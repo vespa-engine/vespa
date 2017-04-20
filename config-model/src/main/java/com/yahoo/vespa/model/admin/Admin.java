@@ -175,7 +175,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
         if (slobroks.isEmpty()) // TODO: Move to caller
             slobroks.addAll(createDefaultSlobrokSetup());
         for (HostResource host : hosts) {
-            if (!host.getHost().isMultitenant()) {
+            if (!host.getHost().runsConfigServer()) {
                 addCommonServices(host, properties);
             }
         }
@@ -238,7 +238,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
         int n = 0;
         while ((n < hosts.size()) && (slobs.size() < 3)) {
             HostResource host = hosts.get(n);
-            if ((logserver== null || host != logserver.getHostResource()) && ! host.getHost().isMultitenant()) {
+            if ((logserver== null || host != logserver.getHostResource()) && ! host.getHost().runsConfigServer()) {
                 Slobrok newSlobrok = new Slobrok(this, slobs.size());
                 addAndInitializeService(host, newSlobrok);
                 slobs.add(newSlobrok);

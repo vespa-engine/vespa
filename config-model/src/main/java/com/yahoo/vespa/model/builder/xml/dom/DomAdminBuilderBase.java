@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
-import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -13,7 +12,6 @@ import com.yahoo.vespa.model.admin.*;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Yamas;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
-import com.yahoo.vespa.model.admin.monitoring.builder.PredefinedMetricSets;
 import com.yahoo.vespa.model.admin.monitoring.builder.xml.MetricsBuilder;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import com.yahoo.config.application.api.FileRegistry;
@@ -51,7 +49,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         List<Configserver> configservers = new ArrayList<>();
         for (ConfigServerSpec spec : configServerSpecs) {
             HostSystem hostSystem = parent.getHostSystem();
-            HostResource host = new HostResource(Host.createMultitenantHost(hostSystem, spec.getHostName()));
+            HostResource host = new HostResource(Host.createConfigServerHost(hostSystem, spec.getHostName()));
             hostSystem.addBoundHost(host);
             Configserver configserver = new Configserver(parent, spec.getHostName());
             configserver.setHostResource(host);

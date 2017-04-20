@@ -147,10 +147,10 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         return hostResource;
     }
 
-    /** Returns the hosts owned by the application having this system - i.e all hosts except shared ones */
+    /** Returns the hosts owned by the application having this system - i.e all hosts except config servers */
     public List<HostResource> getHosts() {
         return hostname2host.values().stream()
-                .filter(host -> !host.getHost().isMultitenant())
+                .filter(host -> !host.getHost().runsConfigServer())
                 .collect(Collectors.toList());
     }
 
@@ -187,9 +187,8 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         hostname2host.put(host.getHostName(), host);
     }
 
-    Set<HostSpec> getSingleTenantHosts() {
-        return hostname2host.values().stream()
-                .filter(host -> ! host.getHost().isMultitenant())
+    Set<HostSpec> getHostSpecs() {
+        return getHosts().stream()
                 .map(host -> new HostSpec(host.getHostName(), Collections.emptyList(),
                                           host.getFlavor(), host.primaryClusterMembership()))
                 .collect(Collectors.toCollection(LinkedHashSet::new));

@@ -60,6 +60,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.text.StringUtilities.quote;
 
@@ -166,7 +167,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     }
 
     private ProvisionInfo createProvisionInfo() {
-        return ProvisionInfo.withHosts(root.getHostSystem().getSingleTenantHosts());
+        return ProvisionInfo.withHosts(root.getHostSystem().getHostSpecs());
     }
 
     private void validateWrapExceptions() {
@@ -197,13 +198,9 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     /** Return a collection of all hostnames used in this application */
     @Override
     public Set<HostInfo> getHosts() {
-        Set<HostInfo> hosts = new LinkedHashSet<>();
-        for (HostResource host : root.getHostSystem().getHosts()) {
-            if (!host.getHost().isMultitenant()) {
-                hosts.add(host.getHostInfo());
-            }
-        }
-        return hosts;
+        return root.getHostSystem().getHosts().stream()
+                   .map(HostResource::getHostInfo)
+                   .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     public FileDistributor getFileDistributor() {

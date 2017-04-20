@@ -19,7 +19,7 @@ public final class Host extends AbstractConfigProducer<AbstractConfigProducer<?>
 
     private ConfigSentinel configSentinel = null;
     private final String hostname;
-    private final boolean multitenant;
+    private final boolean runsConfigServer;
 
     /**
      * Constructs a new Host instance.
@@ -31,10 +31,10 @@ public final class Host extends AbstractConfigProducer<AbstractConfigProducer<?>
         this(parent, hostname, false);
     }
 
-    private Host(AbstractConfigProducer parent, String hostname, boolean multitenant) {
+    private Host(AbstractConfigProducer parent, String hostname, boolean runsConfigServer) {
         super(parent, hostname);
         Objects.requireNonNull(hostname, "The host name of a host cannot be null");
-        this.multitenant = multitenant;
+        this.runsConfigServer = runsConfigServer;
         this.hostname = hostname;
         if (parent instanceof HostSystem) {            
             checkName((HostSystem) parent, hostname);            
@@ -58,7 +58,7 @@ public final class Host extends AbstractConfigProducer<AbstractConfigProducer<?>
         }
     }
 
-    public static Host createMultitenantHost(AbstractConfigProducer parent, String hostname) {
+    public static Host createConfigServerHost(AbstractConfigProducer parent, String hostname) {
         return new Host(parent, hostname, true);
     }
 
@@ -67,15 +67,15 @@ public final class Host extends AbstractConfigProducer<AbstractConfigProducer<?>
         super(parent, "testhost");
         hostname = "testhost";
         configSentinel = null;
-        multitenant = false;
+        runsConfigServer = false;
     }
 
     public String getHostName() {
         return hostname;
     }
 
-    public boolean isMultitenant() {
-        return multitenant;
+    public boolean runsConfigServer() {
+        return runsConfigServer;
     }
 
     /** Returns the string representation of this Host object. */
