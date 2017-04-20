@@ -126,8 +126,16 @@ class OverrideProcessor implements PreProcessor {
     }
     
     private boolean matches(Optional<Environment> elementEnvironment, RegionName elementRegion) {
-        if (elementEnvironment.isPresent() && ! environment.equals(elementEnvironment.get())) return false;
-        if ( ! elementRegion.isDefault() &&  ( ! region.equals(elementRegion) || ! environment.equals(Environment.prod))) return false;
+        if (elementEnvironment.isPresent()) { // match environment
+            if (! environment.equals(elementEnvironment.get())) return false;
+        }
+
+        if ( ! elementRegion.isDefault()) { // match region
+            if ( ! region.equals(elementRegion)) return false;
+            // match region but no environment in prod only to avoid a region attribute overriding capacity policies outside prod
+            if ( ! elementEnvironment.isPresent() && ! environment.equals(Environment.prod)) return false;
+        }
+
         return true;
     }
 
