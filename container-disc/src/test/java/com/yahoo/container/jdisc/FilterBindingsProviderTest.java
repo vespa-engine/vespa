@@ -179,6 +179,8 @@ public class FilterBindingsProviderTest {
         }
     }
 
+    @SafeVarargs
+    @SuppressWarnings("varargs")
     private static <T> Matcher<? super BindingRepository<T>> containsFilters(
             final T... requiredInstances) {
         return new TypeSafeMatcher<BindingRepository<T>>() {
