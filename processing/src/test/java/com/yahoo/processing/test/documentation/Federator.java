@@ -21,8 +21,9 @@ public class Federator extends Processor {
     private final List<Chain<? extends Processor>> chains;
 
     @SafeVarargs
+    @SuppressWarnings("varargs")
     public Federator(Chain<? extends Processor> ... chains) {
-        this.chains= Arrays.asList(chains);
+        this.chains = Arrays.asList(chains);
     }
 
     @SuppressWarnings("unchecked")

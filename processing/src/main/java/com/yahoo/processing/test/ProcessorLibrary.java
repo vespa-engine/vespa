@@ -156,6 +156,7 @@ public class ProcessorLibrary {
          *                to render the datalist from each federated source in the order it completes.
          */
         @SafeVarargs
+        @SuppressWarnings("varargs")
         public Federator(boolean ordered, Chain<? extends Processor>... chains) {
             this.chains = Arrays.asList(chains);
             this.ordered = ordered;
@@ -205,6 +206,7 @@ public class ProcessorLibrary {
          *                to render the datalist from each federated source in the order it completes.
          */
         @SafeVarargs
+        @SuppressWarnings("varargs")
         public EagerReturnFederator(boolean ordered, Chain<? extends Processor>... chains) {
             this.chains = Arrays.asList(chains);
             this.ordered = ordered;

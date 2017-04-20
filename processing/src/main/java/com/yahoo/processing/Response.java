@@ -106,7 +106,7 @@ public class Response extends ListenableFreezableClass {
 
         @SuppressWarnings("unchecked")
     private static <D extends Data> void collectCompletionFutures(DataList<D> dataList, List<ListenableFuture<DataList<D>>> futures) {
-        futures.add((ListenableFuture<DataList<D>>) dataList.complete());
+        futures.add(dataList.complete());
         for (D data : dataList.asList()) {
             if (data instanceof DataList)
                 collectCompletionFutures((DataList<D>) data, futures);
