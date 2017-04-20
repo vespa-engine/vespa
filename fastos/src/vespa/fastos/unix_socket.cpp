@@ -84,40 +84,13 @@ ssize_t FastOS_UNIX_Socket::Read (void *readBuffer, size_t bufferSize)
 
 
 std::string
-FastOS_UNIX_Socket::getHostName(std::string * errorMsg)
-{
-    char buffer[MAXHOSTNAMELEN];
-    if (gethostname(buffer, sizeof(buffer)) < 0) {
-        if (errorMsg != NULL) {
-            int errnoCopy = errno;
-            // Malloc calculations here are not 100% correct (does not compensate
-            // for printf codes). Allocating a few extra bytes isn't farmful though.
-            const char errorUname[]="Failed to use gethostname() to get host name: %s";
-            char errorBuf[100];
-            const char *errorString = strerror_r(errnoCopy, errorBuf, sizeof(errorBuf));
-            char *errorMsgC = static_cast<char *>
-                              (malloc(strlen(errorUname) +
-                                      strlen(errorString) + 1));
-            sprintf(errorMsgC, errorUname, errorString);
-            *errorMsg = errorMsgC;
-            free(errorMsgC);
-        }
-    } else {
-        buffer[sizeof(buffer) - 1] = '\0';
-        return std::string(buffer);
-    }
-
-    return std::string();
-}
-
-
-std::string
 FastOS_UNIX_Socket::getErrorString(int error)
 {
     char errorBuf[100];
     const char *errorString = strerror_r(error, errorBuf, sizeof(errorBuf));
     return std::string(errorString);
 }
+
 
 bool FastOS_SocketEventObjects::Init (FastOS_SocketEvent *event)
 {
