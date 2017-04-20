@@ -54,18 +54,14 @@ private:
     private:
         AttributeVectorSP _attr;
         bool _isExtra;
-        bool _hideFromReading;
-        bool _hideFromWriting;
-        AttributeWrap(const AttributeVectorSP & a, bool isExtra_, bool hideFromReading, bool hideFromWriting);
+        AttributeWrap(const AttributeVectorSP & a, bool isExtra_);
     public:
         AttributeWrap();
         ~AttributeWrap();
         static AttributeWrap extraAttribute(const AttributeVectorSP &a);
-        static AttributeWrap normalAttribute(const AttributeVectorSP &a, bool hideFromReading, bool hideFromWriting);
+        static AttributeWrap normalAttribute(const AttributeVectorSP &a);
         bool isExtra() const { return _isExtra; }
         const AttributeVectorSP getAttribute() const { return _attr; }
-        bool getHideFromReading() const { return _hideFromReading; }
-        bool getHideFromWriting() const { return _hideFromWriting; }
     };
 
     typedef vespalib::hash_map<vespalib::string, AttributeWrap> AttributeMap;

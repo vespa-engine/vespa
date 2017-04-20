@@ -5,12 +5,8 @@
 
 namespace proton {
 
-AttributeInitializerResult::AttributeInitializerResult(const AttributeVectorSP &attr,
-                                                       bool hideFromReading,
-                                                       bool hideFromWriting)
-    : _attr(attr),
-      _hideFromReading(hideFromReading),
-      _hideFromWriting(hideFromWriting)
+AttributeInitializerResult::AttributeInitializerResult(const AttributeVectorSP &attr)
+    : _attr(attr)
 {
 }
 

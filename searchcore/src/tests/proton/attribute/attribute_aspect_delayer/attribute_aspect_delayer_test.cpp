@@ -45,8 +45,6 @@ ostream &operator<<(ostream &os, const Config &cfg)
 ostream &operator<<(ostream &os, const proton::AttributeSpec &spec)
 {
     os << "{name=" << spec.getName();
-    os << ", hideFromReading=" << boolStr(spec.getHideFromReading());
-    os << ", hideFromWriting=" << boolStr(spec.getHideFromWriting());
     os << ", " << spec.getConfig();
     os << "}";
     return os;
@@ -236,7 +234,7 @@ TEST_F("require that empty specs is OK", Fixture)
 TEST_F("require that simple attribute specs is OK", Fixture)
 {
     f.setup(attrCfg({make_int32_sv_cfg()}), smCfg({make_attribute_override("a")}));
-    TEST_DO(f.assertSpecs({AttributeSpec("a", int32_sv, false, false)}));
+    TEST_DO(f.assertSpecs({AttributeSpec("a", int32_sv)}));
     TEST_DO(f.assertAttributeConfig({make_int32_sv_cfg()}));
     TEST_DO(f.assertSummarymapConfig({make_attribute_override("a")}));
 }
@@ -245,7 +243,7 @@ TEST_F("require that adding attribute aspect is delayed if field type is unchang
 {
     f.addFields({"a"});
     f.setup(attrCfg({}), smCfg({}), attrCfg({make_int32_sv_cfg()}), smCfg({make_attribute_override("a")}));
-    TEST_DO(f.assertSpecs({AttributeSpec("a", int32_sv, false, true)}));
+    TEST_DO(f.assertSpecs({}));
     TEST_DO(f.assertAttributeConfig({}));
     TEST_DO(f.assertSummarymapConfig({}));
 }
@@ -254,7 +252,7 @@ TEST_F("require that adding attribute aspect is delayed if field type is unchang
 {
     f.addFields({"a"});
     f.setup(attrCfg({}), smCfg({}), attrCfg({make_int32_sv_cfg()}), smCfg({make_geopos_override("a")}));
-    TEST_DO(f.assertSpecs({AttributeSpec("a", int32_sv, false, true)}));
+    TEST_DO(f.assertSpecs({}));
     TEST_DO(f.assertAttributeConfig({}));
     TEST_DO(f.assertSummarymapConfig({make_geopos_override("a")}));
 }
@@ -262,7 +260,7 @@ TEST_F("require that adding attribute aspect is delayed if field type is unchang
 TEST_F("require that adding attribute is not delayed if field type changed", Fixture)
 {
     f.setup(attrCfg({}), smCfg({}), attrCfg({make_int32_sv_cfg()}), smCfg({make_attribute_override("a")}));
-    TEST_DO(f.assertSpecs({AttributeSpec("a", int32_sv, false, false)}));
+    TEST_DO(f.assertSpecs({AttributeSpec("a", int32_sv)}));
     TEST_DO(f.assertAttributeConfig({make_int32_sv_cfg()}));
     TEST_DO(f.assertSummarymapConfig({make_attribute_override("a")}));
 }
@@ -271,7 +269,7 @@ TEST_F("require that removing attribute aspect is delayed if field type is uncha
 {
     f.addFields({"a"});
     f.setup(attrCfg({make_int32_sv_cfg()}), smCfg({make_attribute_override("a")}), attrCfg({}), smCfg({}));
-    TEST_DO(f.assertSpecs({AttributeSpec("a", int32_sv, true, false)}));
+    TEST_DO(f.assertSpecs({AttributeSpec("a", int32_sv)}));
     TEST_DO(f.assertAttributeConfig({make_int32_sv_cfg()}));
     TEST_DO(f.assertSummarymapConfig({make_attribute_override("a")}));
 }
@@ -280,7 +278,7 @@ TEST_F("require that removing attribute aspect is delayed if field type is uncha
 {
     f.addFields({"a"});
     f.setup(attrCfg({make_int32_sv_cfg()}), smCfg({make_geopos_override("a")}), attrCfg({}), smCfg({}));
-    TEST_DO(f.assertSpecs({AttributeSpec("a", int32_sv, true, false)}));
+    TEST_DO(f.assertSpecs({AttributeSpec("a", int32_sv)}));
     TEST_DO(f.assertAttributeConfig({make_int32_sv_cfg()}));
     TEST_DO(f.assertSummarymapConfig({}));
 }
@@ -371,7 +369,7 @@ TEST_F("require that fast access flag change is not delayed, true->false edge, s
     f.addFields({"a"});
     f.addOldIndexField("a");
     f.setup(attrCfg({make_fa(make_string_sv_cfg())}), smCfg({make_attribute_override("a")}), attrCfg({make_string_sv_cfg()}), smCfg({make_attribute_override("a")}));
-    TEST_DO(f.assertSpecs({AttributeSpec("a", string_sv, false, false)}));
+    TEST_DO(f.assertSpecs({AttributeSpec("a", string_sv)}));
     TEST_DO(f.assertAttributeConfig({make_string_sv_cfg()}));
     TEST_DO(f.assertSummarymapConfig({make_attribute_override("a")}));
 }

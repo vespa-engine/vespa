@@ -63,21 +63,15 @@ bool matchingTypes(const AttributeVector::SP &av, const search::attribute::Confi
 }
 
 AttributeManager::AttributeWrap::AttributeWrap(const AttributeVectorSP & a,
-                                               bool isExtra_,
-                                               bool hideFromReading,
-                                               bool hideFromWriting)
+                                               bool isExtra_)
     : _attr(a),
-      _isExtra(isExtra_),
-      _hideFromReading(hideFromReading),
-      _hideFromWriting(hideFromWriting)
+      _isExtra(isExtra_)
 {
 }
 
 AttributeManager::AttributeWrap::AttributeWrap()
     : _attr(),
-      _isExtra(false),
-      _hideFromReading(false),
-      _hideFromWriting(false)
+      _isExtra(false)
 {
 }
 
@@ -88,13 +82,13 @@ AttributeManager::AttributeWrap::~AttributeWrap()
 AttributeManager::AttributeWrap
 AttributeManager::AttributeWrap::extraAttribute(const AttributeVectorSP &a)
 {
-    return AttributeWrap(a, true, false, false);
+    return AttributeWrap(a, true);
 }
 
 AttributeManager::AttributeWrap
-AttributeManager::AttributeWrap::normalAttribute(const AttributeVectorSP &a, bool hideFromReading, bool hideFromWriting)
+AttributeManager::AttributeWrap::normalAttribute(const AttributeVectorSP &a)
 {
-    return AttributeWrap(a, false, hideFromReading, hideFromWriting);
+    return AttributeWrap(a, false);
 }
 
 
@@ -107,9 +101,7 @@ AttributeManager::internalAddAttribute(const AttributeSpec &spec,
     AttributeInitializerResult result = initializer.init();
     if (result) {
         result.getAttribute()->setInterlock(_interlock);
-        assert(result.getHideFromReading() == spec.getHideFromReading());
-        assert(result.getHideFromWriting() == spec.getHideFromWriting());
-        addAttribute(AttributeWrap::normalAttribute(result.getAttribute(), result.getHideFromReading(), result.getHideFromWriting()));
+        addAttribute(AttributeWrap::normalAttribute(result.getAttribute()));
     }
     return result.getAttribute();
 }
@@ -158,7 +150,7 @@ AttributeManager::transferExistingAttributes(const AttributeManager &currMgr,
         if (matchingTypes(av, aspec.getConfig())) { // transfer attribute
             LOG(debug, "Transferring attribute vector '%s' with %u docs and serial number %lu from current manager",
                        av->getName().c_str(), av->getNumDocs(), av->getStatus().getLastSyncToken());
-            addAttribute(AttributeWrap::normalAttribute(av, aspec.getHideFromReading(), aspec.getHideFromWriting()));
+            addAttribute(AttributeWrap::normalAttribute(av));
         } else {
             toBeAdded.push_back(aspec);
         }
@@ -288,7 +280,7 @@ AttributeManager::addInitializedAttributes(const std::vector<AttributeInitialize
     for (const auto &result : attributes) {
         assert(result);
         result.getAttribute()->setInterlock(_interlock);
-        addAttribute(AttributeWrap::normalAttribute(result.getAttribute(), result.getHideFromReading(), result.getHideFromWriting()));
+        addAttribute(AttributeWrap::normalAttribute(result.getAttribute()));
     }
 }
 

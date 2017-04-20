@@ -17,15 +17,9 @@ class AttributeInitializerResult
 {
     using AttributeVectorSP = std::shared_ptr<search::AttributeVector>;
     AttributeVectorSP _attr;
-    bool _hideFromReading; // Delayed removal of attribute aspect
-    bool _hideFromWriting; // Delayed addition of attribute aspect
 public:
-    AttributeInitializerResult(const AttributeVectorSP &attr,
-                               bool hideFromReading,
-                               bool hideFromWriting);
+    AttributeInitializerResult(const AttributeVectorSP &attr);
     ~AttributeInitializerResult();
-    bool getHideFromReading() const { return _hideFromReading; }
-    bool getHideFromWriting() const { return _hideFromWriting; }
     const AttributeVectorSP &getAttribute() const { return _attr; }
     operator bool() const { return static_cast<bool>(_attr); }
 };

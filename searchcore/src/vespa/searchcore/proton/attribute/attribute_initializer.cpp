@@ -253,9 +253,9 @@ AttributeInitializerResult
 AttributeInitializer::init() const
 {
     if (!_attrDir->empty()) {
-        return AttributeInitializerResult(tryLoadAttribute(), _spec.getHideFromReading(), _spec.getHideFromWriting());
+        return AttributeInitializerResult(tryLoadAttribute());
     } else {
-        return AttributeInitializerResult(createAndSetupEmptyAttribute(), _spec.getHideFromReading(), _spec.getHideFromWriting());
+        return AttributeInitializerResult(createAndSetupEmptyAttribute());
     }
 }
 

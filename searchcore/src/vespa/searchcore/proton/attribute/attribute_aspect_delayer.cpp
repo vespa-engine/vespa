@@ -124,7 +124,6 @@ handleNewAttributes(const AttributesConfig &oldAttributesConfig,
                 }
             } else {
                 // Delay addition of attribute aspect
-                specs.emplace_back(newAttr.name, newCfg, false, true);
                 delayed.insert(newAttr.name);
             }
         }
@@ -161,7 +160,7 @@ handleOldAttributes(const AttributesConfig &oldAttributesConfig,
                 // Delay removal of attribute aspect if it would trigger
                 // reprocessing.
                 if (willTriggerReprocessOnAttributeAspectRemoval(oldCfg, oldIndexschemaInspector, oldAttr.name)) {
-                    specs.emplace_back(oldAttr.name, oldCfg, true, false);
+                    specs.emplace_back(oldAttr.name, oldCfg);
                     attributesConfig.attribute.emplace_back(oldAttr);
                     delayed.insert(oldAttr.name);
                 }
