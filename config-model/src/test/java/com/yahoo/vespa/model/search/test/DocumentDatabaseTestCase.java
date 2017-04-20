@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search.test;
 
+import com.google.common.collect.ImmutableMap;
 import com.yahoo.vespa.config.search.IndexschemaConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
@@ -253,17 +254,15 @@ public class DocumentDatabaseTestCase {
 
     @Test
     public void testThatAttributesConfigIsProducedForIndexed() {
-        Map<String, List<String>> expectedAttributesMap = new HashMap<>();
-        expectedAttributesMap.put("type1", Arrays.asList("f2"));
         assertAttributesConfigIndependentOfMode("index", Arrays.asList("type1"),
-                Arrays.asList("test/search/cluster.test/type1"), expectedAttributesMap);
+                Arrays.asList("test/search/cluster.test/type1"),
+                ImmutableMap.of("type1", Arrays.asList("f2")));
     }
     @Test
     public void testThatAttributesConfigIsProducedForStreamingForFastAccessFields() {
-        Map<String, List<String>> expectedAttributesMap = new HashMap<>();
-        expectedAttributesMap.put("type1", Arrays.asList("f2"));
         assertAttributesConfigIndependentOfMode("streaming", Arrays.asList("type1"),
-                Arrays.asList("test/search/cluster.test.type1/type1"), expectedAttributesMap);
+                Arrays.asList("test/search/cluster.test.type1/type1"),
+                ImmutableMap.of("type1", Arrays.asList("f2")));
     }
     @Test
     public void testThatAttributesConfigIsNotProducedForStoreOnlyEvenForFastAccessFields() {

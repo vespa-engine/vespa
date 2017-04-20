@@ -264,16 +264,12 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         this.redundancy = redundancy;
     }
 
-    private StreamingSearchCluster findStreamingCluster(String docType) {
-        for (AbstractSearchCluster sc : getClusters().values()) {
-            if (sc instanceof StreamingSearchCluster) {
-                StreamingSearchCluster ssc = (StreamingSearchCluster) sc;
-                if (docType.equals(ssc.getSdConfig().getSearch().getName())) {
-                    return ssc;
-                }
-            }
-        }
-        return null;
+    private Optional<StreamingSearchCluster> findStreamingCluster(String docType) {
+        return getClusters().values().stream()
+                .filter(StreamingSearchCluster.class::isInstance)
+                .map(StreamingSearchCluster.class::cast)
+                .filter(ssc -> ssc.getSdConfig().getSearch().getName().equals(docType))
+                .findFirst();
     }
 
     @Override
@@ -286,9 +282,9 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
                 .configid(getConfigId())
                 .visibilitydelay(visibilityDelay)
                 .global(isGloballyDistributed(type));
-            StreamingSearchCluster ssc = findStreamingCluster(docTypeName);
-            if (ssc != null) {
-                ddbB.inputdoctypename(type.getFullName().getName()).configid(ssc.getDocumentDBConfigId());
+            Optional<StreamingSearchCluster> ssc = findStreamingCluster(docTypeName);
+            if (ssc.isPresent()) {
+                ddbB.inputdoctypename(type.getFullName().getName()).configid(ssc.get().getDocumentDBConfigId());
             } else if (hasIndexedCluster()) {
                 getIndexed().fillDocumentDBConfig(type.getFullName().getName(), ddbB);
             }
