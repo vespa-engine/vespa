@@ -37,10 +37,12 @@ public class ProcessingTestDriver extends RequestHandlerTestDriver {
         this(chains, new ComponentRegistry<Renderer>());
     }
     @SafeVarargs
+    @SuppressWarnings("varargs")
     public ProcessingTestDriver(Chain<Processor> ... chains) {
         this(Arrays.asList(chains), new ComponentRegistry<Renderer>());
     }
     @SafeVarargs
+    @SuppressWarnings("varargs")
     public ProcessingTestDriver(String binding, Chain<Processor> ... chains) {
         this(binding, Arrays.asList(chains), new ComponentRegistry<Renderer>());
     }
