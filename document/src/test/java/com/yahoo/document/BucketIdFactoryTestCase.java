@@ -34,6 +34,7 @@ public class BucketIdFactoryTestCase extends junit.framework.TestCase {
         public boolean equals(Object o) {
             return (o instanceof Hex && value == ((Hex) o).value);
         }
+        public int hashCode() { return (int)value; }
 
         public String toString() {
             return Long.toHexString(value);
