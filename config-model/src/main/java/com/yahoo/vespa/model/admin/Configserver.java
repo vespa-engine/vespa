@@ -26,7 +26,7 @@ import com.yahoo.vespa.model.AbstractService;
  */
 public class Configserver extends AbstractService {
     private static final long serialVersionUID = 1L;
-    public static final int defaultPort = 19070;
+    private static final int defaultPort = 19070;
     private static final Logger log = Logger.getLogger(Configserver.class.getName());
 
     public Configserver(AbstractConfigProducer parent, String name) {
