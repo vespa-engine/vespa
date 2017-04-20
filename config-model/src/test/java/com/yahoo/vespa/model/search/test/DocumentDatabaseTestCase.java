@@ -255,17 +255,20 @@ public class DocumentDatabaseTestCase {
     public void testThatAttributesConfigIsProducedForIndexed() {
         Map<String, List<String>> expectedAttributesMap = new HashMap<>();
         expectedAttributesMap.put("type1", Arrays.asList("f2"));
-        assertAttributesConfigIndependentOfMode("index", Arrays.asList("type1"), Arrays.asList("test/search/cluster.test/type1"), expectedAttributesMap);
+        assertAttributesConfigIndependentOfMode("index", Arrays.asList("type1"),
+                Arrays.asList("test/search/cluster.test/type1"), expectedAttributesMap);
     }
     @Test
     public void testThatAttributesConfigIsProducedForStreamingForFastAccessFields() {
         Map<String, List<String>> expectedAttributesMap = new HashMap<>();
         expectedAttributesMap.put("type1", Arrays.asList("f2"));
-        assertAttributesConfigIndependentOfMode("streaming", Arrays.asList("type1"), Arrays.asList("test/search/cluster.test.type1/type1"), expectedAttributesMap);
+        assertAttributesConfigIndependentOfMode("streaming", Arrays.asList("type1"),
+                Arrays.asList("test/search/cluster.test.type1/type1"), expectedAttributesMap);
     }
     @Test
     public void testThatAttributesConfigIsNotProducedForStoreOnlyEvenForFastAccessFields() {
-        assertAttributesConfigIndependentOfMode("store-only", Arrays.asList("type1"), Arrays.asList("test/search"), Collections.emptyMap());
+        assertAttributesConfigIndependentOfMode("store-only", Arrays.asList("type1"),
+                Arrays.asList("test/search"), Collections.emptyMap());
     }
 
 }
