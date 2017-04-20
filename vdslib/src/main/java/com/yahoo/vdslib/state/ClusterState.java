@@ -66,6 +66,7 @@ public class ClusterState implements Cloneable {
         }
     }
 
+    @Override
     public boolean equals(Object o) {
         if (!(o instanceof ClusterState)) { return false; }
         ClusterState other = (ClusterState) o;
@@ -78,6 +79,16 @@ public class ClusterState implements Cloneable {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int hc = version * 211;
+        hc += state.hashCode() * 97;
+        hc += distributionBits * 31;
+        hc += nodeCount.hashCode() * 7;
+        hc += nodeStates.hashCode();
+        return hc;
     }
 
     @FunctionalInterface

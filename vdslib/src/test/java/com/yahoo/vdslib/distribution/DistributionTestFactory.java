@@ -51,6 +51,10 @@ public class DistributionTestFactory extends CrossPlatformTestFactory {
                     && failure.equals(t.failure));
         }
 
+        public int hashCode() {
+            return bucket.hashCode() + nodes.hashCode() + disks.hashCode();
+        }
+
         public String toString() {
             StringBuilder sb = new StringBuilder().append(bucket.toString());
             if (failure == Failure.NONE) {
