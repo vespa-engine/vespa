@@ -50,6 +50,7 @@ public class DefaultErrorHit extends Hit implements ErrorHit, Cloneable {
      * @deprecated since 5.18, use {@link #errors()}
      */
     @Override
+    @Deprecated
     public ErrorMessage getMainError() {
         return errors.get(0);
     }
