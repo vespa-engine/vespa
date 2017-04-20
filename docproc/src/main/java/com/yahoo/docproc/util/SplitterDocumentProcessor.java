@@ -53,6 +53,7 @@ public class SplitterDocumentProcessor extends DocumentProcessor {
 
         Document outerDoc = ((DocumentPut)processing.getDocumentOperations().get(0)).getDocument();;
 
+        @SuppressWarnings("unchecked")
         Array<Document> innerDocuments = (Array<Document>) outerDoc.getFieldValue(arrayFieldName);
         if (innerDocuments == null) {
             //the document does not have the field, return

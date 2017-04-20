@@ -8,6 +8,7 @@ import java.util.Iterator;
  *
  * @author bratseth
  */
+@SuppressWarnings({"unchecked","rawtypes"})
 public class CallStackTestCase extends junit.framework.TestCase {
 
     private CallStack callStack, insertStack;

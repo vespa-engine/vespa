@@ -47,10 +47,13 @@ public class JoinerDocumentProcessor extends DocumentProcessor {
 
         DocumentPut outerDoc = (DocumentPut)processing.getVariable(contextFieldName);
 
+        @SuppressWarnings("unchecked")
         Array<Document> innerDocuments = (Array<Document>) outerDoc.getDocument().getFieldValue(arrayFieldName);
 
         if (innerDocuments == null) {
-            innerDocuments = (Array<Document>) outerDoc.getDocument().getDataType().getField(arrayFieldName).getDataType().createFieldValue();
+            @SuppressWarnings("unchecked")
+            Array<Document> empty = (Array<Document>) outerDoc.getDocument().getDataType().getField(arrayFieldName).getDataType().createFieldValue();
+            innerDocuments = empty;
         }
 
         for (DocumentOperation op : processing.getDocumentOperations()) {
