@@ -130,8 +130,12 @@ handleNewAttributes(const AttributesConfig &oldAttributesConfig,
         }
     }
     for (const auto &override : newSummarymapConfig.override) {
-        auto itr = delayed.find(override.field);
-        if (itr == delayed.end()) {
+        if (override.command == "attribute") {
+            auto itr = delayed.find(override.field);
+            if (itr == delayed.end()) {
+                summarymapConfig.override.emplace_back(override);
+            }
+        } else {
             summarymapConfig.override.emplace_back(override);
         }
     }
@@ -165,9 +169,11 @@ handleOldAttributes(const AttributesConfig &oldAttributesConfig,
         }
     }
     for (const auto &override : oldSummarymapConfig.override) {
-        auto itr = delayed.find(override.field);
-        if (itr != delayed.end()) {
-            summarymapConfig.override.emplace_back(override);
+        if (override.command == "attribute") {
+            auto itr = delayed.find(override.field);
+            if (itr != delayed.end()) {
+                summarymapConfig.override.emplace_back(override);
+            }
         }
     }
 }

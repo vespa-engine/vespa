@@ -143,6 +143,15 @@ SummarymapConfig::Override make_attribute_override(const vespalib::string &name)
     return override;
 }
 
+SummarymapConfig::Override make_geopos_override(const vespalib::string &name)
+{
+    SummarymapConfig::Override override;
+    override.field = name;
+    override.command = "geopos";
+    override.arguments = name;
+    return override;
+}
+
 SummarymapConfig smCfg(std::vector<SummarymapConfig::Override> overrides)
 {
     SummarymapConfigBuilder result;
@@ -243,6 +252,15 @@ TEST_F("require that adding attribute aspect is delayed if field type is unchang
     TEST_DO(f.assertSummarymapConfig({}));
 }
 
+TEST_F("require that adding attribute aspect is delayed if field type is unchanged, geopos override", Fixture)
+{
+    f.addFields({"a"});
+    f.setup(attrCfg({}), smCfg({}), attrCfg({make_int32_sv_cfg()}), smCfg({make_geopos_override("a")}));
+    TEST_DO(f.assertSpecs({AttributeSpec("a", int32_sv, false, true)}));
+    TEST_DO(f.assertAttributeConfig({}));
+    TEST_DO(f.assertSummarymapConfig({make_geopos_override("a")}));
+}
+
 TEST_F("require that adding attribute is not delayed if field type changed", Fixture)
 {
     f.setup(attrCfg({}), smCfg({}), attrCfg({make_int32_sv_cfg()}), smCfg({make_attribute_override("a")}));
@@ -258,6 +276,15 @@ TEST_F("require that removing attribute aspect is delayed if field type is uncha
     TEST_DO(f.assertSpecs({AttributeSpec("a", int32_sv, true, false)}));
     TEST_DO(f.assertAttributeConfig({make_int32_sv_cfg()}));
     TEST_DO(f.assertSummarymapConfig({make_attribute_override("a")}));
+}
+
+TEST_F("require that removing attribute aspect is delayed if field type is unchanged, gepos override", Fixture)
+{
+    f.addFields({"a"});
+    f.setup(attrCfg({make_int32_sv_cfg()}), smCfg({make_geopos_override("a")}), attrCfg({}), smCfg({}));
+    TEST_DO(f.assertSpecs({AttributeSpec("a", int32_sv, true, false)}));
+    TEST_DO(f.assertAttributeConfig({make_int32_sv_cfg()}));
+    TEST_DO(f.assertSummarymapConfig({}));
 }
 
 TEST_F("require that removing attribute aspect is not delayed if field type changed", Fixture)
