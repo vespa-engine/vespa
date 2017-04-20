@@ -32,13 +32,9 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
      * Flag indicating if a position-attribute has been found
      */
     private boolean hasPosition = false;
-    private final boolean needOnlyFastAccess;
 
     public AttributeFields(Search search) {
-        this(search, false);
-    }
-    public AttributeFields(Search search, boolean onlyFastAccess) {
-        needOnlyFastAccess = onlyFastAccess;
+
         derive(search);
     }
 
@@ -87,16 +83,13 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
      */
     private void deriveAttributes(ImmutableSDField field) {
         for (Attribute fieldAttribute : field.getAttributes().values()) {
-            if (fieldAttribute.isFastAccess() || !needOnlyFastAccess) {
-                deriveAttribute(field, fieldAttribute);
-            }
+            deriveAttribute(field, fieldAttribute);
         }
 
         if (field.containsExpression(ToPositionExpression.class)) {
             // TODO: Move this check to processing and remove this
             if (hasPosition) {
-                throw new IllegalArgumentException("Can not specify more than one " +
-                                                   "set of position attributes per " + "field: " + field.getName());
+                throw new IllegalArgumentException("Can not specify more than one set of position attributes per field: " + field.getName());
             }
             hasPosition = true;
         }

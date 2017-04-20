@@ -29,17 +29,34 @@ public class StreamingSearchCluster extends SearchCluster implements
         SummaryConfig.Producer
 {
 
+    private class AttributesProducer extends AbstractConfigProducer implements AttributesConfig.Producer {
+        AttributesProducer(AbstractConfigProducer parent, String docType) {
+            super(parent, docType);
+        }
+
+        @Override
+        public void getConfig(AttributesConfig.Builder builder) {
+            StreamingSearchCluster.this.getConfig(builder);
+        }
+    }
+
     private final String storageRouteSpec;
+    private final AttributesProducer attributesConfig;
     private DerivedConfiguration sdConfig = null;
 
-    public StreamingSearchCluster(AbstractConfigProducer parent, String clusterName, int index, String storageClusterName, String storageRouteSpec) {
+    public StreamingSearchCluster(AbstractConfigProducer parent, String clusterName, int index, String docTypeName, String storageRouteSpec) {
         super(parent, clusterName, index);
+        attributesConfig = new AttributesProducer(this, docTypeName);
         this.storageRouteSpec = storageRouteSpec;
     }
 
+    public final String getDocumentDBConfigId() {
+        return attributesConfig.getConfigId();
+    }
     @Override
     protected IndexingMode getIndexingMode() { return IndexingMode.STREAMING; }
     public final String getStorageRouteSpec()       { return storageRouteSpec; }
+    @Override
     public int getRowBits() { return 0; }
 
     @Override

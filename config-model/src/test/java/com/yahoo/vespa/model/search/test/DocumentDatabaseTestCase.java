@@ -14,16 +14,20 @@ import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 
-// TODO: Author!
+/**
+ * @author geirst
+ */
 public class DocumentDatabaseTestCase {
 
     private String vespaHosts = "<?xml version='1.0' encoding='utf-8' ?>" +
@@ -33,7 +37,7 @@ public class DocumentDatabaseTestCase {
             "  </host>" +
             "</hosts>";
 
-    private String createVespaServices(List<String> sdNames, String selection, String mode) {
+    private String createVespaServices(List<String> sdNames, String mode) {
         StringBuilder retval = new StringBuilder();
         retval.append("" +
                       "<?xml version='1.0' encoding='utf-8' ?>\n" +
@@ -51,9 +55,7 @@ public class DocumentDatabaseTestCase {
                       "   <redundancy>1</redundancy>\n");
         retval.append("   <documents>\n");
         for (String sdName : sdNames) {
-            retval.append("").append("      <document type='").append(sdName).append("' mode='" + mode + "'");
-            if (selection != null)
-                retval.append(" selection='").append(selection).append("'");
+            retval.append("").append("      <document type='").append(sdName).append("' mode='").append(mode).append("'");
             retval.append("/>\n");
         }
         retval.append("   </documents>\n");
@@ -72,10 +74,10 @@ public class DocumentDatabaseTestCase {
         return new ProtonConfig(pb);
     }
 
-    @Test
-    public void requireThatWeCanHaveOneSearchDefinition() throws IOException, SAXException, ParseException {
+    private void assertSingleSD(String mode) {
         final List<String> sds = Arrays.asList("type1");
-        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(sds, null, "index"), ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
+        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(sds, mode),
+                ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
         IndexedSearchCluster indexedSearchCluster = (IndexedSearchCluster)model.getSearchClusters().get(0);
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
         assertEquals(1, indexedSearchCluster.getDocumentDbs().size());
@@ -84,10 +86,10 @@ public class DocumentDatabaseTestCase {
         assertEquals(1, proton.documentdb().size());
         assertEquals("type1", proton.documentdb(0).inputdoctypename());
         assertEquals(type1Id, proton.documentdb(0).configid());
-        ProtonConfig nodeCfg = getProtonCfg(contentSearchCluster);
-        assertEquals(1, nodeCfg.documentdb().size());
-        assertEquals("type1", nodeCfg.documentdb(0).inputdoctypename());
-        assertEquals(type1Id, nodeCfg.documentdb(0).configid());
+    }
+    @Test
+    public void requireThatWeCanHaveOneSDForIndexedMode() throws IOException, SAXException, ParseException {
+        assertSingleSD("index");
     }
 
     private void assertDocTypeConfig(VespaModel model, String configId, String indexField, String attributeField) {
@@ -104,7 +106,8 @@ public class DocumentDatabaseTestCase {
     @Test
     public void requireThatWeCanHaveMultipleSearchDefinitions() throws IOException, SAXException, ParseException {
         final List<String> sds = Arrays.asList("type1", "type2", "type3");
-        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(sds, null, "index"), ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
+        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(sds, "index"),
+                ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
         IndexedSearchCluster indexedSearchCluster = (IndexedSearchCluster)model.getSearchClusters().get(0);
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
         String type1Id = "test/search/cluster.test/type1";
@@ -132,10 +135,10 @@ public class DocumentDatabaseTestCase {
             assertEquals("type3", iicfg.indexinfo().get(2).name());
         }
         {
-            AttributesConfig rac1 = model.getConfig(AttributesConfig.class, "test/search/cluster.test/type1");
+            AttributesConfig rac1 = model.getConfig(AttributesConfig.class, type1Id);
             assertEquals(1, rac1.attribute().size());
             assertEquals("f2", rac1.attribute(0).name());
-            AttributesConfig rac2 = model.getConfig(AttributesConfig.class, "test/search/cluster.test/type2");
+            AttributesConfig rac2 = model.getConfig(AttributesConfig.class, type2Id);
             assertEquals(1, rac2.attribute().size());
             assertEquals("f4", rac2.attribute(0).name());
         }
@@ -151,7 +154,8 @@ public class DocumentDatabaseTestCase {
     @Test
     public void requireThatRelevantConfigIsAvailableForClusterSearcher() throws ParseException, IOException, SAXException {
         final List<String> sds = Arrays.asList("type1", "type2");
-        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(sds, null, "index"), ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
+        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(sds, "index"),
+                ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
         String searcherId = "container/searchchains/chain/test/component/com.yahoo.prelude.cluster.ClusterSearcher";
 
         { // documentdb-info config
@@ -207,16 +211,61 @@ public class DocumentDatabaseTestCase {
         assertEquals(dynamic, field.dynamic());
     }
 
-
-    @Test
-    public void requireThatConfigIsAvailableForStreaming() throws ParseException, IOException, SAXException {
+    private void assertDocumentDBConfigAvailableForStreaming(String mode) {
         final List<String> sds = Arrays.asList("type");
-        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts,  createVespaServices(sds, null, "streaming"), ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
+        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts,  createVespaServices(sds, mode),
+                ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
 
         DocumentdbInfoConfig dcfg = model.getConfig(DocumentdbInfoConfig.class, "test/search/cluster.test.type");
         assertEquals(1, dcfg.documentdb().size());
         DocumentdbInfoConfig.Documentdb db = dcfg.documentdb(0);
         assertEquals("type", db.name());
+    }
+
+    @Test
+    public void requireThatDocumentDBConfigIsAvailableForStreaming() throws ParseException, IOException, SAXException {
+        assertDocumentDBConfigAvailableForStreaming("streaming");
+    }
+
+
+    private void assertAttributesConfigIndependentOfMode(String mode, List<String> sds,
+                                                         List<String> documentDBConfigIds,
+                                                         Map<String, List<String>> expectedAttributesMap) {
+        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts,  createVespaServices(sds, mode),
+                ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
+        ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
+
+        ProtonConfig proton = getProtonCfg(contentSearchCluster);
+        assertEquals(sds.size(), proton.documentdb().size());
+        for (int i = 0; i < sds.size(); i++) {
+            assertEquals(sds.get(i), proton.documentdb(i).inputdoctypename());
+            assertEquals(documentDBConfigIds.get(i), proton.documentdb(i).configid());
+            List<String> expectedAttributes = expectedAttributesMap.get(sds.get(i));
+            if (expectedAttributes != null) {
+                AttributesConfig rac1 = model.getConfig(AttributesConfig.class, proton.documentdb(i).configid());
+                assertEquals(expectedAttributes.size(), rac1.attribute().size());
+                for (int j = 0; j < expectedAttributes.size(); j++) {
+                    assertEquals(expectedAttributes.get(j), rac1.attribute(j).name());
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testThatAttributesConfigIsProducedForIndexed() {
+        Map<String, List<String>> expectedAttributesMap = new HashMap<>();
+        expectedAttributesMap.put("type1", Arrays.asList("f2"));
+        assertAttributesConfigIndependentOfMode("index", Arrays.asList("type1"), Arrays.asList("test/search/cluster.test/type1"), expectedAttributesMap);
+    }
+    @Test
+    public void testThatAttributesConfigIsProducedForStreamingForFastAccessFields() {
+        Map<String, List<String>> expectedAttributesMap = new HashMap<>();
+        expectedAttributesMap.put("type1", Arrays.asList("f2"));
+        assertAttributesConfigIndependentOfMode("streaming", Arrays.asList("type1"), Arrays.asList("test/search/cluster.test.type1/type1"), expectedAttributesMap);
+    }
+    @Test
+    public void testThatAttributesConfigIsNotProducedForStoreOnlyEvenForFastAccessFields() {
+        assertAttributesConfigIndependentOfMode("store-only", Arrays.asList("type1"), Arrays.asList("test/search"), Collections.emptyMap());
     }
 
 }

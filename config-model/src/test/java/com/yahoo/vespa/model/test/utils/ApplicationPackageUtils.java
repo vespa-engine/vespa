@@ -27,6 +27,7 @@ public class ApplicationPackageUtils {
                 "    }\n" +
                 "    field " + field2 + " type int {\n" +
                 "      indexing: attribute | summary\n" +
+                "      attribute: fast-access\n" +
                 "      header\n" +
                 "    }\n" +
                 "  }\n" +
