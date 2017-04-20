@@ -56,10 +56,10 @@ public class AddValueUpdate extends ValueUpdate {
     public FieldValue applyTo(FieldValue val) {
         if (val instanceof WeightedSet) {
             WeightedSet wset = (WeightedSet) val;
-            wset.put((FieldValue) value, weight);
+            wset.put(value, weight);
         } else if (val instanceof CollectionFieldValue) {
             CollectionFieldValue fval = (CollectionFieldValue) val;
-            fval.add((FieldValue) value);
+            fval.add(value);
         } else {
             throw new IllegalStateException("Cannot add "+value+" to field of type " + val.getClass().getName());
         }
