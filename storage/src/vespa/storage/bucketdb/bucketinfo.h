@@ -9,6 +9,11 @@ namespace distributor {
     class DistributorTestUtil;
 }
 
+enum class TrustedUpdate {
+    UPDATE,
+    DEFER
+};
+
 class BucketInfo
 {
 private:
@@ -84,9 +89,11 @@ public:
 
        listed. Any nodes not in this list will be order numerically afterward.
        @param replace If replace is true, replaces old ones that may exist.
+       @param update If true, will invoke updateTrusted() after replicas are added
     */
     void addNodes(const std::vector<BucketCopy>& newCopies,
-                  const std::vector<uint16_t>& recommendedOrder);
+                  const std::vector<uint16_t>& recommendedOrder,
+                  TrustedUpdate update = TrustedUpdate::UPDATE);
 
     /**
        Simplified API for the common case of inserting one node. See addNodes().
@@ -103,7 +110,7 @@ public:
     /**
         Returns true if the node existed and was removed.
     */
-    bool removeNode(uint16_t node);
+    bool removeNode(uint16_t node, TrustedUpdate update = TrustedUpdate::UPDATE);
 
     /**
      * Returns the bucket copy struct for the given node, null if nonexisting
@@ -113,7 +120,7 @@ public:
     /**
      * Returns the number of nodes this entry has.
      */
-    uint32_t getNodeCount() const { return _nodes.size(); }
+    uint32_t getNodeCount() const noexcept { return static_cast<uint32_t>(_nodes.size()); }
 
     /**
      * Returns a list of the nodes this entry has.

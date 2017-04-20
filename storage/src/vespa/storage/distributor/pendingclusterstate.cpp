@@ -412,7 +412,7 @@ PendingClusterState::insertInfo(
             _clusterInfo->getIdealStorageNodesForState(
                     _newClusterState,
                     _entries[range.first].bucketId));
-    info->addNodes(copiesToAddOrUpdate, order);
+    info->addNodes(copiesToAddOrUpdate, order, TrustedUpdate::DEFER);
 
     LOG_BUCKET_OPERATION_NO_LOCK(
             _entries[range.first].bucketId,
@@ -458,20 +458,26 @@ PendingClusterState::removeCopiesFromNodesThatWereRequested(
         const document::BucketId& bucketId)
 {
     bool updated = false;
-    for (uint32_t i = 0; i < e->getNodeCount(); ++i) {
+    for (uint32_t i = 0; i < e->getNodeCount();) {
         auto& info(e->getNodeRef(i));
         const uint16_t entryNode(info.getNode());
         // Don't remove an entry if it's been updated in the time after the
         // bucket info requests were sent, as this would erase newer state.
+        // Don't immediately update trusted state, as that could erroneously
+        // mark a single remaining replica as trusted even though there might
+        // be one or more additional replicas pending merge into the database.
         if (nodeIsOutdated(entryNode)
             && (info.getTimestamp() < _creationTimestamp)
-            && e->removeNode(entryNode))
+            && e->removeNode(entryNode, TrustedUpdate::DEFER))
         {
             LOG(spam,
                 "Removed bucket %s from node %d",
                 bucketId.toString().c_str(),
                 entryNode);
             updated = true;
+            // After removing current node, getNodeRef(i) will point to the _next_ node, so don't increment `i`.
+        } else {
+            ++i;
         }
     }
     return updated;
@@ -520,9 +526,13 @@ PendingClusterState::process(BucketDatabase::Entry& e)
         updated = true;
     }
 
-    // Remove bucket if we've previously removed all nodes from it
-    if (e->getNodeCount() == 0 && updated) {
-        _removedBuckets.push_back(bucketId);
+    if (updated) {
+        // Remove bucket if we've previously removed all nodes from it
+        if (e->getNodeCount() == 0) {
+            _removedBuckets.push_back(bucketId);
+        } else {
+            e.getBucketInfo().updateTrusted();
+        }
     }
 
     LOG(spam,
@@ -549,6 +559,7 @@ PendingClusterState::addToBucketDB(BucketDatabase& db,
                 framework::MicroSecTime(_creationTimestamp)
                     .getSeconds().getTime());
     }
+    e.getBucketInfo().updateTrusted();
     db.update(e);
 }
 
