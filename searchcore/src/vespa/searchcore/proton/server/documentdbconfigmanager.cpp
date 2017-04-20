@@ -12,7 +12,6 @@
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/vespalib/time/time_box.h>
-#include <vespa/searchcore/proton/attribute/attribute_aspect_delayer.h>
 
 LOG_SETUP(".proton.server.documentdbconfigmanager");
 
@@ -269,17 +268,14 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
         newMaintenanceConfig = oldMaintenanceConfig;
     }
     ConfigSnapshot extraConfigs(snapshot.subset(_extraConfigKeys));
-    AttributeAspectDelayer attributeAspectDelayer;
-    attributeAspectDelayer.setup(*newAttributesConfig, *newSummarymapConfig);
     DocumentDBConfig::SP newSnapshot(
             new DocumentDBConfig(generation,
                                  newRankProfilesConfig,
                                  newRankingConstants,
                                  newIndexschemaConfig,
-                                 attributeAspectDelayer.getAttributesConfig(),
-                                 attributeAspectDelayer.getAttributeSpecs(),
+                                 newAttributesConfig,
                                  newSummaryConfig,
-                                 attributeAspectDelayer.getSummarymapConfig(),
+                                 newSummarymapConfig,
                                  newJuniperrcConfig,
                                  _bootstrapConfig->getDocumenttypesConfigSP(),
                                  _bootstrapConfig->getDocumentTypeRepoSP(),

@@ -3,7 +3,6 @@
 #include <vespa/fastos/fastos.h>
 #include "documentdbconfigscout.h"
 #include <vespa/searchcore/proton/attribute/attributesconfigscout.h>
-#include <vespa/searchcore/proton/attribute/attribute_aspect_delayer.h>
 
 using vespa::config::search::AttributesConfig;
 
@@ -20,10 +19,7 @@ DocumentDBConfigScout::scout(const DocumentDBConfig::SP &config,
         ac(acScout.adjust(config->getAttributesConfig()));
     if (*ac == config->getAttributesConfig())
         return config; // no change
-    AttributeAspectDelayer attributeAspectDelayer;
-    attributeAspectDelayer.setup(*ac, config->getSummarymapConfig());
-    return config->newFromAttributesConfig(attributeAspectDelayer.getAttributesConfig(),
-                                           attributeAspectDelayer.getAttributeSpecs());
+    return config->newFromAttributesConfig(ac);
 }
 
 

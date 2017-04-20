@@ -14,7 +14,6 @@
 #include <vespa/searchcore/proton/server/proton_config_fetcher.h>
 #include <vespa/searchcore/proton/server/proton_config_snapshot.h>
 #include <vespa/searchcore/proton/server/i_proton_configurer.h>
-#include <vespa/searchcore/proton/attribute/attribute_specs.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/varholder.h>
@@ -248,22 +247,6 @@ TEST_FF("require that documentdb config manager builds schema with imported attr
     const auto &schema = f2.getConfig()->getSchemaSP();
     EXPECT_EQUAL(1u, schema->getNumImportedAttributeFields());
     EXPECT_EQUAL("imported", schema->getImportedAttributeFields()[0].getName());
-}
-
-TEST_FF("require that documentdb config manager builds attribute specs",
-        ConfigTestFixture("search"),
-        DocumentDBConfigManager(f1.configId + "/typea", "typea"))
-{
-    auto *docType = f1.addDocType("typea");
-    docType->attributesBuilder.attribute.resize(1);
-    docType->attributesBuilder.attribute[0].name = "attrname";
-
-    ConfigRetriever retriever(f2.createConfigKeySet(), f1.context);
-    f2.forwardConfig(f1.getBootstrapConfig(1));
-    f2.update(retriever.getBootstrapConfigs()); // Cheating, but we only need the configs
-    const auto &attrSpecs = f2.getConfig()->getAttributeSpecs().getSpecs();
-    EXPECT_EQUAL(1u, attrSpecs.size());
-    EXPECT_EQUAL("attrname", attrSpecs[0].getName());
 }
 
 TEST_FFF("require that proton config fetcher follows changes to bootstrap",

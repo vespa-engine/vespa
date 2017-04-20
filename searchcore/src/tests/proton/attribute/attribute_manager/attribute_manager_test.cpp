@@ -225,12 +225,12 @@ struct ParallelAttributeManager
     AttributeManagerInitializer::SP initializer;
 
     ParallelAttributeManager(search::SerialNum configSerialNum, AttributeManager::SP baseAttrMgr,
-                             const AttributeSpecs &attrSpecs, uint32_t docIdLimit);
+                             const AttributesConfig &attrCfg, uint32_t docIdLimit);
     ~ParallelAttributeManager();
 };
 
 ParallelAttributeManager::ParallelAttributeManager(search::SerialNum configSerialNum, AttributeManager::SP baseAttrMgr,
-                                                   const AttributeSpecs &attrSpecs, uint32_t docIdLimit)
+                                                   const AttributesConfig &attrCfg, uint32_t docIdLimit)
     : documentMetaStoreInitTask(std::make_shared<DummyInitializerTask>()),
       bucketDbOwner(std::make_shared<BucketDBOwner>()),
       documentMetaStore(std::make_shared<DocumentMetaStore>(bucketDbOwner)),
@@ -239,7 +239,7 @@ ParallelAttributeManager::ParallelAttributeManager(search::SerialNum configSeria
       fastAccessAttributesOnly(false),
       mgr(std::make_shared<AttributeManager::SP>()),
       initializer(std::make_shared<AttributeManagerInitializer>(configSerialNum, documentMetaStoreInitTask,
-                                                                documentMetaStore, baseAttrMgr, attrSpecs,
+                                                                documentMetaStore, baseAttrMgr, attrCfg,
                                                                 attributeGrow, attributeGrowNumDocs,
                                                                 fastAccessAttributesOnly, mgr))
 {
@@ -670,6 +670,16 @@ TEST_F("require that attributes can be initialized and loaded in sequence", Base
     }
 }
 
+AttributesConfigBuilder::Attribute
+createAttributeConfig(const vespalib::string &name)
+{
+    AttributesConfigBuilder::Attribute result;
+    result.name = name;
+    result.datatype = AttributesConfigBuilder::Attribute::Datatype::INT32;
+    result.collectiontype = AttributesConfigBuilder::Attribute::Collectiontype::SINGLE;
+    return result;
+}
+
 TEST_F("require that attributes can be initialized and loaded in parallel", BaseFixture)
 {
     {
@@ -679,12 +689,12 @@ TEST_F("require that attributes can be initialized and loaded in parallel", Base
     {
         AttributeManagerFixture amf(f);
 
-        AttributeSpecs attrSpecs;
-        attrSpecs.emplace_back("a1", INT32_SINGLE);
-        attrSpecs.emplace_back("a2", INT32_SINGLE);
-        attrSpecs.emplace_back("a3", INT32_SINGLE);
+        AttributesConfigBuilder attrCfg;
+        attrCfg.attribute.push_back(createAttributeConfig("a1"));
+        attrCfg.attribute.push_back(createAttributeConfig("a2"));
+        attrCfg.attribute.push_back(createAttributeConfig("a3"));
 
-        ParallelAttributeManager newMgr(createSerialNum + 5, amf._msp, attrSpecs, 10);
+        ParallelAttributeManager newMgr(createSerialNum + 5, amf._msp, attrCfg, 10);
 
         AttributeGuard::UP a1 = newMgr.mgr->get()->getAttribute("a1");
         TEST_DO(validateAttribute(*a1->get()));
