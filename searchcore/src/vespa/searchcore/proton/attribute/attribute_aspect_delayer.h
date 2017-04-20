@@ -15,10 +15,9 @@ namespace proton {
 
 class IDocumentTypeInspector;
 class IIndexschemaInspector;
-class AttributeSpecs;
 
 /*
- * Class to build adjusted attribute config and vector of attribute specs
+ * Class to build adjusted attributes config and summary map config
  * to eliminate need for reprocessing when system is online.
  */
 class AttributeAspectDelayer
@@ -30,7 +29,6 @@ class AttributeAspectDelayer
     using SummarymapConfigBuilder = vespa::config::search::internal::InternalSummarymapType;
     using SummarymapConfig = const vespa::config::search::internal::InternalSummarymapType;
 
-    std::shared_ptr<AttributeSpecs> _specs;
     std::shared_ptr<AttributesConfigBuilder> _attributesConfig;
     std::shared_ptr<SummarymapConfigBuilder> _summarymapConfig;
 
@@ -54,7 +52,6 @@ public:
                const IIndexschemaInspector &oldIndexschemaInspector,
                const IDocumentTypeInspector &inspector);
 
-    std::shared_ptr<const AttributeSpecs> getAttributeSpecs() const;
     std::shared_ptr<AttributesConfig> getAttributesConfig() const;
     std::shared_ptr<SummarymapConfig> getSummarymapConfig() const;
 };
