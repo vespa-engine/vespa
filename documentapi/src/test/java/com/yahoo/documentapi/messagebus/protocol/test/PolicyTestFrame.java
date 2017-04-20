@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
+@SuppressWarnings("deprecation")
 public class PolicyTestFrame extends junit.framework.Assert {
 
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
