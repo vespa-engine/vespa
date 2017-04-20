@@ -47,17 +47,24 @@ public abstract class FieldPathIteratorHandler {
         }
 
         @Override
+        public int hashCode() {
+            int hc = index;
+            if (key != null) {
+                hc = key.hashCode();
+            }
+            return hc;
+        }
+
+        @Override
         public boolean equals(Object o) {
             IndexValue other = (IndexValue)o;
-
-            if (key != null) {
-                if (other.key != null && key.equals(other.key)) {
-                    return true;
-                }
-                return false;
+            if (key != null && other.key != null) {
+                return key.equals(other.key);
             }
-
-            return index == other.index;
+            if (key == null && other.key == null) {
+                return index == other.index;
+            }
+            return false;
         }
     };
 
