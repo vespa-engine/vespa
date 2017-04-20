@@ -274,20 +274,24 @@ public class JsonReaderTestCase {
         assertEquals("person", ((StringFieldValue) s.getFieldValue("sandra")).getString());
     }
 
+    private DocumentUpdate parseUpdate(String json) throws IOException {
+        InputStream rawDoc = new ByteArrayInputStream(Utf8.toBytes(json));
+        JsonReader r = new JsonReader(types, rawDoc, parserFactory);
+        DocumentParseInfo parseInfo = r.parseDocument().get();
+        DocumentType docType = r.readDocumentType(parseInfo.documentId);
+        DocumentUpdate update = new DocumentUpdate(docType, parseInfo.documentId);
+        new VespaJsonDocumentReader().readUpdate(parseInfo.fieldsBuffer, update);
+        return update;
+    }
+
     @Test
     public final void testStructUpdate() throws IOException {
-        InputStream rawDoc = new ByteArrayInputStream(
-                Utf8.toBytes("{\"update\": \"id:unittest:mirrors:g=test:whee\","
+        DocumentUpdate put = parseUpdate("{\"update\": \"id:unittest:mirrors:g=test:whee\","
                         + "\"create\": true,"
                         + " \"fields\": { "
                         + "\"skuggsjaa\": {"
                         + "\"assign\": { \"sandra\": \"person\","
-                        + " \"cloud\": \"another person\"}}}}"));
-        JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        DocumentParseInfo parseInfo = r.parseDocument().get();
-        DocumentType docType = r.readDocumentType(parseInfo.documentId);
-        DocumentUpdate put = new DocumentUpdate(docType, parseInfo.documentId);
-        new VespaJsonDocumentReader().readUpdate(parseInfo.fieldsBuffer, put);
+                        + " \"cloud\": \"another person\"}}}}");
         assertEquals(1, put.getFieldUpdates().size());
         FieldUpdate fu = put.getFieldUpdate(0);
         assertEquals(1, fu.getValueUpdates().size());
@@ -306,17 +310,11 @@ public class JsonReaderTestCase {
 
     @Test
     public final void testEmptyStructUpdate() throws IOException {
-        InputStream rawDoc = new ByteArrayInputStream(
-                Utf8.toBytes("{\"update\": \"id:unittest:mirrors:g=test:whee\","
+        DocumentUpdate put = parseUpdate("{\"update\": \"id:unittest:mirrors:g=test:whee\","
                         + "\"create\": true,"
                         + " \"fields\": { "
                         + "\"skuggsjaa\": {"
-                        + "\"assign\": { }}}}"));
-        JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        DocumentParseInfo parseInfo = r.parseDocument().get();
-        DocumentType docType = r.readDocumentType(parseInfo.documentId);
-        DocumentUpdate put = new DocumentUpdate(docType, parseInfo.documentId);
-        new VespaJsonDocumentReader().readUpdate(parseInfo.fieldsBuffer, put);
+                        + "\"assign\": { }}}}");
         assertEquals(1, put.getFieldUpdates().size());
         FieldUpdate fu = put.getFieldUpdate(0);
         assertEquals(1, fu.getValueUpdates().size());
@@ -334,33 +332,22 @@ public class JsonReaderTestCase {
 
     @Test
     public final void testUpdateArray() throws IOException {
-        InputStream rawDoc = new ByteArrayInputStream(
-                Utf8.toBytes("{\"update\": \"id:unittest:testarray::whee\","
+        DocumentUpdate doc = parseUpdate("{\"update\": \"id:unittest:testarray::whee\","
                         + " \"fields\": { " + "\"actualarray\": {"
                         + " \"add\": ["
                         + " \"person\","
-                        + " \"another person\"]}}}"));
-        JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        DocumentParseInfo parseInfo = r.parseDocument().get();
-        DocumentType docType = r.readDocumentType(parseInfo.documentId);
-        DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
-        new VespaJsonDocumentReader().readUpdate(parseInfo.fieldsBuffer, doc);
+                        + " \"another person\"]}}}");
         checkSimpleArrayAdd(doc);
     }
 
     @Test
     public final void testUpdateWeighted() throws IOException {
-        InputStream rawDoc = new ByteArrayInputStream(
-                Utf8.toBytes("{\"update\": \"id:unittest:testset::whee\","
+        DocumentUpdate doc = parseUpdate("{\"update\": \"id:unittest:testset::whee\","
                         + " \"fields\": { " + "\"actualset\": {"
                         + " \"add\": {"
                         + " \"person\": 37,"
-                        + " \"another person\": 41}}}}"));
-        JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        DocumentParseInfo parseInfo = r.parseDocument().get();
-        DocumentType docType = r.readDocumentType(parseInfo.documentId);
-        DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
-        new VespaJsonDocumentReader().readUpdate(parseInfo.fieldsBuffer, doc);
+                        + " \"another person\": 41}}}}");
+
         Map<String, Integer> weights = new HashMap<>();
         FieldUpdate x = doc.getFieldUpdate("actualset");
         for (ValueUpdate<?> v : x.getValueUpdates()) {
@@ -379,18 +366,12 @@ public class JsonReaderTestCase {
 
     @Test
     public final void testUpdateMatch() throws IOException {
-        InputStream rawDoc = new ByteArrayInputStream(
-                Utf8.toBytes("{\"update\": \"id:unittest:testset::whee\","
+        DocumentUpdate doc = parseUpdate("{\"update\": \"id:unittest:testset::whee\","
                         + " \"fields\": { " + "\"actualset\": {"
                         + " \"match\": {"
                         + " \"element\": \"person\","
-                        + " \"increment\": 13}}}}"));
-        JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        DocumentParseInfo parseInfo = r.parseDocument().get();
-        DocumentType docType = r.readDocumentType(parseInfo.documentId);
-        DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
+                        + " \"increment\": 13}}}}");
 
-        new VespaJsonDocumentReader().readUpdate(parseInfo.fieldsBuffer, doc);
         Map<String, Tuple2<Number, String>> matches = new HashMap<>();
         FieldUpdate x = doc.getFieldUpdate("actualset");
         for (ValueUpdate<?> v : x.getValueUpdates()) {
@@ -421,18 +402,11 @@ public class JsonReaderTestCase {
                 new Tuple2<String, Operator>(UPDATE_MULTIPLY,
                         ArithmeticValueUpdate.Operator.MUL) };
         for (Tuple2<String, Operator> operator : operations) {
-            InputStream rawDoc = new ByteArrayInputStream(
-                    Utf8.toBytes("{\"update\": \"id:unittest:testset::whee\","
+            DocumentUpdate doc = parseUpdate("{\"update\": \"id:unittest:testset::whee\","
                             + " \"fields\": { " + "\"actualset\": {"
                             + " \"match\": {" + " \"element\": \"person\","
-                            + " \"" + (String) operator.first + "\": 13}}}}"));
+                            + " \"" + (String) operator.first + "\": 13}}}}");
 
-            JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-            DocumentParseInfo parseInfo = r.parseDocument().get();
-            DocumentType docType = r.readDocumentType(parseInfo.documentId);
-            DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
-
-            new VespaJsonDocumentReader().readUpdate(parseInfo.fieldsBuffer, doc);
             Map<String, Tuple2<Number, Operator>> matches = new HashMap<>();
             FieldUpdate x = doc.getFieldUpdate("actualset");
             for (ValueUpdate v : x.getValueUpdates()) {
@@ -455,18 +429,12 @@ public class JsonReaderTestCase {
     @SuppressWarnings("rawtypes")
     @Test
     public final void testArrayIndexing() throws IOException {
-        InputStream rawDoc = new ByteArrayInputStream(
-                Utf8.toBytes("{\"update\": \"id:unittest:testarray::whee\","
+        DocumentUpdate doc = parseUpdate("{\"update\": \"id:unittest:testarray::whee\","
                         + " \"fields\": { " + "\"actualarray\": {"
                         + " \"match\": {"
                         + " \"element\": 3,"
-                        + " \"assign\": \"nalle\"}}}}"));
-        JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        DocumentParseInfo parseInfo = r.parseDocument().get();
-        DocumentType docType = r.readDocumentType(parseInfo.documentId);
-        DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
+                        + " \"assign\": \"nalle\"}}}}");
 
-        new VespaJsonDocumentReader().readUpdate(parseInfo.fieldsBuffer, doc);
         Map<Number, String> matches = new HashMap<>();
         FieldUpdate x = doc.getFieldUpdate("actualarray");
         for (ValueUpdate v : x.getValueUpdates()) {
@@ -677,15 +645,9 @@ public class JsonReaderTestCase {
 
     @Test
     public final void testAssignToString() throws IOException {
-        InputStream rawDoc = new ByteArrayInputStream(
-                Utf8.toBytes("{\"update\": \"id:unittest:smoke::whee\","
+        DocumentUpdate doc = parseUpdate("{\"update\": \"id:unittest:smoke::whee\","
                         + " \"fields\": { \"something\": {"
-                        + " \"assign\": \"orOther\" }}" + " }"));
-        JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        DocumentParseInfo parseInfo = r.parseDocument().get();
-        DocumentType docType = r.readDocumentType(parseInfo.documentId);
-        DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
-        new VespaJsonDocumentReader().readUpdate(parseInfo.fieldsBuffer, doc);
+                        + " \"assign\": \"orOther\" }}" + " }");
         FieldUpdate f = doc.getFieldUpdate("something");
         assertEquals(1, f.size());
         AssignValueUpdate a = (AssignValueUpdate) f.getValueUpdate(0);
@@ -694,15 +656,9 @@ public class JsonReaderTestCase {
 
     @Test
     public final void testAssignToArray() throws IOException {
-        InputStream rawDoc = new ByteArrayInputStream(
-                Utf8.toBytes("{\"update\": \"id:unittest:testMapStringToArrayOfInt::whee\","
+        DocumentUpdate doc = parseUpdate("{\"update\": \"id:unittest:testMapStringToArrayOfInt::whee\","
                         + " \"fields\": { \"actualMapStringToArrayOfInt\": {"
-                        + " \"assign\": { \"bamse\": [1, 2, 3] }}}}"));
-        JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        DocumentParseInfo parseInfo = r.parseDocument().get();
-        DocumentType docType = r.readDocumentType(parseInfo.documentId);
-        DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
-        new VespaJsonDocumentReader().readUpdate(parseInfo.fieldsBuffer, doc);
+                        + " \"assign\": { \"bamse\": [1, 2, 3] }}}}");
         FieldUpdate f = doc.getFieldUpdate("actualMapStringToArrayOfInt");
         assertEquals(1, f.size());
         AssignValueUpdate assign = (AssignValueUpdate) f.getValueUpdate(0);
@@ -716,17 +672,11 @@ public class JsonReaderTestCase {
 
     @Test
     public final void testOldAssignToArray() throws IOException {
-        InputStream rawDoc = new ByteArrayInputStream(
-                Utf8.toBytes("{\"update\": \"id:unittest:testMapStringToArrayOfInt::whee\","
+        DocumentUpdate doc = parseUpdate("{\"update\": \"id:unittest:testMapStringToArrayOfInt::whee\","
                         + " \"fields\": { \"actualMapStringToArrayOfInt\": {"
                         + " \"assign\": ["
                         + "{ \"key\": \"bamse\", \"value\": [1, 2, 3] }"
-                        + "]}}}"));
-        JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        DocumentParseInfo parseInfo = r.parseDocument().get();
-        DocumentType docType = r.readDocumentType(parseInfo.documentId);
-        DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
-        new VespaJsonDocumentReader().readUpdate(parseInfo.fieldsBuffer, doc);
+                        + "]}}}");
         FieldUpdate f = doc.getFieldUpdate("actualMapStringToArrayOfInt");
         assertEquals(1, f.size());
         AssignValueUpdate assign = (AssignValueUpdate) f.getValueUpdate(0);
@@ -740,17 +690,11 @@ public class JsonReaderTestCase {
 
     @Test
     public final void testAssignToWeightedSet() throws IOException {
-        InputStream rawDoc = new ByteArrayInputStream(
-                Utf8.toBytes("{\"update\": \"id:unittest:testset::whee\","
+        DocumentUpdate doc = parseUpdate("{\"update\": \"id:unittest:testset::whee\","
                         + " \"fields\": { " + "\"actualset\": {"
                         + " \"assign\": {"
                         + " \"person\": 37,"
-                        + " \"another person\": 41}}}}"));
-        JsonReader r = new JsonReader(types, rawDoc, parserFactory);
-        DocumentParseInfo parseInfo = r.parseDocument().get();
-        DocumentType docType = r.readDocumentType(parseInfo.documentId);
-        DocumentUpdate doc = new DocumentUpdate(docType, parseInfo.documentId);
-        new VespaJsonDocumentReader().readUpdate(parseInfo.fieldsBuffer, doc);
+                        + " \"another person\": 41}}}}");
         FieldUpdate x = doc.getFieldUpdate("actualset");
         assertEquals(1, x.size());
         AssignValueUpdate assign = (AssignValueUpdate) x.getValueUpdate(0);
