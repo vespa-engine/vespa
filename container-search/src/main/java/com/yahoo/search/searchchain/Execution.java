@@ -220,6 +220,17 @@ public class Execution extends com.yahoo.processing.execution.Execution {
                     && other.linguistics == linguistics;
         }
 
+        public int hashCode() {
+            int hc = indexFacts.hashCode();
+            hc += rendererRegistry.hashCode();
+            hc += tokenRegistry.hashCode();
+            hc += searchChainRegistry.hashCode();
+            hc += detailedDiagnostics ? 9907 : 0;
+            hc += breakdown ? 9949 : 0;
+            hc += linguistics.hashCode();
+            return hc;
+        }
+
         @Override
         public boolean equals(Object other) {
             if (other == null) {
