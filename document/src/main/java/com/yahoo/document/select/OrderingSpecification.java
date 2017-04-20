@@ -5,10 +5,10 @@ public class OrderingSpecification {
     public static int ASCENDING = 0;
     public static int DESCENDING = 1;
 
-    public int order;
-    public long orderingStart;
-    public short widthBits;
-    public short divisionBits;
+    public final int order;
+    public final long orderingStart;
+    public final short widthBits;
+    public final short divisionBits;
 
     public OrderingSpecification() {
         this(ASCENDING, (long)0, (short)0, (short)0);
@@ -35,6 +35,10 @@ public class OrderingSpecification {
         if (o == null) return false;
 
         return (order == o.order && orderingStart == o.orderingStart && widthBits == o.widthBits && divisionBits == o.divisionBits);
+    }
+
+    public int hashCode() {
+        return order + widthBits*9901 + divisionBits*9973 + 2*(int)orderingStart;
     }
 
     public String toString() {
