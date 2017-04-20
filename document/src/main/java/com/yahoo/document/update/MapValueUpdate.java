@@ -70,7 +70,7 @@ public class MapValueUpdate extends ValueUpdate {
                 }
             }
             weight = (Integer) update.applyTo(new IntegerFieldValue(weight)).getWrappedValue();
-            wset.put((FieldValue) value, weight);
+            wset.put(value, weight);
             if (wtype.removeIfZero() && update instanceof ArithmeticValueUpdate && weight == 0) {
                 wset.remove(value);
             }
