@@ -21,7 +21,7 @@ class AttributeSpecs;
  * Class to build adjusted attribute config and vector of attribute specs
  * to eliminate need for reprocessing when system is online.
  */
-class AttributeSpecsBuilder
+class AttributeAspectDelayer
 {
     using AttributesConfigBuilder = vespa::config::search::internal::InternalAttributesType;
     using AttributesConfig = const vespa::config::search::internal::InternalAttributesType;
@@ -35,8 +35,8 @@ class AttributeSpecsBuilder
     std::shared_ptr<SummarymapConfigBuilder> _summarymapConfig;
 
 public:
-    AttributeSpecsBuilder();
-    ~AttributeSpecsBuilder();
+    AttributeAspectDelayer();
+    ~AttributeAspectDelayer();
 
     /*
      * Setup called from document db config manager and document db

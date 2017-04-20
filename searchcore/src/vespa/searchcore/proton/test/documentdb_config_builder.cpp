@@ -9,7 +9,7 @@
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/config-imported-fields.h>
-#include <vespa/searchcore/proton/attribute/attribute_specs_builder.h>
+#include <vespa/searchcore/proton/attribute/attribute_aspect_delayer.h>
 
 using document::DocumenttypesConfig;
 using search::TuneFileDocumentDB;
@@ -74,17 +74,17 @@ DocumentDBConfigBuilder::DocumentDBConfigBuilder(const DocumentDBConfig &cfg)
 DocumentDBConfig::SP
 DocumentDBConfigBuilder::build()
 {
-    AttributeSpecsBuilder attributeSpecsBuilder;
-    attributeSpecsBuilder.setup(*_attributes, *_summarymap);
+    AttributeAspectDelayer attributeAspectDelayer;
+    attributeAspectDelayer.setup(*_attributes, *_summarymap);
     return std::make_shared<DocumentDBConfig>(
             _generation,
             _rankProfiles,
             _rankingConstants,
             _indexschema,
-            attributeSpecsBuilder.getAttributesConfig(),
-            attributeSpecsBuilder.getAttributeSpecs(),
+            attributeAspectDelayer.getAttributesConfig(),
+            attributeAspectDelayer.getAttributeSpecs(),
             _summary,
-            attributeSpecsBuilder.getSummarymapConfig(),
+            attributeAspectDelayer.getSummarymapConfig(),
             _juniperrc,
             _documenttypes,
             _repo,

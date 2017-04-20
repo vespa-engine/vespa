@@ -20,7 +20,7 @@
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/test/insertion_operators.h>
-#include <vespa/searchcore/proton/attribute/attribute_specs_builder.h>
+#include <vespa/searchcore/proton/attribute/attribute_aspect_delayer.h>
 
 using namespace config;
 using namespace proton;
@@ -72,17 +72,17 @@ struct DBConfigFixture {
                                    const vespalib::string &configId,
                                    const vespalib::string &docTypeName)
     {
-        AttributeSpecsBuilder attributeSpecsBuilder;
-        attributeSpecsBuilder.setup(_attributesBuilder, _summarymapBuilder);
+        AttributeAspectDelayer attributeAspectDelayer;
+        attributeAspectDelayer.setup(_attributesBuilder, _summarymapBuilder);
         return std::make_shared<DocumentDBConfig>
             (generation,
              std::make_shared<RankProfilesConfig>(_rankProfilesBuilder),
              buildRankingConstants(),
              std::make_shared<IndexschemaConfig>(_indexschemaBuilder),
-             attributeSpecsBuilder.getAttributesConfig(),
-             attributeSpecsBuilder.getAttributeSpecs(),
+             attributeAspectDelayer.getAttributesConfig(),
+             attributeAspectDelayer.getAttributeSpecs(),
              std::make_shared<SummaryConfig>(_summaryBuilder),
-             attributeSpecsBuilder.getSummarymapConfig(),
+             attributeAspectDelayer.getSummarymapConfig(),
              std::make_shared<JuniperrcConfig>(_juniperrcBuilder),
              documentTypes,
              repo,

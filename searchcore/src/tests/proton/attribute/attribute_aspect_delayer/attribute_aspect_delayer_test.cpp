@@ -1,11 +1,9 @@
 // Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("attribute_specs_builder_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchcore/proton/test/attribute_utils.h>
-#include <vespa/searchcore/proton/attribute/attribute_specs_builder.h>
+#include <vespa/searchcore/proton/attribute/attribute_aspect_delayer.h>
 #include <vespa/searchcore/proton/attribute/attribute_specs.h>
 #include <vespa/searchcore/proton/common/i_document_type_inspector.h>
 #include <vespa/searchcore/proton/common/indexschema_inspector.h>
@@ -184,12 +182,12 @@ class Fixture
 {
     MyInspector _inspector;
     IndexschemaConfigBuilder _oldIndexSchema;
-    AttributeSpecsBuilder _builder;
+    AttributeAspectDelayer _delayer;
 
 public:
     Fixture()
         : _inspector(),
-          _builder()
+          _delayer()
     {
     }
     ~Fixture() { }
@@ -202,28 +200,28 @@ public:
         _oldIndexSchema.indexfield.emplace_back(field);
     }
     void setup(const AttributesConfig &newAttributesConfig, const SummarymapConfig &newSummarymapConfig) {
-        _builder.setup(newAttributesConfig, newSummarymapConfig);
+        _delayer.setup(newAttributesConfig, newSummarymapConfig);
     }
     void setup(const AttributesConfig &oldAttributesConfig, const SummarymapConfig &oldSummarymapConfig,
                const AttributesConfig &newAttributesConfig, const SummarymapConfig &newSummarymapConfig) {
         IndexschemaInspector indexschemaInspector(_oldIndexSchema);
-        _builder.setup(oldAttributesConfig, oldSummarymapConfig,
+        _delayer.setup(oldAttributesConfig, oldSummarymapConfig,
                        newAttributesConfig, newSummarymapConfig,
                        indexschemaInspector, _inspector);
     }
     void assertSpecs(const std::vector<AttributeSpec> &expSpecs)
     {
-        const auto &actSpecs = _builder.getAttributeSpecs();
+        const auto &actSpecs = _delayer.getAttributeSpecs();
         EXPECT_EQUAL(expSpecs, actSpecs->getSpecs());
     }
     void assertAttributeConfig(const std::vector<AttributesConfig::Attribute> &exp)
     {
-        auto actConfig = _builder.getAttributesConfig();
+        auto actConfig = _delayer.getAttributesConfig();
         EXPECT_TRUE(exp == actConfig->attribute);
     }
     void assertSummarymapConfig(const std::vector<SummarymapConfig::Override> &exp)
     {
-        auto summarymapConfig = _builder.getSummarymapConfig();
+        auto summarymapConfig = _delayer.getSummarymapConfig();
         EXPECT_EQUAL(exp, summarymapConfig->override);
     }
 };

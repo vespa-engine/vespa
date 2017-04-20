@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "attribute_specs_builder.h"
+#include "attribute_aspect_delayer.h"
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchcore/proton/common/i_document_type_inspector.h>
 #include <vespa/searchcore/proton/common/i_indexschema_inspector.h>
@@ -40,37 +40,37 @@ bool willTriggerReprocessOnAttributeAspectRemoval(const search::attribute::Confi
 
 }
 
-AttributeSpecsBuilder::AttributeSpecsBuilder()
+AttributeAspectDelayer::AttributeAspectDelayer()
     : _specs(std::make_shared<AttributeSpecs>()),
       _attributesConfig(std::make_shared<AttributesConfigBuilder>()),
       _summarymapConfig(std::make_shared<SummarymapConfigBuilder>())
 {
 }
 
-AttributeSpecsBuilder::~AttributeSpecsBuilder()
+AttributeAspectDelayer::~AttributeAspectDelayer()
 {
 }
 
 std::shared_ptr<const AttributeSpecs>
-AttributeSpecsBuilder::getAttributeSpecs() const
+AttributeAspectDelayer::getAttributeSpecs() const
 {
     return _specs;
 }
 
-std::shared_ptr<AttributeSpecsBuilder::AttributesConfig>
-AttributeSpecsBuilder::getAttributesConfig() const
+std::shared_ptr<AttributeAspectDelayer::AttributesConfig>
+AttributeAspectDelayer::getAttributesConfig() const
 {
     return _attributesConfig;
 }
 
-std::shared_ptr<AttributeSpecsBuilder::SummarymapConfig>
-AttributeSpecsBuilder::getSummarymapConfig() const
+std::shared_ptr<AttributeAspectDelayer::SummarymapConfig>
+AttributeAspectDelayer::getSummarymapConfig() const
 {
     return _summarymapConfig;
 }
 
 void
-AttributeSpecsBuilder::setup(const AttributesConfig &newAttributesConfig, const SummarymapConfig &newSummarymapConfig)
+AttributeAspectDelayer::setup(const AttributesConfig &newAttributesConfig, const SummarymapConfig &newSummarymapConfig)
 {
     for (const auto &attr : newAttributesConfig.attribute) {
         search::attribute::Config cfg = ConfigConverter::convert(attr);
@@ -181,7 +181,7 @@ handleOldAttributes(const AttributesConfig &oldAttributesConfig,
 }
 
 void
-AttributeSpecsBuilder::setup(const AttributesConfig &oldAttributesConfig,
+AttributeAspectDelayer::setup(const AttributesConfig &oldAttributesConfig,
                              const SummarymapConfig &oldSummarymapConfig,
                              const AttributesConfig &newAttributesConfig,
                              const SummarymapConfig &newSummarymapConfig,
