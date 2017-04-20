@@ -188,6 +188,7 @@ public class IndexCombinatorSearcher extends Searcher {
                 break;
             case FLAT:
                 c = flatTransform(c, session);
+                break;
             default:
                 break;
             }
