@@ -24,8 +24,8 @@ public class OsgiLogServiceTestCase {
         OsgiFramework osgi = TestDriver.newOsgiFramework();
         osgi.start();
 
-        ServiceTracker logs = newTracker(osgi, LogService.class);
-        ServiceTracker logReaders = newTracker(osgi, LogReaderService.class);
+        ServiceTracker<?,?> logs = newTracker(osgi, LogService.class);
+        ServiceTracker<?,?> logReaders = newTracker(osgi, LogReaderService.class);
         assertEquals(1, logs.getTrackingCount());
         assertEquals(1, logReaders.getTrackingCount());
 
@@ -97,8 +97,8 @@ public class OsgiLogServiceTestCase {
     }
 
     @SuppressWarnings("unchecked")
-    private static ServiceTracker newTracker(OsgiFramework osgi, Class trackedClass) {
-        ServiceTracker tracker = new ServiceTracker(osgi.bundleContext(), trackedClass, null);
+    private static ServiceTracker<?,?> newTracker(OsgiFramework osgi, Class<?> trackedClass) {
+        ServiceTracker<?,?> tracker = new ServiceTracker<>(osgi.bundleContext(), trackedClass, null);
         tracker.open();
         return tracker;
     }

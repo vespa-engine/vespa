@@ -90,7 +90,7 @@ public class OsgiLogHandlerTestCase {
         record.setThrown(thrown);
         log.log(record);
 
-        ServiceReference ref = logService.lastServiceReference;
+        ServiceReference<?> ref = logService.lastServiceReference;
         assertNotNull(ref);
         assertTrue(Arrays.equals(new String[] { "LEVEL",
                                                 "LOGGER_NAME",
@@ -146,9 +146,10 @@ public class OsgiLogHandlerTestCase {
         }
     }
 
+    @SuppressWarnings("rawtypes")
     private static class MyLogService implements LogService {
 
-        ServiceReference lastServiceReference;
+        ServiceReference<?> lastServiceReference;
         int lastLevel;
         String lastMessage;
         Throwable lastThrowable;

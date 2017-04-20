@@ -211,7 +211,7 @@ public class ConsoleLogFormatterTestCase {
         final int level;
         final long time;
         Bundle bundle = null;
-        ServiceReference serviceReference = null;
+        ServiceReference<?> serviceReference = null;
         Throwable exception;
 
         MyEntry(long time, int level, String message) {
@@ -263,7 +263,7 @@ public class ConsoleLogFormatterTestCase {
         }
 
         @Override
-        public ServiceReference getServiceReference() {
+        public ServiceReference<?> getServiceReference() {
             return serviceReference;
         }
     }

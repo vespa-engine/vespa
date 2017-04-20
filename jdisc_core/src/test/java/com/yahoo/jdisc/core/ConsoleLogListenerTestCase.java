@@ -108,7 +108,7 @@ public class ConsoleLogListenerTestCase {
         }
 
         @Override
-        public ServiceReference getServiceReference() {
+        public ServiceReference<?> getServiceReference() {
             return null;
         }
     }

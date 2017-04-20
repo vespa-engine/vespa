@@ -87,7 +87,7 @@ public class BindingRepositoryTestCase {
         bindings.bind(pattern, originallyBoundHandler);
         bindings.bind(pattern, new PatternStealingRequestHandler());
 
-        BindingSet bindingSet = bindings.activate();
+        BindingSet<?> bindingSet = bindings.activate();
         assertEquals(originallyBoundHandler, bindingSet.resolve(URI.create(pattern)));
     }
 

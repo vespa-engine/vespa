@@ -74,7 +74,7 @@ public class ContainerBuilderTestCase {
     public void requireThatBindingSetsAreCreatedOnDemand() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         ContainerBuilder builder = driver.newContainerBuilder();
-        BindingRepository repo = builder.serverBindings("foo");
+        BindingRepository<?> repo = builder.serverBindings("foo");
         assertNotNull(repo);
         assertSame(repo, builder.serverBindings("foo"));
         assertNotNull(repo = builder.serverBindings("bar"));
