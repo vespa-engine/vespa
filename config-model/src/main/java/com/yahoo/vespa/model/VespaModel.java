@@ -198,7 +198,9 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     /** Return a collection of all hostnames used in this application */
     @Override
     public Set<HostInfo> getHosts() {
-        return root.getHostSystem().getHosts().stream().map(HostResource::getHostInfo).collect(Collectors.toSet());
+        return root.getHostSystem().getHosts().stream()
+                   .map(HostResource::getHostInfo)
+                   .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     public FileDistributor getFileDistributor() {
