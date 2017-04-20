@@ -14,6 +14,7 @@ import static com.yahoo.application.container.docprocs.Rot13DocumentProcessor.ro
  */
 public class Rot13Processor extends Processor {
 
+    @SuppressWarnings("unchecked")
     @Override
     public Response process(Request request, Execution execution) {
         Object fooObj = request.properties().get("title");
