@@ -1,0 +1,18 @@
+<!-- Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services version='1.0' xmlns:deploy="vespa" xmlns:preprocess="properties">
+    <preprocess:properties>
+        <qrs.port>4099</qrs.port>
+        <qrs.port>5000</qrs.port>
+    </preprocess:properties>
+
+    <preprocess:properties deploy:environment='prod'>
+        <qrs.port deploy:region='us-west'>5001</qrs.port>
+        <qrs.port deploy:region='us-east'>5002</qrs.port>
+    </preprocess:properties>
+    <admin version='2.0'>
+        <adminserver hostalias='node0'/>
+    </admin>
+    <admin version='2.0' deploy:environment='prod'>
+        <adminserver hostalias='node1'/>
+    </admin>
+</services>
