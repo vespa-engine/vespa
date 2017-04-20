@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.search;
 
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
+import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
@@ -36,7 +37,9 @@ public class StreamingSearchCluster extends SearchCluster implements
 
         @Override
         public void getConfig(AttributesConfig.Builder builder) {
-            StreamingSearchCluster.this.getConfig(builder);
+            if (getSdConfig() != null) {
+                getSdConfig().getAttributeFields().getConfig(builder, AttributeFields.FieldSet.FAST_ACCESS);
+            }
         }
     }
 

@@ -30,6 +30,9 @@ public class ApplicationPackageUtils {
                 "      attribute: fast-access\n" +
                 "      header\n" +
                 "    }\n" +
+                "    field " + field2 + "_nfa type int {\n" +
+                "      indexing: attribute \n" +
+                "    }\n" +
                 "  }\n" +
                 "  rank-profile staticrank inherits default {" +
                 "    first-phase { expression: attribute(" + field2 + ") }" +

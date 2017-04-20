@@ -98,8 +98,9 @@ public class DocumentDatabaseTestCase {
         assertEquals(1, icfg.indexfield().size());
         assertEquals(indexField, icfg.indexfield(0).name());
         AttributesConfig acfg = model.getConfig(AttributesConfig.class, configId);
-        assertEquals(1, acfg.attribute().size());
+        assertEquals(2, acfg.attribute().size());
         assertEquals(attributeField, acfg.attribute(0).name());
+        assertEquals(attributeField+"_nfa", acfg.attribute(1).name());
         RankProfilesConfig rcfg = model.getConfig(RankProfilesConfig.class, configId);
         assertEquals(6, rcfg.rankprofile().size());
     }
@@ -137,11 +138,13 @@ public class DocumentDatabaseTestCase {
         }
         {
             AttributesConfig rac1 = model.getConfig(AttributesConfig.class, type1Id);
-            assertEquals(1, rac1.attribute().size());
+            assertEquals(2, rac1.attribute().size());
             assertEquals("f2", rac1.attribute(0).name());
+            assertEquals("f2_nfa", rac1.attribute(1).name());
             AttributesConfig rac2 = model.getConfig(AttributesConfig.class, type2Id);
-            assertEquals(1, rac2.attribute().size());
+            assertEquals(2, rac2.attribute().size());
             assertEquals("f4", rac2.attribute(0).name());
+            assertEquals("f4_nfa", rac2.attribute(1).name());
         }
         {
             IlscriptsConfig icfg = model.getConfig(IlscriptsConfig.class, "test/search/cluster.test");
@@ -189,10 +192,12 @@ public class DocumentDatabaseTestCase {
         }
         { // attributes config
             AttributesConfig acfg = model.getConfig(AttributesConfig.class, searcherId);
-            assertEquals(2, acfg.attribute().size());
+            assertEquals(4, acfg.attribute().size());
             assertEquals("f2", acfg.attribute(0).name());
-            assertEquals("f4", acfg.attribute(1).name());
-            assertEquals("f4", acfg.attribute(1).name());
+            assertEquals("f2_nfa", acfg.attribute(1).name());
+            assertEquals("f4", acfg.attribute(2).name());
+            assertEquals("f4_nfa", acfg.attribute(3).name());
+
         }
     }
 
@@ -256,7 +261,7 @@ public class DocumentDatabaseTestCase {
     public void testThatAttributesConfigIsProducedForIndexed() {
         assertAttributesConfigIndependentOfMode("index", Arrays.asList("type1"),
                 Arrays.asList("test/search/cluster.test/type1"),
-                ImmutableMap.of("type1", Arrays.asList("f2")));
+                ImmutableMap.of("type1", Arrays.asList("f2", "f2_nfa")));
     }
     @Test
     public void testThatAttributesConfigIsProducedForStreamingForFastAccessFields() {
