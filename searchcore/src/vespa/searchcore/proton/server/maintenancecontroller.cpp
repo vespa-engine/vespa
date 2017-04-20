@@ -85,8 +85,7 @@ MaintenanceController::killJobs()
 {
     // Called by master write thread during start/reconfig
     // Called by other thread during stop
-    LOG(debug, "killJobs(): threadId=%" PRIu64 "",
-            (uint64_t)FastOS_Thread::GetCurrentThreadId());
+    LOG(debug, "killJobs(): threadId=%zu", (size_t)FastOS_Thread::GetCurrentThreadId());
     _periodicTimer.reset();
     // No need to take _jobsLock as modification of _jobs also happens in master write thread.
     for (auto &job : _jobs) {
@@ -99,9 +98,7 @@ MaintenanceController::killJobs()
             _jobs.clear();
         }
         // Hold jobs until existing tasks have been drained
-        _masterThread.execute(makeTask(makeClosure(this,
-                                                   &MaintenanceController::performHoldJobs,
-                                                   tmpJobs)));
+        _masterThread.execute(makeTask(makeClosure(this, &MaintenanceController::performHoldJobs, tmpJobs)));
     } else {
         // Wait for all tasks to be finished.
         // NOTE: We must sync 2 times as a task currently being executed can add a new
@@ -111,8 +108,7 @@ MaintenanceController::killJobs()
         _defaultExecutor.sync();
         _defaultExecutor.sync();
         // Clear jobs in master write thread, to avoid races
-        _masterThread.execute(makeTask(makeClosure(this,
-                                                   &MaintenanceController::performClearJobs)));
+        _masterThread.execute(makeTask(makeClosure(this, &MaintenanceController::performClearJobs)));
         _masterThread.sync();
     }
 }
@@ -121,8 +117,7 @@ void
 MaintenanceController::performHoldJobs(JobList jobs)
 {
     // Called by master write thread
-    LOG(debug, "performHoldJobs(): threadId=%" PRIu64 "",
-            (uint64_t)FastOS_Thread::GetCurrentThreadId());
+    LOG(debug, "performHoldJobs(): threadId=%zu", (size_t)FastOS_Thread::GetCurrentThreadId());
     (void) jobs;
 }
 
@@ -130,8 +125,7 @@ void
 MaintenanceController::performClearJobs()
 {
     // Called by master write thread
-    LOG(debug, "performClearJobs(): threadId=%" PRIu64 "",
-        (uint64_t)FastOS_Thread::GetCurrentThreadId());
+    LOG(debug, "performClearJobs(): threadId=%zu", (size_t)FastOS_Thread::GetCurrentThreadId());
     Guard guard(_jobsLock);
     _jobs.clear();
 }
@@ -183,16 +177,14 @@ MaintenanceController::addJobsToPeriodicTimer()
     // No need to take _jobsLock as modification of _jobs also happens in master write thread.
     for (const auto &jw : _jobs) {
         const IMaintenanceJob &job = jw->getJob();
-        LOG(debug, "addJobsToPeriodicTimer(): docType='%s', job.name='%s', "
-                "job.delay=%f, job.interval=%f",
-                _docTypeName.getName().c_str(), job.getName().c_str(),
-                job.getDelay(), job.getInterval());
+        LOG(debug, "addJobsToPeriodicTimer(): docType='%s', job.name='%s', job.delay=%f, job.interval=%f",
+                _docTypeName.getName().c_str(), job.getName().c_str(), job.getDelay(), job.getInterval());
         if (job.getInterval() == 0.0) {
             jw->run();
             continue;
         }
-        _periodicTimer->scheduleAtFixedRate(Executor::Task::UP(new JobWrapperTask(jw.get())),
-                job.getDelay(), job.getInterval());
+        _periodicTimer->scheduleAtFixedRate(std::make_unique<JobWrapperTask>(jw.get()),
+                                            job.getDelay(), job.getInterval());
     }
 }
 
@@ -207,8 +199,7 @@ MaintenanceController::newConfig(const DocumentDBMaintenanceConfig::SP &config)
 void
 MaintenanceController::syncSubDBs(const MaintenanceDocumentSubDB &readySubDB,
                                   const MaintenanceDocumentSubDB &remSubDB,
-                                  const MaintenanceDocumentSubDB &
-                                  notReadySubDB)
+                                  const MaintenanceDocumentSubDB &notReadySubDB)
 {
     // Called by master write thread
     bool oldValid = _readySubDB.valid();
