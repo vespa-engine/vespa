@@ -13,6 +13,11 @@
     <version>6-SNAPSHOT</version>
     <dependencies>
         <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>component</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
           <groupId>com.yahoo.vespa</groupId>
           <artifactId>config-model-api</artifactId>
           <version>${project.version}</version>
