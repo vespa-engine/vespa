@@ -34,7 +34,6 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
     private boolean hasPosition = false;
 
     public AttributeFields(Search search) {
-
         derive(search);
     }
 
