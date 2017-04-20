@@ -21,7 +21,7 @@ public class ValueGroupTestCase extends junit.framework.TestCase {
 
         @Override
         public void publish(LogRecord record) {
-            com.yahoo.log.event.ValueGroup msg = (com.yahoo.log.event.ValueGroup) ((Object[]) record.getParameters())[0];
+            com.yahoo.log.event.ValueGroup msg = (com.yahoo.log.event.ValueGroup) record.getParameters()[0];
             assertEquals("test", msg.getValue("name"));
             String values = msg.getValue("values");
             assertFalse("Unexpected value for a.", values.indexOf("a=-50.0") == -1);

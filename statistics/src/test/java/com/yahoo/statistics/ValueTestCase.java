@@ -132,7 +132,7 @@ public class ValueTestCase extends junit.framework.TestCase {
             if (!(record.getParameters()[0] instanceof com.yahoo.log.event.Histogram)) {
                 return;
             }
-            com.yahoo.log.event.Histogram msg = (com.yahoo.log.event.Histogram) ((Object[]) record.getParameters())[0];
+            com.yahoo.log.event.Histogram msg = (com.yahoo.log.event.Histogram) record.getParameters()[0];
             assertEquals(NALLE, msg.getValue("name"));
             assertEquals(histogram, msg.getValue("counts"));
             assertEquals(representation, msg.getValue("representation"));

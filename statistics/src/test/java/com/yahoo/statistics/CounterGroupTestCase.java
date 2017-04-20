@@ -21,7 +21,7 @@ public class CounterGroupTestCase extends junit.framework.TestCase {
         // This is for testing CounterProxy
         @Override
         public void publish(LogRecord record) {
-            com.yahoo.log.event.CountGroup msg = (com.yahoo.log.event.CountGroup) ((Object[]) record.getParameters())[0];
+            com.yahoo.log.event.CountGroup msg = (com.yahoo.log.event.CountGroup) record.getParameters()[0];
             assertEquals("test", msg.getValue("name"));
             String values = msg.getValue("values");
             assertFalse("Unexpected value for a.", values.indexOf("a=500") == -1);
