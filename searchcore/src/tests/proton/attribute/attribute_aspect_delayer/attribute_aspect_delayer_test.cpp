@@ -154,9 +154,6 @@ public:
         field.name = name;
         _oldIndexSchema.indexfield.emplace_back(field);
     }
-    void setup(const AttributesConfig &newAttributesConfig, const SummarymapConfig &newSummarymapConfig) {
-        _delayer.setup(newAttributesConfig, newSummarymapConfig);
-    }
     void setup(const AttributesConfig &oldAttributesConfig, const SummarymapConfig &oldSummarymapConfig,
                const AttributesConfig &newAttributesConfig, const SummarymapConfig &newSummarymapConfig) {
         IndexschemaInspector indexschemaInspector(_oldIndexSchema);
@@ -178,13 +175,14 @@ public:
 
 TEST_F("require that empty config is OK", Fixture)
 {
-    f.setup(attrCfg({}), smCfg({}));
+    f.setup(attrCfg({}), smCfg({}), attrCfg({}), smCfg({}));
     TEST_DO(f.assertAttributeConfig({}));
+    TEST_DO(f.assertSummarymapConfig({}));
 }
 
 TEST_F("require that simple attribute config is OK", Fixture)
 {
-    f.setup(attrCfg({make_int32_sv_cfg()}), smCfg({make_attribute_override("a")}));
+    f.setup(attrCfg({make_int32_sv_cfg()}), smCfg({make_attribute_override("a")}), attrCfg({make_int32_sv_cfg()}), smCfg({make_attribute_override("a")}));
     TEST_DO(f.assertAttributeConfig({make_int32_sv_cfg()}));
     TEST_DO(f.assertSummarymapConfig({make_attribute_override("a")}));
 }

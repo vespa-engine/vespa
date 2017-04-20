@@ -61,13 +61,6 @@ AttributeAspectDelayer::getSummarymapConfig() const
     return _summarymapConfig;
 }
 
-void
-AttributeAspectDelayer::setup(const AttributesConfig &newAttributesConfig, const SummarymapConfig &newSummarymapConfig)
-{
-    _attributesConfig = std::make_shared<AttributesConfigBuilder>(newAttributesConfig);
-    _summarymapConfig = std::make_shared<SummarymapConfigBuilder>(newSummarymapConfig);
-}
-
 namespace {
 
 void

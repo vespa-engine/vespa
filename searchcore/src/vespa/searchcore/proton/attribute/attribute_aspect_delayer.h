@@ -37,11 +37,6 @@ public:
     ~AttributeAspectDelayer();
 
     /*
-     * Setup called from document db config manager and document db
-     * config scout.  No adjustments.
-     */
-    void setup(const AttributesConfig &newAttributesConfig, const SummarymapConfig &newSummarymapConfig);
-    /*
      * Setup to avoid reprocessing, used to create adjusted document db
      * config before applying new config when system is online.
      */
