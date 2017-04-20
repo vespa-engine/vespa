@@ -31,7 +31,7 @@ public:
 }
 
 MaintenanceController::MaintenanceController(IThreadService &masterThread,
-                                             vespalib::Executor & defaultExecutor,
+                                             vespalib::ThreadExecutor & defaultExecutor,
                                              const DocTypeName &docTypeName)
     : IBucketFreezeListener(),
       _masterThread(masterThread),
@@ -100,8 +100,7 @@ MaintenanceController::killJobs()
         }
         // Hold jobs until existing tasks have been drained
         _masterThread.execute(makeTask(makeClosure(this,
-                                                   &MaintenanceController::
-                                                   performHoldJobs,
+                                                   &MaintenanceController::performHoldJobs,
                                                    tmpJobs)));
     } else {
         // Wait for all tasks to be finished.
@@ -109,10 +108,11 @@ MaintenanceController::killJobs()
         // task to the executor as it might not see the new value of the stopped flag.
         _masterThread.sync();
         _masterThread.sync();
+        _defaultExecutor.sync();
+        _defaultExecutor.sync();
         // Clear jobs in master write thread, to avoid races
         _masterThread.execute(makeTask(makeClosure(this,
-                                                   &MaintenanceController::
-                                                   performClearJobs)));
+                                                   &MaintenanceController::performClearJobs)));
         _masterThread.sync();
     }
 }
