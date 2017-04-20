@@ -9,6 +9,7 @@
 using search::AttributeVector;
 using search::GrowStrategy;
 using search::SerialNum;
+using vespa::config::search::AttributesConfig;
 
 namespace proton {
 
@@ -89,14 +90,14 @@ AttributeManagerInitializer::createAttributeSpec() const
 {
     uint32_t docIdLimit = 1; // The real docIdLimit is used after attributes are loaded to pad them
     AttributeCollectionSpecFactory factory(_attributeGrow, _attributeGrowNumDocs, _fastAccessAttributesOnly);
-    return factory.create(_attrSpecs, docIdLimit, _configSerialNum);
+    return factory.create(_attrCfg, docIdLimit, _configSerialNum);
 }
 
 AttributeManagerInitializer::AttributeManagerInitializer(SerialNum configSerialNum,
                                                          initializer::InitializerTask::SP documentMetaStoreInitTask,
                                                          DocumentMetaStore::SP documentMetaStore,
                                                          AttributeManager::SP baseAttrMgr,
-                                                         const AttributeSpecs &attrSpecs,
+                                                         const AttributesConfig &attrCfg,
                                                          const GrowStrategy &attributeGrow,
                                                          size_t attributeGrowNumDocs,
                                                          bool fastAccessAttributesOnly,
@@ -104,7 +105,7 @@ AttributeManagerInitializer::AttributeManagerInitializer(SerialNum configSerialN
     : _configSerialNum(configSerialNum),
       _documentMetaStore(documentMetaStore),
       _attrMgr(),
-      _attrSpecs(attrSpecs),
+      _attrCfg(attrCfg),
       _attributeGrow(attributeGrow),
       _attributeGrowNumDocs(attributeGrowNumDocs),
       _fastAccessAttributesOnly(fastAccessAttributesOnly),

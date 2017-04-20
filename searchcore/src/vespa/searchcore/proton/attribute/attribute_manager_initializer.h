@@ -8,7 +8,7 @@
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
 #include <vespa/searchlib/common/serialnum.h>
-#include "attribute_specs.h"
+#include <vespa/config-attributes.h>
 
 namespace proton {
 
@@ -21,7 +21,7 @@ private:
     search::SerialNum _configSerialNum;
     DocumentMetaStore::SP _documentMetaStore;
     AttributeManager::SP _attrMgr;
-    AttributeSpecs _attrSpecs;
+    vespa::config::search::AttributesConfig _attrCfg;
     search::GrowStrategy _attributeGrow;
     size_t _attributeGrowNumDocs;
     bool _fastAccessAttributesOnly;
@@ -35,7 +35,7 @@ public:
                                 initializer::InitializerTask::SP documentMetaStoreInitTask,
                                 DocumentMetaStore::SP documentMetaStore,
                                 AttributeManager::SP baseAttrMgr,
-                                const AttributeSpecs &attrSpecs,
+                                const vespa::config::search::AttributesConfig &attrCfg,
                                 const search::GrowStrategy &attributeGrow,
                                 size_t attributeGrowNumDocs,
                                 bool fastAccessAttributesOnly,

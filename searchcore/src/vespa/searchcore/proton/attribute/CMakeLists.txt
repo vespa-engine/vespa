@@ -2,6 +2,7 @@
 vespa_add_library(searchcore_attribute STATIC
     SOURCES
     address_space_usage_stats.cpp
+    attribute_aspect_delayer.cpp
     attribute_collection_spec_factory.cpp
     attribute_collection_spec.cpp
     attribute_directory.cpp
@@ -12,7 +13,6 @@ vespa_add_library(searchcore_attribute STATIC
     attribute_manager_initializer.cpp
     attribute_populator.cpp
     attribute_spec.cpp
-    attribute_specs_builder.cpp
     attribute_usage_filter.cpp
     attribute_usage_sampler_context.cpp
     attribute_usage_sampler_functor.cpp

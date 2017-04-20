@@ -31,8 +31,6 @@ namespace document { namespace internal { class InternalDocumenttypesType; } }
 
 namespace proton {
 
-class AttributeSpecs;
-
 class DocumentDBConfig
 {
 public:
@@ -84,7 +82,6 @@ private:
     RankingConstants::SP           _rankingConstants;
     IndexschemaConfigSP            _indexschema;
     AttributesConfigSP             _attributes;
-    std::shared_ptr<const AttributeSpecs> _attributeSpecs;
     SummaryConfigSP                _summary;
     SummarymapConfigSP             _summarymap;
     JuniperrcConfigSP              _juniperrc;
@@ -112,7 +109,6 @@ public:
                      const RankingConstants::SP &rankingConstants,
                      const IndexschemaConfigSP &indexschema,
                      const AttributesConfigSP &attributes,
-                     const std::shared_ptr<const AttributeSpecs> &attributeSpecs,
                      const SummaryConfigSP &summary,
                      const SummarymapConfigSP &summarymap,
                      const JuniperrcConfigSP &juniperrc,
@@ -159,8 +155,6 @@ public:
     const search::index::Schema::SP &getSchemaSP() const { return _schema; }
     const MaintenanceConfigSP &getMaintenanceConfigSP() const { return _maintenance; }
     const search::TuneFileDocumentDB::SP &getTuneFileDocumentDBSP() const { return _tuneFileDocumentDB; }
-    const AttributeSpecs &getAttributeSpecs() const { return *_attributeSpecs; }
-    const std::shared_ptr<const AttributeSpecs> &getAttributeSpecsSP() const { return _attributeSpecs; }
 
     bool operator==(const DocumentDBConfig &rhs) const;
 
@@ -194,8 +188,7 @@ public:
     /**
      * Create modified attributes config.
      */
-    SP newFromAttributesConfig(const AttributesConfigSP &attributes,
-                               const std::shared_ptr<const AttributeSpecs> &attributeSpecs) const;
+    SP newFromAttributesConfig(const AttributesConfigSP &attributes) const;
 };
 
 } // namespace proton

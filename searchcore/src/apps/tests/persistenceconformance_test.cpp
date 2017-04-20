@@ -27,7 +27,6 @@ LOG_SETUP("persistenceconformance_test");
 #include <tests/proton/common/dummydbowner.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
-#include <vespa/searchcore/proton/attribute/attribute_specs_builder.h>
 
 
 using namespace config;
@@ -113,17 +112,14 @@ public:
         SchemaBuilder::build(*indexschema, *schema);
         SchemaBuilder::build(*attributes, *schema);
         SchemaBuilder::build(*summary, *schema);
-        AttributeSpecsBuilder attributeSpecsBuilder;
-        attributeSpecsBuilder.setup(*attributes, SummarymapConfig());
         return DocumentDBConfig::SP(new DocumentDBConfig(
                         1,
                         std::make_shared<RankProfilesConfig>(),
                         std::make_shared<matching::RankingConstants>(),
                         indexschema,
-                        attributeSpecsBuilder.getAttributesConfig(),
-                        attributeSpecsBuilder.getAttributeSpecs(),
+                        attributes,
                         summary,
-                        attributeSpecsBuilder.getSummarymapConfig(),
+                        std::make_shared<SummarymapConfig>(),
                         std::make_shared<JuniperrcConfig>(),
                         _typeCfg,
                         _repo,

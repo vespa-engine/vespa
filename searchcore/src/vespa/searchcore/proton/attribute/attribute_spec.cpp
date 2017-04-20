@@ -6,18 +6,8 @@ namespace proton {
 
 AttributeSpec::AttributeSpec(const vespalib::string &name,
                              const search::attribute::Config &cfg)
-    : AttributeSpec(name, cfg, false, false)
-{
-}
-
-AttributeSpec::AttributeSpec(const vespalib::string &name,
-                             const search::attribute::Config &cfg,
-                             bool hideFromReading,
-                             bool hideFromWriting)
     : _name(name),
-      _cfg(cfg),
-      _hideFromReading(hideFromReading),
-      _hideFromWriting(hideFromWriting)
+      _cfg(cfg)
 {
 }
 
@@ -37,9 +27,7 @@ bool
 AttributeSpec::operator==(const AttributeSpec &rhs) const
 {
     return ((_name == rhs._name) &&
-            (_cfg == rhs._cfg) &&
-            (_hideFromReading == rhs._hideFromReading) &&
-            (_hideFromWriting == rhs._hideFromWriting));
+            (_cfg == rhs._cfg));
 }
 
 }

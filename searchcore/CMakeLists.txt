@@ -61,11 +61,11 @@ vespa_define_module(
     src/tests/fdispatch/search_path
     src/tests/grouping
     src/tests/proton/attribute
+    src/tests/proton/attribute/attribute_aspect_delayer
     src/tests/proton/attribute/attribute_directory
     src/tests/proton/attribute/attribute_initializer
     src/tests/proton/attribute/attribute_manager
     src/tests/proton/attribute/attribute_populator
-    src/tests/proton/attribute/attribute_specs_builder
     src/tests/proton/attribute/attribute_usage_filter
     src/tests/proton/attribute/attributes_state_explorer
     src/tests/proton/attribute/document_field_populator

@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "attribute_specs_builder.h"
+#include "attribute_aspect_delayer.h"
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchcore/proton/common/i_document_type_inspector.h>
 #include <vespa/searchcore/proton/common/i_indexschema_inspector.h>
@@ -8,7 +8,6 @@
 #include <vespa/vespalib/stllike/hash_set.hpp>
 #include <vespa/config-attributes.h>
 #include <vespa/config-summarymap.h>
-#include "attribute_specs.h"
 
 using search::attribute::ConfigConverter;
 using vespa::config::search::AttributesConfig;
@@ -40,44 +39,26 @@ bool willTriggerReprocessOnAttributeAspectRemoval(const search::attribute::Confi
 
 }
 
-AttributeSpecsBuilder::AttributeSpecsBuilder()
-    : _specs(std::make_shared<AttributeSpecs>()),
-      _attributesConfig(std::make_shared<AttributesConfigBuilder>()),
+AttributeAspectDelayer::AttributeAspectDelayer()
+    : _attributesConfig(std::make_shared<AttributesConfigBuilder>()),
       _summarymapConfig(std::make_shared<SummarymapConfigBuilder>())
 {
 }
 
-AttributeSpecsBuilder::~AttributeSpecsBuilder()
+AttributeAspectDelayer::~AttributeAspectDelayer()
 {
 }
 
-std::shared_ptr<const AttributeSpecs>
-AttributeSpecsBuilder::getAttributeSpecs() const
-{
-    return _specs;
-}
-
-std::shared_ptr<AttributeSpecsBuilder::AttributesConfig>
-AttributeSpecsBuilder::getAttributesConfig() const
+std::shared_ptr<AttributeAspectDelayer::AttributesConfig>
+AttributeAspectDelayer::getAttributesConfig() const
 {
     return _attributesConfig;
 }
 
-std::shared_ptr<AttributeSpecsBuilder::SummarymapConfig>
-AttributeSpecsBuilder::getSummarymapConfig() const
+std::shared_ptr<AttributeAspectDelayer::SummarymapConfig>
+AttributeAspectDelayer::getSummarymapConfig() const
 {
     return _summarymapConfig;
-}
-
-void
-AttributeSpecsBuilder::setup(const AttributesConfig &newAttributesConfig, const SummarymapConfig &newSummarymapConfig)
-{
-    for (const auto &attr : newAttributesConfig.attribute) {
-        search::attribute::Config cfg = ConfigConverter::convert(attr);
-        _specs->emplace_back(attr.name, cfg);
-    }
-    _attributesConfig = std::make_shared<AttributesConfigBuilder>(newAttributesConfig);
-    _summarymapConfig = std::make_shared<SummarymapConfigBuilder>(newSummarymapConfig);
 }
 
 namespace {
@@ -88,7 +69,6 @@ handleNewAttributes(const AttributesConfig &oldAttributesConfig,
                     const SummarymapConfig &newSummarymapConfig,
                     const IIndexschemaInspector &oldIndexschemaInspector,
                     const IDocumentTypeInspector &inspector,
-                    AttributeSpecs &specs,
                     AttributesConfigBuilder &attributesConfig,
                     SummarymapConfigBuilder &summarymapConfig)
 {
@@ -98,7 +78,6 @@ handleNewAttributes(const AttributesConfig &oldAttributesConfig,
         search::attribute::Config newCfg = ConfigConverter::convert(newAttr);
         if (!inspector.hasUnchangedField(newAttr.name)) {
             // No reprocessing due to field type change, just use new config
-            specs.emplace_back(newAttr.name, newCfg);
             attributesConfig.attribute.emplace_back(newAttr);
         } else {
             auto oldAttr = oldAttrs.lookup(newAttr.name);
@@ -107,7 +86,6 @@ handleNewAttributes(const AttributesConfig &oldAttributesConfig,
                 if (willTriggerReprocessOnAttributeAspectRemoval(oldCfg, oldIndexschemaInspector, newAttr.name) || !oldAttr->fastaccess) {
                     // Delay change of fast access flag
                     newCfg.setFastAccess(oldAttr->fastaccess);
-                    specs.emplace_back(newAttr.name, newCfg);
                     auto modNewAttr = newAttr;
                     modNewAttr.fastaccess = oldAttr->fastaccess;
                     attributesConfig.attribute.emplace_back(modNewAttr);
@@ -119,12 +97,10 @@ handleNewAttributes(const AttributesConfig &oldAttributesConfig,
                     // Don't delay change of fast access flag from true to
                     // false when removing attribute aspect in a way that
                     // doesn't trigger reprocessing.
-                    specs.emplace_back(newAttr.name, newCfg);
                     attributesConfig.attribute.emplace_back(newAttr);
                 }
             } else {
                 // Delay addition of attribute aspect
-                specs.emplace_back(newAttr.name, newCfg, false, true);
                 delayed.insert(newAttr.name);
             }
         }
@@ -147,7 +123,6 @@ handleOldAttributes(const AttributesConfig &oldAttributesConfig,
                     const SummarymapConfig &oldSummarymapConfig,
                     const IIndexschemaInspector &oldIndexschemaInspector,
                     const IDocumentTypeInspector &inspector,
-                    AttributeSpecs &specs,
                     AttributesConfigBuilder &attributesConfig,
                     SummarymapConfigBuilder &summarymapConfig)
 {
@@ -161,7 +136,6 @@ handleOldAttributes(const AttributesConfig &oldAttributesConfig,
                 // Delay removal of attribute aspect if it would trigger
                 // reprocessing.
                 if (willTriggerReprocessOnAttributeAspectRemoval(oldCfg, oldIndexschemaInspector, oldAttr.name)) {
-                    specs.emplace_back(oldAttr.name, oldCfg, true, false);
                     attributesConfig.attribute.emplace_back(oldAttr);
                     delayed.insert(oldAttr.name);
                 }
@@ -181,7 +155,7 @@ handleOldAttributes(const AttributesConfig &oldAttributesConfig,
 }
 
 void
-AttributeSpecsBuilder::setup(const AttributesConfig &oldAttributesConfig,
+AttributeAspectDelayer::setup(const AttributesConfig &oldAttributesConfig,
                              const SummarymapConfig &oldSummarymapConfig,
                              const AttributesConfig &newAttributesConfig,
                              const SummarymapConfig &newSummarymapConfig,
@@ -190,11 +164,11 @@ AttributeSpecsBuilder::setup(const AttributesConfig &oldAttributesConfig,
 {
     handleNewAttributes(oldAttributesConfig, newAttributesConfig,
                         newSummarymapConfig,
-                        oldIndexschemaInspector, inspector, *_specs,
+                        oldIndexschemaInspector, inspector,
                         *_attributesConfig, *_summarymapConfig);
     handleOldAttributes(oldAttributesConfig, newAttributesConfig,
                         oldSummarymapConfig,
-                        oldIndexschemaInspector, inspector, *_specs,
+                        oldIndexschemaInspector, inspector,
                         *_attributesConfig, *_summarymapConfig);
 }
 

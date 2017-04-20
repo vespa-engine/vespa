@@ -5,7 +5,6 @@
 LOG_SETUP(".proton.attribute.attribute_collection_spec_factory");
 #include "attribute_collection_spec_factory.h"
 #include <vespa/searchlib/attribute/configconverter.h>
-#include "attribute_specs.h"
 
 using search::attribute::ConfigConverter;
 using search::GrowStrategy;
@@ -23,24 +22,24 @@ AttributeCollectionSpecFactory::AttributeCollectionSpecFactory(
 }
 
 AttributeCollectionSpec::UP
-AttributeCollectionSpecFactory::create(const AttributeSpecs &attrSpecs,
+AttributeCollectionSpecFactory::create(const AttributesConfig &attrCfg,
                                        uint32_t docIdLimit,
                                        search::SerialNum serialNum) const
 {
     AttributeCollectionSpec::AttributeList attrs;
     // Amortize memory spike cost over N docs
-    const size_t skew = _growNumDocs/(attrSpecs.getSpecs().size()+1);
+    const size_t skew = _growNumDocs/(attrCfg.attribute.size()+1);
     GrowStrategy grow = _growStrategy;
     grow.setDocsInitialCapacity(std::max(grow.getDocsInitialCapacity(),
                                          docIdLimit));
-    for (const auto &attr : attrSpecs.getSpecs()) {
-        auto cfg = attr.getConfig();
+    for (const auto &attr : attrCfg.attribute) {
+        search::attribute::Config cfg = ConfigConverter::convert(attr);
         if (_fastAccessOnly && !cfg.fastAccess()) {
             continue;
         }
         grow.setDocsGrowDelta(grow.getDocsGrowDelta() + skew);
         cfg.setGrowStrategy(grow);
-        attrs.push_back(AttributeSpec(attr.getName(), cfg));
+        attrs.push_back(AttributeSpec(attr.name, cfg));
     }
     return AttributeCollectionSpec::UP(new AttributeCollectionSpec(attrs,
                                                                    docIdLimit,

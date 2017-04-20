@@ -15,13 +15,12 @@ namespace proton {
 
 class IDocumentTypeInspector;
 class IIndexschemaInspector;
-class AttributeSpecs;
 
 /*
- * Class to build adjusted attribute config and vector of attribute specs
+ * Class to build adjusted attributes config and summary map config
  * to eliminate need for reprocessing when system is online.
  */
-class AttributeSpecsBuilder
+class AttributeAspectDelayer
 {
     using AttributesConfigBuilder = vespa::config::search::internal::InternalAttributesType;
     using AttributesConfig = const vespa::config::search::internal::InternalAttributesType;
@@ -30,19 +29,13 @@ class AttributeSpecsBuilder
     using SummarymapConfigBuilder = vespa::config::search::internal::InternalSummarymapType;
     using SummarymapConfig = const vespa::config::search::internal::InternalSummarymapType;
 
-    std::shared_ptr<AttributeSpecs> _specs;
     std::shared_ptr<AttributesConfigBuilder> _attributesConfig;
     std::shared_ptr<SummarymapConfigBuilder> _summarymapConfig;
 
 public:
-    AttributeSpecsBuilder();
-    ~AttributeSpecsBuilder();
+    AttributeAspectDelayer();
+    ~AttributeAspectDelayer();
 
-    /*
-     * Setup called from document db config manager and document db
-     * config scout.  No adjustments.
-     */
-    void setup(const AttributesConfig &newAttributesConfig, const SummarymapConfig &newSummarymapConfig);
     /*
      * Setup to avoid reprocessing, used to create adjusted document db
      * config before applying new config when system is online.
@@ -54,7 +47,6 @@ public:
                const IIndexschemaInspector &oldIndexschemaInspector,
                const IDocumentTypeInspector &inspector);
 
-    std::shared_ptr<const AttributeSpecs> getAttributeSpecs() const;
     std::shared_ptr<AttributesConfig> getAttributesConfig() const;
     std::shared_ptr<SummarymapConfig> getSummarymapConfig() const;
 };

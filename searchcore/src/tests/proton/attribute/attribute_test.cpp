@@ -9,7 +9,6 @@ LOG_SETUP("attribute_test");
 #include <vespa/document/update/arithmeticvalueupdate.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
-#include <vespa/searchcore/proton/attribute/attribute_specs.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/attribute/filter_attribute_manager.h>
@@ -449,23 +448,24 @@ TEST_F("require that attribute adapter handles predicate update", Fixture)
 
 struct AttributeCollectionSpecFixture
 {
-    AttributeSpecs _specs;
+    AttributesConfigBuilder _builder;
     AttributeCollectionSpecFactory _factory;
     AttributeCollectionSpecFixture(bool fastAccessOnly)
-        : _specs(),
+        : _builder(),
           _factory(search::GrowStrategy(), 100, fastAccessOnly)
     {
         addAttribute("a1", false);
         addAttribute("a2", true);
     }
     void addAttribute(const vespalib::string &name, bool fastAccess) {
-        AVConfig cfg;
-        cfg.setFastAccess(fastAccess);
-        _specs.emplace_back(name, cfg);
+        AttributesConfigBuilder::Attribute attr;
+        attr.name = name;
+        attr.fastaccess = fastAccess;
+        _builder.attribute.push_back(attr);
     }
     AttributeCollectionSpec::UP create(uint32_t docIdLimit,
                                        search::SerialNum serialNum) {
-        return _factory.create(_specs, docIdLimit, serialNum);
+        return _factory.create(_builder, docIdLimit, serialNum);
     }
 };
 

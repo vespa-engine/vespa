@@ -6,10 +6,9 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/common/growstrategy.h>
 #include <vespa/searchlib/common/serialnum.h>
+#include <vespa/config-attributes.h>
 
 namespace proton {
-
-class AttributeSpecs;
 
 /**
  * A factory for generating an AttributeCollectionSpec based on AttributesConfig
@@ -18,6 +17,8 @@ class AttributeSpecs;
 class AttributeCollectionSpecFactory
 {
 private:
+    typedef vespa::config::search::AttributesConfig AttributesConfig;
+
     const search::GrowStrategy _growStrategy;
     const size_t               _growNumDocs;
     const bool                 _fastAccessOnly;
@@ -27,7 +28,7 @@ public:
                                    size_t growNumDocs,
                                    bool fastAccessOnly);
 
-    AttributeCollectionSpec::UP create(const AttributeSpecs &attrSpecs,
+    AttributeCollectionSpec::UP create(const AttributesConfig &attrCfg,
                                        uint32_t docIdLimit,
                                        search::SerialNum serialNum) const;
 };

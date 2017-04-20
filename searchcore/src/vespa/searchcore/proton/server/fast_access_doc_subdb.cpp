@@ -78,7 +78,7 @@ FastAccessDocSubDB::createAttributeManagerInitializer(const DocumentDBConfig &co
                                                          documentMetaStoreInitTask,
                                                          documentMetaStore,
                                                          baseAttrMgr,
-                                                         (_hasAttributes ? configSnapshot.getAttributeSpecs() : AttributeSpecs()),
+                                                         (_hasAttributes ? configSnapshot.getAttributesConfig() : AttributesConfig()),
                                                          _attributeGrow,
                                                          _attributeGrowNumDocs,
                                                          _fastAccessAttributesOnly,
@@ -103,13 +103,13 @@ FastAccessDocSubDB::setupAttributeManager(AttributeManager::SP attrMgrResult)
 
 
 AttributeCollectionSpec::UP
-FastAccessDocSubDB::createAttributeSpec(const AttributeSpecs &attrSpecs,
+FastAccessDocSubDB::createAttributeSpec(const AttributesConfig &attrCfg,
                                         SerialNum serialNum) const
 {
     uint32_t docIdLimit(_dms->getCommittedDocIdLimit());
     AttributeCollectionSpecFactory factory(_attributeGrow,
             _attributeGrowNumDocs, _fastAccessAttributesOnly);
-    return factory.create(attrSpecs, docIdLimit, serialNum);
+    return factory.create(attrCfg, docIdLimit, serialNum);
 }
 
 void
@@ -268,7 +268,7 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot,
                 std::make_unique<AttributeWriterFactory>(), getSubDbName());
         proton::IAttributeManager::SP oldMgr = extractAttributeManager(_fastAccessFeedView.get());
         AttributeCollectionSpec::UP attrSpec =
-            createAttributeSpec(newConfigSnapshot.getAttributeSpecs(), serialNum);
+            createAttributeSpec(newConfigSnapshot.getAttributesConfig(), serialNum);
         IReprocessingInitializer::UP initializer =
                 configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, *attrSpec);
         if (initializer->hasReprocessors()) {
