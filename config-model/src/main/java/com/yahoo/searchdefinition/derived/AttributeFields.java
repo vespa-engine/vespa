@@ -26,6 +26,8 @@ import java.util.Map;
  */
 public class AttributeFields extends Derived implements AttributesConfig.Producer {
 
+    public enum FieldSet {ALL, FAST_ACCESS}
+
     private Map<String, Attribute> attributes = new java.util.LinkedHashMap<>();
 
     /**
@@ -65,28 +67,30 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         return getAttribute(attributeName) != null;
     }
 
+    private void deriveAttribute(ImmutableSDField field, Attribute fieldAttribute) {
+        Attribute attribute = getAttribute(fieldAttribute.getName());
+        if (attribute == null) {
+            attributes.put(fieldAttribute.getName(), fieldAttribute);
+            attribute = getAttribute(fieldAttribute.getName());
+        }
+        Ranking ranking = field.getRanking();
+        if (ranking != null && ranking.isFilter()) {
+            attribute.setEnableBitVectors(true);
+            attribute.setEnableOnlyBitVector(true);
+        }
+    }
     /**
      * Derives one attribute. TODO: Support non-default named attributes
      */
     private void deriveAttributes(ImmutableSDField field) {
         for (Attribute fieldAttribute : field.getAttributes().values()) {
-            Attribute attribute = getAttribute(fieldAttribute.getName());
-            if (attribute == null) {
-                attributes.put(fieldAttribute.getName(), fieldAttribute);
-                attribute = getAttribute(fieldAttribute.getName());
-            }
-            Ranking ranking = field.getRanking();
-            if (ranking != null && ranking.isFilter()) {
-                attribute.setEnableBitVectors(true);
-                attribute.setEnableOnlyBitVector(true);
-            }
+            deriveAttribute(field, fieldAttribute);
         }
 
         if (field.containsExpression(ToPositionExpression.class)) {
             // TODO: Move this check to processing and remove this
             if (hasPosition) {
-                throw new IllegalArgumentException("Can not specify more than one " +
-                                                   "set of position attributes per " + "field: " + field.getName());
+                throw new IllegalArgumentException("Can not specify more than one set of position attributes per field: " + field.getName());
             }
             hasPosition = true;
         }
@@ -122,48 +126,62 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
 
     @Override
     public void getConfig(AttributesConfig.Builder builder) {
-        for (Attribute attribute : attributes.values()) {
-            AttributesConfig.Attribute.Builder aaB = new AttributesConfig.Attribute.Builder()
+        getConfig(builder, FieldSet.ALL);
+    }
+
+    private boolean isAttributeInFieldSet(Attribute attribute, FieldSet fs) {
+        return (fs == FieldSet.ALL) || ((fs == FieldSet.FAST_ACCESS) && attribute.isFastAccess());
+    }
+
+    private AttributesConfig.Attribute.Builder getConfig(Attribute attribute) {
+        AttributesConfig.Attribute.Builder aaB = new AttributesConfig.Attribute.Builder()
                 .name(attribute.getName())
                 .datatype(AttributesConfig.Attribute.Datatype.Enum.valueOf(attribute.getType().getExportAttributeTypeName()))
                 .collectiontype(AttributesConfig.Attribute.Collectiontype.Enum.valueOf(attribute.getCollectionType().getName()));
-            if (attribute.isRemoveIfZero()) {
-                aaB.removeifzero(true);
+        if (attribute.isRemoveIfZero()) {
+            aaB.removeifzero(true);
+        }
+        if (attribute.isCreateIfNonExistent()) {
+            aaB.createifnonexistent(true);
+        }
+        aaB.enablebitvectors(attribute.isEnabledBitVectors());
+        aaB.enableonlybitvector(attribute.isEnabledOnlyBitVector());
+        if (attribute.isFastSearch()) {
+            aaB.fastsearch(true);
+        }
+        if (attribute.isFastAccess()) {
+            aaB.fastaccess(true);
+        }
+        if (attribute.isHuge()) {
+            aaB.huge(true);
+        }
+        if (attribute.getSorting().isDescending()) {
+            aaB.sortascending(false);
+        }
+        if (attribute.getSorting().getFunction() != Sorting.Function.UCA) {
+            aaB.sortfunction(AttributesConfig.Attribute.Sortfunction.Enum.valueOf(attribute.getSorting().getFunction().toString()));
+        }
+        if (attribute.getSorting().getStrength() != Sorting.Strength.PRIMARY) {
+            aaB.sortstrength(AttributesConfig.Attribute.Sortstrength.Enum.valueOf(attribute.getSorting().getStrength().toString()));
+        }
+        if (!attribute.getSorting().getLocale().isEmpty()) {
+            aaB.sortlocale(attribute.getSorting().getLocale());
+        }
+        aaB.arity(attribute.arity());
+        aaB.lowerbound(attribute.lowerBound());
+        aaB.upperbound(attribute.upperBound());
+        aaB.densepostinglistthreshold(attribute.densePostingListThreshold());
+        if (attribute.tensorType().isPresent()) {
+            aaB.tensortype(attribute.tensorType().get().toString());
+        }
+        return aaB;
+    }
+
+    public void getConfig(AttributesConfig.Builder builder, FieldSet fs) {
+        for (Attribute attribute : attributes.values()) {
+            if (isAttributeInFieldSet(attribute, fs)) {
+                builder.attribute(getConfig(attribute));
             }
-            if (attribute.isCreateIfNonExistent()) {
-                aaB.createifnonexistent(true);
-            }
-            aaB.enablebitvectors(attribute.isEnabledBitVectors());
-            aaB.enableonlybitvector(attribute.isEnabledOnlyBitVector());
-            if (attribute.isFastSearch()) {
-                aaB.fastsearch(true);
-            }
-            if (attribute.isFastAccess()) {
-                aaB.fastaccess(true);
-            }
-            if (attribute.isHuge()) {
-                aaB.huge(true);
-            }
-            if (attribute.getSorting().isDescending()) {
-                aaB.sortascending(false);
-            }
-            if (attribute.getSorting().getFunction() != Sorting.Function.UCA) {
-                aaB.sortfunction(AttributesConfig.Attribute.Sortfunction.Enum.valueOf(attribute.getSorting().getFunction().toString()));
-            }
-            if (attribute.getSorting().getStrength() != Sorting.Strength.PRIMARY) {
-                aaB.sortstrength(AttributesConfig.Attribute.Sortstrength.Enum.valueOf(attribute.getSorting().getStrength().toString()));
-            }
-            if (!attribute.getSorting().getLocale().isEmpty()) {
-                aaB.sortlocale(attribute.getSorting().getLocale());
-            }
-            aaB.arity(attribute.arity());
-            aaB.lowerbound(attribute.lowerBound());
-            aaB.upperbound(attribute.upperBound());
-            aaB.densepostinglistthreshold(attribute.densePostingListThreshold());
-            if (attribute.tensorType().isPresent()) {
-                aaB.tensortype(attribute.tensorType().get().toString());
-            }
-            builder.attribute(aaB);
         }
     }
 }
