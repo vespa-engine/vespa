@@ -54,6 +54,7 @@ public class ApplicationTest {
     @Test
     public void minimal_application_can_be_constructed() throws Exception {
         try (Application application = Application.fromServicesXml("<jdisc version=\"1.0\"/>", Networking.disable)) {
+                Application unused = application;
         }
     }
 
@@ -296,6 +297,7 @@ public class ApplicationTest {
     public void file_distribution() throws Exception {
         try (Application application = Application.fromApplicationPackage(new File("src/test/app-packages/filedistribution/"), Networking.disable)) {
             // Deployment succeeded
+            Application unused = application;
         }
     }
 
@@ -324,6 +326,7 @@ public class ApplicationTest {
                 .container("default", new Application.Builder.Container()
                 .search(true)
                 ))) {
+            Application unused = app;
         }
     }
 
@@ -334,6 +337,7 @@ public class ApplicationTest {
             HttpClient client = new org.apache.http.impl.client.DefaultHttpClient();
             int statusCode = client.execute(new HttpGet("http://localhost:" + httpPort)).getStatusLine().getStatusCode();
             fail("Networking.disable is specified, but the network interface is enabled! Got status code: " + statusCode);
+            Application unused = application;
         }
     }
 
@@ -351,6 +355,7 @@ public class ApplicationTest {
                 sb.append(line).append("\n");
             }
             assertTrue(sb.toString().contains("Handler"));
+            Application unused = application;
         }
     }
 
