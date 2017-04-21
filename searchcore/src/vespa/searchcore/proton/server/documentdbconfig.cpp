@@ -9,6 +9,9 @@
 #include <vespa/config-summarymap.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/document/config/config-documenttypes.h>
+#include <vespa/searchcore/proton/attribute/attribute_aspect_delayer.h>
+#include <vespa/searchcore/proton/common/document_type_inspector.h>
+#include <vespa/searchcore/proton/common/indexschema_inspector.h>
 
 using namespace config;
 using namespace vespa::config::search::summary;
@@ -74,7 +77,8 @@ DocumentDBConfig::DocumentDBConfig(
       _schema(schema),
       _maintenance(maintenance),
       _extraConfigs(extraConfigs),
-      _orig()
+      _orig(),
+      _delayedAttributeAspects(false)
 { }
 
 
@@ -97,7 +101,8 @@ DocumentDBConfig(const DocumentDBConfig &cfg)
       _schema(cfg._schema),
       _maintenance(cfg._maintenance),
       _extraConfigs(cfg._extraConfigs),
-      _orig(cfg._orig)
+      _orig(cfg._orig),
+      _delayedAttributeAspects(false)
 { }
 
 DocumentDBConfig::~DocumentDBConfig() { }
@@ -268,6 +273,43 @@ DocumentDBConfig::newFromAttributesConfig(const AttributesConfigSP &attributes) 
             _configId,
             _docTypeName,
             _extraConfigs);
+}
+
+DocumentDBConfig::SP
+DocumentDBConfig::makeDelayedAttributeAspectConfig(const SP &newCfg, const DocumentDBConfig &oldCfg)
+{
+    const DocumentDBConfig &n = *newCfg;
+    AttributeAspectDelayer attributeAspectDelayer;
+    DocumentTypeInspector inspector(*oldCfg.getDocumentType(), *n.getDocumentType());
+    IndexschemaInspector oldIndexschemaInspector(oldCfg.getIndexschemaConfig());
+    attributeAspectDelayer.setup(oldCfg.getAttributesConfig(), oldCfg.getSummarymapConfig(),
+                                 n.getAttributesConfig(), n.getSummarymapConfig(),
+                                 oldIndexschemaInspector, inspector);
+    bool delayedAttributeAspects = (n.getAttributesConfig() != *attributeAspectDelayer.getAttributesConfig()) ||
+                                   (n.getSummarymapConfig() != *attributeAspectDelayer.getSummarymapConfig());
+    if (!delayedAttributeAspects) {
+        return newCfg;
+    }
+    auto result = std::make_shared<DocumentDBConfig>
+                  (n._generation,
+                   n._rankProfiles,
+                   n._rankingConstants,
+                   n._indexschema,
+                   attributeAspectDelayer.getAttributesConfig(),
+                   n._summary,
+                   attributeAspectDelayer.getSummarymapConfig(),
+                   n._juniperrc,
+                   n._documenttypes,
+                   n._repo,
+                   n._importedFields,
+                   n._tuneFileDocumentDB,
+                   n._schema,
+                   n._maintenance,
+                   n._configId,
+                   n._docTypeName,
+                   n._extraConfigs);
+    result->_delayedAttributeAspects = true;
+    return result;
 }
 
 } // namespace proton
