@@ -35,10 +35,8 @@ public class Dependencies<T> {
         return new Dependencies<>(new Order<>(null, classes, null), Order.<T>emptyOrder(), null);
     }
 
-    @SuppressWarnings("unchecked")
-    public static Dependencies before(String... providedNames) {
-        // Does not use type parameters due to Javas limited type inference.
-        return new Dependencies(new Order(null, null, providedNames), Order.emptyOrder(), null);
+    public static <T> Dependencies<T> before(String... providedNames) {
+        return new Dependencies<>(new Order<T>(null, null, providedNames), Order.<T>emptyOrder(), null);
     }
 
     @SafeVarargs
@@ -51,16 +49,12 @@ public class Dependencies<T> {
         return new Dependencies<>(Order.<T>emptyOrder(), new Order<>(null, classes, null), null);
     }
 
-    @SuppressWarnings("unchecked")
-    public static Dependencies after(String... providedNames) {
-        // Does not use type parameters due to Javas limited type inference.
-        return new Dependencies(Order.emptyOrder(), new Order(null, null, providedNames), null);
+    public static <T> Dependencies<T> after(String... providedNames) {
+        return new Dependencies<>(Order.<T>emptyOrder(), new Order<T>(null, null, providedNames), null);
     }
 
-    @SuppressWarnings("unchecked")
-    public static Dependencies provides(String... names) {
-        // Does not use type parameters due to Javas limited type inference.
-        return new Dependencies(Order.emptyOrder(), Order.emptyOrder(), names);
+    public static <T> Dependencies<T> provides(String... names) {
+        return new Dependencies<>(Order.<T>emptyOrder(), Order.<T>emptyOrder(), names);
     }
 
     public static <T> Dependencies<T> emptyDependencies() {
