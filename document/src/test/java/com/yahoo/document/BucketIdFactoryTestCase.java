@@ -31,9 +31,12 @@ public class BucketIdFactoryTestCase extends junit.framework.TestCase {
             value = val;
         }
 
+        @Override
         public boolean equals(Object o) {
             return (o instanceof Hex && value == ((Hex) o).value);
         }
+        @Override
+        public int hashCode() { return (int)value; }
 
         public String toString() {
             return Long.toHexString(value);

@@ -13,11 +13,11 @@ import org.osgi.framework.ServiceRegistration;
 public class MyBundleActivator implements BundleActivator {
 
     private MyService service;
-    private ServiceRegistration registration;
+    private ServiceRegistration<?> registration;
 
     @Override
     public void start(BundleContext ctx) throws Exception {
-        ServiceReference containerRef = ctx.getServiceReference(CurrentContainer.class.getName());
+        ServiceReference<?> containerRef = ctx.getServiceReference(CurrentContainer.class.getName());
         service = new MyService((CurrentContainer)ctx.getService(containerRef));
         registration = ctx.registerService(MyService.class.getName(), service, null);
     }

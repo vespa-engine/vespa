@@ -50,6 +50,7 @@ public class Chain<COMPONENT extends ChainedComponent> {
 
     /** Create a chain directly. This will NOT order the chain by the ordering constraints. */
     @SafeVarargs
+    @SuppressWarnings("varargs")
     public Chain(ComponentId id, COMPONENT... components) {
         this(id, Arrays.<COMPONENT>asList(components));
     }
@@ -115,7 +116,7 @@ public class Chain<COMPONENT extends ChainedComponent> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Chain chain = (Chain) o;
+        Chain<?> chain = (Chain<?>) o;
 
         if (!componentList.equals(chain.componentList)) return false;
         if (!id.equals(chain.id)) return false;

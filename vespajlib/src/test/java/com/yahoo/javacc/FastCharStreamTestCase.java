@@ -30,25 +30,27 @@ public class FastCharStreamTestCase {
     @Test
     public void requireThatColumnIsTracked() throws IOException {
         FastCharStream input = new FastCharStream("foo");
-        assertEquals(1, input.getColumn());
+        assertEquals(1, input.getEndColumn());
         input.readChar();
-        assertEquals(2, input.getColumn());
+        assertEquals(2, input.getEndColumn());
         input.readChar();
-        assertEquals(3, input.getColumn());
+        assertEquals(3, input.getEndColumn());
         input.readChar();
-        assertEquals(4, input.getColumn());
+        assertEquals(4, input.getEndColumn());
     }
 
     @Test
     public void requireThatLineIsNotTracked() throws IOException {
         FastCharStream input = new FastCharStream("f\no");
-        assertEquals(-1, input.getLine());
+        assertEquals(-1, input.getEndLine());
+        assertEquals(-1, input.getBeginLine());
         input.readChar();
-        assertEquals(-1, input.getLine());
+        assertEquals(-1, input.getBeginLine());
         input.readChar();
-        assertEquals(-1, input.getLine());
+        assertEquals(-1, input.getBeginLine());
         input.readChar();
-        assertEquals(-1, input.getLine());
+        assertEquals(-1, input.getBeginLine());
+        assertEquals(-1, input.getEndLine());
     }
 
 

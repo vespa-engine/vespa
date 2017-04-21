@@ -5,10 +5,10 @@ public class OrderingSpecification {
     public static int ASCENDING = 0;
     public static int DESCENDING = 1;
 
-    public int order;
-    public long orderingStart;
-    public short widthBits;
-    public short divisionBits;
+    public final int order;
+    public final long orderingStart;
+    public final short widthBits;
+    public final short divisionBits;
 
     public OrderingSpecification() {
         this(ASCENDING, (long)0, (short)0, (short)0);
@@ -30,11 +30,17 @@ public class OrderingSpecification {
     public short getWidthBits() { return widthBits; }
     public short getDivisionBits() { return divisionBits; }
 
+    @Override
     public boolean equals(Object other) {
         OrderingSpecification o = (OrderingSpecification)other;
         if (o == null) return false;
 
         return (order == o.order && orderingStart == o.orderingStart && widthBits == o.widthBits && divisionBits == o.divisionBits);
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(order, orderingStart, widthBits, divisionBits);
     }
 
     public String toString() {

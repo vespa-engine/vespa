@@ -66,6 +66,7 @@ public class QueryMarshaller {
             break;
         case WEAK_AND:
             marshalWeakAnd((WeakAndItem)root, s);
+            break;
         default:
             break;
         }

@@ -43,12 +43,18 @@ public class DistributionTestFactory extends CrossPlatformTestFactory {
             failure = Failure.NONE;
         }
 
+        @Override
         public boolean equals(Object other) {
             if (!(other instanceof Test)) return false;
             Test t = (Test) other;
             return (bucket.equals(t.bucket)
                     && nodes.equals(t.nodes)
                     && failure.equals(t.failure));
+        }
+
+        @Override
+        public int hashCode() {
+            return java.util.Objects.hash(bucket, nodes, disks);
         }
 
         public String toString() {

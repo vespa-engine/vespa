@@ -25,7 +25,7 @@ public class ApplicationEnvironmentModuleTestCase {
 
     @Test
     public void requireThatBindingsExist() {
-        List<Class> expected = new LinkedList<>();
+        List<Class<?>> expected = new LinkedList<>();
         expected.add(ContainerActivator.class);
         expected.add(ContainerBuilder.class);
         expected.add(CurrentContainer.class);

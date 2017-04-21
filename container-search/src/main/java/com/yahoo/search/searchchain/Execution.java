@@ -221,6 +221,14 @@ public class Execution extends com.yahoo.processing.execution.Execution {
         }
 
         @Override
+        public int hashCode() {
+            return java.util.Objects.hash(indexFacts,
+                                          rendererRegistry, tokenRegistry, searchChainRegistry,
+                                          detailedDiagnostics, breakdown,
+                                          linguistics);
+        }
+
+        @Override
         public boolean equals(Object other) {
             if (other == null) {
                 return false;

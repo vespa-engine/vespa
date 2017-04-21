@@ -32,6 +32,7 @@ public class SimpleDocumentProcessor extends DocumentProcessor {
      *
      * @param document the Document to process.
      */
+    @Deprecated
     public void process(Document document) {
         if (log.isLoggable(LogLevel.DEBUG)) {
             log.log(LogLevel.DEBUG, "Ignored " + document);

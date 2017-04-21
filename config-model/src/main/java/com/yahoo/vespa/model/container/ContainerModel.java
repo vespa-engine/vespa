@@ -41,6 +41,7 @@ public class ContainerModel extends ConfigModel {
     }
 
     @Override
+    @Deprecated
     public void initialize(ConfigModelRepo configModelRepo) {
         List<AbstractSearchCluster> searchClusters = Content.getSearchClusters(configModelRepo);
 

@@ -19,7 +19,6 @@ import com.yahoo.container.di.osgi.OsgiUtil;
 import com.yahoo.container.handler.observability.OverviewHandler;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.AccessLogInterface;
-import com.yahoo.container.protect.FreezeDetector;
 import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.service.ClientProvider;
@@ -166,7 +165,9 @@ public class HandlersConfigurerDi {
                 bind(com.yahoo.container.Container.class).toInstance(vespaContainer);
                 bind(com.yahoo.statistics.Statistics.class).toInstance(Statistics.nullImplementation);
                 bind(Linguistics.class).toInstance(new SimpleLinguistics());
-                bind(FreezeDetector.class).toInstance(new FreezeDetector(new DiagnosticsConfig(new DiagnosticsConfig.Builder().disabled(true))));
+                bind(com.yahoo.container.protect.FreezeDetector.class).toInstance(
+                        new com.yahoo.container.protect.FreezeDetector(
+                                new DiagnosticsConfig(new DiagnosticsConfig.Builder().disabled(true))));
                 bind(AccessLog.class).toInstance(new AccessLog(new ComponentRegistry<>()));
                 bind(Executor.class).toInstance(Executors.newCachedThreadPool(ThreadFactoryFactory.getThreadFactory("HandlersConfigurerDI")));
 

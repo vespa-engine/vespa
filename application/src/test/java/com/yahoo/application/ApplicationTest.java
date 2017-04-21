@@ -27,7 +27,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -49,6 +48,7 @@ import static com.yahoo.application.container.JDiscTest.getListenPort;
 /**
  * @author bratseth
  */
+@SuppressWarnings("deprecation")
 public class ApplicationTest {
 
     @Test
@@ -331,7 +331,7 @@ public class ApplicationTest {
     public void http_interface_is_off_when_networking_is_disabled() throws Exception {
         int httpPort = getFreePort();
         try (Application application = Application.fromServicesXml(servicesXmlWithServer(httpPort), Networking.disable)) {
-            HttpClient client = new DefaultHttpClient();
+            HttpClient client = new org.apache.http.impl.client.DefaultHttpClient();
             int statusCode = client.execute(new HttpGet("http://localhost:" + httpPort)).getStatusLine().getStatusCode();
             fail("Networking.disable is specified, but the network interface is enabled! Got status code: " + statusCode);
         }
@@ -341,7 +341,7 @@ public class ApplicationTest {
     public void http_interface_is_on_when_networking_is_enabled() throws Exception {
         int httpPort = getFreePort();
         try (Application application = Application.fromServicesXml(servicesXmlWithServer(httpPort), Networking.enable)) {
-            HttpClient client = new DefaultHttpClient();
+            HttpClient client = new org.apache.http.impl.client.DefaultHttpClient();
             HttpResponse response = client.execute(new HttpGet("http://localhost:" + httpPort));
             assertEquals(200, response.getStatusLine().getStatusCode());
             BufferedReader r = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));

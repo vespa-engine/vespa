@@ -115,6 +115,7 @@ public class DiskState implements Cloneable {
         return sb.toString();
     }
 
+    @Override
     public boolean equals(Object o) {
         if (!(o instanceof DiskState)) { return false; }
         DiskState other = (DiskState) o;
@@ -124,5 +125,11 @@ public class DiskState implements Cloneable {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public int hashCode() {
+        // NOTE: capacity cannot be part of the hashCode
+        return state.hashCode();
     }
 }

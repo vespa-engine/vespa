@@ -22,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
+@SuppressWarnings({"unchecked","rawtypes"})
 public class SplitterJoinerTestCase {
 
     @Test

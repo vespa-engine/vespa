@@ -34,6 +34,7 @@ import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.StructuredFieldValue;
 import com.yahoo.document.update.FieldUpdate;
 
+@SuppressWarnings("unchecked")
 public class SchemaMappingAndAccessesTest extends junit.framework.TestCase {
 
     private Document getDoc() {

@@ -40,7 +40,7 @@ import static org.junit.Assert.*;
  * Testcases for vespa-documentgen-plugin
  * @author vegardh
  */
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked", "rawtypes"})
 public class DocumentGenPluginTest {
 
     private static final int NUM_BOOKS = 10000;

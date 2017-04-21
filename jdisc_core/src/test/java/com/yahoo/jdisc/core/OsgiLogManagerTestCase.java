@@ -41,11 +41,11 @@ public class OsgiLogManagerTestCase {
         manager.log(4, "b", t1);
         assertLast(service, null, 4, "b", t1);
 
-        ServiceReference ref1 = Mockito.mock(ServiceReference.class);
+        ServiceReference<?> ref1 = Mockito.mock(ServiceReference.class);
         manager.log(ref1, 8, "c");
         assertLast(service, ref1, 8, "c", null);
 
-        ServiceReference ref2 = Mockito.mock(ServiceReference.class);
+        ServiceReference<?> ref2 = Mockito.mock(ServiceReference.class);
         Throwable t2 = new Throwable();
         manager.log(ref2, 16, "d", t2);
         assertLast(service, ref2, 16, "d", t2);
@@ -66,7 +66,7 @@ public class OsgiLogManagerTestCase {
         OsgiLogManager manager = new OsgiLogManager(true);
         manager.install(ctx);
 
-        ServiceReference ref1 = Mockito.mock(ServiceReference.class);
+        ServiceReference<?> ref1 = Mockito.mock(ServiceReference.class);
         Throwable t1 = new Throwable();
         manager.log(ref1, 2, "a", t1);
         assertLast(foo, ref1, 2, "a", t1);
@@ -74,7 +74,7 @@ public class OsgiLogManagerTestCase {
         MyLogService bar = new MyLogService();
         ServiceRegistration<LogService> barReg = ctx.registerService(LogService.class, bar, null);
 
-        ServiceReference ref2 = Mockito.mock(ServiceReference.class);
+        ServiceReference<?> ref2 = Mockito.mock(ServiceReference.class);
         Throwable t2 = new Throwable();
         manager.log(ref2, 4, "b", t2);
         assertLast(foo, ref2, 4, "b", t2);
@@ -83,7 +83,7 @@ public class OsgiLogManagerTestCase {
         MyLogService baz = new MyLogService();
         ServiceRegistration<LogService> bazReg = ctx.registerService(LogService.class, baz, null);
 
-        ServiceReference ref3 = Mockito.mock(ServiceReference.class);
+        ServiceReference<?> ref3 = Mockito.mock(ServiceReference.class);
         Throwable t3 = new Throwable();
         manager.log(ref3, 8, "c", t3);
         assertLast(foo, ref3, 8, "c", t3);
@@ -92,7 +92,7 @@ public class OsgiLogManagerTestCase {
 
         fooReg.unregister();
 
-        ServiceReference ref4 = Mockito.mock(ServiceReference.class);
+        ServiceReference<?> ref4 = Mockito.mock(ServiceReference.class);
         Throwable t4 = new Throwable();
         manager.log(ref4, 16, "d", t4);
         assertLast(foo, ref3, 8, "c", t3);
@@ -101,7 +101,7 @@ public class OsgiLogManagerTestCase {
 
         barReg.unregister();
 
-        ServiceReference ref5 = Mockito.mock(ServiceReference.class);
+        ServiceReference<?> ref5 = Mockito.mock(ServiceReference.class);
         Throwable t5 = new Throwable();
         manager.log(ref5, 32, "e", t5);
         assertLast(foo, ref3, 8, "c", t3);
@@ -110,7 +110,7 @@ public class OsgiLogManagerTestCase {
 
         bazReg.unregister();
 
-        ServiceReference ref6 = Mockito.mock(ServiceReference.class);
+        ServiceReference<?> ref6 = Mockito.mock(ServiceReference.class);
         Throwable t6 = new Throwable();
         manager.log(ref6, 64, "f", t6);
         assertLast(foo, ref3, 8, "c", t3);
@@ -144,13 +144,14 @@ public class OsgiLogManagerTestCase {
         assertEquals(Level.ALL, logger.getLevel());
     }
 
-    private static void assertLast(MyLogService service, ServiceReference ref, int level, String message, Throwable t) {
+    private static void assertLast(MyLogService service, ServiceReference<?> ref, int level, String message, Throwable t) {
         assertSame(ref, service.lastServiceReference);
         assertEquals(level, service.lastLevel);
         assertEquals(message, service.lastMessage);
         assertSame(t, service.lastThrowable);
     }
 
+    @SuppressWarnings("rawtypes")
     private static class MyLogService implements LogService {
 
         ServiceReference lastServiceReference;

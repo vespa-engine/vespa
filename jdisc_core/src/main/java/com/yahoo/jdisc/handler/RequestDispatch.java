@@ -12,6 +12,8 @@ import com.yahoo.jdisc.References;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <p>This class provides a convenient way of safely dispatching a {@link Request}. Using this class you do not have to
@@ -116,7 +118,10 @@ public abstract class RequestDispatch implements ListenableFuture<Response>, Res
 
     @Override
     public void addListener(Runnable listener, Executor executor) {
-        Futures.allAsList(completions, futureResponse).addListener(listener, executor);
+        List<ListenableFuture<?>> combined = new ArrayList<>(2);
+        combined.add(completions);
+        combined.add(futureResponse);
+        Futures.allAsList(combined).addListener(listener, executor);
     }
 
     @Override
