@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search.test;
 
+import com.google.common.collect.ImmutableMap;
 import com.yahoo.vespa.config.search.IndexschemaConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
@@ -14,16 +15,20 @@ import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 
-// TODO: Author!
+/**
+ * @author geirst
+ */
 public class DocumentDatabaseTestCase {
 
     private String vespaHosts = "<?xml version='1.0' encoding='utf-8' ?>" +
@@ -33,7 +38,7 @@ public class DocumentDatabaseTestCase {
             "  </host>" +
             "</hosts>";
 
-    private String createVespaServices(List<String> sdNames, String selection, String mode) {
+    private String createVespaServices(List<String> sdNames, String mode) {
         StringBuilder retval = new StringBuilder();
         retval.append("" +
                       "<?xml version='1.0' encoding='utf-8' ?>\n" +
@@ -51,9 +56,7 @@ public class DocumentDatabaseTestCase {
                       "   <redundancy>1</redundancy>\n");
         retval.append("   <documents>\n");
         for (String sdName : sdNames) {
-            retval.append("").append("      <document type='").append(sdName).append("' mode='" + mode + "'");
-            if (selection != null)
-                retval.append(" selection='").append(selection).append("'");
+            retval.append("").append("      <document type='").append(sdName).append("' mode='").append(mode).append("'");
             retval.append("/>\n");
         }
         retval.append("   </documents>\n");
@@ -72,10 +75,10 @@ public class DocumentDatabaseTestCase {
         return new ProtonConfig(pb);
     }
 
-    @Test
-    public void requireThatWeCanHaveOneSearchDefinition() throws IOException, SAXException, ParseException {
+    private void assertSingleSD(String mode) {
         final List<String> sds = Arrays.asList("type1");
-        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(sds, null, "index"), ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
+        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(sds, mode),
+                ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
         IndexedSearchCluster indexedSearchCluster = (IndexedSearchCluster)model.getSearchClusters().get(0);
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
         assertEquals(1, indexedSearchCluster.getDocumentDbs().size());
@@ -84,10 +87,10 @@ public class DocumentDatabaseTestCase {
         assertEquals(1, proton.documentdb().size());
         assertEquals("type1", proton.documentdb(0).inputdoctypename());
         assertEquals(type1Id, proton.documentdb(0).configid());
-        ProtonConfig nodeCfg = getProtonCfg(contentSearchCluster);
-        assertEquals(1, nodeCfg.documentdb().size());
-        assertEquals("type1", nodeCfg.documentdb(0).inputdoctypename());
-        assertEquals(type1Id, nodeCfg.documentdb(0).configid());
+    }
+    @Test
+    public void requireThatWeCanHaveOneSDForIndexedMode() throws IOException, SAXException, ParseException {
+        assertSingleSD("index");
     }
 
     private void assertDocTypeConfig(VespaModel model, String configId, String indexField, String attributeField) {
@@ -95,8 +98,9 @@ public class DocumentDatabaseTestCase {
         assertEquals(1, icfg.indexfield().size());
         assertEquals(indexField, icfg.indexfield(0).name());
         AttributesConfig acfg = model.getConfig(AttributesConfig.class, configId);
-        assertEquals(1, acfg.attribute().size());
+        assertEquals(2, acfg.attribute().size());
         assertEquals(attributeField, acfg.attribute(0).name());
+        assertEquals(attributeField+"_nfa", acfg.attribute(1).name());
         RankProfilesConfig rcfg = model.getConfig(RankProfilesConfig.class, configId);
         assertEquals(6, rcfg.rankprofile().size());
     }
@@ -104,7 +108,8 @@ public class DocumentDatabaseTestCase {
     @Test
     public void requireThatWeCanHaveMultipleSearchDefinitions() throws IOException, SAXException, ParseException {
         final List<String> sds = Arrays.asList("type1", "type2", "type3");
-        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(sds, null, "index"), ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
+        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(sds, "index"),
+                ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
         IndexedSearchCluster indexedSearchCluster = (IndexedSearchCluster)model.getSearchClusters().get(0);
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
         String type1Id = "test/search/cluster.test/type1";
@@ -132,12 +137,14 @@ public class DocumentDatabaseTestCase {
             assertEquals("type3", iicfg.indexinfo().get(2).name());
         }
         {
-            AttributesConfig rac1 = model.getConfig(AttributesConfig.class, "test/search/cluster.test/type1");
-            assertEquals(1, rac1.attribute().size());
+            AttributesConfig rac1 = model.getConfig(AttributesConfig.class, type1Id);
+            assertEquals(2, rac1.attribute().size());
             assertEquals("f2", rac1.attribute(0).name());
-            AttributesConfig rac2 = model.getConfig(AttributesConfig.class, "test/search/cluster.test/type2");
-            assertEquals(1, rac2.attribute().size());
+            assertEquals("f2_nfa", rac1.attribute(1).name());
+            AttributesConfig rac2 = model.getConfig(AttributesConfig.class, type2Id);
+            assertEquals(2, rac2.attribute().size());
             assertEquals("f4", rac2.attribute(0).name());
+            assertEquals("f4_nfa", rac2.attribute(1).name());
         }
         {
             IlscriptsConfig icfg = model.getConfig(IlscriptsConfig.class, "test/search/cluster.test");
@@ -151,7 +158,8 @@ public class DocumentDatabaseTestCase {
     @Test
     public void requireThatRelevantConfigIsAvailableForClusterSearcher() throws ParseException, IOException, SAXException {
         final List<String> sds = Arrays.asList("type1", "type2");
-        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(sds, null, "index"), ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
+        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(sds, "index"),
+                ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
         String searcherId = "container/searchchains/chain/test/component/com.yahoo.prelude.cluster.ClusterSearcher";
 
         { // documentdb-info config
@@ -184,10 +192,12 @@ public class DocumentDatabaseTestCase {
         }
         { // attributes config
             AttributesConfig acfg = model.getConfig(AttributesConfig.class, searcherId);
-            assertEquals(2, acfg.attribute().size());
+            assertEquals(4, acfg.attribute().size());
             assertEquals("f2", acfg.attribute(0).name());
-            assertEquals("f4", acfg.attribute(1).name());
-            assertEquals("f4", acfg.attribute(1).name());
+            assertEquals("f2_nfa", acfg.attribute(1).name());
+            assertEquals("f4", acfg.attribute(2).name());
+            assertEquals("f4_nfa", acfg.attribute(3).name());
+
         }
     }
 
@@ -207,16 +217,62 @@ public class DocumentDatabaseTestCase {
         assertEquals(dynamic, field.dynamic());
     }
 
-
-    @Test
-    public void requireThatConfigIsAvailableForStreaming() throws ParseException, IOException, SAXException {
+    private void assertDocumentDBConfigAvailableForStreaming(String mode) {
         final List<String> sds = Arrays.asList("type");
-        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts,  createVespaServices(sds, null, "streaming"), ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
+        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts,  createVespaServices(sds, mode),
+                ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
 
         DocumentdbInfoConfig dcfg = model.getConfig(DocumentdbInfoConfig.class, "test/search/cluster.test.type");
         assertEquals(1, dcfg.documentdb().size());
         DocumentdbInfoConfig.Documentdb db = dcfg.documentdb(0);
         assertEquals("type", db.name());
+    }
+
+    @Test
+    public void requireThatDocumentDBConfigIsAvailableForStreaming() throws ParseException, IOException, SAXException {
+        assertDocumentDBConfigAvailableForStreaming("streaming");
+    }
+
+
+    private void assertAttributesConfigIndependentOfMode(String mode, List<String> sds,
+                                                         List<String> documentDBConfigIds,
+                                                         Map<String, List<String>> expectedAttributesMap) {
+        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts,  createVespaServices(sds, mode),
+                ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
+        ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
+
+        ProtonConfig proton = getProtonCfg(contentSearchCluster);
+        assertEquals(sds.size(), proton.documentdb().size());
+        for (int i = 0; i < sds.size(); i++) {
+            assertEquals(sds.get(i), proton.documentdb(i).inputdoctypename());
+            assertEquals(documentDBConfigIds.get(i), proton.documentdb(i).configid());
+            List<String> expectedAttributes = expectedAttributesMap.get(sds.get(i));
+            if (expectedAttributes != null) {
+                AttributesConfig rac1 = model.getConfig(AttributesConfig.class, proton.documentdb(i).configid());
+                assertEquals(expectedAttributes.size(), rac1.attribute().size());
+                for (int j = 0; j < expectedAttributes.size(); j++) {
+                    assertEquals(expectedAttributes.get(j), rac1.attribute(j).name());
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testThatAttributesConfigIsProducedForIndexed() {
+        assertAttributesConfigIndependentOfMode("index", Arrays.asList("type1"),
+                Arrays.asList("test/search/cluster.test/type1"),
+                ImmutableMap.of("type1", Arrays.asList("f2", "f2_nfa")));
+    }
+    @Test
+    public void testThatAttributesConfigIsProducedForStreamingForFastAccessFields() {
+        assertAttributesConfigIndependentOfMode("streaming", Arrays.asList("type1"),
+                Arrays.asList("test/search/type1"),
+                ImmutableMap.of("type1", Arrays.asList("f2")));
+    }
+    @Test
+    public void testThatAttributesConfigIsNotProducedForStoreOnlyEvenForFastAccessFields() {
+        assertAttributesConfigIndependentOfMode("store-only", Arrays.asList("type1"),
+                Arrays.asList("test/search"), Collections.emptyMap());
     }
 
 }

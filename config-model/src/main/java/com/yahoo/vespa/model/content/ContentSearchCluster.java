@@ -106,11 +106,9 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         }
 
         private void buildStreamingSearchCluster(ModelElement clusterElem, String clusterName, ContentSearchCluster search, ModelElement docType) {
-            StreamingSearchCluster cluster = new StreamingSearchCluster(search, clusterName + "." + docType.getStringAttribute("type"), 0, clusterName, clusterName);
-
-            List<ModelElement> def = new ArrayList<>();
-            def.add(docType);
-            search.addSearchCluster(cluster, getQueryTimeout(clusterElem), def);
+            String docTypeName = docType.getStringAttribute("type");
+            StreamingSearchCluster cluster = new StreamingSearchCluster(search, clusterName + "." + docTypeName, 0, docTypeName, clusterName);
+            search.addSearchCluster(cluster, getQueryTimeout(clusterElem), Arrays.asList(docType));
         }
 
         private void buildIndexedSearchCluster(ModelElement clusterElem,
@@ -266,6 +264,14 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         this.redundancy = redundancy;
     }
 
+    private Optional<StreamingSearchCluster> findStreamingCluster(String docType) {
+        return getClusters().values().stream()
+                .filter(StreamingSearchCluster.class::isInstance)
+                .map(StreamingSearchCluster.class::cast)
+                .filter(ssc -> ssc.getSdConfig().getSearch().getName().equals(docType))
+                .findFirst();
+    }
+
     @Override
     public void getConfig(ProtonConfig.Builder builder) {
         double visibilityDelay = hasIndexedCluster() ? getIndexed().getVisibilityDelay() : 0.0;
@@ -276,19 +282,15 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
                 .configid(getConfigId())
                 .visibilitydelay(visibilityDelay)
                 .global(isGloballyDistributed(type));
-            if (hasIndexedCluster()) {
+            Optional<StreamingSearchCluster> ssc = findStreamingCluster(docTypeName);
+            if (ssc.isPresent()) {
+                ddbB.inputdoctypename(type.getFullName().getName()).configid(ssc.get().getDocumentDBConfigId());
+            } else if (hasIndexedCluster()) {
                 getIndexed().fillDocumentDBConfig(type.getFullName().getName(), ddbB);
             }
             builder.documentdb(ddbB);
         }
-        for (AbstractSearchCluster sc : getClusters().values()) {
-            if (sc instanceof StreamingSearchCluster) {
-                NewDocumentType type = repo.getDocumentType(((StreamingSearchCluster)sc).getSdConfig().getSearch().getName());
-                ProtonConfig.Documentdb.Builder ddbB = new ProtonConfig.Documentdb.Builder();
-                ddbB.inputdoctypename(type.getFullName().getName()).configid(getConfigId());
-                builder.documentdb(ddbB);
-            }
-        }
+
         int numDocumentDbs = builder.documentdb.size();
         builder.initialize(new ProtonConfig.Initialize.Builder().threads(numDocumentDbs + 1));
 
