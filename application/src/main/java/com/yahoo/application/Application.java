@@ -20,6 +20,7 @@ import com.yahoo.search.rendering.Renderer;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.model.VespaModel;
+import org.jboss.netty.channel.ChannelException;
 import org.xml.sax.SAXException;
 
 import java.io.File;
@@ -315,7 +316,7 @@ public final class Application implements AutoCloseable {
                     break;
                 } catch (Error e) { // the container thinks this is really serious, in this case is it not in the cause is a BindException
                     // catch bind error and reset container
-                    if (e.getCause() != null && e.getCause().getCause() != null && e.getCause().getCause() instanceof BindException) {
+                    if (e.getCause() != null && e.getCause() instanceof ChannelException && e.getCause().getCause() != null && e.getCause().getCause() instanceof BindException) {
                         exception = (Exception) e.getCause().getCause();
                         com.yahoo.container.Container.resetInstance(); // this is needed to be able to recreate the container from config again
                     } else {
