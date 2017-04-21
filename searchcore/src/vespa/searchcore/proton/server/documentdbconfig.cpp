@@ -276,38 +276,38 @@ DocumentDBConfig::newFromAttributesConfig(const AttributesConfigSP &attributes) 
 }
 
 DocumentDBConfig::SP
-DocumentDBConfig::makeDelayedAttributeAspectConfig(const SP &orig, const DocumentDBConfig &old)
+DocumentDBConfig::makeDelayedAttributeAspectConfig(const SP &newCfg, const DocumentDBConfig &oldCfg)
 {
-    const DocumentDBConfig &o = *orig;
+    const DocumentDBConfig &n = *newCfg;
     AttributeAspectDelayer attributeAspectDelayer;
-    DocumentTypeInspector inspector(*old.getDocumentType(), *o.getDocumentType());
-    IndexschemaInspector oldIndexschemaInspector(old.getIndexschemaConfig());
-    attributeAspectDelayer.setup(old.getAttributesConfig(), old.getSummarymapConfig(),
-                                 o.getAttributesConfig(), o.getSummarymapConfig(),
+    DocumentTypeInspector inspector(*oldCfg.getDocumentType(), *n.getDocumentType());
+    IndexschemaInspector oldIndexschemaInspector(oldCfg.getIndexschemaConfig());
+    attributeAspectDelayer.setup(oldCfg.getAttributesConfig(), oldCfg.getSummarymapConfig(),
+                                 n.getAttributesConfig(), n.getSummarymapConfig(),
                                  oldIndexschemaInspector, inspector);
-    bool delayedAttributeAspects = (o.getAttributesConfig() != *attributeAspectDelayer.getAttributesConfig()) ||
-                                   (o.getSummarymapConfig() != *attributeAspectDelayer.getSummarymapConfig());
+    bool delayedAttributeAspects = (n.getAttributesConfig() != *attributeAspectDelayer.getAttributesConfig()) ||
+                                   (n.getSummarymapConfig() != *attributeAspectDelayer.getSummarymapConfig());
     if (!delayedAttributeAspects) {
-        return orig;
+        return newCfg;
     }
     auto result = std::make_shared<DocumentDBConfig>
-                  (o._generation,
-                   o._rankProfiles,
-                   o._rankingConstants,
-                   o._indexschema,
+                  (n._generation,
+                   n._rankProfiles,
+                   n._rankingConstants,
+                   n._indexschema,
                    attributeAspectDelayer.getAttributesConfig(),
-                   o._summary,
+                   n._summary,
                    attributeAspectDelayer.getSummarymapConfig(),
-                   o._juniperrc,
-                   o._documenttypes,
-                   o._repo,
-                   o._importedFields,
-                   o._tuneFileDocumentDB,
-                   o._schema,
-                   o._maintenance,
-                   o._configId,
-                   o._docTypeName,
-                   o._extraConfigs);
+                   n._juniperrc,
+                   n._documenttypes,
+                   n._repo,
+                   n._importedFields,
+                   n._tuneFileDocumentDB,
+                   n._schema,
+                   n._maintenance,
+                   n._configId,
+                   n._docTypeName,
+                   n._extraConfigs);
     result->_delayedAttributeAspects = true;
     return result;
 }

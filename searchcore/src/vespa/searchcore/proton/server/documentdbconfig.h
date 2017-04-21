@@ -196,7 +196,7 @@ public:
      * Create config with delayed attribute aspect changes if they require
      * reprocessing.
      */
-    static SP makeDelayedAttributeAspectConfig(const SP &orig, const DocumentDBConfig &old);
+    static SP makeDelayedAttributeAspectConfig(const SP &newCfg, const DocumentDBConfig &oldCfg);
 };
 
 } // namespace proton
