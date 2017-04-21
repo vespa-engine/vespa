@@ -2,7 +2,6 @@
 vespa_add_library(vbench_test STATIC
     SOURCES
     request_receptor.cpp
-    server_socket.cpp
     simple_http_result_handler.cpp
     DEPENDS
 )

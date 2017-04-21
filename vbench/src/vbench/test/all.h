@@ -39,7 +39,6 @@
 #include <vbench/core/stream.h>
 #include <vespa/vespalib/data/input.h>
 #include <vbench/test/simple_http_result_handler.h>
-#include <vbench/test/server_socket.h>
 #include <vbench/test/request_receptor.h>
 #include <vbench/http/hex_number.h>
 #include <vbench/http/http_result_handler.h>

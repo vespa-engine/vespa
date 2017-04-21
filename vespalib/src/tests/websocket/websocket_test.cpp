@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/websocket/socket.h>
-#include <vespa/vespalib/websocket/server_socket.h>
+#include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/websocket/handler.h>
 #include <vespa/vespalib/websocket/acceptor.h>
 #include <vespa/vespalib/websocket/key.h>
@@ -11,6 +10,7 @@
 #include <functional>
 #include <chrono>
 
+using namespace vespalib;
 using namespace vespalib::ws;
 
 template <typename T>
@@ -62,14 +62,6 @@ void verify_socket_io_async(Socket &server, Socket &client) {
     client_thread.join();
 }
 
-Socket::UP connect_sockets(bool is_server, ServerSocket &server_socket) {
-    if (is_server) {
-        return server_socket.accept();
-    } else {
-        return Socket::UP(new Socket("localhost", server_socket.port()));
-    }
-}
-
 void check_buffer_stats(const Buffer &buffer, size_t dead, size_t used, size_t free) {
     EXPECT_EQUAL(dead, buffer.dead());
     EXPECT_EQUAL(used, buffer.used());
@@ -109,34 +101,13 @@ TEST("require that buffer moves contained data when more space is needed") {
     EXPECT_EQUAL('z', *buffer.obtain());
 }
 
-TEST_MT_F("require that basic socket io works", 2, ServerSocket(0)) {
-    bool is_server = (thread_id == 0);
-    Socket::UP socket = connect_sockets(is_server, f1);
-    TEST_DO(verify_socket_io(is_server, *socket));
-}
-
-TEST_MT_F("require that server accept can be interrupted", 2, ServerSocket(0)) {
-    bool is_server = (thread_id == 0);
-    if (is_server) {
-        fprintf(stderr, "--> calling accept\n");
-        Socket::UP socket = f1.accept();
-        fprintf(stderr, "<-- accept returned\n");
-        EXPECT_TRUE(socket.get() == nullptr);
-        EXPECT_TRUE(f1.is_closed());
-    } else {
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        fprintf(stderr, "--- closing server socket\n");
-        f1.close();
-    }
-}
-
 TEST("require that an acceptor can accept connections asynchronously") {
     Receptor<Socket> server;
     Acceptor acceptor(0, server);
-    Socket::UP client(new Socket("localhost", acceptor.port()));
+    Socket::UP client = SimpleSocket::connect(SocketSpec::from_port(acceptor.port()));
     server.gate.await(60000);
-    EXPECT_TRUE(server.obj.get() != nullptr);
-    EXPECT_TRUE(client.get() != nullptr);
+    ASSERT_TRUE(server.obj.get() != nullptr);
+    ASSERT_TRUE(client.get() != nullptr);
     TEST_DO(verify_socket_io_async(*server.obj, *client));
 }
 

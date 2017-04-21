@@ -1,33 +1,30 @@
-// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
+// Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include "socket_handle.h"
-#include "socket_address.h"
+#include <memory>
 
 namespace vespalib {
 
 class SocketSpec;
 
-class Socket
-{
-private:
-    SocketHandle _handle;
+/**
+ * Abstract stream-based socket interface.
+ **/
+struct Socket {
+    using UP = std::unique_ptr<Socket>;
+    virtual ssize_t read(char *buf, size_t len) = 0;
+    virtual ssize_t write(const char *buf, size_t len) = 0;
+    virtual ~Socket() {}
+};
 
-public:
-    typedef std::unique_ptr<Socket> UP;
-    Socket(const Socket &rhs) = delete;
-    Socket &operator=(const Socket &rhs) = delete;
-    explicit Socket(SocketHandle handle) : _handle(std::move(handle)) {}
-    bool valid() const { return _handle.valid(); }
-    SocketAddress address() const;
-    SocketAddress peer_address() const;
-    void shutdown();
-    ssize_t read(char *buf, size_t len);
-    ssize_t write(const char *buf, size_t len);
-    static Socket::UP connect(const SocketSpec &spec);
+struct SimpleSocket : public Socket {
+    SocketHandle handle;
+    explicit SimpleSocket(SocketHandle handle_in) : handle(std::move(handle_in)) {}
+    ssize_t read(char *buf, size_t len) final override { return handle.read(buf, len); }
+    ssize_t write(const char *buf, size_t len) final override { return handle.write(buf, len); }
+    static std::unique_ptr<SimpleSocket> connect(const SocketSpec &spec);
 };
 
 } // namespace vespalib

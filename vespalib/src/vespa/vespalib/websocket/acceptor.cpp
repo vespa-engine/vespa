@@ -3,6 +3,7 @@
 #include <vespa/fastos/fastos.h>
 #include "acceptor.h"
 #include <functional>
+#include <vespa/vespalib/net/socket_spec.h>
 
 namespace vespalib {
 namespace ws {
@@ -10,23 +11,25 @@ namespace ws {
 void
 Acceptor::accept_main(Handler<Socket> &socket_handler)
 {
-    while (!_server_socket.is_closed()) {
-        Socket::UP socket = _server_socket.accept();
-        if (socket) {
-            socket_handler.handle(std::move(socket));
+    while (!_is_closed) {
+        SocketHandle handle = _server_socket.accept();
+        if (handle.valid()) {
+            socket_handler.handle(std::make_unique<SimpleSocket>(std::move(handle)));
         }
     }
 }
 
 Acceptor::Acceptor(int port_in, Handler<Socket> &socket_handler)
     : _server_socket(port_in),
-      _accept_thread(&Acceptor::accept_main, this, std::ref(socket_handler))
+      _accept_thread(&Acceptor::accept_main, this, std::ref(socket_handler)),
+      _is_closed(false)
 {
 }
 
 Acceptor::~Acceptor()
 {
-    _server_socket.close();
+    _server_socket.shutdown();
+    _is_closed = true;
     _accept_thread.join();
 }
 

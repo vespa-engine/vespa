@@ -5,9 +5,9 @@
 #include "string.h"
 #include "stream.h"
 #include <vespa/vespalib/data/simple_buffer.h>
+#include <vespa/vespalib/net/socket_handle.h>
+#include <vespa/vespalib/net/server_socket.h>
 #include <memory>
-
-class FastOS_SocketInterface;
 
 namespace vbench {
 
@@ -20,22 +20,36 @@ using WritableMemory = vespalib::WritableMemory;
 class Socket : public Stream
 {
 private:
-    std::unique_ptr<FastOS_SocketInterface> _socket;
-    SimpleBuffer                            _input;
-    SimpleBuffer                            _output;
-    Taint                                   _taint;
-    bool                                    _eof;
+    vespalib::SocketHandle _socket;
+    SimpleBuffer           _input;
+    SimpleBuffer           _output;
+    Taint                  _taint;
+    bool                   _eof;
 
 public:
-    Socket(std::unique_ptr<FastOS_SocketInterface> socket);
-    Socket(const string host, int port);
-    virtual ~Socket();
+    Socket(vespalib::SocketHandle socket);
+    Socket(const string &host, int port);
     virtual bool eof() const override { return _eof; }
     virtual Memory obtain() override;
     virtual Input &evict(size_t bytes) override;
     virtual WritableMemory reserve(size_t bytes) override;
     virtual Output &commit(size_t bytes) override;
     virtual const Taint &tainted() const override { return _taint; }
+};
+
+struct ServerSocket {
+    vespalib::ServerSocket server_socket;
+    ServerSocket() : server_socket(0) {}
+    int port() const { return server_socket.address().port(); }
+    Stream::UP accept() {
+        vespalib::SocketHandle handle = server_socket.accept();
+        if (handle.valid()) {
+            return std::make_unique<Socket>(std::move(handle));
+        } else {
+            return Stream::UP();
+        }
+    }
+    void close() { server_socket.shutdown(); }
 };
 
 } // namespace vbench

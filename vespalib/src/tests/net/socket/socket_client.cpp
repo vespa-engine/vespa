@@ -11,7 +11,7 @@
 
 using namespace vespalib;
 
-vespalib::string read_msg(Socket &socket) {
+vespalib::string read_msg(SocketHandle &socket) {
     vespalib::string msg;
     for (;;) {
         char c;
@@ -27,7 +27,7 @@ vespalib::string read_msg(Socket &socket) {
     }
 }
 
-void write_msg(Socket &socket, const vespalib::string &msg) {
+void write_msg(SocketHandle &socket, const vespalib::string &msg) {
     for (size_t i = 0; i < msg.size(); ++i) {
         ssize_t ret = socket.write(&msg[i], 1);
         if (ret != 1) {
@@ -53,14 +53,15 @@ int main(int argc, char **argv) {
             fprintf(stderr, "  %s\n", addr.spec().c_str());
         }
     }
-    Socket::UP socket = Socket::connect(SocketSpec::from_host_port(host, port));
-    if (!socket->valid()) {
+    SocketHandle socket = SocketSpec::from_host_port(host, port).client_address().connect();
+    if (!socket.valid()) {
         fprintf(stderr, "connect failed\n");
         return 1;
     }
     fprintf(stderr, "connected to: %s (local address: %s)\n",
-            socket->peer_address().spec().c_str(), socket->address().spec().c_str());
-    write_msg(*socket, "hello from client\n");
-    fprintf(stderr, "message from server: '%s'\n", read_msg(*socket).c_str());
+            SocketAddress::peer_address(socket.get()).spec().c_str(),
+            SocketAddress::address_of(socket.get()).spec().c_str());
+    write_msg(socket, "hello from client\n");
+    fprintf(stderr, "message from server: '%s'\n", read_msg(socket).c_str());
     return 0;
 }

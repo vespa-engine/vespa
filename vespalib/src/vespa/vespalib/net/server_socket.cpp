@@ -16,17 +16,52 @@ bool is_socket(const vespalib::string &path) {
     return S_ISSOCK(info.st_mode);
 }
 
-ServerSocket::ServerSocket(SocketHandle handle)
-    : _handle(std::move(handle)),
-      _path(SocketAddress::address_of(_handle.get()).path())
+void
+ServerSocket::cleanup()
+{
+    if (valid() && is_socket(_path)) {
+        unlink(_path.c_str());
+    }
+}
+
+ServerSocket::ServerSocket(const SocketSpec &spec)
+    : _handle(spec.server_address().listen()),
+      _path(spec.path())
+{
+    if (!_handle.valid() && is_socket(_path)) {
+        if (!spec.client_address().connect().valid()) {
+            LOG(warning, "removing old socket: '%s'", _path.c_str());
+            unlink(_path.c_str());
+            _handle = spec.server_address().listen();
+        }
+    }
+}
+
+ServerSocket::ServerSocket(const vespalib::string &spec)
+    : ServerSocket(SocketSpec(spec))
 {
 }
 
-ServerSocket::~ServerSocket()
+ServerSocket::ServerSocket(int port)
+    : ServerSocket(SocketSpec::from_port(port))
 {
-    if (is_socket(_path)) {
-        unlink(_path.c_str());
-    }
+}
+
+ServerSocket::ServerSocket(ServerSocket &&rhs)
+    : _handle(std::move(rhs._handle)),
+      _path(std::move(rhs._path))
+{
+    rhs._path.clear();
+}
+
+ServerSocket &
+ServerSocket::operator=(ServerSocket &&rhs)
+{
+    cleanup();
+    _handle = std::move(rhs._handle);
+    _path = std::move(rhs._path);
+    rhs._path.clear();
+    return *this;
 }
 
 SocketAddress
@@ -38,30 +73,13 @@ ServerSocket::address() const
 void
 ServerSocket::shutdown()
 {
-    if (valid()) {
-        ::shutdown(_handle.get(), SHUT_RDWR);
-    }
+    _handle.shutdown();
 }
 
-Socket::UP
+SocketHandle
 ServerSocket::accept()
 {
-    SocketHandle handle(::accept(_handle.get(), nullptr, 0));
-    return std::make_unique<Socket>(std::move(handle));
-}
-
-ServerSocket::UP
-ServerSocket::listen(const SocketSpec &spec)
-{
-    SocketHandle handle = spec.server_address().listen();
-    if (!handle.valid() && is_socket(spec.path())) {
-        if (!spec.client_address().connect().valid()) {
-            LOG(warning, "removing old socket: '%s'", spec.path().c_str());
-            unlink(spec.path().c_str());
-            handle = spec.server_address().listen();
-        }
-    }
-    return std::make_unique<ServerSocket>(std::move(handle));
+    return _handle.accept();
 }
 
 } // namespace vespalib

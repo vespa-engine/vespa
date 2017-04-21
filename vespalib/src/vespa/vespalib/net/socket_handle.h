@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "socket_options.h"
 #include <unistd.h>
 
 namespace vespalib {
@@ -33,6 +34,7 @@ public:
         _fd = rhs.release();
         return *this;
     }
+    ~SocketHandle() { maybe_close(_fd); }
     bool valid() const { return (_fd >= 0); }
     operator bool() const { return valid(); }
     int get() const { return _fd; }
@@ -45,7 +47,18 @@ public:
         maybe_close(_fd);
         _fd = fd;
     }
-    ~SocketHandle() { maybe_close(_fd); }
+
+    bool set_blocking(bool value) { return SocketOptions::set_blocking(_fd, value); }
+    bool set_nodelay(bool value) { return SocketOptions::set_nodelay(_fd, value); }
+    bool set_reuse_addr(bool value) { return SocketOptions::set_reuse_addr(_fd, value); }
+    bool set_ipv6_only(bool value) { return SocketOptions::set_ipv6_only(_fd, value); }
+    bool set_keepalive(bool value) { return SocketOptions::set_keepalive(_fd, value); }
+    bool set_linger(bool enable, int value) { return SocketOptions::set_linger(_fd, enable, value); }
+
+    ssize_t read(char *buf, size_t len);
+    ssize_t write(const char *buf, size_t len);
+    SocketHandle accept();
+    void shutdown();
 };
 
 } // namespace vespalib
