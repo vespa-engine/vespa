@@ -6,6 +6,7 @@ vespa_add_library(vespalib_vespalib_net OBJECT
     socket.cpp
     socket_address.cpp
     socket_handle.cpp
+    socket_options.cpp
     socket_spec.cpp
     DEPENDS
 )

@@ -2,13 +2,29 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/net/server_socket.h>
+#include <vespa/vespalib/net/socket_options.h>
 #include <vespa/vespalib/net/socket.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/test/socket_options_verifier.h>
 #include <thread>
 #include <functional>
 #include <chrono>
 
 using namespace vespalib;
+
+bool ipv4_enabled = false;
+bool ipv6_enabled = false;
+
+int my_inet() {
+    if (ipv6_enabled) {
+        return AF_INET6;
+    }
+    if (ipv4_enabled) {
+        return AF_INET;
+    }
+    TEST_ERROR("tcp/ip support not detected");
+    return AF_UNIX;
+}
 
 bool is_socket(const vespalib::string &path) {
     struct stat info;
@@ -109,6 +125,8 @@ TEST("my local address") {
     for (const auto &addr: list) {
         EXPECT_TRUE(addr.is_wildcard());
         EXPECT_TRUE(addr.is_ipv4() || addr.is_ipv6());
+        ipv4_enabled |= addr.is_ipv4();
+        ipv6_enabled |= addr.is_ipv6();
         EXPECT_TRUE(!addr.is_ipc());
         EXPECT_TRUE(!addr.is_abstract());
         EXPECT_EQUAL(addr.port(), 4080);
@@ -297,6 +315,74 @@ TEST_MT_FFF("require that abstract and file-based unix domain sockets are not in
     ServerSocket &server_socket = ((thread_id / 2) == 0) ? *f1.server : *f2.server;
     Socket::UP socket = connect_sockets(is_server, server_socket);
     TEST_DO(verify_socket_io(is_server, *socket));
+}
+
+TEST("require that sockets can be set blocking and non-blocking") {
+    SocketHandle handle(socket(my_inet(), SOCK_STREAM, 0));
+    test::SocketOptionsVerifier verifier(handle.get());
+    EXPECT_TRUE(!SocketOptions::set_blocking(-1, true));
+    EXPECT_TRUE(SocketOptions::set_blocking(handle.get(), true));
+    TEST_DO(verifier.verify_blocking(true));
+    EXPECT_TRUE(SocketOptions::set_blocking(handle.get(), false));
+    TEST_DO(verifier.verify_blocking(false));
+}
+
+TEST("require that tcp nodelay can be enabled and disabled") {
+    SocketHandle handle(socket(my_inet(), SOCK_STREAM, 0));
+    test::SocketOptionsVerifier verifier(handle.get());
+    EXPECT_TRUE(!SocketOptions::set_nodelay(-1, true));
+    EXPECT_TRUE(SocketOptions::set_nodelay(handle.get(), true));
+    TEST_DO(verifier.verify_nodelay(true));
+    EXPECT_TRUE(SocketOptions::set_nodelay(handle.get(), false));
+    TEST_DO(verifier.verify_nodelay(false));
+}
+
+TEST("require that reuse addr can be set and cleared") {
+    SocketHandle handle(socket(my_inet(), SOCK_STREAM, 0));
+    test::SocketOptionsVerifier verifier(handle.get());
+    EXPECT_TRUE(!SocketOptions::set_reuse_addr(-1, true));
+    EXPECT_TRUE(SocketOptions::set_reuse_addr(handle.get(), true));
+    TEST_DO(verifier.verify_reuse_addr(true));
+    EXPECT_TRUE(SocketOptions::set_reuse_addr(handle.get(), false));
+    TEST_DO(verifier.verify_reuse_addr(false));
+}
+
+TEST("require that ipv6_only can be set and cleared") {
+    if (ipv6_enabled) {
+        SocketHandle handle(socket(my_inet(), SOCK_STREAM, 0));
+        test::SocketOptionsVerifier verifier(handle.get());
+        EXPECT_TRUE(!SocketOptions::set_ipv6_only(-1, true));
+        EXPECT_TRUE(SocketOptions::set_ipv6_only(handle.get(), true));
+        TEST_DO(verifier.verify_ipv6_only(true));
+        EXPECT_TRUE(SocketOptions::set_ipv6_only(handle.get(), false));
+        TEST_DO(verifier.verify_ipv6_only(false));
+    } else {
+        fprintf(stderr, "WARNING: skipping ipv6_only test since ipv6 is disabled");
+    }
+}
+
+TEST("require that tcp keepalive can be set and cleared") {
+    SocketHandle handle(socket(my_inet(), SOCK_STREAM, 0));
+    test::SocketOptionsVerifier verifier(handle.get());
+    EXPECT_TRUE(!SocketOptions::set_keepalive(-1, true));
+    EXPECT_TRUE(SocketOptions::set_keepalive(handle.get(), true));
+    TEST_DO(verifier.verify_keepalive(true));
+    EXPECT_TRUE(SocketOptions::set_keepalive(handle.get(), false));
+    TEST_DO(verifier.verify_keepalive(false));
+}
+
+TEST("require that tcp lingering can be adjusted") {
+    SocketHandle handle(socket(my_inet(), SOCK_STREAM, 0));
+    test::SocketOptionsVerifier verifier(handle.get());
+    EXPECT_TRUE(!SocketOptions::set_linger(-1, true, 0));
+    EXPECT_TRUE(SocketOptions::set_linger(handle.get(), true, 0));
+    TEST_DO(verifier.verify_linger(true, 0));
+    EXPECT_TRUE(SocketOptions::set_linger(handle.get(), true, 10));
+    TEST_DO(verifier.verify_linger(true, 10));
+    EXPECT_TRUE(SocketOptions::set_linger(handle.get(), false, 0));
+    TEST_DO(verifier.verify_linger(false, 0));
+    EXPECT_TRUE(SocketOptions::set_linger(handle.get(), false, 10));
+    TEST_DO(verifier.verify_linger(false, 0));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
