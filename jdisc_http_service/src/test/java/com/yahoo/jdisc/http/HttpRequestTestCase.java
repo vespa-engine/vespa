@@ -4,10 +4,6 @@ package com.yahoo.jdisc.http;
 import com.yahoo.jdisc.Container;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.service.CurrentContainer;
-import com.yahoo.jdisc.test.TestDriver;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
-import org.jboss.netty.handler.codec.http.HttpMethod;
-import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.testng.annotations.Test;
 
 import java.net.InetSocketAddress;
@@ -29,27 +25,6 @@ import static org.testng.AssertJUnit.assertTrue;
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
 public class HttpRequestTestCase {
-
-    @Test
-    public void requireThatMethodIsCompatibleWithNetty() {
-        assertMethod(HttpRequest.Method.OPTIONS, HttpMethod.OPTIONS);
-        assertMethod(HttpRequest.Method.GET, HttpMethod.GET);
-        assertMethod(HttpRequest.Method.HEAD, HttpMethod.HEAD);
-        assertMethod(HttpRequest.Method.POST, HttpMethod.POST);
-        assertMethod(HttpRequest.Method.PUT, HttpMethod.PUT);
-        assertMethod(HttpRequest.Method.PATCH, HttpMethod.PATCH);
-        assertMethod(HttpRequest.Method.DELETE, HttpMethod.DELETE);
-        assertMethod(HttpRequest.Method.TRACE, HttpMethod.TRACE);
-        assertMethod(HttpRequest.Method.CONNECT, HttpMethod.CONNECT);
-        assertEquals(9, HttpRequest.Method.values().length);
-    }
-
-    @Test
-    public void requireThatVersionIsCompatibleWithNetty() {
-        assertVersion(HttpRequest.Version.HTTP_1_0, HttpVersion.HTTP_1_0);
-        assertVersion(HttpRequest.Version.HTTP_1_1, HttpVersion.HTTP_1_1);
-        assertEquals(2, HttpRequest.Version.values().length);
-    }
 
     @Test
     public void requireThatSimpleServerConstructorsUseReasonableDefaults() {
@@ -219,18 +194,6 @@ public class HttpRequestTestCase {
         final List<Cookie> cookies = Collections.singletonList(new Cookie("foo", "bar"));
         request.encodeCookieHeader(cookies);
         assertEquals(cookies, request.decodeCookieHeader());
-    }
-
-    private static void assertMethod(final HttpRequest.Method discMethod, final HttpMethod nettyMethod) {
-        assertEquals(discMethod, HttpRequest.Method.valueOf(nettyMethod.getName()));
-        assertEquals(discMethod, HttpRequest.Method.valueOf(nettyMethod.toString()));
-        assertEquals(nettyMethod, HttpMethod.valueOf(discMethod.toString()));
-    }
-
-    private static void assertVersion(final HttpRequest.Version discVersion, final HttpVersion nettyVersion) {
-        assertEquals(discVersion, HttpRequest.Version.fromString(nettyVersion.getText()));
-        assertEquals(discVersion, HttpRequest.Version.fromString(nettyVersion.toString()));
-        assertEquals(nettyVersion, HttpVersion.valueOf(discVersion.toString()));
     }
 
     private static HttpRequest newRequest(final HttpRequest.Version version) throws Exception {
