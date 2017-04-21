@@ -10,7 +10,6 @@
 #include "lid_space_compaction_handler.h"
 #include "maintenance_jobs_injector.h"
 #include "reconfig_params.h"
-#include "configvalidator.h"
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
@@ -391,35 +390,6 @@ DocumentDB::performReconfig(DocumentDBConfig::SP configSnapshot)
 
 
 void
-DocumentDB::handleRejectedConfig(DocumentDBConfig::SP &configSnapshot,
-                                 const configvalidator::Result &cvr,
-                                 const DDBState::ConfigState &cs)
-{
-    _state.setConfigState(cs);
-    if (cs == DDBState::ConfigState::NEED_RESTART) {
-        LOG(warning, "DocumentDB(%s): Cannot apply new config snapshot directly: '%s'."
-            " Search node must be restarted for new config to take effect",
-            _docTypeName.toString().c_str(), cvr.what().c_str());
-    } else {
-        LOG(error, "DocumentDB(%s): Cannot apply new config snapshot, new schema is in conflict"
-            " with old schema or history schema: '%s'."
-            " Feed interface is disabled until old config is redeployed",
-            _docTypeName.toString().c_str(), cvr.what().c_str());
-    }
-    LOG(info, "DocumentDB(%s): Config from config server rejected: %s",
-        _docTypeName.toString().c_str(),
-        (cs == DDBState::ConfigState::NEED_RESTART ? "need restart" : "feed disabled"));
-    DocumentDBConfig::SP oaconfig = _activeConfigSnapshot->
-                                    getOriginalConfig();
-    if (!oaconfig ||
-        _state.getState() != DDBState::State::APPLY_LIVE_CONFIG) {
-        configSnapshot = _activeConfigSnapshot;
-    } else {
-        configSnapshot = oaconfig;
-    }
-}
-
-void
 DocumentDB::applySubDBConfig(const DocumentDBConfig &newConfigSnapshot, SerialNum serialNum, const ReconfigParams &params)
 {
     auto registry = _owner.getDocumentDBReferenceRegistry();
@@ -453,38 +423,19 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
     }
     ConfigComparisonResult cmpres;
     Schema::SP oldSchema;
-    bool fallbackConfig = false;
     int64_t generation = configSnapshot->getGeneration();
     {
         lock_guard guard(_configMutex);
         assert(_activeConfigSnapshot.get());
-        if (_activeConfigSnapshot.get() == configSnapshot.get() ||
-            *_activeConfigSnapshot == *configSnapshot) {
-            // generation might have changed but config is unchanged.
-            if (_state.getRejectedConfig()) {
-                // Illegal reconfig has been reverted.
-                _state.clearRejectedConfig();
-                LOG(info,
-                    "DocumentDB(%s): Config from config server accepted (reverted config)",
-                    _docTypeName.toString().c_str());
-            }
-        } else {
-            oldSchema = _activeConfigSnapshot->getSchemaSP();
-            configvalidator::Result cvr =
-                ConfigValidator::validate(ConfigValidator::Config
-                                          (*configSnapshot->getSchemaSP(),
-                                           configSnapshot->getAttributesConfig()),
-                                          ConfigValidator::Config
-                                          (*oldSchema, _activeConfigSnapshot->getAttributesConfig()),
-                                          *_historySchema);
-            DDBState::ConfigState cs = _state.calcConfigState(cvr.type());
-            if (DDBState::getRejectedConfig(cs))
-            {
-                handleRejectedConfig(configSnapshot, cvr, cs);
-                fallbackConfig = true;
-            }
-            cmpres = _activeConfigSnapshot->compare(*configSnapshot);
+        if (_state.getState() >= DDBState::State::ONLINE) {
+            configSnapshot = DocumentDBConfig::makeDelayedAttributeAspectConfig(configSnapshot, *_activeConfigSnapshot);
         }
+        if (configSnapshot->getDelayedAttributeAspects()) {
+            _state.setConfigState(DDBState::ConfigState::NEED_RESTART);
+            LOG(info, "DocumentDB(%s): Config from config server rejected: need restart",
+                _docTypeName.toString().c_str());
+        }
+        cmpres = _activeConfigSnapshot->compare(*configSnapshot);
     }
     const ReconfigParams params(cmpres);
     if (params.shouldSchemaChange()) {
@@ -494,7 +445,6 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
     bool equalReplayConfig =
         *DocumentDBConfig::makeReplayConfig(configSnapshot) ==
         *DocumentDBConfig::makeReplayConfig(_activeConfigSnapshot);
-    assert(!fallbackConfig || equalReplayConfig);
     bool tlsReplayDone = _feedHandler.getTransactionLogReplayDone();
     if (!equalReplayConfig && tlsReplayDone) {
         sync(_feedHandler.getSerialNum());
@@ -536,7 +486,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
     if (params.shouldIndexManagerChange()) {
         setIndexSchema(*configSnapshot, serialNum);
     }
-    if (!fallbackConfig) { 
+    if (!configSnapshot->getDelayedAttributeAspects()) {
         if (_state.getRejectedConfig()) {
             LOG(info, "DocumentDB(%s): Rejected config replaced with new config",
                 _docTypeName.toString().c_str());
