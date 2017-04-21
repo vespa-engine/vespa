@@ -15,12 +15,14 @@ private:
 
 public:
     ReconfigParams(const DocumentDBConfig::ComparisonResult &res);
+    bool configHasChanged() const;
     bool shouldSchemaChange() const;
     bool shouldMatchersChange() const;
     bool shouldIndexManagerChange() const;
     bool shouldAttributeManagerChange() const;
     bool shouldSummaryManagerChange() const;
     bool shouldSubDbsChange() const;
+    bool shouldMaintenanceControllerChange() const;
 };
 
 }

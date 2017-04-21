@@ -544,7 +544,9 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
         _state.clearRejectedConfig();
     }
     setActiveConfig(configSnapshot, serialNum, generation);
-    forwardMaintenanceConfig();
+    if (params.shouldMaintenanceControllerChange()) {
+        forwardMaintenanceConfig();
+    }
     _writeFilter.setConfig(configSnapshot->getMaintenanceConfigSP()->
                            getAttributeUsageFilterConfig());
 }

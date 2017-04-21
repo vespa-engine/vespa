@@ -640,6 +640,42 @@ TEST("require that attribute manager should change when imported fields has chan
     EXPECT_TRUE(params.shouldAttributeManagerChange());
 }
 
+void
+assertMaintenanceControllerShouldNotChange(DocumentDBConfig::ComparisonResult result)
+{
+    ReconfigParams params(result);
+    EXPECT_FALSE(params.configHasChanged());
+    EXPECT_FALSE(params.shouldMaintenanceControllerChange());
+}
+
+void
+assertMaintenanceControllerShouldChange(DocumentDBConfig::ComparisonResult result)
+{
+    ReconfigParams params(result);
+    EXPECT_TRUE(params.configHasChanged());
+    EXPECT_TRUE(params.shouldMaintenanceControllerChange());
+}
+
+TEST("require that maintenance controller should change if some config has changed")
+{
+    using CR = DocumentDBConfig::ComparisonResult;
+    TEST_DO(assertMaintenanceControllerShouldNotChange(CR()));
+
+    TEST_DO(assertMaintenanceControllerShouldChange(CR().setRankProfilesChanged(true)));
+    TEST_DO(assertMaintenanceControllerShouldChange(CR().setRankingConstantsChanged(true)));
+    TEST_DO(assertMaintenanceControllerShouldChange(CR().setIndexschemaChanged(true)));
+    TEST_DO(assertMaintenanceControllerShouldChange(CR().setAttributesChanged(true)));
+    TEST_DO(assertMaintenanceControllerShouldChange(CR().setSummaryChanged(true)));
+    TEST_DO(assertMaintenanceControllerShouldChange(CR().setSummarymapChanged(true)));
+    TEST_DO(assertMaintenanceControllerShouldChange(CR().setJuniperrcChanged(true)));
+    TEST_DO(assertMaintenanceControllerShouldChange(CR().setDocumenttypesChanged(true)));
+    TEST_DO(assertMaintenanceControllerShouldChange(CR().setDocumentTypeRepoChanged(true)));
+    TEST_DO(assertMaintenanceControllerShouldChange(CR().setImportedFieldsChanged(true)));
+    TEST_DO(assertMaintenanceControllerShouldChange(CR().setTuneFileDocumentDBChanged(true)));
+    TEST_DO(assertMaintenanceControllerShouldChange(CR().setSchemaChanged(true)));
+    TEST_DO(assertMaintenanceControllerShouldChange(CR().setMaintenanceChanged(true)));
+}
+
 TEST_MAIN()
 {
     TEST_RUN_ALL();
