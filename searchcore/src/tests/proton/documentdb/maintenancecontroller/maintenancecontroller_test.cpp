@@ -420,6 +420,7 @@ class MaintenanceControllerFixture : public ICommitable
 {
 public:
     MyExecutor                    _executor;
+    MyExecutor                    _genericExecutor;
     ExecutorThreadService         _threadService;
     DocTypeName                   _docTypeName;
     test::UserDocumentsBuilder    _builder;
@@ -910,6 +911,7 @@ MyExecutor::waitIdle(double timeout)
 
 MaintenanceControllerFixture::MaintenanceControllerFixture()
     : _executor(),
+      _genericExecutor(),
       _threadService(_executor),
       _docTypeName("searchdocument"), // must match document builder
       _builder(),
@@ -932,7 +934,7 @@ MaintenanceControllerFixture::MaintenanceControllerFixture()
       _readyAttributeManager(std::make_shared<MyAttributeManager>()),
       _notReadyAttributeManager(std::make_shared<MyAttributeManager>()),
       _attributeUsageFilter(),
-      _mc(_threadService, _executor, _docTypeName)
+      _mc(_threadService, _genericExecutor, _docTypeName)
 {
     std::vector<MyDocumentSubDB *> subDBs;
     subDBs.push_back(&_ready);
@@ -1492,7 +1494,7 @@ TEST_F("Require that maintenance jobs are run by correct executor", MaintenanceC
     auto jobs = f._mc.getJobList();
     EXPECT_EQUAL(6u, jobs.size());
     EXPECT_TRUE(containsJobAndExecutedBy(jobs, "heart_beat", f._threadService));
-    EXPECT_TRUE(containsJobAndExecutedBy(jobs, "prune_session_cache", f._executor));
+    EXPECT_TRUE(containsJobAndExecutedBy(jobs, "prune_session_cache", f._genericExecutor));
     EXPECT_TRUE(containsJobAndExecutedBy(jobs, "wipe_old_removed_fields", f._threadService));
     EXPECT_TRUE(containsJobAndExecutedBy(jobs, "prune_removed_documents.searchdocument", f._threadService));
     EXPECT_TRUE(containsJobAndExecutedBy(jobs, "move_buckets.searchdocument", f._threadService));
