@@ -432,7 +432,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
         }
         if (configSnapshot->getDelayedAttributeAspects()) {
             _state.setConfigState(DDBState::ConfigState::NEED_RESTART);
-            LOG(info, "DocumentDB(%s): Config from config server rejected: need restart",
+            LOG(info, "DocumentDB(%s): Delaying attribute aspect changes: need restart",
                 _docTypeName.toString().c_str());
         }
         cmpres = _activeConfigSnapshot->compare(*configSnapshot);
@@ -488,7 +488,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
     }
     if (!configSnapshot->getDelayedAttributeAspects()) {
         if (_state.getRejectedConfig()) {
-            LOG(info, "DocumentDB(%s): Rejected config replaced with new config",
+            LOG(info, "DocumentDB(%s): Stopped delaying attribute aspect changes",
                 _docTypeName.toString().c_str());
         }
         _state.clearRejectedConfig();
