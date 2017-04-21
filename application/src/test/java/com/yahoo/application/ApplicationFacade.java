@@ -155,7 +155,7 @@ public class ApplicationFacade implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         application.close();
     }
 }
