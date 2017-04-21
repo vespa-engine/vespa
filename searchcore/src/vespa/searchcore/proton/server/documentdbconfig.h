@@ -44,12 +44,12 @@ public:
         bool summaryChanged;
         bool summarymapChanged;
         bool juniperrcChanged;
-        bool _documenttypesChanged;
-        bool _documentTypeRepoChanged;
-        bool _importedFieldsChanged;
-        bool _tuneFileDocumentDBChanged;
-        bool _schemaChanged;
-        bool _maintenanceChanged;
+        bool documenttypesChanged;
+        bool documentTypeRepoChanged;
+        bool importedFieldsChanged;
+        bool tuneFileDocumentDBChanged;
+        bool schemaChanged;
+        bool maintenanceChanged;
 
         ComparisonResult();
     };

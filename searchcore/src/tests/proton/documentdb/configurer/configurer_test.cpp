@@ -506,7 +506,7 @@ TEST_F("require that we can reconfigure attribute manager", Fixture)
     ViewPtrs o = f._views.getViewPtrs();
     ConfigComparisonResult cmpres;
     cmpres.attributesChanged = true;
-    cmpres._schemaChanged = true;
+    cmpres.schemaChanged = true;
     AttributeCollectionSpec::AttributeList specList;
     AttributeCollectionSpec spec(specList, 1, 0);
     ReconfigParams params(cmpres);
@@ -540,7 +540,7 @@ TEST_F("require that reconfigure returns reprocessing initializer when changing 
 {
     ConfigComparisonResult cmpres;
     cmpres.attributesChanged = true;
-    cmpres._schemaChanged = true;
+    cmpres.schemaChanged = true;
     AttributeCollectionSpec::AttributeList specList;
     AttributeCollectionSpec spec(specList, 1, 0);
     ReconfigParams params(cmpres);
@@ -635,7 +635,7 @@ TEST_F("require that we can reconfigure matchers", Fixture)
 TEST("require that attribute manager should change when imported fields has changed")
 {
     DocumentDBConfig::ComparisonResult result;
-    result._importedFieldsChanged = true;
+    result.importedFieldsChanged = true;
     ReconfigParams params(result);
     EXPECT_TRUE(params.shouldAttributeManagerChange());
 }

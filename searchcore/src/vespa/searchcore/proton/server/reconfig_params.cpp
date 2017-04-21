@@ -16,7 +16,7 @@ ReconfigParams(const DocumentDBConfig::ComparisonResult &res)
 bool
 ReconfigParams::shouldSchemaChange() const
 {
-    return _res._schemaChanged;
+    return _res.schemaChanged;
 }
 
 bool
@@ -34,13 +34,21 @@ ReconfigParams::shouldIndexManagerChange() const
 bool
 ReconfigParams::shouldAttributeManagerChange() const
 {
-    return _res.attributesChanged || _res._importedFieldsChanged;
+    return _res.attributesChanged || _res.importedFieldsChanged;
 }
 
 bool
 ReconfigParams::shouldSummaryManagerChange() const
 {
     return _res.summaryChanged || _res.summarymapChanged || _res.juniperrcChanged;
+}
+
+bool
+ReconfigParams::shouldSubDbsChange() const
+{
+    return shouldMatchersChange()
+           || shouldAttributeManagerChange()
+           || shouldSummaryManagerChange();
 }
 
 } // namespace proton
