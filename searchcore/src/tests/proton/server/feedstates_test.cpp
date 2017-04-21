@@ -52,7 +52,6 @@ MyFeedView::~MyFeedView() {}
 
 struct MyReplayConfig : IReplayConfig {
     virtual void replayConfig(SerialNum) override {}
-    virtual void replayWipeHistory(SerialNum, fastos::TimeStamp) override {}
 };
 
 struct InstantExecutor : vespalib::Executor {

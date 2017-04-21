@@ -102,7 +102,6 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       IFeedHandlerOwner(),
       IDocumentSubDBOwner(),
       IClusterStateChangedHandler(),
-      IWipeOldRemovedFieldsHandler(),
       search::transactionlog::SyncProxy(),
       _docTypeName(docTypeName),
       _baseDir(baseDir + "/" + _docTypeName.toString()),
@@ -147,7 +146,6 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
                    _writeFilter,
                    *this,
                    tlsDirectWriter),
-      _historySchema(),
       _subDBs(*this,
               *this,
               _feedHandler,
@@ -185,14 +183,13 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
     assert(configSerial > 0);
     DocumentDBConfig::SP loaded_config;
     _config_store->loadConfig(*configSnapshot, configSerial,
-                              loaded_config, _historySchema);
+                              loaded_config);
     // Grab relevant parts from pending config
     loaded_config = DocumentDBConfigScout::scout(loaded_config,
                                                  *_pendingConfigSnapshot.get());
     // Ignore configs that are not relevant during replay of transaction log
     loaded_config = DocumentDBConfig::makeReplayConfig(loaded_config);
 
-    reconfigureSchema(*loaded_config, *loaded_config);
     _initConfigSnapshot = loaded_config;
     _initConfigSerialNum = configSerial;
     // Forward changes of cluster state to feed view via us
@@ -438,9 +435,6 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
         cmpres = _activeConfigSnapshot->compare(*configSnapshot);
     }
     const ReconfigParams params(cmpres);
-    if (params.shouldSchemaChange()) {
-        reconfigureSchema(*configSnapshot, *_activeConfigSnapshot);
-    }
     // Save config via config manager if replay is done.
     bool equalReplayConfig =
         *DocumentDBConfig::makeReplayConfig(configSnapshot) ==
@@ -449,7 +443,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
     if (!equalReplayConfig && tlsReplayDone) {
         sync(_feedHandler.getSerialNum());
         serialNum = _feedHandler.incSerialNum();
-        _config_store->saveConfig(*configSnapshot, *_historySchema, serialNum);
+        _config_store->saveConfig(*configSnapshot, serialNum);
         // save entry in transaction log
         NewConfigOperation op(serialNum, *_config_store);
         _feedHandler.storeOperation(op);
@@ -499,19 +493,6 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
     }
     _writeFilter.setConfig(configSnapshot->getMaintenanceConfigSP()->
                            getAttributeUsageFilterConfig());
-}
-
-
-void
-DocumentDB::reconfigureSchema(const DocumentDBConfig &configSnapshot,
-                              const DocumentDBConfig &oldConfigSnapshot)
-{
-    // Called by CTOR and executor thread
-    const Schema &newSchema = *configSnapshot.getSchemaSP();
-    const Schema &oldSchema = *oldConfigSnapshot.getSchemaSP();
-    Schema::SP oldHistory = _historySchema;
-    _historySchema =
-        SchemaUtil::makeHistorySchema(newSchema, oldSchema, *oldHistory);
 }
 
 
@@ -663,7 +644,7 @@ DocumentDB::saveInitialConfig(const DocumentDBConfig &configSnapshot)
         LOG(warning, "DocumentDB(%s): saveInitialConfig() failed pruning due to '%s'",
             _docTypeName.toString().c_str(), e.what());
     }
-    _config_store->saveConfig(configSnapshot, Schema(), confSerial);
+    _config_store->saveConfig(configSnapshot, confSerial);
 }
 
 
@@ -932,40 +913,6 @@ void
 DocumentDB::performWipeHistory()
 {
     // Called by executor thread
-    if (_historySchema->empty())
-        return;
-    if (_feedHandler.getTransactionLogReplayDone()) {
-        sync(_feedHandler.getSerialNum()); // Sync before wiping history
-        DocumentDBConfig::SP configSnapshot = getActiveConfig();
-        SerialNum wipeSerial = _feedHandler.incSerialNum();
-        Schema::UP newHistory(new Schema);
-        writeWipeHistoryTransactionLogEntry(wipeSerial, 0,
-                                            *configSnapshot, *newHistory);
-        internalWipeHistory(wipeSerial, std::move(newHistory));
-    }
-}
-
-
-void DocumentDB::writeWipeHistoryTransactionLogEntry(
-        SerialNum wipeSerial, fastos::TimeStamp wipeTimeLimit,
-        const DocumentDBConfig &configSnapshot,
-        const Schema &newHistorySchema) {
-    // Caller must have synced transaction log
-    _config_store->saveConfig(configSnapshot, newHistorySchema, wipeSerial);
-    // save entry in transaction log
-    WipeHistoryOperation op(wipeSerial, wipeTimeLimit);
-    _feedHandler.storeOperation(op);
-    sync(op.getSerialNum());
-}
-
-
-void
-DocumentDB::internalWipeHistory(SerialNum wipeSerial,
-                                Schema::UP newHistorySchema)
-{
-    // Called by executor thread
-    _subDBs.wipeHistory(wipeSerial);
-    _historySchema.reset(newHistorySchema.release());
 }
 
 
@@ -980,10 +927,9 @@ DocumentDB::replayConfig(search::SerialNum serialNum)
             _docTypeName.toString().c_str(), serialNum);
         return;
     }
-    // Load historyschema before applyConfig to preserve the history
-    // field timestamps.
+    // Load config to replay
     _config_store->loadConfig(*configSnapshot, serialNum,
-                            configSnapshot, _historySchema);
+                            configSnapshot);
     // Grab relevant parts from pending config
     configSnapshot = DocumentDBConfigScout::scout(configSnapshot,
                                                  *_pendingConfigSnapshot.get());
@@ -994,36 +940,6 @@ DocumentDB::replayConfig(search::SerialNum serialNum)
         "DocumentDB(%s): Replayed config with serialNum=%" PRIu64,
         _docTypeName.toString().c_str(), serialNum);
 }
-
-void
-DocumentDB::replayWipeHistory(search::SerialNum serialNum,
-                              fastos::TimeStamp wipeTimeLimit)
-{
-    // Called by executor thread
-    DocumentDBConfig::SP configSnapshot = getActiveConfig();
-    if (configSnapshot.get() == NULL) {
-        LOG(warning,
-            "DocumentDB(%s): Missing old config when replaying wipe history, serialNum=%" PRIu64,
-            _docTypeName.toString().c_str(),
-            serialNum);
-        return;
-    }
-    Schema::UP wipeSchemaOwner;
-    Schema *wipeSchema;
-    Schema::UP newHistory;
-    if (wipeTimeLimit) {
-        wipeSchemaOwner = _historySchema->getOldFields(wipeTimeLimit);
-        wipeSchema = wipeSchemaOwner.get();
-        newHistory = Schema::set_difference(*_historySchema, *wipeSchema);
-    } else {  // wipeTimeLimit == 0 means old style wipeHistory.
-        wipeSchema = _historySchema.get();
-        newHistory.reset(new Schema);
-    }
-    LOG(info, "DocumentDB(%s): Replayed history wipe with serialNum=%" PRIu64,
-        _docTypeName.toString().c_str(), serialNum);
-    internalWipeHistory(serialNum, std::move(newHistory));
-}
-
 
 void
 DocumentDB::listSchema(std::vector<vespalib::string> &fieldNames,
@@ -1087,7 +1003,6 @@ DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config)
             config,
             _feedHandler, // IHeartBeatHandler
             *_sessionManager, // ISessionCachePruner
-            *this, // IWipeOldRemovedFieldsHandler
             _lidSpaceCompactionHandlers,
             _feedHandler, // IOperationStorer
             _maintenanceController, // IFrozenBucketHandler
@@ -1197,51 +1112,6 @@ DocumentDB::notifyAllBucketsChanged()
                          _clusterStateHandler, "notready");
 }
 
-
-namespace {
-
-vespalib::string
-getSchemaFieldsList(const Schema &schema)
-{
-    vespalib::asciistream oss;
-    for (uint32_t i = 0; i < schema.getNumIndexFields(); ++i) {
-        if (i > 0) oss << ",";
-        oss << schema.getIndexField(i).getName();
-    }
-    for (uint32_t i = 0; i < schema.getNumAttributeFields(); ++i) {
-        if (!oss.str().empty()) oss << ",";
-        oss << schema.getAttributeField(i).getName();
-    }
-    return oss.str();
-}
-
-}
-
-void
-DocumentDB::wipeOldRemovedFields(fastos::TimeStamp wipeTimeLimit)
-{
-    // Called by executor thread
-
-    if (_historySchema->empty())
-        return;
-    DocumentDBConfig::SP configSnapshot = getActiveConfig();
-
-    Schema::UP wipeSchema = _historySchema->getOldFields(wipeTimeLimit);
-    Schema::UP newHistorySchema =
-        Schema::set_difference(*_historySchema, *wipeSchema);
-
-    sync(_feedHandler.getSerialNum()); // Sync before wiping history
-    SerialNum wipeSerial = _feedHandler.incSerialNum();
-    writeWipeHistoryTransactionLogEntry(wipeSerial, wipeTimeLimit,
-                                        *configSnapshot, *newHistorySchema);
-    internalWipeHistory(wipeSerial, std::move(newHistorySchema));
-
-    LOG(debug, "DocumentDB(%s): Done wipeOldRemovedFields: wipe(%s), history(%s) timeLimit(%" PRIu64 ")",
-        _docTypeName.toString().c_str(),
-        getSchemaFieldsList(*wipeSchema).c_str(),
-        getSchemaFieldsList(*_historySchema).c_str(),
-        static_cast<uint64_t>(wipeTimeLimit.sec()));
-}
 
 searchcorespi::IIndexManagerFactory::SP
 DocumentDB::getIndexManagerFactory(const vespalib::stringref &name) const

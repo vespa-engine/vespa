@@ -195,14 +195,12 @@ struct MySessionCachePruner : public ISessionCachePruner
 class MyFeedHandler : public IDocumentMoveHandler,
                       public IPruneRemovedDocumentsHandler,
                       public IHeartBeatHandler,
-                      public IWipeOldRemovedFieldsHandler,
                       public IOperationStorer
 {
     FastOS_ThreadId                _executorThreadId;
     std::vector<MyDocumentSubDB *> _subDBs;
     SerialNum                      _serialNum;
     uint32_t                       _heartBeats;
-    fastos::TimeStamp              _wipeTimeLimit;
 public:
     MyFeedHandler(FastOS_ThreadId &executorThreadId);
 
@@ -221,9 +219,6 @@ public:
     virtual void
     heartBeat() override;
 
-    virtual void
-    wipeOldRemovedFields(TimeStamp wipeTimeLimit) override;
-
     void
     setSubDBs(const std::vector<MyDocumentSubDB *> &subDBs);
 
@@ -241,12 +236,6 @@ public:
     getHeartBeats()
     {
         return _heartBeats;
-    }
-
-    fastos::TimeStamp
-    getWipeTimeLimit()
-    {
-        return _wipeTimeLimit;
     }
 };
 
@@ -499,7 +488,6 @@ public:
             newCfg(new DocumentDBMaintenanceConfig(
                            pruneConfig,
                            _mcCfg->getHeartBeatConfig(),
-                           _mcCfg->getWipeOldRemovedFieldsConfig(),
                            _mcCfg->getSessionCachePruneInterval(),
                            _mcCfg->getVisibilityDelay(),
                            _mcCfg->getLidSpaceCompactionConfig(),
@@ -517,7 +505,6 @@ public:
             newCfg(new DocumentDBMaintenanceConfig(
                            _mcCfg->getPruneRemovedDocumentsConfig(),
                            heartBeatConfig,
-                           _mcCfg->getWipeOldRemovedFieldsConfig(),
                            _mcCfg->getSessionCachePruneInterval(),
                            _mcCfg->getVisibilityDelay(),
                            _mcCfg->getLidSpaceCompactionConfig(),
@@ -527,25 +514,6 @@ public:
         _mcCfg = newCfg;
         forwardMaintenanceConfig();
     }
-
-    void
-    setWipeOldRemovedFieldsConfig(const DocumentDBWipeOldRemovedFieldsConfig &wipeConfig)
-    {
-        DocumentDBMaintenanceConfig::SP
-            newCfg(new DocumentDBMaintenanceConfig(
-                           _mcCfg->getPruneRemovedDocumentsConfig(),
-                           _mcCfg->getHeartBeatConfig(),
-                           wipeConfig,
-                           _mcCfg->getSessionCachePruneInterval(),
-                           _mcCfg->getVisibilityDelay(),
-                           _mcCfg->getLidSpaceCompactionConfig(),
-                           _mcCfg->getAttributeUsageFilterConfig(),
-                           _mcCfg->getAttributeUsageSampleInterval(),
-                           _mcCfg->getResourceLimitFactor()));
-        _mcCfg = newCfg;
-        forwardMaintenanceConfig();
-    }
-
 
     void
     setGroupingSessionPruneInterval(double groupingSessionPruneInterval)
@@ -554,7 +522,6 @@ public:
             newCfg(new DocumentDBMaintenanceConfig(
                            _mcCfg->getPruneRemovedDocumentsConfig(),
                            _mcCfg->getHeartBeatConfig(),
-                           _mcCfg->getWipeOldRemovedFieldsConfig(),
                            groupingSessionPruneInterval,
                            _mcCfg->getVisibilityDelay(),
                            _mcCfg->getLidSpaceCompactionConfig(),
@@ -570,7 +537,6 @@ public:
             newCfg(new DocumentDBMaintenanceConfig(
                            _mcCfg->getPruneRemovedDocumentsConfig(),
                            _mcCfg->getHeartBeatConfig(),
-                           _mcCfg->getWipeOldRemovedFieldsConfig(),
                            _mcCfg->getSessionCachePruneInterval(),
                            _mcCfg->getVisibilityDelay(),
                            cfg,
@@ -790,8 +756,7 @@ MyFeedHandler::MyFeedHandler(FastOS_ThreadId &executorThreadId)
       _executorThreadId(executorThreadId),
       _subDBs(),
       _serialNum(0u),
-      _heartBeats(0u),
-      _wipeTimeLimit()
+      _heartBeats(0u)
 {
 }
 
@@ -845,14 +810,6 @@ MyFeedHandler::heartBeat()
 {
     assert(isExecutorThread());
     ++_heartBeats;
-}
-
-
-void
-MyFeedHandler::wipeOldRemovedFields(fastos::TimeStamp wipeTimeLimit)
-{
-    assert(isExecutorThread());
-    _wipeTimeLimit = wipeTimeLimit;
 }
 
 
@@ -1000,7 +957,7 @@ void
 MaintenanceControllerFixture::injectMaintenanceJobs()
 {
     if (_injectDefaultJobs) {
-        MaintenanceJobsInjector::injectJobs(_mc, *_mcCfg, _fh, _gsp, _fh,
+        MaintenanceJobsInjector::injectJobs(_mc, *_mcCfg, _fh, _gsp,
                                             _lscHandlers, _fh, _mc, _docTypeName.getName(),
                                             _fh, _fh, _bmc, _clusterStateHandler, _bucketHandler,
                                             _calc,
@@ -1224,38 +1181,6 @@ TEST_F("require that periodic session prunings are scheduled",
     ASSERT_TRUE(f._gsp.isInvoked);
 }
 
-TEST_F("require that wipe old removed fields are scheduled",
-       MaintenanceControllerFixture)
-{
-    f.notifyClusterStateChanged();
-    f.startMaintenance();
-    TimeStamp now0 = TimeStamp(ClockSystem::now());
-    f.setWipeOldRemovedFieldsConfig(DocumentDBWipeOldRemovedFieldsConfig(0.2, 100));
-    TimeStamp now = TimeStamp(ClockSystem::now());
-    TimeStamp expWipeTimeLimit = now - TimeStamp(100 * TimeStamp::SEC);
-    TimeStamp wtLim;
-    for (uint32_t i = 0; i < 600; ++i) {
-        FastOS_Thread::Sleep(100);
-        wtLim = f._fh.getWipeTimeLimit();
-        if (wtLim.sec() != 0u) {
-            break;
-        }
-    }
-    TimeStamp now1 = TimeStamp(ClockSystem::now());
-    double fuzz = now1.sec() - now0.sec();
-    LOG(info,
-        "WipeOldRemovedFields: "
-        "now(%" PRIu64 "), "
-        "expWipeTimeLimit(%" PRIu64 "), "
-        "actWipeTimeLimit(%" PRIu64 "), "
-        "fuzz(%05.3f)",
-        (uint64_t)now.sec(),
-        (uint64_t)expWipeTimeLimit.sec(),
-        (uint64_t)wtLim.sec(),
-        fuzz);
-    EXPECT_APPROX(expWipeTimeLimit.sec(), wtLim.sec(), 4u + fuzz);
-}
-
 TEST_F("require that active bucket is not moved until de-activated", MaintenanceControllerFixture)
 {
     f._builder.createDocs(1, 1, 4); // 3 docs
@@ -1477,13 +1402,13 @@ TEST_F("require that lid space compaction jobs can be disabled", MaintenanceCont
     f.forwardMaintenanceConfig();
     {
         auto jobs = f._mc.getJobList();
-        EXPECT_EQUAL(7u, jobs.size());
+        EXPECT_EQUAL(6u, jobs.size());
         EXPECT_TRUE(containsJob(jobs, "lid_space_compaction.my_handler"));
     }
     f.setLidSpaceCompactionConfig(DocumentDBLidSpaceCompactionConfig::createDisabled());
     {
         auto jobs = f._mc.getJobList();
-        EXPECT_EQUAL(6u, jobs.size());
+        EXPECT_EQUAL(5u, jobs.size());
         EXPECT_FALSE(containsJob(jobs, "lid_space_compaction.my_handler"));
     }
 }
@@ -1492,10 +1417,9 @@ TEST_F("Require that maintenance jobs are run by correct executor", MaintenanceC
 {
     f.injectMaintenanceJobs();
     auto jobs = f._mc.getJobList();
-    EXPECT_EQUAL(6u, jobs.size());
+    EXPECT_EQUAL(5u, jobs.size());
     EXPECT_TRUE(containsJobAndExecutedBy(jobs, "heart_beat", f._threadService));
     EXPECT_TRUE(containsJobAndExecutedBy(jobs, "prune_session_cache", f._genericExecutor));
-    EXPECT_TRUE(containsJobAndExecutedBy(jobs, "wipe_old_removed_fields", f._threadService));
     EXPECT_TRUE(containsJobAndExecutedBy(jobs, "prune_removed_documents.searchdocument", f._threadService));
     EXPECT_TRUE(containsJobAndExecutedBy(jobs, "move_buckets.searchdocument", f._threadService));
     EXPECT_TRUE(containsJobAndExecutedBy(jobs, "sample_attribute_usage.searchdocument", f._threadService));

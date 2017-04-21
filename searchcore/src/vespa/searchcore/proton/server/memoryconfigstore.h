@@ -12,7 +12,6 @@ namespace proton {
 struct ConfigMaps {
     typedef std::shared_ptr<ConfigMaps> SP;
     std::map<search::SerialNum, DocumentDBConfig::SP> configs;
-    std::map<search::SerialNum, search::index::Schema::SP> histories;
     std::set<search::SerialNum> _valid;
 };
 
@@ -32,14 +31,11 @@ public:
     virtual bool hasValidSerial(SerialNum serial) const override;
     virtual SerialNum getPrevValidSerial(SerialNum serial) const override;
     virtual void saveConfig(const DocumentDBConfig &config,
-                            const Schema &history,
                             SerialNum serial) override;
     virtual void loadConfig(const DocumentDBConfig &, SerialNum serial,
-                            DocumentDBConfig::SP &loaded_config,
-                            Schema::SP &history_schema) override;
+                            DocumentDBConfig::SP &loaded_config) override;
     virtual void removeInvalid() override;
     void prune(SerialNum serial) override;
-    virtual void saveWipeHistoryConfig(SerialNum serial, fastos::TimeStamp wipeTimeLimit) override;
     virtual void serializeConfig(SerialNum, vespalib::nbostream &) override;
     virtual void deserializeConfig(SerialNum, vespalib::nbostream &) override;
     virtual void setProtonConfig(const ProtonConfigSP &) override;

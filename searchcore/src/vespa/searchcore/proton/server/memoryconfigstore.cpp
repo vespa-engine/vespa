@@ -33,21 +33,17 @@ MemoryConfigStore::getPrevValidSerial(SerialNum serial) const {
 }
 void
 MemoryConfigStore::saveConfig(const DocumentDBConfig &config,
-                              const Schema &history,
                               SerialNum serial)
 {
     _maps->configs[serial].reset(new DocumentDBConfig(config));
-    _maps->histories[serial].reset(new Schema(history));
     _maps->_valid.insert(serial);
 }
 void
 MemoryConfigStore::loadConfig(const DocumentDBConfig &, SerialNum serial,
-                              DocumentDBConfig::SP &loaded_config,
-                              Schema::SP &history_schema)
+                              DocumentDBConfig::SP &loaded_config)
 {
     assert(hasValidSerial(serial));
     loaded_config = _maps->configs[serial];
-    history_schema = _maps->histories[serial];
 }
 void
 MemoryConfigStore::removeInvalid()
@@ -60,44 +56,16 @@ MemoryConfigStore::removeInvalid()
         }
         ++it;
     }
-    for (auto it = _maps->histories.begin();
-         it != _maps->histories.end();) {
-        if (!hasValidSerial(it->first)) {
-            it = _maps->histories.erase(it);
-            continue;
-        }
-        ++it;
-    }
 }
+
 void
 MemoryConfigStore::prune(SerialNum serial) {
     _maps->configs.erase(_maps->configs.begin(),
                          _maps->configs.upper_bound(serial));
-    _maps->histories.erase(_maps->histories.begin(),
-                           _maps->histories.upper_bound(serial));
     _maps->_valid.erase(_maps->_valid.begin(),
                         _maps->_valid.upper_bound(serial));
 }
-void
-MemoryConfigStore::saveWipeHistoryConfig(SerialNum serial,
-                                   fastos::TimeStamp wipeTimeLimit)
-{
-    if (hasValidSerial(serial)) {
-        return;
-    }
-    SerialNum prev = getPrevValidSerial(serial);
-    Schema::SP schema(new Schema);
-    if (wipeTimeLimit != 0) {
-        Schema::SP oldHistorySchema(_maps->histories[prev]);
-        Schema::UP wipeSchema;
-        wipeSchema = oldHistorySchema->getOldFields(wipeTimeLimit);
-        schema.reset(Schema::set_difference(*oldHistorySchema, *wipeSchema).release());
-        
-    }
-    _maps->histories[serial] = schema;
-    _maps->configs[serial] = _maps->configs[prev];
-    _maps->_valid.insert(serial);
-}
+
 void
 MemoryConfigStore::serializeConfig(SerialNum, vespalib::nbostream &) {
     LOG(info, "Serialization of config not implemented.");

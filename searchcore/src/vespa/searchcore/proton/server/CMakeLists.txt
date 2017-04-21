@@ -97,7 +97,6 @@ vespa_add_library(searchcore_server STATIC
     transactionlogmanagerbase.cpp
     updatedonecontext.cpp
     visibilityhandler.cpp
-    wipe_old_removed_fields_job.cpp
     DEPENDS
     searchcore_attribute
     searchcore_bucketdb

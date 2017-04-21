@@ -298,7 +298,6 @@ FileConfigManager::getOldestSerialNum(void) const
 
 void
 FileConfigManager::saveConfig(const DocumentDBConfig &snapshot,
-                              const search::index::Schema &historySchema,
                               SerialNum serialNum)
 {
     if (getBestSerialNum() >= serialNum) {
@@ -325,10 +324,6 @@ FileConfigManager::saveConfig(const DocumentDBConfig &snapshot,
     bool saveSchemaRes = snapshot.getSchemaSP()->saveToFile(snapDir + "/schema.txt");
     assert(saveSchemaRes);
     (void) saveSchemaRes;
-
-    bool saveHistorySchemaRes = historySchema.saveToFile(snapDir + "/historyschema.txt");
-    assert(saveHistorySchemaRes);
-    (void) saveHistorySchemaRes;
 
     writeExtraConfigs(snapDir, snapshot);
     _info.validateSnapshot(serialNum);
@@ -361,8 +356,7 @@ void addEmptyFile(vespalib::string snapDir, vespalib::string fileName)
 void
 FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
                               search::SerialNum serialNum,
-                              DocumentDBConfig::SP &loadedSnapshot,
-                              search::index::Schema::SP &historySchema)
+                              DocumentDBConfig::SP &loadedSnapshot)
 {
     vespalib::string snapDirBaseName(makeSnapDirBaseName(serialNum));
     vespalib::string snapDir(_baseDir + "/" + snapDirBaseName);
@@ -404,15 +398,9 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
     dbc.forwardConfig(bootstrap);
     dbc.nextGeneration(0);
 
-    Schema::UP newHistorySchema(new Schema);
-    bool loadHistorySchemaRes = newHistorySchema->loadFromFile(snapDir + "/historyschema.txt");
-    assert(loadHistorySchemaRes);
-    (void) loadHistorySchemaRes;
-
     loadedSnapshot = dbc.getConfig();
     loadedSnapshot->setConfigId(_configId);
     loadedSnapshot->setExtraConfigs(readExtraConfigs(snapDir));
-    historySchema.reset(newHistorySchema.release());
 }
 
 
@@ -494,65 +482,6 @@ FileConfigManager::getPrevValidSerial(SerialNum serialNum) const
             res = snap.syncToken;
     }
     return res;
-}
-
-
-void
-FileConfigManager::saveWipeHistoryConfig(SerialNum serialNum,
-                                         fastos::TimeStamp wipeTimeLimit)
-{
-    vespalib::string snapDirBaseName(makeSnapDirBaseName(serialNum));
-    vespalib::string snapDir(_baseDir + "/" + snapDirBaseName);
-
-    if (hasValidSerial(serialNum))
-        return;	// config already saved.
-
-    SerialNum prevSerialNum = getPrevValidSerial(serialNum);
-
-    assert(prevSerialNum > 0);
-
-    Snapshot snap(false, serialNum, snapDirBaseName);
-    _info.addSnapshot(snap);
-
-    bool saveInvalidSnap = _info.save();
-    assert(saveInvalidSnap);
-    (void) saveInvalidSnap;
-
-    vespalib::mkdir(snapDir, false);
-
-    vespalib::string prevSnapDirBaseName(makeSnapDirBaseName(prevSerialNum));
-    vespalib::string prevSnapDir(_baseDir + "/" + prevSnapDirBaseName);
-
-    std::vector<vespalib::string> configs = getFileList(prevSnapDir);
-    for (const auto &config : configs) {
-        if (config == "historyschema.txt") {
-            Schema::UP historySchema(new Schema);
-            if (wipeTimeLimit != 0) {
-                Schema oldHistorySchema;
-                bool loadOldHistorySchemaRes =
-                    oldHistorySchema.loadFromFile(prevSnapDir +
-                                                   "/historyschema.txt");
-                assert(loadOldHistorySchemaRes);
-                (void) loadOldHistorySchemaRes;
-                Schema::UP wipeSchema;
-                wipeSchema = oldHistorySchema.getOldFields(wipeTimeLimit);
-                historySchema = Schema::set_difference(oldHistorySchema,
-                                                       *wipeSchema);
-            }
-            bool saveHistorySchemaRes =
-                historySchema->saveToFile(snapDir + "/historyschema.txt");
-            assert(saveHistorySchemaRes);
-            (void) saveHistorySchemaRes;
-            continue;
-        }
-        ConfigFile file(config,
-                        prevSnapDir + "/" + config);
-        file.save(snapDir);
-    }
-    _info.validateSnapshot(serialNum);
-    bool saveValidSnap = _info.save();
-    assert(saveValidSnap);
-    (void) saveValidSnap;
 }
 
 

@@ -9,8 +9,6 @@ namespace proton {
 struct FeedConfigStore : NewConfigOperation::IStreamHandler {
     virtual ~FeedConfigStore() {}
 
-    virtual void saveWipeHistoryConfig(search::SerialNum,
-                                       fastos::TimeStamp wipeTimeLimit) = 0;
 };
 
 }  // namespace proton

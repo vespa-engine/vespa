@@ -40,7 +40,6 @@ public:
     virtual SerialNum getOldestSerialNum() const override;
 
     virtual void saveConfig(const DocumentDBConfig &snapshot,
-                            const search::index::Schema &historySchema,
                             SerialNum serialNum) override;
 
     /**
@@ -53,27 +52,16 @@ public:
      * @param serialNum the serial number of the config snapshot to load.
      * @param loadedSnapshot the shared pointer in which to store the
      *                       resulting config snapshot.
-     * @param historySchema the shared pointer in which to store the
-     *                      resulting history schema.
      */
     virtual void loadConfig(const DocumentDBConfig &currentSnapshot,
                             SerialNum serialNum,
-                            DocumentDBConfig::SP &loadedSnapshot,
-                            search::index::Schema::SP &historySchema) override;
+                            DocumentDBConfig::SP &loadedSnapshot) override;
 
     virtual void removeInvalid() override;
     virtual void prune(SerialNum serialNum) override;
     virtual bool hasValidSerial(SerialNum serialNum) const override;
 
     virtual SerialNum getPrevValidSerial(SerialNum serialNum) const override;
-
-    /**
-     * Clone config except for history schema.
-     * Used when wiping history.
-     */
-    virtual void saveWipeHistoryConfig(SerialNum serialNum,
-                                       fastos::TimeStamp wipeTimeLimit) override;
-
 
     /**
      * Serialize config files.

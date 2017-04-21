@@ -15,10 +15,6 @@ public:
 
     virtual void
     replayConfig(search::SerialNum serialNum) = 0;
-
-    virtual void
-    replayWipeHistory(search::SerialNum serialNum,
-                      fastos::TimeStamp wipeTimeLimit) = 0;
 };
 
 } // namespace proton

@@ -139,7 +139,6 @@ struct MyResourceWriteFilter : public IResourceWriteFilter
 
 struct MyReplayConfig : public IReplayConfig {
     virtual void replayConfig(SerialNum) override {}
-    virtual void replayWipeHistory(SerialNum, fastos::TimeStamp) override {}
 };
 
 void ackToken(FeedToken *token) {
@@ -480,17 +479,13 @@ struct FeedHandlerFixture
 struct MyConfigStore : ConfigStore {
     virtual SerialNum getBestSerialNum() const override { return 1; }
     virtual SerialNum getOldestSerialNum() const override { return 1; }
-    virtual void saveConfig(const DocumentDBConfig &,
-                            const search::index::Schema &, SerialNum) override {}
+    virtual void saveConfig(const DocumentDBConfig &, SerialNum) override {}
     virtual void loadConfig(const DocumentDBConfig &, SerialNum,
-                            DocumentDBConfig::SP &,
-                            search::index::Schema::SP &) override {}
+                            DocumentDBConfig::SP &) override {}
     virtual void removeInvalid() override {}
     void prune(SerialNum) override {}
     virtual bool hasValidSerial(SerialNum) const override { return true; }
     virtual SerialNum getPrevValidSerial(SerialNum) const override { return 1; }
-    virtual void saveWipeHistoryConfig(SerialNum,
-                                       fastos::TimeStamp) override {}
     virtual void serializeConfig(SerialNum, vespalib::nbostream &) override {}
     virtual void deserializeConfig(SerialNum, vespalib::nbostream &) override {}
     virtual void setProtonConfig(const ProtonConfigSP &) override { }

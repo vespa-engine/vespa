@@ -6,7 +6,6 @@
 #include "i_lid_space_compaction_handler.h"
 #include "i_operation_storer.h"
 #include "iheartbeathandler.h"
-#include "iwipeoldremovedfieldshandler.h"
 #include "icommitable.h"
 #include <vespa/searchcore/proton/matching/isessioncachepruner.h>
 #include <vespa/searchcore/proton/metrics/documentdb_job_trackers.h>
@@ -34,7 +33,6 @@ struct MaintenanceJobsInjector
                            const DocumentDBMaintenanceConfig &config,
                            IHeartBeatHandler &hbHandler,
                            matching::ISessionCachePruner &scPruner,
-                           IWipeOldRemovedFieldsHandler &worfHandler,
                            const ILidSpaceCompactionHandler::Vector &lscHandlers,
                            IOperationStorer &opStorer,
                            IFrozenBucketHandler &fbHandler,
