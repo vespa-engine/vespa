@@ -91,6 +91,8 @@ MaintenanceController::killJobs()
     for (auto &job : _jobs) {
         job->stop(); // Make sure no more tasks are added to the executor
     }
+    _defaultExecutor.sync();
+    _defaultExecutor.sync();
     if (_masterThread.isCurrentThread()) {
         JobList tmpJobs = _jobs;
         {
@@ -105,8 +107,6 @@ MaintenanceController::killJobs()
         // task to the executor as it might not see the new value of the stopped flag.
         _masterThread.sync();
         _masterThread.sync();
-        _defaultExecutor.sync();
-        _defaultExecutor.sync();
         // Clear jobs in master write thread, to avoid races
         _masterThread.execute(makeTask(makeClosure(this, &MaintenanceController::performClearJobs)));
         _masterThread.sync();
