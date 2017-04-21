@@ -715,13 +715,6 @@ DocumentDB::getAllowPrune(void) const
 }
 
 
-bool
-DocumentDB::isFeedBlockedByRejectedConfig()
-{
-    return _state.isFeedBlockedByRejectedConfig();
-}
-
-
 void
 DocumentDB::start()
 {

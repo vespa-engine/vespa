@@ -202,7 +202,6 @@ private:
      */
     virtual void onTransactionLogReplayDone() override __attribute__((noinline));
     virtual void onPerformPrune(SerialNum flushedSerial) override;
-    virtual bool isFeedBlockedByRejectedConfig() override;
 
     /**
      * Implements IFeedHandlerOwner

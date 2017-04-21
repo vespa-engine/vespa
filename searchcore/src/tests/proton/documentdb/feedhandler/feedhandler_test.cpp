@@ -97,13 +97,11 @@ struct Rendezvous {
 
 struct MyOwner : public IFeedHandlerOwner
 {
-    bool rejected_config;
     bool _allowPrune;
     int wipe_history_count;
     
     MyOwner()
         :
-        rejected_config(false),
         _allowPrune(false),
         wipe_history_count(0)
     {
@@ -114,7 +112,6 @@ struct MyOwner : public IFeedHandlerOwner
     }
     virtual void enterRedoReprocessState() override {}
     virtual void onPerformPrune(SerialNum) override {}
-    virtual bool isFeedBlockedByRejectedConfig() override { return rejected_config; }
 
     virtual bool
     getAllowPrune(void) const override
@@ -512,43 +509,6 @@ TEST_F("require that heartBeat calls FeedView's heartBeat",
 {
     f.runAsMaster([&]() { f.handler.heartBeat(); });
     EXPECT_EQUAL(1, f.feedView.heartbeat_count);
-}
-
-TEST_F("require that rejected config disables operations and heartbeat",
-       FeedHandlerFixture)
-{
-    f.owner.rejected_config = true;
-    f.handler.changeToNormalFeedState();
-    f.owner._allowPrune = true;
-
-    DocumentContext doc_context("doc:test:foo", *f.schema.builder);
-    FeedOperation::UP op(new PutOperation(doc_context.bucketId,
-                                          Timestamp(10), doc_context.doc));
-    FeedTokenContext token1;
-    f.handler.performOperation(std::move(token1.token_ap), std::move(op));
-    EXPECT_EQUAL(0, f.feedView.put_count);
-    EXPECT_EQUAL(Result::PERMANENT_ERROR, token1.getResult()->getErrorCode());
-
-    FeedTokenContext token2(DocumentProtocol::REPLY_REMOVEDOCUMENT);
-    op.reset(new RemoveOperation(doc_context.bucketId, Timestamp(10),
-                                 doc_context.doc->getId()));
-    f.handler.performOperation(std::move(token2.token_ap), std::move(op));
-    EXPECT_EQUAL(0, f.feedView.remove_count);
-    EXPECT_TRUE(dynamic_cast<const RemoveResult *>(token2.getResult()));
-    EXPECT_EQUAL(Result::PERMANENT_ERROR, token2.getResult()->getErrorCode());
-
-    FeedTokenContext token3(DocumentProtocol::REPLY_UPDATEDOCUMENT);
-    op.reset(new UpdateOperation(doc_context.bucketId, Timestamp(10),
-                                 document::DocumentUpdate::SP()));
-    f.handler.performOperation(std::move(token3.token_ap), std::move(op));
-    EXPECT_EQUAL(0, f.feedView.update_count);
-    EXPECT_TRUE(dynamic_cast<const UpdateResult *>(token3.getResult()));
-    EXPECT_EQUAL(Result::PERMANENT_ERROR, token3.getResult()->getErrorCode());
-
-    f.runAsMaster([&]() { f.handler.heartBeat(); });
-    EXPECT_EQUAL(0, f.feedView.heartbeat_count);
-
-    EXPECT_EQUAL(0, f.tls_writer.store_count);
 }
 
 TEST_F("require that outdated remove is ignored", FeedHandlerFixture)

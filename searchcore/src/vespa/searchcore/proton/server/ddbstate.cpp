@@ -5,7 +5,6 @@
 LOG_SETUP(".proton.server.ddbstate");
 
 #include "ddbstate.h"
-using proton::configvalidator::ResultType;
 
 
 namespace proton {
@@ -26,8 +25,7 @@ std::vector<vespalib::string> DDBState::_stateNames =
 std::vector<vespalib::string> DDBState::_configStateNames =
 {
     "OK",
-    "NEED_RESTART",
-    "REJECT"
+    "NEED_RESTART"
 };
 
 DDBState::DDBState()
@@ -161,32 +159,6 @@ void
 DDBState::clearRejectedConfig()
 {
     setConfigState(ConfigState::OK);
-}
-
-
-DDBState::ConfigState
-DDBState::calcConfigState(const ResultType &cvr)
-{
-    if (_state < State::APPLY_LIVE_CONFIG) {
-        // Config has been accepted, placed in transaction log and
-        // activated by earlier instance. Rejecting config would cause
-        // a divergent state.
-        return ConfigState::OK;
-    }
-    switch (cvr) {
-    case ResultType::OK:
-        return ConfigState::OK;
-    case ResultType::ATTRIBUTE_ASPECT_ADDED:
-    case ResultType::ATTRIBUTE_FAST_ACCESS_ADDED:
-    case ResultType::ATTRIBUTE_ASPECT_REMOVED:
-    case ResultType::ATTRIBUTE_FAST_ACCESS_REMOVED:
-        if (_state == State::APPLY_LIVE_CONFIG) {
-            return ConfigState::OK;
-        }
-        return ConfigState::NEED_RESTART;
-    default:
-        return ConfigState::REJECT;
-    }
 }
 
 

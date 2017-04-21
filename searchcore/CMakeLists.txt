@@ -84,7 +84,6 @@ vespa_define_module(
     src/tests/proton/documentdb/clusterstatehandler
     src/tests/proton/documentdb/combiningfeedview
     src/tests/proton/documentdb/configurer
-    src/tests/proton/documentdb/configvalidator
     src/tests/proton/documentdb/document_scan_iterator
     src/tests/proton/documentdb/document_subdbs
     src/tests/proton/documentdb/documentbucketmover

@@ -21,7 +21,6 @@ tests/proton/documentdb/buckethandler
 tests/proton/documentdb/clusterstatehandler
 tests/proton/documentdb/combiningfeedview
 tests/proton/documentdb/configurer
-tests/proton/documentdb/configvalidator
 tests/proton/documentdb/document_scan_iterator
 tests/proton/documentdb/document_subdbs
 tests/proton/documentdb/documentbucketmover
