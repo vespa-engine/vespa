@@ -349,8 +349,8 @@ struct FixtureBase
 	    MyConfigSnapshot::UP newCfg(new MyConfigSnapshot(reconfigSchema, reconfigConfigDir));
 	    DocumentDBConfig::ComparisonResult cmpResult;
 	    cmpResult.attributesChanged = true;
-	    cmpResult._documenttypesChanged = true;
-	    cmpResult._documentTypeRepoChanged = true;
+	    cmpResult.documenttypesChanged = true;
+	    cmpResult.documentTypeRepoChanged = true;
 		MyDocumentDBReferenceResolver resolver;
 	    IReprocessingTask::List tasks =
 	            _subDb.applyConfig(*newCfg->_cfg,

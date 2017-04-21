@@ -44,14 +44,27 @@ public:
         bool summaryChanged;
         bool summarymapChanged;
         bool juniperrcChanged;
-        bool _documenttypesChanged;
-        bool _documentTypeRepoChanged;
-        bool _importedFieldsChanged;
-        bool _tuneFileDocumentDBChanged;
-        bool _schemaChanged;
-        bool _maintenanceChanged;
+        bool documenttypesChanged;
+        bool documentTypeRepoChanged;
+        bool importedFieldsChanged;
+        bool tuneFileDocumentDBChanged;
+        bool schemaChanged;
+        bool maintenanceChanged;
 
         ComparisonResult();
+        ComparisonResult &setRankProfilesChanged(bool val) { rankProfilesChanged = val; return *this; }
+        ComparisonResult &setRankingConstantsChanged(bool val) { rankingConstantsChanged = val; return *this; }
+        ComparisonResult &setIndexschemaChanged(bool val) { indexschemaChanged = val; return *this; }
+        ComparisonResult &setAttributesChanged(bool val) { attributesChanged = val; return *this; }
+        ComparisonResult &setSummaryChanged(bool val) { summaryChanged = val; return *this; }
+        ComparisonResult &setSummarymapChanged(bool val) { summarymapChanged = val; return *this; }
+        ComparisonResult &setJuniperrcChanged(bool val) { juniperrcChanged = val; return *this; }
+        ComparisonResult &setDocumenttypesChanged(bool val) { documenttypesChanged = val; return *this; }
+        ComparisonResult &setDocumentTypeRepoChanged(bool val) { documentTypeRepoChanged = val; return *this; }
+        ComparisonResult &setImportedFieldsChanged(bool val) { importedFieldsChanged = val; return *this; }
+        ComparisonResult &setTuneFileDocumentDBChanged(bool val) { tuneFileDocumentDBChanged = val; return *this; }
+        ComparisonResult &setSchemaChanged(bool val) { schemaChanged = val; return *this; }
+        ComparisonResult &setMaintenanceChanged(bool val) { maintenanceChanged = val; return *this; }
     };
 
     using SP = std::shared_ptr<DocumentDBConfig>;

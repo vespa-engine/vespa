@@ -34,12 +34,12 @@ DocumentDBConfig::ComparisonResult::ComparisonResult()
       summaryChanged(false),
       summarymapChanged(false),
       juniperrcChanged(false),
-      _documenttypesChanged(false),
-      _documentTypeRepoChanged(false),
-      _importedFieldsChanged(false),
-      _tuneFileDocumentDBChanged(false),
-      _schemaChanged(false),
-      _maintenanceChanged(false)
+      documenttypesChanged(false),
+      documentTypeRepoChanged(false),
+      importedFieldsChanged(false),
+      tuneFileDocumentDBChanged(false),
+      schemaChanged(false),
+      maintenanceChanged(false)
 { }
 
 DocumentDBConfig::DocumentDBConfig(
@@ -156,18 +156,18 @@ DocumentDBConfig::compare(const DocumentDBConfig &rhs) const
         !equals<SummarymapConfig>(_summarymap.get(), rhs._summarymap.get());
     retval.juniperrcChanged =
         !equals<JuniperrcConfig>(_juniperrc.get(), rhs._juniperrc.get());
-    retval._documenttypesChanged =
+    retval.documenttypesChanged =
         !equals<DocumenttypesConfig>(_documenttypes.get(),
                 rhs._documenttypes.get());
-    retval._documentTypeRepoChanged = _repo.get() != rhs._repo.get();
-    retval._importedFieldsChanged =
+    retval.documentTypeRepoChanged = _repo.get() != rhs._repo.get();
+    retval.importedFieldsChanged =
             !equals<ImportedFieldsConfig >(_importedFields.get(), rhs._importedFields.get());
-    retval._tuneFileDocumentDBChanged =
+    retval.tuneFileDocumentDBChanged =
         !equals<TuneFileDocumentDB>(_tuneFileDocumentDB.get(),
                 rhs._tuneFileDocumentDB.get());
-    retval._schemaChanged =
+    retval.schemaChanged =
         !equals<Schema>(_schema.get(), rhs._schema.get());
-    retval._maintenanceChanged =
+    retval.maintenanceChanged =
         !equals<DocumentDBMaintenanceConfig>(_maintenance.get(),
                 rhs._maintenance.get());
     return retval;

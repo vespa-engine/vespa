@@ -48,11 +48,11 @@ using searchcorespi::index::IThreadingService;
 using proton::test::MockGidToLidChangeHandler;
 
 
-typedef DocumentDBConfig::ComparisonResult ConfigComparisonResult;
-typedef SearchableDocSubDBConfigurer Configurer;
-typedef std::unique_ptr<SearchableDocSubDBConfigurer> ConfigurerUP;
-typedef SummaryManager::SummarySetup SummarySetup;
-typedef proton::DocumentDBConfig::DocumenttypesConfigSP DocumenttypesConfigSP;
+using CCR = DocumentDBConfig::ComparisonResult;
+using Configurer = SearchableDocSubDBConfigurer;
+using ConfigurerUP = std::unique_ptr<SearchableDocSubDBConfigurer>;
+using SummarySetup = SummaryManager::SummarySetup;
+using DocumenttypesConfigSP = proton::DocumentDBConfig::DocumenttypesConfigSP;
 
 const vespalib::string BASE_DIR("baseDir");
 const vespalib::string DOC_TYPE("invalid");
@@ -504,12 +504,9 @@ asAttributeManager(const proton::IAttributeManager::SP &attrMgr)
 TEST_F("require that we can reconfigure attribute manager", Fixture)
 {
     ViewPtrs o = f._views.getViewPtrs();
-    ConfigComparisonResult cmpres;
-    cmpres.attributesChanged = true;
-    cmpres._schemaChanged = true;
     AttributeCollectionSpec::AttributeList specList;
     AttributeCollectionSpec spec(specList, 1, 0);
-    ReconfigParams params(cmpres);
+    ReconfigParams params(CCR().setAttributesChanged(true).setSchemaChanged(true));
     // Use new config snapshot == old config snapshot (only relevant for reprocessing)
     f._configurer->reconfigure(*createConfig(), *createConfig(), spec, params, f._resolver);
 
@@ -538,12 +535,9 @@ TEST_F("require that we can reconfigure attribute manager", Fixture)
 
 TEST_F("require that reconfigure returns reprocessing initializer when changing attributes", Fixture)
 {
-    ConfigComparisonResult cmpres;
-    cmpres.attributesChanged = true;
-    cmpres._schemaChanged = true;
     AttributeCollectionSpec::AttributeList specList;
     AttributeCollectionSpec spec(specList, 1, 0);
-    ReconfigParams params(cmpres);
+    ReconfigParams params(CCR().setAttributesChanged(true).setSchemaChanged(true));
     IReprocessingInitializer::UP init =
             f._configurer->reconfigure(*createConfig(), *createConfig(), spec, params, f._resolver);
 
@@ -582,9 +576,7 @@ TEST_F("require that reconfigure returns reprocessing initializer", FastAccessFi
 TEST_F("require that we can reconfigure summary manager", Fixture)
 {
     ViewPtrs o = f._views.getViewPtrs();
-    ConfigComparisonResult cmpres;
-    cmpres.summarymapChanged = true;
-    ReconfigParams params(cmpres);
+    ReconfigParams params(CCR().setSummarymapChanged(true));
     // Use new config snapshot == old config snapshot (only relevant for reprocessing)
     f._configurer->reconfigure(*createConfig(), *createConfig(), params, f._resolver);
 
@@ -604,11 +596,9 @@ TEST_F("require that we can reconfigure summary manager", Fixture)
 TEST_F("require that we can reconfigure matchers", Fixture)
 {
     ViewPtrs o = f._views.getViewPtrs();
-    ConfigComparisonResult cmpres;
-    cmpres.rankProfilesChanged = true;
     // Use new config snapshot == old config snapshot (only relevant for reprocessing)
     f._configurer->reconfigure(*createConfig(o.fv->getSchema()), *createConfig(o.fv->getSchema()),
-            ReconfigParams(cmpres), f._resolver);
+            ReconfigParams(CCR().setRankProfilesChanged(true)), f._resolver);
 
     ViewPtrs n = f._views.getViewPtrs();
     { // verify search view
@@ -634,10 +624,43 @@ TEST_F("require that we can reconfigure matchers", Fixture)
 
 TEST("require that attribute manager should change when imported fields has changed")
 {
-    DocumentDBConfig::ComparisonResult result;
-    result._importedFieldsChanged = true;
-    ReconfigParams params(result);
+    ReconfigParams params(CCR().setImportedFieldsChanged(true));
     EXPECT_TRUE(params.shouldAttributeManagerChange());
+}
+
+void
+assertMaintenanceControllerShouldNotChange(DocumentDBConfig::ComparisonResult result)
+{
+    ReconfigParams params(result);
+    EXPECT_FALSE(params.configHasChanged());
+    EXPECT_FALSE(params.shouldMaintenanceControllerChange());
+}
+
+void
+assertMaintenanceControllerShouldChange(DocumentDBConfig::ComparisonResult result)
+{
+    ReconfigParams params(result);
+    EXPECT_TRUE(params.configHasChanged());
+    EXPECT_TRUE(params.shouldMaintenanceControllerChange());
+}
+
+TEST("require that maintenance controller should change if some config has changed")
+{
+    TEST_DO(assertMaintenanceControllerShouldNotChange(CCR()));
+
+    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setRankProfilesChanged(true)));
+    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setRankingConstantsChanged(true)));
+    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setIndexschemaChanged(true)));
+    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setAttributesChanged(true)));
+    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setSummaryChanged(true)));
+    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setSummarymapChanged(true)));
+    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setJuniperrcChanged(true)));
+    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setDocumenttypesChanged(true)));
+    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setDocumentTypeRepoChanged(true)));
+    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setImportedFieldsChanged(true)));
+    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setTuneFileDocumentDBChanged(true)));
+    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setSchemaChanged(true)));
+    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setMaintenanceChanged(true)));
 }
 
 TEST_MAIN()

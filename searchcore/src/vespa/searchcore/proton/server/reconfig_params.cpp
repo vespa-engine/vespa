@@ -14,9 +14,27 @@ ReconfigParams(const DocumentDBConfig::ComparisonResult &res)
 }
 
 bool
+ReconfigParams::configHasChanged() const
+{
+    return _res.rankProfilesChanged ||
+            _res.rankingConstantsChanged ||
+            _res.indexschemaChanged ||
+            _res.attributesChanged ||
+            _res.summaryChanged ||
+            _res.summarymapChanged ||
+            _res.juniperrcChanged ||
+            _res.documenttypesChanged ||
+            _res.documentTypeRepoChanged ||
+            _res.importedFieldsChanged ||
+            _res.tuneFileDocumentDBChanged ||
+            _res.schemaChanged ||
+            _res.maintenanceChanged;
+}
+
+bool
 ReconfigParams::shouldSchemaChange() const
 {
-    return _res._schemaChanged;
+    return _res.schemaChanged;
 }
 
 bool
@@ -34,13 +52,27 @@ ReconfigParams::shouldIndexManagerChange() const
 bool
 ReconfigParams::shouldAttributeManagerChange() const
 {
-    return _res.attributesChanged || _res._importedFieldsChanged;
+    return _res.attributesChanged || _res.importedFieldsChanged;
 }
 
 bool
 ReconfigParams::shouldSummaryManagerChange() const
 {
     return _res.summaryChanged || _res.summarymapChanged || _res.juniperrcChanged;
+}
+
+bool
+ReconfigParams::shouldSubDbsChange() const
+{
+    return shouldMatchersChange()
+           || shouldAttributeManagerChange()
+           || shouldSummaryManagerChange();
+}
+
+bool
+ReconfigParams::shouldMaintenanceControllerChange() const
+{
+    return configHasChanged();
 }
 
 } // namespace proton
