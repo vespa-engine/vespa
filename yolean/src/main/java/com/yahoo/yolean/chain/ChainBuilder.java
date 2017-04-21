@@ -216,7 +216,7 @@ public final class ChainBuilder<T> {
         return result;
     }
 
-    private static void addClassName(Map<String, Set<Vertex>> providedNamesToVertex, ComponentVertex vertex) {
+    private static void addClassName(Map<String, Set<Vertex>> providedNamesToVertex, ComponentVertex<?> vertex) {
         String className = vertex.component.getClass().getName();
         getIdentitySet(providedNamesToVertex, className).add(vertex);
     }

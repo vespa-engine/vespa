@@ -125,7 +125,7 @@ public class Dependencies<T> {
         try {
             List<String> values = new ArrayList<>();
 
-            Class clazz = component.getClass();
+            Class<?> clazz = component.getClass();
             while (clazz != null) {
                 Annotation annotation = clazz.getAnnotation(annotationClass);
                 if (annotation != null) {
