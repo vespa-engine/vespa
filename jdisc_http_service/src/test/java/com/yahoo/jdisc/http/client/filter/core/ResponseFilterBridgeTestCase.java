@@ -59,7 +59,7 @@ public class ResponseFilterBridgeTestCase {
         URL url = new URL("http://localhost:8080/echo");
         URI reqURI = new URI(url.getProtocol(), url.getUserInfo(), url.getHost(), url.getPort(), url.getPath(),
                 url.getQuery(), url.getRef());
-        when(request.getURI()).thenReturn(reqURI);
+        when(request.getUri().toJavaNetURI()).thenReturn(reqURI);
 
         HttpResponseStatus responseStatus = mock(HttpResponseStatus.class);
         when(responseStatus.getStatusCode()).thenReturn(200);
