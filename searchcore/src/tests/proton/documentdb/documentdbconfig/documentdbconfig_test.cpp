@@ -7,6 +7,8 @@
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/config-summarymap.h>
+#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/documenttyperepo.h>
 
 using namespace document;
 using namespace proton;
@@ -17,8 +19,31 @@ using proton::matching::RankingConstants;
 using std::make_shared;
 using std::shared_ptr;
 using vespa::config::search::core::RankingConstantsConfig;
+using document::config_builder::DocumenttypesConfigBuilderHelper;
+using document::config_builder::Struct;
 
 using ConfigSP = shared_ptr<DocumentDBConfig>;
+
+namespace {
+
+const int32_t doc_type_id = 787121340;
+const vespalib::string type_name = "test";
+const vespalib::string header_name = type_name + ".header";
+const vespalib::string body_name = type_name + ".body";
+
+DocumentTypeRepo::SP
+makeDocTypeRepo(bool hasField)
+{
+    DocumenttypesConfigBuilderHelper builder;
+    Struct body(body_name);
+    if (hasField) {
+        body.addField("my_attribute", DataType::T_INT);
+    }
+    builder.document(doc_type_id, type_name, Struct(header_name), body);
+    return make_shared<DocumentTypeRepo>(builder.config());
+}
+
+}
 
 class MyConfigBuilder {
 private:
@@ -58,13 +83,15 @@ public:
         builder.attribute.resize(1);
         AttributesConfigBuilder::Attribute &attribute = builder.attribute.back();
         attribute.name = "my_attribute";
+        attribute.datatype = AttributesConfigBuilder::Attribute::Datatype::INT32;
         _builder.attributes(make_shared<AttributesConfig>(builder));
         return *this;
     }
     MyConfigBuilder &addSummarymap() {
         SummarymapConfigBuilder builder;
         builder.override.resize(1);
-        builder.override.back().field = "my_summary_field";
+        builder.override.back().field = "my_attribute";
+        builder.override.back().command = "attribute";
         _builder.summarymap(make_shared<SummarymapConfig>(builder));
         return *this;
     }
@@ -111,6 +138,55 @@ TEST_F("require that makeReplayConfig() drops unneeded configs", Fixture)
     EXPECT_TRUE(DDBC::preferOriginalConfig(f.fullCfg).get() == f.fullCfg.get());
     EXPECT_TRUE(DDBC::preferOriginalConfig(f.replayCfg).get() == f.fullCfg.get());
     EXPECT_TRUE(DDBC::preferOriginalConfig(f.nullCfg).get() == nullptr);
+}
+
+struct DelayAttributeAspectFixture {
+    Schema::SP schema;
+    ConfigSP attrCfg;
+    ConfigSP noAttrCfg;
+    DelayAttributeAspectFixture(bool hasDocField)
+        : schema(make_shared<Schema>()),
+          attrCfg(),
+          noAttrCfg()
+    {
+        attrCfg = MyConfigBuilder(4, schema, makeDocTypeRepo(true)).addAttribute().
+                                                   addRankProfile().
+                                                   addRankingConstant().
+                                                   addImportedField().
+                                                   addSummarymap().
+                                                   build();
+        noAttrCfg = MyConfigBuilder(4, schema, makeDocTypeRepo(hasDocField)).addRankProfile().
+                         addRankingConstant().
+                         addImportedField().
+                         build();
+    }
+
+    void assertDelayedConfig(const DocumentDBConfig &testCfg) {
+        EXPECT_FALSE(noAttrCfg->getAttributesConfig() == testCfg.getAttributesConfig());
+        EXPECT_FALSE(noAttrCfg->getSummarymapConfig() == testCfg.getSummarymapConfig());
+        EXPECT_TRUE(attrCfg->getAttributesConfig() == testCfg.getAttributesConfig());
+        EXPECT_TRUE(attrCfg->getSummarymapConfig() == testCfg.getSummarymapConfig());
+        EXPECT_TRUE(testCfg.getDelayedAttributeAspects());
+    }
+    void assertNotDelayedConfig(const DocumentDBConfig &testCfg) {
+        EXPECT_TRUE(noAttrCfg->getAttributesConfig() == testCfg.getAttributesConfig());
+        EXPECT_TRUE(noAttrCfg->getSummarymapConfig() == testCfg.getSummarymapConfig());
+        EXPECT_FALSE(attrCfg->getAttributesConfig() == testCfg.getAttributesConfig());
+        EXPECT_FALSE(attrCfg->getSummarymapConfig() == testCfg.getSummarymapConfig());
+        EXPECT_FALSE(testCfg.getDelayedAttributeAspects());
+    }
+};
+
+TEST_F("require that makeDelayedAttributeAspectConfig works, field remains when attribute removed", DelayAttributeAspectFixture(true))
+{
+    auto delayedRemove = DocumentDBConfig::makeDelayedAttributeAspectConfig(f.noAttrCfg, *f.attrCfg);
+    TEST_DO(f.assertDelayedConfig(*delayedRemove));
+}
+
+TEST_F("require that makeDelayedAttributeAspectConfig works, field removed with attribute", DelayAttributeAspectFixture(false))
+{
+    auto removed = DocumentDBConfig::makeDelayedAttributeAspectConfig(f.noAttrCfg, *f.attrCfg);
+    TEST_DO(f.assertNotDelayedConfig(*removed));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

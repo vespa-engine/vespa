@@ -9,6 +9,9 @@
 #include <vespa/config-summarymap.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/document/config/config-documenttypes.h>
+#include <vespa/searchcore/proton/attribute/attribute_aspect_delayer.h>
+#include <vespa/searchcore/proton/common/document_type_inspector.h>
+#include <vespa/searchcore/proton/common/indexschema_inspector.h>
 
 using namespace config;
 using namespace vespa::config::search::summary;
@@ -74,7 +77,8 @@ DocumentDBConfig::DocumentDBConfig(
       _schema(schema),
       _maintenance(maintenance),
       _extraConfigs(extraConfigs),
-      _orig()
+      _orig(),
+      _delayedAttributeAspects(false)
 { }
 
 
@@ -97,7 +101,8 @@ DocumentDBConfig(const DocumentDBConfig &cfg)
       _schema(cfg._schema),
       _maintenance(cfg._maintenance),
       _extraConfigs(cfg._extraConfigs),
-      _orig(cfg._orig)
+      _orig(cfg._orig),
+      _delayedAttributeAspects(false)
 { }
 
 DocumentDBConfig::~DocumentDBConfig() { }
@@ -268,6 +273,43 @@ DocumentDBConfig::newFromAttributesConfig(const AttributesConfigSP &attributes) 
             _configId,
             _docTypeName,
             _extraConfigs);
+}
+
+DocumentDBConfig::SP
+DocumentDBConfig::makeDelayedAttributeAspectConfig(const SP &orig, const DocumentDBConfig &old)
+{
+    const DocumentDBConfig &o = *orig;
+    AttributeAspectDelayer attributeAspectDelayer;
+    DocumentTypeInspector inspector(*old.getDocumentType(), *o.getDocumentType());
+    IndexschemaInspector oldIndexschemaInspector(old.getIndexschemaConfig());
+    attributeAspectDelayer.setup(old.getAttributesConfig(), old.getSummarymapConfig(),
+                                 o.getAttributesConfig(), o.getSummarymapConfig(),
+                                 oldIndexschemaInspector, inspector);
+    bool delayedAttributeAspects = (o.getAttributesConfig() != *attributeAspectDelayer.getAttributesConfig()) ||
+                                   (o.getSummarymapConfig() != *attributeAspectDelayer.getSummarymapConfig());
+    if (!delayedAttributeAspects) {
+        return orig;
+    }
+    auto result = std::make_shared<DocumentDBConfig>
+                  (o._generation,
+                   o._rankProfiles,
+                   o._rankingConstants,
+                   o._indexschema,
+                   attributeAspectDelayer.getAttributesConfig(),
+                   o._summary,
+                   attributeAspectDelayer.getSummarymapConfig(),
+                   o._juniperrc,
+                   o._documenttypes,
+                   o._repo,
+                   o._importedFields,
+                   o._tuneFileDocumentDB,
+                   o._schema,
+                   o._maintenance,
+                   o._configId,
+                   o._docTypeName,
+                   o._extraConfigs);
+    result->_delayedAttributeAspects = true;
+    return result;
 }
 
 } // namespace proton

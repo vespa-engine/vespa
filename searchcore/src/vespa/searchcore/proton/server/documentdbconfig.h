@@ -93,6 +93,7 @@ private:
     MaintenanceConfigSP            _maintenance;
     config::ConfigSnapshot         _extraConfigs;
     SP _orig;
+    bool                           _delayedAttributeAspects;
 
 
     template <typename T>
@@ -155,6 +156,7 @@ public:
     const search::index::Schema::SP &getSchemaSP() const { return _schema; }
     const MaintenanceConfigSP &getMaintenanceConfigSP() const { return _maintenance; }
     const search::TuneFileDocumentDB::SP &getTuneFileDocumentDBSP() const { return _tuneFileDocumentDB; }
+    bool getDelayedAttributeAspects() const { return _delayedAttributeAspects; }
 
     bool operator==(const DocumentDBConfig &rhs) const;
 
@@ -189,6 +191,12 @@ public:
      * Create modified attributes config.
      */
     SP newFromAttributesConfig(const AttributesConfigSP &attributes) const;
+
+    /**
+     * Create config with delayed attribute aspect changes if they require
+     * reprocessing.
+     */
+    static SP makeDelayedAttributeAspectConfig(const SP &orig, const DocumentDBConfig &old);
 };
 
 } // namespace proton
