@@ -32,6 +32,7 @@ import java.util.ArrayList;
  * test to fail, so you will need to update the
  * AnnotationDeserialization component to handle the format changes.
  */
+@SuppressWarnings("deprecation")
 public class SerializeAnnotationsTestCase extends junit.framework.TestCase {
     private static final String PATH = "src/tests/serialization/";
     DocumentTypeManager docMan = new DocumentTypeManager();

@@ -13,6 +13,7 @@ import java.nio.ByteBuffer;
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
+@SuppressWarnings("deprecation")
 public class SerializationHelperTestCase extends junit.framework.TestCase {
     public SerializationHelperTestCase(String name) {
         super(name);

@@ -21,6 +21,7 @@ public class DocumentSerializerFactory {
     /**
      * Creates a serializer for the document format that was created on Vespa 4.2.
      */
+    @SuppressWarnings("deprecation")
     public static DocumentSerializer create42(GrowableByteBuffer buf) {
         return new VespaDocumentSerializer42(buf);
     }
@@ -28,6 +29,7 @@ public class DocumentSerializerFactory {
     /**
      * Creates a serializer for the document format that was created on Vespa 4.2.
      */
+    @SuppressWarnings("deprecation")
     public static DocumentSerializer create42(GrowableByteBuffer buf, boolean headerOnly) {
         return new VespaDocumentSerializer42(buf, headerOnly);
     }
@@ -35,6 +37,7 @@ public class DocumentSerializerFactory {
     /**
      * Creates a serializer for the document format that was created on Vespa 4.2.
      */
+    @SuppressWarnings("deprecation")
     public static DocumentSerializer create42() {
         return new VespaDocumentSerializer42();
     }
