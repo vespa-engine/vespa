@@ -83,12 +83,7 @@ public class ClusterState implements Cloneable {
 
     @Override
     public int hashCode() {
-        int hc = version * 211;
-        hc += state.hashCode() * 97;
-        hc += distributionBits * 31;
-        hc += nodeCount.hashCode() * 7;
-        hc += nodeStates.hashCode();
-        return hc;
+        return java.util.Objects.hash(version, state, distributionBits, nodeCount, nodeStates);
     }
 
     @FunctionalInterface

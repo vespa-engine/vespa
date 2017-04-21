@@ -38,7 +38,7 @@ public class OrderingSpecification {
     }
 
     public int hashCode() {
-        return order + widthBits*9901 + divisionBits*9973 + 2*(int)orderingStart;
+        return java.util.Objects.hash(order, orderingStart, widthBits, divisionBits);
     }
 
     public String toString() {
