@@ -57,6 +57,9 @@ public abstract class FieldPathIteratorHandler {
 
         @Override
         public boolean equals(Object o) {
+            if (!(o instanceof IndexValue)) {
+                return false;
+            }
             IndexValue other = (IndexValue)o;
             if (key != null && other.key != null) {
                 return key.equals(other.key);
