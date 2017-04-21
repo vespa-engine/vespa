@@ -38,6 +38,14 @@ void write_msg(SocketHandle &socket, const vespalib::string &msg) {
     }
 }
 
+void kill_func() {
+    while (!SignalHandler::INT.check()) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+    fprintf(stderr, "exiting...\n");    
+    kill(getpid(), SIGTERM);
+}
+
 int main(int, char **) {
     ServerSocket server(0);
     if (!server.valid()) {
@@ -57,7 +65,8 @@ int main(int, char **) {
             HostName::get().c_str(), server.address().port());
     fprintf(stderr, "use ^C (SIGINT) to exit\n");
     SignalHandler::INT.hook();
-    while (!SignalHandler::INT.check()) {
+    std::thread kill_thread(kill_func);
+    for (;;) {
         SocketHandle socket = server.accept();
         if (socket.valid()) {
             fprintf(stderr, "got connection from: %s (local address: %s)\n",
