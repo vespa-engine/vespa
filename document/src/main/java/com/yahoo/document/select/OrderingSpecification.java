@@ -30,6 +30,7 @@ public class OrderingSpecification {
     public short getWidthBits() { return widthBits; }
     public short getDivisionBits() { return divisionBits; }
 
+    @Override
     public boolean equals(Object other) {
         OrderingSpecification o = (OrderingSpecification)other;
         if (o == null) return false;
@@ -37,6 +38,7 @@ public class OrderingSpecification {
         return (order == o.order && orderingStart == o.orderingStart && widthBits == o.widthBits && divisionBits == o.divisionBits);
     }
 
+    @Override
     public int hashCode() {
         return java.util.Objects.hash(order, orderingStart, widthBits, divisionBits);
     }

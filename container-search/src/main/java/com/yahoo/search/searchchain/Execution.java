@@ -220,6 +220,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
                     && other.linguistics == linguistics;
         }
 
+        @Override
         public int hashCode() {
             return java.util.Objects.hash(indexFacts,
                                           rendererRegistry, tokenRegistry, searchChainRegistry,
