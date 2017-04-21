@@ -17,6 +17,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
+@SuppressWarnings("deprecation")
 public class VespaDocumentSerializerTestCase {
 
     @Test

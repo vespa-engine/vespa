@@ -311,6 +311,7 @@ public class Document extends StructuredFieldValue {
         serialize((DocumentWriter)data);
     }
 
+    @SuppressWarnings("deprecation")
     public void serializeHeader(Serializer data) throws SerializationException {
         if (data instanceof DocumentWriter) {
             if (data instanceof VespaDocumentSerializer42) {

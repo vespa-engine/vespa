@@ -13,6 +13,7 @@ import com.yahoo.io.GrowableByteBuffer;
  *
  * @author baldersheim
  */
+@SuppressWarnings("deprecation")
 public class VespaDocumentSerializerHead extends VespaDocumentSerializer42 {
 
     public VespaDocumentSerializerHead(GrowableByteBuffer buf) {

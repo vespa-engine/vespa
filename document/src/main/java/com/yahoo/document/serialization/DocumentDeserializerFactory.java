@@ -22,6 +22,7 @@ public class DocumentDeserializerFactory {
     /**
      * Creates a de-serializer for the document format that was created on Vespa 4.2.
      */
+    @SuppressWarnings("deprecation")
     public static DocumentDeserializer create42(DocumentTypeManager manager, GrowableByteBuffer buf) {
         return new VespaDocumentDeserializer42(manager, buf);
     }
@@ -29,6 +30,7 @@ public class DocumentDeserializerFactory {
     /**
      * Creates a de-serializer for the document format that was created on Vespa 4.2.
      */
+    @SuppressWarnings("deprecation")
     public static DocumentDeserializer create42(DocumentTypeManager manager, GrowableByteBuffer buf, GrowableByteBuffer body) {
         return new VespaDocumentDeserializer42(manager, buf, body);
     }
