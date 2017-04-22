@@ -613,6 +613,9 @@ AttributeBlueprintFactory::createBlueprint(const IRequestContext & requestContex
                                             const search::query::Node &term)
 {
     const IAttributeVector *attr(requestContext.getAttribute(field.getName()));
+    if (attr == nullptr) {
+        return std::make_unique<queryeval::EmptyBlueprint>(field);
+    }
     CreateBlueprintVisitor visitor(*this, requestContext, field, *attr);
     const_cast<Node &>(term).accept(visitor);
     return visitor.getResult();

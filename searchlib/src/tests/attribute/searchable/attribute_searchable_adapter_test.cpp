@@ -219,24 +219,29 @@ Result do_search(IAttributeManager &attribute_manager, const Node &node, bool st
 }
 
 bool search(const Node &node, IAttributeManager &attribute_manager,
-            bool fast_search = false, bool strict = true)
+            bool fast_search = false, bool strict = true, bool empty = false)
 {
     Result result = do_search(attribute_manager, node, strict);
     if (fast_search) {
         EXPECT_LESS(result.est_hits, num_docs / 10);
     } else {
-        EXPECT_TRUE(!result.est_empty);
-        EXPECT_EQUAL(num_docs, result.est_hits);
+        if (empty) {
+            EXPECT_TRUE(result.est_empty);
+            EXPECT_EQUAL(0, result.est_hits);
+        } else {
+            EXPECT_TRUE(!result.est_empty);
+            EXPECT_EQUAL(num_docs, result.est_hits);
+        }
     }
     return (result.hits.size() == 1) && (result.hits[0].docid == (num_docs - 1));
 }
 
 bool search(const string &term, IAttributeManager &attribute_manager,
-            bool fast_search = false, bool strict = true)
+            bool fast_search = false, bool strict = true, bool empty = false)
 {
     TEST_STATE(term.c_str());
     SimpleStringTerm node(term, "field", 0, Weight(0));
-    return search(node, attribute_manager, fast_search, strict);
+    return search(node, attribute_manager, fast_search, strict, empty);
 }
 
 template <typename T> struct AttributeVectorTypeFinder {
@@ -285,6 +290,12 @@ TEST("requireThatIteratorsCanBeCreated") {
     MyAttributeManager attribute_manager = makeAttributeManager("foo");
 
     EXPECT_TRUE(search("foo", attribute_manager));
+}
+
+TEST("require that missing attribute produces empty search")
+{
+    MyAttributeManager attribute_manager(nullptr);
+    EXPECT_FALSE(search("foo", attribute_manager, false, false, true));
 }
 
 TEST("requireThatRangeTermsWorkToo") {
