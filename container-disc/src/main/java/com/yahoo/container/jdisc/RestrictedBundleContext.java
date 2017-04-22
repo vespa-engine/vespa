@@ -45,6 +45,22 @@ public class RestrictedBundleContext implements BundleContext {
     }
 
     @Override
+    public <S> ServiceObjects<S> getServiceObjects(ServiceReference<S> serviceReference) {
+        if (wrapped == null) {
+            return null;
+        }
+        return wrapped.getServiceObjects(serviceReference);
+    }
+
+    @Override
+    public <S> ServiceRegistration<S> registerService(Class<S> aClass, ServiceFactory<S> serviceFactory, Dictionary<String, ?> dictionary) {
+        if (wrapped == null) {
+            return null;
+        }
+        return wrapped.registerService(aClass, serviceFactory, dictionary);
+    }
+
+    @Override
     public ServiceReference<?>[] getServiceReferences(String localHostname, String localHostname2) throws InvalidSyntaxException {
         if (wrapped == null) {
             return new ServiceReference<?>[0];
