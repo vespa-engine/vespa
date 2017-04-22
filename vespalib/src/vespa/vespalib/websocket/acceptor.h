@@ -3,8 +3,10 @@
 #pragma once
 
 #include "handler.h"
-#include "server_socket.h"
+#include <vespa/vespalib/net/socket.h>
+#include <vespa/vespalib/net/server_socket.h>
 #include <thread>
+#include <atomic>
 
 namespace vespalib {
 namespace ws {
@@ -13,13 +15,14 @@ class Acceptor {
 private:
     ServerSocket _server_socket;
     std::thread _accept_thread;
+    std::atomic<bool> _is_closed;
 
     void accept_main(Handler<Socket> &socket_handler);
 
 public:
     Acceptor(int port_in, Handler<Socket> &socket_handler);
     ~Acceptor();
-    int port() { return _server_socket.port(); }
+    int port() { return _server_socket.address().port(); }
 };
 
 } // namespace vespalib::ws

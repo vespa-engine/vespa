@@ -35,7 +35,6 @@ vespa_define_module(
     src/tests/request_dumper
     src/tests/request_generator
     src/tests/request_sink
-    src/tests/server_socket
     src/tests/server_spec
     src/tests/server_tagger
     src/tests/socket

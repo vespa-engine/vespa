@@ -8,8 +8,6 @@ vespa_add_library(vespalib_vespalib_websocket OBJECT
     handler.cpp
     key.cpp
     request.cpp
-    server_socket.cpp
-    socket.cpp
     websocket_server.cpp
     DEPENDS
 )

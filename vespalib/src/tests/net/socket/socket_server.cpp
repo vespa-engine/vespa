@@ -12,7 +12,7 @@
 
 using namespace vespalib;
 
-vespalib::string read_msg(Socket &socket) {
+vespalib::string read_msg(SocketHandle &socket) {
     vespalib::string msg;
     for (;;) {
         char c;
@@ -28,7 +28,7 @@ vespalib::string read_msg(Socket &socket) {
     }
 }
 
-void write_msg(Socket &socket, const vespalib::string &msg) {
+void write_msg(SocketHandle &socket, const vespalib::string &msg) {
     for (size_t i = 0; i < msg.size(); ++i) {
         ssize_t ret = socket.write(&msg[i], 1);
         if (ret != 1) {
@@ -38,9 +38,17 @@ void write_msg(Socket &socket, const vespalib::string &msg) {
     }
 }
 
+void kill_func() {
+    while (!SignalHandler::INT.check()) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+    fprintf(stderr, "exiting...\n");    
+    kill(getpid(), SIGTERM);
+}
+
 int main(int, char **) {
-    ServerSocket::UP server = ServerSocket::listen(SocketSpec::from_port(0));
-    if (!server->valid()) {
+    ServerSocket server(0);
+    if (!server.valid()) {
         fprintf(stderr, "listen failed, exiting\n");
         return 1;
     }
@@ -52,18 +60,20 @@ int main(int, char **) {
             fprintf(stderr, "  %s\n", addr.spec().c_str());
         }
     }
-    fprintf(stderr, "listening to %s\n", server->address().spec().c_str());
+    fprintf(stderr, "listening to %s\n", server.address().spec().c_str());
     fprintf(stderr, "client command: ./vespalib_socket_client_app %s %d\n",
-            HostName::get().c_str(), server->address().port());
+            HostName::get().c_str(), server.address().port());
     fprintf(stderr, "use ^C (SIGINT) to exit\n");
     SignalHandler::INT.hook();
-    while (!SignalHandler::INT.check()) {
-        Socket::UP socket = server->accept();
-        if (socket->valid()) {
+    std::thread kill_thread(kill_func);
+    for (;;) {
+        SocketHandle socket = server.accept();
+        if (socket.valid()) {
             fprintf(stderr, "got connection from: %s (local address: %s)\n",
-                    socket->peer_address().spec().c_str(), socket->address().spec().c_str());
-            fprintf(stderr, "message from client: '%s'\n", read_msg(*socket).c_str());
-            write_msg(*socket, "hello from server\n");
+                    SocketAddress::peer_address(socket.get()).spec().c_str(),
+                    SocketAddress::address_of(socket.get()).spec().c_str());
+            fprintf(stderr, "message from client: '%s'\n", read_msg(socket).c_str());
+            write_msg(socket, "hello from server\n");
         } else {
             fprintf(stderr, "(got invalid socket from accept)\n");
         }

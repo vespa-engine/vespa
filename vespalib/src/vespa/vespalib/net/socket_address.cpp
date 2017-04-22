@@ -133,7 +133,7 @@ SocketAddress::connect() const
 {
     if (valid()) {
         SocketHandle handle(socket(_addr.ss_family, SOCK_STREAM, 0));
-        if (handle && (::connect(handle.get(), addr(), _size) == 0)) {
+        if (handle.valid() && (::connect(handle.get(), addr(), _size) == 0)) {
             return handle;
         }
     }
@@ -145,14 +145,12 @@ SocketAddress::listen(int backlog) const
 {
     if (valid()) {
         SocketHandle handle(socket(_addr.ss_family, SOCK_STREAM, 0));
-        if (handle) {
+        if (handle.valid()) {
             if (is_ipv6()) {
-                int disable = 0;
-                setsockopt(handle.get(), IPPROTO_IPV6, IPV6_V6ONLY, &disable, sizeof(disable));
+                handle.set_ipv6_only(false);
             }
             if (port() > 0) {
-                int enable = 1;
-                setsockopt(handle.get(), SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable));
+                handle.set_reuse_addr(true);
             }
             if ((bind(handle.get(), addr(), _size) == 0) &&
                 (::listen(handle.get(), backlog) == 0))

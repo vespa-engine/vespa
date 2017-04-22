@@ -74,7 +74,7 @@ vespalib::string get_meta(const SocketAddress &addr) {
     return meta;
 }
 
-vespalib::string read_bytes(Socket &socket, size_t wanted_bytes) {
+vespalib::string read_bytes(SocketHandle &socket, size_t wanted_bytes) {
     char tmp[64];
     vespalib::string result;
     while (result.size() < wanted_bytes) {
@@ -88,7 +88,7 @@ vespalib::string read_bytes(Socket &socket, size_t wanted_bytes) {
     return result;
 }
 
-void verify_socket_io(bool is_server, Socket &socket) {
+void verify_socket_io(bool is_server, SocketHandle &socket) {
     vespalib::string server_message = "hello, this is the server speaking";
     vespalib::string client_message = "please pick up, I need to talk to you";
     if(is_server) {
@@ -104,7 +104,7 @@ void verify_socket_io(bool is_server, Socket &socket) {
     }
 }
 
-Socket::UP connect_sockets(bool is_server, ServerSocket &server_socket) {
+SocketHandle connect_sockets(bool is_server, ServerSocket &server_socket) {
     if (is_server) {
         return server_socket.accept();
     } else {
@@ -113,7 +113,7 @@ Socket::UP connect_sockets(bool is_server, ServerSocket &server_socket) {
         auto client = SocketSpec(spec).client_address();
         fprintf(stderr, "connecting to '%s' (server: %s) (client: %s)\n",
                 spec.c_str(), get_meta(server).c_str(), get_meta(client).c_str());
-        return Socket::connect(SocketSpec(spec));
+        return client.connect();
     }
 }
 
@@ -187,84 +187,79 @@ TEST("local client/server addresses") {
     fprintf(stderr, "server(tcp/123): %s (%s)\n", server.spec().c_str(), get_meta(server).c_str());
 }
 
-struct ServerWrapper {
-    ServerSocket::UP server;
-    ServerWrapper(const vespalib::string &spec) : server(ServerSocket::listen(SocketSpec(spec))) {}
-};
-
-TEST_MT_FF("require that basic socket io works", 2, ServerWrapper("tcp/0"), TimeBomb(60)) {
+TEST_MT_FF("require that basic socket io works", 2, ServerSocket("tcp/0"), TimeBomb(60)) {
     bool is_server = (thread_id == 0);
-    Socket::UP socket = connect_sockets(is_server, *f1.server);
-    TEST_DO(verify_socket_io(is_server, *socket));
+    SocketHandle socket = connect_sockets(is_server, f1);
+    TEST_DO(verify_socket_io(is_server, socket));
 }
 
 TEST_MT_FF("require that basic unix domain socket io works (path)", 2,
-           ServerWrapper("ipc/file:my_socket"), TimeBomb(60))
+           ServerSocket("ipc/file:my_socket"), TimeBomb(60))
 {
     bool is_server = (thread_id == 0);
-    Socket::UP socket = connect_sockets(is_server, *f1.server);
-    TEST_DO(verify_socket_io(is_server, *socket));
+    SocketHandle socket = connect_sockets(is_server, f1);
+    TEST_DO(verify_socket_io(is_server, socket));
 }
 
 TEST_MT_FF("require that basic unix domain socket io works (name)", 2,
-           ServerWrapper(make_string("ipc/name:my_socket-%d", int(getpid()))), TimeBomb(60))
+           ServerSocket(make_string("ipc/name:my_socket-%d", int(getpid()))), TimeBomb(60))
 {
     bool is_server = (thread_id == 0);
-    Socket::UP socket = connect_sockets(is_server, *f1.server);
-    TEST_DO(verify_socket_io(is_server, *socket));
+    SocketHandle socket = connect_sockets(is_server, f1);
+    TEST_DO(verify_socket_io(is_server, socket));
 }
 
-TEST_MT_FF("require that server accept can be interrupted", 2, ServerWrapper("tcp/0"), TimeBomb(60)) {
+TEST_MT_FF("require that server accept can be interrupted", 2, ServerSocket("tcp/0"), TimeBomb(60)) {
     bool is_server = (thread_id == 0);
     if (is_server) {
         fprintf(stderr, "--> calling accept\n");
-        Socket::UP socket = f1.server->accept();
+        SocketHandle socket = f1.accept();
         fprintf(stderr, "<-- accept returned\n");
-        EXPECT_TRUE(!socket->valid());
+        EXPECT_TRUE(!socket.valid());
     } else {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
         fprintf(stderr, "--- closing server socket\n");
-        f1.server->shutdown();
+        f1.shutdown();
     }
 }
 
 TEST("require that socket file is removed by server socket when destructed") {
     remove_file("my_socket");
-    ServerSocket::UP server = ServerSocket::listen(SocketSpec("ipc/file:my_socket"));
-    EXPECT_TRUE(server->valid());
+    ServerSocket server("ipc/file:my_socket");
+    EXPECT_TRUE(server.valid());
     EXPECT_TRUE(is_socket("my_socket"));
-    server.reset();
+    server = ServerSocket("invalid");
     EXPECT_TRUE(!is_socket("my_socket"));
 }
 
 TEST("require that socket file is only removed on destruction if it is a socket") {
     remove_file("my_socket");
-    ServerSocket::UP server = ServerSocket::listen(SocketSpec("ipc/file:my_socket"));
-    EXPECT_TRUE(server->valid());
+    ServerSocket server("ipc/file:my_socket");
+    EXPECT_TRUE(server.valid());
     EXPECT_TRUE(is_socket("my_socket"));
     replace_file("my_socket", "hello\n");
-    server.reset();
+    server = ServerSocket("invalid");
     EXPECT_TRUE(is_file("my_socket"));
     remove_file("my_socket");
 }
 
 TEST("require that a server socket will fail to listen to a path that is already a regular file") {
     replace_file("my_socket", "hello\n");
-    ServerSocket::UP server = ServerSocket::listen(SocketSpec("ipc/file:my_socket"));
-    EXPECT_TRUE(!server->valid());
-    server.reset();
+    ServerSocket server("ipc/file:my_socket");
+    EXPECT_TRUE(!server.valid());
+    server = ServerSocket("invalid");
     EXPECT_TRUE(is_file("my_socket"));
     remove_file("my_socket");
 }
 
 TEST("require that a server socket will fail to listen to a path that is already taken by another server") {
     remove_file("my_socket");
-    ServerSocket::UP server1 = ServerSocket::listen(SocketSpec("ipc/file:my_socket"));
-    ServerSocket::UP server2 = ServerSocket::listen(SocketSpec("ipc/file:my_socket"));
-    EXPECT_TRUE(server1->valid());
-    EXPECT_TRUE(!server2->valid());
+    ServerSocket server1("ipc/file:my_socket");
+    ServerSocket server2("ipc/file:my_socket");
+    EXPECT_TRUE(server1.valid());
+    EXPECT_TRUE(!server2.valid());
     EXPECT_TRUE(is_socket("my_socket"));
-    server1.reset();
+    server1 = ServerSocket("invalid");
     EXPECT_TRUE(!is_socket("my_socket"));
 }
 
@@ -275,55 +270,54 @@ TEST("require that a server socket will remove an old socket file if it cannot b
         EXPECT_TRUE(is_socket("my_socket"));
     }
     EXPECT_TRUE(is_socket("my_socket"));
-    ServerSocket::UP server = ServerSocket::listen(SocketSpec("ipc/file:my_socket"));
-    EXPECT_TRUE(server->valid());
-    server.reset();
+    ServerSocket server("ipc/file:my_socket");
+    EXPECT_TRUE(server.valid());
+    server = ServerSocket("invalid");
     EXPECT_TRUE(!is_socket("my_socket"));
 }
 
 TEST("require that two server sockets cannot have the same abstract unix domain socket name") {
     vespalib::string spec = make_string("ipc/name:my_socket-%d", int(getpid()));
-    ServerSocket::UP server1 = ServerSocket::listen(SocketSpec(spec));
-    ServerSocket::UP server2 = ServerSocket::listen(SocketSpec(spec));
-    EXPECT_TRUE(server1->valid());
-    EXPECT_TRUE(!server2->valid());
+    ServerSocket server1(spec);
+    ServerSocket server2(spec);
+    EXPECT_TRUE(server1.valid());
+    EXPECT_TRUE(!server2.valid());
 }
 
 TEST("require that abstract socket names are freed when the server socket is destructed") {
     vespalib::string spec = make_string("ipc/name:my_socket-%d", int(getpid()));
-    ServerSocket::UP server1 = ServerSocket::listen(SocketSpec(spec));
-    EXPECT_TRUE(server1->valid());
-    server1.reset();
-    ServerSocket::UP server2 = ServerSocket::listen(SocketSpec(spec));
-    EXPECT_TRUE(server2->valid());
+    ServerSocket server1(spec);
+    EXPECT_TRUE(server1.valid());
+    server1 = ServerSocket("invalid");
+    ServerSocket server2(spec);
+    EXPECT_TRUE(server2.valid());
 }
 
 TEST("require that abstract sockets do not have socket files") {
     vespalib::string name = make_string("my_socket-%d", int(getpid()));
-    vespalib::string spec = make_string("ipc/name:%s", name.c_str());
-    ServerSocket::UP server = ServerSocket::listen(SocketSpec(spec));
-    EXPECT_TRUE(server->valid());
+    ServerSocket server(SocketSpec::from_name(name));
+    EXPECT_TRUE(server.valid());
     EXPECT_TRUE(!is_socket(name));
     EXPECT_TRUE(!is_file(name));    
 }
 
 TEST_MT_FFF("require that abstract and file-based unix domain sockets are not in conflict", 4,
-            ServerWrapper(make_string("ipc/file:my_socket-%d", int(getpid()))),
-            ServerWrapper(make_string("ipc/name:my_socket-%d", int(getpid()))), TimeBomb(60))
+            ServerSocket(make_string("ipc/file:my_socket-%d", int(getpid()))),
+            ServerSocket(make_string("ipc/name:my_socket-%d", int(getpid()))), TimeBomb(60))
 {
     bool is_server = ((thread_id % 2) == 0);
-    ServerSocket &server_socket = ((thread_id / 2) == 0) ? *f1.server : *f2.server;
-    Socket::UP socket = connect_sockets(is_server, server_socket);
-    TEST_DO(verify_socket_io(is_server, *socket));
+    ServerSocket &server_socket = ((thread_id / 2) == 0) ? f1 : f2;
+    SocketHandle socket = connect_sockets(is_server, server_socket);
+    TEST_DO(verify_socket_io(is_server, socket));
 }
 
 TEST("require that sockets can be set blocking and non-blocking") {
     SocketHandle handle(socket(my_inet(), SOCK_STREAM, 0));
     test::SocketOptionsVerifier verifier(handle.get());
     EXPECT_TRUE(!SocketOptions::set_blocking(-1, true));
-    EXPECT_TRUE(SocketOptions::set_blocking(handle.get(), true));
+    EXPECT_TRUE(handle.set_blocking(true));
     TEST_DO(verifier.verify_blocking(true));
-    EXPECT_TRUE(SocketOptions::set_blocking(handle.get(), false));
+    EXPECT_TRUE(handle.set_blocking(false));
     TEST_DO(verifier.verify_blocking(false));
 }
 
@@ -331,9 +325,9 @@ TEST("require that tcp nodelay can be enabled and disabled") {
     SocketHandle handle(socket(my_inet(), SOCK_STREAM, 0));
     test::SocketOptionsVerifier verifier(handle.get());
     EXPECT_TRUE(!SocketOptions::set_nodelay(-1, true));
-    EXPECT_TRUE(SocketOptions::set_nodelay(handle.get(), true));
+    EXPECT_TRUE(handle.set_nodelay(true));
     TEST_DO(verifier.verify_nodelay(true));
-    EXPECT_TRUE(SocketOptions::set_nodelay(handle.get(), false));
+    EXPECT_TRUE(handle.set_nodelay(false));
     TEST_DO(verifier.verify_nodelay(false));
 }
 
@@ -341,9 +335,9 @@ TEST("require that reuse addr can be set and cleared") {
     SocketHandle handle(socket(my_inet(), SOCK_STREAM, 0));
     test::SocketOptionsVerifier verifier(handle.get());
     EXPECT_TRUE(!SocketOptions::set_reuse_addr(-1, true));
-    EXPECT_TRUE(SocketOptions::set_reuse_addr(handle.get(), true));
+    EXPECT_TRUE(handle.set_reuse_addr(true));
     TEST_DO(verifier.verify_reuse_addr(true));
-    EXPECT_TRUE(SocketOptions::set_reuse_addr(handle.get(), false));
+    EXPECT_TRUE(handle.set_reuse_addr(false));
     TEST_DO(verifier.verify_reuse_addr(false));
 }
 
@@ -352,9 +346,9 @@ TEST("require that ipv6_only can be set and cleared") {
         SocketHandle handle(socket(my_inet(), SOCK_STREAM, 0));
         test::SocketOptionsVerifier verifier(handle.get());
         EXPECT_TRUE(!SocketOptions::set_ipv6_only(-1, true));
-        EXPECT_TRUE(SocketOptions::set_ipv6_only(handle.get(), true));
+        EXPECT_TRUE(handle.set_ipv6_only(true));
         TEST_DO(verifier.verify_ipv6_only(true));
-        EXPECT_TRUE(SocketOptions::set_ipv6_only(handle.get(), false));
+        EXPECT_TRUE(handle.set_ipv6_only(false));
         TEST_DO(verifier.verify_ipv6_only(false));
     } else {
         fprintf(stderr, "WARNING: skipping ipv6_only test since ipv6 is disabled");
@@ -365,9 +359,9 @@ TEST("require that tcp keepalive can be set and cleared") {
     SocketHandle handle(socket(my_inet(), SOCK_STREAM, 0));
     test::SocketOptionsVerifier verifier(handle.get());
     EXPECT_TRUE(!SocketOptions::set_keepalive(-1, true));
-    EXPECT_TRUE(SocketOptions::set_keepalive(handle.get(), true));
+    EXPECT_TRUE(handle.set_keepalive(true));
     TEST_DO(verifier.verify_keepalive(true));
-    EXPECT_TRUE(SocketOptions::set_keepalive(handle.get(), false));
+    EXPECT_TRUE(handle.set_keepalive(false));
     TEST_DO(verifier.verify_keepalive(false));
 }
 
@@ -375,13 +369,13 @@ TEST("require that tcp lingering can be adjusted") {
     SocketHandle handle(socket(my_inet(), SOCK_STREAM, 0));
     test::SocketOptionsVerifier verifier(handle.get());
     EXPECT_TRUE(!SocketOptions::set_linger(-1, true, 0));
-    EXPECT_TRUE(SocketOptions::set_linger(handle.get(), true, 0));
+    EXPECT_TRUE(handle.set_linger(true, 0));
     TEST_DO(verifier.verify_linger(true, 0));
-    EXPECT_TRUE(SocketOptions::set_linger(handle.get(), true, 10));
+    EXPECT_TRUE(handle.set_linger(true, 10));
     TEST_DO(verifier.verify_linger(true, 10));
-    EXPECT_TRUE(SocketOptions::set_linger(handle.get(), false, 0));
+    EXPECT_TRUE(handle.set_linger(false, 0));
     TEST_DO(verifier.verify_linger(false, 0));
-    EXPECT_TRUE(SocketOptions::set_linger(handle.get(), false, 10));
+    EXPECT_TRUE(handle.set_linger(false, 10));
     TEST_DO(verifier.verify_linger(false, 0));
 }
 

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "socket.h"
+#include <vespa/vespalib/net/socket.h>
 #include "buffer.h"
 #include "frame.h"
 
