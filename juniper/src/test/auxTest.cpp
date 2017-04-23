@@ -3,7 +3,7 @@
 #include "auxTest.h"
 #include <vespa/fastos/file.h>
 #include <vespa/log/log.h>
-LOG_SETUP("auxtest");
+LOG_SETUP(".auxtest");
 
 // Using separator definitions only from here:
 

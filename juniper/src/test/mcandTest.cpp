@@ -20,7 +20,7 @@
 #include "mcandTest.h"
 
 #include <vespa/log/log.h>
-LOG_SETUP("mcandtest");
+LOG_SETUP(".mcandtest");
 
 // Comment out cerr below to ignore unimplemented tests
 #define NOTEST(name) \
