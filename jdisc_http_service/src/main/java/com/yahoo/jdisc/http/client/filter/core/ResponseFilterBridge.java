@@ -5,7 +5,6 @@ import com.ning.http.client.filter.FilterContext;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.http.client.filter.ResponseFilterContext;
 
-import java.net.URISyntaxException;
 import java.util.Collections;
 
 /**
@@ -14,16 +13,12 @@ import java.util.Collections;
 public class ResponseFilterBridge {
 
     public static ResponseFilterContext toResponseFilterContext(FilterContext<?> filterContext, Request request) {
-        try {
-            return new ResponseFilterContext.Builder()
-                    .uri(filterContext.getRequest().getUri().toJavaNetURI())
-                    .statusCode(filterContext.getResponseStatus().getStatusCode())
-                    .headers(filterContext.getResponseHeaders().getHeaders())
-                    .requestContext(request == null ? Collections.<String, Object>emptyMap() : request.context())
-                    .build();
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("Bad URI", e);
-        }
+        return new ResponseFilterContext.Builder()
+                            .uri(filterContext.getRequest().getURI())
+                            .statusCode(filterContext.getResponseStatus().getStatusCode())
+                            .headers(filterContext.getResponseHeaders().getHeaders())
+                            .requestContext(request == null ? Collections.<String, Object>emptyMap() : request.context())
+                            .build();
     }
 
 }
