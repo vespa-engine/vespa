@@ -1,9 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.client;
 
-import com.ning.http.client.Cookie;
+import com.ning.http.client.cookie.Cookie;
 import com.ning.http.client.FluentCaseInsensitiveStringsMap;
 import com.ning.http.client.Response;
+import com.ning.http.client.uri.Uri;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -70,7 +71,7 @@ final class EmptyResponse implements Response {
     }
 
     @Override
-    public URI getUri() throws MalformedURLException {
+    public Uri getUri() {
         return null;
     }
 

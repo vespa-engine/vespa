@@ -4,8 +4,7 @@ package com.yahoo.jdisc.http.test;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
-import com.google.inject.name.Names;
-import com.ning.http.util.AllowAllHostnameVerifier;
+import com.ning.http.util.DefaultHostnameVerifier;
 import com.yahoo.jdisc.application.ContainerBuilder;
 import com.yahoo.jdisc.http.client.HttpClient;
 import com.yahoo.jdisc.http.client.HttpClientConfig;
@@ -91,7 +90,7 @@ public class ClientTestDriver {
 
             @Override
             protected void configure() {
-                bind(HostnameVerifier.class).to(AllowAllHostnameVerifier.class);
+                bind(HostnameVerifier.class).to(DefaultHostnameVerifier.class);
                 bind(new TypeLiteral<List<ResponseFilter>>() { }).toInstance(Collections.<ResponseFilter>emptyList());
             }
         };

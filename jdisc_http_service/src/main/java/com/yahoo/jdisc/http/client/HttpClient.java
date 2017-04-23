@@ -188,38 +188,34 @@ public class HttpClient extends AbstractClientProvider {
                                                  HostnameVerifier hostnameVerifier, SSLContext sslContext,
                                                  List<ResponseFilter> responseFilters) {
         AsyncHttpClientConfig.Builder builder = new AsyncHttpClientConfig.Builder();
-        builder.setAllowPoolingConnection(config.connectionPoolEnabled());
-        builder.setAllowSslConnectionPool(config.sslConnectionPoolEnabled());
-        builder.setCompressionEnabled(config.compressionEnabled());
-        builder.setConnectionTimeoutInMs((int)(config.connectionTimeout() * 1000));
+        builder.setAllowPoolingConnections(config.connectionPoolEnabled());
+        builder.setAllowPoolingSslConnections(config.sslConnectionPoolEnabled());
+        builder.setCompressionEnforced(config.compressionEnabled());
+        builder.setConnectTimeout((int)(config.connectionTimeout() * 1000));
         builder.setExecutorService(Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2,
                                                                 threadFactory));
-        builder.setFollowRedirects(config.followRedirects());
+        builder.setFollowRedirect(config.followRedirects());
         builder.setHostnameVerifier(hostnameVerifier);
         builder.setIOThreadMultiplier(2);
-        builder.setIdleConnectionInPoolTimeoutInMs((int)(config.idleConnectionInPoolTimeout() * 1000));
-        builder.setIdleConnectionTimeoutInMs((int)(config.idleConnectionTimeout() * 1000));
+        builder.setPooledConnectionIdleTimeout((int)(config.idleConnectionInPoolTimeout() * 1000));
         builder.setMaxRequestRetry(config.chunkedEncodingEnabled() ? 0 : config.maxNumRetries());
-        builder.setMaximumConnectionsPerHost(config.maxNumConnectionsPerHost());
-        builder.setMaximumConnectionsTotal(config.maxNumConnections());
-        builder.setMaximumNumberOfRedirects(config.maxNumRedirects());
+        builder.setMaxConnectionsPerHost(config.maxNumConnectionsPerHost());
+        builder.setMaxConnections(config.maxNumConnections());
+        builder.setMaxRedirects(config.maxNumRedirects());
         if (!config.proxyServer().isEmpty()) {
             builder.setProxyServer(ProxyServerFactory.newInstance(URI.create(config.proxyServer())));
         }
-        builder.setRemoveQueryParamsOnRedirect(config.removeQueryParamsOnRedirect());
-        builder.setRequestCompressionLevel(config.compressionLevel());
-        builder.setRequestTimeoutInMs((int)(config.requestTimeout() * 1000));
+        builder.setRequestTimeout((int)(config.requestTimeout() * 1000));
         builder.setSSLContext(sslContext);
         builder.setUseProxyProperties(config.useProxyProperties());
-        builder.setUseRawUrl(config.useRawUri());
         builder.setUserAgent(config.userAgent());
-        builder.setWebSocketIdleTimeoutInMs((int)(config.idleWebSocketTimeout() * 1000));
+        builder.setWebSocketTimeout((int)(config.idleWebSocketTimeout() * 1000));
 
         for (final ResponseFilter responseFilter : responseFilters) {
             builder.addResponseFilter(new com.ning.http.client.filter.ResponseFilter() {
                 @Override
                 @SuppressWarnings("rawtypes")
-                public FilterContext filter(FilterContext filterContext) throws FilterException {
+                public <T> FilterContext<T> filter(FilterContext<T> filterContext) throws FilterException {
                     /*
                      * TODO: returned ResponseFilterContext is ignored right now.
                      * For now, we return the input filterContext until there is a need for custom filterContext
