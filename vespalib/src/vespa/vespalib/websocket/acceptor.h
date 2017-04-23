@@ -14,8 +14,8 @@ namespace ws {
 class Acceptor {
 private:
     ServerSocket _server_socket;
-    std::thread _accept_thread;
     std::atomic<bool> _is_closed;
+    std::thread _accept_thread;
 
     void accept_main(Handler<Socket> &socket_handler);
 

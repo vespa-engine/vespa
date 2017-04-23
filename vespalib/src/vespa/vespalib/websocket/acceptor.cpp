@@ -21,8 +21,8 @@ Acceptor::accept_main(Handler<Socket> &socket_handler)
 
 Acceptor::Acceptor(int port_in, Handler<Socket> &socket_handler)
     : _server_socket(port_in),
-      _accept_thread(&Acceptor::accept_main, this, std::ref(socket_handler)),
-      _is_closed(false)
+      _is_closed(false),
+      _accept_thread(&Acceptor::accept_main, this, std::ref(socket_handler))
 {
 }
 
