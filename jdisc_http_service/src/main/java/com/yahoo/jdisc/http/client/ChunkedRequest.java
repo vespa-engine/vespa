@@ -26,7 +26,11 @@ final class ChunkedRequest {
         RequestBuilder builder = RequestBuilderFactory.newInstance(request, method);
         ChunkedRequestContent content = new ChunkedRequestContent(request);
         builder.setBody(content);
-        ningClient.executeRequest(builder.build(), new AsyncResponseHandler(request, handler, metric, ctx));
+        try {
+            ningClient.executeRequest(builder.build(), new AsyncResponseHandler(request, handler, metric, ctx));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         return content;
     }
 }
