@@ -8,6 +8,7 @@ vespa_add_library(storage_storageserver
     fnetlistener.cpp
     rpcrequestwrapper.cpp
     communicationmanager.cpp
+    communicationmanagermetrics.cpp
     statemanager.cpp
     documentapiconverter.cpp
     opslogger.cpp

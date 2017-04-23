@@ -5,7 +5,7 @@
 #include "attributevector.hpp"
 #include "multivalueattribute.hpp"
 #include "multinumericattribute.hpp"
-#include "multistringattribute.h"
+#include "multistringattribute.hpp"
 
 namespace search {
 
