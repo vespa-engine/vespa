@@ -6,7 +6,6 @@
 #include <vespa/storage/distributor/min_replica_provider.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/util/jsonstream.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <tests/common/hostreporter/util.h>
 #include <vespa/vespalib/stllike/asciistream.h>

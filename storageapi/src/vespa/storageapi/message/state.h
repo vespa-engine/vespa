@@ -1,9 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * @file state.h
- *
- * State commands.
- */
+
 #pragma once
 
 #include <vespa/storageapi/messageapi/storagecommand.h>
@@ -25,9 +21,7 @@ class GetNodeStateCommand : public StorageCommand {
 public:
     explicit GetNodeStateCommand(lib::NodeState::UP expectedState);
 
-    const lib::NodeState* getExpectedState() const
-        { return _expectedState.get(); }
-
+    const lib::NodeState* getExpectedState() const { return _expectedState.get(); }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGECOMMAND(GetNodeStateCommand, onGetNodeState)
@@ -71,9 +65,7 @@ class SetSystemStateCommand : public StorageCommand {
 
 public:
     explicit SetSystemStateCommand(const lib::ClusterState&);
-
     const lib::ClusterState& getSystemState() const { return _state; }
-
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGECOMMAND(SetSystemStateCommand, onSetSystemState)
@@ -93,7 +85,6 @@ public:
 
     // Not serialized. Available locally
     const lib::ClusterState& getSystemState() const { return _state; }
-
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGEREPLY(SetSystemStateReply, onSetSystemStateReply)
@@ -101,4 +92,3 @@ public:
 
 } // api
 } // storage
-

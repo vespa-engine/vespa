@@ -10,9 +10,6 @@ namespace defaultimplementation {
 
 struct TimeTest : public CppUnit::TestFixture
 {
-    void setUp() override {}
-    void tearDown() override {}
-
     void testBasics();
     void testCreatedFromClock();
     void canAssignMicrosecondResolutionTimeToFakeClock();

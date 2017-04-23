@@ -13,9 +13,9 @@
 
 #pragma once
 
+#include "mergestatus.h"
 #include <vespa/document/bucket/bucketid.h>
 #include <ostream>
-#include <vespa/storage/persistence/filestorage/mergestatus.h>
 #include <vespa/storage/storageutil/resumeguard.h>
 #include <vespa/storage/common/messagesender.h>
 

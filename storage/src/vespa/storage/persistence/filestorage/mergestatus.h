@@ -41,7 +41,7 @@ public:
             const std::vector<api::ApplyBucketDiffCommand::Entry>& part,
             uint16_t hasMask);
     void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+               const std::string& indent) const override;
 
     bool isFirstNode() const { return (reply.get() != 0); }
 };

@@ -29,7 +29,7 @@ private:
                             vespalib::ThreadStackExecutor &e,
                             std::unique_ptr<PersistenceProvider> &p)
             : FNET_Task(s), executor(e), provider(p) {}
-        virtual void PerformTask() override {
+        void PerformTask() override {
             executor.sync();
             assert(provider.get() != 0);
             provider.reset();

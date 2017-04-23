@@ -1,13 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/thread.h>
 #include <vespa/vespalib/util/runnable_pair.h>
 #include <vbench/vbench/vbench.h>
-#include <vespa/vespalib/data/slime/slime.h>
-#include <string>
 #include <iostream>
 
 using namespace vbench;
@@ -17,7 +14,7 @@ typedef vespalib::SignalHandler SIG;
 struct NotifyDone : public vespalib::Runnable {
     vespalib::Gate &done;
     NotifyDone(vespalib::Gate &d) : done(d) {}
-    virtual void run() override {
+    void run() override {
         done.countDown();
     }
 };

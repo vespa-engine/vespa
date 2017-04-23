@@ -1,15 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".get_weight_from_node");
-
 #include "get_weight_from_node.h"
 #include <vespa/searchlib/query/tree/intermediatenodes.h>
-#include <vespa/searchlib/query/tree/node.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/templatetermvisitor.h>
-#include <vespa/searchlib/query/tree/termnodes.h>
 
 using search::query::Node;
 using search::query::SimpleQueryNodeTypes;
@@ -31,7 +25,7 @@ struct WeightExtractor : public TemplateTermVisitor<WeightExtractor,
     }
 
     // Treat Equiv nodes as terms.
-    virtual void visit(search::query::Equiv &n) override { visitTerm(n); }
+    void visit(search::query::Equiv &n) override { visitTerm(n); }
 };
 
 } // namespace search::queryeval::<unnamed>

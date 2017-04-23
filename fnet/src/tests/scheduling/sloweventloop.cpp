@@ -2,7 +2,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/fnet/fnet.h>
 
-
 class MyTask : public FNET_Task
 {
 public:

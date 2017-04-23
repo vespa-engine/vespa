@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/vespalib/objects/visit.hpp>
@@ -22,7 +22,7 @@ IMPLEMENT_IDENTIFIABLE(Base, vespalib::Identifiable);
 struct Baz : public Base
 {
     DECLARE_IDENTIFIABLE(Baz);
-    virtual Baz *clone() const override { return new Baz(*this); }
+    Baz *clone() const override { return new Baz(*this); }
 };
 IMPLEMENT_IDENTIFIABLE(Baz, Base);
 
@@ -45,9 +45,9 @@ struct Bar : public Base
             _int32(-4), _uint32(4), _int64(-8), _uint64(8),
             _float(2.5), _double(2.75), _string("bla bla") {}
 
-    virtual Bar *clone() const override { return new Bar(*this); }
+    Bar *clone() const override { return new Bar(*this); }
 
-    virtual void visitMembers(ObjectVisitor &v) const override {
+    void visitMembers(ObjectVisitor &v) const override {
         visit(v, "_bool", _bool);
         visit(v, "_int8", _int8);
         visit(v, "_uint8", _uint8);

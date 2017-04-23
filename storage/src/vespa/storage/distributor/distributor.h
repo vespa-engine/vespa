@@ -2,7 +2,6 @@
 
 #pragma once
 
-
 #include "idealstatemanager.h"
 #include "bucketdbupdater.h"
 #include "pendingmessagetracker.h"
@@ -22,7 +21,6 @@
 #include <vespa/storageframework/generic/thread/tickingthread.h>
 #include <vespa/config/config.h>
 #include <vespa/vespalib/util/sync.h>
-
 #include <unordered_map>
 
 namespace storage {
@@ -57,16 +55,12 @@ public:
     ~Distributor();
 
     void onOpen() override;
-
     void onClose() override;
-
     bool onDown(const std::shared_ptr<api::StorageMessage>&) override;
-
     void sendUp(const std::shared_ptr<api::StorageMessage>&) override;
-
     void sendDown(const std::shared_ptr<api::StorageMessage>&) override;
 
-    virtual ChainedMessageSender& getMessageSender() override {
+    ChainedMessageSender& getMessageSender() override {
         return (_messageSender == 0 ? *this : *_messageSender);
     }
 
@@ -99,8 +93,7 @@ public:
     bool handleReply(const std::shared_ptr<api::StorageReply>& reply) override;
 
     // StatusReporter implementation
-    vespalib::string getReportContentType(
-            const framework::HttpUrlPath&) const override;
+    vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
     bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 
     bool handleStatusRequest(const DelegatedStatusRequest& request) const override;
@@ -117,8 +110,7 @@ public:
      * Checks whether a bucket needs to be split, and sends a split
      * if so.
      */
-    void checkBucketForSplit(const BucketDatabase::Entry& e,
-                             uint8_t priority) override;
+    void checkBucketForSplit(const BucketDatabase::Entry& e, uint8_t priority) override;
 
     const lib::Distribution& getDistribution() const override;
 
@@ -130,8 +122,9 @@ public:
      * @return Returns the states in which the distributors consider
      * storage nodes to be up.
      */
-    const char* getStorageNodeUpStates() const override
-    { return _initializingIsUp ? "uri" : "ur"; }
+    const char* getStorageNodeUpStates() const override {
+        return _initializingIsUp ? "uri" : "ur";
+    }
 
     /**
      * Called by bucket db updater after a merge has finished, and all the
@@ -154,13 +147,10 @@ public:
     }
 
     int getDistributorIndex() const override;
-
     const std::string& getClusterName() const override;
-
     const PendingMessageTracker& getPendingMessageTracker() const override;
-
-    virtual void sendCommand(const std::shared_ptr<api::StorageCommand>&) override;
-    virtual void sendReply(const std::shared_ptr<api::StorageReply>&) override;
+    void sendCommand(const std::shared_ptr<api::StorageCommand>&) override;
+    void sendReply(const std::shared_ptr<api::StorageReply>&) override;
 
     const BucketGcTimeCalculator::BucketIdHasher&
     getBucketIdHasher() const override {

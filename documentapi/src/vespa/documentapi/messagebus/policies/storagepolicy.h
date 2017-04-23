@@ -39,13 +39,9 @@ private:
 
 public:
     StoragePolicy(const string& param);
-    virtual ~StoragePolicy();
-
-    // Inherit doc from IRoutingPolicy.
-    virtual void doSelect(mbus::RoutingContext &context) override;
-
-    // Inherit doc from IRoutingPolicy.
-    virtual void merge(mbus::RoutingContext &context) override;
+    ~StoragePolicy();
+    void doSelect(mbus::RoutingContext &context) override;
+    void merge(mbus::RoutingContext &context) override;
 
     void updateStateFromReply(WrongDistributionReply& reply);
 
@@ -56,7 +52,6 @@ public:
     const storage::lib::ClusterState* getSystemState() const { return _state.get(); }
 
     virtual void configure(std::unique_ptr<storage::lib::Distribution::DistributionConfig> config);
-
     string init() override;
 
 private:

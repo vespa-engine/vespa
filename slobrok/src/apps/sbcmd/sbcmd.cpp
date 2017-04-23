@@ -1,14 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP("sb-cmd");
 
 #include <vespa/fnet/frt/frt.h>
-
+#include <vespa/fastos/app.h>
 #include <string>
 #include <sstream>
 
+#include <vespa/log/log.h>
+LOG_SETUP("sb-cmd");
 
 class Slobrok_CMD : public FastOS_Application
 {
@@ -25,16 +23,14 @@ public:
     int usage();
     void initRPC(const char *spec);
     void finiRPC();
-    virtual int Main() override;
+    int Main() override;
 };
-
 
 Slobrok_CMD::~Slobrok_CMD()
 {
     LOG_ASSERT(_supervisor == NULL);
     LOG_ASSERT(_target == NULL);
 }
-
 
 int
 Slobrok_CMD::usage()

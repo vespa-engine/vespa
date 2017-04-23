@@ -1,15 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/vdstestlib/cppunit/dirconfig.h>
-
-#include <fstream>
-#include <iostream>
-#include <vespa/log/log.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/exceptions.h>
-
-LOG_SETUP("dirconfig_test");
+#include <vespa/vdstestlib/cppunit/dirconfig.h>
+#include <fstream>
+#include <iostream>
 
 using namespace vdstestlib;
 

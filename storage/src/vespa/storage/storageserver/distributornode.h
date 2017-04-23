@@ -8,9 +8,9 @@
 
 #pragma once
 
+#include "distributornodecontext.h"
+#include "storagenode.h"
 #include <vespa/storage/common/distributorcomponent.h>
-#include <vespa/storage/storageserver/distributornodecontext.h>
-#include <vespa/storage/storageserver/storagenode.h>
 #include <vespa/storageframework/generic/thread/tickingthread.h>
 
 namespace storage {
@@ -41,19 +41,16 @@ public:
                     StorageLink::UP communicationManager = StorageLink::UP());
     ~DistributorNode();
 
-    virtual const lib::NodeType& getNodeType() const override
-        { return lib::NodeType::DISTRIBUTOR; }
-
-    virtual ResumeGuard pause() override;
+    const lib::NodeType& getNodeType() const override { return lib::NodeType::DISTRIBUTOR; }
+    ResumeGuard pause() override;
 
     void handleConfigChange(vespa::config::content::core::StorDistributormanagerConfig&);
     void handleConfigChange(vespa::config::content::core::StorVisitordispatcherConfig&);
 
 private:
-    virtual void initializeNodeSpecific() override;
-    virtual StorageLink::UP createChain() override;
-
-    virtual api::Timestamp getUniqueTimestamp() override;
+    void initializeNodeSpecific() override;
+    StorageLink::UP createChain() override;
+    api::Timestamp getUniqueTimestamp() override;
 
     /**
      * Shut down necessary distributor-specific components before shutting
@@ -63,4 +60,3 @@ private:
 };
 
 } // storage
-

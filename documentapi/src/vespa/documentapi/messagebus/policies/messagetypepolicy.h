@@ -43,16 +43,10 @@ public:
      * @param configUri The configuration uri to subscribe with.
      */
     MessageTypePolicy(const config::ConfigUri & configUri);
-
-    // Implements Subscriber.
+    ~MessageTypePolicy();
     void configure(std::unique_ptr<vespa::config::content::MessagetyperouteselectorpolicyConfig> cfg) override;
-
-    // Implements IRoutingPolicy.
     void select(mbus::RoutingContext &context) override;
-
-    // Implements IRoutingPolicy.
     void merge(mbus::RoutingContext &context) override;
 };
 
 }
-

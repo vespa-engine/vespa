@@ -1,21 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/attribute/floatbase.h>
+#include "attributefactory.h"
+#include "integerbase.h"
+#include "floatbase.h"
 #include "defines.h"
-
-#include <vespa/log/log.h>
-LOG_SETUP(".createsinglefastsearch");
-
-#include <vespa/searchlib/attribute/singlestringattribute.h>
-#include <vespa/searchlib/attribute/singlestringpostattribute.hpp>
-#include <vespa/searchlib/attribute/singlenumericenumattribute.hpp>
-#include <vespa/searchlib/attribute/singlenumericpostattribute.hpp>
-#include <vespa/searchlib/attribute/enumstore.hpp>
-#include <vespa/searchlib/attribute/enumattribute.hpp>
-#include <vespa/searchlib/attribute/singleenumattribute.hpp>
+#include "singlestringattribute.h"
+#include "singlestringpostattribute.hpp"
+#include "singlenumericenumattribute.hpp"
+#include "singlenumericpostattribute.hpp"
+#include "enumstore.hpp"
+#include "enumattribute.hpp"
+#include "singleenumattribute.hpp"
 
 #define INTPOSTING(T)   SingleValueNumericPostingAttribute< ENUM_ATTRIBUTE(IntegerAttributeTemplate<T>) >
 #define FLOATPOSTING(T) SingleValueNumericPostingAttribute< ENUM_ATTRIBUTE(FloatingPointAttributeTemplate<T>) >

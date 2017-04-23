@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vector>
 #include <vespa/messagebus/routing/hop.h>
 #include <vespa/messagebus/routing/iroutingpolicy.h>
 #include <vespa/documentapi/common.h>
@@ -26,19 +25,9 @@ public:
      * @param param A string of recipients to select unless recipients have been configured.
      */
     ANDPolicy(const string& param);
-
-    /**
-     * Destructor.
-     *
-     * Frees all allocated resources.
-     */
-    virtual ~ANDPolicy();
-
-    // Inherit doc from IRoutingPolicy.
-    virtual void select(mbus::RoutingContext &context) override;
-
-    // Inherit doc from IRoutingPolicy.
-    virtual void merge(mbus::RoutingContext &context) override;
+    ~ANDPolicy();
+    void select(mbus::RoutingContext &context) override;
+    void merge(mbus::RoutingContext &context) override;
 
 private:
     ANDPolicy(const ANDPolicy &);            // hide

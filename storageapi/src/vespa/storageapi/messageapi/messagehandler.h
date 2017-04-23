@@ -13,6 +13,7 @@
 
 #pragma once
 
+#include <memory>
 
 namespace storage {
 namespace api {

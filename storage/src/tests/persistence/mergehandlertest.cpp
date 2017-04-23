@@ -3,15 +3,13 @@
 #include <vespa/document/base/testdocman.h>
 #include <vespa/storage/persistence/mergehandler.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
-#include <vespa/storageapi/message/bucket.h>
-#include <vespa/log/log.h>
 #include <tests/persistence/persistencetestutils.h>
 #include <tests/persistence/common/persistenceproviderwrapper.h>
 #include <tests/distributor/messagesenderstub.h>
-#include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <cmath>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".test.persistence.handler.merge");
 
 namespace storage {

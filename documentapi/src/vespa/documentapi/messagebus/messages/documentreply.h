@@ -32,7 +32,7 @@ public:
     /**
      * Virtual destructor required for inheritance.
      */
-    virtual ~DocumentReply() { }
+    ~DocumentReply() { }
 
     /**
      * Returns the priority tag for this message. This is an optional tag added for VDS that is not interpreted by the
@@ -41,7 +41,6 @@ public:
      * @return The priority.
      */
     Priority::Value getPriority() const { return _priority; }
-
     uint8_t priority() const override { return (uint8_t)_priority; }
 
     /**
@@ -50,13 +49,8 @@ public:
      * @param priority The priority to set.
      */
     void setPriority(Priority::Value p) { _priority = p; }
-
-    // Implements mbus::Reply.
     const mbus::string& getProtocol() const override;
-
-    // Implements mbus::Reply.
     uint32_t getType() const override { return _type; }
 };
 
 }
-

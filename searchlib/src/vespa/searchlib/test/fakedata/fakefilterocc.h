@@ -4,11 +4,9 @@
 #include "fakeword.h"
 #include "fakeposting.h"
 
-namespace search
-{
+namespace search {
 
-namespace fakedata
-{
+namespace fakedata {
 
 /*
  * Old posocc format.
@@ -22,51 +20,19 @@ private:
 public:
     FakeFilterOcc(const FakeWord &fakeword);
 
-    ~FakeFilterOcc(void);
+    ~FakeFilterOcc();
 
-    static void
-    forceLink(void);
+    static void forceLink();
 
-    /*
-     * Size of posting list, in bits.
-     */
-    size_t bitSize(void) const override;
-
-    virtual bool hasWordPositions(void) const override;
-
-    /*
-     * Single posting list performance, without feature unpack.
-     */
-    virtual int
-    lowLevelSinglePostingScan(void) const override;
-
-    /*
-     * Single posting list performance, with feature unpack.
-     */
-    virtual int
-    lowLevelSinglePostingScanUnpack(void) const override;
-
-    /*
-     * Two posting lists performance (same format) without feature unpack.
-     */
-    virtual int
-    lowLevelAndPairPostingScan(const FakePosting &rhs) const override;
-
-    /*
-     * Two posting lists performance (same format) with feature unpack.
-     */
-    virtual int
-    lowLevelAndPairPostingScanUnpack(const FakePosting &rhs) const override;
-
-
-    /*
-     * Iterator factory, for current query evaluation framework.
-     */
-    virtual search::queryeval::SearchIterator *
-    createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
+    size_t bitSize() const override;
+    bool hasWordPositions(void) const override;
+    int lowLevelSinglePostingScan(void) const override;
+    int lowLevelSinglePostingScanUnpack(void) const override;
+    int lowLevelAndPairPostingScan(const FakePosting &rhs) const override;
+    int lowLevelAndPairPostingScanUnpack(const FakePosting &rhs) const override;
+    queryeval::SearchIterator * createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
 };
 
 } // namespace fakedata
 
 } // namespace search
-

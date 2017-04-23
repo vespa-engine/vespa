@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/objects/identifiable.hpp>
 #include <vespa/vespalib/objects/objectpredicate.h>
@@ -17,7 +17,7 @@ struct Foo : public Identifiable
 
     DECLARE_IDENTIFIABLE(Foo);
     virtual Foo *clone() const { return new Foo(*this); }
-    virtual void selectMembers(const ObjectPredicate &p, ObjectOperation &o) override {
+    void selectMembers(const ObjectPredicate &p, ObjectOperation &o) override {
         for (uint32_t i = 0; i < nodes.size(); ++i) {
             nodes[i]->select(p, o);
         }
@@ -32,7 +32,7 @@ struct Bar : public Foo
     DECLARE_IDENTIFIABLE(Bar);
     Bar() : value(0) {}
     Bar(int v) { value = v; }
-    virtual Bar *clone() const override { return new Bar(*this); }
+    Bar *clone() const override { return new Bar(*this); }
 };
 IMPLEMENT_IDENTIFIABLE(Bar, Identifiable);
 
@@ -40,7 +40,7 @@ struct ObjectType : public ObjectPredicate
 {
     uint32_t cid;
     ObjectType(uint32_t id) : cid(id) {}
-    virtual bool check(const Identifiable &obj) const override {
+    bool check(const Identifiable &obj) const override {
         return (obj.getClass().id() == cid);
     }
 };
@@ -48,7 +48,7 @@ struct ObjectType : public ObjectPredicate
 struct ObjectCollect : public ObjectOperation
 {
     std::vector<Identifiable*> nodes;
-    virtual void execute(Identifiable &obj) override {
+    void execute(Identifiable &obj) override {
         nodes.push_back(&obj);
     }
 };

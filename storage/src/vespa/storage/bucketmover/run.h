@@ -15,12 +15,13 @@
 
 #pragma once
 
-#include <list>
-#include <map>
+
 #include <vespa/storage/bucketmover/move.h>
 #include <vespa/storage/bucketmover/runstatistics.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/nodestate.h>
+#include <list>
+#include <map>
 
 namespace storage {
 
@@ -91,8 +92,7 @@ public:
 
     RunStatistics& getStatistics() { return _statistics; }
     const RunStatistics& getStatistics() const { return _statistics; }
-
-    virtual void print(std::ostream&, bool verbose, const std::string& indent) const override;
+    void print(std::ostream&, bool verbose, const std::string& indent) const override;
 private:
     void removePending(Move&);
     void finalize();
@@ -100,4 +100,3 @@ private:
 
 } // bucketmover
 } // storage
-

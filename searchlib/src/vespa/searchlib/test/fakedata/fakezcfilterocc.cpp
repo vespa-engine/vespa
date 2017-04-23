@@ -1,16 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".fakezcfilterocc");
 #include "fakezcfilterocc.h"
-#include <vespa/searchlib/bitcompression/compression.h>
-#include <vespa/searchlib/bitcompression/posocccompression.h>
-#include <vespa/searchlib/diskindex/zcposocciterators.h>
-#include <vespa/searchlib/index/docidandfeatures.h>
-#include <vespa/searchlib/index/postinglistcounts.h>
 #include "fpfactory.h"
-
+#include <vespa/searchlib/diskindex/zcposocciterators.h>
 
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataArray;
@@ -26,11 +18,9 @@ using search::bitcompression::FeatureEncodeContext;
 using search::ComprFileWriteContext;
 using namespace search::diskindex;
 
-namespace search
-{
+namespace search {
 
-namespace fakedata
-{
+namespace fakedata {
 
 
 #define L1SKIPSTRIDE 16
@@ -769,10 +759,8 @@ class FakeZcSkipFilterOcc : public FakeZcFilterOcc
 public:
     FakeZcSkipFilterOcc(const FakeWord &fw);
 
-    ~FakeZcSkipFilterOcc(void);
-
-    virtual SearchIterator *
-    createIterator(const TermFieldMatchDataArray &matchData) const override;
+    ~FakeZcSkipFilterOcc();
+    SearchIterator *createIterator(const TermFieldMatchDataArray &matchData) const override;
 };
 
 static FPFactoryInit
@@ -1384,17 +1372,11 @@ class FakeEGCompr64PosOcc : public FakeZcFilterOcc
 {
 public:
     FakeEGCompr64PosOcc(const FakeWord &fw);
-
-    ~FakeEGCompr64PosOcc(void);
-
+    ~FakeEGCompr64PosOcc();
     void setup(const FakeWord &fw);
-
-    size_t bitSize(void) const override;
-
-    virtual bool hasWordPositions(void) const override;
-
-    virtual SearchIterator *
-    createIterator(const TermFieldMatchDataArray &matchData) const override;
+    size_t bitSize() const override;
+    bool hasWordPositions() const override;
+    SearchIterator *createIterator(const TermFieldMatchDataArray &matchData) const override;
 };
 
 
@@ -1488,7 +1470,7 @@ FakeEGCompr64PosOcc<bigEndian>::setup(const FakeWord &fw)
 
 template <bool bigEndian>
 size_t
-FakeEGCompr64PosOcc<bigEndian>::bitSize(void) const
+FakeEGCompr64PosOcc<bigEndian>::bitSize() const
 {
     return _compressedBits;
 }
@@ -1496,7 +1478,7 @@ FakeEGCompr64PosOcc<bigEndian>::bitSize(void) const
 
 template <bool bigEndian>
 bool
-FakeEGCompr64PosOcc<bigEndian>::hasWordPositions(void) const
+FakeEGCompr64PosOcc<bigEndian>::hasWordPositions() const
 {
     return true;
 }
@@ -1517,17 +1499,11 @@ class FakeEG2Compr64PosOcc : public FakeZcFilterOcc
 {
 public:
     FakeEG2Compr64PosOcc(const FakeWord &fw);
-
-    ~FakeEG2Compr64PosOcc(void);
-
+    ~FakeEG2Compr64PosOcc();
     void setup(const FakeWord &fw);
-
-    size_t bitSize(void) const override;
-
-    virtual bool hasWordPositions(void) const override;
-
-    virtual SearchIterator *
-    createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
+    size_t bitSize() const override;
+    bool hasWordPositions() const override;
+    SearchIterator *createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
 };
 
 
@@ -1650,15 +1626,11 @@ class FakeZcSkipPosOcc : public FakeZcFilterOcc
     search::index::PostingListCounts _counts;
 public:
     FakeZcSkipPosOcc(const FakeWord &fw);
+    ~FakeZcSkipPosOcc();
 
-    ~FakeZcSkipPosOcc(void);
-
-    size_t bitSize(void) const override;
-
-    virtual bool hasWordPositions(void) const override;
-
-    virtual SearchIterator *
-    createIterator(const TermFieldMatchDataArray &matchData) const override;
+    size_t bitSize() const override;
+    bool hasWordPositions() const override;
+    SearchIterator *createIterator(const TermFieldMatchDataArray &matchData) const override;
 };
 
 
@@ -1673,14 +1645,14 @@ FakeZcSkipPosOcc<bigEndian>::FakeZcSkipPosOcc(const FakeWord &fw)
 
 
 template <bool bigEndian>
-FakeZcSkipPosOcc<bigEndian>::~FakeZcSkipPosOcc(void)
+FakeZcSkipPosOcc<bigEndian>::~FakeZcSkipPosOcc()
 {
 }
 
 
 template <bool bigEndian>
 size_t
-FakeZcSkipPosOcc<bigEndian>::bitSize(void) const
+FakeZcSkipPosOcc<bigEndian>::bitSize() const
 {
     return _compressedBits -
         _l1SkipSize - _l2SkipSize - _l3SkipSize - _l4SkipSize;
@@ -1689,7 +1661,7 @@ FakeZcSkipPosOcc<bigEndian>::bitSize(void) const
 
 template <bool bigEndian>
 bool
-FakeZcSkipPosOcc<bigEndian>::hasWordPositions(void) const
+FakeZcSkipPosOcc<bigEndian>::hasWordPositions() const
 {
     return true;
 }
@@ -1714,15 +1686,10 @@ class FakeZc2SkipPosOcc : public FakeZcFilterOcc
     search::index::PostingListCounts _counts;
 public:
     FakeZc2SkipPosOcc(const FakeWord &fw);
-
-    ~FakeZc2SkipPosOcc(void);
-
-    size_t bitSize(void) const override;
-
-    virtual bool hasWordPositions(void) const override;
-
-    virtual SearchIterator *
-    createIterator(const TermFieldMatchDataArray &matchData) const override;
+    ~FakeZc2SkipPosOcc();
+    size_t bitSize() const override;
+    bool hasWordPositions() const override;
+    SearchIterator *createIterator(const TermFieldMatchDataArray &matchData) const override;
 };
 
 
@@ -1737,14 +1704,14 @@ FakeZc2SkipPosOcc<bigEndian>::FakeZc2SkipPosOcc(const FakeWord &fw)
 
 
 template <bool bigEndian>
-FakeZc2SkipPosOcc<bigEndian>::~FakeZc2SkipPosOcc(void)
+FakeZc2SkipPosOcc<bigEndian>::~FakeZc2SkipPosOcc()
 {
 }
 
 
 template <bool bigEndian>
 size_t
-FakeZc2SkipPosOcc<bigEndian>::bitSize(void) const
+FakeZc2SkipPosOcc<bigEndian>::bitSize() const
 {
     return _compressedBits -
         _l1SkipSize - _l2SkipSize - _l3SkipSize - _l4SkipSize;
@@ -1753,7 +1720,7 @@ FakeZc2SkipPosOcc<bigEndian>::bitSize(void) const
 
 template <bool bigEndian>
 bool
-FakeZc2SkipPosOcc<bigEndian>::hasWordPositions(void) const
+FakeZc2SkipPosOcc<bigEndian>::hasWordPositions() const
 {
     return true;
 }

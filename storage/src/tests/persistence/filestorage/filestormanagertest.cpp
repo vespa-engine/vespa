@@ -9,7 +9,6 @@
 #include <vespa/document/select/parser.h>
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vdslib/container/mutabledocumentlist.h>
-#include <vespa/vdslib/container/operationlist.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/storageapi/message/bucket.h>
@@ -18,25 +17,17 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storage/bucketdb/bucketmanager.h>
-#include <vespa/storage/bucketdb/storbucketdb.h>
-#include <vespa/storage/common/bucketmessages.h>
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/storage/persistence/persistencethread.h>
-#include <vespa/storage/persistence/messages.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/storagelinktest.h>
 #include <tests/common/teststorageapp.h>
-#include <tests/common/dummystoragelink.h>
 #include <tests/persistence/filestorage/forwardingmessagesender.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/storageapi/message/batch.h>
 #include <vespa/storage/storageserver/statemanager.h>
 #include <vespa/fastos/file.h>
-#include <fstream>
-#include <memory>
-#include <atomic>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".filestormanagertest");
@@ -2364,10 +2355,8 @@ namespace {
             closeNextLink();
         }
 
-        virtual void print(std::ostream& out, bool, const std::string&) const override
-            { out << "MidLink"; }
-
-        virtual bool onUp(const std::shared_ptr<api::StorageMessage> & msg) override {
+        void print(std::ostream& out, bool, const std::string&) const override { out << "MidLink"; }
+        bool onUp(const std::shared_ptr<api::StorageMessage> & msg) override {
             if (!StorageLinkTest::callOnUp(_up, msg)) _up.sendUp(msg);
             return true;
         }
@@ -2395,10 +2384,9 @@ namespace {
               _leftAddr(leftAddr),
               _rightAddr(rightAddr) {}
 
-        virtual void print(std::ostream& out, bool, const std::string&) const override
-            { out << "BinaryStorageLink"; }
+        void print(std::ostream& out, bool, const std::string&) const override { out << "BinaryStorageLink"; }
 
-        virtual bool onDown(const std::shared_ptr<api::StorageMessage> & msg) override {
+        bool onDown(const std::shared_ptr<api::StorageMessage> & msg) override {
 //            LOG(debug, "onDown Received msg: ->%s, %s %llu\n", msg->getAddress() ? msg->getAddress()->toString().c_str() : "(null)", msg->toString().c_str(), msg->getMsgId());
 
             vespalib::LockGuard lock(_lock);
@@ -2432,7 +2420,7 @@ namespace {
             return true;
         }
 
-        virtual bool onUp(const std::shared_ptr<api::StorageMessage> & msg) override {
+        bool onUp(const std::shared_ptr<api::StorageMessage> & msg) override {
             // LOG(debug, "onUp Received msg: ->%s, %s %llu\n", msg->getAddress() ? msg->getAddress()->toString().c_str() : "(null)", msg->toString().c_str(), msg->getMsgId());
 
             vespalib::LockGuard lock(_lock);
