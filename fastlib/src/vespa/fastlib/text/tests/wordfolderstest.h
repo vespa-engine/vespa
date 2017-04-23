@@ -96,9 +96,9 @@ class WordFoldersTest : public Test
 
    bool AccentRemovalTest() {
        auto freefunction = [] (char * ptr) { free(ptr); };
-       auto input = std::unique_ptr<char, decltype(freefunction)>(Fast_UnicodeUtil::strdupLAT1("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½pï¿½!"),
+       auto input = std::unique_ptr<char, decltype(freefunction)>(Fast_UnicodeUtil::strdupLAT1("¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþpþ!"),
                                                                   freefunction);
-       auto yelloutput = std::unique_ptr<char, decltype(freefunction)>(Fast_UnicodeUtil::strdupLAT1("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½AAAAAEAAAECEEEEIIIIDNOOOOOEï¿½OEUUUUEYTHssaaaaaeaaaeceeeeiiiidnoooooeï¿½oeuuuueythpth!"),
+       auto yelloutput = std::unique_ptr<char, decltype(freefunction)>(Fast_UnicodeUtil::strdupLAT1("¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿AAAAAEAAAECEEEEIIIIDNOOOOOE×OEUUUUEYTHssaaaaaeaaaeceeeeiiiidnoooooe÷oeuuuueythpth!"),
                                                freefunction);
        Fast_NormalizeWordFolder wordfolder;
        int len = wordfolder.FoldedSizeAsUTF8(input.get());
