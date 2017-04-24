@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
-
-
-* @class CommunicationManager
+ * @class CommunicationManager
  * @ingroup storageserver
  *
  * @brief Class used for sending messages over the network.
@@ -12,26 +10,26 @@
 
 #pragma once
 
+#include <vespa/documentapi/documentapi.h>
+#include "communicationmanagermetrics.h"
+#include "messageallocationtypes.h"
+#include "documentapiconverter.h"
+#include <vespa/storage/common/storagelink.h>
+#include <vespa/storage/config/config-stor-communicationmanager.h>
+#include <vespa/storageframework/storageframework.h>
+#include <vespa/storageframework/storageframework.h>
+#include <vespa/storageapi/messageapi/storagecommand.h>
+#include <vespa/storageapi/messageapi/storagemessage.h>
+#include <vespa/storageapi/mbusprot/storagecommand.h>
+#include <vespa/storageapi/mbusprot/storagereply.h>
+#include <vespa/messagebus/rpcmessagebus.h>
+#include <vespa/metrics/metrics.h>
 #include <vespa/vespalib/util/document_runnable.h>
 #include <map>
 #include <memory>
 #include <queue>
 #include <vector>
 #include <atomic>
-#include <vespa/metrics/metrics.h>
-#include <vespa/messagebus/rpcmessagebus.h>
-#include <vespa/storageframework/storageframework.h>
-#include <vespa/storage/common/storagelink.h>
-#include <vespa/storage/config/config-stor-communicationmanager.h>
-#include <vespa/storageapi/messageapi/storagecommand.h>
-#include <vespa/storageapi/messageapi/storagemessage.h>
-#include <vespa/storageapi/mbusprot/storagecommand.h>
-#include <vespa/storageapi/mbusprot/storagereply.h>
-#include <vespa/documentapi/documentapi.h>
-#include <vespa/storage/storageserver/communicationmanagermetrics.h>
-#include <vespa/storage/storageserver/messageallocationtypes.h>
-#include "documentapiconverter.h"
-#include <vespa/storageframework/storageframework.h>
 
 namespace storage {
 
@@ -189,43 +187,32 @@ private:
 public:
     CommunicationManager(StorageComponentRegister& compReg,
                          const config::ConfigUri & configUri);
-    virtual ~CommunicationManager();
+    ~CommunicationManager();
 
     void enqueue(const std::shared_ptr<api::StorageMessage> & msg);
-
     mbus::RPCMessageBus& getMessageBus() { assert(_mbus.get()); return *_mbus; }
-
     const PriorityConverter& getPriorityConverter() const { return _docApiConverter.getPriorityConverter(); }
 
     /**
      * From StorageLink. Called when messages arrive from storage
      * modules. Will convert and dispatch messages to MessageServer
      */
-    virtual bool onUp(const std::shared_ptr<api::StorageMessage>&) override;
-
+    bool onUp(const std::shared_ptr<api::StorageMessage>&) override;
     bool sendCommand(const std::shared_ptr<api::StorageCommand>& command);
-
     bool sendReply(const std::shared_ptr<api::StorageReply>& reply);
     void sendDirectRPCReply(RPCRequestWrapper& request, const std::shared_ptr<api::StorageReply>& reply);
     void sendMessageBusReply(StorageTransportContext& context, const std::shared_ptr<api::StorageReply>& reply);
 
     // Pump thread
     void run(framework::ThreadHandle&) override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-
-    /** Get messages from messagebus. */
     void handleMessage(std::unique_ptr<mbus::Message> msg) override;
-
     void sendMessageBusMessage(const std::shared_ptr<api::StorageCommand>& msg,
-                                            std::unique_ptr<mbus::Message> mbusMsg, const mbus::Route& route);
+                               std::unique_ptr<mbus::Message> mbusMsg, const mbus::Route& route);
 
-    /** Get replies from messagebus. */
     void handleReply(std::unique_ptr<mbus::Reply> msg) override;
-
     void updateMessagebusProtocol(const document::DocumentTypeRepo::SP &repo);
-
 };
 
 } // storage
-

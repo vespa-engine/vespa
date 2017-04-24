@@ -12,9 +12,10 @@
 
 #pragma once
 
+#include "storagemetricsset.h"
+#include "storagenodecontext.h"
+#include "applicationgenerationfetcher.h"
 #include <vespa/document/bucket/bucketidfactory.h>
-#include <memory>
-#include <string>
 #include <vespa/storage/config/config-stor-server.h>
 
 #include <vespa/config/helper/legacysubscriber.h>
@@ -34,9 +35,6 @@
 #include <vespa/storageframework/defaultimplementation/memory/memorymanager.h>
 #include <vespa/storageframework/defaultimplementation/thread/threadpoolimpl.h>
 #include <vespa/storage/frameworkimpl/memory/memorystatusviewer.h>
-#include <vespa/storage/storageserver/applicationgenerationfetcher.h>
-#include <vespa/storage/storageserver/storagenodecontext.h>
-#include <vespa/storage/storageserver/storagemetricsset.h>
 #include <vespa/storage/visiting/visitormessagesessionfactory.h>
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/storage/storageutil/resumeguard.h>
@@ -78,12 +76,9 @@ public:
     virtual ~StorageNode();
 
     virtual const lib::NodeType& getNodeType() const = 0;
-
     bool attemptedStopped() const;
-
-    virtual void notifyDoneInitializing() override;
+    void notifyDoneInitializing() override;
     void waitUntilInitialized(uint32_t timeoutSeconds = 15);
-
     void updateMetrics(const MetricLockGuard & guard) override;
 
     /** Updates the document type repo. */
@@ -94,17 +89,12 @@ public:
      * is alive, no calls will be made towards the persistence provider.
      */
     virtual ResumeGuard pause() = 0;
-
     void requestShutdown(vespalib::stringref reason) override;
-
-    void
-    notifyPartitionDown(int partId, vespalib::stringref reason);
-
+    void notifyPartitionDown(int partId, vespalib::stringref reason);
     DoneInitializeHandler& getDoneInitializeHandler() { return *this; }
 
-        // For testing
+    // For testing
     StorageLink* getChain() { return _chain.get(); }
-
     virtual void initializeStatusWebServer();
 
 private:
@@ -140,10 +130,10 @@ private:
     std::unique_ptr<StorageLink>               _chain;
 
     /** Implementation of config callbacks. */
-    virtual void configure(std::unique_ptr<vespa::config::content::core::StorServerConfig> config) override;
-    virtual void configure(std::unique_ptr<vespa::config::content::UpgradingConfig> config) override;
-    virtual void configure(std::unique_ptr<vespa::config::content::StorDistributionConfig> config) override;
-    virtual void configure(std::unique_ptr<vespa::config::content::core::StorPrioritymappingConfig>) override;
+    void configure(std::unique_ptr<vespa::config::content::core::StorServerConfig> config) override;
+    void configure(std::unique_ptr<vespa::config::content::UpgradingConfig> config) override;
+    void configure(std::unique_ptr<vespa::config::content::StorDistributionConfig> config) override;
+    void configure(std::unique_ptr<vespa::config::content::core::StorPrioritymappingConfig>) override;
     virtual void configure(std::unique_ptr<document::DocumenttypesConfig> config,
                            bool hasChanged, int64_t generation);
     void updateUpgradeFlag(const vespa::config::content::UpgradingConfig&);
@@ -184,8 +174,6 @@ protected:
     virtual void handleLiveConfigUpdate();
     void shutdown();
     virtual void removeConfigSubscriptions();
-
 };
 
 } // storage
-
