@@ -425,12 +425,12 @@ public class NodeRepository extends AbstractComponent {
     }
 
     /**
-     * Removes a node. A node must be in the failed or parked state before it can be removed.
+     * Removes a node. A node must be in the provisioned, failed or parked state before it can be removed.
      *
      * @return true if the node was removed, false if it was not found in one of these states
      */
     public boolean remove(String hostname) {
-        Optional<Node> nodeToRemove = getNode(hostname, Node.State.failed, Node.State.parked);
+        Optional<Node> nodeToRemove = getNode(hostname, Node.State.provisioned, Node.State.failed, Node.State.parked);
         if ( ! nodeToRemove.isPresent()) return false;
 
         try (Mutex lock = lock(nodeToRemove.get())) {

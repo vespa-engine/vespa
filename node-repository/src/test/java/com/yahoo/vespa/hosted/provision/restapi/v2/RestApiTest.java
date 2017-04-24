@@ -82,6 +82,11 @@ public class RestApiTest {
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host11.yahoo.com"), "node11.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/parent2.yahoo.com"), "parent2.json");
 
+        // DELETE a provisioned node
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host11.yahoo.com",
+                                   new byte[0], Request.Method.DELETE),
+                       "{\"message\":\"Removed host11.yahoo.com\"}");
+
         // PUT nodes ready
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/host8.yahoo.com",
                         new byte[0], Request.Method.PUT),
@@ -352,10 +357,10 @@ public class RestApiTest {
                                    new byte[0], Request.Method.PUT),
                        "{\"message\":\"Moved host2.yahoo.com to ready\"}");
 
-        // Attempt to DELETE a node which is not put in failed first
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host8.yahoo.com",
+        // Attempt to DELETE a node which is not put in a deletable state first
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com",
                                    new byte[0], Request.Method.DELETE),
-                       404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"No node in the failed state with hostname host8.yahoo.com\"}");
+                       404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"No node in the provisioned, parked or failed state with hostname host2.yahoo.com\"}");
 
         // PUT current restart generation with string instead of long
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",

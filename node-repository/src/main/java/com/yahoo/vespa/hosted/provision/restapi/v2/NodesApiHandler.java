@@ -154,7 +154,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
             if (nodeRepository.remove(hostname))
                 return new MessageResponse("Removed " + hostname);
             else
-                throw new NotFoundException("No node in the failed state with hostname " + hostname);
+                throw new NotFoundException("No node in the provisioned, parked or failed state with hostname " + hostname);
         }
 
         throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
