@@ -245,9 +245,10 @@ struct JobFixture
     JobFixture(uint32_t allowedLidBloat = ALLOWED_LID_BLOAT,
                double allowedLidBloatFactor = ALLOWED_LID_BLOAT_FACTOR,
                uint32_t maxDocsToScan = MAX_DOCS_TO_SCAN,
-               double resourceLimitFactor = RESOURCE_LIMIT_FACTOR)
+               double resourceLimitFactor = RESOURCE_LIMIT_FACTOR,
+               double interval = JOB_DELAY)
         : _handler(),
-          _job(DocumentDBLidSpaceCompactionConfig(JOB_DELAY,
+          _job(DocumentDBLidSpaceCompactionConfig(interval,
                   allowedLidBloat, allowedLidBloatFactor, false, maxDocsToScan),
                _handler, _storer, _frozenHandler, _diskMemUsageNotifier, resourceLimitFactor),
           _jobRunner(_job)
@@ -538,6 +539,24 @@ TEST_F("require that resource limit factor adjusts limit", JobFixture(ALLOWED_LI
     TEST_DO(assertJobContext(2, 9, 1, 0, 0, f));
     TEST_DO(f.endScan().compact());
     TEST_DO(assertJobContext(2, 9, 1, 7, 1, f));
+}
+
+struct JobFixtureWithInterval : public JobFixture {
+    JobFixtureWithInterval(double interval)
+        : JobFixture(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, MAX_DOCS_TO_SCAN, RESOURCE_LIMIT_FACTOR, interval)
+    {}
+};
+
+TEST_F("require that delay is set based on interval and is max 300 secs", JobFixtureWithInterval(301))
+{
+    EXPECT_EQUAL(300, f._job.getDelay());
+    EXPECT_EQUAL(301, f._job.getInterval());
+}
+
+TEST_F("require that delay is set based on interval and can be less than 300 secs", JobFixtureWithInterval(299))
+{
+    EXPECT_EQUAL(299, f._job.getDelay());
+    EXPECT_EQUAL(299, f._job.getInterval());
 }
 
 TEST_MAIN()

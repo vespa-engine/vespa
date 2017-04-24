@@ -23,7 +23,7 @@ PruneRemovedDocumentsJob(const Config &config,
                          IPruneRemovedDocumentsHandler &handler,
                          IFrozenBucketHandler &frozenHandler)
     : IMaintenanceJob("prune_removed_documents." + docTypeName,
-                      config.getInterval(), config.getInterval()),
+                      config.getDelay(), config.getInterval()),
       _metaStore(metaStore),
       _subDbId(subDbId),
       _cfgAgeLimit(config.getAge()),

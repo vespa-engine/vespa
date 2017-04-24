@@ -308,6 +308,7 @@ filedistributor.configid reference default="" restart
 ## Interval between pruning of old removed documents.
 ##
 ## Default value is 6 hours (21600 seconds).
+## If set to 0, the value is calculated as (pruneremoveddocumentsage / 100) (default 3.36 hours).
 pruneremoveddocumentsinterval double default=21600.0
 
 ## Age of removed document before it can be pruned.
@@ -336,8 +337,8 @@ packetcompresstype enum {NONE, LZ4} default=LZ4
 
 ## Interval between considering if lid space compaction should be done (in seconds).
 ##
-## Default value is 1 hour (3600 seconds).
-lidspacecompaction.interval double default=3600.0
+## Default value is 10 minutes (600 seconds).
+lidspacecompaction.interval double default=600.0
 
 ## The allowed lid bloat (in docs) before considering lid space compaction.
 ##

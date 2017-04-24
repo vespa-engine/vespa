@@ -4,9 +4,12 @@
 
 namespace proton {
 
+constexpr double MAX_DELAY_SEC = 300;
+
 DocumentDBPruneConfig::
-DocumentDBPruneConfig(void)
-    : _interval(21600.0),
+DocumentDBPruneConfig()
+    : _delay(MAX_DELAY_SEC),
+      _interval(21600.0),
       _age(1209600.0)
 {
 }
@@ -14,7 +17,8 @@ DocumentDBPruneConfig(void)
 DocumentDBPruneConfig::
 DocumentDBPruneConfig(double interval,
                       double age)
-    : _interval(interval),
+    : _delay(std::min(MAX_DELAY_SEC, interval)),
+      _interval(interval),
       _age(age)
 {
 }
@@ -23,11 +27,12 @@ bool
 DocumentDBPruneConfig::
 operator==(const DocumentDBPruneConfig &rhs) const
 {
-    return _interval == rhs._interval &&
-                _age == rhs._age;
+    return _delay == rhs._delay &&
+           _interval == rhs._interval &&
+           _age == rhs._age;
 }
 
-DocumentDBHeartBeatConfig::DocumentDBHeartBeatConfig(void)
+DocumentDBHeartBeatConfig::DocumentDBHeartBeatConfig()
     : _interval(60.0)
 {
 }
@@ -45,7 +50,8 @@ operator==(const DocumentDBHeartBeatConfig &rhs) const
 }
 
 DocumentDBLidSpaceCompactionConfig::DocumentDBLidSpaceCompactionConfig()
-    : _interval(3600),
+    : _delay(MAX_DELAY_SEC),
+      _interval(3600),
       _allowedLidBloat(1000000000),
       _allowedLidBloatFactor(1.0),
       _disabled(false),
@@ -58,7 +64,8 @@ DocumentDBLidSpaceCompactionConfig::DocumentDBLidSpaceCompactionConfig(double in
                                                                        double allowedLidBloatFactor,
                                                                        bool disabled,
                                                                        uint32_t maxDocsToScan)
-    : _interval(interval),
+    : _delay(std::min(MAX_DELAY_SEC, interval)),
+      _interval(interval),
       _allowedLidBloat(allowedLidBloat),
       _allowedLidBloatFactor(allowedLidBloatFactor),
       _disabled(disabled),
@@ -77,13 +84,14 @@ DocumentDBLidSpaceCompactionConfig::createDisabled()
 bool
 DocumentDBLidSpaceCompactionConfig::operator==(const DocumentDBLidSpaceCompactionConfig &rhs) const
 {
-   return _interval == rhs._interval &&
+   return _delay == rhs._delay &&
+           _interval == rhs._interval &&
            _allowedLidBloat == rhs._allowedLidBloat &&
            _allowedLidBloatFactor == rhs._allowedLidBloatFactor &&
            _disabled == rhs._disabled;
 }
 
-DocumentDBMaintenanceConfig::DocumentDBMaintenanceConfig(void)
+DocumentDBMaintenanceConfig::DocumentDBMaintenanceConfig()
     : _pruneRemovedDocuments(),
       _heartBeat(),
       _sessionCachePruneInterval(900.0),

@@ -221,16 +221,22 @@ TEST_FFF("require that bootstrap config manager updates config", ConfigTestFixtu
     ASSERT_TRUE(f1.configEqual(f2.getConfig()));
 }
 
+DocumentDBConfig::SP
+getDocumentDBConfig(ConfigTestFixture &f, DocumentDBConfigManager &mgr)
+{
+    ConfigRetriever retriever(mgr.createConfigKeySet(), f.context);
+    mgr.forwardConfig(f.getBootstrapConfig(1));
+    mgr.update(retriever.getBootstrapConfigs()); // Cheating, but we only need the configs
+    return mgr.getConfig();
+}
+
 TEST_FF("require that documentdb config manager subscribes for config",
         ConfigTestFixture("search"),
         DocumentDBConfigManager(f1.configId + "/typea", "typea")) {
     f1.addDocType("typea");
     const ConfigKeySet keySet(f2.createConfigKeySet());
     ASSERT_EQUAL(8u, keySet.size());
-    ConfigRetriever retriever(keySet, f1.context);
-    f2.forwardConfig(f1.getBootstrapConfig(1));
-    f2.update(retriever.getBootstrapConfigs()); // Cheating, but we only need the configs
-    ASSERT_TRUE(f1.configEqual("typea", f2.getConfig()));
+    ASSERT_TRUE(f1.configEqual("typea", getDocumentDBConfig(f1, f2)));
 }
 
 TEST_FF("require that documentdb config manager builds schema with imported attribute fields",
@@ -241,10 +247,7 @@ TEST_FF("require that documentdb config manager builds schema with imported attr
     docType->importedFieldsBuilder.attribute.resize(1);
     docType->importedFieldsBuilder.attribute[0].name = "imported";
 
-    ConfigRetriever retriever(f2.createConfigKeySet(), f1.context);
-    f2.forwardConfig(f1.getBootstrapConfig(1));
-    f2.update(retriever.getBootstrapConfigs()); // Cheating, but we only need the configs
-    const auto &schema = f2.getConfig()->getSchemaSP();
+    const auto &schema = getDocumentDBConfig(f1, f2)->getSchemaSP();
     EXPECT_EQUAL(1u, schema->getNumImportedAttributeFields());
     EXPECT_EQUAL("imported", schema->getImportedAttributeFields()[0].getName());
 }
@@ -314,12 +317,19 @@ TEST_FF("require that lid space compaction is disabled for globally distributed 
         DocumentDBConfigManager(f1.configId + "/global", "global"))
 {
     f1.addDocType("global", true);
-
-    ConfigRetriever retriever(f2.createConfigKeySet(), f1.context);
-    f2.forwardConfig(f1.getBootstrapConfig(1));
-    f2.update(retriever.getBootstrapConfigs()); // Cheating, but we only need the configs
-    auto config = f2.getConfig();
+    auto config = getDocumentDBConfig(f1, f2);
     EXPECT_TRUE(config->getMaintenanceConfigSP()->getLidSpaceCompactionConfig().isDisabled());
+}
+
+TEST_FF("require that prune removed documents interval can be set based on age",
+        ConfigTestFixture("test"),
+        DocumentDBConfigManager(f1.configId + "/test", "test"))
+{
+    f1.protonBuilder.pruneremoveddocumentsage = 2000;
+    f1.protonBuilder.pruneremoveddocumentsinterval = 0;
+    f1.addDocType("test");
+    auto config = getDocumentDBConfig(f1, f2);
+    EXPECT_EQUAL(20, config->getMaintenanceConfigSP()->getPruneRemovedDocumentsConfig().getInterval());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
