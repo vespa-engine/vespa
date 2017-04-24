@@ -3,7 +3,6 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
-import com.yahoo.jdisc.HeaderFields;
 import com.yahoo.jdisc.References;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
@@ -427,32 +426,6 @@ public class HttpServerTest {
         assertThat(driver.close(), is(true));
     }
 
-    @Test(enabled = false)
-    public void requireThatRequestTrailersAreSupported() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new RequestHandlerThatEchoesTrailers());
-        assertThat(driver.client().raw("GET /status.html HTTP/1.1\r\n" +
-                                       "Host: localhost\r\n" +
-                                       "Transfer-Encoding: chunked\r\n\r\n" +
-                                       "0\r\n" +
-                                       "X-Foo: foo\r\n" +
-                                       "X-Bar: bar\r\n" +
-                                       "\r\n"),
-                   containsPattern(Pattern.quote("{X-Bar=[bar], X-Foo=[foo]}")));
-        assertThat(driver.close(), is(true));
-    }
-
-    @Test(enabled = false)
-    public void requireThatResponseTrailersAreSupported() throws Exception {
-        final HeaderFields trailers = new HeaderFields();
-        trailers.add("X-Foo", "foo");
-        trailers.add("X-Bar", "bar");
-        final TestDriver driver = TestDrivers.newInstance(new RequestHandlerThatSetsResponseTrailers(trailers));
-        driver.client().get("/status.html")
-              .expectTrailer("X-Foo", is("foo"))
-              .expectTrailer("X-Bar", is("bar"));
-        assertThat(driver.close(), is(true));
-    }
-
     @Test
     public void requireThatServerCanRespondToSslRequest() throws Exception {
         final TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler());
@@ -578,51 +551,6 @@ public class HttpServerTest {
 
             // Have the request content written back to the response.
             return responseContentChannel;
-        }
-    }
-
-    private static class RequestHandlerThatEchoesTrailers extends AbstractRequestHandler {
-
-        @Override
-        public ContentChannel handleRequest(final Request request, final ResponseHandler handler) {
-            final HttpRequest httpRequest = (HttpRequest)request;
-            final ContentChannel out = ResponseDispatch.newInstance(Response.Status.OK).connect(handler);
-            return new ContentChannel() {
-
-                @Override
-                public void write(final ByteBuffer buf, final CompletionHandler handler) {
-                    handler.completed();
-                }
-
-                @Override
-                public void close(final CompletionHandler handler) {
-                    synchronized (httpRequest.trailers()) {
-                        out.write(StandardCharsets.UTF_8.encode(httpRequest.trailers().toString()), null);
-                    }
-                    out.close(null);
-                    handler.completed();
-                }
-            };
-        }
-    }
-
-    private static class RequestHandlerThatSetsResponseTrailers extends AbstractRequestHandler {
-
-        final HeaderFields trailers;
-
-        RequestHandlerThatSetsResponseTrailers(final HeaderFields trailers) {
-            this.trailers = trailers;
-        }
-
-        @Override
-        public ContentChannel handleRequest(final Request request, final ResponseHandler handler) {
-            final HttpResponse response = HttpResponse.newInstance(OK);
-            final ContentChannel content = handler.handleResponse(response);
-            synchronized (response.trailers()) {
-                response.trailers().putAll(this.trailers);
-            }
-            content.close(null);
-            return null;
         }
     }
 
