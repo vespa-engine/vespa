@@ -179,7 +179,7 @@ void DocumentTest::testTraversing()
 
     Handler fullTraverser;
     FieldPath empty;
-    doc.iterateNested(empty.begin(), empty.end(), fullTraverser);
+    doc.iterateNested(empty.getFullRange(), fullTraverser);
     CPPUNIT_ASSERT_EQUAL(fullTraverser.getResult(),
                          std::string("<P<P<PP[PPP][<PP><PP>]>>>"));
 }
@@ -231,7 +231,7 @@ DocumentTest::testVariables()
     {
         VariableIteratorHandler handler;
         FieldPath::UP path = type.buildFieldPath("iiiarray[$x][$y][$z]");
-        doc.iterateNested(path->begin(), path->end(), handler);
+        doc.iterateNested(path->getFullRange(), handler);
 
         std::string fasit =
             "x: 0,y: 0,z: 0, - 1\n"
@@ -388,7 +388,7 @@ DocumentTest::testModifyDocument()
 
     FieldPath::UP path
         = doc->getDataType()->buildFieldPath("l1s1.structmap.value.smap{leonardo}");
-    doc->iterateNested(path->begin(), path->end(), handler);
+    doc->iterateNested(path->getFullRange(), handler);
 
     doc->print(std::cerr, true, "");
 }

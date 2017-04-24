@@ -284,8 +284,7 @@ MapFieldValue::checkAndRemove(const FieldValue& key,
 }
 
 FieldValue::IteratorHandler::ModificationStatus
-MapFieldValue::iterateNestedImpl(FieldPath::const_iterator start,
-                                 FieldPath::const_iterator end_,
+MapFieldValue::iterateNestedImpl(PathRange nested,
                                  IteratorHandler & handler,
                                  const FieldValue& complexFieldValue) const
 {
@@ -294,25 +293,25 @@ MapFieldValue::iterateNestedImpl(FieldPath::const_iterator start,
     bool wasModified = false;
     const bool isWSet(complexFieldValue.inherits(WeightedSetFieldValue::classId));
 
-    if (start != end_) {
+    if ( ! nested.atEnd() ) {
         LOG(spam, "not yet at end of field path");
-        switch (start->getType()) {
+        const FieldPathEntry & fpe = nested.cur();
+        switch (fpe.getType()) {
         case FieldPathEntry::MAP_KEY:
         {
             LOG(spam, "MAP_KEY");
-            const_iterator iter = find(*start->getLookupKey());
+            const_iterator iter = find(*fpe.getLookupKey());
             if (iter != end()) {
-                wasModified = checkAndRemove(*start->getLookupKey(),
-                        iter->second->iterateNested(start + 1, end_, handler),
+                wasModified = checkAndRemove(*fpe.getLookupKey(),
+                        iter->second->iterateNested(nested.next(), handler),
                         wasModified, keysToRemove);
             } else if (handler.createMissingPath()) {
                 LOG(spam, "creating missing path");
                 FieldValue::UP val =
                     getMapType().getValueType().createFieldValue();
-                IteratorHandler::ModificationStatus status
-                    = val->iterateNested(start + 1, end_, handler);
+                IteratorHandler::ModificationStatus status = val->iterateNested(nested.next(), handler);
                 if (status == IteratorHandler::MODIFIED) {
-                    const_cast<MapFieldValue&>(*this).put(FieldValue::UP(start->getLookupKey()->clone()), std::move(val));
+                    const_cast<MapFieldValue&>(*this).put(FieldValue::UP(fpe.getLookupKey()->clone()), std::move(val));
                     return status;
                 }
             }
@@ -325,43 +324,44 @@ MapFieldValue::iterateNestedImpl(FieldPath::const_iterator start,
                     handler.setWeight(static_cast<const IntFieldValue &>(*it->second).getValue());
                 }
                 wasModified = checkAndRemove(*it->first,
-                        it->first->iterateNested(start + 1, end_, handler),
-                        wasModified, keysToRemove);
+                                             it->first->iterateNested(nested.next(), handler),
+                                             wasModified, keysToRemove);
             }
             break;
         case FieldPathEntry::MAP_ALL_VALUES:
             LOG(spam, "MAP_ALL_VALUES");
             for (const_iterator it(begin()), mt(end()); it != mt; it++) {
                 wasModified = checkAndRemove(*it->second,
-                        it->second->iterateNested(start + 1, end_, handler),
-                        wasModified, keysToRemove);
+                                             it->second->iterateNested(nested.next(), handler),
+                                             wasModified, keysToRemove);
             }
             break;
         case FieldPathEntry::VARIABLE:
         {
             LOG(spam, "VARIABLE");
             IteratorHandler::VariableMap::iterator
-                iter = handler.getVariables().find(start->getVariableName());
+                iter = handler.getVariables().find(fpe.getVariableName());
             if (iter != handler.getVariables().end()) {
                 LOG(spam, "variable key = %s", iter->second.key->toString().c_str());
                 const_iterator found = find(*iter->second.key);
                 if (found != end()) {
                     wasModified = checkAndRemove(*iter->second.key,
-                            found->second->iterateNested(start + 1, end_, handler),
-                            wasModified, keysToRemove);
+                                                 found->second->iterateNested(nested.next(), handler),
+                                                 wasModified, keysToRemove);
                 }
             } else {
+                PathRange next = nested.next();
                 for (const_iterator it(begin()), mt(end()); it != mt; it++) {
                     LOG(spam, "key is '%s'", it->first->toString().c_str());
-                    handler.getVariables()[start->getVariableName()]
+                    handler.getVariables()[fpe.getVariableName()]
                         = IteratorHandler::IndexValue(*it->first);
                     LOG(spam, "vars at this time = %s",
                         FieldValue::IteratorHandler::toString(handler.getVariables()).c_str());
                     wasModified = checkAndRemove(*it->first,
-                            it->second->iterateNested(start + 1, end_, handler),
-                            wasModified, keysToRemove);
+                                                 it->second->iterateNested(next, handler),
+                                                 wasModified, keysToRemove);
                 }
-                handler.getVariables().erase(start->getVariableName());
+                handler.getVariables().erase(fpe.getVariableName());
             }
             break;
         }
@@ -372,8 +372,8 @@ MapFieldValue::iterateNestedImpl(FieldPath::const_iterator start,
                     handler.setWeight(static_cast<const IntFieldValue &>(*it->second).getValue());
                 }
                 wasModified = checkAndRemove(*it->first,
-                        it->first->iterateNested(start, end_, handler),
-                        wasModified, keysToRemove);
+                                             it->first->iterateNested(nested, handler),
+                                             wasModified, keysToRemove);
                 // Don't iterate over values
                 /*wasModified = checkAndRemove(*it->second,
                         it->second->iterateNested(start, end_, handler),
@@ -401,7 +401,7 @@ MapFieldValue::iterateNestedImpl(FieldPath::const_iterator start,
                     handler.setWeight(static_cast<const IntFieldValue &>(*it->second).getValue());
                 }
                 wasModified = checkAndRemove(*it->first,
-                        it->first->iterateNested(start, end_, handler),
+                        it->first->iterateNested(nested, handler),
                         wasModified, keysToRemove);
                 // XXX: Map value iteration is currently disabled since it changes
                 // existing search behavior
@@ -423,12 +423,10 @@ MapFieldValue::iterateNestedImpl(FieldPath::const_iterator start,
 }
 
 FieldValue::IteratorHandler::ModificationStatus
-MapFieldValue::onIterateNested(FieldPath::const_iterator start,
-                               FieldPath::const_iterator end_,
-                               IteratorHandler & handler) const
+MapFieldValue::onIterateNested(PathRange nested, IteratorHandler & handler) const
 {
     LOG(spam, "iterating over MapFieldValue");
-    return iterateNestedImpl(start, end_, handler, *this);
+    return iterateNestedImpl(nested, handler, *this);
 }
 
 

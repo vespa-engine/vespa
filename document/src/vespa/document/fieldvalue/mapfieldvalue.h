@@ -7,7 +7,7 @@
  */
 #pragma once
 
-#include <vespa/document/fieldvalue/fieldvalue.h>
+#include "fieldvalue.h"
 #include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/vespalib/util/polymorphicarrays.h>
 
@@ -29,9 +29,7 @@ private:
                         FieldValue::IteratorHandler::ModificationStatus status,
                         bool wasModified,
                         std::vector<const FieldValue*>& keysToRemove) const;
-    IteratorHandler::ModificationStatus onIterateNested(
-            FieldPath::const_iterator start, FieldPath::const_iterator end,
-            IteratorHandler & handler) const override;
+    IteratorHandler::ModificationStatus onIterateNested(PathRange nested, IteratorHandler & handler) const override;
     // Utility method to avoid constant explicit casting
     const MapDataType& getMapType() const { return *_type; }
 
@@ -120,11 +118,8 @@ public:
     void reserve(size_t sz) { _keys->reserve(sz); _values->reserve(sz); }
     void resize(size_t sz) { _keys->resize(sz); _values->resize(sz); }
 
-    IteratorHandler::ModificationStatus iterateNestedImpl(
-            FieldPath::const_iterator start,
-            FieldPath::const_iterator end_,
-            IteratorHandler & handler,
-            const FieldValue& complexFieldValue) const;
+    IteratorHandler::ModificationStatus iterateNestedImpl(PathRange nested, IteratorHandler & handler,
+                                                          const FieldValue& complexFieldValue) const;
 
     // FieldValue implementation
     FieldValue& assign(const FieldValue&) override;

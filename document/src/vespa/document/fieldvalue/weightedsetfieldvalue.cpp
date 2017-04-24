@@ -204,11 +204,9 @@ WeightedSetFieldValue::find(const FieldValue& key)
 }
 
 FieldValue::IteratorHandler::ModificationStatus
-WeightedSetFieldValue::onIterateNested(FieldPath::const_iterator start,
-                                       FieldPath::const_iterator end_,
-                                       IteratorHandler & handler) const
+WeightedSetFieldValue::onIterateNested(PathRange nested, IteratorHandler & handler) const
 {
-    return _map.iterateNestedImpl(start, end_, handler, *this);
+    return _map.iterateNestedImpl(nested, handler, *this);
 }
 
 } // document

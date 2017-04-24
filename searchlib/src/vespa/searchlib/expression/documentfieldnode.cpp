@@ -184,7 +184,7 @@ void DocumentFieldNode::onDoc(const Document & doc)
 
 bool DocumentFieldNode::onExecute() const
 {
-    _doc->iterateNested(_fieldPath.begin(), _fieldPath.end(), *_handler);
+    _doc->iterateNested(_fieldPath.getFullRange(), *_handler);
     return true;
 }
 

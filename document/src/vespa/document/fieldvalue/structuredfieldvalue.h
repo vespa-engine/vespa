@@ -31,7 +31,7 @@ class StructuredFieldValue : public FieldValue
 {
     const DataType *_type;
 
-    UP onGetNestedFieldValue(FieldPath::const_iterator start, FieldPath::const_iterator end) const override;
+    UP onGetNestedFieldValue(PathRange nested) const override;
 
 protected:
     StructuredFieldValue(const DataType &type);
@@ -93,7 +93,7 @@ protected:
     void setFieldValue(const Field & field, const FieldValue & value);
 
     IteratorHandler::ModificationStatus
-    onIterateNested(FieldPath::const_iterator start, FieldPath::const_iterator end, IteratorHandler & handler) const override;
+    onIterateNested(PathRange nested, IteratorHandler & handler) const override;
 
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(StructuredFieldValue);

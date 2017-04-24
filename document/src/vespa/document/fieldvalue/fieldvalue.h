@@ -11,7 +11,6 @@
  */
 #pragma once
 
-
 #include "fieldvaluevisitor.h"
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/util/xmlserializable.h>
@@ -35,9 +34,10 @@ protected:
     static IArray::UP createArray(const DataType & baseType);
 
 public:
-    typedef std::unique_ptr<FieldValue> UP;
-    typedef std::shared_ptr<FieldValue> SP;
-    typedef vespalib::CloneablePtr<FieldValue> CP;
+    using PathRange = FieldPath::Range<FieldPath::const_iterator>;
+    using UP = std::unique_ptr<FieldValue>;
+    using SP = std::shared_ptr<FieldValue>;
+    using CP = vespalib::CloneablePtr<FieldValue>;
 
     class IteratorHandler {
     public:
@@ -109,7 +109,7 @@ public:
     public:
         virtual ~IteratorHandler();
 
-        void handlePrimitive(const FieldValue & fv);
+        void handlePrimitive(uint32_t fid, const FieldValue & fv);
 
         /**
            Handles a complex type (struct/array/map etc) that is at the end of the
@@ -267,9 +267,7 @@ public:
      * Will give you the leaf fieldvalue you are looking for in your fieldPath.
      * If the path does not lead anywhere an empty UP will be returned.
      */
-    FieldValue::UP getNestedFieldValue(
-            FieldPath::const_iterator start,
-            FieldPath::const_iterator end) const;
+    FieldValue::UP getNestedFieldValue(PathRange nested) const;
 
     /**
      * Will iterate the possibly nested fieldvalue depth first.
@@ -278,21 +276,13 @@ public:
      * invocations of the before mentioned methods and the additional
      * onPrimitive.
      */
-    IteratorHandler::ModificationStatus iterateNested(
-            FieldPath::const_iterator start,
-            FieldPath::const_iterator end,
-            IteratorHandler & handler) const;
+    IteratorHandler::ModificationStatus iterateNested(PathRange nested, IteratorHandler & handler) const;
 
-    IteratorHandler::ModificationStatus iterateNested(
-            const FieldPath& fieldPath,
-            IteratorHandler& handler) const
-    {
+    IteratorHandler::ModificationStatus iterateNested(const FieldPath& fieldPath, IteratorHandler& handler) const {
         return iterateNested(fieldPath.begin(), fieldPath.end(), handler);
     }
 
-    virtual void print(std::ostream& out,
-                       bool verbose,
-                       const std::string& indent) const = 0;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const = 0;
     // Duplication to reduce size of FieldValue
     void print(std::ostream& out) const { print(out, false, ""); }
     void print(std::ostream& out, bool verbose) const { print(out, verbose, ""); }
@@ -302,14 +292,12 @@ public:
     virtual void printXml(XmlOutputStream& out) const = 0;
 
 private:
-    virtual FieldValue::UP onGetNestedFieldValue(
-                                 FieldPath::const_iterator start,
-                                 FieldPath::const_iterator end) const;
-
-    virtual IteratorHandler::ModificationStatus onIterateNested(
-            FieldPath::const_iterator start,
-            FieldPath::const_iterator end,
-            IteratorHandler & handler) const;
+    IteratorHandler::ModificationStatus
+    iterateNested(FieldPath::const_iterator start, FieldPath::const_iterator end, IteratorHandler & handler) const {
+        return iterateNested(PathRange(start, end), handler);
+    }
+    virtual FieldValue::UP onGetNestedFieldValue(PathRange nested) const;
+    virtual IteratorHandler::ModificationStatus onIterateNested(PathRange nested, IteratorHandler & handler) const;
 };
 
 std::ostream& operator<<(std::ostream& out, const FieldValue & p);
@@ -317,4 +305,3 @@ std::ostream& operator<<(std::ostream& out, const FieldValue & p);
 XmlOutputStream & operator<<(XmlOutputStream & out, const FieldValue & p);
 
 } // document
-

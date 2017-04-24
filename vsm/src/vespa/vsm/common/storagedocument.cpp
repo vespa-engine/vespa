@@ -7,6 +7,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.storagedocument");
 
+using NestedIterator = document::FieldValue::PathRange;
+
 namespace vsm {
 
 StorageDocument::StorageDocument(document::Document::UP doc, const SharedFieldPathMap & fim, size_t fieldNoLimit) :
@@ -21,7 +23,7 @@ StorageDocument::~StorageDocument() { }
 
 namespace {
     FieldPath _emptyFieldPath;
-    StorageDocument::SubDocument _empySubDocument(NULL, _emptyFieldPath.begin(), _emptyFieldPath.end());
+    StorageDocument::SubDocument _empySubDocument(NULL, _emptyFieldPath.getFullRange());
 }
 
 const StorageDocument::SubDocument &
@@ -31,12 +33,11 @@ StorageDocument::getComplexField(FieldIdT fId) const
         const FieldPath & fp = (*_fieldMap)[fId];
         if ( ! fp.empty() ) {
             const document::StructuredFieldValue * sfv = _doc.get();
-            FieldPath::const_iterator it = fp.begin();
-            FieldPath::const_iterator mt = fp.end();
-            const document::FieldPathEntry& fvInfo = *it;
+            NestedIterator nested = fp.getFullRange();
+            const document::FieldPathEntry& fvInfo = nested.cur();
             bool ok = sfv->getValue(fvInfo.getFieldRef(), fvInfo.getFieldValueToSet());
             if (ok) {
-                SubDocument tmp(&fvInfo.getFieldValueToSet(), it + 1, mt);
+                SubDocument tmp(&fvInfo.getFieldValueToSet(), nested.next());
                 _cachedFields[fId].swap(tmp);
             }
         } else {
@@ -70,7 +71,7 @@ bool StorageDocument::setField(FieldIdT fId, document::FieldValue::UP fv)
     bool ok(fId < _cachedFields.size());
     if (ok) {
         const FieldPath & fp = (*_fieldMap)[fId];
-        SubDocument tmp(fv.get(), fp.end(), fp.end());
+        SubDocument tmp(fv.get(), NestedIterator(fp.end(), fp.end()));
         _cachedFields[fId].swap(tmp);
         _backedFields.emplace_back(std::move(fv));
     }

@@ -162,9 +162,22 @@ public:
 
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
 
+    template <typename IT>
+    class Range {
+    public:
+        Range() : _begin(), _end() { }
+        Range(IT begin_, IT end_) : _begin(begin_), _end(end_) { }
+        Range next() const { return Range(_begin+1, _end); }
+        bool atEnd() const { return _begin == _end; }
+        const FieldPathEntry & cur() { return *_begin; }
+    private:
+        IT _begin;
+        IT _end;
+    };
+
+    Range<const_iterator> getFullRange() const { return Range<const_iterator>(begin(), end()); }
 private:
     Container _path;
 };
 
 }
-
