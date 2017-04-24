@@ -49,7 +49,6 @@ public:
         fprintf(stderr, "disableSearching\n");
         fprintf(stderr, "triggerFlush\n");
         fprintf(stderr, "prepareRestart\n");
-        fprintf(stderr, "wipeHistory\n");
         return 1;
     }
 
@@ -402,13 +401,6 @@ public:
                 } else {
                     fprintf(stderr, "Unexpected return value\n");
                 }
-            }
-        } else if (strcmp(_argv[2], "wipeHistory") == 0) {
-            _req->SetMethodName("proton.wipeHistory");
-            invokeRPC(false, 86400.0);
-            invoked = true;
-            if (! _req->IsError()) {
-                printf("OK: history wiped\n");
             }
         } else if (strcmp(_argv[2], "die") == 0) {
             _req->SetMethodName("pandora.rtc.die");
