@@ -3,6 +3,7 @@ package com.yahoo.container.jdisc.state;
 
 import com.google.inject.Inject;
 import com.yahoo.collections.Tuple2;
+import com.yahoo.component.Vtag;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.jdisc.Request;
@@ -28,17 +29,19 @@ import java.io.PrintStream;
 import java.io.ByteArrayOutputStream;
 
 /**
- * A handler which returns state (health) information from this container instance: Status and metrics.
+ * A handler which returns state (health) information from this container instance: Status, metrics and vespa version.
  *
  * @author Simon Thoresen Hult
  */
 public class StateHandler extends AbstractRequestHandler {
 
-    private static final String METRICS_API_NAME = "metrics";
-    private static final String HISTOGRAMS_API_NAME = "metrics/histograms";
-    private static final String CONFIG_GENERATION_API_NAME = "config";
-    private static final String HEALTH_API_NAME = "health";
     public static final String STATE_API_ROOT = "/state/v1";
+    private static final String METRICS_PATH = "metrics";
+    private static final String HISTOGRAMS_PATH = "metrics/histograms";
+    private static final String CONFIG_GENERATION_PATH = "config";
+    private static final String HEALTH_PATH = "health";
+    private static final String VERSION_PATH = "version";
+    
     private final static MetricDimensions NULL_DIMENSIONS = StateMetricContext.newInstance(null);
     private final StateMonitor monitor;
     private final Timer timer;
@@ -79,7 +82,7 @@ public class StateHandler extends AbstractRequestHandler {
     }
 
     private String resolveContentType(URI requestUri) {
-        if (resolvePath(requestUri).equals(HISTOGRAMS_API_NAME)) {
+        if (resolvePath(requestUri).equals(HISTOGRAMS_PATH)) {
             return "text/plain; charset=utf-8";
         } else {
             return "application/json";
@@ -91,13 +94,15 @@ public class StateHandler extends AbstractRequestHandler {
         switch (suffix) {
             case "":
                 return ByteBuffer.wrap(apiLinks(requestUri));
-            case CONFIG_GENERATION_API_NAME:
+            case CONFIG_GENERATION_PATH:
                 return ByteBuffer.wrap(config);
-            case HISTOGRAMS_API_NAME:
+            case HISTOGRAMS_PATH:
                 return ByteBuffer.wrap(buildHistogramsOutput());
-            case HEALTH_API_NAME:
-            case METRICS_API_NAME:
+            case HEALTH_PATH:
+            case METRICS_PATH:
                 return ByteBuffer.wrap(buildMetricOutput(suffix));
+            case VERSION_PATH:
+                return ByteBuffer.wrap(buildVersionOutput());
             default:
                 // XXX should possibly do something else here
                 return ByteBuffer.wrap(buildMetricOutput(suffix));
@@ -116,7 +121,7 @@ public class StateHandler extends AbstractRequestHandler {
             base.append(STATE_API_ROOT);
             String uriBase = base.toString();
             JSONArray linkList = new JSONArray();
-            for (String api : new String[] { METRICS_API_NAME, CONFIG_GENERATION_API_NAME, HEALTH_API_NAME}) {
+            for (String api : new String[] {METRICS_PATH, CONFIG_GENERATION_PATH, HEALTH_PATH, VERSION_PATH}) {
                 JSONObject resource = new JSONObject();
                 resource.put("url", uriBase + "/" + api);
                 linkList.put(resource);
@@ -146,10 +151,20 @@ public class StateHandler extends AbstractRequestHandler {
     private static byte[] buildConfigOutput(ApplicationMetadataConfig config) {
         try {
             return new JSONObjectWithLegibleException()
-                    .put(CONFIG_GENERATION_API_NAME, new JSONObjectWithLegibleException()
+                    .put(CONFIG_GENERATION_PATH, new JSONObjectWithLegibleException()
                             .put("generation", config.generation())
                             .put("container", new JSONObjectWithLegibleException()
                                     .put("generation", config.generation())))
+                    .toString(4).getBytes(StandardCharsets.UTF_8);
+        } catch (JSONException e) {
+            throw new RuntimeException("Bad JSON construction.", e);
+        }
+    }
+
+    private static byte[] buildVersionOutput() {
+        try {
+            return new JSONObjectWithLegibleException()
+                    .put("version", Vtag.currentVersion)
                     .toString(4).getBytes(StandardCharsets.UTF_8);
         } catch (JSONException e) {
             throw new RuntimeException("Bad JSON construction.", e);
@@ -176,7 +191,7 @@ public class StateHandler extends AbstractRequestHandler {
         JSONObjectWithLegibleException ret = new JSONObjectWithLegibleException();
         ret.put("time", timer.currentTimeMillis());
         ret.put("status", new JSONObjectWithLegibleException().put("code", "up"));
-        ret.put(METRICS_API_NAME, buildJsonForSnapshot(consumer, getSnapshot()));
+        ret.put(METRICS_PATH, buildJsonForSnapshot(consumer, getSnapshot()));
         return ret;
     }
 
@@ -197,7 +212,7 @@ public class StateHandler extends AbstractRequestHandler {
                 .put("from", metricSnapshot.getFromTime(TimeUnit.MILLISECONDS) / 1000.0)
                 .put("to", metricSnapshot.getToTime(TimeUnit.MILLISECONDS) / 1000.0));
 
-        boolean includeDimensions = !consumer.equals(HEALTH_API_NAME);
+        boolean includeDimensions = !consumer.equals(HEALTH_PATH);
         long periodInMillis = metricSnapshot.getToTime(TimeUnit.MILLISECONDS) -
                               metricSnapshot.getFromTime(TimeUnit.MILLISECONDS);
         for (Tuple tuple : collapseMetrics(metricSnapshot, consumer)) {
@@ -242,10 +257,10 @@ public class StateHandler extends AbstractRequestHandler {
 
     private static List<Tuple> collapseMetrics(MetricSnapshot snapshot, String consumer) {
         switch (consumer) {
-            case HEALTH_API_NAME:
+            case HEALTH_PATH:
                 return collapseHealthMetrics(snapshot);
             case "all": // deprecated name
-            case METRICS_API_NAME:
+            case METRICS_PATH:
                 return flattenAllMetrics(snapshot);
             default:
                 throw new IllegalArgumentException("Unknown consumer '" + consumer + "'.");

@@ -32,10 +32,11 @@ import org.glassfish.jersey.client.proxy.WebResourceFactory;
 /**
  * A web service to discover and proxy Vespa service state info.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 @Path("/")
 public class StateResource implements StateClient {
+
     private static final String SINGLE_API_LINK = "url";
     private final int restApiPort;
     private final String host;
