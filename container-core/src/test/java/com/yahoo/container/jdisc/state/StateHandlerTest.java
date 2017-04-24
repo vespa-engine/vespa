@@ -4,6 +4,7 @@ package com.yahoo.container.jdisc.state;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
+import com.yahoo.component.Vtag;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.jdisc.Metric;
@@ -34,7 +35,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class StateHandlerTest {
 
@@ -383,6 +384,14 @@ public class StateHandlerTest {
         JsonNode config = root.get("config");
         JsonNode container = config.get("container");
         assertEquals(META_GENERATION, container.get("generation").asLong());
+    }
+
+    @Test
+    public void testStateVersion() throws Exception {
+        JsonNode root = requestAsJson("http://localhost/state/v1/version");
+
+        JsonNode version = root.get("version");
+        assertEquals(Vtag.currentVersion.toString(), version.asText());
     }
 
     private void incrementCurrentTime(long val) {

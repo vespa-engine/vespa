@@ -47,7 +47,7 @@ import java.util.Map;
  * Handler that outputs meta-info about the deployed Vespa application, and status of components and chains.
  *
  * @author gjoranv
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class ApplicationStatusHandler extends AbstractRequestHandler {
 
