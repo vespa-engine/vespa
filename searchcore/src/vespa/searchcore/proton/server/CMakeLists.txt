@@ -1,14 +1,12 @@
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(searchcore_server STATIC
     SOURCES
-    attribute_config_validator.cpp
     bootstrapconfig.cpp
     bootstrapconfigmanager.cpp
     buckethandler.cpp
     bucketmovejob.cpp
     clusterstatehandler.cpp
     combiningfeedview.cpp
-    configvalidator.cpp
     data_directory_upgrader.cpp
     ddbstate.cpp
     disk_mem_usage_filter.cpp
@@ -83,7 +81,6 @@ vespa_add_library(searchcore_server STATIC
     resource_usage_explorer.cpp
     rpc_hooks.cpp
     sample_attribute_usage_job.cpp
-    schema_config_validator.cpp
     searchable_doc_subdb_configurer.cpp
     searchable_feed_view.cpp
     searchabledocsubdb.cpp
@@ -100,7 +97,6 @@ vespa_add_library(searchcore_server STATIC
     transactionlogmanagerbase.cpp
     updatedonecontext.cpp
     visibilityhandler.cpp
-    wipe_old_removed_fields_job.cpp
     DEPENDS
     searchcore_attribute
     searchcore_bucketdb

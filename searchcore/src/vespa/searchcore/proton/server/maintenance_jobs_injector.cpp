@@ -9,7 +9,6 @@
 #include "prune_session_cache_job.h"
 #include "pruneremoveddocumentsjob.h"
 #include "sample_attribute_usage_job.h"
-#include "wipe_old_removed_fields_job.h"
 
 using fastos::ClockSystem;
 using fastos::TimeStamp;
@@ -81,7 +80,6 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                     const DocumentDBMaintenanceConfig &config,
                                     IHeartBeatHandler &hbHandler,
                                     matching::ISessionCachePruner &scPruner,
-                                    IWipeOldRemovedFieldsHandler &worfHandler,
                                     const ILidSpaceCompactionHandler::Vector &lscHandlers,
                                     IOperationStorer &opStorer,
                                     IFrozenBucketHandler &fbHandler,
@@ -104,8 +102,6 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
     if (config.getVisibilityDelay() > 0) {
         controller.registerJobInMasterThread(MUP(new DocumentDBCommitJob(commit, config.getVisibilityDelay())));
     }
-    controller.registerJobInMasterThread(
-            MUP(new WipeOldRemovedFieldsJob(worfHandler, config.getWipeOldRemovedFieldsConfig())));
     const MaintenanceDocumentSubDB &mRemSubDB(controller.getRemSubDB());
     MUP pruneRDjob(new PruneRemovedDocumentsJob(config.getPruneRemovedDocumentsConfig(), *mRemSubDB._metaStore,
                                                 mRemSubDB._subDbId, docTypeName, prdHandler, fbHandler));

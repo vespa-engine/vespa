@@ -13,7 +13,6 @@
 #include "i_lid_space_compaction_handler.h"
 #include "ifeedview.h"
 #include "ireplayconfig.h"
-#include "iwipeoldremovedfieldshandler.h"
 #include "maintenancecontroller.h"
 #include "i_document_db_config_owner.h"
 #include "executorthreadingservice.h"
@@ -65,7 +64,6 @@ class DocumentDB : public IDocumentDBConfigOwner,
                    public IFeedHandlerOwner,
                    public IDocumentSubDBOwner,
                    public IClusterStateChangedHandler,
-                   public IWipeOldRemovedFieldsHandler,
                    public search::transactionlog::SyncProxy
 {
 private:
@@ -133,11 +131,6 @@ private:
     AttributeUsageFilter          _writeFilter;
     FeedHandler                   _feedHandler;
 
-    // Members only accessed by executor thread
-    // (+ ctor and after executor stops)
-    Schema::SP                    _historySchema; // Removed fields
-    // End members only accessed by executor thread.
-
     DocumentSubDBCollection       _subDBs;
     MaintenanceController         _maintenanceController;
     VisibilityHandler             _visibility;
@@ -172,10 +165,6 @@ private:
      */
     void resumeSaveConfig(void);
 
-    void
-    reconfigureSchema(const DocumentDBConfig &configSnapshot,
-                      const DocumentDBConfig &oldConfigSnapshot);
-
     void setIndexSchema(const DocumentDBConfig &configSnapshot, SerialNum serialNum);
 
     /**
@@ -202,7 +191,6 @@ private:
      */
     virtual void onTransactionLogReplayDone() override __attribute__((noinline));
     virtual void onPerformPrune(SerialNum flushedSerial) override;
-    virtual bool isFeedBlockedByRejectedConfig() override;
 
     /**
      * Implements IFeedHandlerOwner
@@ -228,10 +216,6 @@ private:
     virtual void notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) override;
     void notifyAllBucketsChanged();
 
-    /**
-     * Implements IWipeOldRemovedFieldsHandler
-     */
-    virtual void wipeOldRemovedFields(TimeStamp wipeTimeLimit) override;
     void updateLegacyMetrics(LegacyDocumentDBMetrics &metrics);
     void updateMetrics(DocumentDBTaggedMetrics &metrics);
     void updateMetrics(DocumentDBTaggedMetrics::AttributeMetrics &metrics);
@@ -430,8 +414,6 @@ public:
      * Implements IReplayConfig API.
      */
     virtual void replayConfig(SerialNum serialNum) override;
-
-    virtual void replayWipeHistory(SerialNum serialNum, TimeStamp wipeTimeLimit) override;
 
     const DocTypeName & getDocTypeName(void) const { return _docTypeName; }
 

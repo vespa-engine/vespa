@@ -23,7 +23,6 @@ public:
 };
 
 typedef DocumentDBPruneConfig DocumentDBPruneRemovedDocumentsConfig;
-typedef DocumentDBPruneConfig DocumentDBWipeOldRemovedFieldsConfig;
 
 class DocumentDBHeartBeatConfig
 {
@@ -72,7 +71,6 @@ public:
 private:
     DocumentDBPruneRemovedDocumentsConfig _pruneRemovedDocuments;
     DocumentDBHeartBeatConfig             _heartBeat;
-    DocumentDBWipeOldRemovedFieldsConfig  _wipeOldRemovedFields;
     double                                _sessionCachePruneInterval;
     fastos::TimeStamp                     _visibilityDelay;
     DocumentDBLidSpaceCompactionConfig    _lidSpaceCompaction;
@@ -85,7 +83,6 @@ public:
 
     DocumentDBMaintenanceConfig(const DocumentDBPruneRemovedDocumentsConfig &pruneRemovedDocuments,
                                 const DocumentDBHeartBeatConfig &heartBeat,
-                                const DocumentDBWipeOldRemovedFieldsConfig &wipeOldRemovedFields,
                                 double sessionCachePruneInterval,
                                 fastos::TimeStamp visibilityDelay,
                                 const DocumentDBLidSpaceCompactionConfig &lidSpaceCompaction,
@@ -106,12 +103,6 @@ public:
     getHeartBeatConfig(void) const
     {
         return _heartBeat;
-    }
-
-    const DocumentDBWipeOldRemovedFieldsConfig &
-    getWipeOldRemovedFieldsConfig() const
-    {
-        return _wipeOldRemovedFields;
     }
 
     double

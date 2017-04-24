@@ -126,33 +126,6 @@ FeedHandler::doHandleOperation(FeedToken token, FeedOperation::UP op)
     _feedState->handleOperation(token, std::move(op));
 }
 
-namespace {
-template <typename ResultType>
-void configRejected(FeedToken *token, DocTypeName docTypeName) {
-    if (token) {
-        vespalib::string str =
-            make_string("Feed rejected for documenttype '%s'"
-                        " due to incompatible changes to search definition.",
-                        docTypeName.toString().c_str());
-        token->setResult(
-                ResultUP(new ResultType(Result::PERMANENT_ERROR, str)), false);
-        token->fail(documentapi::DocumentProtocol::ERROR_REJECTED, str);
-    }
-}
-
-void notifyConfigRejected(FeedToken *token, FeedOperation::Type type,
-                          DocTypeName docTypeName) {
-    if (type == FeedOperation::REMOVE) {
-        configRejected<RemoveResult>(token, docTypeName);
-    } else if ((type == FeedOperation::UPDATE_42) || (type == FeedOperation::UPDATE)) {
-        configRejected<UpdateResult>(token, docTypeName);
-    } else {
-        configRejected<Result>(token, docTypeName);
-    }
-}
-}  // namespace
-
-
 void FeedHandler::performPut(FeedToken::UP token, PutOperation &op) {
     op.assertValid();
     _activeFeedView->preparePut(op);
@@ -702,10 +675,6 @@ notifyFeedOperationRejected(FeedToken *token, const FeedOperation &op,
 bool
 FeedHandler::considerWriteOperationForRejection(FeedToken *token, const FeedOperation &op)
 {
-    if (_owner.isFeedBlockedByRejectedConfig()) {
-        notifyConfigRejected(token, op.getType(), _docTypeName);
-        return true;
-    }
     if (!_writeFilter.acceptWriteOperation() && isRejectableFeedOperation(op.getType())) {
         IResourceWriteFilter::State state = _writeFilter.getAcceptState();
         if (!state.acceptWriteOperation()) {
@@ -778,8 +747,6 @@ void
 FeedHandler::heartBeat(void)
 {
     assert(_writeService.master().isCurrentThread());
-    if (_owner.isFeedBlockedByRejectedConfig())
-        return;
     _activeFeedView->heartBeat(_serialNum);
 }
 

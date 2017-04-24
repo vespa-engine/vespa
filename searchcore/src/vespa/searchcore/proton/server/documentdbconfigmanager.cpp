@@ -120,9 +120,6 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
                             pruneRemovedDocumentsInterval,
                             pruneRemovedDocumentsAge),
                     DocumentDBHeartBeatConfig(),
-                    DocumentDBWipeOldRemovedFieldsConfig(
-                            proton.wipeoldremovedfieldsinterval,
-                            proton.wipeoldremovedfieldsage),
                     proton.grouping.sessionmanager.pruning.interval,
                     visibilityDelay,
                     DocumentDBLidSpaceCompactionConfig(

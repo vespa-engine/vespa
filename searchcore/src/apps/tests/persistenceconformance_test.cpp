@@ -164,7 +164,7 @@ public:
         vespalib::string inputCfg = _baseDir + "/" + docType.toString() + "/baseconfig";
         {
             FileConfigManager fileCfg(inputCfg, "", docType.getName());
-            fileCfg.saveConfig(*snapshot, Schema(), 1);
+            fileCfg.saveConfig(*snapshot, 1);
         }
         config::DirSpec spec(inputCfg + "/config-1");
         TuneFileDocumentDB::SP tuneFileDocDB(new TuneFileDocumentDB());

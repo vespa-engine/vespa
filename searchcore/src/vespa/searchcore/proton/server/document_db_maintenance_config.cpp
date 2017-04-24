@@ -99,8 +99,6 @@ DocumentDBMaintenanceConfig::
 DocumentDBMaintenanceConfig(const DocumentDBPruneRemovedDocumentsConfig &
                             pruneRemovedDocuments,
                             const DocumentDBHeartBeatConfig &heartBeat,
-                            const DocumentDBWipeOldRemovedFieldsConfig &
-                            wipeOldRemovedFields,
                             double groupingSessionPruneInterval,
                             fastos::TimeStamp visibilityDelay,
                             const DocumentDBLidSpaceCompactionConfig &lidSpaceCompaction,
@@ -109,7 +107,6 @@ DocumentDBMaintenanceConfig(const DocumentDBPruneRemovedDocumentsConfig &
                             double resourceLimitFactor)
     : _pruneRemovedDocuments(pruneRemovedDocuments),
       _heartBeat(heartBeat),
-      _wipeOldRemovedFields(wipeOldRemovedFields),
       _sessionCachePruneInterval(groupingSessionPruneInterval),
       _visibilityDelay(visibilityDelay),
       _lidSpaceCompaction(lidSpaceCompaction),
@@ -125,7 +122,6 @@ operator==(const DocumentDBMaintenanceConfig &rhs) const
 {
     return _pruneRemovedDocuments == rhs._pruneRemovedDocuments &&
         _heartBeat == rhs._heartBeat &&
-        _wipeOldRemovedFields == rhs._wipeOldRemovedFields &&
         _sessionCachePruneInterval == rhs._sessionCachePruneInterval &&
         _visibilityDelay == rhs._visibilityDelay &&
         _lidSpaceCompaction == rhs._lidSpaceCompaction &&

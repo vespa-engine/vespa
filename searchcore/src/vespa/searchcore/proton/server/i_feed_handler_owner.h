@@ -16,7 +16,6 @@ struct IFeedHandlerOwner {
     virtual void onTransactionLogReplayDone() = 0;
     virtual void enterRedoReprocessState() = 0;
     virtual void onPerformPrune(search::SerialNum flushedSerial) = 0;
-    virtual bool isFeedBlockedByRejectedConfig() = 0;
     virtual bool getAllowPrune() const = 0;
 };
 

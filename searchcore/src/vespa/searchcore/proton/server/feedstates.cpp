@@ -91,11 +91,7 @@ public:
     virtual void replay(const NewConfigOperation &op) override {
         _replay_config.replayConfig(op.getSerialNum());
     }
-    virtual void replay(const WipeHistoryOperation &op) override {
-        _config_store.saveWipeHistoryConfig(op.getSerialNum(),
-                                            op.getWipeTimeLimit());
-        _replay_config.replayWipeHistory(op.getSerialNum(),
-                                         op.getWipeTimeLimit());
+    virtual void replay(const WipeHistoryOperation &) override {
     }
     virtual void replay(const DeleteBucketOperation &op) override {
         _feed_view_ptr->handleDeleteBucket(op);

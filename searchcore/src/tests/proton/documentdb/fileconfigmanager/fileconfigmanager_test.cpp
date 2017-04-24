@@ -32,31 +32,6 @@ using vespalib::nbostream;
 
 vespalib::string myId("myconfigid");
 
-namespace
-{
-
-DocumentDBConfig::SP
-getConfig(int64_t generation, const Schema::SP &schema)
-{
-    return test::DocumentDBConfigBuilder(generation, schema, "client", "test").build();
-}
-
-Schema::SP
-getSchema(int step)
-{
-    Schema::SP schema(new Schema);
-    schema->addIndexField(Schema::IndexField("foo1", schema::DataType::STRING));
-    if (step < 2) {
-        schema->addIndexField(Schema::IndexField("foo2", schema::DataType::STRING));
-    }
-    if (step < 1) {
-        schema->addIndexField(Schema::IndexField("foo3", schema::DataType::STRING));
-    }
-    return schema;
-}
-
-        }
-
 DocumentDBConfig::SP
 makeBaseConfigSnapshot()
 {
@@ -79,19 +54,11 @@ makeBaseConfigSnapshot()
     return snap;
 }
 
-Schema
-makeHistorySchema()
-{
-    Schema hs;
-    hs.addIndexField(Schema::IndexField("history", schema::DataType::STRING));
-    return hs;
-}
-
 void
-saveBaseConfigSnapshot(const DocumentDBConfig &snap, const Schema &history, SerialNum num)
+saveBaseConfigSnapshot(const DocumentDBConfig &snap, SerialNum num)
 {
     FileConfigManager cm("out", myId, snap.getDocTypeName());
-    cm.saveConfig(snap, history, num);
+    cm.saveConfig(snap, num);
 }
 
 
@@ -157,26 +124,22 @@ addConfigsThatAreNotSavedToDisk(const DocumentDBConfig &cfg)
     return builder.build();
 }
 
-TEST_FF("requireThatConfigCanBeSavedAndLoaded", DocumentDBConfig::SP(makeBaseConfigSnapshot()),
-                                                Schema(makeHistorySchema()))
+TEST_F("requireThatConfigCanBeSavedAndLoaded", DocumentDBConfig::SP(makeBaseConfigSnapshot()))
 {
 
-    DocumentDBConfig::SP fullCfg = addConfigsThatAreNotSavedToDisk(*f1);
-    saveBaseConfigSnapshot(*fullCfg, f2, 20);
+    DocumentDBConfig::SP fullCfg = addConfigsThatAreNotSavedToDisk(*f);
+    saveBaseConfigSnapshot(*fullCfg, 20);
     DocumentDBConfig::SP esnap(makeEmptyConfigSnapshot());
-    Schema::SP ehs;
     {
         FileConfigManager cm("out", myId, "dummy");
-        cm.loadConfig(*esnap, 20, esnap, ehs);
+        cm.loadConfig(*esnap, 20, esnap);
     }
-    assertEqualSnapshot(*f1, *esnap);
-    EXPECT_TRUE(f2 == *ehs);
+    assertEqualSnapshot(*f, *esnap);
 }
 
-TEST_FF("requireThatConfigCanBeSerializedAndDeserialized", DocumentDBConfig::SP(makeBaseConfigSnapshot()),
-                                                           Schema(makeHistorySchema()))
+TEST_F("requireThatConfigCanBeSerializedAndDeserialized", DocumentDBConfig::SP(makeBaseConfigSnapshot()))
 {
-    saveBaseConfigSnapshot(*f1, f2, 30);
+    saveBaseConfigSnapshot(*f, 30);
     nbostream stream;
     {
         FileConfigManager cm("out", myId, "dummy");
@@ -187,100 +150,32 @@ TEST_FF("requireThatConfigCanBeSerializedAndDeserialized", DocumentDBConfig::SP(
         cm.deserializeConfig(40, stream);
     }
     DocumentDBConfig::SP fsnap(makeEmptyConfigSnapshot());
-    Schema::SP fhs;
     {
         FileConfigManager cm("out", myId, "dummy");
-        cm.loadConfig(*fsnap, 40, fsnap, fhs);
+        cm.loadConfig(*fsnap, 40, fsnap);
     }
-    assertEqualSnapshot(*f1, *fsnap);
-    EXPECT_TRUE(f2 == *fhs);
+    assertEqualSnapshot(*f, *fsnap);
     EXPECT_EQUAL("dummy", fsnap->getDocTypeName());
 }
 
-TEST_FF("requireThatWipeHistoryCanBeSaved", DocumentDBConfig::SP(makeBaseConfigSnapshot()),
-                                            Schema(makeHistorySchema()))
+TEST_F("requireThatConfigCanBeLoadedWithoutExtraConfigsDataFile", DocumentDBConfig::SP(makeBaseConfigSnapshot()))
 {
-    saveBaseConfigSnapshot(*f1, f2, 50);
-    {
-        FileConfigManager cm("out", myId, "dummy");
-        cm.saveWipeHistoryConfig(60, 0);
-    }
-    DocumentDBConfig::SP gsnap(makeEmptyConfigSnapshot());
-    Schema::SP ghs;
-    {
-        FileConfigManager cm("out", myId, "dummy");
-        cm.loadConfig(*gsnap, 60, gsnap, ghs);
-    }
-    assertEqualSnapshot(*f1, *gsnap);
-    EXPECT_TRUE(f2 != *ghs);
-    EXPECT_TRUE(!f2.empty());
-    EXPECT_TRUE(ghs->empty());
-}
-
-
-TEST("require that wipe history clears only portions of history")
-{
-    FileConfigManager cm("out2", myId, "dummy");
-    Schema::SP schema(getSchema(0));
-    Schema::SP history(new Schema);
-    DocumentDBConfig::SP config(getConfig(5, schema));
-    cm.saveConfig(*config, *history, 5);
-    Schema::SP oldSchema(schema);
-    schema = getSchema(1);
-    config = getConfig(6, schema);
-    history = SchemaUtil::makeHistorySchema(*schema, *oldSchema, *history,
-                                            100);
-    cm.saveConfig(*config, *history, 10);
-    oldSchema = schema;
-    schema = getSchema(2);
-    config = getConfig(7, schema);
-    history = SchemaUtil::makeHistorySchema(*schema, *oldSchema, *history,
-                                            200);
-    cm.saveConfig(*config, *history, 15);
-    cm.saveWipeHistoryConfig(20, 50);
-    cm.saveWipeHistoryConfig(25, 100);
-    cm.saveWipeHistoryConfig(30, 150);
-    cm.saveWipeHistoryConfig(35, 200);
-    cm.saveWipeHistoryConfig(40, 250);
-    DocumentDBConfig::SP oldconfig(config);
-    cm.loadConfig(*oldconfig, 20, config, history);
-    EXPECT_EQUAL(2u, history->getNumIndexFields());
-    oldconfig = config;
-    cm.loadConfig(*oldconfig, 25, config, history);
-    EXPECT_EQUAL(2u, history->getNumIndexFields());
-    oldconfig = config;
-    cm.loadConfig(*oldconfig, 30, config, history);
-    EXPECT_EQUAL(1u, history->getNumIndexFields());
-    oldconfig = config;
-    cm.loadConfig(*oldconfig, 35, config, history);
-    EXPECT_EQUAL(1u, history->getNumIndexFields());
-    oldconfig = config;
-    cm.loadConfig(*oldconfig, 40, config, history);
-    EXPECT_EQUAL(0u, history->getNumIndexFields());
-}
-
-TEST_FF("requireThatConfigCanBeLoadedWithoutExtraConfigsDataFile", DocumentDBConfig::SP(makeBaseConfigSnapshot()),
-                                                                   Schema(makeHistorySchema()))
-{
-    saveBaseConfigSnapshot(*f1, f2, 70);
+    saveBaseConfigSnapshot(*f, 70);
     EXPECT_TRUE(vespalib::unlink("out/config-70/extraconfigs.dat"));
     DocumentDBConfig::SP esnap(makeEmptyConfigSnapshot());
-    Schema::SP ehs;
     {
         FileConfigManager cm("out", myId, "dummy");
-        cm.loadConfig(*esnap, 70, esnap, ehs);
+        cm.loadConfig(*esnap, 70, esnap);
     }
     EXPECT_EQUAL(0u, esnap->getExtraConfigs().size());
 }
 
 
-TEST_FF("requireThatVisibilityDelayIsPropagated",
-        DocumentDBConfig::SP(makeBaseConfigSnapshot()),
-        Schema(makeHistorySchema()))
+TEST_F("requireThatVisibilityDelayIsPropagated",
+        DocumentDBConfig::SP(makeBaseConfigSnapshot()))
 {
-    saveBaseConfigSnapshot(*f1, f2, 80);
+    saveBaseConfigSnapshot(*f, 80);
     DocumentDBConfig::SP esnap(makeEmptyConfigSnapshot());
-    Schema::SP ehs;
     {
         ProtonConfigBuilder protonConfigBuilder;
         ProtonConfigBuilder::Documentdb ddb;
@@ -292,7 +187,7 @@ TEST_FF("requireThatVisibilityDelayIsPropagated",
         using ProtonConfigSP = BootstrapConfig::ProtonConfigSP;
         cm.setProtonConfig(
                 ProtonConfigSP(new ProtonConfig(protonConfigBuilder)));
-        cm.loadConfig(*esnap, 70, esnap, ehs);
+        cm.loadConfig(*esnap, 70, esnap);
     }
     EXPECT_EQUAL(0u, esnap->getExtraConfigs().size());
     EXPECT_EQUAL(61.0, esnap->getMaintenanceConfigSP()->getVisibilityDelay().sec());

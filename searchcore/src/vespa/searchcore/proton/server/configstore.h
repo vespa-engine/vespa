@@ -21,15 +21,11 @@ struct ConfigStore : FeedConfigStore {
      * @param serialNum the serial number of the config snapshot to load.
      * @param loadedSnapshot the shared pointer in which to store the
      *                       resulting config snapshot.
-     * @param historySchema the shared pointer in which to store the
-     *                      resulting history schema.
      */
     virtual void loadConfig(const DocumentDBConfig &currentSnapshot,
                             SerialNum serialNum,
-                            DocumentDBConfig::SP &loadedSnapshot,
-                            search::index::Schema::SP &historySchema) = 0;
+                            DocumentDBConfig::SP &loadedSnapshot) = 0;
     virtual void saveConfig(const DocumentDBConfig &snapshot,
-                            const search::index::Schema &historySchema,
                             SerialNum serialNum) = 0;
 
     virtual void removeInvalid() = 0;

@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "config_validator_result_type.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <mutex>
 #include <condition_variable>
@@ -35,8 +34,7 @@ public:
     enum class ConfigState
     {
         OK,
-        NEED_RESTART,
-        REJECT
+        NEED_RESTART
     };
 private:
 
@@ -131,19 +129,6 @@ public:
         return getRejectedConfig(state);
     }
 
-    static bool
-    isFeedBlockedByRejectedConfig(ConfigState state)
-    {
-        return state == ConfigState::REJECT;
-    }
-    
-    bool
-    isFeedBlockedByRejectedConfig() const
-    {
-        ConfigState state(_configState);
-        return isFeedBlockedByRejectedConfig(state);
-    }
-    
     void
     clearRejectedConfig();
 
@@ -158,9 +143,6 @@ public:
 
     void
     setConfigState(ConfigState newConfigState);
-
-    ConfigState
-    calcConfigState(const configvalidator::ResultType &cvr);
 
     void
     waitForOnlineState();
