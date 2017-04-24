@@ -106,8 +106,9 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
         if (docTypeName == ddbConfig.inputdoctypename)
             break;
     }
-    double pruneRemovedDocumentsInterval = proton.pruneremoveddocumentsinterval;
     double pruneRemovedDocumentsAge = proton.pruneremoveddocumentsage;
+    double pruneRemovedDocumentsInterval = (proton.pruneremoveddocumentsinterval == 0) ?
+                                           (pruneRemovedDocumentsAge / 100) : proton.pruneremoveddocumentsinterval;
 
     if (index < proton.documentdb.size()) {
         const DdbConfig &ddbConfig = proton.documentdb[index];
