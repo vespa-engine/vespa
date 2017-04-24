@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http;
 
-import org.jboss.netty.handler.codec.http.CookieDecoder;
-import org.jboss.netty.handler.codec.http.DefaultCookie;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
@@ -23,12 +21,13 @@ import static org.testng.AssertJUnit.fail;
 /**
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
  */
+@SuppressWarnings("deprecation")
 public class CookieTestCase {
 
     @Test
     public void requireThatDefaultValuesAreSane() {
-        assertCookie(new DefaultCookie("foo", "bar"), new Cookie().setName("foo").setValue("bar"));
-        assertCookie(new DefaultCookie("foo", "bar"), new Cookie("foo", "bar"));
+        assertCookie(new org.jboss.netty.handler.codec.http.DefaultCookie("foo", "bar"), new Cookie().setName("foo").setValue("bar"));
+        assertCookie(new org.jboss.netty.handler.codec.http.DefaultCookie("foo", "bar"), new Cookie("foo", "bar"));
     }
 
     @Test
@@ -134,20 +133,17 @@ public class CookieTestCase {
     @Test
     public void requireThatCookieCanBeEncoded() {
         assertEncodeCookie(
-                Collections.singletonList("$Version=1; foo.name=foo.value; $Path=path; $Domain=domain; $Port=\"69\""),
+                Collections.singletonList("foo.name=foo.value"),
                 Collections.singletonList(newCookie("foo")));
         assertEncodeCookie(
-                Arrays.asList("$Version=1; bar.name=bar.value; $Path=path; $Domain=domain; $Port=\"69\"",
-                              "$Version=1; foo.name=foo.value; $Path=path; $Domain=domain; $Port=\"69\""),
+                Collections.singletonList("bar.name=bar.value; foo.name=foo.value"),
                 Arrays.asList(newCookie("foo"), newCookie("bar")));
     }
 
     @Test
     public void requireThatSetCookieCanBeEncoded() {
         assertEncodeSetCookie(
-                Collections.singletonList("foo.name=foo.value; Max-Age=0; Path=path; Domain=domain; Secure; " +
-                                          "HTTPOnly; Comment=comment; Version=1; CommentURL=\"commentUrl\"; " +
-                                          "Port=\"69\"; Discard"),
+                Collections.singletonList("foo.name=foo.value; Path=path; Domain=domain; Secure; HTTPOnly"),
                 Collections.singletonList(newCookie("foo")));
     }
 
@@ -214,7 +210,7 @@ public class CookieTestCase {
 
     @Test
     public void requireThatCookieDecoderWorksForGenericValidCookies() {
-        new CookieDecoder().decode("Y=v=1&n=8es5opih9ljtk&l=og0_iedeh0qqvqqr/o&p=m2g2rs6012000000&r=pv&lg=en-US&intl=" +
+        new org.jboss.netty.handler.codec.http.CookieDecoder().decode("Y=v=1&n=8es5opih9ljtk&l=og0_iedeh0qqvqqr/o&p=m2g2rs6012000000&r=pv&lg=en-US&intl=" +
                                    "us&np=1; T=z=h.nzPBhSP4PBVd5JqacVnIbNjU1NAY2TjYzNzVOTjYzNzM0Mj&a=YAE&sk=DAALShmNQ" +
                                    "vhoZV&ks=EAABsibvMK6ejwn0uUoS4rC9w--~E&d=c2wBTVRJeU13RXhPVEUwTURJNU9URTBNRFF6TlRJ" +
                                    "NU5nLS0BYQFZQUUBZwE1VkNHT0w3VUVDTklJVEdRR1FXT0pOSkhEQQFzY2lkAWNOUnZIbEc3ZHZoVHlWZ" +
@@ -223,7 +219,7 @@ public class CookieTestCase {
 
     @Test
     public void requireThatCookieDecoderWorksForYInvalidCookies() {
-        new CookieDecoder().decode("Y=v=1&n=77nkr5t7o4nqn&l=og0_iedeh0qqvqqr/o&p=m2g2rs6012000000&r=pv&lg=en-US&intl=" +
+        new org.jboss.netty.handler.codec.http.CookieDecoder().decode("Y=v=1&n=77nkr5t7o4nqn&l=og0_iedeh0qqvqqr/o&p=m2g2rs6012000000&r=pv&lg=en-US&intl=" +
                                    "us&np=1; T=z=05nzPB0NP4PBN/n0gwc1AWGNjU1NAY2TjYzNzVOTjYzNzM0Mj&a=QAE&sk=DAA4R2svo" +
                                    "osjIa&ks=EAAj3nBQFkN4ZmuhqFxJdNoaQ--~E&d=c2wBTVRJeU13RXhPVEUwTURJNU9URTBNRFF6TlRJ" +
                                    "NU5nLS0BYQFRQUUBZwE1VkNHT0w3VUVDTklJVEdRR1FXT0pOSkhEQQFzY2lkAUpPalRXOEVsUDZrR3RHT" +
@@ -232,7 +228,7 @@ public class CookieTestCase {
 
     @Test
     public void requireThatCookieDecoderWorksForYValidCookies() {
-        new CookieDecoder().decode("Y=v=1&n=3767k6te5aj2s&l=1v4u3001uw2ys00q0rw0qrw34q0x5s3u/o&p=030vvit012000000&iz=" +
+        new org.jboss.netty.handler.codec.http.CookieDecoder().decode("Y=v=1&n=3767k6te5aj2s&l=1v4u3001uw2ys00q0rw0qrw34q0x5s3u/o&p=030vvit012000000&iz=" +
                                    "&r=pu&lg=en-US,it-IT,it&intl=it&np=1; T=z=m38yPBmLk3PBWvehTPBhBHYNU5OBjQ3NE5ONU5P" +
                                    "NDY0NzU0M0&a=IAE&sk=DAAAx5URYgbhQ6&ks=EAA4rTgdlAGeMQmdYeM_VehGg--~E&d=c2wBTWprNUF" +
                                    "UTXdNems1TWprNE16RXpNREl6TkRneAFhAUlBRQFnAUVJSlNMSzVRM1pWNVNLQVBNRkszQTRaWDZBAXNj" +
@@ -242,7 +238,7 @@ public class CookieTestCase {
 
     @Test
     public void requireThatCookieDecoderWorksForGenericInvalidCookies() {
-        new CookieDecoder().decode("Y=v=1&n=e92s5cq8qbs6h&l=3kdb0f.3@i126be10b.d4j/o&p=m1f2qgmb13000107&r=g5&lg=en-US" +
+        new org.jboss.netty.handler.codec.http.CookieDecoder().decode("Y=v=1&n=e92s5cq8qbs6h&l=3kdb0f.3@i126be10b.d4j/o&p=m1f2qgmb13000107&r=g5&lg=en-US" +
                                    "&intl=us; T=z=TXp3OBTrQ8OBFMcj3GBpFSyNk83TgY2MjMwN04zMDMw&a=YAE&sk=DAAVfaNwLeISrX" +
                                    "&ks=EAAOeNNgY8c5hV8YzPYmnrW7w--~E&d=c2wBTVRnd09RRXhOVFEzTURrME56UTMBYQFZQUUBZwFMQ" +
                                    "U5NT0Q2UjY2Q0I1STY0R0tKSUdVQVlRRQFvawFaVzAtAXRpcAFMTlRUdkMBenoBVFhwM09CQTdF&af=QU" +
@@ -282,7 +278,7 @@ public class CookieTestCase {
         }
     }
 
-    private static void assertCookie(final DefaultCookie expected, final Cookie actual) {
+    private static void assertCookie(final org.jboss.netty.handler.codec.http.DefaultCookie expected, final Cookie actual) {
         assertEquals(expected.getName(), actual.getName());
         assertEquals(expected.getValue(), actual.getValue());
         assertEquals(expected.getDomain(), actual.getDomain());
@@ -304,7 +300,6 @@ public class CookieTestCase {
         cookie.setPath("path");
         cookie.setComment("comment");
         cookie.setCommentUrl("commentUrl");
-        cookie.setMaxAge(69, TimeUnit.MILLISECONDS);
         cookie.setVersion(2);
         cookie.setSecure(true);
         cookie.setHttpOnly(true);

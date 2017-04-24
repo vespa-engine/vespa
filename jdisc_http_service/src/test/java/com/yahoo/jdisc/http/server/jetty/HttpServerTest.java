@@ -353,21 +353,13 @@ public class HttpServerTest {
                                             .setDiscard(true)
                                             .setDomain(".localhost")
                                             .setHttpOnly(true)
-                                            .setMaxAge(5000, TimeUnit.SECONDS)
                                             .setPath("/foopath")
                                             .setSecure(true)
                                             .setVersion(2)));
         driver.client().get("/status.html")
               .expectStatusCode(is(OK))
-              .expectHeader("Set-Cookie", is("foo=bar; " +
-                                             "Max-Age=5000; " +
-                                             "Path=\"/foopath\"; " +
-                                             "Domain=.localhost; " +
-                                             "Secure; HTTPOnly; " +
-                                             "Comment=\"comment yeah\"; " +
-                                             "Version=1; " +
-                                             "CommentURL=\"http://comment.yes/\"; " +
-                                             "Discard"));
+              .expectHeader("Set-Cookie",
+                      is("foo=bar; Path=/foopath; Domain=.localhost; Secure; HTTPOnly"));
         assertThat(driver.close(), is(true));
     }
 
