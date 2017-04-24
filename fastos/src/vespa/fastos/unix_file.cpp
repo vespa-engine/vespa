@@ -10,7 +10,6 @@
 #include <vespa/fastos/file.h>
 #include <sys/vfs.h>
 #include <sstream>
-#include <stdexcept>
 
 bool
 FastOS_UNIX_File::SetPosition(int64_t desiredPosition)
