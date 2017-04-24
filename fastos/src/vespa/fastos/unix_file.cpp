@@ -143,7 +143,7 @@ FastOS_UNIX_File::CalcAccessFlags(unsigned int openFlags)
 #endif
 
     if ((openFlags & FASTOS_FILE_OPEN_DIRECTIO) != 0) {
-        accessFlags |= O_DIRECT | O_DSYNC | O_RSYNC;
+        accessFlags |= O_DIRECT;
     }
 
     if ((openFlags & FASTOS_FILE_OPEN_TRUNCATE) != 0) {
