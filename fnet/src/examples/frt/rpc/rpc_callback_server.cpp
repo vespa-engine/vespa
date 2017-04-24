@@ -6,6 +6,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("rpc_callback_server");
 
+
 struct RPC : public FRT_Invokable
 {
     void CallBack(FRT_RPCRequest *req);

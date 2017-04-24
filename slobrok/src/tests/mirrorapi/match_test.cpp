@@ -4,12 +4,11 @@
 
 class MatchTester : public slobrok::api::IMirrorAPI
 {
-    virtual SpecList lookup(const std::string &) const override {
+    SpecList lookup(const std::string &) const override {
         return SpecList();
     }
-    virtual uint32_t updates() const override { return 0; }
-
-    virtual bool ready() const override { return true; }
+    uint32_t updates() const override { return 0; }
+    bool ready() const override { return true; }
 
     const std::string name;
 

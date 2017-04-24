@@ -102,9 +102,7 @@ class Closure0_2 : public Closure0<R> {
     T1 _arg1;
     T2 _arg2;
 
-    virtual R call() override
-    { return _func(std::move(_arg1), std::move(_arg2)); }
-
+    R call() override { return _func(std::move(_arg1), std::move(_arg2)); }
 public:
     Closure0_2(Func func, T1 &&arg1, T2 &&arg2)
         : _func(func), _arg1(std::move(arg1)), _arg2(std::move(arg2)) {}
@@ -120,8 +118,7 @@ class Closure0_3 : public Closure0<R> {
     T2 _arg2;
     T3 _arg3;
 
-    virtual R call() override
-    { return _func(std::move(_arg1), std::move(_arg2), std::move(_arg3)); }
+    R call() override { return _func(std::move(_arg1), std::move(_arg2), std::move(_arg3)); }
 
 public:
     Closure0_3(Func func, T1 &&arg1, T2 &&arg2, T3 &&arg3)

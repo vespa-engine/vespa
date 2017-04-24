@@ -2,7 +2,6 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MAIN
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/filedistribution/distributor/filedownloader.h>
 #include <vespa/filedistribution/distributor/filedistributortrackerimpl.h>
 
@@ -12,12 +11,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 
-#include <libtorrent/session.hpp>
-#include <libtorrent/tracker_manager.hpp>
-#include <libtorrent/torrent.hpp>
-
 #include <vespa/filedistribution/manager/createtorrent.h>
-#include <vespa/filedistribution/model/filedistributionmodel.h>
 #include <vespa/filedistribution/common/componentsdeleter.h>
 
 namespace fs = boost::filesystem;
@@ -47,16 +41,16 @@ createDownloader(ComponentsDeleter& deleter,
 } //anonymous namespace
 
 class MockFileDistributionModel : public FileDistributionModel {
-    virtual FileDBModel& getFileDBModel() override {
+    FileDBModel& getFileDBModel() override {
         abort();
     }
 
-    virtual std::set<std::string> getFilesToDownload() override {
+    std::set<std::string> getFilesToDownload() override {
         return std::set<std::string>();
     }
 
-    virtual PeerEntries getPeers(const std::string&, size_t) override {
-        PeerEntries peers(2);
+    PeerEntries getPeers(const std::string& , size_t) override {
+         PeerEntries peers(2);
         peers[0].ip = localHost;
         peers[0].port = uploaderPort;
 
@@ -66,9 +60,9 @@ class MockFileDistributionModel : public FileDistributionModel {
         return peers;
     }
 
-    virtual void addPeer(const std::string&) override {}
-    virtual void removePeer(const std::string&) override {}
-    virtual void peerFinished(const std::string&) override {}
+    void addPeer(const std::string&) override {}
+    void removePeer(const std::string&) override {}
+    void peerFinished(const std::string&) override {}
 };
 
 

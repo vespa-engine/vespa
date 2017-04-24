@@ -6,6 +6,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("echo_client");
 
+
 class EchoClient : public FastOS_Application
 {
 public:
