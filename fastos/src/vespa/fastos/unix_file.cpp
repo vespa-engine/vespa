@@ -10,7 +10,6 @@
 #include <vespa/fastos/file.h>
 #include <sys/vfs.h>
 #include <sstream>
-#include <stdexcept>
 
 bool
 FastOS_UNIX_File::SetPosition(int64_t desiredPosition)
@@ -143,7 +142,7 @@ FastOS_UNIX_File::CalcAccessFlags(unsigned int openFlags)
 #endif
 
     if ((openFlags & FASTOS_FILE_OPEN_DIRECTIO) != 0) {
-        accessFlags |= O_DIRECT | O_DSYNC | O_RSYNC;
+        accessFlags |= O_DIRECT;
     }
 
     if ((openFlags & FASTOS_FILE_OPEN_TRUNCATE) != 0) {
