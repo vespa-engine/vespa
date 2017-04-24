@@ -13,7 +13,5 @@ public class HttpHeadersTestCase {
     @Test
     public void requireThatHeadersDoNotChange() {
         assertEquals("X-JDisc-Disable-Chunking", HttpHeaders.Names.X_DISABLE_CHUNKING);
-        assertEquals("X-JDisc-Enable-TraceId", HttpHeaders.Names.X_ENABLE_TRACE_ID);
-        assertEquals("X-JDisc-TraceId", HttpHeaders.Names.X_TRACE_ID);
     }
 }

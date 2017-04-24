@@ -4,6 +4,7 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.yahoo.jdisc.HeaderFields;
+import com.yahoo.jdisc.References;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.BindingSetSelector;
@@ -19,7 +20,6 @@ import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.HttpResponse;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.service.BindingSetNotFoundException;
-import com.yahoo.jdisc.References;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.FormBodyPart;
 import org.apache.http.entity.mime.content.StringBody;
@@ -48,7 +48,6 @@ import static com.yahoo.jdisc.http.HttpHeaders.Names.CONNECTION;
 import static com.yahoo.jdisc.http.HttpHeaders.Names.CONTENT_TYPE;
 import static com.yahoo.jdisc.http.HttpHeaders.Names.COOKIE;
 import static com.yahoo.jdisc.http.HttpHeaders.Names.X_DISABLE_CHUNKING;
-import static com.yahoo.jdisc.http.HttpHeaders.Names.X_TRACE_ID;
 import static com.yahoo.jdisc.http.HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
 import static com.yahoo.jdisc.http.HttpHeaders.Values.CLOSE;
 import static com.yahoo.jdisc.http.server.jetty.SimpleHttpClient.ResponseValidator;
@@ -370,36 +369,6 @@ public class HttpServerTest {
                                              "Version=1; " +
                                              "CommentURL=\"http://comment.yes/\"; " +
                                              "Discard"));
-        assertThat(driver.close(), is(true));
-    }
-
-    @Test(enabled = false)
-    public void requireThatGeneratedTraceIdIsSet() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new EchoRequestHandler());
-        final SimpleHttpClient client1 = driver.client();
-        final SimpleHttpClient client2 = driver.newClient();
-
-        client1.newGet("/status.html").addHeader(X_TRACE_ID, "true").execute()
-               .expectHeader("X-JDisc-TraceId", matchesPattern("\\w+00000000"));
-        client1.newGet("/status.html").addHeader(X_TRACE_ID, "true").execute()
-               .expectHeader("X-JDisc-TraceId", matchesPattern("\\w+00000001"));
-        client2.newGet("/status.html").addHeader(X_TRACE_ID, "true").execute()
-               .expectHeader("X-JDisc-TraceId", matchesPattern("\\w+00000000"));
-        client1.newGet("/status.html").addHeader(X_TRACE_ID, "true").execute()
-               .expectHeader("X-JDisc-TraceId", matchesPattern("\\w+00000002"));
-        client2.newGet("/status.html").addHeader(X_TRACE_ID, "true").execute()
-               .expectHeader("X-JDisc-TraceId", matchesPattern("\\w+00000001"));
-        client2.newGet("/status.html").addHeader(X_TRACE_ID, "true").execute()
-               .expectHeader("X-JDisc-TraceId", matchesPattern("\\w+00000002"));
-
-        assertThat(driver.close(), is(true));
-    }
-
-    @Test(enabled = false)
-    public void requireThatClientTraceIdIsSet() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new EchoRequestHandler());
-        driver.client().newGet("/status.html").addHeader(X_TRACE_ID, "foo").execute()
-              .expectHeader(X_TRACE_ID, is("foo"));
         assertThat(driver.close(), is(true));
     }
 
