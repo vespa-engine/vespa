@@ -1,13 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/bucketmover/runstatistics.h>
-
-#include <iomanip>
-#include <vespa/log/log.h>
-#include <vespa/storage/bucketmover/htmltable.h>
-
-LOG_SETUP(".bucketmover.run.statistics");
+#include "runstatistics.h"
+#include "htmltable.h"
 
 namespace storage {
 namespace bucketmover {

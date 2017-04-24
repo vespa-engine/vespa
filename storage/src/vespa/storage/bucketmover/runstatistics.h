@@ -92,10 +92,8 @@ struct RunStatistics : public document::Printable {
     double getProgress() const;
     uint64_t getBucketCount(uint16_t disk, bool includeWrongLocation) const;
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 } // bucketmover
 } // storage
-

@@ -18,8 +18,8 @@ namespace storage {
 
 class DummyApplicationGenerationFether : public ApplicationGenerationFetcher {
 public:
-    virtual int64_t getGeneration() const override { return 1; }
-    virtual std::string getComponentName() const override { return "component"; }
+    int64_t getGeneration() const override { return 1; }
+    std::string getComponentName() const override { return "component"; }
 };
 
 struct StateReporterTest : public CppUnit::TestFixture {
@@ -58,10 +58,8 @@ namespace {
     {
         framework::Clock& _clock;
         MetricClock(framework::Clock& c) : _clock(c) {}
-        virtual time_t getTime() const override
-            { return _clock.getTimeInSeconds().getTime(); }
-        virtual time_t getTimeInMilliSecs() const override
-            { return _clock.getTimeInMillis().getTime(); }
+        time_t getTime() const override { return _clock.getTimeInSeconds().getTime(); }
+        time_t getTimeInMilliSecs() const override { return _clock.getTimeInMillis().getTime(); }
     };
 }
 

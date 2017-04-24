@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/storage/distributor/distributormessagesender.h>
+#include <cassert>
 
 namespace storage {
 
@@ -20,13 +21,11 @@ struct MessageSenderStub : distributor::DistributorMessageSender
         replies.clear();
     }
 
-    virtual void sendCommand(const std::shared_ptr<api::StorageCommand>& cmd)
-    {
+    virtual void sendCommand(const std::shared_ptr<api::StorageCommand>& cmd) {
         commands.push_back(cmd);
     }
 
-    virtual void sendReply(const std::shared_ptr<api::StorageReply>& reply)
-    {
+    virtual void sendReply(const std::shared_ptr<api::StorageReply>& reply) {
         replies.push_back(reply);
     }
 
@@ -67,4 +66,3 @@ private:
 };
 
 }
-

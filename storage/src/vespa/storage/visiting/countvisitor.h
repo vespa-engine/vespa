@@ -9,7 +9,7 @@
  */
 #pragma once
 
-#include <vespa/storage/visiting/visitor.h>
+#include "visitor.h"
 
 namespace storage {
 

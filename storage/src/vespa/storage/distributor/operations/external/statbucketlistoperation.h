@@ -7,9 +7,7 @@
 
 namespace storage {
 
-namespace api {
-class GetBucketListCommand;
-}
+namespace api { class GetBucketListCommand; }
 
 namespace distributor {
 
@@ -23,22 +21,21 @@ public:
             const MaintenanceOperationGenerator& generator,
             uint16_t distributorIndex,
             const std::shared_ptr<api::GetBucketListCommand>& cmd);
-    virtual ~StatBucketListOperation() {}
+    ~StatBucketListOperation() {}
 
-    virtual const char* getName() const override { return "statBucketList"; }
-    virtual std::string getStatus() const override { return ""; }
+    const char* getName() const override { return "statBucketList"; }
+    std::string getStatus() const override { return ""; }
 
-    virtual void onStart(DistributorMessageSender& sender) override;
-    virtual void onReceive(DistributorMessageSender&, const std::shared_ptr<api::StorageReply>&) override {
+    void onStart(DistributorMessageSender& sender) override;
+    void onReceive(DistributorMessageSender&, const std::shared_ptr<api::StorageReply>&) override
+    {
         // Never called.
         assert(false);
     }
-    void onClose(DistributorMessageSender&) override {
-    }
+    void onClose(DistributorMessageSender&) override {}
 
 private:
-    void getBucketStatus(const BucketDatabase::Entry& entry,
-                         std::ostream& os) const;
+    void getBucketStatus(const BucketDatabase::Entry& entry, std::ostream& os) const;
 
     const BucketDatabase& _bucketDb;
     const MaintenanceOperationGenerator& _generator;
@@ -48,4 +45,3 @@ private:
 
 } // distributor
 } // storage
-

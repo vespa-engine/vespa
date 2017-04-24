@@ -19,13 +19,11 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/printable.h>
-#include <memory>
+#include "messagesender.h"
+#include "storagecomponent.h"
 #include <vespa/storageapi/messageapi/messagehandler.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
-#include <string>
-#include <vespa/storage/common/messagesender.h>
-#include <vespa/storage/common/storagecomponent.h>
+#include <vespa/vespalib/util/printable.h>
 
 namespace storage {
 
@@ -84,10 +82,10 @@ public:
     void flush();
 
     /** Send message down the storage chain. */
-    virtual void sendDown(const api::StorageMessage::SP&);
+    void sendDown(const api::StorageMessage::SP&) override;
 
     /** Send message up the storage chain. */
-    virtual void sendUp(const api::StorageMessage::SP&);
+    void sendUp(const api::StorageMessage::SP&) override;
 
     void printChain(std::ostream&, std::string indent = "") const;
 
@@ -126,8 +124,7 @@ public:
      */
     virtual bool onUp(const api::StorageMessage::SP&);
 
-    virtual void print(std::ostream& out, bool,
-                       const std::string&) const {
+    void print(std::ostream& out, bool, const std::string&) const override {
         out << getName();
     }
 
@@ -188,4 +185,3 @@ private:
 std::ostream& operator<<(std::ostream& out, StorageLink& link);
 
 }
-
