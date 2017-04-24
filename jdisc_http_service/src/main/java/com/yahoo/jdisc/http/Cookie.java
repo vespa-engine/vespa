@@ -1,10 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http;
 
-import org.jboss.netty.handler.codec.http.CookieDecoder;
-import org.jboss.netty.handler.codec.http.CookieEncoder;
-import org.jboss.netty.handler.codec.http.DefaultCookie;
-
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -14,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
+@SuppressWarnings("deprecation")
 public class Cookie {
 
     private final Set<Integer> ports = new HashSet<>();
@@ -240,10 +237,11 @@ public class Cookie {
     }
 
     private static String encodeCookies(Iterable<? extends Cookie> cookies, boolean server) {
-        CookieEncoder encoder = new org.jboss.netty.handler.codec.http.CookieEncoder(server);
+        org.jboss.netty.handler.codec.http.CookieEncoder encoder =
+                new org.jboss.netty.handler.codec.http.CookieEncoder(server);
         for (Cookie cookie : cookies) {
             org.jboss.netty.handler.codec.http.Cookie nettyCookie =
-                    new DefaultCookie(String.valueOf(cookie.getName()), String.valueOf(cookie.getValue()));
+                    new org.jboss.netty.handler.codec.http.DefaultCookie(String.valueOf(cookie.getName()), String.valueOf(cookie.getValue()));
             nettyCookie.setComment(cookie.getComment());
             nettyCookie.setCommentUrl(cookie.getCommentUrl());
             nettyCookie.setDiscard(cookie.isDiscard());
@@ -260,7 +258,8 @@ public class Cookie {
     }
 
     private static List<Cookie> decodeCookies(String str) {
-        CookieDecoder decoder = new CookieDecoder();
+        org.jboss.netty.handler.codec.http.CookieDecoder decoder =
+                new org.jboss.netty.handler.codec.http.CookieDecoder();
         List<Cookie> ret = new LinkedList<>();
         for (org.jboss.netty.handler.codec.http.Cookie nettyCookie : decoder.decode(str)) {
             Cookie cookie = new Cookie();
