@@ -49,10 +49,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-util</artifactId>
-    </dependency>
-    <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>jdisc_jetty</artifactId>
       <version>${project.version}</version>
@@ -184,6 +180,7 @@
             jetty-server-${jetty.version}.jar,
             jetty-servlet-${jetty.version}.jar,
             jetty-servlets-${jetty.version}.jar,
+            jetty-util-${jetty.version}.jar,
             org.apache.aries.spifly.dynamic.bundle-${aries.spifly.version}.jar,
             org.apache.aries.util-${aries.util.version}.jar,
             component-jar-with-dependencies.jar
