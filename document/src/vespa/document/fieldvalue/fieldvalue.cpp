@@ -12,14 +12,8 @@
 #include "predicatefieldvalue.h"
 
 #include <vespa/document/base/exceptions.h>
-#include <vespa/document/datatype/arraydatatype.h>
-#include <vespa/document/datatype/numericdatatype.h>
-#include <vespa/document/datatype/primitivedatatype.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
-#include <vespa/document/util/bytebuffer.h>
-#include <vespa/vespalib/objects/fieldbase.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/document/util/serializableexceptions.h>
 #include <sstream>
 
 using vespalib::FieldBase;
@@ -161,29 +155,30 @@ std::pair<const char*, size_t> FieldValue::getAsRaw() const
             *getDataType(), *DataType::RAW, VESPA_STRLOC);
 }
 
-FieldValue::UP FieldValue::getNestedFieldValue(FieldPath::const_iterator start, FieldPath::const_iterator end) const
+FieldValue::UP
+FieldValue::getNestedFieldValue(PathRange nested) const
 {
-    return (start != end) ? onGetNestedFieldValue(start, end) : FieldValue::UP();
+    return ( ! nested.atEnd() ) ? onGetNestedFieldValue(nested) : FieldValue::UP();
 }
 
-FieldValue::UP FieldValue::onGetNestedFieldValue(FieldPath::const_iterator start, FieldPath::const_iterator end) const
+FieldValue::UP
+FieldValue::onGetNestedFieldValue(PathRange nested) const
 {
-    (void) start;
-    (void) end;
+    (void) nested;
     return FieldValue::UP();
 }
 
 FieldValue::IteratorHandler::ModificationStatus
-FieldValue::iterateNested(FieldPath::const_iterator start, FieldPath::const_iterator end, IteratorHandler & handler) const
+FieldValue::iterateNested(PathRange nested, IteratorHandler & handler) const
 {
-    return onIterateNested(start, end, handler);
+    return onIterateNested(nested, handler);
 }
 
 FieldValue::IteratorHandler::ModificationStatus
-FieldValue::onIterateNested(FieldPath::const_iterator start, FieldPath::const_iterator end, IteratorHandler & handler) const
+FieldValue::onIterateNested(PathRange nested, IteratorHandler & handler) const
 {
-    if (start == end) {
-        handler.handlePrimitive(*this);
+    if (nested.atEnd()) {
+        handler.handlePrimitive(-1, *this);
         return handler.modify(const_cast<FieldValue&>(*this));
     } else {
         throw vespalib::IllegalArgumentException("Primitive types can't be iterated through");
@@ -221,8 +216,8 @@ FieldValue::IteratorHandler::IndexValue::toString() const {
 }
 
 void
-FieldValue::IteratorHandler::handlePrimitive(const FieldValue & fv) {
-    onPrimitive(-1, Content(fv, getWeight()));
+FieldValue::IteratorHandler::handlePrimitive(uint32_t fid, const FieldValue & fv) {
+    onPrimitive(fid, Content(fv, getWeight()));
 }
 bool
 FieldValue::IteratorHandler::handleComplex(const FieldValue & fv) {

@@ -26,12 +26,9 @@ private:
     bool removeValue(const FieldValue& val) override;
     IteratorHandler::ModificationStatus iterateSubset(
             int startPos, int endPos, const vespalib::stringref & variable,
-            FieldPath::const_iterator nextPos,
-            FieldPath::const_iterator end_,
+            PathRange nested,
             IteratorHandler& handler) const;
-    IteratorHandler::ModificationStatus onIterateNested(
-            FieldPath::const_iterator start, FieldPath::const_iterator end,
-            IteratorHandler & handler) const override;
+    IteratorHandler::ModificationStatus onIterateNested(PathRange nested, IteratorHandler & handler) const override;
 public:
     typedef IArray::const_iterator const_iterator;
     typedef IArray::iterator iterator;

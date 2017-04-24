@@ -265,7 +265,7 @@ bool FieldSearcher::onSearch(const StorageDocument & doc)
     if (sub.getFieldValue() != NULL) {
         LOG(spam, "onSearch %s : %s", sub.getFieldValue()->getClass().name(), sub.getFieldValue()->toString().c_str());
         IteratorHandler ih(*this);
-        sub.getFieldValue()->iterateNested(sub.begin(), sub.end(), ih);
+        sub.getFieldValue()->iterateNested(sub.getRange(), ih);
     }
     return retval;
 }

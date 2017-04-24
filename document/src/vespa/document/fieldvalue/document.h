@@ -167,5 +167,5 @@ private:
             const DocumentTypeRepo& repo, ByteBuffer& buffer,
             DocumentId& id, const DocumentType * docType);
 };
-}  // document
 
+}  // document

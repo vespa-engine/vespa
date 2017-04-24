@@ -1004,10 +1004,10 @@ SearchVisitor::fillAttributeVectors(const vespalib::string & documentId, const S
             if (isPosition) {
                 LOG(spam, "Position");
                 PositionInserter pi(attrV, docId);
-                subDoc.getFieldValue()->iterateNested(subDoc.begin(), subDoc.end(), pi);
+                subDoc.getFieldValue()->iterateNested(subDoc.getRange(), pi);
             } else {
                 AttributeInserter ai(attrV, docId);
-                subDoc.getFieldValue()->iterateNested(subDoc.begin(), subDoc.end(), ai);
+                subDoc.getFieldValue()->iterateNested(subDoc.getRange(), ai);
             }
         } else if (finfoGuard->getName() == "[docid]") {
             _documentIdAttribute.add(documentId.c_str());

@@ -98,7 +98,7 @@ void
 DocsumTest::assertFlattenDocsumWriter(FlattenDocsumWriter & fdw, const FieldValue & fv, const std::string & exp)
 {
     FieldPath empty;
-    fv.iterateNested(empty.begin(), empty.end(), fdw);
+    fv.iterateNested(empty.getFullRange(), fdw);
     std::string actual(fdw.getResult().getBuffer(), fdw.getResult().getPos());
     EXPECT_EQUAL(actual, exp);
 }

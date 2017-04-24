@@ -154,8 +154,7 @@ AttributeWriter::internalPut(SerialNum serialNum, const Document &doc, DocumentI
         const FieldPath *const fieldPath(_fieldPaths[fieldId].get());
         FieldValue::UP fv;
         if (fieldPath != NULL) {
-            fv = doc.getNestedFieldValue(fieldPath->begin(),
-                                         fieldPath->end());
+            fv = doc.getNestedFieldValue(fieldPath->getFullRange());
         }
 
         _attributeFieldWriter.execute(attr.getName(),

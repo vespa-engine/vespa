@@ -17,8 +17,7 @@ StructuredFieldValue::Iterator::Iterator()
 {
 }
 
-StructuredFieldValue::Iterator::Iterator(const StructuredFieldValue& owner,
-                                         const Field* first)
+StructuredFieldValue::Iterator::Iterator(const StructuredFieldValue& owner, const Field* first)
     : _owner(&const_cast<StructuredFieldValue&>(owner)),
       _iterator(owner.getIterator(first).release()),
       _field(_iterator->getNextField())
@@ -70,43 +69,38 @@ void StructuredFieldValue::setFieldValue(const Field & field, const FieldValue &
 }
 
 FieldValue::UP
-StructuredFieldValue::onGetNestedFieldValue(
-        FieldPath::const_iterator start,
-        FieldPath::const_iterator end_) const
+StructuredFieldValue::onGetNestedFieldValue(PathRange nested) const
 {
-    FieldValue::UP fv = getValue(start->getFieldRef());
+    FieldValue::UP fv = getValue(nested.cur().getFieldRef());
     if (fv.get() != NULL) {
-        if ((start + 1) != end_) {
-            return fv->getNestedFieldValue(start + 1, end_);
+        PathRange next = nested.next();
+        if ( ! next.atEnd() ) {
+            return fv->getNestedFieldValue(next);
         }
     }
     return fv;
 }
 
 FieldValue::IteratorHandler::ModificationStatus
-StructuredFieldValue::onIterateNested(
-        FieldPath::const_iterator start,
-        FieldPath::const_iterator end_,
-        IteratorHandler & handler) const
+StructuredFieldValue::onIterateNested(PathRange nested, IteratorHandler & handler) const
 {
     IteratorHandler::StructScope autoScope(handler, *this);
 
-    if (start != end_) {
-        if (start->getType() == FieldPathEntry::STRUCT_FIELD) {
-            bool exists = getValue(start->getFieldRef(), start->getFieldValueToSet());
-            LOG(spam, "fieldRef = %s", start->getFieldRef().toString().c_str());
-            LOG(spam, "fieldValueToSet = %s", start->getFieldValueToSet().toString().c_str());
+    if ( ! nested.atEnd()) {
+        const FieldPathEntry & fpe = nested.cur();
+        if (fpe.getType() == FieldPathEntry::STRUCT_FIELD) {
+            bool exists = getValue(fpe.getFieldRef(), fpe.getFieldValueToSet());
+            LOG(spam, "fieldRef = %s", fpe.getFieldRef().toString().c_str());
+            LOG(spam, "fieldValueToSet = %s", fpe.getFieldValueToSet().toString().c_str());
             if (exists) {
-                IteratorHandler::ModificationStatus
-                    status = start->getFieldValueToSet().iterateNested(start + 1, end_, handler);
+                IteratorHandler::ModificationStatus status = fpe.getFieldValueToSet().iterateNested(nested.next(), handler);
                 if (status == IteratorHandler::REMOVED) {
                     LOG(spam, "field exists, status = REMOVED");
-                    const_cast<StructuredFieldValue&>(*this).remove(start->getFieldRef());
+                    const_cast<StructuredFieldValue&>(*this).remove(fpe.getFieldRef());
                     return IteratorHandler::MODIFIED;
                 } else if (status == IteratorHandler::MODIFIED) {
                     LOG(spam, "field exists, status = MODIFIED");
-                    const_cast<StructuredFieldValue&>(*this).setFieldValue(
-                            start->getFieldRef(), start->getFieldValueToSet());
+                    const_cast<StructuredFieldValue&>(*this).setFieldValue(fpe.getFieldRef(), fpe.getFieldValueToSet());
                     return IteratorHandler::MODIFIED;
                 } else {
                     LOG(spam, "field exists, status = %u", status);
@@ -115,11 +109,10 @@ StructuredFieldValue::onIterateNested(
             } else if (handler.createMissingPath()) {
                 LOG(spam, "createMissingPath is true");
                 IteratorHandler::ModificationStatus status
-                    = start->getFieldValueToSet().iterateNested(start + 1, end_, handler);
+                    = fpe.getFieldValueToSet().iterateNested(nested.next(), handler);
                 if (status == IteratorHandler::MODIFIED) {
                     LOG(spam, "field did not exist, status = MODIFIED");
-                    const_cast<StructuredFieldValue&>(*this).setFieldValue(
-                            start->getFieldRef(), start->getFieldValueToSet());
+                    const_cast<StructuredFieldValue&>(*this).setFieldValue(fpe.getFieldRef(), fpe.getFieldValueToSet());
                     return status;
                 }
             }
@@ -140,8 +133,7 @@ StructuredFieldValue::onIterateNested(
             LOG(spam, "handleComplex");
             std::vector<const Field*> fieldsToRemove;
             for (const_iterator it(begin()), mt(end()); it != mt; ++it) {
-                IteratorHandler::ModificationStatus
-                    currStatus = getValue(it.field())->iterateNested(start, end_, handler);
+                IteratorHandler::ModificationStatus currStatus = getValue(it.field())->iterateNested(nested, handler);
                 if (currStatus == IteratorHandler::REMOVED) {
                     fieldsToRemove.push_back(&it.field());
                     status = IteratorHandler::MODIFIED;

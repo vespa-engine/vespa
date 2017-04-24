@@ -33,10 +33,7 @@ private:
     bool addValue(const FieldValue& fval) override { return add(fval, 1); }
     bool containsValue(const FieldValue& val) const override;
     bool removeValue(const FieldValue& val) override;
-    IteratorHandler::ModificationStatus onIterateNested(
-            FieldPath::const_iterator start,
-            FieldPath::const_iterator end,
-            IteratorHandler& handler) const override;
+    IteratorHandler::ModificationStatus onIterateNested(PathRange nested, IteratorHandler& handler) const override;
 public:
     typedef std::unique_ptr<WeightedSetFieldValue> UP;
 

@@ -241,7 +241,7 @@ FieldValueNode::getValue(const Context& context) const
         initFieldPath(doc.getType());
 
         IteratorHandler handler;
-        doc.iterateNested(_fieldPath.begin(), _fieldPath.end(), handler);
+        doc.iterateNested(_fieldPath.getFullRange(), handler);
 
         if (handler.hasSingleValue()) {
             return handler.getSingleValue();
@@ -406,7 +406,7 @@ FieldValueNode::traceValue(const Context &context, std::ostream& out) const
         initFieldPath(doc.getType());
 
         IteratorHandler handler;
-        doc.iterateNested(_fieldPath.begin(), _fieldPath.end(), handler);
+        doc.iterateNested(_fieldPath.getFullRange(), handler);
 
         if (handler.hasSingleValue()) {
             return handler.getSingleValue();
