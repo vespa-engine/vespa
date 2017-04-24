@@ -337,8 +337,8 @@ packetcompresstype enum {NONE, LZ4} default=LZ4
 
 ## Interval between considering if lid space compaction should be done (in seconds).
 ##
-## Default value is 1 hour (3600 seconds).
-lidspacecompaction.interval double default=3600.0
+## Default value is 10 minutes (600 seconds).
+lidspacecompaction.interval double default=600.0
 
 ## The allowed lid bloat (in docs) before considering lid space compaction.
 ##
