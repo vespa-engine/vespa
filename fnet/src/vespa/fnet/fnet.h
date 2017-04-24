@@ -28,7 +28,6 @@ class FNET_Context;
 class FNET_ControlPacket;
 class FNET_DataBuffer;
 class FNET_DummyPacket;
-class FNET_FDSelector;
 class FNET_Info;
 class FNET_IOComponent;
 class FNET_Packet;
@@ -69,7 +68,6 @@ class FNET_TransportThread;
 #include "transport.h"
 #include "connection.h"
 #include "connector.h"
-#include "fdselector.h"
 #include "info.h"
 #include "signalshutdown.h"
 
