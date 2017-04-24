@@ -898,24 +898,6 @@ DocumentDB::reportStatus() const
     }
 }
 
-
-void
-DocumentDB::wipeHistory(void)
-{
-    // Called from RPC handler
-    _writeService.master().execute(makeTask(makeClosure(this,
-                                           &DocumentDB::performWipeHistory)));
-    _writeService.master().sync();
-}
-
-
-void
-DocumentDB::performWipeHistory()
-{
-    // Called by executor thread
-}
-
-
 void
 DocumentDB::replayConfig(search::SerialNum serialNum)
 {

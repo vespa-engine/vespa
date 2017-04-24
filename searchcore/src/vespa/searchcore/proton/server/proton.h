@@ -218,7 +218,6 @@ public:
 
     bool triggerFlush();
     bool prepareRestart();
-    void wipeHistory();
     void listDocTypes(std::vector<vespalib::string> &documentTypes);
 
     void

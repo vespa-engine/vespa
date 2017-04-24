@@ -774,20 +774,6 @@ Proton::prepareRestart()
 }
 
 void
-Proton::wipeHistory()
-{
-    DocumentDBMap dbs;
-    {
-        std::shared_lock<std::shared_timed_mutex> guard(_mutex);
-        dbs = _documentDBMap;
-    }
-    for (const auto &kv : dbs) {
-        kv.second->wipeHistory();
-    }
-}
-
-
-void
 Proton::listDocTypes(std::vector<vespalib::string> &documentTypes)
 {
     DocumentDBMap dbs;

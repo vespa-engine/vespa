@@ -327,7 +327,6 @@ void FeedHandler::performRemove(FeedToken::UP token, RemoveOperation &op) {
 void
 FeedHandler::performGarbageCollect(FeedToken::UP token)
 {
-    _owner.performWipeHistory();
     if (token.get() != NULL) {
         token->ack();
     }

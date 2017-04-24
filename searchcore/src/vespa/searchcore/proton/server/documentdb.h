@@ -195,17 +195,7 @@ private:
     /**
      * Implements IFeedHandlerOwner
      **/
-    virtual void performWipeHistory() override;
     virtual bool getAllowPrune(void) const override;
-
-    void
-    writeWipeHistoryTransactionLogEntry(
-            SerialNum wipeSerial,
-            TimeStamp wipeTimeLimit,
-            const DocumentDBConfig &configSnapshot,
-            const Schema &newHistorySchema);
-
-    void internalWipeHistory(SerialNum wipeSerial, Schema::UP newHistorySchema);
 
     void startTransactionLogReplay();
 
@@ -408,7 +398,6 @@ public:
     void release() { _refCount.release(); }
 
     bool getRejectedConfig() const { return _state.getRejectedConfig(); }
-    void wipeHistory(void);
 
     /**
      * Implements IReplayConfig API.

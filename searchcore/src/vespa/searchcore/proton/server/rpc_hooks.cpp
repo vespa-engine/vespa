@@ -181,10 +181,6 @@ RPCHooksBase::initRPC()
             "such that TLS replay time + time spent flushing components is as low as possible");
     rb.ReturnDesc("success", "Whether or not prepare for restart was triggered.");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("proton.wipeHistory", "", "", true,
-                    FRT_METHOD(RPCHooksBase::rpc_wipeHistory), this);
-    rb.MethodDesc("Tell the node to wipe history");
-    //-------------------------------------------------------------------------
     rb.DefineMethod("proton.listDocTypes", "", "S", true,
                     FRT_METHOD(RPCHooksBase::rpc_listDocTypes), this);
     rb.MethodDesc("Get the current list of document types");
@@ -444,22 +440,6 @@ RPCHooksBase::rpc_prepareRestart(FRT_RPCRequest *req)
     LOG(info, "RPCHooksBase::rpc_prepareRestart started");
     req->Detach();
     letProtonDo(makeClosure(this, &RPCHooksBase::prepareRestart, req));
-}
-
-void
-RPCHooksBase::wipeHistory(FRT_RPCRequest *req)
-{
-    _proton.wipeHistory();
-    LOG(info, "RPCHooksBase::wipeHistory finished successfully");
-    req->Return();
-}
-
-void
-RPCHooksBase::rpc_wipeHistory(FRT_RPCRequest *req)
-{
-    LOG(info, "RPCHooksBase::rpc_wipeHistory started");
-    req->Detach();
-    letProtonDo(makeClosure(this, &RPCHooksBase::wipeHistory, req));
 }
 
 void
