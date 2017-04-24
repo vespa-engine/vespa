@@ -372,8 +372,8 @@ public class NodeRepository extends AbstractComponent {
      * @return the node in its new state
      * @throws NoSuchNodeException if the node is not found
      */
-    public Node park(String hostname, Agent agent) {
-        return move(hostname, Node.State.parked, agent, Optional.empty());
+    public Node park(String hostname, Agent agent, String reason) {
+        return move(hostname, Node.State.parked, agent, Optional.of(reason));
     }
 
     /**
@@ -381,8 +381,8 @@ public class NodeRepository extends AbstractComponent {
      *
      * @return List of all the parked nodes in their new state
      */
-    public List<Node> parkRecursively(String hostname, Agent agent) {
-        return moveRecursively(hostname, Node.State.parked, agent, Optional.empty());
+    public List<Node> parkRecursively(String hostname, Agent agent, String reason) {
+        return moveRecursively(hostname, Node.State.parked, agent, Optional.of(reason));
     }
 
     /**

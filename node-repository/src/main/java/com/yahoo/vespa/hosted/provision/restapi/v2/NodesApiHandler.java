@@ -112,7 +112,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
             return new MessageResponse("Moved " + failedHostnames + " to failed");
         }
         else if (path.startsWith("/nodes/v2/state/parked/")) {
-            List<Node> parkedNodes = nodeRepository.parkRecursively(lastElement(path), Agent.operator);
+            List<Node> parkedNodes = nodeRepository.parkRecursively(lastElement(path), Agent.operator, "Parked through the nodes/v2 API");
             String parkedHostnames = parkedNodes.stream().map(Node::hostname).sorted().collect(Collectors.joining(", "));
             return new MessageResponse("Moved " + parkedHostnames + " to parked");
         }

@@ -47,7 +47,7 @@ public class ZooKeeperAccessMaintainerTest {
         assertEquals(2, tester.getNodes(NodeType.proxy).size());
         assertEquals(asSet("host1,host2,host3,host4,host5,server1,server2"), ZooKeeperServer.getAllowedClientHostnames());
 
-        tester.nodeRepository().park("host2", Agent.system);
+        tester.nodeRepository().park("host2", Agent.system, "Parking to unit test");
         assertTrue(tester.nodeRepository().remove("host2"));
         maintainer.maintain();
 
