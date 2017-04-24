@@ -26,8 +26,10 @@ public:
     ServerSocket &operator=(ServerSocket &&rhs);
     ~ServerSocket() { cleanup(); }
     bool valid() const { return _handle.valid(); }
+    int get_fd() const { return _handle.get(); }
     SocketAddress address() const;
     void shutdown();
+    bool set_blocking(bool value) { return _handle.set_blocking(value); }
     SocketHandle accept();
 };
 

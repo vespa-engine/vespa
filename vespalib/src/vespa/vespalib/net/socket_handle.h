@@ -59,6 +59,7 @@ public:
     ssize_t write(const char *buf, size_t len);
     SocketHandle accept();
     void shutdown();
+    int get_so_error() const;
 };
 
 } // namespace vespalib

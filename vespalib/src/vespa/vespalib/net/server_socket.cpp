@@ -29,7 +29,7 @@ ServerSocket::ServerSocket(const SocketSpec &spec)
       _path(spec.path())
 {
     if (!_handle.valid() && is_socket(_path)) {
-        if (!spec.client_address().connect().valid()) {
+        if (!spec.client_address().connect_async().valid()) {
             LOG(warning, "removing old socket: '%s'", _path.c_str());
             unlink(_path.c_str());
             _handle = spec.server_address().listen();

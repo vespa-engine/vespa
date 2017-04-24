@@ -3,6 +3,7 @@
 #include "socket_handle.h"
 #include <sys/socket.h>
 #include <errno.h>
+#include <assert.h>
 
 namespace vespalib {
 
@@ -43,6 +44,21 @@ void
 SocketHandle::shutdown()
 {
     ::shutdown(_fd, SHUT_RDWR);
+}
+
+int
+SocketHandle::get_so_error() const
+{
+    if (!valid()) {
+        return EBADF;
+    }
+    int so_error = 0;
+    socklen_t opt_len = sizeof(so_error);
+    if (getsockopt(_fd, SOL_SOCKET, SO_ERROR, &so_error, &opt_len) != 0) {
+        return errno;
+    }
+    assert(opt_len == sizeof(so_error));
+    return so_error;
 }
 
 } // namespace vespalib
