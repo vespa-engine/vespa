@@ -90,7 +90,7 @@ LidSpaceCompactionJob::LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionC
                                              IDiskMemUsageNotifier &diskMemUsageNotifier,
                                              double resourceLimitFactor)
     : IMaintenanceJob("lid_space_compaction." + handler.getName(),
-            config.getInterval(), config.getInterval()),
+            config.getDelay(), config.getInterval()),
       _cfg(config),
       _handler(handler),
       _opStorer(opStorer),

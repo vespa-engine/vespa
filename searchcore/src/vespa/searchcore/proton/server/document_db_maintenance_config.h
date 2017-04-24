@@ -10,6 +10,7 @@ namespace proton {
 class DocumentDBPruneConfig
 {
 private:
+    double _delay;
     double _interval;
     double _age;
 
@@ -18,8 +19,9 @@ public:
     DocumentDBPruneConfig(double interval, double age);
 
     bool operator==(const DocumentDBPruneConfig &rhs) const;
-    double getInterval(void) const { return _interval; }
-    double getAge(void) const { return _age; }
+    double getDelay() const { return _delay; }
+    double getInterval() const { return _interval; }
+    double getAge() const { return _age; }
 };
 
 typedef DocumentDBPruneConfig DocumentDBPruneRemovedDocumentsConfig;
@@ -40,6 +42,7 @@ public:
 class DocumentDBLidSpaceCompactionConfig
 {
 private:
+    double   _delay;
     double   _interval;
     uint32_t _allowedLidBloat;
     double   _allowedLidBloatFactor;
@@ -56,6 +59,7 @@ public:
 
     static DocumentDBLidSpaceCompactionConfig createDisabled();
     bool operator==(const DocumentDBLidSpaceCompactionConfig &rhs) const;
+    double getDelay() const { return _delay; }
     double getInterval() const { return _interval; }
     uint32_t getAllowedLidBloat() const { return _allowedLidBloat; }
     double getAllowedLidBloatFactor() const { return _allowedLidBloatFactor; }

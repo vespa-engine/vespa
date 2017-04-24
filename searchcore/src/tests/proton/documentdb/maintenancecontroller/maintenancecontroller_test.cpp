@@ -1379,21 +1379,29 @@ TEST("Verify FrozenBucketsMap interface") {
     }
 }
 
-bool
-containsJob(const MaintenanceController::JobList &jobs, const vespalib::string &jobName)
+const MaintenanceJobRunner *
+findJob(const MaintenanceController::JobList &jobs, const vespalib::string &jobName)
 {
     auto itr = std::find_if(jobs.begin(), jobs.end(),
                             [&](const auto &job){ return job->getJob().getName() == jobName; });
-    return itr != jobs.end();
+    if (itr != jobs.end()) {
+        return itr->get();
+    }
+    return nullptr;
+}
+
+bool
+containsJob(const MaintenanceController::JobList &jobs, const vespalib::string &jobName)
+{
+    return findJob(jobs, jobName) != nullptr;
 }
 
 bool
 containsJobAndExecutedBy(const MaintenanceController::JobList &jobs, const vespalib::string &jobName,
                          const vespalib::Executor & executor)
 {
-    auto itr = std::find_if(jobs.begin(), jobs.end(),
-                            [&](const auto &job){ return job->getJob().getName() == jobName; });
-    return itr != jobs.end() && (&(*itr)->getExecutor() == &executor);
+    const auto *job = findJob(jobs, jobName);
+    return (job != nullptr) && (&job->getExecutor() == &executor);
 }
 
 TEST_F("require that lid space compaction jobs can be disabled", MaintenanceControllerFixture)
@@ -1413,7 +1421,7 @@ TEST_F("require that lid space compaction jobs can be disabled", MaintenanceCont
     }
 }
 
-TEST_F("Require that maintenance jobs are run by correct executor", MaintenanceControllerFixture)
+TEST_F("require that maintenance jobs are run by correct executor", MaintenanceControllerFixture)
 {
     f.injectMaintenanceJobs();
     auto jobs = f._mc.getJobList();
@@ -1423,6 +1431,21 @@ TEST_F("Require that maintenance jobs are run by correct executor", MaintenanceC
     EXPECT_TRUE(containsJobAndExecutedBy(jobs, "prune_removed_documents.searchdocument", f._threadService));
     EXPECT_TRUE(containsJobAndExecutedBy(jobs, "move_buckets.searchdocument", f._threadService));
     EXPECT_TRUE(containsJobAndExecutedBy(jobs, "sample_attribute_usage.searchdocument", f._threadService));
+}
+
+void
+assertPruneRemovedDocumentsConfig(double expDelay, double expInterval, double interval, MaintenanceControllerFixture &f)
+{
+    f.setPruneConfig(DocumentDBPruneRemovedDocumentsConfig(interval, 1000));
+    const auto *job = findJob(f._mc.getJobList(), "prune_removed_documents.searchdocument");
+    EXPECT_EQUAL(expDelay, job->getJob().getDelay());
+    EXPECT_EQUAL(expInterval, job->getJob().getInterval());
+}
+
+TEST_F("require that delay for prune removed documents is set based on interval and is max 300 secs", MaintenanceControllerFixture)
+{
+    assertPruneRemovedDocumentsConfig(300, 301, 301, f);
+    assertPruneRemovedDocumentsConfig(299, 299, 299, f);
 }
 
 TEST_MAIN()
