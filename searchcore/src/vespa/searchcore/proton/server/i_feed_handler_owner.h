@@ -12,7 +12,6 @@ namespace proton {
  */
 struct IFeedHandlerOwner {
     virtual ~IFeedHandlerOwner() {}
-    virtual void performWipeHistory() = 0;
     virtual void onTransactionLogReplayDone() = 0;
     virtual void enterRedoReprocessState() = 0;
     virtual void onPerformPrune(search::SerialNum flushedSerial) = 0;

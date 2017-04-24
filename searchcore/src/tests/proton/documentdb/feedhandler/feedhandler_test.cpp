@@ -98,15 +98,12 @@ struct Rendezvous {
 struct MyOwner : public IFeedHandlerOwner
 {
     bool _allowPrune;
-    int wipe_history_count;
     
     MyOwner()
         :
-        _allowPrune(false),
-        wipe_history_count(0)
+        _allowPrune(false)
     {
     }
-    virtual void performWipeHistory() override { ++wipe_history_count; }
     virtual void onTransactionLogReplayDone() override {
         LOG(info, "MyOwner::onTransactionLogReplayDone()");
     }
@@ -540,16 +537,6 @@ addLidToRemove(RemoveDocumentsOperation &op)
     op.setLidsToRemove(0, lids);
 }
 
-
-TEST_F("require that WipeHistory calls owner", FeedHandlerFixture)
-{
-    MyTransport transport;
-    FeedTokenContext token_context;
-    f.handler.performOperation(std::move(token_context.token_ap),
-                               FeedOperation::UP(new WipeHistoryOperation));
-    EXPECT_EQUAL(1, f.owner.wipe_history_count);
-    EXPECT_EQUAL(0, f.tls_writer.store_count);  // Not stored in tls.
-}
 
 TEST_F("require that handleMove calls FeedView", FeedHandlerFixture)
 {
