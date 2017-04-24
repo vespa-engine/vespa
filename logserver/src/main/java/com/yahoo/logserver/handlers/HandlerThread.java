@@ -123,7 +123,7 @@ public class HandlerThread extends Thread implements LogHandler
     public void flush () {
         Iterator<LogHandler> it = handlers.iterator();
         while (it.hasNext()) {
-            LogHandler handler = (LogHandler)it.next();
+            LogHandler handler = it.next();
             handler.flush();
         }
     }
@@ -131,7 +131,7 @@ public class HandlerThread extends Thread implements LogHandler
     public void close () {
         Iterator<LogHandler> it = handlers.iterator();
         while (it.hasNext()) {
-            LogHandler handler = (LogHandler)it.next();
+            LogHandler handler = it.next();
             handler.close();
         }
     }

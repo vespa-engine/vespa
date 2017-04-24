@@ -26,7 +26,7 @@ public class LogWriterLRUCache extends LinkedHashMap<Integer, LogWriter>
     // TODO: implement unit test for this
     protected boolean removeEldestEntry (Map.Entry<Integer, LogWriter> eldest) {
         if (size() > maxEntries) {
-            LogWriter logWriter = (LogWriter)eldest.getValue();
+            LogWriter logWriter = eldest.getValue();
             log.fine("Closing oldest LogWriter: " + logWriter);
             try {
                 logWriter.close();
