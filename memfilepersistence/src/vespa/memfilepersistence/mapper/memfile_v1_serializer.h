@@ -1,10 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "bufferedfilewriter.h"
-#include "versionserializer.h"
-#include "fileinfo.h"
-#include "simplememfileiobuffer.h"
+#include <vespa/memfilepersistence/mapper/bufferedfilewriter.h>
+#include <vespa/memfilepersistence/mapper/versionserializer.h>
+#include <vespa/memfilepersistence/mapper/fileinfo.h>
+#include <vespa/memfilepersistence/mapper/simplememfileiobuffer.h>
 #include <vespa/memfilepersistence/common/environment.h>
 #include <vespa/memfilepersistence/spi/threadmetricprovider.h>
 
@@ -22,25 +22,40 @@ public:
 
     MemFileV1Serializer(ThreadMetricProvider&);
 
-    FileVersion getFileVersion() override { return TRADITIONAL_SLOTFILE; }
-    void loadFile(MemFile& file, Environment&, Buffer& buffer, uint64_t bytesRead) override;
+    virtual FileVersion getFileVersion() override { return TRADITIONAL_SLOTFILE; }
 
-    void cacheLocationsForPart(SimpleMemFileIOBuffer& cache, DocumentPart part, uint32_t blockIndex,
+    virtual void loadFile(MemFile& file, Environment&,
+                          Buffer& buffer, uint64_t bytesRead) override;
+
+    void cacheLocationsForPart(SimpleMemFileIOBuffer& cache,
+                               DocumentPart part,
+                               uint32_t blockIndex,
                                const std::vector<DataLocation>& locationsToCache,
                                const std::vector<DataLocation>& locationsRead,
                                SimpleMemFileIOBuffer::BufferAllocation& buf);
 
-    void cacheLocations(MemFileIOInterface& cache, Environment& env, const Options& options,
-                        DocumentPart part, const std::vector<DataLocation>& locations) override;
+    virtual void cacheLocations(MemFileIOInterface& cache,
+                                Environment& env,
+                                const Options& options,
+                                DocumentPart part,
+                                const std::vector<DataLocation>& locations) override;
 
-    FlushResult flushUpdatesToFile(MemFile&, Environment&) override;
-    void rewriteFile(MemFile&, Environment&) override;
-    bool verify(MemFile&, Environment&, std::ostream& errorReport,
-                bool repairErrors, uint16_t fileVerifyFlags) override;
+    virtual FlushResult flushUpdatesToFile(MemFile&, Environment&) override;
 
-    uint64_t read(vespalib::LazyFile& file, char* buf, const std::vector<DataLocation>& readOps);
+    virtual void rewriteFile(MemFile&, Environment&) override;
+
+    virtual bool verify(MemFile&, Environment&,
+                        std::ostream& errorReport, bool repairErrors,
+                        uint16_t fileVerifyFlags) override;
+
+    uint64_t read(vespalib::LazyFile& file,
+                  char* buf,
+                  const std::vector<DataLocation>& readOps);
+
     void ensureFormatSpecificDataSet(const MemFile& file);
-    uint32_t writeMetaData(BufferedFileWriter& writer, const MemFile& file);
+
+    uint32_t writeMetaData(BufferedFileWriter& writer,
+                           const MemFile& file);
 
     uint32_t writeAndUpdateLocations(
             MemFile& file,
@@ -53,3 +68,4 @@ public:
 
 } // memfile
 } // storage
+

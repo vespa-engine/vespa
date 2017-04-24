@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "visitor.h"
 #include <vespa/vdslib/container/searchresult.h>
 #include <vespa/vdslib/container/documentsummary.h>
+#include <vespa/storageapi/message/visitor.h>
 
 namespace storage {
 namespace api {
@@ -43,9 +43,12 @@ private:
 class QueryResultReply : public StorageReply {
 public:
     explicit QueryResultReply(const QueryResultCommand& command);
+
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
     DECLARE_STORAGEREPLY(QueryResultReply, onQueryResultReply)
 };
 
 } // api
 } // storage
+

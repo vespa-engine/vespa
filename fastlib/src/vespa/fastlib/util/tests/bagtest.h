@@ -1,8 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastlib/util/bag.h>
-#include <vespa/fastlib/testsuite/test.h>
 #include <iostream>
+
+#include <vespa/fastlib/util/bag.h>
+
+#include <vespa/fastlib/testsuite/test.h>
 
 /**
 
@@ -525,30 +527,37 @@ public:
     delete[] _array;
   }
 
-    void Run() override {
-        RunTest(&BagTester::IterPtrInitTest);
-        RunTest(&BagTester::IterRefInitTest);
-        RunTest(&BagTester::IterPtrStartTest);
-        RunTest(&BagTester::IterRefStartTest);
-        RunTest(&BagTester::IterStartOverTest);
-        RunTest(&BagTester::IterPPOperTest);
-        RunTest(&BagTester::GrowTest);
-        RunTest(&BagTester::AssignTest);
-        RunTest(&BagTester::CopyConstTest);
-        RunTest(&BagTester::EqualTest);
-        RunTest(&BagTester::DeleteEnumTest);
-        RunTest(&BagTester::RemoveTest);
-        RunTest(&BagTester::HasElementTest);
-        RunTest(&BagTester::RemoveAllElementsTest);
-        RunTest(&BagTester::GetBlocksizeTest);
-        RunTest(&BagTester::SetBlocksizeTest);
-        RunTest(&BagTester::NumberOfElementsTest);
-    }
+
+
+  virtual void Run() override {
+    RunTest(&BagTester::IterPtrInitTest);
+    RunTest(&BagTester::IterRefInitTest);
+    RunTest(&BagTester::IterPtrStartTest);
+    RunTest(&BagTester::IterRefStartTest);
+    RunTest(&BagTester::IterStartOverTest);
+    RunTest(&BagTester::IterPPOperTest);
+    RunTest(&BagTester::GrowTest);
+    RunTest(&BagTester::AssignTest);
+    RunTest(&BagTester::CopyConstTest);
+    RunTest(&BagTester::EqualTest);
+    RunTest(&BagTester::DeleteEnumTest);
+    RunTest(&BagTester::RemoveTest);
+    RunTest(&BagTester::HasElementTest);
+    RunTest(&BagTester::RemoveAllElementsTest);
+    RunTest(&BagTester::GetBlocksizeTest);
+    RunTest(&BagTester::SetBlocksizeTest);
+    RunTest(&BagTester::NumberOfElementsTest);
+  }
+
+
 
 };
 
 class BagTest : public FastOS_Application
 {
 public:
-    int Main() override;
+
+  virtual int Main() override;
 };
+
+

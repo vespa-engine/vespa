@@ -1,15 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "memfilecache.h"
+#include <vespa/fastos/fastos.h>
 #include <vespa/memfilepersistence/common/environment.h>
 #include <vespa/memfilepersistence/mapper/memfilemapper.h>
+#include <vespa/memfilepersistence/memfile/memfilecache.h>
+#include <vespa/log/log.h>
+#include <vespa/vespalib/util/vstringfmt.h>
 #include <vespa/memfilepersistence/spi/memfilepersistenceprovidermetrics.h>
 
-#include <vespa/log/log.h>
 LOG_SETUP(".persistence.memfile.cache");
 
 namespace storage {
 namespace memfile {
+
 
 void
 MemFileCache::Entry::setInUse(bool inUse) {
@@ -108,7 +111,7 @@ struct MemFileCache::CacheEntryGuard : public MemFilePtr::EntryGuard {
           _entry(&entry)
     {
     }
-    ~CacheEntryGuard() {
+    virtual ~CacheEntryGuard() {
         if (_entry) {
             _cache.done(*_entry);
         }
@@ -118,20 +121,20 @@ struct MemFileCache::CacheEntryGuard : public MemFilePtr::EntryGuard {
         return _entry->_file;
     }
 
-    void deleteFile() override {
+    virtual void deleteFile() override {
         LOG(debug, "Cache entry guard deleting %s", _file->toString().c_str());
         _env._memFileMapper.deleteFile(*_file, _env);
         erase();
     }
 
-    void erase() override {
+    virtual void erase() override {
         LOG(debug, "Cache entry guard erasing %s from cache",
             _file->toString().c_str());
         _cache.erase(document::BucketId(_entry->_file.getFile().getBucketId()));
         _entry = 0;
     }
 
-    void move(EntryGuard& target) override {
+    virtual void move(EntryGuard& target) override {
         LOG(debug, "Cache entry guard moving %s", _file->toString().c_str());
         _cache.move(*this, static_cast<CacheEntryGuard&>(target));
     }
@@ -172,7 +175,10 @@ MemFileCache::setCacheSize(MemoryUsage cacheSize)
     vespalib::LockGuard lock(_cacheLock);
 
     _cacheLimit = cacheSize;
-    _memoryToken->resize(std::min(_memoryToken->getSize(), _cacheLimit.sum()), _cacheLimit.sum());
+
+    _memoryToken->resize(std::min(_memoryToken->getSize(), _cacheLimit.sum()),
+                         _cacheLimit.sum());
+
     evictWhileFull();
 }
 

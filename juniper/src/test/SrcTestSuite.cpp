@@ -1,12 +1,29 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
+/**
+ * Implementation of the test suite application SrcTestSuite.
+ *
+ * @file SrcTestSuite.cpp
+ *
+ * @author Knut Omang
+ *
+ * @date Created 21 Feb 2003
+ *
+ * $Id$
+ *
+ * <pre>
+ *              Copyright (c) : 2003 Fast Search & Transfer ASA
+ *                              ALL RIGHTS RESERVED
+ * </pre>
+ ****************************************************************************/
+#include <vespa/fastos/fastos.h>
+#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/fastlib/testsuite/suite.h>
 #include "testenv.h"
 #include "mcandTest.h"
 #include "queryparserTest.h"
 #include "matchobjectTest.h"
 #include "auxTest.h"
-#include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/fastlib/testsuite/suite.h>
+
 /**
  * The SrcTestSuite class runs all the unit tests for the src module.
  *
@@ -36,7 +53,7 @@ SrcTestSuite::SrcTestSuite() :
  */
 class SrcTestSuiteApp : public vespalib::TestApp {
 public:
-    int Main() override;
+    virtual int Main() override;
 };
 
 int SrcTestSuiteApp::Main() {

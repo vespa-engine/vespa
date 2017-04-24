@@ -1,12 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/fastos/fastos.h>
+#include <vespa/document/util/stringutil.h>
+#include <vespa/log/log.h>
+#include <sstream>
 #include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
 #include <vespa/storage/frameworkimpl/status/statuswebserver.h>
 #include <vespa/storageframework/defaultimplementation/thread/threadpoolimpl.h>
 #include <tests/common/teststorageapp.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
-#include <vespa/document/util/stringutil.h>
-#include <sstream>
+
+LOG_SETUP(".test.status");
 
 namespace storage {
 
@@ -43,13 +47,18 @@ namespace {
             : framework::HtmlStatusReporter(id, name),
               _headerAddition(headerAddition),
               _content(content)
-        {}
+        {
+        }
 
-        void reportHtmlHeaderAdditions(std::ostream& out, const framework::HttpUrlPath&) const override {
+        virtual void reportHtmlHeaderAdditions(
+                std::ostream& out, const framework::HttpUrlPath&) const override
+        {
             out << _headerAddition;
         }
 
-        void reportHtmlStatus(std::ostream& out, const framework::HttpUrlPath&) const override {
+        virtual void reportHtmlStatus(
+                std::ostream& out, const framework::HttpUrlPath&) const override
+        {
             out << _content;
         }
     };
@@ -57,9 +66,9 @@ namespace {
     struct XmlStatusReporter : public framework::XmlStatusReporter {
         XmlStatusReporter(const std::string& id, const std::string& name)
             : framework::XmlStatusReporter(id, name) {}
-
-        vespalib::string reportXmlStatus(vespalib::xml::XmlOutputStream& xos,
-                                         const framework::HttpUrlPath&) const override
+        virtual vespalib::string reportXmlStatus(
+                vespalib::xml::XmlOutputStream& xos,
+                const framework::HttpUrlPath&) const override
         {
             xos << vespalib::xml::XmlTag("mytag")
                 << vespalib::xml::XmlAttribute("foo", "bar")

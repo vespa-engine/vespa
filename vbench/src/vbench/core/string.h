@@ -10,8 +10,6 @@
 #include <string>
 #endif
 
-#include <vector>
-
 namespace vbench {
 
 // define which string class to use

@@ -423,8 +423,7 @@ struct FakePersistenceLayer : public StorageLink {
         }
         return 0;
     }
-
-    bool onDown(const api::StorageMessage::SP& msg) override {
+    virtual bool onDown(const api::StorageMessage::SP& msg) override {
         fatalError = "";
         if (messageCallback) {
             messageCallback->onMessage(*msg);

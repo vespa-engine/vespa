@@ -10,11 +10,11 @@
 
 #pragma once
 
-#include "applicationgenerationfetcher.h"
-#include <vespa/storage/common/storagecomponent.h>
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/metrics/metrics.h>
 #include <vespa/metrics/state_api_adapter.h>
+#include <vespa/storage/common/storagecomponent.h>
+#include <vespa/storage/storageserver/applicationgenerationfetcher.h>
+#include <vespa/storageframework/storageframework.h>
 #include <vespa/vespalib/net/metrics_producer.h>
 #include <vespa/vespalib/net/state_api.h>
 
@@ -37,8 +37,11 @@ public:
             const std::string& name = "status");
     ~StateReporter();
 
-    vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
-    bool reportStatus(std::ostream& out, const framework::HttpUrlPath& path) const override;
+    vespalib::string getReportContentType(
+            const framework::HttpUrlPath&) const override;
+    bool reportStatus(std::ostream& out,
+                      const framework::HttpUrlPath& path) const override;
+
 private:
     metrics::MetricManager &_manager;
     metrics::StateApiAdapter _metricsAdapter;
@@ -47,10 +50,16 @@ private:
     ApplicationGenerationFetcher& _generationFetcher;
     std::string _name;
 
-    vespalib::string getMetrics(const vespalib::string &consumer) override;
-    vespalib::string getTotalMetrics(const vespalib::string &consumer) override;
-    Health getHealth() const override;
-    void getComponentConfig(Consumer &consumer) override;
+    // Implements vespalib::MetricsProducer
+    virtual vespalib::string getMetrics(const vespalib::string &consumer) override;
+    virtual vespalib::string getTotalMetrics(const vespalib::string &consumer) override;
+
+    // Implements vespalib::HealthProducer
+    virtual Health getHealth() const override;
+
+    // Implements vespalib::ComponentConfigProducer
+    virtual void getComponentConfig(Consumer &consumer) override;
 };
 
 } // storage
+

@@ -4,16 +4,24 @@
 
 #include "syncproxy.h"
 
-namespace search {
-namespace transactionlog {
+namespace search
+{
+namespace transactionlog
+{
 
 class NoSyncProxy : public SyncProxy
 {
 public:
-    NoSyncProxy();
-    ~NoSyncProxy();
-    void sync(SerialNum syncTo) override;
+    NoSyncProxy(void);
+
+    virtual
+    ~NoSyncProxy(void);
+
+    virtual void
+    sync(SerialNum syncTo) override;
 };
 
 }
+
 }
+

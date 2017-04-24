@@ -138,12 +138,12 @@ public:
                                ServiceLayerComponentRegister&);
     ~StorageBucketDBInitializer();
 
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    void onOpen() override;
-    void onClose() override;
+    virtual void onOpen() override;
+    virtual void onClose() override;
 
-    void run(framework::ThreadHandle&) override;
+    virtual void run(framework::ThreadHandle&) override;
 
     bool onDown(const std::shared_ptr<api::StorageMessage>&) override;
     bool onInternalReply(const std::shared_ptr<api::InternalReply>&) override;
@@ -215,3 +215,4 @@ public:
 };
 
 } // storage
+

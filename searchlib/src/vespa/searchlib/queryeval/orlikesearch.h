@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "orsearch.h"
 #include <vespa/vespalib/objects/visit.h>
+#include "orsearch.h"
 
 namespace search {
 namespace queryeval {
@@ -52,16 +52,16 @@ public:
         _unpacker(unpacker)
     { }
 private:
-    void onRemove(size_t index) override {
+    virtual void onRemove(size_t index) override {
         _unpacker.onRemove(index);
     }
-    void onInsert(size_t index) override {
+    virtual void onInsert(size_t index) override {
         _unpacker.onInsert(index);
     }
-    void doUnpack(uint32_t docid) override {
+    virtual void doUnpack(uint32_t docid) override {
         _unpacker.unpack(docid, *this);
     }
-    bool needUnpack(size_t index) const override {
+    virtual bool needUnpack(size_t index) const override {
         return _unpacker.needUnpack(index);
     }
     Unpack _unpacker;
@@ -70,3 +70,4 @@ private:
 
 } // namespace queryeval
 } // namespace search
+

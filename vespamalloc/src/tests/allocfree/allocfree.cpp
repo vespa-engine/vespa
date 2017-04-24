@@ -19,7 +19,7 @@ public:
     FreeWorker(uint32_t maxQueue, bool inverse)
         : Consumer (maxQueue, inverse) {}
 private:
-    void consume(void * p) override { free(p); }
+    virtual void consume(void * p) override { free(p); }
 };
 
 //-----------------------------------------------------------------------------
@@ -30,7 +30,7 @@ public:
         : Producer(cnt, target), _size(size) {}
 private:
     uint32_t _size;
-    void * produce() override { return malloc(_size); }
+    virtual void * produce()       override { return malloc(_size); }
 };
 
 //-----------------------------------------------------------------------------
@@ -41,9 +41,8 @@ public:
         : ProducerConsumer(cnt, inverse), _size(size) { }
 private:
     uint32_t _size;
-
-    void * produce() override { return malloc(_size); }
-    void consume(void * p) override { free(p); }
+    virtual void * produce()       override { return malloc(_size); }
+    virtual void consume(void * p) override { free(p); }
 };
 
 //-----------------------------------------------------------------------------

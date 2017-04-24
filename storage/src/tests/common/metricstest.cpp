@@ -67,8 +67,10 @@ namespace {
     {
         framework::Clock& _clock;
         MetricClock(framework::Clock& c) : _clock(c) {}
-        time_t getTime() const override { return _clock.getTimeInSeconds().getTime(); }
-        time_t getTimeInMilliSecs() const override { return _clock.getTimeInMillis().getTime(); }
+        virtual time_t getTime() const override
+            { return _clock.getTimeInSeconds().getTime(); }
+        virtual time_t getTimeInMilliSecs() const override
+            { return _clock.getTimeInMillis().getTime(); }
     };
 }
 

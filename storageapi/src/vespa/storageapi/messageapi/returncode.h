@@ -14,6 +14,7 @@
 #include <vespa/document/util/serializable.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <iosfwd>
+#include <string>
 
 namespace document {
     class ByteBuffer;
@@ -67,7 +68,9 @@ public:
 private:
     Result _result;
     vespalib::string _message;
-    void onDeserialize(const document::DocumentTypeRepo &repo, document::ByteBuffer& buffer) override;
+
+    void onDeserialize(const document::DocumentTypeRepo &repo,
+                       document::ByteBuffer& buffer) override;
     void onSerialize(document::ByteBuffer& buffer) const override;
 
 public:
@@ -120,3 +123,4 @@ public:
 
 } // api
 } // storage
+

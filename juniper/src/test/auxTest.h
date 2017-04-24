@@ -7,6 +7,7 @@
 #include <vespa/fastlib/testsuite/test.h>
 #include "testenv.h"
 
+
 class AuxTest : public Test
 {
 private:
@@ -24,14 +25,14 @@ public:
     void Run(MethodContainer::iterator &itr);
     void Run(const char* method);
     void Run(int argc, char* argv[]);
-    void Run() override;
+    virtual void Run() override;
 protected:
     /**
      * Since we are running within Emacs, the default behavior of
      * print_progress which includes backspace does not work.
      * We'll use a single '.' instead.
      */
-    void print_progress() override { *m_osptr << '.' << std::flush; }
+    virtual void print_progress() override { *m_osptr << '.' << std::flush; }
 private:
     // tests:
     void TestPropertyMap();

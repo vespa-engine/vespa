@@ -21,7 +21,11 @@ public:
 
     // Overrides RPCNetwork.
     bool allocServiceAddress(mbus::RoutingNode &recipient) override;
+
+    // Overrides RPCNetwork.
     void freeServiceAddress(mbus::RoutingNode &recipient) override;
+
+    // Overrides RPCNetwork.
     void send(const mbus::Message &msg, const std::vector<mbus::RoutingNode*> &recipients) override;
 
     /**
@@ -39,3 +43,4 @@ public:
      */
     void removeNodes(std::vector<mbus::RoutingNode*> &nodes);
 };
+

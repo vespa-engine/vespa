@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include "filestorhandler.h"
-#include "filestormetrics.h"
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/document/bucket/bucketid.h>
@@ -22,7 +20,8 @@
 #include <vespa/storage/common/storagelinkqueued.h>
 #include <vespa/config-stor-filestor.h>
 #include <vespa/storage/persistence/diskthread.h>
-
+#include <vespa/storage/persistence/filestorage/filestorhandler.h>
+#include <vespa/storage/persistence/filestorage/filestormetrics.h>
 #include <vespa/storage/persistence/providershutdownwrapper.h>
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/storage/common/nodestateupdater.h>
@@ -105,7 +104,7 @@ public:
                              ServiceLayerComponentRegister&);
     ~FileStorManager();
 
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     // Return true if we are currently merging the given bucket.
     bool isMerging(const document::BucketId& bucket) const;
@@ -123,7 +122,8 @@ public:
 private:
     void configure(std::unique_ptr<vespa::config::content::StorFilestorConfig> config) override;
 
-    void replyWithBucketNotFound(api::StorageMessage&, const document::BucketId&);
+    void replyWithBucketNotFound(api::StorageMessage&,
+                                 const document::BucketId&);
 
     void replyDroppedOperation(api::StorageMessage& msg,
                                const document::BucketId& bucket,
@@ -135,12 +135,17 @@ private:
             api::StorageMessage& msg,
             const char* callerId);
 
-    bool validateApplyDiffCommandBucket(api::StorageMessage& msg, const StorBucketDatabase::WrappedEntry&);
-    bool validateDiffReplyBucket(const StorBucketDatabase::WrappedEntry&, const document::BucketId&);
+    bool validateApplyDiffCommandBucket(api::StorageMessage& msg,
+                                        const StorBucketDatabase::WrappedEntry&);
+    bool validateDiffReplyBucket(const StorBucketDatabase::WrappedEntry&,
+                                 const document::BucketId&);
 
-    StorBucketDatabase::WrappedEntry mapOperationToDisk(api::StorageMessage&, const document::BucketId&);
-    StorBucketDatabase::WrappedEntry mapOperationToBucketAndDisk(api::BucketCommand&, const document::DocumentId*);
-    bool handlePersistenceMessage(const std::shared_ptr<api::StorageMessage>&, uint16_t disk);
+    StorBucketDatabase::WrappedEntry mapOperationToDisk(
+            api::StorageMessage&, const document::BucketId&);
+    StorBucketDatabase::WrappedEntry mapOperationToBucketAndDisk(
+            api::BucketCommand&, const document::DocumentId*);
+    bool handlePersistenceMessage(const std::shared_ptr<api::StorageMessage>&,
+                                  uint16_t disk);
 
     // Document operations
     bool onPut(const std::shared_ptr<api::PutCommand>&) override;
@@ -170,15 +175,23 @@ private:
     bool onInternal(const std::shared_ptr<api::InternalCommand>&) override;
     bool onInternalReply(const std::shared_ptr<api::InternalReply>&) override;
 
-    void handleAbortBucketOperations(const std::shared_ptr<AbortBucketOperationsCommand>&);
+    void handleAbortBucketOperations(
+            const std::shared_ptr<AbortBucketOperationsCommand>&);
+
     void sendCommand(const std::shared_ptr<api::StorageCommand>&) override;
     void sendReply(const std::shared_ptr<api::StorageReply>&) override;
+
     void sendUp(const std::shared_ptr<api::StorageMessage>&) override;
+
     void onClose() override;
     void onFlush(bool downwards) override;
-    void reportHtmlStatus(std::ostream&, const framework::HttpUrlPath&) const override;
-    void storageDistributionChanged() override;
+
+    virtual void reportHtmlStatus(std::ostream&, const framework::HttpUrlPath&) const override;
+
+    virtual void storageDistributionChanged() override;
+
     void updateState();
 };
 
 } // storage
+

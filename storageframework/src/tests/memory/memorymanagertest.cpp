@@ -155,7 +155,8 @@ MemoryManagerTest::testBasics()
         struct ReduceI : public framework::ReduceMemoryUsageInterface {
             framework::MemoryToken::UP _token;
 
-            uint64_t reduceMemoryConsumption(const MemoryToken& token, uint64_t reduceBy) override {
+            virtual uint64_t reduceMemoryConsumption(const MemoryToken& token, uint64_t reduceBy) override
+            {
                 assert(&token == _token.get());
                 (void) &token;
                 assert(_token->getSize() >= reduceBy);

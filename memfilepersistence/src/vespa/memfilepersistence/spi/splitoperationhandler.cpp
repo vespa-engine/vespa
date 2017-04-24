@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
-#include "splitoperationhandler.h"
-#include "cacheevictionguard.h"
-
+#include <vespa/fastos/fastos.h>
+#include <vespa/memfilepersistence/spi/splitoperationhandler.h>
+#include <vespa/memfilepersistence/spi/cacheevictionguard.h>
 #include <vespa/log/log.h>
+
 LOG_SETUP(".persistence.memfile.handler.split");
 
 namespace storage {
@@ -25,7 +25,7 @@ struct BucketMatcher : public SlotMatcher {
           _factory(factory),
           _bid(bid) {}
 
-    bool match(const Slot& slot) override {
+    virtual bool match(const Slot& slot) override {
         document::DocumentId id(slot.getDocumentId());
         document::BucketId bucket = _factory.getBucketId(id);
         bucket.setUsedBits(_bid.getUsedBits());
@@ -69,7 +69,7 @@ SplitOperationHandler::splitIntoFile(MemFile& source,
     MemFileCacheEvictionGuard targetFile(getMemFile(target, false));
 
     LOG(debug,
-        "Found %zu slots to move from file %s to file %s",
+        "Found %" PRIu64 " slots to move from file %s to file %s",
         ts.size(),
         source.getFile().toString().c_str(),
         targetFile->getFile().toString().c_str());

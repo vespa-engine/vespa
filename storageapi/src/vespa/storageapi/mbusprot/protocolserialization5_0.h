@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "protocolserialization4_2.h"
+#include <vespa/storageapi/mbusprot/protocolserialization4_2.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
 
 namespace storage {
@@ -15,64 +15,66 @@ public:
     ProtocolSerialization5_0(const document::DocumentTypeRepo::SP&,
                              const documentapi::LoadTypeSet& loadTypes);
 
-    api::BucketInfo getBucketInfo(document::ByteBuffer& buf) const override;
-    void putBucketInfo(const api::BucketInfo& info, vespalib::GrowableByteBuffer& buf) const override;
+    virtual api::BucketInfo getBucketInfo(document::ByteBuffer& buf) const override;
+    virtual void putBucketInfo(const api::BucketInfo& info,
+                               vespalib::GrowableByteBuffer& buf) const override;
 
-    void onEncode(GBBuf&, const api::PutCommand&) const override;
-    void onEncode(GBBuf&, const api::PutReply&) const override;
-    void onEncode(GBBuf&, const api::UpdateCommand&) const override;
-    void onEncode(GBBuf&, const api::UpdateReply&) const override;
-    void onEncode(GBBuf&, const api::GetReply&) const override;
-    void onEncode(GBBuf&, const api::RemoveReply&) const override;
-    void onEncode(GBBuf&, const api::RevertReply&) const override;
-    void onEncode(GBBuf&, const api::CreateBucketReply&) const override;
-    void onEncode(GBBuf&, const api::DeleteBucketCommand&) const override;
-    void onEncode(GBBuf&, const api::DeleteBucketReply&) const override;
-    void onEncode(GBBuf&, const api::MergeBucketCommand&) const override;
-    void onEncode(GBBuf&, const api::MergeBucketReply&) const override;
-    void onEncode(GBBuf&, const api::GetBucketDiffReply&) const override;
-    void onEncode(GBBuf&, const api::ApplyBucketDiffReply&) const override;
-    void onEncode(GBBuf&, const api::SplitBucketReply&) const override;
-    void onEncode(GBBuf&, const api::MultiOperationReply&) const override;
-    void onEncode(GBBuf&, const api::JoinBucketsCommand&) const override;
-    void onEncode(GBBuf&, const api::JoinBucketsReply&) const override;
-    void onEncode(GBBuf&, const api::RequestBucketInfoCommand&) const override;
+    virtual void onEncode(GBBuf&, const api::PutCommand&) const override;
+    virtual void onEncode(GBBuf&, const api::PutReply&) const override;
+    virtual void onEncode(GBBuf&, const api::UpdateCommand&) const override;
+    virtual void onEncode(GBBuf&, const api::UpdateReply&) const override;
+    virtual void onEncode(GBBuf&, const api::GetReply&) const override;
+    virtual void onEncode(GBBuf&, const api::RemoveReply&) const override;
+    virtual void onEncode(GBBuf&, const api::RevertReply&) const override;
+    virtual void onEncode(GBBuf&, const api::CreateBucketReply&) const override;
+    virtual void onEncode(GBBuf&, const api::DeleteBucketCommand&) const override;
+    virtual void onEncode(GBBuf&, const api::DeleteBucketReply&) const override;
+    virtual void onEncode(GBBuf&, const api::MergeBucketCommand&) const override;
+    virtual void onEncode(GBBuf&, const api::MergeBucketReply&) const override;
+    virtual void onEncode(GBBuf&, const api::GetBucketDiffReply&) const override;
+    virtual void onEncode(GBBuf&, const api::ApplyBucketDiffReply&) const override;
+    virtual void onEncode(GBBuf&, const api::SplitBucketReply&) const override;
+    virtual void onEncode(GBBuf&, const api::MultiOperationReply&) const override;
+    virtual void onEncode(GBBuf&, const api::JoinBucketsCommand&) const override;
+    virtual void onEncode(GBBuf&, const api::JoinBucketsReply&) const override;
+    virtual void onEncode(GBBuf&, const api::RequestBucketInfoCommand&) const override;
 
-    void onEncodeBucketInfoReply(GBBuf&, const api::BucketInfoReply&) const override;
+    virtual void onEncodeBucketInfoReply(GBBuf&, const api::BucketInfoReply&) const override;
     virtual void onEncodeBucketReply(GBBuf&, const api::BucketReply&) const;
 
-    void onEncode(GBBuf&, const api::CreateVisitorCommand& msg) const override;
-    void onEncode(GBBuf&, const api::CreateVisitorReply& msg) const override;
-    void onEncodeCommand(GBBuf&, const api::StorageCommand&) const override;
-    void onEncodeReply(GBBuf&, const api::StorageReply&) const override;
+    virtual void onEncode(GBBuf&, const api::CreateVisitorCommand& msg) const override;
+    virtual void onEncode(GBBuf&, const api::CreateVisitorReply& msg) const override;
+    virtual void onEncodeCommand(GBBuf&, const api::StorageCommand&) const override;
+    virtual void onEncodeReply(GBBuf&, const api::StorageReply&) const override;
 
-    SCmd::UP onDecodePutCommand(BBuf&) const override;
-    SRep::UP onDecodePutReply(const SCmd&, BBuf&) const override;
-    SCmd::UP onDecodeUpdateCommand(BBuf&) const override;
-    SRep::UP onDecodeUpdateReply(const SCmd&, BBuf&) const override;
-    SRep::UP onDecodeGetReply(const SCmd&, BBuf&) const override;
-    SRep::UP onDecodeRemoveReply(const SCmd&, BBuf&) const override;
-    SRep::UP onDecodeRevertReply(const SCmd&, BBuf&) const override;
-    SRep::UP onDecodeCreateBucketReply(const SCmd&, BBuf&) const override;
-    SCmd::UP onDecodeDeleteBucketCommand(BBuf&) const override;
-    SRep::UP onDecodeDeleteBucketReply(const SCmd&, BBuf&) const override;
-    SCmd::UP onDecodeMergeBucketCommand(BBuf&) const override;
-    SRep::UP onDecodeMergeBucketReply(const SCmd&, BBuf&) const override;
-    SRep::UP onDecodeGetBucketDiffReply(const SCmd&, BBuf&) const override;
-    SRep::UP onDecodeApplyBucketDiffReply(const SCmd&, BBuf&) const override;
-    SRep::UP onDecodeSplitBucketReply(const SCmd&, BBuf&) const override;
-    SRep::UP onDecodeMultiOperationReply(const SCmd&, BBuf&) const override;
-    SCmd::UP onDecodeJoinBucketsCommand(BBuf& buf) const override;
-    SRep::UP onDecodeJoinBucketsReply(const SCmd& cmd, BBuf& buf) const override;
-    SCmd::UP onDecodeCreateVisitorCommand(BBuf&) const override;
-    SCmd::UP onDecodeRequestBucketInfoCommand(BBuf& buf) const override;
+    virtual SCmd::UP onDecodePutCommand(BBuf&) const override;
+    virtual SRep::UP onDecodePutReply(const SCmd&, BBuf&) const override;
+    virtual SCmd::UP onDecodeUpdateCommand(BBuf&) const override;
+    virtual SRep::UP onDecodeUpdateReply(const SCmd&, BBuf&) const override;
+    virtual SRep::UP onDecodeGetReply(const SCmd&, BBuf&) const override;
+    virtual SRep::UP onDecodeRemoveReply(const SCmd&, BBuf&) const override;
+    virtual SRep::UP onDecodeRevertReply(const SCmd&, BBuf&) const override;
+    virtual SRep::UP onDecodeCreateBucketReply(const SCmd&, BBuf&) const override;
+    virtual SCmd::UP onDecodeDeleteBucketCommand(BBuf&) const override;
+    virtual SRep::UP onDecodeDeleteBucketReply(const SCmd&, BBuf&) const override;
+    virtual SCmd::UP onDecodeMergeBucketCommand(BBuf&) const override;
+    virtual SRep::UP onDecodeMergeBucketReply(const SCmd&, BBuf&) const override;
+    virtual SRep::UP onDecodeGetBucketDiffReply(const SCmd&, BBuf&) const override;
+    virtual SRep::UP onDecodeApplyBucketDiffReply(const SCmd&, BBuf&) const override;
+    virtual SRep::UP onDecodeSplitBucketReply(const SCmd&, BBuf&) const override;
+    virtual SRep::UP onDecodeMultiOperationReply(const SCmd&, BBuf&) const override;
+    virtual SCmd::UP onDecodeJoinBucketsCommand(BBuf& buf) const override;
+    virtual SRep::UP onDecodeJoinBucketsReply(const SCmd& cmd, BBuf& buf) const override;
+    virtual SCmd::UP onDecodeCreateVisitorCommand(BBuf&) const override;
+    virtual SCmd::UP onDecodeRequestBucketInfoCommand(BBuf& buf) const override;
 
-    void onDecodeBucketInfoReply(BBuf&, api::BucketInfoReply&) const override;
+    virtual void onDecodeBucketInfoReply(BBuf&, api::BucketInfoReply&) const override;
     virtual void onDecodeBucketReply(BBuf&, api::BucketReply&) const;
-    SRep::UP onDecodeCreateVisitorReply(const SCmd& cmd, BBuf& buf) const override;
-    void onDecodeCommand(BBuf& buf, api::StorageCommand& msg) const override;
-    void onDecodeReply(BBuf&, api::StorageReply&) const override;
+    virtual SRep::UP onDecodeCreateVisitorReply(const SCmd& cmd, BBuf& buf) const override;
+    virtual void onDecodeCommand(BBuf& buf, api::StorageCommand& msg) const override;
+    virtual void onDecodeReply(BBuf&, api::StorageReply&) const override;
 };
 
 } // mbusprot
 } // storage
+

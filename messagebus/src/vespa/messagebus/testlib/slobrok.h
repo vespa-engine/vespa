@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <memory>
 #include <vespa/messagebus/common.h>
 #include <vespa/slobrok/cfg.h>
 

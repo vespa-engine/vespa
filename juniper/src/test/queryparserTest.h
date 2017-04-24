@@ -17,11 +17,11 @@
  ***************************************************************************/
 #pragma once
 
+#include <map>
+#include <vespa/fastlib/testsuite/test.h>
 #include "testenv.h"
 #include <vespa/juniper/queryparser.h>
 #include <vespa/juniper/rewriter.h>
-#include <vespa/fastlib/testsuite/test.h>
-#include <map>
 
 /**
  * The QueryParserTest class holds
@@ -97,7 +97,7 @@ protected:
      * print_progress which includes backspace does not work.
      * We'll use a single '.' instead.
      */
-    void print_progress() override { *m_osptr << '.' << std::flush; }
+    virtual void print_progress() override { *m_osptr << '.' << std::flush; }
 
 public:
 
@@ -108,7 +108,7 @@ public:
      *                         main entry points
      *************************************************************************/
     void Run(MethodContainer::iterator &itr);
-    void Run() override;
+    virtual void Run() override;
     void Run(const char *method);
     void Run(int argc, char* argv[]);
 };

@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP("");
 
 #include "auxTest.h"
-#include <vespa/fastos/file.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".auxtest");
 
 // Using separator definitions only from here:
 
@@ -560,7 +560,7 @@ void AuxTest::test_summary(Matcher& m, const char* content, size_t content_len,
 class DefProps : public IJuniperProperties
 {
 public:
-    const char* GetProperty(const char*, const char* def) override {
+    virtual const char* GetProperty(const char*, const char* def) override {
         return def;
     }
 };
@@ -626,12 +626,12 @@ public:
     TokenChecker(Token* output) : _out(output), i(0)
     {  }
 
-    void handle_token(Token& token) override {
+    virtual void handle_token(Token& token) override {
         _out[i] = token;
         i++;
     }
 
-    void handle_end(Token&) override {}
+    virtual void handle_end(Token&) override {}
 };
 
 
@@ -670,13 +670,13 @@ private:
     std::vector<std::string> _tokens;
 public:
     TokenProcessor(const std::string & text) : _text(text), _tokens() {}
-    void handle_token(Token & t) override {
+    virtual void handle_token(Token & t) override {
         _tokens.push_back(std::string(_text.c_str() + t.bytepos, t.bytelen));
         //LOG(info, "handle_token(%s): bytepos(%d), wordpos(%d), bytelen(%d), curlen(%d)",
             //_tokens.back().c_str(),
             //(int)t.bytepos, (int)t.wordpos, t.bytelen, t.curlen);
     }
-    void handle_end(Token & t) override {
+    virtual void handle_end(Token & t) override {
         _tokens.push_back(std::string(_text.c_str() + t.bytepos, t.bytelen));
         //LOG(info, "handle_end(%s): bytepos(%d), wordpos(%d), bytelen(%d), curlen(%d)",
             //_tokens.back().c_str(),

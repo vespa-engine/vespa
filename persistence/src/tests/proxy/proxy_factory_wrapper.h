@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/vstringfmt.h>
 #include <vespa/persistence/conformancetest/conformancetest.h>
 #include <vespa/persistence/proxy/providerstub.h>
 #include <vespa/persistence/proxy/providerproxy.h>
@@ -33,7 +33,7 @@ struct ProxyFactoryWrapper : ConformanceTest::PersistenceFactory
         DummyProviderFactory::UP provider;
         Server::UP server;
         Wrapper(DummyProviderFactory::UP p, Server::UP s, const Repo &repo)
-            : Client(vespalib::make_string("tcp/localhost:%u", s->getPort()), repo),
+            : Client(vespalib::make_vespa_string("tcp/localhost:%u", s->getPort()), repo),
               provider(std::move(p)),
               server(std::move(s))
         {}
@@ -47,7 +47,9 @@ struct ProxyFactoryWrapper : ConformanceTest::PersistenceFactory
         return Provider::UP(new Wrapper(std::move(provider), std::move(server), *repo));
     }
 
-    bool supportsActiveState() const override  {
+    virtual bool
+    supportsActiveState() const override
+    {
         return factory->supportsActiveState();
     }
 };

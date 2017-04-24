@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
+#include <vespa/fastos/fastos.h>
 #include <vespa/metrics/metrics.h>
 #include <vespa/metrics/loadmetric.hpp>
 #include <vespa/metrics/summetric.hpp>
@@ -108,7 +108,7 @@ OuterMetricSet::~OuterMetricSet() { }
             //std::cerr << "Loadgiver thread joined\n";
         }
 
-        void run() override {
+        virtual void run() override {
             uint64_t i = 0;
             while (running()) {
                 ++i;

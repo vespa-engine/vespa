@@ -34,7 +34,7 @@ namespace {
 
     struct MyThread : public TaskThread<Task> {
         MyThread(ThreadLock& lock) : TaskThread<Task>(lock) {}
-        ThreadWaitInfo doNonCriticalTick(ThreadIndex) override {
+        virtual ThreadWaitInfo doNonCriticalTick(ThreadIndex) override {
             return ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
         }
     };

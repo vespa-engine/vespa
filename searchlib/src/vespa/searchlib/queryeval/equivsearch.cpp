@@ -1,6 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/fastos/fastos.h>
 #include "equivsearch.h"
+#include <vespa/vespalib/objects/visit.h>
+#include <vespa/searchlib/fef/termmatchdatamerger.h>
 
 namespace search {
 namespace queryeval {
@@ -14,7 +17,7 @@ private:
     bool                      _valid;
 
 protected:
-    void doUnpack(uint32_t docid) override;
+    virtual void doUnpack(uint32_t docid) override;
 
 public:
     /**

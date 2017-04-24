@@ -196,7 +196,7 @@ protected:
      * print_progress which includes backspace does not work.
      * We'll use a single '.' instead.
      */
-    void print_progress() override { *m_osptr << '.' << std::flush; }
+    virtual void print_progress() override { *m_osptr << '.' << std::flush; }
 
 public:
 
@@ -207,7 +207,7 @@ public:
      *                         main entry points
      *************************************************************************/
     void Run(MethodContainer::iterator &itr);
-    void Run() override;
+    virtual void Run() override;
     void Run(const char *method);
     void Run(int argc, char* argv[]);
 };

@@ -1,5 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+
 #pragma once
 
 #include <vbench/core/string.h>
@@ -67,9 +68,9 @@ public:
 
     double latency() const { return (_endTime - _startTime); }
 
-    void handleHeader(const string &name, const string &value) override;
-    void handleContent(const Memory &data) override;
-    void handleFailure(const string &reason) override;
+    virtual void handleHeader(const string &name, const string &value) override;
+    virtual void handleContent(const Memory &data) override;
+    virtual void handleFailure(const string &reason) override;
 
     const BenchmarkHeaders &headers() const { return _headers; }
 
@@ -77,3 +78,4 @@ public:
 };
 
 } // namespace vbench
+

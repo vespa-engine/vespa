@@ -29,13 +29,12 @@ private:
 public:
     Socket(vespalib::SocketHandle socket);
     Socket(const string &host, int port);
-    ~Socket();
-    bool eof() const override { return _eof; }
-    Memory obtain() override;
-    Input &evict(size_t bytes) override;
-    WritableMemory reserve(size_t bytes) override;
-    Output &commit(size_t bytes) override;
-    const Taint &tainted() const override { return _taint; }
+    virtual bool eof() const override { return _eof; }
+    virtual Memory obtain() override;
+    virtual Input &evict(size_t bytes) override;
+    virtual WritableMemory reserve(size_t bytes) override;
+    virtual Output &commit(size_t bytes) override;
+    virtual const Taint &tainted() const override { return _taint; }
 };
 
 struct ServerSocket {
@@ -54,3 +53,4 @@ struct ServerSocket {
 };
 
 } // namespace vbench
+

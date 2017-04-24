@@ -12,8 +12,8 @@
 
 #pragma once
 
-#include "returncode.h"
-#include "storagemessage.h"
+#include <vespa/storageapi/messageapi/returncode.h>
+#include <vespa/storageapi/messageapi/storagemessage.h>
 
 namespace storage {
 namespace api {
@@ -34,7 +34,9 @@ public:
     void setResult(const ReturnCode& r) { _result = r; }
     void setResult(ReturnCode::Result r) { _result = ReturnCode(r); }
     const ReturnCode& getResult() const { return _result; }
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
+    /** Overload this to get more descriptive output. */
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 } // api

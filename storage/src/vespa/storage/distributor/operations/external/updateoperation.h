@@ -25,9 +25,14 @@ public:
                     PersistenceOperationMetricSet& metric);
 
     void onStart(DistributorMessageSender& sender) override;
-    const char* getName() const override { return "update"; };
-    std::string getStatus() const override { return ""; };
-    void onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg) override;
+
+    const char* getName() const override { return "update"; }
+
+    std::string getStatus() const override { return ""; }
+
+    void onReceive(DistributorMessageSender& sender,
+                   const std::shared_ptr<api::StorageReply> & msg) override;
+
     void onClose(DistributorMessageSender& sender) override;
 
     std::pair<document::BucketId, uint16_t> getNewestTimestampLocation() const {
@@ -60,3 +65,4 @@ private:
 }
 
 }
+

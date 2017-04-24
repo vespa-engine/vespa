@@ -9,6 +9,9 @@
 #include <vbench/http/http_client.h>
 #include <iostream>
 
+#include <vespa/log/log.h>
+LOG_SETUP("vespa-config-status");
+
 using configdefinitions::tagsContain;
 
 struct ComponentTraverser : public vespalib::slime::ObjectTraverser
@@ -38,7 +41,8 @@ struct ComponentTraverser : public vespalib::slime::ObjectTraverser
         slime.get()["config"].traverse(traverser);
     }
 
-    void field(const vespalib::Memory &symbol_name, const vespalib::slime::Inspector &inspector) override {
+    virtual void
+    field(const vespalib::Memory &symbol_name, const vespalib::slime::Inspector &inspector) override {
         switch (_state) {
         case ROOT:
             _component = symbol_name.make_string();
@@ -83,16 +87,16 @@ public:
     {}
     ~MyHttpHandler();
 
-    void handleHeader(const vbench::string &name, const vbench::string &value) override {
+    virtual void handleHeader(const vbench::string &name, const vbench::string &value) override {
         (void) name;
         (void) value;
     }
 
-    void handleContent(const vbench::Memory &data) override {
+    virtual void handleContent(const vbench::Memory &data) override {
         _json += std::string(data.data, data.size);
     }
 
-    void handleFailure(const vbench::string &reason) override {
+    virtual void handleFailure(const vbench::string &reason) override {
         std::cerr << _configId << ": Failed to fetch json: " << reason << std::endl;
         _error = reason;
     }

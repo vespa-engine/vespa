@@ -1,9 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "vdsdisktool.h"
+#include <vespa/fastos/fastos.h>
 #include <vespa/defaults.h>
-#include <vespa/fastos/app.h>
+#include <vespa/log/log.h>
+#include <vespa/memfilepersistence/tools/vdsdisktool.h>
 #include <iostream>
+
+LOG_SETUP(".vdsdisktool");
 
 namespace {
     struct DiskApp : public FastOS_Application {

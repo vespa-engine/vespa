@@ -37,7 +37,8 @@ public:
     const String& getPath() const { return _path; }
     FileVersion getWantedFileVersion() const { return _wantedVersion; }
 
-     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    virtual void print(std::ostream& out, bool verbose,
+                       const std::string& indent) const override;
 
     bool operator==(const FileSpecification& o) const {
         return (_bucketId == o._bucketId && _dir == o._dir
@@ -47,3 +48,4 @@ public:
 
 } // storage
 } // memfile
+

@@ -28,10 +28,13 @@ private:
     void testBucketDbNotUpdatedOnFailure();
 
 public:
-    void setUp() override {
+    void setUp() override
+    {
         createLinks();
     }
-    void tearDown() override {
+
+    void tearDown() override
+    {
         close();
     }
 };

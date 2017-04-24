@@ -7,6 +7,11 @@
  */
 #pragma once
 
+#include <map>
+#include <utility>
+#include <vector>
+#include <set>
+#include <memory>
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/common/storagelink.h>
@@ -43,8 +48,37 @@ public:
         metrics::LongCountMetric rejected;
         metrics::LongCountMetric other;
 
-        MergeFailureMetrics(metrics::MetricSet* owner);
-        ~MergeFailureMetrics();
+        MergeFailureMetrics(metrics::MetricSet* owner)
+            : metrics::MetricSet("failures", "", "Detailed failure statistics", owner),
+              sum("total", "", "Sum of all failures", this),
+              notready("notready", "", "The number of merges discarded "
+                       "because distributor was not ready", this),
+              timeout("timeout", "", "The number of merges that failed because "
+                      "they timed out towards storage", this),
+              aborted("aborted", "", "The number of merges that failed "
+                   "because the storage node was (most likely) shutting down", this),
+              wrongdistribution("wrongdistribution", "", "The number of merges that "
+                                "were discarded (flushed) because they were initiated at an "
+                                "older cluster state than the current", this),
+              bucketnotfound("bucketnotfound", "", "The number of operations that failed "
+                             "because the bucket did not exist", this),
+              busy("busy", "", "The number of merges that failed because the "
+                   "storage node was busy", this),
+              exists("exists", "", "The number of merges that were rejected due to a "
+                     "merge operation for their bucket already being processed", this),
+              rejected("rejected", "", "The number of merges that were rejected", this),
+              other("other", "", "The number of other failures", this)
+        {
+            sum.addMetricToSum(notready);
+            sum.addMetricToSum(timeout);
+            sum.addMetricToSum(aborted);
+            sum.addMetricToSum(wrongdistribution);
+            sum.addMetricToSum(bucketnotfound);
+            sum.addMetricToSum(busy);
+            sum.addMetricToSum(exists);
+            sum.addMetricToSum(rejected);
+            sum.addMetricToSum(other);
+        }
     };
 
     class MergeOperationMetrics : public metrics::MetricSet
@@ -53,8 +87,12 @@ public:
         metrics::LongCountMetric ok;
         MergeFailureMetrics failures;
 
-        MergeOperationMetrics(const std::string& name, metrics::MetricSet* owner);
-        ~MergeOperationMetrics();
+        MergeOperationMetrics(const std::string& name, metrics::MetricSet* owner)
+            : metrics::MetricSet(name, "", vespalib::make_string("Statistics for %s", name.c_str()), owner),
+              ok("ok", "", vespalib::make_string("The number of successful merges for '%s'", name.c_str()), this),
+              failures(this)
+        {
+        }
     };
 
     class Metrics : public metrics::MetricSet
@@ -64,8 +102,15 @@ public:
         MergeOperationMetrics chaining;
         MergeOperationMetrics local;
 
-        Metrics(metrics::MetricSet* owner = 0);
-        ~Metrics();
+        Metrics(metrics::MetricSet* owner = 0)
+            : metrics::MetricSet("mergethrottler", "", "", owner),
+              averageQueueWaitingTime(
+                      "averagequeuewaitingtime", "", "Average time a merge spends in "
+                      "the throttler queue", this),
+              chaining("mergechains", this),
+              local("locallyexecutedmerges", this)
+        {
+        }
     };
 
 private:
@@ -106,9 +151,30 @@ private:
         bool _cycleBroken;
         bool _aborted;
 
-        ChainedMergeState();
-        ChainedMergeState(const api::StorageMessage::SP& cmd, bool executing = false);
-        ~ChainedMergeState();
+        ChainedMergeState()
+            : _cmd(),
+            _cmdString(),
+            _clusterStateVersion(0),
+            _inCycle(false),
+            _executingLocally(false),
+            _unwinding(false),
+            _cycleBroken(false),
+            _aborted(false)
+        {
+        }
+
+        ChainedMergeState(const api::StorageMessage::SP& cmd, bool executing = false)
+            : _cmd(cmd),
+            _cmdString(cmd->toString()),
+            _clusterStateVersion(static_cast<const api::MergeBucketCommand&>(
+                    *cmd).getClusterStateVersion()),
+            _inCycle(false),
+            _executingLocally(executing),
+            _unwinding(false),
+            _cycleBroken(false),
+            _aborted(false)
+        {
+        }
         // Use default copy-constructor/assignment operator
 
         bool isExecutingLocally() const { return _executingLocally; }
@@ -173,7 +239,9 @@ public:
      * windowSizeIncrement used for allowing unit tests to start out with more
      * than 1 as their window size.
      */
-    MergeThrottler(const config::ConfigUri & configUri, StorageComponentRegister&);
+    MergeThrottler(const config::ConfigUri & configUri,
+                   StorageComponentRegister&);
+
     ~MergeThrottler();
 
     /** Implements document::Runnable::run */
@@ -199,8 +267,12 @@ public:
     vespalib::Lock& getStateLock() { return _stateLock; }
 
     Metrics& getMetrics() { return *_metrics; }
+
     std::size_t getMaxQueueSize() const { return _maxQueueSize; }
+
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
+    // HtmlStatusReporter implementation
     void reportHtmlStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 private:
     friend class ThreadRendezvousGuard; // impl in .cpp file
@@ -213,7 +285,9 @@ private:
         std::size_t _sortedIndex; // Index of current storage node in the sorted node sequence
         const uint16_t _thisIndex; // Index of the current storage node
 
-        MergeNodeSequence(const api::MergeBucketCommand& cmd, uint16_t thisIndex);
+        MergeNodeSequence(
+                const api::MergeBucketCommand& cmd,
+                uint16_t thisIndex);
 
         std::size_t getSortedIndex() const { return _sortedIndex; }
         const std::vector<api::MergeBucketCommand::Node>& getSortedNodes() const {
@@ -258,8 +332,13 @@ private:
     // NOTE: unless explicitly specified, all the below functions require
     // _sync lock to be held upon call (usually implicitly via MessageGuard)
 
-    void handleMessageDown(const std::shared_ptr<api::StorageMessage>& msg, MessageGuard& msgGuard);
-    void handleMessageUp(const std::shared_ptr<api::StorageMessage>& msg, MessageGuard& msgGuard);
+    void handleMessageDown(
+            const std::shared_ptr<api::StorageMessage>& msg,
+            MessageGuard& msgGuard);
+
+    void handleMessageUp(
+            const std::shared_ptr<api::StorageMessage>& msg,
+            MessageGuard& msgGuard);
 
     /**
      * Handle the receival of MergeBucketReply, be it from another node
@@ -293,13 +372,17 @@ private:
      *
      * Precondition: no existing merge state exists for msg's bucketid.
      */
-    void processNewMergeCommand(const api::StorageMessage::SP& msg, MessageGuard& msgGuard);
+    void processNewMergeCommand(
+            const api::StorageMessage::SP& msg,
+            MessageGuard& msgGuard);
 
     /**
      * Precondition: an existing merge state exists for msg's bucketid.
      * @return true if message was handled, false otherwise (see onUp/onDown).
      */
-    bool processCycledMergeCommand(const api::StorageMessage::SP& msg, MessageGuard& msgGuard);
+    bool processCycledMergeCommand(
+            const api::StorageMessage::SP& msg,
+            MessageGuard& msgGuard);
 
     /**
      * Forwards the given MergeBucketCommand to the storage node given
@@ -320,7 +403,10 @@ private:
      * @return Highest priority waiting merge or null SP if queue is empty
      */
     api::StorageMessage::SP getNextQueuedMerge();
-    void enqueueMerge(const api::StorageMessage::SP& msg, MessageGuard& msgGuard);
+
+    void enqueueMerge(
+            const api::StorageMessage::SP& msg,
+            MessageGuard& msgGuard);
 
     /**
      * @return true if throttle policy says at least one additional
@@ -348,15 +434,25 @@ private:
      * Immediately reject all queued merges whose cluster state version is
      * less than that of rejectLessThanVersion
      */
-    void rejectOutdatedQueuedMerges(MessageGuard& msgGuard, uint32_t rejectLessThanVersion);
+    void rejectOutdatedQueuedMerges(MessageGuard& msgGuard,
+                                    uint32_t rejectLessThanVersion);
+
     bool attemptProcessNextQueuedMerge(MessageGuard& msgGuard);
+
     bool processQueuedMerges(MessageGuard& msgGuard);
+
     void handleRendezvous(vespalib::MonitorGuard& guard);
+
     void rendezvousWithWorkerThread(vespalib::MonitorGuard&);
+
     void releaseWorkerThreadRendezvous(vespalib::MonitorGuard&);
+
     bool isDiffCommand(const api::StorageMessage& msg) const;
+
     bool isMergeCommand(const api::StorageMessage& msg) const;
+
     bool isMergeReply(const api::StorageMessage& msg) const;
+
     bool bucketIsUnknownOrAborted(const document::BucketId& bucket) const;
 
     std::shared_ptr<api::StorageMessage> makeAbortReply(
@@ -364,7 +460,8 @@ private:
             vespalib::stringref reason) const;
 
     void handleOutdatedMerges(const api::SetSystemStateCommand&);
-    void rejectOperationsInThreadQueue(MessageGuard&, uint32_t minimumStateVersion);
+    void rejectOperationsInThreadQueue(MessageGuard&,
+                                       uint32_t minimumStateVersion);
     void markActiveMergesAsAborted(uint32_t minimumStateVersion);
 
     // const function, but metrics are mutable
@@ -374,3 +471,4 @@ private:
 };
 
 } // namespace storage
+

@@ -1,7 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP("timeout");
 #include <vespa/fnet/fnet.h>
-#include <vespa/fastos/app.h>
+
 
 class Timeout : public FNET_Task
 {
@@ -18,7 +20,7 @@ public:
       _queue(queue)
   {}
 
-     void PerformTask() override;
+    virtual void PerformTask() override;
 };
 
 

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "enumattribute.h"
+#include <vespa/searchlib/attribute/enumattribute.h>
 #include <vespa/searchlib/common/rcuvector.h>
 
 namespace search {
@@ -83,8 +83,7 @@ protected:
     }
 
     virtual void mergeMemoryStats(MemoryUsage & total) { (void) total; }
-
-    void fillValues(LoadedVector & loaded) override;
+    virtual void fillValues(LoadedVector & loaded) override;
 
     void fillEnumIdx(ReaderBase &attrReader,
                      const EnumStoreBase::IndexVector &eidxs,
@@ -102,7 +101,7 @@ protected:
      *
      * Should return true if underlying structures were resized.
      **/
-    bool onAddDoc(DocId doc) override;
+    virtual bool onAddDoc(DocId doc) override;
 
 public:
     SingleValueEnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
@@ -137,3 +136,4 @@ public:
 };
 
 } // namespace search
+

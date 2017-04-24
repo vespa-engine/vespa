@@ -64,9 +64,6 @@ SingleValueNumericEnumAttribute(const vespalib::string & baseFileName,
 }
 
 template <typename B>
-SingleValueNumericEnumAttribute<B>::~SingleValueNumericEnumAttribute() {}
-
-template <typename B>
 void
 SingleValueNumericEnumAttribute<B>::onCommit()
 {

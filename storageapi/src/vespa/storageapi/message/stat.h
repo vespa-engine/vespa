@@ -20,22 +20,30 @@ namespace api {
 class StatBucketCommand : public BucketCommand {
 private:
     vespalib::string _docSelection;
+
 public:
     StatBucketCommand(const document::BucketId& bucket,
                       const vespalib::stringref & documentSelection);
 
     const vespalib::string& getDocumentSelection() const { return _docSelection; }
+
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    StorageCommand::UP createCopyToForward(const document::BucketId&, uint64_t timestamp) const override;
+
+    virtual StorageCommand::UP createCopyToForward(const document::BucketId&, uint64_t timestamp) const override;
+
     DECLARE_STORAGECOMMAND(StatBucketCommand, onStatBucket);
 };
 
 class StatBucketReply : public BucketReply {
     vespalib::string _results;
+
 public:
     StatBucketReply(const StatBucketCommand&, const vespalib::stringref & results = "");
+
     const vespalib::string& getResults() { return _results; }
+
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
     DECLARE_STORAGEREPLY(StatBucketReply, onStatBucketReply)
 };
 
@@ -52,7 +60,9 @@ public:
 class GetBucketListCommand : public BucketCommand {
 public:
     GetBucketListCommand(const document::BucketId& bucket);
+
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
     DECLARE_STORAGECOMMAND(GetBucketListCommand, onGetBucketList);
 };
 
@@ -66,7 +76,8 @@ public:
                    const vespalib::stringref & bucketInformation)
             : _bucket(id),
               _bucketInformation(bucketInformation)
-        {}
+        {
+        }
 
         bool operator==(const BucketInfo& other) const {
             return (_bucket == other._bucket
@@ -79,9 +90,12 @@ private:
 
 public:
     GetBucketListReply(const GetBucketListCommand&);
+
     std::vector<BucketInfo>& getBuckets() { return _buckets; }
     const std::vector<BucketInfo>& getBuckets() const { return _buckets; }
+
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
     DECLARE_STORAGEREPLY(GetBucketListReply, onGetBucketListReply)
 
 };
@@ -90,3 +104,4 @@ std::ostream& operator<<(std::ostream& out, const GetBucketListReply::BucketInfo
 
 } // api
 } // storage
+

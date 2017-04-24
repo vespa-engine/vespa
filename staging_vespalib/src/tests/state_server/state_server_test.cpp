@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
+#include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/net/state_server.h>
 #include <vespa/vespalib/net/simple_health_producer.h>
@@ -52,8 +52,10 @@ vespalib::string getFull(int port, const vespalib::string &path) { return getPag
 struct DummyHandler : JsonGetHandler {
     vespalib::string result;
     DummyHandler(const vespalib::string &result_in) : result(result_in) {}
-    vespalib::string get(const vespalib::string &, const vespalib::string &,
-                         const std::map<vespalib::string,vespalib::string> &) const override
+    virtual vespalib::string get(const vespalib::string &,
+                                 const vespalib::string &,
+                                 const std::map<vespalib::string,vespalib::string> &)
+        const override
     {
         return result;
     }
@@ -111,8 +113,10 @@ TEST_FFFF("require that handler is selected based on longest matching url prefix
 }
 
 struct EchoHost : JsonGetHandler {
-    vespalib::string get(const vespalib::string &host, const vespalib::string &,
-                         const std::map<vespalib::string,vespalib::string> &) const override
+    virtual vespalib::string get(const vespalib::string &host,
+                                 const vespalib::string &,
+                                 const std::map<vespalib::string,vespalib::string> &)
+        const override
     {
         return "[\"" + host + "\"]";
     }
@@ -312,11 +316,11 @@ TEST_FFFFF("require that custom handlers can be added to the state server",
 }
 
 struct EchoConsumer : MetricsProducer {
-    vespalib::string getMetrics(const vespalib::string &consumer) override {
+    virtual vespalib::string getMetrics(const vespalib::string &consumer) override {
         return "[\"" + consumer + "\"]";
     }
-    vespalib::string getTotalMetrics(const vespalib::string &consumer) override {
-        return "[\"" + consumer + "\"]";
+    virtual vespalib::string getTotalMetrics(const vespalib::string &consumer) override {
+        return "[\"" + consumer + "\"]";        
     }
 };
 

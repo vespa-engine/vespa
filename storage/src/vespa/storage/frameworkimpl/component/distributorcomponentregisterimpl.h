@@ -7,10 +7,10 @@
  */
 #pragma once
 
-#include "storagecomponentregisterimpl.h"
 #include <vespa/storage/bucketdb/mapbucketdatabase.h>
 #include <vespa/storage/common/distributorcomponent.h>
 #include <vespa/storage/common/nodestateupdater.h>
+#include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
 
 namespace storage {
 namespace lib {
@@ -36,13 +36,18 @@ public:
     DistributorComponentRegisterImpl();
     ~DistributorComponentRegisterImpl();
 
-    void registerDistributorComponent(DistributorManagedComponent&) override;
+    virtual void registerDistributorComponent(DistributorManagedComponent&) override;
+
     void setTimeCalculator(UniqueTimeCalculator& calc);
     void setDistributorConfig(const DistributorConfig&);
     void setVisitorConfig(const VisitorConfig&);
+
 private:
-    void handleNewState() override;
-    void setNodeStateUpdater(NodeStateUpdater& updater) override;
+    virtual void handleNewState() override;
+
+    virtual void setNodeStateUpdater(NodeStateUpdater& updater) override;
 };
 
 } // storage
+
+

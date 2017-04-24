@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "idealstatemanager.h"
+#include <vespa/storage/distributor/idealstatemanager.h>
 
 namespace storage {
 
@@ -11,7 +11,9 @@ class SynchronizeAndMoveStateChecker : public StateChecker
 {
 public:
     std::string getStatusText() const override { return "Synchronization and moving"; }
+
     Result check(Context& c) override;
+
     const char* getName() const override { return "SynchronizeAndMove"; }
 };
 
@@ -19,7 +21,9 @@ class DeleteExtraCopiesStateChecker : public StateChecker
 {
 public:
     std::string getStatusText() const override { return "Delete extra copies"; }
+
     Result check(Context& c) override;
+
     const char* getName() const override { return "DeleteExtraCopies"; }
 
 private:
@@ -45,7 +49,9 @@ class JoinBucketsStateChecker : public StateChecker
 {
 public:
     std::string getStatusText() const override { return "Join buckets"; }
+
     Result check(Context& c) override;
+
     const char* getName() const override { return "JoinBuckets"; }
 private:
     uint64_t getTotalUsedFileSize(const Context& c) const;
@@ -63,9 +69,13 @@ class SplitBucketStateChecker : public StateChecker
 {
 public:
     std::string getStatusText() const override { return "Split buckets"; }
+
     Result check(Context& c) override;
+
     const char* getName() const override { return "SplitBucket"; }
+
 private:
+
     Result generateMinimumBucketSplitOperation(Context& c);
     Result generateMaxSizeExceededSplitOperation(Context& c);
 
@@ -76,8 +86,11 @@ private:
 class SplitInconsistentStateChecker : public StateChecker
 {
 public:
-    std::string getStatusText() const override { return "Fix inconsistently split buckets"; }
+    std::string getStatusText() const override
+        { return "Fix inconsistently split buckets"; }
+
     Result check(Context& c) override;
+
     const char* getName() const override { return "SplitInconsistentBuckets"; }
 
 private:
@@ -102,7 +115,9 @@ class BucketStateStateChecker : public StateChecker
             const StateChecker::Context& c) const;
 public:
     std::string getStatusText() const override { return "Set bucket copy state"; }
+
     Result check(Context& c) override;
+
     const char* getName() const override { return "SetBucketState"; }
 };
 
@@ -110,11 +125,15 @@ class GarbageCollectionStateChecker : public StateChecker
 {
 public:
     std::string getStatusText() const override { return "Garbage collection"; }
+
     bool needsGarbageCollection(const Context& c) const;
+
     Result check(Context& c) override;
+
     const char* getName() const override { return "GarbageCollection"; }
 };
 
 }
 
 }
+

@@ -1,7 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+    // Include first to make sure it includes all it need.
+#include <vespa/fastos/fastos.h>
+#include <vespa/vespalib/objects/floatingpointtype.h>
 
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/objects/floatingpointtype.h>
 
 class Test : public vespalib::TestApp
 {

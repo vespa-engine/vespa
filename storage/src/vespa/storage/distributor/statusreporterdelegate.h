@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "delegatedstatusrequest.h"
-#include "statusdelegator.h"
 #include <vespa/storageframework/storageframework.h>
+#include <vespa/storage/distributor/delegatedstatusrequest.h>
+#include <vespa/storage/distributor/statusdelegator.h>
 
 namespace storage {
 namespace distributor {
@@ -20,7 +20,9 @@ public:
                            const framework::StatusReporter& target);
 
     void registerStatusPage();
-    vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
+
+    vespalib::string getReportContentType(
+            const framework::HttpUrlPath&) const override;
     bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 };
 

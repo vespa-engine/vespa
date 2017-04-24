@@ -1,6 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <memory>
 #include <vespa/fastlib/testsuite/test.h>
-#include <vespa/fastlib/text/normwordfolder.h>
+
+#include "../wordfolder.h"
+#include "../normwordfolder.h"
 
 class WordFoldersTest : public Test
 {
@@ -112,18 +115,17 @@ class WordFoldersTest : public Test
 
 
 public:
-
-    void Run() override {
-        // do the tests
-        _test(NormalizeWordFolderConstruction());
-        _test(TokenizeAnnotatedBuffer());
-        _test(TokenizeAnnotatedUCS4Buffer());
-        _test(AccentRemovalTest());
-    }
+  virtual void Run() override {
+    // do the tests
+    _test(NormalizeWordFolderConstruction());
+    _test(TokenizeAnnotatedBuffer());
+    _test(TokenizeAnnotatedUCS4Buffer());
+    _test(AccentRemovalTest());
+  }
 };
 
 class WordFoldersTestApp : public FastOS_Application
 {
 public:
-    int Main() override;
+  virtual int Main() override;
 };

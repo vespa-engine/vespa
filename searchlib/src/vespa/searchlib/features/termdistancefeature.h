@@ -23,7 +23,7 @@ struct TermDistanceParams {
 /**
  * Implements the executor for calculating min term distance (forward and reverse).
  **/
-class TermDistanceExecutor : public fef::FeatureExecutor
+class TermDistanceExecutor : public search::fef::FeatureExecutor
 {
 private:
     const TermDistanceParams & _params;
@@ -34,31 +34,44 @@ private:
     virtual void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
-    TermDistanceExecutor(const fef::IQueryEnvironment & env,
+    TermDistanceExecutor(const search::fef::IQueryEnvironment & env,
                          const TermDistanceParams & params);
-    void execute(uint32_t docId) override;
-     bool valid() const;
+    virtual void execute(uint32_t docId) override;
+    bool valid() const;
 };
 
 
 /**
  * Implements the blueprint for the term distance executor.
  **/
-class TermDistanceBlueprint : public fef::Blueprint {
+class TermDistanceBlueprint : public search::fef::Blueprint {
 private:
     TermDistanceParams _params;
 
 public:
     TermDistanceBlueprint();
-    void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
-    fef::Blueprint::UP createInstance() const override;
-    fef::ParameterDescriptions getDescriptions() const override {
-        return fef::ParameterDescriptions().desc().indexField(fef::ParameterCollection::ANY).number().number();
+
+    // Inherit doc from Blueprint.
+    virtual void visitDumpFeatures(const search::fef::IIndexEnvironment & env,
+                                   search::fef::IDumpFeatureVisitor & visitor) const override;
+
+    // Inherit doc from Blueprint.
+    virtual search::fef::Blueprint::UP createInstance() const override;
+
+    // Inherit doc from Blueprint.
+    virtual search::fef::ParameterDescriptions getDescriptions() const override {
+        return search::fef::ParameterDescriptions().desc().indexField(search::fef::ParameterCollection::ANY).number().number();
     }
-    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
-    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+
+    // Inherit doc from Blueprint.
+    virtual bool setup(const search::fef::IIndexEnvironment & env,
+                       const search::fef::ParameterList & params) override;
+
+    // Inherit doc from Blueprint.
+    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
 
 } // namespace features
 } // namespace search
+

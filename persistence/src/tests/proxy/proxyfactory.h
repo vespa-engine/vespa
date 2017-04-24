@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/vespalib/util/vstringfmt.h>
 #include <vespa/persistence/conformancetest/conformancetest.h>
 #include <vespa/persistence/proxy/providerstub.h>
 #include <vespa/persistence/proxy/providerproxy.h>
@@ -29,9 +30,12 @@ struct ProxyFactory : ConformanceTest::PersistenceFactory
         return Provider::UP(new Client("tcp/localhost:3456", *repo));
     }
 
-    bool supportsActiveState() const override {
+    virtual bool
+    supportsActiveState() const override
+    {
         return false;
     }
 };
 }  // namespace spi
 }  // namespace storage
+

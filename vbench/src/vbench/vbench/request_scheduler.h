@@ -1,14 +1,23 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+
 #pragma once
 
-#include "worker.h"
-#include "dropped_tagger.h"
+#include <memory>
+
+#include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/util/thread.h>
+#include <vespa/vespalib/util/runnable.h>
+#include <vespa/vespalib/util/active.h>
+
+#include <vbench/core/handler.h>
 #include <vbench/core/time_queue.h>
 #include <vbench/core/dispatcher.h>
 #include <vbench/core/handler_thread.h>
-#include <vespa/vespalib/util/sync.h>
-#include <vespa/vespalib/util/active.h>
+
+#include "request.h"
+#include "worker.h"
+#include "dropped_tagger.h"
 
 namespace vbench {
 
@@ -31,15 +40,16 @@ private:
     HttpConnectionPool      _connectionPool;
     std::vector<Worker::UP> _workers;
 
-    void run() override;
+    virtual void run() override;
 public:
     typedef std::unique_ptr<RequestScheduler> UP;
     RequestScheduler(Handler<Request> &next, size_t numWorkers);
     void abort();
-    void handle(Request::UP request) override;
-    void start() override;
-    RequestScheduler &stop() override;
-    void join() override;
+    virtual void handle(Request::UP request) override;
+    virtual void start() override;
+    virtual RequestScheduler &stop() override;
+    virtual void join() override;
 };
 
 } // namespace vbench
+

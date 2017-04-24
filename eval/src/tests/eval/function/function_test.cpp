@@ -374,7 +374,7 @@ TEST("require that Call children can be accessed") {
 
 struct MyNodeHandler : public NodeHandler {
     std::vector<nodes::Node_UP> nodes;
-    void handle(nodes::Node_UP node) override {
+    virtual void handle(nodes::Node_UP node) override {
         if (node.get() != nullptr) {
             nodes.push_back(std::move(node));
         }
@@ -657,9 +657,9 @@ struct MySymbolExtractor : SymbolExtractor {
     }
     MySymbolExtractor() : extra(), invoke_count() {}
     explicit MySymbolExtractor(std::initializer_list<char> extra_in) : extra(extra_in), invoke_count() {}
-
-    void extract_symbol(const char *pos_in, const char *end_in,
-                        const char *&pos_out, vespalib::string &symbol_out) const override
+    virtual void extract_symbol(const char *pos_in, const char *end_in,
+                                const char *&pos_out, vespalib::string &symbol_out)
+        const override
     {
         ++invoke_count;
         for (; pos_in < end_in; ++pos_in) {

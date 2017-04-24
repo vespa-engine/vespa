@@ -14,9 +14,9 @@ StorageComponentRegisterImpl::StorageComponentRegisterImpl()
       _index(0xffff),
       _loadTypes(new documentapi::LoadTypeSet),
       _nodeStateUpdater(0)
-{ }
+{
 
-StorageComponentRegisterImpl::~StorageComponentRegisterImpl() { }
+}
 
 void
 StorageComponentRegisterImpl::registerStorageComponent(StorageComponent& smc)

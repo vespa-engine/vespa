@@ -40,7 +40,6 @@ public:
     typedef std::unique_ptr<StorageComponentRegisterImpl> UP;
 
     StorageComponentRegisterImpl();
-    ~StorageComponentRegisterImpl();
 
     const vespalib::string& getClusterName() const { return _clusterName; }
     const lib::NodeType& getNodeType() const
@@ -48,12 +47,13 @@ public:
     uint16_t getIndex() const { return _index; }
     document::DocumentTypeRepo::SP getTypeRepo() { return _docTypeRepo; }
     documentapi::LoadTypeSet::SP getLoadTypes() { return _loadTypes; }
-    const document::BucketIdFactory& getBucketIdFactory() { return _bucketIdFactory; }
+    const document::BucketIdFactory& getBucketIdFactory()
+        { return _bucketIdFactory; }
     lib::Distribution::SP getDistribution() { return _distribution; }
     NodeStateUpdater& getNodeStateUpdater()
         { assert(_nodeStateUpdater != 0); return *_nodeStateUpdater; }
 
-    void registerStorageComponent(StorageComponent&) override;
+    virtual void registerStorageComponent(StorageComponent&) override;
 
     void setNodeInfo(vespalib::stringref clusterName,
                      const lib::NodeType& nodeType,
@@ -68,3 +68,5 @@ public:
 };
 
 } // storage
+
+

@@ -1,6 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+
 #pragma once
+
+#include <memory>
+
+#include <vespa/vespalib/util/runnable.h>
+#include <vbench/core/taintable.h>
+#include <vespa/vespalib/data/slime/slime.h>
 
 #include "analyzer.h"
 #include "generator.h"
@@ -13,8 +20,6 @@
 #include "request_sink.h"
 #include "server_tagger.h"
 #include "tagger.h"
-#include <vbench/core/taintable.h>
-#include <vespa/vespalib/data/slime/slime.h>
 
 namespace vbench {
 
@@ -37,8 +42,9 @@ private:
 public:
     VBench(const vespalib::Slime &cfg);
     void abort();
-    void run() override;
-    const Taint &tainted() const override { return _taint; }
+    virtual void run() override;
+    virtual const Taint &tainted() const override { return _taint; }
 };
 
 } // namespace vbench
+

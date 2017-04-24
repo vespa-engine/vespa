@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "storagemessage.h"
+#include <vespa/storageapi/messageapi/storagemessage.h>
 
 namespace storage {
 namespace api {
@@ -46,7 +46,7 @@ public:
     void setNewId() { StorageMessage::setNewMsgId(); }
 
     /** Overload this to get more descriptive message output. */
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     /**
      * A way for someone to make a reply to a storage message without

@@ -12,6 +12,7 @@ namespace mbus {
  */
 class SystemTimer : public ITimer {
 public:
+    // Implements ITimer.
     uint64_t getMilliTime() const override;
 };
 

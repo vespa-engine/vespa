@@ -303,9 +303,17 @@ public:
      * @return The system state.
      */
     SystemState &getSystemState() { return *_systemState; }
+
+    // Implements IProtocol.
     const mbus::string &getName() const override { return NAME; }
+
+    // Implements IProtocol.
     mbus::IRoutingPolicy::UP createPolicy(const mbus::string &name, const mbus::string &param) const override;
+
+    // Implements IProtocol.
     mbus::Blob encode(const vespalib::Version &version, const mbus::Routable &routable) const override;
+
+    // Implements IProtocol.
     mbus::Routable::UP decode(const vespalib::Version &version, mbus::BlobRef data) const override;
 };
 
