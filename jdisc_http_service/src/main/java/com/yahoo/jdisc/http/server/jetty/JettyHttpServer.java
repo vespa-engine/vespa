@@ -70,6 +70,7 @@ public class JettyHttpServer extends AbstractServerProvider {
         String NAME_DIMENSION = "serverName";
         String PORT_DIMENSION = "serverPort";
 
+        String NUM_ACTIVE_REQUESTS = "serverNumActiveRequests";
         String NUM_OPEN_CONNECTIONS = "serverNumOpenConnections";
         String NUM_CONNECTIONS_OPEN_MAX = "serverConnectionsOpenMax";
         String CONNECTION_DURATION_MAX = "serverConnectionDurationMax";
@@ -82,6 +83,8 @@ public class JettyHttpServer extends AbstractServerProvider {
         String MANHATTAN_NUM_BYTES_SENT     = "http.out.bytes";
 
         String NUM_CONNECTIONS = "serverNumConnections";
+        String NUM_CONNECTIONS_IDLE = "serverNumConnectionsIdle";
+        String NUM_UNEXPECTED_DISCONNECTS = "serverNumUnexpectedDisconnects";
 
         /* For historical reasons, these are all aliases for the same metric. 'jdisc.http' should ideally be the only one. */
         String JDISC_HTTP_REQUESTS = "jdisc.http.requests";
@@ -93,6 +96,7 @@ public class JettyHttpServer extends AbstractServerProvider {
         String NUM_SUCCESSFUL_WRITES = "serverNumSuccessfulResponseWrites";
         String NUM_FAILED_WRITES = "serverNumFailedResponseWrites";
 
+        String NETWORK_LATENCY = "serverNetworkLatency";
         String TOTAL_SUCCESSFUL_LATENCY = "serverTotalSuccessfulResponseLatency";
         String MANHATTAN_TOTAL_SUCCESSFUL_LATENCY = "http.latency";
         String TOTAL_FAILED_LATENCY = "serverTotalFailedResponseLatency";
