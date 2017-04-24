@@ -75,8 +75,6 @@ public class HttpHeaders {
         public static final String WEBSOCKET_PROTOCOL = "WebSocket-Protocol";
         public static final String WWW_AUTHENTICATE = "WWW-Authenticate";
         public static final String X_DISABLE_CHUNKING = "X-JDisc-Disable-Chunking";
-        public static final String X_ENABLE_TRACE_ID = "X-JDisc-Enable-TraceId";
-        public static final String X_TRACE_ID = "X-JDisc-TraceId";
         public static final String X_YAHOO_SERVING_HOST = "X-Yahoo-Serving-Host";
 
         private Names() {

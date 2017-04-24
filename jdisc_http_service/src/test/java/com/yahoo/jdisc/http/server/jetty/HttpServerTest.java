@@ -3,7 +3,7 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
-import com.yahoo.jdisc.HeaderFields;
+import com.yahoo.jdisc.References;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.BindingSetSelector;
@@ -19,7 +19,6 @@ import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.HttpResponse;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.service.BindingSetNotFoundException;
-import com.yahoo.jdisc.References;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.FormBodyPart;
 import org.apache.http.entity.mime.content.StringBody;
@@ -48,7 +47,6 @@ import static com.yahoo.jdisc.http.HttpHeaders.Names.CONNECTION;
 import static com.yahoo.jdisc.http.HttpHeaders.Names.CONTENT_TYPE;
 import static com.yahoo.jdisc.http.HttpHeaders.Names.COOKIE;
 import static com.yahoo.jdisc.http.HttpHeaders.Names.X_DISABLE_CHUNKING;
-import static com.yahoo.jdisc.http.HttpHeaders.Names.X_TRACE_ID;
 import static com.yahoo.jdisc.http.HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
 import static com.yahoo.jdisc.http.HttpHeaders.Values.CLOSE;
 import static com.yahoo.jdisc.http.server.jetty.SimpleHttpClient.ResponseValidator;
@@ -373,36 +371,6 @@ public class HttpServerTest {
         assertThat(driver.close(), is(true));
     }
 
-    @Test(enabled = false)
-    public void requireThatGeneratedTraceIdIsSet() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new EchoRequestHandler());
-        final SimpleHttpClient client1 = driver.client();
-        final SimpleHttpClient client2 = driver.newClient();
-
-        client1.newGet("/status.html").addHeader(X_TRACE_ID, "true").execute()
-               .expectHeader("X-JDisc-TraceId", matchesPattern("\\w+00000000"));
-        client1.newGet("/status.html").addHeader(X_TRACE_ID, "true").execute()
-               .expectHeader("X-JDisc-TraceId", matchesPattern("\\w+00000001"));
-        client2.newGet("/status.html").addHeader(X_TRACE_ID, "true").execute()
-               .expectHeader("X-JDisc-TraceId", matchesPattern("\\w+00000000"));
-        client1.newGet("/status.html").addHeader(X_TRACE_ID, "true").execute()
-               .expectHeader("X-JDisc-TraceId", matchesPattern("\\w+00000002"));
-        client2.newGet("/status.html").addHeader(X_TRACE_ID, "true").execute()
-               .expectHeader("X-JDisc-TraceId", matchesPattern("\\w+00000001"));
-        client2.newGet("/status.html").addHeader(X_TRACE_ID, "true").execute()
-               .expectHeader("X-JDisc-TraceId", matchesPattern("\\w+00000002"));
-
-        assertThat(driver.close(), is(true));
-    }
-
-    @Test(enabled = false)
-    public void requireThatClientTraceIdIsSet() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new EchoRequestHandler());
-        driver.client().newGet("/status.html").addHeader(X_TRACE_ID, "foo").execute()
-              .expectHeader(X_TRACE_ID, is("foo"));
-        assertThat(driver.close(), is(true));
-    }
-
     @Test
     public void requireThatTimeoutWorks() throws Exception {
         final UnresponsiveHandler requestHandler = new UnresponsiveHandler();
@@ -455,32 +423,6 @@ public class HttpServerTest {
         driver.client().get("/status.html")
                 .expectStatusCode(is(OK))
                 .expectHeader(CONNECTION, is(CLOSE));
-        assertThat(driver.close(), is(true));
-    }
-
-    @Test(enabled = false)
-    public void requireThatRequestTrailersAreSupported() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new RequestHandlerThatEchoesTrailers());
-        assertThat(driver.client().raw("GET /status.html HTTP/1.1\r\n" +
-                                       "Host: localhost\r\n" +
-                                       "Transfer-Encoding: chunked\r\n\r\n" +
-                                       "0\r\n" +
-                                       "X-Foo: foo\r\n" +
-                                       "X-Bar: bar\r\n" +
-                                       "\r\n"),
-                   containsPattern(Pattern.quote("{X-Bar=[bar], X-Foo=[foo]}")));
-        assertThat(driver.close(), is(true));
-    }
-
-    @Test(enabled = false)
-    public void requireThatResponseTrailersAreSupported() throws Exception {
-        final HeaderFields trailers = new HeaderFields();
-        trailers.add("X-Foo", "foo");
-        trailers.add("X-Bar", "bar");
-        final TestDriver driver = TestDrivers.newInstance(new RequestHandlerThatSetsResponseTrailers(trailers));
-        driver.client().get("/status.html")
-              .expectTrailer("X-Foo", is("foo"))
-              .expectTrailer("X-Bar", is("bar"));
         assertThat(driver.close(), is(true));
     }
 
@@ -609,51 +551,6 @@ public class HttpServerTest {
 
             // Have the request content written back to the response.
             return responseContentChannel;
-        }
-    }
-
-    private static class RequestHandlerThatEchoesTrailers extends AbstractRequestHandler {
-
-        @Override
-        public ContentChannel handleRequest(final Request request, final ResponseHandler handler) {
-            final HttpRequest httpRequest = (HttpRequest)request;
-            final ContentChannel out = ResponseDispatch.newInstance(Response.Status.OK).connect(handler);
-            return new ContentChannel() {
-
-                @Override
-                public void write(final ByteBuffer buf, final CompletionHandler handler) {
-                    handler.completed();
-                }
-
-                @Override
-                public void close(final CompletionHandler handler) {
-                    synchronized (httpRequest.trailers()) {
-                        out.write(StandardCharsets.UTF_8.encode(httpRequest.trailers().toString()), null);
-                    }
-                    out.close(null);
-                    handler.completed();
-                }
-            };
-        }
-    }
-
-    private static class RequestHandlerThatSetsResponseTrailers extends AbstractRequestHandler {
-
-        final HeaderFields trailers;
-
-        RequestHandlerThatSetsResponseTrailers(final HeaderFields trailers) {
-            this.trailers = trailers;
-        }
-
-        @Override
-        public ContentChannel handleRequest(final Request request, final ResponseHandler handler) {
-            final HttpResponse response = HttpResponse.newInstance(OK);
-            final ContentChannel content = handler.handleResponse(response);
-            synchronized (response.trailers()) {
-                response.trailers().putAll(this.trailers);
-            }
-            content.close(null);
-            return null;
         }
     }
 

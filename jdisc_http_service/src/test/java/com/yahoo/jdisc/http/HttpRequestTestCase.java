@@ -4,7 +4,6 @@ package com.yahoo.jdisc.http;
 import com.yahoo.jdisc.Container;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.service.CurrentContainer;
-import com.yahoo.jdisc.test.TestDriver;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpVersion;
@@ -195,12 +194,6 @@ public class HttpRequestTestCase {
         final HttpRequest request = newRequest(HttpRequest.Version.HTTP_1_0);
         request.headers().add(com.yahoo.jdisc.http.HttpHeaders.Names.X_DISABLE_CHUNKING, "true");
         assertFalse(request.hasChunkedResponse());
-    }
-
-    @Test
-    public void requireThatTraceIsDisabledByDefault() throws Exception {
-        final HttpRequest request = newRequest(HttpRequest.Version.HTTP_1_0);
-        assertFalse(request.headers().contains(com.yahoo.jdisc.http.HttpHeaders.Names.X_ENABLE_TRACE_ID, "true"));
     }
 
     @Test
