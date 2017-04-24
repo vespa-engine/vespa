@@ -17,7 +17,7 @@ import static org.testng.AssertJUnit.fail;
  */
 public class RemoteServerTestCase {
 
-    @Test(enabled = false)
+    @Test
     public void requireThatRequestUriFactoryWorks() throws IOException {
         RemoteServer server = RemoteServer.newInstance();
         try {
