@@ -4,8 +4,11 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.maintenance.retire.RetirementPolicy;
@@ -30,6 +33,9 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -42,6 +48,7 @@ public class NodeRetirerTest {
     private final List<Flavor> flavors = makeFlavors(5);
     private final Map<String, Node> nodesByHostname = new HashMap<>();
     private final NodeRepository nodeRepository = mock(NodeRepository.class);
+    private final Zone zone = new Zone(Environment.prod, RegionName.from("us-north-3"));
 
     @Test
     public void testRetireUnallocatedNodes() {
@@ -52,19 +59,20 @@ public class NodeRetirerTest {
         deployApp("search", "images", 3, 6);
 
         RetirementPolicy policy = node -> node.ipAddresses().equals(Collections.singleton("::1"));
-        NodeRetirer retirer = new NodeRetirer(nodeRepository, Duration.ofDays(1), policy);
-        Map<Flavor, Long> expected = expectedCountsByFlavor(0, 1, 56, 39);
+        NodeRetirer retirer = new NodeRetirer(nodeRepository, zone, Duration.ofDays(1), policy);
+        Map<Flavor, Long> expected = expectedCountsByFlavor(1, 3, 56, 40);
         Map<Flavor, Long> actual = retirer.getNumberSpareReadyNodesByFlavor(nodeRepository.getNodes());
         assertEquals(expected, actual);
 
-        retirer.retireUnallocated();
+        // Not all nodes that we wanted to retire could be retired now (Not enough spare nodes)
+        assertFalse(retirer.retireUnallocated());
         Map<Flavor, Long> parkedCountsByFlavor = nodesByHostname.values().stream()
                 .filter(node -> node.state() == Node.State.parked)
                 .collect(Collectors.groupingBy(Node::flavor, Collectors.counting()));
-        expected.remove(flavors.get(0)); // Flavor-0 has 0 ready nodes, so just remove it to easily compare maps
         assertEquals(expected, parkedCountsByFlavor);
 
         expected = expectedCountsByFlavor(0, 0, 0, 0);
+        expected.remove(flavors.get(1)); // Flavor-1 has 0 ready nodes, so just remove it to easily compare maps
         actual = retirer.getNumberSpareReadyNodesByFlavor(nodeRepository.getNodes());
         assertEquals(expected, actual);
 
@@ -72,16 +80,17 @@ public class NodeRetirerTest {
         nodesByHostname.entrySet().stream().filter(entry -> entry.getValue().state() == Node.State.parked).forEach(entry ->
                 updateNode(entry.getKey(), entry.getValue().flavor(), Node.State.ready, Optional.empty(), Collections.singleton("::2")));
 
-        expected = expectedCountsByFlavor(0, 1, 56, 39);
+        expected = expectedCountsByFlavor(1, 3, 56, 40);
         actual = retirer.getNumberSpareReadyNodesByFlavor(nodeRepository.getNodes());
         assertEquals(expected, actual);
 
-        retirer.retireUnallocated();
+        // The remaining nodes we wanted to retire has been retired
+        assertTrue(retirer.retireUnallocated());
         parkedCountsByFlavor = nodesByHostname.values().stream()
                 .filter(node -> node.state() == Node.State.parked)
                 .collect(Collectors.groupingBy(Node::flavor, Collectors.counting()));
-        expected = expectedCountsByFlavor(0, 1, 2, 2);
-        expected.remove(flavors.get(0)); // Flavor-0 has 0 ready nodes, so just remove it to easily compare maps
+        expected = expectedCountsByFlavor(1, 0, 2, 1);
+        expected.remove(flavors.get(1)); // Flavor-1 already had all its nodes retired & reprovisioned, so just remove it to easily compare maps
         assertEquals(expected, parkedCountsByFlavor);
     }
 
@@ -89,8 +98,8 @@ public class NodeRetirerTest {
     public void testGetNumberSpareNodesWithNoActiveNodes() {
         addNodesByFlavor(Node.State.ready, 5, 3, 77);
 
-        NodeRetirer retirer = new NodeRetirer(nodeRepository, Duration.ofDays(1), node -> false);
-        Map<Flavor, Long> expected = expectedCountsByFlavor(3, 1, 75);
+        NodeRetirer retirer = new NodeRetirer(nodeRepository, zone, Duration.ofDays(1), node -> false);
+        Map<Flavor, Long> expected = expectedCountsByFlavor(5, 3, 77);
         Map<Flavor, Long> actual = retirer.getNumberSpareReadyNodesByFlavor(nodeRepository.getNodes());
         assertEquals(expected, actual);
     }
@@ -100,10 +109,23 @@ public class NodeRetirerTest {
         addNodesByFlavor(Node.State.ready, 5, 3, 77, 47);
         addNodesByFlavor(Node.State.active, 0, 10, 2, 230, 137);
 
-        NodeRetirer retirer = new NodeRetirer(nodeRepository, Duration.ofDays(1), node -> false);
-        Map<Flavor, Long> expected = expectedCountsByFlavor(3, 1, 75, 24);
+        NodeRetirer retirer = new NodeRetirer(nodeRepository, zone, Duration.ofDays(1), node -> false);
+        Map<Flavor, Long> expected = expectedCountsByFlavor(5, 2, 76, 24);
         Map<Flavor, Long> actual = retirer.getNumberSpareReadyNodesByFlavor(nodeRepository.getNodes());
         assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testGetNumSpareNodes() {
+        NodeRetirer retirer = new NodeRetirer(nodeRepository, zone, Duration.ofDays(1), node -> false);
+        assertEquals(retirer.getNumSpareNodes(0, 0), 0L);
+        assertEquals(retirer.getNumSpareNodes(0, 1), 1L);
+        assertEquals(retirer.getNumSpareNodes(0, 100), 100L);
+
+        assertEquals(retirer.getNumSpareNodes(1, 0), 0L);
+        assertEquals(retirer.getNumSpareNodes(1, 1), 0L);
+        assertEquals(retirer.getNumSpareNodes(1, 2), 1L);
+        assertEquals(retirer.getNumSpareNodes(43, 23), 18L);
     }
 
 
@@ -111,7 +133,7 @@ public class NodeRetirerTest {
     public void setup() {
         when(nodeRepository.getNodes()).thenAnswer(invoc -> new ArrayList<>(nodesByHostname.values()));
         when(nodeRepository.lockUnallocated()).thenReturn(null);
-        when(nodeRepository.park(anyString(), eq(Agent.system))).then(invocation -> {
+        when(nodeRepository.park(anyString(), eq(Agent.NodeRetirer), any())).then(invocation -> {
             Object[] args = invocation.getArguments();
             String hostname = (String) args[0];
             Node nodeToPark = Optional.ofNullable(nodesByHostname.get(hostname))
