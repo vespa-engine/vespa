@@ -17,9 +17,9 @@
  ***************************************************************************/
 #pragma once
 
-#include "testenv.h"
-#include <vespa/fastlib/testsuite/test.h>
 #include <map>
+#include <vespa/fastlib/testsuite/test.h>
+#include "testenv.h"
 
 /**
  * The MatchObjectTest class holds
@@ -98,7 +98,8 @@ protected:
      * print_progress which includes backspace does not work.
      * We'll use a single '.' instead.
      */
-    void print_progress() override { *m_osptr << '.' << std::flush; }
+    virtual void print_progress() override { *m_osptr << '.' << std::flush; }
+
 public:
 
     MatchObjectTest() : Test("MatchObject"), test_methods_() { init(); }
@@ -108,7 +109,7 @@ public:
      *                         main entry points
      *************************************************************************/
     void Run(MethodContainer::iterator &itr);
-    void Run() override;
+    virtual void Run() override;
     void Run(const char *method);
     void Run(int argc, char* argv[]);
 };

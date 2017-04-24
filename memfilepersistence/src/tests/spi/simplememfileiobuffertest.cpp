@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/memfilepersistence/mapper/simplememfileiobuffer.h>
+#include <vespa/vdstestlib/cppunit/macros.h>
 #include <tests/spi/memfiletestutils.h>
 #include <tests/spi/options_builder.h>
 
@@ -50,15 +51,19 @@ class SimpleMemFileIOBufferTest : public SingleDiskMemFileTestUtils
 public:
     class DummyFileReader : public VersionSerializer {
     public:
-        FileVersion getFileVersion() override { return FileVersion(); }
-        void loadFile(MemFile&, Environment&, Buffer&, uint64_t ) override {}
-        FlushResult flushUpdatesToFile(MemFile&, Environment&) override {
+        virtual FileVersion getFileVersion() override { return FileVersion(); }
+        virtual void loadFile(MemFile&, Environment&, Buffer&, uint64_t ) override {}
+        virtual FlushResult flushUpdatesToFile(MemFile&, Environment&) override {
             return FlushResult::TooSmall;
         }
-        void rewriteFile(MemFile&, Environment&) override {}
-        bool verify(MemFile&, Environment&, std::ostream&, bool, uint16_t) override { return false; };
-        void cacheLocations(MemFileIOInterface&, Environment&, const Options&,
-                            DocumentPart, const std::vector<DataLocation>&) override {}
+        virtual void rewriteFile(MemFile&, Environment&) override {}
+        virtual bool verify(MemFile&, Environment&,
+                            std::ostream&, bool, uint16_t) override { return false; };
+        virtual void cacheLocations(MemFileIOInterface&,
+                                    Environment&,
+                                    const Options&,
+                                    DocumentPart,
+                                    const std::vector<DataLocation>&) override {}
     };
 
     DummyFileReader dfr;

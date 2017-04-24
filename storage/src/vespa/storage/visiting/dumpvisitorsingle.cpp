@@ -3,10 +3,12 @@
 #include "dumpvisitorsingle.h"
 #include <vespa/documentapi/messagebus/messages/multioperationmessage.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/log/log.h>
+#include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
+#include <memory>
 
-#include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance.dumpvisitorsingle");
 
 namespace storage {

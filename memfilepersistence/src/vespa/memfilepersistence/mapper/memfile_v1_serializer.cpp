@@ -3,13 +3,16 @@
 #include "memfile_v1_serializer.h"
 #include "memfile_v1_verifier.h"
 
+#include "memfilemapper.h"
 #include "locationreadplanner.h"
 #include "uniqueslotgenerator.h"
+#include "simplememfileiobuffer.h"
 #include <vespa/memfilepersistence/common/exceptions.h>
 #include <vespa/memfilepersistence/spi/memfilepersistenceprovidermetrics.h>
+#include <vespa/vespalib/util/crc.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-
 #include <vespa/log/log.h>
+
 LOG_SETUP(".persistence.memfilev1");
 
 namespace storage {
@@ -739,16 +742,19 @@ namespace {
             _buffer.resize(firstAligned - _headerBlockIndex);
         }
 
-        uint32_t getCachedAmount() const override { return _buffer.size() + _headerBlockIndex; }
-        char* getCache(uint32_t pos) override {
+        virtual uint32_t getCachedAmount() const override
+            { return _buffer.size() + _headerBlockIndex; }
+
+        virtual char* getCache(uint32_t pos) override {
                 // We should never get requests to write prior to header block
                 // index.
             assert(pos >= _headerBlockIndex);
             return (&_buffer[0] + (pos - _headerBlockIndex));
         }
 
-        bool duplicateCacheWrite() const override { return true; }
-        void setData(const char* data, size_t len, uint64_t pos) override {
+        virtual bool duplicateCacheWrite() const override { return true; }
+
+        virtual void setData(const char* data, size_t len, uint64_t pos) override {
             if (pos < _headerBlockIndex) {
                 if (len <= _headerBlockIndex - pos) return;
                 uint32_t diff = (_headerBlockIndex - pos);

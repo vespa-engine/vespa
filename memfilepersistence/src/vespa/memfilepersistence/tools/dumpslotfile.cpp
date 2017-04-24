@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "dumpslotfile.h"
+
 #include <vespa/config/helper/configgetter.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -9,6 +9,7 @@
 #include <vespa/memfilepersistence/mapper/memfilemapper.h>
 #include <vespa/memfilepersistence/memfile/memfilecache.h>
 #include <vespa/memfilepersistence/spi/memfilepersistenceprovidermetrics.h>
+#include <vespa/memfilepersistence/tools/dumpslotfile.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
 #include <vespa/storageframework/defaultimplementation/memory/nomemorymanager.h>

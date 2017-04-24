@@ -36,7 +36,9 @@ public:
         const document::DocumentTypeRepo &_repo;
         string _configId;
     public:
-        DocumentRouteSelectorPolicyFactory(const document::DocumentTypeRepo &repo, const string &configId);
+        DocumentRouteSelectorPolicyFactory(
+                const document::DocumentTypeRepo &repo,
+                const string &configId);
         mbus::IRoutingPolicy::UP createPolicy(const string &param) const override;
     };
     class ExternPolicyFactory : public IRoutingPolicyFactory {
@@ -66,3 +68,4 @@ public:
 };
 
 }
+

@@ -1,12 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP("cpp-client");
 #include <vespa/messagebus/messagebus.h>
 #include <vespa/messagebus/routing/retrytransienterrorspolicy.h>
 #include <vespa/messagebus/rpcmessagebus.h>
+#include <vespa/messagebus/sourcesession.h>
+#include <vespa/messagebus/sourcesessionparams.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/testlib/simplereply.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/sync.h>
 
 using namespace mbus;
 

@@ -199,7 +199,8 @@ public:
 
     class PartNotCachedException : public vespalib::Exception {
     public:
-        PartNotCachedException(const std::string& msg, const std::string& location)
+        PartNotCachedException(const std::string& msg,
+                               const std::string& location)
             : vespalib::Exception(msg, location) {};
     };
 
@@ -210,39 +211,64 @@ public:
             const FileSpecification& fileSpec,
             const Environment& env);
 
-    Document::UP getDocumentHeader(const document::DocumentTypeRepo& repo, DataLocation loc) const override;
-    document::DocumentId getDocumentId(DataLocation loc) const override;
-    void readBody(const document::DocumentTypeRepo& repo, DataLocation loc, Document& doc) const override;
-    DataLocation addDocumentIdOnlyHeader(const DocumentId& id, const document::DocumentTypeRepo& repo) override;
-    DataLocation addHeader(const Document& doc) override;
-    DataLocation addBody(const Document& doc) override;
-    void clear(DocumentPart type) override;
-    bool verifyConsistent() const override;
+    virtual Document::UP getDocumentHeader(
+            const document::DocumentTypeRepo& repo,
+            DataLocation loc) const override;
+
+    virtual document::DocumentId getDocumentId(DataLocation loc) const override;
+
+    virtual void readBody(
+            const document::DocumentTypeRepo& repo,
+            DataLocation loc,
+            Document& doc) const override;
+
+    virtual DataLocation addDocumentIdOnlyHeader(
+            const DocumentId& id,
+            const document::DocumentTypeRepo& repo) override;
+
+    virtual DataLocation addHeader(const Document& doc) override;
+
+    virtual DataLocation addBody(const Document& doc) override;
+
+    virtual void clear(DocumentPart type) override;
+
+    virtual bool verifyConsistent() const override;
 
     /**
      * Moves the underlying file to another location.
      */
-    void move(const FileSpecification& target) override;
-    void close() override;
-    DataLocation copyCache(const MemFileIOInterface& source, DocumentPart part, DataLocation loc) override;
+    virtual void move(const FileSpecification& target) override;
+
+    virtual void close() override;
+
+    virtual DataLocation copyCache(const MemFileIOInterface& source,
+                                   DocumentPart part,
+                                   DataLocation loc) override;
 
     /**
      * Add a location -> buffer mapping
      */
-    void cacheLocation(DocumentPart part, DataLocation loc, BufferType::SP buf, uint32_t bufferPos);
+    void cacheLocation(DocumentPart part,
+                       DataLocation loc,
+                       BufferType::SP buf,
+                       uint32_t bufferPos);
 
     /**
      * @return Returns true if the given location is cached.
      */
-    bool isCached(DataLocation loc, DocumentPart type) const override;
+    virtual bool isCached(DataLocation loc, DocumentPart type) const override;
 
     /**
      * @return Returns true if the given location has been persisted to disk.
      */
+    virtual bool isPersisted(DataLocation loc, DocumentPart type) const override;
 
-    bool isPersisted(DataLocation loc, DocumentPart type) const override;
-    uint32_t getSerializedSize(DocumentPart part, DataLocation loc) const override;
-    void ensureCached(Environment& env, DocumentPart part, const std::vector<DataLocation>& locations) override;
+    virtual uint32_t getSerializedSize(DocumentPart part,
+                                       DataLocation loc) const override;
+
+    virtual void ensureCached(Environment& env,
+                              DocumentPart part,
+                              const std::vector<DataLocation>& locations) override;
 
     /**
      * Moves the given location into the persisted data area.
@@ -316,9 +342,14 @@ private:
     // the reasoning about a given bucket in the face of such actions.
     std::shared_ptr<const Options> _options;
 
-    DataLocation addLocation(DocumentPart part, BufferAllocation newData);
+    DataLocation addLocation(DocumentPart part,
+                             BufferAllocation newData);
+
     const Data& getData(DocumentPart part, DataLocation loc) const;
-    BufferAllocation serializeDocumentIdOnlyHeader(const DocumentId& id, const document::DocumentTypeRepo&);
+
+    BufferAllocation serializeDocumentIdOnlyHeader(
+            const DocumentId& id,
+            const document::DocumentTypeRepo&);
     BufferAllocation serializeHeader(const Document& doc);
     BufferAllocation serializeBody(const Document& doc);
 
@@ -327,3 +358,5 @@ private:
 
 }
 }
+
+

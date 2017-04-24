@@ -1,12 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "mergethrottler.h"
-#include "storagemetricsset.h"
+#include <vespa/fastos/fastos.h>
+#include <vespa/storage/storageserver/mergethrottler.h>
+
 #include <iostream>
 #include <sstream>
+#include <iterator>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/persistence/messages.h>
+#include <vespa/storage/storageserver/storagemetricsset.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".mergethrottler");
@@ -42,71 +45,6 @@ template <typename Base>
 const mbus::string DummyMbusMessage<Base>::NAME = "SkyNet";
 
 }
-
-MergeThrottler::ChainedMergeState::ChainedMergeState()
-    : _cmd(),
-      _cmdString(),
-      _clusterStateVersion(0),
-      _inCycle(false),
-      _executingLocally(false),
-      _unwinding(false),
-      _cycleBroken(false),
-      _aborted(false)
-{ }
-
-MergeThrottler::ChainedMergeState::ChainedMergeState(const api::StorageMessage::SP& cmd, bool executing)
-    : _cmd(cmd),
-      _cmdString(cmd->toString()),
-      _clusterStateVersion(static_cast<const api::MergeBucketCommand&>(*cmd).getClusterStateVersion()),
-      _inCycle(false),
-      _executingLocally(executing),
-      _unwinding(false),
-      _cycleBroken(false),
-      _aborted(false)
-{ }
-MergeThrottler::ChainedMergeState::~ChainedMergeState() {}
-
-MergeThrottler::Metrics::Metrics(metrics::MetricSet* owner)
-    : metrics::MetricSet("mergethrottler", "", "", owner),
-      averageQueueWaitingTime("averagequeuewaitingtime", "", "Average time a merge spends in the throttler queue", this),
-      chaining("mergechains", this),
-      local("locallyexecutedmerges", this)
-{ }
-MergeThrottler::Metrics::~Metrics() {}
-
-MergeThrottler::MergeFailureMetrics::MergeFailureMetrics(metrics::MetricSet* owner)
-    : metrics::MetricSet("failures", "", "Detailed failure statistics", owner),
-      sum("total", "", "Sum of all failures", this),
-      notready("notready", "", "The number of merges discarded because distributor was not ready", this),
-      timeout("timeout", "", "The number of merges that failed because they timed out towards storage", this),
-      aborted("aborted", "", "The number of merges that failed because the storage node was (most likely) shutting down", this),
-      wrongdistribution("wrongdistribution", "", "The number of merges that were discarded (flushed) because they were initiated at an older cluster state than the current", this),
-      bucketnotfound("bucketnotfound", "", "The number of operations that failed because the bucket did not exist", this),
-      busy("busy", "", "The number of merges that failed because the storage node was busy", this),
-      exists("exists", "", "The number of merges that were rejected due to a merge operation for their bucket already being processed", this),
-      rejected("rejected", "", "The number of merges that were rejected", this),
-      other("other", "", "The number of other failures", this)
-{
-    sum.addMetricToSum(notready);
-    sum.addMetricToSum(timeout);
-    sum.addMetricToSum(aborted);
-    sum.addMetricToSum(wrongdistribution);
-    sum.addMetricToSum(bucketnotfound);
-    sum.addMetricToSum(busy);
-    sum.addMetricToSum(exists);
-    sum.addMetricToSum(rejected);
-    sum.addMetricToSum(other);
-}
-MergeThrottler::MergeFailureMetrics::~MergeFailureMetrics() { }
-
-
-MergeThrottler::MergeOperationMetrics::MergeOperationMetrics(const std::string& name, metrics::MetricSet* owner)
-    : metrics::MetricSet(name, "", vespalib::make_string("Statistics for %s", name.c_str()), owner),
-      ok("ok", "", vespalib::make_string("The number of successful merges for '%s'", name.c_str()), this),
-      failures(this)
-{
-}
-MergeThrottler::MergeOperationMetrics::~MergeOperationMetrics() { }
 
 MergeThrottler::MergeNodeSequence::MergeNodeSequence(
         const api::MergeBucketCommand& cmd,

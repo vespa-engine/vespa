@@ -4,7 +4,7 @@
 #include <vespa/fastlib/testsuite/test.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/fastlib/text/latintokenizer.h>
+#include "../latintokenizer.h"
 
 class Mapel_Pucntuation {
 private:
@@ -142,9 +142,10 @@ private:
   void TestTypeparamObservers();
 
 public:
-    LatinTokenizerTest();
-    ~LatinTokenizerTest();
-    void Run() override;
+  LatinTokenizerTest();
+  virtual ~LatinTokenizerTest();
+
+  virtual void Run() override;
 };
 
 
@@ -458,7 +459,7 @@ void LatinTokenizerTest::Run()
 class LatinTokenizerTestApp : public FastOS_Application
 {
 public:
-    int Main() override;
+  virtual int Main() override;
 };
 
 

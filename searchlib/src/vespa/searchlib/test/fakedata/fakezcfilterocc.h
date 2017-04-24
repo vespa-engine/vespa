@@ -1,14 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+
 #include "fakeword.h"
 #include "fakeposting.h"
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 
-namespace search {
+namespace search
+{
 
-namespace fakedata {
+namespace fakedata
+{
 
 /*
  * YST style compression of docid list.
@@ -35,29 +38,70 @@ protected:
     void setup(const FakeWord &fw, bool doFeatures, bool dynamicK);
 
     template <bool bigEndian>
-    void setupT(const FakeWord &fw, bool doFeatures, bool dynamicK);
+    void
+    setupT(const FakeWord &fw, bool doFeatures, bool dynamicK);
 
 public:
     FakeZcFilterOcc(const FakeWord &fw);
-    FakeZcFilterOcc(const FakeWord &fw, bool bigEndian, const char *nameSuffix);
-    ~FakeZcFilterOcc();
 
-    static void forceLink();
+    FakeZcFilterOcc(const FakeWord &fw,
+                    bool bigEndian,
+                    const char *nameSuffix);
 
-    size_t bitSize() const override;
-    bool hasWordPositions() const override;
-    size_t skipBitSize() const override;
-    size_t l1SkipBitSize() const override;
-    size_t l2SkipBitSize() const override;
-    size_t l3SkipBitSize() const override;
-    size_t l4SkipBitSize() const override;
-    int lowLevelSinglePostingScan() const override;
-    int lowLevelSinglePostingScanUnpack() const override;
-    int lowLevelAndPairPostingScan(const FakePosting &rhs) const override;
-    int lowLevelAndPairPostingScanUnpack(const FakePosting &rhs) const override;
-    queryeval::SearchIterator *createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
+    ~FakeZcFilterOcc(void);
+
+    static void
+    forceLink(void);
+
+    /*
+     * Size of posting list, in bits.
+     */
+    size_t bitSize(void) const override;
+
+    virtual bool hasWordPositions(void) const override;
+
+    /*
+     * Size of posting skip list, in bits.
+     */
+    size_t skipBitSize(void) const override;
+    size_t l1SkipBitSize(void) const override;
+    size_t l2SkipBitSize(void) const override;
+    size_t l3SkipBitSize(void) const override;
+    size_t l4SkipBitSize(void) const override;
+
+    /*
+     * Single posting list performance, without feature unpack.
+     */
+    virtual int
+    lowLevelSinglePostingScan(void) const override;
+
+    /*
+     * Single posting list performance, with feature unpack.
+     */
+    virtual int
+    lowLevelSinglePostingScanUnpack(void) const override;
+
+    /*
+     * Two posting lists performance (same format) without feature unpack.
+     */
+    virtual int
+    lowLevelAndPairPostingScan(const FakePosting &rhs) const override;
+
+    /*
+     * Two posting lists performance (same format) with feature unpack.
+     */
+    virtual int
+    lowLevelAndPairPostingScanUnpack(const FakePosting &rhs) const override;
+
+
+    /*
+     * Iterator factory, for current query evaluation framework.
+     */
+    virtual search::queryeval::SearchIterator *
+    createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
 };
 
 } // namespace fakedata
 
 } // namespace search
+

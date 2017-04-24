@@ -1,7 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/fastos/fastos.h>
 #include <boost/pointer_cast.hpp>
 #include <cppunit/extensions/HelperMacros.h>
+#include <iostream>
+#include <string>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/message/stat.h>

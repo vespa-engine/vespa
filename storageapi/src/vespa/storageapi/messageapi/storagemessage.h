@@ -11,11 +11,11 @@
 
 #pragma once
 
-#include "messagehandler.h"
 #include <map>
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/messagebus/routing/route.h>
 #include <vespa/vespalib/util/sync.h>
+#include <vespa/storageapi/messageapi/messagehandler.h>
 #include <vespa/vdslib/state/nodetype.h>
 #include <vespa/messagebus/trace.h>
 #include <vespa/documentapi/loadtypes/loadtype.h>
@@ -42,8 +42,9 @@ namespace vespalib {
 public: \
     DECLARE_POINTER_TYPEDEFS(reply) \
 private: \
-    bool callHandler(MessageHandler& h, \
-                     const std::shared_ptr<StorageMessage>& m) const override \
+    virtual bool callHandler( \
+            MessageHandler& h, \
+            const std::shared_ptr<StorageMessage>& m) const override \
     { \
         return h.callback(std::static_pointer_cast<reply>(m)); \
     }
@@ -65,7 +66,7 @@ public: \
 #define IMPLEMENT_COMMAND(command, reply) \
     IMPLEMENT_COMMON(command) \
     std::unique_ptr<storage::api::StorageReply> \
-    storage::api::command::makeReply() \
+        storage::api::command::makeReply() \
     { \
         return std::unique_ptr<storage::api::StorageReply>(new reply(*this)); \
     }

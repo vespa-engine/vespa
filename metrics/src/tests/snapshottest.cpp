@@ -1,5 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/fastos/fastos.h>
 #include <vespa/metrics/metrics.h>
 #include <vespa/metrics/loadmetric.hpp>
 #include <vespa/metrics/summetric.hpp>
@@ -39,8 +40,8 @@ struct SubSubMetricSet : public MetricSet {
 
     SubSubMetricSet(vespalib::stringref name, const LoadTypeSet& loadTypes_, MetricSet* owner = 0);
     ~SubSubMetricSet();
-    MetricSet* clone(std::vector<Metric::UP> &ownerList, CopyType copyType,
-                     metrics::MetricSet* owner, bool includeUnused) const override;
+    virtual MetricSet* clone(std::vector<Metric::UP> &ownerList, CopyType copyType,
+                             metrics::MetricSet* owner, bool includeUnused) const override;
     void incValues();
 };
 
@@ -190,8 +191,10 @@ TestMetricSet::incValues() {
 
 struct FakeTimer : public MetricManager::Timer {
     uint32_t _timeInSecs;
+
     FakeTimer() : _timeInSecs(1) {}
-    time_t getTime() const override { return _timeInSecs; }
+
+    virtual time_t getTime() const override { return _timeInSecs; }
 };
 
 } // End of anonymous namespace

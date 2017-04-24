@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <vespa/messagebus/iprotocol.h>
 #include <map>
+#include <string>
+#include <vespa/messagebus/iprotocol.h>
 
 namespace mbus {
 
@@ -48,7 +49,10 @@ public:
      */
     SimpleProtocol();
 
-    ~SimpleProtocol();
+    /**
+     * Frees up any allocated resources.
+     */
+    virtual ~SimpleProtocol();
 
     /**
      * Registers a policy factory with this protocol under a given name. Whenever a policy is requested that
@@ -68,10 +72,19 @@ public:
      */
     static void simpleMerge(RoutingContext &ctx);
 
+    // Implements IProtocol.
     const string & getName() const override;
-    IRoutingPolicy::UP createPolicy(const string &name, const string &param) const override;
+
+    // Implements IProtocol.
+    IRoutingPolicy::UP createPolicy(const string &name,
+                                    const string &param) const override;
+
+    // Implements IProtocol.
     Blob encode(const vespalib::Version &version, const Routable &routable) const override;
+
+    // Implements IProtocol.
     Routable::UP decode(const vespalib::Version &version, BlobRef data) const override;
 };
 
 } // namespace mbus
+

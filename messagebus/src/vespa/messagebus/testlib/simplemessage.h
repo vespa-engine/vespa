@@ -8,9 +8,9 @@ namespace mbus {
 
 class SimpleMessage : public Message {
 private:
-    string   _value;
-    bool     _hasSeqId;
-    uint64_t _seqId;
+    string _value;
+    bool        _hasSeqId;
+    uint64_t    _seqId;
 
 public:
     SimpleMessage(const string &str);
@@ -25,7 +25,9 @@ public:
     bool hasSequenceId() const override;
     uint64_t getSequenceId() const override;
     uint32_t getApproxSize() const override;
+
     uint8_t priority() const override { return 8; }
+
     string toString() const override { return _value; }
 };
 

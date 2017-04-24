@@ -3,9 +3,9 @@
 #pragma once
 
 #include "attributevector.h"
-#include "enumstorebase.h"
-#include "loadedenumvalue.h"
 #include <vespa/searchlib/common/sort.h>
+#include <vespa/searchlib/attribute/enumstorebase.h>
+#include "loadedenumvalue.h"
 
 namespace search {
 
@@ -28,7 +28,6 @@ protected:
     virtual void fillEnumIdx(ReaderBase &attrReader, const EnumIndexVector &eidxs, EnumVector &enumHist);
     virtual void fillPostingsFixupEnum(const attribute::LoadedEnumAttributeVector &loaded);
     virtual void fixupEnumRefCounts(const EnumVector &enumHist);
-    bool onAddDoc(DocId) override { return true; }
 
     template<typename T>
     class Equal
@@ -58,7 +57,8 @@ protected:
     protected:
         Range(const QueryTermSimple & queryTerm, bool avoidUndefinedInRange=false);
         Int64Range getRange() const {
-            return Int64Range(static_cast<int64_t>(_low), static_cast<int64_t>(_high));
+            return Int64Range(static_cast<int64_t>(_low),
+                              static_cast<int64_t>(_high));
         }
         bool isValid() const { return _valid; }
         bool match(T v) const { return (_low <= v) && (v <= _high); }
@@ -75,7 +75,8 @@ protected:
             BaseType numMin = std::numeric_limits<BaseType>::min();
             BaseType numMax = std::numeric_limits<BaseType>::max();
 
-            if (isFloat) {
+            if (isFloat)
+            {
                 if (_low <= (-numMax)) {
                     low = -numMax;
                 }
@@ -101,3 +102,4 @@ public:
 };
 
 } // namespace search
+

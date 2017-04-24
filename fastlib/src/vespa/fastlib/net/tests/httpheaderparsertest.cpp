@@ -1,13 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/app.h>
+#include <vespa/fastos/fastos.h>
 #include <vespa/fastlib/net/httpheaderparser.h>
 #include <vespa/fastlib/io/fileinputstream.h>
 #include <vespa/fastlib/io/bufferedinputstream.h>
 
+
+
+
 class HeaderReaderApp : public FastOS_Application
 {
   public:
-    int Main() override
+
+    int Main(void) override
     {
       if (_argc != 2)
       {

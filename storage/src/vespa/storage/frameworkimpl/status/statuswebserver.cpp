@@ -236,7 +236,7 @@ StatusWebServer::WebServer::onGetRequest(const string & tmpurl, const string &se
 namespace {
     class IndexPageReporter : public framework::HtmlStatusReporter {
         std::ostringstream ost;
-        void reportHtmlStatus(std::ostream& out,const framework::HttpUrlPath&) const override{
+        virtual void reportHtmlStatus(std::ostream& out, const framework::HttpUrlPath&) const override {
             out << ost.str();
         }
 

@@ -18,8 +18,6 @@ MessageTypePolicy::MessageTypePolicy(const config::ConfigUri & configUri) :
     _fetcher.start();
 }
 
-MessageTypePolicy::~MessageTypePolicy() {}
-
 void
 MessageTypePolicy::configure(std::unique_ptr<MessagetyperouteselectorpolicyConfig> cfg)
 {

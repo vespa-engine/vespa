@@ -78,28 +78,29 @@ struct TermAsStringVisitor : public QueryVisitor {
         isSet = false;
     }
 
-    void visit(And &) override {illegalVisit(); }
-    void visit(AndNot &) override {illegalVisit(); }
-    void visit(Equiv &) override {illegalVisit(); }
-    void visit(Near &) override {illegalVisit(); }
-    void visit(ONear &) override {illegalVisit(); }
-    void visit(Or &) override {illegalVisit(); }
-    void visit(Phrase &) override {illegalVisit(); }
-    void visit(Rank &) override {illegalVisit(); }
-    void visit(WeakAnd &) override {illegalVisit(); }
-    void visit(WeightedSetTerm &) override {illegalVisit(); }
-    void visit(DotProduct &) override {illegalVisit(); }
-    void visit(WandTerm &) override {illegalVisit(); }
+    virtual void visit(And &) override { illegalVisit(); }
+    virtual void visit(AndNot &) override { illegalVisit(); }
+    virtual void visit(Equiv &) override { illegalVisit(); }
+    virtual void visit(Near &) override { illegalVisit(); }
+    virtual void visit(ONear &) override { illegalVisit(); }
+    virtual void visit(Or &) override { illegalVisit(); }
+    virtual void visit(Phrase &) override { illegalVisit(); }
+    virtual void visit(Rank &) override { illegalVisit(); }
+    virtual void visit(WeakAnd &) override { illegalVisit(); }
+    virtual void visit(WeightedSetTerm &) override { illegalVisit(); }
+    virtual void visit(DotProduct &) override { illegalVisit(); }
+    virtual void visit(WandTerm &) override { illegalVisit(); }
 
-    void visit(NumberTerm &n) override {visitTerm(n); }
-    void visit(LocationTerm &n) override {visitTerm(n); }
-    void visit(PrefixTerm &n) override {visitTerm(n); }
-    void visit(RangeTerm &n) override {visitTerm(n); }
-    void visit(StringTerm &n) override {visitTerm(n); }
-    void visit(SubstringTerm &n) override {visitTerm(n); }
-    void visit(SuffixTerm &n) override {visitTerm(n); }
-    void visit(RegExpTerm &n) override {visitTerm(n); }
-    void visit(PredicateQuery &) override {illegalVisit(); }
+    virtual void visit(NumberTerm &n) override { visitTerm(n); }
+    virtual void visit(LocationTerm &n) override { visitTerm(n); }
+    virtual void visit(PrefixTerm &n) override { visitTerm(n); }
+    virtual void visit(RangeTerm &n) override { visitTerm(n); }
+    virtual void visit(StringTerm &n) override { visitTerm(n); }
+    virtual void visit(SubstringTerm &n) override { visitTerm(n); }
+    virtual void visit(SuffixTerm &n) override { visitTerm(n); }
+    virtual void visit(RegExpTerm &n) override { visitTerm(n); }
+
+    virtual void visit(PredicateQuery &) override { illegalVisit(); }
 };
 }  // namespace
 

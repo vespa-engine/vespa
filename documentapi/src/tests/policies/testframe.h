@@ -197,6 +197,8 @@ public:
      * @return Handle to the system state.
      */
     documentapi::SystemStateHandle getSystemState();
+
+    // Implements IReplyHandler.
     void handleReply(mbus::Reply::UP reply) override;
 };
 

@@ -26,11 +26,14 @@ public:
 template <typename ConfigType>
 class IFetcherCallback : public ICallback
 {
+public:
+    virtual ~IFetcherCallback() { }
 protected:
-    void configure(std::unique_ptr<const ConfigInstance> config) override {
+    virtual void configure(std::unique_ptr<const ConfigInstance> config) override {
         configure(std::unique_ptr<ConfigType>(static_cast<const ConfigType *>(config.release())));
     }
     virtual void configure(std::unique_ptr<ConfigType> config) = 0;
 };
 
 } // namespace config
+

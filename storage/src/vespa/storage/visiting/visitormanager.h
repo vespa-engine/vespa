@@ -19,18 +19,19 @@
 
 #pragma once
 
-#include "commandqueue.h"
-#include "visitor.h"
-#include "visitormetrics.h"
-#include "visitorthread.h"
-#include "config-stor-visitor.h"
-#include <vespa/storageframework/storageframework.h>
-#include <vespa/storage/common/storagelink.h>
+#include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/internal.h>
 #include <vespa/storageapi/message/visitor.h>
+#include <vespa/storage/common/storagelink.h>
+#include <vespa/storage/visiting/commandqueue.h>
+#include <vespa/storage/visiting/config-stor-visitor.h>
+#include <vespa/storage/visiting/visitor.h>
+#include <vespa/storage/visiting/visitormetrics.h>
+#include <vespa/storage/visiting/visitorthread.h>
+#include <vespa/storageframework/storageframework.h>
+#include <vespa/storageframework/storageframework.h>
 #include <vespa/config/config.h>
-#include <vespa/vespalib/util/document_runnable.h>
 
 namespace storage {
 namespace api {
@@ -89,11 +90,14 @@ public:
     VisitorManager(const config::ConfigUri & configUri, StorageComponentRegister&,
                    VisitorMessageSessionFactory&,
                    const VisitorFactory::Map& external = VisitorFactory::Map());
-    ~VisitorManager();
+    virtual ~VisitorManager();
 
-    void onClose() override;
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    virtual void onClose() override;
+
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
     uint32_t getActiveVisitorCount() const;
+
     void setTimeBetweenTicks(uint32_t time);
 
     void setMaxConcurrentVisitors(uint32_t count) { // Used in unit testing
@@ -122,7 +126,7 @@ public:
 
 private:
     void configure(std::unique_ptr<vespa::config::content::core::StorVisitorConfig>) override;
-    void run(framework::ThreadHandle&) override;
+    virtual void run(framework::ThreadHandle&) override;
 
     /**
      * Schedules a visitor for running. onCreateVisitor will typically call
@@ -153,12 +157,13 @@ private:
      */
     bool attemptScheduleQueuedVisitor(vespalib::MonitorGuard& visitorLock);
 
-    // VisitorMessageHandler implementation
+        // VisitorMessageHandler implementation
     void send(const std::shared_ptr<api::StorageCommand>& cmd, Visitor& visitor) override;
     void send(const std::shared_ptr<api::StorageReply>& reply) override;
     void closed(api::VisitorId id) override;
 
-    void reportHtmlStatus(std::ostream&, const framework::HttpUrlPath&) const override;
+        // Status::Reporter implementation
+    virtual void reportHtmlStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 
     /**
      * The maximum amount of concurrent visitors for a priority is given
@@ -174,3 +179,4 @@ private:
 };
 
 }
+

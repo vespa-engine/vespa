@@ -1,9 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/allocinarray.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <deque>
+
+LOG_SETUP("array_test");
 
 using namespace vespalib;
 

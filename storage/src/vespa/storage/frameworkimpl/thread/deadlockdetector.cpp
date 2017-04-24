@@ -2,6 +2,8 @@
 
 #include "deadlockdetector.h"
 #include <vespa/storage/bucketdb/storbucketdb.h>
+#include <vespa/storageframework/storageframework.h>
+#include <vespa/vdslib/state/nodetype.h>
 #include <vespa/storage/bucketmover/htmltable.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
@@ -144,10 +146,10 @@ namespace {
         ThreadChecker(DeadLockDetector& d, const framework::MilliSecTime& time)
             : _detector(d), _currentTime(time) {}
 
-        void visitThread(const vespalib::string& id,
-                         const framework::ThreadProperties& tp,
-                         const framework::ThreadTickData& tick,
-                         DeadLockDetector::State& state) override
+        virtual void visitThread(const vespalib::string& id,
+                                 const framework::ThreadProperties& tp,
+                                 const framework::ThreadTickData& tick,
+                                 DeadLockDetector::State& state) override
         {
                 // In case we just got a new tick, ignore the thread
             if (tick._lastTickMs > _currentTime.getTime()) return;

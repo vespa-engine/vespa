@@ -61,7 +61,7 @@ public:
     LinkIn(List::AtomicHeadPtr & list, uint32_t maxQueue, bool inverse);
 private:
     List::AtomicHeadPtr & _head;
-    void consume(void * p) override {
+    virtual void consume(void * p) override {
         List * l((List *) p);
         if ( ! ((l >= &globalList[0]) && (l < &globalList[NumBlocks]))) { abort(); }
         List::linkIn(_head, l, l);
@@ -82,7 +82,7 @@ public:
         : Producer(cnt, target), _head(list) {}
 private:
     List::AtomicHeadPtr & _head;
-    void * produce()  override {
+    virtual void * produce()       override {
         void *p = List::linkOut(_head);
         List *l((List *)p);
         if ( ! ((l >= &globalList[0]) && (l < &globalList[NumBlocks]))) { abort(); }
@@ -98,13 +98,13 @@ public:
         : ProducerConsumer(cnt, inverse), _head(list) { }
 private:
     List::AtomicHeadPtr & _head;
-    void * produce() override {
+    virtual void * produce()       override {
         void *p = List::linkOut(_head);
         List *l((List *)p);
         if ( !((l >= &globalList[0]) && (l < &globalList[NumBlocks]))) { abort(); }
         return p;
     }
-    void consume(void * p) override {
+    virtual void consume(void * p) override {
         List * l((List *) p);
         if ( !((l >= &globalList[0]) && (l < &globalList[NumBlocks]))) { abort(); }
         List::linkIn(_head, l, l);

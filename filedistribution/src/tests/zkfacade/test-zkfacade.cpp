@@ -2,10 +2,14 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MAIN
 #define BOOST_TEST_MODULE zkfacade test
-
+#include <vespa/fastos/fastos.h>
 #include <boost/test/unit_test.hpp>
+
 #include <iostream>
+
 #include <boost/thread/barrier.hpp>
+#include <boost/checked_delete.hpp>
+
 #include <vespa/filedistribution/common/componentsdeleter.h>
 #include <vespa/filedistribution/model/zkfacade.h>
 

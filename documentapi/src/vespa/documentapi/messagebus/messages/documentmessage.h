@@ -82,6 +82,7 @@ public:
         _approxSize = approxSize;
     }
 
+    // Implements mbus::Message.
     const mbus::string& getProtocol() const override;
 };
 

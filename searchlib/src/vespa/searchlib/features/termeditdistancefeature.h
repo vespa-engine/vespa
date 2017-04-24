@@ -1,6 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <string>
+#include <vector>
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/common/feature.h>
@@ -43,14 +45,14 @@ struct TermEditDistanceConfig {
 /**
  * Implements the executor for the term edit distance calculator.
  */
-class TermEditDistanceExecutor : public fef::FeatureExecutor {
+class TermEditDistanceExecutor : public search::fef::FeatureExecutor {
 public:
     /**
      * Constructs a new executor for the term edit distance calculator.
      *
      * @param config The config for this executor.
      */
-    TermEditDistanceExecutor(const fef::IQueryEnvironment &env,
+    TermEditDistanceExecutor(const search::fef::IQueryEnvironment &env,
                              const TermEditDistanceConfig &config);
 
 
@@ -78,7 +80,7 @@ public:
      *
      * @param docid local document id to be evaluated
      */
-    void execute(uint32_t docId) override;
+    virtual void execute(uint32_t docId) override;
 
 private:
     /**
@@ -89,11 +91,11 @@ private:
      */
     void logRow(const std::vector<TedCell> &row, size_t numCols);
 
-    void handle_bind_match_data(fef::MatchData &md) override;
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 
 private:
     const TermEditDistanceConfig             &_config;       // The config for this executor.
-    std::vector<fef::TermFieldHandle> _fieldHandles; // The handles of all query terms.
+    std::vector<search::fef::TermFieldHandle> _fieldHandles; // The handles of all query terms.
     std::vector<feature_t>                    _termWeights;  // The weights of all query terms.
     std::vector<TedCell>                      _prevRow;      // Optimized representation of the cost table.
     std::vector<TedCell>                      _thisRow;      //
@@ -103,17 +105,26 @@ private:
 /**
  * Implements the blueprint for the term edit distance calculator.
  */
-class TermEditDistanceBlueprint : public fef::Blueprint {
+class TermEditDistanceBlueprint : public search::fef::Blueprint {
 public:
     /**
      * Constructs a new blueprint for the term edit distance calculator.
      */
     TermEditDistanceBlueprint();
-    void visitDumpFeatures(const fef::IIndexEnvironment &env, fef::IDumpFeatureVisitor &visitor) const override;
-    fef::Blueprint::UP createInstance() const override;
-    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
-    fef::ParameterDescriptions getDescriptions() const override {
-        return fef::ParameterDescriptions().desc().indexField(fef::ParameterCollection::SINGLE);
+
+    // Inherit doc from Blueprint.
+    virtual void visitDumpFeatures(const search::fef::IIndexEnvironment &env,
+                                   search::fef::IDumpFeatureVisitor &visitor) const override;
+
+    // Inherit doc from Blueprint.
+    virtual search::fef::Blueprint::UP createInstance() const override;
+
+    // Inherit doc from Blueprint.
+    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+
+    // Inherit doc from Blueprint.
+    virtual search::fef::ParameterDescriptions getDescriptions() const override {
+        return search::fef::ParameterDescriptions().desc().indexField(search::fef::ParameterCollection::SINGLE);
     }
 
     /**
@@ -132,10 +143,12 @@ public:
      * @param params A list of the parameters mentioned above.
      * @return Whether or not setup was possible.
      */
-    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
+    virtual bool setup(const search::fef::IIndexEnvironment & env,
+                       const search::fef::ParameterList & params) override;
 
 private:
     TermEditDistanceConfig _config; // The config for this blueprint.
 };
 
 }}
+

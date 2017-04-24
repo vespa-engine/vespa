@@ -26,7 +26,8 @@ namespace {
     }
 
     struct RealStatter : public PartitionMonitor::Statter {
-        void statFileSystem(const std::string& file, struct statvfs& info) override {
+        virtual void statFileSystem(const std::string& file, struct statvfs& info) override
+        {
             if (statvfs(file.c_str(), &info) != 0) {
                 vespalib::asciistream ost;
                 ost << "Failed to run statvfs to find data on disk containing "

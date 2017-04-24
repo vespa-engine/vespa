@@ -6,7 +6,7 @@
 LOG_SETUP("persistencecppunittests");
 
 int
-main(int argc, const char *argv[])
+main(int argc, char **argv)
 {
     vdstestlib::CppUnitTestRunner testRunner;
     return testRunner.run(argc, argv);

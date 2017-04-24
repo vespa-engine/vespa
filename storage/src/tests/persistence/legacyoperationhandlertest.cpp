@@ -1,12 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/fastos/fastos.h>
 #include <vespa/document/base/testdocrepo.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/loadtypes/loadtype.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/storageapi/message/multioperation.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/persistencetestutils.h>
+#include <vespa/storage/persistence/types.h>
 
 using document::DocumentTypeRepo;
 using document::TestDocRepo;

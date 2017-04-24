@@ -1,9 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/fastos/fastos.h>
 #include <vespa/memfilepersistence/mapper/memfilemapper.h>
 #include <vespa/memfilepersistence/mapper/memfile_v1_serializer.h>
 #include <vespa/memfilepersistence/mapper/memfile_v1_verifier.h>
+#include <vespa/memfilepersistence/mapper/fileinfo.h>
+#include <vespa/memfilepersistence/mapper/simplememfileiobuffer.h>
 #include <tests/spi/memfiletestutils.h>
+#include <vespa/vdstestlib/cppunit/macros.h>
+#include <tests/spi/simulatedfailurefile.h>
 
 namespace storage {
 namespace memfile {

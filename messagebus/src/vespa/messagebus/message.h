@@ -35,9 +35,10 @@ public:
      * will log an error and generate an auto-reply to avoid having the sender
      * wait indefinetly for a reply.
      */
-    ~Message();
+    virtual ~Message();
 
-    void swapState(Routable &rhs) override;
+    // Overrides Routable.
+    virtual void swapState(Routable &rhs) override;
 
     /**
      * Returns the timestamp for when this message was last seen by message
@@ -138,7 +139,7 @@ public:
      *
      * @return false
      */
-    bool isReply() const override { return false; }
+    virtual bool isReply() const override { return false; }
 
     /**
      * Returns whether or not this message contains a sequence identifier that

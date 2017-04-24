@@ -13,17 +13,17 @@
 
 #pragma once
 
-#include "visitor.h"
-#include "visitormetrics.h"
-#include "visitormessagesessionfactory.h"
-#include <vespa/storageframework/storageframework.h>
-#include <vespa/storage/persistence/messages.h>
-#include <vespa/storage/common/storagecomponent.h>
-#include <vespa/storageapi/messageapi/messagehandler.h>
-#include <vespa/metrics/metrictimer.h>
-#include <vespa/vespalib/util/document_runnable.h>
-#include <vespa/vespalib/util/sync.h>
 #include <deque>
+#include <vespa/vespalib/util/document_runnable.h>
+#include <vespa/metrics/metrictimer.h>
+#include <vespa/storageapi/messageapi/messagehandler.h>
+#include <vespa/vespalib/util/sync.h>
+#include <vespa/storage/common/storagecomponent.h>
+#include <vespa/storage/persistence/messages.h>
+#include <vespa/storage/visiting/visitor.h>
+#include <vespa/storage/visiting/visitormetrics.h>
+#include <vespa/storage/visiting/visitormessagesessionfactory.h>
+#include <vespa/storageframework/storageframework.h>
 
 namespace storage {
 
@@ -36,7 +36,8 @@ class VisitorThread : public framework::Runnable,
 
     typedef std::map<api::VisitorId, std::shared_ptr<Visitor> > VisitorMap;
     VisitorMap _visitors;
-    std::deque<std::pair<api::VisitorId, framework::SecondTime> > _recentlyCompleted;
+    std::deque<std::pair<api::VisitorId,
+                         framework::SecondTime> > _recentlyCompleted;
 
     struct Event {
         enum Type {
@@ -99,9 +100,13 @@ public:
                   VisitorMessageHandler& sender);
     ~VisitorThread();
 
-    void processMessage(api::VisitorId visitorId, const std::shared_ptr<api::StorageMessage>& msg);
+    void processMessage(api::VisitorId visitorId,
+                        const std::shared_ptr<api::StorageMessage>& msg);
+
     void shutdown();
+
     void setTimeBetweenTicks(uint32_t time) { _timeBetweenTicks = time; }
+
     void handleMessageBusReply(std::unique_ptr<mbus::Reply> reply, Visitor& visitor);
 
     /** For unit tests needing to pause thread. */
@@ -112,7 +117,7 @@ public:
     }
 
 private:
-    void run(framework::ThreadHandle&) override;
+    virtual void run(framework::ThreadHandle&) override;
     /**
      * Attempt to fetch an event from the visitor thread's queue. If an event
      * was available, pop it from the queue and return it. If not, return
@@ -122,11 +127,12 @@ private:
     Event popNextQueuedEventIfAvailable();
     void tick();
     void trimRecentlyCompletedList(framework::SecondTime currentTime);
-    void handleNonExistingVisitorCall(const Event& entry, api::ReturnCode& code);
+    void handleNonExistingVisitorCall(const Event& entry,
+                                      api::ReturnCode& code);
 
     std::shared_ptr<Visitor> createVisitor(const vespalib::stringref & libName,
-                                           const vdslib::Parameters& params,
-                                           vespalib::asciistream & error);
+                                             const vdslib::Parameters& params,
+                                             vespalib::asciistream & error);
 
     bool onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>&) override;
 
@@ -136,9 +142,12 @@ private:
 
     /** Deletes a visitor instance. */
     void close();
-    void getStatus(vespalib::asciistream & out, const framework::HttpUrlPath& path) const;
+    void getStatus(vespalib::asciistream & out,
+                   const framework::HttpUrlPath& path) const;
+
     void updateMetrics(const MetricLockGuard &) override;
 
 };
 
 } // storage
+

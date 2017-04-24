@@ -1,4 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
 #include <vespa/storage/bucketdb/mapbucketdatabase.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 
@@ -464,7 +465,7 @@ namespace {
     struct Writer : public BucketDatabase::EntryProcessor {
         std::ostream& _ost;
         Writer(std::ostream& ost) : _ost(ost) {}
-        bool process(const BucketDatabase::Entry& e) override {
+        virtual bool process(const BucketDatabase::Entry& e) override {
             _ost << e.toString() << "\n";
             return true;
         }

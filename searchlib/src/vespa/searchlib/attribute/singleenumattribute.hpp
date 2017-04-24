@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "singleenumattribute.h"
-#include "enumattribute.hpp"
+#include <vespa/searchlib/attribute/singleenumattribute.h>
+#include <vespa/searchlib/attribute/enumattribute.hpp>
 #include "ipostinglistattributebase.h"
 #include "singleenumattributesaver.h"
 #include "load_utils.h"

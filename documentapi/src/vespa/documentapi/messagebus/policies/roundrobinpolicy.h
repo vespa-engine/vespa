@@ -61,9 +61,19 @@ public:
      * in slobrok.
      */
     RoundRobinPolicy(const string &param);
-    ~RoundRobinPolicy();
-    void select(mbus::RoutingContext &context) override;
-    void merge(mbus::RoutingContext &context) override;
+
+    /**
+     * Destructor.
+     *
+     * Frees all allocated resources.
+     */
+    virtual ~RoundRobinPolicy();
+
+    // Inherit doc from IRoutingPolicy.
+    virtual void select(mbus::RoutingContext &context) override;
+
+    // Inherit doc from IRoutingPolicy.
+    virtual void merge(mbus::RoutingContext &context) override;
 };
 
 }

@@ -50,7 +50,7 @@ public:
     CppUnitTestRunner();
 
     void listTests(const CppUnit::TestSuite *tests);
-    int run(int argc, const char * argv[]);
+    int run(int argc, const char * const * argv);
 
 };
 

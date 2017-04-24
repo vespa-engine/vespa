@@ -52,24 +52,24 @@ struct IntermediateMessageSender : DistributorMessageSender {
                               DistributorMessageSender & fwd);
     ~IntermediateMessageSender();
 
-    void sendCommand(const std::shared_ptr<api::StorageCommand>& cmd) override {
+    virtual void sendCommand(const std::shared_ptr<api::StorageCommand>& cmd) override {
         msgMap.insert(cmd->getMsgId(), callback);
         forward.sendCommand(cmd);
     };
 
-    void sendReply(const std::shared_ptr<api::StorageReply>& reply) override {
+    virtual void sendReply(const std::shared_ptr<api::StorageReply>& reply) override {
         _reply = reply;
     }
 
-    int getDistributorIndex() const override {
+    virtual int getDistributorIndex() const override {
         return forward.getDistributorIndex();
     }
 
-    const std::string& getClusterName() const override {
+    virtual const std::string& getClusterName() const override {
         return forward.getClusterName();
     }
 
-    const PendingMessageTracker& getPendingMessageTracker() const override {
+    virtual const PendingMessageTracker& getPendingMessageTracker() const override {
         return forward.getPendingMessageTracker();
     }
 };

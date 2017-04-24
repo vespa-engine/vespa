@@ -1,15 +1,19 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <boost/pointer_cast.hpp>
 #include <cppunit/extensions/HelperMacros.h>
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/state.h>
+#include <vespa/vdslib/state/nodestate.h>
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
 #include <vespa/storage/storageserver/statemanager.h>
+#include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/dummystoragelink.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <iostream>
 
 using storage::lib::NodeState;
 using storage::lib::NodeType;
@@ -134,7 +138,8 @@ namespace {
         MyStateListener(const NodeStateUpdater& upd)
             : updater(upd), current(*updater.getReportedNodeState()) {}
 
-        void handleNewState() override {
+        void handleNewState() override
+        {
             ost << current << " -> ";
             current = *updater.getReportedNodeState();
             ost << current << "\n";
@@ -254,3 +259,4 @@ StateManagerTest::testClusterStateVersion()
 }
 
 } // storage
+

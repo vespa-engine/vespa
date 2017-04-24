@@ -1,14 +1,21 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
+#include <vespa/fastos/fastos.h>
 #include "filedistributionmodel.h"
-#include "zkfiledbmodel.h"
-#include "deployedfilestodownload.h"
-#include "filedistributionmodelimpl.h"
+
+#include <vector>
+#include <set>
+#include <string>
+#include <cstdlib>
+
 #include <boost/filesystem.hpp>
 #include <zookeeper/zookeeper.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".filedistributionmodel");
+
+#include "zkfiledbmodel.h"
+#include "deployedfilestodownload.h"
+#include "filedistributionmodelimpl.h"
 
 namespace fs = boost::filesystem;
 

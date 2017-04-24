@@ -2,6 +2,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/fnet/frt/frt.h>
 
+
 class TestErrors : public vespalib::TestApp
 {
 private:

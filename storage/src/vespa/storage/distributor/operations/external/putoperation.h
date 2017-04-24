@@ -28,9 +28,14 @@ public:
                  PersistenceOperationMetricSet& metric);
 
     void onStart(DistributorMessageSender& sender) override;
-    const char* getName() const override { return "put"; };
-    std::string getStatus() const override { return ""; };
-    void onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
+
+    const char* getName() const override { return "put"; }
+
+    std::string getStatus() const override { return ""; }
+
+    void onReceive(DistributorMessageSender& sender,
+                   const std::shared_ptr<api::StorageReply> &) override;
+
     void onClose(DistributorMessageSender& sender) override;
 
     /**
@@ -66,9 +71,11 @@ private:
             const uint16_t node,
             std::vector<PersistenceMessageTracker::ToSend>& putBatch);
 
-    bool shouldImplicitlyActivateReplica(const OperationTargetList& targets) const;
+    bool shouldImplicitlyActivateReplica(
+            const OperationTargetList& targets) const;
 
     std::shared_ptr<api::PutCommand> _msg;
+
     DistributorComponent& _manager;
 };
 

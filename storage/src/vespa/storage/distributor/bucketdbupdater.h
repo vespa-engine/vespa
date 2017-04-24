@@ -49,14 +49,23 @@ public:
             const std::shared_ptr<api::RequestBucketInfoReply> & repl) override;
 
     bool onMergeBucketReply(const std::shared_ptr<api::MergeBucketReply>& reply) override;
+
     bool onNotifyBucketChange(const std::shared_ptr<api::NotifyBucketChangeCommand>&) override;
+
     void resendDelayedMessages();
+
     void storageDistributionChanged(const lib::Distribution&);
 
-    vespalib::string reportXmlStatus(vespalib::xml::XmlOutputStream&, const framework::HttpUrlPath&) const;
-    vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
+    vespalib::string reportXmlStatus(vespalib::xml::XmlOutputStream&,
+                                        const framework::HttpUrlPath&) const;
+
+    vespalib::string getReportContentType(
+            const framework::HttpUrlPath&) const override;
     bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const override;
-    void print(std::ostream& out, bool verbose, const std::string& indent) const;
+
+    virtual void print(std::ostream& out, bool verbose,
+                       const std::string& indent) const;
+
     DistributorComponent& getDistributorComponent() { return _bucketSpaceComponent; }
 
     /**
@@ -231,8 +240,12 @@ private:
               _upStates(upStates) {}
 
         ~NodeRemover();
-        bool process(BucketDatabase::Entry& e) override;
-        void logRemove(const document::BucketId& bucketId, const char* msg) const;
+
+        virtual bool process(BucketDatabase::Entry& e) override;
+
+        void logRemove(const document::BucketId& bucketId,
+                       const char* msg) const;
+
         bool distributorOwnsBucket(const document::BucketId&) const;
 
         const std::vector<document::BucketId>& getBucketsToRemove() const {
@@ -253,7 +266,8 @@ private:
         const char* _upStates;
     };
 
-    std::deque<std::pair<framework::MilliSecTime, BucketRequest> > _delayedRequests;
+    std::deque<std::pair<framework::MilliSecTime,
+                         BucketRequest> > _delayedRequests;
     std::map<uint64_t, BucketRequest> _sentMessages;
     std::unique_ptr<PendingClusterState> _pendingClusterState;
     std::list<PendingClusterState::Summary> _history;
@@ -266,3 +280,4 @@ private:
 }
 
 }
+

@@ -51,7 +51,13 @@ public:
      * @param param The address to use for this, if empty this will resolve to hostname.
      */
     ExternPolicy(const string &param);
-    ~ExternPolicy();
+
+    /**
+     * Destructor.
+     *
+     * Frees all allocated resources.
+     */
+    virtual ~ExternPolicy();
 
     /**
      * This is a safety mechanism to allow the constructor to fail and signal that it can not be used.
@@ -68,7 +74,11 @@ public:
      * @return The mirror pointer.
      */
     slobrok::api::IMirrorAPI &getMirror() { return *_mirror; }
+
+    // Overrides IRoutingPolicy.
     void select(mbus::RoutingContext &ctx) override;
+
+    // Overrides IRoutingPolicy.
     void merge(mbus::RoutingContext &ctx) override;
 };
 

@@ -16,11 +16,11 @@
  *                              ALL RIGHTS RESERVED
  * </pre>
  ***************************************************************************/
-
-#include "mcandTest.h"
-
+#include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
-LOG_SETUP(".mcandtest");
+LOG_SETUP("");
+#include "mcandTest.h"
+#include "testenv.h"
 
 // Comment out cerr below to ignore unimplemented tests
 #define NOTEST(name) \
@@ -405,13 +405,13 @@ struct MyTokenProcessor : public ITokenProcessor
     Matcher &_m;
     std::vector<size_t> _cands;
     MyTokenProcessor(Matcher &m) : _m(m), _cands() {}
-    void handle_token(Token &token) override {
+    virtual void handle_token(Token &token) override {
         _m.handle_token(token);
         const match_sequence *ms = _m.GetWorkSet();
         _cands.push_back(ms[0].size());
         LOG(info, "match_sequence[0].size(%zu)", _cands.back());
     }
-    void handle_end(Token &token) override {
+    virtual void handle_end(Token &token) override {
         _m.handle_end(token);
     }
 };

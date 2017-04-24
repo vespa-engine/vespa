@@ -48,7 +48,8 @@ struct LockedReqWait : public FRT_IRequestWait
         return ret;
     }
 
-    void RequestDone(FRT_RPCRequest *) override {
+    virtual void RequestDone(FRT_RPCRequest *) override
+    {
         _wasLocked = isLocked();
         _cond.Lock();
         _done = true;
@@ -56,7 +57,8 @@ struct LockedReqWait : public FRT_IRequestWait
         _cond.Unlock();
     }
 
-    void waitReq() {
+    void waitReq()
+    {
         _cond.Lock();
         while(!_done) {
             _cond.Wait();
@@ -76,7 +78,9 @@ private:
     DelayedReturn &operator=(const DelayedReturn &);
 
 public:
-    DelayedReturn(FNET_Scheduler *sched, FRT_RPCRequest *req, double delay)
+    DelayedReturn(FNET_Scheduler *sched,
+                  FRT_RPCRequest *req,
+                  double delay)
         : FNET_Task(sched),
           _req(req)
     {

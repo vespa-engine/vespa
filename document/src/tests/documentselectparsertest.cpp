@@ -1,12 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 
+//#include <boost/regex/icu.hpp>
+#include <vespa/fastos/fastos.h>
 #include <cppunit/TestFixture.h>
 #include <cppunit/extensions/HelperMacros.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <iostream>
+#include <memory>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/base/testdocman.h>
+#include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/visitor.h>
 #include <vespa/document/select/bodyfielddetector.h>
@@ -61,6 +66,7 @@ public:
         : _bucketIdFactory() {}
 
     void setUp() override;
+    void tearDown() override {}
     void createDocs();
 
     void testParseTerminals();
@@ -906,27 +912,32 @@ namespace {
         std::ostringstream data;
 
     public:
-        ~TestVisitor() {}
+        virtual ~TestVisitor() {}
 
-        void visitConstant(const select::Constant& node) override {
+        void visitConstant(const select::Constant& node) override
+        {
             data << "CONSTANT(" << node << ")";
         }
 
-        void
-        visitInvalidConstant(const select::InvalidConstant& node) override {
+        virtual void
+        visitInvalidConstant(const select::InvalidConstant& node) override
+        {
             data << "INVALIDCONSTANT(" << node << ")";
         }
 
-        void visitDocumentType(const select::DocType& node) override {
+        void visitDocumentType(const select::DocType& node) override
+        {
             data << "DOCTYPE(" << node << ")";
         }
 
-        void visitComparison(const select::Compare& node) override {
+        void visitComparison(const select::Compare& node) override
+        {
             data << "COMPARE(" << node.getLeft() << " "
                  << node.getOperator() << " " << node.getRight() << ")";
         }
 
-        void visitAndBranch(const select::And& node) override {
+        void visitAndBranch(const select::And& node) override
+        {
             data << "AND(";
             node.getLeft().visit(*this);
             data << ", ";
@@ -934,7 +945,8 @@ namespace {
             data << ")";
         }
 
-        void visitOrBranch(const select::Or& node) override {
+        void visitOrBranch(const select::Or& node) override
+        {
             data << "OR(";
             node.getLeft().visit(*this);
             data << ", ";
@@ -942,24 +954,72 @@ namespace {
             data << ")";
         }
 
-        void visitNotBranch(const select::Not& node) override {
+        void visitNotBranch(const select::Not& node) override
+        {
             data << "NOT(";
             node.getChild().visit(*this);
             data << ")";
         }
 
-        void visitArithmeticValueNode(const select::ArithmeticValueNode &) override {}
-        void visitFunctionValueNode(const select::FunctionValueNode &) override {}
-        void visitIdValueNode(const select::IdValueNode &) override {}
-        void visitSearchColumnValueNode(const select::SearchColumnValueNode &) override {}
-        void visitFieldValueNode(const select::FieldValueNode &) override {}
-        void visitFloatValueNode(const select::FloatValueNode &) override {}
-        void visitVariableValueNode(const select::VariableValueNode &) override {}
-        void visitIntegerValueNode(const select::IntegerValueNode &) override {}
-        void visitCurrentTimeValueNode(const select::CurrentTimeValueNode &) override {}
-        void visitStringValueNode(const select::StringValueNode &) override {}
-        void visitNullValueNode(const select::NullValueNode &) override {}
-        void visitInvalidValueNode(const select::InvalidValueNode &) override {}
+        virtual void
+        visitArithmeticValueNode(const select::ArithmeticValueNode &) override
+        {
+        }
+
+        virtual void
+        visitFunctionValueNode(const select::FunctionValueNode &) override
+        {
+        }
+
+        virtual void
+        visitIdValueNode(const select::IdValueNode &) override
+        {
+        }
+
+        virtual void
+        visitSearchColumnValueNode(const select::SearchColumnValueNode &) override
+        {
+        }
+
+        virtual void
+        visitFieldValueNode(const select::FieldValueNode &) override
+        {
+        }
+
+        virtual void
+        visitFloatValueNode(const select::FloatValueNode &) override
+        {
+        }
+
+        virtual void
+        visitVariableValueNode(const select::VariableValueNode &) override
+        {
+        }
+
+        virtual void
+        visitIntegerValueNode(const select::IntegerValueNode &) override
+        {
+        }
+
+        virtual void
+        visitCurrentTimeValueNode(const select::CurrentTimeValueNode &) override
+        {
+        }
+
+        virtual void
+        visitStringValueNode(const select::StringValueNode &) override
+        {
+        }
+
+        virtual void
+        visitNullValueNode(const select::NullValueNode &) override
+        {
+        }
+
+        virtual void
+        visitInvalidValueNode(const select::InvalidValueNode &) override
+        {
+        }
 
         std::string getVisitString() { return data.str(); }
     };

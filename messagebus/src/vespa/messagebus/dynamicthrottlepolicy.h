@@ -164,8 +164,13 @@ public:
      */
     uint32_t getMaxPendingCount() const { return (uint32_t)_windowSize; }
 
+    // Implements IThrottlePolicy.
     bool canSend(const Message &msg, uint32_t pendingCount) override;
+
+    // Implements IThrottlePolicy.
     void processMessage(Message &msg) override;
+
+    // Implements IThrottlePolicy.
     void processReply(Reply &reply) override;
 };
 

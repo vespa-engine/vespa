@@ -1,12 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP("serviceaddress_test");
 
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/messagebus/testlib/slobrok.h>
-#include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/messagebus/testlib/receptor.h>
-#include <vespa/messagebus/testlib/simplemessage.h>
-#include <vespa/messagebus/testlib/simplereply.h>
-#include <vespa/messagebus/testlib/simpleprotocol.h>
+#include <vespa/vespalib/util/vstringfmt.h>
 #include <vespa/messagebus/messagebus.h>
 #include <vespa/messagebus/sourcesession.h>
 #include <vespa/messagebus/intermediatesession.h>
@@ -17,7 +15,12 @@
 #include <vespa/messagebus/routing/routingspec.h>
 #include <vespa/messagebus/network/rpcservice.h>
 #include <vespa/messagebus/sourcesessionparams.h>
-#include <vespa/vespalib/util/vstringfmt.h>
+#include <vespa/messagebus/testlib/slobrok.h>
+#include <vespa/messagebus/testlib/testserver.h>
+#include <vespa/messagebus/testlib/receptor.h>
+#include <vespa/messagebus/testlib/simplemessage.h>
+#include <vespa/messagebus/testlib/simplereply.h>
+#include <vespa/messagebus/testlib/simpleprotocol.h>
 
 using namespace mbus;
 

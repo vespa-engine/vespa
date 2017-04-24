@@ -46,8 +46,8 @@ public:
           _destinationSession(0),
           _messageCounter(0)
     {}
-    void handleMessage(Message::UP msg) override
-     {
+    virtual void handleMessage(Message::UP msg) override
+    {
         SimpleMessage& simpleMsg(dynamic_cast<SimpleMessage&>(*msg));
         LOG(spam, "Attempting to acquire lock for %s",
             simpleMsg.getValue().c_str());

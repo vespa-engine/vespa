@@ -6,17 +6,25 @@
 #include <vespa/document/fieldvalue/rawfieldvalue.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/persistence.h>
+#include <vespa/storageapi/message/visitor.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/visiting/visitormanager.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/common/dummystoragelink.h>
 #include <tests/storageserver/testvisitormessagesession.h>
+#include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/vdslib/container/visitorordering.h>
 #include <vespa/documentapi/messagebus/messages/multioperationmessage.h>
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vector>
 #include <thread>
+#include <chrono>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".visitortest");
 
 using namespace std::chrono_literals;
 
@@ -177,6 +185,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION(VisitorTest);
 void
 VisitorTest::initializeTest(const TestParams& params)
 {
+    LOG(debug, "Initializing test");
     vdstestlib::DirConfig config(getStandardConfig(true, "visitortest"));
     config.getConfig("stor-visitor").set("visitorthreads", "1");
     config.getConfig("stor-visitor").set(
@@ -264,6 +273,7 @@ VisitorTest::initializeTest(const TestParams& params)
         _documents.back()->setValue(type.getField("headerval"),
                                     document::IntFieldValue(i % 4));
     }
+    LOG(debug, "Done initializing test");
 }
 
 void

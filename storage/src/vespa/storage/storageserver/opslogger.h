@@ -27,15 +27,20 @@ public:
     ~OpsLogger();
 
     void onClose() override;
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
     bool onPutReply(const std::shared_ptr<api::PutReply>& msg) override;
     bool onUpdateReply(const std::shared_ptr<api::UpdateReply>& msg) override;
     bool onRemoveReply(const std::shared_ptr<api::RemoveReply>& msg) override;
     bool onGetReply(const std::shared_ptr<api::GetReply>& msg) override;
 
     /** Ignore all replies on the way down the storage chain. */
-    bool onDown(const std::shared_ptr<api::StorageMessage>&) override { return false; };
+    bool onDown(const std::shared_ptr<api::StorageMessage>&) override
+        { return false; };
+
     void configure(std::unique_ptr<vespa::config::content::core::StorOpsloggerConfig> config) override;
+
 private:
     vespalib::Lock _lock;
     std::string _fileName;
@@ -46,3 +51,4 @@ private:
 };
 
 }
+

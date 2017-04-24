@@ -8,7 +8,6 @@ vespa_add_library(storage_storageserver
     fnetlistener.cpp
     rpcrequestwrapper.cpp
     communicationmanager.cpp
-    communicationmanagermetrics.cpp
     statemanager.cpp
     documentapiconverter.cpp
     opslogger.cpp
@@ -21,7 +20,6 @@ vespa_add_library(storage_storageserver
     distributornode.cpp
     servicelayernode.cpp
     statereporter.cpp
-    storagemetricsset.cpp
     changedbucketownershiphandler.cpp
     INSTALL lib64
     DEPENDS

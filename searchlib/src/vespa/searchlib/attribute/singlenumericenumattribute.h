@@ -46,9 +46,9 @@ private:
 protected:
 
     // from SingleValueEnumAttribute
-    void considerUpdateAttributeChange(const Change & c) override;
-    void considerArithmeticAttributeChange(const Change & c, UniqueSet & newUniques) override;
-    void applyArithmeticValueChange(const Change & c, EnumStoreBase::IndexVector & unused) override;
+    virtual void considerUpdateAttributeChange(const Change & c);
+    virtual void considerArithmeticAttributeChange(const Change & c, UniqueSet & newUniques);
+    virtual void applyArithmeticValueChange(const Change & c, EnumStoreBase::IndexVector & unused);
 
     /*
      * Specialization of SearchContext
@@ -92,10 +92,9 @@ public:
                                     const AttributeVector::Config & c =
                                     AttributeVector::Config(AttributeVector::BasicType::fromType(T()),
                                                         attribute::CollectionType::SINGLE));
-    ~SingleValueNumericEnumAttribute();
 
-    void onCommit() override;
-    bool onLoad() override;
+    virtual void onCommit();
+    virtual bool onLoad();
 
     bool onLoadEnumerated(ReaderBase &attrReader);
 
@@ -105,46 +104,46 @@ public:
     //-------------------------------------------------------------------------
     // Attribute read API
     //-------------------------------------------------------------------------
-    T get(DocId doc) const override {
+    virtual T get(DocId doc) const {
         return this->_enumStore.getValue(this->_enumIndices[doc]);
     }
-    largeint_t getInt(DocId doc) const override {
+    virtual largeint_t getInt(DocId doc) const {
         return static_cast<largeint_t>(get(doc));
     }
-    double getFloat(DocId doc) const override {
+    virtual double getFloat(DocId doc) const {
         return static_cast<double>(get(doc));
     }
-    uint32_t getAll(DocId doc, T * v, uint32_t sz) const override {
+    virtual uint32_t getAll(DocId doc, T * v, uint32_t sz) const {
         if (sz > 0) {
             v[0] = get(doc);
         }
         return 1;
     }
-    uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const override {
+    virtual uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const {
         if (sz > 0) {
             v[0] = getInt(doc);
         }
         return 1;
     }
-    uint32_t get(DocId doc, double * v, uint32_t sz) const override {
+    virtual uint32_t get(DocId doc, double * v, uint32_t sz) const {
         if (sz > 0) {
             v[0] = getFloat(doc);
         }
         return 1;
     }
-    uint32_t getAll(DocId doc, Weighted * v, uint32_t sz) const override {
+    virtual uint32_t getAll(DocId doc, Weighted * v, uint32_t sz) const {
         if (sz > 0) {
             v[0] = Weighted(get(doc));
         }
         return 1;
     }
-    uint32_t get(DocId doc, WeightedInt * v, uint32_t sz) const override {
+    virtual uint32_t get(DocId doc, WeightedInt * v, uint32_t sz) const {
         if (sz > 0) {
             v[0] = WeightedInt(getInt(doc));
         }
         return 1;
     }
-    uint32_t get(DocId doc, WeightedFloat * v, uint32_t sz) const override {
+    virtual uint32_t get(DocId doc, WeightedFloat * v, uint32_t sz) const {
         if (sz > 0) {
             v[0] = WeightedFloat(getFloat(doc));
         }

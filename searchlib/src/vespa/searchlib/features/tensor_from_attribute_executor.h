@@ -34,7 +34,7 @@ public:
     {
         _attrBuffer.allocate(_attribute->getMaxValueCount());
     }
-    void execute(uint32_t docId) override;
+    virtual void execute(uint32_t docId) override;
 };
 
 template <typename WeightedBufferType>

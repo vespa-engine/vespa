@@ -67,9 +67,12 @@ public:
     uint32_t getMemoryFootprint() const override {
         return (_doc.get() ? 4096 : 0) + 20;
     }
+
     vespalib::string getSummary() const override;
+
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    StorageCommand::UP createCopyToForward(const document::BucketId& bucket, uint64_t timestamp) const override;
+
+    virtual StorageCommand::UP createCopyToForward(const document::BucketId& bucket, uint64_t timestamp) const override;
 
     DECLARE_STORAGECOMMAND(PutCommand, onPut);
 };
@@ -137,7 +140,8 @@ public:
     vespalib::string getSummary() const override;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    StorageCommand::UP createCopyToForward(const document::BucketId& bucket, uint64_t timestamp) const override;
+
+    virtual StorageCommand::UP createCopyToForward(const document::BucketId& bucket, uint64_t timestamp) const override;
 
     DECLARE_STORAGECOMMAND(UpdateCommand, onUpdate);
 };
@@ -199,7 +203,9 @@ public:
     GetCommand(const document::BucketId&, const document::DocumentId&,
                const vespalib::stringref & fieldSet, Timestamp before = MAX_TIMESTAMP);
     ~GetCommand();
+
     void setBeforeTimestamp(Timestamp ts) { _beforeTimestamp = ts; }
+
     const document::DocumentId& getDocumentId() const { return _docId; }
     Timestamp getBeforeTimestamp() const { return _beforeTimestamp; }
     const vespalib::string& getFieldSet() const { return _fieldSet; }
@@ -208,7 +214,7 @@ public:
     vespalib::string getSummary() const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    StorageCommand::UP createCopyToForward(const document::BucketId& bucket, uint64_t timestamp) const override;
+    virtual StorageCommand::UP createCopyToForward(const document::BucketId& bucket, uint64_t timestamp) const override;
 
     DECLARE_STORAGECOMMAND(GetCommand, onGet)
 };
@@ -240,10 +246,13 @@ public:
     Timestamp getBeforeTimestamp() const { return _beforeTimestamp; }
 
     bool wasFound() const { return (_doc.get() != 0); }
+
     uint32_t getMemoryFootprint() const override {
         return (_doc.get() ? 4096 : 0) + 30;
     }
+
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
     DECLARE_STORAGEREPLY(GetReply, onGetReply)
 };
 
@@ -258,15 +267,20 @@ class RemoveCommand : public TestAndSetCommand {
     Timestamp _timestamp;
 
 public:
-    RemoveCommand(const document::BucketId&, const document::DocumentId& docId, Timestamp timestamp);
+    RemoveCommand(const document::BucketId&, const document::DocumentId& docId,
+                  Timestamp timestamp);
     ~RemoveCommand();
 
     void setTimestamp(Timestamp ts) { _timestamp = ts; }
+
     const document::DocumentId& getDocumentId() const override { return _docId; }
     Timestamp getTimestamp() const { return _timestamp; }
+
     vespalib::string getSummary() const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    StorageCommand::UP createCopyToForward(const document::BucketId& bucket, uint64_t timestamp) const override;
+
+    virtual StorageCommand::UP createCopyToForward(const document::BucketId& bucket, uint64_t timestamp) const override;
+
     DECLARE_STORAGECOMMAND(RemoveCommand, onRemove)
 };
 
@@ -280,6 +294,7 @@ class RemoveReply : public BucketInfoReply {
     document::DocumentId _docId;
     Timestamp _timestamp;
     Timestamp _oldTimestamp;
+
 public:
     explicit RemoveReply(const RemoveCommand& cmd, Timestamp oldTimestamp = 0);
     ~RemoveReply();
@@ -287,9 +302,13 @@ public:
     const document::DocumentId& getDocumentId() const { return _docId; }
     Timestamp getTimestamp() { return _timestamp; };
     Timestamp getOldTimestamp() const { return _oldTimestamp; }
+
     void setOldTimestamp(Timestamp oldTimestamp) { _oldTimestamp = oldTimestamp; }
+
     bool wasFound() const { return (_oldTimestamp != 0); }
+
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
     DECLARE_STORAGEREPLY(RemoveReply, onRemoveReply)
 };
 
@@ -301,12 +320,16 @@ public:
  */
 class RevertCommand : public BucketInfoCommand {
     std::vector<Timestamp> _tokens;
+
 public:
     RevertCommand(const document::BucketId& bucket,
                   const std::vector<Timestamp>& revertTokens);
     ~RevertCommand();
+
     const std::vector<Timestamp>& getRevertTokens() const { return _tokens; }
+
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
     DECLARE_STORAGECOMMAND(RevertCommand, onRevert)
 };
 
@@ -318,13 +341,19 @@ public:
  */
 class RevertReply : public BucketInfoReply {
     std::vector<Timestamp> _tokens;
+
 public:
     explicit RevertReply(const RevertCommand& cmd);
     ~RevertReply();
+
     const std::vector<Timestamp>& getRevertTokens() const { return _tokens; }
+
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
     DECLARE_STORAGEREPLY(RevertReply, onRevertReply)
 };
 
 } // api
 } // storage
+
+

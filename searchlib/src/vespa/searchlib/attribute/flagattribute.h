@@ -40,7 +40,8 @@ public:
     void setNewBVValue(DocId doc, typename B::WType::ValueType value);
 
 private:
-    bool onAddDoc(DocId doc) override;
+    virtual bool onAddDoc(DocId doc) override;
+
     void onAddDocs(DocId docIdLimit) override;
     void ensureGuardBit(BitVector & bv);
     void ensureGuardBit();

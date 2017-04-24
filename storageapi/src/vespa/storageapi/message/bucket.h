@@ -7,14 +7,14 @@
 
 #pragma once
 
+#include <vespa/document/base/globalid.h>
+#include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/storageapi/defs.h>
 #include <vespa/storageapi/messageapi/bucketcommand.h>
 #include <vespa/storageapi/messageapi/bucketreply.h>
 #include <vespa/storageapi/messageapi/bucketinfocommand.h>
 #include <vespa/storageapi/messageapi/bucketinforeply.h>
 #include <vespa/storageapi/messageapi/maintenancecommand.h>
-#include <vespa/document/base/globalid.h>
-#include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/storageapi/defs.h>
 
 namespace document { class DocumentTypeRepo; }
 
@@ -32,9 +32,12 @@ class CreateBucketCommand : public MaintenanceCommand {
 
 public:
     explicit CreateBucketCommand(const document::BucketId& id);
+
     void setActive(bool active) { _active = active; }
     bool getActive() const { return _active; }
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
     DECLARE_STORAGECOMMAND(CreateBucketCommand, onCreateBucket)
 };
 
@@ -47,7 +50,9 @@ public:
 class CreateBucketReply : public BucketInfoReply {
 public:
     explicit CreateBucketReply(const CreateBucketCommand& cmd);
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
     DECLARE_STORAGEREPLY(CreateBucketReply, onCreateBucketReply);
 };
 
@@ -64,7 +69,9 @@ public:
 
     const BucketInfo& getBucketInfo() const { return _info; }
     void setBucketInfo(const BucketInfo& info) { _info = info; }
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
     DECLARE_STORAGECOMMAND(DeleteBucketCommand, onDeleteBucket)
 };
 
@@ -77,7 +84,9 @@ public:
 class DeleteBucketReply : public BucketInfoReply {
 public:
     explicit DeleteBucketReply(const DeleteBucketCommand& cmd);
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
     DECLARE_STORAGEREPLY(DeleteBucketReply, onDeleteBucketReply)
 };
 
@@ -127,10 +136,14 @@ public:
     const std::vector<Node>& getNodes() const { return _nodes; }
     Timestamp getMaxTimestamp() const { return _maxTimestamp; }
     const std::vector<uint16_t>& getChain() const { return _chain; }
+
     uint32_t getClusterStateVersion() const { return _clusterStateVersion; }
+
     void setClusterStateVersion(uint32_t version) { _clusterStateVersion = version; }
     void setChain(const std::vector<uint16_t>& chain) { _chain = chain; }
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
     DECLARE_STORAGECOMMAND(MergeBucketCommand, onMergeBucket)
 };
 
@@ -160,7 +173,8 @@ public:
     Timestamp getMaxTimestamp() const { return _maxTimestamp; }
     const std::vector<uint16_t>& getChain() const { return _chain; }
     uint32_t getClusterStateVersion() const { return _clusterStateVersion; }
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGEREPLY(MergeBucketReply, onMergeBucketReply)
 };
@@ -184,7 +198,8 @@ public:
         uint16_t _hasMask;
 
         Entry();
-        void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
+        virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
         bool operator==(const Entry&) const;
         bool operator<(const Entry& e) const
             { return (_timestamp < e._timestamp); }
@@ -204,7 +219,7 @@ public:
     const std::vector<Entry>& getDiff() const { return _diff; }
     std::vector<Entry>& getDiff() { return _diff; }
 
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGECOMMAND(GetBucketDiffCommand, onGetBucketDiff)
 };
@@ -232,7 +247,8 @@ public:
     Timestamp getMaxTimestamp() const { return _maxTimestamp; }
     const std::vector<Entry>& getDiff() const { return _diff; }
     std::vector<Entry>& getDiff() { return _diff; }
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGEREPLY(GetBucketDiffReply, onGetBucketDiffReply)
 };
@@ -258,7 +274,8 @@ public:
         Entry(const GetBucketDiffCommand::Entry&);
 
         bool filled() const;
-        void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
+        virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
         bool operator==(const Entry&) const;
     };
 private:
@@ -279,7 +296,8 @@ public:
     const std::vector<Entry>& getDiff() const { return _diff; }
     std::vector<Entry>& getDiff() { return _diff; }
     uint32_t getMaxBufferSize() const { return _maxBufferSize; }
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGECOMMAND(ApplyBucketDiffCommand, onApplyBucketDiff)
 };
@@ -308,7 +326,7 @@ public:
     std::vector<Entry>& getDiff() { return _diff; }
     uint32_t getMaxBufferSize() const { return _maxBufferSize; }
 
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGEREPLY(ApplyBucketDiffReply, onApplyBucketDiffReply)
 };
@@ -341,11 +359,13 @@ public:
     RequestBucketInfoCommand(uint16_t distributor,
                              const lib::ClusterState& state);
 
-    const std::vector<document::BucketId>& getBuckets() const { return _buckets; }
+    const std::vector<document::BucketId>& getBuckets() const
+        { return _buckets; }
 
     bool hasSystemState() const { return (_state.get() != 0); }
     uint16_t getDistributor() const { return _distributor; }
-    const lib::ClusterState& getSystemState() const { return *_state; }
+    const lib::ClusterState& getSystemState() const
+        { return *_state; }
 
     const vespalib::string& getDistributionHash() const { return _distributionHash; }
 
@@ -382,10 +402,14 @@ public:
 
     explicit RequestBucketInfoReply(const RequestBucketInfoCommand& cmd);
     ~RequestBucketInfoReply();
+
     const EntryVector & getBucketInfo() const { return _buckets; }
     EntryVector & getBucketInfo() { return _buckets; }
+
     uint32_t getMemoryFootprint() const override;
+
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
     DECLARE_STORAGEREPLY(RequestBucketInfoReply, onRequestBucketInfoReply)
 };
 
@@ -402,11 +426,15 @@ public:
  */
 class NotifyBucketChangeCommand : public BucketCommand {
     BucketInfo _info;
+
 public:
     NotifyBucketChangeCommand(const document::BucketId& bucket,
                               const BucketInfo& bucketInfo);
+
     const BucketInfo& getBucketInfo() const { return _info; }
+
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
     DECLARE_STORAGECOMMAND(NotifyBucketChangeCommand, onNotifyBucketChange)
 };
 
@@ -423,7 +451,9 @@ public:
 class NotifyBucketChangeReply : public BucketReply {
 public:
     explicit NotifyBucketChangeReply(const NotifyBucketChangeCommand& cmd);
+
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
     DECLARE_STORAGEREPLY(NotifyBucketChangeReply, onNotifyBucketChangeReply)
 };
 
@@ -444,13 +474,16 @@ public:
 private:
     BUCKET_STATE _state;
 public:
-    SetBucketStateCommand(const document::BucketId& bucket, BUCKET_STATE state);
+    SetBucketStateCommand(const document::BucketId& bucket,
+                          BUCKET_STATE state);
+
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
     BUCKET_STATE getState() const { return _state; }
+
     DECLARE_STORAGECOMMAND(SetBucketStateCommand, onSetBucketState)
 private:
-
-    vespalib::string getSummary() const override;
+    virtual vespalib::string getSummary() const override;
 };
 
 /**
@@ -463,9 +496,12 @@ class SetBucketStateReply : public BucketInfoReply
 {
 public:
     explicit SetBucketStateReply(const SetBucketStateCommand&);
+
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
     DECLARE_STORAGEREPLY(SetBucketStateReply, onSetBucketStateReply)
 };
 
 } // api
 } // storage
+

@@ -8,10 +8,10 @@ class FakeRewriter: public juniper::IRewriter
 {
 public:
     FakeRewriter() : _name() {}
-    const char* Name() const override;
-    juniper::RewriteHandle* Rewrite(uint32_t langid, const char* term) override;
-    juniper::RewriteHandle* Rewrite(uint32_t langid, const char* term, size_t length) override;
-    const char* NextTerm(juniper::RewriteHandle* exp, size_t& length) override;
+    virtual const char* Name() const override;
+    virtual juniper::RewriteHandle* Rewrite(uint32_t langid, const char* term) override;
+    virtual juniper::RewriteHandle* Rewrite(uint32_t langid, const char* term, size_t length) override;
+    virtual const char* NextTerm(juniper::RewriteHandle* exp, size_t& length) override;
 private:
     std::string _name;
 };

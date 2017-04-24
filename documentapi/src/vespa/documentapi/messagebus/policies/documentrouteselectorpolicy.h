@@ -1,11 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "config-documentrouteselectorpolicy.h"
 #include <vespa/document/select/node.h>
 #include <map>
 #include <vespa/messagebus/routing/iroutingpolicy.h>
 #include <vespa/vespalib/util/sync.h>
+#include <vespa/documentapi/messagebus/policies/config-documentrouteselectorpolicy.h>
 #include <vespa/documentapi/common.h>
 #include <vespa/config/config.h>
 #include <vespa/config/helper/configfetcher.h>
@@ -64,8 +64,14 @@ public:
      * @return The error string, or null if no error.
      */
     const string &getError() const;
+
+    // Implements Subscriber.
     void configure(std::unique_ptr<messagebus::protocol::DocumentrouteselectorpolicyConfig> cfg) override;
+
+    // Implements IRoutingPolicy.
     void select(mbus::RoutingContext &context) override;
+
+    // Implements IRoutingPolicy.
     void merge(mbus::RoutingContext &context) override;
 };
 

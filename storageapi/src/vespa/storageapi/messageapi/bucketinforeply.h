@@ -12,9 +12,9 @@
 
 #pragma once
 
-#include "bucketreply.h"
-#include "bucketinfocommand.h"
 #include <vespa/storageapi/buckets/bucketinfo.h>
+#include <vespa/storageapi/messageapi/bucketreply.h>
+#include <vespa/storageapi/messageapi/bucketinfocommand.h>
 
 namespace storage {
 namespace api {
@@ -31,8 +31,11 @@ public:
 
     const BucketInfo& getBucketInfo() const { return _result; };
     void setBucketInfo(const BucketInfo& info) { _result = info; }
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
+    /** Overload this to get more descriptive message output. */
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 } // api
 } // storage
+

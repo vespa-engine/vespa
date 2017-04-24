@@ -1,10 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+
 #pragma once
 
-#include <vbench/core/taintable.h>
-#include <vespa/vespalib/util/runnable.h>
 #include <memory>
+#include <vespa/vespalib/util/runnable.h>
+#include <vbench/core/taintable.h>
 
 namespace vbench {
 

@@ -1,10 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
-#include <vespa/fnet/fnet.h>
-#include <vespa/fastos/app.h>
-
+#include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
 LOG_SETUP("proxy");
+#include <vespa/fnet/fnet.h>
+
 
 class RawPacket : public FNET_Packet
 {
@@ -13,10 +12,10 @@ private:
 
 public:
     RawPacket() : _data() {}
-    uint32_t GetPCODE() override;
-    uint32_t GetLength() override;
-    void Encode(FNET_DataBuffer *) override;
-    bool Decode(FNET_DataBuffer *src, uint32_t len) override;
+    virtual uint32_t GetPCODE() override;
+    virtual uint32_t GetLength() override;
+    virtual void Encode(FNET_DataBuffer *) override;
+    virtual bool Decode(FNET_DataBuffer *src, uint32_t len) override;
 };
 
 uint32_t
@@ -70,7 +69,7 @@ public:
         _server = server;
     }
 
-    HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context context) override;
+    virtual HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context context) override;
 };
 
 
@@ -140,14 +139,14 @@ private:
 
 public:
     Proxy() : _transport() {}
-    bool GetPacketInfo(FNET_DataBuffer *src, uint32_t *plen, uint32_t *pcode, uint32_t *chid, bool *) override;
-    FNET_Packet *Decode(FNET_DataBuffer *src, uint32_t plen, uint32_t pcode, FNET_Context) override;
-    void Encode(FNET_Packet *packet, uint32_t chid, FNET_DataBuffer *dst) override;
+    virtual bool GetPacketInfo(FNET_DataBuffer *src, uint32_t *plen, uint32_t *pcode, uint32_t *chid, bool *) override;
+    virtual FNET_Packet *Decode(FNET_DataBuffer *src, uint32_t plen, uint32_t pcode, FNET_Context) override;
+    virtual void Encode(FNET_Packet *packet, uint32_t chid, FNET_DataBuffer *dst) override;
     // ---------------------------------------------
-    bool InitAdminChannel(FNET_Channel *channel) override;
-    bool InitChannel(FNET_Channel *, uint32_t) override;
+    virtual bool InitAdminChannel(FNET_Channel *channel) override;
+    virtual bool InitChannel(FNET_Channel *, uint32_t) override;
     // ---------------------------------------------
-    int Main() override;
+    virtual int Main() override;
 };
 
 

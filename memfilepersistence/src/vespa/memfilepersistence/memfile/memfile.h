@@ -27,12 +27,12 @@
 
 #pragma once
 
-#include "memslot.h"
-#include "slotiterator.h"
-#include "memfileiointerface.h"
 #include <vespa/memfilepersistence/common/filespecification.h>
 #include <vespa/memfilepersistence/common/types.h>
+#include <vespa/memfilepersistence/memfile/memslot.h>
+#include <vespa/memfilepersistence/memfile/slotiterator.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/memfilepersistence/memfile/memfileiointerface.h>
 
 namespace storage {
 namespace memfile {

@@ -1,14 +1,19 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+
 #pragma once
 
-#include "request.h"
-#include <vbench/core/provider.h>
-#include <vbench/core/handler.h>
-#include <vbench/http/http_connection_pool.h>
+#include <memory>
+
 #include <vespa/vespalib/util/runnable.h>
 #include <vespa/vespalib/util/thread.h>
 #include <vespa/vespalib/util/joinable.h>
+
+#include <vbench/core/provider.h>
+#include <vbench/core/handler.h>
+#include <vbench/http/http_connection_pool.h>
+
+#include "request.h"
 
 namespace vbench {
 
@@ -28,12 +33,13 @@ private:
     HttpConnectionPool &_pool;
     Timer              &_timer;
 
-    void run() override;
+    virtual void run() override;
 public:
     typedef std::unique_ptr<Worker> UP;
     Worker(Provider<Request> &provider, Handler<Request> &next,
            HttpConnectionPool &pool, Timer &timer);
-    void join() override { _thread.join(); }
+    virtual void join() override { _thread.join(); }
 };
 
 } // namespace vbench
+

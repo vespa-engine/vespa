@@ -1,9 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
+#include <vespa/fastos/fastos.h>
 #include <vbench/http/http_result_handler.h>
 #include <vbench/http/server_spec.h>
 #include <vbench/http/http_client.h>
-#include <vespa/fastos/app.h>
 
 using namespace vbench;
 
@@ -14,14 +13,14 @@ public:
 };
 
 struct MyHttpHandler : public HttpResultHandler {
-    void handleHeader(const string &name, const string &value) override {
+    virtual void handleHeader(const string &name, const string &value) override {
         fprintf(stderr, "got header: '%s': '%s'\n", name.c_str(), value.c_str());
     }
-    void handleContent(const Memory &data) override {
+    virtual void handleContent(const Memory &data) override {
         fprintf(stderr, "got data: %zu bytes\n", data.size);
         fwrite(data.data, 1, data.size, stdout);
     }
-    void handleFailure(const string &reason) override {
+    virtual void handleFailure(const string &reason) override {
         fprintf(stderr, "got FAILURE: '%s'\n", reason.c_str());
     }
 };
