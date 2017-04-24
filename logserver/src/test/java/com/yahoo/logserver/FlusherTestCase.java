@@ -14,7 +14,7 @@ public class FlusherTestCase {
     public void testFlusher() throws InterruptedException {
         Flusher flusher = new Flusher();
         LogDispatcherTestCase.MockHandler handler = new LogDispatcherTestCase.MockHandler();
-        flusher.register(handler);
+        Flusher.register(handler);
         flusher.start();
         Thread.sleep(5000);
         flusher.interrupt();
