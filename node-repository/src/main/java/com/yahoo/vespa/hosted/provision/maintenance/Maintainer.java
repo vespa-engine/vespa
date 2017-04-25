@@ -22,12 +22,14 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
 
     private final NodeRepository nodeRepository;
     private final Duration interval;
+    private final JobControl jobControl;
 
     private final ScheduledExecutorService service;
 
-    public Maintainer(NodeRepository nodeRepository, Duration interval) {
+    public Maintainer(NodeRepository nodeRepository, Duration interval, JobControl jobControl) {
         this.nodeRepository = nodeRepository;
         this.interval = interval;
+        this.jobControl = jobControl;
 
         this.service = new ScheduledThreadPoolExecutor(1);
         this.service.scheduleAtFixedRate(this, interval.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS);
@@ -46,7 +48,8 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     @Override
     public void run() {
         try {
-            maintain();
+            if (jobControl.isActive(this.getClass().getSimpleName()))
+                maintain();
         }
         catch (RuntimeException e) {
             log.log(Level.WARNING, this + " failed. Will retry in " + interval.toMinutes() + " minutes", e);

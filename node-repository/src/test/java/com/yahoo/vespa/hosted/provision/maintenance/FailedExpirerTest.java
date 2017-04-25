@@ -136,7 +136,7 @@ public class FailedExpirerTest {
 
         // Failure times out
         clock.advance(Duration.ofDays(5));
-        new FailedExpirer(nodeRepository, new Zone(system, environment, RegionName.from("us-west-1")), clock, Duration.ofDays(4)).run();
+        new FailedExpirer(nodeRepository, new Zone(system, environment, RegionName.from("us-west-1")), clock, Duration.ofDays(4), new JobControl()).run();
 
         return nodeRepository;
     }

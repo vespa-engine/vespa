@@ -9,6 +9,7 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.vespa.hosted.provision.maintenance.JobControl;
 import com.yahoo.vespa.hosted.provision.maintenance.MetricsReporter;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
@@ -51,7 +52,7 @@ public class MetricsReporterTest {
         expectedMetrics.put("hostedVespa.failedHosts", 0);
 
         TestMetric metric = new TestMetric();
-        MetricsReporter metricsReporter = new MetricsReporter(nodeRepository, metric, Duration.ofMinutes(1));
+        MetricsReporter metricsReporter = new MetricsReporter(nodeRepository, metric, Duration.ofMinutes(1), new JobControl());
         metricsReporter.maintain();
 
         assertEquals(expectedMetrics, metric.values);

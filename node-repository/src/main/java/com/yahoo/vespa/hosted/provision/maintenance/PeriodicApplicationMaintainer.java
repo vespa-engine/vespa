@@ -28,8 +28,9 @@ import java.util.stream.Collectors;
  */
 public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
 
-    public PeriodicApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval) {
-        super(deployer, nodeRepository, interval);
+    public PeriodicApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, 
+                                         Duration interval, JobControl jobControl) {
+        super(deployer, nodeRepository, interval, jobControl);
     }
 
     protected void throttle(int applicationCount) {

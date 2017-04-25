@@ -69,7 +69,7 @@ public class ListMap<K, V> {
 
     /**
      * Returns the List containing the elements with this key, or an empty list
-     * if there are no elements. The list returned is unmodifiable.
+     * if there are no elements for this key. The list returned is unmodifiable.
      */
     public List<V> get(K key) {
         List<V> list = map.get(key);

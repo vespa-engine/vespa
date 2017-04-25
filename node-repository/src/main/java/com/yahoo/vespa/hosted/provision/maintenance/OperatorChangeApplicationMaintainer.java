@@ -40,8 +40,8 @@ public class OperatorChangeApplicationMaintainer extends ApplicationMaintainer {
     private Instant previousRun;
     
     public OperatorChangeApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Clock clock,
-                                               Duration interval) {
-        super(deployer, nodeRepository, interval);
+                                               Duration interval, JobControl jobControl) {
+        super(deployer, nodeRepository, interval, jobControl);
         this.clock = clock;
         previousRun = clock.instant(); // Changes before this will be caught by the first PeriodicApplicationMaintainer run
     }

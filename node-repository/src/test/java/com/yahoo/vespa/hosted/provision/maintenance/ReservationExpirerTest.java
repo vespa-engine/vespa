@@ -59,7 +59,7 @@ public class ReservationExpirerTest {
 
         // Reservation times out
         clock.advance(Duration.ofMinutes(14)); // Reserved but not used time out
-        new ReservationExpirer(nodeRepository, clock, Duration.ofMinutes(10)).run();
+        new ReservationExpirer(nodeRepository, clock, Duration.ofMinutes(10), new JobControl()).run();
 
         // Assert nothing is reserved
         assertEquals(0, nodeRepository.getNodes(NodeType.tenant, Node.State.reserved).size());

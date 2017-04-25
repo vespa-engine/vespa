@@ -26,8 +26,8 @@ public abstract class ApplicationMaintainer extends Maintainer {
 
     private final Executor deploymentExecutor = Executors.newCachedThreadPool();
 
-    protected ApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval) {
-        super(nodeRepository, interval);
+    protected ApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval, JobControl jobControl) {
+        super(nodeRepository, interval, jobControl);
         this.deployer = deployer;
     }
 

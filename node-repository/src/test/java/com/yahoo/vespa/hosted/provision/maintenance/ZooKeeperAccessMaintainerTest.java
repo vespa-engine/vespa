@@ -25,7 +25,7 @@ public class ZooKeeperAccessMaintainerTest {
         NodeRepositoryTester tester = new NodeRepositoryTester();
         tester.curator().setConnectionSpec("server1:1234,server2:5678");
         ZooKeeperAccessMaintainer maintainer = new ZooKeeperAccessMaintainer(tester.nodeRepository(), 
-                                                                             tester.curator(), Duration.ofHours(1));
+                                                                             tester.curator(), Duration.ofHours(1), new JobControl());
         assertTrue(ZooKeeperServer.getAllowedClientHostnames().isEmpty());
         maintainer.maintain();
         assertTrue("We don't restrict to only config servers", ZooKeeperServer.getAllowedClientHostnames().isEmpty());

@@ -24,8 +24,9 @@ public class ZooKeeperAccessMaintainer extends Maintainer {
 
     private final Curator curator;
     
-    public ZooKeeperAccessMaintainer(NodeRepository nodeRepository, Curator curator, Duration maintenanceInterval) {
-        super(nodeRepository, maintenanceInterval);
+    public ZooKeeperAccessMaintainer(NodeRepository nodeRepository, Curator curator, Duration maintenanceInterval, 
+                                     JobControl jobControl) {
+        super(nodeRepository, maintenanceInterval, jobControl);
         this.curator = curator;
     }
 

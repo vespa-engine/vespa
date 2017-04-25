@@ -31,8 +31,9 @@ public class RetiredExpirer extends Expirer {
     private final NodeRepository nodeRepository;
     private final Deployer deployer;
 
-    public RetiredExpirer(NodeRepository nodeRepository, Deployer deployer, Clock clock, Duration retiredDuration) {
-        super(Node.State.active, History.Event.Type.retired, nodeRepository, clock, retiredDuration);
+    public RetiredExpirer(NodeRepository nodeRepository, Deployer deployer, Clock clock, 
+                          Duration retiredDuration, JobControl jobControl) {
+        super(Node.State.active, History.Event.Type.retired, nodeRepository, clock, retiredDuration, jobControl);
         this.nodeRepository = nodeRepository;
         this.deployer = deployer;
     }

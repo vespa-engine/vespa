@@ -25,7 +25,7 @@ public class NodeRebooterTest {
         // will be performed.
         tester.clock.advance(rebootInterval);
         
-        NodeRebooter rebooter = new NodeRebooter(tester.nodeRepository, tester.clock, rebootInterval);
+        NodeRebooter rebooter = new NodeRebooter(tester.nodeRepository, tester.clock, rebootInterval, new JobControl());
 
         maintenanceIntervals(rebooter, tester, 1);
         assertEquals("All tenant nodes have reboot scheduled",
