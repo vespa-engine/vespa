@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "types.h"
+#include <persistence/spi/types.h>
 
 namespace storage {
 namespace spi {
@@ -29,3 +29,4 @@ class DocumentSelection
 
 }
 }
+
