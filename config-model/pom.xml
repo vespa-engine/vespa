@@ -327,7 +327,6 @@
             <arg>-Xlint:all</arg>
             <arg>-Xlint:-rawtypes</arg>
             <arg>-Xlint:-unchecked</arg>
-            <arg>-Xlint:-deprecation</arg>
             <arg>-Xlint:-serial</arg>
             <arg>-Xlint:-cast</arg>
             <arg>-Xlint:-overloads</arg>
