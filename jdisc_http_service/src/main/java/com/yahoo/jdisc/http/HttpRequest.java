@@ -9,12 +9,14 @@ import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpRequest;
 import com.yahoo.jdisc.service.CurrentContainer;
-import org.jboss.netty.handler.codec.http.QueryStringDecoder;
+import org.eclipse.jetty.http.HttpURI;
+import org.eclipse.jetty.util.MultiMap;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -84,7 +86,7 @@ public class HttpRequest extends Request implements ServletOrJdiscHttpRequest {
             this.method = method;
             this.version = version;
             this.remoteAddress = remoteAddress;
-            this.parameters.putAll(new QueryStringDecoder(uri.toString(), true).getParameters());
+            this.parameters.putAll(getUriQueryParameters(uri));
             if (connectedAtMillis != null) {
                 this.connectedAt = connectedAtMillis;
             } else {
@@ -102,12 +104,24 @@ public class HttpRequest extends Request implements ServletOrJdiscHttpRequest {
             this.method = method;
             this.version = version;
             this.remoteAddress = null;
-            this.parameters.putAll(new QueryStringDecoder(uri.toString(), true).getParameters());
+            this.parameters.putAll(getUriQueryParameters(uri));
             this.connectedAt = creationTime(TimeUnit.MILLISECONDS);
         } catch (RuntimeException e) {
             release();
             throw e;
         }
+    }
+
+    private static Map<String, List<String>> getUriQueryParameters(URI uri) {
+        MultiMap<String> queryParameters = new MultiMap<>();
+        new HttpURI(uri).decodeQueryTo(queryParameters);
+
+        // Do a deep copy so we do not leak Jetty classes outside
+        Map<String, List<String>> deepCopiedQueryParameters = new HashMap<>();
+        for (Map.Entry<String, List<String>> entry : queryParameters.entrySet()) {
+            deepCopiedQueryParameters.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+        }
+        return deepCopiedQueryParameters;
     }
 
     public Method getMethod() {
