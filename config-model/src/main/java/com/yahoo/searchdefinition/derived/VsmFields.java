@@ -132,6 +132,7 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
                 this.searchMethod=searchMethod;
             }
 
+            @Override
             public int hashCode() {
                 return name.hashCode();
             }
@@ -141,6 +142,7 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
 
             public String getSearchMethod() { return searchMethod; }
 
+            @Override
             public boolean equals(Object other) {
                 if ( ! (other instanceof Type)) return false;
                 return this.name.equals(((Type)other).name);
@@ -225,6 +227,7 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
             return fB;
         }
 
+        @Override
         public boolean equals(Object o) {
             if (o.getClass().equals(getClass())) {
                 StreamingField sf = (StreamingField)o;
@@ -233,6 +236,10 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
                         type.equals(sf.type);
             }
             return false;
+        }
+
+        @Override public int hashCode() {
+            return java.util.Objects.hash(name, matching, type);
         }
 
     }

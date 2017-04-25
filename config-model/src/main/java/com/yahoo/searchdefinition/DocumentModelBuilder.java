@@ -201,6 +201,8 @@ public class DocumentModelBuilder {
             resolveTemporariesRecurse(type, dtc, docs);
         }
     }
+
+    @SuppressWarnings("deprecation")
     private static DataType resolveTemporariesRecurse(DataType type, DataTypeCollection repo,
                                                       Collection<NewDocumentType> docs) {
         if (type instanceof TemporaryStructuredDataType) {
@@ -218,6 +220,7 @@ public class DocumentModelBuilder {
             StructDataType dt = (StructDataType) type;
             for (com.yahoo.document.Field field : dt.getFields()) {
                 if (field.getDataType() != type) {
+                    // XXX deprecated:
                     field.setDataType(resolveTemporariesRecurse(field.getDataType(), repo, docs));
                 }
             }
@@ -247,12 +250,13 @@ public class DocumentModelBuilder {
         return null;
     }
 
+    @SuppressWarnings("deprecation")
     private static void specialHandleAnnotationReference(NewDocumentType docType, Field field) {
         DataType fieldType = specialHandleAnnotationReferenceRecurse(docType, field.getName(), field.getDataType());
         if (fieldType == null) {
             return;
         }
-        field.setDataType(fieldType);
+        field.setDataType(fieldType); // XXX deprecated
     }
 
     private static DataType specialHandleAnnotationReferenceRecurse(NewDocumentType docType, String fieldName,

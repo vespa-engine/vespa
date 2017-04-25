@@ -52,6 +52,10 @@ public class Ranking implements Cloneable, Serializable {
         return true;
     }
 
+    public @Override int hashCode() {
+        return java.util.Objects.hash(filter, literal, normal);
+    }
+
     public @Override String toString() {
         return "rank settings [filter: " + filter + ", literal: " + literal + ", normal: "+normal+"]";
     }

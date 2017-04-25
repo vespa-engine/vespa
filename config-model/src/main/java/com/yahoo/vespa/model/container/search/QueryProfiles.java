@@ -252,15 +252,10 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
     }
 
     private static class MapEntryKeyComparator implements Comparator<Map.Entry<String,Object>> {
-
+        @Override
         public int compare(Map.Entry<String,Object> e1,Map.Entry<String,Object> e2) {
             return e1.getKey().compareTo(e2.getKey());
         }
-
-        public boolean equals(Object other) {
-            return other instanceof MapEntryKeyComparator;
-        }
-
     }
 
     /**

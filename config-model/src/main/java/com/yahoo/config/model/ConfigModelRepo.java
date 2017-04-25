@@ -103,6 +103,7 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
      * @param root The Root to set as parent for all plugins
      * @param servicesRoot XML root node of the services file
      */
+    @SuppressWarnings("deprecation")
     private void readConfigModels(ApplicationConfigProducerRoot root, Element servicesRoot, DeployState deployState, ConfigModelRegistry configModelRegistry) throws IOException, SAXException {
         final Map<ConfigModelBuilder, List<Element>> model2Element = new LinkedHashMap<>();
         ModelGraphBuilder graphBuilder = new ModelGraphBuilder();
@@ -141,7 +142,7 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
         for (ModelNode node : graphBuilder.build().topologicalSort())
             buildModels(node, getApplicationType(servicesRoot), deployState, root, model2Element.get(node.builder));
         for (ConfigModel model : configModels)
-            model.initialize(ConfigModelRepo.this);
+            model.initialize(ConfigModelRepo.this); // XXX deprecated
     }
 
     private ApplicationType getApplicationType(Element servicesRoot) {
