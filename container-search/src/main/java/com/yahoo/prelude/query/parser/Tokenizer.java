@@ -166,6 +166,7 @@ public final class Tokenizer {
         return tokens;
     }
 
+    @SuppressWarnings("fallthrough")
     private boolean acceptApostropheAsWordCharacter(Index currentIndex) {
         if (!(currentIndex.isUriIndex() || currentIndex.isHostIndex())) {
             return true;
@@ -178,6 +179,7 @@ public final class Tokenizer {
                 if (i == indexLastExplicitlyChangedAt) {
                     return false;
                 }
+                // XXX was fallthrough intended here?
             case SPACE:
                 return true;
             default:

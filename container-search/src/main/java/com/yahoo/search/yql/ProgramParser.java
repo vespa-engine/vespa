@@ -112,6 +112,7 @@ import java.util.Set;
 /**
  * Translate the ANTLR grammar into the logical representation.
  */
+@SuppressWarnings("fallthrough")
 final class ProgramParser {
 
     public yqlplusParser prepareParser(String programName, InputStream input) throws IOException {
@@ -713,7 +714,7 @@ final class ProgramParser {
        switch (getParseTreeIndex(dataSourceNode)) {
            case yqlplusParser.RULE_write_data_source:
            case yqlplusParser.RULE_call_source: {
-               List<String> names = readName((Namespaced_nameContext)dataSourceNode.getChild(Namespaced_nameContext.class, 0));
+               List<String> names = readName(dataSourceNode.getChild(Namespaced_nameContext.class, 0));
                alias = assignAlias(names.get(names.size() - 1), aliasContext, scope);
                List<OperatorNode<ExpressionOperator>> arguments = ImmutableList.of();
                ArgumentsContext argumentsContext = dataSourceNode.getRuleContext(ArgumentsContext.class,0);
@@ -874,6 +875,7 @@ final class ProgramParser {
             // DDL
             case yqlplusParser.RULE_ddl:
                 ruleContext = (ParserRuleContext)ruleContext.getChild(0);
+                // XXX was fallthrough intended here?
             case yqlplusParser.RULE_view: {
                 // view and projection expansion now has to be done by the
                 // execution engine
@@ -1122,6 +1124,8 @@ final class ProgramParser {
 			        return convertExpr(parseTree.getChild(1), scope);
 			}
 		}
+                // XXX was fallthrough intended here? probably not.
+
 		// TODO: Temporarily disable CAST - think through how types are named
 		// case yqlplusParser.CAST: {
 		//
