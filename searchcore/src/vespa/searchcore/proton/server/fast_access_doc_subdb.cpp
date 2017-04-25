@@ -144,6 +144,12 @@ FastAccessDocSubDB::getFlushTargetsInternal()
 }
 
 void
+FastAccessDocSubDB::wipeHistory(SerialNum wipeSerial)
+{
+    getAttributeManager()->wipeHistory(wipeSerial);
+}
+
+void
 FastAccessDocSubDB::reconfigureAttributeMetrics(const proton::IAttributeManager &newMgr,
                                                 const proton::IAttributeManager &oldMgr)
 {

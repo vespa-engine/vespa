@@ -157,13 +157,6 @@ public:
      * @param schema The new schema to start using.
      **/
     virtual void setSchema(const Schema &schema, SerialNum serialNum) = 0;
-
-    /**
-     * Wipes remains of removed fields from this index manager.
-     *
-     * @param wipeSerial The serial number of this wipe operation.
-     **/
-    virtual void wipeHistory(SerialNum wipeSerial);
 };
 
 } // namespace searchcorespi

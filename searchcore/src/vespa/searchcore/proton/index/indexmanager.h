@@ -114,10 +114,6 @@ public:
     virtual void setSchema(const Schema &schema, SerialNum serialNum) override {
         _maintainer.setSchema(schema, serialNum);
     }
-
-    virtual void wipeHistory(SerialNum wipeSerial) override {
-        _maintainer.wipeHistory(wipeSerial);
-    }
 };
 
 } // namespace proton

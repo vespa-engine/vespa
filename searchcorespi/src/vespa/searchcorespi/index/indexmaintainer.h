@@ -383,7 +383,6 @@ public:
 
     IFlushTarget::List getFlushTargets() override;
     void setSchema(const Schema & schema, SerialNum serialNum) override ;
-    void wipeHistory(SerialNum wipeSerial) override;
 };
 
 } // namespace index
