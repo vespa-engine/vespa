@@ -1,6 +1,9 @@
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(documentapi_documentapimessages OBJECT
     SOURCES
+    batchdocumentupdatemessage.cpp
+    batchdocumentupdatereply.cpp
+    documentignoredreply.cpp
     documentmessage.cpp
     documentreply.cpp
     documentstate.cpp
@@ -24,12 +27,10 @@ vespa_add_library(documentapi_documentapimessages OBJECT
     searchresultmessage.cpp
     statbucketmessage.cpp
     statbucketreply.cpp
+    testandsetmessage.cpp
     updatedocumentmessage.cpp
+    updatedocumentreply.cpp
     visitor.cpp
     wrongdistributionreply.cpp
-    updatedocumentreply.cpp
-    batchdocumentupdatemessage.cpp
-    batchdocumentupdatereply.cpp
-    documentignoredreply.cpp
     DEPENDS
 )

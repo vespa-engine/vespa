@@ -2,9 +2,8 @@
 // @author Vegard Sjonfjell
 #pragma once
 
-#include <vespa/documentapi/messagebus/messages/documentmessage.h>
-#include <vespa/documentapi/messagebus/messages/testandsetcondition.h>
-#include <string>
+#include "documentmessage.h"
+#include "testandsetcondition.h"
 
 namespace documentapi {
 
@@ -13,6 +12,7 @@ private:
     TestAndSetCondition _condition;
 
 public:
+    ~TestAndSetMessage();
     void setCondition(const TestAndSetCondition & condition) { _condition = condition; }
     const TestAndSetCondition & getCondition() const { return _condition; }
 };

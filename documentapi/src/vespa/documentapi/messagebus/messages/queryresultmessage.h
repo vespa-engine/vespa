@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "visitor.h"
 #include <vespa/vdslib/container/searchresult.h>
 #include <vespa/vdslib/container/documentsummary.h>
-#include <vespa/documentapi/messagebus/messages/visitor.h>
 
 namespace documentapi {
 
@@ -12,8 +12,7 @@ private:
     vdslib::SearchResult    _searchResult;
     vdslib::DocumentSummary _summary;
 protected:
-    // Implements VisitorMessage.
-    DocumentReply::UP doCreateReply() const;
+    DocumentReply::UP doCreateReply() const override;
 
 public:
     /**
@@ -34,11 +33,8 @@ public:
      */
     QueryResultMessage(const vdslib::SearchResult & result, const vdslib::DocumentSummary & summary);
 
-    // Overrides VisitorMessage.
-    uint32_t getApproxSize() const;
-
-    // Implements VisitorMessage.
-    uint32_t getType() const;
+    uint32_t getApproxSize() const override;
+    uint32_t getType() const override;
 
     // Accessors
     const vdslib::SearchResult & getSearchResult() const { return _searchResult; }
@@ -46,8 +42,7 @@ public:
     const vdslib::DocumentSummary & getDocumentSummary() const { return _summary; }
     vdslib::DocumentSummary & getDocumentSummary() { return _summary; }
 
-    string toString() const { return "queryresultmessage"; }
+    string toString() const override { return "queryresultmessage"; }
 };
 
 }
-
