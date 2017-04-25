@@ -102,27 +102,27 @@ public class RankSetupValidator extends Validator {
             RankProfilesConfig.Builder rpcb = new RankProfilesConfig.Builder();
             RankProfilesConfig.Producer.class.cast(producer).getConfig(rpcb);
             RankProfilesConfig rpc = new RankProfilesConfig(rpcb);
-            writeConfig(dir, rpc.getDefName() + ".cfg", rpc);
+            writeConfig(dir, RankProfilesConfig.getDefName() + ".cfg", rpc);
 
             IndexschemaConfig.Builder iscb = new IndexschemaConfig.Builder();
             IndexschemaConfig.Producer.class.cast(producer).getConfig(iscb);
             IndexschemaConfig isc = new IndexschemaConfig(iscb);
-            writeConfig(dir, isc.getDefName() + ".cfg", isc);
+            writeConfig(dir, IndexschemaConfig.getDefName() + ".cfg", isc);
 
             AttributesConfig.Builder acb = new AttributesConfig.Builder();
             AttributesConfig.Producer.class.cast(producer).getConfig(acb);
             AttributesConfig ac = new AttributesConfig(acb);
-            writeConfig(dir, ac.getDefName() + ".cfg", ac);
+            writeConfig(dir, AttributesConfig.getDefName() + ".cfg", ac);
 
             RankingConstantsConfig.Builder rccb = new RankingConstantsConfig.Builder();
             RankingConstantsConfig.Producer.class.cast(producer).getConfig(rccb);
             RankingConstantsConfig rcc = new RankingConstantsConfig(rccb);
-            writeConfig(dir, rcc.getDefName() + ".cfg", rcc);
+            writeConfig(dir, RankingConstantsConfig.getDefName() + ".cfg", rcc);
 
             ImportedFieldsConfig.Builder ifcb = new ImportedFieldsConfig.Builder();
             ImportedFieldsConfig.Producer.class.cast(producer).getConfig(ifcb);
             ImportedFieldsConfig ifc = new ImportedFieldsConfig(ifcb);
-            writeConfig(dir, ifc.getDefName() + ".cfg", ifc);
+            writeConfig(dir, ImportedFieldsConfig.getDefName() + ".cfg", ifc);
     }
 
     private static void writeConfig(String dir, String configName, ConfigInstance config) throws IOException {
