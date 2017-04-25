@@ -52,9 +52,4 @@ public class NodeRebooter extends Maintainer {
             return random.nextDouble() < (double) interval().getSeconds() / (double)rebootInterval.getSeconds();
     }
 
-    @Override
-    public String toString() {
-        return "Node rebooter";
-    }
-
 }

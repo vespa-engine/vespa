@@ -33,6 +33,7 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
 
         this.service = new ScheduledThreadPoolExecutor(1);
         this.service.scheduleAtFixedRate(this, interval.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS);
+        jobControl.started(name());
     }
 
     /** Returns the node repository */
@@ -48,7 +49,7 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     @Override
     public void run() {
         try {
-            if (jobControl.isActive(this.getClass().getSimpleName()))
+            if (jobControl.isActive(name()))
                 maintain();
         }
         catch (RuntimeException e) {
@@ -61,11 +62,13 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
         this.service.shutdown();
     }
 
-    /** Returns a textual description of this job */
+    /** Returns the simple name of this job */
     @Override
-    public abstract String toString();
+    public final String toString() { return name(); }
 
     /** Called once each time this maintenance job should run */
     protected abstract void maintain();
+    
+    private String name() { return this.getClass().getSimpleName(); }
 
 }

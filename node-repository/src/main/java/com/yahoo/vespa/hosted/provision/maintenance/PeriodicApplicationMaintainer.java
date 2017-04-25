@@ -43,7 +43,4 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
         return nodeRepository().getNodes(Node.State.active);
     }
 
-    @Override
-    public String toString() { return "Periodic application redeployer"; }
-
 }

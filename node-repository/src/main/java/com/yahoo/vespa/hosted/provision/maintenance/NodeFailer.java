@@ -281,9 +281,6 @@ public class NodeFailer extends Maintainer {
         return throttle;
     }
 
-    @Override
-    public String toString() { return "Node failer"; }
-
     public enum ThrottlePolicy {
 
         hosted(Duration.ofDays(1), 0.01, 2),

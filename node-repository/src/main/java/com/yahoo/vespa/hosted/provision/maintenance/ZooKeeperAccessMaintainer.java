@@ -45,9 +45,4 @@ public class ZooKeeperAccessMaintainer extends Maintainer {
         ZooKeeperServer.setAllowedClientHostnames(hosts);
     }
 
-    @Override
-    public String toString() {
-        return "ZooKeeper access maintainer";
-    }
-
 }

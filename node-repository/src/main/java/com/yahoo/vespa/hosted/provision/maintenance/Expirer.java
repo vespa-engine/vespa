@@ -55,9 +55,6 @@ public abstract class Expirer extends Maintainer {
         expire(expired);
     }
 
-    @Override
-    public String toString() { return "Expiry from " + fromState; }
-
     /** Implement this callback to take action to expire these nodes */
     protected abstract void expire(List<Node> node);
 

@@ -15,6 +15,11 @@ public class JobControl {
     
     private Set<String> startedJobs = new ConcurrentSkipListSet<>();
     private Set<String> deactivatedJobs = new ConcurrentSkipListSet<>();
+    
+    /** Notifies this that a job was started */
+    public void started(String jobSimpleClassName) {
+        startedJobs.add(jobSimpleClassName);
+    }
 
     /**
      * Returns a snapshot of the set of jobs started on this system (whether deactivated or not).

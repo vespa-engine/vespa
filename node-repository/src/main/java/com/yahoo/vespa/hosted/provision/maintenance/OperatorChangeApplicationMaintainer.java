@@ -75,7 +75,4 @@ public class OperatorChangeApplicationMaintainer extends ApplicationMaintainer {
                  " as a manual change was made to its nodes");
     }
 
-    @Override
-    public String toString() { return "Operator change application redeployer"; }
-
 }

@@ -33,7 +33,4 @@ public class MetricsReporter extends Maintainer {
                        nodeRepository().getNodes(NodeType.tenant, state).size(), null);
     }
 
-    @Override
-    public String toString() { return "Metrics reporter"; }
-    
 }
