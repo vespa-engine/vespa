@@ -46,6 +46,12 @@ public class ScheduledEventQueue {
             return true;
         }
 
+        @Override
+        public int hashCode() {
+            return java.util.Objects.hash(sequenceId, timestamp, task);
+        }
+
+        @Override
         public int compareTo(Entry o) {
             if (timestamp < o.timestamp) return -1;
             if (timestamp > o.timestamp) return 1;

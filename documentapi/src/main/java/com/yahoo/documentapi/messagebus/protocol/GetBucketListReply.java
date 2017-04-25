@@ -53,6 +53,11 @@ public class GetBucketListReply extends DocumentReply {
         }
 
         @Override
+        public int hashCode() {
+            return java.util.Objects.hash(bucket, bucketInformation);
+        }
+
+        @Override
         public String toString() {
             return String.format("BucketInfo(%s: %s)", bucket, bucketInformation);
         }

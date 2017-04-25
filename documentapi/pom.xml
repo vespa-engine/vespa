@@ -80,9 +80,10 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-	  <compilerArgs>
-	    <arg>-Xlint:deprecation</arg>
-	    <arg>-Xlint:unchecked</arg>
+          <compilerArgs>
+            <arg>-Xlint:all</arg>
+            <arg>-Xlint:-serial</arg>
+            <arg>-Werror</arg>
           </compilerArgs>
         </configuration>
       </plugin>

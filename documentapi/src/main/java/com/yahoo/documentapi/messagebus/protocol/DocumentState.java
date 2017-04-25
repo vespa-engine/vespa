@@ -10,7 +10,7 @@ import com.yahoo.vespa.objects.Serializer;
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
 */
-public class DocumentState implements Comparable {
+public class DocumentState implements Comparable<DocumentState> {
     private DocumentId docId;
     private GlobalId gid;
     private long timestamp;
@@ -78,8 +78,8 @@ public class DocumentState implements Comparable {
         return size;
     }
 
-    public int compareTo(Object o) {
-        DocumentState state = (DocumentState) o;
+    @Override
+    public int compareTo(DocumentState state) {
         int comp = gid.compareTo(state.gid);
         if (comp == 0) {
             if (docId != null) {
