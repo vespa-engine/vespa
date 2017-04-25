@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/storage/distributor/operations/operation.h>
+#include <vespa/storage/distributor/operations/sequenced_operation.h>
 #include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/storage/distributor/persistencemessagetracker.h>
 #include <vespa/storage/distributor/operationtargetresolver.h>
@@ -20,12 +20,13 @@ namespace api {
 }
 namespace distributor {
 
-class PutOperation  : public Operation
+class PutOperation : public SequencedOperation
 {
 public:
     PutOperation(DistributorComponent& manager,
                  const std::shared_ptr<api::PutCommand> & msg,
-                 PersistenceOperationMetricSet& metric);
+                 PersistenceOperationMetricSet& metric,
+                 SequencingHandle sequencingHandle = SequencingHandle());
 
     void onStart(DistributorMessageSender& sender) override;
     const char* getName() const override { return "put"; };

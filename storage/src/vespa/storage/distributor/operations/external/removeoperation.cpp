@@ -13,9 +13,10 @@ using namespace storage::distributor;
 using namespace storage;
 
 RemoveOperation::RemoveOperation(DistributorComponent& manager,
-                               const std::shared_ptr<api::RemoveCommand> & msg,
-                               PersistenceOperationMetricSet& metric)
-    : Operation(),
+                                 const std::shared_ptr<api::RemoveCommand> & msg,
+                                 PersistenceOperationMetricSet& metric,
+                                 SequencingHandle sequencingHandle)
+    : SequencedOperation(std::move(sequencingHandle)),
       _trackerInstance(metric,
                std::shared_ptr<api::BucketInfoReply>(new api::RemoveReply(*msg)),
                manager, msg->getTimestamp()),

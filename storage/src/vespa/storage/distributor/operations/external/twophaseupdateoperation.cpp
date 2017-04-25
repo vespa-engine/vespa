@@ -19,10 +19,11 @@ namespace storage {
 namespace distributor {
 
 TwoPhaseUpdateOperation::TwoPhaseUpdateOperation(
-    DistributorComponent& manager,
-    const std::shared_ptr<api::UpdateCommand>& msg,
-    DistributorMetricSet& metrics)
-    : Operation(),
+        DistributorComponent& manager,
+        const std::shared_ptr<api::UpdateCommand>& msg,
+        DistributorMetricSet& metrics,
+        SequencingHandle sequencingHandle)
+    : SequencedOperation(std::move(sequencingHandle)),
     _updateMetric(metrics.updates[msg->getLoadType()]),
     _putMetric(metrics.update_puts[msg->getLoadType()]),
     _getMetric(metrics.update_gets[msg->getLoadType()]),

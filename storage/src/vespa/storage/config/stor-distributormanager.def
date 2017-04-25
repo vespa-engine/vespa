@@ -174,3 +174,9 @@ disable_bucket_activation bool default=false
 ## transfers.
 ## Zero means this mechanism is disabled.
 max_cluster_clock_skew_sec int default=1
+
+## If set, a distributor will only allow one active operation per document ID
+## for puts, updates and removes. This helps prevent issues caused by concurrent
+## modifications to documents when sent from multiple feed clients.
+sequence_mutating_operations bool default=true
+

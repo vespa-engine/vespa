@@ -1,4 +1,4 @@
-// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "externaloperationhandler.h"
 #include "distributor.h"
@@ -19,7 +19,6 @@
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/batch.h>
 #include <vespa/storageapi/message/stat.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.manager");
@@ -101,6 +100,27 @@ ExternalOperationHandler::checkTimestampMutationPreconditions(
     return true;
 }
 
+std::shared_ptr<api::StorageMessage>
+ExternalOperationHandler::makeConcurrentMutationRejectionReply(
+        api::StorageCommand& cmd,
+        const document::DocumentId& docId) const {
+    api::StorageReply::UP reply(cmd.makeReply());
+    reply->setResult(api::ReturnCode(
+            api::ReturnCode::BUSY, vespalib::make_string(
+                    "A mutating operation for document '%s' is already in progress",
+                    docId.toString().c_str())));
+    return std::shared_ptr<api::StorageMessage>(reply.release());
+}
+
+bool ExternalOperationHandler::allowMutation(const SequencingHandle& handle) const {
+    const auto& config(getDistributor().getConfig());
+    if (!config.getSequenceMutatingOperations()) {
+        // Sequencing explicitly disabled, so always allow.
+        return true;
+    }
+    return handle.valid();
+}
+
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, Put)
 {
     if (!checkTimestampMutationPreconditions(
@@ -114,9 +134,12 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Put)
         cmd->setTimestamp(getUniqueTimestamp());
     }
 
-    _op = Operation::SP(new PutOperation(*this,
-                                        cmd,
-                                        getMetrics().puts[cmd->getLoadType()]));
+    auto handle = _mutationSequencer.try_acquire(cmd->getDocumentId());
+    if (allowMutation(handle)) {
+        _op = std::make_shared<PutOperation>(*this, cmd, getMetrics().puts[cmd->getLoadType()], std::move(handle));
+    } else {
+        sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId()));
+    }
 
     return true;
 }
@@ -134,7 +157,13 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Update)
     if (cmd->getTimestamp() == 0) {
         cmd->setTimestamp(getUniqueTimestamp());
     }
-    _op = Operation::SP(new TwoPhaseUpdateOperation(*this, cmd, getMetrics()));
+    auto handle = _mutationSequencer.try_acquire(cmd->getDocumentId());
+    if (allowMutation(handle)) {
+        _op = std::make_shared<TwoPhaseUpdateOperation>(*this, cmd, getMetrics(), std::move(handle));
+    } else {
+        sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId()));
+    }
+
     return true;
 }
 
@@ -151,10 +180,17 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Remove)
     if (cmd->getTimestamp() == 0) {
         cmd->setTimestamp(getUniqueTimestamp());
     }
-    _op = Operation::SP(new RemoveOperation(
-                                *this,
-                                cmd,
-                                getMetrics().removes[cmd->getLoadType()]));
+    auto handle = _mutationSequencer.try_acquire(cmd->getDocumentId());
+    if (allowMutation(handle)) {
+        _op = std::make_shared<RemoveOperation>(
+                *this,
+                cmd,
+                getMetrics().removes[cmd->getLoadType()],
+                std::move(handle));
+    } else {
+        sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId()));
+    }
+
     return true;
 }
 

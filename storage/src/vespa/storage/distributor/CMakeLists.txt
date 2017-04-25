@@ -35,6 +35,7 @@ vespa_add_library(storage_distributor
     managed_bucket_space.cpp
     managed_bucket_space_component.cpp
     managed_bucket_space_repo.cpp
+    operation_sequencer.cpp
     $<TARGET_OBJECTS:storage_distributoroperation>
     $<TARGET_OBJECTS:storage_distributoroperationexternal>
     $<TARGET_OBJECTS:storage_distributoroperationidealstate>
