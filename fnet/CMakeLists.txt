@@ -17,7 +17,6 @@ vespa_define_module(
     src/tests/connection_spread
     src/tests/databuffer
     src/tests/examples
-    src/tests/fdselector
     src/tests/frt/method_pt
     src/tests/frt/parallel_rpc
     src/tests/frt/rpc

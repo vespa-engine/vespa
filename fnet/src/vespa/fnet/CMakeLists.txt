@@ -10,7 +10,6 @@ vespa_add_library(fnet
     controlpacket.cpp
     databuffer.cpp
     dummypacket.cpp
-    fdselector.cpp
     info.cpp
     iocomponent.cpp
     packet.cpp

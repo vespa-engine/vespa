@@ -1,8 +1,0 @@
-# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_add_executable(fnet_fdselector_test_app TEST
-    SOURCES
-    fdselector.cpp
-    DEPENDS
-    fnet
-)
-vespa_add_test(NAME fnet_fdselector_test_app COMMAND fnet_fdselector_test_app)
