@@ -41,7 +41,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final NodeRebooter nodeRebooter;
     private final MetricsReporter metricsReporter;
     
-    private final JobControl jobControl = new JobControl();
+    private final JobControl jobControl;
 
     @Inject
     public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, Curator curator,
@@ -54,6 +54,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor, 
                                      Zone zone, Clock clock, Orchestrator orchestrator, Metric metric) {
         DefaultTimes defaults = new DefaultTimes(zone.environment());
+        jobControl = new JobControl(nodeRepository.database());
         nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, durationFromEnv("fail_grace").orElse(defaults.failGrace), clock, orchestrator, throttlePolicyFromEnv("throttle_policy").orElse(defaults.throttlePolicy), jobControl);
         periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, nodeRepository, durationFromEnv("periodic_redeploy_interval").orElse(defaults.periodicRedeployInterval), jobControl);
         operatorChangeApplicationMaintainer = new OperatorChangeApplicationMaintainer(deployer, nodeRepository, clock, durationFromEnv("operator_change_redeploy_interval").orElse(defaults.operatorChangeRedeployInterval), jobControl);

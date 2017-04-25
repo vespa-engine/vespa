@@ -136,7 +136,7 @@ public class MultigroupProvisioningTest {
                              Collections.singletonMap(application1, 
                                                       new MockDeployer.ApplicationContext(application1, cluster(), 
                                                                                           Capacity.fromNodeCount(8, Optional.of("large")), 1)));
-        new RetiredExpirer(tester.nodeRepository(), deployer, tester.clock(), Duration.ofHours(12), new JobControl()).run();
+        new RetiredExpirer(tester.nodeRepository(), deployer, tester.clock(), Duration.ofHours(12), new JobControl(tester.nodeRepository().database())).run();
 
         assertEquals(8, tester.getNodes(application1, Node.State.inactive).flavor("small").size());
         deploy(application1, 8, 8, "large", tester);

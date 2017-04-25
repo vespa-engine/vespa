@@ -209,7 +209,7 @@ public class PeriodicApplicationMaintainerTest {
         
         TestablePeriodicApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval,
                                               Optional<List<Node>> overriddenNodesNeedingMaintenance) {
-            super(deployer, nodeRepository, interval, new JobControl());
+            super(deployer, nodeRepository, interval, new JobControl(nodeRepository.database()));
             this.overriddenNodesNeedingMaintenance = overriddenNodesNeedingMaintenance;
         }
 

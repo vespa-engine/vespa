@@ -67,7 +67,7 @@ import java.util.stream.Collectors;
 // Nodes might have an application assigned in dirty.
 public class NodeRepository extends AbstractComponent {
 
-    private final CuratorDatabaseClient zkClient;
+    private final CuratorDatabaseClient db;
     private final Curator curator;
     private final Clock clock;
     private final NodeFlavors flavors;
@@ -87,7 +87,7 @@ public class NodeRepository extends AbstractComponent {
      * which will be used for time-sensitive decisions.
      */
     public NodeRepository(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, NameResolver nameResolver) {
-        this.zkClient = new CuratorDatabaseClient(flavors, curator, clock, zone);
+        this.db = new CuratorDatabaseClient(flavors, curator, clock, zone);
         this.curator = curator;
         this.clock = clock;
         this.flavors = flavors;
@@ -95,9 +95,12 @@ public class NodeRepository extends AbstractComponent {
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
         for (Node.State state : Node.State.values())
-            zkClient.writeTo(state, zkClient.getNodes(state), Agent.system, Optional.empty());
+            db.writeTo(state, db.getNodes(state), Agent.system, Optional.empty());
     }
 
+    /** Returns the curator database client used by this */
+    public CuratorDatabaseClient database() { return db; }
+    
     // ---------------- Query API ----------------------------------------------------------------
 
     /**
@@ -108,7 +111,7 @@ public class NodeRepository extends AbstractComponent {
      * @return the node, or empty if it was not found in any of the given states
      */
     public Optional<Node> getNode(String hostname, Node.State ... inState) {
-        return zkClient.getNode(hostname, inState);
+        return db.getNode(hostname, inState);
     }
 
     /**
@@ -118,7 +121,7 @@ public class NodeRepository extends AbstractComponent {
      * @return the node, or empty if it was not found in any of the given states
      */
     public List<Node> getNodes(Node.State ... inState) {
-        return zkClient.getNodes(inState).stream().collect(Collectors.toList());
+        return db.getNodes(inState).stream().collect(Collectors.toList());
     }
     /**
      * Finds and returns the nodes of the given type in any of the given states.
@@ -128,7 +131,7 @@ public class NodeRepository extends AbstractComponent {
      * @return the node, or empty if it was not found in any of the given states
      */
     public List<Node> getNodes(NodeType type, Node.State ... inState) {
-        return zkClient.getNodes(inState).stream().filter(node -> node.type().equals(type)).collect(Collectors.toList());
+        return db.getNodes(inState).stream().filter(node -> node.type().equals(type)).collect(Collectors.toList());
     }
 
     /**
@@ -138,16 +141,16 @@ public class NodeRepository extends AbstractComponent {
      * @return List of child nodes
      */
     public List<Node> getChildNodes(String hostname) {
-        return zkClient.getNodes().stream()
+        return db.getNodes().stream()
                 .filter(node -> node.parentHostname()
                         .map(parentHostname -> parentHostname.equals(hostname))
                         .orElse(false))
                 .collect(Collectors.toList());
     }
 
-    public List<Node> getNodes(ApplicationId id, Node.State ... inState) { return zkClient.getNodes(id, inState); }
-    public List<Node> getInactive() { return zkClient.getNodes(Node.State.inactive); }
-    public List<Node> getFailed() { return zkClient.getNodes(Node.State.failed); }
+    public List<Node> getNodes(ApplicationId id, Node.State ... inState) { return db.getNodes(id, inState); }
+    public List<Node> getInactive() { return db.getNodes(Node.State.inactive); }
+    public List<Node> getFailed() { return db.getNodes(Node.State.failed); }
 
     /**
      * Returns a set of nodes that should be trusted by the given node.
@@ -227,7 +230,7 @@ public class NodeRepository extends AbstractComponent {
 
     /** Get default flavor override for an application, if present. */
     public Optional<String> getDefaultFlavorOverride(ApplicationId applicationId) {
-        return zkClient.getDefaultFlavorForApplication(applicationId);
+        return db.getDefaultFlavorForApplication(applicationId);
     }
 
     // ----------------- Node lifecycle -----------------------------------------------------------
@@ -254,7 +257,7 @@ public class NodeRepository extends AbstractComponent {
                 throw new IllegalArgumentException("Cannot add " + node.hostname() + ": A node with this name already exists");
         }
         try (Mutex lock = lockUnallocated()) {
-            return zkClient.addNodes(nodes);
+            return db.addNodes(nodes);
         }
     }
 
@@ -264,7 +267,7 @@ public class NodeRepository extends AbstractComponent {
             if (node.state() != Node.State.dirty)
                 throw new IllegalArgumentException("Can not set " + node + " ready. It is not dirty.");
         try (Mutex lock = lockUnallocated()) {
-            return zkClient.writeTo(Node.State.ready, nodes, Agent.system, Optional.empty());
+            return db.writeTo(Node.State.ready, nodes, Agent.system, Optional.empty());
         }
     }
 
@@ -278,12 +281,12 @@ public class NodeRepository extends AbstractComponent {
 
     /** Reserve nodes. This method does <b>not</b> lock the node repository */
     public List<Node> reserve(List<Node> nodes) { 
-        return zkClient.writeTo(Node.State.reserved, nodes, Agent.application, Optional.empty()); 
+        return db.writeTo(Node.State.reserved, nodes, Agent.application, Optional.empty()); 
     }
 
     /** Activate nodes. This method does <b>not</b> lock the node repository */
     public List<Node> activate(List<Node> nodes, NestedTransaction transaction) {
-        return zkClient.writeTo(Node.State.active, nodes, Agent.application, Optional.empty(), transaction);
+        return db.writeTo(Node.State.active, nodes, Agent.application, Optional.empty(), transaction);
     }
 
     /**
@@ -303,9 +306,9 @@ public class NodeRepository extends AbstractComponent {
 
     public void deactivate(ApplicationId application, NestedTransaction transaction) {
         try (Mutex lock = lock(application)) {
-            zkClient.writeTo(Node.State.inactive,
-                             zkClient.getNodes(application, Node.State.reserved, Node.State.active),
-                             Agent.application, Optional.empty(), transaction
+            db.writeTo(Node.State.inactive,
+                       db.getNodes(application, Node.State.reserved, Node.State.active),
+                       Agent.application, Optional.empty(), transaction
             );
         }
     }
@@ -316,7 +319,7 @@ public class NodeRepository extends AbstractComponent {
      * This method does <b>not</b> lock
      */
     public List<Node> deactivate(List<Node> nodes, NestedTransaction transaction) {
-        return zkClient.writeTo(Node.State.inactive, nodes, Agent.application, Optional.empty(), transaction);
+        return db.writeTo(Node.State.inactive, nodes, Agent.application, Optional.empty(), transaction);
     }
 
     /** Move nodes to the dirty state */
@@ -326,7 +329,7 @@ public class NodeRepository extends AbstractComponent {
 
     /** Move a single node to the dirty state */
     public Node setDirty(Node node) {
-        return zkClient.writeTo(Node.State.dirty, node, Agent.system, Optional.empty());
+        return db.writeTo(Node.State.dirty, node, Agent.system, Optional.empty());
     }
 
     /**
@@ -420,7 +423,7 @@ public class NodeRepository extends AbstractComponent {
                                                            "It has the same cluster and index as an existing node");
                 }
             }
-            return zkClient.writeTo(toState, node, agent, reason);
+            return db.writeTo(toState, node, agent, reason);
         }
     }
 
@@ -434,7 +437,7 @@ public class NodeRepository extends AbstractComponent {
         if ( ! nodeToRemove.isPresent()) return false;
 
         try (Mutex lock = lock(nodeToRemove.get())) {
-            return zkClient.removeNode(nodeToRemove.get().state(), hostname);
+            return db.removeNode(nodeToRemove.get().state(), hostname);
         }
     }
 
@@ -460,8 +463,8 @@ public class NodeRepository extends AbstractComponent {
      *
      * @return the written node for convenience
      */
-    public Node write(Node node) { return zkClient.writeTo(node.state(), node,
-                                                           Agent.system, Optional.empty()); }
+    public Node write(Node node) { return db.writeTo(node.state(), node,
+                                                     Agent.system, Optional.empty()); }
 
     /**
      * Writes these nodes after they have changed some internal state but NOT changed their state field.
@@ -478,7 +481,7 @@ public class NodeRepository extends AbstractComponent {
             if ( node.state() != state)
                 throw new IllegalArgumentException("Multiple states: " + node.state() + " and " + state);
         }
-        return zkClient.writeTo(state, nodes, Agent.system, Optional.empty());
+        return db.writeTo(state, nodes, Agent.system, Optional.empty());
     }
 
     /**
@@ -493,7 +496,7 @@ public class NodeRepository extends AbstractComponent {
         ListMap<ApplicationId, Node> allocatedNodes = new ListMap<>();
 
         // Group matching nodes by the lock needed
-        for (Node node : zkClient.getNodes()) {
+        for (Node node : db.getNodes()) {
             if ( ! filter.matches(node)) continue;
             if (node.allocation().isPresent())
                 allocatedNodes.put(node.allocation().get().owner(), node);
@@ -531,13 +534,13 @@ public class NodeRepository extends AbstractComponent {
     public Clock clock() { return clock; }
 
     /** Create a lock which provides exclusive rights to making changes to the given application */
-    public Mutex lock(ApplicationId application) { return zkClient.lock(application); }
+    public Mutex lock(ApplicationId application) { return db.lock(application); }
 
     /** Create a lock with a timeout which provides exclusive rights to making changes to the given application */
-    public Mutex lock(ApplicationId application, Duration timeout) { return zkClient.lock(application, timeout); }
+    public Mutex lock(ApplicationId application, Duration timeout) { return db.lock(application, timeout); }
 
     /** Create a lock which provides exclusive rights to changing the set of ready nodes */
-    public Mutex lockUnallocated() { return zkClient.lockInactive(); }
+    public Mutex lockUnallocated() { return db.lockInactive(); }
 
     /** Acquires the appropriate lock for this node */
     private Mutex lock(Node node) {

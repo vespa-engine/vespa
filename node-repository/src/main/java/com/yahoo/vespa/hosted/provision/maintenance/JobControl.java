@@ -1,6 +1,8 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import java.util.Collections;
+import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
+import com.yahoo.vespa.hosted.provision.persistence.CuratorMutex;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -12,9 +14,16 @@ import java.util.concurrent.ConcurrentSkipListSet;
  * @author bratseth
  */
 public class JobControl {
-    
+
+    /** This is not stored in ZooKeeper as all nodes start all jobs */
     private Set<String> startedJobs = new ConcurrentSkipListSet<>();
-    private Set<String> deactivatedJobs = new ConcurrentSkipListSet<>();
+
+    /** Used to store deactivation in ZooKeeper to make changes take effect on all nodes */
+    private final CuratorDatabaseClient db;
+    
+    public JobControl(CuratorDatabaseClient db) {
+        this.db = db;
+    }
     
     /** Notifies this that a job was started */
     public void started(String jobSimpleClassName) {
@@ -29,15 +38,19 @@ public class JobControl {
     
     /** Returns true if this job is not currently deactivated */
     public boolean isActive(String jobSimpleClassName) {
-        return ! deactivatedJobs.contains(jobSimpleClassName);
+        return  ! db.readDeactivatedJobs().contains(jobSimpleClassName);
     }
 
     /** Set a job active or inactive */
     public void setActive(String jobSimpleClassName, boolean active) {
-        if (active)
-            deactivatedJobs.remove(jobSimpleClassName);
-        else
-            deactivatedJobs.add(jobSimpleClassName);
+        try (CuratorMutex lock = db.lockDeactivatedJobs()) {
+            Set<String> deactivatedJobs = db.readDeactivatedJobs();
+            if (active)
+                deactivatedJobs.remove(jobSimpleClassName);
+            else
+                deactivatedJobs.add(jobSimpleClassName);
+            db.writeDeactivatedJobs(deactivatedJobs);
+        }
     }
     
 }

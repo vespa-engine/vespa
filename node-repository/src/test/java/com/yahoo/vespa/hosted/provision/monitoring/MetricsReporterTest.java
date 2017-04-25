@@ -52,7 +52,7 @@ public class MetricsReporterTest {
         expectedMetrics.put("hostedVespa.failedHosts", 0);
 
         TestMetric metric = new TestMetric();
-        MetricsReporter metricsReporter = new MetricsReporter(nodeRepository, metric, Duration.ofMinutes(1), new JobControl());
+        MetricsReporter metricsReporter = new MetricsReporter(nodeRepository, metric, Duration.ofMinutes(1), new JobControl(nodeRepository.database()));
         metricsReporter.maintain();
 
         assertEquals(expectedMetrics, metric.values);

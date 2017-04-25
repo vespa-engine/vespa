@@ -195,7 +195,7 @@ public class NodeFailTester {
     }
 
     public NodeFailer createFailer() {
-        return new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, downtimeLimitOneHour, clock, orchestrator, NodeFailer.ThrottlePolicy.hosted, new JobControl());
+        return new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, downtimeLimitOneHour, clock, orchestrator, NodeFailer.ThrottlePolicy.hosted, new JobControl(nodeRepository.database()));
     }
 
     public void allNodesMakeAConfigRequestExcept(Node ... deadNodeArray) {
