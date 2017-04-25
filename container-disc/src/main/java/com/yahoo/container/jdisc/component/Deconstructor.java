@@ -2,7 +2,6 @@
 package com.yahoo.container.jdisc.component;
 
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.di.ComponentDeconstructor;
 import com.yahoo.container.di.componentgraph.Provider;
@@ -11,12 +10,15 @@ import com.yahoo.jdisc.SharedResource;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 /**
 * @author tonyv
 * @author gv
 */
 public class Deconstructor implements ComponentDeconstructor {
+    private static final Logger log = Logger.getLogger(Deconstructor.class.getName());
+
     private final ScheduledExecutorService executor =
             Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("deconstructor"));
 
@@ -31,9 +33,10 @@ public class Deconstructor implements ComponentDeconstructor {
     public void deconstruct(Object component) {
         if (component instanceof AbstractComponent) {
             AbstractComponent abstractComponent = (AbstractComponent) component;
-            if (abstractComponent.isDeconstructable())
-                executor.schedule(
-                        new DestructComponentTask(abstractComponent), delay, TimeUnit.SECONDS);
+            if (abstractComponent.isDeconstructable()) {
+                log.info("Scheduling deconstruction of " + abstractComponent);
+                executor.schedule(new DestructComponentTask(abstractComponent), delay, TimeUnit.SECONDS);
+            }
         } else if (component instanceof Provider) {
             ((Provider)component).deconstruct();
         } else if (component instanceof SharedResource) {
@@ -50,7 +53,9 @@ public class Deconstructor implements ComponentDeconstructor {
         }
 
         public void run() {
+            log.info("Starting deconstruction of " + component);
             component.deconstruct();
+            log.info("Finished deconstructing " + component);
         }
     }
 }
