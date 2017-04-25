@@ -712,18 +712,6 @@ TEST_F("require that setSchema updates schema on disk, wiping removed fields", F
     TEST_DO(expectSchemaIndexFields(0));
 }
 
-TEST_F("require that wipeHistory updates schema on disk", Fixture)
-{
-    Schema empty_schema;
-    f.addDocument(docid);
-    f.flushIndexManager();
-    TEST_DO(expectSchemaIndexFields(1));
-    f.runAsMaster([&]() { f._index_manager->setSchema(empty_schema, f._serial_num); });
-    TEST_DO(expectSchemaIndexFields(1));
-    f.runAsMaster([&]() { f._index_manager->wipeHistory(++f._serial_num); });
-    TEST_DO(expectSchemaIndexFields(0));
-}
-
 TEST_F("require that indexes manager stats can be generated", Fixture)
 {
     TEST_DO(f.assertStats(0, 1, 0, 0));

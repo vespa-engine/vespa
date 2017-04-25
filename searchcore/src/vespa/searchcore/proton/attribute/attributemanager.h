@@ -100,6 +100,7 @@ private:
 
     void transferExtraAttributes(const AttributeManager &currMgr);
 
+    void wipeHistory(search::SerialNum wipeSerial);
 public:
     typedef std::shared_ptr<AttributeManager> SP;
 
@@ -168,8 +169,6 @@ public:
     virtual search::SerialNum getNewestFlushedSerialNumber() const override;
 
     virtual void getAttributeListAll(std::vector<search::AttributeGuard> &list) const override;
-
-    virtual void wipeHistory(search::SerialNum wipeSerial) override;
 
     virtual const IAttributeFactory::SP &getFactory() const override { return _factory; }
 

@@ -529,8 +529,7 @@ TEST_F("require that history can be wiped", Fixture)
 
     AttrSpecList newSpec;
     newSpec.push_back(AttributeSpec("a2", INT32_SINGLE));
-    SequentialAttributeManager sam(f._m, AttrMgrSpec(newSpec, 1, 11));
-    sam.mgr.wipeHistory(11);
+    auto nmgr = f._m.create(AttrMgrSpec(newSpec, 1, 11));
 
     FastOS_StatInfo si;
     EXPECT_TRUE(!FastOS_File::Stat(vespalib::string(test_dir + "/a1").c_str(), &si));

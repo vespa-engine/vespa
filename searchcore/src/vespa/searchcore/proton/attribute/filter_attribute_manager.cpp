@@ -93,10 +93,6 @@ void
 FilterAttributeManager::getAttributeListAll(std::vector<search::AttributeGuard> &) const {
     throw vespalib::IllegalArgumentException("Not implemented");
 }
-void
-FilterAttributeManager::wipeHistory(search::SerialNum) {
-    throw vespalib::IllegalArgumentException("Not implemented");
-}
 const IAttributeFactory::SP &
 FilterAttributeManager::getFactory() const {
     throw vespalib::IllegalArgumentException("Not implemented");

@@ -138,9 +138,6 @@ public:
     SerialNum getNewestFlushedSerial(void);
 
     void
-    wipeHistory(SerialNum wipeSerial);
-
-    void
     applyConfig(const DocumentDBConfig &newConfigSnapshot,
                 const DocumentDBConfig &oldConfigSnapshot,
                 SerialNum serialNum,

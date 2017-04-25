@@ -1224,11 +1224,5 @@ IndexMaintainer::internalWipeHistory(const Schema &schema, SerialNum wipeSerial)
     }
 }
 
-void
-IndexMaintainer::wipeHistory(SerialNum wipeSerial)
-{
-    internalWipeHistory(getSchema(), wipeSerial);
-}
-
 }  // namespace index
 }  // namespace searchcorespi

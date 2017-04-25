@@ -460,11 +460,6 @@ StoreOnlyDocSubDB::getIndexWriter() const
 }
 
 void
-StoreOnlyDocSubDB::wipeHistory(SerialNum)
-{
-}
-
-void
 StoreOnlyDocSubDB::setIndexSchema(const Schema::SP &schema, SerialNum serialNum)
 {
     assert(_writeService.master().isCurrentThread());

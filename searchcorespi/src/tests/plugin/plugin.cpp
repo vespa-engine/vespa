@@ -35,7 +35,6 @@ public:
         return l;
     }
     virtual void setSchema(const Schema &, SerialNum) override { }
-    virtual void wipeHistory(SerialNum) override { }
 };
 
 class IndexManagerFactory : public searchcorespi::IIndexManagerFactory

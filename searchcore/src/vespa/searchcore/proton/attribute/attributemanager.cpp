@@ -420,6 +420,7 @@ AttributeManager::create(const Spec &spec) const
     SequentialAttributesInitializer initializer(spec.getDocIdLimit());
     proton::AttributeManager::SP result = std::make_shared<AttributeManager>(*this, spec, initializer);
     result->addInitializedAttributes(initializer.getInitializedAttributes());
+    result->wipeHistory(spec.getCurrentSerialNum());
     return result;
 }
 

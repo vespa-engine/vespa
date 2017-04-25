@@ -74,7 +74,6 @@ private:
 
     void triggerFlush(FRT_RPCRequest *req);
     void prepareRestart(FRT_RPCRequest *req);
-    void wipeHistory(FRT_RPCRequest * req);
     void enableSearching(FRT_RPCRequest * req);
     void disableSearching(FRT_RPCRequest * req);
     void checkState(StateArg::UP arg);
@@ -116,7 +115,6 @@ public:
     void rpc_die(FRT_RPCRequest *req);
     void rpc_triggerFlush(FRT_RPCRequest *req);
     void rpc_prepareRestart(FRT_RPCRequest *req);
-    void rpc_wipeHistory(FRT_RPCRequest *req);
     void rpc_listDocTypes(FRT_RPCRequest *req);
     void rpc_listSchema(FRT_RPCRequest *req);
     void rpc_getConfigGeneration(FRT_RPCRequest *req);
