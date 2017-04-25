@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "testandsetmessage.h"
 #include <vespa/document/update/documentupdate.h>
-#include <vespa/documentapi/messagebus/messages/testandsetmessage.h>
 
 namespace documentapi {
 
@@ -13,8 +13,7 @@ private:
     uint64_t                                    _newTime;
 
 protected:
-    // Implements DocumentMessage.
-    DocumentReply::UP doCreateReply() const;
+    DocumentReply::UP doCreateReply() const override;
 
 public:
     /**
@@ -84,17 +83,10 @@ public:
      */
     void setNewTimestamp(uint64_t time) { _newTime = time; }
 
-    // Overrides DocumentMessage.
-    bool hasSequenceId() const;
-
-    // Overrides DocumentMessage.
-    uint64_t getSequenceId() const;
-
-    // Implements DocumentMessage.
-    uint32_t getType() const;
-
-    string toString() const { return "updatedocumentmessage"; }
+    bool hasSequenceId() const override;
+    uint64_t getSequenceId() const override;
+    uint32_t getType() const override;
+    string toString() const override { return "updatedocumentmessage"; }
 };
 
 }
-

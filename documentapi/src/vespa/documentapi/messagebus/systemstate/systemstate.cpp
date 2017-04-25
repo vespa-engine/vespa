@@ -1,16 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".systemstate");
 
+#include "systemstate.h"
+#include <vespa/vespalib/util/stringfmt.h>
 #include <boost/spirit/include/classic_core.hpp>
 #include <boost/spirit/include/classic_parse_tree.hpp>
 #include <boost/spirit/include/classic_tree_to_xml.hpp>
 #include <boost/spirit/include/classic_chset.hpp>
 #include <boost/spirit/include/classic_escape_char.hpp>
 #include <boost/spirit/include/classic_grammar_def.hpp>
-#include <vespa/vespalib/util/stringfmt.h>
-#include "systemstate.h"
+
+#include <vespa/log/log.h>
+LOG_SETUP(".systemstate");
 
 using namespace documentapi;
 

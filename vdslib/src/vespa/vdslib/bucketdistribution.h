@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vector>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/util/sync.h>
+#include <vector>
 
 namespace vdslib {
 
@@ -21,6 +21,11 @@ public:
      * @param numBucketBits The number of bits to use for bucket id.
      */
     BucketDistribution(uint32_t numColumns, uint32_t numBucketBits);
+    BucketDistribution(const BucketDistribution &);
+    BucketDistribution & operator = (const BucketDistribution &);
+    BucketDistribution(BucketDistribution &&) = default;
+    BucketDistribution & operator = (BucketDistribution &&) = default;
+    ~BucketDistribution();
 
     /**
      * Returns the number of buckets that the given number of bucket bits will allow.
@@ -116,4 +121,3 @@ private:
 };
 
 }
-

@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/document/bucket/bucketid.h>
+
 #include "visitor.h"
 
 namespace documentapi {
@@ -19,9 +18,7 @@ CreateVisitorMessage::CreateVisitorMessage() :
     _version(42),
     _ordering(document::OrderingSpecification::ASCENDING),
     _maxBucketsPerVisitor(1)
-{
-    // empty
-}
+{}
 
 CreateVisitorMessage::CreateVisitorMessage(const string& libraryName,
                                            const string& instanceId,
@@ -44,9 +41,7 @@ CreateVisitorMessage::CreateVisitorMessage(const string& libraryName,
     _version(42),
     _ordering(document::OrderingSpecification::ASCENDING),
     _maxBucketsPerVisitor(1)
-{
-    // empty
-}
+{}
 
 DocumentReply::UP
 CreateVisitorMessage::doCreateReply() const

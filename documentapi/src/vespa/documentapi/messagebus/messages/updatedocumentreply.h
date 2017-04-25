@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/documentapi/messagebus/messages/writedocumentreply.h>
+#include "writedocumentreply.h"
 
 namespace documentapi {
 
@@ -43,7 +43,7 @@ public:
      */
     bool getWasFound() const { return _found; }
 
-    string toString() const { return "updatedocumentreply"; }
+    string toString() const override { return "updatedocumentreply"; }
 };
 
 }

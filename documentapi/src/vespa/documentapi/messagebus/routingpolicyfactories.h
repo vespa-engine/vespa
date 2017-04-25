@@ -1,8 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/documentapi/messagebus/systemstate/systemstate.h>
 #include "iroutingpolicyfactory.h"
+#include <vespa/documentapi/messagebus/systemstate/systemstate.h>
+#include <vespa/document/repo/documenttyperepo.h>
 
 namespace documentapi {
 

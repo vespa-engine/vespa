@@ -2,16 +2,13 @@
 #pragma once
 
 #include "routablefactories42.h"
-#include <vespa/document/base/documentid.h>
-#include <vespa/document/util/bytebuffer.h>
-#include <vespa/documentapi/messagebus/messages/feedmessage.h>
-#include <vespa/documentapi/messagebus/messages/feedreply.h>
-#include <vespa/messagebus/routable.h>
-#include <vespa/messagebus/blob.h>
-#include <vespa/messagebus/blobref.h>
-#include <vespa/vespalib/util/growablebytebuffer.h>
-#include <vespa/documentapi/documentapi.h>
 #include "iroutablefactory.h"
+#include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
+#include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
+#include <vespa/documentapi/messagebus/messages/updatedocumentmessage.h>
+#include <vespa/document/repo/documenttyperepo.h>
+
+
 
 namespace document { class DocumentTypeRepo; }
 

@@ -1,12 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
+#include "roundrobinpolicy.h"
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/errorcode.h>
-#include <vespa/messagebus/routing/route.h>
-#include <vespa/messagebus/routing/routingcontext.h>
 #include <vespa/messagebus/routing/verbatimdirective.h>
-#include "roundrobinpolicy.h"
 
 namespace documentapi {
 
@@ -14,21 +11,14 @@ RoundRobinPolicy::CacheEntry::CacheEntry() :
     _offset(0),
     _generation(),
     _recipients()
-{
-    // empty
-}
+{}
 
 RoundRobinPolicy::RoundRobinPolicy(const string &) :
     _lock(),
     _cache()
-{
-    // empty
-}
+{}
 
-RoundRobinPolicy::~RoundRobinPolicy()
-{
-    // empty
-}
+RoundRobinPolicy::~RoundRobinPolicy() {}
 
 void
 RoundRobinPolicy::select(mbus::RoutingContext &ctx)

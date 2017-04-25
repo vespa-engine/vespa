@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/documentapi/common.h>
 #include <vespa/messagebus/routing/iroutingpolicy.h>
 
 namespace documentapi {
@@ -18,23 +19,12 @@ public:
      * @param param The number of minimum non-OOS replies that this policy requires.
      */
     SearchRowPolicy(const string &param);
+    ~SearchRowPolicy();
 
-    /**
-     * Destructor.
-     *
-     * Frees all allocated resources.
-     */
-    virtual ~SearchRowPolicy();
-
-    // Inherit doc from IRoutingPolicy.
-    virtual void select(mbus::RoutingContext &context);
-
-    // Inherit doc from IRoutingPolicy.
-    virtual void merge(mbus::RoutingContext &context);
-
+    void select(mbus::RoutingContext &context) override;
+    void merge(mbus::RoutingContext &context) override;
 private:
     uint32_t _minOk; // Hide OUT_OF_SERVICE as long as this number of replies are something else.
 };
 
 }
-
