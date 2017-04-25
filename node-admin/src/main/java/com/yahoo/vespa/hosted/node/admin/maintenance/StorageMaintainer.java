@@ -273,7 +273,7 @@ public class StorageMaintainer {
             }
 
             String[] command = {"java", "-cp", classPath,
-                    "-Dvespa.log.target=file:" + getDefaults().underVespaHome("logs/vespa/vespa.log"),
+                    "-Dvespa.log.target=file:" + getDefaults().underVespaHome("logs/vespa/maintainer.log"),
                     "com.yahoo.vespa.hosted.node.maintainer.Maintainer", args};
             ProcessResult result = docker.executeInContainerAsRoot(executeIn, command);
 
