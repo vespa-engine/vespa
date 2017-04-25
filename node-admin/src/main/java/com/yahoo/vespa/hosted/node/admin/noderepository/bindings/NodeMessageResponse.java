@@ -13,4 +13,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class NodeMessageResponse {
     @JsonProperty("message")
     public String message;
+    @JsonProperty("error-code")
+    public String errorCode;
 }
