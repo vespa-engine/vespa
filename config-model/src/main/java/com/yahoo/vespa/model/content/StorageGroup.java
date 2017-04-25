@@ -178,6 +178,10 @@ public class StorageGroup {
         return false;
     }
 
+    @Override public int hashCode() {
+        return java.util.Objects.hash(index, name, partitions);
+    }
+
     public static Map<HostResource, ClusterMembership> provisionHosts(NodesSpecification nodesSpecification, 
                                                                       String clusterIdString, 
                                                                       HostSystem hostSystem, 

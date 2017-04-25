@@ -134,6 +134,7 @@ public class Matching implements Cloneable, Serializable {
         }
     }
 
+    @Override
     public boolean equals(Object o) {
         if (! (o instanceof Matching)) return false;
 
@@ -147,5 +148,8 @@ public class Matching implements Cloneable, Serializable {
         return true;
     }
 
+    @Override public int hashCode() {
+        return java.util.Objects.hash(type, algorithm, exactMatchTerminator, gramSize);
+    }
 
 }
