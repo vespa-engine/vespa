@@ -324,9 +324,14 @@
           <source>1.8</source>
           <target>1.8</target>
           <compilerArgs>
-            <arg>-Xlint:rawtypes</arg>
-            <arg>-Xlint:unchecked</arg>
-            <arg>-Xlint:deprecation</arg>
+            <arg>-Xlint:all</arg>
+            <arg>-Xlint:-rawtypes</arg>
+            <arg>-Xlint:-unchecked</arg>
+            <arg>-Xlint:-deprecation</arg>
+            <arg>-Xlint:-serial</arg>
+            <arg>-Xlint:-cast</arg>
+            <arg>-Xlint:-overloads</arg>
+            <arg>-Werror</arg>
           </compilerArgs>
         </configuration>
       </plugin>
