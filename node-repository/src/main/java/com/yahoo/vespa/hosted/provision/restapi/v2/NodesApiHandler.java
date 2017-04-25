@@ -158,13 +158,6 @@ public class NodesApiHandler extends LoggingRequestHandler {
         }
     }
 
-    private MessageResponse setActive(String jobName, boolean active) {
-        if ( ! maintenance.jobControl().jobs().contains(jobName))
-            throw new NotFoundException("No job named '" + jobName + "'");
-        maintenance.jobControl().setActive(jobName, active);
-        return new MessageResponse((active ? "Re-activated" : "Deactivated" ) + " job '" + jobName + "'");
-    }
-    
     private HttpResponse handleDELETE(HttpRequest request) {
         String path = request.getUri().getPath();
         if (path.startsWith("/nodes/v2/node/")) {
@@ -175,8 +168,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
                 throw new NotFoundException("No node in the provisioned, parked or failed state with hostname " + hostname);
         }
         else if (path.startsWith("/nodes/v2/maintenance/inactive/")) {
-            setActive(lastElement(path), true);
-            return new MessageResponse("Reactivated job '" + lastElement(path) + "'");
+            return setActive(lastElement(path), true);
         }
         else {
             throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
@@ -272,6 +264,13 @@ public class NodesApiHandler extends LoggingRequestHandler {
             }
         }
         return false;
+    }
+
+    private MessageResponse setActive(String jobName, boolean active) {
+        if ( ! maintenance.jobControl().jobs().contains(jobName))
+            throw new NotFoundException("No job named '" + jobName + "'");
+        maintenance.jobControl().setActive(jobName, active);
+        return new MessageResponse((active ? "Re-activated" : "Deactivated" ) + " job '" + jobName + "'");
     }
 
 }
