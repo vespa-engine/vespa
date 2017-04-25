@@ -9,11 +9,14 @@
 
 #pragma once
 
+#include <cstdint>
+#include <string>
+
 namespace storage {
 
 class ApplicationGenerationFetcher {
 public:
-    virtual ~ApplicationGenerationFetcher() {};
+    virtual ~ApplicationGenerationFetcher() {}
 
     virtual int64_t getGeneration() const = 0;
     virtual std::string getComponentName() const = 0;
