@@ -117,7 +117,7 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains>
     }
     
     public ProcessingHandler<DocprocChains> getDocprocHandler() {
-        return ((DocprocChains) getChains()).getDocprocHandler();
+        return getChains().getDocprocHandler();
     }
 
     @Override

@@ -157,8 +157,8 @@ public class DocumentTypes {
         dataTypeBuilder.
                 type(DocumenttypesConfig.Documenttype.Datatype.Type.Enum.ARRAY).
                 array(new DocumenttypesConfig.Documenttype.Datatype.Array.Builder().
-                        element(new DocumenttypesConfig.Documenttype.Datatype.Array.Element.Builder().id(((ArrayDataType) type).getNestedType().getId())));
-        buildConfig(((ArrayDataType) type).getNestedType(), documentBuilder, built);
+                        element(new DocumenttypesConfig.Documenttype.Datatype.Array.Element.Builder().id(type.getNestedType().getId())));
+        buildConfig(type.getNestedType(), documentBuilder, built);
     }
 
     private void buildConfig(WeightedSetDataType type,
@@ -168,10 +168,10 @@ public class DocumentTypes {
         dataTypeBuilder.type(DocumenttypesConfig.Documenttype.Datatype.Type.Enum.WSET).
                 wset(new DocumenttypesConfig.Documenttype.Datatype.Wset.Builder().
                         key(new DocumenttypesConfig.Documenttype.Datatype.Wset.Key.Builder().
-                                id(((WeightedSetDataType) type).getNestedType().getId())).
-                        createifnonexistent(((WeightedSetDataType) type).createIfNonExistent()).
-                        removeifzero(((WeightedSetDataType) type).removeIfZero()));
-        buildConfig(((WeightedSetDataType) type).getNestedType(), documentBuilder, built);
+                                id(type.getNestedType().getId())).
+                        createifnonexistent(type.createIfNonExistent()).
+                        removeifzero(type.removeIfZero()));
+        buildConfig(type.getNestedType(), documentBuilder, built);
     }
 
     private void buildConfig(MapDataType type,
@@ -182,11 +182,11 @@ public class DocumentTypes {
                 type(DocumenttypesConfig.Documenttype.Datatype.Type.Enum.MAP).
                 map(new DocumenttypesConfig.Documenttype.Datatype.Map.Builder().
                         key(new DocumenttypesConfig.Documenttype.Datatype.Map.Key.Builder().
-                                id(((MapDataType) type).getKeyType().getId())).
+                                id(type.getKeyType().getId())).
                         value(new DocumenttypesConfig.Documenttype.Datatype.Map.Value.Builder().
-                                id(((MapDataType) type).getValueType().getId())));
-        buildConfig(((MapDataType) type).getKeyType(), documentBuilder, built);
-        buildConfig(((MapDataType) type).getValueType(), documentBuilder, built);
+                                id(type.getValueType().getId())));
+        buildConfig(type.getKeyType(), documentBuilder, built);
+        buildConfig(type.getValueType(), documentBuilder, built);
     }
 
     private void buildConfig(AnnotationReferenceDataType type,
@@ -195,16 +195,16 @@ public class DocumentTypes {
                 type(DocumenttypesConfig.Documenttype.Datatype.Type.Enum.ANNOTATIONREF).
                 annotationref(new DocumenttypesConfig.Documenttype.Datatype.Annotationref.Builder().
                         annotation(new DocumenttypesConfig.Documenttype.Datatype.Annotationref.Annotation.Builder().
-                                id(((AnnotationReferenceDataType) type).getAnnotationType().getId())));
+                                id(type.getAnnotationType().getId())));
     }
 
     private void buildConfig(ReferenceDataType type,
                              DocumenttypesConfig.Documenttype.Builder documentBuilder) {
-        ReferenceDataType refType = (ReferenceDataType) type;
+        ReferenceDataType refType = type;
         DocumenttypesConfig.Documenttype.Referencetype.Builder refBuilder =
                 new DocumenttypesConfig.Documenttype.Referencetype.Builder();
         refBuilder.id(refType.getId());
-        refBuilder.target_type_id(((ReferenceDataType) type).getTargetType().getId());
+        refBuilder.target_type_id(type.getTargetType().getId());
         documentBuilder.referencetype(refBuilder);
     }
 
