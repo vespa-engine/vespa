@@ -7,10 +7,10 @@
  */
 #pragma once
 
+#include "storagecomponentregisterimpl.h"
 #include <vespa/storage/bucketdb/minimumusedbitstracker.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/common/servicelayercomponent.h>
-#include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
 
 namespace storage {
 
@@ -35,11 +35,8 @@ public:
         return _minUsedBitsTracker;
     }
 
-    virtual void registerServiceLayerComponent(ServiceLayerManagedComponent&) override;
-
+    void registerServiceLayerComponent(ServiceLayerManagedComponent&) override;
     void setDiskCount(uint16_t count);
 };
 
 } // storage
-
-

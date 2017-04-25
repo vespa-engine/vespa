@@ -36,12 +36,12 @@
     } \
 }
 
-#include <vespa/document/bucket/bucketid.h>
-#include <vespa/vespalib/util/printable.h>
 #include <vespa/storageframework/storageframework.h>
-#include <vector>
 #include <vespa/vdslib/state/nodestate.h>
 #include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/document/bucket/bucketid.h>
+#include <vespa/vespalib/util/printable.h>
+#include <vector>
 
 namespace storage {
 
@@ -92,10 +92,8 @@ struct RunStatistics : public document::Printable {
     double getProgress() const;
     uint64_t getBucketCount(uint16_t disk, bool includeWrongLocation) const;
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 } // bucketmover
 } // storage
-

@@ -36,7 +36,7 @@ public:
     uint8_t getPriority() const { return _priority; }
     uint32_t getTotalDocSize() const { return _totalDocSize; }
 
-    void print(std::ostream& out, bool verbose, const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 } // bucketmover

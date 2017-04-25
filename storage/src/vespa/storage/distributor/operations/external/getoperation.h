@@ -6,15 +6,11 @@
 #include <vespa/storage/bucketdb/bucketcopy.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 
-namespace document {
-class Document;
-}
+namespace document { class Document; }
 
 namespace storage {
 
-namespace api {
-class GetCommand;
-}
+namespace api { class GetCommand; }
 
 class PersistenceOperationMetricSet;
 
@@ -30,13 +26,9 @@ public:
                  PersistenceOperationMetricSet& metric);
 
     void onClose(DistributorMessageSender& sender) override;
-
     void onStart(DistributorMessageSender& sender) override;
-
     void onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg) override;
-
     const char* getName() const override { return "get"; }
-
     std::string getStatus() const override { return ""; }
 
     bool hasConsistentCopies() const;
@@ -48,13 +40,9 @@ private:
         GroupId(const document::BucketId& id, uint32_t checksum, int node);
 
         bool operator<(const GroupId& other) const;
-
         bool operator==(const GroupId& other) const;
-
         const document::BucketId& getBucketId() const { return _id; }
-
         int getNode() const { return _node; }
-
     private:
         document::BucketId _id;
         uint32_t _checksum;
@@ -65,7 +53,8 @@ private:
     public:
         BucketChecksumGroup(const BucketCopy& c) :
             copy(c),
-            sent(0), received(false), returnCode(api::ReturnCode::OK) {};
+            sent(0), received(false), returnCode(api::ReturnCode::OK)
+        {}
 
         BucketCopy copy;
         api::StorageMessage::Id sent;
@@ -105,8 +94,4 @@ private:
 };
 
 }
-
-
 }
-
-

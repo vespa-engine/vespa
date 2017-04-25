@@ -22,7 +22,7 @@ struct AppKiller {
 };
 
 struct RealAppKiller : public AppKiller {
-    virtual void kill();
+    void kill() override;
 };
 
 } // storage

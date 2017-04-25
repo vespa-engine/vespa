@@ -102,8 +102,7 @@ public:
     ~BucketManager();
 
     void startWorkerThread();
-
-    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     /** Dump the whole database to the given output. Use for debugging. */
     void dump(std::ostream& out) const;
@@ -120,11 +119,11 @@ private:
     vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
     bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 
-        /** Event saying node is up and running. We can start to build cache. */
-    virtual void onOpen() override;
-    virtual void onDoneInit() override { _doneInitialized = true; }
-    virtual void onClose() override;
-    virtual void onFlush(bool downwards) override;
+    /** Event saying node is up and running. We can start to build cache. */
+    void onOpen() override;
+    void onDoneInit() override { _doneInitialized = true; }
+    void onClose() override;
+    void onFlush(bool downwards) override;
 
     void updateMetrics(bool updateDocCount);
     void updateMetrics(const MetricLockGuard &) override { updateMetrics(true); }

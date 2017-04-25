@@ -34,13 +34,14 @@
 
 #pragma once
 
-#include <deque>
-#include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storageframework/defaultimplementation/memory/memorystate.h>
 #include <vespa/storageframework/storageframework.h>
-#include <vector>
+#include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/vespalib/util/sync.h>
+#include <deque>
+#include <vector>
+
 
 namespace metrics {
     class MetricManager;
@@ -110,7 +111,7 @@ private:
         _states.push_back(Entry::SP(new Entry(name, _component.getClock(),
                                               framework::SecondTime(maxAge))));
     }
-    void run(framework::ThreadHandle&);
+    void run(framework::ThreadHandle&) override;
     void grabMemoryUsage();
     void printSnapshot(std::ostream& out, Entry& entry,
                        std::map<const framework::MemoryAllocationType*,
@@ -123,10 +124,8 @@ public:
             StorageComponentRegister&);
     ~MemoryStatusViewer();
 
-    virtual void reportHtmlHeaderAdditions(std::ostream&,
-                                           const framework::HttpUrlPath&) const;
-    virtual void reportHtmlStatus(std::ostream&,
-                                  const framework::HttpUrlPath&) const;
+    void reportHtmlHeaderAdditions(std::ostream&, const framework::HttpUrlPath&) const override;
+    void reportHtmlStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 
     /** Useful for testing. */
     framework::SecondTime getProcessedTime() const { return _processedTime; }

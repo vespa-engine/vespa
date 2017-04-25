@@ -2,15 +2,15 @@
 
 #pragma once
 
-#include <vespa/storage/common/statusmessages.h>
-#include <vespa/storage/persistence/diskthread.h>
-#include <vespa/storage/persistence/processallhandler.h>
-#include <vespa/storage/persistence/mergehandler.h>
-#include <vespa/storage/persistence/diskmoveoperationhandler.h>
+#include "diskthread.h"
+#include "processallhandler.h"
+#include "mergehandler.h"
+#include "diskmoveoperationhandler.h"
+#include "persistenceutil.h"
+#include "providershutdownwrapper.h"
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/storage/common/storagecomponent.h>
-#include <vespa/storage/persistence/persistenceutil.h>
-#include <vespa/storage/persistence/providershutdownwrapper.h>
+#include <vespa/storage/common/statusmessages.h>
 
 namespace storage {
 
@@ -35,7 +35,7 @@ public:
 
     bool isMerging(const BucketId& bucket) const;
 
-    virtual framework::Thread& getThread() override { return *_thread; }
+    framework::Thread& getThread() override { return *_thread; }
 
     MessageTracker::UP handlePut(api::PutCommand& cmd);
     MessageTracker::UP handleRemove(api::RemoveCommand& cmd);
@@ -99,10 +99,8 @@ private:
     void processMessages(FileStorHandler::LockedMessage & lock);
 
     // Thread main loop
-    virtual void run(framework::ThreadHandle&) override;
-
+    void run(framework::ThreadHandle&) override;
     bool checkForError(const spi::Result& response, MessageTracker& tracker);
-
     spi::Bucket getBucket(const DocumentId& id, const BucketId& bucket) const;
 
     void flushAllReplies(const document::BucketId& bucketId,
@@ -114,4 +112,3 @@ private:
 };
 
 } // storage
-

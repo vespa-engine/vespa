@@ -8,7 +8,7 @@
  */
 #pragma once
 
-#include <vespa/storage/visiting/visitor.h>
+#include "visitor.h"
 
 namespace storage {
 
@@ -30,10 +30,9 @@ private:
     }
 
     void completedVisiting(HitCounter& hitCounter) override;
-
     void abortedVisiting() override;
 
-        // Send datagram with message back to client
+    // Send datagram with message back to client
     void report(const std::string& message);
 
     std::string _params;
@@ -55,6 +54,3 @@ struct TestVisitorFactory : public VisitorFactory {
 };
 
 }
-
-
-

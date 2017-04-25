@@ -2,8 +2,8 @@
 
 #pragma once
 
+#include "operationtargetresolver.h"
 #include <vespa/storage/bucketdb/bucketdatabase.h>
-#include <vespa/storage/distributor/operationtargetresolver.h>
 #include <vespa/vdslib/distribution/idealnodecalculator.h>
 
 namespace storage {
@@ -91,23 +91,20 @@ public:
           _idealNodeCalculator(idealNodeCalc),
           _minUsedBucketBits(minUsedBucketBits),
           _redundancy(redundancy)
-    {
-    }
+    {}
 
     BucketInstanceList getAllInstances(OperationType type,
                                        const document::BucketId& id);
-    BucketInstanceList getInstances(OperationType type, const document::BucketId& id)
-    {
+    BucketInstanceList getInstances(OperationType type, const document::BucketId& id) {
         BucketInstanceList result(getAllInstances(type, id));
         result.limitToRedundancyCopies(_redundancy);
         return result;
     }
 
-    virtual OperationTargetList getTargets(OperationType type,
-                                           const document::BucketId& id) override
-        { return getInstances(type, id).createTargets(); }
+    OperationTargetList getTargets(OperationType type, const document::BucketId& id) override {
+        return getInstances(type, id).createTargets();
+    }
 };
 
 } // distributor
 } // storage
-

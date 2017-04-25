@@ -14,11 +14,11 @@
 
 #pragma once
 
+#include "storagelink.h"
+#include <vespa/storageframework/storageframework.h>
 #include <vespa/vespalib/util/document_runnable.h>
 #include <deque>
 #include <limits>
-#include <vespa/storageframework/storageframework.h>
-#include <vespa/storage/common/storagelink.h>
 
 namespace storage {
 
@@ -40,13 +40,13 @@ public:
     void dispatchUp(const std::shared_ptr<api::StorageMessage>&);
 
     /** Remember to call this method if you override it. */
-    virtual void onClose() override {
+    void onClose() override {
         _commandDispatcher.flush();
         _closeState |= 1;
     }
 
     /** Remember to call this method if you override it. */
-    virtual void onFlush(bool downwards) override {
+    void onFlush(bool downwards) override {
         if (downwards) {
             _commandDispatcher.flush();
             _closeState |= 2;
@@ -79,7 +79,7 @@ private:
     public:
         Dispatcher(StorageLinkQueued& parent, unsigned int maxQueueSize, bool replyDispatcher);
 
-        virtual ~Dispatcher();
+        ~Dispatcher();
 
         void start();
         void run(framework::ThreadHandle&) override;
@@ -106,7 +106,7 @@ private:
         void send(const std::shared_ptr<api::StorageMessage> & reply) override {
             _parent.sendUp(reply);
         }
-        virtual ~ReplyDispatcher() { terminate(); }
+        ~ReplyDispatcher() { terminate(); }
     };
 
     class CommandDispatcher : public Dispatcher<api::StorageMessage>
@@ -117,7 +117,7 @@ private:
                     parent, std::numeric_limits<unsigned int>::max(), false)
         {
         }
-        virtual ~CommandDispatcher() { terminate(); }
+         ~CommandDispatcher() { terminate(); }
         void send(const std::shared_ptr<api::StorageMessage> & command) override {
             _parent.sendDown(command);
         }
@@ -132,7 +132,6 @@ private:
 
 protected:
     ReplyDispatcher& getReplyDispatcher() { return _replyDispatcher; }
-
 };
 
 }

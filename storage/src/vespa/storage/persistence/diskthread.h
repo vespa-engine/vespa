@@ -60,7 +60,7 @@ public:
         bool operator==(const OperationCount& c) const
             { return (count == c.count && pending == c.pending); }
 
-        void print(std::ostream& out, bool, const std::string&) const
+        void print(std::ostream& out, bool, const std::string&) const override
         {
             out << "OperationCount(" << count << (pending ? ", pending" : "")
                 << ")";

@@ -9,11 +9,11 @@
 
 #pragma once
 
+#include "storagecomponent.h"
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/vespalib/util/sync.h>
 #include <map>
 #include <vespa/metrics/metrics.h>
-#include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storageframework/storageframework.h>
 
 namespace vespalib {

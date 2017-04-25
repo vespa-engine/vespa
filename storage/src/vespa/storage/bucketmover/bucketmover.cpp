@@ -1,13 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <iomanip>
-#include <vespa/storage/bucketmover/bucketmover.h>
-#include <vespa/storage/bucketmover/htmltable.h>
+#include "bucketmover.h"
+#include "htmltable.h"
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/storageutil/log.h>
-#include <vespa/vdslib/distribution/distribution.h>
 
 LOG_SETUP(".bucketmover");
 

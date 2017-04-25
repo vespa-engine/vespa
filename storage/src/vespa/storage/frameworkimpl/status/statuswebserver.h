@@ -10,13 +10,12 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/fastlib/net/httpserver.h>
-#include <list>
 #include <vespa/storage/config/config-stor-status.h>
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/config/config.h>
 #include <vespa/config/helper/configfetcher.h>
+#include <vespa/fastlib/net/httpserver.h>
+#include <list>
 
 namespace storage {
 
@@ -30,7 +29,7 @@ class StatusWebServer : private config::IFetcherCallback<vespa::config::content:
     public:
         WebServer(StatusWebServer&, uint16_t port);
 
-        virtual void onGetRequest(const string & url,
+        void onGetRequest(const string & url,
                                   const string & serverSpec,
                                   Fast_HTTPConnection& conn) override;
         const vespalib::string &getServerSpec() const {
@@ -69,16 +68,12 @@ public:
     virtual ~StatusWebServer();
 
     void handlePage(const framework::HttpUrlPath&, std::ostream& out);
-
     static vespalib::string getServerSpec(const vespalib::string &requestSpec,
                                           const vespalib::string &serverSpec);
-
 private:
-    virtual void configure(std::unique_ptr<vespa::config::content::core::StorStatusConfig> config) override;
+    void configure(std::unique_ptr<vespa::config::content::core::StorStatusConfig> config) override;
     void getPage(const char* url, Fast_HTTPConnection& conn);
-    virtual void run(framework::ThreadHandle&) override;
-
+    void run(framework::ThreadHandle&) override;
 };
 
 }
-

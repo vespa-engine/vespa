@@ -5,7 +5,7 @@
    This class handles ownership and creation of dynamic visitor libraries.
 */
 
-#include <vespa/storage/visiting/visitor.h>
+#include "visitor.h"
 
 namespace storage {
 
@@ -36,4 +36,3 @@ private:
 };
 
 }
-

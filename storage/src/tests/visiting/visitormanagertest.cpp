@@ -1,15 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/rawfieldvalue.h>
-#include <vespa/log/log.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/storageapi/message/visitor.h>
-#include <vector>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/visiting/visitormanager.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
@@ -17,15 +13,10 @@
 #include <tests/common/testhelper.h>
 #include <tests/common/dummystoragelink.h>
 #include <tests/storageserver/testvisitormessagesession.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
-#include <vespa/vdslib/container/visitorordering.h>
 #include <vespa/documentapi/messagebus/messages/multioperationmessage.h>
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
 #include <vespa/vespalib/util/exceptions.h>
-
-
-LOG_SETUP(".visitormanagertest");
 
 namespace storage {
 namespace {
@@ -113,7 +104,6 @@ CPPUNIT_TEST_SUITE_REGISTRATION(VisitorManagerTest);
 void
 VisitorManagerTest::initializeTest()
 {
-    LOG(debug, "Initializing test");
     vdstestlib::DirConfig config(getStandardConfig(true));
     config.getConfig("stor-visitor").set("visitorthreads", "1");
 
@@ -221,7 +211,6 @@ VisitorManagerTest::initializeTest()
         CPPUNIT_ASSERT_EQUAL(api::ReturnCode(api::ReturnCode::OK),
                              reply->getResult());
     }
-    LOG(debug, "Done initializing test");
 }
 
 void
