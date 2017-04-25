@@ -1,12 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <boost/lexical_cast.hpp>
-#include <cppunit/extensions/HelperMacros.h>
 #include <vespa/vdslib/state/nodetype.h>
 #include <vdslib/state/group.h>
 #include <vespa/vdslib/state/idealgroup.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <iostream>
+#include <cppunit/extensions/HelperMacros.h>
+#include <boost/lexical_cast.hpp>
 #include <algorithm>
 
 using namespace std;

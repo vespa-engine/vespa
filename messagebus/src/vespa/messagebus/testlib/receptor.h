@@ -20,11 +20,10 @@ private:
     Receptor &operator=(const Receptor &);
 public:
     Receptor();
-    virtual void handleMessage(Message::UP msg) override;
-    virtual void handleReply(Reply::UP reply) override;
+    void handleMessage(Message::UP msg) override;
+    void handleReply(Reply::UP reply) override;
     Message::UP getMessage(double maxWait = 120.0);
     Reply::UP getReply(double maxWait = 120.0);
 };
 
 } // namespace mbus
-

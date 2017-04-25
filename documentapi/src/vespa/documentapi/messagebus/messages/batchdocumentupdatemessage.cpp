@@ -1,12 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/vespalib/util/exceptions.h>
+
+#include "batchdocumentupdatemessage.h"
+#include "batchdocumentupdatereply.h"
 #include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <vespa/documentapi/messagebus/messages/batchdocumentupdatemessage.h>
-#include <vespa/documentapi/messagebus/messages/batchdocumentupdatereply.h>
-#include <vespa/document/base/idstring.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/bucket/bucketselector.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 namespace documentapi {
 

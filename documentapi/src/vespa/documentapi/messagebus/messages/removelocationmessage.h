@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/documentapi/messagebus/messages/documentmessage.h>
+#include "documentmessage.h"
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/bucket/bucketselector.h>
 #include <vespa/document/select/parser.h>
@@ -17,13 +17,9 @@ public:
     RemoveLocationMessage(const document::BucketIdFactory& factory, document::select::Parser& parser, const string& documentSelection);
 
     const string& getDocumentSelection() const { return _documentSelection; }
-
-    uint32_t getType() const override;
-
     const document::BucketId& getBucketId() const { return _bucketId; };
-
+    uint32_t getType() const override;
     string toString() const override { return "removelocationmessage"; }
-
 protected:
     DocumentReply::UP doCreateReply() const override;
 

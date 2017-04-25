@@ -47,7 +47,6 @@ private:
     bool                _closed;
 
 protected:
-    // Implements FastOS_Runnable.
     void Run(FastOS_ThreadInterface *thread, void *arg) override;
 
 public:

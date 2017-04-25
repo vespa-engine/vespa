@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/messagebus/routing/iroutingpolicy.h>
 #include "simpleprotocol.h"
+#include <vespa/messagebus/routing/iroutingpolicy.h>
 
 namespace mbus {
 
@@ -17,8 +17,8 @@ public:
                  const std::vector<uint32_t> consumableErrors,
                  const std::vector<Route> &routes);
 
-    virtual void select(RoutingContext &context) override;
-    virtual void merge(RoutingContext &context) override;
+    void select(RoutingContext &context) override;
+    void merge(RoutingContext &context) override;
 };
 
 class CustomPolicyFactory : public SimpleProtocol::IPolicyFactory {
@@ -37,4 +37,3 @@ public:
 };
 
 } // namespace mbus
-

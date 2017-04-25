@@ -4,7 +4,6 @@
 #include <vector>
 #include <vespa/document/bucket/bucketid.h>
 
-
 namespace BucketVector{
 
     void reserve(size_t capacity);
@@ -13,4 +12,3 @@ namespace BucketVector{
     void getBuckets(uint32_t distributionBits, std::vector<document::BucketId>& buckets);
     void printVector();
 }
-

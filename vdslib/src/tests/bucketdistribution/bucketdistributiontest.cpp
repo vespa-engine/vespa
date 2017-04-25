@@ -1,7 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".bucketdistributiontest");
 
 #include <cppunit/extensions/HelperMacros.h>
 #include <vespa/vdslib/bucketdistribution.h>
@@ -10,8 +7,6 @@ using namespace vdslib;
 
 class BucketDistributionTest : public CppUnit::TestFixture {
 public:
-    void setUp() override { }
-    void tearDown() override { }
     void testDistribution();
     void testNumBucketBits();
 
@@ -29,7 +24,6 @@ CPPUNIT_TEST_SUITE_REGISTRATION(BucketDistributionTest);
 
 void BucketDistributionTest::testDistribution()
 {
-    LOG(info, "testDistribution");
     const uint32_t expected4[] = {
         10, 11, 9, 6, 4, 8, 14, 1, 13, 2, 12, 3, 5, 7, 15, 0 };
     assertDistribution(16, 4, expected4);

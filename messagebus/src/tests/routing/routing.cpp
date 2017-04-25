@@ -1,5 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/messagebus.h>
@@ -15,8 +14,8 @@
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/vespalib/component/vtag.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/log/log.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP("routing_test");
 
 using namespace mbus;
@@ -414,12 +413,9 @@ private:
 public:
     MyPolicy(const MyPolicyFactory &parent) :
         _parent(parent)
-    {
-        // empty
-    }
+    {}
 
-    virtual void 
-    select(RoutingContext &ctx) override
+    void select(RoutingContext &ctx) override
     {
         if (!_parent._selectRoute.empty()) {
             ctx.addChild(Route::parse(_parent._selectRoute));
@@ -433,9 +429,8 @@ public:
             throw TestException();
         }
     }
-    
-    virtual void
-    merge(RoutingContext &ctx) override
+
+    void merge(RoutingContext &ctx) override
     {
         if (_parent._mergeError != ErrorCode::NONE) {
             Reply::UP reply(new EmptyReply());

@@ -74,19 +74,9 @@ public:
      * @param param The address to use for this, if empty this will resolve to hostname.
      */
     LocalServicePolicy(const string &param);
-
-    /**
-     * Destructor.
-     *
-     * Frees all allocated resources.
-     */
-    virtual ~LocalServicePolicy();
-
-    // Inherit doc from IRoutingPolicy.
-    virtual void select(mbus::RoutingContext &context) override;
-
-    // Inherit doc from IRoutingPolicy.
-    virtual void merge(mbus::RoutingContext &context) override;
+    ~LocalServicePolicy();
+    void select(mbus::RoutingContext &context) override;
+    void merge(mbus::RoutingContext &context) override;
 };
 
 }

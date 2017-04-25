@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
+#include "getdocumentmessage.h"
+#include "getdocumentreply.h"
 #include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <vespa/documentapi/messagebus/messages/getdocumentmessage.h>
-#include <vespa/documentapi/messagebus/messages/getdocumentreply.h>
 
 namespace documentapi {
 
@@ -10,9 +10,7 @@ GetDocumentMessage::GetDocumentMessage() :
     DocumentMessage(),
     _documentId(),
     _fieldSet("[all]")
-{
-    // empty
-}
+{}
 
 GetDocumentMessage::GetDocumentMessage(const document::DocumentId &documentId, int flags) :
     DocumentMessage(),

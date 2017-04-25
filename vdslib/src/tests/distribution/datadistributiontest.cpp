@@ -1,15 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <cppunit/extensions/HelperMacros.h>
-#include <list>
-#include <vespa/document/bucket/bucketidfactory.h>
+#include "bucketvector.h"
+#include "randombucket.h"
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/state/random.h>
-#include <ctime>
-#include <tests/distribution/bucketvector.h>
-#include <tests/distribution/randombucket.h>
+#include <vespa/document/bucket/bucketidfactory.h>
+#include <cppunit/extensions/HelperMacros.h>
 #include <fstream>
+#include <list>
+#include <ctime>
+
+
 
 using std::cout;
 using std::ios;

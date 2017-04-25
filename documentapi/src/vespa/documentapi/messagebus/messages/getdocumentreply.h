@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "documentacceptedreply.h"
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/documentapi/messagebus/messages/documentacceptedreply.h>
 
 namespace documentapi {
 
@@ -65,7 +65,7 @@ public:
      */
     void setLastModified(uint64_t lastModified);
 
-    string toString() const { return "getdocumentreply"; }
+    string toString() const override { return "getdocumentreply"; }
 };
 
 }

@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "documentmessage.h"
+#include "writedocumentreply.h"
 #include <vespa/document/update/documentupdate.h>
-#include <vespa/documentapi/messagebus/messages/documentmessage.h>
-#include <vespa/documentapi/messagebus/messages/writedocumentreply.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/base/idstring.h>
 
@@ -53,19 +53,17 @@ public:
     */
     const string& getGroup() const { return _group; }
 
-    // Implements DocumentMessage.
-    uint32_t getType() const;
+    uint32_t getType() const override;
 
     /**
        Returns a bucket id suitable for routing this message.
     */
     const document::BucketId& getBucketId() const { return _bucketId; }
 
-    string toString() const { return "batchdocumentupdatemessage"; }
+    string toString() const override { return "batchdocumentupdatemessage"; }
 
 protected:
-    // Implements DocumentMessage.
-    DocumentReply::UP doCreateReply() const;
+    DocumentReply::UP doCreateReply() const override;
 
 private:
     uint64_t _userId;
