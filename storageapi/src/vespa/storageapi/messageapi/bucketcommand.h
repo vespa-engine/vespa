@@ -8,8 +8,7 @@
 
 #pragma once
 
-#include <vespa/document/bucket/bucketid.h>
-#include <vespa/storageapi/messageapi/storagecommand.h>
+#include "storagecommand.h"
 
 namespace storage {
 namespace api {
@@ -32,13 +31,9 @@ public:
 
     document::BucketId getBucketId() const override { return _bucket; }
     bool hasBeenRemapped() const { return (_originalBucket.getRawId() != 0); }
-    const document::BucketId& getOriginalBucketId() const
-        { return _originalBucket; }
-
-    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-
-    virtual bool hasSingleBucketId() const override { return true; }
-
+    const document::BucketId& getOriginalBucketId() const { return _originalBucket; }
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    bool hasSingleBucketId() const override { return true; }
 };
 
 } // api

@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include <vespa/storageapi/messageapi/bucketcommand.h>
+#include "bucketcommand.h"
 
 namespace storage {
 namespace api {
@@ -24,8 +24,7 @@ protected:
 
 public:
     DECLARE_POINTER_TYPEDEFS(BucketInfoCommand);
-
-    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 } // api

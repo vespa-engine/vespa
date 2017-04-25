@@ -13,7 +13,6 @@
 
 #pragma once
 
-#include <stdint.h>
 #include <vespa/storageapi/defs.h>
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/vespalib/util/xmlserializable.h>
@@ -77,13 +76,10 @@ public:
     bool empty() const {
         return _metaCount == 0 && _usedFileSize == 0 && _checksum == 0;
     }
-
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const override
-    {
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override {
         vespalib::AsciiPrintable::print(out, verbose, indent);
     }
-    virtual void print(vespalib::asciistream&, const PrintProperties&) const override;
+    void print(vespalib::asciistream&, const PrintProperties&) const override;
 
     void printXml(vespalib::XmlOutputStream&) const;
 };
