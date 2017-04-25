@@ -40,7 +40,7 @@ public class DockerOperationsImplTest {
         final ContainerName containerName = new ContainerName("container-name");
         final ProcessResult actualResult = new ProcessResult(0, "output", "errors");
         final String programPath = "/bin/command";
-        final String[] command = new String[] {programPath, "arg"};
+        final String[] command = new String[]{programPath, "arg"};
 
         when(docker.executeInContainerAsRoot(any(), anyVararg()))
                 .thenReturn(actualResult); // output from node program
@@ -56,12 +56,12 @@ public class DockerOperationsImplTest {
         assertThat(result, is(actualResult));
     }
 
-    @Test(expected=RuntimeException.class)
+    @Test(expected = RuntimeException.class)
     public void processResultFromNodeProgramWhenNonZeroExitCode() throws Exception {
         final ContainerName containerName = new ContainerName("container-name");
         final ProcessResult actualResult = new ProcessResult(3, "output", "errors");
         final String programPath = "/bin/command";
-        final String[] command = new String[] {programPath, "arg"};
+        final String[] command = new String[]{programPath, "arg"};
 
         when(docker.executeInContainerAsRoot(any(), anyVararg()))
                 .thenReturn(actualResult); // output from node program

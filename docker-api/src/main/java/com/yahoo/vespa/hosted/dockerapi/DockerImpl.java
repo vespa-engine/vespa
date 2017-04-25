@@ -93,7 +93,7 @@ public class DockerImpl implements Docker {
                 true, /* fallback to 1.23 on errors */
                 metricReceiver);
 
-        if (! config.isRunningLocally()) {
+        if (!config.isRunningLocally()) {
             Duration minAgeToDelete = Duration.ofMinutes(config.imageGCMinTimeToLiveMinutes());
             dockerImageGC = Optional.of(new DockerImageGarbageCollector(minAgeToDelete));
 
@@ -121,7 +121,7 @@ public class DockerImpl implements Docker {
     }
 
     private void setupDockerNetworkIfNeeded() throws IOException {
-        if (! dockerClient.listNetworksCmd().withNameFilter(DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).exec().isEmpty()) return;
+        if (!dockerClient.listNetworksCmd().withNameFilter(DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).exec().isEmpty()) return;
 
         // Use IPv6 address if there is a mix of IP4 and IPv6 by taking the longest address.
         List<InetAddress> hostAddresses = Arrays.asList(InetAddress.getAllByName(com.yahoo.net.HostName.getLocalhost()));
@@ -426,7 +426,7 @@ public class DockerImpl implements Docker {
 
     @Override
     public void deleteUnusedDockerImages() {
-        if (! dockerImageGC.isPresent()) return;
+        if (!dockerImageGC.isPresent()) return;
 
         List<Image> images = listAllImages();
         List<com.github.dockerjava.api.model.Container> containers = listAllContainers();
@@ -494,7 +494,7 @@ public class DockerImpl implements Docker {
             remoteApiVersion = RemoteApiVersion.parseConfig(DockerClientImpl.getInstance(
                     buildDockerClientConfig(config).build())
                     .withDockerCmdExecFactory(dockerFactory).versionCmd().exec().getApiVersion());
-            logger.info("Found version of remote docker API: "+ remoteApiVersion);
+            logger.info("Found version of remote docker API: " + remoteApiVersion);
             // From version 1.24 a field was removed which causes trouble with the current docker java code.
             // When this is fixed, we can remove this and do not specify version.
             if (remoteApiVersion.isGreaterOrEqual(RemoteApiVersion.VERSION_1_24)) {
@@ -502,7 +502,7 @@ public class DockerImpl implements Docker {
                 logger.info("Found version 1.24 or newer of remote API, using 1.23.");
             }
         } catch (Exception e) {
-            if (! fallbackTo123orErrors) {
+            if (!fallbackTo123orErrors) {
                 throw e;
             }
             logger.log(LogLevel.ERROR, "Failed when trying to figure out remote API version of docker, using 1.23", e);

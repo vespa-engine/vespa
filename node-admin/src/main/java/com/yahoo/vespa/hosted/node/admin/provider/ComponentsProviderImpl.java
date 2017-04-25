@@ -83,7 +83,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
     public ComponentsProviderImpl(final NodeAdminConfig config, final Docker docker, final MetricReceiverWrapper metricReceiver) {
         this(docker, metricReceiver, new Environment(), config.isRunningLocally());
 
-        if (! config.isRunningLocally()) {
+        if (!config.isRunningLocally()) {
             setCorePattern(docker);
             initializeNodeAgentSecretAgent(docker);
         }

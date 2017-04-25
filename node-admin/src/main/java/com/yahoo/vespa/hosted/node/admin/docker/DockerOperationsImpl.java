@@ -38,16 +38,17 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 /**
  * Class that wraps the Docker class and have some tools related to running programs in docker.
+ *
  * @author dybis
  */
 public class DockerOperationsImpl implements DockerOperations {
     public static final String NODE_PROGRAM = Defaults.getDefaults().underVespaHome("bin/vespa-nodectl");
     private static final String[] GET_VESPA_VERSION_COMMAND = new String[]{NODE_PROGRAM, "vespa-version"};
 
-    private static final String[] RESUME_NODE_COMMAND = new String[] {NODE_PROGRAM, "resume"};
-    private static final String[] SUSPEND_NODE_COMMAND = new String[] {NODE_PROGRAM, "suspend"};
-    private static final String[] RESTART_VESPA_ON_NODE_COMMAND = new String[] {NODE_PROGRAM, "restart-vespa"};
-    private static final String[] STOP_NODE_COMMAND = new String[] {NODE_PROGRAM, "stop"};
+    private static final String[] RESUME_NODE_COMMAND = new String[]{NODE_PROGRAM, "resume"};
+    private static final String[] SUSPEND_NODE_COMMAND = new String[]{NODE_PROGRAM, "suspend"};
+    private static final String[] RESTART_VESPA_ON_NODE_COMMAND = new String[]{NODE_PROGRAM, "restart-vespa"};
+    private static final String[] STOP_NODE_COMMAND = new String[]{NODE_PROGRAM, "stop"};
 
     private static final Pattern VESPA_VERSION_PATTERN = Pattern.compile("^(\\S*)$", Pattern.MULTILINE);
 
@@ -55,6 +56,7 @@ public class DockerOperationsImpl implements DockerOperations {
 
     // Map of directories to mount and whether they should be writable by everyone
     private static final Map<String, Boolean> DIRECTORIES_TO_MOUNT = new HashMap<>();
+
     static {
         DIRECTORIES_TO_MOUNT.put("/etc/yamas-agent", true);
         DIRECTORIES_TO_MOUNT.put("/etc/filebeat", true);
@@ -231,7 +233,7 @@ public class DockerOperationsImpl implements DockerOperations {
      * Try to suspend node. Suspending a node means the node should be taken offline,
      * such that maintenance can be done of the node (upgrading, rebooting, etc),
      * and such that we will start serving again as soon as possible afterwards.
-     *
+     * <p>
      * Any failures are logged and ignored.
      */
     @Override
@@ -244,7 +246,7 @@ public class DockerOperationsImpl implements DockerOperations {
             // It's bad to continue as-if nothing happened, but on the other hand if we do not proceed to
             // remove container, we will not be able to upgrade to fix any problems in the suspend logic!
             logger.warning("Failed trying to suspend container " + containerName.asString() + "  with "
-                   + Arrays.toString(SUSPEND_NODE_COMMAND), e);
+                    + Arrays.toString(SUSPEND_NODE_COMMAND), e);
         }
     }
 
@@ -371,7 +373,7 @@ public class DockerOperationsImpl implements DockerOperations {
             if (resultCode != 0) {
                 throw new RuntimeException("Command " + Joiner.on(' ').join(command) + " failed: " + output);
             }
-        } catch (IOException|InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
