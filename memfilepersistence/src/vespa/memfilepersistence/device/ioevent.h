@@ -23,6 +23,12 @@ public:
             const vespalib::string & description,
             const vespalib::string & location,
             bool global = false);
+    IOEvent(const IOEvent &);
+    IOEvent & operator = (const IOEvent &);
+    IOEvent(IOEvent &&) = default;
+    IOEvent & operator = (IOEvent &&) = default;
+
+    ~IOEvent();
 
     static IOEvent createEventFromErrno(uint32_t timestamp,
                                         int error,

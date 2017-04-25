@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/memfilepersistence/common/slotmatcher.h>
+
 namespace document {
     namespace select {
         class Node;
@@ -21,7 +22,7 @@ public:
     VisitorSlotMatcher(const document::DocumentTypeRepo& repo,
                        const document::select::Node* selection);
 
-    virtual bool match(const Slot& slot);
+    bool match(const Slot& slot) override;
 
 };
 

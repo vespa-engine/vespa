@@ -65,8 +65,8 @@ public:
                           Timestamp fromTimestamp,
                           Timestamp toTimestamp);
 
-    virtual void iterate() const override;
-    virtual SlotIterator* clone() const override;
+    void iterate() const override;
+     SlotIterator* clone() const override;
 };
 
 class AllSlotsIterator : public SlotIterator {
@@ -82,8 +82,8 @@ public:
                      Timestamp fromTimestamp,
                      Timestamp toTimestamp);
 
-    virtual void iterate() const override;
-    virtual SlotIterator* clone() const override;
+    void iterate() const override;
+    SlotIterator* clone() const override;
 };
 
 /**
@@ -127,4 +127,3 @@ public:
 
 } // memfile
 } // storage
-

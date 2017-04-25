@@ -17,6 +17,7 @@
 #pragma once
 
 #include <vector>
+#include <cstdint>
 
 namespace document {
     class BucketId;
@@ -37,4 +38,3 @@ public:
 
 }
 }
-

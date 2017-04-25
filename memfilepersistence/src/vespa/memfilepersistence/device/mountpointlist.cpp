@@ -1,22 +1,21 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/memfilepersistence/device/mountpointlist.h>
 
+#include "mountpointlist.h"
+#include "devicemanager.h"
+#include <vespa/memfilepersistence/common/exceptions.h>
+#include <vespa/persistence/spi/exceptions.h>
+#include <vespa/vdslib/state/nodestate.h>
 #include <vespa/config/helper/configfetcher.h>
+#include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/xmlserializable.h>
 #include <vespa/vespalib/util/guard.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
-#include <errno.h>
+#include <cerrno>
 #include <fstream>
-#include <vespa/log/log.h>
-#include <vespa/persistence/spi/exceptions.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <vespa/memfilepersistence/common/exceptions.h>
-#include <vespa/memfilepersistence/device/devicemanager.h>
-#include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vdslib/state/nodestate.h>
-#include <vespa/vespalib/util/xmlserializable.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".persistence.mountpointlist");
 
 namespace storage {

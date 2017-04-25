@@ -10,9 +10,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/printable.h>
+#include "types.h"
 #include <vespa/memfilepersistence/device/directory.h>
-#include <vespa/memfilepersistence/common/types.h>
+#include <vespa/vespalib/util/printable.h>
 
 namespace storage {
 namespace memfile {
@@ -37,8 +37,7 @@ public:
     const String& getPath() const { return _path; }
     FileVersion getWantedFileVersion() const { return _wantedVersion; }
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const override;
+     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     bool operator==(const FileSpecification& o) const {
         return (_bucketId == o._bucketId && _dir == o._dir
@@ -48,4 +47,3 @@ public:
 
 } // storage
 } // memfile
-

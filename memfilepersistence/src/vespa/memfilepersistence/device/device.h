@@ -12,7 +12,6 @@
 
 #include <vespa/vespalib/util/printable.h>
 #include <list>
-#include <string>
 
 namespace storage {
 
@@ -63,9 +62,7 @@ public:
     virtual const IOEvent* getLastEvent() const = 0;
 
     const std::list<IOEvent>& getEvents() const { return _events; }
-
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
 };
 

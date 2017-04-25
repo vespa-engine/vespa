@@ -79,7 +79,7 @@ public:
 
     void setupDisks(uint32_t disks);
 
-    void tearDown() {
+    void tearDown() override{
         _env.reset();
         _componentRegister.reset();
         _memoryManager.reset();
@@ -290,7 +290,7 @@ public:
 class SingleDiskMemFileTestUtils : public MemFileTestUtils
 {
 public:
-    void setUp() {
+    void setUp() override {
         setupDisks(1);
     }
 };

@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/memfilepersistence/spi/visitorslotmatcher.h>
+
+#include "visitorslotmatcher.h"
 #include <vespa/document/select/bodyfielddetector.h>
 #include <vespa/document/select/node.h>
 
@@ -46,7 +46,7 @@ VisitorSlotMatcher::VisitorSlotMatcher(
       _selection(selection),
       _needDocument(needDocument(selection))
 {
-};
+}
 
 bool
 VisitorSlotMatcher::match(const Slot& slot) {

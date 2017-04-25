@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/sync.h>
+#include <vector>
 
 namespace storage {
 

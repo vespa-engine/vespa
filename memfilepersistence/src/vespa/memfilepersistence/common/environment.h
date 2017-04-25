@@ -13,15 +13,16 @@
 
 #pragma once
 
-#include <vespa/config/helper/configfetcher.h>
-#include <vespa/memfilepersistence/common/options.h>
-#include <vespa/memfilepersistence/common/types.h>
-#include <vespa/memfilepersistence/common/config_lock_guard.h>
-#include <vespa/memfilepersistence/common/config_aliases.h>
+#include "options.h"
+#include "types.h"
+#include "config_lock_guard.h"
+#include "config_aliases.h"
+#include <vespa/memfilepersistence/device/mountpointlist.h>
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/memfilepersistence/device/mountpointlist.h>
 #include <vespa/document/bucket/bucketidfactory.h>
+#include <vespa/config/helper/configfetcher.h>
+
 
 namespace storage {
 namespace memfile {

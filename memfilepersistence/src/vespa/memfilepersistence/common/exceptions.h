@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include <vespa/memfilepersistence/common/filespecification.h>
+#include "filespecification.h"
 #include <vespa/memfilepersistence/memfile/memslot.h>
 #include <vespa/vespalib/util/exceptions.h>
 

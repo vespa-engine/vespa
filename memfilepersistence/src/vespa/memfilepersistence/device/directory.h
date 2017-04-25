@@ -10,7 +10,7 @@
  */
 #pragma once
 
-#include <vespa/memfilepersistence/device/partition.h>
+#include "partition.h"
 
 namespace storage {
 
@@ -39,16 +39,15 @@ public:
     Partition& getPartition() { return *_partition; }
     const Partition& getPartition() const { return *_partition; }
 
-    const IOEvent* getLastEvent() const;
-    virtual void addEvent(const IOEvent& e);
+    const IOEvent* getLastEvent() const override;
+    void addEvent(const IOEvent& e) override;
     virtual void addEvent(Device::State s,
                           const std::string& description,
                           const std::string& location);
 
     State getState() const;
     bool isOk() const { return (getLastEvent() == 0); }
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     bool operator==(const Directory& d) const { return (_path == d._path); }
     bool operator!=(const Directory& d) const { return (_path != d._path); }
 

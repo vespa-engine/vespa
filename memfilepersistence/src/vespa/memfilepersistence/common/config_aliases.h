@@ -9,8 +9,7 @@ namespace storage {
 namespace memfile {
 
 // Friendly aliases to painfully long config names.
-using MemFilePersistenceConfig
-        = vespa::config::storage::StorMemfilepersistenceConfig;
+using MemFilePersistenceConfig= vespa::config::storage::StorMemfilepersistenceConfig;
 using PersistenceConfig = vespa::config::content::PersistenceConfig;
 using DevicesConfig = vespa::config::storage::StorDevicesConfig;
 

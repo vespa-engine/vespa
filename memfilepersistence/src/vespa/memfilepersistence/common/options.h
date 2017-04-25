@@ -16,13 +16,12 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/printable.h>
-#include <vespa/fastos/types.h> // For uint32_t on linux
-#include <string>
-#include <vespa/vespalib/stllike/string.h>
+
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/config-stor-memfilepersistence.h>
 #include <vespa/config-persistence.h>
+#include <vespa/vespalib/util/printable.h>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace storage {
 

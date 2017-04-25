@@ -1,8 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/memfilepersistence/device/ioevent.h>
-#include <vespa/memfilepersistence/device/device.h>
+
+#include "ioevent.h"
 #include <vespa/vespalib/util/exceptions.h>
-#include <cerrno>
 #include <ostream>
 
 namespace storage {
@@ -15,8 +14,12 @@ IOEvent::IOEvent()
       _location(),
       _global(false),
       _timestamp(0)
-{
-}
+{}
+
+IOEvent::IOEvent(const IOEvent &) = default;
+IOEvent & IOEvent::operator = (const IOEvent &) = default;
+
+IOEvent::~IOEvent() {}
 
 namespace {
     vespalib::string stripBacktrace(const vespalib::string& s) {
