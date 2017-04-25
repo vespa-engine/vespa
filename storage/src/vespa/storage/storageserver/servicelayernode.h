@@ -8,11 +8,11 @@
 
 #pragma once
 
-#include <vespa/persistence/spi/persistenceprovider.h>
+#include "applicationgenerationfetcher.h"
+#include "servicelayernodecontext.h"
+#include "storagenode.h"
 #include <vespa/storage/bucketdb/minimumusedbitstracker.h>
-#include <vespa/storage/storageserver/applicationgenerationfetcher.h>
-#include <vespa/storage/storageserver/servicelayernodecontext.h>
-#include <vespa/storage/storageserver/storagenode.h>
+#include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/config-stor-devices.h>
 #include <vespa/config/config.h>
 
@@ -44,33 +44,29 @@ public:
     typedef std::unique_ptr<ServiceLayerNode> UP;
 
     ServiceLayerNode(const config::ConfigUri & configUri,
-                            ServiceLayerNodeContext& context,
-                            ApplicationGenerationFetcher& generationFetcher,
-                            spi::PersistenceProvider& persistenceProvider,
-                            const VisitorFactory::Map& externalVisitors);
+                     ServiceLayerNodeContext& context,
+                     ApplicationGenerationFetcher& generationFetcher,
+                     spi::PersistenceProvider& persistenceProvider,
+                     const VisitorFactory::Map& externalVisitors);
     ~ServiceLayerNode();
     /**
      * Init must be called exactly once after construction and before destruction.
      */
     void init();
 
-    virtual const lib::NodeType& getNodeType() const
-        { return lib::NodeType::STORAGE; }
+    const lib::NodeType& getNodeType() const override { return lib::NodeType::STORAGE; }
 
-    virtual ResumeGuard pause();
+    ResumeGuard pause() override;
 
 private:
-    virtual void subscribeToConfigs();
-    virtual void initializeNodeSpecific();
-    virtual void handleLiveConfigUpdate();
-    virtual void configure(std::unique_ptr<vespa::config::storage::StorDevicesConfig> config);
-    virtual VisitorMessageSession::UP createSession(Visitor&, VisitorThread&);
-    virtual documentapi::Priority::Value toDocumentPriority(
-            uint8_t storagePriority) const;
-
-    virtual StorageLink::UP createChain();
-    virtual void removeConfigSubscriptions();
+    void subscribeToConfigs() override;
+    void initializeNodeSpecific() override;
+    void handleLiveConfigUpdate() override;
+    void configure(std::unique_ptr<vespa::config::storage::StorDevicesConfig> config) override;
+    VisitorMessageSession::UP createSession(Visitor&, VisitorThread&) override;
+    documentapi::Priority::Value toDocumentPriority(uint8_t storagePriority) const override;
+    StorageLink::UP createChain() override;
+    void removeConfigSubscriptions() override;
 };
 
 } // storage
-

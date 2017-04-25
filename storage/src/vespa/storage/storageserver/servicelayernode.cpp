@@ -1,27 +1,23 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/storageserver/servicelayernode.h>
-
-#include <vespa/log/log.h>
-#include <vespa/persistence/spi/exceptions.h>
-#include <vespa/storage/common/nodestateupdater.h>
+#include "servicelayernode.h"
+#include "bouncer.h"
+#include "bucketintegritychecker.h"
+#include <vespa/storage/bucketmover/bucketmover.h>
+#include "communicationmanager.h"
+#include "changedbucketownershiphandler.h"
+#include "mergethrottler.h"
+#include "opslogger.h"
+#include "statemanager.h"
+#include <vespa/storage/visiting/messagebusvisitormessagesession.h>
+#include <vespa/storage/visiting/visitormanager.h>
 #include <vespa/storage/bucketdb/bucketmanager.h>
 #include <vespa/storage/bucketdb/storagebucketdbinitializer.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
-#include <vespa/storage/storageserver/bouncer.h>
-#include <vespa/storage/storageserver/bucketintegritychecker.h>
-#include <vespa/storage/bucketmover/bucketmover.h>
-#include <vespa/storage/storageserver/communicationmanager.h>
-#include <vespa/storage/storageserver/changedbucketownershiphandler.h>
-#include <vespa/storage/storageserver/mergethrottler.h>
-#include <vespa/storage/storageserver/opslogger.h>
-#include <vespa/storage/storageserver/statemanager.h>
-#include <vespa/storage/visiting/messagebusvisitormessagesession.h>
-#include <vespa/storage/visiting/visitormanager.h>
-#include <vespa/storage/common/hostreporter/hostinfo.h>
+#include <vespa/persistence/spi/exceptions.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".node.servicelayer");
 
 namespace storage {

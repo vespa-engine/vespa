@@ -36,12 +36,12 @@
     } \
 }
 
-#include <vespa/document/bucket/bucketid.h>
-#include <vespa/vespalib/util/printable.h>
 #include <vespa/storageframework/storageframework.h>
-#include <vector>
 #include <vespa/vdslib/state/nodestate.h>
 #include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/document/bucket/bucketid.h>
+#include <vespa/vespalib/util/printable.h>
+#include <vector>
 
 namespace storage {
 

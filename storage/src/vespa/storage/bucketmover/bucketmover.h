@@ -16,14 +16,14 @@
 
 #pragma once
 
+#include "run.h"
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storage/config/config-stor-bucketmover.h>
+#include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storageapi/message/bucket.h>
-#include <vespa/storage/bucketmover/run.h>
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/config/helper/ifetchercallback.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/config/config.h>
@@ -58,11 +58,10 @@ public:
     BucketMover(const config::ConfigUri & configUri, ServiceLayerComponentRegister&);
     ~BucketMover();
 
-    virtual void onDoneInit();
-    virtual void onClose();
+    void onDoneInit() override;
+    void onClose() override;
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     bool isWorkingOnCycle() const;
     uint32_t getCycleCount() const;
@@ -82,21 +81,18 @@ private:
     void finishCurrentRun();
     bool tick();
 
-    virtual void configure(std::unique_ptr<vespa::config::content::core::StorBucketmoverConfig>);
-    virtual void run(framework::ThreadHandle&);
-    bool onInternalReply(const std::shared_ptr<api::InternalReply>&);
-    virtual void storageDistributionChanged();
+    void configure(std::unique_ptr<vespa::config::content::core::StorBucketmoverConfig>) override;
+    void run(framework::ThreadHandle&) override;
+    bool onInternalReply(const std::shared_ptr<api::InternalReply>&) override;
+    void storageDistributionChanged() override;
 
     framework::SecondTime calculateWaitTimeOfNextRun() const;
 
-    virtual void reportHtmlStatus(std::ostream&,
-                                  const framework::HttpUrlPath&) const;
+    void reportHtmlStatus(std::ostream&, const framework::HttpUrlPath&) const override;
     void printCurrentStatus(std::ostream&, const RunStatistics&) const;
     void printRunHtml(std::ostream&, const bucketmover::Run&) const;
     void printRunStatisticsHtml(std::ostream&, const RunStatistics&) const;
-
 };
 
 } // bucketmover
 } // storage
-
