@@ -64,8 +64,9 @@ public class HostedVespaPolicyTest {
         when(clusterControllerClientFactory.createClient(any(), any())).thenReturn(client);
     }
 
-    private final HostedVespaPolicy policy
-            = new HostedVespaPolicy(clusterControllerClientFactory);
+    // TODO: Replace HostedVespaClusterPolicy with ClusterPolicy mock
+    private final HostedVespaPolicy policy =
+            new HostedVespaPolicy(new HostedVespaClusterPolicy(), clusterControllerClientFactory);
 
     private final MutableStatusRegistry mutablestatusRegistry = mock(MutableStatusRegistry.class);
     {
@@ -192,7 +193,7 @@ public class HostedVespaPolicyTest {
 
         policy.grantSuspensionRequest(applicationInstance, HOST_NAME_3, mutablestatusRegistry);
 
-        verify(mutablestatusRegistry, times(1)).setHostState(HOST_NAME_3, HostStatus.ALLOWED_TO_BE_DOWN);
+        verify(mutablestatusRegistry, times(0)).setHostState(HOST_NAME_3, HostStatus.ALLOWED_TO_BE_DOWN);
     }
 
     @Test

@@ -2,16 +2,15 @@
 package com.yahoo.vespa.orchestrator.policy;
 
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.orchestrator.NodeGroup;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
-
-import java.util.List;
 
 public class BatchHostStateChangeDeniedException extends OrchestrationException {
 
     public BatchHostStateChangeDeniedException(HostName parentHostname,
-                                               List<HostName> orderedHostNames,
+                                               NodeGroup group,
                                                HostStateChangeDeniedException e) {
-        super("Failed to suspend " + orderedHostNames + " with parent host "
+        super("Failed to suspend " + group + " with parent host "
                 + parentHostname + ": " + e.getMessage(), e);
 
     }

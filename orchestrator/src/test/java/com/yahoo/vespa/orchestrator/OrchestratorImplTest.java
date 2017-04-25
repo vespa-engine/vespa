@@ -236,23 +236,18 @@ public class OrchestratorImplTest {
     }
 
     @Test
-    public void rollbackWorks() throws Exception {
+    public void partialSuspension() throws Exception {
         // A spy is preferential because suspendAll() relies on delegating the hard work to suspend() and resume().
         OrchestratorImpl orchestrator = spy(this.orchestrator);
 
-        doNothing().when(orchestrator).suspend(DummyInstanceLookupService.TEST3_HOST_NAME);
+        doNothing().when(orchestrator).suspendGroup(DummyInstanceLookupService.TEST3_NODE_GROUP);
 
         Throwable supensionFailure = new HostStateChangeDeniedException(
                 DummyInstanceLookupService.TEST6_HOST_NAME,
                 "some-constraint",
                 new ServiceType("foo"),
                 "error message");
-        doThrow(supensionFailure).when(orchestrator).suspend(DummyInstanceLookupService.TEST1_HOST_NAME);
-
-        doThrow(new HostStateChangeDeniedException(DummyInstanceLookupService.TEST1_HOST_NAME, "foo1-constraint", new ServiceType("foo1-service"), "foo1-message"))
-                .when(orchestrator).resume(DummyInstanceLookupService.TEST1_HOST_NAME);
-        doNothing().when(orchestrator).resume(DummyInstanceLookupService.TEST6_HOST_NAME);
-        doNothing().when(orchestrator).resume(DummyInstanceLookupService.TEST3_HOST_NAME);
+        doThrow(supensionFailure).when(orchestrator).suspendGroup(DummyInstanceLookupService.TEST6_NODE_GROUP);
 
         try {
             orchestrator.suspendAll(
@@ -263,29 +258,22 @@ public class OrchestratorImplTest {
                             DummyInstanceLookupService.TEST6_HOST_NAME));
             fail();
         } catch (BatchHostStateChangeDeniedException e) {
-            assertEquals(e.getSuppressed().length, 1);
-            assertEquals("Failed to suspend [test3.prod.utpoia-1.vespahosted.ut1.yahoo.com, " +
-                    "test6.prod.us-east-1.vespahosted.ne1.yahoo.com, test1.prod.utpoia-1.vespahosted.ut1.yahoo.com] " +
-                    "with parent host parentHostname: Changing the state of host " +
-                    "test6.prod.us-east-1.vespahosted.ne1.yahoo.com would violate some-constraint for " +
-                    "service type foo: error message; " +
-                    "With suppressed throwable com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException: " +
-                    "Changing the state of host test1.prod.utpoia-1.vespahosted.ut1.yahoo.com would violate " +
-                    "foo1-constraint for service type foo1-service: foo1-message", e.getMessage());
+            assertEquals("Failed to suspend "
+                    + "NodeGroup{application=tenant-id-3:application-instance-3:prod:utopia-1:default, "
+                    + "hostNames=[test6.prod.us-east-1.vespahosted.ne1.yahoo.com]} with parent host parentHostname: "
+                    + "Changing the state of test6.prod.us-east-1.vespahosted.ne1.yahoo.com would violate "
+                    + "some-constraint for service type foo: error message",
+                    e.getMessage());
         }
-
-        InOrder order = inOrder(orchestrator);
-        order.verify(orchestrator).suspend(DummyInstanceLookupService.TEST3_HOST_NAME);
-        order.verify(orchestrator).suspend(DummyInstanceLookupService.TEST6_HOST_NAME);
 
         // As of 2016-06-07:
         //   TEST1_HOST_NAME: test-tenant-id:application:instance
         //   TEST3_HOST_NAME: mediasearch:imagesearch:default
         //   TEST6_HOST_NAME: tenant-id-3:application-instance-3:default
         // Meaning the order is 3, 6, then 1. For rollback/resume the order is reversed.
-        order.verify(orchestrator).resume(DummyInstanceLookupService.TEST1_HOST_NAME);
-        order.verify(orchestrator).resume(DummyInstanceLookupService.TEST6_HOST_NAME);
-        order.verify(orchestrator).resume(DummyInstanceLookupService.TEST3_HOST_NAME);
+        InOrder order = inOrder(orchestrator);
+        order.verify(orchestrator).suspendGroup(DummyInstanceLookupService.TEST3_NODE_GROUP);
+        order.verify(orchestrator).suspendGroup(DummyInstanceLookupService.TEST6_NODE_GROUP);
         order.verifyNoMoreInteractions();
     }
 
