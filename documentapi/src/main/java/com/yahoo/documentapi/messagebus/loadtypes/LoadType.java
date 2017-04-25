@@ -19,6 +19,7 @@ public class LoadType {
         this.priority = priority;
     }
 
+    @Override
     public boolean equals(Object other) {
         if (!(other instanceof LoadType)) {
             return false;
@@ -27,6 +28,11 @@ public class LoadType {
         LoadType o = (LoadType)other;
 
         return name.equals(o.getName()) && id == o.getId() && priority == o.getPriority();
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(name, id, priority);
     }
 
     public String getName() { return name; }
