@@ -6,6 +6,7 @@
 #include "socket_handle.h"
 #include <vector>
 #include <sys/socket.h>
+#include <functional>
 
 struct sockaddr_in;
 struct sockaddr_in6;
@@ -45,7 +46,11 @@ public:
     vespalib::string path() const;
     vespalib::string name() const;
     vespalib::string spec() const;
-    SocketHandle connect() const;
+    SocketHandle connect(const std::function<bool(SocketHandle&)> &tweak) const;
+    SocketHandle connect() const { return connect([](SocketHandle&){ return true; }); }
+    SocketHandle connect_async() const {
+        return connect([](SocketHandle &handle){ return handle.set_blocking(false); });
+    }
     SocketHandle listen(int backlog = 500) const;
     static SocketAddress address_of(int sockfd);
     static SocketAddress peer_address(int sockfd);

@@ -99,4 +99,12 @@ TEST("require that socket spec to string transform works as expected") {
     TEST_DO(verify_spec("tcp/[host]:123", "tcp/host:123"));
 }
 
+TEST("require that port-only spec resolves to wildcard server address") {
+    EXPECT_TRUE(SocketSpec("tcp/123").server_address().is_wildcard());
+}
+
+TEST("require that port-only spec resolves to non-wildcard client address") {
+    EXPECT_TRUE(!SocketSpec("tcp/123").client_address().is_wildcard());
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

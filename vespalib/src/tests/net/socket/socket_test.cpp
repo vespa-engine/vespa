@@ -1,5 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/net/selector.h>
 #include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/net/server_socket.h>
 #include <vespa/vespalib/net/socket_options.h>
@@ -217,7 +218,7 @@ TEST_MT_FF("require that server accept can be interrupted", 2, ServerSocket("tcp
         fprintf(stderr, "<-- accept returned\n");
         EXPECT_TRUE(!socket.valid());
     } else {
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
         fprintf(stderr, "--- closing server socket\n");
         f1.shutdown();
     }
@@ -377,6 +378,58 @@ TEST("require that tcp lingering can be adjusted") {
     TEST_DO(verifier.verify_linger(false, 0));
     EXPECT_TRUE(handle.set_linger(false, 10));
     TEST_DO(verifier.verify_linger(false, 0));
+}
+
+SocketHandle connect_async(const SocketAddress &addr) {
+    struct ConnectContext {
+        SocketHandle handle;
+        bool connect_done = false;
+        int error = 0;
+    };
+    struct ConnectHandler {
+        using context_type = ConnectContext;
+        int get_fd(ConnectContext &ctx) const { return ctx.handle.get(); }
+        void handle_wakeup() {}
+        void handle_event(ConnectContext &ctx, bool read, bool write) {
+            (void) read;
+            if (write) {
+                ctx.connect_done = true;
+                ctx.error = ctx.handle.get_so_error();
+            }
+        }
+    };
+    ConnectHandler handler;
+    Selector<ConnectHandler> selector(handler, 4096);
+    ConnectContext ctx;
+    ctx.handle = addr.connect_async();
+    EXPECT_TRUE(ctx.handle.valid());
+    test::SocketOptionsVerifier verifier(ctx.handle.get());
+    TEST_DO(verifier.verify_blocking(false));
+    if (ctx.handle.valid()) {
+        selector.add(ctx, true);
+        while (!ctx.connect_done) {
+            selector.poll(1000);
+            selector.dispatch();
+        }
+        selector.remove(ctx);
+    }
+    EXPECT_EQUAL(ctx.error, 0);
+    return std::move(ctx.handle);
+}
+
+TEST_MT_FF("require that async connect pattern works", 2, ServerSocket("tcp/0"), TimeBomb(60)) {
+    if (thread_id == 0) {
+        SocketHandle socket = f1.accept();
+        EXPECT_TRUE(socket.valid());
+        TEST_DO(verify_socket_io(true, socket));
+    } else {
+        SocketAddress addr = SocketSpec::from_port(f1.address().port()).client_address();
+        SocketHandle socket = connect_async(addr);
+        socket.set_blocking(true);
+        TEST_DO(verify_socket_io(false, socket));
+        // TEST_DO(connect_async(SocketAddress::select_remote(80, "www.yahoo.com")));
+        // TEST_DO(connect_async(SocketAddress::select_remote(85, "myinternalhost")));
+    }
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -129,12 +129,14 @@ SocketAddress::spec() const
 }
 
 SocketHandle
-SocketAddress::connect() const
+SocketAddress::connect(const std::function<bool(SocketHandle&)> &tweak) const
 {
     if (valid()) {
         SocketHandle handle(socket(_addr.ss_family, SOCK_STREAM, 0));
-        if (handle.valid() && (::connect(handle.get(), addr(), _size) == 0)) {
-            return handle;
+        if (handle.valid() && tweak(handle)) {
+            if ((::connect(handle.get(), addr(), _size) == 0) || (errno == EINPROGRESS)) {
+                return handle;
+            }
         }
     }
     return SocketHandle();
