@@ -12,8 +12,15 @@ public class ContainerConfig {
         public static final String servicesXmlV2(int port) {
                 return
                         "<jdisc version='1.0'>" +
+                        "  <component id='com.yahoo.test.ManualClock'/>" +
+                        "  <component id='com.yahoo.vespa.curator.mock.MockCurator'/>" +
+                        "  <component id='com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock'/>" +
+                        "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockDeployer'/>" +
+                        "  <component id='com.yahoo.vespa.hosted.provision.testutils.TestHostLivenessTracker'/>" +
+                        "  <component id='com.yahoo.vespa.hosted.provision.testutils.ServiceMonitorStub'/>" +
                         "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors'/>" +
                         "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository'/>" +
+                        "  <component id='com.yahoo.vespa.hosted.provision.maintenance.NodeRepositoryMaintenance'/>" +
                         "  <handler id='com.yahoo.vespa.hosted.provision.restapi.v2.NodesApiHandler'>" +
                         "    <binding>http://*/nodes/v2/*</binding>" +
                         "  </handler>" +

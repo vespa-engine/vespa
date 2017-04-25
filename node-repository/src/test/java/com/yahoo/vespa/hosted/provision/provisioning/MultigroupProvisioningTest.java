@@ -11,7 +11,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.maintenance.JobControl;
-import com.yahoo.vespa.hosted.provision.maintenance.MockDeployer;
+import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.hosted.provision.maintenance.RetiredExpirer;
 import org.junit.Ignore;
 import org.junit.Test;

@@ -137,7 +137,8 @@ public class VespaFormatter extends SimpleFormatter {
     private void appendException(Throwable throwable, StringBuilder builder) {
         if (throwable == null)
             return;
-
+//throwable.printStackTrace();
+if (1==1) return;
         String escapedStackTrace = VespaFormat.escape(stackTrace(throwable));
         builder.append("\\n").append("exception=").append("\\n").append(escapedStackTrace);
     }
@@ -169,4 +170,36 @@ public class VespaFormatter extends SimpleFormatter {
     public String getServiceName () {
         return serviceName;
     }
+
+
+    public static String toMessageString(Throwable t) {
+        StringBuilder b = new StringBuilder();
+        String lastMessage = null;
+        String message;
+        for (; t != null; t = t.getCause()) {
+            message = getMessage(t);
+            if (message == null) continue;
+            if (message.equals(lastMessage)) continue;
+            if (b.length() > 0) {
+                b.append(": ");
+            }
+            b.append(message);
+            lastMessage = message;
+        }
+        return b.toString();
+    }
+
+    /** Returns a useful message from *this* exception, or null if there is nothing useful to return */
+    private static String getMessage(Throwable t) {
+        String message = t.getMessage();
+        if (t.getCause() == null) {
+            if (message == null) return t.getClass().getSimpleName();
+        } else {
+            if (message == null) return null;
+            //if (message.equals(t.getCause().getClass().getName() + ": " + t.getCause().getMessage())) return null;
+        }
+        return message;
+    }
+
+
 }

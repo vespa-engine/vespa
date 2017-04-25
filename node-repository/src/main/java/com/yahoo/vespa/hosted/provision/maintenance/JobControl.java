@@ -35,21 +35,24 @@ public class JobControl {
      * Each job is represented by its simple (omitting package) class name.
      */
     public Set<String> jobs() { return new HashSet<>(startedJobs); }
+
+    /** Returns a snapshot containing the currently inactive jobs in this */
+    public Set<String> inactiveJobs() { return db.readInactiveJobs(); }
     
     /** Returns true if this job is not currently deactivated */
     public boolean isActive(String jobSimpleClassName) {
-        return  ! db.readDeactivatedJobs().contains(jobSimpleClassName);
+        return  ! db.readInactiveJobs().contains(jobSimpleClassName);
     }
 
     /** Set a job active or inactive */
     public void setActive(String jobSimpleClassName, boolean active) {
-        try (CuratorMutex lock = db.lockDeactivatedJobs()) {
-            Set<String> deactivatedJobs = db.readDeactivatedJobs();
+        try (CuratorMutex lock = db.lockInactiveJobs()) {
+            Set<String> inactiveJobs = db.readInactiveJobs();
             if (active)
-                deactivatedJobs.remove(jobSimpleClassName);
+                inactiveJobs.remove(jobSimpleClassName);
             else
-                deactivatedJobs.add(jobSimpleClassName);
-            db.writeDeactivatedJobs(deactivatedJobs);
+                inactiveJobs.add(jobSimpleClassName);
+            db.writeInactiveJobs(inactiveJobs);
         }
     }
     

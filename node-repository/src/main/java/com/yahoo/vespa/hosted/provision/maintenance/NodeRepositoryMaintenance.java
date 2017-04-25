@@ -83,6 +83,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         metricsReporter.deconstruct();
     }
 
+    public JobControl jobControl() { return jobControl; }
+    
     private static Optional<Duration> durationFromEnv(String envVariable) {
         return Optional.ofNullable(System.getenv(envPrefix + envVariable)).map(Long::parseLong).map(Duration::ofSeconds);
     }

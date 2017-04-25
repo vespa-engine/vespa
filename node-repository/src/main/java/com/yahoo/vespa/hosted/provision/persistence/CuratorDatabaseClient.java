@@ -68,7 +68,7 @@ public class CuratorDatabaseClient {
         curatorDatabase.create(root);
         for (Node.State state : Node.State.values())
             curatorDatabase.create(toPath(state));
-        curatorDatabase.create(deactivatedJobsPath());
+        curatorDatabase.create(inactiveJobsPath());
     }
 
     /**
@@ -308,26 +308,26 @@ public class CuratorDatabaseClient {
         return root.append("defaultFlavor").append(applicationId.serializedForm());
     }
 
-    public Set<String> readDeactivatedJobs() {
-        return curatorDatabase.getData(deactivatedJobsPath())
+    public Set<String> readInactiveJobs() {
+        return curatorDatabase.getData(inactiveJobsPath())
                               .map(data -> stringSetSerializer.fromJson(data))
                               .orElse(Collections.emptySet());
     }
 
-    public void writeDeactivatedJobs(Set<String> deactivatedJobs) {
+    public void writeInactiveJobs(Set<String> inactiveJobs) {
         NestedTransaction transaction = new NestedTransaction();
         CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
-        curatorTransaction.add(CuratorOperations.setData(deactivatedJobsPath().getAbsolute(), 
-                                                         stringSetSerializer.toJson(deactivatedJobs)));
+        curatorTransaction.add(CuratorOperations.setData(inactiveJobsPath().getAbsolute(),
+                                                         stringSetSerializer.toJson(inactiveJobs)));
         transaction.commit();
     }
     
-    public CuratorMutex lockDeactivatedJobs() {
-        return lock(deactivatedJobsPath(), defaultLockTimeout);
+    public CuratorMutex lockInactiveJobs() {
+        return lock(inactiveJobsPath(), defaultLockTimeout);
     }
 
-    private Path deactivatedJobsPath() {
-        return root.append("deactivatedJobs");
+    private Path inactiveJobsPath() {
+        return root.append("inactiveJobs");
     }
     
 }

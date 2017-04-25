@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator.mock;
 
+import com.google.inject.Inject;
 import com.yahoo.collections.Pair;
 import com.yahoo.path.Path;
 import static com.yahoo.vespa.curator.mock.MemoryFileSystem.Node;
@@ -115,6 +116,7 @@ public class MockCurator extends Curator {
     private final CuratorFramework curatorFramework;
 
     /** Creates a mock curator with stable ordering */
+    @Inject
     public MockCurator() {
         this(true);
     }

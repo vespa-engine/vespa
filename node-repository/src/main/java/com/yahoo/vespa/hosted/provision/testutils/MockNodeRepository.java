@@ -43,17 +43,12 @@ public class MockNodeRepository extends NodeRepository {
      * Constructor
      * @param flavors flavors to have in node repo
      */
-    public MockNodeRepository(NodeFlavors flavors) throws Exception {
-        super(flavors, mockCurator(), Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z")), Zone.defaultZone(),
+    public MockNodeRepository(MockCurator curator, NodeFlavors flavors) throws Exception {
+        super(flavors, curator, Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z")), Zone.defaultZone(),
                 new MockNameResolver().mockAnyLookup());
         this.flavors = flavors;
+        curator.setConnectionSpec("cfg1:1234,cfg2:1234,cfg3:1234");
         populate();
-    }
-
-    private static Curator mockCurator() {
-        MockCurator mockCurator = new MockCurator();
-        mockCurator.setConnectionSpec("cfg1:1234,cfg2:1234,cfg3:1234");
-        return mockCurator;
     }
 
     private void populate() {
