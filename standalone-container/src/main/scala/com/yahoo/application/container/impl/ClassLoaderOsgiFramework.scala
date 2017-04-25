@@ -198,8 +198,6 @@ final class ClassLoaderOsgiFramework extends OsgiFramework {
     override def getDataFile(filename: String) = throw new UnsupportedOperationException
     override def createFilter(filter: String) = throw new UnsupportedOperationException
 
-    override def registerService[S](aClass: Class[S], serviceFactory: ServiceFactory[S], dictionary: Dictionary[String, _]): ServiceRegistration[S] = throw new UnsupportedOperationException;
-    override def getServiceObjects[S](serviceReference: ServiceReference[S]): ServiceObjects[S] = throw new UnsupportedOperationException;
   }
 
 }
