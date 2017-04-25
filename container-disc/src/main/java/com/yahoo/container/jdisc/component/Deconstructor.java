@@ -12,8 +12,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import static com.yahoo.log.LogLevel.DEBUG;
-
 /**
 * @author tonyv
 * @author gv
@@ -36,7 +34,7 @@ public class Deconstructor implements ComponentDeconstructor {
         if (component instanceof AbstractComponent) {
             AbstractComponent abstractComponent = (AbstractComponent) component;
             if (abstractComponent.isDeconstructable()) {
-                log.log(DEBUG, () -> "Scheduling deconstruction of " + abstractComponent);
+                log.info("Scheduling deconstruction of " + abstractComponent);
                 executor.schedule(new DestructComponentTask(abstractComponent), delay, TimeUnit.SECONDS);
             }
         } else if (component instanceof Provider) {
@@ -55,9 +53,9 @@ public class Deconstructor implements ComponentDeconstructor {
         }
 
         public void run() {
-            log.log(DEBUG, () -> "Starting deconstruction of " + component);
+            log.info("Starting deconstruction of " + component);
             component.deconstruct();
-            log.log(DEBUG, () -> "Finished deconstructing " + component);
+            log.info("Finished deconstructing " + component);
         }
     }
 }
