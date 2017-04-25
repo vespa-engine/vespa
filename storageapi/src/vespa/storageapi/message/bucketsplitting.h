@@ -57,7 +57,7 @@ public:
     void setMinByteSize(uint32_t v) { _minByteSize = v; }
     void setMinDocCount(uint32_t v) { _minDocCount = v; }
 
-    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGECOMMAND(SplitBucketCommand, onSplitBucket)
 };
@@ -71,19 +71,14 @@ public:
 class SplitBucketReply : public BucketReply {
 public:
     typedef std::pair<document::BucketId, BucketInfo> Entry;
-
-private:
-    std::vector<Entry> _result;
-
-public:
     explicit SplitBucketReply(const SplitBucketCommand& cmd);
-
     std::vector<Entry>& getSplitInfo() { return _result; }
     const std::vector<Entry>& getSplitInfo() const { return _result; }
 
-    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGEREPLY(SplitBucketReply, onSplitBucketReply)
+private:
+    std::vector<Entry> _result;
 };
 
 /**
@@ -97,19 +92,13 @@ public:
 class JoinBucketsCommand : public MaintenanceCommand {
     std::vector<document::BucketId> _sources;
     uint8_t _minJoinBits;
-
 public:
     explicit JoinBucketsCommand(const document::BucketId& target);
-
     std::vector<document::BucketId>& getSourceBuckets() { return _sources; }
-    const std::vector<document::BucketId>& getSourceBuckets() const
-        { return _sources; }
-
+    const std::vector<document::BucketId>& getSourceBuckets() const { return _sources; }
     void setMinJoinBits(uint8_t minJoinBits) { _minJoinBits = minJoinBits; }
     uint8_t getMinJoinBits() const { return _minJoinBits; }
-
-    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGECOMMAND(JoinBucketsCommand, onJoinBuckets)
 };
 
@@ -121,20 +110,13 @@ public:
  */
 class JoinBucketsReply : public BucketInfoReply {
     std::vector<document::BucketId> _sources;
-
 public:
     explicit JoinBucketsReply(const JoinBucketsCommand& cmd);
-
     JoinBucketsReply(const JoinBucketsCommand& cmd, const BucketInfo& bucketInfo);
-
-    const std::vector<document::BucketId>& getSourceBuckets() const
-        { return _sources; }
-
-    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-
+    const std::vector<document::BucketId>& getSourceBuckets() const { return _sources; }
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGEREPLY(JoinBucketsReply, onJoinBucketsReply)
 };
 
 } // api
 } // storage
-

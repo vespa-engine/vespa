@@ -1,8 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/storageapi/mbusprot/protocolserialization5_0.h>
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
+#include "protocolserialization5_0.h"
 
 namespace storage {
 namespace mbusprot {
@@ -17,24 +16,22 @@ public:
     ProtocolSerialization5_1(const document::DocumentTypeRepo::SP&,
                              const documentapi::LoadTypeSet& loadTypes);
 
-    virtual api::BucketInfo getBucketInfo(document::ByteBuffer& buf) const override;
-    virtual void putBucketInfo(const api::BucketInfo& info,
-                               vespalib::GrowableByteBuffer& buf) const override;
+    api::BucketInfo getBucketInfo(document::ByteBuffer& buf) const override;
+    void putBucketInfo(const api::BucketInfo& info, vespalib::GrowableByteBuffer& buf) const override;
 
 protected:
-    virtual void onEncode(GBBuf&, const api::SetBucketStateCommand&) const override;
-    virtual void onEncode(GBBuf&, const api::SetBucketStateReply&) const override;
-    virtual void onEncode(GBBuf&, const api::GetCommand&) const override;
-    virtual void onEncode(GBBuf&, const api::CreateVisitorCommand&) const override;
-    virtual void onEncode(GBBuf&, const api::CreateBucketCommand&) const override;
+    void onEncode(GBBuf&, const api::SetBucketStateCommand&) const override;
+    void onEncode(GBBuf&, const api::SetBucketStateReply&) const override;
+    void onEncode(GBBuf&, const api::GetCommand&) const override;
+    void onEncode(GBBuf&, const api::CreateVisitorCommand&) const override;
+    void onEncode(GBBuf&, const api::CreateBucketCommand&) const override;
 
-    virtual SCmd::UP onDecodeSetBucketStateCommand(BBuf&) const override;
-    virtual SRep::UP onDecodeSetBucketStateReply(const SCmd&, BBuf&) const override;
-    virtual SCmd::UP onDecodeGetCommand(BBuf&) const override;
-    virtual SCmd::UP onDecodeCreateVisitorCommand(BBuf&) const override;
-    virtual SCmd::UP onDecodeCreateBucketCommand(BBuf&) const override;
+    SCmd::UP onDecodeSetBucketStateCommand(BBuf&) const override;
+    SRep::UP onDecodeSetBucketStateReply(const SCmd&, BBuf&) const override;
+    SCmd::UP onDecodeGetCommand(BBuf&) const override;
+    SCmd::UP onDecodeCreateVisitorCommand(BBuf&) const override;
+    SCmd::UP onDecodeCreateBucketCommand(BBuf&) const override;
 };
 
 } // mbusprot
 } // storage
-
