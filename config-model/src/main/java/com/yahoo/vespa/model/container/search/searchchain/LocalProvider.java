@@ -86,7 +86,7 @@ public class LocalProvider extends Provider implements
     }
 
     private void addProviderSearchers(LocalProviderSpec providerSpec) {
-        for (ChainedComponentModel searcherModel : providerSpec.searcherModels) {
+        for (ChainedComponentModel searcherModel : LocalProviderSpec.searcherModels) {
             addInnerComponent(new Searcher<>(searcherModel));
         }
     }
