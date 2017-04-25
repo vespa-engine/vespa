@@ -21,7 +21,7 @@
         </dependency>
         <dependency>
             <groupId>com.google.inject</groupId>
-            <artifactId>inject</artifactId>
+            <artifactId>guice</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
