@@ -62,8 +62,9 @@ public class ComponentsProviderImpl implements ComponentsProvider {
             throw new IllegalStateException("Environment setting for config servers missing or empty.");
         }
 
-        Orchestrator orchestrator = new OrchestratorImpl(ConfigServerHttpRequestExecutor.create(configServerHosts));
-        NodeRepository nodeRepository = new NodeRepositoryImpl(configServerHosts, WEB_SERVICE_PORT, baseHostName);
+        ConfigServerHttpRequestExecutor requestExecutor = ConfigServerHttpRequestExecutor.create(configServerHosts);
+        Orchestrator orchestrator = new OrchestratorImpl(requestExecutor);
+        NodeRepository nodeRepository = new NodeRepositoryImpl(requestExecutor, WEB_SERVICE_PORT, baseHostName);
         DockerOperations dockerOperations = new DockerOperationsImpl(docker, environment, metricReceiver);
 
         Optional<StorageMaintainer> storageMaintainer = isRunningLocally ?

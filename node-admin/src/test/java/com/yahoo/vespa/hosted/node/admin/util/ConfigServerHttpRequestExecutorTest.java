@@ -5,13 +5,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yahoo.collections.ArraySet;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Test;
-import org.mockito.stubbing.Answer;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -22,6 +20,7 @@ import java.util.Set;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
@@ -40,6 +39,8 @@ public class ConfigServerHttpRequestExecutorTest {
     public static class TestPojo {
         @JsonProperty("foo")
         public String foo;
+        @JsonProperty("error-code")
+        public Integer errorCode;
     }
 
     private final StringBuilder mockLog = new StringBuilder();
@@ -47,7 +48,7 @@ public class ConfigServerHttpRequestExecutorTest {
 
     private CloseableHttpClient createClientMock() throws IOException {
         CloseableHttpClient httpMock = mock(CloseableHttpClient.class);
-        when(httpMock.execute(any())).thenAnswer((Answer<HttpResponse>) invocationOnMock -> {
+        when(httpMock.execute(any())).thenAnswer(invocationOnMock -> {
             HttpGet get = (HttpGet) invocationOnMock.getArguments()[0];
             mockLog.append(get.getMethod()).append(" ").append(get.getURI()).append("  ");
             CloseableHttpResponse response = mock(CloseableHttpResponse.class);
@@ -57,7 +58,8 @@ public class ConfigServerHttpRequestExecutorTest {
             if (mockReturnCode == 100000) throw new RuntimeException("FAIL");
             HttpEntity entity = mock(HttpEntity.class);
             when(response.getEntity()).thenReturn(entity);
-            InputStream stream = new ByteArrayInputStream("{ \"foo\":\"bar\", \"no\":3}".getBytes(StandardCharsets.UTF_8));
+            String returnMessage = "{\"foo\":\"bar\", \"no\":3, \"error-code\": " + mockReturnCode + "}";
+            InputStream stream = new ByteArrayInputStream(returnMessage.getBytes(StandardCharsets.UTF_8));
             when(entity.getContent()).thenReturn(stream);
             return response;
         });
@@ -84,12 +86,9 @@ public class ConfigServerHttpRequestExecutorTest {
         // Server is returning 400, no retries.
         mockReturnCode = 400;
         ConfigServerHttpRequestExecutor executor = new ConfigServerHttpRequestExecutor(configServers, createClientMock());
-        try {
-            executor.get("/path", 666, TestPojo.class);
-            fail("Expected failure");
-        } catch (Exception e) {
-            // ignore
-        }
+
+        TestPojo testPojo = executor.get("/path", 666, TestPojo.class);
+        assertEquals(testPojo.errorCode.intValue(), mockReturnCode);
         assertLogStringContainsGETForAHost();
     }
 

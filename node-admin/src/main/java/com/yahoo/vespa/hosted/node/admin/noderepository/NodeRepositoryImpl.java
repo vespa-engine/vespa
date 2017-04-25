@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -33,10 +32,10 @@ public class NodeRepositoryImpl implements NodeRepository {
     private final int port;
     private final ConfigServerHttpRequestExecutor requestExecutor;
 
-    public NodeRepositoryImpl(Set<String> configServerHosts, int configPort, String baseHostName) {
+    public NodeRepositoryImpl(ConfigServerHttpRequestExecutor requestExecutor, int configPort, String baseHostName) {
         this.baseHostName = baseHostName;
         this.port = configPort;
-        this.requestExecutor = ConfigServerHttpRequestExecutor.create(configServerHosts);
+        this.requestExecutor = requestExecutor;
     }
 
     @Override
@@ -154,21 +153,25 @@ public class NodeRepositoryImpl implements NodeRepository {
 
     @Override
     public void markAsDirty(String hostName) {
-        NodeMessageResponse response = requestExecutor.put(
-                "/nodes/v2/state/dirty/" + hostName,
-                port,
-                Optional.empty(), /* body */
-                NodeMessageResponse.class);
-        NODE_ADMIN_LOGGER.info(response.message);
+        markNodeToState(hostName, Node.State.dirty);
     }
 
     @Override
     public void markAsReady(final String hostName) {
+        markNodeToState(hostName, Node.State.ready);
+    }
+
+    private void markNodeToState(String hostName, Node.State state) {
         NodeMessageResponse response = requestExecutor.put(
-                "/nodes/v2/state/ready/" + hostName,
+                "/nodes/v2/state/" + state + "/" + hostName,
                 port,
                 Optional.empty(), /* body */
                 NodeMessageResponse.class);
         NODE_ADMIN_LOGGER.info(response.message);
+
+        if (response.errorCode == null || response.errorCode.isEmpty()) {
+            return;
+        }
+        throw new RuntimeException("Unexpected message " + response.message + " " + response.errorCode);
     }
 }
