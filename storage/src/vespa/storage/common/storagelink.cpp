@@ -1,14 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/common/storagelink.h>
+#include "storagelink.h"
+#include "bucketmessages.h"
+#include <vespa/vespalib/util/backtrace.h>
+#include <sstream>
 
 #include <vespa/log/log.h>
-#include <sstream>
-#include <vespa/storageapi/messageapi/storagecommand.h>
-#include <vespa/storage/common/bucketmessages.h>
-#include <vespa/vespalib/util/backtrace.h>
-
 LOG_SETUP(".application.link");
 
 using std::shared_ptr;
@@ -312,4 +309,3 @@ std::ostream& operator<<(std::ostream& out, StorageLink& link) {
 }
 
 }
-

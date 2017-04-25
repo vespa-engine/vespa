@@ -3,7 +3,6 @@
 #pragma once
 
 #include <vespa/messagebus/trace.h>
-#include <stdint.h>
 
 namespace storage {
 

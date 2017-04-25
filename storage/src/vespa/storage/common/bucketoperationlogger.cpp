@@ -1,16 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/common/bucketoperationlogger.h>
+#include "bucketoperationlogger.h"
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/bucketdb/bucketcopy.h>
-#include <vespa/log/log.h>
+
 #include <vespa/storageapi/buckets/bucketinfo.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/vespalib/util/backtrace.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
 #ifdef ENABLE_BUCKET_OPERATION_LOGGING
-
+#include <vespa/log/log.h>
 LOG_SETUP(".debuglogger");
 
 namespace storage {

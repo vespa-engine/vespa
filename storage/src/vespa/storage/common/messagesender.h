@@ -41,5 +41,3 @@ struct ChainedMessageSender {
 };
 
 } // storage
-
-
