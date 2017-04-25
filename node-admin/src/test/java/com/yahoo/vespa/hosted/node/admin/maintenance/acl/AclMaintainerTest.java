@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -102,7 +101,9 @@ public class AclMaintainerTest {
 
         verify(dockerOperations).executeCommandInNetworkNamespace(
                 eq(container.name),
-                aryEq(new String[]{"ip6tables", "-P", "INPUT", "ACCEPT"})
+                eq("ip6tables"),
+                eq("-F"),
+                eq("INPUT")
         );
     }
 
@@ -114,40 +115,80 @@ public class AclMaintainerTest {
                                    VerificationMode verificationMode) {
         verify(dockerOperations, verificationMode).executeCommandInNetworkNamespace(
                 eq(containerName),
-                aryEq(new String[]{"ip6tables", "-F", "INPUT"})
+                eq("ip6tables"),
+                eq("-F"),
+                eq("INPUT")
         );
         verify(dockerOperations, verificationMode).executeCommandInNetworkNamespace(
                 eq(containerName),
-                aryEq(new String[]{"ip6tables", "-P", "INPUT", "DROP"})
+                eq("ip6tables"),
+                eq("-P"),
+                eq("INPUT"),
+                eq("DROP")
         );
         verify(dockerOperations, verificationMode).executeCommandInNetworkNamespace(
                 eq(containerName),
-                aryEq(new String[]{"ip6tables", "-P", "FORWARD", "DROP"})
+                eq("ip6tables"),
+                eq("-P"),
+                eq("FORWARD"),
+                eq("DROP")
         );
         verify(dockerOperations, verificationMode).executeCommandInNetworkNamespace(
                 eq(containerName),
-                aryEq(new String[]{"ip6tables", "-P", "OUTPUT", "ACCEPT"})
+                eq("ip6tables"),
+                eq("-P"),
+                eq("OUTPUT"),
+                eq("ACCEPT")
         );
         verify(dockerOperations, verificationMode).executeCommandInNetworkNamespace(
                 eq(containerName),
-                aryEq(new String[]{"ip6tables", "-A", "INPUT", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j",
-                        "ACCEPT"})
+                eq("ip6tables"),
+                eq("-A"),
+                eq("INPUT"),
+                eq("-m"),
+                eq("state"),
+                eq("--state"),
+                eq("RELATED,ESTABLISHED"),
+                eq("-j"),
+                eq("ACCEPT")
         );
         verify(dockerOperations, verificationMode).executeCommandInNetworkNamespace(
                 eq(containerName),
-                aryEq(new String[]{"ip6tables", "-A", "INPUT", "-i", "lo", "-j", "ACCEPT"})
+                eq("ip6tables"),
+                eq("-A"),
+                eq("INPUT"),
+                eq("-i"),
+                eq("lo"),
+                eq("-j"),
+                eq("ACCEPT")
         );
         verify(dockerOperations, verificationMode).executeCommandInNetworkNamespace(
                 eq(containerName),
-                aryEq(new String[]{"ip6tables", "-A", "INPUT", "-p", "ipv6-icmp", "-j", "ACCEPT"})
+                eq("ip6tables"),
+                eq("-A"),
+                eq("INPUT"),
+                eq("-p"),
+                eq("ipv6-icmp"),
+                eq("-j"),
+                eq("ACCEPT")
         );
         containerAclSpecs.forEach(aclSpec -> verify(dockerOperations, verificationMode).executeCommandInNetworkNamespace(
                 eq(containerName),
-                aryEq(new String[]{"ip6tables", "-A", "INPUT", "-s", aclSpec.ipAddress() + "/128", "-j", "ACCEPT"})
+                eq("ip6tables"),
+                eq("-A"),
+                eq("INPUT"),
+                eq("-s"),
+                eq(aclSpec.ipAddress() + "/128"),
+                eq("-j"),
+                eq("ACCEPT")
         ));
         verify(dockerOperations, verificationMode).executeCommandInNetworkNamespace(
                 eq(containerName),
-                aryEq(new String[]{"ip6tables", "-A", "INPUT", "-j", "REJECT"})
+                eq("ip6tables"),
+                eq("-A"),
+                eq("INPUT"),
+                eq("-j"),
+                eq("REJECT")
         );
     }
 

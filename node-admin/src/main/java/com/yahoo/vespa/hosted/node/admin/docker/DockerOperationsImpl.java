@@ -274,10 +274,10 @@ public class DockerOperationsImpl implements DockerOperations {
         });
     }
 
-    ProcessResult executeCommandInContainer(ContainerName containerName, String[] command) {
+    ProcessResult executeCommandInContainer(ContainerName containerName, String... command) {
         ProcessResult result = docker.executeInContainerAsRoot(containerName, command);
 
-        if (! result.isSuccess()) {
+        if (!result.isSuccess()) {
             throw new RuntimeException("Container " + containerName.asString() +
                     ": command " + Arrays.toString(command) + " failed: " + result);
         }
@@ -285,12 +285,17 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public ProcessResult executeCommandInContainerAsRoot(ContainerName containerName, String[] command) {
+    public ProcessResult executeCommandInContainerAsRoot(ContainerName containerName, Long timeoutSeconds, String... command) {
+        return docker.executeInContainerAsRoot(containerName, timeoutSeconds, command);
+    }
+
+    @Override
+    public ProcessResult executeCommandInContainerAsRoot(ContainerName containerName, String... command) {
         return docker.executeInContainerAsRoot(containerName, command);
     }
 
     @Override
-    public void executeCommandInNetworkNamespace(ContainerName containerName, String[] command) {
+    public void executeCommandInNetworkNamespace(ContainerName containerName, String... command) {
         final PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         final Integer containerPid = docker.getContainer(containerName)
                 .filter(container -> container.state.isRunning())
