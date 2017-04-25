@@ -1,15 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/persistence/spi/bucket.h>
-#include <vespa/persistence/spi/bucketinfo.h>
-#include <vespa/persistence/spi/context.h>
-#include <vespa/persistence/spi/docentry.h>
-#include <vespa/persistence/spi/documentselection.h>
-#include <vespa/persistence/spi/partitionstate.h>
-#include <vespa/persistence/spi/result.h>
-#include <vespa/persistence/spi/selection.h>
-#include <vespa/persistence/spi/clusterstate.h>
+#include "bucket.h"
+#include "bucketinfo.h"
+#include "context.h"
+#include "docentry.h"
+#include "documentselection.h"
+#include "partitionstate.h"
+#include "result.h"
+#include "selection.h"
+#include "clusterstate.h"
 
 namespace document {
     class FieldSet;
