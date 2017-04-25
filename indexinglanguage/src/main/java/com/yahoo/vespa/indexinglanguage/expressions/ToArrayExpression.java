@@ -12,7 +12,7 @@ import com.yahoo.document.datatypes.FieldValue;
  */
 public class ToArrayExpression extends Expression {
 
-    @SuppressWarnings({ "unchecked" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     protected void doExecute(ExecutionContext ctx) {
         FieldValue input = ctx.getValue();

@@ -8,6 +8,7 @@ import com.yahoo.document.update.*;
 /**
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
+@SuppressWarnings("rawtypes")
 public abstract class FieldUpdateHelper {
 
     public static boolean isComplete(Field field, ValueUpdate update) {

@@ -18,6 +18,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
+@SuppressWarnings({ "rawtypes" })
 public class DocumentUpdateTestCase {
 
     @Test

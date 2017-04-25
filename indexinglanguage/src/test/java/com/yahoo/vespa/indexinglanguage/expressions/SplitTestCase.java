@@ -15,6 +15,7 @@ import static org.junit.Assert.*;
 /**
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
+@SuppressWarnings({ "rawtypes" })
 public class SplitTestCase {
 
     @Test
