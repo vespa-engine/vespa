@@ -7,7 +7,6 @@ import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.jdisc.http.servlet.ServletResponse;
 
 import javax.servlet.http.HttpServletResponse;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -78,8 +77,7 @@ class ServletFilterResponse extends DiscFilterResponse {
     @Override
     public void setCookies(List<Cookie> cookies) {
         removeHeaders(HttpHeaders.Names.SET_COOKIE);
-        for (Cookie cookie : cookies) {
-            addHeader(HttpHeaders.Names.SET_COOKIE, Cookie.toSetCookieHeader(Arrays.asList(cookie)));
-        }
+        List<String> setCookieHeaders = Cookie.toSetCookieHeaderAll(cookies);
+        setCookieHeaders.forEach(cookie -> addHeader(HttpHeaders.Names.SET_COOKIE, cookie));
     }
 }

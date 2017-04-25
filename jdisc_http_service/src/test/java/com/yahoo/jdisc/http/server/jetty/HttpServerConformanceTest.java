@@ -717,7 +717,6 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private class TestRunner implements Adapter<JettyHttpServer, ClientProxy, Future<HttpResponse>> {
 
         private Matcher<ResponseGist> expectedResponse = null;

@@ -348,14 +348,11 @@ public class HttpServerTest {
     @Test
     public void requireThatSetCookieHeaderIsCorrect() throws Exception {
         final TestDriver driver = TestDrivers.newInstance(new CookieSetterRequestHandler(
-                new Cookie("foo", "bar").setComment("comment yeah")
-                                            .setCommentURL("http://comment.yes/")
-                                            .setDiscard(true)
-                                            .setDomain(".localhost")
-                                            .setHttpOnly(true)
-                                            .setPath("/foopath")
-                                            .setSecure(true)
-                                            .setVersion(2)));
+                new Cookie("foo", "bar")
+                        .setDomain(".localhost")
+                        .setHttpOnly(true)
+                        .setPath("/foopath")
+                        .setSecure(true)));
         driver.client().get("/status.html")
               .expectStatusCode(is(OK))
               .expectHeader("Set-Cookie",

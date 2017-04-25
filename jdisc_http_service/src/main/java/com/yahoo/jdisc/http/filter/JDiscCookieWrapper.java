@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.filter;
 
-import java.util.concurrent.TimeUnit;
-
 import com.yahoo.jdisc.http.Cookie;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * Wrapper of Cookie.
@@ -23,6 +23,7 @@ public class JDiscCookieWrapper {
         return new JDiscCookieWrapper(cookie);
     }
 
+    @Deprecated
     public String getComment() {
         return cookie.getComment();
     }
@@ -51,10 +52,12 @@ public class JDiscCookieWrapper {
         return cookie.getValue();
     }
 
+    @Deprecated
     public int getVersion() {
         return cookie.getVersion();
     }
 
+    @Deprecated
     public void setComment(String purpose) {
         cookie.setComment(purpose);
     }
@@ -79,6 +82,7 @@ public class JDiscCookieWrapper {
        cookie.setValue(newValue);
     }
 
+    @Deprecated
     public void setVersion(int version) {
        cookie.setVersion(version);
     }
