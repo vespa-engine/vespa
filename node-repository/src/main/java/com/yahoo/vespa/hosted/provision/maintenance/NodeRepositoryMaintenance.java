@@ -71,6 +71,9 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         metricsReporter = new MetricsReporter(nodeRepository, metric, durationFromEnv("metrics_interval").orElse(defaults.metricsInterval));
         nodeRetirer = new NodeRetirer(nodeRepository, zone, durationFromEnv("retire_interval").orElse(defaults.nodeRetirerInterval),
                 new RetireIPv4OnlyNodes(),
+                new Zone(SystemName.cd, Environment.dev, RegionName.from("cd-us-central-1")),
+                new Zone(SystemName.cd, Environment.prod, RegionName.from("cd-us-central-1")),
+                new Zone(SystemName.cd, Environment.prod, RegionName.from("cd-us-central-2")));
                 new Zone(SystemName.main, Environment.prod, RegionName.from("us-west-1")));
         jobControl = new JobControl(nodeRepository.database());
         nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, durationFromEnv("fail_grace").orElse(defaults.failGrace), clock, orchestrator, throttlePolicyFromEnv("throttle_policy").orElse(defaults.throttlePolicy), jobControl);
