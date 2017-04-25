@@ -355,9 +355,9 @@ public final class SyncDefaultRenderer extends Renderer {
     }
 
     private void renderHitGroup(XMLWriter writer, HitGroup hit) throws IOException {
-        if (HitRenderer.renderHeader((HitGroup) hit, writer)) {
+        if (HitRenderer.renderHeader(hit, writer)) {
             // empty
-        } else if (((HitGroup) hit).types().contains("grouphit")) {
+        } else if (hit.types().contains("grouphit")) {
             // TODO Keep this?
             renderHitGroupOfTypeGroupHit(writer, hit);
         } else {
@@ -367,13 +367,13 @@ public final class SyncDefaultRenderer extends Renderer {
 
     private void renderGroup(XMLWriter writer, HitGroup hit) throws IOException {
         writer.openTag(GROUP);
-        renderHitAttributes(writer, (HitGroup) hit);
+        renderHitAttributes(writer, hit);
         writer.closeStartTag();
     }
 
     private void renderHitGroupOfTypeGroupHit(XMLWriter writer, HitGroup hit) throws IOException {
         writer.openTag(HIT);
-        renderHitAttributes(writer, (HitGroup) hit);
+        renderHitAttributes(writer, hit);
         renderId(writer, hit);
         writer.closeStartTag();
     }
