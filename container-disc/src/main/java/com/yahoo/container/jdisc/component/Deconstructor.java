@@ -12,8 +12,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import static java.util.logging.Level.WARNING;
-
 /**
 * @author tonyv
 * @author gv
@@ -56,15 +54,8 @@ public class Deconstructor implements ComponentDeconstructor {
 
         public void run() {
             log.info("Starting deconstruction of " + component);
-            try {
-                component.deconstruct();
-                log.info("Finished deconstructing " + component);
-            } catch (Exception e) {
-                log.log(WARNING, "Exception thrown when deconstructing " + component, e);
-            } catch (Throwable t) {
-                com.yahoo.protect.Process.logAndDie("Error when deconstructing " + component, t);
-            }
+            component.deconstruct();
+            log.info("Finished deconstructing " + component);
         }
-
     }
 }
