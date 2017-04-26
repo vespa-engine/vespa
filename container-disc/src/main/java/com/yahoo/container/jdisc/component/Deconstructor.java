@@ -63,7 +63,7 @@ public class Deconstructor implements ComponentDeconstructor {
             } catch (Error e) {
                 try {
                     Thread.sleep((long) (new Random(System.nanoTime()).nextDouble() * 180 * 1000));
-                } catch (InterruptedException e) { }
+                } catch (InterruptedException exception) { }
                 com.yahoo.protect.Process.logAndDie("Error when deconstructing " + component, e);
             } catch (Exception e) {
                 log.log(WARNING, "Exception thrown when deconstructing " + component, e);
