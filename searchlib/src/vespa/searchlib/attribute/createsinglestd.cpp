@@ -1,17 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/attribute/attributefactory.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP(".createsinglestd");
-
+#include "attributefactory.h"
 #include "predicate_attribute.h"
 #include "singlesmallnumericattribute.h"
 #include "reference_attribute.h"
-#include <vespa/searchlib/attribute/attributevector.hpp>
-#include <vespa/searchlib/attribute/singlenumericattribute.hpp>
-#include <vespa/searchlib/attribute/singlestringattribute.h>
+#include "attributevector.hpp"
+#include "singlenumericattribute.hpp"
+#include "singlestringattribute.h"
 #include <vespa/searchlib/tensor/generic_tensor_attribute.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 
