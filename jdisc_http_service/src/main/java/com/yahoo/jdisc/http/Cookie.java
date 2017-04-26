@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -225,6 +226,7 @@ public class Cookie {
     }
 
     public static List<Cookie> fromCookieHeader(String headerVal) {
+        if (headerVal == null) return Collections.emptyList();
         return decodeCookies(headerVal);
     }
 
@@ -233,6 +235,7 @@ public class Cookie {
     }
 
     public static List<Cookie> fromSetCookieHeader(String headerVal) {
+        if (headerVal == null) return Collections.emptyList();
         return decodeCookies(headerVal);
     }
 
