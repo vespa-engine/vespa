@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 public class JobControl {
 
     /** This is not stored in ZooKeeper as all nodes start all jobs */
-    private Set<String> startedJobs = new ConcurrentSkipListSet<>();
+    private final Set<String> startedJobs = new ConcurrentSkipListSet<>();
 
     /** Used to store deactivation in ZooKeeper to make changes take effect on all nodes */
     private final CuratorDatabaseClient db;
