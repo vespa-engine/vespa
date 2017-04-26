@@ -5,6 +5,7 @@ AdminV2 =
  element admin {
    attribute version { "2.0" } &
    element adminserver { service.attlist } &
+   element minSlobroksPerCluster { xsd:positiveInteger }? &
    GenericConfig* &
    LogServer? &
    (ConfigServer | ConfigServers)? &
