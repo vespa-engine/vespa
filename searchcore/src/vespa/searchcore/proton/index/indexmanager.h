@@ -58,6 +58,7 @@ public:
                  size_t maxFlushed,
                  size_t cacheSize,
                  const Schema &schema,
+                 SerialNum serialNum,
                  Reconfigurer &reconfigurer,
                  searchcorespi::index::IThreadingService &threadingService,
                  vespalib::ThreadExecutor & warmupExecutor,

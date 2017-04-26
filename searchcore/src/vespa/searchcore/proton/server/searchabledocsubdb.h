@@ -90,6 +90,7 @@ private:
     // Note: lifetime of indexManager must be handled by caller.
     std::shared_ptr<initializer::InitializerTask>
     createIndexManagerInitializer(const DocumentDBConfig &configSnapshot,
+                                  SerialNum configSerialNum,
                                   const vespa::config::search::core::ProtonConfig::Index &indexCfg,
                                   std::shared_ptr<searchcorespi::IIndexManager::SP> indexManager) const;
 

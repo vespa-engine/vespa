@@ -13,6 +13,7 @@
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/util/autoclosurecaller.h>
 #include <vespa/vespalib/util/closuretask.h>
+#include <vespa/searchlib/common/lambdatask.h>
 #include <sstream>
 #include <vespa/searchcorespi/flush/closureflushtask.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -30,6 +31,7 @@ using search::common::FileHeaderContext;
 using search::queryeval::ISourceSelector;
 using search::queryeval::Source;
 using search::SerialNum;
+using search::makeLambdaTask;
 using std::ostringstream;
 using vespalib::makeClosure;
 using vespalib::makeTask;
@@ -869,6 +871,8 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
     sourceList->setCurrentIndex(_current_index_id);
     _source_list = std::move(sourceList);
     _fusion_spec = spec;
+    _ctx.getThreadingService().master().execute(makeLambdaTask([this,&config]() {internalWipeHistory(_schema, config.getSerialNum()); }));
+    _ctx.getThreadingService().master().sync();
 }
 
 IndexMaintainer::~IndexMaintainer()

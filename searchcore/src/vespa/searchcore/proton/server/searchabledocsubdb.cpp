@@ -86,6 +86,7 @@ SearchableDocSubDB::getNewestFlushedSerial()
 initializer::InitializerTask::SP
 SearchableDocSubDB::
 createIndexManagerInitializer(const DocumentDBConfig &configSnapshot,
+                              SerialNum configSerialNum,
                               const ProtonConfig::Index &indexCfg,
                               std::shared_ptr<searchcorespi::IIndexManager::SP> indexManager) const
 {
@@ -98,6 +99,7 @@ createIndexManagerInitializer(const DocumentDBConfig &configSnapshot,
          indexCfg.maxflushed,
          indexCfg.cache.size,
          *schema,
+         configSerialNum,
          const_cast<SearchableDocSubDB &>(*this),
          _writeService,
          _warmupExecutor,
@@ -127,6 +129,7 @@ createInitializer(const DocumentDBConfig &configSnapshot,
                                             protonSummaryCfg,
                                             indexCfg);
     auto indexTask = createIndexManagerInitializer(configSnapshot,
+                                                   configSerialNum,
                                                    indexCfg,
                                                    result->writableResult().
                                                    writableIndexManager());

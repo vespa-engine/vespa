@@ -3,6 +3,7 @@
 
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
+#include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/stllike/string.h>
 #include "warmupconfig.h"
 
@@ -18,6 +19,7 @@ private:
     const WarmupConfig _warmup;
     const size_t _maxFlushed;
     const search::index::Schema _schema;
+    const search::SerialNum _serialNum;
     const search::TuneFileAttributes _tuneFileAttributes;
 
 public:
@@ -25,6 +27,7 @@ public:
                           const WarmupConfig & warmup,
                           size_t maxFlushed,
                           const search::index::Schema &schema,
+                          const search::SerialNum serialNum,
                           const search::TuneFileAttributes &tuneFileAttributes);
 
     /**
@@ -42,6 +45,8 @@ public:
     const search::index::Schema &getSchema() const {
         return _schema;
     }
+
+    search::SerialNum getSerialNum() const { return _serialNum; }
 
     /**
      * Returns the specification on how to read/write attribute vector data files.
