@@ -166,24 +166,20 @@ public final class Tokenizer {
         return tokens;
     }
 
-    @SuppressWarnings("fallthrough")
     private boolean acceptApostropheAsWordCharacter(Index currentIndex) {
-        if (!(currentIndex.isUriIndex() || currentIndex.isHostIndex())) {
+        if ( ! (currentIndex.isUriIndex() || currentIndex.isHostIndex())) {
             return true;
         }
         // this is a heuristic to check whether we probably have reached the end of an URL element
         for (int i = tokens.size() - 1; i >= 0; --i) {
-            Token lookAt = tokens.get(i);
-            switch (lookAt.kind) {
-            case COLON:
-                if (i == indexLastExplicitlyChangedAt) {
-                    return false;
-                }
-                // XXX was fallthrough intended here?
-            case SPACE:
-                return true;
-            default:
-                // do nothing
+            switch (tokens.get(i).kind) {
+                case COLON:
+                    if (i == indexLastExplicitlyChangedAt) return false;
+                    break;
+                case SPACE:
+                    return true;
+                default:
+                    // do nothing
             }
         }
         // really not sure whether we should choose false instead, on cause of the guard at
