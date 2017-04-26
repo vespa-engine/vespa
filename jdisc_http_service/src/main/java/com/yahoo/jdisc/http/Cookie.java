@@ -1,17 +1,29 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http;
 
+import org.jboss.netty.handler.codec.http.cookie.ClientCookieDecoder;
+import org.jboss.netty.handler.codec.http.cookie.ClientCookieEncoder;
+import org.jboss.netty.handler.codec.http.cookie.DefaultCookie;
+import org.jboss.netty.handler.codec.http.cookie.ServerCookieDecoder;
+import org.jboss.netty.handler.codec.http.cookie.ServerCookieEncoder;
+
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
+ * A RFC 6265 compliant cookie.
+ *
+ * Note: RFC 2109 and RFC 2965 is no longer supported. All fields that are not part of RFC 6265 are deprecated.
+ *
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author bjorncs
  */
-@SuppressWarnings("deprecation")
 public class Cookie {
 
     private final Set<Integer> ports = new HashSet<>();
@@ -86,27 +98,33 @@ public class Cookie {
         return this;
     }
 
+    @Deprecated
     public String getComment() {
         return comment;
     }
 
+    @Deprecated
     public Cookie setComment(String comment) {
         this.comment = comment;
         return this;
     }
 
+    @Deprecated
     public String getCommentURL() {
         return getCommentUrl();
     }
 
+    @Deprecated
     public Cookie setCommentURL(String commentUrl) {
         return setCommentUrl(commentUrl);
     }
 
+    @Deprecated
     public String getCommentUrl() {
         return commentUrl;
     }
 
+    @Deprecated
     public Cookie setCommentUrl(String commentUrl) {
         this.commentUrl = commentUrl;
         return this;
@@ -121,10 +139,12 @@ public class Cookie {
         return this;
     }
 
+    @Deprecated
     public int getVersion() {
         return version;
     }
 
+    @Deprecated
     public Cookie setVersion(int version) {
         this.version = version;
         return this;
@@ -148,70 +168,44 @@ public class Cookie {
         return this;
     }
 
+    @Deprecated
     public boolean isDiscard() {
         return discard;
     }
 
+    @Deprecated
     public Cookie setDiscard(boolean discard) {
         this.discard = discard;
         return this;
     }
 
+    @Deprecated
     public Set<Integer> ports() {
         return ports;
     }
 
     @Override
-    public int hashCode() {
-        return ports.hashCode() + hashCode(name) + hashCode(value) + hashCode(domain) + hashCode(path) +
-               hashCode(comment) + hashCode(commentUrl) + Long.valueOf(maxAgeMillis).hashCode() +
-               Integer.valueOf(version).hashCode() + Boolean.valueOf(secure).hashCode() +
-               Boolean.valueOf(httpOnly).hashCode() + Boolean.valueOf(discard).hashCode();
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Cookie cookie = (Cookie) o;
+        return maxAgeMillis == cookie.maxAgeMillis &&
+                version == cookie.version &&
+                secure == cookie.secure &&
+                httpOnly == cookie.httpOnly &&
+                discard == cookie.discard &&
+                Objects.equals(ports, cookie.ports) &&
+                Objects.equals(name, cookie.name) &&
+                Objects.equals(value, cookie.value) &&
+                Objects.equals(domain, cookie.domain) &&
+                Objects.equals(path, cookie.path) &&
+                Objects.equals(comment, cookie.comment) &&
+                Objects.equals(commentUrl, cookie.commentUrl);
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof Cookie)) {
-            return false;
-        }
-        Cookie rhs = (Cookie)obj;
-        if (!ports.equals(rhs.ports)) {
-            return false;
-        }
-        if (!equals(name, rhs.name)) {
-            return false;
-        }
-        if (!equals(value, rhs.value)) {
-            return false;
-        }
-        if (!equals(domain, rhs.domain)) {
-            return false;
-        }
-        if (!equals(path, rhs.path)) {
-            return false;
-        }
-        if (!equals(comment, rhs.comment)) {
-            return false;
-        }
-        if (!equals(commentUrl, rhs.commentUrl)) {
-            return false;
-        }
-        if (maxAgeMillis != rhs.maxAgeMillis) {
-            return false;
-        }
-        if (version != rhs.version) {
-            return false;
-        }
-        if (secure != rhs.secure) {
-            return false;
-        }
-        if (httpOnly != rhs.httpOnly) {
-            return false;
-        }
-        if (discard != rhs.discard) {
-            return false;
-        }
-        return true;
+    public int hashCode() {
+        return Objects.hash(ports, name, value, domain, path, comment, commentUrl, maxAgeMillis, version, secure, httpOnly, discard);
     }
 
     @Override
@@ -222,78 +216,65 @@ public class Cookie {
     }
 
     public static String toCookieHeader(Iterable<? extends Cookie> cookies) {
-        return encodeCookies(cookies, false);
+        ClientCookieEncoder encoder = ClientCookieEncoder.STRICT;
+        List<org.jboss.netty.handler.codec.http.cookie.Cookie> nettyCookies =
+                StreamSupport.stream(cookies.spliterator(), false)
+                        // NOTE: Only name and value is included in Cookie header as of RFC-6265
+                        .map(cookie -> new DefaultCookie(cookie.getName(), cookie.getValue()))
+                        .collect(Collectors.toList());
+        return encoder.encode(nettyCookies);
     }
 
     public static List<Cookie> fromCookieHeader(String headerVal) {
         if (headerVal == null) return Collections.emptyList();
-        return decodeCookies(headerVal);
+
+        ServerCookieDecoder decoder = ServerCookieDecoder.STRICT;
+        Set<org.jboss.netty.handler.codec.http.cookie.Cookie> nettyCookies = decoder.decode(headerVal);
+        return nettyCookies.stream()
+                // NOTE: Only name and value is included in Cookie header as of RFC-6265
+                .map(nettyCookie -> new Cookie(nettyCookie.name(), nettyCookie.value()))
+                .collect(Collectors.toList());
     }
 
+    /**
+     * @deprecated Use {@link #toSetCookieHeaderAll(Iterable)} instead.
+     */
+    @Deprecated
     public static String toSetCookieHeader(Iterable<? extends Cookie> cookies) {
-        return encodeCookies(cookies, true);
+        List<String> encodedCookies = toSetCookieHeaderAll(cookies);
+        return encodedCookies.isEmpty() ? null : encodedCookies.get(0);
     }
 
+    // TODO Rename to toSetCookieHeader for Vespa 7
+    public static List<String> toSetCookieHeaderAll(Iterable<? extends Cookie> cookies) {
+        ServerCookieEncoder encoder = ServerCookieEncoder.STRICT;
+        List<org.jboss.netty.handler.codec.http.cookie.Cookie> nettyCookies =
+                StreamSupport.stream(cookies.spliterator(), false)
+                        .map(cookie -> {
+                            org.jboss.netty.handler.codec.http.cookie.Cookie nettyCookie
+                                    = new DefaultCookie(cookie.getName(), cookie.getValue());
+                            nettyCookie.setPath(cookie.getPath());
+                            nettyCookie.setMaxAge(cookie.getMaxAge(TimeUnit.SECONDS));
+                            nettyCookie.setSecure(cookie.isSecure());
+                            nettyCookie.setHttpOnly(cookie.isHttpOnly());
+                            nettyCookie.setDomain(cookie.getDomain());
+                            return nettyCookie;
+                        })
+                        .collect(Collectors.toList());
+        return encoder.encode(nettyCookies);
+    }
+
+    // TODO Change return type to Cookie for Vespa 7
     public static List<Cookie> fromSetCookieHeader(String headerVal) {
         if (headerVal == null) return Collections.emptyList();
-        return decodeCookies(headerVal);
-    }
 
-    private static String encodeCookies(Iterable<? extends Cookie> cookies, boolean server) {
-        org.jboss.netty.handler.codec.http.CookieEncoder encoder =
-                new org.jboss.netty.handler.codec.http.CookieEncoder(server);
-        for (Cookie cookie : cookies) {
-            org.jboss.netty.handler.codec.http.Cookie nettyCookie =
-                    new org.jboss.netty.handler.codec.http.DefaultCookie(String.valueOf(cookie.getName()), String.valueOf(cookie.getValue()));
-            nettyCookie.setComment(cookie.getComment());
-            nettyCookie.setCommentUrl(cookie.getCommentUrl());
-            nettyCookie.setDiscard(cookie.isDiscard());
-            nettyCookie.setDomain(cookie.getDomain());
-            nettyCookie.setHttpOnly(cookie.isHttpOnly());
-            nettyCookie.setMaxAge(cookie.getMaxAge(TimeUnit.SECONDS));
-            nettyCookie.setPath(cookie.getPath());
-            nettyCookie.setSecure(cookie.isSecure());
-            nettyCookie.setVersion(cookie.getVersion());
-            nettyCookie.setPorts(cookie.ports());
-            encoder.addCookie(nettyCookie);
-        }
-        return encoder.encode();
-    }
-
-    private static List<Cookie> decodeCookies(String str) {
-        org.jboss.netty.handler.codec.http.CookieDecoder decoder =
-                new org.jboss.netty.handler.codec.http.CookieDecoder();
-        List<Cookie> ret = new LinkedList<>();
-        for (org.jboss.netty.handler.codec.http.Cookie nettyCookie : decoder.decode(str)) {
-            Cookie cookie = new Cookie();
-            cookie.setName(nettyCookie.getName());
-            cookie.setValue(nettyCookie.getValue());
-            cookie.setComment(nettyCookie.getComment());
-            cookie.setCommentUrl(nettyCookie.getCommentUrl());
-            cookie.setDiscard(nettyCookie.isDiscard());
-            cookie.setDomain(nettyCookie.getDomain());
-            cookie.setHttpOnly(nettyCookie.isHttpOnly());
-            cookie.setMaxAge(nettyCookie.getMaxAge(), TimeUnit.SECONDS);
-            cookie.setPath(nettyCookie.getPath());
-            cookie.setSecure(nettyCookie.isSecure());
-            cookie.setVersion(nettyCookie.getVersion());
-            cookie.ports().addAll(nettyCookie.getPorts());
-            ret.add(cookie);
-        }
-        return ret;
-    }
-
-    private static int hashCode(Object obj) {
-        if (obj == null) {
-            return 0;
-        }
-        return obj.hashCode();
-    }
-
-    private static boolean equals(Object lhs, Object rhs) {
-        if (lhs == null || rhs == null) {
-            return lhs == rhs;
-        }
-        return lhs.equals(rhs);
+        ClientCookieDecoder encoder = ClientCookieDecoder.STRICT;
+        org.jboss.netty.handler.codec.http.cookie.Cookie nettyCookie = encoder.decode(headerVal);
+        return Collections.singletonList(new Cookie(nettyCookie.name(), nettyCookie.value())
+                .setHttpOnly(nettyCookie.isHttpOnly())
+                .setSecure(nettyCookie.isSecure())
+                .setMaxAge(nettyCookie.maxAge(), TimeUnit.SECONDS)
+                .setPath(nettyCookie.path())
+                .setDomain(nettyCookie.domain()));
     }
 }

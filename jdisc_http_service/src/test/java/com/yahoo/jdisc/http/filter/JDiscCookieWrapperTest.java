@@ -1,14 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.filter;
 
-import java.util.concurrent.TimeUnit;
-
-import com.yahoo.jdisc.http.filter.JDiscCookieWrapper;
+import com.yahoo.jdisc.http.Cookie;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import com.yahoo.jdisc.http.Cookie;
+import java.util.concurrent.TimeUnit;
 
+@SuppressWarnings("deprecation")
 public class JDiscCookieWrapperTest {
 
     @Test

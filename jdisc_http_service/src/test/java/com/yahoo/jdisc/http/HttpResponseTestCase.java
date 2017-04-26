@@ -92,8 +92,7 @@ public class HttpResponseTestCase {
         response.encodeSetCookieHeader(cookies);
         final List<String> headers = response.headers().get(HttpHeaders.Names.SET_COOKIE);
         assertEquals(1, headers.size());
-        assertEquals(Cookie.toSetCookieHeader(cookies),
-                     headers.get(0));
+        assertEquals(Cookie.toSetCookieHeaderAll(cookies), headers);
     }
 
     @Test
@@ -103,10 +102,8 @@ public class HttpResponseTestCase {
         response.encodeSetCookieHeader(cookies);
         final List<String> headers = response.headers().get(HttpHeaders.Names.SET_COOKIE);
         assertEquals(2, headers.size());
-        assertEquals(Cookie.toSetCookieHeader(Collections.singletonList(new Cookie("foo", "bar"))),
-                     headers.get(0));
-        assertEquals(Cookie.toSetCookieHeader(Collections.singletonList(new Cookie("baz", "cox"))),
-                     headers.get(1));
+        assertEquals(Cookie.toSetCookieHeaderAll(Arrays.asList(new Cookie("foo", "bar"), new Cookie("baz", "cox"))),
+                     headers);
     }
 
     @Test

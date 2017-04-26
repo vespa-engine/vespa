@@ -8,7 +8,6 @@ import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpResponse;
-import edu.umd.cs.findbugs.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -78,7 +77,7 @@ public class HttpResponse extends Response implements ServletOrJdiscHttpResponse
     public void encodeSetCookieHeader(List<Cookie> cookies) {
         headers().remove(HttpHeaders.Names.SET_COOKIE);
         for (Cookie cookie : cookies) {
-            headers().add(HttpHeaders.Names.SET_COOKIE, Cookie.toSetCookieHeader(Arrays.asList(cookie)));
+            headers().add(HttpHeaders.Names.SET_COOKIE, Cookie.toSetCookieHeaderAll(Arrays.asList(cookie)));
         }
     }
 
