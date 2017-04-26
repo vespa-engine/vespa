@@ -204,7 +204,7 @@ struct SequentialAttributeManager
         : initializer(newSpec.getDocIdLimit()),
           mgr(currMgr, newSpec, initializer)
     {
-        mgr.addInitializedAttributes(initializer.getInitializedAttributes());
+        mgr.addInitializedAttributes(initializer.getInitializedAttributes(), newSpec.getCurrentSerialNum());
     }
 };
 

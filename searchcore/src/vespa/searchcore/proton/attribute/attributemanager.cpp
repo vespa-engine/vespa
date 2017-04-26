@@ -275,13 +275,14 @@ AttributeManager::addAttribute(const AttributeSpec &spec, uint64_t serialNum)
 }
 
 void
-AttributeManager::addInitializedAttributes(const std::vector<AttributeInitializerResult> &attributes)
+AttributeManager::addInitializedAttributes(const std::vector<AttributeInitializerResult> &attributes, search::SerialNum serialNum)
 {
     for (const auto &result : attributes) {
         assert(result);
         result.getAttribute()->setInterlock(_interlock);
         addAttribute(AttributeWrap::normalAttribute(result.getAttribute()));
     }
+    wipeHistory(serialNum);
 }
 
 void
@@ -419,8 +420,7 @@ AttributeManager::create(const Spec &spec) const
 {
     SequentialAttributesInitializer initializer(spec.getDocIdLimit());
     proton::AttributeManager::SP result = std::make_shared<AttributeManager>(*this, spec, initializer);
-    result->addInitializedAttributes(initializer.getInitializedAttributes());
-    result->wipeHistory(spec.getCurrentSerialNum());
+    result->addInitializedAttributes(initializer.getInitializedAttributes(), spec.getCurrentSerialNum());
     return result;
 }
 
