@@ -2,10 +2,9 @@
 #pragma once
 
 #include "documentreply.h"
+#include <vespa/documentapi/loadtypes/loadtype.h>
 #include <vespa/messagebus/message.h>
 #include <vespa/messagebus/reply.h>
-#include <vespa/documentapi/loadtypes/loadtype.h>
-#include <vespa/documentapi/messagebus/priority.h>
 
 namespace documentapi {
 
@@ -82,7 +81,6 @@ public:
         _approxSize = approxSize;
     }
 
-    // Implements mbus::Message.
     const mbus::string& getProtocol() const override;
 };
 

@@ -1,14 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("routable_test");
-#include <vespa/messagebus/error.h>
-#include <vespa/messagebus/errorcode.h>
-#include <vespa/messagebus/message.h>
-#include <vespa/messagebus/reply.h>
+
 #include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/simplereply.h>
+#include <vespa/messagebus/message.h>
+#include <vespa/messagebus/reply.h>
+#include <vespa/messagebus/errorcode.h>
+#include <vespa/messagebus/error.h>
+
 #include <vespa/vespalib/testkit/testapp.h>
 
 using namespace mbus;

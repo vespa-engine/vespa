@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/documentapi/common.h>
 #include <vespa/messagebus/routing/iroutingpolicy.h>
 
 namespace documentapi {
@@ -22,11 +23,7 @@ public:
      * @param msg The message of the error to assign.
      */
     ErrorPolicy(const string &msg);
-
-    // Implements IRoutingPolicy.
     void select(mbus::RoutingContext &context) override;
-
-    // Implements IRoutingPolicy.
     void merge(mbus::RoutingContext &context) override;
 };
 

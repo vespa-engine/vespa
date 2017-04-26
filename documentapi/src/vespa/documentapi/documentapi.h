@@ -28,8 +28,6 @@
 #include <vespa/documentapi/messagebus/messages/queryresultmessage.h>
 #include <vespa/documentapi/messagebus/messages/documentignoredreply.h>
 
-
 namespace documentapi {
 
 }
-

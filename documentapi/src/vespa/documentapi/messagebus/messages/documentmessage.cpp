@@ -1,9 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 
-#include <vespa/documentapi/messagebus/messages/documentmessage.h>
+#include "documentmessage.h"
 #include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <vespa/documentapi/messagebus/priority.h>
 
 namespace documentapi {
 
@@ -12,9 +10,7 @@ DocumentMessage::DocumentMessage() :
     _priority(Priority::PRI_NORMAL_3),
     _loadType(LoadType::DEFAULT),
     _approxSize(1024)
-{
-    // empty
-}
+{}
 
 mbus::Reply::UP
 DocumentMessage::createReply() const

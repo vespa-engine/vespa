@@ -1,15 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".test");
 
 #include "messages51test.h"
-#include <vespa/document/datatype/datatype.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/documentapi/documentapi.h>
-#include <vespa/vdslib/container/writabledocumentlist.h>
+#include <vespa/document/update/fieldpathupdates.h>
 
 using document::DataType;
 using document::DocumentTypeRepo;

@@ -1,20 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/component/vtag.h>
-#include <vespa/messagebus/errorcode.h>
-#include <vespa/messagebus/ireplyhandler.h>
-#include <vespa/messagebus/network/identity.h>
-#include <vespa/messagebus/routing/routingcontext.h>
+
 #include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/simplereply.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/log/log.h>
-
-LOG_SETUP("simpleprotocol_test");
+#include <vespa/messagebus/errorcode.h>
+#include <vespa/messagebus/ireplyhandler.h>
+#include <vespa/messagebus/network/identity.h>
+#include <vespa/messagebus/routing/routingcontext.h>
+#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/component/vtag.h>
 
 using namespace mbus;
 

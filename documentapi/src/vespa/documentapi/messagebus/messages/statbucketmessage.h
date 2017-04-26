@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "documentmessage.h"
 #include <vespa/document/bucket/bucketid.h>
-#include <vespa/documentapi/messagebus/messages/documentmessage.h>
 
 namespace documentapi {
 
@@ -12,8 +12,7 @@ private:
     string        _documentSelection;
 
 protected:
-    // Implements DocumentMessage.
-    DocumentReply::UP doCreateReply() const;
+    DocumentReply::UP doCreateReply() const override;
 
 public:
     /**
@@ -57,17 +56,10 @@ public:
      */
     void setDocumentSelection(const string &value) { _documentSelection = value; };
 
-    // Overrides DocumentMessage.
-    bool hasSequenceId() const;
-
-    // Overrides DocumentMessage.
-    uint64_t getSequenceId() const;
-
-    // Implements DocumentMessage.
-    uint32_t getType() const;
-
-    string toString() const { return "statbucketmessage"; }
+    bool hasSequenceId() const override;
+    uint64_t getSequenceId() const override;
+    uint32_t getType() const override;
+    string toString() const override { return "statbucketmessage"; }
 };
 
 }
-

@@ -2,9 +2,8 @@
 
 #pragma once
 
-#include <string>
-#include <vespa/messagebus/reply.h>
 #include "simplemessage.h"
+#include <vespa/messagebus/reply.h>
 
 namespace mbus {
 
@@ -19,11 +18,10 @@ public:
     virtual ~SimpleReply();
     void setValue(const string &value);
     const string &getValue() const;
-    virtual const string & getProtocol() const override;
-    virtual uint32_t getType() const override;
+    const string & getProtocol() const override;
+    uint32_t getType() const override;
 
     uint8_t priority() const override { return 8; }
 };
 
 } // namespace mbus
-

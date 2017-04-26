@@ -1,12 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "visitor.h"
+#include "documentreply.h"
 #include <vespa/vdslib/container/parameters.h>
 #include <vespa/vdslib/container/documentlist.h>
 #include <vespa/vdslib/container/operationlist.h>
 #include <vespa/document/bucket/bucketid.h>
-#include <vespa/documentapi/messagebus/messages/visitor.h>
-#include <vespa/documentapi/messagebus/messages/documentreply.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 
 namespace documentapi {

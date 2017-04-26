@@ -1,16 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/document/util/bytebuffer.h>
-#include <vespa/documentapi/messagebus/messages/documentmessage.h>
+#include "documentmessage.h"
 
 namespace documentapi {
 
 class FeedMessage : public DocumentMessage {
 private:
     string _name;
-    int         _generation;
-    int         _increment;
+    int    _generation;
+    int    _increment;
 
 public:
     /**

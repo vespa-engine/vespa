@@ -1,13 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
+#include <vespa/messagebus/testlib/simplemessage.h>
+#include <vespa/messagebus/sequencer.h>
+#include <vespa/messagebus/routablequeue.h>
+#include <vespa/messagebus/emptyreply.h>
+#include <vespa/vespalib/testkit/testapp.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP("sequencer_test");
-
-#include <vespa/messagebus/sequencer.h>
-#include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/routablequeue.h>
-#include <vespa/messagebus/testlib/simplemessage.h>
-#include <vespa/vespalib/testkit/testapp.h>
 
 using namespace mbus;
 

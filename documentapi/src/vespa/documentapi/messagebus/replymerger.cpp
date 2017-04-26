@@ -1,14 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <cassert>
-#include <vespa/messagebus/reply.h>
-#include <vespa/messagebus/emptyreply.h>
-#include <vespa/documentapi/messagebus/replymerger.h>
-#include <vespa/documentapi/messagebus/documentprotocol.h>
+#include "replymerger.h"
+#include "documentprotocol.h"
 #include <vespa/documentapi/messagebus/messages/removedocumentreply.h>
 #include <vespa/documentapi/messagebus/messages/updatedocumentreply.h>
 #include <vespa/documentapi/messagebus/messages/getdocumentreply.h>
+#include <vespa/messagebus/emptyreply.h>
 
 namespace documentapi {
 

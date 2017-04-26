@@ -65,20 +65,9 @@ public:
      * @param param The number of services to include in the set.
      */
     SubsetServicePolicy(const string &param);
-
-    /**
-     * Destructor.
-     *
-     * Frees all allocated resources.
-     */
-    virtual ~SubsetServicePolicy();
-
-    // Inherit doc from IRoutingPolicy.
-    virtual void select(mbus::RoutingContext &context) override;
-
-    // Inherit doc from IRoutingPolicy.
-    virtual void merge(mbus::RoutingContext &context) override;
+    ~SubsetServicePolicy();
+    void select(mbus::RoutingContext &context) override;
+    void merge(mbus::RoutingContext &context) override;
 };
 
 }
-

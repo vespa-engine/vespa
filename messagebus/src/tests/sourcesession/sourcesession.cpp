@@ -1,7 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("sourcesession_test");
 
 #include <vespa/messagebus/destinationsession.h>
 #include <vespa/messagebus/error.h>
@@ -34,7 +31,7 @@ struct DelayedHandler : public IMessageHandler
     ~DelayedHandler() {
         session.reset();
     }
-    virtual void handleMessage(Message::UP msg) override {
+    void handleMessage(Message::UP msg) override {
         // this will block the transport thread in the server messagebus,
         // but that should be ok, as we only want to test the timing in the
         // client messagebus...

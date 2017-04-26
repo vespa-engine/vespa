@@ -1,10 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/document/bucket/bucketidfactory.h>
+#include <vespa/documentapi/common.h>
 #include <vespa/messagebus/routing/iroutingpolicy.h>
 #include <vespa/vdslib/bucketdistribution.h>
+#include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/vespalib/util/sync.h>
+#include <map>
 
 namespace documentapi {
 
@@ -41,20 +43,10 @@ public:
      * @param param The maximum number of allowed bad columns.
      */
     SearchColumnPolicy(const string &param);
+    ~SearchColumnPolicy();
 
-    /**
-     * Destructor.
-     *
-     * Frees all allocated resources.
-     */
-    virtual ~SearchColumnPolicy();
-
-    // Inherit doc from IRoutingPolicy.
-    virtual void select(mbus::RoutingContext &context);
-
-    // Inherit doc from IRoutingPolicy.
-    virtual void merge(mbus::RoutingContext &context);
+    void select(mbus::RoutingContext &context) override;
+    void merge(mbus::RoutingContext &context) override;
 };
 
 }
-

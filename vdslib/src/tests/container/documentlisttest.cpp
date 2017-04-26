@@ -1,20 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/vdslib/container/writabledocumentlist.h>
-
-#include <cppunit/extensions/HelperMacros.h>
 #include <vespa/document/base/testdocman.h>
-#include <vespa/document/config/config-documenttypes.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/random.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/vstringfmt.h>
-#include <iostream>
+#include <cppunit/extensions/HelperMacros.h>
 
 using document::DocumentTypeRepo;
 using document::readDocumenttypesConfig;
@@ -522,14 +515,14 @@ void WritableDocumentListTest::testOperationList()
 
     for (uint32_t i=0; i<3000; ++i, it++) {
         CPPUNIT_ASSERT_EQUAL(
-                vespalib::make_vespa_string("userdoc:test:1298798789:%d", i),
+                vespalib::make_string("userdoc:test:1298798789:%d", i),
                 it->getDocument()->getId().toString());
         CPPUNIT_ASSERT(!it->isRemoveEntry());
     }
 
     for (uint32_t i=5000; i<5900; ++i, it++) {
         CPPUNIT_ASSERT_EQUAL(
-                vespalib::make_vespa_string("userdoc:test:1298798789:%d", i),
+                vespalib::make_string("userdoc:test:1298798789:%d", i),
                 it->getDocument()->getId().toString());
         CPPUNIT_ASSERT(it->isRemoveEntry());
     }

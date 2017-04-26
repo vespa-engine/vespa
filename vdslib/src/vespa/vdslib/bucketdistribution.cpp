@@ -17,6 +17,11 @@ BucketDistribution::BucketDistribution(uint32_t numColumns, uint32_t numBucketBi
     setNumColumns(numColumns);
 }
 
+BucketDistribution::BucketDistribution(const BucketDistribution &) = default;
+BucketDistribution & BucketDistribution::operator = (const BucketDistribution &) = default;
+
+BucketDistribution::~BucketDistribution() {}
+
 void
 BucketDistribution::getBucketCount(uint32_t numColumns, uint32_t numBucketBits, std::vector<uint32_t> &ret)
 {

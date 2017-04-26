@@ -1,23 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".searchcolumnpolicy");
 
-#include <vespa/document/base/documentid.h>
+#include "searchcolumnpolicy.h"
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/documentapi/messagebus/messages/getdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
-#include <vespa/documentapi/messagebus/policies/searchcolumnpolicy.h>
 #include <vespa/documentapi/messagebus/messages/updatedocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/batchdocumentupdatemessage.h>
 #include <vespa/documentapi/messagebus/messages/multioperationmessage.h>
-#include <vespa/messagebus/error.h>
-#include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/vdslib/bucketdistribution.h>
 #include <vespa/vespalib/util/hashmap.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".searchcolumnpolicy");
 
 namespace documentapi {
 

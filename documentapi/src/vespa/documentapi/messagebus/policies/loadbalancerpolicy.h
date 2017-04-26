@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/documentapi/messagebus/policies/loadbalancer.h>
-#include <vespa/documentapi/messagebus/policies/externslobrokpolicy.h>
+#include "loadbalancer.h"
+#include "externslobrokpolicy.h"
 
 namespace documentapi {
 
@@ -10,8 +10,7 @@ class LoadBalancerPolicy : public ExternSlobrokPolicy
 {
 public:
     LoadBalancerPolicy(const string& param);
-
-    virtual void doSelect(mbus::RoutingContext &context) override;
+    void doSelect(mbus::RoutingContext &context) override;
 
     /**
        Finds the TCP address of the target docproc.
@@ -22,7 +21,7 @@ public:
         return _loadBalancer->getRecipient(lookup(context, _pattern));
     }
 
-    virtual void merge(mbus::RoutingContext &context) override;
+    void merge(mbus::RoutingContext &context) override;
 
 private:
     string _pattern;

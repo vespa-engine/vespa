@@ -2,14 +2,6 @@
 #pragma once
 
 #include "routablefactories41.h"
-#include <vespa/document/base/documentid.h>
-#include <vespa/document/util/bytebuffer.h>
-#include <vespa/documentapi/messagebus/messages/feedmessage.h>
-#include <vespa/documentapi/messagebus/messages/feedreply.h>
-#include <vespa/messagebus/blob.h>
-#include <vespa/messagebus/blobref.h>
-#include <vespa/messagebus/routable.h>
-#include <vespa/vespalib/util/growablebytebuffer.h>
 
 namespace document { class DocumentTypeRepo; }
 

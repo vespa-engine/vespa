@@ -1,8 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/documentapi/messagebus/systemstate/systemstate.h>
 #include "iroutingpolicyfactory.h"
+#include <vespa/documentapi/messagebus/systemstate/systemstate.h>
+#include <vespa/document/repo/documenttyperepo.h>
 
 namespace documentapi {
 
@@ -36,9 +37,7 @@ public:
         const document::DocumentTypeRepo &_repo;
         string _configId;
     public:
-        DocumentRouteSelectorPolicyFactory(
-                const document::DocumentTypeRepo &repo,
-                const string &configId);
+        DocumentRouteSelectorPolicyFactory(const document::DocumentTypeRepo &repo, const string &configId);
         mbus::IRoutingPolicy::UP createPolicy(const string &param) const override;
     };
     class ExternPolicyFactory : public IRoutingPolicyFactory {
@@ -68,4 +67,3 @@ public:
 };
 
 }
-

@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/vespalib/util/exceptions.h>
-#include <vespa/documentapi/messagebus/messages/queryresultmessage.h>
+#include "queryresultmessage.h"
 
 namespace documentapi {
 
@@ -9,9 +7,7 @@ QueryResultMessage::QueryResultMessage() :
     VisitorMessage(),
     _searchResult(),
     _summary()
-{
-    // empty
-}
+{}
 
 QueryResultMessage::QueryResultMessage(const vdslib::SearchResult & result, const vdslib::DocumentSummary & summary) :
     VisitorMessage(),
@@ -40,4 +36,3 @@ QueryResultMessage::getType() const
 }
 
 }
-

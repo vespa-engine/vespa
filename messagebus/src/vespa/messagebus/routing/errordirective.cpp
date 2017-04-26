@@ -11,13 +11,13 @@ ErrorDirective::ErrorDirective(const vespalib::stringref &msg) :
 string
 ErrorDirective::toString() const
 {
-    return vespalib::make_vespa_string("(%s)", _msg.c_str());
+    return vespalib::make_string("(%s)", _msg.c_str());
 }
 
 string
 ErrorDirective::toDebugString() const
 {
-    return vespalib::make_vespa_string("ErrorDirective(msg = '%s')", _msg.c_str());
+    return vespalib::make_string("ErrorDirective(msg = '%s')", _msg.c_str());
 }
 
 } // mbus

@@ -1,9 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/vespalib/util/exceptions.h>
+#include "updatedocumentmessage.h"
+#include "updatedocumentreply.h"
 #include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <vespa/documentapi/messagebus/messages/updatedocumentmessage.h>
-#include <vespa/documentapi/messagebus/messages/updatedocumentreply.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 namespace documentapi {
 
@@ -12,9 +11,7 @@ UpdateDocumentMessage::UpdateDocumentMessage() :
     _documentUpdate(),
     _oldTime(0),
     _newTime(0)
-{
-    // empty
-}
+{}
 
 UpdateDocumentMessage::UpdateDocumentMessage(document::DocumentUpdate::SP documentUpdate) :
     TestAndSetMessage(),
