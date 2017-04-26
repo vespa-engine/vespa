@@ -7,6 +7,7 @@ import com.yahoo.container.di.ComponentDeconstructor;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.jdisc.SharedResource;
 
+import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -62,6 +63,9 @@ public class Deconstructor implements ComponentDeconstructor {
             } catch (Exception e) {
                 log.log(WARNING, "Exception thrown when deconstructing " + component, e);
             } catch (Throwable t) {
+                try {
+                    Thread.sleep((long) (new Random(System.nanoTime()).nextDouble() * 180 * 1000));
+                } catch (InterruptedException e) { }
                 com.yahoo.protect.Process.logAndDie("Error when deconstructing " + component, t);
             }
         }
