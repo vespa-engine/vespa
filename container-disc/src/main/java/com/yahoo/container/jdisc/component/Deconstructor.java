@@ -7,13 +7,10 @@ import com.yahoo.container.di.ComponentDeconstructor;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.jdisc.SharedResource;
 
-import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-
-import static java.util.logging.Level.WARNING;
 
 /**
 * @author tonyv
@@ -57,19 +54,8 @@ public class Deconstructor implements ComponentDeconstructor {
 
         public void run() {
             log.info("Starting deconstruction of " + component);
-            try {
-                component.deconstruct();
-                log.info("Finished deconstructing " + component);
-            } catch (Error e) {
-                try {
-                    Thread.sleep((long) (new Random(System.nanoTime()).nextDouble() * 180 * 1000));
-                } catch (InterruptedException e) { }
-                com.yahoo.protect.Process.logAndDie("Error when deconstructing " + component, e);
-            } catch (Exception e) {
-                log.log(WARNING, "Exception thrown when deconstructing " + component, e);
-            } catch (Throwable t) {
-                log.log(WARNING, "Unexpected Throwable thrown when deconstructing " + component, t);
-            }
+            component.deconstruct();
+            log.info("Finished deconstructing " + component);
         }
     }
 }
