@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -45,6 +46,8 @@ public class CuratorDatabaseClient {
     private static final Duration defaultLockTimeout = Duration.ofMinutes(1);
 
     private final NodeSerializer nodeSerializer;
+    
+    private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
 
     private final CuratorDatabase curatorDatabase;
 
@@ -65,6 +68,7 @@ public class CuratorDatabaseClient {
         curatorDatabase.create(root);
         for (Node.State state : Node.State.values())
             curatorDatabase.create(toPath(state));
+        curatorDatabase.create(inactiveJobsPath());
     }
 
     /**
@@ -303,4 +307,27 @@ public class CuratorDatabaseClient {
     private Path defaultFlavorPath(ApplicationId applicationId) {
         return root.append("defaultFlavor").append(applicationId.serializedForm());
     }
+
+    public Set<String> readInactiveJobs() {
+        return curatorDatabase.getData(inactiveJobsPath())
+                              .map(data -> stringSetSerializer.fromJson(data))
+                              .orElse(Collections.emptySet());
+    }
+
+    public void writeInactiveJobs(Set<String> inactiveJobs) {
+        NestedTransaction transaction = new NestedTransaction();
+        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
+        curatorTransaction.add(CuratorOperations.setData(inactiveJobsPath().getAbsolute(),
+                                                         stringSetSerializer.toJson(inactiveJobs)));
+        transaction.commit();
+    }
+    
+    public CuratorMutex lockInactiveJobs() {
+        return lock(inactiveJobsPath(), defaultLockTimeout);
+    }
+
+    private Path inactiveJobsPath() {
+        return root.append("inactiveJobs");
+    }
+    
 }

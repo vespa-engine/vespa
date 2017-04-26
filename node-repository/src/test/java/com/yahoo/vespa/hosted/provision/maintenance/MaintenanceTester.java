@@ -33,6 +33,8 @@ public class MaintenanceTester {
     public final NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
                                                                      new MockNameResolver().mockAnyLookup());
 
+    public NodeRepository nodeRepository() { return nodeRepository; }
+    
     public void createReadyTenantNodes(int count) {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = 0; i < count; i++)

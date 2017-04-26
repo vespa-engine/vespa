@@ -33,8 +33,9 @@ public abstract class Expirer extends Maintainer {
 
     private final Duration expiryTime;
 
-    public Expirer(Node.State fromState, History.Event.Type eventType, NodeRepository nodeRepository, Clock clock, Duration expiryTime) {
-        super(nodeRepository, min(Duration.ofMinutes(25), expiryTime));
+    public Expirer(Node.State fromState, History.Event.Type eventType, NodeRepository nodeRepository, 
+                   Clock clock, Duration expiryTime, JobControl jobControl) {
+        super(nodeRepository, min(Duration.ofMinutes(25), expiryTime), jobControl);
         this.fromState = fromState;
         this.eventType = eventType;
         this.clock = clock;
@@ -53,9 +54,6 @@ public abstract class Expirer extends Maintainer {
             log.info(fromState + " expirer found " + expired.size() + " expired nodes");
         expire(expired);
     }
-
-    @Override
-    public String toString() { return "Expiry from " + fromState; }
 
     /** Implement this callback to take action to expire these nodes */
     protected abstract void expire(List<Node> node);

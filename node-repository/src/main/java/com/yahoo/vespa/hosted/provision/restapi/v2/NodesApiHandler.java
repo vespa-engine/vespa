@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.vespa.hosted.provision.maintenance.NodeRepositoryMaintenance;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
@@ -48,13 +49,16 @@ import static com.yahoo.vespa.config.SlimeUtils.optionalString;
 public class NodesApiHandler extends LoggingRequestHandler {
 
     private final NodeRepository nodeRepository;
+    private final NodeRepositoryMaintenance maintenance;
     private final NodeFlavors nodeFlavors;
     private static final String nodeTypeKey = "type";
 
 
-    public NodesApiHandler(Executor executor, AccessLog accessLog, NodeRepository nodeRepository, NodeFlavors flavors) {
+    public NodesApiHandler(Executor executor, AccessLog accessLog, NodeRepository nodeRepository,
+                           NodeRepositoryMaintenance maintenance, NodeFlavors flavors) {
         super(executor, accessLog);
         this.nodeRepository = nodeRepository;
+        this.maintenance = maintenance;
         this.nodeFlavors = flavors;
     }
 
@@ -84,13 +88,14 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     private HttpResponse handleGET(HttpRequest request) {
         String path = request.getUri().getPath();
-        if (path.equals(    "/nodes/v2/")) return ResourcesResponse.fromStrings(request.getUri(), "state", "node", "command");
+        if (path.equals(    "/nodes/v2/")) return ResourcesResponse.fromStrings(request.getUri(), "state", "node", "command", "maintenance");
         if (path.equals(    "/nodes/v2/node/")) return new NodesResponse(ResponseType.nodeList, request, nodeRepository);
         if (path.startsWith("/nodes/v2/node/")) return new NodesResponse(ResponseType.singleNode, request, nodeRepository);
         if (path.equals(    "/nodes/v2/state/")) return new NodesResponse(ResponseType.stateList, request, nodeRepository);
         if (path.startsWith("/nodes/v2/state/")) return new NodesResponse(ResponseType.nodesInStateList, request, nodeRepository);
         if (path.startsWith("/nodes/v2/acl/")) return new NodeAclResponse(request, nodeRepository);
         if (path.equals(    "/nodes/v2/command/")) return ResourcesResponse.fromStrings(request.getUri(), "restart", "reboot");
+        if (path.equals(    "/nodes/v2/maintenance/")) return new JobsResponse(maintenance.jobControl());
         throw new NotFoundException("Nothing at path '" + path + "'");
     }
 
@@ -132,18 +137,24 @@ public class NodesApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handlePOST(HttpRequest request) {
-        switch (request.getUri().getPath()) {
-            case "/nodes/v2/command/restart" :
-                int restartCount = nodeRepository.restart(toNodeFilter(request)).size();
-                return new MessageResponse("Scheduled restart of " + restartCount + " matching nodes");
-            case "/nodes/v2/command/reboot" :
-                int rebootCount = nodeRepository.reboot(toNodeFilter(request)).size();
-                return new MessageResponse("Scheduled reboot of " + rebootCount + " matching nodes");
-            case "/nodes/v2/node" :
-                int addedNodes = addNodes(request.getData());
-                return new MessageResponse("Added " + addedNodes + " nodes to the provisioned state");
-            default:
-                throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
+        String path = request.getUri().getPath();
+        if (path.equals("/nodes/v2/command/restart")) {
+            int restartCount = nodeRepository.restart(toNodeFilter(request)).size();
+            return new MessageResponse("Scheduled restart of " + restartCount + " matching nodes");
+        } 
+        else if (path.equals("/nodes/v2/command/reboot")) {
+            int rebootCount = nodeRepository.reboot(toNodeFilter(request)).size();
+            return new MessageResponse("Scheduled reboot of " + rebootCount + " matching nodes");
+        } 
+        else if (path.equals("/nodes/v2/node")) {
+            int addedNodes = addNodes(request.getData());
+            return new MessageResponse("Added " + addedNodes + " nodes to the provisioned state");
+        }
+        else if (path.startsWith("/nodes/v2/maintenance/inactive/")) {
+            return setActive(lastElement(path), false);
+        }
+        else {
+            throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
         }
     }
 
@@ -156,8 +167,12 @@ public class NodesApiHandler extends LoggingRequestHandler {
             else
                 throw new NotFoundException("No node in the provisioned, parked or failed state with hostname " + hostname);
         }
-
-        throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
+        else if (path.startsWith("/nodes/v2/maintenance/inactive/")) {
+            return setActive(lastElement(path), true);
+        }
+        else {
+            throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
+        }
     }
 
     private Node nodeFromRequest(HttpRequest request) {
@@ -249,6 +264,13 @@ public class NodesApiHandler extends LoggingRequestHandler {
             }
         }
         return false;
+    }
+
+    private MessageResponse setActive(String jobName, boolean active) {
+        if ( ! maintenance.jobControl().jobs().contains(jobName))
+            throw new NotFoundException("No job named '" + jobName + "'");
+        maintenance.jobControl().setActive(jobName, active);
+        return new MessageResponse((active ? "Re-activated" : "Deactivated" ) + " job '" + jobName + "'");
     }
 
 }

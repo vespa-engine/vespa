@@ -23,6 +23,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
+import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Test;
 
@@ -71,7 +72,7 @@ public class RetiredExpirerTest {
         MockDeployer deployer =
             new MockDeployer(provisioner,
                              Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromNodeCount(wantedNodes, Optional.of("default")), 1)));
-        new RetiredExpirer(nodeRepository, deployer, clock, Duration.ofHours(12)).run();
+        new RetiredExpirer(nodeRepository, deployer, clock, Duration.ofHours(12), new JobControl(nodeRepository.database())).run();
         assertEquals(3, nodeRepository.getNodes(applicationId, Node.State.active).size());
         assertEquals(4, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
         assertEquals(1, deployer.redeployments);
@@ -106,7 +107,7 @@ public class RetiredExpirerTest {
         MockDeployer deployer =
             new MockDeployer(provisioner,
                              Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromNodeCount(1, Optional.of("default")), 1)));
-        new RetiredExpirer(nodeRepository, deployer, clock, Duration.ofHours(12)).run();
+        new RetiredExpirer(nodeRepository, deployer, clock, Duration.ofHours(12), new JobControl(nodeRepository.database())).run();
         assertEquals(1, nodeRepository.getNodes(applicationId, Node.State.active).size());
         assertEquals(7, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
         assertEquals(1, deployer.redeployments);

@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
+import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Before;
 import org.junit.Test;
@@ -209,7 +210,7 @@ public class PeriodicApplicationMaintainerTest {
         
         TestablePeriodicApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval,
                                               Optional<List<Node>> overriddenNodesNeedingMaintenance) {
-            super(deployer, nodeRepository, interval);
+            super(deployer, nodeRepository, interval, new JobControl(nodeRepository.database()));
             this.overriddenNodesNeedingMaintenance = overriddenNodesNeedingMaintenance;
         }
 

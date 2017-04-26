@@ -25,8 +25,8 @@ public class NodeRebooter extends Maintainer {
     private final Clock clock;
     private final Random random;
 
-    public NodeRebooter(NodeRepository nodeRepository, Clock clock, Duration rebootInterval) {
-        super(nodeRepository, min(Duration.ofMinutes(25), rebootInterval));
+    public NodeRebooter(NodeRepository nodeRepository, Clock clock, Duration rebootInterval, JobControl jobControl) {
+        super(nodeRepository, min(Duration.ofMinutes(25), rebootInterval), jobControl);
         this.rebootInterval = rebootInterval;
         this.clock = clock;
         this.random = new Random(clock.millis()); // seed with clock for test determinism   
@@ -50,11 +50,6 @@ public class NodeRebooter extends Maintainer {
             return false;
         else // schedule with a probability such that reboots of nodes are spread roughly over the reboot interval
             return random.nextDouble() < (double) interval().getSeconds() / (double)rebootInterval.getSeconds();
-    }
-
-    @Override
-    public String toString() {
-        return "Node rebooter";
     }
 
 }

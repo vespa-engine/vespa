@@ -22,8 +22,9 @@ public class ReservationExpirer extends Expirer {
 
     private final NodeRepository nodeRepository;
 
-    public ReservationExpirer(NodeRepository nodeRepository, Clock clock, Duration reservationPeriod) {
-        super(Node.State.reserved, History.Event.Type.reserved, nodeRepository, clock, reservationPeriod);
+    public ReservationExpirer(NodeRepository nodeRepository, Clock clock, Duration reservationPeriod, 
+                              JobControl jobControl) {
+        super(Node.State.reserved, History.Event.Type.reserved, nodeRepository, clock, reservationPeriod, jobControl);
         this.nodeRepository = nodeRepository;
     }
 

@@ -21,8 +21,8 @@ public class MetricsReporter extends Maintainer {
 
     private final Metric metric;
 
-    public MetricsReporter(NodeRepository nodeRepository, Metric metric, Duration interval) {
-        super(nodeRepository, interval);
+    public MetricsReporter(NodeRepository nodeRepository, Metric metric, Duration interval, JobControl jobControl) {
+        super(nodeRepository, interval, jobControl);
         this.metric = metric;
     }
 
@@ -33,7 +33,4 @@ public class MetricsReporter extends Maintainer {
                        nodeRepository().getNodes(NodeType.tenant, state).size(), null);
     }
 
-    @Override
-    public String toString() { return "Metrics reporter"; }
-    
 }

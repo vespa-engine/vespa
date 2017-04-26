@@ -59,9 +59,10 @@ public class NodeFailer extends Maintainer {
     public NodeFailer(Deployer deployer, HostLivenessTracker hostLivenessTracker,
                       ServiceMonitor serviceMonitor, NodeRepository nodeRepository,
                       Duration downTimeLimit, Clock clock, Orchestrator orchestrator,
-                      ThrottlePolicy throttlePolicy) {
+                      ThrottlePolicy throttlePolicy,
+                      JobControl jobControl) {
         // check ping status every five minutes, but at least twice as often as the down time limit
-        super(nodeRepository, min(downTimeLimit.dividedBy(2), Duration.ofMinutes(5)));
+        super(nodeRepository, min(downTimeLimit.dividedBy(2), Duration.ofMinutes(5)), jobControl);
         this.deployer = deployer;
         this.hostLivenessTracker = hostLivenessTracker;
         this.serviceMonitor = serviceMonitor;
@@ -279,9 +280,6 @@ public class NodeFailer extends Maintainer {
         }
         return throttle;
     }
-
-    @Override
-    public String toString() { return "Node failer"; }
 
     public enum ThrottlePolicy {
 

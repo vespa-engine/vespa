@@ -8,38 +8,39 @@ import org.junit.Test;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author bakksjo
  */
 public class NodeStateSerializerTest {
+
     @Test
     public void allStatesHaveASerializedForm() {
         for (Node.State nodeState : Node.State.values()) {
-            assertThat(NodeStateSerializer.wireNameOf(nodeState), is(notNullValue()));
+            assertNotNull(NodeStateSerializer.wireNameOf(nodeState));
         }
     }
 
     @Test
     public void wireNamesDoNotOverlap() {
-        final Set<String> wireNames = new HashSet<>();
+        Set<String> wireNames = new HashSet<>();
         for (Node.State nodeState : Node.State.values()) {
             wireNames.add(NodeStateSerializer.wireNameOf(nodeState));
         }
-        assertThat(wireNames.size(), is(Node.State.values().length));
+        assertEquals(Node.State.values().length, wireNames.size());
     }
 
     @Test
     public void serializationAndDeserializationIsSymmetric() {
         for (Node.State nodeState : Node.State.values()) {
-            final String serialized = NodeStateSerializer.wireNameOf(nodeState);
-            final Node.State deserialized = NodeStateSerializer.fromWireName(serialized)
+            String serialized = NodeStateSerializer.wireNameOf(nodeState);
+            Node.State deserialized = NodeStateSerializer.fromWireName(serialized)
                     .orElseThrow(() -> new RuntimeException(
                             "Cannot deserialize '" + serialized + "', serialized form of " + nodeState.name()));
-            assertThat(deserialized, is(nodeState));
+            assertEquals(nodeState, deserialized);
         }
     }
+
 }

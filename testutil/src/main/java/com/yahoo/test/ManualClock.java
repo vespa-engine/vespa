@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.test;
 
+import com.google.inject.Inject;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -14,6 +15,7 @@ public class ManualClock extends Clock {
 
     private Instant currentTime = Instant.now();
 
+    @Inject
     public ManualClock() {}
 
     public ManualClock(String utcIsoTime) {

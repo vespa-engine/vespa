@@ -68,6 +68,17 @@ public class RestApiTest {
         assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com"),
                                "\"rebootGeneration\":4");
 
+        // POST deactivation of a maintenance job
+        assertResponse(new Request("http://localhost:8080/nodes/v2/maintenance/inactive/NodeFailer",
+                                   new byte[0], Request.Method.POST),
+                       "{\"message\":\"Deactivated job 'NodeFailer'\"}");
+        // GET a list of all maintenance jobs
+        assertFile(new Request("http://localhost:8080/nodes/v2/maintenance/"), "maintenance.json");
+        // DELETE deactivation of a maintenance job
+        assertResponse(new Request("http://localhost:8080/nodes/v2/maintenance/inactive/NodeFailer",
+                                   new byte[0], Request.Method.DELETE),
+                       "{\"message\":\"Re-activated job 'NodeFailer'\"}");
+
         // POST new nodes
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
                                    ("[" + asNodeJson("host8.yahoo.com", "default", "127.0.0.1") + "," + // test with only 1 ip address

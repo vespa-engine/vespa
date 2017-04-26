@@ -31,8 +31,8 @@ public class InactiveExpirer extends Expirer {
 
     private final NodeRepository nodeRepository;
 
-    public InactiveExpirer(NodeRepository nodeRepository, Clock clock, Duration inactiveTimeout) {
-        super(Node.State.inactive, History.Event.Type.deactivated, nodeRepository, clock, inactiveTimeout);
+    public InactiveExpirer(NodeRepository nodeRepository, Clock clock, Duration inactiveTimeout, JobControl jobControl) {
+        super(Node.State.inactive, History.Event.Type.deactivated, nodeRepository, clock, inactiveTimeout, jobControl);
         this.nodeRepository = nodeRepository;
     }
 

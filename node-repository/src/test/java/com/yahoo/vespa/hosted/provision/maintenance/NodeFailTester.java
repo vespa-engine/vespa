@@ -7,7 +7,6 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeFlavors;
@@ -17,16 +16,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.vespa.applicationmodel.ApplicationInstance;
-import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
-import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
-import com.yahoo.vespa.applicationmodel.ClusterId;
-import com.yahoo.vespa.applicationmodel.ConfigId;
-import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.applicationmodel.ServiceCluster;
-import com.yahoo.vespa.applicationmodel.ServiceInstance;
-import com.yahoo.vespa.applicationmodel.ServiceType;
-import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
@@ -34,23 +23,14 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
+import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
-import com.yahoo.vespa.orchestrator.ApplicationIdNotFoundException;
-import com.yahoo.vespa.orchestrator.ApplicationStateChangeDeniedException;
-import com.yahoo.vespa.orchestrator.BatchHostNameNotFoundException;
-import com.yahoo.vespa.orchestrator.BatchInternalErrorException;
-import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
+import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
+import com.yahoo.vespa.hosted.provision.testutils.ServiceMonitorStub;
+import com.yahoo.vespa.hosted.provision.testutils.TestHostLivenessTracker;
 import com.yahoo.vespa.orchestrator.Orchestrator;
-import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
-import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
-import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
-import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.service.monitor.ServiceMonitor;
-import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 
-import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -59,7 +39,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -195,7 +174,7 @@ public class NodeFailTester {
     }
 
     public NodeFailer createFailer() {
-        return new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, downtimeLimitOneHour, clock, orchestrator, NodeFailer.ThrottlePolicy.hosted);
+        return new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, downtimeLimitOneHour, clock, orchestrator, NodeFailer.ThrottlePolicy.hosted, new JobControl(nodeRepository.database()));
     }
 
     public void allNodesMakeAConfigRequestExcept(Node ... deadNodeArray) {
@@ -263,127 +242,6 @@ public class NodeFailTester {
                 highestIndex = node;
         }
         return highestIndex;
-    }
-
-    /** This is a fully functional implementation */
-    private static class TestHostLivenessTracker implements HostLivenessTracker {
-
-        private final Clock clock;
-        private final Map<String, Instant> lastRequestFromHost = new HashMap<>();
-
-        public TestHostLivenessTracker(Clock clock) {
-            this.clock = clock;
-        }
-
-        @Override
-        public void receivedRequestFrom(String hostname) {
-            lastRequestFromHost.put(hostname, clock.instant());
-        }
-
-        @Override
-        public Optional<Instant> lastRequestFrom(String hostname) {
-            return Optional.ofNullable(lastRequestFromHost.get(hostname));
-        }
-
-    }
-
-    public static class ServiceMonitorStub implements ServiceMonitor {
-
-        private final Map<ApplicationId, MockDeployer.ApplicationContext> apps;
-        private final NodeRepository nodeRepository;
-
-        private Set<String> downHosts = new HashSet<>();
-        private boolean statusIsKnown = true;
-
-        /** Create a service monitor where all nodes are initially up */
-        public ServiceMonitorStub(Map<ApplicationId, MockDeployer.ApplicationContext> apps, NodeRepository nodeRepository) {
-            this.apps = apps;
-            this.nodeRepository = nodeRepository;
-        }
-
-        public void setHostDown(String hostname) {
-            downHosts.add(hostname);
-        }
-
-        public void setHostUp(String hostname) {
-            downHosts.remove(hostname);
-        }
-
-        public void setStatusIsKnown(boolean statusIsKnown) {
-            this.statusIsKnown = statusIsKnown;
-        }
-
-        private ServiceMonitorStatus getHostStatus(String hostname) {
-            if ( ! statusIsKnown) return ServiceMonitorStatus.NOT_CHECKED;
-            if (downHosts.contains(hostname)) return ServiceMonitorStatus.DOWN;
-            return ServiceMonitorStatus.UP;
-        }
-
-        @Override
-        public Map<ApplicationInstanceReference, ApplicationInstance<ServiceMonitorStatus>> queryStatusOfAllApplicationInstances() {
-            // Convert apps information to the response payload to return
-            Map<ApplicationInstanceReference, ApplicationInstance<ServiceMonitorStatus>> status = new HashMap<>();
-            for (Map.Entry<ApplicationId, MockDeployer.ApplicationContext> app : apps.entrySet()) {
-                Set<ServiceInstance<ServiceMonitorStatus>> serviceInstances = new HashSet<>();
-                for (Node node : nodeRepository.getNodes(app.getValue().id(), Node.State.active)) {
-                    serviceInstances.add(new ServiceInstance<>(new ConfigId("configid"),
-                                                               new HostName(node.hostname()),
-                                                               getHostStatus(node.hostname())));
-                }
-                Set<ServiceCluster<ServiceMonitorStatus>> serviceClusters = new HashSet<>();
-                serviceClusters.add(new ServiceCluster<>(new ClusterId(app.getValue().cluster().id().value()),
-                                                         new ServiceType("serviceType"),
-                                                         serviceInstances));
-                TenantId tenantId = new TenantId(app.getKey().tenant().value());
-                ApplicationInstanceId applicationInstanceId = new ApplicationInstanceId(app.getKey().application().value());
-                status.put(new ApplicationInstanceReference(tenantId, applicationInstanceId),
-                           new ApplicationInstance<>(tenantId, applicationInstanceId, serviceClusters));
-            }
-            return status;
-        }
-
-    }
-
-    class OrchestratorMock implements Orchestrator {
-
-        Set<ApplicationId> suspendedApplications = new HashSet<>();
-
-        @Override
-        public HostStatus getNodeStatus(HostName hostName) throws HostNameNotFoundException {
-            return null;
-        }
-
-        @Override
-        public void resume(HostName hostName) throws HostStateChangeDeniedException, HostNameNotFoundException {}
-
-        @Override
-        public void suspend(HostName hostName) throws HostStateChangeDeniedException, HostNameNotFoundException {}
-
-        @Override
-        public ApplicationInstanceStatus getApplicationInstanceStatus(ApplicationId appId) throws ApplicationIdNotFoundException {
-            return suspendedApplications.contains(appId)
-                   ? ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN : ApplicationInstanceStatus.NO_REMARKS;
-        }
-
-        @Override
-        public Set<ApplicationId> getAllSuspendedApplications() {
-            return null;
-        }
-
-        @Override
-        public void resume(ApplicationId appId) throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException {
-            suspendedApplications.remove(appId);
-        }
-
-        @Override
-        public void suspend(ApplicationId appId) throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException {
-            suspendedApplications.add(appId);
-        }
-
-        @Override
-        public void suspendAll(HostName parentHostname, List<HostName> hostNames) throws BatchInternalErrorException, BatchHostStateChangeDeniedException, BatchHostNameNotFoundException {
-            throw new RuntimeException("Not implemented");
-        }
     }
 
 }

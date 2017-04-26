@@ -24,8 +24,9 @@ public class ZooKeeperAccessMaintainer extends Maintainer {
 
     private final Curator curator;
     
-    public ZooKeeperAccessMaintainer(NodeRepository nodeRepository, Curator curator, Duration maintenanceInterval) {
-        super(nodeRepository, maintenanceInterval);
+    public ZooKeeperAccessMaintainer(NodeRepository nodeRepository, Curator curator, Duration maintenanceInterval, 
+                                     JobControl jobControl) {
+        super(nodeRepository, maintenanceInterval, jobControl);
         this.curator = curator;
     }
 
@@ -42,11 +43,6 @@ public class ZooKeeperAccessMaintainer extends Maintainer {
         }
 
         ZooKeeperServer.setAllowedClientHostnames(hosts);
-    }
-
-    @Override
-    public String toString() {
-        return "ZooKeeper access maintainer";
     }
 
 }

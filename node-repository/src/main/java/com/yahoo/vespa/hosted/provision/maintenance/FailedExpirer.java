@@ -39,8 +39,9 @@ public class FailedExpirer extends Expirer {
     private final NodeRepository nodeRepository;
     private final Zone zone;
 
-    public FailedExpirer(NodeRepository nodeRepository, Zone zone, Clock clock, Duration failTimeout) {
-        super(Node.State.failed, History.Event.Type.failed, nodeRepository, clock, failTimeout);
+    public FailedExpirer(NodeRepository nodeRepository, Zone zone, Clock clock, 
+                         Duration failTimeout, JobControl jobControl) {
+        super(Node.State.failed, History.Event.Type.failed, nodeRepository, clock, failTimeout, jobControl);
         this.nodeRepository = nodeRepository;
         this.zone = zone;
     }
