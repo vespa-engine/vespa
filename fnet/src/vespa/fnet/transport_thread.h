@@ -8,8 +8,9 @@
 #include "packetqueue.h"
 #include "stats.h"
 #include <vespa/fastos/thread.h>
-#include <vespa/fastos/socketevent.h>
 #include <vespa/fastos/time.h>
+#include <vespa/vespalib/net/socket_handle.h>
+#include <vespa/vespalib/net/selector.h>
 
 class FNET_Transport;
 class FNET_ControlPacket;
@@ -26,9 +27,7 @@ class FNET_TransportThread : public FastOS_Runnable
     friend class FNET_IOComponent;
 
 public:
-    enum {
-        EVT_MAX = 4096
-    };
+    using Selector = vespalib::Selector<FNET_IOComponent>;
 
 #ifndef IAM_DOXYGEN
     class StatsTask : public FNET_Task
@@ -61,8 +60,7 @@ private:
     FNET_IOComponent        *_componentsTail; // I/O component list tail
     uint32_t                 _componentCnt;   // # of components
     FNET_IOComponent        *_deleteList;     // IOC delete list
-    FastOS_SocketEvent       _socketEvent;    // I/O event generator
-    FastOS_IOEvent          *_events;         // I/O event array
+    Selector                 _selector;       // I/O event generator
     FNET_PacketQueue_NoLock  _queue;          // outer event queue
     FNET_PacketQueue_NoLock  _myQueue;        // inner event queue
     FastOS_Cond              _cond;           // used for synchronization
@@ -256,6 +254,11 @@ public:
      **/
     FNET_Transport &owner() const { return _owner; }
 
+    /**
+     * Tune the given socket handle to be used as an async transport
+     * connection.
+     **/
+    bool tune(vespalib::SocketHandle &handle) const;
 
     /**
      * Add a network listener in an abstract way. The given 'spec'
@@ -586,6 +589,12 @@ public:
      **/
     bool InitEventLoop();
 
+
+    // selector call-back for selector wakeup
+    void handle_wakeup();
+
+    // selector call-back for io-events
+    void handle_event(FNET_IOComponent &ctx, bool read, bool write);
 
     /**
      * Perform a single transport thread event loop iteration. This
