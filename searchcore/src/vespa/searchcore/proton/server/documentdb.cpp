@@ -355,6 +355,7 @@ DocumentDB::enterReprocessState()
         NoopOperation op;
         _feedHandler.storeOperation(op);
         sync(op.getSerialNum());
+        _subDBs.wipeHistory(op.getSerialNum());
     }
     _subDBs.onReprocessDone(_feedHandler.getSerialNum());
     enterOnlineState();
@@ -493,6 +494,9 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
     }
     _writeFilter.setConfig(configSnapshot->getMaintenanceConfigSP()->
                            getAttributeUsageFilterConfig());
+    if (_subDBs.getReprocessingRunner().empty()) {
+        _subDBs.wipeHistory(serialNum);
+    }
 }
 
 
@@ -837,6 +841,7 @@ DocumentDB::enterRedoReprocessState()
         NoopOperation op;
         _feedHandler.storeOperation(op);
         sync(op.getSerialNum());
+        _subDBs.wipeHistory(op.getSerialNum());
     }
     enterApplyLiveConfigState();
 }
