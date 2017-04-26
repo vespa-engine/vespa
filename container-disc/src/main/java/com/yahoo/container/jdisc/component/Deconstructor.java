@@ -60,15 +60,16 @@ public class Deconstructor implements ComponentDeconstructor {
             try {
                 component.deconstruct();
                 log.info("Finished deconstructing " + component);
-            } catch (Exception e) {
-                log.log(WARNING, "Exception thrown when deconstructing " + component, e);
-            } catch (Throwable t) {
+            } catch (Error e) {
                 try {
                     Thread.sleep((long) (new Random(System.nanoTime()).nextDouble() * 180 * 1000));
                 } catch (InterruptedException e) { }
-                com.yahoo.protect.Process.logAndDie("Error when deconstructing " + component, t);
+                com.yahoo.protect.Process.logAndDie("Error when deconstructing " + component, e);
+            } catch (Exception e) {
+                log.log(WARNING, "Exception thrown when deconstructing " + component, e);
+            } catch (Throwable t) {
+                log.log(WARNING, "Unexpected Throwable thrown when deconstructing " + component, t);
             }
         }
-
     }
 }
