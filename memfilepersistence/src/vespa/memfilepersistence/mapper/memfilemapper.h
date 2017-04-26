@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include <vespa/memfilepersistence/mapper/versionserializer.h>
+#include "versionserializer.h"
 #include <vespa/memfilepersistence/spi/threadmetricprovider.h>
 
 namespace storage {

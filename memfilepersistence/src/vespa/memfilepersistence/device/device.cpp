@@ -1,13 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/memfilepersistence/device/device.h>
-
-#include <vespa/log/log.h>
-#include <vespa/memfilepersistence/device/ioevent.h>
-
-LOG_SETUP(".persistence.device");
-
-#include <algorithm>
+#include "device.h"
+#include "ioevent.h"
+#include <sstream>
 
 namespace storage {
 
@@ -15,12 +9,9 @@ namespace memfile {
 
 Device::Device(DeviceManager& manager)
     : _manager(manager)
-{
-}
+{}
 
-Device::~Device()
-{
-}
+Device::~Device() {}
 
 std::string Device::getStateString(State s)
 {

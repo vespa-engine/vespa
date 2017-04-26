@@ -1,12 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <iterator>
-#include <vespa/document/fieldset/fieldsets.h>
+
+#include "iteratorhandler.h"
+#include "visitorslotmatcher.h"
+#include "cacheevictionguard.h"
 #include <vespa/document/select/bodyfielddetector.h>
-#include <vespa/document/select/node.h>
-#include <vespa/memfilepersistence/spi/iteratorhandler.h>
-#include <vespa/memfilepersistence/spi/visitorslotmatcher.h>
-#include <vespa/memfilepersistence/spi/cacheevictionguard.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.memfile.handler.iterator");
@@ -26,14 +23,28 @@ CachePrefetchRequirements::createFromSelection(const document::DocumentTypeRepo&
     return ret;
 }
 
+
+IteratorState::IteratorState(const spi::Bucket& bucket, const spi::Selection& sel, document::FieldSet::UP fieldSet,
+                             spi::IncludedVersions versions, std::unique_ptr<document::select::Node> docSel,
+                             const CachePrefetchRequirements& prefetchRequirements)
+    : _bucket(bucket),
+      _selection(sel),
+      _fieldSet(std::move(fieldSet)),
+      _documentSelection(std::move(docSel)),
+      _remaining(),
+      _versions(versions),
+      _prefetchRequirements(prefetchRequirements),
+      _isActive(false),
+      _isCompleted(false)
+{}
+
+IteratorState::~IteratorState() {}
+
 IteratorHandler::IteratorHandler(Environment& env)
     : OperationHandler(env)
-{
-}
+{}
 
-IteratorHandler::~IteratorHandler()
-{
-}
+IteratorHandler::~IteratorHandler() {}
 
 void
 IteratorHandler::sanityCheckActiveIteratorCount()
@@ -91,13 +102,8 @@ IteratorHandler::createIterator(const spi::Bucket& bucket,
                 _sharedState._iterators.insert(
                         IteratorStateMap::value_type(
                                 id,
-                                IteratorState(
-                                        bucket,
-                                        sel,
-                                        document::FieldSet::UP(fields.clone()),
-                                        versions,
-                                        std::move(docSelection),
-                                        prefetcher))));
+                                IteratorState(bucket, sel, document::FieldSet::UP(fields.clone()),
+                                              versions, std::move(docSelection), prefetcher))));
 
         assert(inserted.second); // Should never have duplicates
         ++_sharedState._nextId;

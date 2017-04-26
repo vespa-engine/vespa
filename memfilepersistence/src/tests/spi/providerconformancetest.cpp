@@ -1,19 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
+#include "memfiletestutils.h"
 #include <vespa/persistence/conformancetest/conformancetest.h>
-#include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
-#include <vespa/storageframework/defaultimplementation/clock/realclock.h>
-#include <vespa/storageframework/defaultimplementation/memory/memorymanager.h>
 #include <vespa/storageframework/defaultimplementation/memory/simplememorylogic.h>
-#include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
-#include <vespa/memfilepersistence/memfile/memfilecache.h>
-#include <vespa/memfilepersistence/spi/memfilepersistenceprovider.h>
-#include <tests/spi/memfiletestutils.h>
-
-LOG_SETUP(".test.dummyimpl");
 
 namespace storage {
 namespace memfile {

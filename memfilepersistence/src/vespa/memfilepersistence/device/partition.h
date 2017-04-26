@@ -11,8 +11,8 @@
 
 #pragma once
 
-#include <vespa/memfilepersistence/device/disk.h>
-#include <vespa/memfilepersistence/device/partitionmonitor.h>
+#include "disk.h"
+#include "partitionmonitor.h"
 
 namespace storage {
 
@@ -43,14 +43,11 @@ public:
     PartitionMonitor* getMonitor() { return _monitor.get(); }
     const PartitionMonitor* getMonitor() const { return _monitor.get(); }
 
-    virtual void addEvent(const IOEvent& e);
-    const IOEvent* getLastEvent() const;
-
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void addEvent(const IOEvent& e) override;
+    const IOEvent* getLastEvent() const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     bool operator==(const Partition& p) const { return (_id == p._id); }
     bool operator!=(const Partition& p) const { return (_id != p._id); }
-
 };
 
 } // memfile

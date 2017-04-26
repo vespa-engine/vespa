@@ -9,27 +9,27 @@
  */
 #pragma once
 
-#include <vespa/memfilepersistence/device/devicemapper.h>
-#include <vespa/memfilepersistence/device/directory.h>
-#include <vespa/memfilepersistence/device/disk.h>
-#include <vespa/memfilepersistence/device/ioevent.h>
-#include <vespa/memfilepersistence/device/partition.h>
-#include <set>
-#include <vector>
+#include "devicemapper.h"
+#include "directory.h"
+#include "disk.h"
+#include "ioevent.h"
+#include "partition.h"
 #include <vespa/vespalib/util/xmlserializable.h>
 #include <vespa/storageframework/generic/clock/clock.h>
+#include <set>
 
 namespace storage {
 
 namespace memfile {
 
 class DeviceManager : public vespalib::XmlSerializable {
+    using StatfsPolicy = vespa::config::storage::StorDevicesConfig::StatfsPolicy;
     DeviceMapper::UP _deviceMapper;
     std::map<int, Disk::SP> _disks;
     std::map<std::string, Partition::SP> _partitions;
     std::map<std::string, Directory::SP> _directories;
     std::set<IOEventListener*> _eventListeners;
-    vespa::config::storage::StorDevicesConfig::StatfsPolicy _statPolicy;
+    StatfsPolicy _statPolicy;
     uint32_t _statPeriod;
     const framework::Clock& _clock;
 
@@ -41,11 +41,9 @@ class DeviceManager : public vespalib::XmlSerializable {
 public:
     using UP = std::unique_ptr<DeviceManager>;
 
-    DeviceManager(DeviceMapper::UP mapper,
-                  const framework::Clock& clock);
+    DeviceManager(DeviceMapper::UP mapper, const framework::Clock& clock);
 
-    void setPartitionMonitorPolicy(
-            vespa::config::storage::StorDevicesConfig::StatfsPolicy, uint32_t period = 0);
+    void setPartitionMonitorPolicy(StatfsPolicy, uint32_t period = 0);
 
     void notifyDiskEvent(Disk& disk, const IOEvent& e);
     void notifyDirectoryEvent(Directory& dir, const IOEvent& e);
@@ -62,11 +60,10 @@ public:
     std::vector<Directory::SP> getDirectories(const Disk& disk) const;
     std::vector<Directory::SP> getDirectories(const Partition& part) const;
 
-    vespa::config::storage::StorDevicesConfig::StatfsPolicy getStatPolicy() const
-        { return _statPolicy; }
+    StatfsPolicy getStatPolicy() const { return _statPolicy; }
     uint32_t getStatPeriod() const { return _statPeriod; }
 
-    virtual void printXml(vespalib::XmlOutputStream&) const;
+    void printXml(vespalib::XmlOutputStream&) const override;
 
     const framework::Clock& getClock() const { return _clock; }
 };
@@ -74,4 +71,3 @@ public:
 } // memfile
 
 } // storage
-

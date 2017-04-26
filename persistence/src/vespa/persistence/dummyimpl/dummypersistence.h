@@ -144,14 +144,9 @@ public:
     BucketIdListResult getModifiedBuckets() const override;
 
     Result setClusterState(const ClusterState& newState) override;
-
-    Result setActiveState(const Bucket& bucket,
-                           BucketInfo::ActiveState newState) override;
-
+    Result setActiveState(const Bucket& bucket, BucketInfo::ActiveState newState) override;
     BucketInfoResult getBucketInfo(const Bucket&) const override;
-
     Result put(const Bucket&, Timestamp, const DocumentSP&, Context&) override;
-
     GetResult get(const Bucket&,
                   const document::FieldSet& fieldSet,
                   const DocumentId&,
@@ -185,7 +180,6 @@ public:
                 Context&) override;
 
     Result revert(const Bucket&, Timestamp, Context&);
-
     Result maintain(const Bucket& bucket, MaintenanceLevel level) override;
 
     /**
@@ -242,4 +236,3 @@ private:
 } // dummy
 } // spi
 } // storage
-

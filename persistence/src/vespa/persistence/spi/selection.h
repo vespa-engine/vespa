@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <vespa/persistence/spi/documentselection.h>
+#include "documentselection.h"
 
 namespace storage {
 namespace spi {

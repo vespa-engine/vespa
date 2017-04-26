@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-#include <vespa/memfilepersistence/spi/cacheevictionguard.h>
+
+#include "cacheevictionguard.h"
 #include <vespa/memfilepersistence/memfile/memfile.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".persistence.memfile.cacheevictionguard");
 
 namespace storage {

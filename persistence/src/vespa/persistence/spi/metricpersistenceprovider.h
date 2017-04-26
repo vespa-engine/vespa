@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <vespa/persistence/spi/persistenceprovider.h>
+#include "persistenceprovider.h"
 #include <vespa/metrics/metrics.h>
 
 namespace storage {

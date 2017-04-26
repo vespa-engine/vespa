@@ -55,7 +55,7 @@ class SimpleDeviceMapper : public DeviceMapper {
 public:
     SimpleDeviceMapper() : _devices(), _lastDevice(0) {}
 
-    uint64_t getPartitionId(const std::string& fileOnFS) const {
+    uint64_t getPartitionId(const std::string& fileOnFS) const override {
         std::map<std::string, int>::const_iterator it = _devices.find(fileOnFS);
         if (it != _devices.end()) {
             return it->second;
@@ -64,12 +64,11 @@ public:
         _devices[fileOnFS] = dev;
         return dev;
     }
-    std::string getMountPoint(const std::string& path) const { return path; }
-    virtual uint64_t getDeviceId(const std::string& fileOnFS) const {
+    std::string getMountPoint(const std::string& path) const override { return path; }
+    uint64_t getDeviceId(const std::string& fileOnFS) const override {
         return getPartitionId(fileOnFS);
     }
-    virtual const char* getName() const
-        { return "Simple (All directories on individual fake devices)"; }
+    const char* getName() const override { return "Simple (All directories on individual fake devices)"; }
 };
 
 /**
@@ -88,18 +87,16 @@ struct AdvancedDeviceMapper : public DeviceMapper {
     AdvancedDeviceMapper();
     void init(std::istream&);
 
-    virtual std::string getMountPoint(const std::string& fileOnFS) const;
-    virtual uint64_t getPartitionId(const std::string& fileOnFS) const;
-    virtual uint64_t getDeviceId(const std::string& fileOnFS) const {
+    std::string getMountPoint(const std::string& fileOnFS) const override;
+    uint64_t getPartitionId(const std::string& fileOnFS) const override;
+    uint64_t getDeviceId(const std::string& fileOnFS) const override {
             // Not found a way to detect partitions on common device.
             // Returning partition ids for now.
         return getPartitionId(fileOnFS);
     }
-    virtual const char* getName() const
-        { return "Advanced (Read devices attempted found)"; }
+    const char* getName() const override { return "Advanced (Read devices attempted found)"; }
 };
 
 }
 
 } // storage
-

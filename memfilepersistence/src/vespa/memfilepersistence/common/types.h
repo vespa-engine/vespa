@@ -15,12 +15,10 @@
  */
 #pragma once
 
-#include <vespa/document/bucket/bucketid.h>
-#include <vespa/document/base/documentid.h>
-#include <vespa/document/fieldvalue/document.h>
+
 #include <vespa/storageframework/storageframework.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/persistence/spi/bucketinfo.h>
+#include <vespa/document/fieldvalue/document.h>
 
 namespace storage {
 namespace memfile {

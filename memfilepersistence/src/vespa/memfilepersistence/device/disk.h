@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <vespa/memfilepersistence/device/device.h>
+#include "device.h"
 
 namespace storage {
 
@@ -32,16 +32,14 @@ public:
 
     uint64_t getId() const { return _id; }
 
-    virtual void addEvent(const IOEvent& e);
-    const IOEvent* getLastEvent() const;
+    void addEvent(const IOEvent& e) override;
+    const IOEvent* getLastEvent() const override;
 
     bool operator==(const Disk& disk) const { return (_id == disk._id); }
     bool operator!=(const Disk& disk) const { return (_id != disk._id); }
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 } // memfile
 
 } // storage
-

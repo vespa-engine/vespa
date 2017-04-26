@@ -11,11 +11,12 @@
  */
 #pragma once
 
-#include <vespa/vespalib/util/printable.h>
-#include <sys/statvfs.h>
 #include <vespa/config-stor-devices.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/xmlserializable.h>
+#include <vespa/vespalib/util/printable.h>
+#include <sys/statvfs.h>
+
 
 namespace storage {
 
@@ -129,8 +130,7 @@ public:
      */
     void removingData(uint64_t dataSize);
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override ;
 
     /**
      * Calculate the file system id for a given file. Used when wanting an
@@ -143,8 +143,7 @@ public:
     void overrideRealStat(uint32_t blockSize, uint32_t totalBlocks,
                           uint32_t blocksUsed, float inodeFillRate = 0.1);
 
-    virtual void printXml(vespalib::XmlOutputStream&) const;
-
+    void printXml(vespalib::XmlOutputStream&) const override;
 private:
     void updateIfNeeded() const;
 
@@ -153,4 +152,3 @@ private:
 } // memfile
 
 } // storage
-

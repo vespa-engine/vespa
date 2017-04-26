@@ -11,11 +11,12 @@
 
 #pragma once
 
-#include <vespa/memfilepersistence/common/types.h>
-#include <vespa/memfilepersistence/mapper/buffer.h>
-#include <vespa/memfilepersistence/mapper/mapperslotoperation.h>
+#include "buffer.h"
+#include "mapperslotoperation.h"
 #include <vespa/memfilepersistence/memfile/memfile.h>
 #include <vespa/memfilepersistence/memfile/memfileiointerface.h>
+#include <vespa/memfilepersistence/common/types.h>
+
 
 namespace storage {
 namespace memfile {

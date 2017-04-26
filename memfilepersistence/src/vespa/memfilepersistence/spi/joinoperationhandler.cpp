@@ -1,10 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/memfilepersistence/spi/joinoperationhandler.h>
-#include <vespa/memfilepersistence/spi/cacheevictionguard.h>
-#include <vespa/memfilepersistence/mapper/memfilemapper.h>
-#include <vespa/log/log.h>
 
+#include "joinoperationhandler.h"
+#include "cacheevictionguard.h"
+#include <vespa/memfilepersistence/mapper/memfilemapper.h>
+
+#include <vespa/log/log.h>
 LOG_SETUP(".persistence.memfile.handler.join");
 
 namespace storage {

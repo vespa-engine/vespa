@@ -10,14 +10,14 @@
  */
 #pragma once
 
-#include <vespa/memfilepersistence/common/filespecification.h>
-#include <vespa/memfilepersistence/common/types.h>
 #include <vespa/memfilepersistence/memfile/memfile.h>
 #include <vespa/memfilepersistence/memfile/memfilecache.h>
 #include <vespa/memfilepersistence/memfile/memfileptr.h>
-#include <vespa/memfilepersistence/common/slotmatcher.h>
-#include <vespa/persistence/spi/bucketinfo.h>
 #include <vespa/memfilepersistence/common/environment.h>
+#include <vespa/memfilepersistence/common/filespecification.h>
+#include <vespa/memfilepersistence/common/slotmatcher.h>
+#include <vespa/memfilepersistence/common/types.h>
+#include <vespa/persistence/spi/bucketinfo.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
 
 namespace document {

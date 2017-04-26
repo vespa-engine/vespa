@@ -7,11 +7,11 @@
  */
 #pragma once
 
-#include <map>
-#include <vespa/memfilepersistence/spi/operationhandler.h>
+#include "operationhandler.h"
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/document/select/node.h>
+#include <map>
 
 namespace document {
 
@@ -83,22 +83,12 @@ class IteratorState
     std::map<std::string, bool> _headerOnlyForDocumentType;
 
 public:
-    IteratorState(const spi::Bucket& bucket,
-                  const spi::Selection& sel,
-                  document::FieldSet::UP fieldSet,
-                  spi::IncludedVersions versions,
-                  std::unique_ptr<document::select::Node> docSel,
-                  const CachePrefetchRequirements& prefetchRequirements)
-        : _bucket(bucket),
-          _selection(sel),
-          _fieldSet(std::move(fieldSet)),
-          _documentSelection(std::move(docSel)),
-          _remaining(),
-          _versions(versions),
-          _prefetchRequirements(prefetchRequirements),
-          _isActive(false),
-          _isCompleted(false)
-    {}
+    IteratorState(const spi::Bucket& bucket, const spi::Selection& sel, document::FieldSet::UP fieldSet,
+                  spi::IncludedVersions versions, std::unique_ptr<document::select::Node> docSel,
+                  const CachePrefetchRequirements& prefetchRequirements);
+    IteratorState(IteratorState &&) = default;
+    IteratorState & operator = (IteratorState &&) = default;
+    ~IteratorState();
 
     const spi::Bucket& getBucket() const { return _bucket; }
 

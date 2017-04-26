@@ -16,12 +16,12 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/printable.h>
-#include <vespa/memfilepersistence/device/devicemanager.h>
-#include <vespa/memfilepersistence/device/directory.h>
+#include "devicemanager.h"
+#include "directory.h"
 #include <vespa/storageframework/storageframework.h>
-#include <vector>
 #include <vespa/persistence/spi/persistenceprovider.h>
+#include <vespa/vespalib/util/printable.h>
+
 
 namespace storage {
 namespace lib {
@@ -111,9 +111,7 @@ struct MountPointList : public framework::XmlStatusReporter {
 
     uint16_t findIndex(const Directory& dir) const;
 
-    // XmlStatusReporter implementation
-    vespalib::string reportXmlStatus(vespalib::xml::XmlOutputStream&,
-                                     const framework::HttpUrlPath&) const;
+    vespalib::string reportXmlStatus(vespalib::xml::XmlOutputStream&, const framework::HttpUrlPath&) const override;
 
     /**
      * Returns the current state of the mountpoints.
@@ -133,5 +131,3 @@ private:
 } // memfile
 
 } // storage
-
-
