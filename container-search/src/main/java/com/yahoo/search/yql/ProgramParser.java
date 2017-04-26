@@ -112,7 +112,6 @@ import java.util.Set;
 /**
  * Translate the ANTLR grammar into the logical representation.
  */
-@SuppressWarnings("fallthrough")
 final class ProgramParser {
 
     public yqlplusParser prepareParser(String programName, InputStream input) throws IOException {
@@ -875,7 +874,7 @@ final class ProgramParser {
             // DDL
             case yqlplusParser.RULE_ddl:
                 ruleContext = (ParserRuleContext)ruleContext.getChild(0);
-                // XXX was fallthrough intended here?
+                break;
             case yqlplusParser.RULE_view: {
                 // view and projection expansion now has to be done by the
                 // execution engine
@@ -1003,8 +1002,7 @@ final class ProgramParser {
         }
     }
 
-	public OperatorNode<ExpressionOperator> convertExpr(ParseTree parseTree,
-			Scope scope) {
+	public OperatorNode<ExpressionOperator> convertExpr(ParseTree parseTree, Scope scope) {
 	  switch (getParseTreeIndex(parseTree)) {
 	        case yqlplusParser.RULE_vespa_grouping: {
 	                ParseTree firstChild = parseTree.getChild(0);
@@ -1123,8 +1121,8 @@ final class ProgramParser {
 			    case yqlplusParser.LPAREN:
 			        return convertExpr(parseTree.getChild(1), scope);
 			}
+			break;
 		}
-                // XXX was fallthrough intended here? probably not.
 
 		// TODO: Temporarily disable CAST - think through how types are named
 		// case yqlplusParser.CAST: {
