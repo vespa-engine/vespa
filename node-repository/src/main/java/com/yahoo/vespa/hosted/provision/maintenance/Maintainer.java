@@ -31,8 +31,8 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
         this.interval = interval;
         this.jobControl = jobControl;
 
-        this.service = new ScheduledThreadPoolExecutor(1);
-        this.service.scheduleAtFixedRate(this, interval.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS);
+        service = new ScheduledThreadPoolExecutor(1);
+        service.scheduleAtFixedRate(this, interval.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS);
         jobControl.started(name());
     }
 

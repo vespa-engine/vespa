@@ -13,6 +13,7 @@ import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -43,7 +44,7 @@ public class OrchestratorMock implements Orchestrator {
 
     @Override
     public Set<ApplicationId> getAllSuspendedApplications() {
-        return null;
+        return Collections.unmodifiableSet(suspendedApplications);
     }
 
     @Override
@@ -58,7 +59,7 @@ public class OrchestratorMock implements Orchestrator {
 
     @Override
     public void suspendAll(HostName parentHostname, List<HostName> hostNames) throws BatchInternalErrorException, BatchHostStateChangeDeniedException, BatchHostNameNotFoundException {
-        throw new RuntimeException("Not implemented");
+        throw new UnsupportedOperationException("Not implemented");
     }
 
 }
