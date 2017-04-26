@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/polymorphicarrays.h>
 
@@ -112,7 +112,7 @@ class Factory : public ComplexArrayT<A>::Factory
 {
 public:
     A * create() override { return new Complex(); }
-    virtual Factory * clone() const override { return new Factory(*this); }
+    Factory * clone() const override { return new Factory(*this); }
 };
 
 TEST("require that complex arrays conforms") {
