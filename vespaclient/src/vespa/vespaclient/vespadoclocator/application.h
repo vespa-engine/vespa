@@ -17,7 +17,6 @@ private:
     bool printDocumentLocation(Locator &locator, const std::string &docId);
 
 public:
-    // Implements FastOS_Application.
     int Main() override;
 };
 
