@@ -82,12 +82,7 @@ public class CoredumpHandler {
                 .filter(path -> path.toFile().isFile() && ! path.getFileName().toString().startsWith("."))
                 .forEach(coredumpPath -> {
                     try {
-                        coredumpPath.toFile().setReadable(true, false);
-                        coredumpPath = startProcessing(coredumpPath, processingCoredumpsPath);
-
-                        Path metadataPath = coredumpPath.getParent().resolve(METADATA_FILE_NAME);
-                        Map<String, Object> metadata = collectMetadata(coredumpPath, nodeAttributes);
-                        writeMetadata(metadataPath, metadata);
+                        startProcessing(coredumpPath, processingCoredumpsPath);
                     } catch (Throwable e) {
                         logger.log(Level.WARNING, "Failed to process coredump " + coredumpPath, e);
                     }
@@ -103,7 +98,8 @@ public class CoredumpHandler {
                 .filter(path -> path.toFile().isDirectory())
                 .forEach(coredumpDirectory -> {
                     try {
-                        report(coredumpDirectory);
+                        String metadata = collectMetadata(coredumpDirectory, nodeAttributes);
+                        report(coredumpDirectory, metadata);
                         finishProcessing(coredumpDirectory);
                     } catch (Throwable e) {
                         logger.log(Level.WARNING, "Failed to report coredump " + coredumpDirectory, e);
@@ -112,28 +108,35 @@ public class CoredumpHandler {
     }
 
     Path startProcessing(Path coredumpPath, Path processingCoredumpsPath) throws IOException {
+        // Make coredump readable
+        coredumpPath.toFile().setReadable(true, false);
+
+        // Create new directory for this coredump and move it into it
         Path folder = processingCoredumpsPath.resolve(UUID.randomUUID().toString());
         folder.toFile().mkdirs();
         return Files.move(coredumpPath, folder.resolve(coredumpPath.getFileName()));
     }
 
-    private Map<String, Object> collectMetadata(Path coredumpPath, Map<String, Object> nodeAttributes) {
-        Map<String, Object> metadata = coreCollector.collect(coredumpPath, yinstStatePath);
-        metadata.putAll(nodeAttributes);
+    String collectMetadata(Path coredumpPath, Map<String, Object> nodeAttributes) throws IOException {
+        Path metadataPath = coredumpPath.resolve(METADATA_FILE_NAME);
+        if (!Files.exists(metadataPath)) {
+            Map<String, Object> metadata = coreCollector.collect(coredumpPath, yinstStatePath);
+            metadata.putAll(nodeAttributes);
 
-        Map<String, Object> fields = new HashMap<>();
-        fields.put("fields", metadata);
-        return fields;
+            Map<String, Object> fields = new HashMap<>();
+            fields.put("fields", metadata);
+
+            String metadataFields = objectMapper.writeValueAsString(fields);
+            Files.write(metadataPath, metadataFields.getBytes());
+            return metadataFields;
+        } else {
+            return new String(Files.readAllBytes(metadataPath));
+        }
     }
 
-    private void writeMetadata(Path metadataPath, Map<String, Object> metadata) throws IOException {
-        Files.write(metadataPath, objectMapper.writeValueAsString(metadata).getBytes());
-    }
-
-    void report(Path coredumpDirectory) throws IOException {
+    void report(Path coredumpDirectory, String metadata) throws IOException {
         // Use core dump UUID as document ID
         String documentId = coredumpDirectory.getFileName().toString();
-        String metadata = new String(Files.readAllBytes(coredumpDirectory.resolve(METADATA_FILE_NAME)));
 
         HttpPost post = new HttpPost(FEED_ENDPOINT + "/" + documentId);
         post.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");

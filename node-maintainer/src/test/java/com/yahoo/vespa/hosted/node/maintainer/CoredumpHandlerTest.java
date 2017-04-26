@@ -34,6 +34,7 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -93,7 +94,7 @@ public class CoredumpHandlerTest {
     public void startProcessingTest() throws IOException {
         Path coredumpPath = createCoredump("core.dump");
         Path processingPath = crashPath.resolve("processing_dir");
-        coredumpHandler.startProcessing(coredumpPath, crashPath.resolve("processing_dir"));
+        coredumpHandler.startProcessing(coredumpPath, processingPath);
 
         // Contents of 'crash' should be only the 'processing' directory
         assertFolderContents(crashPath, processingPath.getFileName().toString());
@@ -111,12 +112,25 @@ public class CoredumpHandlerTest {
         when(coreCollector.collect(any(), any())).thenReturn(metadata);
         createCoredump("core.dump");
         Path processingPath = coredumpHandler.processCoredumps();
+        Path processingCoredumpPath = Files.list(processingPath).findFirst().orElseThrow(() ->
+                new RuntimeException("Expected to find directory with coredump in processing dir"));
 
-        // Inside 'processing' directory, there should be a new directory containing 'metadata.json' file
-        List<Path> processedCoredumps = Files.list(processingPath).collect(Collectors.toList());
+        // Inside 'processing' directory, there should be a new directory containing 'core.dump' file
+        String returnedMetadata = coredumpHandler.collectMetadata(processingCoredumpPath, attributes);
         String metadataFileContents = new String(Files.readAllBytes(
-                processedCoredumps.get(0).resolve(CoredumpHandler.METADATA_FILE_NAME)));
+                processingCoredumpPath.resolve(CoredumpHandler.METADATA_FILE_NAME)));
         assertEquals(expectedMetadataFileContents, metadataFileContents);
+        assertEquals(expectedMetadataFileContents, returnedMetadata);
+    }
+
+    @Test
+    public void coredumpMetadataReadIfExistsTest() throws IOException, InterruptedException {
+        final String documentId = "UIDD-ABCD-EFGH";
+        Path metadataPath = createProcessedCoredump(documentId);
+
+        verifyZeroInteractions(coreCollector);
+        String returnedMetadata = coredumpHandler.collectMetadata(metadataPath.getParent(), attributes);
+        assertEquals(expectedMetadataFileContents, returnedMetadata);
     }
 
     @Test
@@ -125,7 +139,7 @@ public class CoredumpHandlerTest {
         Path coredumpPath = createProcessedCoredump(documentId);
 
         setNextHttpResponse(200, Optional.empty());
-        coredumpHandler.report(coredumpPath.getParent());
+        coredumpHandler.report(coredumpPath.getParent(), expectedMetadataFileContents);
         validateNextHttpPost(documentId, expectedMetadataFileContents);
     }
 
