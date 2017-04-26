@@ -1179,6 +1179,42 @@ TEST_F("require that thawed bucket is not moved if active as well", ControllerFi
     EXPECT_EQUAL(f._ready.bucket(1), f.bucketsModified()[0]);
 }
 
+TEST_F("ready bucket not moved to not ready if node is marked as retired", ControllerFixture) {
+    f._calc->setNodeRetired(true);
+    // Bucket 2 would be moved from ready to not ready in a non-retired case, but not when retired.
+    f.addReady(f._ready.bucket(1));
+    f._bmj.scanAndMove(4, 3);
+    EXPECT_TRUE(f._bmj.done());
+    EXPECT_EQUAL(0u, f.docsMoved().size());
+}
+
+// Technically this should never happen since a retired node is never in the ideal state,
+// but test this case for the sake of completion.
+TEST_F("inactive not ready bucket not moved to ready if node is marked as retired", ControllerFixture) {
+    f._calc->setNodeRetired(true);
+    f.addReady(f._ready.bucket(1));
+    f.addReady(f._ready.bucket(2));
+    f.addReady(f._notReady.bucket(3));
+    f._bmj.scanAndMove(4, 3);
+    EXPECT_TRUE(f._bmj.done());
+    EXPECT_EQUAL(0u, f.docsMoved().size());
+}
+
+TEST_F("explicitly active not ready bucket can be moved to ready even if node is marked as retired", ControllerFixture) {
+    f._calc->setNodeRetired(true);
+    f.addReady(f._ready.bucket(1));
+    f.addReady(f._ready.bucket(2));
+    f.addReady(f._notReady.bucket(3));
+    f.activateBucket(f._notReady.bucket(3));
+    f._bmj.scanAndMove(4, 3);
+    EXPECT_FALSE(f._bmj.done());
+    ASSERT_EQUAL(2u, f.docsMoved().size());
+    assertEqual(f._notReady.bucket(3), f._notReady.docs(3)[0], 2, 1, f.docsMoved()[0]);
+    assertEqual(f._notReady.bucket(3), f._notReady.docs(3)[1], 2, 1, f.docsMoved()[1]);
+    ASSERT_EQUAL(1u, f.bucketsModified().size());
+    EXPECT_EQUAL(f._notReady.bucket(3), f.bucketsModified()[0]);
+}
+
 struct ResourceLimitControllerFixture : public ControllerFixture
 {
     using ControllerFixture::ControllerFixture;
