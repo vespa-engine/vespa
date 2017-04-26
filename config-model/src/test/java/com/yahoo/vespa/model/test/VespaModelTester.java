@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.test;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -11,16 +12,18 @@ import com.yahoo.config.model.provision.Host;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Helper class which sets up a system with multiple hosts.
@@ -59,6 +62,13 @@ public class VespaModelTester {
             hosts.add(new com.yahoo.config.model.provision.Host(flavor + i));
         this.hosts.put(flavor.isEmpty() ? "default" : flavor, hosts);
         return new Hosts(hosts);
+    }
+    public void addHosts(Flavor flavor, int count) {
+        List<Host> hosts = new ArrayList<>();
+        for (int i = 0; i < count; ++i) {
+            hosts.add(new Host(flavor.name() + i, ImmutableList.of(), Optional.of(flavor)));
+        }
+        this.hosts.put(flavor.name(), hosts);
     }
 
     /** Sets whether this sets up a model for a hosted system. Default: true */
