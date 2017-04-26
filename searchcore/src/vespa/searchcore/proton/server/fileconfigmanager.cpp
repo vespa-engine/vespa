@@ -325,6 +325,11 @@ FileConfigManager::saveConfig(const DocumentDBConfig &snapshot,
     assert(saveSchemaRes);
     (void) saveSchemaRes;
 
+    search::index::Schema historySchema;
+    bool saveHistorySchemaRes = historySchema.saveToFile(snapDir + "/historyschema.txt");
+    assert(saveHistorySchemaRes);
+    (void) saveHistorySchemaRes;
+
     writeExtraConfigs(snapDir, snapshot);
     _info.validateSnapshot(serialNum);
 
