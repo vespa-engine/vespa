@@ -8,6 +8,7 @@ import com.yahoo.slime.Type;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.config.SlimeUtils;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.io.IOException;
@@ -24,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class Maintainer {
     private static final CoreCollector coreCollector = new CoreCollector(new ProcessExecuter());
-    private static final HttpClient httpClient = HttpClientBuilder.create().build();
+    private static final HttpClient httpClient = createHttpClient(Duration.ofSeconds(5));
 
     public static void main(String[] args) {
         LogSetup.initVespaLogging("node-maintainer");
@@ -181,5 +182,16 @@ public class Maintainer {
             throw new IllegalArgumentException("Key '" + key + "' was not found!");
         }
         return out;
+    }
+
+    private static HttpClient createHttpClient(Duration timeout) {
+        int timeoutInMillis = (int) timeout.toMillis();
+        return HttpClientBuilder.create()
+                                .setDefaultRequestConfig(RequestConfig.custom()
+                                                                      .setConnectTimeout(timeoutInMillis)
+                                                                      .setConnectionRequestTimeout(timeoutInMillis)
+                                                                      .setSocketTimeout(timeoutInMillis)
+                                                                      .build())
+                                .build();
     }
 }
