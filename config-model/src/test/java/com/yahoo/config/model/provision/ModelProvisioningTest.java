@@ -1,11 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.provision;
 
+import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
 import java.io.StringReader;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -14,7 +16,10 @@ import java.util.stream.Collectors;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.search.config.QrStartConfig;
+import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
@@ -22,7 +27,9 @@ import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.search.Dispatch;
+import com.yahoo.vespa.model.search.SearchNode;
 import com.yahoo.vespa.model.test.VespaModelTester;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -1412,6 +1419,42 @@ public class ModelProvisioningTest {
         QrStartConfig.Builder b = new QrStartConfig.Builder();
         cluster.getSearch().getConfig(b);
         return new QrStartConfig(b).jvm().heapSizeAsPercentageOfPhysicalMemory();
+    }
+
+    @Test
+    public void require_that_proton_config_is_tuned_based_on_node_flavor() {
+         String services = joinLines("<?xml version='1.0' encoding='utf-8' ?>",
+                 "<services>",
+                 "  <content version='1.0' id='test'>",
+                 "     <documents>",
+                 "       <document type='type1' mode='index'/>",
+                 "     </documents>",
+                 "     <nodes count='2' flavor='content-test-flavor'/>",
+                 "  </content>",
+                 "</services>");
+
+         VespaModelTester tester = new VespaModelTester();
+         tester.addHosts(createFlavorFromDiskSetting("content-test-flavor", false), 2);
+         VespaModel model = tester.createModel(services, true, 0);
+         ContentSearchCluster cluster = model.getContentClusters().get("test").getSearch();
+         assertEquals(2, cluster.getSearchNodes().size());
+         assertEquals(40, getProtonConfig(cluster, 0).hwinfo().disk().writespeed(), 0.001);
+         assertEquals(40, getProtonConfig(cluster, 1).hwinfo().disk().writespeed(), 0.001);
+    }
+
+    private static Flavor createFlavorFromDiskSetting(String name, boolean fastDisk) {
+        FlavorsConfig.Flavor.Builder builder = new FlavorsConfig.Flavor.Builder();
+        builder.name(name);
+        builder.fastDisk(fastDisk);
+        return new Flavor(new FlavorsConfig.Flavor(builder));
+    }
+
+    private static ProtonConfig getProtonConfig(ContentSearchCluster cluster, int searchNodeIdx) {
+        ProtonConfig.Builder builder = new ProtonConfig.Builder();
+        List<SearchNode> searchNodes = cluster.getSearchNodes();
+        assertTrue(searchNodeIdx < searchNodes.size());
+        searchNodes.get(searchNodeIdx).getConfig(builder);
+        return new ProtonConfig(builder);
     }
     
 }

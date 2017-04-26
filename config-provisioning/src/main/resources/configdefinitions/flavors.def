@@ -37,6 +37,9 @@ flavor[].minMainMemoryAvailableGb double default=0.0
 # The minimum amount of disk available.
 flavor[].minDiskAvailableGb double default=0.0
 
+# Whether the disk is fast (typically SSD) or slow (typically spinning HDD).
+flavor[].fastDisk bool default=true
+
 # Human readable free text for description of node.
 flavor[].description string default=""
 

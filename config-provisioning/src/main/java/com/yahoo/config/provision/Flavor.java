@@ -22,6 +22,7 @@ public class Flavor {
     private final double minCpuCores;
     private final double minMainMemoryAvailableGb;
     private final double minDiskAvailableGb;
+    private final boolean fastDisk;
     private final String description;
     private final boolean retired;
     private List<Flavor> replacesFlavors;
@@ -39,6 +40,7 @@ public class Flavor {
         this.minCpuCores = flavorConfig.minCpuCores();
         this.minMainMemoryAvailableGb = flavorConfig.minMainMemoryAvailableGb();
         this.minDiskAvailableGb = flavorConfig.minDiskAvailableGb();
+        this.fastDisk = flavorConfig.fastDisk();
         this.description = flavorConfig.description();
         this.retired = flavorConfig.retired();
     }
@@ -59,6 +61,8 @@ public class Flavor {
     public double getMinMainMemoryAvailableGb() { return minMainMemoryAvailableGb; }
 
     public double getMinDiskAvailableGb() { return minDiskAvailableGb; }
+
+    public boolean hasFastDisk() { return fastDisk; }
 
     public double getMinCpuCores() { return minCpuCores; }
 

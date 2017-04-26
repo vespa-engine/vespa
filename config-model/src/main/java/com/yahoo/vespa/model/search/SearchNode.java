@@ -271,6 +271,9 @@ public class SearchNode extends AbstractService implements
             // to make sure the node failer has done its work
             builder.pruneremoveddocumentsage(4 * 24 * 3600 + 3600 + 60);
         }
+        if (getHostResource() != null && getHostResource().getFlavor().isPresent()) {
+            new NodeFlavorTuning(getHostResource().getFlavor().get()).getConfig(builder);
+        }
     }
 
     @Override
