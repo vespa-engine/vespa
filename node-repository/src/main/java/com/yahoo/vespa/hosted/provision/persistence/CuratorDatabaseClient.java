@@ -323,7 +323,7 @@ public class CuratorDatabaseClient {
     }
     
     public CuratorMutex lockInactiveJobs() {
-        return lock(inactiveJobsPath(), defaultLockTimeout);
+        return lock(root.append("locks").append("inactiveJobsLock"), defaultLockTimeout);
     }
 
     private Path inactiveJobsPath() {
