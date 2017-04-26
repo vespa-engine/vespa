@@ -137,8 +137,7 @@ public class VespaFormatter extends SimpleFormatter {
     private void appendException(Throwable throwable, StringBuilder builder) {
         if (throwable == null)
             return;
-//throwable.printStackTrace();
-if (1==1) return;
+
         String escapedStackTrace = VespaFormat.escape(stackTrace(throwable));
         builder.append("\\n").append("exception=").append("\\n").append(escapedStackTrace);
     }
