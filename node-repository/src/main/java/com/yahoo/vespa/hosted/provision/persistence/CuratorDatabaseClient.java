@@ -23,9 +23,11 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -309,9 +311,16 @@ public class CuratorDatabaseClient {
     }
 
     public Set<String> readInactiveJobs() {
-        return curatorDatabase.getData(inactiveJobsPath())
-                              .map(data -> stringSetSerializer.fromJson(data))
-                              .orElse(Collections.emptySet());
+        try {
+            byte[] data = curatorDatabase.getData(inactiveJobsPath()).get();
+            if (data.length == 0) return new HashSet<>(); // inactive jobs has never been written
+            return stringSetSerializer.fromJson(data);
+        }
+        catch (RuntimeException e) {
+            log.log(Level.WARNING, "Error reading inactive jobs, deleting inactive state");
+            writeInactiveJobs(Collections.emptySet());
+            return new HashSet<>();
+        }
     }
 
     public void writeInactiveJobs(Set<String> inactiveJobs) {
