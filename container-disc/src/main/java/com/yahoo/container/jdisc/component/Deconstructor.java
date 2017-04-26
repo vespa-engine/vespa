@@ -6,12 +6,13 @@ import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.di.ComponentDeconstructor;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.jdisc.SharedResource;
-import com.yahoo.yolean.Exceptions;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+
+import static java.util.logging.Level.WARNING;
 
 /**
 * @author tonyv
@@ -59,9 +60,11 @@ public class Deconstructor implements ComponentDeconstructor {
                 component.deconstruct();
                 log.info("Finished deconstructing " + component);
             } catch (Exception e) {
-                log.warning("Exception thrown when deconstructing " + component + ": " + e.getClass().getName()
-                                    + ": " + Exceptions.toMessageString(e));
+                log.log(WARNING, "Exception thrown when deconstructing " + component, e);
+            } catch (Throwable t) {
+                com.yahoo.protect.Process.logAndDie("Error when deconstructing " + component, t);
             }
         }
+
     }
 }
