@@ -8,6 +8,8 @@ import com.yahoo.processing.request.Properties;
 import com.yahoo.processing.request.properties.PropertyMap;
 import org.junit.Test;
 
+import java.util.Arrays;
+
 /**
  * Tests using requests
  *
@@ -117,17 +119,17 @@ public class RequestTestCase extends junit.framework.TestCase {
         request.properties().set("d", "d1");
         request.errors().add(new ErrorMessage("boz"));
 
-        assertEquals("a1",request.properties().get("a"));
-        assertEquals("a1",rcloned.properties().get("a"));
-        assertEquals("b1",request.properties().get("b"));
-        assertEquals("b1",rcloned.properties().get("b"));
-        assertEquals(null,request.properties().get("c"));
-        assertEquals("c1",rcloned.properties().get("c"));
-        assertEquals("d1",request.properties().get("d"));
-        assertEquals(null,rcloned.properties().get("d"));
+        assertEquals("a1", request.properties().get("a"));
+        assertEquals("a1", rcloned.properties().get("a"));
+        assertEquals("b1", request.properties().get("b"));
+        assertEquals("b1", rcloned.properties().get("b"));
+        assertEquals(null, request.properties().get("c"));
+        assertEquals("c1", rcloned.properties().get("c"));
+        assertEquals("d1", request.properties().get("d"));
+        assertEquals(null, rcloned.properties().get("d"));
 
-        assertEquals(3,request.errors().size());
-        assertEquals(1,rcloned.errors().size());
+        assertEquals(3, request.errors().size());
+        assertEquals(1, rcloned.errors().size());
         assertEquals("foo",request.errors().get(0).getMessage());
         assertEquals("bar",request.errors().get(1).getMessage());
         assertEquals("boz",request.errors().get(2).getMessage());
