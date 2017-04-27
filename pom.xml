@@ -180,21 +180,18 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.16</version>
+                    <version>${surefire.version}</version>
                     <configuration>
                         <redirectTestOutputToFile>${test.hide}</redirectTestOutputToFile>
                         <systemPropertyVariables>
                             <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
                         </systemPropertyVariables>
-                        <excludes>
-                            <exclude>**/*SystemTest.java</exclude>
-                        </excludes>
                     </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-report-plugin</artifactId>
-                    <version>2.16</version>
+                    <version>${surefire.version}</version>
                     <configuration>
                         <alwaysGenerateSurefireReport>false</alwaysGenerateSurefireReport>
                         <showSuccess>false</showSuccess>
@@ -492,25 +489,6 @@
                                 </configuration>
                             </execution>
                         </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>systemtests</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <excludes>
-                                <exclude>none</exclude>
-                            </excludes>
-                            <includes>
-                                <include>**/*SystemTest.java</include>
-                            </includes>
-                        </configuration>
                     </plugin>
                 </plugins>
             </build>
@@ -842,12 +820,12 @@
             <dependency>
                 <groupId>org.apache.maven.surefire</groupId>
                 <artifactId>surefire-junit4</artifactId>
-                <version>2.16</version>
+                <version>${surefire.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven.surefire</groupId>
                 <artifactId>surefire-providers</artifactId>
-                <version>2.16</version>
+                <version>${surefire.version}</version>
                 <type>pom</type>
             </dependency>
             <dependency>
@@ -1084,6 +1062,7 @@
     	<doclint>all</doclint>
         <scala.major-version>2.11</scala.major-version>
         <scala.version>${scala.major-version}.4</scala.version>
+        <surefire.version>2.20</surefire.version>
     </properties>
 
     <modules>
