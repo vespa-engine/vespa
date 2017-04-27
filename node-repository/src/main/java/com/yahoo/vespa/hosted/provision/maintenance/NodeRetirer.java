@@ -21,10 +21,12 @@ import java.util.stream.Collectors;
 public class NodeRetirer extends Maintainer {
     private final RetirementPolicy retirementPolicy;
 
-    public NodeRetirer(NodeRepository nodeRepository, Zone zone, Duration interval, RetirementPolicy retirementPolicy, Zone... applies) {
-        super(nodeRepository, interval);
-        this.retirementPolicy = retirementPolicy;
+    public NodeRetirer(NodeRepository nodeRepository, Zone zone, Duration interval, JobControl jobControl,
+                       RetirementPolicy retirementPolicy, Zone... applies) {
+        super(nodeRepository, interval, jobControl);
         if (! Arrays.asList(applies).contains(zone)) deconstruct();
+
+        this.retirementPolicy = retirementPolicy;
     }
 
     @Override
@@ -62,7 +64,7 @@ public class NodeRetirer extends Maintainer {
     boolean limitedPark(Set<Node> nodesToPark, long limit) {
         nodesToPark.stream()
                 .limit(limit)
-                .forEach(node -> nodeRepository().park(node.hostname(), Agent.NodeRetirer, "Parked by NodeRetirer, Policy: " + retirementPolicy.getClass().getName()));
+                .forEach(node -> nodeRepository().park(node.hostname(), Agent.NodeRetirer, "Parked by NodeRetirer, Policy: " + retirementPolicy.getClass().getSimpleName()));
 
         return limit >= nodesToPark.size();
     }
@@ -91,10 +93,5 @@ public class NodeRetirer extends Maintainer {
     long getNumSpareNodes(long numActiveNodes, long numReadyNodes) {
         long numNodesToSpare = (long) Math.ceil(0.1 * numActiveNodes);
         return Math.max(0L, numReadyNodes - numNodesToSpare);
-    }
-
-    @Override
-    public String toString() {
-        return "Node retirer";
     }
 }
