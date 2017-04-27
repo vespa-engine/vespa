@@ -246,10 +246,10 @@ DocumentSubDBCollection::getNewestFlushedSerial()
 
 
 void
-DocumentSubDBCollection::wipeHistory(SerialNum wipeSerial)
+DocumentSubDBCollection::pruneRemovedFields(SerialNum serialNum)
 {
     for (auto subDb : _subDBs) {
-        subDb->wipeHistory(wipeSerial);
+        subDb->pruneRemovedFields(serialNum);
     }
 }
 

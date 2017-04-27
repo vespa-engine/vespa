@@ -144,9 +144,9 @@ FastAccessDocSubDB::getFlushTargetsInternal()
 }
 
 void
-FastAccessDocSubDB::wipeHistory(SerialNum wipeSerial)
+FastAccessDocSubDB::pruneRemovedFields(SerialNum serialNum)
 {
-    getAttributeManager()->wipeHistory(wipeSerial);
+    getAttributeManager()->pruneRemovedFields(serialNum);
 }
 
 void

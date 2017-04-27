@@ -520,7 +520,7 @@ TEST_F("require that extra attribute is not treated as removed", Fixture)
     EXPECT_TRUE(am2.mgr.getAttribute("ex")->operator->() == ex.get()); // reuse
 }
 
-TEST_F("require that history can be wiped", Fixture)
+TEST_F("require that removed fields can be pruned", Fixture)
 {
     f.addAttribute("a1");
     f.addAttribute("a2");
@@ -530,7 +530,7 @@ TEST_F("require that history can be wiped", Fixture)
     AttrSpecList newSpec;
     newSpec.push_back(AttributeSpec("a2", INT32_SINGLE));
     SequentialAttributeManager sam(f._m, AttrMgrSpec(newSpec, 1, 11));
-    sam.mgr.wipeHistory(11);
+    sam.mgr.pruneRemovedFields(11);
 
     FastOS_StatInfo si;
     EXPECT_TRUE(!FastOS_File::Stat(vespalib::string(test_dir + "/a1").c_str(), &si));

@@ -169,7 +169,7 @@ public:
 
     virtual void getAttributeListAll(std::vector<search::AttributeGuard> &list) const override;
 
-    virtual void wipeHistory(search::SerialNum wipeSerial) override;
+    virtual void pruneRemovedFields(search::SerialNum serialNum) override;
 
     virtual const IAttributeFactory::SP &getFactory() const override { return _factory; }
 
