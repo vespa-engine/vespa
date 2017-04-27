@@ -191,17 +191,17 @@ IndexMaintainer::reopenDiskIndexes(ISearchableIndexCollection &coll)
 void
 IndexMaintainer::updateDiskIndexSchema(const vespalib::string &indexDir,
                                        const Schema &schema,
-                                       SerialNum wipeSerial)
+                                       SerialNum serialNum)
 {
     // Called by a flush worker thread OR document db executor thread
     LockGuard lock(_schemaUpdateLock);
-    IndexWriteUtilities::updateDiskIndexSchema(indexDir, schema, wipeSerial);
+    IndexWriteUtilities::updateDiskIndexSchema(indexDir, schema, serialNum);
 }
 
 void
 IndexMaintainer::updateIndexSchemas(IIndexCollection &coll,
                                     const Schema &schema,
-                                    SerialNum wipeSerial)
+                                    SerialNum serialNum)
 {
     assert(_ctx.getThreadingService().master().isCurrentThread());
     uint32_t count = coll.getSourceCount();
@@ -216,7 +216,7 @@ IndexMaintainer::updateIndexSchemas(IIndexCollection &coll,
             }
             continue;
         }
-        updateDiskIndexSchema(d->getIndexDir(), schema, wipeSerial);
+        updateDiskIndexSchema(d->getIndexDir(), schema, serialNum);
     }
 }
 
@@ -833,7 +833,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
       _operations(operations)
 {
     // Called by document db init executor thread
-    _changeGens.bumpWipeGen();
+    _changeGens.bumpPruneGen();
     DiskIndexCleaner::clean(_base_dir, *_active_indexes);
     FusionSpec spec = IndexReadUtilities::readFusionSpec(_base_dir);
     _next_id = 1 + (spec.flush_ids.empty() ? spec.last_fusion_id : spec.flush_ids.back());
@@ -1202,17 +1202,17 @@ IndexMaintainer::setSchema(const Schema & schema, SerialNum serialNum)
 }
 
 void
-IndexMaintainer::pruneRemovedFields(const Schema &schema, SerialNum wipeSerial)
+IndexMaintainer::pruneRemovedFields(const Schema &schema, SerialNum serialNum)
 {
     assert(_ctx.getThreadingService().master().isCurrentThread());
     ISearchableIndexCollection::SP new_source_list;
     IIndexCollection::SP coll = getSourceCollection();
-    updateIndexSchemas(*coll, schema, wipeSerial);
+    updateIndexSchemas(*coll, schema, serialNum);
     updateActiveFusionPrunedSchema(schema);
     {
         LockGuard state_lock(_state_lock);
         LockGuard lock(_index_update_lock);
-        _changeGens.bumpWipeGen();
+        _changeGens.bumpPruneGen();
     }
     {
         LockGuard state_lock(_state_lock);

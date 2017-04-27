@@ -73,12 +73,12 @@ class IndexMaintainer : public IIndexManager,
     class ChangeGens
     {
     public:
-        uint32_t _wipeGen;
+        uint32_t _pruneGen;
 
-        ChangeGens() : _wipeGen(0) { }
-        void bumpWipeGen(void) { ++_wipeGen; }
-        bool operator==(const ChangeGens &rhs) const { return _wipeGen == rhs._wipeGen; }
-        bool operator!=(const ChangeGens &rhs) const { return _wipeGen != rhs._wipeGen; }
+        ChangeGens() : _pruneGen(0) { }
+        void bumpPruneGen(void) { ++_pruneGen; }
+        bool operator==(const ChangeGens &rhs) const { return _pruneGen == rhs._pruneGen; }
+        bool operator!=(const ChangeGens &rhs) const { return _pruneGen != rhs._pruneGen; }
     };
 
     typedef std::vector<uint32_t> FlushIds;
@@ -134,8 +134,8 @@ class IndexMaintainer : public IIndexManager,
      *
      * Things get more complicated when handling multiple kinds of overlapping
      * flush operations, e.g. dump from memory to disk, fusion, schema changes
-     * and wipe of old fields, since this will trigger more retries for some
-     * of the operations.
+     * and pruning of removed fields, since this will trigger more retries for
+     * some of the operations.
      */
     vespalib::Lock _state_lock;  // Outer lock (SL)
     vespalib::Lock _index_update_lock;  // Inner lock (IUL)
@@ -168,12 +168,12 @@ class IndexMaintainer : public IIndexManager,
     void
     updateDiskIndexSchema(const vespalib::string &indexDir,
                           const Schema &schema,
-                          SerialNum wipeSerial);
+                          SerialNum serialNum);
 
     void
     updateIndexSchemas(IIndexCollection &coll,
                        const Schema &schema,
-                       SerialNum wipeSerial);
+                       SerialNum serialNum);
 
     void updateActiveFusionPrunedSchema(const Schema &schema);
     void deactivateDiskIndexes(vespalib::string indexDir);
@@ -287,7 +287,7 @@ class IndexMaintainer : public IIndexManager,
     bool makeSureAllRemainingWarmupIsDone(ISearchableIndexCollection::SP keepAlive);
     void scheduleCommit();
     void commit();
-    void pruneRemovedFields(const Schema &schema, SerialNum wipeSerial);
+    void pruneRemovedFields(const Schema &schema, SerialNum serialNum);
 
 public:
     IndexMaintainer(const IndexMaintainer &) = delete;
