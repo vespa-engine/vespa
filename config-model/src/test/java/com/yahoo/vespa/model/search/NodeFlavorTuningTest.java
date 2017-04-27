@@ -44,8 +44,21 @@ public class NodeFlavorTuningTest {
         assertDocumentStoreMaxFileSize(4 * GB, 512);
     }
 
-    private static void assertDocumentStoreMaxFileSize(long expSize, int memoryGb) {
-        assertEquals(expSize, configFromMemorySetting(memoryGb).summary().log().maxfilesize());
+    private static void assertDocumentStoreMaxFileSize(long expSizeBytes, int memoryGb) {
+        assertEquals(expSizeBytes, configFromMemorySetting(memoryGb).summary().log().maxfilesize());
+    }
+
+    @Test
+    public void require_that_flush_strategy_memory_limits_are_set_based_on_available_memory() {
+        assertFlushStrategyMemory(512 * MB, 4);
+        assertFlushStrategyMemory(1 * GB, 8);
+        assertFlushStrategyMemory(3 * GB, 24);
+        assertFlushStrategyMemory(8 * GB, 64);
+    }
+
+    private static void assertFlushStrategyMemory(long expMemoryBytes, int memoryGb) {
+        assertEquals(expMemoryBytes, configFromMemorySetting(memoryGb).flush().memory().maxmemory());
+        assertEquals(expMemoryBytes, configFromMemorySetting(memoryGb).flush().memory().each().maxmemory());
     }
 
     private static ProtonConfig configFromDiskSetting(boolean fastDisk) {

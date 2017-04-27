@@ -10,6 +10,8 @@ import com.yahoo.vespa.config.search.core.ProtonConfig;
  */
 public class NodeFlavorTuning implements ProtonConfig.Producer {
 
+    static long MB = 1024 * 1024;
+    static long GB = MB * 1024;
     private final Flavor nodeFlavor;
 
     public NodeFlavorTuning(Flavor nodeFlavor) {
@@ -20,6 +22,7 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
     public void getConfig(ProtonConfig.Builder builder) {
         tuneDiskWriteSpeed(builder);
         tuneDocumentStoreMaxFileSize(builder);
+        tuneFlushStrategyMemoryLimits(builder);
     }
 
     private void tuneDiskWriteSpeed(ProtonConfig.Builder builder) {
@@ -31,20 +34,27 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
     }
 
     private void tuneDocumentStoreMaxFileSize(ProtonConfig.Builder builder) {
-        ProtonConfig.Summary.Log.Builder logBuilder = new ProtonConfig.Summary.Log.Builder();
         double memoryGb = nodeFlavor.getMinMainMemoryAvailableGb();
+        long fileSizeBytes = 4 * GB;
         if (memoryGb <= 12.0) {
-            logBuilder.maxfilesize(256 * MB);
+            fileSizeBytes = 256 * MB;
         } else if (memoryGb < 24.0) {
-            logBuilder.maxfilesize(512 * MB);
+            fileSizeBytes = 512 * MB;
         } else if (memoryGb <= 64.0) {
-            logBuilder.maxfilesize(1 * GB);
-        } else {
-            logBuilder.maxfilesize(4 * GB);
+            fileSizeBytes = 1 * GB;
         }
-        builder.summary(new ProtonConfig.Summary.Builder().log(logBuilder));
+        builder.summary(new ProtonConfig.Summary.Builder()
+                .log(new ProtonConfig.Summary.Log.Builder()
+                        .maxfilesize(fileSizeBytes)));
     }
 
-    static long MB = 1024 * 1024;
-    static long GB = MB * 1024;
+    private void tuneFlushStrategyMemoryLimits(ProtonConfig.Builder builder) {
+        long memoryLimit = (long) ((nodeFlavor.getMinMainMemoryAvailableGb() / 8) * GB);
+        builder.flush(new ProtonConfig.Flush.Builder()
+                .memory(new ProtonConfig.Flush.Memory.Builder()
+                        .maxmemory(memoryLimit)
+                        .each(new ProtonConfig.Flush.Memory.Each.Builder()
+                                .maxmemory(memoryLimit))));
+    }
+
 }
