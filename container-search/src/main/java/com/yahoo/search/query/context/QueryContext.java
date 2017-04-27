@@ -15,8 +15,7 @@ import java.util.Iterator;
  * A proxy to the Execution.trace() which exists for legacy reasons.
  * Calls to this is forwarded to owningQuery.getModel().getExecution().trace().
  *
- * @since 4.2
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author  Steinar Knutsen
  * @author  bratseth
  */
 public class QueryContext implements Cloneable {
@@ -109,4 +108,14 @@ public class QueryContext implements Cloneable {
     /** Returns the execution trace this delegates to */
     public Execution.Trace getTrace() { return owner.getModel().getExecution().trace(); }
 
+    @Override
+    public QueryContext clone() {
+        try {
+            return (QueryContext)super.clone();
+        }
+        catch (CloneNotSupportedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
 }
