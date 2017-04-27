@@ -12,7 +12,7 @@ public class MyBundleActivator implements BundleActivator {
 
     @Override
     public void start(BundleContext ctx) throws Exception {
-        ServiceReference ref = ctx.getServiceReference(RuntimeException.class);
+        ServiceReference<?> ref = ctx.getServiceReference(RuntimeException.class);
         if (ref != null) {
             throw (RuntimeException)ctx.getService(ref);
         }
@@ -20,7 +20,7 @@ public class MyBundleActivator implements BundleActivator {
 
     @Override
     public void stop(BundleContext ctx) throws Exception {
-        ServiceReference ref = ctx.getServiceReference(RuntimeException.class);
+        ServiceReference<?> ref = ctx.getServiceReference(RuntimeException.class);
         if (ref != null) {
             throw (RuntimeException)ctx.getService(ref);
         }

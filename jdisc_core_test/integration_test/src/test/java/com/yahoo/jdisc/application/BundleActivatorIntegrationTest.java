@@ -22,10 +22,10 @@ public class BundleActivatorIntegrationTest {
         OsgiFramework osgi = driver.osgiFramework();
         BundleInstaller installer = new BundleInstaller(driver.osgiFramework());
         Bundle bundle = installer.installAndStart("my-bundle-activator.jar").get(0);
-        Class serviceClass = bundle.loadClass("com.yahoo.jdisc.bundle.MyService");
+        Class<?> serviceClass = bundle.loadClass("com.yahoo.jdisc.bundle.MyService");
         assertNotNull(serviceClass);
         BundleContext ctx = osgi.bundleContext();
-        ServiceReference serviceRef = ctx.getServiceReference(serviceClass.getName());
+        ServiceReference<?> serviceRef = ctx.getServiceReference(serviceClass.getName());
         assertNotNull(serviceRef);
         Object service = ctx.getService(serviceRef);
         assertNotNull(service);
@@ -37,10 +37,10 @@ public class BundleActivatorIntegrationTest {
     public void requireThatApplicationBundleActivatorHasAccessToCurrentContainer() throws Exception {
         TestDriver driver = TestDriver.newApplicationBundleInstance("app-g-act.jar", false);
         OsgiFramework osgi = driver.osgiFramework();
-        Class serviceClass = osgi.bundles().get(1).loadClass("com.yahoo.jdisc.bundle.MyService");
+        Class<?> serviceClass = osgi.bundles().get(1).loadClass("com.yahoo.jdisc.bundle.MyService");
         assertNotNull(serviceClass);
         BundleContext ctx = osgi.bundleContext();
-        ServiceReference serviceRef = ctx.getServiceReference(serviceClass.getName());
+        ServiceReference<?> serviceRef = ctx.getServiceReference(serviceClass.getName());
         assertNotNull(serviceRef);
         Object service = ctx.getService(serviceRef);
         assertNotNull(service);
