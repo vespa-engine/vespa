@@ -62,7 +62,7 @@ MemoryIndex::MemoryIndex(const Schema &schema,
       _numDocs(0),
       _lock(),
       _hiddenFields(schema.getNumIndexFields(), false),
-      _wipeTimeSchema(),
+      _prunedSchema(),
       _indexedDocs(0),
       _staticMemoryFootprint(getMemoryUsage().allocatedBytes())
 {
@@ -260,31 +260,31 @@ void
 MemoryIndex::pruneRemovedFields(const Schema &schema)
 {
     LockGuard lock(_lock);
-    if (_wipeTimeSchema.get() == NULL) {
+    if (_prunedSchema.get() == NULL) {
         Schema::UP newSchema = Schema::intersect(_schema, schema);
         if (_schema == *newSchema)
             return;
-        _wipeTimeSchema.reset(newSchema.release());
+        _prunedSchema.reset(newSchema.release());
     } else {
-        Schema::UP newSchema = Schema::intersect(*_wipeTimeSchema, schema);
-        if (*_wipeTimeSchema == *newSchema)
+        Schema::UP newSchema = Schema::intersect(*_prunedSchema, schema);
+        if (*_prunedSchema == *newSchema)
             return;
-        _wipeTimeSchema.reset(newSchema.release());
+        _prunedSchema.reset(newSchema.release());
     }
     SchemaUtil::IndexIterator i(_schema);
     for (; i.isValid(); ++i) {
         uint32_t packedIndex = i.getIndex();
         assert(packedIndex < _hiddenFields.size());
-        SchemaUtil::IndexIterator wi(*_wipeTimeSchema, i);
+        SchemaUtil::IndexIterator wi(*_prunedSchema, i);
         _hiddenFields[packedIndex] = !wi.isValid();
     }
 }
 
 Schema::SP
-MemoryIndex::getWipeTimeSchema() const
+MemoryIndex::getPrunedSchema() const
 {
     LockGuard lock(_lock);
-    return _wipeTimeSchema;
+    return _prunedSchema;
 }
 
 } // namespace memoryindex

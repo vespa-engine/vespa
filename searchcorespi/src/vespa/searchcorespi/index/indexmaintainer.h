@@ -91,7 +91,7 @@ class IndexMaintainer : public IIndexManager,
     Schema                 _schema;             // Protected by SL + IUL
     Schema::SP             _activeFusionSchema; // Protected by SL + IUL
     // Protected by SL + IUL
-    Schema::SP             _activeFusionWipeTimeSchema;
+    Schema::SP             _activeFusionPrunedSchema;
     uint32_t               _source_selector_changes; // Protected by IUL
     // _selector is protected by SL + IUL
     ISourceSelector::SP             _selector;
@@ -175,7 +175,7 @@ class IndexMaintainer : public IIndexManager,
                        const Schema &schema,
                        SerialNum wipeSerial);
 
-    void updateActiveFusionWipeTimeSchema(const Schema &schema);
+    void updateActiveFusionPrunedSchema(const Schema &schema);
     void deactivateDiskIndexes(vespalib::string indexDir);
     IDiskIndex::SP loadDiskIndex(const vespalib::string &indexDir);
     IDiskIndex::SP reloadDiskIndex(const IDiskIndex &oldIndex);
@@ -208,7 +208,7 @@ class IndexMaintainer : public IIndexManager,
         // or data structure limitations).
         FrozenMemoryIndexRefs _extraIndexes;
         ChangeGens _changeGens;
-        Schema::SP _wtSchema;
+        Schema::SP _prunedSchema;
 
         FlushArgs();
         FlushArgs(const FlushArgs &) = delete;
@@ -235,14 +235,14 @@ class IndexMaintainer : public IIndexManager,
         uint32_t   _new_fusion_id;
         ChangeGens _changeGens;
         Schema     _schema;
-        Schema::SP _wtSchema;
+        Schema::SP _prunedSchema;
         ISearchableIndexCollection::SP _old_source_list; // Delays destruction
 
         FusionArgs()
             : _new_fusion_id(0u),
               _changeGens(),
               _schema(),
-              _wtSchema(),
+              _prunedSchema(),
               _old_source_list()
         { }
         ~FusionArgs();
@@ -273,7 +273,7 @@ class IndexMaintainer : public IIndexManager,
     void doneSetSchema(SetSchemaArgs &args, IMemoryIndex::SP &newIndex);
 
     Schema getSchema(void) const;
-    Schema::SP getActiveFusionWipeTimeSchema() const;
+    Schema::SP getActiveFusionPrunedSchema() const;
     search::TuneFileAttributes getAttrTune();
     ChangeGens getChangeGens();
 

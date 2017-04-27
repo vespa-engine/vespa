@@ -78,7 +78,7 @@ struct IMemoryIndex : public searchcorespi::IndexSearchable {
                              search::SerialNum serialNum) = 0;
 
     virtual void pruneRemovedFields(const search::index::Schema &schema) = 0;
-    virtual search::index::Schema::SP getWipeTimeSchema() const = 0;
+    virtual search::index::Schema::SP getPrunedSchema() const = 0;
 };
 
 } // namespace index
