@@ -17,7 +17,7 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.google.common.collect.Sets.newHashSet;
+import com.google.common.collect.ImmutableSet;
 import static com.yahoo.vespa.orchestrator.TestUtil.makeServiceClusterSet;
 import static com.yahoo.vespa.orchestrator.TestUtil.makeServiceInstanceSet;
 import static junit.framework.TestCase.assertFalse;
@@ -171,7 +171,7 @@ public class VespaModelUtilTest {
     public void testGettingClusterControllerInstances() {
         Set<ServiceInstance<?>> controllers =
                 new HashSet<>(VespaModelUtil.getClusterControllerInstances(application, CONTENT_CLUSTER_ID));
-        Set<ServiceInstance<ServiceMonitorStatus>> expectedControllers = newHashSet(controller0, controller1);
+        Set<ServiceInstance<ServiceMonitorStatus>> expectedControllers = ImmutableSet.of(controller0, controller1);
 
         assertThat(controllers).isEqualTo(expectedControllers);
     }
