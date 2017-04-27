@@ -64,7 +64,7 @@ public class CloneHelper {
         else if (array instanceof boolean[])
             return Arrays.copyOf((boolean[])array, ((boolean[])array).length);
         else
-            return new IllegalArgumentException("Unexpected primitive arrat type " + array.getClass());
+            return new IllegalArgumentException("Unexpected primitive array type " + array.getClass());
     }
     
     private Object objectArrayClone(Object[] object) {

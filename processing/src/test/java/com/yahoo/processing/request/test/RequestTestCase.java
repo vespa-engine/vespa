@@ -8,8 +8,6 @@ import com.yahoo.processing.request.Properties;
 import com.yahoo.processing.request.properties.PropertyMap;
 import org.junit.Test;
 
-import java.util.Arrays;
-
 /**
  * Tests using requests
  *
