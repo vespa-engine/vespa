@@ -713,7 +713,7 @@ final class ProgramParser {
        switch (getParseTreeIndex(dataSourceNode)) {
            case yqlplusParser.RULE_write_data_source:
            case yqlplusParser.RULE_call_source: {
-               List<String> names = readName((Namespaced_nameContext)dataSourceNode.getChild(Namespaced_nameContext.class, 0));
+               List<String> names = readName(dataSourceNode.getChild(Namespaced_nameContext.class, 0));
                alias = assignAlias(names.get(names.size() - 1), aliasContext, scope);
                List<OperatorNode<ExpressionOperator>> arguments = ImmutableList.of();
                ArgumentsContext argumentsContext = dataSourceNode.getRuleContext(ArgumentsContext.class,0);
@@ -874,6 +874,7 @@ final class ProgramParser {
             // DDL
             case yqlplusParser.RULE_ddl:
                 ruleContext = (ParserRuleContext)ruleContext.getChild(0);
+                break;
             case yqlplusParser.RULE_view: {
                 // view and projection expansion now has to be done by the
                 // execution engine
@@ -1001,8 +1002,7 @@ final class ProgramParser {
         }
     }
 
-	public OperatorNode<ExpressionOperator> convertExpr(ParseTree parseTree,
-			Scope scope) {
+	public OperatorNode<ExpressionOperator> convertExpr(ParseTree parseTree, Scope scope) {
 	  switch (getParseTreeIndex(parseTree)) {
 	        case yqlplusParser.RULE_vespa_grouping: {
 	                ParseTree firstChild = parseTree.getChild(0);
@@ -1121,7 +1121,9 @@ final class ProgramParser {
 			    case yqlplusParser.LPAREN:
 			        return convertExpr(parseTree.getChild(1), scope);
 			}
+			break;
 		}
+
 		// TODO: Temporarily disable CAST - think through how types are named
 		// case yqlplusParser.CAST: {
 		//

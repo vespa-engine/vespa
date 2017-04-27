@@ -65,12 +65,12 @@ public class DocumentSourceSearcher extends Searcher {
         for (Iterator i = fullResult.hits().deepIterator();i.hasNext();) {
             Hit fullHit = (Hit)i.next();
 
-            Hit emptyHit = (Hit)fullHit.clone();
+            Hit emptyHit = fullHit.clone();
             emptyHit.clearFields();
             emptyHit.setFillable();
             emptyHit.setRelevance(fullHit.getRelevance());
 
-            Hit attributeHit = (Hit)fullHit.clone();
+            Hit attributeHit = fullHit.clone();
             removePropertiesNotStartingByA(attributeHit);
             attributeHit.setFillable();
             attributeHit.setRelevance(fullHit.getRelevance());
