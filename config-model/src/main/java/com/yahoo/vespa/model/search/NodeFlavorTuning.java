@@ -3,6 +3,8 @@ package com.yahoo.vespa.model.search;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 
+import static java.lang.Long.min;
+
 /**
  * Tuning of proton config for a search node based on the node flavor of that node.
  *
@@ -22,7 +24,10 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
     public void getConfig(ProtonConfig.Builder builder) {
         tuneDiskWriteSpeed(builder);
         tuneDocumentStoreMaxFileSize(builder);
-        tuneFlushStrategyMemoryLimits(builder);
+        ProtonConfig.Flush.Memory.Builder flushMemoryBuilder = new ProtonConfig.Flush.Memory.Builder();
+        tuneFlushStrategyMemoryLimits(flushMemoryBuilder);
+        tuneFlushStrategyTlsSize(flushMemoryBuilder);
+        builder.flush(new ProtonConfig.Flush.Builder().memory(flushMemoryBuilder));
     }
 
     private void tuneDiskWriteSpeed(ProtonConfig.Builder builder) {
@@ -48,13 +53,17 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
                         .maxfilesize(fileSizeBytes)));
     }
 
-    private void tuneFlushStrategyMemoryLimits(ProtonConfig.Builder builder) {
-        long memoryLimit = (long) ((nodeFlavor.getMinMainMemoryAvailableGb() / 8) * GB);
-        builder.flush(new ProtonConfig.Flush.Builder()
-                .memory(new ProtonConfig.Flush.Memory.Builder()
-                        .maxmemory(memoryLimit)
-                        .each(new ProtonConfig.Flush.Memory.Each.Builder()
-                                .maxmemory(memoryLimit))));
+    private void tuneFlushStrategyMemoryLimits(ProtonConfig.Flush.Memory.Builder builder) {
+        long memoryLimitBytes = (long) ((nodeFlavor.getMinMainMemoryAvailableGb() / 8) * GB);
+        builder.maxmemory(memoryLimitBytes)
+                .each(new ProtonConfig.Flush.Memory.Each.Builder()
+                        .maxmemory(memoryLimitBytes));
+    }
+
+    private void tuneFlushStrategyTlsSize(ProtonConfig.Flush.Memory.Builder builder) {
+        long tlsSizeBytes = (long) ((nodeFlavor.getMinDiskAvailableGb() * 0.07) * GB);
+        tlsSizeBytes = min(tlsSizeBytes, 100 * GB);
+        builder.maxtlssize(tlsSizeBytes);
     }
 
 }
