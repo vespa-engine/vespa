@@ -58,23 +58,6 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor, 
                                      Zone zone, Clock clock, Orchestrator orchestrator, Metric metric) {
         DefaultTimes defaults = new DefaultTimes(zone.environment());
-        nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, durationFromEnv("fail_grace").orElse(defaults.failGrace), clock, orchestrator, throttlePolicyFromEnv("throttle_policy").orElse(defaults.throttlePolicy));
-        periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, nodeRepository, durationFromEnv("periodic_redeploy_interval").orElse(defaults.periodicRedeployInterval));
-        operatorChangeApplicationMaintainer = new OperatorChangeApplicationMaintainer(deployer, nodeRepository, clock, durationFromEnv("operator_change_redeploy_interval").orElse(defaults.operatorChangeRedeployInterval));
-        zooKeeperAccessMaintainer = new ZooKeeperAccessMaintainer(nodeRepository, curator, durationFromEnv("zookeeper_access_maintenance_interval").orElse(defaults.zooKeeperAccessMaintenanceInterval));
-        reservationExpirer = new ReservationExpirer(nodeRepository, clock, durationFromEnv("reservation_expiry").orElse(defaults.reservationExpiry));
-        retiredExpirer = new RetiredExpirer(nodeRepository, deployer, clock, durationFromEnv("retired_expiry").orElse(defaults.retiredExpiry));
-        inactiveExpirer = new InactiveExpirer(nodeRepository, clock, durationFromEnv("inactive_expiry").orElse(defaults.inactiveExpiry));
-        failedExpirer = new FailedExpirer(nodeRepository, zone, clock, durationFromEnv("failed_expiry").orElse(defaults.failedExpiry));
-        dirtyExpirer = new DirtyExpirer(nodeRepository, clock, durationFromEnv("dirty_expiry").orElse(defaults.dirtyExpiry));
-        nodeRebooter = new NodeRebooter(nodeRepository, clock, durationFromEnv("reboot_interval").orElse(defaults.rebootInterval));
-        metricsReporter = new MetricsReporter(nodeRepository, metric, durationFromEnv("metrics_interval").orElse(defaults.metricsInterval));
-        nodeRetirer = new NodeRetirer(nodeRepository, zone, durationFromEnv("retire_interval").orElse(defaults.nodeRetirerInterval),
-                new RetireIPv4OnlyNodes(),
-                new Zone(SystemName.cd, Environment.dev, RegionName.from("cd-us-central-1")),
-                new Zone(SystemName.cd, Environment.prod, RegionName.from("cd-us-central-1")),
-                new Zone(SystemName.cd, Environment.prod, RegionName.from("cd-us-central-2")));
-                new Zone(SystemName.main, Environment.prod, RegionName.from("us-west-1")));
         jobControl = new JobControl(nodeRepository.database());
         nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, durationFromEnv("fail_grace").orElse(defaults.failGrace), clock, orchestrator, throttlePolicyFromEnv("throttle_policy").orElse(defaults.throttlePolicy), jobControl);
         periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, nodeRepository, durationFromEnv("periodic_redeploy_interval").orElse(defaults.periodicRedeployInterval), jobControl);
@@ -87,6 +70,11 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         dirtyExpirer = new DirtyExpirer(nodeRepository, clock, durationFromEnv("dirty_expiry").orElse(defaults.dirtyExpiry), jobControl);
         nodeRebooter = new NodeRebooter(nodeRepository, clock, durationFromEnv("reboot_interval").orElse(defaults.rebootInterval), jobControl);
         metricsReporter = new MetricsReporter(nodeRepository, metric, durationFromEnv("metrics_interval").orElse(defaults.metricsInterval), jobControl);
+        nodeRetirer = new NodeRetirer(nodeRepository, zone, durationFromEnv("retire_interval").orElse(defaults.nodeRetirerInterval), jobControl,
+                new RetireIPv4OnlyNodes(),
+                new Zone(SystemName.cd, Environment.dev, RegionName.from("cd-us-central-1")),
+                new Zone(SystemName.cd, Environment.prod, RegionName.from("cd-us-central-1")),
+                new Zone(SystemName.cd, Environment.prod, RegionName.from("cd-us-central-2")));
     }
 
     @Override

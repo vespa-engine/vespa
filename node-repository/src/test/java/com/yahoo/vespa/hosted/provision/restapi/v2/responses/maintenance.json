@@ -1,15 +1,6 @@
 {
   "jobs":[
     {
-      "name":"DirtyExpirer"
-    },
-    {
-      "name":"OperatorChangeApplicationMaintainer"
-    },
-    {
-      "name":"MetricsReporter"
-    },
-    {
       "name":"PeriodicApplicationMaintainer"
     },
     {
@@ -22,16 +13,28 @@
       "name":"RetiredExpirer"
     },
     {
-      "name":"ZooKeeperAccessMaintainer"
-    },
-    {
-      "name":"NodeFailer"
-    },
-    {
       "name":"NodeRebooter"
     },
     {
       "name":"InactiveExpirer"
+    },
+    {
+      "name":"DirtyExpirer"
+    },
+    {
+      "name":"NodeRetirer"
+    },
+    {
+      "name":"OperatorChangeApplicationMaintainer"
+    },
+    {
+      "name":"MetricsReporter"
+    },
+    {
+      "name":"ZooKeeperAccessMaintainer"
+    },
+    {
+      "name":"NodeFailer"
     }
   ],
   "inactive":[
