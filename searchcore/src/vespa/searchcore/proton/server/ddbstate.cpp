@@ -156,7 +156,7 @@ DDBState::setConfigState(ConfigState newConfigState)
 
 
 void
-DDBState::clearRejectedConfig()
+DDBState::clearDelayedConfig()
 {
     setConfigState(ConfigState::OK);
 }

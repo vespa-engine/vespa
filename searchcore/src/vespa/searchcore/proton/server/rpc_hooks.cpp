@@ -65,10 +65,10 @@ RPCHooksBase::reportState(Session & session, FRT_RPCRequest * req)
 {
     std::vector<Pair> res;
     int64_t numDocs(_proton.getNumDocs());
-    std::string badConfigs = _proton.getBadConfigs();
+    std::string delayedConfigs = _proton.getDelayedConfigs();
     bool numDocsChanged = session.getNumDocs() != numDocs;
-    bool badConfigsChanged = session.getBadConfigs() != badConfigs;
-    bool changed = numDocsChanged || badConfigsChanged;
+    bool delayedConfigsChanged = session.getDelayedConfigs() != delayedConfigs;
+    bool changed = numDocsChanged || delayedConfigsChanged;
 
     if (_proton.getMatchEngine().isOnline()) {
         res.push_back(Pair("online", "true"));
@@ -78,20 +78,20 @@ RPCHooksBase::reportState(Session & session, FRT_RPCRequest * req)
         res.push_back(Pair("onlineState", "onlineSoon"));
     }
     if (session.getGen() < 0) {
-        if (badConfigsChanged)
-            res.push_back(Pair("badConfigs", badConfigs));
+        if (delayedConfigsChanged)
+            res.push_back(Pair("delayedConfigs", delayedConfigs));
         res.push_back(Pair("onlineDocs", make_string("%lu", numDocs)));
         session.setGen(0);
     } else if (changed) {
-        if (badConfigsChanged)
-            res.push_back(Pair("badConfigs", badConfigs));
+        if (delayedConfigsChanged)
+            res.push_back(Pair("delayedConfigs", delayedConfigs));
         res.push_back(Pair("onlineDocs", make_string("%lu", numDocs)));
         session.setGen(session.getGen() + 1);
     }
     if (numDocsChanged)
         session.setNumDocs(numDocs);
-    if (badConfigsChanged)
-        session.setBadConfigs(badConfigs);
+    if (delayedConfigsChanged)
+        session.setDelayedConfigs(delayedConfigs);
 
     FRT_Values &ret = *req->GetReturn();
     FRT_StringValue *k = ret.AddStringArray(res.size());
@@ -112,7 +112,7 @@ RPCHooksBase::reportState(Session & session, FRT_RPCRequest * req)
 RPCHooksBase::Session::Session()
     : _createTime(fastos::ClockSystem::now()),
       _numDocs(0u),
-      _badConfigs(),
+      _delayedConfigs(),
       _gen(-1),
       _down(false)
 {
