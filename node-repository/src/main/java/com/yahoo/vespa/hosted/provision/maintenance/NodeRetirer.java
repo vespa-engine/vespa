@@ -13,18 +13,24 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
  * @author freva
  */
 public class NodeRetirer extends Maintainer {
+    private static final Logger log = Logger.getLogger(NodeRetirer.class.getName());
     private final RetirementPolicy retirementPolicy;
 
     public NodeRetirer(NodeRepository nodeRepository, Zone zone, Duration interval, JobControl jobControl,
                        RetirementPolicy retirementPolicy, Zone... applies) {
         super(nodeRepository, interval, jobControl);
-        if (! Arrays.asList(applies).contains(zone)) deconstruct();
+        if (! Arrays.asList(applies).contains(zone)) {
+            String targetZones = Arrays.stream(applies).map(Zone::toString).collect(Collectors.joining(", "));
+            log.info("NodeRetirer should only run in " + targetZones + " and not in " + zone + ", stopping.");
+            deconstruct();
+        }
 
         this.retirementPolicy = retirementPolicy;
     }
