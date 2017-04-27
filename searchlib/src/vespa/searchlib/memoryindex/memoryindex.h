@@ -162,8 +162,7 @@ public:
         return _dictionary.getNumUniqueWords();
     }
 
-    void
-    wipeHistory(const index::Schema &schema);
+    void pruneRemovedFields(const index::Schema &schema);
 
     index::Schema::SP getWipeTimeSchema() const;
 

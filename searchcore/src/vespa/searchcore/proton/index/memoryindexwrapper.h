@@ -84,8 +84,8 @@ public:
         _index.commit(onWriteDone);
         _serialNum.store(serialNum, std::memory_order_relaxed);
     }
-    void wipeHistory(const search::index::Schema &schema)  override {
-        _index.wipeHistory(schema);
+    void pruneRemovedFields(const search::index::Schema &schema)  override {
+        _index.pruneRemovedFields(schema);
     }
     void flushToDisk(const vespalib::string &flushDir, uint32_t docIdLimit, SerialNum serialNum) override;
 };

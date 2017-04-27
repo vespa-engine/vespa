@@ -77,7 +77,7 @@ struct IMemoryIndex : public searchcorespi::IndexSearchable {
                              uint32_t docIdLimit,
                              search::SerialNum serialNum) = 0;
 
-    virtual void wipeHistory(const search::index::Schema &schema) = 0;
+    virtual void pruneRemovedFields(const search::index::Schema &schema) = 0;
     virtual search::index::Schema::SP getWipeTimeSchema() const = 0;
 };
 

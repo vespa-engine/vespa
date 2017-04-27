@@ -212,7 +212,7 @@ IndexMaintainer::updateIndexSchemas(IIndexCollection &coll,
         if (d == NULL) {
             IMemoryIndex *const m = dynamic_cast<IMemoryIndex *>(&is);
             if (m != NULL) {
-                m->wipeHistory(schema);
+                m->pruneRemovedFields(schema);
             }
             continue;
         }
@@ -871,7 +871,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
     sourceList->setCurrentIndex(_current_index_id);
     _source_list = std::move(sourceList);
     _fusion_spec = spec;
-    _ctx.getThreadingService().master().execute(makeLambdaTask([this,&config]() {internalWipeHistory(_schema, config.getSerialNum()); }));
+    _ctx.getThreadingService().master().execute(makeLambdaTask([this,&config]() {pruneRemovedFields(_schema, config.getSerialNum()); }));
     _ctx.getThreadingService().master().sync();
 }
 
@@ -1187,7 +1187,7 @@ void
 IndexMaintainer::setSchema(const Schema & schema, SerialNum serialNum)
 {
     assert(_ctx.getThreadingService().master().isCurrentThread());
-    internalWipeHistory(schema, serialNum);
+    pruneRemovedFields(schema, serialNum);
     IMemoryIndex::SP new_index(_operations.createMemoryIndex(schema, _current_serial_num));
     SetSchemaArgs args;
 
@@ -1202,7 +1202,7 @@ IndexMaintainer::setSchema(const Schema & schema, SerialNum serialNum)
 }
 
 void
-IndexMaintainer::internalWipeHistory(const Schema &schema, SerialNum wipeSerial)
+IndexMaintainer::pruneRemovedFields(const Schema &schema, SerialNum wipeSerial)
 {
     assert(_ctx.getThreadingService().master().isCurrentThread());
     ISearchableIndexCollection::SP new_source_list;

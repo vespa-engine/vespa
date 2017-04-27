@@ -257,7 +257,7 @@ MemoryIndex::getMemoryUsage() const
 }
 
 void
-MemoryIndex::wipeHistory(const Schema &schema)
+MemoryIndex::pruneRemovedFields(const Schema &schema)
 {
     LockGuard lock(_lock);
     if (_wipeTimeSchema.get() == NULL) {
