@@ -1063,6 +1063,7 @@
         <jersey2.version>2.23.2</jersey2.version>
         <jetty.version>9.4.4.v20170414</jetty.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <test.hide>true</test.hide>
     	<doclint>all</doclint>
         <scala.major-version>2.11</scala.major-version>
@@ -1077,6 +1078,7 @@
         <module>application-model</module>
         <module>application-preprocessor</module>
         <module>bundle-plugin</module>
+        <module>bundle-plugin-test</module>
         <module>chain</module>
         <module>clustercontroller-apps</module>
         <module>clustercontroller-apputil</module>
