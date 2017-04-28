@@ -3,23 +3,30 @@ package com.yahoo.processing.request.test;
 
 import com.yahoo.processing.request.properties.PropertyMap;
 import com.yahoo.processing.request.properties.PublicCloneable;
+import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author  bratseth
  */
-public class PropertyMapTestCase extends junit.framework.TestCase {
+public class PropertyMapTestCase {
 
-    public void testCloning() {
-        PropertyMap map=new PropertyMap();
-        map.set("clonable",new ClonableObject());
-        map.set("publicClonable",new PublicClonableObject());
-        map.set("nonclonable",new NonClonableObject());
-        map.set("clonableArray",new ClonableObject[] {new ClonableObject()});
-        map.set("publicClonableArray",new ClonableObject[] {new ClonableObject()});
-        map.set("nonclonableArray",new NonClonableObject[] {new NonClonableObject()});
+    @Test
+    public void testObjectCloning() {
+        PropertyMap map = new PropertyMap();
+        map.set("clonable", new ClonableObject());
+        map.set("publicClonable", new PublicClonableObject());
+        map.set("nonclonable", new NonClonableObject());
+        map.set("clonableArray", new ClonableObject[] {new ClonableObject()});
+        map.set("publicClonableArray", new ClonableObject[] {new ClonableObject()});
+        map.set("nonclonableArray", new NonClonableObject[] {new NonClonableObject()});
         map.set("clonableList", Collections.singletonList(new ClonableObject()));
         map.set("nonclonableList", Collections.singletonList(new NonClonableObject()));
         assertNotNull(map.get("clonable"));
@@ -35,6 +42,17 @@ public class PropertyMapTestCase extends junit.framework.TestCase {
         assertTrue(map.get("publicClonableArray") != mapClone.get("publicClonableArray"));
         assertTrue(first(map.get("publicClonableArray")) != first(mapClone.get("publicClonableArray")));
         assertTrue(first(map.get("nonclonableArray")) == first(mapClone.get("nonclonableArray")));
+    }
+    
+    @Test
+    public void testArrayCloning() {
+        PropertyMap map = new PropertyMap();
+        byte[] byteArray = new byte[] {2, 4, 7};
+        map.set("byteArray", byteArray);
+
+        PropertyMap mapClone = map.clone();
+        assertArrayEquals(byteArray, (byte[])mapClone.get("byteArray"));
+        assertTrue("Array was cloned", mapClone.get("byteArray") != byteArray);
     }
 
     private Object first(Object object) {
