@@ -52,10 +52,10 @@ public class OsgiLogServiceIntegrationTest {
         LogEntry entry = log.nextElement();
         assertNotNull(entry);
         System.err.println("log entry: "+entry.getMessage()+" bundle="+entry.getBundle());
+        assertEquals(expectedMessage, entry.getMessage());
         assertNull(entry.getBundle());
         assertNotNull(entry.getServiceReference());
         assertEquals(OsgiLogHandler.toServiceLevel(expectedLevel), entry.getLevel());
-        assertEquals(expectedMessage, entry.getMessage());
         assertEquals(expectedException, entry.getException());
         assertTrue(expectedTimeGE <= entry.getTime());
     }
