@@ -4,9 +4,9 @@
 
 #include "string.h"
 #include "taintable.h"
+#include "line_reader.h"
 #include <vespa/vespalib/io/mapped_file_input.h>
 #include <vespa/vespalib/data/input_reader.h>
-#include "line_reader.h"
 
 namespace vbench {
 
@@ -34,7 +34,7 @@ public:
      **/
     bool readLine(string &dst);
 
-    virtual const Taint &tainted() const override { return _taint; }
+    const Taint &tainted() const override { return _taint; }
 };
 
 } // namespace vbench

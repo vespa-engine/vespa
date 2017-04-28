@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/sync.h>
-
 #include "handler.h"
 #include "provider.h"
 #include "closeable.h"
+#include <vespa/vespalib/util/sync.h>
+#include <vector>
 
 namespace vbench {
 

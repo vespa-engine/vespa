@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <cstddef>
+
 namespace vbench {
 
 /**
@@ -21,4 +23,3 @@ public:
 };
 
 } // namespace vbench
-

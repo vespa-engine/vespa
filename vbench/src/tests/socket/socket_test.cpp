@@ -34,7 +34,7 @@ struct Agent {
 
 struct Client : public Agent, public vespalib::Runnable {
     Client(Stream::UP s) : Agent(std::move(s)) {}
-    virtual void run() override {
+    void run() override {
         TEST_THREAD("client");
         write("client-");
         read("server-");
@@ -43,7 +43,7 @@ struct Client : public Agent, public vespalib::Runnable {
 
 struct Server : public Agent, public vespalib::Runnable {
     Server(Stream::UP s) : Agent(std::move(s)) {}
-    virtual void run() override {
+    void run() override {
         TEST_THREAD("server");
         read("client-");
         write("server-");

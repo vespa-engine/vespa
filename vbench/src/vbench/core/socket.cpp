@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "socket.h"
 #include <vespa/vespalib/net/socket_options.h>
 #include <vespa/vespalib/net/socket_spec.h>
@@ -39,6 +38,8 @@ Socket::Socket(const string &host, int port)
         _socket.reset();
     }
 }
+
+Socket::~Socket() { }
 
 Memory
 Socket::obtain()

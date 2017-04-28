@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <vespa/fastos/time.h>
+
 namespace vbench {
 
 /**
