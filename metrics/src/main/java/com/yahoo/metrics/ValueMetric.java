@@ -109,7 +109,7 @@ public class ValueMetric<N extends Number>
     }
 
     private Value<N> getValues() {
-        return (Value<N>) values.get(getJoinBehavior());
+        return values.get(getJoinBehavior());
     }
 
     @Override
