@@ -126,7 +126,7 @@ public class OrchestratorUtil {
 
     public static ApplicationId toApplicationId(ApplicationInstanceReference appRef) {
 
-        String appNameStr = appRef.toString();
+        String appNameStr = appRef.asString();
         String[] appNameParts = appNameStr.split(":");
 
         // Env, region and instance seems to be optional due to the hardcoded config server app

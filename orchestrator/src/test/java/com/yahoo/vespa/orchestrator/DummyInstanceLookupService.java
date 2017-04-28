@@ -12,6 +12,7 @@ import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
+import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
 import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 
 import java.util.HashSet;

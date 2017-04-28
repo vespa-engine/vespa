@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.orchestrator;
+package com.yahoo.vespa.orchestrator.model;
 
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ClusterId;
@@ -11,6 +11,7 @@ import com.yahoo.vespa.applicationmodel.ServiceType;
 
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -39,6 +40,9 @@ public class VespaModelUtil {
     public static final ServiceType SEARCHNODE_SERVICE_TYPE = new ServiceType("searchnode");
     public static final ServiceType STORAGENODE_SERVICE_TYPE = new ServiceType("storagenode");
 
+    private static final Comparator<ServiceInstance<?>> CLUSTER_CONTROLLER_INDEX_COMPARATOR =
+            Comparator.comparing(serviceInstance -> VespaModelUtil.getClusterControllerIndex(serviceInstance.configId()));
+
     // @return true iff the service cluster refers to a cluster controller service cluster.
     public static boolean isClusterController(ServiceCluster<?> cluster) {
         return CLUSTER_CONTROLLER_SERVICE_TYPE.equals(cluster.serviceType());
@@ -66,26 +70,32 @@ public class VespaModelUtil {
     /**
      * @return The set of all Cluster Controller service instances for the application.
      */
-    public static <T> Set<ServiceInstance<T>> getClusterControllerInstances(ApplicationInstance<T> application,
-                                                                            ClusterId contentClusterId)
+    public static <T> List<HostName> getClusterControllerInstancesInOrder(ApplicationInstance<T> application,
+                                                                          ClusterId contentClusterId)
     {
         Set<ServiceCluster<T>> controllerClusters = getClusterControllerServiceClusters(application);
 
         Collection<ServiceCluster<T>> controllerClustersForContentCluster = filter(controllerClusters, contentClusterId);
 
+        Set<ServiceInstance<T>> clusterControllerInstances;
         if (controllerClustersForContentCluster.size() == 1) {
-            return first(controllerClustersForContentCluster).serviceInstances();
+            clusterControllerInstances = first(controllerClustersForContentCluster).serviceInstances();
         } else if (controllerClusters.size() == 1) {
             ServiceCluster<T> cluster = first(controllerClusters);
             log.warning("No cluster controller cluster for content cluster " + contentClusterId
                     + ", using the only cluster controller cluster available: " + cluster.clusterId());
 
-            return cluster.serviceInstances();
+            clusterControllerInstances = cluster.serviceInstances();
         } else {
             throw new RuntimeException("Failed getting cluster controller for content cluster " + contentClusterId +
                     ". Available clusters = " + controllerClusters +
                     ", matching clusters = " + controllerClustersForContentCluster);
         }
+
+        return clusterControllerInstances.stream()
+                .sorted(CLUSTER_CONTROLLER_INDEX_COMPARATOR)
+                .map(serviceInstance -> serviceInstance.hostName())
+                .collect(Collectors.toList());
     }
 
     private static <T> Collection<ServiceCluster<T>> filter(Set<ServiceCluster<T>> controllerClusters,
@@ -110,12 +120,10 @@ public class VespaModelUtil {
      */
     public static HostName getControllerHostName(ApplicationInstance<?> application, ClusterId contentClusterId) {
         //  It happens that the master Cluster Controller is the one with the lowest index, if up.
-        ServiceInstance<?> serviceInstance = getClusterControllerInstances(application, contentClusterId)
-                .stream()
-                .min(Comparator.comparing(instance -> getClusterControllerIndex(instance.configId())))
+        return getClusterControllerInstancesInOrder(application, contentClusterId).stream()
+                .findFirst()
                 .orElseThrow(() ->
                         new IllegalArgumentException("No cluster controllers found in application " + application));
-        return serviceInstance.hostName();
     }
 
     /**

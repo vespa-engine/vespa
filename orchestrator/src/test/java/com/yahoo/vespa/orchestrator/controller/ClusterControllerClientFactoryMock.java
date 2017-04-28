@@ -4,15 +4,14 @@ package com.yahoo.vespa.orchestrator.controller;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.orchestrator.DummyInstanceLookupService;
-import com.yahoo.vespa.orchestrator.VespaModelUtil;
+import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
 import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -50,7 +49,7 @@ public class ClusterControllerClientFactoryMock implements ClusterControllerClie
     }
 
     @Override
-    public ClusterControllerClient createClient(Collection<? extends ServiceInstance<?>> clusterControllers, String clusterName) {
+    public ClusterControllerClient createClient(List<HostName> clusterControllers, String clusterName) {
         return new ClusterControllerClient() {
 
             @Override

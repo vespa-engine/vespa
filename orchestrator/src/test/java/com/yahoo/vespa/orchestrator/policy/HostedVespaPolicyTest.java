@@ -12,19 +12,21 @@ import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.orchestrator.TestUtil;
-import com.yahoo.vespa.orchestrator.VespaModelUtil;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClient;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerState;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerStateResponse;
+import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
 import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 import org.junit.Test;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.orchestrator.TestUtil.makeServiceClusterSet;
 import static com.yahoo.vespa.orchestrator.TestUtil.makeServiceInstanceSet;
@@ -417,10 +419,12 @@ public class HostedVespaPolicyTest {
         // Verification phase.
 
         if (expectedNodeStateSentToClusterController.isPresent()) {
+            List<HostName> clusterControllers = CLUSTER_CONTROLLER_SERVICE_CLUSTER.serviceInstances().stream()
+                    .map(service -> service.hostName())
+                    .collect(Collectors.toList());
+            
             verify(clusterControllerClientFactory, times(1))
-                    .createClient(
-                            CLUSTER_CONTROLLER_SERVICE_CLUSTER.serviceInstances(),
-                            CONTENT_CLUSTER_NAME);
+                    .createClient(clusterControllers, CONTENT_CLUSTER_NAME);
             verify(client, times(1))
                     .setNodeState(
                             STORAGE_NODE_INDEX,

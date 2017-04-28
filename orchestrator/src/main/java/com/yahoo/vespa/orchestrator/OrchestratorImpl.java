@@ -13,6 +13,7 @@ import com.yahoo.vespa.orchestrator.controller.ClusterControllerClient;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerState;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerStateResponse;
+import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
@@ -294,7 +295,7 @@ public class OrchestratorImpl implements Orchestrator {
                 contentClusterIds,application.applicationInstanceId(),state));
         for (ClusterId clusterId : contentClusterIds) {
             ClusterControllerClient client = clusterControllerClientFactory.createClient(
-                    VespaModelUtil.getClusterControllerInstances(application, clusterId),
+                    VespaModelUtil.getClusterControllerInstancesInOrder(application, clusterId),
                     clusterId.s());
             try {
                 ClusterControllerStateResponse response = client.setApplicationState(state);
