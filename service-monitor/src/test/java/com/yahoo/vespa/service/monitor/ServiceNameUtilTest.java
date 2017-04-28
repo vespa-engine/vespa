@@ -32,6 +32,7 @@ public class ServiceNameUtilTest {
     }
 
     @SafeVarargs
+    @SuppressWarnings("varargs")
     private static <T> Set<T> setOf(T... t) {
         return new HashSet<>(Arrays.asList(t));
     }
