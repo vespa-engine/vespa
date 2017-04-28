@@ -205,7 +205,7 @@ public abstract class Expression extends Selectable {
         return expression.execute(new SimpleAdapterFactory(), doc);
     }
     public static final DocumentUpdate execute(Expression expression, DocumentUpdate update) {
-        return expression.execute(expression, new SimpleAdapterFactory(), update);
+        return execute(expression, new SimpleAdapterFactory(), update);
     }
     public final FieldValue execute() {
         return execute(new ExecutionContext());

@@ -12,7 +12,7 @@ import static org.junit.Assert.*;
 /**
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
-@SuppressWarnings({ "unchecked" })
+@SuppressWarnings({ "unchecked", "rawtypes" })
 public class DocumentTestCase {
 
     @Test

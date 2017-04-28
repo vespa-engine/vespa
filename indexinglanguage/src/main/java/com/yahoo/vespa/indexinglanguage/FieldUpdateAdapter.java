@@ -12,6 +12,7 @@ import java.util.*;
 /**
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
+@SuppressWarnings("rawtypes")
 public class FieldUpdateAdapter implements UpdateAdapter {
 
     private final DocumentAdapter adapter;

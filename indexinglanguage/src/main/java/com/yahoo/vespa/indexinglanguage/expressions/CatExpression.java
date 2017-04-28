@@ -137,7 +137,7 @@ public class CatExpression extends ExpressionList<Expression> {
         }
     }
 
-    @SuppressWarnings({ "unchecked" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     private static FieldValue asArray(ArrayDataType arrType, List<FieldValue> values) {
         Array out = arrType.createFieldValue();
         for (FieldValue val : values) {
@@ -149,7 +149,7 @@ public class CatExpression extends ExpressionList<Expression> {
         return out;
     }
 
-    @SuppressWarnings({ "unchecked" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     private static FieldValue asWset(WeightedSetDataType wsetType, List<FieldValue> values) {
         WeightedSet out = wsetType.createFieldValue();
         for (FieldValue val : values) {

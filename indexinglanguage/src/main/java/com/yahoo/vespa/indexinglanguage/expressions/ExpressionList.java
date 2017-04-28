@@ -49,6 +49,7 @@ public abstract class ExpressionList<T extends Expression> extends CompositeExpr
     }
 
     @Override
+    @SuppressWarnings("rawtypes")
     public boolean equals(Object obj) {
         if (!(obj instanceof ExpressionList)) {
             return false;
