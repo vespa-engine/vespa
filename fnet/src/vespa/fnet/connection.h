@@ -7,10 +7,10 @@
 #include "context.h"
 #include "channellookup.h"
 #include "packetqueue.h"
+#include <vespa/vespalib/net/socket_handle.h>
 
 class FNET_IPacketStreamer;
 class FNET_IServerAdapter;
-class FastOS_SocketInterface;
 class FNET_IPacketHandler;
 
 /**
@@ -80,7 +80,7 @@ private:
     FNET_IPacketStreamer    *_streamer;        // custom packet streamer
     FNET_IServerAdapter     *_serverAdapter;   // only on server side
     FNET_Channel            *_adminChannel;    // only on client side
-    FastOS_SocketInterface  *_socket;          // socket for this conn
+    vespalib::SocketHandle   _socket;          // socket for this conn
     FNET_Context             _context;         // connection context
     State                    _state;           // connection state
     Flags                    _flags;           // Packed flags.
@@ -213,13 +213,13 @@ public:
      * @param owner the TransportThread object serving this connection
      * @param streamer custom packet streamer
      * @param serverAdapter object for custom channel creation
-     * @param mySocket the underlying socket used for IO
+     * @param socket the underlying socket used for IO
      * @param spec listen spec
      **/
     FNET_Connection(FNET_TransportThread *owner,
                     FNET_IPacketStreamer *streamer,
                     FNET_IServerAdapter *serverAdapter,
-                    FastOS_SocketInterface *mySocket,
+                    vespalib::SocketHandle socket,
                     const char *spec);
 
     /**
@@ -231,7 +231,7 @@ public:
      * @param adminHandler packet handler for admin channel
      * @param adminContext context for admin channel
      * @param context initial context for this connection
-     * @param mySocket the underlying socket used for IO
+     * @param socket the underlying socket used for IO
      * @param spec connect spec
      **/
     FNET_Connection(FNET_TransportThread *owner,
@@ -240,7 +240,7 @@ public:
                     FNET_IPacketHandler *adminHandler,
                     FNET_Context adminContext,
                     FNET_Context context,
-                    FastOS_SocketInterface *mySocket,
+                    vespalib::SocketHandle socket,
                     const char *spec);
 
     /**

@@ -3,11 +3,10 @@
 #pragma once
 
 #include "iocomponent.h"
+#include <vespa/vespalib/net/server_socket.h>
 
-class FastOS_ServerSocket;
 class FNET_IPacketStreamer;
 class FNET_IServerAdapter;
-class FastOS_SocketFactory;
 
 /**
  * Class used to listen for incoming connections on a single TCP/IP
@@ -18,8 +17,7 @@ class FNET_Connector : public FNET_IOComponent
 private:
     FNET_IPacketStreamer  *_streamer;
     FNET_IServerAdapter   *_serverAdapter;
-    FastOS_ServerSocket   *_serverSocket;
-    bool                   _strict;
+    vespalib::ServerSocket _server_socket;
 
     FNET_Connector(const FNET_Connector &);
     FNET_Connector &operator=(const FNET_Connector &);
@@ -32,20 +30,13 @@ public:
      * @param streamer custom packet streamer
      * @param serverAdapter object for custom channel creation
      * @param spec listen spec for this connector
-     * @param port the port to listen on
-     * @param backlog accept queue length
-     * @param factory custom socket factory
-     * @param strictBindHostName bind strict to given hostname
+     * @param server_socket the underlying server socket
      **/
     FNET_Connector(FNET_TransportThread *owner,
                    FNET_IPacketStreamer *streamer,
                    FNET_IServerAdapter *serverAdapter,
                    const char *spec,
-                   int port, int backlog = 500,
-                   FastOS_SocketFactory *factory = nullptr,
-                   const char *strictBindHostName = nullptr);
-    ~FNET_Connector();
-
+                   vespalib::ServerSocket server_socket);
 
     /**
      * Obtain the port number of the underlying server socket.
@@ -53,15 +44,6 @@ public:
      * @return port number
      **/
     uint32_t GetPortNumber() const;
-
-    /**
-     * Try to create a listening server socket at the port number
-     * specified in the constructor. The socket is set to
-     * non-blocking.
-     *
-     * @return true on success, false on fail
-     **/
-    bool Init();
 
     /**
      * Close this connector. This method must be called in the transport

@@ -68,41 +68,39 @@ public:
 
 //-----------------------------------------------------------------------------
 
-template <typename Handler>
+template <typename Context>
 class Selector
 {
 private:
-    Handler    &_handler;
     Epoll       _epoll;
     WakeupPipe  _wakeup_pipe;
     EpollEvents _events;
 public:
-    using Context = typename Handler::context_type;
-    Selector(Handler &handler, size_t max_events)
-        : _handler(handler), _epoll(), _wakeup_pipe(), _events(max_events)
+    Selector()
+        : _epoll(), _wakeup_pipe(), _events(4096)
     {
         _epoll.add(_wakeup_pipe.get_read_fd(), nullptr, true, false);    
     }
     ~Selector() {
         _epoll.remove(_wakeup_pipe.get_read_fd());
     }
-    void add(Context &ctx, bool write_enabled) { _epoll.add(_handler.get_fd(ctx), &ctx, true, write_enabled); }
-    void enable_write(Context &ctx) { _epoll.update(_handler.get_fd(ctx), &ctx, true, true); }
-    void disable_write(Context &ctx) { _epoll.update(_handler.get_fd(ctx), &ctx, true, false); }
-    void remove(Context &ctx) { _epoll.remove(_handler.get_fd(ctx)); }
+    void add(int fd, Context &ctx, bool read, bool write) { _epoll.add(fd, &ctx, read, write); }
+    void update(int fd, Context &ctx, bool read, bool write) { _epoll.update(fd, &ctx, read, write); }
+    void remove(int fd) { _epoll.remove(fd); }
     void wakeup() { _wakeup_pipe.write_token(); }
     void poll(int timeout_ms) { _events.extract(_epoll, timeout_ms); }
     size_t num_events() const { return _events.size(); }
-    void dispatch() {
+    template <typename Handler>
+    void dispatch(Handler &handler) {
         for (const auto &evt: _events) {
             if (evt.data.ptr == nullptr) {
                 _wakeup_pipe.read_tokens();
-                _handler.handle_wakeup();
+                handler.handle_wakeup();
             } else {
                 Context &ctx = *((Context *)(evt.data.ptr));
                 bool read = ((evt.events & (EPOLLIN  | EPOLLERR | EPOLLHUP)) != 0);
                 bool write = ((evt.events & (EPOLLOUT  | EPOLLERR | EPOLLHUP)) != 0);
-                _handler.handle_event(ctx, read, write);
+                handler.handle_event(ctx, read, write);
             }
         }
     }
