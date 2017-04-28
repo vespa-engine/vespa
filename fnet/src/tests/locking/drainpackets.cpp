@@ -2,15 +2,13 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/fnet/fnet.h>
 
-
 class MyPacket : public FNET_Packet
 {
 public:
-  uint32_t GetPCODE()  override { return 0; }
+  uint32_t  GetPCODE() override { return 0; }
   uint32_t GetLength() override { return 0; }
   void Encode(FNET_DataBuffer *) override {}
-  bool Decode(FNET_DataBuffer *, uint32_t) override
-  { return true; }
+  bool Decode(FNET_DataBuffer *, uint32_t) override { return true; }
 };
 
 
