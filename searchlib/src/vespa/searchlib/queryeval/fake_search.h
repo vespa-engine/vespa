@@ -34,12 +34,11 @@ public:
     {
         assert(_tfmda.size() == 1);
     }
-    virtual void doSeek(uint32_t docid) override;
-    virtual void doUnpack(uint32_t docid) override;
-    virtual const PostingInfo *getPostingInfo() const override { return _result.postingInfo(); }
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    void doSeek(uint32_t docid) override;
+    void doUnpack(uint32_t docid) override;
+    const PostingInfo *getPostingInfo() const override { return _result.postingInfo(); }
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 };
 
 } // namespace queryeval
 } // namespace search
-

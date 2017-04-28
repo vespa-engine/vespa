@@ -542,7 +542,7 @@ class FindSource : public Blueprint::IPredicate
 {
 public:
     FindSource(uint32_t sourceId) : _sourceId(sourceId) { }
-    virtual bool check(const Blueprint & bp) const override { return bp.getSourceId() == _sourceId; }
+    bool check(const Blueprint & bp) const override { return bp.getSourceId() == _sourceId; }
 private:
     uint32_t _sourceId;
 };

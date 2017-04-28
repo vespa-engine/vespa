@@ -3,7 +3,6 @@
 #pragma once
 
 #include "multi_value_mapping.h"
-#include <vespa/vespalib/stllike/string.h>
 #include "attributevector.h"
 
 namespace search {
@@ -48,7 +47,7 @@ protected:
      * Can be overridden by subclasses that need to resize structures as a result of this.
      * Should return true if underlying structures were resized.
      **/
-    virtual bool onAddDoc(DocId doc) override { (void) doc; return false; }
+    bool onAddDoc(DocId doc) override { (void) doc; return false; }
 
     AddressSpace getMultiValueAddressSpaceUsage() const override;
 
@@ -74,4 +73,3 @@ public:
 };
 
 } // namespace search
-
