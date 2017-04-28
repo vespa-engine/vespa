@@ -2,7 +2,6 @@
 
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storageframework/defaultimplementation/memory/memorystate.h>
-#include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -12,8 +11,6 @@ namespace defaultimplementation {
 
 struct MemoryStateTest : public CppUnit::TestFixture
 {
-    void setUp() override {}
-    void tearDown() override {}
 
     void testBasics();
 
@@ -30,15 +27,15 @@ private:
     std::map<std::string, framework::MemoryAllocationType> _types;
 
 public:
-    virtual void setMaximumMemoryUsage(uint64_t max) override { (void) max; }
+    void setMaximumMemoryUsage(uint64_t max) override { (void) max; }
 
-    virtual const framework::MemoryAllocationType&
+    const framework::MemoryAllocationType&
     registerAllocationType(const framework::MemoryAllocationType& type) override {
         _types[type.getName()] = type;
         return _types[type.getName()];
     }
 
-    virtual const framework::MemoryAllocationType&
+    const framework::MemoryAllocationType&
     getAllocationType(const std::string& name) const override {
         std::map<std::string, framework::MemoryAllocationType>::const_iterator iter =
             _types.find(name);
@@ -50,8 +47,7 @@ public:
         return iter->second;
     }
 
-    virtual std::vector<const MemoryAllocationType*> getAllocationTypes() const override
-    {
+    std::vector<const MemoryAllocationType*> getAllocationTypes() const override {
         std::vector<const MemoryAllocationType*> types;
         for(std::map<std::string, framework::MemoryAllocationType>
                 ::const_iterator it = _types.begin(); it != _types.end(); ++it)

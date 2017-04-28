@@ -13,9 +13,6 @@ namespace defaultimplementation {
 
 struct TickingThreadTest : public CppUnit::TestFixture
 {
-    void setUp() override {}
-    void tearDown() override {}
-
     void testTicksBeforeWaitBasic();
     void testTicksBeforeWaitLiveUpdate();
     void testDestroyWithoutStarting();
@@ -62,7 +59,7 @@ struct MyApp : public TickingThread {
 
     void start(ThreadPool& p) { _threadPool->start(p); }
 
-    virtual ThreadWaitInfo doCriticalTick(ThreadIndex index) override {
+    ThreadWaitInfo doCriticalTick(ThreadIndex index) override {
         assert(index < _context.size());
         Context& c(_context[index]);
         if (_doCritOverlapTest) {
@@ -74,13 +71,12 @@ struct MyApp : public TickingThread {
         ++c._critTickCount;
         return ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
     }
-    virtual ThreadWaitInfo doNonCriticalTick(ThreadIndex index) override {
+    ThreadWaitInfo doNonCriticalTick(ThreadIndex index) override {
         assert(index < _context.size());
         Context& c(_context[index]);
         ++c._nonCritTickCount;
         return ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
     }
-
     uint64_t getMinCritTick() {
         uint64_t min = std::numeric_limits<uint64_t>().max();
         for (uint32_t i=0; i<_context.size(); ++i) {
@@ -314,7 +310,7 @@ struct BroadcastApp : public TickingThread {
 
     void start(ThreadPool& p) { _threadPool->start(p); }
 
-    virtual ThreadWaitInfo doCriticalTick(ThreadIndex) override {
+    ThreadWaitInfo doCriticalTick(ThreadIndex) override {
         if (!_queue.empty()) {
             for (uint32_t i=0; i<_queue.size(); ++i) {
                 printTaskInfo(_queue[i], "activating");
@@ -325,7 +321,7 @@ struct BroadcastApp : public TickingThread {
         }
         return ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
     }
-    virtual ThreadWaitInfo doNonCriticalTick(ThreadIndex) override {
+    ThreadWaitInfo doNonCriticalTick(ThreadIndex) override {
         if (!_active.empty()) {
             for (uint32_t i=0; i<_active.size(); ++i) {
                 printTaskInfo(_queue[i], "processing");
