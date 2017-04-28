@@ -2,6 +2,9 @@
 
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/fastos/app.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("rpc_proxy");
 //-----------------------------------------------------------------------------
 
 struct Session

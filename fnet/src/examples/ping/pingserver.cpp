@@ -4,6 +4,9 @@
 #include <examples/ping/packets.h>
 #include <vespa/fastos/app.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("pingserver");
+
 class PingServer : public FNET_IServerAdapter,
                    public FNET_IPacketHandler,
                    public FastOS_Application

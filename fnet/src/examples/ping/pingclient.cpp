@@ -4,6 +4,9 @@
 #include <examples/ping/packets.h>
 #include <vespa/fastos/app.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("pingclient");
+
 class PingClient : public FastOS_Application
 {
 public:

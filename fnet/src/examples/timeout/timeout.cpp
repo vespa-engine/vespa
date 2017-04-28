@@ -3,6 +3,9 @@
 #include <vespa/fnet/fnet.h>
 #include <vespa/fastos/app.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("timeout");
+
 class Timeout : public FNET_Task
 {
 private:

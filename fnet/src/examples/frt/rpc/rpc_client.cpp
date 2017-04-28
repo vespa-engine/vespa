@@ -3,6 +3,9 @@
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/fastos/app.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("rpc_client");
+
 class RPCClient : public FastOS_Application
 {
 public:

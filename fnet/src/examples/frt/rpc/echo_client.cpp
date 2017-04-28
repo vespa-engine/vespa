@@ -3,6 +3,9 @@
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/fastos/app.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("echo_client");
+
 class EchoClient : public FastOS_Application
 {
 public:
