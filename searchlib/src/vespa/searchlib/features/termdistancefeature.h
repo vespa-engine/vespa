@@ -37,7 +37,7 @@ public:
     TermDistanceExecutor(const fef::IQueryEnvironment & env,
                          const TermDistanceParams & params);
     void execute(uint32_t docId) override;
-     bool valid() const;
+    bool valid() const;
 };
 
 

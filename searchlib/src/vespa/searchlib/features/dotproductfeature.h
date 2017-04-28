@@ -157,7 +157,7 @@ protected:
     const A * _attribute;
 private:
     size_t getAttributeValues(uint32_t docid, const AT * & count) override;
- public:
+public:
     DotProductExecutor(const A * attribute, const V & queryVector);
     ~DotProductExecutor();
 };
