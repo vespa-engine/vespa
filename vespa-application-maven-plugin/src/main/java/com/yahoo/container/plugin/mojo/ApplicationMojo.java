@@ -108,7 +108,7 @@ public class ApplicationMojo extends AbstractMojo {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> List<T> emptyListIfNull(List modules) {
+    private <T> List<T> emptyListIfNull(List<T> modules) {
         return modules == null ?
                 Collections.emptyList():
                 modules;
