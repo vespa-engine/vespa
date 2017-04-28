@@ -15,6 +15,7 @@ struct IBucketStateCalculator
     virtual bool clusterUp() const = 0;
     virtual bool nodeUp() const = 0;
     virtual bool nodeInitializing() const = 0;
+    virtual bool nodeRetired() const = 0;
     virtual ~IBucketStateCalculator() {}
 };
 

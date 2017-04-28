@@ -32,28 +32,24 @@ public:
     {
     }
 
-    virtual bool
-    shouldBeReady(const document::BucketId &bucket) const override
-    {
+    bool shouldBeReady(const document::BucketId &bucket) const override {
         return _calc.shouldBeReady(Bucket(bucket, PartitionId(0)));
     }
 
-    virtual bool
-    clusterUp(void) const override
-    {
+    bool clusterUp() const override {
         return _calc.clusterUp();
     }
 
-    virtual bool
-    nodeUp(void) const override
-    {
+    bool nodeUp() const override {
         return _calc.nodeUp();
     }
 
-    virtual bool
-    nodeInitializing() const override
-    {
+    bool nodeInitializing() const override {
         return _calc.nodeInitializing();
+    }
+
+    bool nodeRetired() const override {
+        return _calc.nodeRetired();
     }
 };
 

@@ -18,12 +18,14 @@ struct ClusterStateTest : public CppUnit::TestFixture {
     CPPUNIT_TEST(testNodeUp);
     CPPUNIT_TEST(testNodeInitializing);
     CPPUNIT_TEST(testReady);
+    CPPUNIT_TEST(can_infer_own_node_retired_state);
     CPPUNIT_TEST_SUITE_END();
 
     void testClusterUp();
     void testNodeUp();
     void testNodeInitializing();
     void testReady();
+    void can_infer_own_node_retired_state();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(ClusterStateTest);
@@ -220,6 +222,32 @@ ClusterStateTest::testReady()
         ClusterState state(s2, i, d);
         CPPUNIT_ASSERT_EQUAL(i == 2, state.shouldBeReady(b));
     }
+}
+
+namespace {
+
+bool
+node_marked_as_retired_in_state(const std::string& stateStr,
+                                const lib::Distribution& d,
+                                uint16_t node)
+{
+    lib::ClusterState s(stateStr);
+    ClusterState state(s, node, d);
+    return state.nodeRetired();
+}
+
+}
+
+void ClusterStateTest::can_infer_own_node_retired_state() {
+    lib::Distribution d(lib::Distribution::getDefaultDistributionConfig(3, 3));
+
+    CPPUNIT_ASSERT(!node_marked_as_retired_in_state("distributor:3 storage:3", d, 0));
+    CPPUNIT_ASSERT(!node_marked_as_retired_in_state("distributor:3 storage:3 .0.s:i", d, 0));
+    CPPUNIT_ASSERT(!node_marked_as_retired_in_state("distributor:3 storage:3 .0.s:d", d, 0));
+    CPPUNIT_ASSERT(!node_marked_as_retired_in_state("distributor:3 storage:3 .0.s:m", d, 0));
+    CPPUNIT_ASSERT(node_marked_as_retired_in_state("distributor:3 storage:3 .0.s:r", d, 0));
+    CPPUNIT_ASSERT(!node_marked_as_retired_in_state("distributor:3 storage:3 .0.s:r", d, 1));
+    CPPUNIT_ASSERT(!node_marked_as_retired_in_state("distributor:3 storage:3 .1.s:r", d, 0));
 }
 
 } // spi
