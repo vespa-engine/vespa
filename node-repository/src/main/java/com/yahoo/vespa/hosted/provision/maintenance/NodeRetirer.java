@@ -70,7 +70,7 @@ public class NodeRetirer extends Maintainer {
     boolean limitedPark(Set<Node> nodesToPark, long limit) {
         nodesToPark.stream()
                 .limit(limit)
-                .forEach(node -> nodeRepository().park(node.hostname(), Agent.NodeRetirer, "Parked by NodeRetirer, Policy: " + retirementPolicy.getClass().getSimpleName()));
+                .forEach(node -> nodeRepository().park(node.hostname(), Agent.NodeRetirer, "Policy: " + retirementPolicy.getClass().getSimpleName()));
 
         return limit >= nodesToPark.size();
     }
