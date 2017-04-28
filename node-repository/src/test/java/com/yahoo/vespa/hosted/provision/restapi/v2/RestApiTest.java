@@ -23,6 +23,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
+ * Test of the nodes/v2 API.
+ * 
+ * Note: This class is referenced from our operations documentation and must not be renamed/moved without updating that.
+ * 
  * @author bratseth
  */
 public class RestApiTest {
@@ -100,7 +104,7 @@ public class RestApiTest {
 
         // PUT nodes ready
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/host8.yahoo.com",
-                        new byte[0], Request.Method.PUT),
+                       new byte[0], Request.Method.PUT),
                 "{\"message\":\"Moved host8.yahoo.com to dirty\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host8.yahoo.com",
                                    new byte[0], Request.Method.PUT),

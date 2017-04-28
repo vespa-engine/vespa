@@ -5,6 +5,7 @@ package com.yahoo.config.provision;
  *
  * Exception thrown when we are unable to fulfill the request due to
  * having too few nodes (of the specified flavor)
+ * 
  * @author hmusum
  *
  */

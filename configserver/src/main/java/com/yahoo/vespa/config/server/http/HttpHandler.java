@@ -49,10 +49,10 @@ public class HttpHandler extends LoggingRequestHandler {
             return HttpErrorResponse.notFoundError(getMessage(e, request));
         } catch (BadRequestException | IllegalArgumentException | IllegalStateException e) {
             return HttpErrorResponse.badRequest(getMessage(e, request));
-        } catch (InvalidApplicationException e) {
-            return HttpErrorResponse.invalidApplicationPackage(getMessage(e, request));
         } catch (OutOfCapacityException e) {
             return HttpErrorResponse.outOfCapacity(getMessage(e, request));
+        } catch (InvalidApplicationException e) {
+            return HttpErrorResponse.invalidApplicationPackage(getMessage(e, request));
         } catch (InternalServerException e) {
             return HttpErrorResponse.internalServerError(getMessage(e, request));
         } catch (UnknownVespaVersionException e) {
@@ -62,7 +62,7 @@ public class HttpHandler extends LoggingRequestHandler {
         } catch (ApplicationLockException e) {
             return HttpErrorResponse.applicationLockFailure(getMessage(e, request));
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(LogLevel.WARNING, "Unexpected exception handling a config server request", e);
             return HttpErrorResponse.internalServerError(getMessage(e, request));
         }
     }
@@ -75,16 +75,14 @@ public class HttpHandler extends LoggingRequestHandler {
     }
 
     private String getMessage(Exception e, HttpRequest request) {
-        String message;
         if (request.getBooleanProperty("debug")) {
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
             e.printStackTrace(pw);
-            message = sw.toString();
+            return sw.toString();
         } else {
-            message = Exceptions.toMessageString(e);
+            return Exceptions.toMessageString(e);
         }
-        return message;
     }
 
     /**
