@@ -116,6 +116,7 @@ public class BundleIT {
         assertThat(webInfUrl, containsString("/WEB-INF/web.xml"));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void bundle_class_path_mappings_are_generated() throws URISyntaxException {
         URL mappingsUrl = getClass().getResource("/" + ProjectBundleClassPaths.classPathMappingsFileName());
