@@ -18,6 +18,7 @@ import static com.yahoo.jdisc.Response.Status.*;
  * @since 5.1
  */
 public class HttpErrorResponse extends HttpResponse {
+
     private static final Logger log = Logger.getLogger(HttpErrorResponse.class.getName());
     private final Slime slime = new Slime();
 
@@ -88,4 +89,5 @@ public class HttpErrorResponse extends HttpResponse {
     public String getContentType() {
         return HttpConfigResponse.JSON_CONTENT_TYPE;
     }
+
 }

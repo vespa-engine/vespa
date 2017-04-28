@@ -13,4 +13,5 @@ public class InvalidApplicationException extends RuntimeException {
     public InvalidApplicationException(String message, Throwable e) {
         super(message, e);
     }
+
 }

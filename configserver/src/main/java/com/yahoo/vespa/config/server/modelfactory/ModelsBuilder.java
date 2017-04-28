@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
@@ -57,22 +58,25 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                               .distinct()
                                               .sorted(Comparator.reverseOrder())
                                               .collect(Collectors.toList());
+
         List<MODELRESULT> allApplicationModels = new ArrayList<>();
         for (int i = 0; i < majorVersions.size(); i++) {
             try {
                 allApplicationModels.addAll(buildModelVersion(filterByMajorVersion(majorVersions.get(i), versions),
                                                               applicationId, wantedNodeVespaVersion, applicationPackage));
 
-                    // skip old config models after we have found a major version which works
-                    if (allApplicationModels.size() > 0 && allApplicationModels.get(0).getModel().skipOldConfigModels())
-                        break;
+                // skip old config models if requested after we have found a major version which works
+                if (allApplicationModels.size() > 0 && allApplicationModels.get(0).getModel().skipOldConfigModels())
+                    break;
             }
-            catch (RuntimeException e) { // TODO: Make this a specialized exception
+            catch (OutOfCapacityException e) {
+                // Don't wrap this exception, and don't try to load other model versions as this is (most likely)
+                // caused by the state of the system, not the model version/application combination
+                throw e;
+            }
+            catch (RuntimeException e) {
                 boolean isOldestMajor = i == majorVersions.size() - 1;
                 if (isOldestMajor) {
-                    if (e instanceof NoSuchElementException && "No value present".equals(e.getMessage())) {
-                        e.printStackTrace();
-                    }
                     throw new IllegalArgumentException(applicationId + ": Error loading model", e);
                 } else {
                     log.log(Level.INFO, applicationId + ": Skipping major version " + majorVersions.get(i), e);
