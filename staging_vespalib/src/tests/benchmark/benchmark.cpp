@@ -2,6 +2,9 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include "testbase.h"
 
+#include <vespa/log/log.h>
+LOG_SETUP("benchmark_test");
+
 using namespace vespalib;
 
 TEST_SETUP(Test)
