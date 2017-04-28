@@ -11,7 +11,7 @@ public class CertificateM implements Callable<Integer> {
     @Override
     @SuppressWarnings({ "unchecked" })
     public Integer call() throws Exception {
-        Class certClass = Class.forName("com.yahoo.jdisc.bundle.l.CertificateL");
+        Class<?> certClass = Class.forName("com.yahoo.jdisc.bundle.l.CertificateL");
         Callable<Integer> cert = (Callable<Integer>)certClass.newInstance();
         return cert.call();
     }

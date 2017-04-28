@@ -55,7 +55,7 @@ public class ClientDriverIntegrationTest {
             }
             try {
                 List<Bundle> bundles = installer.installAndStart("cert-a.jar");
-                Class classObj = bundles.get(0).loadClass("com.yahoo.jdisc.bundle.a.CertificateA");
+                Class<?> classObj = bundles.get(0).loadClass("com.yahoo.jdisc.bundle.a.CertificateA");
                 log.info("Loaded '" + classObj.getName() + "'.");
             } catch (Exception e) {
                 throw new AssertionError(e);

@@ -33,7 +33,7 @@ public class OsgiLogServiceIntegrationTest {
         long now = System.currentTimeMillis();
         TestDriver driver = TestDriver.newApplicationBundleInstance("app-h-log.jar", false);
         BundleContext ctx = driver.osgiFramework().bundleContext();
-        ServiceReference ref = ctx.getServiceReference(LogReaderService.class.getName());
+        ServiceReference<?> ref = ctx.getServiceReference(LogReaderService.class.getName());
         LogReaderService reader = (LogReaderService)ctx.getService(ref);
         Enumeration<LogEntry> log = (Enumeration<LogEntry>)reader.getLog();
 

@@ -194,7 +194,7 @@ public class FelixFrameworkIntegrationTest {
 
     @SuppressWarnings({ "unchecked" })
     private static int callClass(Bundle bundle, String className) throws Exception {
-        Class certClass = bundle.loadClass(className);
+        Class<?> certClass = bundle.loadClass(className);
         assertNotNull(certClass);
         Callable<Integer> cert = (Callable<Integer>)certClass.newInstance();
         assertNotNull(cert);

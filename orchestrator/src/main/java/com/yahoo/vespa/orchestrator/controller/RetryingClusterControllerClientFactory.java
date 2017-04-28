@@ -39,7 +39,7 @@ public class RetryingClusterControllerClientFactory implements ClusterController
     public ClusterControllerClient createClient(Collection<? extends ServiceInstance<?>> clusterControllers,
                                                 String clusterName) {
         Set<HostName> hostNames = clusterControllers.stream()
-                .map(ServiceInstance::hostName)
+                .map(s -> s.hostName())
                 .collect(Collectors.toSet());
         JaxRsStrategy<ClusterControllerJaxRsApi> jaxRsApi
                 = new JaxRsStrategyFactory(hostNames, HARDCODED_CLUSTERCONTROLLER_PORT, jaxRsClientFactory)

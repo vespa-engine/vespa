@@ -32,8 +32,8 @@ public class CertificateK {
     private final com.yahoo.jdisc.application.AbstractApplication application = null;
     private final com.yahoo.jdisc.handler.AbstractRequestHandler handler = null;
     private final com.yahoo.jdisc.service.AbstractClientProvider client = null;
-    private final com.yahoo.yolean.chain.Chain chain = null;
-    private final com.yahoo.yolean.concurrent.ThreadRobustList robustList = null;
+    private final com.yahoo.yolean.chain.Chain<?> chain = null;
+    private final com.yahoo.yolean.concurrent.ThreadRobustList<?> robustList = null;
     private final com.yahoo.yolean.trace.TraceNode traceNode = null;
     private final com.sun.security.auth.LdapPrincipal principal = null;
     private final com.sun.security.auth.module.JndiLoginModule jndiLoginModule = null;
@@ -57,7 +57,7 @@ public class CertificateK {
     private final javax.lang.model.SourceVersion sourceVersion = null;
     private final javax.lang.model.element.AnnotationMirror annotationMirror = null;
     private final javax.lang.model.type.ArrayType arrayType = null;
-    private final javax.lang.model.util.AbstractAnnotationValueVisitor6 abstractAnnotationValueVisitor6 = null;
+    private final javax.lang.model.util.AbstractAnnotationValueVisitor6<?,?> abstractAnnotationValueVisitor6 = null;
     private final javax.management.Attribute attribute = null;
     private final javax.management.loading.ClassLoaderRepository classLoaderRepository = null;
     private final javax.management.modelmbean.DescriptorSupport descriptorSupport = null;
@@ -120,7 +120,7 @@ public class CertificateK {
     private final javax.transaction.xa.XAException xaException = null;
     private final javax.xml.XMLConstants xmlConstants = null;
     private final javax.xml.bind.DataBindingException dataBindingException = null;
-    private final javax.xml.bind.annotation.DomHandler domHandler = null;
+    private final javax.xml.bind.annotation.DomHandler<?,?> domHandler = null;
     private final javax.xml.bind.annotation.adapters.CollapsedStringAdapter collapsedStringAdapter = null;
     private final javax.xml.bind.attachment.AttachmentMarshaller attachmentMarshaller = null;
     private final javax.xml.bind.helpers.AbstractMarshallerImpl abstractMarshaller = null;
@@ -198,7 +198,7 @@ public class CertificateK {
     private final org.osgi.service.packageadmin.ExportedPackage pkg = null;
     private final org.osgi.service.startlevel.StartLevel level = null;
     private final org.osgi.service.url.URLConstants constants = null;
-    private final org.osgi.util.tracker.BundleTracker tracker = null;
+    private final org.osgi.util.tracker.BundleTracker<?> tracker = null;
     private final org.slf4j.ILoggerFactory loggerFactory = null;
     private final org.slf4j.spi.LocationAwareLogger locationAwareLogger = null;
     private final org.slf4j.helpers.BasicMarker basicMarker = null;
@@ -216,7 +216,10 @@ public class CertificateK {
     private final org.xml.sax.ContentHandler contentHandler = null;
     private final org.xml.sax.ext.Attributes2Impl attributes2 = null;
     private final org.xml.sax.helpers.AttributesImpl attributes = null;
-    private final sun.misc.ASCIICaseInsensitiveComparator comparator = null;
-    private final sun.net.util.IPAddressUtil ipaddressutil = null;
-    private final sun.security.krb5.Checksum checksum = null;
+
+    // We should only access these old sun-internal classes if we
+    // really, really have to
+    // private final sun.misc.ASCIICaseInsensitiveComparator comparator = null;
+    // private final sun.net.util.IPAddressUtil ipaddressutil = null;
+    // private final sun.security.krb5.Checksum checksum = null;
 }
