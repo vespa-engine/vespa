@@ -15,10 +15,9 @@ gen_project_file() {
 
 gen_source() {
     echo "generating '$1' ..."
-    echo "#include <vespa/log/log.h>"                   > $1
+    echo "#include <vespa/vespalib/testkit/testapp.h>" > $1
+    echo "#include <vespa/log/log.h>"            >> $1
     echo "LOG_SETUP(\"${test}_test\");"          >> $1
-    echo "#include <vespa/fastos/fastos.h>"            >> $1
-    echo "#include <vespa/vespalib/testkit/testapp.h>" >> $1
     echo ""                                      >> $1
     echo "using namespace vespalib;"             >> $1
     echo ""                                      >> $1

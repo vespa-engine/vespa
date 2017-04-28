@@ -1,10 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("fileheader_test");
 
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/data/fileheader.h>
+#include <vespa/fastos/file.h>
 #include <iostream>
 
 using namespace vespalib;
@@ -29,15 +27,9 @@ private:
     void testRewriteErrors();
     void testLayout();
 
-    void
-    testReadSize(bool mapped);
-
-    void
-    testReadSizeErrors(bool mapped);
-
-    bool
-    testReadSizeError(DataBuffer &buf, const std::string &expected,
-                      bool mapped);
+    void testReadSize(bool mapped);
+    void testReadSizeErrors(bool mapped);
+    bool testReadSizeError(DataBuffer &buf, const std::string &expected, bool mapped);
 
 public:
     int Main() override {
