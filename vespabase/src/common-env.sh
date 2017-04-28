@@ -147,8 +147,8 @@ fixlimits () {
     # number of open files:
     if varhasvalue file_descriptor_limit; then
        ulimit -n ${file_descriptor_limit} || exit 1
-    elif [ `ulimit -n` -lt 16384 ]; then
-        ulimit -n 16384 || exit 1
+    elif [ `ulimit -n` -lt 262144 ]; then
+        ulimit -n 262144 || exit 1
     fi
 
     # core file size
