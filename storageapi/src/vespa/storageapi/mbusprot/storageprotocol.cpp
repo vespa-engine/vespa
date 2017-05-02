@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "storageprotocol.h"
-#include "protocolserialization.h"
 #include "serializationhelper.h"
 #include "storagecommand.h"
 #include "storagereply.h"
@@ -22,6 +21,8 @@ StorageProtocol::StorageProtocol(const document::DocumentTypeRepo::SP repo,
       _serializer5_2(repo, loadTypes)
 {
 }
+
+StorageProtocol::~StorageProtocol() {}
 
 mbus::IRoutingPolicy::UP
 StorageProtocol::createPolicy(const mbus::string&, const mbus::string&) const

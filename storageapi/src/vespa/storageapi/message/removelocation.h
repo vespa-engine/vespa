@@ -11,8 +11,8 @@ namespace api {
 class RemoveLocationCommand : public BucketInfoCommand
 {
 public:
-    RemoveLocationCommand(const vespalib::stringref & documentSelection,
-                          const document::BucketId&);
+    RemoveLocationCommand(const vespalib::stringref & documentSelection, const document::BucketId&);
+    ~RemoveLocationCommand();
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     uint32_t getMemoryFootprint() const override {

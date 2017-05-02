@@ -123,6 +123,7 @@ public:
                        Timestamp maxTimestamp,
                        uint32_t clusterStateVersion = 0,
                        const std::vector<uint16_t>& chain = std::vector<uint16_t>());
+    ~MergeBucketCommand();
 
     const std::vector<Node>& getNodes() const { return _nodes; }
     Timestamp getMaxTimestamp() const { return _maxTimestamp; }
@@ -198,6 +199,7 @@ public:
     GetBucketDiffCommand(const document::BucketId&,
                          const std::vector<Node>&,
                          Timestamp maxTimestamp);
+    ~GetBucketDiffCommand();
 
     const std::vector<Node>& getNodes() const { return _nodes; }
     Timestamp getMaxTimestamp() const { return _maxTimestamp; }
@@ -227,6 +229,7 @@ private:
 
 public:
     explicit GetBucketDiffReply(const GetBucketDiffCommand& cmd);
+    ~GetBucketDiffReply();
 
     const std::vector<Node>& getNodes() const { return _nodes; }
     Timestamp getMaxTimestamp() const { return _maxTimestamp; }
@@ -256,6 +259,11 @@ public:
 
         Entry();
         Entry(const GetBucketDiffCommand::Entry&);
+        Entry(const Entry &);
+        Entry & operator = (const Entry &);
+        Entry(Entry &&) = default;
+        Entry & operator = (Entry &&) = default;
+        ~Entry();
 
         bool filled() const;
         void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -274,6 +282,7 @@ public:
     ApplyBucketDiffCommand(const document::BucketId& id,
                            const std::vector<Node>& nodes,
                            uint32_t maxBufferSize);
+    ~ApplyBucketDiffCommand();
 
     const std::vector<Node>& getNodes() const { return _nodes; }
     const std::vector<Entry>& getDiff() const { return _diff; }
@@ -302,6 +311,7 @@ private:
 
 public:
     explicit ApplyBucketDiffReply(const ApplyBucketDiffCommand& cmd);
+    ~ApplyBucketDiffReply();
 
     const std::vector<Node>& getNodes() const { return _nodes; }
     const std::vector<Entry>& getDiff() const { return _diff; }

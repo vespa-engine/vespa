@@ -12,16 +12,15 @@
 #pragma once
 
 #include "messagehandler.h"
-#include <map>
-#include <vespa/vespalib/util/printable.h>
-#include <vespa/messagebus/routing/route.h>
-#include <vespa/vespalib/util/sync.h>
-#include <vespa/vdslib/state/nodetype.h>
-#include <vespa/messagebus/trace.h>
-#include <vespa/documentapi/loadtypes/loadtype.h>
 #include <vespa/storageframework/generic/memory/memorytoken.h>
+#include <vespa/documentapi/loadtypes/loadtype.h>
+#include <vespa/messagebus/routing/route.h>
+#include <vespa/messagebus/trace.h>
+#include <vespa/vdslib/state/nodetype.h>
 #include <vespa/document/bucket/bucketid.h>
-
+#include <vespa/vespalib/util/printable.h>
+#include <vespa/vespalib/util/sync.h>
+#include <map>
 
 namespace vespalib {
     class asciistream;

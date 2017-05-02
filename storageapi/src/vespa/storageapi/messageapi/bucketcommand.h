@@ -10,8 +10,7 @@
 
 #include "storagecommand.h"
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 class BucketCommand : public StorageCommand {
     document::BucketId _bucket;
@@ -19,7 +18,8 @@ class BucketCommand : public StorageCommand {
 
 protected:
     BucketCommand(const MessageType& type, const document::BucketId& id)
-        : StorageCommand(type), _bucket(id), _originalBucket() {}
+        : StorageCommand(type), _bucket(id), _originalBucket()
+    {}
 
 public:
     DECLARE_POINTER_TYPEDEFS(BucketCommand);
@@ -36,6 +36,4 @@ public:
     bool hasSingleBucketId() const override { return true; }
 };
 
-} // api
-} // storage
-
+}

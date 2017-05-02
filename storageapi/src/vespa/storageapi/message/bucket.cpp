@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include "bucket.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/array.hpp>
-
 
 namespace storage {
 namespace api {
@@ -105,12 +105,12 @@ MergeBucketCommand::MergeBucketCommand(
       _maxTimestamp(maxTimestamp),
       _clusterStateVersion(clusterStateVersion),
       _chain(chain)
-{
-}
+{}
+
+MergeBucketCommand::~MergeBucketCommand() {}
 
 void
-MergeBucketCommand::print(std::ostream& out, bool verbose,
-                          const std::string& indent) const
+MergeBucketCommand::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     out << "MergeBucketCommand(" << getBucketId() << ", to time "
         << _maxTimestamp << ", cluster state version: "
@@ -208,8 +208,9 @@ GetBucketDiffCommand::GetBucketDiffCommand(
     : BucketCommand(MessageType::GETBUCKETDIFF, id),
       _nodes(nodes),
       _maxTimestamp(maxTimestamp)
-{
-}
+{}
+
+GetBucketDiffCommand::~GetBucketDiffCommand() {}
 
 void
 GetBucketDiffCommand::print(std::ostream& out, bool verbose,
@@ -245,8 +246,9 @@ GetBucketDiffReply::GetBucketDiffReply(const GetBucketDiffCommand& cmd)
       _nodes(cmd.getNodes()),
       _maxTimestamp(cmd.getMaxTimestamp()),
       _diff(cmd.getDiff())
-{
-}
+{}
+
+GetBucketDiffReply::~GetBucketDiffReply() {}
 
 void
 GetBucketDiffReply::print(std::ostream& out, bool verbose,
@@ -283,8 +285,7 @@ ApplyBucketDiffCommand::Entry::Entry()
       _headerBlob(),
       _bodyBlob(),
       _repo()
-{
-}
+{}
 
 ApplyBucketDiffCommand::Entry::Entry(const GetBucketDiffCommand::Entry& e)
     : _entry(e),
@@ -292,10 +293,14 @@ ApplyBucketDiffCommand::Entry::Entry(const GetBucketDiffCommand::Entry& e)
       _headerBlob(),
       _bodyBlob(),
       _repo()
-{
-}
+{}
 
-bool ApplyBucketDiffCommand::Entry::filled() const
+ApplyBucketDiffCommand::Entry::~Entry() {}
+ApplyBucketDiffCommand::Entry::Entry(const Entry &) = default;
+ApplyBucketDiffCommand::Entry & ApplyBucketDiffCommand::Entry::operator = (const Entry &) = default;
+
+bool
+ApplyBucketDiffCommand::Entry::filled() const
 {
     return ((_headerBlob.size() > 0 ||
              (_entry._headerSize  == 0 && !_docName.empty())) &&
@@ -303,7 +308,8 @@ bool ApplyBucketDiffCommand::Entry::filled() const
               _entry._bodySize == 0));
 }
 
-void ApplyBucketDiffCommand::Entry::print(
+void
+ApplyBucketDiffCommand::Entry::print(
         std::ostream& out, bool verbose, const std::string& indent) const
 {
     out << "ApplyEntry(";
@@ -324,7 +330,8 @@ void ApplyBucketDiffCommand::Entry::print(
     out << ")";
 }
 
-bool ApplyBucketDiffCommand::Entry::operator==(const Entry& e) const
+bool
+ApplyBucketDiffCommand::Entry::operator==(const Entry& e) const
 {
     return (_entry == e._entry &&
             _headerBlob == e._headerBlob &&
@@ -338,8 +345,9 @@ ApplyBucketDiffCommand::ApplyBucketDiffCommand(
       _nodes(nodes),
       _diff(),
       _maxBufferSize(maxBufferSize)
-{
-}
+{}
+
+ApplyBucketDiffCommand::~ApplyBucketDiffCommand() {}
 
 void
 ApplyBucketDiffCommand::print(std::ostream& out, bool verbose,
@@ -386,8 +394,9 @@ ApplyBucketDiffReply::ApplyBucketDiffReply(const ApplyBucketDiffCommand& cmd)
       _nodes(cmd.getNodes()),
       _diff(cmd.getDiff()),
       _maxBufferSize(cmd.getMaxBufferSize())
-{
-}
+{}
+
+ApplyBucketDiffReply::~ApplyBucketDiffReply() {}
 
 void
 ApplyBucketDiffReply::print(std::ostream& out, bool verbose,
