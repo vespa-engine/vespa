@@ -9,11 +9,11 @@ class FrtServerStream : public FrtStream {
     FRT_RPCRequest* request;
     uint32_t _nextOutValue;
 
-    FRT_Values& in() {
+    FRT_Values& in() override {
         return *request->GetReturn();
     }
 
-    FRT_Value& nextOut() {
+    FRT_Value& nextOut() override {
         return request->GetParams()->GetValue(_nextOutValue++);
     }
 public:
@@ -23,9 +23,6 @@ public:
 
     using FrtStream::operator<<;
     using FrtStream::operator>>;
-
 };
 
-
 } //end namespace frtstream
-
