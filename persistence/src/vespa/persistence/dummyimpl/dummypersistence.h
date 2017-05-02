@@ -131,6 +131,7 @@ class DummyPersistence : public AbstractPersistenceProvider
 public:
     DummyPersistence(const document::DocumentTypeRepo::SP& repo,
                      uint16_t partitionCount = 1);
+    ~DummyPersistence();
 
     PartitionStateListResult getPartitionStates() const override;
     BucketIdListResult listBuckets(PartitionId) const override;
