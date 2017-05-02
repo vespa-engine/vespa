@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MAIN
-#include <vespa/fastos/fastos.h>
+
 #include <boost/test/unit_test.hpp>
 
 #include <vespa/filedistribution/distributor/scheduler.h>
@@ -9,7 +9,6 @@
 #include <iostream>
 
 #include <boost/thread/barrier.hpp>
-#include <thread>
 
 using filedistribution::Scheduler;
 using namespace std::literals;

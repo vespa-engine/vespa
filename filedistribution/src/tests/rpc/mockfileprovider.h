@@ -32,7 +32,6 @@ public:
         downloadCompleted()(fileReference, "downloaded/path/" + fileReference);
     }
 
-    //Overrides
     DownloadCompletedSignal& downloadCompleted() override {
         return _downloadCompleted;
     }
