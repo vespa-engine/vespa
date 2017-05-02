@@ -34,6 +34,7 @@ public:
               opt(UPDATE)
         {
         }
+        ~Operation();
 
         document::DocumentId docId;
         std::shared_ptr<document::Document> document;
@@ -73,6 +74,8 @@ public:
                 Operation(std::shared_ptr<document::DocumentUpdate>(std::move(docUpdate))));
     }
 
+    OperationList();
+    ~OperationList();
 private:
     std::vector<Operation> _operations;
 
