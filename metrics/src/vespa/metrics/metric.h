@@ -87,9 +87,12 @@ struct Tag
     vespalib::string key;
     vespalib::string value;
 
-    Tag(vespalib::stringref k, vespalib::stringref v)
-        : key(k), value(v)
-    { }
+    Tag(vespalib::stringref k, vespalib::stringref v);
+    Tag(const Tag &);
+    Tag & operator = (const Tag &);
+    Tag(Tag &&) = default;
+    Tag & operator = (Tag &&) = default;
+    ~Tag();
 };
 
 class Metric : public vespalib::Printable
