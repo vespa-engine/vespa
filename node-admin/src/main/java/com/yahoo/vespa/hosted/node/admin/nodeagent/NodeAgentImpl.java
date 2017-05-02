@@ -120,6 +120,7 @@ public class NodeAgentImpl implements NodeAgent {
                         lastCpuMetric = new CpuUsageReporter(container.created);
                     }
                     containerState = RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
+                    logger.info("Container is already running, setting containerState to " + containerState);
                 });
     }
 
@@ -269,6 +270,7 @@ public class NodeAgentImpl implements NodeAgent {
             addDebugMessage("startContainerIfNeeded: containerState " + containerState + " -> " +
                             RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN);
             containerState = RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
+            logger.info("Container successfully started, new containerState is " + containerState);
         }
     }
 
@@ -347,6 +349,7 @@ public class NodeAgentImpl implements NodeAgent {
             dockerOperations.removeContainer(existingContainer.get());
             metricReceiver.unsetMetricsForContainer(hostname);
             containerState = ABSENT;
+            logger.info("Container successfully removed, new containerState is " + containerState);
             return Optional.empty();
         }
         return existingContainer;
@@ -395,6 +398,7 @@ public class NodeAgentImpl implements NodeAgent {
 
             if (isFrozen != wantFrozen) {
                 isFrozen = wantFrozen;
+                logger.info("Updated NodeAgent's frozen state, new value: isFrozen: " + isFrozen);
             }
             isFrozenCopy = isFrozen;
         }
