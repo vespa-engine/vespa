@@ -33,6 +33,8 @@ IndexCollection::IndexCollection(const ISourceSelector::SP & selector,
     setCurrentIndex(sources.getCurrentIndex());
 }
 
+IndexCollection::~IndexCollection() {}
+
 void
 IndexCollection::setSource(uint32_t docId)
 {

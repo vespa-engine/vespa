@@ -1,13 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
+#include "indexfusiontarget.h"
+
 #include <vespa/log/log.h>
 LOG_SETUP(".searchcorespi.index.indexfusiontarget");
 
-#include "indexfusiontarget.h"
-#include "fusionspec.h"
-
-namespace searchcorespi {
-namespace index {
+namespace searchcorespi::index {
 
 using search::SerialNum;
 namespace {
@@ -43,6 +41,8 @@ IndexFusionTarget::IndexFusionTarget(IndexMaintainer &indexMaintainer)
     _lastStats.setPathElementsToLog(7);
     LOG(debug, "New target, Num flushed: %d, Disk usage: %" PRIu64, _fusionStats.numUnfused, _fusionStats.diskUsage);
 }
+
+IndexFusionTarget::~IndexFusionTarget() {}
 
 IFlushTarget::MemoryGain
 IndexFusionTarget::getApproxMemoryGain() const
@@ -103,5 +103,4 @@ IndexFusionTarget::getApproxBytesToWriteToDisk() const
 }
 
 
-}  // namespace index
-}  // namespace searchcorespi
+}
