@@ -2,5 +2,6 @@
 vespa_add_library(storageframework_componentimpl OBJECT
     SOURCES
     componentregisterimpl.cpp
+    testcomponentregister.cpp
     DEPENDS
 )

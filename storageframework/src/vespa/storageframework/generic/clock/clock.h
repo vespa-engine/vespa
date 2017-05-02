@@ -13,9 +13,8 @@
 
 #pragma once
 
-#include <vespa/storageframework/generic/clock/time.h>
+#include "time.h"
 #include <memory>
-#include <chrono>
 
 namespace storage {
 namespace framework {

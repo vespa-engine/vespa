@@ -13,14 +13,12 @@
  */
 #pragma once
 
-#include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
-#include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
+#include "componentregisterimpl.h"
 #include <vespa/storageframework/defaultimplementation/thread/threadpoolimpl.h>
 #include <vespa/storageframework/defaultimplementation/memory/nomemorymanager.h>
+#include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 
-namespace storage {
-namespace framework {
-namespace defaultimplementation {
+namespace storage::framework::defaultimplementation {
 
 class TestComponentRegister {
     ComponentRegisterImpl::UP _compReg;
@@ -29,28 +27,8 @@ class TestComponentRegister {
     NoMemoryManager _memoryManager;
 
 public:
-    TestComponentRegister(ComponentRegisterImpl::UP compReg)
-        : _compReg(std::move(compReg)),
-          _clock(),
-          _threadPool(_clock),
-          _memoryManager()
-    {
-        assert(_compReg.get() != 0);
-            // Set a memory manager, so users can register memory types and
-            // ask for memory.
-        _compReg->setMemoryManager(_memoryManager);
-            // Set a fake clock, giving test control of clock
-        _compReg->setClock(_clock);
-            // Set a thread pool so components can make threads in tests.
-        _compReg->setThreadPool(_threadPool);
-            // Metric manager should not be needed. Tests of metric system can
-            // be done without using this class. Components can still register
-            // metrics without a manager.
-
-            // Status page server should not be needed. Tests of status parts
-            // can be done without using this class. Components can still
-            // register status pages without a server
-    }
+    TestComponentRegister(ComponentRegisterImpl::UP compReg);
+    ~TestComponentRegister();
 
     ComponentRegisterImpl& getComponentRegister() { return *_compReg; }
     FakeClock& getClock() { return _clock; }
@@ -59,7 +37,4 @@ public:
     NoMemoryManager& getMemoryManager() { return _memoryManager; }
 };
 
-} // defaultimplementation
-} // framework
-} // storage
-
+}
