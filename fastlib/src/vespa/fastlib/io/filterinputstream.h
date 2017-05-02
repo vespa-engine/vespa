@@ -16,11 +16,7 @@
 ******************************************************************************/
 #pragma once
 
-#include <vespa/fastlib/io/inputstream.h>
-
-
-
-
+#include "inputstream.h"
 
 class Fast_FilterInputStream : public Fast_InputStream
 {
@@ -43,18 +39,13 @@ class Fast_FilterInputStream : public Fast_InputStream
     // Constructors
     Fast_FilterInputStream(Fast_InputStream &in) : _in(&in) {}
 
-    virtual ~Fast_FilterInputStream(void) {};
+    ~Fast_FilterInputStream() {};
 
+    ssize_t Available()              override  { return _in->Available();      }
+    bool    Close()                  override  { return _in->Close();          }
+    ssize_t Skip(size_t skipNBytes)  override { return _in->Skip(skipNBytes); }
 
-    virtual ssize_t Available(void)          { return _in->Available();      }
-    virtual bool    Close(void)              { return _in->Close();          }
-    virtual ssize_t Skip(size_t skipNBytes)  { return _in->Skip(skipNBytes); }
-
-    virtual inline ssize_t Read(void *targetBuffer, size_t length)
-    {
+    ssize_t Read(void *targetBuffer, size_t length) override {
       return _in->Read(targetBuffer, length);
     }
-
 };
-
-
