@@ -1,12 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/document/bucket/bucketid.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
-#include <vespa/vespalib/util/document_runnable.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
-#include <cppunit/extensions/HelperMacros.h>
 #include <vespa/storage/storageutil/utils.h>
+#include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/vespalib/util/document_runnable.h>
+#include <cppunit/extensions/HelperMacros.h>
 
 #define SETUP_DATABASE_TESTS() \
     CPPUNIT_TEST(testUpdateGetAndRemove); \
@@ -24,7 +23,7 @@ namespace storage {
 namespace distributor {
 
 struct BucketDatabaseTest : public CppUnit::TestFixture {
-    void setUp();
+    void setUp() override ;
 
     void testUpdateGetAndRemove();
     void testClear();

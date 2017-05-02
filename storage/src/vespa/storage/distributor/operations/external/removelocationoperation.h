@@ -6,9 +6,7 @@
 
 namespace storage {
 
-namespace api {
-class RemoveLocationCommand;
-}
+namespace api { class RemoveLocationCommand; }
 
 namespace distributor {
 
@@ -18,21 +16,17 @@ public:
     RemoveLocationOperation(DistributorComponent& manager,
                             const std::shared_ptr<api::RemoveLocationCommand> & msg,
                             PersistenceOperationMetricSet& metric);
+    ~RemoveLocationOperation();
 
-    void onStart(DistributorMessageSender& sender);
 
     static int getBucketId(DistributorComponent& manager,
                            const api::RemoveLocationCommand& cmd,
                            document::BucketId& id);
-
-    const char* getName() const { return "removelocation"; };
-
-    std::string getStatus() const { return ""; };
-
-    void onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> &);
-
-    void onClose(DistributorMessageSender& sender);
-
+    void onStart(DistributorMessageSender& sender) override;
+    const char* getName() const override { return "removelocation"; };
+    std::string getStatus() const override { return ""; };
+    void onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
+    void onClose(DistributorMessageSender& sender) override;
 private:
     PersistenceMessageTrackerImpl _trackerInstance;
     PersistenceMessageTracker& _tracker;
@@ -45,4 +39,3 @@ private:
 }
 
 }
-

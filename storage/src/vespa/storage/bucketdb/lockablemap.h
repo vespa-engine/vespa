@@ -113,6 +113,7 @@ public:
     };
 
     LockableMap();
+    ~LockableMap();
     bool operator==(const LockableMap& other) const;
     bool operator!=(const LockableMap& other) const {
         return ! (*this == other);

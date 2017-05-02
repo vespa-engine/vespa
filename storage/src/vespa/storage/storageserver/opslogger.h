@@ -9,8 +9,7 @@
 #pragma once
 
 #include <vespa/storage/common/storagelink.h>
-#include <vespa/storageframework/storageframework.h>
-
+#include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storage/config/config-stor-opslogger.h>

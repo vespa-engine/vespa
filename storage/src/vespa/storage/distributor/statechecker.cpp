@@ -1,16 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/distributor/statechecker.h>
+#include "statechecker.h"
+#include "distributorcomponent.h"
+
 #include <vespa/log/log.h>
-#include <vespa/storage/distributor/distributorcomponent.h>
-
-#include <algorithm>
-
 LOG_SETUP(".distributor.statechecker");
 
-namespace storage {
-
-namespace distributor {
+namespace storage::distributor {
 
 namespace {
 
@@ -83,6 +78,8 @@ StateChecker::Context::Context(const DistributorComponent& c,
     unorderedIdealState.insert(idealState.begin(), idealState.end());
 }
 
+StateChecker::Context::~Context() {}
+
 std::string
 StateChecker::Context::toString() const
 {
@@ -106,8 +103,6 @@ StateChecker::StateChecker()
 
 StateChecker::~StateChecker()
 {
-}
-
 }
 
 }

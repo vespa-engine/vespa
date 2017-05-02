@@ -1,21 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
-#include <vespa/storageapi/messageapi/storagereply.h>
-#include <vespa/storageapi/message/bucket.h>
+#include "mergeoperation.h"
 #include <vespa/storage/distributor/idealstatemanager.h>
-#include <vespa/storage/distributor/operations/idealstate/removebucketoperation.h>
 
 #include <vespa/log/log.h>
-
 LOG_SETUP(".distributor.operation.idealstate.merge");
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
-MergeOperation::~MergeOperation()
-{
-}
+MergeOperation::~MergeOperation() {}
 
 std::string
 MergeOperation::getStatus() const
@@ -149,9 +141,7 @@ MergeOperation::onStart(DistributorMessageSender& sender)
 {
     BucketDatabase::Entry entry = _manager->getDistributorComponent().getBucketDatabase().get(getBucketId());
     if (!entry.valid()) {
-        LOGBP(debug,
-              "Unable to merge nonexisting bucket %s",
-              getBucketId().toString().c_str());
+        LOGBP(debug, "Unable to merge nonexisting bucket %s", getBucketId().toString().c_str());
         _ok = false;
         done();
         return;
@@ -164,8 +154,7 @@ MergeOperation::onStart(DistributorMessageSender& sender)
     for (uint32_t i = 0; i < getNodes().size(); ++i) {
         const BucketCopy* copy = entry->getNode(getNodes()[i]);
         if (copy == 0) { // New copies?
-            newCopies.push_back(std::unique_ptr<BucketCopy>(
-                    new BucketCopy(0, getNodes()[i], api::BucketInfo())));
+            newCopies.push_back(std::unique_ptr<BucketCopy>(new BucketCopy(0, getNodes()[i], api::BucketInfo())));
             copy = newCopies.back().get();
         }
         nodes.push_back(MergeMetaData(getNodes()[i], *copy));
@@ -211,10 +200,8 @@ MergeOperation::onStart(DistributorMessageSender& sender)
         _sentMessageTime = _manager->getDistributorComponent().getClock().getTimeInSeconds();
     } else {
         LOGBP(debug,
-              "Unable to merge bucket %s, since only one copy is available. "
-              "System state %s",
-              getBucketId().toString().c_str(),
-              clusterState.toString().c_str());
+              "Unable to merge bucket %s, since only one copy is available. System state %s",
+              getBucketId().toString().c_str(), clusterState.toString().c_str());
         _ok = false;
         done();
     }
@@ -388,5 +375,4 @@ MergeOperation::shouldBlockThisOperation(uint32_t messageType, uint8_t pri) cons
     return IdealStateOperation::shouldBlockThisOperation(messageType, pri);
 }
 
-} // distributor
-} // storage
+}

@@ -17,8 +17,7 @@
  */
 #pragma once
 
-#include <vespa/document/base/testdocman.h>
-#include <vespa/persistence/spi/persistenceprovider.h>
+#include "testnodestateupdater.h"
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/storage/common/nodestateupdater.h>
@@ -28,7 +27,8 @@
 #include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storageframework/defaultimplementation/component/testcomponentregister.h>
-#include <tests/common/testnodestateupdater.h>
+#include <vespa/persistence/spi/persistenceprovider.h>
+#include <vespa/document/base/testdocman.h>
 
 namespace storage {
 
@@ -64,6 +64,7 @@ public:
     TestStorageApp(StorageComponentRegisterImpl::UP compReg,
                    const lib::NodeType&, NodeIndex = NodeIndex(0xffff),
                    vespalib::stringref configId = "");
+    ~TestStorageApp();
 
     // Set functions, to be able to modify content while running.
     void setDistribution(Redundancy, NodeCount);
@@ -89,7 +90,7 @@ public:
     // The storage app also implements the done initializer interface, so it can
     // be sent to components needing this.
     DoneInitializeHandler& getDoneInitializeHandler() { return *this; }
-    virtual void notifyDoneInitializing() { _initialized = true; }
+    void notifyDoneInitializing() override { _initialized = true; }
     bool isInitialized() const { return _initialized; }
     void waitUntilInitialized(
             StorageBucketDBInitializer* initializer = 0,
@@ -113,25 +114,23 @@ public:
     TestServiceLayerApp(vespalib::stringref configId = "");
     TestServiceLayerApp(DiskCount diskCount, NodeIndex = NodeIndex(0xffff),
                         vespalib::stringref configId = "");
+    ~TestServiceLayerApp();
 
     void setupDummyPersistence();
     void setPersistenceProvider(spi::PersistenceProvider::UP);
 
-    ServiceLayerComponentRegisterImpl& getComponentRegister()
-        { return _compReg; }
+    ServiceLayerComponentRegisterImpl& getComponentRegister() { return _compReg; }
 
     spi::PersistenceProvider& getPersistenceProvider();
     spi::PartitionStateList& getPartitions();
-
     uint16_t getPartition(const document::BucketId&);
 
-    virtual StorBucketDatabase& getStorageBucketDatabase()
-        { return _compReg.getBucketDatabase(); }
+    StorBucketDatabase& getStorageBucketDatabase() override { return _compReg.getBucketDatabase(); }
 
 private:
-        // For storage server interface implementation we'll get rid of soon.
-        // Use getPartitions().size() instead.
-    virtual uint16_t getDiskCount() const { return _compReg.getDiskCount(); }
+    // For storage server interface implementation we'll get rid of soon.
+    // Use getPartitions().size() instead.
+    uint16_t getDiskCount() const override { return _compReg.getDiskCount(); }
 };
 
 class TestDistributorApp : public TestStorageApp,
@@ -152,8 +151,7 @@ public:
         return _compReg;
     }
 
-    virtual api::Timestamp getUniqueTimestamp();
+    api::Timestamp getUniqueTimestamp() override;
 };
 
 } // storageo
-

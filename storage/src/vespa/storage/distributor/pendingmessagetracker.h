@@ -1,11 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/document/bucket/bucketid.h>
-#include <vespa/storageapi/messageapi/returncode.h>
-#include <vespa/storageapi/message/bucket.h>
+#include "nodeinfo.h"
+#include "latency_statistics_provider.h"
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storageframework/storageframework.h>
+#include <vespa/storageapi/messageapi/returncode.h>
+#include <vespa/storageapi/message/bucket.h>
+#include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/util/sync.h>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/identity.hpp>
 #include <boost/multi_index/member.hpp>
@@ -13,10 +16,6 @@
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/sequenced_index.hpp>
 #include <boost/multi_index/composite_key.hpp>
-#include <vespa/storage/distributor/nodeinfo.h>
-#include <vespa/storage/distributor/latency_statistics_provider.h>
-#include <vespa/vespalib/stllike/hash_set.h>
-#include <vespa/vespalib/util/sync.h>
 
 #include <set>
 #include <unordered_map>
@@ -62,14 +61,10 @@ public:
     ~PendingMessageTracker();
 
     void insert(const std::shared_ptr<api::StorageMessage>&);
-
     document::BucketId reply(const api::StorageReply& reply);
+    void reportHtmlStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 
-    void reportHtmlStatus(std::ostream&, const framework::HttpUrlPath&) const;
-
-    void print(std::ostream& out,
-               bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const;
 
     /**
      * Goes through each pending message for the given node+bucket pair,
@@ -241,14 +236,10 @@ private:
 
 
     void getStatusStartPage(std::ostream& out) const;
-
     void getStatusPerNode(std::ostream& out) const;
-
     void getStatusPerBucket(std::ostream& out) const;
-
     TimePoint currentTime() const;
 };
 
 }
 }
-

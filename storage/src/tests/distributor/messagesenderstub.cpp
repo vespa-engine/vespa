@@ -1,9 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <tests/distributor/messagesenderstub.h>
-#include <tests/distributor/distributortestutil.h>
+
+#include "messagesenderstub.h"
+#include "distributortestutil.h"
 
 namespace storage {
+
+MessageSenderStub::MessageSenderStub()
+    : _clusterName("storage"),
+      _pendingMessageTracker(0)
+{}
+MessageSenderStub::~MessageSenderStub() {}
 
 std::string
 MessageSenderStub::getLastCommand(bool verbose) const
@@ -11,10 +17,7 @@ MessageSenderStub::getLastCommand(bool verbose) const
     if (commands.empty()) {
         throw std::logic_error("Expected command where there was none");
     }
-    return dumpMessage(*commands[commands.size() - 1],
-                                            true,
-                                            verbose);
-
+    return dumpMessage(*commands[commands.size() - 1], true, verbose);
 }
 
 std::string
@@ -85,4 +88,3 @@ MessageSenderStub::getReplies(bool includeAddress, bool verbose) const
 }
 
 }
-

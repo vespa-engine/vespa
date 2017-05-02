@@ -1,14 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/storage/common/storagecomponent.h>
+#include "bucketgctimecalculator.h"
+#include "maintenancebucket.h"
 #include <vespa/storage/distributor/operations/idealstate/idealstateoperation.h>
+#include <vespa/storage/common/storagecomponent.h>
+#include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/storage/distributor/bucketgctimecalculator.h>
-#include <vespa/storage/distributor/maintenancebucket.h>
-#include <vespa/storage/bucketdb/bucketdatabase.h>
-
 #include <unordered_set>
 #include <map>
 #include <set>
@@ -48,6 +47,10 @@ public:
         Context(const DistributorComponent&,
                 NodeMaintenanceStatsTracker&,
                 const document::BucketId& bid);
+        ~Context();
+        Context(const Context &) = delete;
+        Context & operator =(const Context &) = delete;
+
 
         // Per bucket
         document::BucketId bucketId;
@@ -86,11 +89,8 @@ public:
     {
     public:
         virtual ~ResultImpl() {}
-
         virtual IdealStateOperation::UP createOperation() = 0;
-
         virtual MaintenancePriority getPriority() const = 0;
-
         virtual MaintenanceOperation::Type getType() const = 0;
     };
 

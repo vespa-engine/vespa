@@ -1,15 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/storage/distributor/sentmessagemap.h>
-#include <vespa/vdslib/state/clusterstate.h>
+#include "sentmessagemap.h"
+#include "distributormessagesender.h"
+#include "operationstarter.h"
 #include <vespa/storage/common/storagelink.h>
-#include <vespa/storage/distributor/distributormessagesender.h>
-#include <vespa/storage/distributor/operationstarter.h>
+#include <vespa/vdslib/state/clusterstate.h>
 
-namespace storage {
+namespace storage::framework { class Clock; }
 
-namespace distributor {
+namespace storage::distributor {
 
 class Operation;
 
@@ -29,29 +29,22 @@ public:
               _cb(cb) 
          {}
 
-        /**
-           Sends a message.
-         */
-        void sendCommand(const std::shared_ptr<api::StorageCommand> &);
-
-        /**
-           Send a reply.
-         */
-        void sendReply(const std::shared_ptr<api::StorageReply> & msg);
+        void sendCommand(const std::shared_ptr<api::StorageCommand> &) override;
+        void sendReply(const std::shared_ptr<api::StorageReply> & msg) override;
 
         OperationOwner& getOwner() {
             return _owner;
         }
 
-        virtual int getDistributorIndex() const {
+        int getDistributorIndex() const override {
             return _sender.getDistributorIndex();
         }
         
-        virtual const std::string& getClusterName() const {
+        const std::string& getClusterName() const override {
             return _sender.getClusterName();
         }
 
-        virtual const PendingMessageTracker& getPendingMessageTracker() const {
+        const PendingMessageTracker& getPendingMessageTracker() const override {
             return _sender.getPendingMessageTracker();
         }
 
@@ -81,8 +74,7 @@ public:
         return _sentMessageMap;
     };
 
-    virtual bool start(const std::shared_ptr<Operation>& operation,
-            Priority priority);
+    bool start(const std::shared_ptr<Operation>& operation, Priority priority) override;
 
     /**
        If the given message exists, create a reply and pass it to the
@@ -91,11 +83,7 @@ public:
     void erase(api::StorageMessage::Id msgId);
 
     void onClose();
-
-    uint32_t size() const {
-        return _sentMessageMap.size();
-    }
-
+    uint32_t size() const { return _sentMessageMap.size(); }
     std::string toString() const;
 
 private:
@@ -105,6 +93,3 @@ private:
 };
 
 }
-
-}
-

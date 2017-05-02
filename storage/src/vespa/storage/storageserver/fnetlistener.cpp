@@ -12,9 +12,7 @@ LOG_SETUP(".rpc.listener");
 
 namespace storage {
 
-
-FNetListener::FNetListener(
-        CommunicationManager& comManager, const config::ConfigUri & configUri, uint32_t port)
+FNetListener::FNetListener(CommunicationManager& comManager, const config::ConfigUri & configUri, uint32_t port)
     : _comManager(comManager),
       _orb(),
       _closed(false),
@@ -175,7 +173,5 @@ FNetListener::RPC_setSystemState2(FRT_RPCRequest *req)
     req->Detach();
     _comManager.enqueue(cmd);
 }
-
-
 
 }

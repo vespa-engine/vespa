@@ -1,14 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
+#include "removelocationoperation.h"
+#include <vespa/storageapi/message/removelocation.h>
 #include <vespa/document/bucket/bucketselector.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/select/parser.h>
-#include <vespa/log/log.h>
-#include <vespa/storage/distributor/distributormetricsset.h>
-#include <vespa/storage/distributor/operations/external/removelocationoperation.h>
-#include <vespa/storageapi/message/removelocation.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.doc.removelocation");
 
 
@@ -27,8 +26,9 @@ RemoveLocationOperation::RemoveLocationOperation(
       _tracker(_trackerInstance),
       _msg(msg),
       _manager(manager)
-{
-}
+{}
+
+RemoveLocationOperation::~RemoveLocationOperation() {}
 
 int
 RemoveLocationOperation::getBucketId(

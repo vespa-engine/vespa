@@ -11,21 +11,19 @@ struct MessageSenderStub : distributor::DistributorMessageSender
     std::vector<std::shared_ptr<api::StorageCommand> > commands;
     std::vector<std::shared_ptr<api::StorageReply> > replies;
 
-    MessageSenderStub()
-        : _clusterName("storage"),
-          _pendingMessageTracker(0)
-    {}
+    MessageSenderStub();
+    ~MessageSenderStub();
 
     void clear() {
         commands.clear();
         replies.clear();
     }
 
-    virtual void sendCommand(const std::shared_ptr<api::StorageCommand>& cmd) {
+    void sendCommand(const std::shared_ptr<api::StorageCommand>& cmd) override {
         commands.push_back(cmd);
     }
 
-    virtual void sendReply(const std::shared_ptr<api::StorageReply>& reply) {
+    void sendReply(const std::shared_ptr<api::StorageReply>& reply) override {
         replies.push_back(reply);
     }
 
@@ -44,15 +42,15 @@ struct MessageSenderStub : distributor::DistributorMessageSender
                             bool includeAddress,
                             bool verbose) const;
 
-    virtual int getDistributorIndex() const {
+    int getDistributorIndex() const override {
         return 0;
     }
 
-    virtual const std::string& getClusterName() const {
+    const std::string& getClusterName() const override {
         return _clusterName;
     }
 
-    virtual const distributor::PendingMessageTracker& getPendingMessageTracker() const {
+    const distributor::PendingMessageTracker& getPendingMessageTracker() const override {
         assert(_pendingMessageTracker);
         return *_pendingMessageTracker;
     }

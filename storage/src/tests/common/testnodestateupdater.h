@@ -20,25 +20,20 @@ struct TestNodeStateUpdater : public NodeStateUpdater
     std::vector<StateListener*> _listeners;
 
 public:
-    TestNodeStateUpdater(const lib::NodeType& type) {
-        _reported.reset(new lib::NodeState(type, lib::State::UP));
-        _current.reset(new lib::NodeState(type, lib::State::UP));
-    }
+    TestNodeStateUpdater(const lib::NodeType& type);
+    ~TestNodeStateUpdater();
 
-    lib::NodeState::CSP getReportedNodeState() const { return _reported; }
-    lib::NodeState::CSP getCurrentNodeState() const { return _current; }
-    lib::ClusterState::CSP getSystemState() const { return _cluster; }
-    void addStateListener(StateListener& s) {
-        _listeners.push_back(&s);
-    }
-    void removeStateListener(StateListener&) {}
-    Lock::SP grabStateChangeLock() { return Lock::SP(new Lock); }
-    void setReportedNodeState(const lib::NodeState& state)
-        { _reported.reset(new lib::NodeState(state)); }
-    void setCurrentNodeState(const lib::NodeState& state)
-        { _current.reset(new lib::NodeState(state)); }
+    lib::NodeState::CSP getReportedNodeState() const override { return _reported; }
+    lib::NodeState::CSP getCurrentNodeState() const override { return _current; }
+    lib::ClusterState::CSP getSystemState() const override { return _cluster; }
+    void addStateListener(StateListener& s) override { _listeners.push_back(&s); }
+    void removeStateListener(StateListener&) override {}
+    Lock::SP grabStateChangeLock() override { return Lock::SP(new Lock); }
+    void setReportedNodeState(const lib::NodeState& state) override { _reported.reset(new lib::NodeState(state)); }
 
-    void setClusterState(lib::ClusterState::CSP c) {
+    void setCurrentNodeState(const lib::NodeState& state) { _current.reset(new lib::NodeState(state)); }
+
+    void setClusterState(lib::ClusterState::CSP c)  {
         _cluster = c;
         for (uint32_t i = 0; i < _listeners.size(); ++i) {
             _listeners[i]->handleNewState();
@@ -47,4 +42,3 @@ public:
 };
 
 } // storage
-

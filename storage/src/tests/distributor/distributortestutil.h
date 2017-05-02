@@ -1,18 +1,19 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "messagesenderstub.h"
+#include <tests/common/teststorageapp.h>
+#include <tests/common/testhelper.h>
 #include <tests/common/dummystoragelink.h>
-#include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/frameworkimpl/component/distributorcomponentregisterimpl.h>
 #include <vespa/storage/storageutil/utils.h>
-#include <tests/common/teststorageapp.h>
-#include <tests/distributor/messagesenderstub.h>
+#include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <vespa/storageapi/message/state.h>
-#include <tests/common/testhelper.h>
 
 namespace storage {
-    namespace framework { class TickingThreadPool; }
+
+namespace framework { class TickingThreadPool; }
 
 namespace distributor {
 
@@ -149,7 +150,7 @@ public:
 
     void setRedundancy(uint32_t redundancy);
 
-    virtual void notifyDoneInitializing() {}
+    void notifyDoneInitializing() override {}
 
         // Must implement this for storage server interface for now
     virtual api::Timestamp getUniqueTimestamp() {
@@ -176,10 +177,10 @@ protected:
         MessageSenderImpl(MessageSenderStub& up, MessageSenderStub& down)
             : _sender(up), _senderDown(down) {}
 
-        void sendUp(const std::shared_ptr<api::StorageMessage>& msg) {
+        void sendUp(const std::shared_ptr<api::StorageMessage>& msg) override {
             _sender.send(msg);
         }
-        void sendDown(const std::shared_ptr<api::StorageMessage>& msg) {
+        void sendDown(const std::shared_ptr<api::StorageMessage>& msg) override {
             _senderDown.send(msg);
         }
     };
@@ -189,4 +190,3 @@ protected:
 }
 
 }
-

@@ -1,23 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <memory>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class Operation;
 
 class OperationStarter
 {
 public:
-    typedef uint8_t Priority;
-
+    using Priority = uint8_t;
     virtual ~OperationStarter() {}
-
-    virtual bool start(const std::shared_ptr<Operation>& operation,
-                       Priority priority) = 0;
+    virtual bool start(const std::shared_ptr<Operation>& operation, Priority priority) = 0;
 };
 
 }
-}
-

@@ -7,14 +7,14 @@
  */
 #pragma once
 
-#include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/common/storagelink.h>
+#include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/storage/distributor/messageguard.h>
 #include <vespa/storageapi/message/bucket.h>
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/document/bucket/bucketid.h>
+#include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/messagebus/staticthrottlepolicy.h>
 #include <vespa/metrics/metrics.h>
 #include <vespa/config/config.h>

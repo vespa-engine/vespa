@@ -1,14 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "distributormetricsset.h"
+#include <vespa/storage/common/messagesender.h>
 #include <vespa/storageapi/messageapi/bucketcommand.h>
 #include <vespa/storageapi/messageapi/bucketreply.h>
-#include <vespa/storage/distributor/distributormetricsset.h>
-#include <vespa/storage/common/messagesender.h>
 
-namespace storage {
-
-namespace distributor {
+namespace storage::distributor {
 
 class MessageTracker {
 public:
@@ -22,6 +20,9 @@ public:
     };
 
     MessageTracker(const std::string& clusterName);
+    MessageTracker(MessageTracker &&) = default;
+    MessageTracker & operator = (MessageTracker &&) = default;
+    ~MessageTracker();
 
     void queueCommand(std::shared_ptr<api::BucketCommand> msg, uint16_t target) {
         _commandQueue.push_back(ToSend(msg, target));
@@ -48,6 +49,3 @@ protected:
 };
 
 }
-
-}
-

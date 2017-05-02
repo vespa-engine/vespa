@@ -1,12 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/documentapi/messagebus/messages/documentmessage.h>
-#include <vespa/documentapi/messagebus/messages/documentreply.h>
-#include <vespa/storage/storageserver/priorityconverter.h>
+#include "priorityconverter.h"
 #include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
+#include <vespa/documentapi/messagebus/messages/documentmessage.h>
+#include <vespa/documentapi/messagebus/messages/documentreply.h>
+#include <vespa/document/repo/documenttyperepo.h>
 
 namespace storage {
 

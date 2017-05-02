@@ -1,15 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <memory>
-#include <vespa/document/bucket/bucketid.h>
-#include <vespa/vespalib/stllike/hash_set.h>
-#include <vespa/storageframework/storageframework.h>
+#include <vespa/storageframework/generic/memory/memorytoken.h>
 #include <vespa/storageapi/message/internal.h>
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/selection.h>
 #include <vespa/persistence/spi/read_consistency.h>
+#include <vespa/vespalib/stllike/hash_set.h>
+
 
 namespace storage {
 

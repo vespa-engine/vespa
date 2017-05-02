@@ -25,12 +25,12 @@
 
 #pragma once
 
-#include <vespa/storageapi/defs.h>
-#include <vespa/storage/common/storagecomponent.h>
+#include "storagecomponent.h"
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
 #include <vespa/storage/config/config-stor-visitordispatcher.h>
+#include <vespa/storageapi/defs.h>
 
 namespace storage {
 
@@ -72,19 +72,20 @@ class DistributorComponent : public StorageComponent,
     VisitorConfig                 _visitorConfig;
     DistributorConfiguration      _totalConfig;
 
-        // DistributorManagedComponent implementation
-    virtual void setTimeCalculator(UniqueTimeCalculator& utc)
-        { _timeCalculator = &utc; }
-    virtual void setDistributorConfig(const DistributorConfig& c)
-        { _distributorConfig = c; _totalConfig.configure(c); }
-    virtual void setVisitorConfig(const VisitorConfig& c)
-        { _visitorConfig = c; _totalConfig.configure(c); }
+    void setTimeCalculator(UniqueTimeCalculator& utc) override { _timeCalculator = &utc; }
+    void setDistributorConfig(const DistributorConfig& c) override {
+        _distributorConfig = c;
+        _totalConfig.configure(c);
+    }
+    void setVisitorConfig(const VisitorConfig& c) override {
+        _visitorConfig = c;
+        _totalConfig.configure(c);
+    }
 
 public:
     typedef std::unique_ptr<DistributorComponent> UP;
 
-    DistributorComponent(DistributorComponentRegister& compReg,
-                         vespalib::stringref name);
+    DistributorComponent(DistributorComponentRegister& compReg, vespalib::stringref name);
     ~DistributorComponent();
 
     api::Timestamp getUniqueTimestamp() const {
@@ -103,4 +104,3 @@ public:
 };
 
 } // storage
-

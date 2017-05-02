@@ -1,25 +1,25 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/document/base/testdocman.h>
-#include <vespa/storage/common/messagesender.h>
-#include <vespa/storage/common/storagecomponent.h>
-#include <vespa/storage/persistence/filestorage/filestorhandler.h>
-#include <vespa/storage/persistence/persistenceutil.h>
-#include <vespa/storageframework/defaultimplementation/memory/memorymanager.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/common/testhelper.h>
-#include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/storage/persistence/persistencethread.h>
+#include <vespa/storage/persistence/filestorage/filestorhandler.h>
+#include <vespa/storage/persistence/persistenceutil.h>
+#include <vespa/storage/common/messagesender.h>
+#include <vespa/storage/common/storagecomponent.h>
+#include <vespa/storageframework/defaultimplementation/memory/memorymanager.h>
+#include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
+#include <vespa/document/base/testdocman.h>
 
 namespace storage {
 
 struct MessageKeeper : public MessageSender {
     std::vector<api::StorageMessage::SP> _msgs;
 
-    void sendCommand(const api::StorageCommand::SP& m) { _msgs.push_back(m); }
-    void sendReply(const api::StorageReply::SP& m) { _msgs.push_back(m); }
+    void sendCommand(const api::StorageCommand::SP& m) override { _msgs.push_back(m); }
+    void sendReply(const api::StorageReply::SP& m) override { _msgs.push_back(m); }
 };
 
 struct PersistenceTestEnvironment {
@@ -52,7 +52,7 @@ public:
 
     void setupDisks(uint32_t disks);
 
-    void tearDown() {
+    void tearDown() override {
         _env.reset();
     }
 
@@ -204,7 +204,7 @@ public:
 class SingleDiskPersistenceTestUtils : public PersistenceTestUtils
 {
 public:
-    void setUp() {
+    void setUp() override {
         setupDisks(1);
     }
 };

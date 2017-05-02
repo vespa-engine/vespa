@@ -41,8 +41,10 @@ public:
         std::string _name;
         int32_t _color;
 
-        Entry(const std::vector<Point>& v, const std::string& name, int32_t col)
-            : points(v), _name(name), _color(col) {}
+        Entry(const std::vector<Point>& v, const std::string& name, int32_t col);
+        Entry(Entry &&) = default;
+        Entry & operator = (Entry &&) = default;
+        ~Entry();
     };
     struct Axis {
         double value;
@@ -69,6 +71,7 @@ private:
 
 public:
     Graph(const std::string&, ColorScheme = SCHEME_BLUE);
+    ~Graph();
 
     void add(const std::vector<Point>&, const std::string& name);
     void add(const std::vector<Point>&, const std::string& name, Color c);

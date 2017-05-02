@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "bucketprioritydatabase.h"
 #include <set>
 #include <map>
-#include <vespa/storage/distributor/maintenance/bucketprioritydatabase.h>
 
 namespace storage {
 namespace distributor {
@@ -14,11 +14,9 @@ public:
     virtual ~SimpleBucketPriorityDatabase();
     typedef PrioritizedBucket::Priority Priority;
 
-    virtual void setPriority(const PrioritizedBucket&);
-
-    virtual const_iterator begin() const;
-
-    virtual const_iterator end() const;
+    virtual void setPriority(const PrioritizedBucket&) override;
+    virtual const_iterator begin() const override;
+    virtual const_iterator end() const override;
 
     std::string toString() const;
 
@@ -42,10 +40,9 @@ private:
                 initializeBucketIterToFirstAvailableEntry();
             }
         }
+        SimpleConstIteratorImpl(const SimpleConstIteratorImpl&) = delete;
+        SimpleConstIteratorImpl& operator=(const SimpleConstIteratorImpl&) = delete;
     private:
-        SimpleConstIteratorImpl(const SimpleConstIteratorImpl&);
-        SimpleConstIteratorImpl& operator=(const SimpleConstIteratorImpl&);
-
         void initializeBucketIterToFirstAvailableEntry();
 
         bool atEnd() const;
@@ -54,11 +51,9 @@ private:
         void stepToNextPriority();
         void step();
 
-        virtual void increment();
-
-        virtual bool equal(const ConstIteratorImpl& other) const;
-
-        virtual PrioritizedBucket dereference() const;
+        void increment() override;
+        bool equal(const ConstIteratorImpl& other) const override;
+        PrioritizedBucket dereference() const override;
     };
 
     void clearAllEntriesForBucket(const document::BucketId& bucketId);
@@ -68,4 +63,3 @@ private:
 
 }
 }
-

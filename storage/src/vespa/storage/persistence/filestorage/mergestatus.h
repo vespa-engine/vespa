@@ -29,6 +29,7 @@ public:
     spi::Context context;
  	
     MergeStatus(framework::Clock&, const metrics::LoadType&, api::StorageMessage::Priority, uint32_t traceLevel);
+    ~MergeStatus();
 
     /**
      * @return true if any entries were removed from the internal diff
