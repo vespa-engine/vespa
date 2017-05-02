@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "fieldpathupdate.h"
 #include <vespa/document/base/documentcalculator.h>
-#include <vespa/document/update/fieldpathupdate.h>
 
 namespace document {
 
@@ -44,21 +44,19 @@ public:
     bool hasValue() const { return _newValue.get() != nullptr; }
     const FieldValue & getValue() const { return *_newValue; }
 
-    FieldPathUpdate* clone() const;
+    FieldPathUpdate* clone() const override;
 
-    bool operator==(const FieldPathUpdate& other) const;
+    bool operator==(const FieldPathUpdate& other) const override;
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_IDENTIFIABLE(AssignFieldPathUpdate);
     ACCEPT_UPDATE_VISITOR;
 
 private:
     uint8_t getSerializedType() const override { return AssignMagic; }
-    virtual void deserialize(const DocumentTypeRepo& repo,
-                             const DataType& type,
-                             ByteBuffer& buffer, uint16_t version);
+    void deserialize(const DocumentTypeRepo& repo, const DataType& type,
+                     ByteBuffer& buffer, uint16_t version) override;
 
     class AssignValueIteratorHandler : public FieldValue::IteratorHandler
     {
@@ -68,14 +66,11 @@ private:
                               bool createMissingPath_)
             : _newValue(newValue), _removeIfZero(removeIfZero),
             _createMissingPath(createMissingPath_)
-        {
-        }
+        {}
 
-        ModificationStatus doModify(FieldValue& fv);
-
-        bool onComplex(const Content&) { return false; }
-
-        bool createMissingPath() const { return _createMissingPath; }
+        ModificationStatus doModify(FieldValue& fv) override;
+        bool onComplex(const Content&) override { return false; }
+        bool createMissingPath() const override { return _createMissingPath; }
 
     private:
         const FieldValue& _newValue;
@@ -96,14 +91,11 @@ private:
             _doc(doc),
             _removeIfZero(removeIfZero),
             _createMissingPath(createMissingPath_)
-        {
-        }
+        {}
 
-        ModificationStatus doModify(FieldValue& fv);
-
-        bool onComplex(const Content&) { return false; }
-
-        bool createMissingPath() const { return _createMissingPath; }
+        ModificationStatus doModify(FieldValue& fv) override;
+        bool onComplex(const Content&) override { return false; }
+        bool createMissingPath() const override { return _createMissingPath; }
 
     private:
         DocumentCalculator _calc;
@@ -112,7 +104,7 @@ private:
         bool _createMissingPath;
     };
 
-    std::unique_ptr<FieldValue::IteratorHandler> getIteratorHandler(Document& doc) const;
+    std::unique_ptr<FieldValue::IteratorHandler> getIteratorHandler(Document& doc) const override;
 
     const DocumentTypeRepo *_repo;
     FieldValue::CP _newValue;
@@ -122,4 +114,3 @@ private:
 };
 
 } // ns document
-

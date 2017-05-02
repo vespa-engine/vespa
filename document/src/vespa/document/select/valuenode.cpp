@@ -199,7 +199,12 @@ FieldValueNode::FieldValueNode(const vespalib::string& doctype,
 {
 }
 
-const vespalib::string FieldValueNode::extractFieldName(const std::string & fieldExpression) {
+FieldValueNode::FieldValueNode(const FieldValueNode &) = default;
+FieldValueNode & FieldValueNode::operator = (const FieldValueNode &) = default;
+
+FieldValueNode::~FieldValueNode() {}
+vespalib::string
+FieldValueNode::extractFieldName(const std::string & fieldExpression) {
     std::smatch match;
 
     if (std::regex_match(fieldExpression, match, FIELD_NAME_REGEX) && match[1].matched) {
@@ -215,10 +220,8 @@ FieldValueNode::initFieldPath(const DocumentType& type) const {
         FieldPath::UP path(type.buildFieldPath(_fieldExpression));
         if (!path.get()) {
             throw FieldNotFoundException(
-                    vespalib::make_string("Could not create field path for doc "
-                                          "type: '%s' field: '%s'",
-                                          type.toString().c_str(),
-                                          _fieldExpression.c_str()),
+                    vespalib::make_string("Could not create field path for doc type: '%s' field: '%s'",
+                                          type.toString().c_str(), _fieldExpression.c_str()),
                     VESPA_STRLOC);
         }
         _fieldPath = *path;

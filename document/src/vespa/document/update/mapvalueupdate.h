@@ -11,7 +11,7 @@
  */
 #pragma once
 
-#include <vespa/document/update/valueupdate.h>
+#include "valueupdate.h"
 #include <vespa/document/fieldvalue/fieldvalue.h>
 
 namespace document {
@@ -37,10 +37,13 @@ public:
      * @param key The identifier of the field value to be updated.
      * @param update The update to map to apply to the field value of this.
      */
-    MapValueUpdate(const FieldValue& key, const ValueUpdate& update)
-        : ValueUpdate(),
-          _key(key.clone()),
-          _update(update.clone()) {}
+    MapValueUpdate(const FieldValue& key, const ValueUpdate& update);
+    MapValueUpdate(const MapValueUpdate &);
+    MapValueUpdate & operator = (const MapValueUpdate &);
+    MapValueUpdate(MapValueUpdate &&) = default;
+    MapValueUpdate & operator = (MapValueUpdate &&) = default;
+
+    ~MapValueUpdate();
 
     bool operator==(const ValueUpdate& other) const override;
 
