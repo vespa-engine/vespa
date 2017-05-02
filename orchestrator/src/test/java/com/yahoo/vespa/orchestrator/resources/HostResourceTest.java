@@ -10,6 +10,7 @@ import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.orchestrator.InstanceLookupService;
 import com.yahoo.vespa.orchestrator.OrchestratorImpl;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMock;
+import com.yahoo.vespa.orchestrator.policy.ApplicationApi;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.Policy;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchHostSuspendRequest;
@@ -90,8 +91,14 @@ public class HostResourceTest {
         public void grantSuspensionRequest(
                 ApplicationInstance<ServiceMonitorStatus> applicationInstance,
                 HostName hostName,
-                MutableStatusRegistry hostStatusRegistry) {
+                MutableStatusRegistry hostStatusService) throws HostStateChangeDeniedException {
+
         }
+
+        @Override
+        public void grantSuspensionRequest(ApplicationApi applicationApi) throws HostStateChangeDeniedException {
+        }
+
         @Override
         public void releaseSuspensionGrant(
                 ApplicationInstance<ServiceMonitorStatus> applicationInstance,
@@ -180,6 +187,12 @@ public class HostResourceTest {
                 MutableStatusRegistry hostStatusRegistry) throws HostStateChangeDeniedException {
             doThrow();
         }
+
+        @Override
+        public void grantSuspensionRequest(ApplicationApi applicationApi) throws HostStateChangeDeniedException {
+            doThrow();
+        }
+
         @Override
         public void releaseSuspensionGrant(
                 ApplicationInstance<ServiceMonitorStatus> applicationInstance,

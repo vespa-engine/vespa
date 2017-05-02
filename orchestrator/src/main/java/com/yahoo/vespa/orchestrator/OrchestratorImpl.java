@@ -13,8 +13,11 @@ import com.yahoo.vespa.orchestrator.controller.ClusterControllerClient;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerState;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerStateResponse;
+import com.yahoo.vespa.orchestrator.policy.ApplicationApi;
+import com.yahoo.vespa.orchestrator.policy.ApplicationApiImpl;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
+import com.yahoo.vespa.orchestrator.policy.HostedVespaClusterPolicy;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
 import com.yahoo.vespa.orchestrator.policy.Policy;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
@@ -24,8 +27,6 @@ import com.yahoo.vespa.orchestrator.status.StatusService;
 import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,7 +56,7 @@ public class OrchestratorImpl implements Orchestrator {
                             OrchestratorConfig orchestratorConfig,
                             InstanceLookupService instanceLookupService)
     {
-        this(new HostedVespaPolicy(clusterControllerClientFactory),
+        this(new HostedVespaPolicy(new HostedVespaClusterPolicy(), clusterControllerClientFactory),
                 clusterControllerClientFactory,
                 statusService,
                 instanceLookupService,
@@ -115,19 +116,22 @@ public class OrchestratorImpl implements Orchestrator {
     @Override
     public void suspend(HostName hostName) throws HostStateChangeDeniedException, HostNameNotFoundException {
         ApplicationInstance<ServiceMonitorStatus> appInstance = getApplicationInstance(hostName);
+        NodeGroup nodeGroup = new NodeGroup(appInstance, hostName);
+        suspendGroup(nodeGroup);
+    }
 
+    @Override
+    public void suspendGroup(NodeGroup nodeGroup) throws HostStateChangeDeniedException, HostNameNotFoundException {
+        ApplicationInstance<ServiceMonitorStatus> appInstance = nodeGroup.getApplication();
 
         try (MutableStatusRegistry hostStatusRegistry = statusService.lockApplicationInstance_forCurrentThreadOnly(appInstance.reference())) {
-            final HostStatus currentHostState = hostStatusRegistry.getHostStatus(hostName);
-
-            if (HostStatus.ALLOWED_TO_BE_DOWN == currentHostState) {
+            ApplicationInstanceStatus appStatus = statusService.forApplicationInstance(appInstance.reference()).getApplicationInstanceStatus();
+            if (appStatus == ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN) {
                 return;
             }
 
-            ApplicationInstanceStatus appStatus = statusService.forApplicationInstance(appInstance.reference()).getApplicationInstanceStatus();
-            if (appStatus == ApplicationInstanceStatus.NO_REMARKS) {
-                policy.grantSuspensionRequest(appInstance, hostName, hostStatusRegistry);
-            }
+            ApplicationApi applicationApi = new ApplicationApiImpl(appInstance, nodeGroup, hostStatusRegistry);
+            policy.grantSuspensionRequest(applicationApi);
         }
     }
 
@@ -157,40 +161,18 @@ public class OrchestratorImpl implements Orchestrator {
     public void suspendAll(HostName parentHostname, List<HostName> hostNames)
             throws BatchHostStateChangeDeniedException, BatchHostNameNotFoundException, BatchInternalErrorException {
         try {
-            hostNames = sortHostNamesForSuspend(hostNames);
-        } catch (HostNameNotFoundException e) {
-            throw new BatchHostNameNotFoundException(parentHostname, hostNames, e);
-        }
-
-        try {
-            for (HostName hostName : hostNames) {
+            List<NodeGroup> nodeGroupsOrderedByApplication = nodeGroupsOrderedForSuspend(hostNames);
+            for (NodeGroup nodeGroup : nodeGroupsOrderedByApplication) {
                 try {
-                    suspend(hostName);
+                    suspendGroup(nodeGroup);
                 } catch (HostStateChangeDeniedException e) {
-                    throw new BatchHostStateChangeDeniedException(parentHostname, hostNames, e);
-                } catch (HostNameNotFoundException e) {
-                    // Should never get here since since we would have received HostNameNotFoundException earlier.
-                    throw new BatchHostNameNotFoundException(parentHostname, hostNames, e);
+                    throw new BatchHostStateChangeDeniedException(parentHostname, nodeGroup, e);
                 } catch (RuntimeException e) {
                     throw new BatchInternalErrorException(parentHostname, hostNames, e);
                 }
             }
-        } catch (Exception e) {
-            rollbackSuspendAll(hostNames, e);
-            throw e;
-        }
-    }
-
-    private void rollbackSuspendAll(List<HostName> orderedHostNames, Exception exception) {
-        List<HostName> reverseOrderedHostNames = new ArrayList<>(orderedHostNames);
-        Collections.reverse(reverseOrderedHostNames);
-        for (HostName hostName : reverseOrderedHostNames) {
-            try {
-                resume(hostName);
-            } catch (HostStateChangeDeniedException | HostNameNotFoundException | RuntimeException e) {
-                // We're forced to ignore these since we're already rolling back a suspension.
-                exception.addSuppressed(e);
-            }
+        } catch (HostNameNotFoundException e) {
+            throw new BatchHostNameNotFoundException(parentHostname, hostNames, e);
         }
     }
 
@@ -241,13 +223,40 @@ public class OrchestratorImpl implements Orchestrator {
         ApplicationInstanceReference rightApplicationReference = applicationReferences.get(rightHostname);
         assert rightApplicationReference != null;
 
-        // ApplicationInstanceReference.toString() is e.g. "hosted-vespa:routing:dev:ci-corp-us-east-1:default"
-        int diff = leftApplicationReference.toString().compareTo(rightApplicationReference.toString());
+        // ApplicationInstanceReference.asString() is e.g. "hosted-vespa:routing:dev:ci-corp-us-east-1:default"
+        int diff = leftApplicationReference.asString().compareTo(rightApplicationReference.asString());
         if (diff != 0) {
             return diff;
         }
 
         return leftHostname.toString().compareTo(rightHostname.toString());
+    }
+
+    private List<NodeGroup> nodeGroupsOrderedForSuspend(List<HostName> hostNames) throws HostNameNotFoundException {
+        Map<ApplicationInstanceReference, NodeGroup> hostGroupMap = new HashMap<>(hostNames.size());
+        for (HostName hostName : hostNames) {
+            ApplicationInstance<ServiceMonitorStatus> application = getApplicationInstance(hostName);
+
+            NodeGroup nodeGroup = hostGroupMap.get(application);
+            if (nodeGroup == null) {
+                nodeGroup = new NodeGroup(application);
+                hostGroupMap.put(application.reference(), nodeGroup);
+            }
+
+            nodeGroup.addNode(hostName);
+        }
+
+        return hostGroupMap.values().stream()
+                .sorted((leftNodeGroup, rightNodeGroup) -> compareHostGroupsForSuspend(leftNodeGroup, rightNodeGroup))
+                .collect(Collectors.toList());
+    }
+
+    private int compareHostGroupsForSuspend(NodeGroup leftNodeGroup, NodeGroup rightNodeGroup) {
+        ApplicationInstanceReference leftApplicationReference = leftNodeGroup.getApplication().reference();
+        ApplicationInstanceReference rightApplicationReference = rightNodeGroup.getApplication().reference();
+
+        // ApplicationInstanceReference.toString() is e.g. "hosted-vespa:routing:dev:ci-corp-us-east-1:default"
+        return leftApplicationReference.toString().compareTo(rightApplicationReference.toString());
     }
 
     private HostStatus getNodeStatus(ApplicationInstanceReference applicationRef, HostName hostName) {

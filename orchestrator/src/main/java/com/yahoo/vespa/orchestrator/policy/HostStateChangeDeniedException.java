@@ -3,6 +3,7 @@ package com.yahoo.vespa.orchestrator.policy;
 
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceType;
+import com.yahoo.vespa.orchestrator.NodeGroup;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 
 /**
@@ -15,21 +16,36 @@ public class HostStateChangeDeniedException extends OrchestrationException {
 
     public HostStateChangeDeniedException(HostName hostName, String constraintName, 
                                           ServiceType serviceType, String message) {
-        super(createMessage(hostName, constraintName, serviceType, message));
-        this.constraintName = constraintName;
-        this.serviceType = serviceType;
+        this(hostName, constraintName, serviceType, message, null);
     }
 
     public HostStateChangeDeniedException(HostName hostName, String constraintName, 
                                           ServiceType serviceType, String message, Throwable cause) {
-        super(createMessage(hostName, constraintName, serviceType, message), cause);
+        this(hostName.toString(), constraintName, serviceType, message, cause);
+    }
+
+    public HostStateChangeDeniedException(NodeGroup nodeGroup,
+                                          String constraintName,
+                                          ServiceType serviceType,
+                                          String message) {
+        this(nodeGroup.toCommaSeparatedString(), constraintName, serviceType, message, null);
+    }
+
+    private HostStateChangeDeniedException(String nodes,
+                                           String constraintName,
+                                           ServiceType serviceType,
+                                           String message,
+                                           Throwable cause) {
+        super(createMessage(nodes, constraintName, serviceType, message), cause);
         this.constraintName = constraintName;
         this.serviceType = serviceType;
     }
 
-    private static String createMessage(HostName hostName, String constraintName, 
-                                        ServiceType serviceType, String message) {
-        return "Changing the state of host " + hostName + " would violate " + constraintName
+    private static String createMessage(String nodes,
+                                        String constraintName,
+                                        ServiceType serviceType,
+                                        String message) {
+        return "Changing the state of " + nodes + " would violate " + constraintName
                 + " for service type " + serviceType + ": " + message;
     }
 

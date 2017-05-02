@@ -33,7 +33,6 @@ public class DummyInstanceLookupService implements InstanceLookupService {
 
     private static final Set<ApplicationInstance<ServiceMonitorStatus>> apps = new HashSet<>();
 
-
     static {
         apps.add(new ApplicationInstance<>(
                 new TenantId("test-tenant-id"),
@@ -118,6 +117,11 @@ public class DummyInstanceLookupService implements InstanceLookupService {
                 )
         ));
     }
+
+    // A node group is tied to an application, so we need to define them after we have populated the above applications.
+    public final static NodeGroup TEST1_NODE_GROUP = new NodeGroup(new DummyInstanceLookupService().findInstanceByHost(TEST1_HOST_NAME).get(), TEST1_HOST_NAME);
+    public final static NodeGroup TEST3_NODE_GROUP = new NodeGroup(new DummyInstanceLookupService().findInstanceByHost(TEST3_HOST_NAME).get(), TEST3_HOST_NAME);
+    public final static NodeGroup TEST6_NODE_GROUP = new NodeGroup(new DummyInstanceLookupService().findInstanceByHost(TEST6_HOST_NAME).get(), TEST6_HOST_NAME);
 
 
     @Override

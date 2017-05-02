@@ -7,7 +7,7 @@ import java.util.Objects;
 /**
  * @author bjorncs
  */
-public class HostName {
+public class HostName implements Comparable<HostName> {
 
     private final String id;
 
@@ -39,5 +39,10 @@ public class HostName {
     @Override
     public int hashCode() {
         return Objects.hash(id);
+    }
+
+    @Override
+    public int compareTo(HostName o) {
+        return id.compareTo(o.id);
     }
 }
