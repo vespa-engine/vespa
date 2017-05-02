@@ -2,13 +2,12 @@
 
 #pragma once
 
+#include "handler.h"
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/vespalib/util/thread.h>
 #include <vespa/vespalib/util/runnable.h>
 #include <vespa/vespalib/util/joinable.h>
-
-#include "handler.h"
 
 namespace vbench {
 
@@ -31,13 +30,13 @@ private:
     vespalib::Thread                           _thread;
     bool                                       _done;
 
-    virtual void run();
+    void run() override;
 
 public:
     HandlerThread(Handler<T> &next);
-    virtual ~HandlerThread();
-    virtual void handle(std::unique_ptr<T> obj);
-    virtual void join();
+    ~HandlerThread();
+    void handle(std::unique_ptr<T> obj) override;
+    void join() override;
 };
 
 } // namespace vbench

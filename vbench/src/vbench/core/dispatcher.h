@@ -36,10 +36,11 @@ private:
 
 public:
     Dispatcher(Handler<T> &fallback);
+    ~Dispatcher();
     bool waitForThreads(size_t threads, size_t pollCnt) const;
-    virtual void close();
-    virtual void handle(std::unique_ptr<T> obj);
-    virtual std::unique_ptr<T> provide();
+    void close() override;
+    void handle(std::unique_ptr<T> obj) override;
+    std::unique_ptr<T> provide() override;
 };
 
 } // namespace vbench

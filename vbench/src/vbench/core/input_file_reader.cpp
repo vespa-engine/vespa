@@ -14,6 +14,8 @@ InputFileReader::InputFileReader(const string &name)
     }
 }
 
+InputFileReader::~InputFileReader() {}
+
 bool
 InputFileReader::readLine(string &dst)
 {
