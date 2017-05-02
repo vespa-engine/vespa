@@ -43,6 +43,18 @@ ExceptionWithPayload::what() const noexcept {
     return _msg.c_str();
 }
 
+ExceptionWithPayload::ExceptionWithPayload(vespalib::stringref msg)
+    : std::exception(),
+      _msg(msg),
+      _payload()
+{ }
+ExceptionWithPayload::ExceptionWithPayload(vespalib::stringref msg, Anything::UP payload)
+    : std::exception(),
+      _msg(msg),
+      _payload(std::move(payload))
+{ }
+ExceptionWithPayload::~ExceptionWithPayload() {}
+
 SilenceUncaughtException::SilenceUncaughtException(const std::exception & e) :
     _oldTerminate(std::set_terminate(silent_terminate))
 {
@@ -83,6 +95,11 @@ PortListenException::PortListenException(int port, const vespalib::stringref &pr
       _protocol(protocol)
 {
 }
+
+PortListenException::PortListenException(const PortListenException &) = default;
+PortListenException & PortListenException::operator = (const PortListenException &) = default;
+
+PortListenException::~PortListenException() {}
 
 //-----------------------------------------------------------------------------
 

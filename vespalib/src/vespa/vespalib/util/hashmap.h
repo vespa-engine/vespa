@@ -70,7 +70,7 @@ private:
     HashMap<T>& operator=(const HashMap<T> &);
 
     inline uint32_t getSize(uint32_t minBuckets) const;
-    inline Entry *lookup(const char *key) const;
+    Entry *lookup(const char *key) const;
 
 public:
     /**
@@ -100,14 +100,14 @@ public:
 
     friend class Iterator;
 
-    inline explicit HashMap(const T &empty, uint32_t minBuckets = 50);
-    inline ~HashMap();
+    explicit HashMap(const T &empty, uint32_t minBuckets = 50);
+    ~HashMap();
 
-    inline void clear();
-    inline T set(const char *key, const T &value);
+    void clear();
+    T set(const char *key, const T &value);
     inline bool isSet(const char *key) const;
     inline const T &get(const char *key) const;
-    inline T remove(const char *key);
+    T remove(const char *key);
     inline const T& operator[](const char *key) const; // R-value
     inline Iterator iterator() const;
 

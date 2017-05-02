@@ -20,8 +20,8 @@
   void test_kit_main();                                           \
   struct TestKitApp : FastOS_Application                          \
   {                                                               \
-      virtual bool useProcessStarter() const { return useProxy; } \
-      virtual int Main();                                         \
+      bool useProcessStarter() const override { return useProxy; } \
+      int Main() override;                                         \
   };                                                              \
   int main(int argc, char **argv)                                 \
   {                                                               \
