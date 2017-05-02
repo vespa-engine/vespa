@@ -33,6 +33,7 @@ private:
 
 public:
     HitCollectorTest();
+    ~HitCollectorTest();
     int Main() override;
 };
 
@@ -40,6 +41,8 @@ HitCollectorTest::HitCollectorTest()
     : _docType("testdoc", 0)
 {
 }
+
+HitCollectorTest::~HitCollectorTest() {}
 
 void
 HitCollectorTest::assertHit(SearchResult::RankType expRank, uint32_t hitNo, SearchResult & rs)
