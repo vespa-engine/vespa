@@ -20,6 +20,8 @@ DocumentDBExplorer::DocumentDBExplorer(const DocumentDB::SP &docDb)
 {
 }
 
+DocumentDBExplorer::~DocumentDBExplorer() {}
+
 void
 DocumentDBExplorer::get_state(const Inserter &inserter, bool full) const
 {

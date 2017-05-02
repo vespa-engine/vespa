@@ -5,9 +5,7 @@
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-namespace proton {
-
-namespace test {
+namespace proton::test {
 
 /**
  * Builder for creating documents for a set of users.
@@ -20,6 +18,7 @@ private:
     UserDocuments             _docs;
 public:
     UserDocumentsBuilder();
+    ~UserDocumentsBuilder();
     const document::DocumentTypeRepo::SP &getRepo() const {
         return _builder.getDocumentTypeRepo();
     }
@@ -34,7 +33,4 @@ public:
 };
 
 
-} // namespace test
-
-} // namespace proton
-
+}

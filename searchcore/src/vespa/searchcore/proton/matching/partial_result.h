@@ -29,6 +29,7 @@ private:
 
 public:
     PartialResult(size_t maxSize_in, bool hasSortData_in);
+    ~PartialResult();
     size_t size() const { return _hits.size(); }
     size_t maxSize() const { return _maxSize; }
     size_t totalHits() const { return _totalHits; }

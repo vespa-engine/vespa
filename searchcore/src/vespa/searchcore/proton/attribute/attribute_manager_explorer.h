@@ -17,6 +17,7 @@ private:
 
 public:
     AttributeManagerExplorer(const proton::IAttributeManager::SP &mgr);
+    ~AttributeManagerExplorer();
 
     // Implements vespalib::StateExplorer
     virtual void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;

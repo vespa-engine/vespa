@@ -31,6 +31,7 @@ public:
                      const vespalib::string &diversity_attribute,
                      double diversityCutoffFactor,
                      DiversityCutoffStrategy diversityCutoffStrategy);
+    ~AttributeLimiter();
     search::queryeval::SearchIterator::UP create_search(size_t want_hits, size_t max_group_size, bool strictSearch);
     bool was_used() const { return ((!_match_datas.empty()) || (_blueprint.get() != nullptr)); }
     ssize_t getEstimatedHits() const { return _estimatedHits; }

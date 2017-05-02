@@ -18,8 +18,8 @@ struct SimpleJobTracker : public IJobTracker
     {}
 
     // Implements IJobTracker
-    virtual void start() { _started.countDown(); }
-    virtual void end() { _ended.countDown(); }
+    void start() override { _started.countDown(); }
+    void end() override { _ended.countDown(); }
 };
 
 } // namespace test

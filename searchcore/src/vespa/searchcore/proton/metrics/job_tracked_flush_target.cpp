@@ -1,11 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.metrics.job_tracked_flush_target");
 #include "job_tracked_flush_target.h"
 #include "job_tracked_flush_task.h"
-#include <memory>
 
 using searchcorespi::IFlushTarget;
 using searchcorespi::FlushTask;
@@ -19,6 +15,8 @@ JobTrackedFlushTarget::JobTrackedFlushTarget(const IJobTracker::SP &tracker,
       _target(target)
 {
 }
+
+JobTrackedFlushTarget::~JobTrackedFlushTarget() {}
 
 FlushTask::UP
 JobTrackedFlushTarget::initFlush(SerialNum currentSerial)

@@ -38,7 +38,7 @@ public:
                              const search::GrowStrategy &grow = search::GrowStrategy(),
                              const DocumentMetaStore::IGidCompare::SP &gidCompare =
                              DocumentMetaStore::IGidCompare::SP(new DocumentMetaStore::DefaultGidCompare));
-
+    ~DocumentMetaStoreContext();
     /**
      * Create a new context with the given document meta store encapsulated
      * as an attribute vector.

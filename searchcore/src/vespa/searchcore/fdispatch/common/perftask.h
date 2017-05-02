@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <vespa/fnet/task.h>
+
 class FastS_AppContext;
 
 class FastS_PerfTask : public FNET_Task
@@ -18,7 +20,7 @@ private:
 public:
     FastS_PerfTask(FastS_AppContext &ctx, double delay);
     ~FastS_PerfTask();
-    virtual void PerformTask();
+    void PerformTask() override;
     bool isValid() const { return _valid; }
 };
 

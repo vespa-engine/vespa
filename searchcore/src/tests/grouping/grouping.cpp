@@ -139,8 +139,8 @@ class CheckAttributeReferences : public vespalib::ObjectOperation, public vespal
 {
 public:
     CheckAttributeReferences(bool log=false) : _log(log), _numrefs(0) { }
-    bool _log;
-    int _numrefs;
+    bool     _log;
+    uint32_t _numrefs;
 private:
     void execute(vespalib::Identifiable &obj) override {
         if (_log) {
@@ -338,7 +338,7 @@ TEST_F("testGroupingSession", DoomFixture()) {
     for (unsigned int i = 0; i < gl3.size(); i++) {
         gl3[i]->select(attrCheck_after, attrCheck_after);
     }
-    EXPECT_EQUAL(attrCheck_after._numrefs, 0);
+    EXPECT_EQUAL(attrCheck_after._numrefs, 0u);
     {
         EXPECT_EQUAL(id, session.getSessionId());
         ASSERT_TRUE(!session.getGroupingManager().empty());

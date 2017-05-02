@@ -2,13 +2,13 @@
 
 #pragma once
 
+#include "i_document_retriever.h"
+#include <vespa/searchcore/proton/common/cachedselect.h>
+#include <vespa/searchcore/proton/common/selectcontext.h>
+#include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/selection.h>
 #include <vespa/persistence/spi/result.h>
-#include "i_document_retriever.h"
-#include <vespa/searchlib/common/idocumentmetastore.h>
-#include <vespa/searchcore/proton/common/cachedselect.h>
-#include <vespa/searchcore/proton/common/selectcontext.h>
 #include <vespa/persistence/spi/read_consistency.h>
 
 namespace proton {
@@ -45,6 +45,7 @@ public:
                      ssize_t defaultSerializedSize,
                      bool ignoreMaxBytes,
                      ReadConsistency readConsistency=ReadConsistency::STRONG);
+    ~DocumentIterator();
     void add(const IDocumentRetriever::SP &retriever);
     storage::spi::IterateResult iterate(size_t maxBytes);
 };

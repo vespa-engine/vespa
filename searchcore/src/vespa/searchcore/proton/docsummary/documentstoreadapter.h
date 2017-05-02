@@ -2,12 +2,12 @@
 
 #pragma once
 
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/searchlib/docstore/idocumentstore.h>
+#include "fieldcache.h"
 #include <vespa/searchsummary/docsummary/docsumstore.h>
 #include <vespa/searchsummary/docsummary/resultconfig.h>
 #include <vespa/searchsummary/docsummary/resultpacker.h>
-#include "fieldcache.h"
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/searchlib/docstore/idocumentstore.h>
 
 namespace proton {
 
@@ -41,6 +41,7 @@ public:
                          const vespalib::string &resultClassName,
                          const FieldCache::CSP &fieldCache,
                          const std::set<vespalib::string> &markupFields);
+    ~DocumentStoreAdapter();
 
     const search::docsummary::ResultClass *getResultClass() const {
         return _resultClass;

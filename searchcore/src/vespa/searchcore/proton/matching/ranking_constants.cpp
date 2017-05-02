@@ -14,6 +14,8 @@ RankingConstants::Constant::Constant(const vespalib::string &name_in,
 {
 }
 
+RankingConstants::Constant::~Constant() {}
+
 bool
 RankingConstants::Constant::operator==(const Constant &rhs) const
 {
@@ -26,6 +28,8 @@ RankingConstants::RankingConstants()
     : _constants()
 {
 }
+
+RankingConstants::~RankingConstants() {}
 
 RankingConstants::RankingConstants(const Vector &constants)
     : _constants()

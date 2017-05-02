@@ -1,10 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "imatchhandler.h"
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/handlermap.hpp>
 #include <vespa/searchcore/proton/common/statusreport.h>
-#include <vespa/searchcore/proton/matchengine/imatchhandler.h>
 #include <vespa/searchlib/engine/searchapi.h>
 #include <vespa/vespalib/net/state_explorer.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>

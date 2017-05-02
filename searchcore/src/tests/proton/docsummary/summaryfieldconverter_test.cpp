@@ -196,6 +196,7 @@ class Test : public vespalib::TestApp {
     void setSpanTree(StringFieldValue & value, SpanTree::UP tree);
 public:
     Test();
+    ~Test();
     int Main() override;
 };
 
@@ -245,6 +246,8 @@ Test::Test() :
 {
     ASSERT_TRUE(_documentType);
 }
+
+Test::~Test() {}
 
 #define TEST_CALL(func) \
     TEST_DO(setUp()); \
