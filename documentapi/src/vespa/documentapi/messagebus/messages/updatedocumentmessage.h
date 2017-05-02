@@ -26,6 +26,7 @@ public:
      * Constructs a new document message for deserialization.
      */
     UpdateDocumentMessage();
+    ~UpdateDocumentMessage();
 
     /**
      * Constructs a new document update message.

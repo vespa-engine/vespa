@@ -11,6 +11,7 @@ private:
 
 public:
     StatBucketReply();
+    ~StatBucketReply();
     void setResults(const string& results) { _results = results; }
     const string& getResults() const { return _results; }
     string toString() const override { return "statbucketreply"; }

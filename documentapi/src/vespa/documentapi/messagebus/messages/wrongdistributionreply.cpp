@@ -15,4 +15,6 @@ WrongDistributionReply::WrongDistributionReply(const string &systemState) :
     _systemState(systemState)
 {}
 
+WrongDistributionReply::~WrongDistributionReply() {}
+
 }

@@ -43,6 +43,8 @@ CreateVisitorMessage::CreateVisitorMessage(const string& libraryName,
     _maxBucketsPerVisitor(1)
 {}
 
+CreateVisitorMessage::~CreateVisitorMessage() {}
+
 DocumentReply::UP
 CreateVisitorMessage::doCreateReply() const
 {

@@ -1,4 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include "queryresultmessage.h"
 
 namespace documentapi {
@@ -13,9 +14,9 @@ QueryResultMessage::QueryResultMessage(const vdslib::SearchResult & result, cons
     VisitorMessage(),
     _searchResult(result),
     _summary(summary)
-{
-    // empty
-}
+{}
+
+QueryResultMessage::~QueryResultMessage() {}
 
 DocumentReply::UP
 QueryResultMessage::doCreateReply() const

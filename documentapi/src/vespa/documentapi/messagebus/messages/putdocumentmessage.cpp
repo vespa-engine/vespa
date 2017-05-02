@@ -10,9 +10,7 @@ PutDocumentMessage::PutDocumentMessage() :
     TestAndSetMessage(),
     _document(),
     _time(0)
-{
-    // empty
-}
+{}
 
 PutDocumentMessage::PutDocumentMessage(document::Document::SP document) :
     TestAndSetMessage(),
@@ -21,6 +19,8 @@ PutDocumentMessage::PutDocumentMessage(document::Document::SP document) :
 {
     setDocument(document);
 }
+
+PutDocumentMessage::~PutDocumentMessage() {}
 
 DocumentReply::UP
 PutDocumentMessage::doCreateReply() const

@@ -48,11 +48,11 @@ public:
     typedef std::unique_ptr<CreateVisitorMessage> UP;
 
     CreateVisitorMessage(); // must be deserialized into
-
     CreateVisitorMessage(const string& libraryName,
                          const string& instanceId,
                          const string& controlDestination,
                          const string& dataDestination);
+    ~CreateVisitorMessage();
 
     const string& getLibraryName() const { return _libName; }
     void setLibraryName(const string& value) { _libName = value; }
