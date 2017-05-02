@@ -12,8 +12,8 @@ import java.util.stream.Collectors;
 
 /**
  * Keeps track of flavor clusters: disjoint set of flavors that are connected through 'replaces'.
- * Given a node n, which has the flavor x, the flavor cluster of which x is a member of is the set of
- * flavors that n could get next time it is redeployed.
+ * Given a node n, which has the flavor x, the flavor cluster of x is the set of flavors that
+ * n could get next time it is redeployed.
  *
  * @author freva
  */

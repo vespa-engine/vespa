@@ -1,15 +1,20 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.maintenance.retire.RetirementPolicy;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.provisioning.FlavorClusters;
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -20,11 +25,14 @@ import java.util.stream.Collectors;
  * @author freva
  */
 public class NodeRetirer extends Maintainer {
+    private static final long MAX_SIMULTANEOUS_RETIRES_PER_APPLICATION = 1;
     private static final Logger log = Logger.getLogger(NodeRetirer.class.getName());
+
+    private final FlavorClusters flavorClusters;
     private final RetirementPolicy retirementPolicy;
 
-    public NodeRetirer(NodeRepository nodeRepository, Zone zone, Duration interval, JobControl jobControl,
-                       RetirementPolicy retirementPolicy, Zone... applies) {
+    public NodeRetirer(NodeRepository nodeRepository, Zone zone, FlavorClusters flavorClusters, Duration interval,
+                       JobControl jobControl, RetirementPolicy retirementPolicy, Zone... applies) {
         super(nodeRepository, interval, jobControl);
         if (! Arrays.asList(applies).contains(zone)) {
             String targetZones = Arrays.stream(applies).map(Zone::toString).collect(Collectors.joining(", "));
@@ -33,16 +41,23 @@ public class NodeRetirer extends Maintainer {
         }
 
         this.retirementPolicy = retirementPolicy;
+        this.flavorClusters = flavorClusters;
     }
 
     @Override
     protected void maintain() {
-        retireUnallocated();
+        if (retireUnallocated()) {
+            retireAllocated();
+        }
     }
 
+    /**
+     * Retires unallocated nodes by moving them directly to parked.
+     * Returns true iff all there are no unallocated nodes that match the retirement policy
+     */
     boolean retireUnallocated() {
         try (Mutex lock = nodeRepository().lockUnallocated()) {
-            List<Node> allNodes = nodeRepository().getNodes();
+            List<Node> allNodes = nodeRepository().getNodes(NodeType.tenant);
             Map<Flavor, Long> numSpareNodesByFlavor = getNumberSpareReadyNodesByFlavor(allNodes);
 
             long numFlavorsWithUnsuccessfullyRetiredNodes = allNodes.stream()
@@ -60,6 +75,76 @@ public class NodeRetirer extends Maintainer {
 
             return numFlavorsWithUnsuccessfullyRetiredNodes == 0;
         }
+    }
+
+    void retireAllocated() {
+        List<Node> allNodes = nodeRepository().getNodes(NodeType.tenant);
+        List<ApplicationId> activeApplications = getActiveApplicationIds(allNodes);
+        Map<Flavor, Long> numSpareNodesByFlavor = getNumberSpareReadyNodesByFlavor(allNodes);
+
+        for (ApplicationId applicationId : activeApplications) {
+            try (Mutex lock = nodeRepository().lock(applicationId)) {
+                // Get nodes for current application under lock
+                List<Node> applicationNodes = nodeRepository().getNodes(applicationId);
+                Set<Node> retireableNodes = getRetireableNodesForApplication(applicationNodes);
+                long numNodesAllowedToRetire = getNumberNodesAllowToRetireForApplication(applicationNodes, MAX_SIMULTANEOUS_RETIRES_PER_APPLICATION);
+
+                for (Iterator<Node> iterator = retireableNodes.iterator(); iterator.hasNext() && numNodesAllowedToRetire > 0; ) {
+                    Node retireableNode = iterator.next();
+
+                    Set<Flavor> possibleReplacementFlavors = flavorClusters.getFlavorClusterFor(retireableNode.flavor());
+                    Flavor flavorWithMinSpareNodes = getMinAmongstKeys(numSpareNodesByFlavor, possibleReplacementFlavors);
+                    long spareNodesForMinFlavor = numSpareNodesByFlavor.getOrDefault(flavorWithMinSpareNodes, 0L);
+                    if (spareNodesForMinFlavor > 0) {
+                        log.info("Setting node " + retireableNode + " to wantToRetire. Policy: " +
+                                retirementPolicy.getClass().getSimpleName());
+                        Node updatedNode = retireableNode.with(retireableNode.status().withWantToRetire(true));
+                        nodeRepository().write(updatedNode);
+                        numSpareNodesByFlavor.put(flavorWithMinSpareNodes, spareNodesForMinFlavor - 1);
+                        numNodesAllowedToRetire--;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns a list of ApplicationIds sorted by number of active nodes the application has allocated to it
+     */
+    List<ApplicationId> getActiveApplicationIds(List<Node> nodes) {
+        return nodes.stream()
+                .filter(node -> node.state() == Node.State.active)
+                .collect(Collectors.groupingBy(
+                        node -> node.allocation().get().owner(),
+                        Collectors.counting()))
+                .entrySet().stream()
+                .sorted((c1, c2) -> c2.getValue().compareTo(c1.getValue()))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * @param applicationNodes All the nodes allocated to an application
+     * @return Set of nodes that all should eventually be retired
+     */
+    Set<Node> getRetireableNodesForApplication(List<Node> applicationNodes) {
+        return applicationNodes.stream()
+                .filter(node -> node.state() == Node.State.active)
+                .filter(node -> !node.status().wantToRetire())
+                .filter(retirementPolicy::shouldRetire)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * @param applicationNodes All the nodes allocated to an application
+     * @return number of nodes we can safely start retiring
+     */
+    long getNumberNodesAllowToRetireForApplication(List<Node> applicationNodes, long maxSimultaneousRetires) {
+        long numNodesInWantToRetire = applicationNodes.stream()
+                .filter(node -> node.status().wantToRetire())
+                .filter(node -> node.state() != Node.State.parked)
+                .count();
+        return Math.max(0, maxSimultaneousRetires - numNodesInWantToRetire);
     }
 
     /**
@@ -99,5 +184,16 @@ public class NodeRetirer extends Maintainer {
     long getNumSpareNodes(long numActiveNodes, long numReadyNodes) {
         long numNodesToSpare = (long) Math.ceil(0.1 * numActiveNodes);
         return Math.max(0L, numReadyNodes - numNodesToSpare);
+    }
+
+    /**
+     * Returns the key with the smallest value amongst keys
+     */
+    <K, V extends Comparable<V>> K getMinAmongstKeys(Map<K, V> map, Set<K> keys) {
+        return map.entrySet().stream()
+                .filter(entry -> keys.contains(entry.getKey()))
+                .min(Comparator.comparing(Map.Entry::getValue))
+                .map(Map.Entry::getKey)
+                .orElseThrow(() -> new RuntimeException("No min key found"));
     }
 }

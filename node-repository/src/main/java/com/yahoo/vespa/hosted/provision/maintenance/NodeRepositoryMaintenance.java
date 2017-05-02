@@ -13,6 +13,7 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.maintenance.retire.RetireIPv4OnlyNodes;
+import com.yahoo.vespa.hosted.provision.provisioning.FlavorClusters;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
@@ -70,7 +71,9 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         dirtyExpirer = new DirtyExpirer(nodeRepository, clock, durationFromEnv("dirty_expiry").orElse(defaults.dirtyExpiry), jobControl);
         nodeRebooter = new NodeRebooter(nodeRepository, clock, durationFromEnv("reboot_interval").orElse(defaults.rebootInterval), jobControl);
         metricsReporter = new MetricsReporter(nodeRepository, metric, durationFromEnv("metrics_interval").orElse(defaults.metricsInterval), jobControl);
-        nodeRetirer = new NodeRetirer(nodeRepository, zone, durationFromEnv("retire_interval").orElse(defaults.nodeRetirerInterval), jobControl,
+
+        FlavorClusters flavorClusters = new FlavorClusters(zone.nodeFlavors().get().getFlavors());
+        nodeRetirer = new NodeRetirer(nodeRepository, zone, flavorClusters, durationFromEnv("retire_interval").orElse(defaults.nodeRetirerInterval), jobControl,
                 new RetireIPv4OnlyNodes(),
                 new Zone(SystemName.cd, Environment.dev, RegionName.from("cd-us-central-1")),
                 new Zone(SystemName.cd, Environment.prod, RegionName.from("cd-us-central-1")),

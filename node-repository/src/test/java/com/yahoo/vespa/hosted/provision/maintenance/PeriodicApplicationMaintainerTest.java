@@ -204,7 +204,7 @@ public class PeriodicApplicationMaintainerTest {
 
     }
     
-    private static class TestablePeriodicApplicationMaintainer extends PeriodicApplicationMaintainer {
+    public static class TestablePeriodicApplicationMaintainer extends PeriodicApplicationMaintainer {
 
         private Optional<List<Node>> overriddenNodesNeedingMaintenance;
         
