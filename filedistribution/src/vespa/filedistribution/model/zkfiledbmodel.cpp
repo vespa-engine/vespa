@@ -1,15 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #include "filedistributionmodel.h"
-
-#include <ostream>
-#include <algorithm>
-
 #include "zkfacade.h"
 #include "zkfiledbmodel.h"
 #include "deployedfilestodownload.h"
 #include <vespa/filedistribution/common/logfwd.h>
 #include <sys/file.h>
+#include <ostream>
+#include <algorithm>
 
 namespace fs = boost::filesystem;
 
@@ -249,6 +247,7 @@ ZKFileDBModel::ZKFileDBModel(const std::shared_ptr<ZKFacade>& zk)
     createNode(_hostsPath, *_zk);
 }
 
+ZKFileDBModel::~ZKFileDBModel() {}
 
 char
 ZKFileDBModel::getProgress(const Path& path) {
