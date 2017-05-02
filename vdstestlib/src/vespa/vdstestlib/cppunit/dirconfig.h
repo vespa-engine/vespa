@@ -35,6 +35,7 @@ struct DirConfig {
         mutable bool dirtyCache;
 
         Config(const ConfigName&);
+        ~Config();
 
         void clear() { config.clear(); }
         void set(const ConfigKey&); // Set valueless key, such as array size
@@ -48,6 +49,7 @@ struct DirConfig {
     };
 
     DirConfig();
+    ~DirConfig();
 
     // Adjusts the memory representation of this config.
     // publish() to push the config from memory to files.
