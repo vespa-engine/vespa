@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "mutable_dense_tensor_view.h"
 
 using vespalib::eval::ValueType;
@@ -19,6 +18,8 @@ MutableDenseTensorView::MutableValueType::MutableValueType(ValueType type_in)
         }
     }
 }
+
+MutableDenseTensorView::MutableValueType::~MutableValueType() {}
 
 MutableDenseTensorView::MutableDenseTensorView(ValueType type_in)
     : DenseTensorView(_concreteType.type(), CellsRef()),

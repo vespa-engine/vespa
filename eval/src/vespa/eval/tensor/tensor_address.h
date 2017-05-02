@@ -34,6 +34,11 @@ public:
         Element(const vespalib::string &dimension_in, const vespalib::string &label_in)
             : _dimension(dimension_in), _label(label_in)
         {}
+        Element(const Element &) = default;
+        Element & operator = (const Element &) = default;
+        Element(Element &&) = default;
+        Element & operator = (Element &&) = default;
+        ~Element();
         const vespalib::string &dimension() const { return _dimension; }
         const vespalib::string &label() const { return _label; }
         bool operator<(const Element &rhs) const {
@@ -65,8 +70,13 @@ public:
     explicit TensorAddress(const Elements &elements_in);
     explicit TensorAddress(Elements &&elements_in)
         : _elements(std::move(elements_in))
-    {
-    }
+    {}
+    TensorAddress(const TensorAddress &) = default;
+    TensorAddress & operator = (const TensorAddress &) = default;
+    TensorAddress(TensorAddress &&) = default;
+    TensorAddress & operator = (TensorAddress &&) = default;
+
+    ~TensorAddress();
     const Elements &elements() const { return _elements; }
     bool hasDimension(const vespalib::string &dimension) const;
     bool operator<(const TensorAddress &rhs) const;
