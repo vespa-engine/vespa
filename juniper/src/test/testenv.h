@@ -20,6 +20,7 @@
 #include <vespa/juniper/mcand.h>
 #include <vespa/juniper/propreader.h>
 #include <vespa/juniper/specialtokenregistry.h>
+#include <vespa/fastos/app.h>
 
 namespace juniper
 {
@@ -55,9 +56,9 @@ private:
     std::map<std::string, std::string> _map;
 public:
     PropertyMap();
-    virtual ~PropertyMap();
+    ~PropertyMap();
     PropertyMap &set(const char *name, const char *value);
-    virtual const char* GetProperty(const char* name, const char* def = NULL) override;
+    const char* GetProperty(const char* name, const char* def = NULL) override;
 };
 
 

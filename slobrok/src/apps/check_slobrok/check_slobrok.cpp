@@ -1,14 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP("check_slobrok");
 
 #include <vespa/fnet/frt/frt.h>
-
+#include <vespa/fastos/app.h>
 #include <string>
 #include <sstream>
 
+#include <vespa/log/log.h>
+LOG_SETUP("check_slobrok");
 
 class Slobrok_Checker : public FastOS_Application
 {
@@ -25,9 +23,8 @@ public:
     int usage();
     void initRPC(const char *spec);
     void finiRPC();
-    virtual int Main() override;
+    int Main() override;
 };
-
 
 Slobrok_Checker::~Slobrok_Checker()
 {

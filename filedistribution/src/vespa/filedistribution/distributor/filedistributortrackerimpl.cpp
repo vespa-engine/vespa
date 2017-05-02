@@ -1,13 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "filedistributortrackerimpl.h"
-#include <cmath>
-#include <libtorrent/tracker_manager.hpp>
-#include <libtorrent/torrent.hpp>
-#include <vespa/filedistribution/model/filedistributionmodel.h>
-#include <vespa/filedistribution/model/zkfacade.h>
 #include "filedownloader.h"
-#include "hostname.h"
+#include <vespa/filedistribution/model/zkfacade.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".filedistributiontrackerimpl");
