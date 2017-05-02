@@ -1,22 +1,22 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <unistd.h>
-#include <time.h>
-#include <assert.h>
-#include "errhandle.h"
-#include "service.h"
+
 #include "forward.h"
+#include "errhandle.h"
 #include <vespa/vespalib/component/vtag.h>
-#include <vespa/log/log.h>
 
 LOG_SETUP("");
 LOG_RCSID("$Id$");
 
 namespace logdemon {
+
+Forwarder::Forwarder()
+    : _logserverfd(-1),
+      _forwardMap(),
+      _levelparser(),
+      knownServices(),
+      _badLines(0)
+{}
+Forwarder::~Forwarder() {}
 
 void
 Forwarder::forwardText(const char *text, int len)
@@ -34,7 +34,6 @@ Forwarder::forwardText(const char *text, int len)
     }
 }
 
-
 void
 Forwarder::sendMode()
 {
@@ -47,7 +46,6 @@ Forwarder::sendMode()
         LOG(warning, "too long mode line: %s", buf);
     }
 }
-
 
 void
 Forwarder::forwardLine(const char *line, const char *eol)
