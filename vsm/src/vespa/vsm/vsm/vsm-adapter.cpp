@@ -1,11 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vsm/vsm/vsm-adapter.h>
-#include <vespa/vsm/vsm/docsumconfig.h>
-#include <vespa/searchsummary/docsummary/keywordextractor.h>
-
-#include <vespa/config-summary.h>
-#include <vespa/config-summarymap.h>
+#include "vsm-adapter.h"
+#include "docsumconfig.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.vsm-adapter");
@@ -50,13 +46,15 @@ void GetDocsumsStateCallback::FillDocumentLocations(GetDocsumsState *state, IDoc
 }
 
 
-GetDocsumsStateCallback::~GetDocsumsStateCallback(void) { }
+GetDocsumsStateCallback::~GetDocsumsStateCallback() { }
 
 DocsumTools::FieldSpec::FieldSpec() :
     _outputName(),
     _inputNames(),
     _command(VsmsummaryConfig::Fieldmap::NONE)
 { }
+
+DocsumTools::FieldSpec::~FieldSpec() {}
 
 DocsumTools::DocsumTools(std::unique_ptr<DynamicDocsumWriter> writer) :
     _writer(std::move(writer)),

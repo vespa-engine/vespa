@@ -23,6 +23,7 @@ private:
 
 public:
     FlattenDocsumWriter(const vespalib::string & separator = " ");
+    ~FlattenDocsumWriter();
     void setSeparator(const vespalib::string & separator) { _separator = separator; }
     const CharBuffer & getResult() const { return _output; }
     void clear() {

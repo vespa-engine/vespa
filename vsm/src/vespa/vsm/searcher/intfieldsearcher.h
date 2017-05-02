@@ -1,18 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vsm/searcher/fieldsearcher.h>
+#include "fieldsearcher.h"
 
-namespace vsm
-{
+namespace vsm {
 
 class IntFieldSearcher : public FieldSearcher
 {
 public:
     DUPLICATE(IntFieldSearcher);
     IntFieldSearcher(FieldIdT fId=0);
-    virtual void prepare(search::QueryTermList & qtl, const SharedSearcherBuf & buf) override;
-    virtual void onValue(const document::FieldValue & fv) override;
+    ~IntFieldSearcher();
+    void prepare(search::QueryTermList & qtl, const SharedSearcherBuf & buf) override;
+    void onValue(const document::FieldValue & fv) override;
 protected:
     class IntInfo
     {

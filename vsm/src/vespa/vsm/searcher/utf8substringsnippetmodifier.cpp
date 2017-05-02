@@ -133,5 +133,7 @@ UTF8SubstringSnippetModifier::UTF8SubstringSnippetModifier(FieldIdT fId,
 {
 }
 
+UTF8SubstringSnippetModifier::~UTF8SubstringSnippetModifier() {}
+
 }
 
