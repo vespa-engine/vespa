@@ -8,7 +8,6 @@
 #include "health_producer.h"
 #include "metrics_producer.h"
 #include "component_config_producer.h"
-#include <memory>
 #include "json_handler_repo.h"
 
 namespace vespalib {
@@ -26,10 +25,8 @@ private:
 
 public:
     typedef std::unique_ptr<StateServer> UP;
-    StateServer(int port,
-                const HealthProducer &hp,
-                MetricsProducer &mp,
-                ComponentConfigProducer &ccp);
+    StateServer(int port, const HealthProducer &hp, MetricsProducer &mp, ComponentConfigProducer &ccp);
+    ~StateServer();
     int getListenPort() { return _server.port(); }
     JsonHandlerRepo &repo() { return _api.repo(); }
 };

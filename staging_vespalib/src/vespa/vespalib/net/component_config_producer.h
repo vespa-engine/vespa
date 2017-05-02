@@ -14,6 +14,7 @@ struct ComponentConfigProducer {
         Config(const vespalib::string &n, size_t g) : name(n), gen(g), msg() {}
         Config(const vespalib::string &n, size_t g, const vespalib::string &m)
             : name(n), gen(g), msg(m) {}
+        ~Config();
     };
     struct Consumer {
         virtual void add(const Config &config) = 0;
@@ -24,4 +25,3 @@ struct ComponentConfigProducer {
 };
 
 } // namespace vespalib
-

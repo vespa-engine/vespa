@@ -25,6 +25,8 @@ JsonStream::JsonStream(vespalib::asciistream& as, bool createIndents)
     push({State::ROOT});
 }
 
+JsonStream::~JsonStream() {}
+
 JsonStream&
 JsonStream::operator<<(vespalib::stringref value)
 {

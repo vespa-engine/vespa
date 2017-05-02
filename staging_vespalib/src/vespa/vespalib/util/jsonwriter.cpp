@@ -86,6 +86,8 @@ JSONWriter::JSONWriter(vespalib::asciistream & output) :
     (*_os) << vespalib::asciistream::Precision(16) << vespalib::forcedot;
 }
 
+JSONWriter::~JSONWriter() {}
+
 JSONWriter&
 JSONWriter::setOutputStream(vespalib::asciistream & output) {
     _os = &output;

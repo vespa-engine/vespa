@@ -36,6 +36,11 @@ private:
 public:
     JSONWriter();
     JSONWriter(asciistream & output);
+    JSONWriter(const JSONWriter &) = delete;
+    JSONWriter & operator = (const JSONWriter &) = delete;
+    JSONWriter(JSONWriter &&) = default;
+    JSONWriter & operator = (JSONWriter &&) = default;
+    ~JSONWriter();
 
     JSONWriter & setOutputStream(asciistream & output);
     JSONWriter & clear();
@@ -62,6 +67,8 @@ private:
 
 public:
     JSONStringer();
+    JSONStringer(JSONStringer &&) = default;
+    JSONStringer & operator = (JSONStringer &&) = default;
     ~JSONStringer();
     JSONStringer & clear();
     stringref toString() const;

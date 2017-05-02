@@ -53,15 +53,17 @@ class JsonStream : public JsonStreamTypes {
     };
     std::vector<StateEntry> _state;
 
-    JsonStream(const JsonStream&) = delete;
-    JsonStream& operator=(const JsonStream&) = delete;
-
     StateEntry & top() { return _state.back(); }
     const StateEntry & top() const { return _state.back(); }
     void pop() { _state.resize(_state.size() - 1); }
     void push(const StateEntry & e) { _state.push_back(e); }
 public:
     JsonStream(asciistream&, bool createIndents = false);
+    JsonStream(const JsonStream&) = delete;
+    JsonStream& operator=(const JsonStream&) = delete;
+    JsonStream(JsonStream &&) = default;
+    JsonStream& operator=(JsonStream &&) = default;
+    ~JsonStream();
 
     JsonStream& operator<<(stringref);
     JsonStream& operator<<(bool);
