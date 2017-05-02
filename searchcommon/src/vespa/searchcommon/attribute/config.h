@@ -2,12 +2,12 @@
 
 #pragma once
 
-#include <vespa/searchcommon/attribute/basictype.h>
-#include <vespa/searchcommon/attribute/collectiontype.h>
+#include "basictype.h"
+#include "collectiontype.h"
+#include "predicate_params.h"
 #include <vespa/searchcommon/common/growstrategy.h>
 #include <vespa/searchcommon/common/compaction_strategy.h>
 #include <vespa/eval/eval/value_type.h>
-#include "predicate_params.h"
 
 namespace search {
 namespace attribute {
@@ -16,11 +16,11 @@ class Config
 {
 public:
     Config();
-
-    Config(BasicType bt,
-           CollectionType ct = CollectionType::SINGLE,
-           bool fastSearch_ = false,
-           bool huge_ = false);
+    Config(BasicType bt, CollectionType ct = CollectionType::SINGLE,
+           bool fastSearch_ = false, bool huge_ = false);
+    Config(const Config &);
+    Config & operator = (const Config &);
+    ~Config();
 
     BasicType basicType()                 const { return _basicType; }
     CollectionType collectionType()       const { return _type; }
@@ -33,27 +33,15 @@ public:
      * Check if attribute posting list can consist of a bitvector in
      * addition to (or instead of) a btree. 
      */
-    bool
-    getEnableBitVectors(void) const
-    {
-        return _enableBitVectors;
-    }
+    bool getEnableBitVectors() const { return _enableBitVectors; }
 
     /**
      * Check if attribute posting list can consist of only a bitvector with
      * no corresponding btree.
      */
-    bool
-    getEnableOnlyBitVector(void) const
-    {
-        return _enableOnlyBitVector;
-    }
+    bool getEnableOnlyBitVector() const { return _enableOnlyBitVector; }
 
-    bool
-    getIsFilter(void) const
-    {
-        return _isFilter;
-    }
+    bool getIsFilter() const { return _isFilter; }
 
     /**
      * Check if this attribute should be fast accessible at all times.
@@ -74,9 +62,7 @@ public:
      * Enable attribute posting list to consist of a bitvector in
      * addition to (or instead of) a btree. 
      */
-    void
-    setEnableBitVectors(bool enableBitVectors)
-    {
+    void setEnableBitVectors(bool enableBitVectors) {
         _enableBitVectors = enableBitVectors;
     }
 
@@ -86,18 +72,14 @@ public:
      * document frequency goes down, since recreated btree representation
      * will then have lost weight information.
      */
-    void
-    setEnableOnlyBitVector(bool enableOnlyBitVector)
-    {
+    void setEnableOnlyBitVector(bool enableOnlyBitVector) {
         _enableOnlyBitVector = enableOnlyBitVector;
     }
 
     /**
      * Hide weight information when searching in attributes.
      */
-    void
-    setIsFilter(bool isFilter)
-    {
+    void setIsFilter(bool isFilter) {
         _isFilter = isFilter;
     }
 
