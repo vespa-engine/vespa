@@ -1,4 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include "flattendocsumwriter.h"
 #include <vespa/document/fieldvalue/fieldvalues.h>
 
@@ -36,5 +37,7 @@ FlattenDocsumWriter::FlattenDocsumWriter(const vespalib::string & separator) :
     _separator(separator),
     _useSeparator(false)
 { }
+
+FlattenDocsumWriter::~FlattenDocsumWriter() {}
 
 }

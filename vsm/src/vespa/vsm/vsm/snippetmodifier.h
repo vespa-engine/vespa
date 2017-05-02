@@ -51,6 +51,8 @@ public:
      **/
     SnippetModifier(const UTF8SubstringSnippetModifier::SP & searcher, const CharBuffer::SP & valueBuf);
 
+    ~SnippetModifier();
+
     /**
      * Modifies the complete given field value.
      **/
@@ -90,6 +92,7 @@ private:
 
 public:
     SnippetModifierManager();
+    ~SnippetModifierManager();
 
     /**
      * Setups snippet modifiers for all fields where we have substring search.

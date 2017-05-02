@@ -1,13 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include "floatfieldsearcher.h"
-#include <vespa/document/fieldvalue/fieldvalue.h>
-#include <climits>
 
 using search::QueryTerm;
 using search::QueryTermList;
 
-namespace vsm
-{
+namespace vsm {
 
 IMPLEMENT_DUPLICATE(FloatFieldSearcher);
 IMPLEMENT_DUPLICATE(DoubleFieldSearcher);
@@ -16,8 +14,10 @@ template<typename T>
 FloatFieldSearcherT<T>::FloatFieldSearcherT(FieldIdT fId) :
   FieldSearcher(fId),
   _floatTerm()
-{
-}
+{}
+
+template<typename T>
+FloatFieldSearcherT<T>::~FloatFieldSearcherT() {}
 
 template<typename T>
 void FloatFieldSearcherT<T>::prepare(QueryTermList & qtl, const SharedSearcherBuf & buf)

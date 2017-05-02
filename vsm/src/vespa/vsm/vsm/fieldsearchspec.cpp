@@ -10,7 +10,6 @@
 #include <vespa/vsm/searcher/intfieldsearcher.h>
 #include <vespa/vsm/searcher/floatfieldsearcher.h>
 #include <vespa/vespalib/util/regexp.h>
-#include <sys/sysctl.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.fieldsearchspec");
@@ -20,10 +19,7 @@ LOG_SETUP(".vsm.fieldsearchspec");
 using search::Query;
 using search::ConstQueryTermList;
 
-namespace vsm
-{
-
-unsigned FieldSearchSpec::_sse2WarnCount(0);
+namespace vsm {
 
 FieldSearchSpec::FieldSearchSpec() :
     _id(0),
@@ -35,6 +31,7 @@ FieldSearchSpec::FieldSearchSpec() :
     _reconfigured(false)
 {
 }
+FieldSearchSpec::~FieldSearchSpec() {}
 
 FieldSearchSpec::FieldSearchSpec(const FieldIdT & fid, const vespalib::string & fname,
                                  VsmfieldsConfig::Fieldspec::Searchmethod searchDef, const vespalib::string & arg1, size_t maxLength_) :
@@ -150,6 +147,8 @@ FieldSearchSpecMap::FieldSearchSpecMap() :
     _documentTypeMap(),
     _nameIdMap()
 { }
+
+FieldSearchSpecMap::~FieldSearchSpecMap() {}
 
 namespace {
     const vespalib::string _G_empty("");
