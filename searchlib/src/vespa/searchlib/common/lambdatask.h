@@ -13,7 +13,7 @@ class LambdaTask : public vespalib::Executor::Task {
 public:
     LambdaTask(const FunctionType &func) : _func(func) {}
     LambdaTask(FunctionType &&func) : _func(std::move(func)) {}
-    virtual void run() { _func(); }
+    virtual void run() override { _func(); }
 };
 
 template <class FunctionType>

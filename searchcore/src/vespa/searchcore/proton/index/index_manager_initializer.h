@@ -20,6 +20,7 @@ class IndexManagerInitializer :  public initializer::InitializerTask
     size_t                                      _maxFlushed;
     size_t                                      _cacheSize;
     const search::index::Schema                 _schema;
+    search::SerialNum                           _serialNum;
     searchcorespi::IIndexManager::Reconfigurer &_reconfigurer;
     searchcorespi::index::IThreadingService    &_threadingService;
     vespalib::ThreadExecutor                   &_warmupExecutor;
@@ -34,6 +35,7 @@ public:
                             size_t maxFlushed,
                             size_t cacheSize,
                             const search::index::Schema &schema,
+                            search::SerialNum serialNum,
                             searchcorespi::IIndexManager::Reconfigurer & reconfigurer,
                             searchcorespi::index::IThreadingService & threadingService,
                             vespalib::ThreadExecutor & warmupExecutor,

@@ -188,7 +188,7 @@ Fixture::initViewSet(ViewSet &views)
 {
     Matchers::SP matchers(new Matchers(_clock, _queryLimiter, _constantValueRepo));
     IndexManager::SP indexMgr(new IndexManager(BASE_DIR, searchcorespi::index::WarmupConfig(),
-                                      2, 0, Schema(), views._reconfigurer,
+                                      2, 0, Schema(), 1, views._reconfigurer,
                                       views._writeService, _summaryExecutor, TuneFileIndexManager(),
                                       TuneFileAttributes(), views._fileHeaderContext));
     AttributeManager::SP attrMgr(new AttributeManager(BASE_DIR,

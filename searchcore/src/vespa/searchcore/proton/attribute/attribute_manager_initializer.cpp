@@ -122,7 +122,7 @@ void
 AttributeManagerInitializer::run()
 {
     _attrMgr->addExtraAttribute(_documentMetaStore);
-    _attrMgr->addInitializedAttributes(_attributesResult.get());
+    _attrMgr->addInitializedAttributes(_attributesResult.get(), _configSerialNum);
     *_attrMgrResult = _attrMgr;
 }
 

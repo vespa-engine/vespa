@@ -246,15 +246,6 @@ DocumentSubDBCollection::getNewestFlushedSerial()
 
 
 void
-DocumentSubDBCollection::wipeHistory(SerialNum wipeSerial)
-{
-    for (auto subDb : _subDBs) {
-        subDb->wipeHistory(wipeSerial);
-    }
-}
-
-
-void
 DocumentSubDBCollection::applyConfig(const DocumentDBConfig &newConfigSnapshot,
                                      const DocumentDBConfig &oldConfigSnapshot,
                                      SerialNum serialNum,
