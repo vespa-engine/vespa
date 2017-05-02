@@ -21,7 +21,7 @@ private:
 public:
     typedef std::unique_ptr<FRTConfigResponse> UP;
     FRTConfigResponse(FRT_RPCRequest * request);
-    virtual ~FRTConfigResponse();
+    ~FRTConfigResponse();
 
     bool validateResponse() override;
     bool hasValidResponse() const override;
@@ -44,6 +44,7 @@ private:
     FRTConfigResponseV1& operator=(const FRTConfigResponseV1&);
 public:
     FRTConfigResponseV1(FRT_RPCRequest * request);
+    ~FRTConfigResponseV1();
 
     const ConfigKey & getKey() const override { return _key; }
     const ConfigValue & getValue() const override { return _value; }

@@ -39,6 +39,9 @@ ConfigKey::ConfigKey()
       _key()
 {}
 
+ConfigKey::ConfigKey(const ConfigKey &) = default;
+ConfigKey & ConfigKey::operator = (const ConfigKey &) = default;
+
 ConfigKey::~ConfigKey() { }
 
 bool

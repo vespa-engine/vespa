@@ -26,6 +26,7 @@ class FRTConfigAgent : public ConfigAgent
 {
 public:
     FRTConfigAgent(const IConfigHolder::SP & holder, const TimingValues & timingValues);
+    ~FRTConfigAgent();
     void handleResponse(const ConfigRequest & request, ConfigResponse::UP response) override;
     uint64_t getTimeout() const override;
     uint64_t getWaitTime() const override;

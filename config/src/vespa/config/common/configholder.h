@@ -13,6 +13,7 @@ class ConfigHolder : public IConfigHolder
 {
 public:
     ConfigHolder();
+    ~ConfigHolder();
 
     ConfigUpdate::UP provide() override;
     void handle(ConfigUpdate::UP update) override;
