@@ -7,11 +7,11 @@ import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
-import com.yahoo.vespa.orchestrator.VespaModelUtil;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClient;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerState;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerStateResponse;
+import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
 import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
@@ -19,6 +19,7 @@ import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -193,7 +194,7 @@ public class HostedVespaPolicy implements Policy {
                                           HostName hostName,
                                           ClusterControllerState nodeState) throws HostStateChangeDeniedException {
         ClusterId contentClusterId = VespaModelUtil.getContentClusterName(application, hostName);
-        Set<? extends ServiceInstance<?>> clusterControllers = VespaModelUtil.getClusterControllerInstances(application, contentClusterId);
+        List<HostName> clusterControllers = VespaModelUtil.getClusterControllerInstancesInOrder(application, contentClusterId);
         ClusterControllerClient client = clusterControllerClientFactory.createClient(
                 clusterControllers,
                 contentClusterId.s());

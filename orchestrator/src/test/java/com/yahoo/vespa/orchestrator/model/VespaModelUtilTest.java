@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.orchestrator;
+package com.yahoo.vespa.orchestrator.model;
 
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
@@ -10,14 +10,15 @@ import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
+import com.yahoo.vespa.orchestrator.TestUtil;
 import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
-import com.google.common.collect.ImmutableSet;
 import static com.yahoo.vespa.orchestrator.TestUtil.makeServiceClusterSet;
 import static com.yahoo.vespa.orchestrator.TestUtil.makeServiceInstanceSet;
 import static junit.framework.TestCase.assertFalse;
@@ -169,9 +170,8 @@ public class VespaModelUtilTest {
 
     @Test
     public void testGettingClusterControllerInstances() {
-        Set<ServiceInstance<?>> controllers =
-                new HashSet<>(VespaModelUtil.getClusterControllerInstances(application, CONTENT_CLUSTER_ID));
-        Set<ServiceInstance<ServiceMonitorStatus>> expectedControllers = ImmutableSet.of(controller0, controller1);
+        List<HostName> controllers = VespaModelUtil.getClusterControllerInstancesInOrder(application, CONTENT_CLUSTER_ID);
+        List<HostName> expectedControllers = Arrays.asList(controller0.hostName(), controller1.hostName());
 
         assertThat(controllers).isEqualTo(expectedControllers);
     }

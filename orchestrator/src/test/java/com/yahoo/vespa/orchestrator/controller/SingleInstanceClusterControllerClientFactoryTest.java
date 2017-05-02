@@ -1,17 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.controller;
 
-import com.yahoo.vespa.jaxrs.client.JaxRsClientFactory;
-import com.yahoo.vespa.orchestrator.TestUtil;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.applicationmodel.ServiceInstance;
-import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
+import com.yahoo.vespa.jaxrs.client.JaxRsClientFactory;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Collection;
-import java.util.Collections;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -52,7 +49,7 @@ public class SingleInstanceClusterControllerClientFactoryTest {
 
     @Test
     public void testCreateClientWithNoClusterControllerInstances() throws Exception {
-        final Collection<ServiceInstance<ServiceMonitorStatus>> clusterControllers = Collections.emptySet();
+        final List<HostName> clusterControllers = Arrays.asList();
 
         try {
             clientFactory.createClient(clusterControllers, "clusterName");
@@ -64,8 +61,7 @@ public class SingleInstanceClusterControllerClientFactoryTest {
 
     @Test
     public void testCreateClientWithSingleClusterControllerInstance() throws Exception {
-        final Collection<ServiceInstance<ServiceMonitorStatus>> clusterControllers = Collections.singleton(
-                new ServiceInstance<>(clusterControllerConfigId(1), HOST_NAME_1, ServiceMonitorStatus.UP));
+        final List<HostName> clusterControllers = Arrays.asList(HOST_NAME_1);
 
         clientFactory.createClient(clusterControllers, "clusterName")
                 .setNodeState(0, ClusterControllerState.MAINTENANCE);
@@ -78,10 +74,8 @@ public class SingleInstanceClusterControllerClientFactoryTest {
     }
 
     @Test
-    public void testCreateClientWithTwoNonClusterControllerInstances() throws Exception {
-        final Collection<ServiceInstance<ServiceMonitorStatus>> clusterControllers = TestUtil.makeServiceInstanceSet(
-                new ServiceInstance<>(new ConfigId("not-a-cluster-controller-1"), HOST_NAME_1, ServiceMonitorStatus.UP),
-                new ServiceInstance<>(new ConfigId("not-a-cluster-controller-2"), HOST_NAME_2, ServiceMonitorStatus.UP));
+    public void testCreateClientWithoutClusterControllerInstances() throws Exception {
+        final List<HostName> clusterControllers = Arrays.asList();
 
         try {
             clientFactory.createClient(clusterControllers, "clusterName");
@@ -93,10 +87,7 @@ public class SingleInstanceClusterControllerClientFactoryTest {
 
     @Test
     public void testCreateClientWithThreeClusterControllerInstances() throws Exception {
-        final Collection<ServiceInstance<ServiceMonitorStatus>> clusterControllers = TestUtil.makeServiceInstanceSet(
-                new ServiceInstance<>(clusterControllerConfigId(1), HOST_NAME_1, ServiceMonitorStatus.UP),
-                new ServiceInstance<>(clusterControllerConfigId(2), HOST_NAME_2, ServiceMonitorStatus.UP),
-                new ServiceInstance<>(clusterControllerConfigId(3), HOST_NAME_3, ServiceMonitorStatus.UP));
+        final List<HostName> clusterControllers = Arrays.asList(HOST_NAME_1, HOST_NAME_2, HOST_NAME_3);
 
         clientFactory.createClient(clusterControllers, "clusterName")
                 .setNodeState(0, ClusterControllerState.MAINTENANCE);
