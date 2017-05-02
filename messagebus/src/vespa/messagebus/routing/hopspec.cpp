@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/util/stringfmt.h>
+
 #include "routingspec.h"
+#include <vespa/vespalib/util/stringfmt.h>
 
 namespace mbus {
 
@@ -10,6 +11,8 @@ HopSpec::HopSpec(const string &name, const string &selector) :
     _recipients(),
     _ignoreResult(false)
 { }
+
+HopSpec::~HopSpec() {}
 
 HopSpec &
 HopSpec::addRecipients(const std::vector<string> &recipients)

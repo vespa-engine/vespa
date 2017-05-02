@@ -12,6 +12,8 @@ Receptor::Receptor()
       _reply()
 { }
 
+Receptor::~Receptor() {}
+
 void
 Receptor::handleMessage(Message::UP msg)
 {

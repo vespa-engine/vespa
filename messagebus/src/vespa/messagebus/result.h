@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <memory>
 #include "error.h"
 #include "message.h"
 
@@ -71,6 +70,8 @@ public:
      * @param rhs handover object
      **/
     Result(const Handover &rhs);
+
+    ~Result();
 
     /**
      * Check if the message was accepted.
