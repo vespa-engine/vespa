@@ -11,10 +11,10 @@
 
 #pragma once
 
-#include <vespa/metrics/metrics.h>
 #include <vespa/memfilepersistence/device/mountpointlist.h>
 #include <vespa/memfilepersistence/mapper/bucketdirectorymapper.h>
 #include <vespa/storageframework/storageframework.h>
+#include <vespa/metrics/metrics.h>
 
 namespace document {
     class BucketId;
@@ -44,6 +44,7 @@ public:
         metrics::LongAverageMetric _listLatency;
 
         Metrics(framework::Clock&);
+        ~Metrics();
     };
 
 private:
@@ -71,6 +72,7 @@ private:
 public:
     FileScanner(framework::ComponentRegister&, const MountPointList&,
                 uint32_t dirLevels, uint32_t dirSpread);
+    ~FileScanner();
 
     void buildBucketList(document::BucketId::List & list,
                          uint16_t partition,

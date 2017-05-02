@@ -2,8 +2,7 @@
 
 #include "exceptions.h"
 
-namespace storage {
-namespace memfile {
+namespace storage::memfile {
 
 VESPA_IMPLEMENT_EXCEPTION_SPINE(TimestampExistException);
 VESPA_IMPLEMENT_EXCEPTION_SPINE(InconsistentSlotException);
@@ -19,12 +18,12 @@ VESPA_IMPLEMENT_MEMFILE_EXCEPTION(InconsistentException);
 
 MemFileException::MemFileException(const FileSpecification& file)
     : _file(file)
-{
-}
+{ }
 
-MemFileException::~MemFileException()
-{
-}
+MemFileException::~MemFileException() {}
+
+TimestampExistException::TimestampExistException(const TimestampExistException &) = default;
+TimestampExistException::~TimestampExistException() {}
 
 TimestampExistException::TimestampExistException(
         const vespalib::string& message, const FileSpecification& file,
@@ -43,6 +42,9 @@ InconsistentSlotException::InconsistentSlotException(
 {
 }
 
+InconsistentSlotException::InconsistentSlotException(const InconsistentSlotException &) = default;
+InconsistentSlotException::~InconsistentSlotException() {}
+
 MemFileIoException::MemFileIoException(
         const vespalib::string& msg, const FileSpecification& file,
         Type type, const vespalib::string& location, int skipStack)
@@ -51,5 +53,7 @@ MemFileIoException::MemFileIoException(
 {
 }
 
+MemFileIoException::MemFileIoException(const MemFileIoException &) = default;
+MemFileIoException::~MemFileIoException() {}
+
 } // memfile
-} // storage

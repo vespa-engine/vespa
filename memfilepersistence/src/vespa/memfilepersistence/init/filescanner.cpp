@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/memfilepersistence/init/filescanner.h>
-
-#include <vespa/document/bucket/bucketid.h>
+#include "filescanner.h"
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <iomanip>
@@ -35,6 +33,8 @@ FileScanner::Metrics::Metrics(framework::Clock& clock)
 {
 }
 
+FileScanner::Metrics::~Metrics() {}
+
 FileScanner::FileScanner(framework::ComponentRegister& reg,
                          const MountPointList& mountPoints,
                          uint32_t directoryLevels,
@@ -49,6 +49,8 @@ FileScanner::FileScanner(framework::ComponentRegister& reg,
 {
     registerMetric(_globalMetrics);
 }
+
+FileScanner::~FileScanner() {}
 
 void
 FileScanner::buildBucketList(document::BucketId::List & list,

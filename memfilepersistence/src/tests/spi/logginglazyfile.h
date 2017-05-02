@@ -4,15 +4,13 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <sstream>
 
-namespace storage {
-
-namespace memfile {
+namespace storage::memfile {
 
 class LoggingLazyFile : public vespalib::LazyFile {
 public:
     class Factory : public Environment::LazyFileFactory {
     public:
-        vespalib::LazyFile::UP createFile(const std::string& fileName) const {
+        vespalib::LazyFile::UP createFile(const std::string& fileName) const override {
             return vespalib::LazyFile::UP(
                     new LoggingLazyFile(fileName, vespalib::File::DIRECTIO));
         }
@@ -47,7 +45,7 @@ public:
         return operations.size();
     }
 
-    virtual off_t write(const void *buf, size_t bufsize, off_t offset) {
+    off_t write(const void *buf, size_t bufsize, off_t offset) override {
         Entry e;
         e.opType = WRITE;
         e.bufsize = bufsize;
@@ -58,7 +56,7 @@ public:
         return vespalib::LazyFile::write(buf, bufsize, offset);
     }
 
-    virtual size_t read(void *buf, size_t bufsize, off_t offset) const {
+    size_t read(void *buf, size_t bufsize, off_t offset) const override {
         Entry e;
         e.opType = READ;
         e.bufsize = bufsize;
@@ -78,11 +76,6 @@ public:
         return ost.str();
     }
 
-
-
 };
 
 }
-
-}
-

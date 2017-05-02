@@ -209,6 +209,7 @@ public:
             FileInfo::UP fileInfo,
             const FileSpecification& fileSpec,
             const Environment& env);
+    ~SimpleMemFileIOBuffer();
 
     Document::UP getDocumentHeader(const document::DocumentTypeRepo& repo, DataLocation loc) const override;
     document::DocumentId getDocumentId(DataLocation loc) const override;
