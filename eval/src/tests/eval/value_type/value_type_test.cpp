@@ -65,9 +65,9 @@ TEST("require that dimension index can be obtained") {
     EXPECT_EQUAL(ValueType::double_type().dimension_index("x"), ValueType::Dimension::npos);
     EXPECT_EQUAL(ValueType::tensor_type({}).dimension_index("x"), ValueType::Dimension::npos);
     auto my_type = ValueType::tensor_type({{"y", 10}, {"x"}, {"z", 0}});
-    EXPECT_EQUAL(my_type.dimension_index("x"), 0);
-    EXPECT_EQUAL(my_type.dimension_index("y"), 1);
-    EXPECT_EQUAL(my_type.dimension_index("z"), 2);
+    EXPECT_EQUAL(my_type.dimension_index("x"), 0u);
+    EXPECT_EQUAL(my_type.dimension_index("y"), 1u);
+    EXPECT_EQUAL(my_type.dimension_index("z"), 2u);
     EXPECT_EQUAL(my_type.dimension_index("w"), ValueType::Dimension::npos);
 }
 

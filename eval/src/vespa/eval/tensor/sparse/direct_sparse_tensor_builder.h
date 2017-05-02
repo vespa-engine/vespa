@@ -88,6 +88,8 @@ public:
         }
     }
 
+    ~DirectTensorBuilder() {}
+
     Tensor::UP build() {
         return std::make_unique<SparseTensor>(std::move(_type),
                                                  std::move(_cells),

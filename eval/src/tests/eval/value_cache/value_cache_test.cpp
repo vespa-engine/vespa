@@ -29,7 +29,7 @@ TEST_FF("require that values can be created", MyFactory(), ConstantValueCache(f1
     EXPECT_EQUAL(1.0, res->value().as_double());
     EXPECT_EQUAL(2.0, f2.create("2", "type")->value().as_double());
     EXPECT_EQUAL(3.0, f2.create("3", "type")->value().as_double());
-    EXPECT_EQUAL(3, f1.create_cnt);
+    EXPECT_EQUAL(3u, f1.create_cnt);
 }
 
 TEST_FF("require that underlying values can be shared", MyFactory(), ConstantValueCache(f1)) {
@@ -41,7 +41,7 @@ TEST_FF("require that underlying values can be shared", MyFactory(), ConstantVal
     EXPECT_EQUAL(2.0, res2->value().as_double());
     EXPECT_EQUAL(2.0, res2->value().as_double());
     EXPECT_EQUAL(2.0, res2->value().as_double());
-    EXPECT_EQUAL(2, f1.create_cnt);
+    EXPECT_EQUAL(2u, f1.create_cnt);
 }
 
 TEST_FF("require that unused values are evicted", MyFactory(), ConstantValueCache(f1)) {
@@ -49,7 +49,7 @@ TEST_FF("require that unused values are evicted", MyFactory(), ConstantValueCach
     EXPECT_EQUAL(2.0, f2.create("2", "type")->value().as_double());
     EXPECT_EQUAL(2.0, f2.create("2", "type")->value().as_double());
     EXPECT_EQUAL(2.0, f2.create("2", "type")->value().as_double());
-    EXPECT_EQUAL(4, f1.create_cnt);    
+    EXPECT_EQUAL(4u, f1.create_cnt);
 }
 
 TEST_FF("require that type spec is part of cache key", MyFactory(), ConstantValueCache(f1)) {
@@ -61,7 +61,7 @@ TEST_FF("require that type spec is part of cache key", MyFactory(), ConstantValu
     EXPECT_EQUAL(2.0, res2->value().as_double());
     EXPECT_EQUAL(2.0, res2->value().as_double());
     EXPECT_EQUAL(2.0, res2->value().as_double());
-    EXPECT_EQUAL(3, f1.create_cnt);
+    EXPECT_EQUAL(3u, f1.create_cnt);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

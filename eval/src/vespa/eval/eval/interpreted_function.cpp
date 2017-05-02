@@ -10,7 +10,6 @@
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <set>
 
-
 namespace vespalib {
 namespace eval {
 
@@ -523,6 +522,8 @@ InterpretedFunction::SimpleParams::SimpleParams(const std::vector<double> &param
 
 InterpretedFunction::SimpleParams::~SimpleParams() { }
 
+InterpretedFunction::SimpleObjectParams::~SimpleObjectParams() {}
+
 const Value &
 InterpretedFunction::SimpleParams::resolve(size_t idx, Stash &stash) const
 {
@@ -581,6 +582,8 @@ InterpretedFunction::InterpretedFunction(const TensorEngine &engine, const nodes
     ProgramBuilder program_builder(_program, _stash, _tensor_engine, types);
     root.traverse(program_builder);
 }
+
+InterpretedFunction::~InterpretedFunction() {}
 
 const Value &
 InterpretedFunction::eval(Context &ctx, const LazyParams &params) const
