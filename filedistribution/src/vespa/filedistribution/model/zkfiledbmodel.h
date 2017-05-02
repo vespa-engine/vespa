@@ -46,6 +46,7 @@ public:
     HostStatus getHostStatus(const std::string& hostName) override;
 
     ZKFileDBModel(const std::shared_ptr<ZKFacade>& zk);
+    ~ZKFileDBModel();
 
     Progress getProgress(const std::string& fileReference,
                          const std::vector<std::string>& hostsSortedAscending) override;
