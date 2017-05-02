@@ -111,7 +111,7 @@ int Test::Main()
     }
     {
         std::atomic<vespamalloc::TaggedPtr> taggedPtr;
-        ASSERT_EQUAL(16, sizeof(vespamalloc::TaggedPtr));
+        ASSERT_EQUAL(16u, sizeof(vespamalloc::TaggedPtr));
         ASSERT_TRUE(taggedPtr.is_lock_free());
     }
 
