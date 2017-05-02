@@ -100,6 +100,11 @@
                         <showDeprecation>false</showDeprecation>
 	                <compilerArgs>
 	                    <arg>-Xlint:all</arg>
+	                    <arg>-Xlint:-serial</arg>
+	                    <arg>-Xlint:-try</arg>
+	                    <arg>-Xlint:-processing</arg>
+	                    <arg>-Xlint:-varargs</arg>
+	                    <arg>-Werror</arg>
 	                </compilerArgs>
                     </configuration>
                 </plugin>
@@ -124,7 +129,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>2.4</version>
+                    <version>3.0.2</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1058,6 +1063,7 @@
         <jersey2.version>2.23.2</jersey2.version>
         <jetty.version>9.4.4.v20170414</jetty.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <test.hide>true</test.hide>
     	<doclint>all</doclint>
         <scala.major-version>2.11</scala.major-version>
@@ -1072,6 +1078,7 @@
         <module>application-model</module>
         <module>application-preprocessor</module>
         <module>bundle-plugin</module>
+        <module>bundle-plugin-test</module>
         <module>chain</module>
         <module>clustercontroller-apps</module>
         <module>clustercontroller-apputil</module>

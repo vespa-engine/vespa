@@ -206,21 +206,13 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-            <configuration>
-              <archive>
-                <manifest>
-                  <mainClass>com.yahoo.vespa.config.server.Server</mainClass>
-                </manifest>
-              </archive>
-            </configuration>
-          </execution>
-        </executions>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>com.yahoo.vespa.config.server.Server</mainClass>
+            </manifest>
+          </archive>
+        </configuration>
       </plugin>
 
       <!-- For creating config classes for tests, main config classes created by bundle plugin -->
