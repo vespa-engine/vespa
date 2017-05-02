@@ -218,9 +218,9 @@ public class NodeAgentImpl implements NodeAgent {
         experimentalWriteFile(nodeSpec);
 
         addDebugMessage("Starting optional node program resume command");
-        logger.info("Starting optional node program resume command");
         dockerOperations.resumeNode(containerName);
         containerState = RUNNING;
+        logger.info("Resume command successfully executed, new containerState is " + containerState);
     }
 
     private void updateNodeRepoAndMarkNodeAsReady(ContainerNodeSpec nodeSpec) {
