@@ -13,6 +13,8 @@ SimpleHttpResultHandler::SimpleHttpResultHandler()
 {
 }
 
+SimpleHttpResultHandler::~SimpleHttpResultHandler() {}
+
 void
 SimpleHttpResultHandler::handleHeader(const string &name, const string &value)
 {

@@ -36,6 +36,7 @@ private:
 
 public:
     VBench(const vespalib::Slime &cfg);
+    ~VBench();
     void abort();
     void run() override;
     const Taint &tainted() const override { return _taint; }

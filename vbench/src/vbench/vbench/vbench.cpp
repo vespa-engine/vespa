@@ -44,6 +44,8 @@ VBench::VBench(const vespalib::Slime &cfg)
     }
 }
 
+VBench::~VBench() {}
+
 void
 VBench::abort()
 {

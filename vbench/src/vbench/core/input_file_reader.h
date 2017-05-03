@@ -23,6 +23,7 @@ private:
 
 public:
     InputFileReader(const string &name);
+    ~InputFileReader();
 
     /**
      * Read a single line from the input file and put it into

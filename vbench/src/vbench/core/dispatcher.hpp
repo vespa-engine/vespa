@@ -14,6 +14,9 @@ Dispatcher<T>::Dispatcher(Handler<T> &fallback)
 }
 
 template <typename T>
+Dispatcher<T>::~Dispatcher() {}
+
+template <typename T>
 bool
 Dispatcher<T>::waitForThreads(size_t threads, size_t pollCnt) const
 {

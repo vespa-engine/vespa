@@ -2,13 +2,14 @@
 
 #include "http_client.h"
 #include "hex_number.h"
-#include <vespa/vespalib/data/output_writer.h>
 #include <vbench/core/line_reader.h>
-#include <algorithm>
+#include <vespa/vespalib/data/output_writer.h>
 
 namespace vbench {
 
 using OutputWriter = vespalib::OutputWriter;
+
+HttpClient::~HttpClient() {}
 
 void
 HttpClient::writeRequest() {
