@@ -58,6 +58,7 @@ public:
                  size_t maxFlushed,
                  size_t cacheSize,
                  const Schema &schema,
+                 SerialNum serialNum,
                  Reconfigurer &reconfigurer,
                  searchcorespi::index::IThreadingService &threadingService,
                  vespalib::ThreadExecutor & warmupExecutor,
@@ -113,10 +114,6 @@ public:
 
     virtual void setSchema(const Schema &schema, SerialNum serialNum) override {
         _maintainer.setSchema(schema, serialNum);
-    }
-
-    virtual void wipeHistory(SerialNum wipeSerial) override {
-        _maintainer.wipeHistory(wipeSerial);
     }
 };
 

@@ -397,7 +397,7 @@ public:
     void retain() { _refCount.retain(); }
     void release() { _refCount.release(); }
 
-    bool getRejectedConfig() const { return _state.getRejectedConfig(); }
+    bool getDelayedConfig() const { return _state.getDelayedConfig(); }
 
     /**
      * Implements IReplayConfig API.

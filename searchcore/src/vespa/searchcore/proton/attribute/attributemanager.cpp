@@ -474,13 +474,13 @@ AttributeManager::getAttributeListAll(std::vector<AttributeGuard> &list) const
 }
 
 void
-AttributeManager::wipeHistory(search::SerialNum wipeSerial)
+AttributeManager::pruneRemovedFields(search::SerialNum serialNum)
 {
     std::vector<vespalib::string> attributes = _diskLayout->listAttributes();
     for (const auto &attribute : attributes) {
         auto itr = _attributes.find(attribute);
         if (itr == _attributes.end()) {
-            _diskLayout->removeAttributeDir(attribute, wipeSerial);
+            _diskLayout->removeAttributeDir(attribute, serialNum);
         }
     }
 }

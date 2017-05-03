@@ -13,6 +13,7 @@
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/util/autoclosurecaller.h>
 #include <vespa/vespalib/util/closuretask.h>
+#include <vespa/searchlib/common/lambdatask.h>
 #include <sstream>
 #include <vespa/searchcorespi/flush/closureflushtask.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -30,6 +31,7 @@ using search::common::FileHeaderContext;
 using search::queryeval::ISourceSelector;
 using search::queryeval::Source;
 using search::SerialNum;
+using search::makeLambdaTask;
 using std::ostringstream;
 using vespalib::makeClosure;
 using vespalib::makeTask;
@@ -189,17 +191,17 @@ IndexMaintainer::reopenDiskIndexes(ISearchableIndexCollection &coll)
 void
 IndexMaintainer::updateDiskIndexSchema(const vespalib::string &indexDir,
                                        const Schema &schema,
-                                       SerialNum wipeSerial)
+                                       SerialNum serialNum)
 {
     // Called by a flush worker thread OR document db executor thread
     LockGuard lock(_schemaUpdateLock);
-    IndexWriteUtilities::updateDiskIndexSchema(indexDir, schema, wipeSerial);
+    IndexWriteUtilities::updateDiskIndexSchema(indexDir, schema, serialNum);
 }
 
 void
 IndexMaintainer::updateIndexSchemas(IIndexCollection &coll,
                                     const Schema &schema,
-                                    SerialNum wipeSerial)
+                                    SerialNum serialNum)
 {
     assert(_ctx.getThreadingService().master().isCurrentThread());
     uint32_t count = coll.getSourceCount();
@@ -210,43 +212,43 @@ IndexMaintainer::updateIndexSchemas(IIndexCollection &coll,
         if (d == NULL) {
             IMemoryIndex *const m = dynamic_cast<IMemoryIndex *>(&is);
             if (m != NULL) {
-                m->wipeHistory(schema);
+                m->pruneRemovedFields(schema);
             }
             continue;
         }
-        updateDiskIndexSchema(d->getIndexDir(), schema, wipeSerial);
+        updateDiskIndexSchema(d->getIndexDir(), schema, serialNum);
     }
 }
 
 void
-IndexMaintainer::updateActiveFusionWipeTimeSchema(const Schema &schema)
+IndexMaintainer::updateActiveFusionPrunedSchema(const Schema &schema)
 {
     assert(_ctx.getThreadingService().master().isCurrentThread());
     for (;;) {
         Schema::SP activeFusionSchema;
-        Schema::SP activeFusionWipeTimeSchema;
-        Schema::SP newActiveFusionWipeTimeSchema;
+        Schema::SP activeFusionPrunedSchema;
+        Schema::SP newActiveFusionPrunedSchema;
         {
             LockGuard lock(_state_lock);
             activeFusionSchema = _activeFusionSchema;
-            activeFusionWipeTimeSchema = _activeFusionWipeTimeSchema;
+            activeFusionPrunedSchema = _activeFusionPrunedSchema;
         }
-        if (activeFusionSchema.get() == NULL)
+        if (!activeFusionSchema)
             return;	// No active fusion
-        if (activeFusionWipeTimeSchema.get() == NULL) {
+        if (!activeFusionPrunedSchema) {
             Schema::UP newSchema = Schema::intersect(*activeFusionSchema, schema);
-            newActiveFusionWipeTimeSchema.reset(newSchema.release());
+            newActiveFusionPrunedSchema.reset(newSchema.release());
         } else {
-            Schema::UP newSchema = Schema::intersect(*activeFusionWipeTimeSchema, schema);
-            newActiveFusionWipeTimeSchema.reset(newSchema.release());
+            Schema::UP newSchema = Schema::intersect(*activeFusionPrunedSchema, schema);
+            newActiveFusionPrunedSchema.reset(newSchema.release());
         }
         {
             LockGuard slock(_state_lock);
             LockGuard ilock(_index_update_lock);
-            if (activeFusionSchema.get() == _activeFusionSchema.get() &&
-                activeFusionWipeTimeSchema.get() == _activeFusionWipeTimeSchema.get())
+            if (activeFusionSchema == _activeFusionSchema &&
+                activeFusionPrunedSchema == _activeFusionPrunedSchema)
             {
-                _activeFusionWipeTimeSchema = newActiveFusionWipeTimeSchema;
+                _activeFusionPrunedSchema = newActiveFusionPrunedSchema;
                 break;
             }
         }
@@ -311,9 +313,9 @@ IndexMaintainer::flushMemoryIndex(IMemoryIndex &memoryIndex,
     // Called by a flush worker thread
     const string flushDir = getFlushDir(indexId);
     memoryIndex.flushToDisk(flushDir, docIdLimit, serialNum);
-    Schema::SP wtSchema(memoryIndex.getWipeTimeSchema());
-    if (wtSchema.get() != NULL) {
-        updateDiskIndexSchema(flushDir, *wtSchema, noSerialNumHigh);
+    Schema::SP prunedSchema(memoryIndex.getPrunedSchema());
+    if (prunedSchema) {
+        updateDiskIndexSchema(flushDir, *prunedSchema, noSerialNumHigh);
     }
     IndexWriteUtilities::writeSourceSelector(saveInfo, indexId, getAttrTune(),
                                              _ctx.getFileHeaderContext(),
@@ -428,7 +430,7 @@ IndexMaintainer::FlushArgs::FlushArgs()
       _skippedEmptyLast(false),
       _extraIndexes(),
       _changeGens(),
-      _wtSchema()
+      _prunedSchema()
 {
 }
 IndexMaintainer::FlushArgs::~FlushArgs() { }
@@ -554,14 +556,14 @@ IndexMaintainer::flushMemoryIndex(FlushArgs &args,
     // Called by a flush worker thread
     ChangeGens changeGens = getChangeGens();
     IMemoryIndex &memoryIndex = *args.old_index;
-    Schema::SP wtSchema = memoryIndex.getWipeTimeSchema();
+    Schema::SP prunedSchema = memoryIndex.getPrunedSchema();
     IDiskIndex::SP diskIndex = flushMemoryIndex(memoryIndex, args.old_absolute_id,
                                                 docIdLimit, args.flush_serial_num,
                                                 saveInfo);
     // Post processing after memory index has been written to disk and
     // opened as disk index.
     args._changeGens = changeGens;
-    args._wtSchema = wtSchema;
+    args._prunedSchema = prunedSchema;
     reconfigureAfterFlush(args, diskIndex);
 
     flushIds.push_back(args.old_absolute_id);
@@ -580,15 +582,15 @@ IndexMaintainer::reconfigureAfterFlush(FlushArgs &args, IDiskIndex::SP &diskInde
             return;
         }
         ChangeGens changeGens = getChangeGens();
-        Schema::SP wtSchema = args.old_index->getWipeTimeSchema();
+        Schema::SP prunedSchema = args.old_index->getPrunedSchema();
         const string indexDir = getFlushDir(args.old_absolute_id);
-        if (wtSchema.get() != NULL) {
-            updateDiskIndexSchema(indexDir, *wtSchema, noSerialNumHigh);
+        if (prunedSchema) {
+            updateDiskIndexSchema(indexDir, *prunedSchema, noSerialNumHigh);
         }
         IDiskIndex::SP reloadedDiskIndex = reloadDiskIndex(*diskIndex);
         diskIndex = reloadedDiskIndex;
         args._changeGens = changeGens;
-        args._wtSchema = wtSchema;
+        args._prunedSchema = prunedSchema;
     }
 }
 
@@ -602,7 +604,7 @@ IndexMaintainer::doneFlush(FlushArgs *args, IDiskIndex::SP *disk_index) {
     if (args->_changeGens != getChangeGens()) {
         return false;    // Must retry operation
     }
-    if (args->_wtSchema.get() != memoryIndex.getWipeTimeSchema().get()) {
+    if (args->_prunedSchema != memoryIndex.getPrunedSchema()) {
         return false;    // Must retry operation
     }
     _flush_serial_num = std::max(_flush_serial_num, args->flush_serial_num);
@@ -640,7 +642,7 @@ IndexMaintainer::doneFusion(FusionArgs *args, IDiskIndex::SP *new_index)
     if (args->_changeGens != getChangeGens()) {
         return false;    // Must retry operation
     }
-    if (args->_wtSchema.get() != getActiveFusionWipeTimeSchema().get()) {
+    if (args->_prunedSchema != getActiveFusionPrunedSchema()) {
         return false;    // Must retry operation
     }
     args->_old_source_list = _source_list; // delays destruction
@@ -657,7 +659,7 @@ IndexMaintainer::doneFusion(FusionArgs *args, IDiskIndex::SP *new_index)
         _last_fusion_id = args->_new_fusion_id;
         _selector->setBaseId(_last_fusion_id);
         _activeFusionSchema.reset();
-        _activeFusionWipeTimeSchema.reset();
+        _activeFusionPrunedSchema.reset();
     }
 
     ISearchableIndexCollection::SP currentLeaf;
@@ -684,7 +686,7 @@ IndexMaintainer::makeSureAllRemainingWarmupIsDone(ISearchableIndexCollection::SP
     ISearchableIndexCollection::SP warmIndex;
     {
         LockGuard state_lock(_state_lock);
-        if (keepAlive.get() == _source_list.get()) {
+        if (keepAlive == _source_list) {
             LockGuard lock(_new_search_lock);
             warmIndex = (getLeaf(lock, _source_list, false));
             _source_list = warmIndex;
@@ -704,7 +706,7 @@ IndexMaintainer::warmupDone(ISearchableIndexCollection::SP current)
 {
     // Called by a search thread
     LockGuard lock(_new_search_lock);
-    if (current.get() == _source_list.get()) {
+    if (current == _source_list) {
         auto makeSure = makeClosure(this, &IndexMaintainer::makeSureAllRemainingWarmupIsDone, current);
         Executor::Task::UP task(new ReconfigRunnableTask(_ctx.getReconfigurer(), std::move(makeSure)));
         _ctx.getThreadingService().master().execute(std::move(task));
@@ -766,10 +768,10 @@ IndexMaintainer::getSchema(void) const
 }
 
 Schema::SP
-IndexMaintainer::getActiveFusionWipeTimeSchema(void) const
+IndexMaintainer::getActiveFusionPrunedSchema(void) const
 {
     LockGuard lock(_index_update_lock);
-    return _activeFusionWipeTimeSchema;
+    return _activeFusionPrunedSchema;
 }
 
 TuneFileAttributes
@@ -804,7 +806,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
       _layout(config.getBaseDir()),
       _schema(config.getSchema()),
       _activeFusionSchema(),
-      _activeFusionWipeTimeSchema(),
+      _activeFusionPrunedSchema(),
       _source_selector_changes(0),
       _selector(),
       _source_list(),
@@ -831,7 +833,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
       _operations(operations)
 {
     // Called by document db init executor thread
-    _changeGens.bumpWipeGen();
+    _changeGens.bumpPruneGen();
     DiskIndexCleaner::clean(_base_dir, *_active_indexes);
     FusionSpec spec = IndexReadUtilities::readFusionSpec(_base_dir);
     _next_id = 1 + (spec.flush_ids.empty() ? spec.last_fusion_id : spec.flush_ids.back());
@@ -869,6 +871,8 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
     sourceList->setCurrentIndex(_current_index_id);
     _source_list = std::move(sourceList);
     _fusion_spec = spec;
+    _ctx.getThreadingService().master().execute(makeLambdaTask([this,&config]() {pruneRemovedFields(_schema, config.getSerialNum()); }));
+    _ctx.getThreadingService().master().sync();
 }
 
 IndexMaintainer::~IndexMaintainer()
@@ -968,7 +972,7 @@ IndexMaintainer::runFusion(const FusionSpec &fusion_spec)
         LockGuard slock(_state_lock);
         LockGuard ilock(_index_update_lock);
         _activeFusionSchema.reset(new Schema(_schema));
-        _activeFusionWipeTimeSchema.reset();
+        _activeFusionPrunedSchema.reset();
         args._schema = _schema;
     }
     FastOS_StatInfo statInfo;
@@ -993,15 +997,15 @@ IndexMaintainer::runFusion(const FusionSpec &fusion_spec)
             LockGuard slock(_state_lock);
             LockGuard ilock(_index_update_lock);
             _activeFusionSchema.reset();
-            _activeFusionWipeTimeSchema.reset();
+            _activeFusionPrunedSchema.reset();
         }
         return fusion_spec.last_fusion_id;
     }
 
     const string new_fusion_dir = getFusionDir(new_fusion_id);
-    Schema::SP wtSchema = getActiveFusionWipeTimeSchema();
-    if (wtSchema.get() != NULL) {
-        updateDiskIndexSchema(new_fusion_dir, *wtSchema, noSerialNumHigh);
+    Schema::SP prunedSchema = getActiveFusionPrunedSchema();
+    if (prunedSchema) {
+        updateDiskIndexSchema(new_fusion_dir, *prunedSchema, noSerialNumHigh);
     }
     ChangeGens changeGens = getChangeGens();
     IDiskIndex::SP new_index(loadDiskIndex(new_fusion_dir));
@@ -1011,7 +1015,7 @@ IndexMaintainer::runFusion(const FusionSpec &fusion_spec)
 
     args._new_fusion_id = new_fusion_id;
     args._changeGens = changeGens;
-    args._wtSchema = wtSchema;
+    args._prunedSchema = prunedSchema;
     for (;;) {
         // Call reconfig closure for this change
         Closure0<bool>::UP closure( makeClosure(this, &IndexMaintainer::doneFusion, &args, &new_index));
@@ -1020,15 +1024,15 @@ IndexMaintainer::runFusion(const FusionSpec &fusion_spec)
             break;
         }
         changeGens = getChangeGens();
-        wtSchema = getActiveFusionWipeTimeSchema();
-        if (wtSchema.get() != NULL) {
-            updateDiskIndexSchema(new_fusion_dir, *wtSchema, noSerialNumHigh);
+        prunedSchema = getActiveFusionPrunedSchema();
+        if (prunedSchema) {
+            updateDiskIndexSchema(new_fusion_dir, *prunedSchema, noSerialNumHigh);
         }
         IDiskIndex::SP diskIndex2;
         diskIndex2 = reloadDiskIndex(*new_index);
         new_index = diskIndex2;
         args._changeGens = changeGens;
-        args._wtSchema = wtSchema;
+        args._prunedSchema = prunedSchema;
     }
     removeOldDiskIndexes();
 
@@ -1183,7 +1187,7 @@ void
 IndexMaintainer::setSchema(const Schema & schema, SerialNum serialNum)
 {
     assert(_ctx.getThreadingService().master().isCurrentThread());
-    internalWipeHistory(schema, serialNum);
+    pruneRemovedFields(schema, serialNum);
     IMemoryIndex::SP new_index(_operations.createMemoryIndex(schema, _current_serial_num));
     SetSchemaArgs args;
 
@@ -1198,17 +1202,17 @@ IndexMaintainer::setSchema(const Schema & schema, SerialNum serialNum)
 }
 
 void
-IndexMaintainer::internalWipeHistory(const Schema &schema, SerialNum wipeSerial)
+IndexMaintainer::pruneRemovedFields(const Schema &schema, SerialNum serialNum)
 {
     assert(_ctx.getThreadingService().master().isCurrentThread());
     ISearchableIndexCollection::SP new_source_list;
     IIndexCollection::SP coll = getSourceCollection();
-    updateIndexSchemas(*coll, schema, wipeSerial);
-    updateActiveFusionWipeTimeSchema(schema);
+    updateIndexSchemas(*coll, schema, serialNum);
+    updateActiveFusionPrunedSchema(schema);
     {
         LockGuard state_lock(_state_lock);
         LockGuard lock(_index_update_lock);
-        _changeGens.bumpWipeGen();
+        _changeGens.bumpPruneGen();
     }
     {
         LockGuard state_lock(_state_lock);
@@ -1222,12 +1226,6 @@ IndexMaintainer::internalWipeHistory(const Schema &schema, SerialNum wipeSerial)
         LockGuard lock(_new_search_lock);
         _source_list = new_source_list;
     }
-}
-
-void
-IndexMaintainer::wipeHistory(SerialNum wipeSerial)
-{
-    internalWipeHistory(getSchema(), wipeSerial);
 }
 
 }  // namespace index

@@ -3,12 +3,6 @@
 
 namespace searchcorespi {
 
-void
-IIndexManager::wipeHistory(SerialNum wipeSerial)
-{
-    (void) wipeSerial;
-}
-
 IIndexManager::Reconfigurer::~Reconfigurer()
 {
 }

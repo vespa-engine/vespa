@@ -124,6 +124,7 @@ public:
     void onReprocessDone(SerialNum serialNum) override;
     SerialNum getOldestFlushedSerial() override;
     SerialNum getNewestFlushedSerial() override;
+    virtual void pruneRemovedFields(SerialNum serialNum) override;
 };
 
 } // namespace proton

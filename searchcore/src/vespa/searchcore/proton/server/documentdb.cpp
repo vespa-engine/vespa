@@ -355,6 +355,7 @@ DocumentDB::enterReprocessState()
         NoopOperation op;
         _feedHandler.storeOperation(op);
         sync(op.getSerialNum());
+        _subDBs.pruneRemovedFields(op.getSerialNum());
     }
     _subDBs.onReprocessDone(_feedHandler.getSerialNum());
     enterOnlineState();
@@ -481,11 +482,11 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
         setIndexSchema(*configSnapshot, serialNum);
     }
     if (!configSnapshot->getDelayedAttributeAspects()) {
-        if (_state.getRejectedConfig()) {
+        if (_state.getDelayedConfig()) {
             LOG(info, "DocumentDB(%s): Stopped delaying attribute aspect changes",
                 _docTypeName.toString().c_str());
         }
-        _state.clearRejectedConfig();
+        _state.clearDelayedConfig();
     }
     setActiveConfig(configSnapshot, serialNum, generation);
     if (params.shouldMaintenanceControllerChange()) {
@@ -493,6 +494,9 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot,
     }
     _writeFilter.setConfig(configSnapshot->getMaintenanceConfigSP()->
                            getAttributeUsageFilterConfig());
+    if (_subDBs.getReprocessingRunner().empty()) {
+        _subDBs.pruneRemovedFields(serialNum);
+    }
 }
 
 
@@ -815,7 +819,7 @@ void
 DocumentDB::reconfigure(const DocumentDBConfig::SP & snapshot)
 {
     masterExecute([this, snapshot]() { newConfigSnapshot(snapshot); });
-    // Wait for config to be applied or rejected, or for document db close
+    // Wait for config to be applied, or for document db close
     std::unique_lock<std::mutex> guard(_configMutex);
     while ((_activeConfigSnapshotGeneration < snapshot->getGeneration()) &&
            !_state.getClosed()) {
@@ -837,6 +841,7 @@ DocumentDB::enterRedoReprocessState()
         NoopOperation op;
         _feedHandler.storeOperation(op);
         sync(op.getSerialNum());
+        _subDBs.pruneRemovedFields(op.getSerialNum());
     }
     enterApplyLiveConfigState();
 }
@@ -890,9 +895,9 @@ DocumentDB::reportStatus() const
         return StatusReport::create(params.state(StatusReport::PARTIAL).
                 progress(progress).
                 message(msg));
-    } else if (_state.getRejectedConfig()) {
+    } else if (_state.getDelayedConfig()) {
         return StatusReport::create(params.state(StatusReport::PARTIAL).
-                message("DocumentDB rejecting config"));
+                message("DocumentDB delaying attribute aspects changes in config"));
     } else {
         return StatusReport::create(params.state(StatusReport::UPOK));
     }
@@ -1345,7 +1350,7 @@ DocumentDB::updateLegacyMetrics(LegacyDocumentDBMetrics &metrics)
     updateLidSpaceMetrics(metrics.notReady.docMetaStore, dmss.notreadydms->get());
     updateLidSpaceMetrics(metrics.removed.docMetaStore, dmss.remdms->get());
 
-    metrics.numBadConfigs.set(_state.getRejectedConfig() ? 1u : 0u);
+    metrics.numBadConfigs.set(_state.getDelayedConfig() ? 1u : 0u);
 }
 
 void

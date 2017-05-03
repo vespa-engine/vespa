@@ -66,9 +66,9 @@ struct IAttributeManager : public search::IAttributeManager
     virtual void getAttributeListAll(std::vector<search::AttributeGuard> &list) const = 0;
 
     /**
-     * Wipe unknown attributes from file system.
+     * Prune removed attributes from file system.
      */
-    virtual void wipeHistory(search::SerialNum wipeSerial) = 0;
+    virtual void pruneRemovedFields(search::SerialNum serialNum) = 0;
 
     /**
      * Returns the attribute factory used by this manager.

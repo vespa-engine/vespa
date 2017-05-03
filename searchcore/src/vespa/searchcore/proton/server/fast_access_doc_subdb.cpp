@@ -144,6 +144,12 @@ FastAccessDocSubDB::getFlushTargetsInternal()
 }
 
 void
+FastAccessDocSubDB::pruneRemovedFields(SerialNum serialNum)
+{
+    getAttributeManager()->pruneRemovedFields(serialNum);
+}
+
+void
 FastAccessDocSubDB::reconfigureAttributeMetrics(const proton::IAttributeManager &newMgr,
                                                 const proton::IAttributeManager &oldMgr)
 {

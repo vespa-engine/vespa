@@ -460,7 +460,7 @@ StoreOnlyDocSubDB::getIndexWriter() const
 }
 
 void
-StoreOnlyDocSubDB::wipeHistory(SerialNum)
+StoreOnlyDocSubDB::pruneRemovedFields(SerialNum)
 {
 }
 

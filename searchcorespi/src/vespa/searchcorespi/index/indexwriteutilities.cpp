@@ -124,7 +124,7 @@ IndexWriteUtilities::writeSourceSelector(FixedSourceSelector::SaveInfo &
 void
 IndexWriteUtilities::updateDiskIndexSchema(const vespalib::string &indexDir,
                                            const Schema &schema,
-                                           SerialNum wipeSerial)
+                                           SerialNum serialNum)
 {
     vespalib::string schemaName = IndexDiskLayout::getSchemaFileName(indexDir);
     Schema oldSchema;
@@ -142,9 +142,9 @@ IndexWriteUtilities::updateDiskIndexSchema(const vespalib::string &indexDir,
     if (*newSchema == oldSchema) {
         return;
     }
-    if (wipeSerial != noSerialNumHigh) {
+    if (serialNum != noSerialNumHigh) {
         SerialNum oldSerial = IndexReadUtilities::readSerialNum(indexDir);
-        if (oldSerial >= wipeSerial) {
+        if (oldSerial >= serialNum) {
             return;
         }
     }

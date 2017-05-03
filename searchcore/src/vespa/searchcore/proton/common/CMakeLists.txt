@@ -21,4 +21,5 @@ vespa_add_library(searchcore_pcommon STATIC
     state_reporter_utils.cpp
     DEPENDS
     searchcore_proton_metrics
+    searchcore_fconfig
 )

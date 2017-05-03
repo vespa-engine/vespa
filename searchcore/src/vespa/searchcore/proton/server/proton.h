@@ -243,7 +243,7 @@ public:
     size_t getNumActiveDocs() const;
     DocsumBySlime & getDocsumBySlime() { return *_docsumBySlime; }
 
-    vespalib::string getBadConfigs(void) const;
+    vespalib::string getDelayedConfigs(void) const;
 
     virtual StatusReport::List getStatusReports() const override;
 
