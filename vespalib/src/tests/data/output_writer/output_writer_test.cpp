@@ -46,7 +46,7 @@ TEST("require that large printf works") {
                       "12345678901234567890123456789012345678901234567890"
                       "12345678901234567890123456789012345678901234567890";
     size_t str_len = strlen(str);
-    EXPECT_EQUAL(str_len, 200);
+    EXPECT_EQUAL(str_len, 200u);
     SimpleBuffer buffer;
     {
         OutputWriter dst(buffer, 3);
