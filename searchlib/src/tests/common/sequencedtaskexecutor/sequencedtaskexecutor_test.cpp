@@ -82,7 +82,7 @@ TEST_F("testExecute", Fixture) {
 }
 
 
-TEST_F("require that task with same id are serialized", Fixture)
+TEST_F("require that task with same component id are serialized", Fixture)
 {
     std::shared_ptr<TestObj> tv(std::make_shared<TestObj>());
     EXPECT_EQUAL(0, tv->_val);
@@ -96,7 +96,7 @@ TEST_F("require that task with same id are serialized", Fixture)
     EXPECT_EQUAL(42, tv->_val);
 }
 
-TEST_F("require that task with different ids are not serialized", Fixture)
+TEST_F("require that task with different component ids are not serialized", Fixture)
 {
     int tryCnt = 0;
     for (tryCnt = 0; tryCnt < 100; ++tryCnt) {
@@ -119,7 +119,7 @@ TEST_F("require that task with different ids are not serialized", Fixture)
 }
 
 
-TEST_F("require that task with same string id are serialized", Fixture)
+TEST_F("require that task with same string component id are serialized", Fixture)
 {
     std::shared_ptr<TestObj> tv(std::make_shared<TestObj>());
     EXPECT_EQUAL(0, tv->_val);
@@ -134,15 +134,17 @@ TEST_F("require that task with same string id are serialized", Fixture)
     EXPECT_EQUAL(42, tv->_val);
 }
 
-TEST_F("require that task with different string ids are not serialized",
-       Fixture)
+namespace
+{
+
+int detectSerializeFailure(Fixture &f, vespalib::stringref altComponentId, int tryLimit)
 {
     int tryCnt = 0;
-    for (tryCnt = 0; tryCnt < 100; ++tryCnt) {
+    for (tryCnt = 0; tryCnt < tryLimit; ++tryCnt) {
         std::shared_ptr<TestObj> tv(std::make_shared<TestObj>());
         EXPECT_EQUAL(0, tv->_val);
         f._threads.execute("0", [=]() { usleep(2000); tv->modify(0, 14); });
-        f._threads.execute("2", [=]() { tv->modify(14, 42); });
+        f._threads.execute(altComponentId, [=]() { tv->modify(14, 42); });
         tv->wait(2);
         if (tv->_fail != 1) {
              continue;
@@ -154,7 +156,41 @@ TEST_F("require that task with different string ids are not serialized",
         EXPECT_EQUAL(14, tv->_val);
         break;
     }
+    return tryCnt;
+}
+
+vespalib::string makeAltComponentId(Fixture &f)
+{
+    int tryCnt = 0;
+    char altComponentId[20];
+    uint32_t executorId0 = f._threads.getExecutorId("0");
+    for (tryCnt = 1; tryCnt < 100; ++tryCnt) {
+        sprintf(altComponentId, "%d", tryCnt);
+        if (f._threads.getExecutorId(altComponentId) == executorId0) {
+            break;
+        }
+    }
     EXPECT_TRUE(tryCnt < 100);
+    return altComponentId;
+}
+
+}
+
+TEST_F("require that task with different string component ids are not serialized",
+       Fixture)
+{
+    int tryCnt = detectSerializeFailure(f, "2", 100);
+    EXPECT_TRUE(tryCnt < 100);
+}
+
+
+TEST_F("require that task with different string component ids mapping to the same executor id are serialized",
+       Fixture)
+{
+    vespalib::string altComponentId = makeAltComponentId(f);
+    LOG(info, "second string component id is \"%s\"", altComponentId.c_str());
+    int tryCnt = detectSerializeFailure(f, altComponentId, 100);
+    EXPECT_TRUE(tryCnt == 100);
 }
 
 
@@ -183,6 +219,19 @@ TEST_F("require that execute works with reference to lambda", Fixture)
     f._threads.execute(0, lambdaref);
     f._threads.sync();
     std::vector<int> exp({5, 4, 5, 4});
+    EXPECT_EQUAL(exp, res);
+    EXPECT_EQUAL(5, i);
+}
+
+TEST_F("require that executeLambda works", Fixture)
+{
+    int i = 5;
+    std::vector<int> res;
+    const auto lambda = [i, &res]() mutable
+                        { res.push_back(i--); res.push_back(i--); };
+    f._threads.executeLambda(0, lambda);
+    f._threads.sync();
+    std::vector<int> exp({5, 4});
     EXPECT_EQUAL(exp, res);
     EXPECT_EQUAL(5, i);
 }
