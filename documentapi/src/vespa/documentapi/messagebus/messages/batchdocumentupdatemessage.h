@@ -30,6 +30,7 @@ public:
        for documents belonging to the given group.
     */
     BatchDocumentUpdateMessage(const string& group);
+    ~BatchDocumentUpdateMessage();
 
     /**
        @return Returns a list of the updates to be performed.

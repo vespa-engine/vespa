@@ -1,9 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/base/testdocrepo.h>
-#include <vespa/document/datatype/datatype.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/fieldvalue/longfieldvalue.h>
+#include "testframe.h"
+
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/documentapi/messagebus/policies/andpolicy.h>
 #include <vespa/documentapi/messagebus/policies/documentrouteselectorpolicy.h>
@@ -16,19 +14,17 @@
 #include <vespa/documentapi/messagebus/policies/searchrowpolicy.h>
 #include <vespa/documentapi/messagebus/policies/storagepolicy.h>
 #include <vespa/documentapi/messagebus/policies/subsetservicepolicy.h>
-#include <vespa/documentapi/messagebus/systemstate/systemstatehandle.h>
-#include <limits>
 #include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/errorcode.h>
-#include <vespa/messagebus/routing/routingcontext.h>
 #include <vespa/messagebus/routing/routingnode.h>
 #include <vespa/messagebus/routing/routingtable.h>
 #include <vespa/messagebus/routing/policydirective.h>
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/vdslib/container/mutabledocumentlist.h>
 #include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/document/base/testdocrepo.h>
+#include <vespa/document/fieldvalue/longfieldvalue.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include "testframe.h"
+
 #include <vespa/log/log.h>
 LOG_SETUP("policies_test");
 
@@ -63,6 +59,8 @@ private:
     mbus::Message::UP newPutDocumentMessage(const string &documentId);
 
 public:
+    Test();
+    ~Test();
     int  Main() override;
     void testAND();
     void testDocumentRouteSelector();
@@ -93,6 +91,9 @@ public:
 };
 
 TEST_APPHOOK(Test);
+
+Test::Test() {}
+Test::~Test() {}
 
 int
 Test::Main() {
