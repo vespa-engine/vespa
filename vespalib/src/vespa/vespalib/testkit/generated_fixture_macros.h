@@ -8,9 +8,9 @@ namespace { \
 struct TEST_CAT(TestKitHook, __LINE__) : vespalib::TestHook { \
     TEST_CAT(TestKitHook, __LINE__)() : vespalib::TestHook(__FILE__, name, ignore) {} \
     struct Test : vespalib::TestFixtureWrapper { \
-        void test_entry_point() override; \
+        virtual void test_entry_point(); \
     }; \
-    bool run() override { \
+    virtual bool run() { \
         TEST_STATE(name); \
         Test test; \
         return runTest(test, threads); \
@@ -42,7 +42,7 @@ struct TEST_CAT(TestKitHook, __LINE__) : vespalib::TestHook { \
         F1 &f; \
         F1 &f1; \
         Test(F1 &f1_in) : f(f1_in), f1(f1_in) {} \
-        void test_entry_point() override; \
+        virtual void test_entry_point(); \
     }; \
     template <typename F1> \
     bool dispatch1(F1 *_f1_ptr_) { \
@@ -51,7 +51,7 @@ struct TEST_CAT(TestKitHook, __LINE__) : vespalib::TestHook { \
         Test<F1> test(f1); \
         return runTest(test, threads); \
     } \
-    bool run() override { \
+    virtual bool run() { \
         TEST_STATE(name); \
         size_t num_threads(threads); (void) num_threads; \
         return dispatch1(new fixture1); \
@@ -84,7 +84,7 @@ struct TEST_CAT(TestKitHook, __LINE__) : vespalib::TestHook { \
         F1 &f1; \
         F2 &f2; \
         Test(F1 &f1_in, F2 &f2_in) : f1(f1_in), f2(f2_in) {} \
-        void test_entry_point() override; \
+        virtual void test_entry_point(); \
     }; \
     template <typename F1, typename F2> \
     bool dispatch2(F1 &f1, F2 *_f2_ptr_) { \
@@ -100,7 +100,7 @@ struct TEST_CAT(TestKitHook, __LINE__) : vespalib::TestHook { \
         size_t num_threads(threads); (void) num_threads; \
         return dispatch2(f1, new fixture2); \
     } \
-    bool run() override { \
+    virtual bool run() { \
         TEST_STATE(name); \
         size_t num_threads(threads); (void) num_threads; \
         return dispatch1(new fixture1); \
@@ -134,7 +134,7 @@ struct TEST_CAT(TestKitHook, __LINE__) : vespalib::TestHook { \
         F2 &f2; \
         F3 &f3; \
         Test(F1 &f1_in, F2 &f2_in, F3 &f3_in) : f1(f1_in), f2(f2_in), f3(f3_in) {} \
-        void test_entry_point() override; \
+        virtual void test_entry_point(); \
     }; \
     template <typename F1, typename F2, typename F3> \
     bool dispatch3(F1 &f1, F2 &f2, F3 *_f3_ptr_) { \
@@ -157,7 +157,7 @@ struct TEST_CAT(TestKitHook, __LINE__) : vespalib::TestHook { \
         size_t num_threads(threads); (void) num_threads; \
         return dispatch2(f1, new fixture2); \
     } \
-    bool run() override { \
+    virtual bool run() { \
         TEST_STATE(name); \
         size_t num_threads(threads); (void) num_threads; \
         return dispatch1(new fixture1); \
@@ -192,7 +192,7 @@ struct TEST_CAT(TestKitHook, __LINE__) : vespalib::TestHook { \
         F3 &f3; \
         F4 &f4; \
         Test(F1 &f1_in, F2 &f2_in, F3 &f3_in, F4 &f4_in) : f1(f1_in), f2(f2_in), f3(f3_in), f4(f4_in) {} \
-        void test_entry_point() override; \
+        virtual void test_entry_point(); \
     }; \
     template <typename F1, typename F2, typename F3, typename F4> \
     bool dispatch4(F1 &f1, F2 &f2, F3 &f3, F4 *_f4_ptr_) { \
@@ -222,7 +222,7 @@ struct TEST_CAT(TestKitHook, __LINE__) : vespalib::TestHook { \
         size_t num_threads(threads); (void) num_threads; \
         return dispatch2(f1, new fixture2); \
     } \
-    bool run() override { \
+    virtual bool run() { \
         TEST_STATE(name); \
         size_t num_threads(threads); (void) num_threads; \
         return dispatch1(new fixture1); \
@@ -258,7 +258,7 @@ struct TEST_CAT(TestKitHook, __LINE__) : vespalib::TestHook { \
         F4 &f4; \
         F5 &f5; \
         Test(F1 &f1_in, F2 &f2_in, F3 &f3_in, F4 &f4_in, F5 &f5_in) : f1(f1_in), f2(f2_in), f3(f3_in), f4(f4_in), f5(f5_in) {} \
-        void test_entry_point() override; \
+        virtual void test_entry_point(); \
     }; \
     template <typename F1, typename F2, typename F3, typename F4, typename F5> \
     bool dispatch5(F1 &f1, F2 &f2, F3 &f3, F4 &f4, F5 *_f5_ptr_) { \
@@ -295,7 +295,7 @@ struct TEST_CAT(TestKitHook, __LINE__) : vespalib::TestHook { \
         size_t num_threads(threads); (void) num_threads; \
         return dispatch2(f1, new fixture2); \
     } \
-    bool run() override { \
+    virtual bool run() { \
         TEST_STATE(name); \
         size_t num_threads(threads); (void) num_threads; \
         return dispatch1(new fixture1); \
@@ -332,7 +332,7 @@ struct TEST_CAT(TestKitHook, __LINE__) : vespalib::TestHook { \
         F5 &f5; \
         F6 &f6; \
         Test(F1 &f1_in, F2 &f2_in, F3 &f3_in, F4 &f4_in, F5 &f5_in, F6 &f6_in) : f1(f1_in), f2(f2_in), f3(f3_in), f4(f4_in), f5(f5_in), f6(f6_in) {} \
-        void test_entry_point() override; \
+        virtual void test_entry_point(); \
     }; \
     template <typename F1, typename F2, typename F3, typename F4, typename F5, typename F6> \
     bool dispatch6(F1 &f1, F2 &f2, F3 &f3, F4 &f4, F5 &f5, F6 *_f6_ptr_) { \
@@ -465,7 +465,7 @@ struct TEST_CAT(TestKitHook, __LINE__) : vespalib::TestHook { \
         size_t num_threads(threads); (void) num_threads; \
         return dispatch2(f1, new fixture2); \
     } \
-    bool run() override { \
+    virtual bool run() { \
         TEST_STATE(name); \
         size_t num_threads(threads); (void) num_threads; \
         return dispatch1(new fixture1); \
@@ -504,7 +504,7 @@ struct TEST_CAT(TestKitHook, __LINE__) : vespalib::TestHook { \
         F7 &f7; \
         F8 &f8; \
         Test(F1 &f1_in, F2 &f2_in, F3 &f3_in, F4 &f4_in, F5 &f5_in, F6 &f6_in, F7 &f7_in, F8 &f8_in) : f1(f1_in), f2(f2_in), f3(f3_in), f4(f4_in), f5(f5_in), f6(f6_in), f7(f7_in), f8(f8_in) {} \
-        void test_entry_point() override; \
+        virtual void test_entry_point(); \
     }; \
     template <typename F1, typename F2, typename F3, typename F4, typename F5, typename F6, typename F7, typename F8> \
     bool dispatch8(F1 &f1, F2 &f2, F3 &f3, F4 &f4, F5 &f5, F6 &f6, F7 &f7, F8 *_f8_ptr_) { \
@@ -562,7 +562,7 @@ struct TEST_CAT(TestKitHook, __LINE__) : vespalib::TestHook { \
         size_t num_threads(threads); (void) num_threads; \
         return dispatch2(f1, new fixture2); \
     } \
-    bool run() override { \
+    virtual bool run() { \
         TEST_STATE(name); \
         size_t num_threads(threads); (void) num_threads; \
         return dispatch1(new fixture1); \
@@ -602,7 +602,7 @@ struct TEST_CAT(TestKitHook, __LINE__) : vespalib::TestHook { \
         F8 &f8; \
         F9 &f9; \
         Test(F1 &f1_in, F2 &f2_in, F3 &f3_in, F4 &f4_in, F5 &f5_in, F6 &f6_in, F7 &f7_in, F8 &f8_in, F9 &f9_in) : f1(f1_in), f2(f2_in), f3(f3_in), f4(f4_in), f5(f5_in), f6(f6_in), f7(f7_in), f8(f8_in), f9(f9_in) {} \
-        void test_entry_point() override; \
+        virtual void test_entry_point(); \
     }; \
     template <typename F1, typename F2, typename F3, typename F4, typename F5, typename F6, typename F7, typename F8, typename F9> \
     bool dispatch9(F1 &f1, F2 &f2, F3 &f3, F4 &f4, F5 &f5, F6 &f6, F7 &f7, F8 &f8, F9 *_f9_ptr_) { \
@@ -667,7 +667,7 @@ struct TEST_CAT(TestKitHook, __LINE__) : vespalib::TestHook { \
         size_t num_threads(threads); (void) num_threads; \
         return dispatch2(f1, new fixture2); \
     } \
-    bool run() override { \
+    virtual bool run() { \
         TEST_STATE(name); \
         size_t num_threads(threads); (void) num_threads; \
         return dispatch1(new fixture1); \

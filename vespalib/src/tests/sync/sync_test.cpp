@@ -18,12 +18,10 @@ private:
     LockGuard    lockMonitor()   { return LockGuard(_monitor); }
     MonitorGuard obtainMonitor() { return MonitorGuard(_monitor); }
 public:
-    ~Test();
     void testCountDownLatch();
     int Main() override;
 };
 
-Test::~Test() {}
 void
 Test::testCountDownLatch() {
     {

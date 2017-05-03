@@ -15,14 +15,15 @@ class ClosureTask : public Executor::Task {
 
 public:
     ClosureTask(std::unique_ptr<Closure> closure) : _closure(std::move(closure)) {}
-    ~ClosureTask();
     void run() override { _closure->call(); }
 };
 
 /**
  * Wraps a Closure as an Executor::Task.
  **/
-Executor::Task::UP makeTask(std::unique_ptr<Closure> closure);
+static inline Executor::Task::UP makeTask(std::unique_ptr<Closure> closure) {
+    return Executor::Task::UP(new ClosureTask(std::move(closure)));
+}
 
 }  // namespace vespalib
 

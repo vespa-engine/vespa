@@ -3,6 +3,7 @@
 #include <vespa/vespalib/data/memory_input.h>
 #include <vespa/vespalib/data/input_reader.h>
 #include <vespa/vespalib/test/chunked_input.h>
+#include <algorithm>
 
 using namespace vespalib;
 using vespalib::test::ChunkedInput;
@@ -91,12 +92,12 @@ TEST("expect that obtain does not set failure state on input reader") {
     for (bool byte_first: {true, false}) {
         MemoryInput input(data);
         InputReader src(input);
-        EXPECT_EQUAL(src.obtain(), 5u);
-        EXPECT_EQUAL(src.obtain(), 5u);
+        EXPECT_EQUAL(src.obtain(), 5);
+        EXPECT_EQUAL(src.obtain(), 5);
         EXPECT_EQUAL(src.read(5), Memory("12345"));
         EXPECT_TRUE(!src.failed());
-        EXPECT_EQUAL(src.obtain(), 0u);
-        EXPECT_EQUAL(src.obtain(), 0u);
+        EXPECT_EQUAL(src.obtain(), 0);
+        EXPECT_EQUAL(src.obtain(), 0);
         EXPECT_TRUE(!src.failed());
         if (byte_first) {
             EXPECT_EQUAL(src.read(), 0);
@@ -108,7 +109,7 @@ TEST("expect that obtain does not set failure state on input reader") {
             EXPECT_EQUAL(src.read(), 0);
         }
         EXPECT_EQUAL(src.get_error_message(), vespalib::string("input underflow"));
-        EXPECT_EQUAL(src.obtain(), 0u);
+        EXPECT_EQUAL(src.obtain(), 0);
     }
 }
 

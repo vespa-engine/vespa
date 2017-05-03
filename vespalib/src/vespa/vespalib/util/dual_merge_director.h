@@ -67,7 +67,6 @@ private:
 
 public:
     DualMergeDirector(size_t num_threads);
-    ~DualMergeDirector();
     void dualMerge(size_t thread_id, Source &typeA, Source &typeB);
 };
 

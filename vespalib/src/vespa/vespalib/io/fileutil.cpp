@@ -610,11 +610,6 @@ lstat(const stringref & path)
 }
 
 bool
-fileExists(const vespalib::stringref & path) {
-    return (stat(path).get() != 0);
-}
-
-bool
 unlink(const stringref & filename)
 {
     if (::unlink(filename.c_str()) != 0) {
