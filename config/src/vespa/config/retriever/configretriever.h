@@ -1,13 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/config/common/configkey.h>
-#include <vespa/config/subscription/configsubscription.h>
 #include "configkeyset.h"
 #include "configsnapshot.h"
 #include "genericconfigsubscriber.h"
 #include "fixedconfigsubscriber.h"
+#include <vespa/config/common/configkey.h>
+#include <vespa/config/subscription/configsubscription.h>
+#include <vespa/vespalib/stllike/string.h>
+
 
 namespace config {
 
@@ -26,6 +27,7 @@ public:
     ConfigRetriever(const ConfigKeySet & bootstrapSet,
                     const IConfigContext::SP & context,
                     int64_t subscribeTimeout = DEFAULT_SUBSCRIBE_TIMEOUT);
+    ~ConfigRetriever();
 
     /**
      * Waits for the next generation of bootstrap configs to arrive, and returns

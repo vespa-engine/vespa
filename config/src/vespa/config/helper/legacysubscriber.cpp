@@ -10,6 +10,8 @@ LegacySubscriber::LegacySubscriber()
 {
 }
 
+LegacySubscriber::~LegacySubscriber() {}
+
 void
 LegacySubscriber::close()
 {
