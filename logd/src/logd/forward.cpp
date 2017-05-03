@@ -4,6 +4,7 @@
 #include "errhandle.h"
 #include <vespa/vespalib/component/vtag.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP("");
 LOG_RCSID("$Id$");
 
