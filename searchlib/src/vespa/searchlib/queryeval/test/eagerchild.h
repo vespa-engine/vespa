@@ -13,8 +13,8 @@ namespace test {
 struct EagerChild : public SearchIterator
 {
     EagerChild(uint32_t initial) : SearchIterator() { setDocId(initial); }
-    virtual void doSeek(uint32_t) { setAtEnd(); }
-    virtual void doUnpack(uint32_t) {}
+    void doSeek(uint32_t) override { setAtEnd(); }
+    void doUnpack(uint32_t) override {}
 };
 
 } // namespace test

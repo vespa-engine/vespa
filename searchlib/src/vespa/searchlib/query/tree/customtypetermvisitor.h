@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/searchlib/query/tree/customtypevisitor.h>
-#include <vespa/searchlib/query/tree/intermediate.h>
+#include "customtypevisitor.h"
+#include "intermediate.h"
 
 namespace search {
 namespace query {
@@ -19,14 +19,14 @@ protected:
     }
 
 private:
-    virtual void visit(typename NodeTypes::And &n) { visitChildren(n); }
-    virtual void visit(typename NodeTypes::AndNot &n) { visitChildren(n); }
-    virtual void visit(typename NodeTypes::Equiv &n) { visitChildren(n); }
-    virtual void visit(typename NodeTypes::Near &n) { visitChildren(n); }
-    virtual void visit(typename NodeTypes::ONear &n) { visitChildren(n); }
-    virtual void visit(typename NodeTypes::Or &n) { visitChildren(n); }
-    virtual void visit(typename NodeTypes::Rank &n) { visitChildren(n); }
-    virtual void visit(typename NodeTypes::WeakAnd &n) { visitChildren(n); }
+    void visit(typename NodeTypes::And &n) override { visitChildren(n); }
+    void visit(typename NodeTypes::AndNot &n) override { visitChildren(n); }
+    void visit(typename NodeTypes::Equiv &n) override { visitChildren(n); }
+    void visit(typename NodeTypes::Near &n) override { visitChildren(n); }
+    void visit(typename NodeTypes::ONear &n) override { visitChildren(n); }
+    void visit(typename NodeTypes::Or &n) override { visitChildren(n); }
+    void visit(typename NodeTypes::Rank &n) override { visitChildren(n); }
+    void visit(typename NodeTypes::WeakAnd &n) override { visitChildren(n); }
 
     // phrases and weighted set terms are conceptual leaf nodes and
     // should be handled that way.
@@ -34,4 +34,3 @@ private:
 
 }  // namespace query
 }  // namespace search
-

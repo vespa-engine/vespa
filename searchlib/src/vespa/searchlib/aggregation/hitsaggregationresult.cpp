@@ -6,14 +6,24 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.aggregation.hitsaggregationresult");
 
-namespace search {
-namespace aggregation {
+namespace search::aggregation {
 
 using vespalib::FieldBase;
 using vespalib::Serializer;
 using vespalib::Deserializer;
 
 IMPLEMENT_IDENTIFIABLE_NS2(search, aggregation, HitsAggregationResult, AggregationResult);
+
+HitsAggregationResult::HitsAggregationResult() :
+    AggregationResult(),
+    _summaryClass("default"),
+    _maxHits(std::numeric_limits<uint32_t>::max()),
+    _hits(),
+    _isOrdered(false),
+    _bestHitRank(),
+    _summaryGenerator(0)
+{}
+HitsAggregationResult::~HitsAggregationResult() {}
 
 void HitsAggregationResult::onPrepare(const ResultNode & result, bool useForInit)
 {
@@ -110,7 +120,6 @@ HitsAggregationResult::onGetRank() const
     return _bestHitRank;
 }
 
-}
 }
 
 // this function was added by ../../forcelink.sh

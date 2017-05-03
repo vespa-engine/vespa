@@ -82,6 +82,7 @@ public:
                              bool strict, fef::MatchData &md) const override;
 
     WeakAndBlueprint(uint32_t n) : _n(n) {}
+    ~WeakAndBlueprint();
     void addTerm(Blueprint::UP bp, uint32_t weight) {
         addChild(std::move(bp));
         _weights.push_back(weight);

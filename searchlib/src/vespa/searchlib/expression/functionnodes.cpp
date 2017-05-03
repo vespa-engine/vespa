@@ -43,8 +43,7 @@
 #include <map>
 #include <vespa/vespalib/util/md5.h>
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 using vespalib::asciistream;
 using vespalib::nbostream;
@@ -487,11 +486,13 @@ bool CatFunctionNode::onExecute() const
     return true;
 }
 
+XorBitFunctionNode::XorBitFunctionNode() {}
+XorBitFunctionNode::~XorBitFunctionNode() {}
+
 XorBitFunctionNode::XorBitFunctionNode(ExpressionNode::UP arg, unsigned numBits) :
     UnaryBitFunctionNode(std::move(arg), numBits),
     _tmpXor(getNumBytes(), 0)
-{
-}
+{}
 
 bool UnaryBitFunctionNode::onExecute() const
 {
@@ -624,5 +625,4 @@ UnaryBitFunctionNode::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "numBits", _numBits);
 }
 
-}
 }

@@ -125,6 +125,7 @@ protected:
                               const EnumStoreBase &esb,
                               uint32_t minBvCocFreq,
                               bool useBitVector);
+    ~PostingListSearchContextT();
 
     void lookupSingle(void);
     size_t countHits(void) const;

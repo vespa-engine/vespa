@@ -36,6 +36,14 @@ RawBucketResultNode::hash() const
 #endif
 }
 
+
+RawBucketResultNode::RawBucketResultNode()
+    : _from(new RawResultNode()),
+      _to(new RawResultNode())
+{}
+
+RawBucketResultNode::~RawBucketResultNode() {}
+
 int
 RawBucketResultNode::onCmp(const Identifiable & rhs) const
 {

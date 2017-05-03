@@ -35,6 +35,9 @@ PostingListSearchContextT(const Dictionary &dictionary,
 {
 }
 
+template <typename DataT>
+PostingListSearchContextT<DataT>::~PostingListSearchContextT() {}
+
 
 template <typename DataT>
 void

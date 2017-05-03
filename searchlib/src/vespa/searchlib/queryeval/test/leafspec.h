@@ -7,9 +7,7 @@
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <string>
 
-namespace search {
-namespace queryeval {
-namespace test {
+namespace search::queryeval::test {
 
 /**
  * Defines the hits to be returned by a wand-like subsearch and creates a TrackedSearch.
@@ -28,6 +26,7 @@ struct LeafSpec
           result(),
           search()
     {}
+    ~LeafSpec() {}
     LeafSpec &doc(uint32_t docid) {
         result.doc(docid);
         return *this;
@@ -55,7 +54,4 @@ struct LeafSpec
     }
 };
 
-} // namespace test
-} // namespace queryeval
-} // namespace search
-
+}

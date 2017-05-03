@@ -204,6 +204,8 @@ PredicateBlueprint::PredicateBlueprint(const FieldSpecBase &field,
     }
 }
 
+PredicateBlueprint::~PredicateBlueprint() {}
+
 namespace {
 
     template<typename DictEntry, typename VectorIteratorEntry, typename BTreeIteratorEntry>

@@ -31,6 +31,7 @@ public:
                     const FeatureStore &featureStore,
                     uint32_t packedIndex,
                     const fef::TermFieldMatchDataArray &matchData);
+    ~PostingIterator();
 
     void doSeek(uint32_t docId) override;
     void doUnpack(uint32_t docId) override;

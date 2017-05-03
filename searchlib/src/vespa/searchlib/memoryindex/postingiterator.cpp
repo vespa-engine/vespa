@@ -23,6 +23,8 @@ PostingIterator::PostingIterator(Dictionary::PostingList::ConstIterator itr,
     _featureStore.setupForField(packedIndex, _featureDecoder);
 }
 
+PostingIterator::~PostingIterator() {}
+
 void
 PostingIterator::initRange(uint32_t begin, uint32_t end)
 {

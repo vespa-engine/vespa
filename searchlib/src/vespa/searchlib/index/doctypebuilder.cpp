@@ -166,12 +166,13 @@ DocTypeBuilder::UriField::markUsed(UsedFieldsMap &usedFields) const
 
 
 
-DocTypeBuilder::SchemaIndexFields::SchemaIndexFields(void)
+DocTypeBuilder::SchemaIndexFields::SchemaIndexFields()
     : _textFields(),
       _uriFields()
 {
 }
 
+DocTypeBuilder::SchemaIndexFields::~SchemaIndexFields() {}
 
 void
 DocTypeBuilder::SchemaIndexFields::setup(const Schema &schema)

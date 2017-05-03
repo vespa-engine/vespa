@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <map>
-#include <vespa/vespalib/stllike/string.h>
-#include <vector>
 #include "feature.h"
+#include <vespa/vespalib/stllike/string.h>
+#include <map>
+#include <vector>
 
 namespace search {
 
@@ -37,6 +37,7 @@ public:
      * Create a new object without any feature information.
      **/
     FeatureSet();
+    ~FeatureSet();
 
     /**
      * Create a new object that will contain information about the

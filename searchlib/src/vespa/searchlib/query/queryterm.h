@@ -158,10 +158,10 @@ public:
     };
     QueryTerm();
     QueryTerm(std::unique_ptr<QueryNodeResultBase> resultBase, const string & term, const string & index, SearchTerm type);
-    QueryTerm(const QueryTerm &) = default;
-    QueryTerm & operator = (const QueryTerm &) = default;
-    QueryTerm(QueryTerm &&) = default;
-    QueryTerm & operator = (QueryTerm &&) = default;
+    QueryTerm(const QueryTerm &);
+    QueryTerm & operator = (const QueryTerm &);
+    QueryTerm(QueryTerm &&);
+    QueryTerm & operator = (QueryTerm &&);
     ~QueryTerm();
     bool evaluate() const override;
     const HitList & evaluateHits(HitList & hl) const override;

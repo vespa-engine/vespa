@@ -3,8 +3,7 @@
 
 #include <vespa/vespalib/util/executor.h>
 
-namespace search
-{
+namespace search {
 
 template <class FunctionType>
 class LambdaTask : public vespalib::Executor::Task {
@@ -13,7 +12,7 @@ class LambdaTask : public vespalib::Executor::Task {
 public:
     LambdaTask(const FunctionType &func) : _func(func) {}
     LambdaTask(FunctionType &&func) : _func(std::move(func)) {}
-    virtual void run() override { _func(); }
+    void run() override { _func(); }
 };
 
 template <class FunctionType>
@@ -23,6 +22,5 @@ makeLambdaTask(FunctionType &&function)
     return std::make_unique<LambdaTask<std::decay_t<FunctionType>>>
         (std::forward<FunctionType>(function));
 }
-
 
 } // namespace search

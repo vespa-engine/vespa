@@ -4,24 +4,22 @@
 #include "aggregationresult.h"
 #include <vespa/searchlib/expression/singleresultnode.h>
 
-
-namespace search {
-namespace aggregation {
+namespace search::aggregation {
 
 class SumAggregationResult : public AggregationResult
 {
 public:
     using SingleResultNode = expression::SingleResultNode;
     DECLARE_AGGREGATIONRESULT(SumAggregationResult);
-    SumAggregationResult() : AggregationResult(), _sum() { }
-    SumAggregationResult(SingleResultNode::UP sum) : AggregationResult(), _sum(sum.release()) { }
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    SumAggregationResult();
+    SumAggregationResult(SingleResultNode::UP sum);
+    ~SumAggregationResult();
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     const SingleResultNode & getSum() const { return *_sum; }
 private:
-    virtual const ResultNode & onGetRank() const { return getSum(); }
-    virtual void onPrepare(const ResultNode & result, bool useForInit);
+    const ResultNode & onGetRank() const override { return getSum(); }
+    void onPrepare(const ResultNode & result, bool useForInit) override;
     SingleResultNode::CP _sum;
 };
 
-}
 }

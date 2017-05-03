@@ -80,6 +80,8 @@ FixedWidthBucketFunctionNode::FloatBucketHandler::update(ResultNode &result, con
     bucket.setRange(from, to);
 }
 
+FixedWidthBucketFunctionNode::~FixedWidthBucketFunctionNode() {}
+
 void
 FixedWidthBucketFunctionNode::onPrepareResult()
 {

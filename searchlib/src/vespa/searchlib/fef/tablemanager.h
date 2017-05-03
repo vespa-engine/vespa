@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include <map>
-#include <vector>
-#include <vespa/vespalib/util/sync.h>
 #include "itablefactory.h"
 #include "itablemanager.h"
+#include <vespa/vespalib/util/sync.h>
+#include <map>
+#include <vector>
 
 namespace search {
 namespace fef {
@@ -28,6 +28,7 @@ private:
 
 public:
     TableManager();
+    ~TableManager();
 
     /**
      * Adds a table factory to this manager.

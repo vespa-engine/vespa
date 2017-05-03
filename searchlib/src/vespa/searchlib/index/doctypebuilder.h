@@ -2,18 +2,14 @@
 
 #pragma once
 
+#include <vespa/searchcommon/common/schema.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/datatype/datatypes.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/searchcommon/common/schema.h>
 
-namespace search
-{
-
-namespace index
-{
+namespace search::index {
 
 /**
  * Builder for the indexingdocument document type based on an index schema.
@@ -36,32 +32,17 @@ public:
         uint32_t _hostname;
 
     private:
-        static void
-        markUsed(UsedFieldsMap &usedFields,
-                 uint32_t field);
-
-        static bool
-        valid(const Schema &schema,
-              uint32_t fieldId,
-              const Schema::CollectionType &collectionType);
+        static void markUsed(UsedFieldsMap &usedFields, uint32_t field);
+        static bool valid(const Schema &schema, uint32_t fieldId,
+                          const Schema::CollectionType &collectionType);
 
     public:
         UriField(void);
 
-        bool
-        broken(const Schema &schema,
-               const Schema::CollectionType &collectionType) const;
-
-        bool
-        valid(const Schema &schema,
-              const Schema::CollectionType &collectionType) const;
-
-        void
-        setup(const Schema &schema,
-              const vespalib::string &field);
-
-        void
-        markUsed(UsedFieldsMap &usedFields) const;
+        bool broken(const Schema &schema, const Schema::CollectionType &collectionType) const;
+        bool valid(const Schema &schema, const Schema::CollectionType &collectionType) const;
+        void setup(const Schema &schema, const vespalib::string &field);
+        void markUsed(UsedFieldsMap &usedFields) const;
     };
 
     typedef std::vector<UriField> UriFieldIdVector;
@@ -72,10 +53,9 @@ public:
         FieldIdVector _textFields;
         UriFieldIdVector _uriFields;
 
-        SchemaIndexFields(void);
-
-        void
-        setup(const Schema &schema);
+        SchemaIndexFields();
+        ~SchemaIndexFields();
+        void setup(const Schema &schema);
     };
 
 private:
@@ -90,6 +70,4 @@ public:
     makeConfig(const document::DocumentType &docType);
 };
 
-} // namespace search::index
-} // namespace search
-
+}

@@ -48,6 +48,7 @@ public:
                        const PredicateAttribute & attribute,
                        const query::PredicateQuery &query);
 
+    ~PredicateBlueprint();
     void fetchPostings(bool strict) override;
 
     SearchIterator::UP

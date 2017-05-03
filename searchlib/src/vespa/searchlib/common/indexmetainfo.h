@@ -41,6 +41,7 @@ private:
 
 public:
     IndexMetaInfo(const vespalib::string &path);
+    ~IndexMetaInfo();
     vespalib::string getPath() const { return _path; }
     void setPath(const vespalib::string &path) { _path = path; }
 

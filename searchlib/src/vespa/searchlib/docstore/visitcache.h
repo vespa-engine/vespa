@@ -50,6 +50,9 @@ public:
     using Positions = std::vector<LidPosition>;
     BlobSet();
     BlobSet(const Positions & positions, vespalib::alloc::Alloc && buffer);
+    BlobSet(BlobSet &&) = default;
+    BlobSet &operator = (BlobSet &&) = default;
+    ~BlobSet();
     void append(uint32_t lid, vespalib::ConstBufferRef blob);
     void remove(uint32_t lid);
     const Positions & getPositions() const { return _positions; }

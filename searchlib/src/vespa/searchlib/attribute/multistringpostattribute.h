@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/multistringattribute.h>
-#include <vespa/searchlib/attribute/postinglistattribute.h>
+#include "multistringattribute.h"
+#include "postinglistattribute.h"
 #include "i_document_weight_attribute.h"
 
 namespace search {
@@ -77,9 +77,9 @@ private:
     using PostingParent::fillPostingsFixupEnumBase;
     using PostingParent::forwardedOnAddDoc;
 
-    virtual void freezeEnumDictionary();
-    virtual void mergeMemoryStats(MemoryUsage & total);
-    virtual void applyValueChanges(const DocIndices & docIndices, EnumStoreBase::IndexVector & unused);
+    void freezeEnumDictionary() override;
+    void mergeMemoryStats(MemoryUsage & total) override;
+    void applyValueChanges(const DocIndices & docIndices, EnumStoreBase::IndexVector & unused) override ;
 
 public:
     MultiValueStringPostingAttributeT(const vespalib::string & name, const AttributeVector::Config & c =

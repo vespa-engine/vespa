@@ -3,16 +3,15 @@
 #pragma once
 
 #include "predicate_interval.h"
-#include <unordered_map>
 #include <vespa/vespalib/data/memory.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <climits>
 #include <vector>
+#include <unordered_map>
 
-namespace vespalib { namespace slime { class Inspector; } }
+namespace vespalib::slime { class Inspector; }
 
-namespace search {
-namespace predicate {
+namespace search::predicate {
 
 struct RangeFeature {
     vespalib::Memory label;
@@ -24,8 +23,8 @@ constexpr uint32_t MIN_INTERVAL = 0x0001;
 constexpr uint32_t MAX_INTERVAL = 0xffff;
 
 struct PredicateTreeAnnotations {
-    PredicateTreeAnnotations(uint32_t mf=0, uint16_t ir=MAX_INTERVAL)
-            : min_feature(mf), interval_range(ir) {}
+    PredicateTreeAnnotations(uint32_t mf=0, uint16_t ir=MAX_INTERVAL);
+    ~PredicateTreeAnnotations();
     uint32_t min_feature;
     uint16_t interval_range;
     std::unordered_map<uint64_t, std::vector<Interval>> interval_map;
@@ -47,5 +46,3 @@ struct PredicateTreeAnnotator {
 };
 
 }  // namespace predicate
-}  // namespace search
-

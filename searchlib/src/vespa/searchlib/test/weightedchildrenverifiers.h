@@ -3,14 +3,14 @@
 #include "searchiteratorverifier.h"
 #include "document_weight_attribute_helper.h"
 
-namespace search {
-namespace test {
+namespace search::test {
 
 class WeightedChildrenVerifier : public SearchIteratorVerifier {
 public:
     WeightedChildrenVerifier() :
         _weights(_num_children, 1)
     { }
+    ~WeightedChildrenVerifier() {}
 
 protected:
     static constexpr size_t _num_children = 7;
@@ -57,6 +57,7 @@ public:
             _helper.set_doc(full_list[i], i % _num_children, 1);
         }
     }
+    ~DwaIteratorChildrenVerifier() {}
     SearchIterator::UP create(bool strict) const override {
         (void) strict;
         std::vector<DocumentWeightIterator> children;
@@ -74,5 +75,4 @@ protected:
     DocumentWeightAttributeHelper _helper;
 };
 
-}
 }

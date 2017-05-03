@@ -4,11 +4,11 @@
 
 #include "noaggregated.h"
 #include "minmaxaggregated.h"
-#include <assert.h>
-#include <sys/types.h>
-#include <utility>
 #include <vespa/searchlib/datastore/entryref.h>
 #include <vespa/searchlib/datastore/handle.h>
+#include <cassert>
+#include <utility>
+#include <cstddef>
 
 namespace search {
 namespace datastore {
@@ -42,15 +42,13 @@ protected:
         : _level(level),
           _isFrozen(false),
           _validSlots(0)
-    {
-    }
+    {}
 
     BTreeNode(const BTreeNode &rhs)
         : _level(rhs._level),
           _isFrozen(rhs._isFrozen),
           _validSlots(rhs._validSlots)
-    {
-    }
+    {}
 
     BTreeNode &
     operator=(const BTreeNode &rhs)
@@ -62,50 +60,19 @@ protected:
         return *this;
     }
 
-    ~BTreeNode(void)
-    {
-        assert(_isFrozen);
-    }
+    ~BTreeNode() { assert(_isFrozen); }
 
 public:
     typedef datastore::EntryRef Ref;
 
     bool isLeaf() const { return _level == 0u; }
-
-    bool
-    getFrozen(void) const
-    {
-        return _isFrozen;
-    }
-
-    void
-    freeze(void)
-    {
-        _isFrozen = true;
-    }
-
-    void
-    unFreeze(void)
-    {
-        _isFrozen = false;
-    }
-
-
-    void
-    setLevel(uint8_t level)
-    {
-        _level = level;
-    }
-
+    bool getFrozen() const { return _isFrozen; }
+    void freeze() { _isFrozen = true; }
+    void unFreeze() { _isFrozen = false; }
+    void setLevel(uint8_t level) { _level = level; }
     uint32_t getLevel() const { return _level; }
-
     uint32_t validSlots() const { return _validSlots; }
-
-    void
-    setValidSlots(uint16_t validSlots_)
-    {
-        _validSlots = validSlots_;
-    }
+    void setValidSlots(uint16_t validSlots_) { _validSlots = validSlots_; }
 };
 
 
@@ -115,14 +82,10 @@ class BTreeNodeDataWrap
 public:
     DataT _data[NumSlots];
 
-    BTreeNodeDataWrap(void)
-        : _data()
-    {
-    }
+    BTreeNodeDataWrap() : _data() {}
+    ~BTreeNodeDataWrap() { }
 
-    void
-    copyData(const BTreeNodeDataWrap &rhs, uint32_t validSlots)
-    {
+    void copyData(const BTreeNodeDataWrap &rhs, uint32_t validSlots) {
         const DataT *rdata = rhs._data;
         DataT *ldata = _data;
         DataT *ldatae = _data + validSlots;
@@ -130,23 +93,9 @@ public:
             *ldata = *rdata;
     }
 
-    const DataT &
-    getData(uint32_t idx) const
-    {
-        return _data[idx];
-    }
-
-    void
-    setData(uint32_t idx, const DataT &data)
-    {
-        _data[idx] = data;
-    }
-
-    static bool
-    hasData(void)
-    {
-        return true;
-    }
+    const DataT &getData(uint32_t idx) const { return _data[idx]; }
+    void setData(uint32_t idx, const DataT &data) { _data[idx] = data; }
+    static bool hasData() { return true; }
 };
 
 
@@ -168,36 +117,24 @@ template <uint32_t NumSlots>
 class BTreeNodeDataWrap<BTreeNoLeafData, NumSlots>
 {
 public:
-    BTreeNodeDataWrap(void)
-    {
-    }
+    BTreeNodeDataWrap() {}
 
-    void
-    copyData(const BTreeNodeDataWrap &rhs, uint32_t validSlots)
-    {
+    void copyData(const BTreeNodeDataWrap &rhs, uint32_t validSlots) {
         (void) rhs;
         (void) validSlots;
     }
 
-    const BTreeNoLeafData &
-    getData(uint32_t idx) const
-    {
+    const BTreeNoLeafData &getData(uint32_t idx) const {
         (void) idx;
         return BTreeNoLeafData::_instance;
     }
 
-    void
-    setData(uint32_t idx, const BTreeNoLeafData &data)
-    {
+    void setData(uint32_t idx, const BTreeNoLeafData &data) {
         (void) idx;
         (void) data;
     }
 
-    static bool
-    hasData(void)
-    {
-        return false;
-    }
+    static bool hasData(void) { return false; }
 };
 
 
@@ -211,37 +148,24 @@ public:
     KeyT _key;
     DataT _data;
 
-    BTreeKeyData(void)
+    BTreeKeyData()
         : _key(),
           _data()
-    {
-    }
+    {}
 
     BTreeKeyData(const KeyT &key, const DataT &data)
         : _key(key),
           _data(data)
-    {
-    }
+    {}
 
-    void
-    setData(const DataT &data)
-    {
-        _data = data;
-    }
-
-    const DataT &
-    getData(void) const
-    {
-        return _data;
-    }
+    void setData(const DataT &data) { _data = data; }
+    const DataT &getData(void) const { return _data; }
 
     /**
      * This operator only works when using direct keys.  References to
      * externally stored keys will not be properly sorted.
      */
-    bool
-    operator<(const BTreeKeyData &rhs) const
-    {
+    bool operator<(const BTreeKeyData &rhs) const {
         return _key < rhs._key;
     }
 };
@@ -256,10 +180,7 @@ public:
 
     KeyT _key;
 
-    BTreeKeyData(void)
-        : _key()
-    {
-    }
+    BTreeKeyData() : _key() {}
 
     BTreeKeyData(const KeyT &key, const BTreeNoLeafData &data)
         : _key(key)
@@ -267,25 +188,14 @@ public:
         (void) data;
     }
 
-    void
-    setData(const BTreeNoLeafData &data)
-    {
-        (void) data;
-    }
-
-    const BTreeNoLeafData &
-    getData(void) const
-    {
-        return BTreeNoLeafData::_instance;
-    }
+    void setData(const BTreeNoLeafData &data) { (void) data; }
+    const BTreeNoLeafData &getData(void) const { return BTreeNoLeafData::_instance; }
 
     /**
      * This operator only works when using direct keys.  References to
      * externally stored keys will not be properly sorted.
      */
-    bool
-    operator<(const BTreeKeyData &rhs) const
-    {
+    bool operator<(const BTreeKeyData &rhs) const {
         return _key < rhs._key;
     }
 };
@@ -300,28 +210,12 @@ class BTreeNodeAggregatedWrap
     static AggrT _instance;
 
 public:
-    BTreeNodeAggregatedWrap(void)
+    BTreeNodeAggregatedWrap()
         : _aggr()
-    {
-    }
-
-    AggrT &
-    getAggregated(void)
-    {
-        return _aggr;
-    }
-
-    const AggrT &
-    getAggregated(void) const
-    {
-        return _aggr;
-    }
-
-    static const AggrT &
-    getEmptyAggregated(void)
-    {
-        return _instance;
-    }
+    {}
+    AggrT &getAggregated() { return _aggr; }
+    const AggrT &getAggregated() const { return _aggr; }
+    static const AggrT &getEmptyAggregated() { return _instance; }
 };
 
 
@@ -332,27 +226,11 @@ class BTreeNodeAggregatedWrap<NoAggregated>
 
     static NoAggregated _instance;
 public:
-    BTreeNodeAggregatedWrap(void)
-    {
-    }
+    BTreeNodeAggregatedWrap() {}
 
-    NoAggregated &
-    getAggregated(void)
-    {
-        return _instance;
-    }
-
-    const NoAggregated &
-    getAggregated(void) const
-    {
-        return _instance;
-    }
-
-    static const NoAggregated &
-    getEmptyAggregated(void)
-    {
-        return _instance;
-    }
+    NoAggregated &getAggregated() { return _instance; }
+    const NoAggregated &getAggregated() const { return _instance; }
+    static const NoAggregated &getEmptyAggregated() { return _instance; }
 };
 
 
@@ -363,12 +241,9 @@ protected:
     BTreeNodeT(uint8_t level)
         : BTreeNode(level),
           _keys()
-    {
-    }
+    {}
 
-    ~BTreeNodeT(void)
-    {
-    }
+    ~BTreeNodeT() {}
 
     BTreeNodeT(const BTreeNodeT &rhs)
         : BTreeNode(rhs)
@@ -398,16 +273,13 @@ public:
     void writeKey(uint32_t idx, const KeyT & key) { _keys[idx] = key; }
 
     template <typename CompareT>
-    uint32_t
-    lower_bound(uint32_t sidx, const KeyT & key, CompareT comp) const;
+    uint32_t lower_bound(uint32_t sidx, const KeyT & key, CompareT comp) const;
 
     template <typename CompareT>
-    uint32_t
-    lower_bound(const KeyT & key, CompareT comp) const;
+    uint32_t lower_bound(const KeyT & key, CompareT comp) const;
 
     template <typename CompareT>
-    uint32_t
-    upper_bound(uint32_t sidx, const KeyT & key, CompareT comp) const;
+    uint32_t upper_bound(uint32_t sidx, const KeyT & key, CompareT comp) const;
 
     bool isFull() const { return validSlots() == NumSlots; }
     bool isAtLeastHalfFull() const { return validSlots() >= minSlots(); }
@@ -435,12 +307,9 @@ protected:
     BTreeNodeTT(uint8_t level)
         : ParentType(level),
           DataWrapType()
-    {
-    }
+    {}
 
-    ~BTreeNodeTT(void)
-    {
-    }
+    ~BTreeNodeTT() {}
 
     BTreeNodeTT(const BTreeNodeTT &rhs)
         : ParentType(rhs),
@@ -450,9 +319,7 @@ protected:
         copyData(rhs, _validSlots);
     }
 
-    BTreeNodeTT &
-    operator=(const BTreeNodeTT &rhs)
-    {
+    BTreeNodeTT &operator=(const BTreeNodeTT &rhs) {
         ParentType::operator=(rhs);
         AggrWrapType::operator=(rhs);
         copyData(rhs, _validSlots);
@@ -475,9 +342,8 @@ public:
     void stealSomeFromLeftNode(NodeType * victim);
     void stealSomeFromRightNode(NodeType * victim);
     void cleanRange(uint32_t from, uint32_t to);
-    void clean(void);
-
-    void cleanFrozen(void);
+    void clean();
+    void cleanFrozen();
 };
 
 template <typename KeyT, typename AggrT, uint32_t NumSlots = 16>
@@ -517,99 +383,48 @@ private:
     BTreeInternalNode()
         : ParentType(EMPTY_LEVEL),
           _validLeaves(0u)
-    {
-    }
-
+    {}
 
     BTreeInternalNode(const BTreeInternalNode &rhs)
         : ParentType(rhs),
           _validLeaves(rhs._validLeaves)
-    {
-    }
+    {}
 
-    ~BTreeInternalNode(void)
-    {
-    }
+    ~BTreeInternalNode() {}
 
-    BTreeInternalNode &
-    operator=(const BTreeInternalNode &rhs)
-    {
+    BTreeInternalNode &operator=(const BTreeInternalNode &rhs) {
         ParentType::operator=(rhs);
         _validLeaves = rhs._validLeaves;
         return *this;
     }
 
 public:
-    BTreeNode::Ref
-    getChild(uint32_t idx) const
-    {
-        return getData(idx);
-    }
-
-    void
-    setChild(uint32_t idx, BTreeNode::Ref child)
-    {
-        setData(idx, child);
-    }
-
+    BTreeNode::Ref getChild(uint32_t idx) const { return getData(idx); }
+    void setChild(uint32_t idx, BTreeNode::Ref child) { setData(idx, child); }
     BTreeNode::Ref getLastChild() const { return getChild(validSlots() - 1); }
-
-    uint32_t
-    validLeaves(void) const
-    {
-        return _validLeaves;
-    }
-
-    void
-    setValidLeaves(uint32_t newValidLeaves)
-    {
-        _validLeaves = newValidLeaves;
-    }
-
-    void
-    incValidLeaves(uint32_t delta)
-    {
-        _validLeaves += delta;
-    }
-
-    void
-    decValidLeaves(uint32_t delta)
-    {
-        _validLeaves -= delta;
-    }
+    uint32_t validLeaves() const { return _validLeaves; }
+    void setValidLeaves(uint32_t newValidLeaves) { _validLeaves = newValidLeaves; }
+    void incValidLeaves(uint32_t delta) { _validLeaves += delta; }
+    void decValidLeaves(uint32_t delta) { _validLeaves -= delta; }
 
     template <typename NodeAllocatorType>
-    void
-    splitInsert(BTreeInternalNode *splitNode, uint32_t idx, const KeyT &key,
-                const BTreeNode::Ref &data,
-                NodeAllocatorType &allocator);
+    void splitInsert(BTreeInternalNode *splitNode, uint32_t idx, const KeyT &key,
+                     const BTreeNode::Ref &data, NodeAllocatorType &allocator);
 
-    void
-    stealAllFromLeftNode(const BTreeInternalNode *victim);
-
-    void
-    stealAllFromRightNode(const BTreeInternalNode *victim);
+    void stealAllFromLeftNode(const BTreeInternalNode *victim);
+    void stealAllFromRightNode(const BTreeInternalNode *victim);
 
     template <typename NodeAllocatorType>
-    void
-    stealSomeFromLeftNode(BTreeInternalNode *victim,
-                          NodeAllocatorType &allocator);
+    void stealSomeFromLeftNode(BTreeInternalNode *victim, NodeAllocatorType &allocator);
 
     template <typename NodeAllocatorType>
-    void
-    stealSomeFromRightNode(BTreeInternalNode *victim,
-                           NodeAllocatorType &allocator);
+    void stealSomeFromRightNode(BTreeInternalNode *victim, NodeAllocatorType &allocator);
 
-    void
-    clean(void);
-
-    void
-    cleanFrozen(void);
+    void clean();
+    void cleanFrozen();
 
     template <typename NodeStoreType, typename FunctionType>
-    void
-    foreach_key(NodeStoreType &store, FunctionType func) const
-    {
+    void foreach_key(NodeStoreType &store, FunctionType func) const {
         const BTreeNode::Ref *it = this->_data;
         const BTreeNode::Ref *ite = it + _validSlots;
         if (this->getLevel() > 1u) {
@@ -624,9 +439,7 @@ public:
     }
 
     template <typename NodeStoreType, typename FunctionType>
-    void
-    foreach(NodeStoreType &store, FunctionType func) const
-    {
+    void foreach(NodeStoreType &store, FunctionType func) const {
         const BTreeNode::Ref *it = this->_data;
         const BTreeNode::Ref *ite = it + _validSlots;
         if (this->getLevel() > 1u) {
@@ -676,63 +489,37 @@ private:
 protected:
     BTreeLeafNode(const BTreeLeafNode &rhs)
         : ParentType(rhs)
-    {
-    }
+    {}
 
     BTreeLeafNode(const KeyDataType *smallArray, uint32_t arraySize);
 
-    ~BTreeLeafNode(void)
-    {
-    }
+    ~BTreeLeafNode() {}
 
-    BTreeLeafNode &
-    operator=(const BTreeLeafNode &rhs)
-    {
+    BTreeLeafNode &operator=(const BTreeLeafNode &rhs) {
         ParentType::operator=(rhs);
         return *this;
     }
 
 public:
     template <typename NodeAllocatorType>
-    void
-    stealSomeFromLeftNode(BTreeLeafNode *victim,
-                          NodeAllocatorType &allocator)
+    void stealSomeFromLeftNode(BTreeLeafNode *victim, NodeAllocatorType &allocator)
     {
         (void) allocator;
         stealSomeFromLeftNode(victim);
     }
 
     template <typename NodeAllocatorType>
-    void
-    stealSomeFromRightNode(BTreeLeafNode *victim,
-                           NodeAllocatorType &allocator)
-    {
+    void stealSomeFromRightNode(BTreeLeafNode *victim, NodeAllocatorType &allocator) {
         (void) allocator;
         stealSomeFromRightNode(victim);
     }
 
-    const DataT &
-    getLastData() const
-    {
-        return this->getData(validSlots() - 1);
-    }
-
-    void
-    writeData(uint32_t idx, const DataT &data)
-    {
-        this->setData(idx, data);
-    }
-
-    uint32_t
-    validLeaves(void) const
-    {
-        return validSlots();
-    }
+    const DataT &getLastData() const { return this->getData(validSlots() - 1); }
+    void writeData(uint32_t idx, const DataT &data) { this->setData(idx, data); }
+    uint32_t validLeaves() const { return validSlots(); }
 
     template <typename FunctionType>
-    void
-    foreach_key(FunctionType func) const
-    {
+    void foreach_key(FunctionType func) const {
         const KeyT *it = _keys;
         const KeyT *ite = it + _validSlots;
         for (; it != ite; ++it) {
@@ -741,9 +528,7 @@ public:
     }
 
     template <typename FunctionType>
-    void
-    foreach(FunctionType func) const
-    {
+    void foreach(FunctionType func) const {
         const KeyT *it = _keys;
         const KeyT *ite = it + _validSlots;
         uint32_t idx = 0;
@@ -765,12 +550,9 @@ public:
     BTreeLeafNodeTemp(const KeyDataType *smallArray,
                       uint32_t arraySize)
         : ParentType(smallArray, arraySize)
-    {
-    }
+    {}
 
-    ~BTreeLeafNodeTemp(void)
-    {
-    }
+    ~BTreeLeafNodeTemp() {}
 };
 
 extern template class BTreeNodeDataWrap<uint32_t, 16>;
@@ -796,4 +578,3 @@ extern template class BTreeLeafNodeTemp<uint32_t, BTreeNoLeafData,
 
 } // namespace search::btree
 } // namespace search
-

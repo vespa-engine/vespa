@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/common/featureset.h>
+#include "featureset.h"
 
 namespace search {
 
@@ -11,6 +10,8 @@ FeatureSet::FeatureSet()
       _values()
 {
 }
+
+FeatureSet::~FeatureSet() {}
 
 FeatureSet::FeatureSet(const StringVector &names, uint32_t expectDocs)
     : _names(names),
