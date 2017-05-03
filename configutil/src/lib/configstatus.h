@@ -23,6 +23,7 @@ public:
     };
 
     ConfigStatus(Flags flags, const config::ConfigUri uri);
+    ~ConfigStatus();
     int action();
 
 private:

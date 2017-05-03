@@ -132,6 +132,8 @@ ConfigStatus::ConfigStatus(Flags flags, const config::ConfigUri uri)
     }
 }
 
+ConfigStatus::~ConfigStatus() {}
+
 int
 ConfigStatus::action()
 {
