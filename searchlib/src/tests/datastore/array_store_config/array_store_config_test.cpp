@@ -1,5 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP("array_store_config_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/datastore/entryref.h>
 #include <vespa/searchlib/datastore/array_store_config.h>
@@ -39,7 +41,7 @@ constexpr size_t MB = KB * KB;
 
 TEST_F("require that default allocation spec is given for all array sizes", Fixture(3, AllocSpec(4, 32, 8)))
 {
-    EXPECT_EQUAL(3u, f.cfg.maxSmallArraySize());
+    EXPECT_EQUAL(3, f.cfg.maxSmallArraySize());
     TEST_DO(f.assertSpec(0, AllocSpec(4, 32, 8)));
     TEST_DO(f.assertSpec(1, AllocSpec(4, 32, 8)));
     TEST_DO(f.assertSpec(2, AllocSpec(4, 32, 8)));
@@ -51,7 +53,7 @@ TEST_F("require that we can generate config optimized for a given huge page", Fi
                                                                                       4 * KB,
                                                                                       8 * KB))
 {
-    EXPECT_EQUAL(1024u, f.cfg.maxSmallArraySize());
+    EXPECT_EQUAL(1024, f.cfg.maxSmallArraySize());
     TEST_DO(f.assertSpec(0, 8 * KB)); // large arrays
     TEST_DO(f.assertSpec(1, 256 * KB));
     TEST_DO(f.assertSpec(2, 256 * KB));

@@ -1,4 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP("nativerank_test");
 
 #include <vespa/searchlib/features/nativeattributematchfeature.h>
 #include <vespa/searchlib/features/nativefieldmatchfeature.h>
@@ -12,9 +15,6 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/fef/test/ftlib.h>
 #include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP("nativerank_test");
 
 using namespace search::fef;
 using namespace search::fef::test;
@@ -56,11 +56,8 @@ private:
     void testNativeRank();
 
 public:
-    ~Test();
     int Main() override;
 };
-
-Test::~Test() {}
 
 void
 Test::testNativeFieldMatch()

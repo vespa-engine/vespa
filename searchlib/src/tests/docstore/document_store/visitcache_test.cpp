@@ -32,23 +32,23 @@ TEST("require that KeySet compares well") {
     EXPECT_FALSE(KeySet({1,3,5}) < KeySet({1,2}));
     EXPECT_TRUE(KeySet({1,2}) < KeySet({1,3,5}));
     EXPECT_FALSE(KeySet({1,4}) < KeySet({1,3,5}));
-    EXPECT_EQUAL(1u, a.getKeys()[0]);
-    EXPECT_EQUAL(2u, a.getKeys()[1]);
-    EXPECT_EQUAL(3u, a.getKeys()[2]);
-    EXPECT_EQUAL(4u, a.getKeys()[3]);
-    EXPECT_EQUAL(6u, a.getKeys()[4]);
-    EXPECT_EQUAL(9u, a.getKeys()[5]);
+    EXPECT_EQUAL(1, a.getKeys()[0]);
+    EXPECT_EQUAL(2, a.getKeys()[1]);
+    EXPECT_EQUAL(3, a.getKeys()[2]);
+    EXPECT_EQUAL(4, a.getKeys()[3]);
+    EXPECT_EQUAL(6, a.getKeys()[4]);
+    EXPECT_EQUAL(9, a.getKeys()[5]);
 }
 
 namespace {
 
 void verifyAB(const BlobSet & a) {
-    EXPECT_EQUAL(0u, a.get(8).size());
-    EXPECT_EQUAL(6u, a.get(7).size());
-    EXPECT_EQUAL(5u, a.get(9).size());
+    EXPECT_EQUAL(0, a.get(8).size());
+    EXPECT_EQUAL(6, a.get(7).size());
+    EXPECT_EQUAL(5, a.get(9).size());
     EXPECT_EQUAL(0, strncmp(a.get(7).c_str(), "aaaaaa", 6));
     EXPECT_EQUAL(0, strncmp(a.get(9).c_str(), "bbbbb", 5));
-    EXPECT_EQUAL(11u, a.getBuffer().size());
+    EXPECT_EQUAL(11, a.getBuffer().size());
     EXPECT_EQUAL(0, strncmp(a.getBuffer().c_str(), "aaaaaabbbbb", 11));
 }
 

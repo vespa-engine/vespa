@@ -1,4 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP("beta_features_test");
 
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributemanager.h>
@@ -32,8 +35,8 @@
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
 #include <vespa/searchlib/util/rand48.h>
-#include <vespa/searchlib/fef/test/ftlib.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/searchlib/fef/test/ftlib.h>
 
 using namespace search::features;
 using namespace search::fef;
@@ -61,8 +64,6 @@ public:
 //---------------------------------------------------------------------------------------------------------------------
 class Test : public FtTestApp {
 public:
-    Test();
-    ~Test();
     int Main() override;
     void testJaroWinklerDistance();
     void testProximity();
@@ -82,9 +83,6 @@ private:
 };
 
 TEST_APPHOOK(Test);
-
-Test::Test() {}
-Test::~Test() {}
 
 int
 Test::Main()

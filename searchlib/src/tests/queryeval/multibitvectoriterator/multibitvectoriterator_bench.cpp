@@ -1,5 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP("multibitvectoriterator_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/queryeval/multibitvectoriterator.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
@@ -8,8 +10,6 @@
 #include <vespa/searchlib/queryeval/orsearch.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
-#include <vespa/log/log.h>
-LOG_SETUP("multibitvectoriterator_test");
 
 using namespace search::queryeval;
 using namespace search::fef;
@@ -20,7 +20,6 @@ using namespace search;
 class Test : public vespalib::TestApp
 {
 public:
-    ~Test() {}
     void benchmark();
     int Main() override;
     template <typename T>

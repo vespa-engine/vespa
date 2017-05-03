@@ -1,4 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/properties.h>
@@ -277,9 +278,9 @@ TEST("test stuff") {
 
         { // vespa.matching.minhitsperthread
             EXPECT_EQUAL(matching::MinHitsPerThread::NAME, vespalib::string("vespa.matching.minhitsperthread"));
-            EXPECT_EQUAL(matching::MinHitsPerThread::DEFAULT_VALUE, 0u);
+            EXPECT_EQUAL(matching::MinHitsPerThread::DEFAULT_VALUE, 0);
             Properties p;
-            EXPECT_EQUAL(matching::MinHitsPerThread::lookup(p), 0u);
+            EXPECT_EQUAL(matching::MinHitsPerThread::lookup(p), 0);
             p.add("vespa.matching.minhitsperthread", "50");
             EXPECT_EQUAL(matching::MinHitsPerThread::lookup(p), 50u);
         }

@@ -1,6 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/testapp.h>
+
+#include <map>
+#include <string>
+#include <vector>
+
 #include <vespa/searchlib/common/feature.h>
 
 #include <vespa/searchlib/attribute/attributeguard.h>
@@ -242,7 +247,6 @@ private:
 
 public:
     RankSetupTest();
-    ~RankSetupTest();
     int Main() override;
 };
 
@@ -899,7 +903,6 @@ RankSetupTest::RankSetupTest() :
     _queryEnv.overrideAttributeManager(&_manager);
 }
 
-RankSetupTest::~RankSetupTest() {}
 
 int
 RankSetupTest::Main()
