@@ -1,12 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("featurebenchmark");
-
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <string>
 
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.h>
@@ -20,6 +12,11 @@ LOG_SETUP("featurebenchmark");
 #include <vespa/searchlib/fef/test/plugin/setup.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/fef/test/ftlib.h>
+
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <string>
 
 using namespace search::features;
 using namespace search::fef;
@@ -131,13 +128,16 @@ private:
     void runNativeProximity(Config & cfg);
 
 public:
-    Benchmark() : _factory(), _timer(), _sample() {}
+    Benchmark();
+    ~Benchmark();
     int Main() override;
 
 };
 
 TEST_APPHOOK(Benchmark);
 
+Benchmark::Benchmark() : _factory(), _timer(), _sample() {}
+Benchmark::~Benchmark() {}
 
 bool
 Benchmark::Config::isKnown(const vespalib::string & key) const
@@ -167,7 +167,7 @@ Benchmark::Config::init(const vespalib::string & fileName)
         std::getline(is, line);
         if (!line.empty()) {
             std::vector<vespalib::string> values = FtUtil::tokenize(line, "=");
-            LOG_ASSERT(values.size() == 2);
+            assert(values.size() == 2);
             add(values[0], values[1]);
         }
     }
