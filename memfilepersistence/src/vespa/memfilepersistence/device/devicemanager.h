@@ -18,9 +18,7 @@
 #include <vespa/storageframework/generic/clock/clock.h>
 #include <set>
 
-namespace storage {
-
-namespace memfile {
+namespace storage::memfile {
 
 class DeviceManager : public vespalib::XmlSerializable {
     using StatfsPolicy = vespa::config::storage::StorDevicesConfig::StatfsPolicy;
@@ -33,15 +31,14 @@ class DeviceManager : public vespalib::XmlSerializable {
     uint32_t _statPeriod;
     const framework::Clock& _clock;
 
-    DeviceManager(const DeviceManager&);
-    DeviceManager& operator=(const DeviceManager&);
-
     void setFindDeviceFunction();
-
 public:
     using UP = std::unique_ptr<DeviceManager>;
 
     DeviceManager(DeviceMapper::UP mapper, const framework::Clock& clock);
+    DeviceManager(const DeviceManager&) = delete;
+    DeviceManager& operator=(const DeviceManager&) = delete;
+    ~DeviceManager();
 
     void setPartitionMonitorPolicy(StatfsPolicy, uint32_t period = 0);
 
@@ -69,5 +66,3 @@ public:
 };
 
 } // memfile
-
-} // storage

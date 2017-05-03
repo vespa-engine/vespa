@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/memfilepersistence/device/partitionmonitor.h>
+#include "partitionmonitor.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
@@ -95,6 +95,8 @@ PartitionMonitor::PartitionMonitor(const std::string& file)
     LOG(debug, "%s: Monitor created with default setting of period at 100.",
         _fileOnPartition.c_str());
 }
+
+PartitionMonitor::~PartitionMonitor() {}
 
 void
 PartitionMonitor::setPolicy(vespa::config::storage::StorDevicesConfig::StatfsPolicy policy,

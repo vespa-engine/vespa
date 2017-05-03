@@ -3,15 +3,12 @@
 #include "simplememfileiobuffer.h"
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/memfilepersistence/common/environment.h>
-#include <vespa/vespalib/util/crc.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".memfile.simpleiobuffer");
 
-namespace storage {
-
-namespace memfile {
+namespace storage::memfile {
 
 namespace {
 
@@ -39,6 +36,8 @@ SimpleMemFileIOBuffer::SimpleMemFileIOBuffer(
       _options(env.acquireConfigReadLock().options())
 {
 }
+
+SimpleMemFileIOBuffer::~SimpleMemFileIOBuffer() {}
 
 void
 SimpleMemFileIOBuffer::close()
@@ -537,8 +536,6 @@ SimpleMemFileIOBuffer::getCachedSize(DocumentPart part) const
         seenBufs.insert(it->second.buf->getBuffer());
     }
     return ret;
-}
-
 }
 
 }

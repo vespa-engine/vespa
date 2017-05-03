@@ -3,9 +3,7 @@
 #include "devicemanager.h"
 #include <vespa/vespalib/util/exceptions.h>
 
-namespace storage {
-
-namespace memfile {
+namespace storage::memfile {
 
 DeviceManager::DeviceManager(DeviceMapper::UP mapper,
                              const framework::Clock& clock)
@@ -19,6 +17,8 @@ DeviceManager::DeviceManager(DeviceMapper::UP mapper,
       _clock(clock)
 {
 }
+
+DeviceManager::~DeviceManager() {}
 
 void
 DeviceManager::setPartitionMonitorPolicy(
@@ -207,5 +207,3 @@ DeviceManager::printXml(vespalib::XmlOutputStream& xos) const
 }
 
 } // memfile
-
-} // storage

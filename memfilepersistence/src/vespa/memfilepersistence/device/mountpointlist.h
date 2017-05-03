@@ -22,7 +22,6 @@
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/vespalib/util/printable.h>
 
-
 namespace storage {
 namespace lib {
     class NodeState;
@@ -37,6 +36,7 @@ struct MountPointList : public framework::XmlStatusReporter {
     MountPointList(const std::string& vdsRoot,
                    const std::vector<vespalib::string>& diskPath,
                    std::unique_ptr<DeviceManager>);
+    ~MountPointList();
 
     DeviceManager& getDeviceManager() { return *_deviceManager; }
 

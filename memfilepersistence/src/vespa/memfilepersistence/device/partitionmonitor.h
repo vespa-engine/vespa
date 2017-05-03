@@ -18,9 +18,7 @@
 #include <sys/statvfs.h>
 
 
-namespace storage {
-
-namespace memfile {
+namespace storage::memfile {
 
 class PartitionMonitorTest;
 
@@ -68,6 +66,7 @@ private:
 public:
     /** Default policy is STAT_PERIOD(100). Default max fill rate 0.98. */
     PartitionMonitor(const std::string& fileOnFileSystem);
+    ~PartitionMonitor();
 
     /** Set monitor policy from config. */
     void setPolicy(vespa::config::storage::StorDevicesConfig::StatfsPolicy, uint32_t period);
@@ -150,5 +149,3 @@ private:
 };
 
 } // memfile
-
-} // storage

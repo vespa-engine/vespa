@@ -1,19 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mountpointlist.h"
-#include "devicemanager.h"
 #include <vespa/memfilepersistence/common/exceptions.h>
 #include <vespa/persistence/spi/exceptions.h>
 #include <vespa/vdslib/state/nodestate.h>
 #include <vespa/config/helper/configfetcher.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/util/xmlserializable.h>
 #include <vespa/vespalib/util/guard.h>
-#include <vespa/vespalib/text/stringtokenizer.h>
-#include <cerrno>
 #include <fstream>
-#include <sys/types.h>
-#include <sys/stat.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.mountpointlist");
@@ -35,6 +29,8 @@ MountPointList::MountPointList(const std::string& vdsRoot,
     _mountPoints(0)
 {
 }
+
+MountPointList::~MountPointList() {}
 
 spi::PartitionStateList
 MountPointList::getPartitionStates() const
