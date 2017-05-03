@@ -15,12 +15,15 @@ VESPA_DEFINE_EXCEPTION(VCClusterNotFoundException, vespalib::IllegalArgumentExce
 class ClusterList
 {
 public:
-    typedef VCClusterNotFoundException ClusterNotFoundException;
+    using ClusterNotFoundException = VCClusterNotFoundException;
     class Cluster {
     public:
-        Cluster(const std::string& name, const std::string& configId)
-            : _name(name),
-              _configId(configId) {};
+        Cluster(const std::string& name, const std::string& configId);
+        Cluster(const Cluster &);
+        Cluster & operator = (const Cluster &);
+        Cluster(Cluster &&) = default;
+        Cluster & operator = (Cluster &&) = default;
+        ~Cluster();
 
         const std::string& getName() const { return _name; }
         const std::string& getConfigId() const { return _configId; }
@@ -30,6 +33,7 @@ public:
     };
 
     ClusterList();
+    ~ClusterList();
 
     const std::vector<Cluster>& getContentClusters() const { return _contentClusters; }
 
@@ -42,11 +46,9 @@ public:
 
 private:
     void configure(const cloud::config::ClusterListConfig& cfg);
+    std::string getContentClusterList() const;
 
     std::vector<Cluster> _contentClusters;
-
-    std::string getContentClusterList() const;
 };
 
 }
-

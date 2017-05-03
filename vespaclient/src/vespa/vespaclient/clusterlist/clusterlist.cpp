@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespaclient/clusterlist/clusterlist.h>
+#include "clusterlist.h"
 #include <vespa/config/config.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <sstream>
@@ -9,10 +9,22 @@ using namespace vespaclient;
 
 VESPA_IMPLEMENT_EXCEPTION(VCClusterNotFoundException, vespalib::IllegalArgumentException);
 
+
+ClusterList::Cluster::Cluster(const std::string& name, const std::string& configId)
+    : _name(name),
+      _configId(configId)
+{}
+
+ClusterList::Cluster::Cluster(const Cluster &) = default;
+ClusterList::Cluster & ClusterList::Cluster::operator = (const Cluster &) = default;
+ClusterList::Cluster::~Cluster() {}
+
 ClusterList::ClusterList()
 {
   configure(*config::ConfigGetter<cloud::config::ClusterListConfig>::getConfig("client"));
 }
+
+ClusterList::~ClusterList() {}
 
 void
 ClusterList::configure(const cloud::config::ClusterListConfig& config)
