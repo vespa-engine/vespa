@@ -140,6 +140,4 @@ public:
     void prepare(const DocumentTypeIndexFieldMapT & difm, const SharedSearcherBuf & searcherBuf, search::Query & query);
 };
 
-
 }
-

@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vsm/searcher/utf8stringfieldsearcherbase.h>
+#include "utf8stringfieldsearcherbase.h"
 
 using search::QueryTerm;
 using search::QueryTermList;
@@ -225,14 +225,14 @@ UTF8StringFieldSearcherBase::UTF8StringFieldSearcherBase() :
 {
 }
 
-
-
 UTF8StringFieldSearcherBase::UTF8StringFieldSearcherBase(FieldIdT fId) :
     StrChrFieldSearcher(fId),
     Fast_NormalizeWordFolder(),
     Fast_UnicodeUtil()
 {
 }
+
+UTF8StringFieldSearcherBase::~UTF8StringFieldSearcherBase() {}
 
 void
 UTF8StringFieldSearcherBase::prepare(QueryTermList & qtl, const SharedSearcherBuf & buf)

@@ -4,12 +4,9 @@
 
 #pragma once
 
-#include <time.h>
 #include <vespa/searchlib/query/base.h>
 #include <vespa/config/retriever/configsnapshot.h>
 #include <vespa/vsm/config/vsm-cfif.h>
-#include <memory>
-#include <vector>
 #include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
 #include <vespa/searchlib/common/featureset.h>
@@ -40,13 +37,13 @@ private:
 
 public:
     GetDocsumsStateCallback();
-    virtual void FillSummaryFeatures(GetDocsumsState * state, IDocsumEnvironment * env);
-    virtual void FillRankFeatures(GetDocsumsState * state, IDocsumEnvironment * env);
-    virtual void ParseLocation(GetDocsumsState * state);
+    void FillSummaryFeatures(GetDocsumsState * state, IDocsumEnvironment * env) override;
+    void FillRankFeatures(GetDocsumsState * state, IDocsumEnvironment * env) override;
+    void ParseLocation(GetDocsumsState * state) override;
     virtual void FillDocumentLocations(GetDocsumsState * state, IDocsumEnvironment * env);
     void setSummaryFeatures(const search::FeatureSet::SP & sf) { _summaryFeatures = sf; }
     void setRankFeatures(const search::FeatureSet::SP & rf) { _rankFeatures = rf; }
-    virtual ~GetDocsumsStateCallback(void);
+    ~GetDocsumsStateCallback();
 };
 
 class DocsumTools : public IDocsumEnvironment
@@ -60,6 +57,7 @@ public:
 
     public:
         FieldSpec();
+        ~FieldSpec();
         const vespalib::string & getOutputName() const { return _outputName; }
         void setOutputName(const vespalib::string & name) { _outputName = name; }
         const std::vector<vespalib::string> & getInputNames() const { return _inputNames; }
@@ -87,9 +85,9 @@ public:
     bool obtainFieldNames(const FastS_VsmsummaryHandle &cfg);
 
     // inherit doc from IDocsumEnvironment
-    virtual search::IAttributeManager * getAttributeManager() { return NULL; }
-    virtual vespalib::string lookupIndex(const vespalib::string&) const { return ""; }
-    virtual juniper::Juniper * getJuniper() { return _juniper.get(); }
+    search::IAttributeManager * getAttributeManager() override { return NULL; }
+    vespalib::string lookupIndex(const vespalib::string&) const override { return ""; }
+    juniper::Juniper * getJuniper() override { return _juniper.get(); }
 };
 
 typedef std::shared_ptr<DocsumTools> DocsumToolsPtr;

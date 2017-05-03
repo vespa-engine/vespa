@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include "futf8strchrfieldsearcher.h"
 #include "fold.h"
-#include <vespa/vespalib/util/optimized.h>
 
 using vespalib::Optimized;
 using search::byte;
@@ -11,6 +11,16 @@ using search::v16qi;
 namespace vsm {
 
 IMPLEMENT_DUPLICATE(FUTF8StrChrFieldSearcher);
+
+FUTF8StrChrFieldSearcher::FUTF8StrChrFieldSearcher()
+    : UTF8StrChrFieldSearcher(),
+      _folded(4096)
+{ }
+FUTF8StrChrFieldSearcher::FUTF8StrChrFieldSearcher(FieldIdT fId)
+    : UTF8StrChrFieldSearcher(fId),
+      _folded(4096)
+{ }
+FUTF8StrChrFieldSearcher::~FUTF8StrChrFieldSearcher() {}
 
 bool
 FUTF8StrChrFieldSearcher::ansiFold(const char * toFold, size_t sz, char * folded)

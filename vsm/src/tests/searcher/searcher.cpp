@@ -2,7 +2,6 @@
 
 #include <vespa/vespalib/testkit/testapp.h>
 
-#include <vespa/searchlib/query/queryterm.h>
 #include <vespa/vsm/searcher/fieldsearcher.h>
 #include <vespa/vsm/searcher/floatfieldsearcher.h>
 #include <vespa/vsm/searcher/futf8strchrfieldsearcher.h>
@@ -13,6 +12,7 @@
 #include <vespa/vsm/searcher/utf8substringsnippetmodifier.h>
 #include <vespa/vsm/searcher/utf8suffixstringfieldsearcher.h>
 #include <vespa/vsm/vsm/snippetmodifier.h>
+#include <vespa/searchlib/query/queryterm.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 
 using namespace document;
@@ -145,35 +145,35 @@ void assertString(StrChrFieldSearcher &fs, const std::string &term, const String
     assertString(fs, StringList().add(term), field, HitsList().add(exp));
 }
 
-void assertInt(IntFieldSearcher fs, const StringList &query, int64_t field, const BoolList &exp) {
+void assertInt(IntFieldSearcher & fs, const StringList &query, int64_t field, const BoolList &exp) {
     assertNumeric(fs, query, LongFieldValue(field), exp);
 }
 
-void assertInt(IntFieldSearcher fs, const std::string &term, int64_t field, bool exp) {
+void assertInt(IntFieldSearcher & fs, const std::string &term, int64_t field, bool exp) {
     assertInt(fs, StringList().add(term), field, BoolList().add(exp));
 }
 
-void assertInt(IntFieldSearcher fs, const StringList &query, const LongList &field, const HitsList &exp) {
+void assertInt(IntFieldSearcher & fs, const StringList &query, const LongList &field, const HitsList &exp) {
     assertSearch(fs, query, getFieldValue(field), exp);
 }
 
-void assertInt(IntFieldSearcher fs, const std::string &term, const LongList &field, const Hits &exp) {
+void assertInt(IntFieldSearcher & fs, const std::string &term, const LongList &field, const Hits &exp) {
     assertInt(fs, StringList().add(term), field, HitsList().add(exp));
 }
 
-void assertFloat(FloatFieldSearcher fs, const StringList &query, float field, const BoolList &exp) {
+void assertFloat(FloatFieldSearcher & fs, const StringList &query, float field, const BoolList &exp) {
     assertNumeric(fs, query, FloatFieldValue(field), exp);
 }
 
-void assertFloat(FloatFieldSearcher fs, const std::string &term, float field, bool exp) {
+void assertFloat(FloatFieldSearcher & fs, const std::string &term, float field, bool exp) {
     assertFloat(fs, StringList().add(term), field, BoolList().add(exp));
 }
 
-void assertFloat(FloatFieldSearcher fs, const StringList &query, const FloatList &field, const HitsList &exp) {
+void assertFloat(FloatFieldSearcher & fs, const StringList &query, const FloatList &field, const HitsList &exp) {
     assertSearch(fs, query, getFieldValue(field), exp);
 }
 
-void assertFloat(FloatFieldSearcher fs, const std::string &term, const FloatList &field, const Hits &exp) {
+void assertFloat(FloatFieldSearcher & fs, const std::string &term, const FloatList &field, const Hits &exp) {
     assertFloat(fs, StringList().add(term), field, HitsList().add(exp));
 }
 
@@ -196,37 +196,37 @@ assertFieldInfo(StrChrFieldSearcher &fs, const std::string &term, const std::str
     return assertFieldInfo(fs, StringList().add(term), fv, FieldInfoList().add(exp));
 }
 
-void assertFieldInfo(IntFieldSearcher fs, const StringList &query, int64_t fv, const FieldInfoList &exp) {
+void assertFieldInfo(IntFieldSearcher & fs, const StringList &query, int64_t fv, const FieldInfoList &exp) {
     assertFieldInfo(fs, query, LongFieldValue(fv), exp);
 }
 
-void assertFieldInfo(IntFieldSearcher fs, const StringList &query, const LongList &fv, const FieldInfoList &exp) {
+void assertFieldInfo(IntFieldSearcher & fs, const StringList &query, const LongList &fv, const FieldInfoList &exp) {
     assertFieldInfo(fs, query, getFieldValue(fv), exp);
 }
 
-void assertFieldInfo(IntFieldSearcher fs, const std::string &term, int64_t fv, const QTFieldInfo &exp) {
+void assertFieldInfo(IntFieldSearcher & fs, const std::string &term, int64_t fv, const QTFieldInfo &exp) {
     assertFieldInfo(fs, StringList().add(term), fv, FieldInfoList().add(exp));
 }
 
-void assertFieldInfo(IntFieldSearcher fs, const std::string &term, const LongList &fv, const QTFieldInfo &exp) {
+void assertFieldInfo(IntFieldSearcher & fs, const std::string &term, const LongList &fv, const QTFieldInfo &exp) {
     assertFieldInfo(fs, StringList().add(term), fv, FieldInfoList().add(exp));
 }
 
-void assertFieldInfo(FloatFieldSearcher fs, const StringList &query, float fv, const FieldInfoList &exp) {
+void assertFieldInfo(FloatFieldSearcher & fs, const StringList &query, float fv, const FieldInfoList &exp) {
     assertFieldInfo(fs, query, FloatFieldValue(fv), exp);
 }
 
 void
-assertFieldInfo(FloatFieldSearcher fs, const StringList &query, const FloatList &fv, const FieldInfoList &exp) {
+assertFieldInfo(FloatFieldSearcher & fs, const StringList &query, const FloatList &fv, const FieldInfoList &exp) {
     assertFieldInfo(fs, query, getFieldValue(fv), exp);
 }
 
 /** float field searcher **/
-void assertFieldInfo(FloatFieldSearcher fs, const std::string &term, float fv, const QTFieldInfo &exp) {
+void assertFieldInfo(FloatFieldSearcher & fs, const std::string &term, float fv, const QTFieldInfo &exp) {
     assertFieldInfo(fs, StringList().add(term), fv, FieldInfoList().add(exp));
 }
 
-void assertFieldInfo(FloatFieldSearcher fs, const std::string &term, const FloatList &fv, const QTFieldInfo &exp) {
+void assertFieldInfo(FloatFieldSearcher & fs, const std::string &term, const FloatList &fv, const QTFieldInfo &exp) {
     assertFieldInfo(fs, StringList().add(term), fv, FieldInfoList().add(exp));
 }
 
@@ -837,6 +837,4 @@ TEST("counting of words") {
     assertString(fs, StringList().add("bb").add("not"), field, HitsList().add(Hits().add(2)).add(Hits()));
 }
 
-
 TEST_MAIN() { TEST_RUN_ALL(); }
-
