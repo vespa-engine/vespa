@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
-#include <logd/service.h>
+#include "service.h"
 #include <vespa/vespalib/util/hashmap.h>
 #include <map>
 
@@ -36,11 +36,8 @@ private:
 public:
     Services knownServices;
     int _badLines;
-    Forwarder() : _logserverfd(-1),
-                  _forwardMap(),
-                  _levelparser(),
-                  knownServices(),
-                  _badLines(0) {}
+    Forwarder();
+    ~Forwarder();
     void forwardText(const char *text, int len);
     void forwardLine(const char *line, const char *eol);
     void setForwardMap(const ForwardMap & forwardMap) { _forwardMap = forwardMap; }
