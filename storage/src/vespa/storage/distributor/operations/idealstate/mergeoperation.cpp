@@ -1,5 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
 #include <vespa/storageapi/message/bucket.h>
@@ -28,18 +27,13 @@ MergeOperation::getStatus() const
 
 void
 MergeOperation::addIdealNodes(
-        const lib::Distribution& distribution,
-        const lib::ClusterState& state,
-        const document::BucketId& bucketId,
+        const std::vector<uint16_t>& idealNodes,
         const std::vector<MergeMetaData>& nodes,
         std::vector<MergeMetaData>& result)
 {
-    std::vector<uint16_t> idealNodes(
-            distribution.getIdealStorageNodes(state, bucketId, "ui"));
-
-    // Add all ideal nodes first
+    // Add all ideal nodes first. These are never marked source-only.
     for (uint32_t i = 0; i < idealNodes.size(); i++) {
-        const MergeMetaData* entry = 0;
+        const MergeMetaData* entry = nullptr;
         for (uint32_t j = 0; j < nodes.size(); j++) {
             if (idealNodes[i] == nodes[j]._nodeIndex) {
                 entry = &nodes[j];
@@ -47,48 +41,9 @@ MergeOperation::addIdealNodes(
             }
         }
 
-        if (entry != 0) {
+        if (entry != nullptr) {
             result.push_back(*entry);
             result.back()._sourceOnly = false;
-        }
-    }
-}
-
-uint16_t
-MergeOperation::countTrusted(const std::vector<MergeMetaData>& nodes)
-{
-    uint16_t trusted = 0;
-    for (const auto& n : nodes) {
-        if (n.trusted()) {
-            ++trusted;
-        }
-    }
-    return trusted;
-}
-
-void
-MergeOperation::addTrustedNodesNotAlreadyAdded(
-        uint16_t redundancy,
-        const std::vector<MergeMetaData>& nodes,
-        std::vector<MergeMetaData>& result)
-{
-    uint16_t alreadyTrusted = countTrusted(result);
-    for (uint32_t i = 0; i < nodes.size(); i++) {
-        if (!nodes[i].trusted()) {
-            continue;
-        }
-
-        bool found = false;
-        for (uint32_t j = 0; j < result.size(); j++) {
-            if (result[j]._nodeIndex == nodes[i]._nodeIndex) {
-                found = true;
-            }
-        }
-
-        if (!found) {
-            result.push_back(nodes[i]);
-            result.back()._sourceOnly = (alreadyTrusted >= redundancy);
-            ++alreadyTrusted;
         }
     }
 }
@@ -122,11 +77,19 @@ MergeOperation::generateSortedNodeList(
         MergeLimiter& limiter,
         std::vector<MergeMetaData>& nodes)
 {
+    std::vector<uint16_t> idealNodes(
+            distribution.getIdealStorageNodes(state, bucketId, "ui"));
+
     std::vector<MergeMetaData> result;
     const uint16_t redundancy = distribution.getRedundancy();
-    addIdealNodes(distribution, state, bucketId, nodes, result);
-    addTrustedNodesNotAlreadyAdded(redundancy, nodes, result);
+    addIdealNodes(idealNodes, nodes, result);
     addCopiesNotAlreadyAdded(redundancy, nodes, result);
+    // TODO optimization: when merge case is obviously a replica move (all existing N replicas
+    // are in sync and new replicas are empty), could prune away N-1 lowest indexed replicas
+    // from the node list. This would minimize the number of nodes involved in the merge without
+    // sacrificing the end result. Avoiding the lower indexed nodes would take pressure off the
+    // merge throttling "locks" and could potentially greatly speed up node retirement in the common
+    // case. Existing replica could also be marked as source-only if it's not in the ideal state.
     limiter.limitMergeToMaxNodes(result);
     result.swap(nodes);
 }
@@ -164,8 +127,7 @@ MergeOperation::onStart(DistributorMessageSender& sender)
     for (uint32_t i = 0; i < getNodes().size(); ++i) {
         const BucketCopy* copy = entry->getNode(getNodes()[i]);
         if (copy == 0) { // New copies?
-            newCopies.push_back(std::unique_ptr<BucketCopy>(
-                    new BucketCopy(0, getNodes()[i], api::BucketInfo())));
+            newCopies.push_back(std::make_unique<BucketCopy>(0, getNodes()[i], api::BucketInfo()));
             copy = newCopies.back().get();
         }
         nodes.push_back(MergeMetaData(getNodes()[i], *copy));
@@ -183,12 +145,11 @@ MergeOperation::onStart(DistributorMessageSender& sender)
     }
 
     if (_mnodes.size() > 1) {
-        std::shared_ptr<api::MergeBucketCommand> msg(
-                new api::MergeBucketCommand(
-                        getBucketId(),
-                        _mnodes,
-                        _manager->getDistributorComponent().getUniqueTimestamp(),
-                        clusterState.getVersion()));
+        auto msg = std::make_shared<api::MergeBucketCommand>(
+                getBucketId(),
+                _mnodes,
+                _manager->getDistributorComponent().getUniqueTimestamp(),
+                clusterState.getVersion());
 
         // Due to merge forwarding/chaining semantics, we must always send
         // the merge command to the lowest indexed storage node involved in
@@ -203,10 +164,7 @@ MergeOperation::onStart(DistributorMessageSender& sender)
         msg->setTimeout(60 * 60 * 1000);
         setCommandMeta(*msg);
 
-        sender.sendToNode(
-                    lib::NodeType::STORAGE,
-                    _mnodes[0].index,
-                    msg);
+        sender.sendToNode(lib::NodeType::STORAGE, _mnodes[0].index, msg);
 
         _sentMessageTime = _manager->getDistributorComponent().getClock().getTimeInSeconds();
     } else {
@@ -226,13 +184,11 @@ MergeOperation::sourceOnlyCopyChangedDuringMerge(
 {
     assert(currentState.valid());
     for (size_t i = 0; i < _mnodes.size(); ++i) {
-        const BucketCopy* copyBefore(
-                _infoBefore.getNode(_mnodes[i].index));
+        const BucketCopy* copyBefore(_infoBefore.getNode(_mnodes[i].index));
         if (!copyBefore) {
             continue;
         }
-        const BucketCopy* copyAfter(
-                currentState->getNode(_mnodes[i].index));
+        const BucketCopy* copyAfter(currentState->getNode(_mnodes[i].index));
         if (!copyAfter) {
             LOG(debug, "Copy of %s on node %u removed during merge. Was %s",
                 getBucketId().toString().c_str(),
@@ -308,6 +264,8 @@ MergeOperation::deleteSourceOnlyNodes(
             done();
         }
     }
+    // FIXME what about the else-case here...? done() is not invoked by caller in this branch.
+    // Not calling done() doesn't leak anything, but causes metric updates to be missed.
 }
 
 void
