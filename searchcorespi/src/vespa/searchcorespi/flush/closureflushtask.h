@@ -19,15 +19,11 @@ public:
     {
     }
     
-    virtual search::SerialNum
-    getFlushSerial() const
-    {
+    search::SerialNum getFlushSerial() const override {
         return _flushSerial;
     }
 
-    virtual void
-    run()
-    {
+    void run() override {
         _closure->call();
     }
 };
@@ -39,9 +35,7 @@ static inline FlushTask::UP
 makeFlushTask(std::unique_ptr<vespalib::Closure> closure,
               search::SerialNum flushSerial)
 {
-    return FlushTask::UP(new ClosureFlushTask(std::move(closure),
-                                              flushSerial));
+    return FlushTask::UP(new ClosureFlushTask(std::move(closure), flushSerial));
 }
 
 } // namespace searchcorespi
-
