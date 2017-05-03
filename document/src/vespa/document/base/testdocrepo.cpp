@@ -11,10 +11,13 @@ using document::config_builder::Array;
 using document::config_builder::Map;
 
 namespace document {
+
 TestDocRepo::TestDocRepo()
-    :   _cfg(getDefaultConfig()),
-        _repo(new DocumentTypeRepo(_cfg)) {
+    : _cfg(getDefaultConfig()),
+      _repo(new DocumentTypeRepo(_cfg)) {
 }
+
+    TestDocRepo::~TestDocRepo() {}
 
 DocumenttypesConfig TestDocRepo::getDefaultConfig() {
     const int type1_id = 238423572;

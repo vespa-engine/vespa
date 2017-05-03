@@ -62,6 +62,7 @@ class FeatureSet : public FeatureBase {
 
 public:
     FeatureSet(const vespalib::slime::Inspector &inspector);
+    ~FeatureSet();
 
     size_t getSize() const { return _features.size(); }
     std::string operator[](size_t i) const { return _features[i]; }

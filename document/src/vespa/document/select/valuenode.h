@@ -12,14 +12,12 @@
 
 #pragma once
 
-#include <memory>
-#include <vespa/document/bucket/bucketidfactory.h>
 #include "value.h"
+#include "context.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/bucket/bucketdistribution.h>
-#include <vespa/document/fieldvalue/fieldvalue.h>
-#include "context.h"
+#include <vespa/document/bucket/bucketidfactory.h>
 
 namespace document {
 
@@ -221,13 +219,15 @@ class FieldValueNode : public ValueNode
     mutable FieldPath _fieldPath;
 
 public:
-    FieldValueNode(const vespalib::string& doctype,
-                   const vespalib::string& fieldExpression);
+    FieldValueNode(const vespalib::string& doctype, const vespalib::string& fieldExpression);
+    FieldValueNode(const FieldValueNode &);
+    FieldValueNode & operator = (const FieldValueNode &);
+    FieldValueNode(FieldValueNode &&) = default;
+    FieldValueNode & operator = (FieldValueNode &&) = default;
+    ~FieldValueNode();
 
     const vespalib::string& getDocType() const { return _doctype; }
-
     const vespalib::string& getRealFieldName() const { return _fieldName; }
-
     const vespalib::string& getFieldName() const { return _fieldExpression; }
 
     std::unique_ptr<Value> getValue(const Context& context) const override;
@@ -239,7 +239,7 @@ public:
         return wrapParens(new FieldValueNode(_doctype, _fieldExpression));
     }
 
-    static const vespalib::string extractFieldName(const std::string & fieldExpression);
+    static vespalib::string extractFieldName(const std::string & fieldExpression);
 
 private:
     class IteratorHandler : public FieldValue::IteratorHandler
@@ -416,4 +416,3 @@ private:
 
 } // select
 } // document
-
