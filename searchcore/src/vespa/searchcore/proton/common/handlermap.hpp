@@ -1,13 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <map>
+#include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/sequence.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/searchcore/proton/common/doctypename.h>
+#include <map>
 
 namespace proton {
 
@@ -42,17 +42,16 @@ public:
     public:
         typedef std::unique_ptr<Snapshot> UP;
 
-        Snapshot(StdMap &map) : _handlers(), _offset(0)
-        {
+        Snapshot(StdMap &map) : _handlers(), _offset(0) {
             _handlers.reserve(map.size());
             for (MapIterator pos = map.begin(); pos != map.end(); ++pos) {
                 _handlers.push_back(pos->second);
             }
         }
-        virtual bool valid() const { return (_offset < _handlers.size()); }
-        virtual T *get() const { return _handlers[_offset].get(); }
+        bool valid() const override { return (_offset < _handlers.size()); }
+        T *get() const override { return _handlers[_offset].get(); }
         HandlerSP getSP() const { return _handlers[_offset]; }
-        virtual void next() { ++_offset; }
+        void next() override { ++_offset; }
     };
 
     /**

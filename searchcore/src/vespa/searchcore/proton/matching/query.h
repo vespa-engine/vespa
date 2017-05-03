@@ -26,6 +26,7 @@ private:
     Blueprint::UP           _blackListBlueprint;
 
 public:
+    ~Query();
     /**
      * Build query tree from a stack dump.
      *

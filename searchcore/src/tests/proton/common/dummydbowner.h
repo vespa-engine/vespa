@@ -17,6 +17,7 @@ struct DummyDBOwner : IDocumentDBOwner {
         : _registry(std::make_shared<DocumentDBReferenceRegistry>())
     {
     }
+    ~DummyDBOwner() {}
 
     bool isInitializing() const override { return false; }
 

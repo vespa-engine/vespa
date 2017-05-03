@@ -12,6 +12,7 @@ class FeedDebugger
 {
 public:
     FeedDebugger();
+    ~FeedDebugger();
     bool isDebugging() const { return _enableDebugging; }
     ns_log::Logger::LogLevel getDebugLevel(uint32_t lid, const document::DocumentId & docid) const {
         return getDebugLevel(lid, & docid);

@@ -1,12 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/document/bucket/bucketid.h>
 #include <vespa/searchcore/proton/server/ibucketstatecalculator.h>
+#include <vespa/document/bucket/bucketid.h>
 
-namespace proton {
-
-namespace test {
+namespace proton::test {
 
 typedef document::BucketId::List BucketIdVector;
 typedef std::set<document::BucketId>    BucketIdSet;
@@ -62,25 +60,10 @@ public:
         return _ready.count(bucket) == 1;
     }
 
-    bool clusterUp() const override {
-        return _clusterUp;
-    }
-    
-    bool nodeUp() const override {
-        return _nodeUp;
-    }
-
-    bool nodeRetired() const override {
-        return _nodeRetired;
-    }
-
-    bool nodeInitializing() const override {
-        return false;
-    }
+    bool clusterUp() const override { return _clusterUp; }
+    bool nodeUp() const override { return _nodeUp; }
+    bool nodeRetired() const override { return _nodeRetired; }
+    bool nodeInitializing() const override { return false; }
 };
 
-
-} // namespace test
-
-} // namespace proton
-
+}

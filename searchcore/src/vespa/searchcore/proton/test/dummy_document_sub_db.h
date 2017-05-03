@@ -40,6 +40,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB
           _writeService(std::make_unique<ExecutorThreadingService>(1))
     {
     }
+    ~DummyDocumentSubDb() {}
     void close() override { }
     uint32_t getSubDbId() const override { return _subDbId; }
     vespalib::string getName() const override { return "dummysubdb"; }

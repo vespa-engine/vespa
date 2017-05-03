@@ -19,6 +19,7 @@ private:
 public:
     JobTrackedFlushTarget(const IJobTracker::SP &tracker,
                           const searchcorespi::IFlushTarget::SP &target);
+    ~JobTrackedFlushTarget();
 
     const IJobTracker &getTracker() const { return *_tracker; }
     const searchcorespi::IFlushTarget &getTarget() const { return *_target; }

@@ -1,13 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.attribute.attribute_manager_explorer");
-
 #include "attribute_manager_explorer.h"
 #include "attribute_vector_explorer.h"
-#include "exclusive_attribute_read_accessor.h"
-#include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 
 using vespalib::slime::Inserter;
@@ -18,6 +12,8 @@ AttributeManagerExplorer::AttributeManagerExplorer(const proton::IAttributeManag
     : _mgr(mgr)
 {
 }
+
+AttributeManagerExplorer::~AttributeManagerExplorer() {}
 
 void
 AttributeManagerExplorer::get_state(const Inserter &inserter, bool full) const

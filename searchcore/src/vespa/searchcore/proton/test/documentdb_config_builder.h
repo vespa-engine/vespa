@@ -35,6 +35,7 @@ public:
                             const search::index::Schema::SP &schema,
                             const vespalib::string &configId,
                             const vespalib::string &docTypeName);
+    ~DocumentDBConfigBuilder();
 
     DocumentDBConfigBuilder(const DocumentDBConfig &cfg);
 

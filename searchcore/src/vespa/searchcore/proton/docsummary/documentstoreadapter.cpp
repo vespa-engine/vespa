@@ -159,7 +159,6 @@ DocumentStoreAdapter::convertFromSearchDoc(Document &doc, uint32_t docId)
     }
 }
 
-
 DocumentStoreAdapter::
 DocumentStoreAdapter(const search::IDocumentStore & docStore,
                      const DocumentTypeRepo &repo,
@@ -179,6 +178,8 @@ DocumentStoreAdapter(const search::IDocumentStore & docStore,
       _markupFields(markupFields)
 {
 }
+
+DocumentStoreAdapter::~DocumentStoreAdapter() {}
 
 DocsumStoreValue
 DocumentStoreAdapter::getMappedDocsum(uint32_t docId)

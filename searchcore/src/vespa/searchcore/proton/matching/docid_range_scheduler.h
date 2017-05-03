@@ -3,12 +3,12 @@
 #pragma once
 
 #include <vespa/searchlib/queryeval/begin_and_end_id.h>
+#include <vespa/fastos/dynamiclibrary.h>
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
 #include <algorithm>
 #include <vector>
-#include <vespa/fastos/dynamiclibrary.h>
 
 namespace proton {
 namespace matching {
@@ -195,6 +195,7 @@ private:
     VESPA_DLL_LOCAL DocidRange finalize(const Guard &guard, size_t thread_id);
 public:
     AdaptiveDocidRangeScheduler(size_t num_threads, uint32_t min_task, uint32_t docid_limit);
+    ~AdaptiveDocidRangeScheduler();
     DocidRange first_range(size_t thread_id) override;
     DocidRange next_range(size_t thread_id) override;
     DocidRange total_span(size_t) const override { return _splitter.full_range(); }

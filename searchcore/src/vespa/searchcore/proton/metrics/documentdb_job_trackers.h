@@ -3,7 +3,6 @@
 
 #include "documentdb_tagged_metrics.h"
 #include "job_tracker.h"
-#include <vespa/fastos/timestamp.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/vespalib/util/sync.h>
 #include <chrono>
@@ -32,6 +31,7 @@ private:
 
 public:
     DocumentDBJobTrackers();
+    ~DocumentDBJobTrackers();
 
     IJobTracker &getAttributeFlush() { return *_attributeFlush; }
     IJobTracker &getMemoryIndexFlush() { return *_memoryIndexFlush; }

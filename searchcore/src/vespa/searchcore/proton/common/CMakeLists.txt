@@ -19,6 +19,7 @@ vespa_add_library(searchcore_pcommon STATIC
     selectpruner.cpp
     selectcontext.cpp
     state_reporter_utils.cpp
+    statusreport.cpp
     DEPENDS
     searchcore_proton_metrics
     searchcore_fconfig

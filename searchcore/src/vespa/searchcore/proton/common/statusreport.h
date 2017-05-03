@@ -32,14 +32,8 @@ public:
         float _progress;
         vespalib::string _message;
 
-        Params(const vespalib::string &component)
-            : _component(component),
-              _state(DOWN),
-              _internalState(),
-              _internalConfigState(),
-              _progress(std::numeric_limits<float>::quiet_NaN()),
-              _message()
-        {}
+        Params(const vespalib::string &component);
+        ~Params();
         Params &state(State value) {
             _state = value;
             return *this;
@@ -71,14 +65,8 @@ private:
     vespalib::string _message;
 
 public:
-    StatusReport(const Params &params)
-        : _component(params._component),
-          _state(params._state),
-          _internalState(params._internalState),
-          _internalConfigState(params._internalConfigState),
-          _progress(params._progress),
-          _message(params._message)
-    {}
+    StatusReport(const Params &params);
+    ~StatusReport();
 
     static StatusReport::UP create(const Params &params) {
         return StatusReport::UP(new StatusReport(params));
@@ -121,9 +109,6 @@ public:
     }
 
 };
-
-
-
 
 /**
  * A StatusProducer is able to produce a list of StatusReport objects

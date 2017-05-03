@@ -1,28 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for fusionrunner.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("fusionrunner_test");
-
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/fieldvalue/fieldvalue.h>
-#include <vespa/searchlib/memoryindex/memoryindex.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
+#include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcorespi/index/fusionrunner.h>
-#include <vespa/searchcorespi/index/fusionspec.h>
-#include <vespa/searchlib/attribute/fixedsourceselector.h>
+#include <vespa/searchlib/memoryindex/memoryindex.h>
 #include <vespa/searchlib/diskindex/diskindex.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
-#include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
-#include <vespa/searchlib/queryeval/fake_requestcontext.h>
-#include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/fastos/file.h>
 #include <set>
 
 using document::Document;
@@ -96,8 +86,8 @@ public:
           _ops(_fileHeaderContext,
                TuneFileIndexManager(), 0,
                _threadingService)
-    {
-    }
+    {}
+    ~Test() {}
     int Main() override;
 };
 

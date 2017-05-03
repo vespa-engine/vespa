@@ -1,15 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("indexcollection_test");
 
 #include <vespa/searchcore/proton/matching/fakesearchcontext.h>
-#include <vespa/searchcorespi/index/indexcollection.h>
 #include <vespa/searchcorespi/index/warmupindexcollection.h>
-#include <vespa/searchlib/queryeval/fake_searchable.h>
-#include <vespa/searchlib/attribute/fixedsourceselector.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("indexcollection_test");
 
 using search::queryeval::ISourceSelector;
 using search::queryeval::FakeSearchable;
@@ -46,6 +43,7 @@ public:
              _executor(1, 128*1024),
              _warmup(new FakeIndexSearchable)
     {}
+    ~Test() {}
 
     int Main() override;
 };

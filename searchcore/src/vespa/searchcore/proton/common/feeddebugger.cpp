@@ -41,6 +41,8 @@ FeedDebugger::FeedDebugger() :
     _enableDebugging = ! (_debugLidList.empty() && _debugDocIdList.empty());
 }
 
+FeedDebugger::~FeedDebugger() {}
+
 ns_log::Logger::LogLevel
 FeedDebugger::getDebugDebuggerInternal(uint32_t lid, const document::DocumentId * docid) const
 {
