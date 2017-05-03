@@ -3,6 +3,7 @@ package com.yahoo.vespa.orchestrator;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
@@ -59,6 +60,21 @@ public interface Orchestrator {
     void suspend(HostName hostName) throws HostStateChangeDeniedException, HostNameNotFoundException;
 
     /**
+     * Suspend normal operations for a group of nodes in the same application.
+     *
+     * @param nodeGroup The group of nodes in an application.
+     * @throws HostStateChangeDeniedException if the request cannot be meet due to policy constraints.
+     * @throws HostNameNotFoundException if any hostnames in the node group is not recognized
+     */
+    void suspendGroup(NodeGroup nodeGroup) throws HostStateChangeDeniedException, HostNameNotFoundException;
+
+    /**
+     * Suspend several hosts. On failure, all hosts are resumed before exiting the method with an exception.
+     */
+    void suspendAll(HostName parentHostname, List<HostName> hostNames)
+            throws BatchInternalErrorException, BatchHostStateChangeDeniedException, BatchHostNameNotFoundException;
+
+    /**
      * Get the orchestrator status of the application instance.
      *
      * @param appId Identifier of the application to check
@@ -83,16 +99,10 @@ public interface Orchestrator {
 
 
     /**
-     * Suspend orchestration for hosts belonging to this application.
-     * I.e all suspend requests for its hosts will succeed.
+     * Suspend an application:  All hosts will allow suspension in parallel.
+     * CAUTION:  Only use this if the application is not in service.
      *
      * @param appId Identifier of the application to resume
      */
     void suspend(ApplicationId appId) throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException;
-
-    /**
-     * Suspend all hosts. On failure, all hosts are resumed before exiting the method with an exception.
-     */
-    void suspendAll(HostName parentHostname, List<HostName> hostNames)
-            throws BatchInternalErrorException, BatchHostStateChangeDeniedException, BatchHostNameNotFoundException;
 }

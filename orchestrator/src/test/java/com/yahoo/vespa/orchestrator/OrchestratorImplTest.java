@@ -19,7 +19,6 @@ import org.mockito.InOrder;
 
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
 
 import static com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN;
 import static com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus.NO_REMARKS;
@@ -220,34 +219,18 @@ public class OrchestratorImplTest {
     }
 
     @Test
-    public void sortHostNamesForSuspend() throws Exception {
-        HostName parentHostName = new HostName("parentHostName");
-        List<HostName> expectedOrder = Arrays.asList(
-                DummyInstanceLookupService.TEST3_HOST_NAME,
-                DummyInstanceLookupService.TEST1_HOST_NAME);
-
-        assertEquals(expectedOrder, orchestrator.sortHostNamesForSuspend(Arrays.asList(
-                DummyInstanceLookupService.TEST1_HOST_NAME,
-                DummyInstanceLookupService.TEST3_HOST_NAME)));
-
-        assertEquals(expectedOrder, orchestrator.sortHostNamesForSuspend(Arrays.asList(
-                DummyInstanceLookupService.TEST3_HOST_NAME,
-                DummyInstanceLookupService.TEST1_HOST_NAME)));
-    }
-
-    @Test
     public void rollbackWorks() throws Exception {
         // A spy is preferential because suspendAll() relies on delegating the hard work to suspend() and resume().
         OrchestratorImpl orchestrator = spy(this.orchestrator);
 
-        doNothing().when(orchestrator).suspend(DummyInstanceLookupService.TEST3_HOST_NAME);
+        doNothing().when(orchestrator).suspendGroup(DummyInstanceLookupService.TEST3_NODE_GROUP);
 
         Throwable supensionFailure = new HostStateChangeDeniedException(
                 DummyInstanceLookupService.TEST6_HOST_NAME,
                 "some-constraint",
                 new ServiceType("foo"),
                 "error message");
-        doThrow(supensionFailure).when(orchestrator).suspend(DummyInstanceLookupService.TEST1_HOST_NAME);
+        doThrow(supensionFailure).when(orchestrator).suspendGroup(DummyInstanceLookupService.TEST6_NODE_GROUP);
 
         doThrow(new HostStateChangeDeniedException(DummyInstanceLookupService.TEST1_HOST_NAME, "foo1-constraint", new ServiceType("foo1-service"), "foo1-message"))
                 .when(orchestrator).resume(DummyInstanceLookupService.TEST1_HOST_NAME);
@@ -264,25 +247,26 @@ public class OrchestratorImplTest {
             fail();
         } catch (BatchHostStateChangeDeniedException e) {
             assertEquals(e.getSuppressed().length, 1);
-            assertEquals("Failed to suspend [test3.prod.utpoia-1.vespahosted.ut1.yahoo.com, " +
-                    "test6.prod.us-east-1.vespahosted.ne1.yahoo.com, test1.prod.utpoia-1.vespahosted.ut1.yahoo.com] " +
-                    "with parent host parentHostname: Changing the state of host " +
-                    "test6.prod.us-east-1.vespahosted.ne1.yahoo.com would violate some-constraint for " +
-                    "service type foo: error message; " +
-                    "With suppressed throwable com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException: " +
-                    "Changing the state of host test1.prod.utpoia-1.vespahosted.ut1.yahoo.com would violate " +
-                    "foo1-constraint for service type foo1-service: foo1-message", e.getMessage());
+
+            assertEquals("Failed to suspend NodeGroup{application=tenant-id-3:application-instance-3:prod:utopia-1:default, " +
+                    "hostNames=[test6.prod.us-east-1.vespahosted.ne1.yahoo.com]} with parent host parentHostname: " +
+                            "Changing the state of test6.prod.us-east-1.vespahosted.ne1.yahoo.com would violate " +
+                            "some-constraint for service type foo: error message; With suppressed throwable " +
+                            "com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException: " +
+                            "Changing the state of test1.prod.utpoia-1.vespahosted.ut1.yahoo.com would violate " +
+                            "foo1-constraint for service type foo1-service: foo1-message",
+                    e.getMessage());
         }
 
         InOrder order = inOrder(orchestrator);
-        order.verify(orchestrator).suspend(DummyInstanceLookupService.TEST3_HOST_NAME);
-        order.verify(orchestrator).suspend(DummyInstanceLookupService.TEST6_HOST_NAME);
+        order.verify(orchestrator).suspendGroup(DummyInstanceLookupService.TEST3_NODE_GROUP);
+        order.verify(orchestrator).suspendGroup(DummyInstanceLookupService.TEST6_NODE_GROUP);
 
-        // As of 2016-06-07:
-        //   TEST1_HOST_NAME: test-tenant-id:application:instance
-        //   TEST3_HOST_NAME: mediasearch:imagesearch:default
-        //   TEST6_HOST_NAME: tenant-id-3:application-instance-3:default
-        // Meaning the order is 3, 6, then 1. For rollback/resume the order is reversed.
+        // As of 2016-06-07 the order of the node groups are as follows:
+        //   TEST3: mediasearch:imagesearch:default
+        //   TEST6: tenant-id-3:application-instance-3:default
+        //   TEST1: test-tenant-id:application:instance
+        // Which is reversed when rolling back
         order.verify(orchestrator).resume(DummyInstanceLookupService.TEST1_HOST_NAME);
         order.verify(orchestrator).resume(DummyInstanceLookupService.TEST6_HOST_NAME);
         order.verify(orchestrator).resume(DummyInstanceLookupService.TEST3_HOST_NAME);
@@ -291,7 +275,7 @@ public class OrchestratorImplTest {
 
     private boolean isInMaintenance(ApplicationId appId, HostName hostName) throws ApplicationIdNotFoundException {
         for (ApplicationInstance<ServiceMonitorStatus> app : DummyInstanceLookupService.getApplications()) {
-            if (app.reference().equals(OrchestratorUtil.toApplicationInstanceReference(appId,new DummyInstanceLookupService()))) {
+            if (app.reference().equals(OrchestratorUtil.toApplicationInstanceReference(appId, new DummyInstanceLookupService()))) {
                 return clustercontroller.isInMaintenance(app, hostName);
             }
         }
