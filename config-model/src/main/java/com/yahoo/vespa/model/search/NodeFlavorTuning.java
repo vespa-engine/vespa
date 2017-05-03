@@ -24,18 +24,14 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
     public void getConfig(ProtonConfig.Builder builder) {
         tuneDiskWriteSpeed(builder);
         tuneDocumentStoreMaxFileSize(builder);
-        ProtonConfig.Flush.Memory.Builder flushMemoryBuilder = new ProtonConfig.Flush.Memory.Builder();
-        tuneFlushStrategyMemoryLimits(flushMemoryBuilder);
-        tuneFlushStrategyTlsSize(flushMemoryBuilder);
-        builder.flush(new ProtonConfig.Flush.Builder().memory(flushMemoryBuilder));
+        tuneFlushStrategyMemoryLimits(builder.flush.memory);
+        tuneFlushStrategyTlsSize(builder.flush.memory);
     }
 
     private void tuneDiskWriteSpeed(ProtonConfig.Builder builder) {
-        ProtonConfig.Hwinfo.Disk.Builder diskInfo = new ProtonConfig.Hwinfo.Disk.Builder();
         if (!nodeFlavor.hasFastDisk()) {
-            diskInfo.writespeed(40);
+            builder.hwinfo.disk.writespeed(40);
         }
-        builder.hwinfo(new ProtonConfig.Hwinfo.Builder().disk(diskInfo));
     }
 
     private void tuneDocumentStoreMaxFileSize(ProtonConfig.Builder builder) {
@@ -48,16 +44,13 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
         } else if (memoryGb <= 64.0) {
             fileSizeBytes = 1 * GB;
         }
-        builder.summary(new ProtonConfig.Summary.Builder()
-                .log(new ProtonConfig.Summary.Log.Builder()
-                        .maxfilesize(fileSizeBytes)));
+        builder.summary.log.maxfilesize(fileSizeBytes);
     }
 
     private void tuneFlushStrategyMemoryLimits(ProtonConfig.Flush.Memory.Builder builder) {
         long memoryLimitBytes = (long) ((nodeFlavor.getMinMainMemoryAvailableGb() / 8) * GB);
-        builder.maxmemory(memoryLimitBytes)
-                .each(new ProtonConfig.Flush.Memory.Each.Builder()
-                        .maxmemory(memoryLimitBytes));
+        builder.maxmemory(memoryLimitBytes);
+        builder.each.maxmemory(memoryLimitBytes);
     }
 
     private void tuneFlushStrategyTlsSize(ProtonConfig.Flush.Memory.Builder builder) {
