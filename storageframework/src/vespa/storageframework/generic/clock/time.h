@@ -9,8 +9,7 @@ namespace vespalib {
     class asciistream;
 }
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
 
 using MonotonicTimePoint = std::chrono::steady_clock::time_point;
 using MonotonicDuration = std::chrono::steady_clock::duration;
@@ -171,6 +170,4 @@ inline MicroSecTime MilliSecTime::getMicros() const {
     return MicroSecTime(getTime() * 1000);
 }
 
-} // framework
-} // storage
-
+}
