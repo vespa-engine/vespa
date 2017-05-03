@@ -18,15 +18,40 @@ public:
     virtual ~ISequencedTaskExecutor() { }
 
     /**
-     * Schedule a task to run after all previously scheduled tasks with
-     * same id.  All tasks must be scheduled from same thread.
+     * Calculate which executor will handle an component. All callers
+     * must be in the same thread.
      *
-     * @param id         task id.
+     * @param componentId   component id
+     * @return              executor id
+     */
+    virtual uint32_t getExecutorId(uint64_t componentId) = 0;
+
+    inline uint32_t getExecutorId(vespalib::stringref componentId) {
+        vespalib::hash<vespalib::stringref> hashfun;
+        return getExecutorId(hashfun(componentId));
+    }
+
+    /**
+     * Schedule a task to run after all previously scheduled tasks with
+     * same id.
+     *
+     * @param executorId which internal executor to use
      * @param task       unique pointer to the task to be executed
      */
-    virtual void executeTask(uint64_t id,
-                             vespalib::Executor::Task::UP task) = 0;
+    virtual void executeTask(uint32_t exeucutorId, vespalib::Executor::Task::UP task) = 0;
 
+    /**
+     * Wrap lambda function into a task and schedule it to be run.
+     * Caller must ensure that pointers and references are valid and
+     * call sync before tearing down pointed to/referenced data.
+      *
+     * @param executorId    which internal executor to use
+     * @param function      function to be wrapped in a task and later executed
+     */
+    template <class FunctionType>
+    inline void executeLambda(uint64_t executorId, FunctionType &&function) {
+        executeTask(executorId, makeLambdaTask(std::forward<FunctionType>(function)));
+    }
     /**
      * Wait for all scheduled tasks to complete.
      */
@@ -38,12 +63,13 @@ public:
      * call sync before tearing down pointed to/referenced data.
      * All tasks must be scheduled from same thread.
      *
-     * @param id         task id.
-     * @param function   function to be wrapped in a task and later executed
+     * @param componentId   component id
+     * @param function      function to be wrapped in a task and later executed
      */
     template <class FunctionType>
-    inline void execute(uint64_t id, FunctionType &&function) {
-        executeTask(id, makeLambdaTask(std::forward<FunctionType>(function)));
+    inline void execute(uint64_t componentId, FunctionType &&function) {
+        uint32_t executorId = getExecutorId(componentId);
+        executeTask(executorId, makeLambdaTask(std::forward<FunctionType>(function)));
     }
 
     /**
@@ -52,13 +78,13 @@ public:
      * call sync before tearing down pointed to/referenced data.
      * All tasks must be scheduled from same thread.
      *
-     * @param id         task id.
-     * @param function   function to be wrapped in a task and later executed
+     * @param componentId   component id
+     * @param function      function to be wrapped in a task and later executed
      */
     template <class FunctionType>
-    inline void execute(const vespalib::stringref id, FunctionType &&function) {
-        vespalib::hash<vespalib::stringref> hashfun;
-        executeTask(hashfun(id),
+    inline void execute(vespalib::stringref componentId, FunctionType &&function) {
+        uint32_t executorId = getExecutorId(componentId);
+        executeTask(executorId,
                     makeLambdaTask(std::forward<FunctionType>(function)));
     }
 };

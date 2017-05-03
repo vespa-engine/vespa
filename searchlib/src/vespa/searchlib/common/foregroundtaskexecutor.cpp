@@ -28,12 +28,17 @@ ForegroundTaskExecutor::~ForegroundTaskExecutor()
 {
 }
 
+uint32_t
+ForegroundTaskExecutor::getExecutorId(uint64_t componentId)
+{
+    (void) componentId;
+    return 0u;
+}
 
 void
-ForegroundTaskExecutor::executeTask(uint64_t id,
-                                   vespalib::Executor::Task::UP task)
+ForegroundTaskExecutor::executeTask(uint32_t executorId, vespalib::Executor::Task::UP task)
 {
-    (void) id;
+    (void) executorId;
     task->run();
 }
 

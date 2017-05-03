@@ -12,6 +12,7 @@ GidToLidChangeListener::GidToLidChangeListener(search::ISequencedTaskExecutor &a
                                                const vespalib::string &name,
                                                const vespalib::string &docTypeName)
     : _attributeFieldWriter(attributeFieldWriter),
+      _executorId(_attributeFieldWriter.getExecutorId(attr->getName())),
       _attr(std::move(attr)),
       _refCount(refCount),
       _name(name),
@@ -29,8 +30,8 @@ GidToLidChangeListener::notifyGidToLidChange(document::GlobalId gid, uint32_t li
 {
     std::promise<bool> promise;
     std::future<bool> future = promise.get_future();
-    _attributeFieldWriter.execute(_attr->getName(),
-                                  [this, &promise, gid, lid]() { _attr->notifyGidToLidChange(gid, lid); promise.set_value(true); });
+    _attributeFieldWriter.executeLambda(_executorId,
+                                        [this, &promise, gid, lid]() { _attr->notifyGidToLidChange(gid, lid); promise.set_value(true); });
     (void) future.get();
 }
 
@@ -39,8 +40,8 @@ GidToLidChangeListener::notifyRegistered()
 {
     std::promise<bool> promise;
     std::future<bool> future = promise.get_future();
-    _attributeFieldWriter.execute(_attr->getName(),
-                                  [this, &promise]() { _attr->populateReferencedLids(); promise.set_value(true); });
+    _attributeFieldWriter.executeLambda(_executorId,
+                                        [this, &promise]() { _attr->populateReferencedLids(); promise.set_value(true); });
     (void) future.get();
 }
 

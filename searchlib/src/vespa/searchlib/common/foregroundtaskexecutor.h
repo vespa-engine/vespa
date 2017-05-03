@@ -22,12 +22,15 @@ namespace search
 class ForegroundTaskExecutor : public ISequencedTaskExecutor
 {
 public:
+    using ISequencedTaskExecutor::getExecutorId;
+
     ForegroundTaskExecutor();
 
     ~ForegroundTaskExecutor();
 
-    virtual void executeTask(uint64_t id,
-                             vespalib::Executor::Task::UP task) override;
+    virtual uint32_t getExecutorId(uint64_t componentId) override;
+
+    virtual void executeTask(uint32_t executorId, vespalib::Executor::Task::UP task) override;
 
     virtual void sync() override;
 };

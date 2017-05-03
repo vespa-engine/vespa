@@ -17,6 +17,8 @@ class SequencedTaskExecutorObserver : public ISequencedTaskExecutor
     std::atomic<uint32_t> _executeCnt;
     std::atomic<uint32_t> _syncCnt;
 public:
+    using ISequencedTaskExecutor::getExecutorId;
+
     SequencedTaskExecutorObserver(ISequencedTaskExecutor &executor)
         : _executor(executor),
           _executeCnt(0u),
@@ -26,10 +28,14 @@ public:
 
     virtual ~SequencedTaskExecutorObserver() { }
 
-    virtual void executeTask(uint64_t id,
-                             vespalib::Executor::Task::UP task) override {
+    virtual uint32_t getExecutorId(uint64_t componentId) override {
+        return _executor.getExecutorId(componentId);
+    }
+
+    virtual void executeTask(uint32_t executorId,
+                              vespalib::Executor::Task::UP task) override {
         ++_executeCnt;
-        _executor.executeTask(id, std::move(task));
+        _executor.executeTask(executorId, std::move(task));
     }
 
     virtual void sync() override {
