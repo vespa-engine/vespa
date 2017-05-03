@@ -2,15 +2,14 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/sync.h>
-#include <list>
-#include <sstream>
-#include <vespa/storageapi/messageapi/storagecommand.h>
-#include <string>
-#include <vector>
+
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storageapi/message/internal.h>
+#include <vespa/storageapi/messageapi/storagecommand.h>
+#include <vespa/vespalib/util/sync.h>
+#include <list>
+#include <sstream>
 
 class FastOS_ThreadPool;
 
@@ -33,15 +32,14 @@ public:
     DummyStorageLink();
     ~DummyStorageLink();
 
-    bool onDown(const api::StorageMessage::SP&);
-    bool onUp(const api::StorageMessage::SP&);
+    bool onDown(const api::StorageMessage::SP&) override;
+    bool onUp(const api::StorageMessage::SP&) override;
 
     void addOnTopOfChain(StorageLink& link) {
         link.addTestLinkOnTop(this);
     }
 
-    void print(std::ostream& ost, bool verbose, const std::string& indent) const
-    {
+    void print(std::ostream& ost, bool verbose, const std::string& indent) const override     {
         (void) verbose;
         ost << indent << "DummyStorageLink("
             << "autoreply = " << (_autoReply ? "on" : "off")
