@@ -9,25 +9,26 @@ namespace vsm {
 IMPLEMENT_DUPLICATE(IntFieldSearcher);
 
 IntFieldSearcher::IntFieldSearcher(FieldIdT fId) :
-  FieldSearcher(fId),
-  _intTerm()
+    FieldSearcher(fId),
+    _intTerm()
 { }
 
 IntFieldSearcher::~IntFieldSearcher() {}
 
 void IntFieldSearcher::prepare(QueryTermList & qtl, const SharedSearcherBuf & buf)
 {
-  FieldSearcher::prepare(qtl, buf);
-  for (QueryTermList::const_iterator it=qtl.begin(); it < qtl.end(); it++) {
-    const QueryTerm * qt = *it;
-    size_t sz(qt->termLen());
-    if (sz) {
-      int64_t low;
-      int64_t high;
-      bool valid = qt->getAsIntegerTerm(low, high);
-      _intTerm.push_back(IntInfo(low, high, valid));
+    _intTerm.clear();
+    FieldSearcher::prepare(qtl, buf);
+    for (QueryTermList::const_iterator it=qtl.begin(); it < qtl.end(); it++) {
+        const QueryTerm * qt = *it;
+        size_t sz(qt->termLen());
+        if (sz) {
+            int64_t low;
+            int64_t high;
+            bool valid = qt->getAsIntegerTerm(low, high);
+            _intTerm.push_back(IntInfo(low, high, valid));
+        }
     }
-  }
 }
 
 void IntFieldSearcher::onValue(const document::FieldValue & fv)

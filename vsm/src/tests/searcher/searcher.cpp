@@ -598,70 +598,70 @@ TEST("utf8 flexible searcher"){
 TEST("integer search")
 {
     IntFieldSearcher fs;
-    assertInt(fs,     "10",  10, true);
-    assertInt(fs,      "9",  10, false);
-    assertInt(fs,     ">9",  10, true);
-    assertInt(fs,     ">9",   9, false);
-    assertInt(fs,    "<11",  10, true);
-    assertInt(fs,    "<11",  11, false);
-    assertInt(fs,    "-10", -10, true);
-    assertInt(fs,     "-9", -10, false);
-    assertInt(fs,      "a",  10, false);
-    assertInt(fs, "[-5;5]",  -5, true);
-    assertInt(fs, "[-5;5]",   0, true);
-    assertInt(fs, "[-5;5]",   5, true);
-    assertInt(fs, "[-5;5]",  -6, false);
-    assertInt(fs, "[-5;5]",   6, false);
+    TEST_DO(assertInt(fs,     "10",  10, true));
+    TEST_DO(assertInt(fs,      "9",  10, false));
+    TEST_DO(assertInt(fs,     ">9",  10, true));
+    TEST_DO(assertInt(fs,     ">9",   9, false));
+    TEST_DO(assertInt(fs,    "<11",  10, true));
+    TEST_DO(assertInt(fs,    "<11",  11, false));
+    TEST_DO(assertInt(fs,    "-10", -10, true));
+    TEST_DO(assertInt(fs,     "-9", -10, false));
+    TEST_DO(assertInt(fs,      "a",  10, false));
+    TEST_DO(assertInt(fs, "[-5;5]",  -5, true));
+    TEST_DO(assertInt(fs, "[-5;5]",   0, true));
+    TEST_DO(assertInt(fs, "[-5;5]",   5, true));
+    TEST_DO(assertInt(fs, "[-5;5]",  -6, false));
+    TEST_DO(assertInt(fs, "[-5;5]",   6, false));
 
-    assertInt(fs, StringList().add("9").add("11"),  10, BoolList().add(false).add(false));
-    assertInt(fs, StringList().add("9").add("10"),  10, BoolList().add(false).add(true));
-    assertInt(fs, StringList().add("10").add(">9"), 10, BoolList().add(true).add(true));
+    TEST_DO(assertInt(fs, StringList().add("9").add("11"),  10, BoolList().add(false).add(false)));
+    TEST_DO(assertInt(fs, StringList().add("9").add("10"),  10, BoolList().add(false).add(true)));
+    TEST_DO(assertInt(fs, StringList().add("10").add(">9"), 10, BoolList().add(true).add(true)));
 
-    assertInt(fs, "10", LongList().add(10).add(20).add(10).add(30), Hits().add(0).add(2));
-    assertInt(fs, StringList().add("10").add("20"), LongList().add(10).add(20).add(10).add(30),
-              HitsList().add(Hits().add(0).add(2)).add(Hits().add(1)));
+    TEST_DO(assertInt(fs, "10", LongList().add(10).add(20).add(10).add(30), Hits().add(0).add(2)));
+    TEST_DO(assertInt(fs, StringList().add("10").add("20"), LongList().add(10).add(20).add(10).add(30),
+                      HitsList().add(Hits().add(0).add(2)).add(Hits().add(1))));
 
-    assertFieldInfo(fs, "10", 10, QTFieldInfo(0, 1, 1));
-    assertFieldInfo(fs, "10", LongList().add(10).add(20).add(10).add(30), QTFieldInfo(0, 2, 4));
-    assertFieldInfo(fs, StringList().add("10").add("20"), 10,
-                    FieldInfoList().add(QTFieldInfo(0, 1, 1)).add(QTFieldInfo(0, 0, 1)));
-    assertFieldInfo(fs, StringList().add("10").add("20"), LongList().add(10).add(20).add(10).add(30),
-                    FieldInfoList().add(QTFieldInfo(0, 2, 4)).add(QTFieldInfo(0, 1, 4)));
+    TEST_DO(assertFieldInfo(fs, "10", 10, QTFieldInfo(0, 1, 1)));
+    TEST_DO(assertFieldInfo(fs, "10", LongList().add(10).add(20).add(10).add(30), QTFieldInfo(0, 2, 4)));
+    TEST_DO(assertFieldInfo(fs, StringList().add("10").add("20"), 10,
+                            FieldInfoList().add(QTFieldInfo(0, 1, 1)).add(QTFieldInfo(0, 0, 1))));
+    TEST_DO(assertFieldInfo(fs, StringList().add("10").add("20"), LongList().add(10).add(20).add(10).add(30),
+                            FieldInfoList().add(QTFieldInfo(0, 2, 4)).add(QTFieldInfo(0, 1, 4))));
 }
 
 TEST("floating point search")
 {
     FloatFieldSearcher fs;
-    assertFloat(fs,         "10",    10, true);
-    assertFloat(fs,       "10.5",  10.5, true);
-    assertFloat(fs,      "-10.5", -10.5, true);
-    assertFloat(fs,      ">10.5",  10.6, true);
-    assertFloat(fs,      ">10.5",  10.5, false);
-    assertFloat(fs,      "<10.5",  10.4, true);
-    assertFloat(fs,      "<10.5",  10.5, false);
-    assertFloat(fs,       "10.4",  10.5, false);
-    assertFloat(fs,      "-10.4", -10.5, false);
-    assertFloat(fs,          "a",  10.5, false);
-    assertFloat(fs, "[-5.5;5.5]",  -5.5, true);
-    assertFloat(fs, "[-5.5;5.5]",     0, true);
-    assertFloat(fs, "[-5.5;5.5]",   5.5, true);
-    assertFloat(fs, "[-5.5;5.5]",  -5.6, false);
-    assertFloat(fs, "[-5.5;5.5]",   5.6, false);
+    TEST_DO(assertFloat(fs,         "10",    10, true));
+    TEST_DO(assertFloat(fs,       "10.5",  10.5, true));
+    TEST_DO(assertFloat(fs,      "-10.5", -10.5, true));
+    TEST_DO(assertFloat(fs,      ">10.5",  10.6, true));
+    TEST_DO(assertFloat(fs,      ">10.5",  10.5, false));
+    TEST_DO(assertFloat(fs,      "<10.5",  10.4, true));
+    TEST_DO(assertFloat(fs,      "<10.5",  10.5, false));
+    TEST_DO(assertFloat(fs,       "10.4",  10.5, false));
+    TEST_DO(assertFloat(fs,      "-10.4", -10.5, false));
+    TEST_DO(assertFloat(fs,          "a",  10.5, false));
+    TEST_DO(assertFloat(fs, "[-5.5;5.5]",  -5.5, true));
+    TEST_DO(assertFloat(fs, "[-5.5;5.5]",     0, true));
+    TEST_DO(assertFloat(fs, "[-5.5;5.5]",   5.5, true));
+    TEST_DO(assertFloat(fs, "[-5.5;5.5]",  -5.6, false));
+    TEST_DO(assertFloat(fs, "[-5.5;5.5]",   5.6, false));
 
-    assertFloat(fs, StringList().add("10").add("11"),      10.5, BoolList().add(false).add(false));
-    assertFloat(fs, StringList().add("10").add("10.5"),    10.5, BoolList().add(false).add(true));
-    assertFloat(fs, StringList().add(">10.4").add("10.5"), 10.5, BoolList().add(true).add(true));
+    TEST_DO(assertFloat(fs, StringList().add("10").add("11"),      10.5, BoolList().add(false).add(false)));
+    TEST_DO(assertFloat(fs, StringList().add("10").add("10.5"),    10.5, BoolList().add(false).add(true)));
+    TEST_DO(assertFloat(fs, StringList().add(">10.4").add("10.5"), 10.5, BoolList().add(true).add(true)));
 
-    assertFloat(fs, "10.5", FloatList().add(10.5).add(20.5).add(10.5).add(30.5), Hits().add(0).add(2));
-    assertFloat(fs, StringList().add("10.5").add("20.5"), FloatList().add(10.5).add(20.5).add(10.5).add(30.5),
-                HitsList().add(Hits().add(0).add(2)).add(Hits().add(1)));
+    TEST_DO(assertFloat(fs, "10.5", FloatList().add(10.5).add(20.5).add(10.5).add(30.5), Hits().add(0).add(2)));
+    TEST_DO(assertFloat(fs, StringList().add("10.5").add("20.5"), FloatList().add(10.5).add(20.5).add(10.5).add(30.5),
+                    HitsList().add(Hits().add(0).add(2)).add(Hits().add(1))));
 
-    assertFieldInfo(fs, "10.5", 10.5, QTFieldInfo(0, 1, 1));
-    assertFieldInfo(fs, "10.5", FloatList().add(10.5).add(20.5).add(10.5).add(30.5), QTFieldInfo(0, 2, 4));
-    assertFieldInfo(fs, StringList().add("10.5").add("20.5"), 10.5,
-                    FieldInfoList().add(QTFieldInfo(0, 1, 1)).add(QTFieldInfo(0, 0, 1)));
-    assertFieldInfo(fs, StringList().add("10.5").add("20.5"), FloatList().add(10.5).add(20.5).add(10.5).add(30.5),
-                    FieldInfoList().add(QTFieldInfo(0, 2, 4)).add(QTFieldInfo(0, 1, 4)));
+    TEST_DO(assertFieldInfo(fs, "10.5", 10.5, QTFieldInfo(0, 1, 1)));
+    TEST_DO(assertFieldInfo(fs, "10.5", FloatList().add(10.5).add(20.5).add(10.5).add(30.5), QTFieldInfo(0, 2, 4)));
+    TEST_DO(assertFieldInfo(fs, StringList().add("10.5").add("20.5"), 10.5,
+                    FieldInfoList().add(QTFieldInfo(0, 1, 1)).add(QTFieldInfo(0, 0, 1))));
+    TEST_DO(assertFieldInfo(fs, StringList().add("10.5").add("20.5"), FloatList().add(10.5).add(20.5).add(10.5).add(30.5),
+                    FieldInfoList().add(QTFieldInfo(0, 2, 4)).add(QTFieldInfo(0, 1, 4))));
 }
 
 TEST("Snippet modifier search") {
