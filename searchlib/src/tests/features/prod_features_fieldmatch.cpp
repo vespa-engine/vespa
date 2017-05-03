@@ -1,19 +1,19 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
-#include "prod_features.h"
-#include <vespa/searchlib/features/fieldmatchfeature.h>
-
+#include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".prod_features_fieldmatch");
+
+#include <vespa/searchlib/fef/test/ftlib.h>
+
+#include "prod_features.h"
+
+#include <vespa/searchlib/features/fieldmatchfeature.h>
 
 using namespace search::features;
 using namespace search::fef;
 using namespace search::fef::test;
 using search::AttributeVector;
 using CollectionType = FieldInfo::CollectionType;
-
-Test::Test() {}
-Test::~Test() {}
 
 void
 Test::testFieldMatch()

@@ -9,8 +9,6 @@
 class Test : public FtTestApp
 {
 public:
-    Test();
-    ~Test();
     int Main() override;
     void testFramework();
     void testFtLib();

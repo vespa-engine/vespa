@@ -1,10 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
-#include <vespa/searchlib/datastore/array_store.hpp>
-#include <vespa/searchlib/test/datastore/memstats.h>
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP("array_store_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/traits.h>
+#include <vespa/searchlib/datastore/array_store.hpp>
+#include <vespa/searchlib/test/datastore/memstats.h>
 #include <vector>
 
 using namespace search::datastore;
@@ -314,8 +316,8 @@ TEST_F("require that address space usage is ratio between used clusters and numb
     f.add({2,2});
     f.add({4,4,4});
     // 1 cluster is reserved (buffer 0, offset 0).
-    EXPECT_EQUAL(3u, f.store.addressSpaceUsage().used());
-    EXPECT_EQUAL(1u, f.store.addressSpaceUsage().dead());
+    EXPECT_EQUAL(3, f.store.addressSpaceUsage().used());
+    EXPECT_EQUAL(1, f.store.addressSpaceUsage().dead());
     size_t fourgig = (1ull << 32);
     /*
      * Expected limit is sum of allocated clusters for active buffers and

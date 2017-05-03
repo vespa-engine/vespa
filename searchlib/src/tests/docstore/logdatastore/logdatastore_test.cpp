@@ -138,7 +138,7 @@ TEST("testThatLidInfoOrdersFileChunkSize") {
 }
 
 TEST("test that DirectIOPadding works accordng to spec") {
-    constexpr ssize_t FILE_SIZE = 4096*3;
+    constexpr size_t FILE_SIZE = 4096*3;
     FastOS_File file("directio.test");
     file.EnableDirectIO();
     EXPECT_TRUE(file.OpenReadWrite());
@@ -855,7 +855,7 @@ TEST("test that StoreByBucket gives bucket by bucket and ordered within") {
 
 TEST("test that LidInfo has 8 bytes size and that it can represent the numbers correctly.")
 {
-    EXPECT_EQUAL(8u, sizeof(LidInfo));
+    EXPECT_EQUAL(8, sizeof(LidInfo));
     LidInfo a(0,0,0);
     EXPECT_EQUAL(0u, a.getFileId());
     EXPECT_EQUAL(0u, a.getChunkId());
@@ -887,8 +887,8 @@ TEST("test that LidInfo has 8 bytes size and that it can represent the numbers c
     EXPECT_TRUE(a.valid());
     EXPECT_FALSE(a.empty());
     a = LidInfo(0xffff,0x3fffff,0xffffff80u);
-    EXPECT_EQUAL(0xffffu, a.getFileId());
-    EXPECT_EQUAL(0x3fffffu, a.getChunkId());
+    EXPECT_EQUAL(0xffff, a.getFileId());
+    EXPECT_EQUAL(0x3fffff, a.getChunkId());
     EXPECT_EQUAL(0xffffff80u, a.size());
     EXPECT_TRUE(a.valid());
     EXPECT_FALSE(a.empty());

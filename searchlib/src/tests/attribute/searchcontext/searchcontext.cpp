@@ -280,7 +280,6 @@ private:
 
 public:
     SearchContextTest();
-    ~SearchContextTest();
     int Main() override;
 };
 
@@ -1893,8 +1892,6 @@ SearchContextTest::SearchContextTest() :
     initFloatConfig();
     initStringConfig();
 }
-
-SearchContextTest::~SearchContextTest() {}
 
 int
 SearchContextTest::Main()

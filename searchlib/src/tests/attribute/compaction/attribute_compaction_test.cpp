@@ -177,7 +177,7 @@ TEST_F("Test that no compaction of int8 array attribute increases address space 
     AddressSpace afterSpace = f.getMultiValueAddressSpaceUsage("after");
     // 100 * 1000 dead clusters due to new values for docids
     // 1 reserved cluster accounted as dead
-    EXPECT_EQUAL(100001u, afterSpace.dead());
+    EXPECT_EQUAL(100001, afterSpace.dead());
 }
 
 TEST_F("Test that compaction of int8 array attribute limits address space usage", Fixture(compactAddressSpaceAttributeConfig(true)))
@@ -188,7 +188,7 @@ TEST_F("Test that compaction of int8 array attribute limits address space usage"
     f.hammer(range2, 101);
     AddressSpace afterSpace = f.getMultiValueAddressSpaceUsage("after");
     // DEAD_CLUSTERS_SLACK in multi value mapping is is 64k
-    EXPECT_GREATER(65536u, afterSpace.dead());
+    EXPECT_GREATER(65536, afterSpace.dead());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -23,7 +23,7 @@ TEST_F("getName() is equal to name given during construction", Fixture) {
 
 TEST_F("getNumDocs() returns number of documents in reference attribute vector", Fixture) {
     add_n_docs_with_undefined_values(*f.reference_attr, 42);
-    EXPECT_EQUAL(42u, f.imported_attr->getNumDocs());
+    EXPECT_EQUAL(42, f.imported_attr->getNumDocs());
 }
 
 TEST_F("hasEnum() is false for non-enum target attribute vector", Fixture) {

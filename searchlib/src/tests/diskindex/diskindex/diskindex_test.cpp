@@ -13,10 +13,10 @@
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/test/fakedata/fpfactory.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <iostream>
 #include <set>
+#include <vespa/searchlib/test/fakedata/fpfactory.h>
 
 using search::BitVectorIterator;
 using namespace search::fef;
@@ -63,7 +63,6 @@ private:
     void requireThatSearchIteratorsConforms();
 public:
     Test();
-    ~Test();
     int Main() override;
 };
 
@@ -282,8 +281,6 @@ Test::Test() :
     TestDiskIndex()
 {
 }
-
-Test::~Test() {}
 
 int
 Test::Main()
