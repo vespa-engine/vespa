@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("rcuvector_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/common/rcuvector.h>
 
@@ -278,8 +276,8 @@ TEST_F("require that shrink() does not increase allocated memory", ShrinkFixture
 TEST_F("require that shrink() can shrink mmap allocation", ShrinkFixture)
 {
     f.vec.shrink(2048);
-    EXPECT_EQUAL(2048, f.vec.size());
-    EXPECT_EQUAL(3072, f.vec.capacity());
+    EXPECT_EQUAL(2048u, f.vec.size());
+    EXPECT_EQUAL(3072u, f.vec.capacity());
     TEST_DO(f.assertOldEqualNewBuffer());
     TEST_DO(f.assertEmptyHoldList());
 }

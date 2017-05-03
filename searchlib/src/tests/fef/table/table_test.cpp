@@ -1,16 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("tablemanager_test");
-#include <vespa/vespalib/testkit/testapp.h>
 
-#include <fstream>
-#include <limits>
-#include <iostream>
+#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/fef/filetablefactory.h>
 #include <vespa/searchlib/fef/functiontablefactory.h>
-#include <vespa/searchlib/fef/table.h>
 #include <vespa/searchlib/fef/tablemanager.h>
+#include <fstream>
+#include <iostream>
 
 namespace search {
 namespace fef {
@@ -29,6 +24,7 @@ private:
     const std::string _tables2Dir;
 public:
     TableTest();
+    ~TableTest();
     int Main() override;
 };
 
@@ -38,6 +34,8 @@ TableTest::TableTest() :
     _tables2Dir(TEST_PATH("tables2"))
 {
 }
+
+TableTest::~TableTest() {}
 
 bool
 TableTest::assertTable(const Table & act, const Table & exp)

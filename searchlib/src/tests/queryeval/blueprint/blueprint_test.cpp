@@ -163,8 +163,8 @@ public:
     Test()
         : vespalib::TestApp(),
           _md(MatchData::makeTestInstance(100, 10))
-    {
-    }
+    {}
+    ~Test() {}
     Blueprint::UP buildBlueprint1();
     Blueprint::UP buildBlueprint2();
     void testBlueprintBuilding();
