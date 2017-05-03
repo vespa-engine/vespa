@@ -227,7 +227,7 @@ bool search(const Node &node, IAttributeManager &attribute_manager,
     } else {
         if (empty) {
             EXPECT_TRUE(result.est_empty);
-            EXPECT_EQUAL(0, result.est_hits);
+            EXPECT_EQUAL(0u, result.est_hits);
         } else {
             EXPECT_TRUE(!result.est_empty);
             EXPECT_EQUAL(num_docs, result.est_hits);
