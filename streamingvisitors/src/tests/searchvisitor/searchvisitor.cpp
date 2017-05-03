@@ -29,6 +29,7 @@ private:
 
 public:
     SearchVisitorTest();
+    ~SearchVisitorTest();
     int Main() override;
 };
 
@@ -42,7 +43,9 @@ SearchVisitorTest::SearchVisitorTest() :
     StorageComponent::DocumentTypeRepoSP repo(new DocumentTypeRepo(readDocumenttypesConfig(TEST_PATH("cfg/documenttypes.cfg"))));
     _componentRegister.setDocumentTypeRepo(repo);
     _component.reset(new StorageComponent(_componentRegister, "storage"));
-};
+}
+
+SearchVisitorTest::~SearchVisitorTest() {}
 
 std::vector<spi::DocEntry::UP>
 createDocuments(const vespalib::string & dir)
