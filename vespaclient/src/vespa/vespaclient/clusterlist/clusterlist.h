@@ -21,7 +21,7 @@ public:
         Cluster(const std::string& name, const std::string& configId);
         Cluster(const Cluster &);
         Cluster & operator = (const Cluster &);
-        Cluster(Cluster &) = default;
+        Cluster(Cluster &&) = default;
         Cluster & operator = (Cluster &&) = default;
         ~Cluster();
 
@@ -52,4 +52,3 @@ private:
 };
 
 }
-
