@@ -1443,10 +1443,8 @@ public class ModelProvisioningTest {
     }
 
     private static Flavor createFlavorFromDiskSetting(String name, boolean fastDisk) {
-        FlavorsConfig.Flavor.Builder builder = new FlavorsConfig.Flavor.Builder();
-        builder.name(name);
-        builder.fastDisk(fastDisk);
-        return new Flavor(new FlavorsConfig.Flavor(builder));
+        return new Flavor(new FlavorsConfig.Flavor(new FlavorsConfig.Flavor.Builder().
+                name(name).fastDisk(fastDisk)));
     }
 
     private static ProtonConfig getProtonConfig(ContentSearchCluster cluster, int searchNodeIdx) {
@@ -1456,5 +1454,59 @@ public class ModelProvisioningTest {
         searchNodes.get(searchNodeIdx).getConfig(builder);
         return new ProtonConfig(builder);
     }
-    
+
+    @Test
+    public void require_that_config_override_and_explicit_proton_tuning_have_precedence_over_default_node_flavor_tuning() {
+        String services = joinLines("<?xml version='1.0' encoding='utf-8' ?>",
+                "<services>",
+                "  <content version='1.0' id='test'>",
+                "    <config name='vespa.config.search.core.proton'>",
+                "      <flush><memory><maxtlssize>2000</maxtlssize></memory></flush>",
+                "    </config>",
+                "    <documents>",
+                "      <document type='type1' mode='index'/>",
+                "    </documents>",
+                "    <nodes count='1' flavor='content-test-flavor'/>",
+                "    <engine>",
+                "      <proton>",
+                "        <tuning>",
+                "          <searchnode>",
+                "            <flushstrategy>",
+                "              <native>",
+                "                <total>",
+                "                  <maxmemorygain>1000</maxmemorygain>",
+                "                </total>",
+                "              </native>",
+                "            </flushstrategy>",
+                "          </searchnode>",
+                "        </tuning>",
+                "      </proton>",
+                "    </engine>",
+                "  </content>",
+                "</services>");
+
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts("default", 1);
+        tester.addHosts(createFlavorFromMemoryAndDisk("content-test-flavor", 128, 100), 1);
+        VespaModel model = tester.createModel(services, true, 0);
+        ContentSearchCluster cluster = model.getContentClusters().get("test").getSearch();
+        ProtonConfig cfg = getProtonConfig(model, cluster.getSearchNodes().get(0).getConfigId());
+        assertEquals(2000, cfg.flush().memory().maxtlssize()); // from config override
+        assertEquals(1000, cfg.flush().memory().maxmemory()); // from explicit tuning
+        assertEquals((long) 16 * GB, cfg.flush().memory().each().maxmemory()); // from default node flavor tuning
+    }
+
+    private static long GB = 1024 * 1024 * 1024;
+
+    private static Flavor createFlavorFromMemoryAndDisk(String name, int memoryGb, int diskGb) {
+        return new Flavor(new FlavorsConfig.Flavor(new FlavorsConfig.Flavor.Builder().
+                name(name).minMainMemoryAvailableGb(memoryGb).minDiskAvailableGb(diskGb)));
+    }
+
+    private static ProtonConfig getProtonConfig(VespaModel model, String configId) {
+        ProtonConfig.Builder builder = new ProtonConfig.Builder();
+        model.getConfig(builder, configId);
+        return new ProtonConfig(builder);
+    }
+
 }

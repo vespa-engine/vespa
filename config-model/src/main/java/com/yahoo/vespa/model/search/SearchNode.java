@@ -55,6 +55,7 @@ public class SearchNode extends AbstractService implements
     private final String clusterName;
     private TransactionLogServer tls;
     private AbstractService serviceLayerService;
+    private final Optional<Tuning> tuning;
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<SearchNode> {
 
@@ -63,17 +64,19 @@ public class SearchNode extends AbstractService implements
         private final String clusterName;
         private final ContentNode contentNode;
         private final boolean flushOnShutdown;
-        public Builder(String name, NodeSpec nodeSpec, String clusterName, ContentNode node, boolean flushOnShutdown) {
+        private final Optional<Tuning> tuning;
+        public Builder(String name, NodeSpec nodeSpec, String clusterName, ContentNode node, boolean flushOnShutdown, Optional<Tuning> tuning) {
             this.name = name;
             this.nodeSpec = nodeSpec;
             this.clusterName = clusterName;
             this.contentNode = node;
             this.flushOnShutdown = flushOnShutdown;
+            this.tuning = tuning;
         }
 
         @Override
         protected SearchNode doBuild(AbstractConfigProducer ancestor, Element producerSpec) {
-            return new SearchNode(ancestor, name, contentNode.getDistributionKey(), nodeSpec, clusterName, contentNode, flushOnShutdown);
+            return new SearchNode(ancestor, name, contentNode.getDistributionKey(), nodeSpec, clusterName, contentNode, flushOnShutdown, tuning);
         }
     }
 
@@ -81,19 +84,19 @@ public class SearchNode extends AbstractService implements
      * Creates a SearchNode in elastic mode.
      */
     public static SearchNode create(AbstractConfigProducer parent, String name, int distributionKey, NodeSpec nodeSpec,
-                                    String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown) {
-        return new SearchNode(parent, name, distributionKey, nodeSpec, clusterName, serviceLayerService, flushOnShutdown);
+                                    String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown, Optional<Tuning> tuning) {
+        return new SearchNode(parent, name, distributionKey, nodeSpec, clusterName, serviceLayerService, flushOnShutdown, tuning);
     }
 
     private SearchNode(AbstractConfigProducer parent, String name, int distributionKey, NodeSpec nodeSpec,
-                       String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown) {
-        this(parent, name, nodeSpec, clusterName, flushOnShutdown);
+                       String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown, Optional<Tuning> tuning) {
+        this(parent, name, nodeSpec, clusterName, flushOnShutdown, tuning);
         this.distributionKey = distributionKey;
         this.serviceLayerService = serviceLayerService;
         setPropertiesElastic(clusterName, distributionKey);
     }
 
-    private SearchNode(AbstractConfigProducer parent, String name, NodeSpec nodeSpec, String clusterName, boolean flushOnShutdown) {
+    private SearchNode(AbstractConfigProducer parent, String name, NodeSpec nodeSpec, String clusterName, boolean flushOnShutdown, Optional<Tuning> tuning) {
         super(parent, name);
         this.nodeSpec = nodeSpec;
         this.clusterName = clusterName;
@@ -105,6 +108,7 @@ public class SearchNode extends AbstractService implements
         portsMeta.on(4).tag("http").tag("json").tag("health").tag("state");
         // Properties are set in DomSearchBuilder
         monitorService();
+        this.tuning = tuning;
     }
 
     private void setPropertiesElastic(String clusterName, int distributionKey) {
@@ -273,6 +277,9 @@ public class SearchNode extends AbstractService implements
         }
         if (getHostResource() != null && getHostResource().getFlavor().isPresent()) {
             new NodeFlavorTuning(getHostResource().getFlavor().get()).getConfig(builder);
+            if (tuning.isPresent()) {
+                tuning.get().getConfig(builder);
+            }
         }
     }
 

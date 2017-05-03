@@ -105,32 +105,25 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
             public void getConfig(ProtonConfig.Builder builder) {
                 // Here, the config building gets very ugly, because we have to check for null because of autoconversion Long/long etc.
 
-                ProtonConfig.Flush.Memory.Builder memoryBuilder = new ProtonConfig.Flush.Memory.Builder();
+                ProtonConfig.Flush.Memory.Builder memoryBuilder = builder.flush.memory;
                 if (totalMaxMemoryGain != null) memoryBuilder.maxmemory(totalMaxMemoryGain);
                 if (totalDiskBloatFactor != null) memoryBuilder.diskbloatfactor(totalDiskBloatFactor);
                 if (transactionLogMaxSize != null) memoryBuilder.maxtlssize(transactionLogMaxSize);
 
-                ProtonConfig.Flush.Memory.Each.Builder eachBuilder = new ProtonConfig.Flush.Memory.Each.Builder();
+                ProtonConfig.Flush.Memory.Each.Builder eachBuilder = memoryBuilder.each;
                 if (componentMaxMemoryGain != null) eachBuilder.maxmemory(componentMaxMemoryGain);
                 if (componentDiskBloatFactor != null) eachBuilder.diskbloatfactor(componentDiskBloatFactor);
-                memoryBuilder.each(eachBuilder);
 
-                ProtonConfig.Flush.Memory.Maxage.Builder maxageBuilder = new ProtonConfig.Flush.Memory.Maxage.Builder();
+                ProtonConfig.Flush.Memory.Maxage.Builder maxageBuilder = memoryBuilder.maxage;
                 if (componentMaxage != null) maxageBuilder.time(componentMaxage);
-                memoryBuilder.maxage(maxageBuilder);
 
-                ProtonConfig.Flush.Memory.Conservative.Builder conservativeBuilder = new ProtonConfig.Flush.Memory.Conservative.Builder();
+                ProtonConfig.Flush.Memory.Conservative.Builder conservativeBuilder = memoryBuilder.conservative;
                 if (conservativeMemoryLimitFactor != null) {
                     conservativeBuilder.memorylimitfactor(conservativeMemoryLimitFactor);
                 }
                 if (conservativeDiskLimitFactor != null) {
                     conservativeBuilder.disklimitfactor(conservativeDiskLimitFactor);
                 }
-                memoryBuilder.conservative(conservativeBuilder);
-
-                builder.
-                    flush(new ProtonConfig.Flush.Builder().
-                            memory(memoryBuilder));
             }
         }
 
