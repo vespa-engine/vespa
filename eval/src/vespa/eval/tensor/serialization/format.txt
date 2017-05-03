@@ -24,7 +24,7 @@ if ('dense'):
     small_string: dimensions name
     1_4_int: dimensions size (must be at least 1) -> 'size_i'
 
-if ('n_mapped > 0' || !'dense'):
+if ('n_mapped' > 0 || !'dense'):
   1_4_int: number of named dense sub-spaces -> 'n_blocks'
 else:
   'n_blocks' = 1 (a single dense space)
