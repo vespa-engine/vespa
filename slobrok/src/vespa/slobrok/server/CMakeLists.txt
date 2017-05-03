@@ -2,6 +2,7 @@
 vespa_add_library(slobrok_slobrokserver
     SOURCES
     cmd.cpp
+    configshim.cpp
     exchange_manager.cpp
     history.cpp
     i_rpc_server_manager.cpp
