@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/messagebus/imessagehandler.h>
 #include <vespa/messagebus/ireplyhandler.h>
+#include <vespa/vespalib/util/sync.h>
 
 namespace mbus {
 
@@ -20,6 +20,7 @@ private:
     Receptor &operator=(const Receptor &);
 public:
     Receptor();
+    ~Receptor();
     void handleMessage(Message::UP msg) override;
     void handleReply(Reply::UP reply) override;
     Message::UP getMessage(double maxWait = 120.0);

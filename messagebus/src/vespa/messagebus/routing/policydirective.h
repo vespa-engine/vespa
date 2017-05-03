@@ -26,6 +26,7 @@ public:
      * @param param The parameter to pass to the name constructor.
      */
     PolicyDirective(const vespalib::stringref &name, const vespalib::stringref &param);
+    ~PolicyDirective();
 
     /**
      * Returns the name of the policy that this item is to invoke.

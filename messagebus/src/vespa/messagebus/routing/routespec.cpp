@@ -1,4 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include "routingspec.h"
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -8,6 +9,11 @@ RouteSpec::RouteSpec(const string &name) :
     _name(name),
     _hops()
 { }
+
+RouteSpec::RouteSpec(const RouteSpec &) = default;
+RouteSpec & RouteSpec::operator = (const RouteSpec &) = default;
+
+RouteSpec::~RouteSpec() {}
 
 RouteSpec &
 RouteSpec::addHops(const std::vector<string> &hops)

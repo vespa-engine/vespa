@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <stdint.h>
 #include "identity.h"
 #include <vespa/slobrok/cfg.h>
 
@@ -22,10 +21,8 @@ private:
     double      _connectionExpireSecs;
 
 public:
-    /**
-     * Constructs a new parameter object with default values.
-     */
     RPCNetworkParams();
+    ~RPCNetworkParams();
 
     /**
      * Returns the identity to use for the network.
