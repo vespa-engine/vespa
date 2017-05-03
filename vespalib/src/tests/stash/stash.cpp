@@ -365,7 +365,7 @@ TEST("require that arrays can be copied into the stash") {
     ArrayRef<PairD> pair_array = stash.copy_array<PairD>(ConstArrayRef<PairD>(paird_vector));
     ASSERT_EQUAL(pair_array_nodelete.size(), 3u);
     ASSERT_EQUAL(pair_array.size(), 3u);
-    for (size_t i = 0; i < 3; ++i) {
+    for (int i = 0; i < 3; ++i) {
         ASSERT_EQUAL(pair_array_nodelete[i].a, i + 1);
         ASSERT_EQUAL(pair_array_nodelete[i].b, i + 1.5);
         ASSERT_EQUAL(pair_array[i].a, i + 1);
@@ -382,11 +382,11 @@ TEST("require that created arrays are destructed (or not) correctly") {
         EXPECT_EQUAL(sum({chunk_header_size(), array_dtor_hook_size(), 5 * sizeof(Small)}), stash.count_used());
         stash.create_array<Small_NoDelete>(7,destruct_nodelete);
         EXPECT_EQUAL(sum({chunk_header_size(), array_dtor_hook_size(), 5 * sizeof(Small), 7 * sizeof(Small_NoDelete)}), stash.count_used());
-        EXPECT_EQUAL(0, destruct);
-        EXPECT_EQUAL(0, destruct_nodelete);
+        EXPECT_EQUAL(0u, destruct);
+        EXPECT_EQUAL(0u, destruct_nodelete);
     }
-    EXPECT_EQUAL(5, destruct);
-    EXPECT_EQUAL(0, destruct_nodelete);
+    EXPECT_EQUAL(5u, destruct);
+    EXPECT_EQUAL(0u, destruct_nodelete);
 }
 
 TEST("require that copied arrays are destructed (or not) correctly") {

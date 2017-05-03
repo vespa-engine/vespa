@@ -51,7 +51,7 @@ void replace_file(const vespalib::string &path, const vespalib::string &data) {
     remove_file(path);
     int fd = creat(path.c_str(), 0600);
     ASSERT_NOT_EQUAL(fd, -1);
-    ASSERT_EQUAL(write(fd, data.data(), data.size()), data.size());
+    ASSERT_EQUAL(write(fd, data.data(), data.size()), ssize_t(data.size()));
     close(fd);
 }
 
@@ -94,12 +94,12 @@ void verify_socket_io(bool is_server, SocketHandle &socket) {
     vespalib::string client_message = "please pick up, I need to talk to you";
     if(is_server) {
         ssize_t written = socket.write(server_message.data(), server_message.size());
-        EXPECT_EQUAL(written, server_message.size());
+        EXPECT_EQUAL(written, ssize_t(server_message.size()));
         vespalib::string read = read_bytes(socket, client_message.size());
         EXPECT_EQUAL(client_message, read);
     } else {
         ssize_t written = socket.write(client_message.data(), client_message.size());
-        EXPECT_EQUAL(written, client_message.size());
+        EXPECT_EQUAL(written, ssize_t(client_message.size()));
         vespalib::string read = read_bytes(socket, server_message.size());
         EXPECT_EQUAL(server_message, read);
     }

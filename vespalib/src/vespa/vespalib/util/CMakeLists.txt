@@ -13,6 +13,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     blockingthreadstackexecutor.cpp
     box.cpp
     classname.cpp
+    closuretask.cpp
     compress.cpp
     dual_merge_director.cpp
     error.cpp

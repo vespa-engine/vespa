@@ -4,8 +4,8 @@
 
 #include "handler.h"
 #include "acceptor.h"
-#include <map>
 #include <vespa/vespalib/stllike/string.h>
+#include <map>
 
 namespace vespalib {
 namespace ws {
@@ -13,19 +13,23 @@ namespace ws {
 class WebsocketServer : public Handler<Socket> {
 public:
     struct StaticPage {
+        StaticPage(StaticPage &&) = default;
+        StaticPage & operator = (StaticPage &&) = default;
+        ~StaticPage();
         vespalib::string content_type;
         vespalib::string content;
     };
     typedef std::map<vespalib::string, StaticPage> StaticRepo;
 
 private:
-    Acceptor _acceptor;
-    StaticRepo _static_repo;
+    Acceptor         _acceptor;
+    StaticRepo       _static_repo;
     vespalib::string _self;
 
 public:
     WebsocketServer(int port_in, StaticRepo &&repo = StaticRepo());
-    virtual void handle(std::unique_ptr<Socket> socket) override;
+    ~WebsocketServer();
+    void handle(std::unique_ptr<Socket> socket) override;
     int port() { return _acceptor.port(); }
 };
 

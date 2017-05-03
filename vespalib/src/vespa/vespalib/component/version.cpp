@@ -3,7 +3,6 @@
 #include "version.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <cctype>
 #include <climits>
 
 namespace vespalib {
@@ -19,6 +18,8 @@ Version::Version(int major, int minor, int micro, const string & qualifier)
     initialize();
 }
 
+Version::Version(const Version &) = default;
+Version & Version::operator = (const Version &) = default;
 Version::~Version() { }
 
 void
