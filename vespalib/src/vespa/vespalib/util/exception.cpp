@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/exception.h>
-#include <algorithm>
-#include <vespa/fastos/backtrace.h>
+#include "exception.h"
 
 #ifdef VESPALIB_EXCEPTION_USEBACKTRACES
 #include <vespa/vespalib/util/backtrace.h>
@@ -15,18 +13,15 @@ ExceptionPtr::ExceptionPtr()
 {
 }
 
-
 ExceptionPtr::ExceptionPtr(const Exception &e)
     : _ref(e.clone())
 {
 }
 
-
 ExceptionPtr::ExceptionPtr(const ExceptionPtr &rhs)
     : _ref(rhs._ref != NULL ? rhs._ref->clone() : NULL)
 {
 }
-
 
 ExceptionPtr &
 ExceptionPtr::operator=(const Exception &rhs)
@@ -36,7 +31,6 @@ ExceptionPtr::operator=(const Exception &rhs)
     return *this;
 }
 
-
 ExceptionPtr &
 ExceptionPtr::operator=(const ExceptionPtr &rhs)
 {
@@ -45,19 +39,16 @@ ExceptionPtr::operator=(const ExceptionPtr &rhs)
     return *this;
 }
 
-
 void
 ExceptionPtr::swap(ExceptionPtr &other)
 {
     std::swap(_ref, other._ref);
 }
 
-
 ExceptionPtr::~ExceptionPtr()
 {
     delete _ref;
 }
-
 
 void
 swap(ExceptionPtr &a, ExceptionPtr &b)
@@ -86,8 +77,11 @@ Exception::Exception(const stringref &msg, const Exception &cause,
       _stackframes(getStackTraceFrames(_stack, STACK_FRAME_BUFFER_SIZE)),
       _skipStack(skipStack),
       _cause(cause)
-{
-}
+{}
+
+Exception::Exception(const Exception &) = default;
+Exception & Exception::operator = (const Exception &) = default;
+Exception::~Exception() {}
 
 const char *
 Exception::what() const throw()
@@ -104,13 +98,11 @@ Exception::what() const throw()
     return _what.c_str();
 }
 
-
 const char *
 Exception::getName() const
 {
     return "Exception";
 }
-
 
 Exception *
 Exception::clone() const
@@ -118,18 +110,11 @@ Exception::clone() const
     return new Exception(*this);
 }
 
-
 void
 Exception::throwSelf() const
 {
     throw Exception(*this);
 }
-
-
-Exception::~Exception() throw()
-{
-}
-
 
 string
 Exception::toString() const

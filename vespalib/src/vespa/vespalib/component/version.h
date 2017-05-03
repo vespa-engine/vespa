@@ -60,6 +60,8 @@ public:
      */
 
     Version(int major = 0, int minor = 0, int micro = 0, const string & qualifier = "");
+    Version(const Version &);
+    Version & operator = (const Version &);
     ~Version();
 
     /**

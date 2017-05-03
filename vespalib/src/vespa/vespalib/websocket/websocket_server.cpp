@@ -1,11 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "websocket_server.h"
 #include "connection.h"
 #include "request.h"
 #include "key.h"
-#include "frame.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/host_name.h>
 
@@ -118,12 +116,16 @@ void handle_upgrade(Connection &conn, Request &req) {
 
 } // namespace vespalib::ws::<unnamed>
 
+WebsocketServer::StaticPage::~StaticPage() {}
+
 WebsocketServer::WebsocketServer(int port_in, StaticRepo &&repo)
     : _acceptor(port_in, *this),
       _static_repo(std::move(repo)),
       _self(make_string("%s:%d", HostName::get().c_str(), _acceptor.port()))
 {
 }
+
+WebsocketServer::~WebsocketServer() {}
 
 void
 WebsocketServer::handle(std::unique_ptr<Socket> socket)

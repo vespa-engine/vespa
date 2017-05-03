@@ -7,7 +7,7 @@ using namespace vespalib;
 TEST("require that MemoryInput wrapper works as expected") {
     const char *data = "1234567890";
     Memory memory(data);
-    EXPECT_EQUAL(memory.size, 10);
+    EXPECT_EQUAL(memory.size, 10u);
     MemoryInput input(memory);
     EXPECT_EQUAL(input.obtain(), memory);
     input.evict(5);
