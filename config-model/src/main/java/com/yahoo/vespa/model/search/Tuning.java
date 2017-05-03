@@ -132,9 +132,9 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
 
             @Override
             public void getConfig(ProtonConfig.Builder builder) {
-                if (initialDocumentCount!=null) builder.
-                                                    grow(new ProtonConfig.Grow.Builder().
-                                                        initial(initialDocumentCount));
+                if (initialDocumentCount!=null) {
+                    builder.grow.initial(initialDocumentCount);
+                }
             }
 
         }
@@ -147,16 +147,15 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
 
                 @Override
                 public void getConfig(ProtonConfig.Builder builder) {
-                    ProtonConfig.Indexing.Builder indexingB = new ProtonConfig.Indexing.Builder();
-                    if (write != null) indexingB.
-                                            write(new ProtonConfig.Indexing.Write.Builder().
-                                                io(ProtonConfig.Indexing.Write.Io.Enum.valueOf(write.name)));
-                    if (read != null) indexingB.
-                                            read(new ProtonConfig.Indexing.Read.Builder().
-                                                io(ProtonConfig.Indexing.Read.Io.Enum.valueOf(read.name)));
-                    if (search != null) builder.search(new ProtonConfig.Search.Builder().
-                                                io(ProtonConfig.Search.Io.Enum.valueOf(search.name)));
-                    builder.indexing(indexingB);
+                    if (write != null) {
+                        builder.indexing.write.io(ProtonConfig.Indexing.Write.Io.Enum.valueOf(write.name));
+                    }
+                    if (read != null) {
+                        builder.indexing.read.io(ProtonConfig.Indexing.Read.Io.Enum.valueOf(read.name));
+                    }
+                    if (search != null) {
+                        builder.search.io(ProtonConfig.Search.Io.Enum.valueOf(search.name));
+                    }
                 }
 
             }
@@ -177,11 +176,10 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
 
                 @Override
                 public void getConfig(ProtonConfig.Builder builder) {
-                    if (write != null) builder.attribute(new ProtonConfig.Attribute.Builder().
-                            write(new ProtonConfig.Attribute.Write.Builder().
-                                    io(ProtonConfig.Attribute.Write.Io.Enum.valueOf(write.name))));
+                    if (write != null) {
+                        builder.attribute.write.io(ProtonConfig.Attribute.Write.Io.Enum.valueOf(write.name));
+                    }
                 }
-
             }
 
             public Io io;
@@ -199,12 +197,12 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
                 public IoType read = null;
 
                 public void getConfig(ProtonConfig.Summary.Builder builder) {
-                    if (write != null) builder.
-                                           write(new ProtonConfig.Summary.Write.Builder().
-                                           io(ProtonConfig.Summary.Write.Io.Enum.valueOf(write.name)));
-                    if (read != null) builder.
-                                          read(new ProtonConfig.Summary.Read.Builder().
-                                          io(ProtonConfig.Summary.Read.Io.Enum.valueOf(read.name)));
+                    if (write != null) {
+                        builder.write.io(ProtonConfig.Summary.Write.Io.Enum.valueOf(write.name));
+                    }
+                    if (read != null) {
+                        builder.read.io(ProtonConfig.Summary.Read.Io.Enum.valueOf(read.name));
+                    }
                 }
             }
 
@@ -265,9 +263,7 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
                             if (initialEntries!=null) cache.initialentries(initialEntries);
                         }
                         if (compression != null) {
-                            ProtonConfig.Summary.Cache.Compression.Builder compressionB = new ProtonConfig.Summary.Cache.Compression.Builder();
-                            compression.getConfig(compressionB);
-                            cache.compression(compressionB);
+                            compression.getConfig(cache.compression);
                         }
                     }
 
@@ -278,9 +274,7 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
                             throw new IllegalStateException("Fix this, chunk does not have long types");
                         }
                         if (compression != null) {
-                           ProtonConfig.Summary.Log.Chunk.Compression.Builder compressionB = new ProtonConfig.Summary.Log.Chunk.Compression.Builder();
-                           compression.getConfig(compressionB);
-                           chunk.compression(compressionB);
+                           compression.getConfig(chunk.compression);
                         }
                     }
                 }
@@ -298,9 +292,7 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
                         if (minFileSizeFactor!=null) log.minfilesizefactor(minFileSizeFactor);
                         if (numThreads != null) log.numthreads(numThreads);
                         if (chunk != null) {
-                            ProtonConfig.Summary.Log.Chunk.Builder chunkB = new ProtonConfig.Summary.Log.Chunk.Builder();
-                            chunk.getConfig(chunkB);
-                            log.chunk(chunkB);
+                            chunk.getConfig(log.chunk);
                         }
                     }
                 }
@@ -310,15 +302,11 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
 
                 public void getConfig(ProtonConfig.Summary.Builder builder) {
                     if (cache != null) {
-                        ProtonConfig.Summary.Cache.Builder cacheB=new ProtonConfig.Summary.Cache.Builder();
-                        cache.getConfig(cacheB);
-                        builder.cache(cacheB);
+                        cache.getConfig(builder.cache);
 
                     }
                     if (logStore != null) {
-                        ProtonConfig.Summary.Log.Builder logB = new ProtonConfig.Summary.Log.Builder();
-                        logStore.getConfig(logB);
-                        builder.log(logB);
+                        logStore.getConfig(builder.log);
                     }
                 }
             }
@@ -328,10 +316,12 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
 
             @Override
             public void getConfig(ProtonConfig.Builder builder) {
-                ProtonConfig.Summary.Builder summary = new ProtonConfig.Summary.Builder();
-                if (io != null) io.getConfig(summary);
-                if (store != null) store.getConfig(summary);
-                builder.summary(summary);
+                if (io != null) {
+                    io.getConfig(builder.summary);
+                }
+                if (store != null) {
+                    store.getConfig(builder.summary);
+                }
             }
         }
 
@@ -341,7 +331,7 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
             @Override
             public void getConfig(ProtonConfig.Builder builder) {
                 if (threads != null) {
-                    builder.initialize(new ProtonConfig.Initialize.Builder().threads(threads));
+                    builder.initialize.threads(threads);
                 }
             }
         }
