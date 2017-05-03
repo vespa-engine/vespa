@@ -19,7 +19,7 @@
 #define TEST_SETUP(test) \
   class test : public vespalib::TestApp \
   { \
-    public: int Main() override; \
+    public: int Main(); \
   }; \
   TEST_APPHOOK(test)
 #define TEST_SETUP_WITHPROCESSPROXY(test) \

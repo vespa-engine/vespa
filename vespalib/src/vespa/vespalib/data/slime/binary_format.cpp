@@ -1,7 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "binary_format.h"
+#include "inserter.h"
 #include "slime.h"
+#include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/data/memory_input.h>
 
 namespace vespalib {
@@ -261,28 +263,6 @@ size_t
 BinaryFormat::decode_into(const Memory &memory, Slime &slime, const Inserter &inserter)
 {
     return binary_format::decode<true>(memory, slime, inserter);
-}
-
-namespace binary_format {
-
-void
-write_cmpr_ulong(OutputWriter &out, uint64_t value) {
-    out.commit(encode_cmpr_ulong(out.reserve(10), value));
-}
-
-void
-write_type_and_size(OutputWriter &out, uint32_t type, uint64_t size) {
-    char *start = out.reserve(11); // max size
-    char *pos = start;
-    if (size <= 30) {
-        *pos++ = encode_type_and_meta(type, size + 1);
-    } else {
-        *pos++ = encode_type_and_meta(type, 0);
-        pos += encode_cmpr_ulong(pos, size);
-    }
-    out.commit(pos - start);
-}
-
 }
 
 } // namespace vespalib::slime

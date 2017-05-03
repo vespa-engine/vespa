@@ -68,11 +68,8 @@ public:
        using UP = std::unique_ptr<Anything>;
        virtual ~Anything() { }
     };
-    ExceptionWithPayload(vespalib::stringref msg);
-    ExceptionWithPayload(vespalib::stringref msg, Anything::UP payload);
-    ExceptionWithPayload(ExceptionWithPayload &&) = default;
-    ExceptionWithPayload & operator = (ExceptionWithPayload &&) = default;
-    ~ExceptionWithPayload();
+    ExceptionWithPayload(vespalib::stringref msg) : std::exception(), _msg(msg), _payload() { }
+    ExceptionWithPayload(vespalib::stringref msg, Anything::UP payload) : std::exception(), _msg(msg), _payload(std::move(payload)) { }
     void setPayload(Anything::UP payload) { _payload = std::move(payload); }
     const char * what() const noexcept override;
 private:
@@ -107,11 +104,6 @@ public:
                         const Exception &cause,
                         const vespalib::stringref &msg = "",
                         const vespalib::stringref &location = "", int skipStack = 0);
-    PortListenException(PortListenException &&) = default;
-    PortListenException & operator = (PortListenException &&) = default;
-    PortListenException(const PortListenException &);
-    PortListenException & operator = (const PortListenException &);
-    ~PortListenException();
     VESPA_DEFINE_EXCEPTION_SPINE(PortListenException);
     int get_port() const { return _port; }
     const vespalib::string &get_protocol() const { return _protocol; }

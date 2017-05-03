@@ -1,9 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
+#include <vespa/fastos/fastos.h>
+#include <stddef.h>
+#include <vespa/log/log.h>
+LOG_SETUP("alloc_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <cstddef>
 
 using namespace vespalib;
 using namespace vespalib::alloc;
@@ -14,11 +16,11 @@ testSwap(T & a, T & b)
 {
     void * tmpA(a.get());
     void * tmpB(b.get());
-    EXPECT_EQUAL(4096ul, a.size());
-    EXPECT_EQUAL(8192ul, b.size());
+    EXPECT_EQUAL(4096u, a.size());
+    EXPECT_EQUAL(8192, b.size());
     std::swap(a, b);
-    EXPECT_EQUAL(4096ul, b.size());
-    EXPECT_EQUAL(8192ul, a.size());
+    EXPECT_EQUAL(4096u, b.size());
+    EXPECT_EQUAL(8192, a.size());
     EXPECT_EQUAL(tmpA, b.get());
     EXPECT_EQUAL(tmpB, a.get());
 }
@@ -85,46 +87,46 @@ TEST("no rounding of small heap buffer") {
 
 TEST("no rounding of large heap buffer") {
     Alloc buf = Alloc::alloc(MemoryAllocator::HUGEPAGE_SIZE*11+3, MemoryAllocator::HUGEPAGE_SIZE*16);
-    EXPECT_EQUAL(size_t(MemoryAllocator::HUGEPAGE_SIZE*11+3), buf.size());
+    EXPECT_EQUAL(MemoryAllocator::HUGEPAGE_SIZE*11+3, buf.size());
 }
 
 TEST("rounding of small mmaped buffer") {
     Alloc buf = Alloc::alloc(MemoryAllocator::HUGEPAGE_SIZE);
     EXPECT_EQUAL(MemoryAllocator::HUGEPAGE_SIZE, buf.size());
     buf = Alloc::alloc(MemoryAllocator::HUGEPAGE_SIZE+1);
-    EXPECT_EQUAL(MemoryAllocator::HUGEPAGE_SIZE*2ul, buf.size());
+    EXPECT_EQUAL(MemoryAllocator::HUGEPAGE_SIZE*2, buf.size());
 }
 
 TEST("rounding of large mmaped buffer") {
     Alloc buf = Alloc::alloc(MemoryAllocator::HUGEPAGE_SIZE*11+3);
-    EXPECT_EQUAL(MemoryAllocator::HUGEPAGE_SIZE*12ul, buf.size());
+    EXPECT_EQUAL(MemoryAllocator::HUGEPAGE_SIZE*12, buf.size());
 }
 
 TEST("heap alloc can not be extended") {
     Alloc buf = Alloc::allocHeap(100);
     void * oldPtr = buf.get();
-    EXPECT_EQUAL(100ul, buf.size());
+    EXPECT_EQUAL(100, buf.size());
     EXPECT_FALSE(buf.resize_inplace(101));
     EXPECT_EQUAL(oldPtr, buf.get());
-    EXPECT_EQUAL(100ul, buf.size());
+    EXPECT_EQUAL(100, buf.size());
 }
 
 TEST("auto alloced heap alloc can not be extended") {
     Alloc buf = Alloc::alloc(100);
     void * oldPtr = buf.get();
-    EXPECT_EQUAL(100ul, buf.size());
+    EXPECT_EQUAL(100, buf.size());
     EXPECT_FALSE(buf.resize_inplace(101));
     EXPECT_EQUAL(oldPtr, buf.get());
-    EXPECT_EQUAL(100ul, buf.size());
+    EXPECT_EQUAL(100, buf.size());
 }
 
 TEST("auto alloced heap alloc can not be extended, even if resize will be mmapped") {
     Alloc buf = Alloc::alloc(100);
     void * oldPtr = buf.get();
-    EXPECT_EQUAL(100ul, buf.size());
+    EXPECT_EQUAL(100, buf.size());
     EXPECT_FALSE(buf.resize_inplace(MemoryAllocator::HUGEPAGE_SIZE*3));
     EXPECT_EQUAL(oldPtr, buf.get());
-    EXPECT_EQUAL(100ul, buf.size());
+    EXPECT_EQUAL(100, buf.size());
 }
 
 TEST("auto alloced mmap alloc can be extended if room") {
@@ -181,10 +183,10 @@ TEST("mmap alloc can be extended if room") {
     }
 
     void * oldPtr = buf.get();
-    EXPECT_EQUAL(4096ul, buf.size());
+    EXPECT_EQUAL(4096, buf.size());
     EXPECT_TRUE(buf.resize_inplace(4097));
     EXPECT_EQUAL(oldPtr, buf.get());
-    EXPECT_EQUAL(8192ul, buf.size());
+    EXPECT_EQUAL(8192, buf.size());
 }
 
 TEST("mmap alloc can not be extended if no room") {
@@ -197,37 +199,37 @@ TEST("mmap alloc can not be extended if no room") {
     EXPECT_EQUAL(reserved.get(), static_cast<const char *>(buf.get()) + buf.size());
 
     void * oldPtr = buf.get();
-    EXPECT_EQUAL(4096ul, buf.size());
+    EXPECT_EQUAL(4096, buf.size());
     EXPECT_FALSE(buf.resize_inplace(4097));
     EXPECT_EQUAL(oldPtr, buf.get());
-    EXPECT_EQUAL(4096ul, buf.size());
+    EXPECT_EQUAL(4096, buf.size());
 }
 
 TEST("heap alloc can not be shrinked") {
     Alloc buf = Alloc::allocHeap(101);
     void * oldPtr = buf.get();
-    EXPECT_EQUAL(101ul, buf.size());
+    EXPECT_EQUAL(101, buf.size());
     EXPECT_FALSE(buf.resize_inplace(100));
     EXPECT_EQUAL(oldPtr, buf.get());
-    EXPECT_EQUAL(101ul, buf.size());
+    EXPECT_EQUAL(101, buf.size());
 }
 
 TEST("mmap alloc can be shrinked") {
     Alloc buf = Alloc::allocMMap(4097);
     void * oldPtr = buf.get();
-    EXPECT_EQUAL(8192ul, buf.size());
+    EXPECT_EQUAL(8192, buf.size());
     EXPECT_TRUE(buf.resize_inplace(4095));
     EXPECT_EQUAL(oldPtr, buf.get());
-    EXPECT_EQUAL(4096ul, buf.size());
+    EXPECT_EQUAL(4096, buf.size());
 }
 
 TEST("auto alloced heap alloc can not be shrinked") {
     Alloc buf = Alloc::alloc(101);
     void * oldPtr = buf.get();
-    EXPECT_EQUAL(101ul, buf.size());
+    EXPECT_EQUAL(101, buf.size());
     EXPECT_FALSE(buf.resize_inplace(100));
     EXPECT_EQUAL(oldPtr, buf.get());
-    EXPECT_EQUAL(101ul, buf.size());
+    EXPECT_EQUAL(101, buf.size());
 }
 
 TEST("auto alloced mmap alloc can be shrinked") {

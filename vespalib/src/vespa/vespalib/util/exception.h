@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/macro.h>
 #include <vespa/vespalib/util/error.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <string>
 #include <exception>
 
 #define VESPALIB_EXCEPTION_USEBACKTRACES
@@ -188,7 +189,8 @@ public:
      *                  should send (skipStack + 1) to the parent constructor (see
      *                  \ref VESPA_DEFINE_EXCEPTION for subclass implementation).
      **/
-    Exception(const stringref &msg, const stringref& location = "", int skipStack = 0);
+    Exception(const stringref &msg, const stringref& location = "",
+              int skipStack = 0);
     /**
      * @brief Construct an exception with a message, a causing exception, and a source code location.
      * @param msg A user-readable message describing the problem
@@ -202,12 +204,6 @@ public:
      **/
     Exception(const stringref &msg, const Exception &cause,
               const stringref &location = "", int skipStack = 0);
-    Exception(const Exception &);
-    Exception & operator = (const Exception &);
-    Exception(Exception &&) = default;
-    Exception & operator = (Exception &&) = default;
-    virtual ~Exception();
-
 
     /** @brief Returns a string describing the current exception, including cause if any */
     const char *what() const throw() override; // should not be overridden
@@ -229,6 +225,9 @@ public:
 
     /** @brief Throw a copy of this object */
     virtual void throwSelf() const;
+
+    /** @brief destructor doing cleanup if needed */
+    virtual ~Exception() throw();
 
     /** @brief make a string describing the current object, not including cause */
     virtual string toString() const;

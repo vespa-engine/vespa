@@ -12,7 +12,7 @@ namespace alloc {
 
 class MemoryAllocator {
 public:
-    enum {HUGEPAGE_SIZE=0x200000u};
+    enum {HUGEPAGE_SIZE=0x200000};
     using UP = std::unique_ptr<MemoryAllocator>;
     using PtrAndSize = std::pair<void *, size_t>;
     MemoryAllocator(const MemoryAllocator &) = delete;
