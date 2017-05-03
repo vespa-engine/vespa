@@ -4,6 +4,7 @@ vespa_add_executable(fastlib_unicodeutiltest_app TEST
     unicodeutiltest.cpp
     DEPENDS
     fastlib_text
+    fastlib_fast_testsuite
 )
 vespa_add_test(NAME fastlib_unicodeutiltest_app NO_VALGRIND COMMAND fastlib_unicodeutiltest_app)
 vespa_add_executable(fastlib_latintokenizertest_app TEST
@@ -11,6 +12,7 @@ vespa_add_executable(fastlib_latintokenizertest_app TEST
     latintokenizertest.cpp
     DEPENDS
     fastlib_text
+    fastlib_fast_testsuite
 )
 vespa_add_test(NAME fastlib_latintokenizertest_app NO_VALGRIND COMMAND fastlib_latintokenizertest_app)
 vespa_add_executable(fastlib_wordfolderstest_app TEST
@@ -18,5 +20,6 @@ vespa_add_executable(fastlib_wordfolderstest_app TEST
     wordfolderstest.cpp
     DEPENDS
     fastlib_text
+    fastlib_fast_testsuite
 )
 vespa_add_test(NAME fastlib_wordfolderstest_app NO_VALGRIND COMMAND fastlib_wordfolderstest_app)
