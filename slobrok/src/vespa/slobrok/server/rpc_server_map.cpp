@@ -89,25 +89,23 @@ RpcServerMap::addNew(ManagedRpcServer *rpcsrv)
         NamedService *oldvis = _visible_map.remove(name);
 
         const char *spec = rpcsrv->getSpec();
-        LOG(warning, "internal state problem: adding [%s at %s] but already had"
-            " oldvis %p oldman %p oldres %p",
-            name, spec, oldvis, oldman, oldres);
-        if (oldvis != NULL) {
-            const char *n = oldvis->getName();
-            const char *s = oldvis->getSpec();
-            LOG(warning, "oldvis: [%s at %s]", n, s);
+        const char *oldname = oldman->getName();
+        const char *oldspec = oldman->getSpec();
+        if (strcmp(spec, oldspec) != 0)  {
+            LOG(warning, "internal state problem: adding [%s at %s] but already had [%s at %s]",
+                name, spec, oldname, oldspec);
+            if (oldvis != oldman) {
+                const char *n = oldvis->getName();
+                const char *s = oldvis->getSpec();
+                LOG(warning, "BAD: different old visible: [%s at %s]", n, s);
+            }
+            if (oldres != NULL) {
+                const char *n = oldres->getName();
+                const char *s = oldres->getSpec();
+                LOG(warning, "old reservation: [%s at %s]", n, s);
+            }
         }
-        if (oldres != NULL) {
-            const char *n = oldres->getName();
-            const char *s = oldres->getSpec();
-            LOG(warning, "oldres: [%s at %s]", n, s);
-        }
-
-        const char *n = oldman->getName();
-        const char *s = oldman->getSpec();
-        LOG(warning, "oldman: [%s at %s]", n, s);
         delete oldman;
-        LOG_ASSERT(oldman == oldvis);
     }
     add(rpcsrv);
     _myrpcsrv_map.set(name, rpcsrv);
