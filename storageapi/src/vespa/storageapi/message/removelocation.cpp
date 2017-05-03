@@ -9,16 +9,16 @@ namespace api {
 IMPLEMENT_COMMAND(RemoveLocationCommand, RemoveLocationReply)
 IMPLEMENT_REPLY(RemoveLocationReply)
 
-RemoveLocationCommand::RemoveLocationCommand(
-        const vespalib::stringref & documentSelection, const document::BucketId& id)
+RemoveLocationCommand::RemoveLocationCommand(const vespalib::stringref & documentSelection,
+                                             const document::BucketId& id)
     : BucketInfoCommand(MessageType::REMOVELOCATION, id),
       _documentSelection(documentSelection)
-{
-}
+{}
+
+RemoveLocationCommand::~RemoveLocationCommand() {}
 
 void
-RemoveLocationCommand::print(std::ostream& out, bool verbose,
-                             const std::string& indent) const
+RemoveLocationCommand::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     if (_documentSelection.length()) {
         out << "Remove selection(" << _documentSelection << "): ";

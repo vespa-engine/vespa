@@ -114,8 +114,8 @@ class EmptyBucketsReply;
 class RemoveLocationCommand;
 class RemoveLocationReply;
 
-#define _INTERNAL_DEF_ON_MC(m, c) virtual bool m(const std::shared_ptr<storage::api::c> & )
-#define _INTERNAL_DEF_IMPL_ON_MC(m, c) virtual bool m(const std::shared_ptr<storage::api::c> & ) { return false; }
+#define _INTERNAL_DEF_ON_MC(m, c) bool m(const std::shared_ptr<storage::api::c> & ) override
+#define _INTERNAL_DEF_IMPL_ON_MC(m, c) bool m(const std::shared_ptr<storage::api::c> & ) override { return false; }
 #define _INTERNAL_IMPL_ON_MC(cl, m, c, p) bool cl::m(const std::shared_ptr<storage::api::c> & p)
 #define DEF_IMPL_MSG_COMMAND_H(m) _INTERNAL_DEF_IMPL_ON_MC(on##m, m##Command)
 #define DEF_IMPL_MSG_REPLY_H(m) _INTERNAL_DEF_IMPL_ON_MC(on##m##Reply, m##Reply)
@@ -365,4 +365,3 @@ public:
 
 } // api
 } // storage
-

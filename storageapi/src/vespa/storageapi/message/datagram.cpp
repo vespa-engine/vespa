@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-//
+
 #include "datagram.h"
-#include <cassert>
 
 namespace storage {
 namespace api {
@@ -25,6 +24,8 @@ DocBlockCommand::DocBlockCommand(const document::BucketId& bucketId,
       _keepTimeStamps(false)
 {
 }
+
+DocBlockCommand::~DocBlockCommand() {}
 
 void
 DocBlockCommand::print(std::ostream& out, bool verbose,

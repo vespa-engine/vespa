@@ -7,8 +7,7 @@
 #include <vespa/storageapi/defs.h>
 #include <vespa/vdslib/container/documentlist.h>
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 /**
  * @class DocBlockCommand
@@ -27,6 +26,7 @@ public:
     DocBlockCommand(const document::BucketId& bucketId,
                     const vdslib::DocumentList& block,
                     const std::shared_ptr<void>& buffer);
+    ~DocBlockCommand();
 
     vdslib::DocumentList& getDocumentBlock()
         { assert(_docBlock.getBufferSize() > 0); return _docBlock; }
@@ -174,5 +174,4 @@ public:
     DECLARE_STORAGEREPLY(EmptyBucketsReply, onEmptyBucketsReply)
 };
 
-} // api
-} // storage
+}

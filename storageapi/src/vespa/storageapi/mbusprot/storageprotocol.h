@@ -14,12 +14,11 @@ public:
 
     static mbus::string NAME;
 
-    StorageProtocol(const document::DocumentTypeRepo::SP,
-                    const documentapi::LoadTypeSet& loadTypes);
+    StorageProtocol(const document::DocumentTypeRepo::SP, const documentapi::LoadTypeSet& loadTypes);
+    ~StorageProtocol();
 
     const mbus::string& getName() const override { return NAME; }
-    mbus::IRoutingPolicy::UP createPolicy(const mbus::string& name,
-                                          const mbus::string& param) const override;
+    mbus::IRoutingPolicy::UP createPolicy(const mbus::string& name, const mbus::string& param) const override;
     mbus::Blob encode(const vespalib::Version&, const mbus::Routable&) const override;
     mbus::Routable::UP decode(const vespalib::Version&, mbus::BlobRef) const override;
 
