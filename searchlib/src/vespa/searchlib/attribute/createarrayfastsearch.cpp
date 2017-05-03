@@ -1,23 +1,22 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/attribute/floatbase.h>
-#include <vespa/searchlib/attribute/flagattribute.h>
+#include "attributefactory.h"
+#include "integerbase.h"
+#include "floatbase.h"
+#include "flagattribute.h"
 #include "defines.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".createarrayfastsearch");
 
-#include <vespa/searchlib/attribute/attributevector.hpp>
-#include <vespa/searchlib/attribute/enumstore.hpp>
-#include <vespa/searchlib/attribute/enumattribute.hpp>
-#include <vespa/searchlib/attribute/multivalueattribute.hpp>
-#include <vespa/searchlib/attribute/multienumattribute.hpp>
-#include <vespa/searchlib/attribute/multinumericenumattribute.hpp>
-#include <vespa/searchlib/attribute/multinumericpostattribute.hpp>
-#include <vespa/searchlib/attribute/multistringpostattribute.hpp>
+#include "attributevector.hpp"
+#include "enumstore.hpp"
+#include "enumattribute.hpp"
+#include "multivalueattribute.hpp"
+#include "multienumattribute.hpp"
+#include "multinumericenumattribute.hpp"
+#include "multinumericpostattribute.hpp"
+#include "multistringpostattribute.hpp"
 
 namespace search {
 

@@ -78,6 +78,7 @@ public:
                uint32_t intFormatWidth = 1,
                uint32_t floatFormatWidth = 1,
                uint32_t floatFormatPrecision = 2);
+        ~Dumper();
 
         vespalib::string toString() const { return _str; }
 
@@ -105,6 +106,7 @@ public:
     MonitoringSearchIterator(const vespalib::string &name,
                              SearchIterator::UP search,
                              bool collectHitSkipStats);
+    ~MonitoringSearchIterator();
 
     // Overrides SearchIterator
     void doSeek(uint32_t docId) override;

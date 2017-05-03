@@ -3,7 +3,6 @@
 #include "predicate_index.h"
 #include "predicate_hash.h"
 
-
 using search::datastore::EntryRef;
 using vespalib::DataBuffer;
 using std::vector;
@@ -87,6 +86,21 @@ public:
 
 PredicateIndex::PredicateIndex(GenerationHandler &generation_handler, GenerationHolder &genHolder,
                                const DocIdLimitProvider &limit_provider,
+                               const SimpleIndexConfig &simple_index_config, uint32_t arity)
+    : _arity(arity),
+      _generation_handler(generation_handler),
+      _limit_provider(limit_provider),
+      _interval_index(genHolder, limit_provider, simple_index_config),
+      _bounds_index(genHolder, limit_provider, simple_index_config),
+      _interval_store(),
+      _zero_constraint_docs(),
+      _features_store(arity),
+      _cache(genHolder)
+{
+}
+
+PredicateIndex::PredicateIndex(GenerationHandler &generation_handler, GenerationHolder &genHolder,
+                               const DocIdLimitProvider &limit_provider,
                                const SimpleIndexConfig &simple_index_config, DataBuffer &buffer,
                                SimpleIndexDeserializeObserver<> & observer, uint32_t version)
     : _arity(0),
@@ -116,6 +130,8 @@ PredicateIndex::PredicateIndex(GenerationHandler &generation_handler, Generation
     _bounds_index.deserialize(buffer, bounds_deserializer, observer, version);
     commit();
 }
+
+PredicateIndex::~PredicateIndex() {}
 
 void PredicateIndex::serialize(DataBuffer &buffer) const {
     _features_store.serialize(buffer);

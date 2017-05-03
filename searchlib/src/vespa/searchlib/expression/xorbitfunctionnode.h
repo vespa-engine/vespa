@@ -3,15 +3,15 @@
 
 #include "unarybitfunctionnode.h"
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 class XorBitFunctionNode : public UnaryBitFunctionNode
 {
 public:
     DECLARE_EXPRESSIONNODE(XorBitFunctionNode);
-    XorBitFunctionNode() { }
+    XorBitFunctionNode();
     XorBitFunctionNode(ExpressionNode::UP arg, unsigned numBits);
+    ~XorBitFunctionNode();
 private:
     mutable std::vector<uint8_t> _tmpXor;
     bool internalExecute(const vespalib::nbostream & os) const override;
@@ -19,5 +19,3 @@ private:
 };
 
 }
-}
-

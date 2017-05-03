@@ -22,9 +22,10 @@ public:
 
     DECLARE_EXPRESSIONNODE(StringBucketResultNode);
     DECLARE_NBO_SERIALIZE;
-    StringBucketResultNode() : _from(new StringResultNode()), _to(new StringResultNode()) {}
-    StringBucketResultNode(const vespalib::stringref & from, const vespalib::stringref & to) : _from(new StringResultNode(from)), _to(new StringResultNode(to)) {}
+    StringBucketResultNode();
+    StringBucketResultNode(const vespalib::stringref & from, const vespalib::stringref & to);
     StringBucketResultNode(ResultNode::UP from, ResultNode::UP to) : _from(from.release()), _to(to.release()) {}
+    ~StringBucketResultNode();
     size_t hash() const override;
     int onCmp(const Identifiable & b) const override;
     int contains(const StringBucketResultNode & b) const;

@@ -25,7 +25,8 @@ class ExpressionCountAggregationResult : public AggregationResult {
     void onPrepare(const ResultNode &, bool) override { }
 public:
     DECLARE_AGGREGATIONRESULT(ExpressionCountAggregationResult);
-    ExpressionCountAggregationResult() : AggregationResult(), _hll() { }
+    ExpressionCountAggregationResult();
+    ~ExpressionCountAggregationResult();
 
     void visitMembers(vespalib::ObjectVisitor &) const override {}
     const Sketch<PRECISION, uint32_t> &getSketch() const { return _hll.getSketch(); }

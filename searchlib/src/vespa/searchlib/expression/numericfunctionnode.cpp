@@ -1,12 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/expression/numericfunctionnode.h>
-#include <stdexcept>
+#include "numericfunctionnode.h"
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 IMPLEMENT_ABSTRACT_EXPRESSIONNODE(NumericFunctionNode,  MultiArgFunctionNode);
+
+NumericFunctionNode::NumericFunctionNode() : _handler() { }
+NumericFunctionNode::~NumericFunctionNode() {}
 
 NumericFunctionNode::NumericFunctionNode(const NumericFunctionNode & rhs) :
     MultiArgFunctionNode(rhs),
@@ -147,7 +147,6 @@ void NumericFunctionNode::FlattenStringHandler::handle(const ResultNode & arg)
     function().flatten(static_cast<const ResultNodeVector &> (arg), _result);
 }
 
-}
 }
 
 // this function was added by ../../forcelink.sh

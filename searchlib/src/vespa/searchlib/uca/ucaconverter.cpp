@@ -1,13 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/common/sortspec.h>
-#include <vespa/searchlib/uca/ucaconverter.h>
+
+#include "ucaconverter.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/sync.h>
-#include <unicode/coll.h>
-#include <unicode/ustring.h>
-#include <stdexcept>
-#include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".search.common.sortspec");
@@ -60,6 +55,8 @@ UcaConverter::UcaConverter(vespalib::stringref locale, vespalib::stringref stren
         throw std::runtime_error("Failed Collator::createInstance(Locale(locale.c_str()), status) with locale : " + locale);
     }
 }
+
+UcaConverter::~UcaConverter() {}
 
 int UcaConverter::utf8ToUtf16(const ConstBufferRef & src) const
 {

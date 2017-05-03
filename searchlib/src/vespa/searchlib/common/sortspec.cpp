@@ -1,15 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/common/sortspec.h>
-#include <vespa/searchlib/common/converters.h>
+#include "sortspec.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/sync.h>
-#include <unicode/ustring.h>
-#include <stdexcept>
 #include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/vespalib/text/utf8.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".search.common.sortspec");
 
 namespace search {
 namespace common {
@@ -40,6 +34,11 @@ ConstBufferRef LowercaseConverter::onConvert(const ConstBufferRef & src) const
     }
     return ConstBufferRef(_buffer.begin(), _buffer.size());
 }
+
+SortInfo::SortInfo(const vespalib::string & field, bool ascending, const BlobConverter::SP & converter)
+    : _field(field), _ascending(ascending), _converter(converter)
+{ }
+SortInfo::~SortInfo() {}
 
 SortSpec::SortSpec(const vespalib::string & spec, const ConverterFactory & ucaFactory) :
     _spec(spec)
@@ -104,6 +103,8 @@ SortSpec::SortSpec(const vespalib::string & spec, const ConverterFactory & ucaFa
         }
     }
 }
+
+SortSpec::~SortSpec() {}
 
 }
 }

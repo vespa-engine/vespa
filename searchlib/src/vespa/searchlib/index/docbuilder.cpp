@@ -1,12 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "docbuilder.h"
-#include "doctypebuilder.h"
-#include <vespa/document/datatype/annotationtype.h>
-#include <vespa/document/datatype/datatypes.h>
 #include <vespa/document/datatype/urldatatype.h>
-#include <vespa/document/fieldvalue/fieldvalues.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/fastlib/text/unicodeutil.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/text/utf8.h>
@@ -652,6 +647,8 @@ DocBuilder::DocBuilder(const Schema &schema)
       _currDoc()
 {
 }
+
+DocBuilder::~DocBuilder() {}
 
 DocBuilder &
 DocBuilder::startDocument(const vespalib::string & docId)

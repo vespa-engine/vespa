@@ -5,8 +5,7 @@
 #include "hitlist.h"
 #include <vespa/searchlib/expression/floatresultnode.h>
 
-namespace search {
-namespace aggregation {
+namespace search::aggregation {
 
 class HitsAggregationResult : public AggregationResult
 {
@@ -43,15 +42,8 @@ public:
     };
 
     DECLARE_AGGREGATIONRESULT(HitsAggregationResult);
-    HitsAggregationResult() :
-        AggregationResult(),
-        _summaryClass("default"),
-        _maxHits(std::numeric_limits<uint32_t>::max()),
-        _hits(),
-        _isOrdered(false),
-        _bestHitRank(),
-        _summaryGenerator(0)
-    {}
+    HitsAggregationResult();
+    ~HitsAggregationResult();
     void postMerge() override { _hits.postMerge(_maxHits); }
     void setSummaryGenerator(SummaryGenerator & summaryGenerator) { _summaryGenerator = &summaryGenerator; }
     const SummaryClassType & getSummaryClass() const { return _summaryClass; }
@@ -70,5 +62,3 @@ public:
 };
 
 }
-}
-

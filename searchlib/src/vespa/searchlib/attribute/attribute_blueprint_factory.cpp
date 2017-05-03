@@ -18,9 +18,15 @@
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/orlikesearch.h>
+#include <vespa/searchlib/queryeval/dot_product_blueprint.h>
+#include <vespa/searchlib/queryeval/wand/parallel_weak_and_blueprint.h>
 #include <vespa/searchlib/queryeval/predicate_blueprint.h>
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_search.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
+#include <vespa/searchlib/queryeval/weighted_set_term_blueprint.h>
+#include <vespa/searchlib/queryeval/get_weight_from_node.h>
+
+
 #include <vespa/vespalib/util/regexp.h>
 #include <sstream>
 

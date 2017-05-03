@@ -22,8 +22,9 @@ public:
 
     DECLARE_EXPRESSIONNODE(RawBucketResultNode);
     DECLARE_NBO_SERIALIZE;
-    RawBucketResultNode() : _from(new RawResultNode()), _to(new RawResultNode()) {}
+    RawBucketResultNode();
     RawBucketResultNode(ResultNode::UP from, ResultNode::UP to) : _from(from.release()), _to(to.release()) {}
+    ~RawBucketResultNode();
     size_t hash() const override;
     int onCmp(const Identifiable & b) const override;
     int contains(const RawBucketResultNode & b) const;

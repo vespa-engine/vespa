@@ -78,8 +78,9 @@ PhraseSplitter::PhraseSplitter(const IQueryEnvironment & queryEnv,
             _copyInfo.push_back(meta);
         }
     }
-
 }
+
+PhraseSplitter::~PhraseSplitter() {}
 
 void
 PhraseSplitter::copyTermFieldMatchData(TermFieldMatchData & dst, const TermFieldMatchData & src, uint32_t hitOffset)

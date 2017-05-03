@@ -1,10 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
+
 #include "monitoring_search_iterator.h"
-#include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".queryeval.monitoring_search_iterator");
 
 using vespalib::make_string;
@@ -80,6 +79,8 @@ MonitoringSearchIterator::Dumper::Dumper(int indent,
       _stack()
 {
 }
+
+MonitoringSearchIterator::Dumper::~Dumper() {}
 
 void
 MonitoringSearchIterator::Dumper::openStruct(const vespalib::string &name, const vespalib::string &type)
@@ -187,6 +188,8 @@ MonitoringSearchIterator::MonitoringSearchIterator(const vespalib::string &name,
 {
 }
 
+MonitoringSearchIterator::~MonitoringSearchIterator() {}
+
 void
 MonitoringSearchIterator::doSeek(uint32_t docId)
 {
@@ -236,4 +239,3 @@ MonitoringSearchIterator::visitMembers(vespalib::ObjectVisitor &visitor) const
 
 }  // namespace queryeval
 }  // namespace search
-

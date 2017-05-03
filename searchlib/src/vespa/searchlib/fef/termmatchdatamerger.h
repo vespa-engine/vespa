@@ -37,6 +37,7 @@ public:
 
     TermMatchDataMerger(const Inputs &allinputs,
                         const TermFieldMatchDataArray &outputs);
+    ~TermMatchDataMerger();
 
     void merge(uint32_t docid);
 };

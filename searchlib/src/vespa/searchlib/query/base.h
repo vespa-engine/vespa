@@ -49,7 +49,7 @@ typedef std::vector<DocumentIdT> DocumentIdList;
 #define NELEMS(a)    (sizeof(a)/sizeof(a[0]))
 
 /// A macro used in descendants of Object to instantiate the duplicate method.
-#define DUPLICATE(a) virtual a * duplicate() const;
+#define DUPLICATE(a) a * duplicate() const override;
 #define IMPLEMENT_DUPLICATE(a) a * a::duplicate() const { return new a(*this); }
 
 /**

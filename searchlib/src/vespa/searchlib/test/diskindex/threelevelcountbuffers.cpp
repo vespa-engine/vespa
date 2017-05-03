@@ -1,20 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-#include <vespa/searchlib/bitcompression/compression.h>
-#include <vespa/searchlib/bitcompression/countcompression.h>
-#include <vespa/searchlib/index/postinglistcounts.h>
 #include "threelevelcountbuffers.h"
 
-LOG_SETUP(".threelevelcountbuffers");
-
-namespace search
-{
-
-namespace diskindex
-{
-
+namespace search::diskindex {
 
 ThreeLevelCountWriteBuffers::
 ThreeLevelCountWriteBuffers(EC &sse, EC &spe, EC &pe)
@@ -77,10 +65,7 @@ ThreeLevelCountWriteBuffers::startPad(uint32_t ssHeaderLen,
 }
 
 
-ThreeLevelCountReadBuffers::ThreeLevelCountReadBuffers(DC &ssd,
-        DC &spd,
-        DC &pd,
-        ThreeLevelCountWriteBuffers &wb)
+ThreeLevelCountReadBuffers::ThreeLevelCountReadBuffers(DC &ssd, DC &spd, DC &pd, ThreeLevelCountWriteBuffers &wb)
     : _ssd(ssd),
       _spd(spd),
       _pd(pd),
@@ -106,9 +91,7 @@ ThreeLevelCountReadBuffers::ThreeLevelCountReadBuffers(DC &ssd,
 }
 
 
-ThreeLevelCountReadBuffers::ThreeLevelCountReadBuffers(DC &ssd,
-        DC &spd,
-        DC &pd)
+ThreeLevelCountReadBuffers::ThreeLevelCountReadBuffers(DC &ssd, DC &spd, DC &pd)
     : _ssd(ssd),
       _spd(spd),
       _pd(pd),
@@ -127,7 +110,6 @@ ThreeLevelCountReadBuffers::ThreeLevelCountReadBuffers(DC &ssd,
     pd.setReadContext(&_rcpd);
 }
 
+ThreeLevelCountReadBuffers::~ThreeLevelCountReadBuffers() {}
 
-} // namespace diskindex
-
-} // namespace search
+}

@@ -74,6 +74,7 @@ public:
      * @param field the field where we need to split phrases
      **/
     PhraseSplitter(const IQueryEnvironment & queryEnv, uint32_t fieldId);
+    ~PhraseSplitter();
 
     /**
      * Copy the source object to the destination object.

@@ -4,7 +4,6 @@
 #include "aggregationresult.h"
 #include <vespa/searchlib/expression/integerresultnode.h>
 
-
 namespace search {
 namespace aggregation {
 
@@ -13,15 +12,15 @@ class XorAggregationResult : public AggregationResult
 public:
     using Int64ResultNode = expression::Int64ResultNode;
     DECLARE_AGGREGATIONRESULT(XorAggregationResult);
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     const Int64ResultNode & getXor() const { return _xor; }
     XorAggregationResult &setXor(const Int64ResultNode &i) {
         _xor = i;
         return *this;
     }
 private:
-    virtual const ResultNode & onGetRank() const { return getXor(); }
-    virtual void onPrepare(const ResultNode & result, bool useForInit);
+    const ResultNode & onGetRank() const override { return getXor(); }
+    void onPrepare(const ResultNode & result, bool useForInit) override;
     Int64ResultNode _xor;
 };
 

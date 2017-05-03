@@ -17,7 +17,7 @@ public:
     Runnable() :
         _cond(), _done(false), _stopped(false)
     { }
-    void Run(FastOS_ThreadInterface *, void *) {
+    void Run(FastOS_ThreadInterface *, void *) override{
         doRun();
 
         vespalib::MonitorGuard guard(_cond);

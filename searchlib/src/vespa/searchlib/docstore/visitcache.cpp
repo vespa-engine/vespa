@@ -36,6 +36,8 @@ BlobSet::BlobSet() :
     _buffer(Alloc::alloc(0, 16 * MemoryAllocator::HUGEPAGE_SIZE), 0)
 { }
 
+BlobSet::~BlobSet() {}
+
 namespace {
 
 size_t getBufferSize(const BlobSet::Positions & p) {

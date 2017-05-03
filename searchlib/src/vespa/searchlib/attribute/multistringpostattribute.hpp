@@ -8,7 +8,6 @@
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/query/queryterm.h>
 
-
 namespace search {
 
 template <typename B, typename T>

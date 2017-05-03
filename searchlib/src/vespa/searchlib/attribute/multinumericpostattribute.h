@@ -76,35 +76,35 @@ private:
     using PostingParent::fillPostingsFixupEnumBase;
     using PostingParent::forwardedOnAddDoc;
 
-    virtual void freezeEnumDictionary();
-    virtual void mergeMemoryStats(MemoryUsage & total);
-    virtual void applyValueChanges(const DocIndices & docIndices, EnumStoreBase::IndexVector & unused);
+    void freezeEnumDictionary() override;
+    void mergeMemoryStats(MemoryUsage & total) override;
+    void applyValueChanges(const DocIndices & docIndices, EnumStoreBase::IndexVector & unused) override;
 
 public:
     MultiValueNumericPostingAttribute(const vespalib::string & name, const AttributeVector::Config & cfg);
-    virtual~MultiValueNumericPostingAttribute();
+    ~MultiValueNumericPostingAttribute();
 
-    virtual void removeOldGenerations(generation_t firstUsed);
-    virtual void onGenerationChange(generation_t generation);
+    void removeOldGenerations(generation_t firstUsed) override;
+    void onGenerationChange(generation_t generation) override;
 
     AttributeVector::SearchContext::UP
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
 
-    virtual const IDocumentWeightAttribute *asDocumentWeightAttribute() const override;
+    const IDocumentWeightAttribute *asDocumentWeightAttribute() const override;
 
-    virtual bool onAddDoc(DocId doc) {
+    bool onAddDoc(DocId doc) override {
         return forwardedOnAddDoc(doc, this->_mvMapping.getNumKeys(), this->_mvMapping.getCapacityKeys());
     }
     
-    virtual void fillPostings(LoadedVector & loaded) {
+    void fillPostings(LoadedVector & loaded) override {
         handleFillPostings(loaded);
     }
 
-    virtual attribute::IPostingListAttributeBase *getIPostingListAttributeBase() {
+    attribute::IPostingListAttributeBase *getIPostingListAttributeBase() override {
         return this;
     }
 
-    virtual void fillPostingsFixupEnum(const LoadedEnumAttributeVector &loaded) {
+    void fillPostingsFixupEnum(const LoadedEnumAttributeVector &loaded) override {
         fillPostingsFixupEnumBase(loaded);
     }
 };

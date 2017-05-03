@@ -1,12 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
+#include "tensor_factory_blueprint.h"
+#include <vespa/eval/eval/function.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".features.tensor_factory_blueprint");
-
-#include "tensor_factory_blueprint.h"
-
-#include <vespa/eval/eval/function.h>
 
 using namespace search::fef;
 using vespalib::eval::Function;
@@ -41,6 +39,8 @@ TensorFactoryBlueprint::TensorFactoryBlueprint(const vespalib::string &baseName)
       _dimension("0") // default dimension is set to the source param if not specified.
 {
 }
+
+TensorFactoryBlueprint::~TensorFactoryBlueprint() {}
 
 } // namespace features
 } // namespace search

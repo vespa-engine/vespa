@@ -17,10 +17,10 @@ private:
 public:
     CountFS4Hits() : _hitCnt(0) {}
     uint32_t getHitCount() const { return _hitCnt; }
-    virtual bool check(const vespalib::Identifiable &obj) const {
+    bool check(const vespalib::Identifiable &obj) const override {
         return (obj.getClass().id() == FS4Hit::classId);
     }
-    virtual void execute(vespalib::Identifiable &obj) {
+    void execute(vespalib::Identifiable &obj) override {
         (void) obj;
         ++_hitCnt;
     }
@@ -34,10 +34,10 @@ private:
 
 public:
     FS4HitSetDistributionKey(uint32_t distributionKey) : _distributionKey(distributionKey) {}
-    virtual bool check(const vespalib::Identifiable &obj) const {
+    bool check(const vespalib::Identifiable &obj) const override {
         return (obj.getClass().id() == FS4Hit::classId);
     }
-    virtual void execute(vespalib::Identifiable &obj) {
+    void execute(vespalib::Identifiable &obj) override {
         static_cast<FS4Hit &>(obj).setDistributionKey(_distributionKey);
     }
 };

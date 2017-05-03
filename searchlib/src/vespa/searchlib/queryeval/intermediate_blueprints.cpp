@@ -9,10 +9,8 @@
 #include "sourceblendersearch.h"
 #include "equivsearch.h"
 #include "termwise_blueprint_helper.h"
-#include "termwise_search.h"
 #include "isourceselector.h"
 #include <vespa/searchlib/queryeval/wand/weak_and_search.h>
-
 
 namespace search {
 namespace queryeval {
@@ -305,6 +303,7 @@ OrBlueprint::createIntermediateSearch(const MultiSearch::Children &subSearches,
 }
 
 //-----------------------------------------------------------------------------
+WeakAndBlueprint::~WeakAndBlueprint() {}
 
 Blueprint::HitEstimate
 WeakAndBlueprint::combine(const std::vector<HitEstimate> &data) const

@@ -2,6 +2,9 @@
 
 #pragma once
 
+#include <cstddef>
+#include <vector>
+
 namespace search {
 namespace datastore {
 

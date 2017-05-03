@@ -58,20 +58,18 @@ DiskIndex::DiskIndex(const vespalib::string &indexDir, size_t cacheSize)
     calculateSize();
 }
 
+DiskIndex::~DiskIndex() {}
+
 bool
 DiskIndex::loadSchema(void)
 {
     vespalib::string schemaName = _indexDir + "/schema.txt";
     if (!_schema.loadFromFile(schemaName)) {
-        LOG(error,
-            "Could not open schema '%s'",
-            schemaName.c_str());
+        LOG(error, "Could not open schema '%s'", schemaName.c_str());
         return false;
     }
     if (!SchemaUtil::validateSchema(_schema)) {
-        LOG(error,
-            "Could not validate schema loaded from '%s'",
-            schemaName.c_str());
+        LOG(error, "Could not validate schema loaded from '%s'", schemaName.c_str());
         return false;
     }
     return true;
@@ -86,8 +84,7 @@ DiskIndex::openDictionaries(const TuneFileSearch &tuneFileSearch)
             _indexDir + "/" + itr.getName() + "/dictionary";
         auto dict = std::make_unique<PageDict4RandRead>();
         if (!dict->open(dictName, tuneFileSearch._read)) {
-            LOG(warning, "Could not open disk dictionary '%s'",
-                dictName.c_str());
+            LOG(warning, "Could not open disk dictionary '%s'", dictName.c_str());
             _dicts.clear();
             return false;
         }

@@ -75,31 +75,28 @@ private:
     typedef typename NodeTypes::PredicateQuery TPredicateQuery;
     typedef typename NodeTypes::RegExpTerm TRegExpTerm;
 
-    virtual void visit(And &n) { visit(static_cast<TAnd&>(n)); }
-    virtual void visit(AndNot &n) { visit(static_cast<TAndNot&>(n)); }
-    virtual void visit(Equiv &n) { visit(static_cast<TEquiv&>(n)); }
-    virtual void visit(NumberTerm &n) { visit(static_cast<TNumberTerm&>(n)); }
-    virtual void visit(LocationTerm &n) { visit(static_cast<TLocTrm&>(n)); }
-    virtual void visit(Near &n) { visit(static_cast<TNear&>(n)); }
-    virtual void visit(ONear &n) { visit(static_cast<TONear&>(n)); }
-    virtual void visit(Or &n) { visit(static_cast<TOr&>(n)); }
-    virtual void visit(Phrase &n) { visit(static_cast<TPhrase&>(n)); }
-    virtual void visit(PrefixTerm &n) { visit(static_cast<TPrefixTerm&>(n)); }
-    virtual void visit(RangeTerm &n) { visit(static_cast<TRangeTerm&>(n)); }
-    virtual void visit(Rank &n) { visit(static_cast<TRank&>(n)); }
-    virtual void visit(StringTerm &n) { visit(static_cast<TStringTerm&>(n)); }
-    virtual void visit(SubstringTerm &n) { visit(static_cast<TSubstrTr&>(n)); }
-    virtual void visit(SuffixTerm &n) { visit(static_cast<TSuffixTerm&>(n)); }
-    virtual void visit(WeakAnd &n) { visit(static_cast<TWeakAnd&>(n)); }
-    virtual void visit(WeightedSetTerm &n)
-    { visit(static_cast<TWeightedSetTerm&>(n)); }
-    virtual void visit(DotProduct &n) { visit(static_cast<TDotProduct&>(n)); }
-    virtual void visit(WandTerm &n) { visit(static_cast<TWandTerm&>(n)); }
-    virtual void visit(PredicateQuery &n)
-    { visit(static_cast<TPredicateQuery&>(n)); }
-    virtual void visit(RegExpTerm &n) { visit(static_cast<TRegExpTerm&>(n)); }
+    void visit(And &n) override { visit(static_cast<TAnd&>(n)); }
+    void visit(AndNot &n) override { visit(static_cast<TAndNot&>(n)); }
+    void visit(Equiv &n) override { visit(static_cast<TEquiv&>(n)); }
+    void visit(NumberTerm &n) override { visit(static_cast<TNumberTerm&>(n)); }
+    void visit(LocationTerm &n) override { visit(static_cast<TLocTrm&>(n)); }
+    void visit(Near &n) override { visit(static_cast<TNear&>(n)); }
+    void visit(ONear &n) override { visit(static_cast<TONear&>(n)); }
+    void visit(Or &n) override { visit(static_cast<TOr&>(n)); }
+    void visit(Phrase &n) override { visit(static_cast<TPhrase&>(n)); }
+    void visit(PrefixTerm &n) override { visit(static_cast<TPrefixTerm&>(n)); }
+    void visit(RangeTerm &n) override { visit(static_cast<TRangeTerm&>(n)); }
+    void visit(Rank &n) override { visit(static_cast<TRank&>(n)); }
+    void visit(StringTerm &n) override { visit(static_cast<TStringTerm&>(n)); }
+    void visit(SubstringTerm &n) override { visit(static_cast<TSubstrTr&>(n)); }
+    void visit(SuffixTerm &n) override { visit(static_cast<TSuffixTerm&>(n)); }
+    void visit(WeakAnd &n) override { visit(static_cast<TWeakAnd&>(n)); }
+    void visit(WeightedSetTerm &n) override { visit(static_cast<TWeightedSetTerm&>(n)); }
+    void visit(DotProduct &n) override { visit(static_cast<TDotProduct&>(n)); }
+    void visit(WandTerm &n) override { visit(static_cast<TWandTerm&>(n)); }
+    void visit(PredicateQuery &n) override { visit(static_cast<TPredicateQuery&>(n)); }
+    void visit(RegExpTerm &n) override { visit(static_cast<TRegExpTerm&>(n)); }
 };
 
 }  // namespace query
 }  // namespace search
-

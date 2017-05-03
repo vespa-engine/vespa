@@ -1,14 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "queryenvironment.h"
+#include <vespa/searchlib/fef/matchdata.h>
 #include <memory>
 #include <set>
-#include <vespa/searchlib/fef/matchdata.h>
-#include "queryenvironment.h"
 
-namespace search {
-namespace fef {
-namespace test {
+namespace search::fef::test {
 
 class MatchDataBuilder {
 public:
@@ -70,6 +68,7 @@ public:
      * @param data     The match data to build in.
      */
     MatchDataBuilder(QueryEnvironment &queryEnv, MatchData &data);
+    ~MatchDataBuilder();
 
     /**
      * Returns the term field match data that corresponds to a given
@@ -144,7 +143,4 @@ private:
     TermMap           _match;
 };
 
-} // namespace test
-} // namespace fef
-} // namespace search
-
+}

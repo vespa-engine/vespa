@@ -61,6 +61,7 @@ public:
     RangeBucketPreDefFunctionNode(ExpressionNode::UP arg) : UnaryFunctionNode(std::move(arg)), _predef(), _result(NULL), _nullResult(NULL) {}
     RangeBucketPreDefFunctionNode(const RangeBucketPreDefFunctionNode & rhs);
     RangeBucketPreDefFunctionNode & operator = (const RangeBucketPreDefFunctionNode & rhs);
+    ~RangeBucketPreDefFunctionNode();
     const ResultNode & getResult()   const override { return *_result; }
     const ResultNodeVector & getBucketList() const { return *_predef; }
     ResultNodeVector       & getBucketList()       { return *_predef; }

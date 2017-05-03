@@ -157,7 +157,7 @@ protected:
 public:
     MultiValueNumericEnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
 
-    virtual bool onLoad();
+    bool onLoad() override;
 
     bool onLoadEnumerated(ReaderBase &attrReader);
 
@@ -167,7 +167,7 @@ public:
     //-------------------------------------------------------------------------
     // Attribute read API
     //-------------------------------------------------------------------------
-    virtual T get(DocId doc) const {
+    T get(DocId doc) const override {
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         if (indices.size() == 0) {
             return T();
@@ -175,10 +175,10 @@ public:
             return this->_enumStore.getValue(indices[0].value());
         }
     }
-    virtual largeint_t getInt(DocId doc) const {
+    largeint_t getInt(DocId doc) const override {
         return static_cast<largeint_t>(get(doc));
     }
-    virtual double getFloat(DocId doc) const {
+    double getFloat(DocId doc) const override {
         return static_cast<double>(get(doc));
     }
 
@@ -191,13 +191,13 @@ public:
         }
         return valueCount;
     }
-    virtual uint32_t getAll(DocId doc, T * v, uint32_t sz) const {
+    uint32_t getAll(DocId doc, T * v, uint32_t sz) const override {
         return getHelper(doc, v, sz);
     }
-    virtual uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const {
+    uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const override {
         return getHelper(doc, v, sz);
     }
-    virtual uint32_t get(DocId doc, double * v, uint32_t sz) const {
+    uint32_t get(DocId doc, double * v, uint32_t sz) const override {
         return getHelper(doc, v, sz);
     }
 
@@ -210,13 +210,13 @@ public:
         }
         return valueCount;
     }
-    virtual uint32_t getAll(DocId doc, Weighted * v, uint32_t sz) const {
+    uint32_t getAll(DocId doc, Weighted * v, uint32_t sz) const override {
         return getWeightedHelper<Weighted, T>(doc, v, sz);
     }
-    virtual uint32_t get(DocId doc, WeightedInt * v, uint32_t sz) const {
+    uint32_t get(DocId doc, WeightedInt * v, uint32_t sz) const override {
         return getWeightedHelper<WeightedInt, largeint_t>(doc, v, sz);
     }
-    virtual uint32_t get(DocId doc, WeightedFloat * v, uint32_t sz) const {
+    uint32_t get(DocId doc, WeightedFloat * v, uint32_t sz) const override {
         return getWeightedHelper<WeightedFloat, double>(doc, v, sz);
     }
 
@@ -226,4 +226,3 @@ private:
 };
 
 } // namespace search
-

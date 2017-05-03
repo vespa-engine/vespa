@@ -33,64 +33,64 @@ private:
         }
     }
 
-    virtual void visit(And &node) {
+    void visit(And &node) override {
         _builder.addAnd(node.getChildren().size());
         visitNodes(node.getChildren());
     }
 
-    virtual void visit(AndNot &node) {
+    void visit(AndNot &node) override {
         _builder.addAndNot(node.getChildren().size());
         visitNodes(node.getChildren());
     }
 
-    virtual void visit(WeakAnd &node) {
+    void visit(WeakAnd &node) override {
         _builder.addWeakAnd(node.getChildren().size(), node.getMinHits(), node.getView());
         visitNodes(node.getChildren());
     }
 
-    virtual void visit(Equiv &node) {
+    void visit(Equiv &node) override {
         _builder.addEquiv(node.getChildren().size(), node.getId(), node.getWeight())
             .setTermIndex(node.getTermIndex());
         visitNodes(node.getChildren());
     }
 
-    virtual void visit(Near &node) {
+    void visit(Near &node) override {
         _builder.addNear(node.getChildren().size(), node.getDistance());
         visitNodes(node.getChildren());
     }
 
-    virtual void visit(ONear &node) {
+    void visit(ONear &node) override {
         _builder.addONear(node.getChildren().size(), node.getDistance());
         visitNodes(node.getChildren());
     }
 
-    virtual void visit(Or &node) {
+    void visit(Or &node) override {
         _builder.addOr(node.getChildren().size());
         visitNodes(node.getChildren());
     }
 
-    virtual void visit(Phrase &node) {
+    void visit(Phrase &node) override {
         replicate(node, _builder.addPhrase(node.getChildren().size(),
                                            node.getView(),
                                            node.getId(), node.getWeight()));
         visitNodes(node.getChildren());
     }
 
-    virtual void visit(WeightedSetTerm &node) {
+    void visit(WeightedSetTerm &node) override {
         replicate(node, _builder.addWeightedSetTerm(node.getChildren().size(),
                                                     node.getView(),
                                                     node.getId(), node.getWeight()));
         visitNodes(node.getChildren());
     }
 
-    virtual void visit(DotProduct &node) {
+    void visit(DotProduct &node) override {
         replicate(node, _builder.addDotProduct(node.getChildren().size(),
                                                node.getView(),
                                                node.getId(), node.getWeight()));
         visitNodes(node.getChildren());
     }
 
-    virtual void visit(WandTerm &node) {
+    void visit(WandTerm &node) override {
         replicate(node, _builder.addWandTerm(node.getChildren().size(),
                                              node.getView(),
                                              node.getId(), node.getWeight(),
@@ -100,7 +100,7 @@ private:
         visitNodes(node.getChildren());
     }
 
-    virtual void visit(Rank &node) {
+    void visit(Rank &node) override {
         _builder.addRank(node.getChildren().size());
         visitNodes(node.getChildren());
     }
@@ -110,56 +110,55 @@ private:
         replica.setRanked(original.isRanked());
     }
 
-    virtual void visit(NumberTerm &node) {
+    void visit(NumberTerm &node) override {
         replicate(node, _builder.addNumberTerm(
                           node.getTerm(), node.getView(),
                           node.getId(), node.getWeight()));
     }
 
-    virtual void visit(LocationTerm &node) {
+    void visit(LocationTerm &node) override {
         replicate(node,_builder.addLocationTerm(
                           node.getTerm(), node.getView(),
                           node.getId(), node.getWeight()));
     }
 
-    virtual void visit(PrefixTerm &node) {
+    void visit(PrefixTerm &node) override {
         replicate(node, _builder.addPrefixTerm(
                           node.getTerm(), node.getView(),
                           node.getId(), node.getWeight()));
     }
 
-    virtual void visit(RangeTerm &node) {
+    void visit(RangeTerm &node) override {
         replicate(node, _builder.addRangeTerm(
                           node.getTerm(), node.getView(),
                           node.getId(), node.getWeight()));
     }
 
-    virtual void visit(StringTerm &node) {
+    void visit(StringTerm &node) override {
         replicate(node, _builder.addStringTerm(
                           node.getTerm(), node.getView(),
                           node.getId(), node.getWeight()));
     }
 
-    virtual void visit(SubstringTerm &node) {
+    void visit(SubstringTerm &node) override {
         replicate(node, _builder.addSubstringTerm(
                           node.getTerm(), node.getView(),
                           node.getId(), node.getWeight()));
     }
 
-    virtual void visit(SuffixTerm &node) {
+    void visit(SuffixTerm &node) override {
         replicate(node, _builder.addSuffixTerm(
                           node.getTerm(), node.getView(),
                           node.getId(), node.getWeight()));
     }
 
-    virtual void visit(PredicateQuery &node) {
+    void visit(PredicateQuery &node) override {
         replicate(node, _builder.addPredicateQuery(
-                          PredicateQueryTerm::UP(new PredicateQueryTerm(
-                                          *node.getTerm())),
+                          PredicateQueryTerm::UP(new PredicateQueryTerm(*node.getTerm())),
                           node.getView(), node.getId(), node.getWeight()));
     }
 
-    virtual void visit(RegExpTerm &node) {
+    void visit(RegExpTerm &node) override {
         replicate(node, _builder.addRegExpTerm(
                           node.getTerm(), node.getView(),
                           node.getId(), node.getWeight()));
@@ -168,4 +167,3 @@ private:
 
 }  // namespace query
 }  // namespace search
-

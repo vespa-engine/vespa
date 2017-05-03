@@ -2,10 +2,12 @@
 
 #pragma once
 
+#include <vespa/searchlib/common/converters.h>
 #include <vespa/searchcommon/common/iblobconverter.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <unicode/coll.h>
 #include <vector>
-#include <vespa/vespalib/stllike/string.h>
+#include <cassert>
 
 namespace search {
 
@@ -24,6 +26,7 @@ class UcaConverter : public BlobConverter
 public:
     using Collator = icu::Collator;
     UcaConverter(vespalib::stringref locale, vespalib::stringref strength);
+    ~UcaConverter();
     const Collator & getCollator() const { return *_collator; }
 private:
     struct Buffer {
@@ -52,7 +55,7 @@ private:
         }
     };
     int utf8ToUtf16(const ConstBufferRef & src) const;
-    virtual ConstBufferRef onConvert(const ConstBufferRef & src) const;
+    ConstBufferRef onConvert(const ConstBufferRef & src) const override;
     mutable Buffer               _buffer;
     mutable std::vector<UChar>   _u16Buffer;
     std::unique_ptr<Collator>      _collator;

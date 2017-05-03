@@ -6,8 +6,8 @@
  */
 #pragma once
 
-#include <vespa/searchlib/attribute/attrvector.h>
-#include <vespa/searchlib/attribute/attrvector.hpp>
+#include "attrvector.h"
+#include "attrvector.hpp"
 
 namespace search {
 
@@ -192,8 +192,8 @@ protected:
     WeightedSetExtAttributeBase(const vespalib::string & name) :
         B(name, attribute::CollectionType::WSET),
         _weights()
-    {
-    }
+    {}
+    ~WeightedSetExtAttributeBase() {}
 };
 
 class WeightedSetIntegerExtAttribute
@@ -208,6 +208,7 @@ class WeightedSetIntegerExtAttribute
     }
 public:
     WeightedSetIntegerExtAttribute(const vespalib::string & name);
+    ~WeightedSetIntegerExtAttribute();
     bool add(int64_t v, int32_t w = 1) override;
     uint32_t get(DocId doc, AttributeVector::WeightedInt * v, uint32_t sz) const override;
 };
@@ -224,6 +225,7 @@ class WeightedSetFloatExtAttribute
     }
 public:
     WeightedSetFloatExtAttribute(const vespalib::string & name);
+    ~WeightedSetFloatExtAttribute();
     bool add(double v, int32_t w = 1) override;
     uint32_t get(DocId doc, AttributeVector::WeightedFloat * v, uint32_t sz) const override;
 };
@@ -248,6 +250,7 @@ private:
 
 public:
     WeightedSetStringExtAttribute(const vespalib::string & name);
+    ~WeightedSetStringExtAttribute();
     bool add(const char * v, int32_t w = 1) override;
     uint32_t get(DocId doc, AttributeVector::WeightedString * v, uint32_t sz) const override;
     uint32_t get(DocId doc, AttributeVector::WeightedConstChar * v, uint32_t sz) const override;

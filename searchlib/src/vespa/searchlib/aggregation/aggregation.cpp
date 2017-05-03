@@ -239,6 +239,8 @@ void MinAggregationResult::onReset()
     _min->setMax();
 }
 
+AverageAggregationResult::~AverageAggregationResult() {}
+
 void AverageAggregationResult::onMerge(const AggregationResult & b)
 {
     const AverageAggregationResult & avg(static_cast<const AverageAggregationResult &>(b));
@@ -349,6 +351,16 @@ Deserializer & SumAggregationResult::onDeserialize(Deserializer & is)
     AggregationResult::onDeserialize(is);
     return is >> _sum;
 }
+
+SumAggregationResult::SumAggregationResult()
+    : AggregationResult(),
+      _sum()
+{ }
+SumAggregationResult::SumAggregationResult(SingleResultNode::UP sum)
+    : AggregationResult(),
+      _sum(sum.release())
+{ }
+SumAggregationResult::~SumAggregationResult() {}
 
 void
 SumAggregationResult::visitMembers(vespalib::ObjectVisitor &visitor) const
@@ -485,6 +497,10 @@ Deserializer &ExpressionCountAggregationResult::onDeserialize(
     _rank.set(calculateRank(_hll.getSketch()));
     return is;
 }
+
+ExpressionCountAggregationResult::ExpressionCountAggregationResult() : AggregationResult(), _hll() { }
+ExpressionCountAggregationResult::~ExpressionCountAggregationResult() {}
+
 }  // namespace aggregation
 }  // namespace search
 
