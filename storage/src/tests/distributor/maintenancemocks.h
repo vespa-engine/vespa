@@ -1,12 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <sstream>
 #include <vespa/storage/distributor/maintenance/maintenanceprioritygenerator.h>
 #include <vespa/storage/distributor/maintenance/maintenanceoperationgenerator.h>
 #include <vespa/storage/distributor/operationstarter.h>
 #include <vespa/storage/distributor/operations/operation.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
+#include <sstream>
 
 namespace storage {
 namespace distributor {
@@ -16,7 +16,7 @@ class MockMaintenancePriorityGenerator
 {
     MaintenancePriorityAndType prioritize(
             const document::BucketId&,
-            NodeMaintenanceStatsTracker& stats) const
+            NodeMaintenanceStatsTracker& stats) const override
     {
         stats.incMovingOut(1);
         stats.incCopyingIn(2);
@@ -38,23 +38,18 @@ public:
           _shouldBlock(false)
     {}
 
-    std::string toString() const {
+    std::string toString() const override {
         return _bucketId.toString();
     }
 
-    void onClose(DistributorMessageSender&) {
-    }
-    const char* getName() const {
-        return "MockOperation";
-    }
-    virtual const std::string& getDetailedReason() const {
+    void onClose(DistributorMessageSender&) override {}
+    const char* getName() const override { return "MockOperation"; }
+    const std::string& getDetailedReason() const override {
         return _reason;
     }
-    void onStart(DistributorMessageSender&) {
-    }
-    void onReceive(DistributorMessageSender&, const std::shared_ptr<api::StorageReply>&) {
-    }
-    bool isBlocked(const PendingMessageTracker&) const {
+    void onStart(DistributorMessageSender&) override {}
+    void onReceive(DistributorMessageSender&, const std::shared_ptr<api::StorageReply>&) override {}
+    bool isBlocked(const PendingMessageTracker&) const override {
         return _shouldBlock;
     }
     void setShouldBlock(bool shouldBlock) {
@@ -66,13 +61,13 @@ class MockMaintenanceOperationGenerator
     : public MaintenanceOperationGenerator
 {
 public:
-    MaintenanceOperation::SP generate(const document::BucketId& id) const {
+    MaintenanceOperation::SP generate(const document::BucketId& id) const override {
         return MaintenanceOperation::SP(new MockOperation(id));
     }
 
     std::vector<MaintenanceOperation::SP> generateAll(
             const document::BucketId& id,
-            NodeMaintenanceStatsTracker& tracker) const
+            NodeMaintenanceStatsTracker& tracker) const override
     {
         (void) tracker;
         std::vector<MaintenanceOperation::SP> ret;
@@ -93,8 +88,7 @@ public:
         : _shouldStart(true)
     {}
 
-    bool start(const std::shared_ptr<Operation>& operation,
-               Priority priority)
+    bool start(const std::shared_ptr<Operation>& operation, Priority priority) override
     {
         if (_shouldStart) {
             _started << operation->toString()

@@ -13,8 +13,9 @@ MergeStatus::MergeStatus(framework::Clock& clock, const metrics::LoadType& lt,
     : reply(), nodeList(), maxTimestamp(0), diff(), pendingId(0),
       pendingGetDiff(), pendingApplyDiff(), timeout(0), startTime(clock),
       context(lt, priority, traceLevel)
-{
-}
+{}
+
+MergeStatus::~MergeStatus() {}
 
 bool
 MergeStatus::removeFromDiff(

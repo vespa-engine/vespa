@@ -15,23 +15,18 @@ struct StorageLinkTest : public CppUnit::TestFixture {
 
     StorageLinkTest();
 
-    void setUp();
+    void setUp() override;
 
     void testPrinting();
     void testNotImplemented();
 
-    static bool callOnUp(StorageLink& link,
-                         const api::StorageMessage::SP& msg)
-    {
+    static bool callOnUp(StorageLink& link, const api::StorageMessage::SP& msg) {
         return link.onUp(msg);
     }
-    static bool callOnDown(StorageLink& link,
-                           const api::StorageMessage::SP& msg)
-    {
+    static bool callOnDown(StorageLink& link, const api::StorageMessage::SP& msg) {
         return link.onDown(msg);
     }
-    static void callOnFlush(StorageLink& link, bool downwards)
-    {
+    static void callOnFlush(StorageLink& link, bool downwards) {
         link.onFlush(downwards);
     }
 
@@ -42,4 +37,3 @@ struct StorageLinkTest : public CppUnit::TestFixture {
 };
 
 }
-

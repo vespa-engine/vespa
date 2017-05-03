@@ -1,9 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <stdint.h>
-#include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/storage/common/messagesender.h>
+#include <vespa/vdslib/distribution/distribution.h>
 
 namespace storage {
 

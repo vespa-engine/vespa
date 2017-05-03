@@ -5,6 +5,7 @@ vespa_add_library(storage_testcommon TEST
     testhelper.cpp
     metricstest.cpp
     storagelinktest.cpp
+    testnodestateupdater.cpp
     teststorageapp.cpp
     DEPENDS
     storage

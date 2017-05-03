@@ -1,16 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/distributor/persistencemessagetracker.h>
-#include <vespa/log/log.h>
-#include <vespa/storageapi/message/persistence.h>
+
+#include "persistencemessagetracker.h"
 #include <vespa/storage/common/vectorprinter.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
+#include <vespa/storageapi/message/persistence.h>
+
+#include <vespa/log/log.h>
 
 LOG_SETUP(".persistencemessagetracker");
 
-namespace storage {
-
-namespace distributor {
+namespace storage::distributor {
 
 PersistenceMessageTrackerImpl::PersistenceMessageTrackerImpl(
         PersistenceOperationMetricSet& metric,
@@ -27,6 +26,8 @@ PersistenceMessageTrackerImpl::PersistenceMessageTrackerImpl(
       _success(true)
 {
 }
+
+PersistenceMessageTrackerImpl::~PersistenceMessageTrackerImpl() {}
 
 void
 PersistenceMessageTrackerImpl::updateDB()
@@ -350,8 +351,6 @@ PersistenceMessageTrackerImpl::updateFromReply(
         checkCopiesDeleted();
         sendReply(sender);
     }
-}
-
 }
 
 }

@@ -4,9 +4,9 @@
 
 #include <vespa/storage/config/config-stor-prioritymapping.h>
 #include <vespa/config/config.h>
+#include <vespa/documentapi/messagebus/priority.h>
 #include <atomic>
 #include <array>
-#include <vespa/documentapi/messagebus/priority.h>
 
 namespace storage {
 

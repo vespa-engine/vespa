@@ -6,10 +6,10 @@
  */
 #pragma once
 
+#include "visitormessagesession.h"
+#include "visitorthread.h"
+#include "visitor.h"
 #include <vespa/messagebus/sourcesession.h>
-#include <vespa/storage/visiting/visitormessagesession.h>
-#include <vespa/storage/visiting/visitorthread.h>
-#include <vespa/storage/visiting/visitor.h>
 
 namespace documentapi {
     class DocumentMessage;
@@ -33,19 +33,16 @@ public:
         _sourceSession = std::move(sourceSession);
     }
 
-    virtual mbus::Result send(std::unique_ptr<documentapi::DocumentMessage> msg) {
+    mbus::Result send(std::unique_ptr<documentapi::DocumentMessage> msg) override {
         msg->setRetryEnabled(false);
         return _sourceSession->send(std::move(msg));
     }
 
-    /**
-       @return Returns the number of pending messages this session has.
-    */
-    virtual uint32_t pending() {
+    uint32_t pending() override {
         return _sourceSession->getPendingCount();
     }
 
-    virtual void handleReply(mbus::Reply::UP reply) {
+    void handleReply(mbus::Reply::UP reply) override {
         _visitorThread.handleMessageBusReply(std::move(reply), _visitor);
     }
 
@@ -56,4 +53,3 @@ private:
 };
 
 } // storage
-

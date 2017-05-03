@@ -2,18 +2,15 @@
 
 #pragma once
 
+#include "idealstateoperation.h"
+#include "mergelimiter.h"
+#include "mergemetadata.h"
+#include "removebucketoperation.h"
 #include <vespa/storage/bucketdb/bucketdatabase.h>
-#include <vespa/storage/distributor/operations/idealstate/idealstateoperation.h>
-#include <vespa/storage/distributor/operations/idealstate/mergelimiter.h>
-#include <vespa/storage/distributor/operations/idealstate/mergemetadata.h>
-#include <vespa/storage/distributor/operations/idealstate/removebucketoperation.h>
 #include <vespa/storageapi/message/bucket.h>
 
-namespace storage {
-namespace lib {
-    class Distribution;
-}
-namespace distributor {
+namespace storage::lib { class Distribution; }
+namespace storage::distributor {
 
 class MergeOperation : public IdealStateOperation
 {
@@ -29,8 +26,7 @@ protected:
 public:
     static const int LOAD = 10;
 
-    MergeOperation(const BucketAndNodes& nodes,
-                   uint16_t maxNodes = 16)
+    MergeOperation(const BucketAndNodes& nodes, uint16_t maxNodes = 16)
         : IdealStateOperation(nodes),
           _sentMessageTime(0),
           _limiter(maxNodes)
@@ -38,16 +34,11 @@ public:
 
     ~MergeOperation();
 
-    void onStart(DistributorMessageSender& sender);
-
-    void onReceive(DistributorMessageSender& sender,
-                   const api::StorageReply::SP&);
-
-    const char* getName() const { return "merge"; };
-
-    std::string getStatus() const;
-
-    Type getType() const { return MERGE_BUCKET; }
+    void onStart(DistributorMessageSender& sender) override;
+    void onReceive(DistributorMessageSender& sender, const api::StorageReply::SP&) override;
+    const char* getName() const override { return "merge"; };
+    std::string getStatus() const override;
+    Type getType() const override { return MERGE_BUCKET; }
 
     /** Generates ordered list of nodes that should be included in the merge */
     static void generateSortedNodeList(
@@ -55,7 +46,7 @@ public:
             const document::BucketId&, MergeLimiter&,
             std::vector<MergeMetaData>&);
 
-    bool shouldBlockThisOperation(uint32_t messageType, uint8_t pri) const;
+    bool shouldBlockThisOperation(uint32_t messageType, uint8_t pri) const override ;
 private:
     static void addIdealNodes(
             const lib::Distribution&,
@@ -80,5 +71,4 @@ private:
                                DistributorMessageSender& sender);
 };
 
-} // distributor
-} // storage
+}

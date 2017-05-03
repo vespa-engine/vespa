@@ -1,10 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <iostream>
-#include <sstream>
-#include <tests/persistence/common/persistenceproviderwrapper.h>
+
+#include "persistenceproviderwrapper.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
+#include <sstream>
 
 #define LOG_SPI(ops) \
     { \
@@ -39,6 +38,15 @@ includedVersionsToString(spi::IncludedVersions versions)
 }
 
 } // anon namespace
+
+PersistenceProviderWrapper::PersistenceProviderWrapper(spi::PersistenceProvider& spi)
+    : _spi(spi),
+      _result(spi::Result(spi::Result::NONE, "")),
+      _log(),
+      _failureMask(0)
+{ }
+PersistenceProviderWrapper::~PersistenceProviderWrapper() {}
+
 
 std::string
 PersistenceProviderWrapper::toString() const

@@ -50,6 +50,7 @@ private:
 
 public:
     PieChart(const std::string&, ColorScheme = SCHEME_BLUE);
+    ~PieChart();
 
     void printLabels(bool doprint) { _printLabels = doprint; }
 

@@ -1,16 +1,22 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
+#include "setbucketstateoperation.h"
 #include <vespa/storage/distributor/idealstatemanager.h>
-#include <vespa/storage/distributor/operations/idealstate/setbucketstateoperation.h>
-#include <vespa/storageapi/message/bucket.h>
 
 #include <vespa/log/log.h>
-
 LOG_SETUP(".distributor.operation.idealstate.setactive");
 
-namespace storage {
+namespace storage::distributor {
 
-namespace distributor {
+SetBucketStateOperation::SetBucketStateOperation(const std::string& clusterName,
+                                                 const BucketAndNodes& nodes,
+                                                 const std::vector<uint16_t>& wantedActiveNodes)
+    : IdealStateOperation(nodes),
+      _tracker(clusterName),
+      _wantedActiveNodes(wantedActiveNodes)
+{ }
+
+SetBucketStateOperation::~SetBucketStateOperation() {}
 
 void
 SetBucketStateOperation::enqueueSetBucketStateCommand(uint16_t node, bool active) {
@@ -120,6 +126,4 @@ SetBucketStateOperation::onReceive(DistributorMessageSender& sender,
     }
 }
 
-} // namespace distributor
-
-} // namespace storage
+}

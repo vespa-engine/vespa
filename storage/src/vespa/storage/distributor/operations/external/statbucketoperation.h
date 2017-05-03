@@ -8,13 +8,10 @@
 #pragma once
 
 #include <vespa/storage/distributor/operations/operation.h>
-#include <vespa/vespalib/util/sync.h>
 
 namespace storage {
 
-namespace api {
-class StatBucketCommand;
-}
+namespace api { class StatBucketCommand; }
 
 namespace distributor {
 
@@ -25,16 +22,13 @@ class StatBucketOperation : public Operation
 public:
     StatBucketOperation(DistributorComponent& manager,
                  const std::shared_ptr<api::StatBucketCommand> & cmd);
-    virtual ~StatBucketOperation() {};
+    ~StatBucketOperation();
 
-    virtual const char* getName() const { return "statBucket"; }
-    virtual std::string getStatus() const { return ""; }
-
-    void onClose(DistributorMessageSender& sender);
-
-    virtual void onStart(DistributorMessageSender& sender);
-    virtual void onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg);
-
+    const char* getName() const override { return "statBucket"; }
+    std::string getStatus() const override { return ""; }
+    void onClose(DistributorMessageSender& sender) override;
+    void onStart(DistributorMessageSender& sender) override;
+    void onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg) override;
 private:
     DistributorComponent& _manager;
 

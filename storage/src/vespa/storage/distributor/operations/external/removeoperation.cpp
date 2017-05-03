@@ -1,11 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/distributor/operations/external/removeoperation.h>
-#include <vespa/document/fieldvalue/document.h>
+#include "removeoperation.h"
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/log/log.h>
-#include <vespa/storage/distributor/distributormetricsset.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".distributor.operation.external.remove");
 
 
@@ -26,12 +23,12 @@ RemoveOperation::RemoveOperation(DistributorComponent& manager,
 {
 }
 
+RemoveOperation::~RemoveOperation() {}
+
 void
 RemoveOperation::onStart(DistributorMessageSender& sender)
 {
-    LOG(spam,
-        "Started remove on document %s",
-        _msg->getDocumentId().toString().c_str());
+    LOG(spam, "Started remove on document %s", _msg->getDocumentId().toString().c_str());
 
     document::BucketId bucketId(
             _manager.getBucketIdFactory().getBucketId(
@@ -86,7 +83,6 @@ RemoveOperation::onReceive(DistributorMessageSender& sender, const std::shared_p
     if (_tracker.getReply().get()) {
         api::RemoveReply& replyToSend =
             static_cast<api::RemoveReply&>(*_tracker.getReply());
-
 
         if (reply.getOldTimestamp() > replyToSend.getOldTimestamp()) {
             replyToSend.setOldTimestamp(reply.getOldTimestamp());

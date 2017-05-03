@@ -20,10 +20,9 @@
 #pragma once
 
 #include "messagesender.h"
-#include "storagecomponent.h"
 #include <vespa/storageapi/messageapi/messagehandler.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
-#include <vespa/vespalib/util/printable.h>
+#include <vespa/document/util/printable.h>
 
 namespace storage {
 

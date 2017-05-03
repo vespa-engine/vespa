@@ -15,9 +15,10 @@
  */
 #pragma once
 
+
+#include <vespa/persistence/spi/abstractpersistenceprovider.h>
 #include <vector>
 #include <string>
-#include <vespa/persistence/spi/abstractpersistenceprovider.h>
 
 namespace storage {
 
@@ -53,13 +54,8 @@ private:
     mutable std::vector<std::string> _log;
     uint32_t _failureMask;
 public:
-    PersistenceProviderWrapper(spi::PersistenceProvider& spi)
-        : _spi(spi),
-          _result(spi::Result(spi::Result::NONE, "")),
-          _log(),
-          _failureMask(0)
-    {
-    }
+    PersistenceProviderWrapper(spi::PersistenceProvider& spi);
+    ~PersistenceProviderWrapper();
 
     /**
      * Explicitly set result to anything != NONE to have all operations
@@ -89,65 +85,29 @@ public:
     void clearOperationLog() { _log.clear(); }
     const std::vector<std::string>& getOperationLog() const { return _log; }
 
-    spi::Result createBucket(const spi::Bucket&, spi::Context&);
+    spi::Result createBucket(const spi::Bucket&, spi::Context&) override;
+    spi::PartitionStateListResult getPartitionStates() const override;
+    spi::BucketIdListResult listBuckets(spi::PartitionId) const override;
+    spi::BucketInfoResult getBucketInfo(const spi::Bucket&) const override;
+    spi::Result put(const spi::Bucket&, spi::Timestamp, const spi::DocumentSP&, spi::Context&) override;
+    spi::RemoveResult remove(const spi::Bucket&, spi::Timestamp, const spi::DocumentId&, spi::Context&) override;
+    spi::RemoveResult removeIfFound(const spi::Bucket&, spi::Timestamp, const spi::DocumentId&, spi::Context&) override;
+    spi::UpdateResult update(const spi::Bucket&, spi::Timestamp, const spi::DocumentUpdateSP&, spi::Context&) override;
+    spi::GetResult get(const spi::Bucket&, const document::FieldSet&,
+                       const spi::DocumentId&, spi::Context&) const override ;
 
-    spi::PartitionStateListResult getPartitionStates() const;
+    spi::Result flush(const spi::Bucket&, spi::Context&) override;
+    spi::CreateIteratorResult createIterator(const spi::Bucket&, const document::FieldSet&, const spi::Selection&,
+                                             spi::IncludedVersions versions, spi::Context&) override;
 
-    spi::BucketIdListResult listBuckets(spi::PartitionId) const;
-
-    spi::BucketInfoResult getBucketInfo(const spi::Bucket&) const;
-
-    spi::Result put(const spi::Bucket&, spi::Timestamp, const spi::DocumentSP&, spi::Context&);
-
-    spi::RemoveResult remove(const spi::Bucket&,
-                             spi::Timestamp,
-                             const spi::DocumentId&,
-                             spi::Context&);
-
-    spi::RemoveResult removeIfFound(const spi::Bucket&,
-                                    spi::Timestamp,
-                                    const spi::DocumentId&,
-                                    spi::Context&);
-
-    spi::UpdateResult update(const spi::Bucket&,
-                             spi::Timestamp,
-                             const spi::DocumentUpdateSP&,
-                             spi::Context&);
-
-    spi::GetResult get(const spi::Bucket&,
-                       const document::FieldSet&,
-                       const spi::DocumentId&,
-                       spi::Context&) const;
-
-    spi::Result flush(const spi::Bucket&, spi::Context&);
-
-    spi::CreateIteratorResult createIterator(const spi::Bucket&,
-                                             const document::FieldSet&,
-                                             const spi::Selection&,
-                                             spi::IncludedVersions versions,
-                                             spi::Context&);
-
-    spi::IterateResult iterate(spi::IteratorId,
-                               uint64_t maxByteSize, spi::Context&) const;
-
-    spi::Result destroyIterator(spi::IteratorId, spi::Context&);
-
-    spi::Result deleteBucket(const spi::Bucket&, spi::Context&);
-
-    spi::Result split(const spi::Bucket& source,
-                      const spi::Bucket& target1,
-                      const spi::Bucket& target2,
-                      spi::Context&);
-
-    spi::Result join(const spi::Bucket& source1,
-                     const spi::Bucket& source2,
-                     const spi::Bucket& target,
-                     spi::Context&);
-
-    spi::Result removeEntry(const spi::Bucket&,
-                            spi::Timestamp,
-                            spi::Context&);
+    spi::IterateResult iterate(spi::IteratorId, uint64_t maxByteSize, spi::Context&) const override;
+    spi::Result destroyIterator(spi::IteratorId, spi::Context&) override;
+    spi::Result deleteBucket(const spi::Bucket&, spi::Context&) override;
+    spi::Result split(const spi::Bucket& source, const spi::Bucket& target1,
+                      const spi::Bucket& target2, spi::Context&) override;
+    spi::Result join(const spi::Bucket& source1, const spi::Bucket& source2,
+                     const spi::Bucket& target, spi::Context&) override;
+    spi::Result removeEntry(const spi::Bucket&, spi::Timestamp, spi::Context&) override;
 };
 
 } // storage
-

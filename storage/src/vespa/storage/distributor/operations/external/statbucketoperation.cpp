@@ -1,13 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/distributor/operations/external/statbucketoperation.h>
-#include <vespa/log/log.h>
-#include <vespa/storageapi/message/bucket.h>
-#include <vespa/storageapi/message/persistence.h>
+#include "statbucketoperation.h"
 #include <vespa/storage/distributor/distributorcomponent.h>
-#include <vespa/storage/distributor/distributormetricsset.h>
+#include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/stat.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.statbucket");
 
 namespace storage {
@@ -21,6 +18,8 @@ StatBucketOperation::StatBucketOperation(
       _command(cmd)
 {
 }
+
+StatBucketOperation::~StatBucketOperation() {}
 
 void
 StatBucketOperation::onClose(DistributorMessageSender& sender)

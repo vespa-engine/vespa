@@ -10,22 +10,18 @@
 
 #pragma once
 
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/storage/common/storagelink.h>
 
 namespace storage {
 
 class MessageSink : public StorageLink {
-private:
-    MessageSink(const MessageSink &);
-    MessageSink& operator=(const MessageSink &);
-
 public:
     explicit MessageSink();
+    MessageSink(const MessageSink &) = delete;
+    MessageSink& operator=(const MessageSink &) = delete;
     ~MessageSink();
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
 private:
     DEF_MSG_COMMAND_H(Get);
@@ -35,4 +31,3 @@ private:
 };
 
 }
-

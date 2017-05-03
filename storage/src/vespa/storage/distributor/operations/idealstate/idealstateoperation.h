@@ -8,11 +8,7 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
 
-namespace storage
-{
-
-namespace distributor
-{
+namespace storage::distributor {
 
 class PendingMessageTracker;
 class IdealStateManager;
@@ -116,7 +112,7 @@ public:
 
     virtual ~IdealStateOperation();
 
-    void onClose(DistributorMessageSender&) {}
+    void onClose(DistributorMessageSender&) override {}
 
     /**
        Returns true if the operation was performed successfully.
@@ -184,7 +180,7 @@ public:
      * Returns true if we are blocked to start this operation given
      * the pending messages.
      */
-    virtual bool isBlocked(const PendingMessageTracker& pendingMessages) const;
+    bool isBlocked(const PendingMessageTracker& pendingMessages) const override;
 
     /**
        Returns the priority we should send messages with.
@@ -198,7 +194,7 @@ public:
         _detailedReason = std::move(detailedReason);
     }
 
-    const std::string& getDetailedReason() const {
+    const std::string& getDetailedReason() const override {
         return _detailedReason;
     }
 
@@ -212,7 +208,7 @@ public:
 
     std::string toXML(framework::Clock& clock) const;
 
-    std::string toString() const;
+    std::string toString() const override;
 
     /**
      * Should return true if the given message type should block this operation.
@@ -237,17 +233,9 @@ protected:
      * operations to other nodes for this bucket, these will not be part of
      * the set of messages checked.
      */
-    bool checkBlock(const document::BucketId& bId,
-                    const PendingMessageTracker& tracker) const;
-
-    bool checkBlockForAllNodes(const document::BucketId& bId,
-                               const PendingMessageTracker& tracker) const;
+    bool checkBlock(const document::BucketId& bId, const PendingMessageTracker& tracker) const;
+    bool checkBlockForAllNodes(const document::BucketId& bId, const PendingMessageTracker& tracker) const;
 
 };
 
 }
-
-
-}
-
-

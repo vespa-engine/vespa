@@ -70,7 +70,11 @@ LockableMap<Map>::LockableMap()
     : _map(),
       _lock(),
       _lockedKeys(),
-      _lockWaiters() {}
+      _lockWaiters()
+{}
+
+template<typename Map>
+LockableMap<Map>::~LockableMap() {}
 
 template<typename Map>
 bool

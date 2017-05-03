@@ -1,11 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/storage/distributor/operationstarter.h>
+#include "operationstarter.h"
 #include <vespa/storage/distributor/operations/operation.h>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class PendingMessageTracker;
 
@@ -17,18 +16,13 @@ public:
         : _messageTracker(messageTracker),
           _starterImpl(starterImpl)
     {}
+    BlockingOperationStarter(const BlockingOperationStarter&) = delete;
+    BlockingOperationStarter& operator=(const BlockingOperationStarter&) = delete;
 
-    virtual bool start(const std::shared_ptr<Operation>& operation,
-                       Priority priority);
-
+    bool start(const std::shared_ptr<Operation>& operation, Priority priority) override;
 private:
-    BlockingOperationStarter(const BlockingOperationStarter&);
-    BlockingOperationStarter& operator=(const BlockingOperationStarter&);
-
     PendingMessageTracker& _messageTracker;
     OperationStarter& _starterImpl;
 };
 
 }
-}
-

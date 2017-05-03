@@ -1,20 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/log/log.h>
-#include <vespa/storage/distributor/distributormetricsset.h>
-#include <vespa/storage/distributor/operations/external/multioperationoperation.h>
-#include <vespa/storage/distributor/operations/external/putoperation.h>
-#include <vespa/storageapi/message/bucket.h>
+
+#include "multioperationoperation.h"
+#include "putoperation.h"
 #include <vespa/storageapi/message/multioperation.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/vdslib/container/writabledocumentlist.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.doc.multioperation");
 
-
-using namespace storage::distributor;
-using namespace storage;
+namespace storage::distributor {
 
 MultiOperationOperation::MultiOperationOperation(
         DistributorComponent& manager,
@@ -28,7 +22,9 @@ MultiOperationOperation::MultiOperationOperation(
       _manager(manager),
       _minUseBits(manager.getDistributor().getConfig().getMinimalBucketSplit())
 {
-};
+}
+
+MultiOperationOperation::~MultiOperationOperation() {}
 
 bool
 MultiOperationOperation::sendToBucket(
@@ -230,7 +226,7 @@ MultiOperationOperation::onStart(DistributorMessageSender& sender)
 
     _msg = std::shared_ptr<api::MultiOperationCommand>();
     _reply->setHighestModificationTimestamp(highestTimestamp);
-};
+}
 
 void
 MultiOperationOperation::onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg)
@@ -242,4 +238,6 @@ void
 MultiOperationOperation::onClose(DistributorMessageSender& sender)
 {
     _tracker.fail(sender, api::ReturnCode(api::ReturnCode::ABORTED, "Process is shutting down"));
+}
+
 }

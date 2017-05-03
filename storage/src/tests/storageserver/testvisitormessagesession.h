@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include <deque>
 #include <vespa/storage/visiting/visitormessagesession.h>
 #include <vespa/storage/visiting/visitorthread.h>
 #include <vespa/documentapi/messagebus/messages/documentmessage.h>
 #include <vespa/storage/storageserver/priorityconverter.h>
+#include <deque>
 
 namespace storage {
 
@@ -34,13 +34,9 @@ public:
                               bool autoReply);
 
     void reply(mbus::Reply::UP rep);
-
-    uint32_t pending() { return pendingCount; }
-
-    mbus::Result send(std::unique_ptr<documentapi::DocumentMessage> message);
-
+    uint32_t pending() override { return pendingCount; }
+    mbus::Result send(std::unique_ptr<documentapi::DocumentMessage> message) override;
     void waitForMessages(unsigned int msgCount);
-
     vespalib::Monitor& getMonitor() { return _waitMonitor; }
 };
 
@@ -56,24 +52,18 @@ struct TestVisitorMessageSessionFactory : public VisitorMessageSessionFactory
         : _createAutoReplyVisitorSessions(false),
           _priConverter(configId) {}
 
-    VisitorMessageSession::UP createSession(Visitor& v, VisitorThread& vt) {
+    VisitorMessageSession::UP createSession(Visitor& v, VisitorThread& vt) override {
         vespalib::LockGuard lock(_accessLock);
-        TestVisitorMessageSession::UP session(
-                new TestVisitorMessageSession(
-                    vt,
-                    v,
-                    _autoReplyError,
-                    _createAutoReplyVisitorSessions));
+        TestVisitorMessageSession::UP session(new TestVisitorMessageSession(vt, v, _autoReplyError,
+                                                                            _createAutoReplyVisitorSessions));
         _visitorSessions.push_back(session.get());
         return VisitorMessageSession::UP(std::move(session));
     }
 
-    documentapi::Priority::Value toDocumentPriority(uint8_t storagePriority) const
-    {
+    documentapi::Priority::Value toDocumentPriority(uint8_t storagePriority) const override {
         return _priConverter.toDocumentPriority(storagePriority);
     }
 
 };
 
 } // storage
-
