@@ -4,7 +4,6 @@
  * @file url.h
  * @author Michael Susæg
  * @date Creation date:
- * @version $Id$
  *
  * This file is the header file for the url class.
  *

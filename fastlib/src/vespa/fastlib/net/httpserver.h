@@ -4,9 +4,6 @@
 *
 * @author Stein Hardy Danielsen
 * @date            Creation date: 2000-1-7
-* @version         $Id$
-*
-* @file
 *
 * Generic http server and connection classes
 *
@@ -39,7 +36,6 @@ class Fast_HTTPServer;
 * Generic HTTP connection class
 * @author Stein Hardy Danielsen
 * @date            Creation date: 2000-1-7
-* @version         $Id$
 *
 * Generic HTTP connection class
 *
@@ -146,7 +142,6 @@ public:
 *
 * @author Stein Hardy Danielsen
 * @date            Creation date: 2000-1-7
-* @version         $Id$
 *
 * Copyright (c)  : 1997-1999 Fast Search & Transfer ASA
 *                  ALL RIGHTS RESERVED

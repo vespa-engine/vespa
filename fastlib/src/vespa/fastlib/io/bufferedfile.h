@@ -3,7 +3,6 @@
 /**
  * Class definitions for Fast_BufferedInputStream
  *
- * @version $Id$
  */
 /*
  * Creation date    : 2001-05-22

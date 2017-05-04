@@ -4,7 +4,6 @@
  * @file url.cpp
  * @author Michael Susæg
  * @date Creation date: 1999-11-23
- * @version $Id$
  *
  * This file contains different URL string functions
  *

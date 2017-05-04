@@ -3,8 +3,7 @@
 *****************************************************************************
 * @author Bård Kvalheim
 * @date    Creation date: 2001-12-07
-* @version $Id$
-* @file
+*
 * A configurable tokenizer template that accepts two predicates: One to
 * determine separator symbols and one to determine punctuation symbols. A
 * typedef is defined that uses isspace/1 and ispunct/1.
@@ -45,7 +44,6 @@
 * @class   Fast_LatinTokenizer
 * @author Bård Kvalheim
 * @date    Creation date: 2001-12-07
-* @version $Id$
 *****************************************************************************/
 
 template <typename IsSeparator, typename IsPunctuation>
@@ -345,7 +343,6 @@ Fast_LatinTokenizer<IsSeparator, IsPunctuation>::GetOriginalText() {
 * @class   Fast_IsSpace
 * @author Bård Kvalheim
 * @date    Creation date: 2001-12-07
-* @version $Id$
 *****************************************************************************/
 
 struct Fast_IsSpace {
@@ -362,7 +359,6 @@ struct Fast_IsSpace {
 * @class   Fast_IsPunctuation
 * @author Bård Kvalheim
 * @date    Creation date: 2001-12-07
-* @version $Id$
 *****************************************************************************/
 
 struct Fast_IsPunctuation {
@@ -376,7 +372,6 @@ struct Fast_IsPunctuation {
 * @class   Fast_SimpleLatinTokenizer
 * @author Bård Kvalheim
 * @date    Creation date: 2001-12-07
-* @version $Id$
 *****************************************************************************/
 
 typedef Fast_LatinTokenizer<Fast_IsSpace, Fast_IsPunctuation> Fast_SimpleLatinTokenizer;

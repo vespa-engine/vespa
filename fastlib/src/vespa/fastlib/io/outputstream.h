@@ -4,9 +4,6 @@
 *
 * @author Stein Hardy Danielsen
 * @date            Creation date: 2000-1-14
-* @version         $Id$
-*
-* @file
 *
 * Generic output stream interface
 *

@@ -3,8 +3,6 @@
 *****************************************************************************
 * @author Aleksander Øhrn
 * @date    Creation date: 2000-10-16
-* @version $Id$
-* @file
 * Utility functions for base-64 encoding/decoding.
 *****************************************************************************/
 

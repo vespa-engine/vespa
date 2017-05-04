@@ -3,8 +3,6 @@
 *****************************************************************************
 * @author Aleksander Øhrn
 * @date    Creation date: 2001-10-16
-* @version $Id$
-* @file
 * Utility functions for base-64 encoding/decoding.
 *****************************************************************************/
 
@@ -17,7 +15,6 @@
 * @class   Fast_Base64
 * @author Aleksander Øhrn
 * @date    Creation date : 2001-10-16
-* @version $Id$
 *****************************************************************************/
 
 class Fast_Base64 {

@@ -4,9 +4,6 @@
 *
 * @author Markus Bjartveit Krüger
 * @date            Creation date: 2001-10-30
-* @version         $Id$
-*
-* @file
 *
 * Generic buffered output stream
 *

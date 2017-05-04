@@ -4,9 +4,6 @@
 *
 * @author Markus Bjartveit Krüger
 * @date            Creation date: 2001-11-21
-* @version         $Id$
-*
-* @file
 *
 * HTTP chunked output stream.
 *

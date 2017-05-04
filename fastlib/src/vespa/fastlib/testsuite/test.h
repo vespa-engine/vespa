@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**************************************************************************
  * @author Bård Kvalheim
- * @version $Id;
- * @file
  *
  * The test class of the testsuite. Written by Chuck Allison.
  * http://www.cuj.com/archive/1809/feature.html
