@@ -83,6 +83,7 @@ public:
  **/
 class StringVector : public VectorBase<vespalib::string, const char *, feature_t, ConstCharComparator> {
 public:
+    StringVector();
     ~StringVector();
     void insert(const vespalib::stringref & label, const vespalib::stringref & value) {
         _vector.push_back(std::make_pair(label, util::strToNum<feature_t>(value)));
