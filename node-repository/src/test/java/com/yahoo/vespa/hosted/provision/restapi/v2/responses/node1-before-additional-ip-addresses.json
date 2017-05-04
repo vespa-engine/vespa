@@ -1,0 +1,37 @@
+{
+  "url": "http://localhost:8080/nodes/v2/node/host1.yahoo.com",
+  "id": "host1.yahoo.com",
+  "state": "active",
+  "type": "tenant",
+  "hostname": "host1.yahoo.com",
+  "openStackId": "node1",
+  "flavor": "default",
+  "canonicalFlavor": "default",
+  "minDiskAvailableGb":400.0,
+  "minMainMemoryAvailableGb":16.0,
+  "description":"Flavor-name-is-default",
+  "minCpuCores":2.0,
+  "environment":"BARE_METAL",
+  "owner": {
+    "tenant": "tenant2",
+    "application": "application2",
+    "instance": "instance2"
+  },
+  "membership": {
+    "clustertype": "content",
+    "clusterid": "id2",
+    "group": "0",
+    "index": 0,
+    "retired": false
+  },
+  "restartGeneration": 0,
+  "currentRestartGeneration": 0,
+  "wantedDockerImage":"docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.0",
+  "wantedVespaVersion":"6.42.0",
+  "rebootGeneration": 1,
+  "currentRebootGeneration": 0,
+  "failCount": 0,
+  "wantToRetire" : false,
+  "history":[{"type":"readied","at":123,"type":"system"},{"type":"reserved","at":123,"agent":"application"},{"type":"activated","at":123,"agent":"application"}],
+  "ipAddresses":["::1", "127.0.0.1"]
+}

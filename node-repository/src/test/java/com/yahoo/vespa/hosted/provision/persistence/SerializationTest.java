@@ -12,6 +12,7 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.io.IOUtils;
 import com.yahoo.test.ManualClock;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -24,6 +25,8 @@ import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import org.junit.Test;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
@@ -250,7 +253,7 @@ public class SerializationTest {
     }
 
     @Test
-    public void serialize_additional_ip_addresses() {
+    public void serialize_additional_ip_addresses() throws IOException {
         Node node = createNode();
 
         // Test round-trip with additional addresses
@@ -262,6 +265,11 @@ public class SerializationTest {
         node = createNode();
         copy = nodeSerializer.fromJson(node.state(), nodeSerializer.toJson(node));
         assertEquals(node.additionalIpAddresses(), copy.additionalIpAddresses());
+
+        // Test deserialization of a json file without the additional ip addresses field
+        byte[] jsonBeforeAdditionalIps = IOUtils.readFileBytes(new File("src/test/java/com/yahoo/vespa/hosted/provision/restapi/v2/responses/node1-before-additional-ip-addresses.json"));
+        node = nodeSerializer.fromJson(State.active, jsonBeforeAdditionalIps);
+        assertEquals(Collections.emptySet(), node.additionalIpAddresses());
     }
 
     @Test
