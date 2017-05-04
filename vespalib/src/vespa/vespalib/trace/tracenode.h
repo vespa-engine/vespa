@@ -48,6 +48,9 @@ public:
      */
     explicit TraceNode(int64_t timestamp);
 
+    TraceNode & operator =(const TraceNode &);
+    TraceNode(TraceNode &&) = default;
+    TraceNode & operator =(TraceNode &&) = default;
     ~TraceNode();
 
     /**
