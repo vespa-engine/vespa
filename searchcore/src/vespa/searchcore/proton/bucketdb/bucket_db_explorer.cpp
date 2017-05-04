@@ -56,6 +56,10 @@ BucketDBExplorer::BucketDBExplorer(BucketDBOwner::Guard bucketDb)
 {
 }
 
+BucketDBExplorer::~BucketDBExplorer()
+{
+}
+
 void
 BucketDBExplorer::get_state(const Inserter &inserter, bool full) const
 {

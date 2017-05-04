@@ -31,6 +31,7 @@ public:
     FastAccessDocSubDBConfigurer(FeedViewVarHolder &feedView,
                                  IAttributeWriterFactory::UP factory,
                                  const vespalib::string &subDbName);
+    ~FastAccessDocSubDBConfigurer();
 
     IReprocessingInitializer::UP reconfigure(const DocumentDBConfig &newConfig,
                                              const DocumentDBConfig &oldConfig,

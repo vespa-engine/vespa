@@ -18,6 +18,7 @@ public:
     typedef vespa::config::content::core::StorPrioritymappingConfig Config;
 
     PriorityConverter(const config::ConfigUri& configUri);
+    ~PriorityConverter();
 
     /** Converts the given priority into a storage api priority number. */
     uint8_t toStoragePriority(documentapi::Priority::Value) const;

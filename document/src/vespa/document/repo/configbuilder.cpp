@@ -19,5 +19,14 @@ DatatypeConfig::DatatypeConfig() {
 DatatypeConfig::DatatypeConfig(const DatatypeConfig&) = default;
 DatatypeConfig& DatatypeConfig::operator=(const DatatypeConfig&) = default;
 
+void DatatypeConfig::addNestedType(const TypeOrId &t) {
+    if (t.has_type) {
+        nested_types.insert(nested_types.end(),
+                            t.type.nested_types.begin(),
+                            t.type.nested_types.end());
+        nested_types.push_back(t.type);
+    }
+}
+
 }  // namespace config_builder
 }  // namespace document

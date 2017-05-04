@@ -95,6 +95,9 @@ AttributeUsageFilter::AttributeUsageFilter()
 {
 }
 
+AttributeUsageFilter::~AttributeUsageFilter()
+{
+}
 
 void
 AttributeUsageFilter::setAttributeStats(AttributeUsageStats attributeStats_in)

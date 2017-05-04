@@ -33,6 +33,7 @@ private:
     void recalcState(const Guard &guard); // called with _lock held
 public:
     AttributeUsageFilter();
+    ~AttributeUsageFilter();
     void setAttributeStats(AttributeUsageStats attributeStats_in);
     AttributeUsageStats getAttributeUsageStats() const;
     void setConfig(Config config);

@@ -46,6 +46,10 @@ FastAccessDocSubDBConfigurer::FastAccessDocSubDBConfigurer(FeedViewVarHolder &fe
 {
 }
 
+FastAccessDocSubDBConfigurer::~FastAccessDocSubDBConfigurer()
+{
+}
+
 IReprocessingInitializer::UP
 FastAccessDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
                                           const DocumentDBConfig &oldConfig,

@@ -30,7 +30,7 @@ struct FastS_MergeFeatures
 
 
 template <typename T, typename F>
-inline bool
+bool
 FastS_MergeCompare(typename T::NodeType *a,
                    typename T::NodeType *b)
 {

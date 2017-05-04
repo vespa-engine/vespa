@@ -11,6 +11,10 @@ SimpleHealthProducer::SimpleHealthProducer()
     setOk();
 }
 
+SimpleHealthProducer::~SimpleHealthProducer()
+{
+}
+
 void
 SimpleHealthProducer::setOk()
 {
