@@ -84,7 +84,7 @@ FUTF8StrChrFieldSearcher::lfoldua(const char * toFold, size_t sz, char * folded,
 
 namespace {
 
-inline const char * advance(const char * n, register const v16qi zero)
+inline const char * advance(const char * n, const v16qi zero)
 {
     uint32_t charMap = 0;
     unsigned zeroCountSum = 0;
@@ -126,7 +126,7 @@ inline const char * advance(const char * n, register const v16qi zero)
 
 size_t FUTF8StrChrFieldSearcher::match(const char *folded, size_t sz, QueryTerm & qt)
 {
-  register const v16qi _G_zero  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+  const v16qi _G_zero  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
   termcount_t words(0);
   const char * term;
   termsize_t tsz = qt.term(term);
@@ -170,7 +170,7 @@ size_t FUTF8StrChrFieldSearcher::match(const char *folded, size_t sz, QueryTerm 
 size_t FUTF8StrChrFieldSearcher::match(const char *folded, size_t sz, size_t mintsz, QueryTerm ** qtl, size_t qtlSize)
 {
   (void) mintsz;
-  register const v16qi _G_zero  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+  const v16qi _G_zero  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
   termcount_t words(0);
   const char * n = folded;
   const char *e = n + sz;
