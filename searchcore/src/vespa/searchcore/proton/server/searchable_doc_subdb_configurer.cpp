@@ -219,6 +219,9 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
         shouldFeedViewChange = true;
         initializer.reset(createAttributeReprocessingInitializer(newConfig, newAttrMgr,
                                                                  oldConfig, oldAttrMgr, _subDbName, attrSpec.getCurrentSerialNum()).release());
+    } else if (params.shouldAttributeWriterChange()) {
+        attrWriter = std::make_shared<AttributeWriter>(attrMgr);
+        shouldFeedViewChange = true;
     }
 
     ISummaryManager::ISummarySetup::SP sumSetup =

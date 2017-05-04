@@ -23,6 +23,7 @@ public:
     bool shouldSummaryManagerChange() const;
     bool shouldSubDbsChange() const;
     bool shouldMaintenanceControllerChange() const;
+    bool shouldAttributeWriterChange() const;
 };
 
 }
