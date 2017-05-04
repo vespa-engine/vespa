@@ -23,7 +23,7 @@
 #include "visitor.h"
 #include "visitormetrics.h"
 #include "visitorthread.h"
-#include "config-stor-visitor.h"
+#include <vespa/storage/visiting/config-stor-visitor.h>
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storageapi/message/datagram.h>
