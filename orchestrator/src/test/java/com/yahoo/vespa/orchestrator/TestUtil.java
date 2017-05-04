@@ -32,6 +32,6 @@ public class TestUtil {
     }
 
     public static ConfigId clusterControllerConfigId(String contentClusterName, int index) {
-        return new ConfigId(contentClusterName + "/cluster-controllers/" + index);
+        return new ConfigId(contentClusterName + "/standalone/" + contentClusterName + "-controllers/" + index);
     }
 }
