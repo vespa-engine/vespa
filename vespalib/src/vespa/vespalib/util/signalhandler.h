@@ -59,8 +59,9 @@ private:
      * initialization.
      **/
     SignalHandler(int signal);
-    SignalHandler(const SignalHandler &); // not defined
-    SignalHandler &operator=(const SignalHandler &); // not defined
+
+    SignalHandler(const SignalHandler &) = delete;
+    SignalHandler &operator=(const SignalHandler &) = delete;
 
 public:
     static SignalHandler HUP;
@@ -103,8 +104,7 @@ public:
      **/
     void unhook();
 
-    static void
-    shutdown(void);
+    static void shutdown();
 };
 
 } // vespalib

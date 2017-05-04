@@ -1,25 +1,20 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root
 
-#include <boost/program_options.hpp>
-
-#include <vespa/fastos/app.h>
-#include <vespa/config-zookeepers.h>
-
-#include <vespa/fileacquirer/config-filedistributorrpc.h>
 #include <vespa/filedistribution/distributor/config-filedistributor.h>
 #include <vespa/filedistribution/model/config-filereferences.h>
 
 #include <vespa/filedistribution/distributor/filedistributortrackerimpl.h>
 #include <vespa/filedistribution/distributor/filedownloadermanager.h>
-#include <vespa/filedistribution/distributor/filedownloader.h>
 #include <vespa/filedistribution/distributor/signalhandling.h>
 #include <vespa/filedistribution/distributor/state_server_impl.h>
 
 #include <vespa/filedistribution/model/filedistributionmodelimpl.h>
 #include <vespa/filedistribution/rpc/filedistributorrpc.h>
-#include <vespa/filedistribution/common/exception.h>
 #include <vespa/filedistribution/common/componentsdeleter.h>
-#include <iostream>
+#include <vespa/fileacquirer/config-filedistributorrpc.h>
+#include <vespa/config-zookeepers.h>
+#include <vespa/fastos/app.h>
+#include <boost/program_options.hpp>
 
 namespace {
 const char* programName = "filedistributor";
@@ -182,6 +177,10 @@ public:
         }
     }
 
+    bool isConfigComplete() {
+        LockGuard guard(_configMutex);
+        return (_zooKeepersConfig && _fileDistributorConfig && _rpcConfig);
+    }
     void createComponents(const config::ConfigUri & configUri) {
         LockGuard guard(_configMutex);
         _components.reset(
@@ -219,8 +218,8 @@ public:
 	       (postPoneAskedToReinitializedSecs > 0 || !askedToReinitialize()) &&
 	       !completeReconfigurationNeeded())
         {
-	    postPoneAskedToReinitializedSecs--;
-	    std::this_thread::sleep_for(1s);
+            postPoneAskedToReinitializedSecs--;
+            std::this_thread::sleep_for(1s);
         }
         _components.reset();
     }
@@ -257,8 +256,7 @@ bool exists(const std::string& optionName, const boost::program_options::variabl
     return map.find(optionName) != map.end();
 }
 
-void ensureExists(const std::string& optionName, const boost::program_options::variables_map& map \
-                  ) {
+void ensureExists(const std::string& optionName, const boost::program_options::variables_map& map ) {
     if (!exists(optionName, map)) {
         throw ProgramOptionException("Error: Missing option " + optionName);
     }
@@ -282,6 +280,9 @@ FileDistributorApplication::Main() {
         configFetcher.subscribeGenerationChanges(&distributor);
         configFetcher.start();
 
+        while (! distributor.isConfigComplete() ) {
+            std::this_thread::sleep_for(10ms);
+        }
         distributor.run(_configUri);
 
         EV_STOPPING(programName, "Clean exit");
