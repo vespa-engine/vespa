@@ -12,8 +12,7 @@ namespace {
 class Shutdown
 {
 public:
-    ~Shutdown(void)
-    {
+    ~Shutdown() {
         SignalHandler::shutdown();
     }
 };
@@ -106,7 +105,7 @@ SignalHandler::unhook()
 
 
 void
-SignalHandler::shutdown(void)
+SignalHandler::shutdown()
 {
     for (std::vector<SignalHandler*>::iterator
              it = _handlers.begin(), ite = _handlers.end();
