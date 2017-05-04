@@ -79,12 +79,22 @@ UniqueStore<EntryT, RefT>::move(EntryRef ref)
     return _store.template allocator<EntryType>(_typeId).alloc(get(ref)).ref;
 }
 
+template <typename T>
+T defaultValue() {
+    return T();
+}
+
+template <uint32_t>
+uint32_t defaultValue() {
+    return 0u;
+}
+
 template <typename EntryT, typename RefT>
 void
 UniqueStore<EntryT, RefT>::remove(EntryRef ref)
 {
     assert(ref.valid());
-    EntryType unused;
+    EntryType unused(defaultValue<EntryType>());
     Compare comp(_store, unused);
     auto itr = _dict.lowerBound(ref, comp);
     if (itr.valid() && itr.getKey() == ref) {
