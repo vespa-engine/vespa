@@ -6,6 +6,9 @@ LOG_SETUP(".protocolrepository");
 
 namespace mbus {
 
+ProtocolRepository::ProtocolRepository() {}
+ProtocolRepository::~ProtocolRepository() {}
+
 void
 ProtocolRepository::clearPolicyCache()
 {

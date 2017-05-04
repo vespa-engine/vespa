@@ -165,6 +165,12 @@ DistributionTest::testVerifyJavaDistributions()
 
 namespace {
     struct ExpectedResult {
+        ExpectedResult() { }
+        ExpectedResult(const ExpectedResult &) = default;
+        ExpectedResult & operator = (const ExpectedResult &) = default;
+        ExpectedResult(ExpectedResult &&) = default;
+        ExpectedResult & operator = (ExpectedResult &&) = default;
+        ~ExpectedResult() { }
         document::BucketId bucket;
         IdealNodeList nodes;
         vespalib::string failure;
