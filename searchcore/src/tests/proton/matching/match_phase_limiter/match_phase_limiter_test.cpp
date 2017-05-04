@@ -35,7 +35,7 @@ struct MockSearch : SearchIterator {
     uint32_t last_seek = beginId();
     uint32_t last_unpack = beginId();
     MockSearch(const vespalib::string &term_in)
-        : spec(0, 0, 0), term(term_in), _strict(vespalib::Trinary::True), tfmda(), postings_fetched(false) {}
+        : spec("", 0, 0), term(term_in), _strict(vespalib::Trinary::True), tfmda(), postings_fetched(false) {}
     MockSearch(const FieldSpec &spec_in, const vespalib::string &term_in, bool strict_in,
                const TermFieldMatchDataArray &tfmda_in, bool postings_fetched_in)
         : spec(spec_in), term(term_in),
