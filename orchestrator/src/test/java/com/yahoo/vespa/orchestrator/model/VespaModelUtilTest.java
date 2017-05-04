@@ -216,12 +216,6 @@ public class VespaModelUtilTest {
     }
 
     @Test
-    public void testGetClusterControllerIndexWithNonStandardClusterName() {
-        ConfigId configId = new ConfigId("foo/cluster-controllers/2");
-        assertThat(VespaModelUtil.getClusterControllerIndex(configId)).isEqualTo(2);
-    }
-
-    @Test
     public void testGetClusterControllerIndexWithStandaloneClusterController() {
         ConfigId configId = new ConfigId("foo/standalone/cluster-controllers/2");
         assertThat(VespaModelUtil.getClusterControllerIndex(configId)).isEqualTo(2);
