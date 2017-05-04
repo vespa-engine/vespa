@@ -12,7 +12,6 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.io.IOUtils;
 import com.yahoo.test.ManualClock;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -25,7 +24,6 @@ import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -266,9 +264,47 @@ public class SerializationTest {
         copy = nodeSerializer.fromJson(node.state(), nodeSerializer.toJson(node));
         assertEquals(node.additionalIpAddresses(), copy.additionalIpAddresses());
 
+        // TODO remove after MAI 2017
         // Test deserialization of a json file without the additional ip addresses field
-        byte[] jsonBeforeAdditionalIps = IOUtils.readFileBytes(new File("src/test/java/com/yahoo/vespa/hosted/provision/restapi/v2/responses/node1-before-additional-ip-addresses.json"));
-        node = nodeSerializer.fromJson(State.active, jsonBeforeAdditionalIps);
+        String json = "{\n" +
+                "  \"url\": \"http://localhost:8080/nodes/v2/node/host1.yahoo.com\",\n" +
+                "  \"id\": \"host1.yahoo.com\",\n" +
+                "  \"state\": \"active\",\n" +
+                "  \"type\": \"tenant\",\n" +
+                "  \"hostname\": \"host1.yahoo.com\",\n" +
+                "  \"openStackId\": \"node1\",\n" +
+                "  \"flavor\": \"default\",\n" +
+                "  \"canonicalFlavor\": \"default\",\n" +
+                "  \"minDiskAvailableGb\":400.0,\n" +
+                "  \"minMainMemoryAvailableGb\":16.0,\n" +
+                "  \"description\":\"Flavor-name-is-default\",\n" +
+                "  \"minCpuCores\":2.0,\n" +
+                "  \"environment\":\"BARE_METAL\",\n" +
+                "  \"owner\": {\n" +
+                "    \"tenant\": \"tenant2\",\n" +
+                "    \"application\": \"application2\",\n" +
+                "    \"instance\": \"instance2\"\n" +
+                "  },\n" +
+                "  \"membership\": {\n" +
+                "    \"clustertype\": \"content\",\n" +
+                "    \"clusterid\": \"id2\",\n" +
+                "    \"group\": \"0\",\n" +
+                "    \"index\": 0,\n" +
+                "    \"retired\": false\n" +
+                "  },\n" +
+                "  \"restartGeneration\": 0,\n" +
+                "  \"currentRestartGeneration\": 0,\n" +
+                "  \"wantedDockerImage\":\"docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.0\",\n" +
+                "  \"wantedVespaVersion\":\"6.42.0\",\n" +
+                "  \"rebootGeneration\": 1,\n" +
+                "  \"currentRebootGeneration\": 0,\n" +
+                "  \"failCount\": 0,\n" +
+                "  \"wantToRetire\" : false,\n" +
+                "  \"history\":[{\"type\":\"readied\",\"at\":123,\"type\":\"system\"},{\"type\":\"reserved\",\"at\":123,\"agent\":\"application\"},{\"type\":\"activated\",\"at\":123,\"agent\":\"application\"}],\n" +
+                "  \"ipAddresses\":[\"::1\", \"127.0.0.1\"]\n" +
+                "}";
+
+        node = nodeSerializer.fromJson(State.active, Utf8.toBytes(json));
         assertEquals(Collections.emptySet(), node.additionalIpAddresses());
     }
 
