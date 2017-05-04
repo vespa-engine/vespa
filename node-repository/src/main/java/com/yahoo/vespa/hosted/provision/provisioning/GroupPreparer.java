@@ -82,7 +82,7 @@ class GroupPreparer {
             // Use new, ready nodes. Lock ready pool to ensure that nodes are not grabbed by others.
             try (Mutex readyLock = nodeRepository.lockUnallocated()) {
                 List<Node> readyNodes = nodeRepository.getNodes(requestedNodes.type(), Node.State.ready);
-                accepted = nodeList.offer(stripeOverHosts(prioritizeNodes(readyNodes, requestedNodes)), !canChangeGroup);
+                accepted = nodeList.offer(prioritizeNodes(readyNodes, requestedNodes), !canChangeGroup);
                 nodeList.update(nodeRepository.reserve(accepted));
             }
 
@@ -109,61 +109,24 @@ class GroupPreparer {
      * to use comes first 
      */
     private List<Node> prioritizeNodes(List<Node> nodeList, NodeSpec nodeSpec) {
-        if ( nodeSpec.specifiesNonStockFlavor()) { // sort by exact before inexact flavor match, increasing cost, hostname
+        if ( nodeSpec.specifiesNonStockFlavor()) { // prefer exact flavor, docker hosts, lower cost, tie break by hostname
             Collections.sort(nodeList, (n1, n2) -> ComparisonChain.start()
                     .compareTrueFirst(nodeSpec.matchesExactly(n1.flavor()), nodeSpec.matchesExactly(n2.flavor()))
+                    .compareTrueFirst(n1.parentHostname().isPresent(), n2.parentHostname().isPresent())
                     .compare(n1.flavor().cost(), n2.flavor().cost())
                     .compare(n1.hostname(), n2.hostname())
                     .result()
             );
         }
-        else { // sort by increasing cost, hostname
+        else { // prefer docker hosts, lower cost, tie break by hostname
             Collections.sort(nodeList, (n1, n2) -> ComparisonChain.start()
-                    .compareTrueFirst(nodeSpec.matchesExactly(n1.flavor()), nodeSpec.matchesExactly(n1.flavor()))
+                    .compareTrueFirst(n1.parentHostname().isPresent(), n2.parentHostname().isPresent())
                     .compare(n1.flavor().cost(), n2.flavor().cost())
                     .compare(n1.hostname(), n2.hostname())
                     .result()
             );
         }
         return nodeList;
-    }
-
-    /** Return the input nodes in an order striped over their parent hosts */
-    static List<Node> stripeOverHosts(List<Node> input) {
-        List<Node> output = new ArrayList<>(input.size());
-
-        // first deal with nodes having a parent host
-        long nodesHavingParent = input.stream()
-            .filter(n -> n.parentHostname().isPresent())
-            .collect(Collectors.counting());
-        if (nodesHavingParent > 0) {
-            // Make a map where each parent host maps to its list of child nodes
-            Map<String, List<Node>> byParentHosts = input.stream()
-                .filter(n -> n.parentHostname().isPresent())
-                .collect(Collectors.groupingBy(n -> n.parentHostname().get()));
-
-            // sort keys, those parent hosts with the most (remaining) ready nodes first
-            List<String> sortedParentHosts = byParentHosts
-                .keySet().stream()
-                .sorted((k1, k2) -> byParentHosts.get(k2).size() - byParentHosts.get(k1).size())
-                .collect(Collectors.toList());
-            while (nodesHavingParent > 0) {
-                // take one node from each parent host, round-robin.
-                for (String k : sortedParentHosts) {
-                    List<Node> leftFromHost = byParentHosts.get(k);
-                    if (! leftFromHost.isEmpty()) {
-                        output.add(leftFromHost.remove(0));
-                        --nodesHavingParent;
-                    }
-                }
-            }
-        }
-
-        // now add non-VMs (nodes without a parent):
-        input.stream()
-            .filter(n -> ! n.parentHostname().isPresent())
-            .forEach(n -> output.add(n));
-        return output;
     }
 
     /** Used to manage a list of nodes during the node reservation process */
