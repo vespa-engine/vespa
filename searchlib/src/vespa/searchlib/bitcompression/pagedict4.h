@@ -572,7 +572,7 @@ public:
         uint32_t _l7Ref;	// L7 entry before overflow, or self-ref if L6
 
         L7Entry()
-            : _l7Word(0),
+            : _l7Word(),
               _l7StartOffset(),
               _l7WordNum(0),
               _l6Offset(0),
