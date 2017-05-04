@@ -44,6 +44,7 @@ public:
     virtual ResultNode & flattenAnd(ResultNode & r) const { return r; }
     virtual ResultNode &  flattenOr(ResultNode & r) const { return r; }
     virtual ResultNode & flattenXor(ResultNode & r) const { return r; }
+    virtual ResultNode & flattenSumOfSquared(ResultNode & r) const { return r; }
     virtual void min(const ResultNode & b) { (void) b; }
     virtual void max(const ResultNode & b) { (void) b; }
     virtual void add(const ResultNode & b) { (void) b; }
@@ -281,6 +282,19 @@ public:
         const std::vector<B> & vec(this->getVector());
         for(size_t i(0), m(vec.size()); i < m; i++) {
             v.min(vec[i]);
+        }
+        r.set(v);
+        return r;
+    }
+    ResultNode & flattenSumOfSquared(ResultNode & r) const override {
+        B v;
+        v.set(r);
+        const std::vector<B> & vec(this->getVector());
+        for(size_t i(0), m(vec.size()); i < m; i++) {
+            B squared;
+            squared.set(vec[i]);
+            squared.multiply(vec[i]);
+            v.add(squared);
         }
         r.set(v);
         return r;
