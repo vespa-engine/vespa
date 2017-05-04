@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
 *****************************************************************************
-* @author  Aleksander �hrn
+* @author Aleksander Øhrn
 * @date    Creation date: 2000-10-16
 * @version $Id$
 * @file
@@ -17,7 +17,7 @@
 *****************************************************************************
 * Define lookup table.
 *
-* @author Aleksander �hrn
+* @author Aleksander Øhrn
 *****************************************************************************/
 
 static const char _base64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

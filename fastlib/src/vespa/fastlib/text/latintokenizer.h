@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
 *****************************************************************************
-* @author  B�rd Kvalheim
+* @author Bård Kvalheim
 * @date    Creation date: 2001-12-07
 * @version $Id$
 * @file
@@ -43,7 +43,7 @@
 * A simple tokenizer. See description above.
 *
 * @class   Fast_LatinTokenizer
-* @author  B�rd Kvalheim
+* @author Bård Kvalheim
 * @date    Creation date: 2001-12-07
 * @version $Id$
 *****************************************************************************/
@@ -129,7 +129,7 @@ private:
 *****************************************************************************
 * Default constructor.
 *
-* @author B�rd Kvalheim
+* @author Bård Kvalheim
 *****************************************************************************/
 
 template <typename IsSeparator, typename IsPunctuation>
@@ -148,7 +148,7 @@ Fast_LatinTokenizer<IsSeparator, IsPunctuation>::Fast_LatinTokenizer() :
 * Constructor. Accepts a '\0' terminated text buffer.
 *
 * @param  text
-* @author B�rd Kvalheim
+* @author Bård Kvalheim
 *****************************************************************************/
 
 template <typename IsSeparator, typename IsPunctuation>
@@ -169,7 +169,7 @@ Fast_LatinTokenizer<IsSeparator, IsPunctuation>::Fast_LatinTokenizer(char *text)
 *
 * @param  text
 * @param  length
-* @author B�rd Kvalheim
+* @author Bård Kvalheim
 *****************************************************************************/
 
 template <typename IsSeparator, typename IsPunctuation>
@@ -188,7 +188,7 @@ Fast_LatinTokenizer<IsSeparator, IsPunctuation>::Fast_LatinTokenizer(char *text,
 *****************************************************************************
 * Destructor.
 *
-* @author B�rd Kvalheim
+* @author Bård Kvalheim
 *****************************************************************************/
 
 template <typename IsSeparator, typename IsPunctuation>
@@ -200,7 +200,7 @@ Fast_LatinTokenizer<IsSeparator, IsPunctuation>::~Fast_LatinTokenizer() {
 * Sets a new '\0' terminated string.
 *
 * @param  text
-* @author B�rd Kvalheim
+* @author Bård Kvalheim
 *****************************************************************************/
 
 template <typename IsSeparator, typename IsPunctuation>
@@ -219,7 +219,7 @@ Fast_LatinTokenizer<IsSeparator, IsPunctuation>::SetNewText(char *text) {
 *
 * @param  text
 * @param  length
-* @author B�rd Kvalheim
+* @author Bård Kvalheim
 *****************************************************************************/
 
 template <typename IsSeparator, typename IsPunctuation>
@@ -236,7 +236,7 @@ Fast_LatinTokenizer<IsSeparator, IsPunctuation>::SetNewText(char *text, size_t l
 *****************************************************************************
 * Skips all blanks and flags if there are more tokens.
 *
-* @author B�rd Kvalheim
+* @author Bård Kvalheim
 *****************************************************************************/
 
 template <typename IsSeparator, typename IsPunctuation>
@@ -270,7 +270,7 @@ Fast_LatinTokenizer<IsSeparator, IsPunctuation>::SkipBlanks() {
 *****************************************************************************
 * Returns true if there are more tokens left in the text buffer.
 *
-* @author B�rd Kvalheim
+* @author Bård Kvalheim
 *****************************************************************************/
 
 template <typename IsSeparator, typename IsPunctuation>
@@ -284,7 +284,7 @@ Fast_LatinTokenizer<IsSeparator, IsPunctuation>::MoreTokens() {
 *****************************************************************************
 * Returns the next token as a Fast_Token.
 *
-* @author B�rd Kvalheim
+* @author Bård Kvalheim
 *****************************************************************************/
 
 template <typename IsSeparator, typename IsPunctuation>
@@ -326,7 +326,7 @@ Fast_LatinTokenizer<IsSeparator, IsPunctuation>::GetNextToken() {
 *****************************************************************************
 * Returns the original text buffer.
 *
-* @author B�rd Kvalheim
+* @author Bård Kvalheim
 *****************************************************************************/
 
 template <typename IsSeparator, typename IsPunctuation>
@@ -343,7 +343,7 @@ Fast_LatinTokenizer<IsSeparator, IsPunctuation>::GetOriginalText() {
 * avoid problems with sign extension. See system documentation for details.
 *
 * @class   Fast_IsSpace
-* @author  B�rd Kvalheim
+* @author Bård Kvalheim
 * @date    Creation date: 2001-12-07
 * @version $Id$
 *****************************************************************************/
@@ -360,7 +360,7 @@ struct Fast_IsSpace {
 * avoid problems with sign extension. See system documentation for details.
 *
 * @class   Fast_IsPunctuation
-* @author  B�rd Kvalheim
+* @author Bård Kvalheim
 * @date    Creation date: 2001-12-07
 * @version $Id$
 *****************************************************************************/
@@ -374,7 +374,7 @@ struct Fast_IsPunctuation {
 * A simple tokenizer. See description above.
 *
 * @class   Fast_SimpleLatinTokenizer
-* @author  B�rd Kvalheim
+* @author Bård Kvalheim
 * @date    Creation date: 2001-12-07
 * @version $Id$
 *****************************************************************************/

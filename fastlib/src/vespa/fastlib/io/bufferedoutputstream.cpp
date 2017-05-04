@@ -2,7 +2,7 @@
 /**
 *******************************************************************************
 *
-* @author          Markus Bjartveit Kr�ger
+* @author Markus Bjartveit Krüger
 * @date            Creation date: 2001-10-30
 * @version         $Id$
 *

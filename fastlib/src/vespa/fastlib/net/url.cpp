@@ -2,7 +2,7 @@
 /**
  *
  * @file url.cpp
- * @author Michael Sus�g
+ * @author Michael Susæg
  * @date Creation date: 1999-11-23
  * @version $Id$
  *

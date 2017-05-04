@@ -2,7 +2,7 @@
 /**
 *******************************************************************************
 *
-* @author          Stein Hardy Danielsen
+* @author Stein Hardy Danielsen
 * @date            Creation date: 2000-1-7
 * @version         $Id$
 *
@@ -37,7 +37,7 @@ class Fast_HTTPServer;
 ********************************************************************************
 *
 * Generic HTTP connection class
-* @author          Stein Hardy Danielsen
+* @author Stein Hardy Danielsen
 * @date            Creation date: 2000-1-7
 * @version         $Id$
 *
@@ -144,7 +144,7 @@ public:
 *
 * Generic HTTP server class
 *
-* @author          Stein Hardy Danielsen
+* @author Stein Hardy Danielsen
 * @date            Creation date: 2000-1-7
 * @version         $Id$
 *

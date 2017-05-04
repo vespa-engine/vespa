@@ -2,7 +2,7 @@
 /**
  *
  * @file url.h
- * @author Michael Sus�g
+ * @author Michael Susæg
  * @date Creation date:
  * @version $Id$
  *

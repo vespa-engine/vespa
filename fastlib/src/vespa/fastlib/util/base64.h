@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
 *****************************************************************************
-* @author  Aleksander �hrn
+* @author Aleksander Øhrn
 * @date    Creation date: 2001-10-16
 * @version $Id$
 * @file
@@ -15,7 +15,7 @@
 * Utility functions for base-64 encoding/decoding.
 *
 * @class   Fast_Base64
-* @author  Aleksander �hrn
+* @author Aleksander Øhrn
 * @date    Creation date : 2001-10-16
 * @version $Id$
 *****************************************************************************/
@@ -33,7 +33,7 @@ public:
      * @param  destination is the destination buffer
      * @return Length of the destination string, INCLUDING the trailing '\0' byte.
      *         Returns -1 on error.
-     * @author Aleksander �hrn
+     * @author Aleksander Øhrn
      ***************************************************************************/
     static int Encode(const char *source,
                       unsigned int length,
@@ -54,7 +54,7 @@ public:
      *         that originally went into Encode().
      * @return Length of the destination string.
      *         Returns -1 on error.
-     * @author Aleksander �hrn
+     * @author Aleksander Øhrn
      **************************************************************************/
     static int Decode(const char *source,
                       unsigned int length,
