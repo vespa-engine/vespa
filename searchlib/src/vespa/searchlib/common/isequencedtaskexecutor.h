@@ -49,7 +49,7 @@ public:
      * @param function      function to be wrapped in a task and later executed
      */
     template <class FunctionType>
-    inline void executeLambda(uint64_t executorId, FunctionType &&function) {
+    inline void executeLambda(uint32_t executorId, FunctionType &&function) {
         executeTask(executorId, makeLambdaTask(std::forward<FunctionType>(function)));
     }
     /**
