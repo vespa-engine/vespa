@@ -38,15 +38,6 @@ struct TypeOrId {
     TypeOrId(const DatatypeConfig &t) : id(t.id), has_type(true), type(t) {}
 };
 
-inline void DatatypeConfig::addNestedType(const TypeOrId &t) {
-    if (t.has_type) {
-        nested_types.insert(nested_types.end(),
-                            t.type.nested_types.begin(),
-                            t.type.nested_types.end());
-        nested_types.push_back(t.type);
-    }
-}
-
 struct Struct : DatatypeConfig {
     Struct(const vespalib::string &name) {
         type = STRUCT;

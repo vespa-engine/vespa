@@ -23,6 +23,7 @@ public:
         : _docType(docType),
           _fields(_docType)
     {}
+    ~FieldVisitor();
 
     const document::FieldSet & getFieldSet() {
         return _fields;

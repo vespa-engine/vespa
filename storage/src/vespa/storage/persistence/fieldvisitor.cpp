@@ -4,6 +4,8 @@
 
 namespace storage {
 
+FieldVisitor::~FieldVisitor() {}
+
 void FieldVisitor::visitFieldValueNode(const document::select::FieldValueNode & node) {
     _fields.insert(_docType.getField(node.getRealFieldName()));
 }

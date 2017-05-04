@@ -16,6 +16,7 @@ private:
 
 public:
     SimpleMetricsProducer();
+    ~SimpleMetricsProducer();
     void setMetrics(const vespalib::string &metrics);
     virtual vespalib::string getMetrics(const vespalib::string &consumer) override;
     void setTotalMetrics(const vespalib::string &metrics);
