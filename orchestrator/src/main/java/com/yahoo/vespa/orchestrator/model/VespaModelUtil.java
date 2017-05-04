@@ -197,10 +197,12 @@ public class VespaModelUtil {
     }
 
     // See getClusterControllerIndex()
-    private static final Pattern CONTROLLER_INDEX_PATTERN = Pattern.compile(".*/cluster-controllers/(\\d+)");
+    private static final Pattern CONTROLLER_INDEX_PATTERN = Pattern.compile(".*-controllers/(\\d+)");
 
     /**
-     * @param configId  Must be of the form admin/cluster-controllers/2
+     * @param configId  Must be of the form admin/cluster-controllers/2 or NAME/standalone/NAME-controllers/2,
+     *                  where NAME is the name of the content cluster.  NAME-controllers is also the cluster ID of
+     *                  the cluster controller cluster.
      * @return the Cluster Controller index given its config ID.
      * @throws java.lang.IllegalArgumentException if the config ID is not of the proper format.
      */

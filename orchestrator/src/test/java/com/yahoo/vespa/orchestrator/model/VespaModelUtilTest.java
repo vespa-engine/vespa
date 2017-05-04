@@ -24,6 +24,7 @@ import static com.yahoo.vespa.orchestrator.TestUtil.makeServiceInstanceSet;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.fest.assertions.Assertions.assertThat;
+import static org.junit.Assert.fail;
 
 /**
  * @author hakonhall
@@ -217,8 +218,15 @@ public class VespaModelUtilTest {
 
     @Test
     public void testGetClusterControllerIndexWithStandaloneClusterController() {
-        ConfigId configId = new ConfigId("foo/standalone/cluster-controllers/2");
-        assertThat(VespaModelUtil.getClusterControllerIndex(configId)).isEqualTo(2);
+        ConfigId configId = new ConfigId("fantasy_sports/standalone/fantasy_sports-controllers/1");
+        assertThat(VespaModelUtil.getClusterControllerIndex(configId)).isEqualTo(1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBadClusterControllerConfigId() {
+        ConfigId configId = new ConfigId("fantasy_sports/storage/9");
+        VespaModelUtil.getClusterControllerIndex(configId);
+        fail();
     }
 
     @Test
