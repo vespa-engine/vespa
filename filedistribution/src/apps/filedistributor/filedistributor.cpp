@@ -177,14 +177,11 @@ public:
         }
     }
 
-    bool incompleteConfig() {
+    bool isConfigComplete() {
         LockGuard guard(_configMutex);
-        return ! (_zooKeepersConfig && _fileDistributorConfig && _rpcConfig);
+        return (_zooKeepersConfig && _fileDistributorConfig && _rpcConfig);
     }
     void createComponents(const config::ConfigUri & configUri) {
-        while (incompleteConfig()) {
-            std::this_thread::sleep_for(10ms);
-        }
         LockGuard guard(_configMutex);
         _components.reset(
                 new Components(configUri,
@@ -259,8 +256,7 @@ bool exists(const std::string& optionName, const boost::program_options::variabl
     return map.find(optionName) != map.end();
 }
 
-void ensureExists(const std::string& optionName, const boost::program_options::variables_map& map \
-                  ) {
+void ensureExists(const std::string& optionName, const boost::program_options::variables_map& map ) {
     if (!exists(optionName, map)) {
         throw ProgramOptionException("Error: Missing option " + optionName);
     }
@@ -284,6 +280,9 @@ FileDistributorApplication::Main() {
         configFetcher.subscribeGenerationChanges(&distributor);
         configFetcher.start();
 
+        while (! distributor.isConfigComplete() ) {
+            std::this_thread::sleep_for(10ms);
+        }
         distributor.run(_configUri);
 
         EV_STOPPING(programName, "Clean exit");
