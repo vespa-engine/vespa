@@ -16,8 +16,8 @@
 #pragma once
 
 
-#include <vespa/storage/bucketmover/move.h>
-#include <vespa/storage/bucketmover/runstatistics.h>
+#include "move.h"
+#include "runstatistics.h"
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/nodestate.h>
 #include <list>

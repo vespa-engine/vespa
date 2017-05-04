@@ -4,8 +4,8 @@
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/bucketdb/lockablemap.hpp>
 #include <iomanip>
-#include <vespa/log/log.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".bucketmover.run");
 
 namespace storage {
