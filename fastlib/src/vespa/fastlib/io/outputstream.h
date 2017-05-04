@@ -21,7 +21,7 @@
 
 class Fast_OutputStream
 {
-  public:
+public:
 
     virtual ~Fast_OutputStream() { }
 
@@ -29,6 +29,3 @@ class Fast_OutputStream
     virtual void    Flush(void) = 0;
     virtual ssize_t Write(const void *sourceBuffer, size_t bufferSize) = 0;
 };
-
-
-

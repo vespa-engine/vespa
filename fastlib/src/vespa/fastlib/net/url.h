@@ -19,14 +19,10 @@
 
 class Fast_URL
 {
-  public:
+public:
     void decode(const char *encodedURL, char *unencodedURL, int bufsize);
     /* bufsize is the length of the unencodedURL buffer */
 
     /* Both methods return the number of chars replaced */
     int DecodeQueryString(char *queryString);
 };
-
-
-
-

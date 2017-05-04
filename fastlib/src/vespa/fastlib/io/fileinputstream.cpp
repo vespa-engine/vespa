@@ -20,8 +20,8 @@
 
 
 Fast_FileInputStream::Fast_FileInputStream(const char *fileName)
-  : _theFile(new FastOS_File(fileName)),
-    _fileOpenedOk(false)
+    : _theFile(new FastOS_File(fileName)),
+      _fileOpenedOk(false)
 {
     _fileOpenedOk = _theFile->OpenReadOnly();
 }

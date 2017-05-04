@@ -61,10 +61,10 @@ class Fast_HTTPServer;
 class Fast_HTTPConnection : public FastOS_Runnable
 {
 private:
-  Fast_HTTPConnection(const Fast_HTTPConnection&);
-  Fast_HTTPConnection& operator=(const Fast_HTTPConnection&);
+    Fast_HTTPConnection(const Fast_HTTPConnection&);
+    Fast_HTTPConnection& operator=(const Fast_HTTPConnection&);
 
-  protected:
+protected:
 
     bool                  _decode; // Decode incoming URLs?
     Fast_Socket          *_socket;
@@ -83,7 +83,7 @@ private:
     vespalib::string      _httpVersion;
     vespalib::string      _cookies;
 
-  public:
+public:
 
     Fast_HTTPConnection(Fast_Socket *sock,
                         bool decode = true,
@@ -121,19 +121,19 @@ private:
 
 class Fast_HTTPServerSocketFactory : public FastOS_SocketFactory
 {
- private:
-  int _readTimeout; // Timeout value for reads.
+private:
+    int _readTimeout; // Timeout value for reads.
 
-  public:
+public:
 
-  Fast_HTTPServerSocketFactory(int readTimeout = -1 /* no timeout */)
-    : _readTimeout(readTimeout) {}
+    Fast_HTTPServerSocketFactory(int readTimeout = -1 /* no timeout */)
+        : _readTimeout(readTimeout) {}
 
     /**
-    * Create a streaming socket object
-    */
+     * Create a streaming socket object
+     */
     FastOS_SocketInterface *CreateSocket() override {
-      return new Fast_Socket(_readTimeout);
+        return new Fast_Socket(_readTimeout);
     }
 };
 
@@ -155,11 +155,11 @@ class Fast_HTTPServerSocketFactory : public FastOS_SocketFactory
 class Fast_HTTPServer : public FastOS_Runnable
 {
 private:
-  Fast_HTTPServer(const Fast_HTTPServer&);
-  Fast_HTTPServer& operator=(const Fast_HTTPServer&);
+    Fast_HTTPServer(const Fast_HTTPServer&);
+    Fast_HTTPServer& operator=(const Fast_HTTPServer&);
 
-  Fast_Bag<Fast_HTTPConnection*> _connections;
-  FastOS_Cond _connectionCond;
+    Fast_Bag<Fast_HTTPConnection*> _connections;
+    FastOS_Cond _connectionCond;
 
 protected:
     typedef vespalib::string string;
@@ -211,7 +211,7 @@ protected:
     int  Listen(void);
 
 
-  public:
+public:
     Fast_HTTPServer(int portNumber,
                     const char* strictBindHostName = NULL, int backlog = 10,
                     bool decode = true,
@@ -296,12 +296,12 @@ protected:
      *                     to the client.
      */
     virtual void OnPostRequest( const string & url,
-                                const string & host,
-                                const string & contentType,
-                                int contentLength,
-                                Fast_HTTPConnection& conn,
-                                Fast_InputStream& inputStream,
-                                Fast_OutputStream& outputStream);
+                               const string & host,
+                               const string & contentType,
+                               int contentLength,
+                               Fast_HTTPConnection& conn,
+                               Fast_InputStream& inputStream,
+                               Fast_OutputStream& outputStream);
 
     /**
      * Callback for receiving all data from a PUT request, and writing
@@ -323,12 +323,12 @@ protected:
      *                     to the client.
      */
     virtual void OnPutRequest( const string & url,
-                               const string & host,
-                               const string & contentType,
-                               int contentLength,
-                               Fast_HTTPConnection& conn,
-                               Fast_InputStream& inputStream,
-                               Fast_OutputStream& outputStream);
+                              const string & host,
+                              const string & contentType,
+                              int contentLength,
+                              Fast_HTTPConnection& conn,
+                              Fast_InputStream& inputStream,
+                              Fast_OutputStream& outputStream);
 
     /**
      * Callback for receiving all headers for a DELETE request, and writing
@@ -365,6 +365,3 @@ protected:
     void RemoveConnection(Fast_HTTPConnection* connection);
 
 };
-
-
-

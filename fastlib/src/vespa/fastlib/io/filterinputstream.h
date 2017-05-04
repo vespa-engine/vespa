@@ -20,7 +20,7 @@
 
 class Fast_FilterInputStream : public Fast_InputStream
 {
-  private:
+private:
 
     // Prevent use of:
     Fast_FilterInputStream(void);
@@ -28,13 +28,13 @@ class Fast_FilterInputStream : public Fast_InputStream
     Fast_FilterInputStream &operator=(const Fast_FilterInputStream &);
 
 
-  protected:
+protected:
 
     /** The stream to forward data to */
     Fast_InputStream *_in;
 
 
-  public:
+public:
 
     // Constructors
     Fast_FilterInputStream(Fast_InputStream &in) : _in(&in) {}
@@ -46,6 +46,6 @@ class Fast_FilterInputStream : public Fast_InputStream
     ssize_t Skip(size_t skipNBytes)  override { return _in->Skip(skipNBytes); }
 
     ssize_t Read(void *targetBuffer, size_t length) override {
-      return _in->Read(targetBuffer, length);
+        return _in->Read(targetBuffer, length);
     }
 };

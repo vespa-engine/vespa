@@ -8,10 +8,10 @@
 class Fast_FileInputStream  : public Fast_InputStream
 {
 private:
-  Fast_FileInputStream(const Fast_FileInputStream&);
-  Fast_FileInputStream& operator=(const Fast_FileInputStream&);
+    Fast_FileInputStream(const Fast_FileInputStream&);
+    Fast_FileInputStream& operator=(const Fast_FileInputStream&);
 
-  protected:
+protected:
 
     /** Pointer to the physical file object*/
     FastOS_FileInterface  *_theFile;
@@ -19,7 +19,7 @@ private:
     /** File opened ok flag */
     bool  _fileOpenedOk;
 
-  public:
+public:
     Fast_FileInputStream(const char *fileName);
     ~Fast_FileInputStream();
 
@@ -30,6 +30,3 @@ private:
     ssize_t Available() override;
     ssize_t Skip(size_t) override;
 };
-
-
-

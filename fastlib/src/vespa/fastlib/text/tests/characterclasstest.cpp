@@ -4,11 +4,10 @@
 
 int character_class_test_app::Main()
 {
-  character_class_test t("Test for the character_class");
-  t.SetStream(&std::cout);
-  t.Run();
-  return t.Report();
+    character_class_test t("Test for the character_class");
+    t.SetStream(&std::cout);
+    t.Run();
+    return t.Report();
 }
 
 FASTOS_MAIN(character_class_test_app)
-

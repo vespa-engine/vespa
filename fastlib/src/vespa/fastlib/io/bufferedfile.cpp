@@ -204,8 +204,8 @@ const char *
 Fast_BufferedFile::GetFileName(void) const
 {
     return (_file.get() == NULL)
-           ? ""
-           : _file->GetFileName();
+        ? ""
+        : _file->GetFileName();
 }
 
 char *
@@ -382,7 +382,7 @@ size_t computeBufLen(size_t buflen)
     buflen = 1 << (bitCount - 1);
 
     if (buflen & (MIN_ALIGNMENT-1)) {
-       buflen = std::max(MIN_ALIGNMENT, buflen & ~(MIN_ALIGNMENT-1));
+        buflen = std::max(MIN_ALIGNMENT, buflen & ~(MIN_ALIGNMENT-1));
     }
     return buflen;
 }

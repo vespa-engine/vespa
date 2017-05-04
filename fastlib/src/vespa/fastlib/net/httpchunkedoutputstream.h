@@ -6,18 +6,18 @@
 
 class Fast_HTTPChunkedOutputStream : public Fast_FilterOutputStream
 {
-  private:
+private:
     // Prevent use of:
     Fast_HTTPChunkedOutputStream(const Fast_HTTPChunkedOutputStream &);
     Fast_HTTPChunkedOutputStream & operator=(const Fast_HTTPChunkedOutputStream &);
-  protected:
+protected:
     size_t  _chunkSize;
     char   *_buffer;
     size_t  _bufferUsed;
     bool    _writeHasFailed;
 
     bool WriteChunk(void);
-  public:
+public:
     Fast_HTTPChunkedOutputStream(Fast_OutputStream &out, size_t chunkSize = 1024);
     ~Fast_HTTPChunkedOutputStream();
 
@@ -27,6 +27,3 @@ class Fast_HTTPChunkedOutputStream : public Fast_FilterOutputStream
     ssize_t Write(const void *sourceBuffer, size_t length) override;
     void    Flush() override;
 };
-
-
-
