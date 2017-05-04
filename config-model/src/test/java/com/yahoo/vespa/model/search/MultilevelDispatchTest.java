@@ -290,7 +290,7 @@ public class MultilevelDispatchTest {
         List<SearchNode> searchNodes = new ArrayList<>();
         MockRoot root = new MockRoot("");
         for (int i = 0; i < numNodes; ++i) {
-            searchNodes.add(SearchNode.create(root, "mynode" + i, i, new NodeSpec(0, i), "mycluster", null, false));
+            searchNodes.add(SearchNode.create(root, "mynode" + i, i, new NodeSpec(0, i), "mycluster", null, false, Optional.empty()));
         }
         return searchNodes;
     }

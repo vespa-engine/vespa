@@ -210,8 +210,9 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         NodeSpec spec = getNextSearchNodeSpec(parentGroup);
         SearchNode snode;
         TransactionLogServer tls;
+        Optional<Tuning> tuning = Optional.ofNullable(this.tuning);
         if (element == null) {
-            snode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec, clusterName, node, flushOnShutdown);
+            snode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec, clusterName, node, flushOnShutdown, tuning);
             snode.setHostResource(node.getHostResource());
             snode.initService();
 
@@ -219,7 +220,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
             tls.setHostResource(snode.getHostResource());
             tls.initService();
         } else {
-            snode = new SearchNode.Builder(""+node.getDistributionKey(), spec, clusterName, node, flushOnShutdown).build(parent, element.getXml());
+            snode = new SearchNode.Builder(""+node.getDistributionKey(), spec, clusterName, node, flushOnShutdown, tuning).build(parent, element.getXml());
             tls = new TransactionLogServer.Builder(clusterName).build(snode, element.getXml());
         }
         snode.setTls(tls);
