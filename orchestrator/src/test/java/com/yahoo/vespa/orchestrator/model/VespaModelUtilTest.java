@@ -36,11 +36,11 @@ public class VespaModelUtilTest {
     public static final HostName controller0Host = new HostName("controller-0");
 
     private static final ServiceInstance<ServiceMonitorStatus> controller0 = new ServiceInstance<>(
-            TestUtil.clusterControllerConfigId(0),
+            TestUtil.clusterControllerConfigId(CONTENT_CLUSTER_ID.toString(), 0),
             controller0Host,
             ServiceMonitorStatus.UP);
     private static final ServiceInstance<ServiceMonitorStatus> controller1 = new ServiceInstance<>(
-            TestUtil.clusterControllerConfigId(1),
+            TestUtil.clusterControllerConfigId(CONTENT_CLUSTER_ID.toString(), 1),
             new HostName("controller-1"),
             ServiceMonitorStatus.UP);
 
@@ -216,8 +216,20 @@ public class VespaModelUtilTest {
     }
 
     @Test
+    public void testGetClusterControllerIndexWithNonStandardClusterName() {
+        ConfigId configId = new ConfigId("foo/cluster-controllers/2");
+        assertThat(VespaModelUtil.getClusterControllerIndex(configId)).isEqualTo(2);
+    }
+
+    @Test
+    public void testGetClusterControllerIndexWithStandaloneClusterController() {
+        ConfigId configId = new ConfigId("foo/standalone/cluster-controllers/2");
+        assertThat(VespaModelUtil.getClusterControllerIndex(configId)).isEqualTo(2);
+    }
+
+    @Test
     public void testGetStorageNodeIndex() {
-        ConfigId configId = TestUtil.storageNodeConfigId(3);
+        ConfigId configId = TestUtil.storageNodeConfigId(CONTENT_CLUSTER_ID.toString(), 3);
         assertThat(VespaModelUtil.getStorageNodeIndex(configId)).isEqualTo(3);
     }
 }

@@ -197,7 +197,7 @@ public class VespaModelUtil {
     }
 
     // See getClusterControllerIndex()
-    private static final Pattern CONTROLLER_INDEX_PATTERN = Pattern.compile("admin/cluster-controllers/(\\d+)");
+    private static final Pattern CONTROLLER_INDEX_PATTERN = Pattern.compile(".*/cluster-controllers/(\\d+)");
 
     /**
      * @param configId  Must be of the form admin/cluster-controllers/2

@@ -344,7 +344,7 @@ public class HostedVespaPolicyTest {
             VespaModelUtil.CLUSTER_CONTROLLER_SERVICE_TYPE,
             makeServiceInstanceSet(
                     new ServiceInstance<>(
-                            TestUtil.clusterControllerConfigId(0),
+                            TestUtil.clusterControllerConfigId(CONTENT_CLUSTER_NAME, 0),
                             CLUSTER_CONTROLLER_HOST,
                             UP)));
 
@@ -362,7 +362,7 @@ public class HostedVespaPolicyTest {
             VespaModelUtil.STORAGENODE_SERVICE_TYPE,
             makeServiceInstanceSet(
                     new ServiceInstance<>(
-                            TestUtil.storageNodeConfigId(STORAGE_NODE_INDEX),
+                            TestUtil.storageNodeConfigId(CONTENT_CLUSTER_NAME, STORAGE_NODE_INDEX),
                             STORAGE_NODE_HOST,
                             UP)));
 
@@ -731,7 +731,7 @@ public class HostedVespaPolicyTest {
         private final Set<ServiceInstance<ServiceMonitorStatus>> instances = new HashSet<>();
 
         public StorageClusterBuilder instance(final HostName hostName, final ServiceMonitorStatus status, int index) {
-            instances.add(new ServiceInstance<>(TestUtil.storageNodeConfigId(index), hostName, status));
+            instances.add(new ServiceInstance<>(TestUtil.storageNodeConfigId("content", index), hostName, status));
             return this;
         }
 
