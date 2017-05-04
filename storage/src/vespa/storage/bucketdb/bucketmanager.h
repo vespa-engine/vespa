@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "config-stor-bucketdb.h"
+#include <vespa/storage/bucketdb/config-stor-bucketdb.h>
 #include "storbucketdb.h"
 #include "bucketmanagermetrics.h"
 #include <vespa/storage/common/bucketmessages.h>
