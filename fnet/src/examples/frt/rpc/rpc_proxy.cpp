@@ -5,6 +5,7 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP("rpc_proxy");
+
 //-----------------------------------------------------------------------------
 
 struct Session
