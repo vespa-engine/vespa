@@ -97,6 +97,9 @@ Metric::Metric(const Metric& other, MetricSet* owner)
     registerWithOwnerIfRequired(owner);
 }
 
+Metric::Metric(const Metric& rhs) = default;
+Metric & Metric::operator =(const Metric& rhs) = default;
+
 Metric::~Metric() { }
 
 bool
