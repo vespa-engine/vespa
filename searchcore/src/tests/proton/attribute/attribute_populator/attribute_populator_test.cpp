@@ -58,7 +58,7 @@ struct Fixture
     ForegroundTaskExecutor _attributeFieldWriter;
     HwInfo                 _hwInfo;
     AttributeManager::SP _mgr;
-    AttributePopulator _pop;
+    std::unique_ptr<AttributePopulator> _pop;
     DocContext _ctx;
     Fixture()
         : _testDir(TEST_DIR),
@@ -68,11 +68,12 @@ struct Fixture
           _mgr(new AttributeManager(TEST_DIR, "test.subdb",
                   TuneFileAttributes(),
                                     _fileHeader, _attributeFieldWriter, _hwInfo)),
-          _pop(_mgr, 1, "test", CREATE_SERIAL_NUM),
+          _pop(),
           _ctx()
     {
         _mgr->addAttribute({ "a1", AVConfig(AVBasicType::INT32)},
                 CREATE_SERIAL_NUM);
+        _pop = std::make_unique<AttributePopulator>(_mgr, 1, "test", CREATE_SERIAL_NUM);
     }
     AttributeGuard::UP getAttr() {
         return _mgr->getAttribute("a1");
@@ -84,16 +85,16 @@ TEST_F("require that reprocess with document populates attribute", Fixture)
     AttributeGuard::UP attr = f.getAttr();
     EXPECT_EQUAL(1u, attr->get()->getNumDocs());
 
-    f._pop.handleExisting(5, *f._ctx.create(0, 33));
+    f._pop->handleExisting(5, *f._ctx.create(0, 33));
     EXPECT_EQUAL(6u, attr->get()->getNumDocs());
     EXPECT_EQUAL(33, attr->get()->getInt(5));
     EXPECT_EQUAL(1u, attr->get()->getStatus().getLastSyncToken());
 
-    f._pop.handleExisting(6, *f._ctx.create(1, 44));
+    f._pop->handleExisting(6, *f._ctx.create(1, 44));
     EXPECT_EQUAL(7u, attr->get()->getNumDocs());
     EXPECT_EQUAL(44, attr->get()->getInt(6));
     EXPECT_EQUAL(2u, attr->get()->getStatus().getLastSyncToken());
-    f._pop.done();
+    f._pop->done();
     EXPECT_EQUAL(CREATE_SERIAL_NUM, attr->get()->getStatus().getLastSyncToken());
 }
 

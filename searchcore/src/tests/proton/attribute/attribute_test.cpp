@@ -105,7 +105,7 @@ struct Fixture
     ForegroundTaskExecutor   _attributeFieldWriter;
     HwInfo                   _hwInfo;
     proton::AttributeManager::SP _m;
-    AttributeWriter aw;
+    std::unique_ptr<AttributeWriter> _aw;
 
     Fixture()
         : _dirHandler(test_dir),
@@ -115,26 +115,34 @@ struct Fixture
           _m(std::make_shared<proton::AttributeManager>
              (test_dir, "test.subdb", TuneFileAttributes(),
               _fileHeaderContext, _attributeFieldWriter, _hwInfo)),
-          aw(_m)
+          _aw()
     {
+        allocAttributeWriter();
+    }
+    void allocAttributeWriter() {
+        _aw = std::make_unique<AttributeWriter>(_m);
     }
     AttributeVector::SP addAttribute(const vespalib::string &name) {
-        return _m->addAttribute({name, AVConfig(AVBasicType::INT32)},
-                                createSerialNum);
+        return addAttribute({name, AVConfig(AVBasicType::INT32)}, createSerialNum);
+    }
+    AttributeVector::SP addAttribute(const AttributeSpec &spec, SerialNum serialNum) {
+        auto ret = _m->addAttribute(spec, serialNum);
+        allocAttributeWriter();
+        return ret;
     }
     void put(SerialNum serialNum, const Document &doc, DocumentIdT lid,
              bool immediateCommit = true) {
-        aw.put(serialNum, doc, lid, immediateCommit, emptyCallback);
+        _aw->put(serialNum, doc, lid, immediateCommit, emptyCallback);
     }
     void update(SerialNum serialNum, const DocumentUpdate &upd,
                 DocumentIdT lid, bool immediateCommit) {
-        aw.update(serialNum, upd, lid, immediateCommit, emptyCallback);
+        _aw->update(serialNum, upd, lid, immediateCommit, emptyCallback);
     }
     void remove(SerialNum serialNum, DocumentIdT lid, bool immediateCommit = true) {
-        aw.remove(serialNum, lid, immediateCommit, emptyCallback);
+        _aw->remove(serialNum, lid, immediateCommit, emptyCallback);
     }
     void commit(SerialNum serialNum) {
-        aw.commit(serialNum, emptyCallback);
+        _aw->commit(serialNum, emptyCallback);
     }
 };
 
@@ -149,11 +157,10 @@ TEST_F("require that attribute adapter handles put", Fixture)
 
     DocBuilder idb(s);
 
-    proton::AttributeManager & am = *f._m;
     AttributeVector::SP a1 = f.addAttribute("a1");
-    AttributeVector::SP a2 = am.addAttribute({"a2", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
-    AttributeVector::SP a3 = am.addAttribute({"a3", AVConfig(AVBasicType::FLOAT)}, createSerialNum);
-    AttributeVector::SP a4 = am.addAttribute({"a4", AVConfig(AVBasicType::STRING)}, createSerialNum);
+    AttributeVector::SP a2 = f.addAttribute({"a2", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
+    AttributeVector::SP a3 = f.addAttribute({"a3", AVConfig(AVBasicType::FLOAT)}, createSerialNum);
+    AttributeVector::SP a4 = f.addAttribute({"a4", AVConfig(AVBasicType::STRING)}, createSerialNum);
 
     attribute::IntegerContent ibuf;
     attribute::FloatContent fbuf;
@@ -231,8 +238,7 @@ TEST_F("require that attribute adapter handles predicate put", Fixture)
     s.addAttributeField(Schema::AttributeField("a1", schema::DataType::BOOLEANTREE, CollectionType::SINGLE));
     DocBuilder idb(s);
 
-    proton::AttributeManager & am = *f._m;
-    AttributeVector::SP a1 = am.addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)}, createSerialNum);
+    AttributeVector::SP a1 = f.addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)}, createSerialNum);
 
     PredicateIndex &index = static_cast<PredicateAttribute &>(*a1).getIndex();
 
@@ -307,8 +313,7 @@ void verifyAttributeContent(const AttributeVector & v, uint32_t lid, vespalib::s
 
 TEST_F("require that visibilitydelay is honoured", Fixture)
 {
-    proton::AttributeManager & am = *f._m;
-    AttributeVector::SP a1 = am.addAttribute({"a1", AVConfig(AVBasicType::STRING)}, createSerialNum);
+    AttributeVector::SP a1 = f.addAttribute({"a1", AVConfig(AVBasicType::STRING)}, createSerialNum);
     Schema s;
     s.addAttributeField(Schema::AttributeField("a1", schema::DataType::STRING, CollectionType::SINGLE));
     DocBuilder idb(s);
@@ -354,8 +359,7 @@ TEST_F("require that visibilitydelay is honoured", Fixture)
 
 TEST_F("require that attribute adapter handles predicate remove", Fixture)
 {
-    proton::AttributeManager & am = *f._m;
-    AttributeVector::SP a1 = am.addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)}, createSerialNum);
+    AttributeVector::SP a1 = f.addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)}, createSerialNum);
     Schema s;
     s.addAttributeField(
             Schema::AttributeField("a1", schema::DataType::BOOLEANTREE, CollectionType::SINGLE));
@@ -417,8 +421,7 @@ TEST_F("require that attribute adapter handles update", Fixture)
 
 TEST_F("require that attribute adapter handles predicate update", Fixture)
 {
-    proton::AttributeManager & am = *f._m;
-    AttributeVector::SP a1 = am.addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)}, createSerialNum);
+    AttributeVector::SP a1 = f.addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)}, createSerialNum);
     Schema schema;
     schema.addAttributeField(Schema::AttributeField("a1", schema::DataType::BOOLEANTREE, CollectionType::SINGLE));
 
@@ -558,7 +561,8 @@ AttributeVector::SP
 createTensorAttribute(Fixture &f) {
     AVConfig cfg(AVBasicType::TENSOR);
     cfg.setTensorType(ValueType::from_spec("tensor(x{},y{})"));
-    return f._m->addAttribute({"a1", cfg}, createSerialNum);
+    auto ret = f.addAttribute({"a1", cfg}, createSerialNum);
+    return ret;
 }
 
 Schema
