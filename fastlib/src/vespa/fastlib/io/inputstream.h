@@ -5,7 +5,7 @@
 
 class Fast_InputStream
 {
-  public:
+public:
     virtual ~Fast_InputStream() { }
 
     virtual ssize_t Available() = 0;
@@ -13,5 +13,3 @@ class Fast_InputStream
     virtual ssize_t Read(void *targetBuffer, size_t bufferSize) = 0;
     virtual ssize_t Skip(size_t skipNBytes) = 0;
 };
-
-

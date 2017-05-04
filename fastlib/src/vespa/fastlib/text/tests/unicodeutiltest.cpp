@@ -3,11 +3,10 @@
 
 int UnicodeUtilTestApp::Main()
 {
-  UnicodeUtilTest t;
-  t.SetStream(&std::cout);
-  t.Run();
-  return t.Report();
+    UnicodeUtilTest t;
+    t.SetStream(&std::cout);
+    t.Run();
+    return t.Report();
 }
 
 FASTOS_MAIN(UnicodeUtilTestApp)
-

@@ -5,39 +5,39 @@
 
 class UnicodeUtilTest : public Test
 {
-  bool GetUTF8Char_WrongInput() {
-    const char *testdata = "ab\xF8";
+    bool GetUTF8Char_WrongInput() {
+        const char *testdata = "ab\xF8";
 
-    ucs4_t the_char = 0;
+        ucs4_t the_char = 0;
 
-    const unsigned char *src = reinterpret_cast<const unsigned char *>(testdata);
-    while (*src != 0) {
-      the_char = Fast_UnicodeUtil::GetUTF8Char(src);
-      // fprintf(stderr, "GetUTF8Char_WrongInput(): the_char = U+%04X\n", the_char);
+        const unsigned char *src = reinterpret_cast<const unsigned char *>(testdata);
+        while (*src != 0) {
+            the_char = Fast_UnicodeUtil::GetUTF8Char(src);
+            // fprintf(stderr, "GetUTF8Char_WrongInput(): the_char = U+%04X\n", the_char);
+        }
+        return (the_char == Fast_UnicodeUtil::_BadUTF8Char);
     }
-    return (the_char == Fast_UnicodeUtil::_BadUTF8Char);
-  }
-  bool IsTerminalPunctuationChar(char ch, bool b) {
-      if (Fast_UnicodeUtil::IsTerminalPunctuationChar(ch) != b) {
-          printf("expected char '%c' %s terminal punctuation char\n", ch, b ? "to be" : "not to be");
-          return false;
-      }
-      return true;
-  }
+    bool IsTerminalPunctuationChar(char ch, bool b) {
+        if (Fast_UnicodeUtil::IsTerminalPunctuationChar(ch) != b) {
+            printf("expected char '%c' %s terminal punctuation char\n", ch, b ? "to be" : "not to be");
+            return false;
+        }
+        return true;
+    }
 
-  bool IsTerminalPunctuationChar() {
-      // test a small selection
-      bool retval = true;
-      retval &= IsTerminalPunctuationChar('!', true);
-      retval &= IsTerminalPunctuationChar(',', true);
-      retval &= IsTerminalPunctuationChar('.', true);
-      retval &= IsTerminalPunctuationChar(':', true);
-      retval &= IsTerminalPunctuationChar(';', true);
-      retval &= IsTerminalPunctuationChar(' ', false);
-      retval &= IsTerminalPunctuationChar('a', false);
-      retval &= IsTerminalPunctuationChar('A', false);
-      return retval;
-  }
+    bool IsTerminalPunctuationChar() {
+        // test a small selection
+        bool retval = true;
+        retval &= IsTerminalPunctuationChar('!', true);
+        retval &= IsTerminalPunctuationChar(',', true);
+        retval &= IsTerminalPunctuationChar('.', true);
+        retval &= IsTerminalPunctuationChar(':', true);
+        retval &= IsTerminalPunctuationChar(';', true);
+        retval &= IsTerminalPunctuationChar(' ', false);
+        retval &= IsTerminalPunctuationChar('a', false);
+        retval &= IsTerminalPunctuationChar('A', false);
+        return retval;
+    }
 
 public:
     void Run() override {

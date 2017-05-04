@@ -6,17 +6,17 @@
 
 class Fast_FilterOutputStream : public Fast_OutputStream
 {
-  private:
+private:
 
     // Prevent use of:
     Fast_FilterOutputStream();
     Fast_FilterOutputStream(Fast_FilterOutputStream &);
     Fast_FilterOutputStream &operator=(const Fast_FilterOutputStream &);
 
-  protected:
+protected:
     /** The stream to forward data to */
     Fast_OutputStream *_out;
-  public:
+public:
     Fast_FilterOutputStream(Fast_OutputStream &out) : _out(&out) {}
     ~Fast_FilterOutputStream() {}
 
@@ -24,6 +24,6 @@ class Fast_FilterOutputStream : public Fast_OutputStream
     void Flush()   override {        _out->Flush(); }
 
     ssize_t Write(const void *sourceBuffer, size_t length) override {
-      return _out->Write(sourceBuffer, length);
+        return _out->Write(sourceBuffer, length);
     }
 };

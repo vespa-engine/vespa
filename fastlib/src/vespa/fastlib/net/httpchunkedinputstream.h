@@ -6,17 +6,17 @@
 
 class Fast_HTTPChunkedInputStream : public Fast_FilterInputStream
 {
-  private:
+private:
     // Prevent use of:
     Fast_HTTPChunkedInputStream(const Fast_HTTPChunkedInputStream &);
     Fast_HTTPChunkedInputStream & operator=(const Fast_HTTPChunkedInputStream &);
-  protected:
+protected:
     size_t _chunkSize;
     bool   _inChunk;
     bool   _isClosed;
 
     bool ReadChunkHeader(void);
-  public:
+public:
     Fast_HTTPChunkedInputStream(Fast_InputStream &in);
     ~Fast_HTTPChunkedInputStream();
 
@@ -27,6 +27,3 @@ class Fast_HTTPChunkedInputStream : public Fast_FilterInputStream
     ssize_t Read(void *targetBuffer, size_t length) override;
     ssize_t Skip(size_t skipNBytes) override;
 };
-
-
-

@@ -10,15 +10,15 @@ class Fast_Socket : public FastOS_Socket,
                     public Fast_OutputStream
 {
 private:
-  Fast_Socket(const Fast_Socket&);
-  Fast_Socket& operator=(const Fast_Socket&);
+    Fast_Socket(const Fast_Socket&);
+    Fast_Socket& operator=(const Fast_Socket&);
 
-  FastOS_SocketEvent _event;
-  int                _readTimeout;
-  bool               _lastReadTimedOut;
-  bool               _eof;
+    FastOS_SocketEvent _event;
+    int                _readTimeout;
+    bool               _lastReadTimedOut;
+    bool               _eof;
 
-  public:
+public:
 
     /**
      * The Fast_Socket constructor creates a new socket instance
@@ -55,9 +55,3 @@ private:
 
     void Interrupt();
 };
-
-
-
-
-
-

@@ -6,40 +6,40 @@
 
 class HeaderReaderApp : public FastOS_Application
 {
-  public:
+public:
     int Main() override
     {
-      if (_argc != 2)
-      {
-        fprintf(stderr, "Usage: %s <header file>\n", _argv[0]);
-        return 1;
-      }
-      Fast_FileInputStream fileinput(_argv[1]);
-      Fast_BufferedInputStream input(fileinput, 32768);
-      Fast_HTTPHeaderParser headerParser(input);
+        if (_argc != 2)
+        {
+            fprintf(stderr, "Usage: %s <header file>\n", _argv[0]);
+            return 1;
+        }
+        Fast_FileInputStream fileinput(_argv[1]);
+        Fast_BufferedInputStream input(fileinput, 32768);
+        Fast_HTTPHeaderParser headerParser(input);
 
-      const char *headerName, *headerValue;
-      while (headerParser.ReadHeader(headerName, headerValue))
-      {
-        printf("Header name:  \"%s\"\n", headerName);
-        printf("Header value: \"%s\"\n", headerValue);
-        printf("\n");
-      }
+        const char *headerName, *headerValue;
+        while (headerParser.ReadHeader(headerName, headerValue))
+        {
+            printf("Header name:  \"%s\"\n", headerName);
+            printf("Header value: \"%s\"\n", headerValue);
+            printf("\n");
+        }
 
-      char buffer[1024];
-      size_t bytesRead = 0;
-      ssize_t lastRead;
-      printf("------> Remaining data in file: <------\n");
-      while ((lastRead = input.Read(buffer, sizeof(buffer))) > 0)
-      {
-        fwrite(buffer, 1, lastRead, stdout);
-        bytesRead += lastRead;
-      }
-      printf("------>  End of remaining data  <--------\n");
-      printf("Total remaining data: %u bytes\n",
-             static_cast<unsigned int>(bytesRead));
+        char buffer[1024];
+        size_t bytesRead = 0;
+        ssize_t lastRead;
+        printf("------> Remaining data in file: <------\n");
+        while ((lastRead = input.Read(buffer, sizeof(buffer))) > 0)
+        {
+            fwrite(buffer, 1, lastRead, stdout);
+            bytesRead += lastRead;
+        }
+        printf("------>  End of remaining data  <--------\n");
+        printf("Total remaining data: %u bytes\n",
+               static_cast<unsigned int>(bytesRead));
 
-      return 0;
+        return 0;
     }
 };
 
@@ -48,8 +48,7 @@ class HeaderReaderApp : public FastOS_Application
 
 int main (int argc, char *argv[])
 {
-   HeaderReaderApp app;
+    HeaderReaderApp app;
 
-   return app.Entry(argc, argv);
+    return app.Entry(argc, argv);
 }
-

@@ -7,22 +7,22 @@
 class Fast_FileOutputStream  : public Fast_OutputStream
 {
 private:
-  Fast_FileOutputStream(const Fast_FileOutputStream&);
-  Fast_FileOutputStream& operator=(const Fast_FileOutputStream&);
+    Fast_FileOutputStream(const Fast_FileOutputStream&);
+    Fast_FileOutputStream& operator=(const Fast_FileOutputStream&);
 
-  protected:
+protected:
 
     /** Pointer to the physical file object*/
     FastOS_FileInterface  *_theFile;
 
-  public:
+public:
     Fast_FileOutputStream(const char *fileName);
     ~Fast_FileOutputStream();
 
     ssize_t Write(const void *sourceBuffer, size_t bufferSize) override {
-      return _theFile->CheckedWrite(sourceBuffer, bufferSize) ?
-          static_cast<ssize_t>(bufferSize) :
-          static_cast<ssize_t>(-1);
+        return _theFile->CheckedWrite(sourceBuffer, bufferSize) ?
+            static_cast<ssize_t>(bufferSize) :
+            static_cast<ssize_t>(-1);
     };
 
     bool Close() override { return _theFile->Close(); }
