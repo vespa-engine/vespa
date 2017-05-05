@@ -3,13 +3,15 @@ package com.yahoo.documentapi;
 
 import com.yahoo.vdslib.VisitorStatistics;
 
+import java.time.Duration;
+
 /**
  * A class for controlling a visitor supplied through visitor parameters when
  * creating the visitor session. The class defines callbacks for reporting
  * progress and that the visitor is done. If you want to reimplement the
  * default behavior of those callbacks, you can write your own subclass.
  *
- * @author <a href="mailto:humbe@yahoo-inc.com">H&aring;kon Humberset</a>
+ * @author Håkon Humberset
  */
 public class VisitorControlHandler {
     /** Possible completion codes for visiting. */
@@ -45,6 +47,14 @@ public class VisitorControlHandler {
             }
 
             return "Unknown error";
+        }
+
+        public CompletionCode getCode() {
+            return code;
+        }
+
+        public String getMessage() {
+            return message;
         }
     };
 
@@ -94,6 +104,17 @@ public class VisitorControlHandler {
     }
 
     /**
+     * Returns true iff the statistics reported by the visiting session indicates at least one
+     * bucket has been completely visited.
+     *
+     * Not thread safe, so should only be called on a quiescent session after waitUntilDone
+     * has completed successfully.
+     */
+    public boolean hasVisitedAnyBuckets() {
+        return ((currentStatistics != null) && (currentStatistics.getBucketsVisited() > 0));
+    }
+
+    /**
      * Callback called when the visitor is done.
      *
      * @param code the completion code
@@ -130,22 +151,49 @@ public class VisitorControlHandler {
      * Waits until visiting is done, or the given timeout (in ms) expires.
      * Will wait forever if timeout is 0.
      *
-     * @param timeoutMs The maximum amount of milliseconds to wait.
-     * @return True if visiting is done (either by error or success).
-     * @throws InterruptedException  If an interrupt signal was received while waiting.
+     * @param timeout Maximum time duration to wait before returning.
+     * @return True if visiting is done (either by error or success), false if session has timed out.
+     * @throws InterruptedException If an interrupt signal was received while waiting.
      */
-    public boolean waitUntilDone(long timeoutMs) throws InterruptedException {
+    public boolean waitUntilDone(Duration timeout) throws InterruptedException {
         synchronized (this) {
-            if (completed) return true;
-            if (timeoutMs == 0) {
+            if (completed) {
+                return true;
+            }
+            if (timeout.isZero()) {
                 while (!completed) {
                     wait();
                 }
             } else {
-                wait(timeoutMs);
+                wait(timeout.toMillis());
             }
             return completed;
         }
+    }
+
+    /**
+     * Waits until visiting is done, or the given timeout (in ms) expires.
+     * Will wait forever if timeout is 0.
+     *
+     * @param timeoutMs The maximum amount of milliseconds to wait.
+     * @return True if visiting is done (either by error or success), false if session has timed out.
+     * @throws InterruptedException If an interrupt signal was received while waiting.
+     *
+     * TODO deprecate this in favor of waitUntilDone(Duration)
+     */
+    public boolean waitUntilDone(long timeoutMs) throws InterruptedException {
+        return waitUntilDone(Duration.ofMillis(timeoutMs));
+    }
+
+    /**
+     * Waits until visiting is done. Session timeout implicitly completes
+     * the visitor session, but will set an unsuccessful result code.
+     *
+     * @throws InterruptedException If an interrupt signal was received while waiting.
+     */
+    public void waitUntilDone() throws InterruptedException {
+        final boolean done = waitUntilDone(Duration.ZERO);
+        assert done : "Infinite waitUntilDone timeout should always complete";
     }
 
     /**

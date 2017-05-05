@@ -10,7 +10,7 @@ package com.yahoo.documentapi;
  * kinds of visitor sessions, such as acking visitor data and aborting the
  * session.
  *
- * @author <a href="mailto:humbe@yahoo-inc.com">H&aring;kon Humberset</a>
+ * @author Håkon Humberset
  */
 public interface VisitorControlSession {
     /**
