@@ -119,6 +119,7 @@ vespa_define_module(
     src/tests/docstore/document_store_visitor
     src/tests/docstore/lid_info
     src/tests/docstore/logdatastore
+    src/tests/docstore/store_by_bucket
     src/tests/engine/docsumapi
     src/tests/engine/monitorapi
     src/tests/engine/searchapi
