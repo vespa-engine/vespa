@@ -2,13 +2,14 @@
 
 #pragma once
 
-#include <vespa/searchlib/docstore/idatastore.h>
-#include <vespa/searchlib/docstore/writeablefilechunk.h>
-#include <vespa/searchlib/common/rcuvector.h>
+#include "idatastore.h"
+#include "lid_info.h"
+#include "writeablefilechunk.h"
 #include <vespa/document/util/compressionconfig.h>
-#include <vespa/vespalib/util/threadexecutor.h>
+#include <vespa/searchlib/common/rcuvector.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
+#include <vespa/vespalib/util/threadexecutor.h>
 
 #include <set>
 
