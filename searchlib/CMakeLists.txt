@@ -116,6 +116,7 @@ vespa_define_module(
     src/tests/diskindex/pagedict4
     src/tests/docstore/document_store
     src/tests/docstore/document_store_visitor
+    src/tests/docstore/lid_info
     src/tests/docstore/logdatastore
     src/tests/engine/docsumapi
     src/tests/engine/monitorapi
