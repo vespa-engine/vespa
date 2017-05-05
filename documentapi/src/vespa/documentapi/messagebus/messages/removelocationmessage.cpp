@@ -26,6 +26,9 @@ RemoveLocationMessage::RemoveLocationMessage(
     }
 }
 
+RemoveLocationMessage::~RemoveLocationMessage() {
+}
+
 DocumentReply::UP
 RemoveLocationMessage::doCreateReply() const {
     return DocumentReply::UP(

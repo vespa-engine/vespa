@@ -15,7 +15,6 @@ MultiOperationMessage::MultiOperationMessage(const document::DocumentTypeRepo::S
     _operations(repo, 0, 0),
     _keepTimeStamps(false)
 {
-    // empty
 }
 
 MultiOperationMessage::MultiOperationMessage(const document::DocumentTypeRepo::SP & repo, const document::BucketId& bucketId, int bufferSize) :
@@ -52,6 +51,9 @@ MultiOperationMessage::MultiOperationMessage(const document::BucketId& bucketId,
     _buffer.resize(operations.getBufferSize());
     memcpy(&_buffer[0], operations.getBuffer(), _buffer.size());
     _operations = vdslib::DocumentList(operations.getTypeRepo(), &_buffer[0], _buffer.size(), true);
+}
+
+MultiOperationMessage::~MultiOperationMessage() {
 }
 
 void

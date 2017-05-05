@@ -19,6 +19,8 @@ class FRTConfigRequestFactory
 {
 public:
     FRTConfigRequestFactory(int protocolVersion, int traceLevel, const VespaVersion & vespaVersion, const CompressionType & compressionType);
+    ~FRTConfigRequestFactory();
+
     FRTConfigRequest::UP createConfigRequest(const ConfigKey & key, Connection * connection, const ConfigState & state, int64_t serverTimeout) const;
 private:
     const int _protocolVersion;

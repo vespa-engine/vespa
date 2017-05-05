@@ -15,6 +15,7 @@ namespace documentapi {
 class RemoveLocationMessage : public DocumentMessage {
 public:
     RemoveLocationMessage(const document::BucketIdFactory& factory, document::select::Parser& parser, const string& documentSelection);
+    ~RemoveLocationMessage();
 
     const string& getDocumentSelection() const { return _documentSelection; }
     const document::BucketId& getBucketId() const { return _bucketId; };

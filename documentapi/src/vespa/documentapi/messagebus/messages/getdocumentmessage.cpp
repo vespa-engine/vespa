@@ -27,6 +27,9 @@ GetDocumentMessage::GetDocumentMessage(const document::DocumentId &documentId,
 {
 }
 
+GetDocumentMessage::~GetDocumentMessage() {
+}
+
 DocumentReply::UP
 GetDocumentMessage::doCreateReply() const
 {

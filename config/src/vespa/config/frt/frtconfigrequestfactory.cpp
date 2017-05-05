@@ -24,6 +24,9 @@ FRTConfigRequestFactory::FRTConfigRequestFactory(int protocolVersion, int traceL
 {
 }
 
+FRTConfigRequestFactory::~FRTConfigRequestFactory() {
+}
+
 FRTConfigRequest::UP
 FRTConfigRequestFactory::createConfigRequest(const ConfigKey & key, Connection * connection, const ConfigState & state, int64_t serverTimeout) const
 {

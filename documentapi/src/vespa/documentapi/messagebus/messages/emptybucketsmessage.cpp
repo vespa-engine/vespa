@@ -8,13 +8,14 @@ namespace documentapi {
 EmptyBucketsMessage::EmptyBucketsMessage() :
     _bucketIds()
 {
-    // empty
 }
 
 EmptyBucketsMessage::EmptyBucketsMessage(const std::vector<document::BucketId> &bucketIds) :
     _bucketIds(bucketIds)
 {
-    // empty
+}
+
+EmptyBucketsMessage::~EmptyBucketsMessage() {
 }
 
 void
