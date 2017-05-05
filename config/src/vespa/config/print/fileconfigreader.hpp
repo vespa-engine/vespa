@@ -41,7 +41,7 @@ FileConfigReader<ConfigType>::read()
     if (f.fail())
         throw vespalib::IllegalArgumentException(std::string("Unable to open file ") + _fileName);
     std::string line;
-    while (getline(f, line)) {
+    for (std::getline(f, line); f; std::getline(f, line)) {
         lines.push_back(line);
     }
     return std::unique_ptr<ConfigType>(new ConfigType(ConfigValue(lines, calculateContentMd5(lines))));

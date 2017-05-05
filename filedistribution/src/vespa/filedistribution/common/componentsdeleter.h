@@ -1,13 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "concurrentqueue.h"
+
 #include <map>
 #include <typeinfo>
 #include <string>
 #include <mutex>
 #include <thread>
+#include <functional>
 
-#include "concurrentqueue.h"
 
 namespace filedistribution {
 /**

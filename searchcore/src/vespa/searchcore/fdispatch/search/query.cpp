@@ -17,9 +17,9 @@ FastS_query::FastS_query(void)
     : _dataset(0),
       _flags(0),
       _stackDump(),
-      _sortSpec(NULL),
+      _sortSpec(),
       _groupSpec(),
-      _location(NULL),
+      _location(),
       _rankProperties(),
       _featureOverrides()
 {
@@ -29,9 +29,9 @@ FastS_query::FastS_query(const search::docsummary::GetDocsumArgs &docsumArgs)
     : _dataset(0),                        // not known
       _flags(docsumArgs.GetQueryFlags()),
       _stackDump(docsumArgs.getStackDump()),
-      _sortSpec(NULL),                    // not known
+      _sortSpec(),                    // not known
       _groupSpec(),                   // not known
-      _location(NULL),
+      _location(),
       _rankProperties(docsumArgs.rankProperties()),
       _featureOverrides(docsumArgs.featureOverrides())
 {

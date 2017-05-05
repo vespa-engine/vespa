@@ -175,7 +175,9 @@ struct MyBucketModifiedHandler : public IBucketModifiedHandler
     BucketIdVector _modified;
     virtual void notifyBucketModified(const BucketId &bucket) override {
         BucketIdVector::const_iterator itr = std::find(_modified.begin(), _modified.end(), bucket);
-        _modified.push_back(bucket);
+        if (itr == _modified.end()) {
+            _modified.push_back(bucket);
+        }
     }
     void reset() { _modified.clear(); }
 };

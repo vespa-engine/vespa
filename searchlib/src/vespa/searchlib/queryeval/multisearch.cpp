@@ -50,7 +50,7 @@ MultiSearch::deactivate(size_t idx)
     assert(idx < _children.size());
     delete _children[idx];
     _children[idx] = _children.back();
-    _children.resize(_children.size() - 1);
+    _children.pop_back();
     return _children.size();
 }
 

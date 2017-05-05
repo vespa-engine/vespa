@@ -2,12 +2,13 @@
 
 #pragma once
 
-#include <memory>
-#include <vector>
-#include <vespa/vespalib/stllike/string.h>
 #include "value_type.h"
 #include "tensor_function.h"
 #include "aggr.h"
+#include <vespa/vespalib/stllike/string.h>
+#include <memory>
+#include <vector>
+#include <functional>
 
 namespace vespalib {
 
