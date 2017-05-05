@@ -115,6 +115,10 @@ public:
            MetricSet* owner = 0);
 
     Metric(const Metric& other, MetricSet* owner);
+    Metric(const Metric& rhs);
+    Metric & operator = (const Metric& rhs);
+    Metric(Metric && rhs) = default;
+    Metric & operator = (Metric && rhs) = default;
     ~Metric();
 
     const String& getName() const { return _name; }

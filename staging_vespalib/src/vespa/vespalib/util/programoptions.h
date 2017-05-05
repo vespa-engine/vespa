@@ -171,7 +171,7 @@ public:
 private:
     void parseOption(const std::string& id, OptionParser&, uint32_t& argPos);
     void parseArgument(OptionParser& opt, uint32_t& pos);
-    OptionParser& addOption(std::shared_ptr<OptionParser> opt);
+    OptionParser& addOption(std::shared_ptr<OptionParser> && opt);
     OptionParser& addArgument(std::shared_ptr<OptionParser> arg);
     void setDefaults(bool failUnsetRequired);
 
@@ -354,114 +354,6 @@ struct ProgramOptions::ListOptionParser : public OptionParser {
         return _entryParser->getArgType(index) + "[]";
     }
 };
-
-#define VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDOPTION(type, parsertype) \
-template<> \
-inline \
-ProgramOptions::OptionParser& \
-ProgramOptions::addOption(const std::string& optionNameList, \
-                          type& value, const std::string& desc) \
-{ \
-    return addOption(OptionParser::SP( \
-            new parsertype(optionNameList, value, desc))); \
-}
-
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDOPTION(bool, FlagOptionParser);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDOPTION(std::string, StringOptionParser);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDOPTION(int32_t, NumberOptionParser<int32_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDOPTION(uint32_t, NumberOptionParser<uint32_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDOPTION(int64_t, NumberOptionParser<int64_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDOPTION(uint64_t, NumberOptionParser<uint64_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDOPTION(float, NumberOptionParser<float>);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDOPTION(double, NumberOptionParser<double>);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDOPTION(MapOptionParser::MapType,
-                                             MapOptionParser);
-
-#define VESPALIB_PROGRAMOPTIONS_IMPL_ADDOPTION(type, parsertype) \
-template<> \
-inline \
-ProgramOptions::OptionParser& \
-ProgramOptions::addOption(const std::string& optionNameList, \
-                          type& value, const type& defVal, \
-                          const std::string& desc) \
-{ \
-    return addOption(OptionParser::SP( \
-            new parsertype(optionNameList, value, defVal, desc))); \
-}
-
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDOPTION(bool, FlagOptionParser);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDOPTION(std::string, StringOptionParser);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDOPTION(int32_t, NumberOptionParser<int32_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDOPTION(uint32_t, NumberOptionParser<uint32_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDOPTION(int64_t, NumberOptionParser<int64_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDOPTION(uint64_t, NumberOptionParser<uint64_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDOPTION(float, NumberOptionParser<float>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDOPTION(double, NumberOptionParser<double>);
-
-#define VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDARGUMENT(type, parsertype) \
-template<> \
-inline \
-ProgramOptions::OptionParser& \
-ProgramOptions::addArgument(const std::string& name, \
-                            type& value, \
-                            const std::string& desc) \
-{ \
-    return addArgument(OptionParser::SP( \
-                new parsertype(name, value, desc))); \
-}
-
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDARGUMENT(bool, BoolOptionParser);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDARGUMENT(std::string, StringOptionParser);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDARGUMENT(int32_t, NumberOptionParser<int32_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDARGUMENT(uint32_t, NumberOptionParser<uint32_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDARGUMENT(int64_t, NumberOptionParser<int64_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDARGUMENT(uint64_t, NumberOptionParser<uint64_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDARGUMENT(float, NumberOptionParser<float>);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDARGUMENT(double, NumberOptionParser<double>);
-
-#define VESPALIB_PROGRAMOPTIONS_IMPL_ADDARGUMENT(type, parsertype) \
-template<> \
-inline \
-ProgramOptions::OptionParser& \
-ProgramOptions::addArgument(const std::string& name, \
-                            type& value, const type& defVal, \
-                            const std::string& desc) \
-{ \
-    return addArgument(OptionParser::SP( \
-                new parsertype(name, value, defVal, desc))); \
-}
-
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDARGUMENT(std::string, StringOptionParser);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDARGUMENT(int32_t, NumberOptionParser<int32_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDARGUMENT(uint32_t, NumberOptionParser<uint32_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDARGUMENT(int64_t, NumberOptionParser<int64_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDARGUMENT(uint64_t, NumberOptionParser<uint64_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDARGUMENT(float, NumberOptionParser<float>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDARGUMENT(double, NumberOptionParser<double>);
-
-#define VESPALIB_PROGRAMOPTIONS_IMPL_ADDLISTARGUMENT(type, parsertype) \
-template<> \
-inline \
-ProgramOptions::OptionParser& \
-ProgramOptions::addListArgument(const std::string& name, \
-                                std::vector<type>& value, \
-                                const std::string& desc) \
-{ \
-    ListOptionParser<type>* listParser( \
-            new ListOptionParser<type>(name, value, desc)); \
-    OptionParser::UP entryParser( \
-            new parsertype(name, listParser->getSingleValue(), desc)); \
-    listParser->setEntryParser(std::move(entryParser)); \
-    return addArgument(OptionParser::SP(listParser)); \
-}
-
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDLISTARGUMENT(std::string, StringOptionParser);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDLISTARGUMENT(int32_t, NumberOptionParser<int32_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDLISTARGUMENT(uint32_t, NumberOptionParser<uint32_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDLISTARGUMENT(int64_t, NumberOptionParser<int64_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDLISTARGUMENT(uint64_t, NumberOptionParser<uint64_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDLISTARGUMENT(float, NumberOptionParser<float>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDLISTARGUMENT(double, NumberOptionParser<double>);
 
 } // vespalib
 

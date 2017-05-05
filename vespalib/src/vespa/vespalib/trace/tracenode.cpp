@@ -60,6 +60,8 @@ TraceNode::TraceNode(const TraceNode &rhs) :
     addChildren(rhs._children);
 }
 
+TraceNode & TraceNode::operator =(const TraceNode &) = default;
+
 TraceNode::~TraceNode() { }
 
 TraceNode::TraceNode(const string &note, int64_t timestamp) :
