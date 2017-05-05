@@ -21,6 +21,8 @@ private:
   std::istream      *_file;
   int                _bufsize;
   std::vector<char>  _buf;
+  uint64_t           _lastReadPos;
+  uint64_t           _nextReadPos;
   int                _bufused;
   int                _bufpos;
 
@@ -57,7 +59,7 @@ public:
   {
     if(_bufpos == _bufused)
       FillBuffer();
-    return (_bufused > _bufpos) ? _buf[_bufpos++] & 0x0ff : -1;
+    return (_bufused > _bufpos) ? (_buf[_bufpos++] & 0x0ff) : -1;
   }
 
   /**
@@ -97,6 +99,8 @@ public:
    * @returns _bufpos
    **/
   uint64_t GetBufPos() const { return _bufpos; }
+
+  uint64_t GetFilePos() const { return _lastReadPos + _bufpos; }
 
   /**
    * @returns offset of next newline from pos

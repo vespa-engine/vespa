@@ -20,6 +20,7 @@ FBench::FBench()
       _restartLimit(0),
       _maxLineSize(0),
       _keepAlive(true),
+      _usePostMode(false),
       _headerBenchmarkdataCoverage(false),
       _seconds(60),
       _singleQueryFile(false)
@@ -39,7 +40,7 @@ FBench::InitBenchmark(int numClients, int ignoreCount, int cycle,
                       int byteLimit, int restartLimit, int maxLineSize,
                       bool keepAlive, bool headerBenchmarkdataCoverage, int seconds,
                       bool singleQueryFile, const std::string & queryStringToAppend, const std::string & extraHeaders,
-                      const std::string &authority)
+                      const std::string &authority, bool postMode)
 {
     _clients.resize(numClients);
     _ignoreCount     = ignoreCount;
@@ -57,6 +58,7 @@ FBench::InitBenchmark(int numClients, int ignoreCount, int cycle,
     _restartLimit    = restartLimit;
     _maxLineSize     = maxLineSize;
     _keepAlive       = keepAlive;
+    _usePostMode     = postMode;
     _headerBenchmarkdataCoverage = headerBenchmarkdataCoverage;
     _seconds = seconds;
     _singleQueryFile = singleQueryFile;
@@ -69,6 +71,12 @@ FBench::CreateClients()
 
     int i(0);
     for(auto & client : _clients) {
+        uint64_t off_beg = 0;
+        uint64_t off_end = 0;
+        if (_singleQueryFile) {
+            off_beg = _queryfileOffset[i];
+            off_end = _queryfileOffset[i+1];
+        }
         client = std::make_unique<Client>(
             new ClientArguments(i, _clients.size(), _filenamePattern,
                                 _outputPattern, _hostnames[i % _hostnames.size()].c_str(),
@@ -76,9 +84,8 @@ FBench::CreateClients()
                                 random() % spread, _ignoreCount,
                                 _byteLimit, _restartLimit, _maxLineSize,
                                 _keepAlive, _headerBenchmarkdataCoverage,
-                                _queryfileOffset[i % _queryfileOffset.size()],
-                                _queryfileOffset[i+1 % _queryfileOffset.size()]-_queryfileOffset[i % _queryfileOffset.size()],
-                                _singleQueryFile, _queryStringToAppend, _extraHeaders, _authority));
+                                off_beg, off_end,
+                                _singleQueryFile, _queryStringToAppend, _extraHeaders, _authority, _usePostMode));
         ++i;
     }
 }
@@ -205,6 +212,7 @@ FBench::Usage()
     printf("              [-r restartLimit] [-m maxLineSize] [-k] <hostname> <port>\n\n");
     printf(" -H <str> : append extra header to each get request.\n");
     printf(" -A <str> : assign autority.  <str> should be hostname:port format. Overrides Host: header sent.\n");
+    printf(" -P       : use POST for requests instead of get.\n");
     printf(" -a <str> : append string to each query\n");
     printf(" -n <num> : run with <num> parallel clients [10]\n");
     printf(" -c <num> : each client will make a request each <num> milliseconds [1000]\n");
@@ -258,6 +266,7 @@ FBench::Main(int argc, char *argv[])
     int  restartLimit = -1;
     bool keepAlive    = true;
     bool headerBenchmarkdataCoverage = false;
+    bool usePostMode = false;
 
     bool singleQueryFile = false;
     std::string authority;
@@ -272,7 +281,7 @@ FBench::Main(int argc, char *argv[])
 
     idx = 1;
     optError = false;
-    while((opt = GetOpt(argc, argv, "H:A:a:n:c:l:i:s:q:o:r:m:p:kxyz", arg, idx)) != -1) {
+    while((opt = GetOpt(argc, argv, "H:A:a:n:c:l:i:s:q:o:r:m:p:kxyzP", arg, idx)) != -1) {
         switch(opt) {
         case 'A':
             authority = arg;
@@ -316,6 +325,9 @@ FBench::Main(int argc, char *argv[])
             if (maxLineSize < minLineSize) {
                 maxLineSize = minLineSize;
             }
+            break;
+        case 'P':
+            usePostMode = true;
             break;
         case 'p':
             printInterval = atoi(arg);
@@ -410,7 +422,7 @@ FBench::Main(int argc, char *argv[])
                   keepAlive,
                   headerBenchmarkdataCoverage, seconds,
                   singleQueryFile, queryStringToAppend, extraHeaders,
-                  authority);
+                  authority, usePostMode);
 
     CreateClients();
     StartClients();

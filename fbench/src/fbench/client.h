@@ -95,13 +95,16 @@ struct ClientArguments
      **/
     bool        _keepAlive;
 
+    /** Whether we should use POST in requests */
+    bool        _usePostMode;
+
     /**
      * Indicate whether to add benchmark data coverage headers
      **/
     bool        _headerBenchmarkdataCoverage;
 
     uint64_t    _queryfileOffset;
-    uint64_t    _queryfileBytes;
+    uint64_t    _queryfileEndOffset;
     bool        _singleQueryFile;
     std::string _queryStringToAppend;
     std::string _extraHeaders;
@@ -115,9 +118,9 @@ struct ClientArguments
                     int ignoreCount, int byteLimit,
                     int restartLimit, int maxLineSize,
                     bool keepAlive, bool headerBenchmarkdataCoverage,
-                    uint64_t queryfileOffset, uint64_t queryfileBytes, bool singleQueryFile,
+                    uint64_t queryfileOffset, uint64_t queryfileEndOffset, bool singleQueryFile,
                     const std::string & queryStringToAppend, const std::string & extraHeaders,
-                    const std::string &authority)
+                    const std::string &authority, bool postMode)
         : _myNum(myNum),
           _totNum(totNum),
           _filenamePattern(filenamePattern),
@@ -131,9 +134,10 @@ struct ClientArguments
           _restartLimit(restartLimit),
           _maxLineSize(maxLineSize),
           _keepAlive(keepAlive),
+          _usePostMode(postMode),
           _headerBenchmarkdataCoverage(headerBenchmarkdataCoverage),
           _queryfileOffset(queryfileOffset),
-          _queryfileBytes(queryfileBytes),
+          _queryfileEndOffset(queryfileEndOffset),
           _singleQueryFile(singleQueryFile),
           _queryStringToAppend(queryStringToAppend),
           _extraHeaders(extraHeaders),
@@ -165,6 +169,8 @@ private:
     std::unique_ptr<std::ofstream>   _output;
     int                              _linebufsize;
     char                            *_linebuf;
+    int                              _contentbufsize;
+    char                            *_contentbuf;
     std::atomic<bool>                _stop;
     std::atomic<bool>                _done;
     std::thread                      _thread;

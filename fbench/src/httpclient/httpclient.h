@@ -159,6 +159,9 @@ protected:
    **/
   bool Connect(const char *url);
 
+  /** connect for post */
+  bool ConnectForPost(const char *url, const char *content, int cLen);
+
   /**
    * Read the next line of text from the data stream into 'buf'. If
    * the line is longer than ('bufsize' - 1), the first ('bufsize' -
@@ -244,7 +247,7 @@ public:
    * @return success(true)/failure(false)
    * @param url the url you want to connect to
    **/
-  bool Open(const char *url);
+  bool Open(const char *url, bool usePost = false, const char *content = 0, int cLen = 0);
 
   /**
    * Read data from the url we are currently connected to. This method
@@ -328,5 +331,8 @@ public:
    *             is NULL, the content will be read and then discarded.
    **/
   FetchStatus Fetch(const char *url, std::ostream *file = NULL);
+
+  /** post some content to URL */
+  FetchStatus Post(const char *url, const char *content, int contentLen, std::ostream *file = NULL);
 };
 
