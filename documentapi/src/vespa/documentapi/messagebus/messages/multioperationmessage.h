@@ -35,6 +35,7 @@ public:
     MultiOperationMessage(const document::DocumentTypeRepo::SP & repo, const document::BucketId& bucketId,
                           const std::vector<char>& buffer, bool keepTimeStamps = false);
     MultiOperationMessage(const document::BucketId& bucketId, vdslib::DocumentList& docList, bool keepTimeStamps = false);
+    ~MultiOperationMessage();
 
     static mbus::Message::UP create(const document::DocumentTypeRepo::SP & repo, const document::BucketId& bucketId, const vdslib::OperationList& operations);
 

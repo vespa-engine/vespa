@@ -16,6 +16,7 @@ public:
     CustomPolicy(bool selectOnRetry,
                  const std::vector<uint32_t> consumableErrors,
                  const std::vector<Route> &routes);
+    ~CustomPolicy();
 
     void select(RoutingContext &context) override;
     void merge(RoutingContext &context) override;

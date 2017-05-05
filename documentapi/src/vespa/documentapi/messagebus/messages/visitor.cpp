@@ -61,14 +61,15 @@ DestroyVisitorMessage::DestroyVisitorMessage() :
     DocumentMessage(),
     _instanceId()
 {
-    // empty
 }
 
 DestroyVisitorMessage::DestroyVisitorMessage(const string& instanceId) :
     DocumentMessage(),
     _instanceId(instanceId)
 {
-    // empty
+}
+
+DestroyVisitorMessage::~DestroyVisitorMessage() {
 }
 
 DocumentReply::UP
@@ -100,7 +101,9 @@ VisitorInfoMessage::VisitorInfoMessage() :
     _finishedBuckets(),
     _errorMessage()
 {
-    // empty
+}
+
+VisitorInfoMessage::~VisitorInfoMessage() {
 }
 
 DocumentReply::UP

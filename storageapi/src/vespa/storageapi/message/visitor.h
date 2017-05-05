@@ -215,6 +215,7 @@ private:
 
 public:
     VisitorInfoCommand();
+    ~VisitorInfoCommand();
 
     void setErrorCode(const ReturnCode& code) { _error = code; }
     void setCompleted() { _completed = true; }

@@ -136,6 +136,7 @@ public:
 
     DestroyVisitorMessage(); // must be deserialized into
     DestroyVisitorMessage(const string &instanceId);
+    ~DestroyVisitorMessage();
 
     const string& getInstanceId() const { return _instanceId; }
     void setInstanceId(const string& id) { _instanceId = id; }
@@ -200,6 +201,7 @@ public:
     typedef std::unique_ptr<VisitorInfoMessage> UP;
 
     VisitorInfoMessage();
+    ~VisitorInfoMessage();
 
     std::vector<document::BucketId>& getFinishedBuckets() { return _finishedBuckets; }
     const std::vector<document::BucketId>& getFinishedBuckets() const { return _finishedBuckets; }

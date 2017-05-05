@@ -182,6 +182,9 @@ VisitorInfoCommand::VisitorInfoCommand()
 {
 }
 
+VisitorInfoCommand::~VisitorInfoCommand() {
+}
+
 void
 VisitorInfoCommand::print(std::ostream& out, bool verbose,
                           const std::string& indent) const

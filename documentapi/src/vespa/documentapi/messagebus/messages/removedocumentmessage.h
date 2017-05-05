@@ -33,6 +33,8 @@ public:
      */
     RemoveDocumentMessage(const document::DocumentId& id);
 
+    ~RemoveDocumentMessage();
+
     /**
      * Returns the identifier of the document to remove.
      *

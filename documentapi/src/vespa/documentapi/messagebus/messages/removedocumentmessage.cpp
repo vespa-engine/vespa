@@ -9,14 +9,15 @@ RemoveDocumentMessage::RemoveDocumentMessage() :
     TestAndSetMessage(),
     _documentId()
 {
-    // empty
 }
 
 RemoveDocumentMessage::RemoveDocumentMessage(const document::DocumentId& documentId) :
     TestAndSetMessage(),
     _documentId(documentId)
 {
-    // empty
+}
+
+RemoveDocumentMessage::~RemoveDocumentMessage() {
 }
 
 DocumentReply::UP

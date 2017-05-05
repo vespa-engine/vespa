@@ -19,7 +19,9 @@ CustomPolicy::CustomPolicy(bool selectOnRetry,
     _consumableErrors(consumableErrors),
     _routes(routes)
 {
-    // empty
+}
+
+CustomPolicy::~CustomPolicy() {
 }
 
 void
@@ -78,14 +80,12 @@ CustomPolicyFactory::CustomPolicyFactory() :
     _selectOnRetry(true),
     _consumableErrors()
 {
-    // empty
 }
 
 CustomPolicyFactory::CustomPolicyFactory(bool selectOnRetry) :
     _selectOnRetry(selectOnRetry),
     _consumableErrors()
 {
-    // empty
 }
 
 CustomPolicyFactory::CustomPolicyFactory(bool selectOnRetry, uint32_t consumableError) :
@@ -99,7 +99,6 @@ CustomPolicyFactory::CustomPolicyFactory(bool selectOnRetry, const std::vector<u
     _selectOnRetry(selectOnRetry),
     _consumableErrors(consumableErrors)
 {
-    // empty
 }
 
 IRoutingPolicy::UP
