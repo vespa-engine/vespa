@@ -10,7 +10,6 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/objects/hexdump.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 using document::BucketId;
@@ -690,56 +689,6 @@ TEST("requireThatFlushTimeIsAvailableAfterFlush") {
     EXPECT_GREATER_EQUAL(after.time(), store.getLastFlushTime().time());
 }
 
-TEST("requireThatChunksObeyLimits") {
-    Chunk c(0, Chunk::Config(256));
-    EXPECT_TRUE(c.hasRoom(1000)); // At least 1 is allowed no matter what the size is.
-    c.append(1, "abc", 3);
-    EXPECT_TRUE(c.hasRoom(229));
-    EXPECT_FALSE(c.hasRoom(230));
-    c.append(2, "abc", 3);
-    EXPECT_TRUE(c.hasRoom(20));
-}
-
-TEST("requireThatChunkCanProduceUniqueList") {
-    const char *d = "ABCDEF";
-    Chunk c(0, Chunk::Config(100));
-    c.append(1, d, 1);
-    c.append(2, d, 2);
-    c.append(3, d, 3);
-    c.append(2, d, 4);
-    c.append(1, d, 5);
-    EXPECT_EQUAL(5u, c.count());
-    const Chunk::LidList & all = c.getLids();
-    EXPECT_EQUAL(5u, all.size());
-    Chunk::LidList unique = c.getUniqueLids();
-    EXPECT_EQUAL(3u, unique.size());
-    EXPECT_EQUAL(1u, unique[0].getLid());
-    EXPECT_EQUAL(5u, unique[0].netSize());
-    EXPECT_EQUAL(2u, unique[1].getLid());
-    EXPECT_EQUAL(4u, unique[1].netSize());
-    EXPECT_EQUAL(3u, unique[2].getLid());
-    EXPECT_EQUAL(3u, unique[2].netSize());
-}
-
-void testChunkFormat(ChunkFormat & cf, size_t expectedLen, const vespalib::string & expectedContent)
-{
-    CompressionConfig cfg;
-    uint64_t MAGIC_CONTENT(0xabcdef9876543210);
-    cf.getBuffer() << MAGIC_CONTENT;
-    vespalib::DataBuffer buffer;
-    cf.pack(7, buffer, cfg);
-    EXPECT_EQUAL(expectedLen, buffer.getDataLen());
-    std::ostringstream os;
-    os << vespalib::HexDump(buffer.getData(), buffer.getDataLen());
-    EXPECT_EQUAL(expectedContent, os.str());
-}
-
-TEST("requireThatChunkFormatsDoesNotChangeBetweenReleases") {
-    ChunkFormatV1 v1(10);
-    testChunkFormat(v1, 26, "26 000000000010ABCDEF987654321000000000000000079CF5E79B");
-    ChunkFormatV2 v2(10);
-    testChunkFormat(v2, 34, "34 015BA32DE7000000220000000010ABCDEF987654321000000000000000074D000694");
-}
 
 class DummyBucketizer : public IBucketizer
 {
