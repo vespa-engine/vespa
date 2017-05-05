@@ -100,7 +100,6 @@ public class OperationHandlerImplTest {
             VisitorSession visitorSession = mock(VisitorSession.class);
             // Pre-bake an already completed session
             when(documentAccess.createVisitorSession(any(VisitorParameters.class))).thenAnswer(p -> {
-                // This isn't pretty, but neither is today's control/data handler/visitor session wiring nor their APIs
                 VisitorParameters params = (VisitorParameters)p.getArguments()[0];
                 assignedParameters.set(params);
 
