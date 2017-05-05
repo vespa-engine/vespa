@@ -25,7 +25,7 @@ void operator delete(void* ptr, std::size_t sz, const std::nothrow_t&) noexcept 
 void operator delete[](void* ptr, std::size_t sz, const std::nothrow_t&) noexcept __attribute__((visibility ("default")));
 #endif
 
-void* operator new(std::size_t sz) throw (std::bad_alloc)
+void* operator new(std::size_t sz)
 {
     void * ptr(vespamalloc::createAllocator()->malloc(sz));
     if (ptr == nullptr) {
@@ -34,7 +34,7 @@ void* operator new(std::size_t sz) throw (std::bad_alloc)
     return ptr;
 }
 
-void* operator new[](std::size_t sz) throw (std::bad_alloc)
+void* operator new[](std::size_t sz)
 {
     return ::operator new(sz);
 }

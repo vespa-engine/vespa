@@ -25,6 +25,7 @@ public:
         sprintf(_dirname, "dirconfig.tmp.XXXXXX");
         char * realName = mkdtemp(_dirname);
         assert(realName == _dirname);
+        assert(strlen(realName) < sizeof(_dirname));
         (void) realName;
     }
     ~Root() {
@@ -41,7 +42,7 @@ public:
     }
 private:
     std::string dir() const { return _dirname; }
-    char                  _dirname[64];
+    char                  _dirname[32];
     std::atomic<uint32_t> _nextDir;
 };
 
