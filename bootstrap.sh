@@ -56,9 +56,11 @@ $top/dist/getversion.pl -M $top > $top/dist/vtag.map
 # the plugins again: java-build helps remembering this.  So to bootstrap the
 # building of the orchestrator modules and all of its dependencies, do:
 # 'bootstrap.sh java-build -pl orchestrator'.
-#
-# Why not just 'mvn_install -am -pl bundle-plugin'?  For unknown reasons, we
-# need to use -N when building through Screwdriver.
+
+# Note: Why not just 'mvn_install -am -pl bundle-plugin'?  Because on
+# Screwdriver (not locally), mvn fails to resolve bundle-plugin while parsing
+# pom files recursivelly. Therefore, shut off recursiveness -N until
+# bundle-plugin is built.
 MODULES="
   .
   annotations
