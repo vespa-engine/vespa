@@ -66,6 +66,10 @@ QueryBlueprint::QueryBlueprint() :
 {
 }
 
+QueryBlueprint::~QueryBlueprint()
+{
+}
+
 void
 QueryBlueprint::visitDumpFeatures(const IIndexEnvironment &,
                                   IDumpFeatureVisitor &) const

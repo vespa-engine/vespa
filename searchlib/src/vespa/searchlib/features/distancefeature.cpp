@@ -86,6 +86,10 @@ DistanceBlueprint::DistanceBlueprint() :
 {
 }
 
+DistanceBlueprint::~DistanceBlueprint()
+{
+}
+
 void
 DistanceBlueprint::visitDumpFeatures(const IIndexEnvironment &,
                                      IDumpFeatureVisitor &) const

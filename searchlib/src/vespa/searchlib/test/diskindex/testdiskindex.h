@@ -16,7 +16,8 @@ protected:
 
 public:
     TestDiskIndex();
-    DiskIndex & getIndex() { return *_index; } 
+    ~TestDiskIndex();
+    DiskIndex & getIndex() { return *_index; }
     void buildSchema();
     void openIndex(const std::string &dir, bool directio, bool readmmap,
                    bool fieldEmpty, bool docEmpty, bool wordEmpty);

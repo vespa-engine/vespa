@@ -96,7 +96,10 @@ FieldMatchBlueprint::FieldMatchBlueprint() :
     _field(NULL),
     _params()
 {
-    // empty
+}
+
+FieldMatchBlueprint::~FieldMatchBlueprint()
+{
 }
 
 void

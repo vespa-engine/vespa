@@ -42,6 +42,7 @@ private:
 
 public:
     FieldMatchBlueprint();
+    ~FieldMatchBlueprint();
     void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
     fef::Blueprint::UP createInstance() const override;
     fef::ParameterDescriptions getDescriptions() const override {
