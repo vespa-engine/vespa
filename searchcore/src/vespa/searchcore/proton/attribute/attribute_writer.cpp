@@ -46,12 +46,9 @@ AttributeWriter::WriteContext::buildFieldPaths(const DocumentType &docType)
 {
     size_t fieldId = 0;
     for (const auto &attrp : _attributes) {
-        vespalib::string name = attrp->getName();
+        const vespalib::string &name = attrp->getName();
         FieldPath::UP fp = docType.buildFieldPath(name);
         if (!fp) {
-            /// Should be exception but due to incomplete unit test we can not be strict enough, must fix unit test proton/docsummary
-            // The above comment is actually incorrect. This is expected during reconfig as long as do not stop accepting feed while doing reconfig.
-            // throw std::runtime_error(vespalib::make_string("Mismatch between documentdefinition and schema. No field named '%s' from schema in document type '%s'", attribute.getName().c_str(), docType.getName().c_str()));
             LOG(warning,
                 "Mismatch between documentdefinition and schema. "
                 "No field named '%s' from schema in document type '%s'. "
