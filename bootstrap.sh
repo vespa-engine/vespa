@@ -12,11 +12,9 @@ elif [ "$1" = "full" ]; then
     # Build all java modules required by C++ testing
     MODE=full
 elif [ "$1" = "java" ]; then
-    # Build minial set of java modules requires to run mvn install from the source root
+    # Build minial set of java modules, then run mvn install with arguments $2,
+    # $3, etc.
     MODE=java
-elif [ "$1" = "java-build" ]; then
-    # Bootstrap as with "java", then build by passing $2 $3 ... to mvn.
-    MODE=java-build
 elif [ "$1" = "default" ]; then
     MODE=default
 elif [ "$1" = "-h" -o "$1" = "--help" ]; then
@@ -53,9 +51,10 @@ $top/dist/getversion.pl -M $top > $top/dist/vtag.map
 # building of several of these into fewer commands to save time.
 #
 # After bootstrapping, the following mvn command must use -rf to avoid building
-# the plugins again: java-build helps remembering this.  So to bootstrap the
-# building of the orchestrator modules and all of its dependencies, do:
-# 'bootstrap.sh java-build -pl orchestrator'.
+# the plugins again: The 'java' mode runs mvn install with the correct -rf.  So
+# to bootstrap the building of the orchestrator modules and all of its
+# dependencies, do: 'bootstrap.sh java -pl orchestrator'.  To build everything
+# do 'bootstrap.sh java'.
 
 # Note: Why not just 'mvn_install -am -pl bundle-plugin'?  Because on
 # Screwdriver (not locally), mvn fails to resolve bundle-plugin while parsing
@@ -75,14 +74,10 @@ done
 mvn_install -am -rf configgen -pl config-class-plugin
 
 case "$MODE" in
-    java*)
+    java)
         mvn_install -am -rf yolean -pl vespajlib
-
-        if test "$MODE" == java-build
-        then
-            shift
-            mvn_install -rf config-lib -am "$@"
-        fi
+        shift
+        mvn_install -rf config-lib -am "$@"
         ;;
     full)
         mvn_install -am -pl filedistributionmanager,jrt,linguistics,messagebus -rf yolean
