@@ -73,11 +73,18 @@ UniqueStore<EntryT, RefT>::find(const EntryType &value)
 }
 
 template <typename EntryT, typename RefT>
+EntryRef
+UniqueStore<EntryT, RefT>::move(EntryRef ref)
+{
+    return _store.template allocator<EntryType>(_typeId).alloc(get(ref)).ref;
+}
+
+template <typename EntryT, typename RefT>
 void
 UniqueStore<EntryT, RefT>::remove(EntryRef ref)
 {
     assert(ref.valid());
-    EntryType unused {};
+    EntryType unused{};
     Compare comp(_store, unused);
     auto itr = _dict.lowerBound(ref, comp);
     if (itr.valid() && itr.getKey() == ref) {
