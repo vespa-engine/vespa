@@ -229,10 +229,6 @@ TEST_F("testAggregatorResults", Fixture("testAggregatorResults")) {
     expression_count.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(67)))
         .aggregate(DocId(42), HitRank(21));
     f.checkObject(expression_count);
-    StandardDeviationAggregationResult stddev;
-    stddev.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(67)))
-            .aggregate(DocId(42), HitRank(21));
-    f.checkObject(stddev);
 }
 
 TEST_F("testHitCollection", Fixture("testHitCollection")) {
