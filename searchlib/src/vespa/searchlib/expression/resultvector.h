@@ -31,7 +31,6 @@ public:
     virtual ResultNode & get(size_t index) = 0;
     virtual void clear() = 0;
     virtual void resize(size_t sz) = 0;
-    virtual void reserve(size_t sz) = 0;
     size_t size() const { return onSize(); }
     bool  empty() const { return size() == 0; }
     /**
@@ -45,7 +44,6 @@ public:
     virtual ResultNode & flattenAnd(ResultNode & r) const { return r; }
     virtual ResultNode &  flattenOr(ResultNode & r) const { return r; }
     virtual ResultNode & flattenXor(ResultNode & r) const { return r; }
-    virtual ResultNode & flattenSumOfSquared(ResultNode & r) const { return r; }
     virtual void min(const ResultNode & b) { (void) b; }
     virtual void max(const ResultNode & b) { (void) b; }
     virtual void add(const ResultNode & b) { (void) b; }
@@ -94,7 +92,6 @@ public:
     ResultNode & get(size_t index) override { return _result[index]; }
     void clear() override { _result.clear(); }
     void resize(size_t sz) override { _result.resize(sz); }
-    void reserve(size_t sz) override { _result.reserve(sz); }
     void negate() override;
 private:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override { visit(visitor, "Vector", _result); }
@@ -222,7 +219,7 @@ public:
         B v;
         v.set(r);
         const std::vector<B> & vec(this->getVector());
-        for (size_t i(0), m(vec.size()); i < m; i++) {
+        for(size_t i(0), m(vec.size()); i < m; i++) {
             v.multiply(vec[i]);
         }
         r.set(v);
@@ -232,7 +229,7 @@ public:
         Int64ResultNode v;
         v.set(r);
         const std::vector<B> & vec(this->getVector());
-        for (size_t i(0), m(vec.size()); i < m; i++) {
+        for(size_t i(0), m(vec.size()); i < m; i++) {
             v.andOp(vec[i]);
         }
         r.set(v);
@@ -242,7 +239,7 @@ public:
         Int64ResultNode v;
         v.set(r);
         const std::vector<B> & vec(this->getVector());
-        for (size_t i(0), m(vec.size()); i < m; i++) {
+        for(size_t i(0), m(vec.size()); i < m; i++) {
             v.orOp(vec[i]);
         }
         r.set(v);
@@ -252,7 +249,7 @@ public:
         Int64ResultNode v;
         v.set(r);
         const std::vector<B> & vec(this->getVector());
-        for (size_t i(0), m(vec.size()); i < m; i++) {
+        for(size_t i(0), m(vec.size()); i < m; i++) {
             v.xorOp(vec[i]);
         }
         r.set(v);
@@ -262,7 +259,7 @@ public:
         B v;
         v.set(r);
         const std::vector<B> & vec(this->getVector());
-        for (size_t i(0), m(vec.size()); i < m; i++) {
+        for(size_t i(0), m(vec.size()); i < m; i++) {
             v.add(vec[i]);
         }
         r.set(v);
@@ -272,7 +269,7 @@ public:
         B v;
         v.set(r);
         const std::vector<B> & vec(this->getVector());
-        for (size_t i(0), m(vec.size()); i < m; i++) {
+        for(size_t i(0), m(vec.size()); i < m; i++) {
             v.max(vec[i]);
         }
         r.set(v);
@@ -282,21 +279,8 @@ public:
         B v;
         v.set(r);
         const std::vector<B> & vec(this->getVector());
-        for (size_t i(0), m(vec.size()); i < m; i++) {
+        for(size_t i(0), m(vec.size()); i < m; i++) {
             v.min(vec[i]);
-        }
-        r.set(v);
-        return r;
-    }
-    ResultNode & flattenSumOfSquared(ResultNode & r) const override {
-        B v;
-        v.set(r);
-        const std::vector<B> & vec(this->getVector());
-        for (size_t i(0), m(vec.size()); i < m; i++) {
-            B squared;
-            squared.set(vec[i]);
-            squared.multiply(vec[i]);
-            v.add(squared);
         }
         r.set(v);
         return r;
@@ -416,7 +400,6 @@ public:
     ResultNode & get(size_t index) override { return *_v[index]; }
     void clear() override { _v.clear(); }
     void resize(size_t sz) override { _v.resize(sz); }
-    void reserve(size_t sz) override { _v.reserve(sz); }
 private:
     int64_t onGetInteger(size_t index) const override { return _v[index]->getInteger(index); }
     double onGetFloat(size_t index)    const override { return _v[index]->getFloat(index); }

@@ -90,8 +90,6 @@
 #define CID_search_aggregation_HitsAggregationResult      SEARCHLIB_CID(87)
 #define CID_search_aggregation_ExpressionCountAggregationResult \
                                                           SEARCHLIB_CID(88)
-#define CID_search_aggregation_StandardDeviationAggregationResult \
-                                                          SEARCHLIB_CID(89)
 
 #define CID_search_aggregation_Group                      SEARCHLIB_CID(90)
 #define CID_search_aggregation_Grouping                   SEARCHLIB_CID(91)

@@ -11,7 +11,6 @@
 #include <vespa/searchlib/aggregation/averageaggregationresult.h>
 #include <vespa/searchlib/aggregation/xoraggregationresult.h>
 #include <vespa/searchlib/aggregation/hitsaggregationresult.h>
-#include <vespa/searchlib/aggregation/standarddeviationaggregationresult.h>
 #include <vespa/searchlib/aggregation/grouping.h>
 
 namespace search {
