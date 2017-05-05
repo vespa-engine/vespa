@@ -139,6 +139,20 @@ SimpleTensorEngine::apply(const BinaryOperation &op, const eval::Tensor &a, cons
 
 //-----------------------------------------------------------------------------
 
+void
+SimpleTensorEngine::encode(const Value &value, nbostream &output, Stash &stash) const
+{
+    SimpleTensor::encode(to_simple(value, stash), output);
+}
+
+const Value &
+SimpleTensorEngine::decode(nbostream &input, Stash &stash) const
+{
+    return to_value(SimpleTensor::decode(input), stash);
+}
+
+//-----------------------------------------------------------------------------
+
 const Value &
 SimpleTensorEngine::map(const Value &a, const std::function<double(double)> &function, Stash &stash) const
 {
