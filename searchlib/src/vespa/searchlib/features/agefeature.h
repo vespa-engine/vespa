@@ -32,6 +32,7 @@ private:
 
 public:
     AgeBlueprint() : fef::Blueprint("age") { }
+    ~AgeBlueprint();
 
     void visitDumpFeatures(const fef::IIndexEnvironment &env, fef::IDumpFeatureVisitor &) const override;
     fef::Blueprint::UP createInstance() const override;

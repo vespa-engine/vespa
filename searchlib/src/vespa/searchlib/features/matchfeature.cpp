@@ -22,7 +22,6 @@ MatchExecutor::MatchExecutor(const MatchParams & params) :
     FeatureExecutor(),
     _params(params)
 {
-    // empty
 }
 
 void
@@ -49,7 +48,10 @@ MatchBlueprint::MatchBlueprint() :
     Blueprint("match"),
     _params()
 {
-    // empty
+}
+
+MatchBlueprint::~MatchBlueprint()
+{
 }
 
 void

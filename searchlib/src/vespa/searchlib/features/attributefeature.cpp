@@ -275,6 +275,10 @@ AttributeBlueprint::AttributeBlueprint() :
 {
 }
 
+AttributeBlueprint::~AttributeBlueprint()
+{
+}
+
 void
 AttributeBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment &,
                                       search::fef::IDumpFeatureVisitor &) const

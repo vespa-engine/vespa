@@ -118,5 +118,9 @@ TestDiskIndex::TestDiskIndex() :
 {
 }
 
+TestDiskIndex::~TestDiskIndex()
+{
+}
+
 }
 }

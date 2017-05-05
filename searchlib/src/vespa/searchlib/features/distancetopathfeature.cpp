@@ -94,14 +94,16 @@ DistanceToPathBlueprint::DistanceToPathBlueprint() :
     Blueprint("distanceToPath"),
     _posAttr()
 {
-    // empty
+}
+
+DistanceToPathBlueprint::~DistanceToPathBlueprint()
+{
 }
 
 void
 DistanceToPathBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment &,
                                            search::fef::IDumpFeatureVisitor &) const
 {
-    // empty
 }
 
 search::fef::Blueprint::UP

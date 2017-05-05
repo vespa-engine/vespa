@@ -170,6 +170,10 @@ RankingExpressionBlueprint::RankingExpressionBlueprint()
 {
 }
 
+RankingExpressionBlueprint::~RankingExpressionBlueprint()
+{
+}
+
 void
 RankingExpressionBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &,
                                               fef::IDumpFeatureVisitor &) const

@@ -143,6 +143,10 @@ NativeProximityBlueprint::NativeProximityBlueprint() :
 {
 }
 
+NativeProximityBlueprint::~NativeProximityBlueprint()
+{
+}
+
 void
 NativeProximityBlueprint::visitDumpFeatures(const IIndexEnvironment & env,
                                             IDumpFeatureVisitor & visitor) const
