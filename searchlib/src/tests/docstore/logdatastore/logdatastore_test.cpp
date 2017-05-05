@@ -10,7 +10,6 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/objects/hexdump.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 using document::BucketId;
@@ -125,16 +124,6 @@ checkStats(IDataStore &store,
     EXPECT_EQUAL(storageStats.diskBloat(), calcDiskBloat(chunkStats));
 }
 
-}
-
-TEST("testThatLidInfoOrdersFileChunkSize") {
-    EXPECT_TRUE(LidInfo(1, 1, 1) == LidInfo(1, 1, 1));
-    EXPECT_FALSE(LidInfo(1, 1, 1) < LidInfo(1, 1, 1));
-
-    EXPECT_FALSE(LidInfo(1, 1, 1) == LidInfo(2, 1, 1));
-    EXPECT_TRUE(LidInfo(1, 1, 1) < LidInfo(2, 1, 1));
-    EXPECT_TRUE(LidInfo(1, 2, 1) < LidInfo(2, 1, 1));
-    EXPECT_TRUE(LidInfo(1, 1, 2) < LidInfo(2, 1, 1));
 }
 
 TEST("test that DirectIOPadding works accordng to spec") {
@@ -700,56 +689,6 @@ TEST("requireThatFlushTimeIsAvailableAfterFlush") {
     EXPECT_GREATER_EQUAL(after.time(), store.getLastFlushTime().time());
 }
 
-TEST("requireThatChunksObeyLimits") {
-    Chunk c(0, Chunk::Config(256));
-    EXPECT_TRUE(c.hasRoom(1000)); // At least 1 is allowed no matter what the size is.
-    c.append(1, "abc", 3);
-    EXPECT_TRUE(c.hasRoom(229));
-    EXPECT_FALSE(c.hasRoom(230));
-    c.append(2, "abc", 3);
-    EXPECT_TRUE(c.hasRoom(20));
-}
-
-TEST("requireThatChunkCanProduceUniqueList") {
-    const char *d = "ABCDEF";
-    Chunk c(0, Chunk::Config(100));
-    c.append(1, d, 1);
-    c.append(2, d, 2);
-    c.append(3, d, 3);
-    c.append(2, d, 4);
-    c.append(1, d, 5);
-    EXPECT_EQUAL(5u, c.count());
-    const Chunk::LidList & all = c.getLids();
-    EXPECT_EQUAL(5u, all.size());
-    Chunk::LidList unique = c.getUniqueLids();
-    EXPECT_EQUAL(3u, unique.size());
-    EXPECT_EQUAL(1u, unique[0].getLid());
-    EXPECT_EQUAL(5u, unique[0].netSize());
-    EXPECT_EQUAL(2u, unique[1].getLid());
-    EXPECT_EQUAL(4u, unique[1].netSize());
-    EXPECT_EQUAL(3u, unique[2].getLid());
-    EXPECT_EQUAL(3u, unique[2].netSize());
-}
-
-void testChunkFormat(ChunkFormat & cf, size_t expectedLen, const vespalib::string & expectedContent)
-{
-    CompressionConfig cfg;
-    uint64_t MAGIC_CONTENT(0xabcdef9876543210);
-    cf.getBuffer() << MAGIC_CONTENT;
-    vespalib::DataBuffer buffer;
-    cf.pack(7, buffer, cfg);
-    EXPECT_EQUAL(expectedLen, buffer.getDataLen());
-    std::ostringstream os;
-    os << vespalib::HexDump(buffer.getData(), buffer.getDataLen());
-    EXPECT_EQUAL(expectedContent, os.str());
-}
-
-TEST("requireThatChunkFormatsDoesNotChangeBetweenReleases") {
-    ChunkFormatV1 v1(10);
-    testChunkFormat(v1, 26, "26 000000000010ABCDEF987654321000000000000000079CF5E79B");
-    ChunkFormatV2 v2(10);
-    testChunkFormat(v2, 34, "34 015BA32DE7000000220000000010ABCDEF987654321000000000000000074D000694");
-}
 
 class DummyBucketizer : public IBucketizer
 {
@@ -790,115 +729,7 @@ TEST("testBucketDensityComputer") {
     EXPECT_EQUAL(0u, nonRecording.getNumBuckets());
 }
 
-vespalib::string
-createPayload(BucketId b) {
-    constexpr const char * BUF = "Buffer for testing Bucket drain order.";
-    vespalib::asciistream os;
-    os << BUF << " " << b;
-    return os.str();
-}
-uint32_t userId(size_t i) { return i%100; }
 
-void
-add(StoreByBucket & sbb, size_t i) {
-    constexpr size_t USED_BITS=5;
-    vespalib::asciistream os;
-    os << "id:a:b:n=" << userId(i) << ":" << i;
-    document::DocumentId docId(os.str());
-    BucketId b = docId.getGlobalId().convertToBucketId();
-    EXPECT_EQUAL(userId(i), docId.getGlobalId().getLocationSpecificBits());
-    b.setUsedBits(USED_BITS);
-    vespalib::string s = createPayload(b);
-    sbb.add(b, i%10, i, s.c_str(), s.size());
-}
-
-class VerifyBucketOrder : public StoreByBucket::IWrite {
-public:
-    VerifyBucketOrder() : _lastLid(0), _lastBucketId(0), _uniqueUser(), _uniqueBucket() { }
-    void write(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) override {
-        (void) chunkId;
-        EXPECT_LESS_EQUAL(_lastBucketId.toKey(), bucketId.toKey());
-        if (_lastBucketId != bucketId) {
-            EXPECT_TRUE(_uniqueBucket.find(bucketId.getRawId()) == _uniqueBucket.end());
-            _uniqueBucket.insert(bucketId.getRawId());
-        }
-        if (userId(_lastLid) != userId(lid)) {
-            EXPECT_TRUE(_uniqueUser.find(userId(lid)) == _uniqueUser.end());
-            _uniqueUser.insert(userId(lid));
-        }
-        _lastLid = lid;
-        _lastBucketId = bucketId;
-        EXPECT_EQUAL(0, memcmp(buffer, createPayload(bucketId).c_str(), sz));
-    }
-private:
-    uint32_t _lastLid;
-    BucketId _lastBucketId;
-    vespalib::hash_set<uint32_t> _uniqueUser;
-    vespalib::hash_set<uint64_t> _uniqueBucket;
-};
-
-TEST("test that StoreByBucket gives bucket by bucket and ordered within") {
-    vespalib::MemoryDataStore backing;
-    vespalib::ThreadStackExecutor executor(8, 128*1024);
-    StoreByBucket sbb(backing, executor, CompressionConfig::LZ4);
-    for (size_t i(1); i <=500; i++) {
-        add(sbb, i);
-    }
-    for (size_t i(1000); i > 500; i--) {
-        add(sbb, i);
-    }
-    EXPECT_EQUAL(32u, sbb.getBucketCount());
-    EXPECT_EQUAL(1000u, sbb.getLidCount());
-    VerifyBucketOrder vbo;
-    sbb.drain(vbo);
-}
-
-TEST("test that LidInfo has 8 bytes size and that it can represent the numbers correctly.")
-{
-    EXPECT_EQUAL(8u, sizeof(LidInfo));
-    LidInfo a(0,0,0);
-    EXPECT_EQUAL(0u, a.getFileId());
-    EXPECT_EQUAL(0u, a.getChunkId());
-    EXPECT_EQUAL(0u, a.size());
-    EXPECT_TRUE(a.valid());
-    EXPECT_TRUE(a.empty());
-    a = LidInfo(1,1,1);
-    EXPECT_EQUAL(1u, a.getFileId());
-    EXPECT_EQUAL(1u, a.getChunkId());
-    EXPECT_EQUAL(64u, a.size());
-    EXPECT_TRUE(a.valid());
-    EXPECT_FALSE(a.empty());
-    a = LidInfo(1,1,63);
-    EXPECT_EQUAL(1u, a.getFileId());
-    EXPECT_EQUAL(1u, a.getChunkId());
-    EXPECT_EQUAL(64u, a.size());
-    EXPECT_TRUE(a.valid());
-    EXPECT_FALSE(a.empty());
-    a = LidInfo(1,1,64);
-    EXPECT_EQUAL(1u, a.getFileId());
-    EXPECT_EQUAL(1u, a.getChunkId());
-    EXPECT_EQUAL(64u, a.size());
-    EXPECT_TRUE(a.valid());
-    EXPECT_FALSE(a.empty());
-    a = LidInfo(1,1,65);
-    EXPECT_EQUAL(1u, a.getFileId());
-    EXPECT_EQUAL(1u, a.getChunkId());
-    EXPECT_EQUAL(128u, a.size());
-    EXPECT_TRUE(a.valid());
-    EXPECT_FALSE(a.empty());
-    a = LidInfo(0xffff,0x3fffff,0xffffff80u);
-    EXPECT_EQUAL(0xffffu, a.getFileId());
-    EXPECT_EQUAL(0x3fffffu, a.getChunkId());
-    EXPECT_EQUAL(0xffffff80u, a.size());
-    EXPECT_TRUE(a.valid());
-    EXPECT_FALSE(a.empty());
-    EXPECT_EXCEPTION(a = LidInfo(0x10000,0x3fffff,1), std::runtime_error,
-                     "LidInfo(fileId=65536, chunkId=4194303, size=1) has invalid fileId larger than 65535");
-    EXPECT_EXCEPTION(a = LidInfo(0xffff,0x400000,1), std::runtime_error,
-                     "LidInfo(fileId=65535, chunkId=4194304, size=1) has invalid chunkId larger than 4194303");
-    EXPECT_EXCEPTION(a = LidInfo(0xffff,0x3fffff,0xffffff81u), std::runtime_error,
-                     "LidInfo(fileId=65535, chunkId=4194303, size=4294967169) has too large size larger than 4294967168");
-}
 TEST_MAIN() {
     DummyFileHeaderContext::setCreator("logdatastore_test");
     TEST_RUN_ALL();
