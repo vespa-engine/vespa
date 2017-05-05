@@ -147,7 +147,7 @@ struct Fixture
 };
 
 
-TEST_F("require that attribute adapter handles put", Fixture)
+TEST_F("require that attribute writer handles put", Fixture)
 {
     Schema s;
     s.addAttributeField(Schema::AttributeField("a1", schema::DataType::INT32, CollectionType::SINGLE));
@@ -232,7 +232,7 @@ TEST_F("require that attribute adapter handles put", Fixture)
     }
 }
 
-TEST_F("require that attribute adapter handles predicate put", Fixture)
+TEST_F("require that attribute writer handles predicate put", Fixture)
 {
     Schema s;
     s.addAttributeField(Schema::AttributeField("a1", schema::DataType::BOOLEANTREE, CollectionType::SINGLE));
@@ -275,7 +275,7 @@ TEST_F("require that attribute adapter handles predicate put", Fixture)
     EXPECT_TRUE(it.valid());
 }
 
-TEST_F("require that attribute adapter handles remove", Fixture)
+TEST_F("require that attribute writer handles remove", Fixture)
 {
     AttributeVector::SP a1 = f.addAttribute("a1");
     AttributeVector::SP a2 = f.addAttribute("a2");
@@ -357,7 +357,7 @@ TEST_F("require that visibilitydelay is honoured", Fixture)
     
 }
 
-TEST_F("require that attribute adapter handles predicate remove", Fixture)
+TEST_F("require that attribute writer handles predicate remove", Fixture)
 {
     AttributeVector::SP a1 = f.addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)}, createSerialNum);
     Schema s;
@@ -379,7 +379,7 @@ TEST_F("require that attribute adapter handles predicate remove", Fixture)
     EXPECT_EQUAL(0u, index.getZeroConstraintDocs().size());
 }
 
-TEST_F("require that attribute adapter handles update", Fixture)
+TEST_F("require that attribute writer handles update", Fixture)
 {
     AttributeVector::SP a1 = f.addAttribute("a1");
     AttributeVector::SP a2 = f.addAttribute("a2");
@@ -419,7 +419,7 @@ TEST_F("require that attribute adapter handles update", Fixture)
     }
 }
 
-TEST_F("require that attribute adapter handles predicate update", Fixture)
+TEST_F("require that attribute writer handles predicate update", Fixture)
 {
     AttributeVector::SP a1 = f.addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)}, createSerialNum);
     Schema schema;
