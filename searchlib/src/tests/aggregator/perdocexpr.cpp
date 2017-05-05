@@ -49,6 +49,7 @@ void testMin(const ResultNode & a, const ResultNode & b) {
 ExpressionNode::UP
 createVectorFloat(const std::vector<double> & v) {
     std::unique_ptr<FloatResultNodeVector> r = MU<FloatResultNodeVector>();
+    r->reserve(v.size());
     for (double d : v) {
         r->push_back(FloatResultNode(d));
     }
@@ -58,6 +59,7 @@ createVectorFloat(const std::vector<double> & v) {
 ExpressionNode::UP
 createVectorInt(const std::vector<double> & v) {
     std::unique_ptr<IntegerResultNodeVector> r = MU<IntegerResultNodeVector>();
+    r->reserve(v.size());
     for (double d : v) {
         r->push_back(Int64ResultNode(static_cast<int64_t>(d)));
     }

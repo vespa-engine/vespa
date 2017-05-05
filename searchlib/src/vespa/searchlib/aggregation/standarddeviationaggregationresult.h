@@ -13,18 +13,16 @@ class StandardDeviationAggregationResult : public AggregationResult
 {
 public:
     DECLARE_AGGREGATIONRESULT(StandardDeviationAggregationResult);
-    StandardDeviationAggregationResult() : AggregationResult(), _count(), _sum(), _sumOfSquared(), _stdDevScratchPad()
-    {
-        _stdDevScratchPad.reset(new expression::FloatResultNode());
-    }
+    StandardDeviationAggregationResult();
+    ~StandardDeviationAggregationResult();
 
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    const double getSum() const noexcept { return _sum.getFloat(); }
-    const double getSumOfSquared() const noexcept { return _sumOfSquared.getFloat(); }
-    const uint64_t getCount() const noexcept { return _count; }
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    double getSum() const noexcept { return _sum.getFloat(); }
+    double getSumOfSquared() const noexcept { return _sumOfSquared.getFloat(); }
+    uint64_t getCount() const noexcept { return _count; }
 private:
-    virtual const ResultNode& onGetRank() const noexcept override { return getStandardDeviation(); }
-    virtual void onPrepare(const ResultNode&, bool) override { };
+    const ResultNode& onGetRank() const noexcept override { return getStandardDeviation(); }
+    void onPrepare(const ResultNode&, bool) override { };
     const expression::NumericResultNode& getStandardDeviation() const noexcept;
 
     uint64_t _count;

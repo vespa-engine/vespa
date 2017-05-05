@@ -502,6 +502,14 @@ Deserializer &ExpressionCountAggregationResult::onDeserialize(
 ExpressionCountAggregationResult::ExpressionCountAggregationResult() : AggregationResult(), _hll() { }
 ExpressionCountAggregationResult::~ExpressionCountAggregationResult() {}
 
+StandardDeviationAggregationResult::StandardDeviationAggregationResult()
+        : AggregationResult(), _count(), _sum(), _sumOfSquared(), _stdDevScratchPad()
+{
+    _stdDevScratchPad.reset(new expression::FloatResultNode());
+}
+
+StandardDeviationAggregationResult::~StandardDeviationAggregationResult() {}
+
 const NumericResultNode& StandardDeviationAggregationResult::getStandardDeviation() const noexcept
 {
     if (_count == 0) {
@@ -543,18 +551,12 @@ void StandardDeviationAggregationResult::onReset()
     _sumOfSquared.set(0.0);
 }
 
-static FieldBase _G_sumOfSquaredField("sumOfSquared");
-
 Serializer & StandardDeviationAggregationResult::onSerialize(Serializer & os) const
 {
     AggregationResult::onSerialize(os);
     double sum = _sum.getFloat();
     double sumOfSquared = _sumOfSquared.getFloat();
-    return os.
-            put(_G_countField, _count).
-            put(_G_sumField, sum).
-            put(_G_sumOfSquaredField, sumOfSquared);
-
+    return os << _count << sum << sumOfSquared;
 }
 
 Deserializer & StandardDeviationAggregationResult::onDeserialize(Deserializer & is)
@@ -562,9 +564,7 @@ Deserializer & StandardDeviationAggregationResult::onDeserialize(Deserializer & 
     AggregationResult::onDeserialize(is);
     double sum;
     double sumOfSquared;
-    Deserializer & r = is.get(_G_countField, _count)
-            .get(_G_sumField, sum)
-            .get(_G_sumOfSquaredField, sumOfSquared);
+    auto& r = is >> _count >> sum >> sumOfSquared;
     _sum.set(sum);
     _sumOfSquared.set(sumOfSquared);
     return r;
