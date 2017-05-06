@@ -15,10 +15,8 @@ class MySearchHandler : public ISearchHandler {
     std::string _name;
     std::string _reply;
 public:
-    MySearchHandler(size_t numHits = 0,
-                    const std::string & name = "my",
-                    const std::string & reply = "myreply") :
-        _numHits(numHits), _name(name), _reply(reply) {}
+    MySearchHandler(size_t numHits = 0) :
+        _numHits(numHits), _name("my"), _reply("myreply") {}
     virtual DocsumReply::UP getDocsums(const DocsumRequest &) override {
         return DocsumReply::UP(new DocsumReply);
     }
