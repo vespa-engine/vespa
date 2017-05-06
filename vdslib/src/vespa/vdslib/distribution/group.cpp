@@ -116,7 +116,8 @@ Group::addSubGroup(Group::UP group)
                 "Another subgroup with same index is already added.",
                 VESPA_STRLOC);
     }
-    _subGroups[group->getIndex()] = group.release();
+    auto index = group->getIndex();
+    _subGroups[index] = group.release();
 }
 
 void
