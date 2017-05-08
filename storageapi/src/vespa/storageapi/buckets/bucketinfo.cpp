@@ -14,8 +14,7 @@ BucketInfo::BucketInfo()
       _usedFileSize(1),
       _ready(false),
       _active(false)
-{
-}
+{}
 
 BucketInfo::BucketInfo(uint32_t checksum, uint32_t docCount,
                        uint32_t totDocSize)
@@ -27,8 +26,7 @@ BucketInfo::BucketInfo(uint32_t checksum, uint32_t docCount,
       _usedFileSize(totDocSize),
       _ready(false),
       _active(false)
-{
-}
+{}
 
 BucketInfo::BucketInfo(uint32_t checksum, uint32_t docCount,
                        uint32_t totDocSize, uint32_t metaCount,
@@ -41,8 +39,7 @@ BucketInfo::BucketInfo(uint32_t checksum, uint32_t docCount,
       _usedFileSize(usedFileSize),
       _ready(false),
       _active(false)
-{
-}
+{}
 
 BucketInfo::BucketInfo(uint32_t checksum, uint32_t docCount,
                        uint32_t totDocSize, uint32_t metaCount,
@@ -56,8 +53,7 @@ BucketInfo::BucketInfo(uint32_t checksum, uint32_t docCount,
       _usedFileSize(usedFileSize),
       _ready(ready),
       _active(active)
-{
-}
+{}
 
 BucketInfo::BucketInfo(uint32_t checksum, uint32_t docCount,
                        uint32_t totDocSize, uint32_t metaCount,
@@ -71,8 +67,11 @@ BucketInfo::BucketInfo(uint32_t checksum, uint32_t docCount,
       _usedFileSize(usedFileSize),
       _ready(ready),
       _active(active)
-{
-}
+{}
+
+BucketInfo::BucketInfo(const BucketInfo &) = default;
+BucketInfo & BucketInfo::operator = (const BucketInfo &) = default;
+BucketInfo::~BucketInfo() {}
 
 bool
 BucketInfo::operator==(const BucketInfo& info) const
