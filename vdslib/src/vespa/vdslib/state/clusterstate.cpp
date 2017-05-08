@@ -85,7 +85,7 @@ ClusterState::ClusterState(const vespalib::stringref & serialized)
             lastAbsolutePath = key;
         }
         
-        if (key.empty() || parse(key, value, nodeData) ) {
+        if (key.empty() || ! parse(key, value, nodeData) ) {
             LOG(debug, "Unknown key %s in systemstate. Ignoring it, assuming it's "
                        "a new feature from a newer version than ourself: %s",
                        key.c_str(), serialized.c_str());
