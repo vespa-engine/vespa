@@ -95,7 +95,7 @@ int CreateIdxFileFromDatApp::createIdxFile(const vespalib::string & datFileName,
     FastOS_File idxFile(idxFileName.c_str());
     assert(idxFile.OpenWriteOnly());
     index::DummyFileHeaderContext fileHeaderContext;
-    idxFile.SetPosition(WriteableFileChunk::writeIdxHeader(fileHeaderContext, idxFile));
+    idxFile.SetPosition(WriteableFileChunk::writeIdxHeader(fileHeaderContext, std::numeric_limits<uint32_t>::max(), idxFile));
     fprintf(stdout, "datHeaderLen=%ld\n", datHeaderLen);
     uint64_t serialNum(0);
     for (const char * current(start + datHeaderLen); current < end; ) {

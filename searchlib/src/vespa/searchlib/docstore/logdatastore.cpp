@@ -620,7 +620,8 @@ LogDataStore::createWritableFile(FileId fileId, SerialNum serialNum, NameId name
         }
     }
     FileChunk::UP file(new WriteableFileChunk(_executor, fileId, nameId, getBaseDir(),
-                                              serialNum, _config.getFileConfig(), _tune, _fileHeaderContext,
+                                              serialNum, std::numeric_limits<uint32_t>::max(),
+                                              _config.getFileConfig(), _tune, _fileHeaderContext,
                                               _bucketizer.get(), _config.crcOnReadDisabled()));
     file->enableRead();
     return file;

@@ -30,6 +30,7 @@ namespace {
 
 const uint64_t Alignment = 4096;
 const uint64_t headerAlign = 4096;
+const vespalib::string DOC_ID_LIMIT_KEY("docIdLimit");
 
 }
 
@@ -80,6 +81,7 @@ WriteableFileChunk(vespalib::ThreadExecutor &executor,
                    FileId fileId, NameId nameId,
                    const vespalib::string &baseName,
                    SerialNum initialSerialNum,
+                   uint32_t docIdLimit,
                    const Config &config,
                    const TuneFileSummary &tune,
                    const FileHeaderContext &fileHeaderContext,
@@ -88,6 +90,7 @@ WriteableFileChunk(vespalib::ThreadExecutor &executor,
     : FileChunk(fileId, nameId, baseName, tune, bucketizer, skipCrcOnRead),
       _config(config),
       _serialNum(initialSerialNum),
+      _docIdLimit(docIdLimit),
       _frozen(false),
       _lock(),
       _writeLock(),
@@ -131,7 +134,7 @@ WriteableFileChunk(vespalib::ThreadExecutor &executor,
         if (_idxFile.OpenReadWrite()) {
             readIdxHeader();
             if (_idxHeaderLen == 0) {
-                _idxHeaderLen = writeIdxHeader(fileHeaderContext, _idxFile);
+                _idxHeaderLen = writeIdxHeader(fileHeaderContext, _docIdLimit, _idxFile);
             }
             _idxFile.SetPosition(_idxFile.GetSize());
         } else {
@@ -744,13 +747,18 @@ WriteableFileChunk::readDataHeader(void)
 
 
 void
-WriteableFileChunk::readIdxHeader(void)
+WriteableFileChunk::readIdxHeader()
 {
     int64_t fSize(_idxFile.GetSize());
     try {
         FileHeader h;
         _idxHeaderLen = h.readFile(_idxFile);
         _idxFile.SetPosition(_idxHeaderLen);
+        if (h.hasTag(DOC_ID_LIMIT_KEY)) {
+            _docIdLimit = h.getTag(DOC_ID_LIMIT_KEY).asInteger();
+        } else {
+            _docIdLimit = std::numeric_limits<uint32_t>::max();
+        }
     } catch (IllegalHeaderException &e) {
         _idxFile.SetPosition(0);
         try {
@@ -790,7 +798,7 @@ WriteableFileChunk::writeDataHeader(const FileHeaderContext &fileHeaderContext)
 
 
 uint64_t
-WriteableFileChunk::writeIdxHeader(const FileHeaderContext &fileHeaderContext, FastOS_FileInterface & file)
+WriteableFileChunk::writeIdxHeader(const FileHeaderContext &fileHeaderContext, uint32_t docIdLimit, FastOS_FileInterface &file)
 {
     typedef FileHeader::Tag Tag;
     FileHeader h;
@@ -799,6 +807,7 @@ WriteableFileChunk::writeIdxHeader(const FileHeaderContext &fileHeaderContext, F
     assert(file.GetPosition() == 0);
     fileHeaderContext.addTags(h, file.GetFileName());
     h.putTag(Tag("desc", "Log data store chunk index"));
+    h.putTag(Tag(DOC_ID_LIMIT_KEY, docIdLimit));
     return h.writeFile(file);
 }
 

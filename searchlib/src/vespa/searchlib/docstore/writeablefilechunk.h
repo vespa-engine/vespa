@@ -45,6 +45,7 @@ public:
                        FileId fileId, NameId nameId,
                        const vespalib::string & baseName,
                        uint64_t initialSerialNum,
+                       uint32_t docIdLimit,
                        const Config & config,
                        const TuneFileSummary &tune,
                        const common::FileHeaderContext &fileHeaderContext,
@@ -59,6 +60,7 @@ public:
     void flush(bool block, uint64_t syncToken);
     uint64_t   getSerialNum() const { return _serialNum; }
     void setSerialNum(uint64_t serialNum) { _serialNum = std::max(_serialNum, serialNum); }
+    uint32_t getDocIdLimit() const { return _docIdLimit; }
 
     virtual fastos::TimeStamp getModificationTime() const override;
     void freeze();
@@ -71,7 +73,7 @@ public:
     void flushPendingChunks(uint64_t serialNum);
     virtual DataStoreFileChunkStats getStats() const override;
 
-    static uint64_t writeIdxHeader(const common::FileHeaderContext &fileHeaderContext, FastOS_FileInterface & file);
+    static uint64_t writeIdxHeader(const common::FileHeaderContext &fileHeaderContext, uint32_t docIdLimit, FastOS_FileInterface &file);
 private:
     using ProcessedChunkUP = std::unique_ptr<ProcessedChunk>;
     typedef std::map<uint32_t, ProcessedChunkUP > ProcessedChunkMap;
@@ -107,6 +109,7 @@ private:
 
     Config            _config;
     SerialNum         _serialNum;
+    uint32_t          _docIdLimit;
     bool              _frozen;
     // Lock order is _writeLock, _flushLock, _lock
     vespalib::Monitor _lock;
