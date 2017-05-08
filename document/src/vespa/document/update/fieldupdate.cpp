@@ -27,6 +27,8 @@ FieldUpdate::FieldUpdate(const DocumentTypeRepo& repo,
     deserialize(repo, type, buffer, version);
 }
 
+FieldUpdate::FieldUpdate(const FieldUpdate &) = default;
+FieldUpdate & FieldUpdate::operator = (const FieldUpdate &) = default;
 FieldUpdate::~FieldUpdate() {}
 
 bool

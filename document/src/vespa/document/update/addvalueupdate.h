@@ -30,10 +30,8 @@ public:
      * @param value The field value to add.
      * @param weight The weight for the field value.
      */
-    AddValueUpdate(const FieldValue& value, int weight = 1)
-        : ValueUpdate(),
-          _value(value.clone()),
-          _weight(weight) {}
+    AddValueUpdate(const FieldValue& value, int weight = 1);
+    ~AddValueUpdate();
 
     bool operator==(const ValueUpdate& other) const override;
 

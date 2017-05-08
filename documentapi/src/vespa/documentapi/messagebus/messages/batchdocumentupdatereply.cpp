@@ -7,7 +7,8 @@ namespace documentapi {
 
 BatchDocumentUpdateReply::BatchDocumentUpdateReply()
     : WriteDocumentReply(DocumentProtocol::REPLY_BATCHDOCUMENTUPDATE)
-{
-}
+{ }
+
+BatchDocumentUpdateReply::~BatchDocumentUpdateReply() {}
 
 }

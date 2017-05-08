@@ -94,6 +94,7 @@ struct SkipNth : Mask {
 struct Bits : Mask {
     std::vector<bool> bits;
     Bits(const std::vector<bool> &bits_in) : bits(bits_in) {}
+    ~Bits() { }
     bool operator[](size_t i) const override {
         ASSERT_LESS(i, bits.size());
         return bits[i];

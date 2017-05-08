@@ -29,12 +29,12 @@ WeightedSetFieldValue::WeightedSetFieldValue(const DataType &type)
     : CollectionFieldValue(type),
       _map_type(new MapDataType(getKeyType(type), *DataType::INT)),
       _map(*_map_type),
-      _altered(true) {
-}
+      _altered(true)
+{ }
 
-WeightedSetFieldValue::~WeightedSetFieldValue()
-{
-}
+WeightedSetFieldValue::WeightedSetFieldValue(const WeightedSetFieldValue &) = default;
+WeightedSetFieldValue & WeightedSetFieldValue::operator = (const WeightedSetFieldValue &) = default;
+WeightedSetFieldValue::~WeightedSetFieldValue() { }
 
 void WeightedSetFieldValue::verifyKey(const FieldValue & v)
 {

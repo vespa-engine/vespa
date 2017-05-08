@@ -34,6 +34,10 @@ public:
     typedef vespalib::CloneablePtr<FieldUpdate> CP;
 
     FieldUpdate(const Field& field);
+    FieldUpdate(const FieldUpdate &);
+    FieldUpdate & operator = (const FieldUpdate &);
+    FieldUpdate(FieldUpdate &&) = default;
+    FieldUpdate & operator = (FieldUpdate &&) = default;
     ~FieldUpdate();
 
     /**
