@@ -6,10 +6,13 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostLivenessTracker;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.maintenance.retire.RetireIPv4OnlyNodes;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
@@ -39,8 +42,9 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final FailedExpirer failedExpirer;
     private final DirtyExpirer dirtyExpirer;
     private final NodeRebooter nodeRebooter;
+    private final NodeRetirer nodeRetirer;
     private final MetricsReporter metricsReporter;
-    
+
     private final JobControl jobControl;
 
     @Inject
@@ -66,6 +70,11 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         dirtyExpirer = new DirtyExpirer(nodeRepository, clock, durationFromEnv("dirty_expiry").orElse(defaults.dirtyExpiry), jobControl);
         nodeRebooter = new NodeRebooter(nodeRepository, clock, durationFromEnv("reboot_interval").orElse(defaults.rebootInterval), jobControl);
         metricsReporter = new MetricsReporter(nodeRepository, metric, durationFromEnv("metrics_interval").orElse(defaults.metricsInterval), jobControl);
+        nodeRetirer = new NodeRetirer(nodeRepository, zone, durationFromEnv("retire_interval").orElse(defaults.nodeRetirerInterval), jobControl,
+                new RetireIPv4OnlyNodes(),
+                new Zone(SystemName.cd, Environment.dev, RegionName.from("cd-us-central-1")),
+                new Zone(SystemName.cd, Environment.prod, RegionName.from("cd-us-central-1")),
+                new Zone(SystemName.cd, Environment.prod, RegionName.from("cd-us-central-2")));
     }
 
     @Override
@@ -80,11 +89,12 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         failedExpirer.deconstruct();
         dirtyExpirer.deconstruct();
         nodeRebooter.deconstruct();
+        nodeRetirer.deconstruct();
         metricsReporter.deconstruct();
     }
 
     public JobControl jobControl() { return jobControl; }
-    
+
     private static Optional<Duration> durationFromEnv(String envVariable) {
         return Optional.ofNullable(System.getenv(envPrefix + envVariable)).map(Long::parseLong).map(Duration::ofSeconds);
     }
@@ -118,6 +128,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration failedExpiry;
         private final Duration dirtyExpiry;
         private final Duration rebootInterval;
+        private final Duration nodeRetirerInterval;
         private final Duration metricsInterval;
 
         private final NodeFailer.ThrottlePolicy throttlePolicy;
@@ -136,6 +147,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 failedExpiry = Duration.ofDays(4); // enough time to recover data even if it happens friday night
                 dirtyExpiry = Duration.ofHours(2); // enough time to clean the node
                 rebootInterval = Duration.ofDays(30);
+                nodeRetirerInterval = Duration.ofMinutes(30);
                 metricsInterval = Duration.ofMinutes(1);
                 throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
             } else {
@@ -151,6 +163,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 failedExpiry = Duration.ofMinutes(10);
                 dirtyExpiry = Duration.ofMinutes(30);
                 rebootInterval = Duration.ofDays(30);
+                nodeRetirerInterval = Duration.ofMinutes(30);
                 metricsInterval = Duration.ofMinutes(1);
                 throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
             }

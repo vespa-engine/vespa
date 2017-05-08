@@ -6,5 +6,5 @@ package com.yahoo.vespa.hosted.provision.node;
  * @author bratseth
  */
 public enum Agent {
-    system, application, operator
+    system, application, operator, NodeRetirer
 }

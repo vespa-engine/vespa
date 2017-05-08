@@ -34,7 +34,7 @@ public class NodeRepositoryTest {
 
         assertEquals(3, tester.getNodes(NodeType.tenant).size());
         
-        tester.nodeRepository().park("host2", Agent.system);
+        tester.nodeRepository().park("host2", Agent.system, "Parking to unit test");
         assertTrue(tester.nodeRepository().remove("host2"));
 
         assertEquals(2, tester.getNodes(NodeType.tenant).size());

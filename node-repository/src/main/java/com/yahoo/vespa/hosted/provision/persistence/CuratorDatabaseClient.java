@@ -174,7 +174,7 @@ public class CuratorDatabaseClient {
         transaction.onCommitted(() -> { // schedule logging on commit of nodes which changed state
             for (Node node : nodes) {
                 if (toState != node.state())
-                    log.log(LogLevel.INFO, "Moved to " + toState + ": " + node + (reason.isPresent() ? ": " + reason.get() : ""));
+                    log.log(LogLevel.INFO, agent + " moved " + node + " to " + toState + reason.map(s -> ": " + s).orElse(""));
             }
         });
         return writtenNodes;

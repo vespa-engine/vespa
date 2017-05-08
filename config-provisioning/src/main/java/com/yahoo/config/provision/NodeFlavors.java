@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.yahoo.config.provisioning.FlavorsConfig;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -28,6 +29,10 @@ public class NodeFlavors {
         for (Flavor flavor : toFlavors(config))
             b.put(flavor.name(), flavor);
         this.flavors = b.build();
+    }
+
+    public List<Flavor> getFlavors() {
+        return new ArrayList<>(flavors.values());
     }
 
     /** Returns a flavor by name, or empty if there is no flavor with this name. */
