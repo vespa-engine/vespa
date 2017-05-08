@@ -127,19 +127,19 @@ public class GlobalDistributionValidatorTest {
     }
 
     private static Redundancy createRedundancyWithGlobalDistribution() {
-        Redundancy redundancy = new Redundancy(2, 2, 2);
+        Redundancy redundancy = new Redundancy(2, 2);
         redundancy.setTotalNodes(2);
         return redundancy;
     }
 
     private static Redundancy createRedundancyWithoutGlobalDistribution() {
-        Redundancy redundancy = new Redundancy(2, 2, 2);
+        Redundancy redundancy = new Redundancy(2, 2);
         redundancy.setTotalNodes(3);
         return redundancy;
     }
 
     private static Redundancy createRedundancyWithTooFewSearchableCopies() {
-        Redundancy redundancy = new Redundancy(2, 2, 1);
+        Redundancy redundancy = new Redundancy(2, 1);
         redundancy.setTotalNodes(2);
         return redundancy;
     }

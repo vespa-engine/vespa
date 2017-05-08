@@ -10,6 +10,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.content.MessagetyperouteselectorpolicyConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
@@ -104,6 +105,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
                     new SearchDefinitionBuilder().build(context.getParentProducer().getRoot().getDeployState().getDocumentModel().getDocumentManager(), documentsElement);
 
             String routingSelection = new DocumentSelectionBuilder().build(documentsElement);
+            warnIfDeprecatedReplyAfterAttributeIsPresent(contentElement);
             Redundancy redundancy = new RedundancyBuilder().build(contentElement);
             Set<NewDocumentType> globallyDistributedDocuments = new GlobalDistributionBuilder(documentDefinitions).build(documentsElement);
 
@@ -454,6 +456,13 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
             return false;
         }
 
+        private void warnIfDeprecatedReplyAfterAttributeIsPresent(ModelElement contentElement) {
+            final ModelElement redundancyElement = contentElement.getChild("redundancy");
+            if (redundancyElement != null) {
+                this.admin.deployLogger().log(LogLevel.WARNING, "The 'reply-after' attribute on content cluster 'redundancy' element is deprecated and ignored");
+            }
+        }
+
     }
 
     private ContentCluster(AbstractConfigProducer parent,
@@ -680,4 +689,5 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
         }
 
     }
+
 }

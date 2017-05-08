@@ -67,15 +67,15 @@ public class IndexedHierarchicDistributionValidator {
     }
 
     private void validateThatLeafGroupsCountIsAFactorOfRedundancy() {
-        if (redundancy.effectiveFinalRedundancy() % rootGroup.getSubgroups().size() != 0) {
+        if (redundancy.effectiveRedundancy() % rootGroup.getSubgroups().size() != 0) {
             throw new IllegalArgumentException(getErrorMsgPrefix() + "Expected number of leaf groups (" +
                                                rootGroup.getSubgroups().size() + ") to be a factor of redundancy (" +
-                                               redundancy.effectiveFinalRedundancy() + "), but it is not.");
+                                               redundancy.effectiveRedundancy() + "), but it is not.");
         }
     }
 
     private void validateThatRedundancyPerGroupIsEqual() {
-        int redundancyPerGroup = redundancy.effectiveFinalRedundancy() / rootGroup.getSubgroups().size();
+        int redundancyPerGroup = redundancy.effectiveRedundancy() / rootGroup.getSubgroups().size();
         String expPartitions = createDistributionPartitions(redundancyPerGroup, rootGroup.getSubgroups().size());
         if (!rootGroup.getPartitions().get().equals(expPartitions)) {
             throw new IllegalArgumentException(getErrorMsgPrefix() + "Expected redundancy per leaf group to be " +
@@ -99,7 +99,7 @@ public class IndexedHierarchicDistributionValidator {
     }
 
     private void validateThatReadyCopiesIsCompatibleWithRedundancy(int groupCount) throws Exception {
-        if (redundancy.effectiveFinalRedundancy() % groupCount != 0) {
+        if (redundancy.effectiveRedundancy() % groupCount != 0) {
             throw new Exception(getErrorMsgPrefix() + "Expected equal redundancy per group.");
         }
         if (redundancy.effectiveReadyCopies() % groupCount != 0) {

@@ -107,7 +107,8 @@ public class ClusterTest extends ContentBaseTest {
         StorDistributionConfig.Builder storBuilder = new StorDistributionConfig.Builder();
         cc.getConfig(storBuilder);
         StorDistributionConfig storConfig = new StorDistributionConfig(storBuilder);
-        assertEquals(4, storConfig.initial_redundancy());
+        // TODO remove initial_redundancy from config. For now, it should always be equal to (final) redundancy.
+        assertEquals(5, storConfig.initial_redundancy());
         assertEquals(5, storConfig.redundancy());
         assertEquals(3, storConfig.ready_copies());
         ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
@@ -148,7 +149,8 @@ public class ClusterTest extends ContentBaseTest {
         ).getConfig(builder);
 
         StorDistributionConfig config = new StorDistributionConfig(builder);
-        assertEquals(2, config.initial_redundancy());
+        // TODO remove initial_redundancy from config. For now, it should always be equal to (final) redundancy.
+        assertEquals(3, config.initial_redundancy());
         assertEquals(3, config.redundancy());
         assertEquals(2, config.ready_copies());
     }

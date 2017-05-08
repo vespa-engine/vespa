@@ -39,7 +39,7 @@ public class GlobalDistributionValidator {
                                     "but do not have high enough redundancy to make the documents globally distributed: %s. " +
                                     "Redundancy is %d, expected %d.",
                             asPrintableString(toDocumentNameStream(globallyDistributedDocuments)),
-                            redundancy.effectiveFinalRedundancy(),
+                            redundancy.effectiveRedundancy(),
                             redundancy.totalNodes()));
         }
     }
@@ -47,14 +47,14 @@ public class GlobalDistributionValidator {
     private static void verifySearchableCopiesIsSameAsRedundancy(Set<NewDocumentType> globallyDistributedDocuments,
                                                                  Redundancy redundancy) {
         if (!globallyDistributedDocuments.isEmpty() &&
-                redundancy.effectiveReadyCopies() != redundancy.effectiveFinalRedundancy()) {
+                redundancy.effectiveReadyCopies() != redundancy.effectiveRedundancy()) {
             throw new IllegalArgumentException(
                     String.format(
                             "The following document types have the number of searchable copies less than redundancy: %s. " +
                                     "Searchable copies is %d, while redundancy is %d.",
                             asPrintableString(toDocumentNameStream(globallyDistributedDocuments)),
                             redundancy.effectiveReadyCopies(),
-                            redundancy.effectiveFinalRedundancy()));
+                            redundancy.effectiveRedundancy()));
         }
     }
 

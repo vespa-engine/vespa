@@ -11,8 +11,7 @@ import com.yahoo.vespa.config.search.core.ProtonConfig;
  */
 public class Redundancy implements StorDistributionConfig.Producer, ProtonConfig.Producer {
 
-    private final int initialRedundancy ;
-    private final int finalRedundancy;
+    private final int redundancy;
     private final int readyCopies;
 
     private int implicitGroups = 1;
@@ -21,9 +20,8 @@ public class Redundancy implements StorDistributionConfig.Producer, ProtonConfig
     /** The total number of nodes available in this cluster (assigned when this becomes known) */
     private int totalNodes = 0;
 
-    public Redundancy(int initialRedundancy, int finalRedundancy, int readyCopies) {
-        this.initialRedundancy = initialRedundancy;
-        this.finalRedundancy = finalRedundancy;
+    public Redundancy(int redundancy, int readyCopies) {
+        this.redundancy = redundancy;
         this.readyCopies = readyCopies;
     }
 
@@ -43,32 +41,30 @@ public class Redundancy implements StorDistributionConfig.Producer, ProtonConfig
     public void setImplicitGroups(int implicitGroups) { this.implicitGroups = implicitGroups; }
     public void setExplicitGroups(int explicitGroups) { this.explicitGroups = explicitGroups; }
 
-    public int initialRedundancy() { return initialRedundancy; }
-    public int finalRedundancy() { return finalRedundancy; }
+    public int redundancy() { return redundancy; }
     public int readyCopies() { return readyCopies; }
     public int totalNodes() {
         return totalNodes;
     }
 
-    public int effectiveInitialRedundancy() { return Math.min(totalNodes, initialRedundancy * implicitGroups); }
-    public int effectiveFinalRedundancy() { return Math.min(totalNodes, finalRedundancy * implicitGroups); }
+    public int effectiveRedundancy() { return Math.min(totalNodes, redundancy * implicitGroups); }
     public int effectiveReadyCopies() { return Math.min(totalNodes, readyCopies * implicitGroups); }
 
     public boolean isEffectivelyGloballyDistributed() {
-        return totalNodes == effectiveFinalRedundancy();
+        return totalNodes == effectiveRedundancy();
     }
 
     @Override
     public void getConfig(StorDistributionConfig.Builder builder) {
-        builder.initial_redundancy(effectiveInitialRedundancy());
-        builder.redundancy(effectiveFinalRedundancy());
+        builder.initial_redundancy(effectiveRedundancy());
+        builder.redundancy(effectiveRedundancy());
         builder.ready_copies(effectiveReadyCopies());
     }
     @Override
     public void getConfig(ProtonConfig.Builder builder) {
         ProtonConfig.Distribution.Builder distBuilder = new ProtonConfig.Distribution.Builder();
-        distBuilder.redundancy(finalRedundancy/explicitGroups);
-        distBuilder.searchablecopies(readyCopies/(explicitGroups*implicitGroups));
+        distBuilder.redundancy(redundancy / explicitGroups);
+        distBuilder.searchablecopies(readyCopies / (explicitGroups * implicitGroups));
         builder.distribution(distBuilder);
     }
 }

@@ -302,7 +302,7 @@ public class StorageGroup {
                     owner.redundancy().setImplicitGroups(hostGroups.size());
 
                     // Compute partitions expression
-                    int redundancyPerGroup = (int)Math.floor(owner.redundancy().effectiveFinalRedundancy() / hostGroups.size());
+                    int redundancyPerGroup = (int)Math.floor(owner.redundancy().effectiveRedundancy() / hostGroups.size());
                     storageGroup.partitions = Optional.of(computePartitions(redundancyPerGroup, hostGroups.size()));
 
                     // create subgroups as returned from allocation
