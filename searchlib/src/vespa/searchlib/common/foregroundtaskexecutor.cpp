@@ -12,15 +12,14 @@ using vespalib::ThreadStackExecutor;
 namespace search
 {
 
-namespace
+ForegroundTaskExecutor::ForegroundTaskExecutor()
+    : ForegroundTaskExecutor(1)
 {
-
-constexpr uint32_t stackSize = 128 * 1024;
-
 }
 
-
-ForegroundTaskExecutor::ForegroundTaskExecutor()
+ForegroundTaskExecutor::ForegroundTaskExecutor(uint32_t threads)
+    : _threads(threads),
+      _ids()
 {
 }
 
@@ -31,14 +30,20 @@ ForegroundTaskExecutor::~ForegroundTaskExecutor()
 uint32_t
 ForegroundTaskExecutor::getExecutorId(uint64_t componentId)
 {
-    (void) componentId;
-    return 0u;
+    auto itr = _ids.find(componentId);
+    if (itr == _ids.end()) {
+        auto insarg = std::make_pair(componentId, _ids.size() % _threads);
+        auto insres = _ids.insert(insarg);
+        assert(insres.second);
+        itr = insres.first;
+    }
+    return itr->second;
 }
 
 void
 ForegroundTaskExecutor::executeTask(uint32_t executorId, vespalib::Executor::Task::UP task)
 {
-    (void) executorId;
+    assert(executorId < _threads);
     task->run();
 }
 

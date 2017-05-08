@@ -21,6 +21,7 @@ LOG_SETUP("attribute_test");
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/test/insertion_operators.h>
 
 #include <vespa/document/predicate/predicate_slime_builder.h>
 #include <vespa/document/update/assignvalueupdate.h>
@@ -30,6 +31,7 @@ LOG_SETUP("attribute_test");
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
 #include <vespa/searchlib/predicate/predicate_hash.h>
 #include <vespa/searchlib/common/foregroundtaskexecutor.h>
+#include <vespa/searchlib/common/sequencedtaskexecutorobserver.h>
 #include <vespa/searchcore/proton/test/directory_handler.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/types.h>
@@ -102,15 +104,17 @@ struct Fixture
 {
     test::DirectoryHandler _dirHandler;
     DummyFileHeaderContext   _fileHeaderContext;
-    ForegroundTaskExecutor   _attributeFieldWriter;
+    ForegroundTaskExecutor   _attributeFieldWriterReal;
+    SequencedTaskExecutorObserver _attributeFieldWriter;
     HwInfo                   _hwInfo;
     proton::AttributeManager::SP _m;
     std::unique_ptr<AttributeWriter> _aw;
 
-    Fixture()
+    Fixture(uint32_t threads)
         : _dirHandler(test_dir),
           _fileHeaderContext(),
-          _attributeFieldWriter(),
+          _attributeFieldWriterReal(threads),
+          _attributeFieldWriter(_attributeFieldWriterReal),
           _hwInfo(),
           _m(std::make_shared<proton::AttributeManager>
              (test_dir, "test.subdb", TuneFileAttributes(),
@@ -118,6 +122,10 @@ struct Fixture
           _aw()
     {
         allocAttributeWriter();
+    }
+    Fixture()
+        : Fixture(1)
+    {
     }
     void allocAttributeWriter() {
         _aw = std::make_unique<AttributeWriter>(_m);
@@ -143,6 +151,9 @@ struct Fixture
     }
     void commit(SerialNum serialNum) {
         _aw->commit(serialNum, emptyCallback);
+    }
+    void assertExecuteHistory(std::vector<uint32_t> expExecuteHistory) {
+        EXPECT_EQUAL(expExecuteHistory, _attributeFieldWriter.getExecuteHistory());
     }
 };
 
@@ -635,6 +646,64 @@ TEST_F("require that attribute writer handles tensor assign update", Fixture)
     EXPECT_TRUE(!tensor->equals(*tensor2));
     EXPECT_TRUE(new_tensor->equals(*tensor2));
 
+}
+
+namespace {
+
+void
+assertPutDone(AttributeVector &attr, int32_t expVal)
+{
+    EXPECT_EQUAL(2u, attr.getNumDocs());
+    EXPECT_EQUAL(1u, attr.getStatus().getLastSyncToken());
+    attribute::IntegerContent ibuf;
+    ibuf.fill(attr, 1);
+    EXPECT_EQUAL(1u, ibuf.size());
+    EXPECT_EQUAL(expVal, ibuf[0]);
+}
+
+void
+putAttributes(Fixture &f, std::vector<uint32_t> expExecuteHistory)
+{
+    Schema s;
+    s.addAttributeField(Schema::AttributeField("a1", schema::DataType::INT32, CollectionType::SINGLE));
+    s.addAttributeField(Schema::AttributeField("a2", schema::DataType::INT32, CollectionType::SINGLE));
+    s.addAttributeField(Schema::AttributeField("a3", schema::DataType::INT32, CollectionType::SINGLE));
+
+    DocBuilder idb(s);
+
+    AttributeVector::SP a1 = f.addAttribute("a1");
+    AttributeVector::SP a2 = f.addAttribute("a2");
+    AttributeVector::SP a3 = f.addAttribute("a3");
+
+    EXPECT_EQUAL(1u, a1->getNumDocs());
+    EXPECT_EQUAL(1u, a2->getNumDocs());
+    EXPECT_EQUAL(1u, a3->getNumDocs());
+    f.put(1, *idb.startDocument("doc::1").
+          startAttributeField("a1").addInt(10).endField().
+          startAttributeField("a2").addInt(15).endField().
+          startAttributeField("a3").addInt(20).endField().
+          endDocument(), 1);
+    TEST_DO(assertPutDone(*a1, 10));
+    TEST_DO(assertPutDone(*a2, 15));
+    TEST_DO(assertPutDone(*a3, 20));
+    TEST_DO(f.assertExecuteHistory(expExecuteHistory));
+}
+
+}
+
+TEST_F("require that attribute writer spreads write over 1 write context", Fixture(1))
+{
+    TEST_DO(putAttributes(f, {0}));
+}
+
+TEST_F("require that attribute writer spreads write over 2 write contexts", Fixture(2))
+{
+    TEST_DO(putAttributes(f, {0, 1}));
+}
+
+TEST_F("require that attribute writer spreads write over 3 write contexts", Fixture(8))
+{
+    TEST_DO(putAttributes(f, {0, 1, 2}));
 }
 
 TEST_MAIN()

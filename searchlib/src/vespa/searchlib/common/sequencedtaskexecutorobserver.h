@@ -3,6 +3,8 @@
 
 #include "isequencedtaskexecutor.h"
 #include <atomic>
+#include <vector>
+#include <mutex>
 
 namespace search
 {
@@ -16,35 +18,22 @@ class SequencedTaskExecutorObserver : public ISequencedTaskExecutor
     ISequencedTaskExecutor &_executor;
     std::atomic<uint32_t> _executeCnt;
     std::atomic<uint32_t> _syncCnt;
+    std::vector<uint32_t> _executeHistory;
+    std::mutex            _mutex;
 public:
     using ISequencedTaskExecutor::getExecutorId;
 
-    SequencedTaskExecutorObserver(ISequencedTaskExecutor &executor)
-        : _executor(executor),
-          _executeCnt(0u),
-          _syncCnt(0u)
-    {
-    }
+    SequencedTaskExecutorObserver(ISequencedTaskExecutor &executor);
 
-    virtual ~SequencedTaskExecutorObserver() { }
-
-    virtual uint32_t getExecutorId(uint64_t componentId) override {
-        return _executor.getExecutorId(componentId);
-    }
-
+    virtual ~SequencedTaskExecutorObserver() override;
+    virtual uint32_t getExecutorId(uint64_t componentId) override;
     virtual void executeTask(uint32_t executorId,
-                              vespalib::Executor::Task::UP task) override {
-        ++_executeCnt;
-        _executor.executeTask(executorId, std::move(task));
-    }
-
-    virtual void sync() override {
-        ++_syncCnt;
-        _executor.sync();
-    }
+                             vespalib::Executor::Task::UP task) override;
+    virtual void sync() override;
 
     uint32_t getExecuteCnt() const { return _executeCnt; }
     uint32_t getSyncCnt() const { return _syncCnt; }
+    std::vector<uint32_t> getExecuteHistory();
 };
 
 } // namespace search
