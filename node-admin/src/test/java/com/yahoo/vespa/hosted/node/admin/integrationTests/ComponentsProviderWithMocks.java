@@ -39,7 +39,7 @@ public class ComponentsProviderWithMocks implements ComponentsProvider {
     private final NodeAdminStateUpdater nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, Clock.systemUTC(), orchestratorMock, "localhost.test.yahoo.com");
 
     public ComponentsProviderWithMocks() {
-        nodeAdminStateUpdater.start(10, 1000);
+        nodeAdminStateUpdater.start(10);
     }
 
     @Override

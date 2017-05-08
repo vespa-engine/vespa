@@ -213,10 +213,6 @@ public class NodeAdminStateUpdater extends AbstractComponent {
                              .collect(Collectors.toList());
     }
 
-    public void start(long stateConvergeInterval, long foo) {
-        start(stateConvergeInterval);
-    }
-
     public void start(long stateConvergeInterval) {
         delaysBetweenEachTickMillis = stateConvergeInterval;
         if (loopThread != null) {
