@@ -51,8 +51,7 @@ class StringTerm : public QueryNodeMixin<StringTerm, StringBase >
 {
 public:
     StringTerm(const Type &term, const vespalib::stringref &view,
-               int32_t id, Weight weight)
-        : QueryNodeMixinType(term, view, id, weight) {}
+               int32_t id, Weight weight);
     virtual ~StringTerm() = 0;
 };
 
