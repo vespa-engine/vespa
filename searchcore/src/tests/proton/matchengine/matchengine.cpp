@@ -1,5 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/searchlib/engine/docsumreply.h>
@@ -15,10 +14,8 @@ class MySearchHandler : public ISearchHandler {
     std::string _name;
     std::string _reply;
 public:
-    MySearchHandler(size_t numHits = 0,
-                    const std::string & name = "my",
-                    const std::string & reply = "myreply") :
-        _numHits(numHits), _name(name), _reply(reply) {}
+    MySearchHandler(size_t numHits = 0) :
+        _numHits(numHits), _name("my"), _reply("myreply") {}
     virtual DocsumReply::UP getDocsums(const DocsumRequest &) override {
         return DocsumReply::UP(new DocsumReply);
     }

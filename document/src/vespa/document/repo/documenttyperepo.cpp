@@ -384,7 +384,8 @@ void addDefaultDocument(DocumentTypeMap &type_map) {
                 AnnotationType::UP(new AnnotationType(*annotation_types[i])));
     }
 
-    type_map[data_types->doc_type->getId()] = data_types.release();
+    uint32_t typeId = data_types->doc_type->getId();
+    type_map[typeId] = data_types.release();
 }
 
 const DataTypeRepo &lookupRepo(int32_t id, const DocumentTypeMap &type_map) {

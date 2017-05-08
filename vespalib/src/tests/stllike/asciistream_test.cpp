@@ -103,7 +103,8 @@ AsciistreamTest::testIllegalNumbers()
         float f(0);
         EXPECT_EXCEPTION(is >> f, IllegalArgumentException, "float value is outside of range '7777777777777777777777777777777777777777'");
         EXPECT_EQUAL(40u, is.size());
-        is << "e" << is.str();
+        vespalib::string tmp = is.str();
+        is << "e" << tmp;
         EXPECT_EQUAL(81u, is.size());
         double d(0);
         EXPECT_EXCEPTION(is >> d, IllegalArgumentException, "double value is outside of range '7777777777777777777777777777777777777777e7777777777777777777777777777777777777777'");

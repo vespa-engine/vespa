@@ -34,7 +34,7 @@ namespace {
         int _val2;
         int _val3;
 
-        A() {}
+        A() = default;
         A(const B &);
         A(const C &);
         A(int val1, int val2, int val3)
@@ -51,7 +51,7 @@ namespace {
         int _val1;
         int _val2;
 
-        B() {}
+        B() = default;
         B(const A& a) : _val1(a._val1), _val2(a._val2) {}
         B(int val1, int val2) : _val1(val1), _val2(val2) {}
 
@@ -61,7 +61,7 @@ namespace {
     struct C {
         int _val1;
 
-        C() {}
+        C() = default;
         C(const A& a) : _val1(a._val1) {}
         C(int val1) : _val1(val1) {}
 

@@ -17,6 +17,7 @@ namespace lib {
 
 class Distribution;
 class Group;
+class NodeData;
 
 class ClusterState : public document::Printable {
     uint32_t _version;
@@ -70,6 +71,8 @@ public:
                              const std::string& indent = "") const;
 
 private:
+    bool parse(vespalib::stringref key, vespalib::stringref value, NodeData & nodeData);
+    bool parseSorD(vespalib::stringref key, vespalib::stringref value, NodeData & nodeData);
     void removeExtraElements();
     void printStateGroupwise(std::ostream& out, const Group&, bool verbose,
                              const std::string& indent, bool rootGroup) const;
