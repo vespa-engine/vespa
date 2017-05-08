@@ -41,6 +41,8 @@ class NoMemoryManager : public MemoryManagerInterface
 public:
     typedef std::unique_ptr<NoMemoryManager> UP;
 
+    ~NoMemoryManager();
+
     void setMaximumMemoryUsage(uint64_t) override {}
     const MemoryAllocationType & registerAllocationType(const MemoryAllocationType& type) override;
     const MemoryAllocationType & getAllocationType(const std::string& name) const override;
