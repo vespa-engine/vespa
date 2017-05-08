@@ -157,10 +157,8 @@ protected:
    * @return success(true)/failure(false)
    * @param url the url you want to connect to
    **/
-  bool Connect(const char *url);
-
-  /** connect for post */
-  bool ConnectForPost(const char *url, const char *content, int cLen);
+  bool Connect(const char *url, bool usePost = false,
+               const char *content = NULL, int contentLen = 0);
 
   /**
    * Read the next line of text from the data stream into 'buf'. If
@@ -246,6 +244,9 @@ public:
    *
    * @return success(true)/failure(false)
    * @param url the url you want to connect to
+   * @param usePost whether to use POST in the request
+   * @param content if usePost is true, the content to post
+   * @param cLen length of content in bytes
    **/
   bool Open(const char *url, bool usePost = false, const char *content = 0, int cLen = 0);
 
@@ -329,10 +330,10 @@ public:
    * @param url the url to fetch.
    * @param file where to save the fetched document. If this parameter
    *             is NULL, the content will be read and then discarded.
+   * @param usePost whether to use POST in the request
+   * @param content if usePost is true, the content to post
+   * @param contentLen length of content in bytes
    **/
-  FetchStatus Fetch(const char *url, std::ostream *file = NULL);
-
-  /** post some content to URL */
-  FetchStatus Post(const char *url, const char *content, int contentLen, std::ostream *file = NULL);
+  FetchStatus Fetch(const char *url, std::ostream *file = NULL,
+                    bool usePost = false, const char *content = NULL, int contentLen = 0);
 };
-

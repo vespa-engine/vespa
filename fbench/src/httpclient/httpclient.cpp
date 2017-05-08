@@ -94,101 +94,7 @@ HTTPClient::ReadLine(char *buf, size_t bufsize)
 }
 
 bool
-HTTPClient::Connect(const char *url)
-{
-    char tmp[4096];
-    char *req = NULL;
-    uint32_t req_max = 0;
-    uint32_t url_len = strlen(url);
-    uint32_t host_len = _hostname.size();
-
-    // Add additional headers
-    std::string headers = _extraHeaders;
-
-    // this is always requested to get robust info on total hit count.
-    headers += "X-Yahoo-Vespa-Benchmarkdata: true\r\n";
-
-    if ( _headerBenchmarkdataCoverage ) {
-        headers += "X-Yahoo-Vespa-Benchmarkdata-Coverage: true\r\n";
-    }
-
-    if (url_len + host_len + headers.length() + FIXED_REQ_MAX < sizeof(tmp)) {
-        req = tmp;
-        req_max = sizeof(tmp);
-    } else {
-        req_max = url_len + host_len + headers.length() + FIXED_REQ_MAX;
-        req = new char[req_max];
-        assert(req != NULL);
-    }
-
-    if (headers.length() > 0) {
-        headers += "\r\n";
-    }
-    // create request
-    if(_keepAlive) {
-        snprintf(req, req_max,
-                 "GET %s HTTP/1.1\r\n"
-                 "Host: %s\r\n"
-                 "User-Agent: fbench/4.2.10\r\n"
-                 "%s"
-                 "\r\n",
-                 url, _authority.c_str(), headers.c_str());
-    } else {
-        snprintf(req, req_max,
-                 "GET %s HTTP/1.1\r\n"
-                 "Host: %s\r\n"
-                 "Connection: close\r\n"
-                 "User-Agent: fbench/4.2.10\r\n"
-                 "%s"
-                 "\r\n",
-                 url, _authority.c_str(), headers.c_str());
-    }
-
-    // try to reuse connection if keep-alive is enabled
-    if (_keepAlive
-        && _socket->IsOpened()
-        && _socket->Write(req, strlen(req)) == (ssize_t)strlen(req)
-        && FillBuffer() > 0) {
-
-        // DEBUG
-        // printf("Socket Connection reused!\n");
-        _reuseCount++;
-        if (req != tmp) {
-            delete [] req;
-        }
-        return true;
-    } else {
-        _socket->Close();
-        ResetBuffer();
-    }
-
-    // try to open new connection to server
-    if (_socket->SetSoBlocking(true)
-        && _socket->Connect()
-        && _socket->SetNoDelay(true)
-        && _socket->SetSoLinger(false, 0)
-        && _socket->Write(req, strlen(req)) == (ssize_t)strlen(req)) {
-
-        // DEBUG
-        // printf("New Socket connection!\n");
-        if (req != tmp) {
-            delete [] req;
-        }
-        return true;
-    } else {
-        _socket->Close();
-    }
-
-    // DEBUG
-    // printf("Connect FAILED!\n");
-    if (req != tmp) {
-        delete [] req;
-    }
-    return false;
-}
-
-bool
-HTTPClient::ConnectForPost(const char *url, const char *content, int cLen)
+HTTPClient::Connect(const char *url, bool usePost, const char *content, int cLen)
 {
     char tmp[4096];
     char *req = NULL;
@@ -218,22 +124,24 @@ HTTPClient::ConnectForPost(const char *url, const char *content, int cLen)
     // create request
     if(_keepAlive) {
         snprintf(req, req_max,
-                 "POST %s HTTP/1.1\r\n"
+                 "%s %s HTTP/1.1\r\n"
                  "Host: %s\r\n"
                  "Content-Length: %d\r\n"
                  "User-Agent: fbench/4.2.10\r\n"
                  "%s"
                  "\r\n",
+                 usePost ? "POST" : "GET",
                  url, _authority.c_str(), cLen, headers.c_str());
     } else {
         snprintf(req, req_max,
-                 "POST %s HTTP/1.1\r\n"
+                 "%s %s HTTP/1.1\r\n"
                  "Host: %s\r\n"
                  "Connection: close\r\n"
                  "Content-Length: %d\r\n"
                  "User-Agent: fbench/4.2.10\r\n"
                  "%s"
                  "\r\n",
+                 usePost ? "POST" : "GET",
                  url, _authority.c_str(), cLen, headers.c_str());
     }
 
@@ -262,7 +170,7 @@ HTTPClient::ConnectForPost(const char *url, const char *content, int cLen)
         && _socket->SetNoDelay(true)
         && _socket->SetSoLinger(false, 0)
         && _socket->Write(req, strlen(req)) == (ssize_t)strlen(req)
-        && _socket->Write(content, cLen) == (ssize_t)cLen)
+        && (!usePost || _socket->Write(content, cLen) == (ssize_t)cLen))
     {
 
         // DEBUG
@@ -443,7 +351,7 @@ HTTPClient::Open(const char *url, bool usePost, const char *content, int cLen)
     ResetBuffer();
     _dataRead  = 0;
     _dataDone  = false;
-    _isOpen    = usePost ? ConnectForPost(url, content, cLen) : Connect(url);
+    _isOpen    = Connect(url, usePost, content, cLen);
     if(!_isOpen || !ReadHTTPHeader()) {
         Close();
         return false;
@@ -605,55 +513,15 @@ HTTPClient::Close()
 }
 
 HTTPClient::FetchStatus
-HTTPClient::Fetch(const char *url, std::ostream *file)
+HTTPClient::Fetch(const char *url, std::ostream *file,
+                  bool usePost, const char *content, int contentLen)
 {
     size_t  buflen   = FETCH_BUFLEN;
     char    buf[FETCH_BUFLEN];      // NB: ensure big enough thread stack.
     ssize_t readRes  = 0;
     ssize_t written  = 0;
 
-    if (!Open(url)) {
-        return FetchStatus(false, _requestStatus, _totalHitCount, 0);
-    }
-
-    // Write headerinfo
-    if (file) {
-        file->write(_headerinfo.c_str(), _headerinfo.length());
-        if (file->fail()) {
-            Close();
-            return FetchStatus(false, _requestStatus, _totalHitCount, 0);
-        }
-        file->write("\r\n", 2);
-        // Reset header data.
-        _headerinfo = "";
-    }
-
-    while((readRes = Read(buf, buflen)) > 0) {
-        if(file != NULL) {
-            if (!file->write(buf, readRes)) {
-                Close();
-                return FetchStatus(false, _requestStatus, _totalHitCount, written);
-            }
-        }
-        written += readRes;
-    }
-    Close();
-
-    return FetchStatus(_requestStatus == 200 && readRes == 0 && _totalHitCount >= 0,
-                       _requestStatus,
-                       _totalHitCount,
-                       written);
-}
-
-HTTPClient::FetchStatus
-HTTPClient::Post(const char *url, const char *content, int contentLen, std::ostream *file)
-{
-    size_t  buflen   = FETCH_BUFLEN;
-    char    buf[FETCH_BUFLEN];      // NB: ensure big enough thread stack.
-    ssize_t readRes  = 0;
-    ssize_t written  = 0;
-
-    if (!Open(url, true, content, contentLen)) {
+    if (!Open(url, usePost, content, contentLen)) {
         return FetchStatus(false, _requestStatus, _totalHitCount, 0);
     }
 

@@ -198,17 +198,10 @@ Client::run()
             if (linelen + (int)_args->_queryStringToAppend.length() < _linebufsize) {
                 strcat(_linebuf, _args->_queryStringToAppend.c_str());
             }
-            HTTPClient::FetchStatus fetch_status(false, -1, -1, -1);
-            if (_args->_usePostMode) {
-                int cLen = urlSource.getContent(_contentbuf, _contentbufsize);
-                _reqTimer->Start();
-                fetch_status = _http->Post(_linebuf, _contentbuf, cLen, _output.get());
-                _reqTimer->Stop();
-            } else {
-                _reqTimer->Start();
-                fetch_status = _http->Fetch(_linebuf, _output.get());
-                _reqTimer->Stop();
-            }
+            int cLen = _args->_usePostMode ? urlSource.getContent(_contentbuf, _contentbufsize) : 0;
+            _reqTimer->Start();
+            auto fetch_status = _http->Fetch(_linebuf, _output.get(), _args->_usePostMode, _contentbuf, cLen);
+            _reqTimer->Stop();
             _status->AddRequestStatus(fetch_status.RequestStatus());
             if (fetch_status.Ok() && fetch_status.TotalHitCount() == 0)
                 ++_status->_zeroHitQueries;
