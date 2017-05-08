@@ -155,6 +155,8 @@ public class GroupingSerializationTest {
             sketch.aggregate(1955583074);
             t.assertMatch(new ExpressionCountAggregationResult(sketch, s -> 42)
                     .setExpression(new ConstantNode(new IntegerResultNode(67))));
+            t.assertMatch(new StandardDeviationAggregationResult(1, 67, 67 * 67)
+                    .setExpression(new ConstantNode(new IntegerResultNode(67))));
         }
     }
 

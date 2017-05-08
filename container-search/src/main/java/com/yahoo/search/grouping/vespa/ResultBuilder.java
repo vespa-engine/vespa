@@ -3,13 +3,50 @@ package com.yahoo.search.grouping.vespa;
 
 import com.yahoo.search.grouping.Continuation;
 import com.yahoo.search.grouping.GroupingRequest;
-import com.yahoo.search.grouping.result.*;
+import com.yahoo.search.grouping.result.DoubleBucketId;
+import com.yahoo.search.grouping.result.DoubleId;
 import com.yahoo.search.grouping.result.Group;
+import com.yahoo.search.grouping.result.GroupId;
+import com.yahoo.search.grouping.result.GroupList;
+import com.yahoo.search.grouping.result.HitList;
+import com.yahoo.search.grouping.result.LongBucketId;
+import com.yahoo.search.grouping.result.LongId;
+import com.yahoo.search.grouping.result.NullId;
+import com.yahoo.search.grouping.result.RawBucketId;
+import com.yahoo.search.grouping.result.RawId;
+import com.yahoo.search.grouping.result.RootGroup;
+import com.yahoo.search.grouping.result.StringBucketId;
+import com.yahoo.search.grouping.result.StringId;
 import com.yahoo.search.result.Relevance;
-import com.yahoo.searchlib.aggregation.*;
-import com.yahoo.searchlib.expression.*;
+import com.yahoo.searchlib.aggregation.AggregationResult;
+import com.yahoo.searchlib.aggregation.AverageAggregationResult;
+import com.yahoo.searchlib.aggregation.CountAggregationResult;
+import com.yahoo.searchlib.aggregation.ExpressionCountAggregationResult;
+import com.yahoo.searchlib.aggregation.Grouping;
+import com.yahoo.searchlib.aggregation.Hit;
+import com.yahoo.searchlib.aggregation.HitsAggregationResult;
+import com.yahoo.searchlib.aggregation.MaxAggregationResult;
+import com.yahoo.searchlib.aggregation.MinAggregationResult;
+import com.yahoo.searchlib.aggregation.StandardDeviationAggregationResult;
+import com.yahoo.searchlib.aggregation.SumAggregationResult;
+import com.yahoo.searchlib.aggregation.XorAggregationResult;
+import com.yahoo.searchlib.expression.ExpressionNode;
+import com.yahoo.searchlib.expression.FloatBucketResultNode;
+import com.yahoo.searchlib.expression.FloatResultNode;
+import com.yahoo.searchlib.expression.IntegerBucketResultNode;
+import com.yahoo.searchlib.expression.IntegerResultNode;
+import com.yahoo.searchlib.expression.NullResultNode;
+import com.yahoo.searchlib.expression.RawBucketResultNode;
+import com.yahoo.searchlib.expression.RawResultNode;
+import com.yahoo.searchlib.expression.ResultNode;
+import com.yahoo.searchlib.expression.StringBucketResultNode;
+import com.yahoo.searchlib.expression.StringResultNode;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This class implements the necessary logic to build a {@link RootGroup} from a list of {@link Grouping} objects. It is
@@ -211,7 +248,9 @@ class ResultBuilder {
             } else if (execResult instanceof MinAggregationResult) {
                 return ((MinAggregationResult)execResult).getMin().getValue();
             } else if (execResult instanceof SumAggregationResult) {
-                return ((SumAggregationResult)execResult).getSum().getValue();
+                return ((SumAggregationResult) execResult).getSum().getValue();
+            } else if (execResult instanceof StandardDeviationAggregationResult) {
+                return ((StandardDeviationAggregationResult) execResult).getStandardDeviation();
             } else if (execResult instanceof XorAggregationResult) {
                 return ((XorAggregationResult)execResult).getXor();
             } else {

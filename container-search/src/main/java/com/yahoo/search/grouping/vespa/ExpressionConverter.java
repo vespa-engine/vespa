@@ -68,6 +68,7 @@ import com.yahoo.search.grouping.request.ReverseFunction;
 import com.yahoo.search.grouping.request.SecondOfMinuteFunction;
 import com.yahoo.search.grouping.request.SizeFunction;
 import com.yahoo.search.grouping.request.SortFunction;
+import com.yahoo.search.grouping.request.StandardDeviationAggregator;
 import com.yahoo.search.grouping.request.StrCatFunction;
 import com.yahoo.search.grouping.request.StrLenFunction;
 import com.yahoo.search.grouping.request.StringValue;
@@ -86,7 +87,6 @@ import com.yahoo.search.grouping.request.YearFunction;
 import com.yahoo.search.grouping.request.YmumValue;
 import com.yahoo.search.grouping.request.ZCurveXFunction;
 import com.yahoo.search.grouping.request.ZCurveYFunction;
-
 import com.yahoo.searchlib.aggregation.AggregationResult;
 import com.yahoo.searchlib.aggregation.AverageAggregationResult;
 import com.yahoo.searchlib.aggregation.CountAggregationResult;
@@ -94,9 +94,9 @@ import com.yahoo.searchlib.aggregation.ExpressionCountAggregationResult;
 import com.yahoo.searchlib.aggregation.HitsAggregationResult;
 import com.yahoo.searchlib.aggregation.MaxAggregationResult;
 import com.yahoo.searchlib.aggregation.MinAggregationResult;
+import com.yahoo.searchlib.aggregation.StandardDeviationAggregationResult;
 import com.yahoo.searchlib.aggregation.SumAggregationResult;
 import com.yahoo.searchlib.aggregation.XorAggregationResult;
-
 import com.yahoo.searchlib.expression.AddFunctionNode;
 import com.yahoo.searchlib.expression.AggregationRefNode;
 import com.yahoo.searchlib.expression.AndFunctionNode;
@@ -234,6 +234,10 @@ class ExpressionConverter {
             return new HitsAggregationResult()
                     .setSummaryClass(summaryName != null ? summaryName : defaultSummaryName)
                     .setExpression(new ConstantNode(new IntegerResultNode(0)));
+        }
+        if (exp instanceof StandardDeviationAggregator) {
+            return new StandardDeviationAggregationResult()
+                    .setExpression(toExpressionNode(((StandardDeviationAggregator) exp).getExpression()));
         }
         if (exp instanceof XorAggregator) {
             return new XorAggregationResult()
