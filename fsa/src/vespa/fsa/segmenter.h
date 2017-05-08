@@ -360,12 +360,8 @@ public:
                                     unsigned int end);
 
   public:
-    /** Default constructor */
-    Segments() : _text(), _segments(), _map(),
-                 _segmentation(Segmenter::SEGMENTATION_METHODS,NULL) {}
-
-    /** Destructor */
-    ~Segments() {}
+    Segments();
+    ~Segments();
 
     /**
      * @brief Set input text, and clear all results.
@@ -413,16 +409,7 @@ public:
     /**
      * @brief Clear all detected segments and built segmentations.
      */
-    void clear()
-    {
-      _segments.clear();
-      _map.init(_text.size());
-      initSingles();
-      for(unsigned int i=0;i<SEGMENTATION_METHODS;i++){
-        delete _segmentation[i];
-        _segmentation[i]=NULL;
-      }
-    }
+    void clear();
 
     /**
      * @brief Insert a detected segment.
