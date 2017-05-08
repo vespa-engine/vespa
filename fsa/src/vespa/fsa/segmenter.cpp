@@ -18,9 +18,9 @@
 namespace fsa {
 
 Segmenter::Segments::Segments()
-      : _text(), _segments(), _map(),
-        _segmentation(Segmenter::SEGMENTATION_METHODS,NULL)
-{}
+  : _text(), _segments(), _map(),
+    _segmentation(Segmenter::SEGMENTATION_METHODS,NULL)
+{ }
 
 Segmenter::Segments::~Segments()
 {
