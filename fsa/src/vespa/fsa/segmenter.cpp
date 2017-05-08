@@ -12,32 +12,12 @@
 #include "config.h"
 #endif
 
+#include <stdio.h>
+
 #include "segmenter.h"
 
 
 namespace fsa {
-
-Segmenter::Segments::Segments()
-  : _text(), _segments(), _map(),
-    _segmentation(Segmenter::SEGMENTATION_METHODS,NULL)
-{ }
-
-Segmenter::Segments::~Segments()
-{
-  clear();
-}
-
-void
-Segmenter::Segments::clear()
-{
-  _segments.clear();
-  _map.init(_text.size());
-  initSingles();
-  for(unsigned int i=0;i<SEGMENTATION_METHODS;i++){
-    delete _segmentation[i];
-    _segmentation[i] = nullptr;
-  }
-}
 
 // {{{ Segmenter::Segments::initSingles
 
