@@ -1,15 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/storage/distributor/distributorinterface.h>
-#include <vespa/storage/distributor/operationowner.h>
-#include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/storageapi/messageapi/storagecommand.h>
-#include <vespa/storageapi/buckets/bucketinfo.h>
+#include "distributorinterface.h"
+#include "operationowner.h"
+#include "statechecker.h"
 #include <vespa/storage/common/distributorcomponent.h>
-#include <vespa/storage/distributor/statechecker.h>
 #include <vespa/storage/storageutil/utils.h>
 #include <vespa/storageframework/storageframework.h>
+#include <vespa/storageapi/messageapi/storagecommand.h>
+#include <vespa/storageapi/buckets/bucketinfo.h>
+#include <vespa/vdslib/state/clusterstate.h>
 
 namespace storage {
 
@@ -33,7 +33,7 @@ public:
   		         DistributorComponentRegister& compReg,
 		         const std::string& name);
 
-    virtual ~DistributorComponent() {}
+    ~DistributorComponent();
 
     /**
      * Returns the ownership status of a bucket as decided with the given

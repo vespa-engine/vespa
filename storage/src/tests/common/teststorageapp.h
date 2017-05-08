@@ -146,6 +146,7 @@ class TestDistributorApp : public TestStorageApp,
 public:
     TestDistributorApp(vespalib::stringref configId = "");
     TestDistributorApp(NodeIndex index, vespalib::stringref configId = "");
+    ~TestDistributorApp();
 
     DistributorComponentRegisterImpl& getComponentRegister() {
         return _compReg;

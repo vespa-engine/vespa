@@ -349,7 +349,10 @@ namespace {
         uint32_t _counter;
 
         LoadGiver(Map& map) : _map(map), _counter(0) {}
+        ~LoadGiver() __attribute__((noinline));
     };
+
+    LoadGiver::~LoadGiver() { }
 
     struct InsertEraseLoadGiver : public LoadGiver {
         InsertEraseLoadGiver(Map& map) : LoadGiver(map) {}

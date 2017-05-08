@@ -274,6 +274,8 @@ TestDistributorApp::TestDistributorApp(NodeIndex index,
     configure(configId);
 }
 
+TestDistributorApp::~TestDistributorApp() {}
+
 api::Timestamp
 TestDistributorApp::getUniqueTimestamp()
 {
