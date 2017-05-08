@@ -13,9 +13,13 @@ import com.yahoo.vespa.orchestrator.controller.ClusterControllerClient;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerState;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerStateResponse;
+import com.yahoo.vespa.orchestrator.model.ApplicationApi;
+import com.yahoo.vespa.orchestrator.model.ApplicationApiImpl;
+import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
+import com.yahoo.vespa.orchestrator.policy.HostedVespaClusterPolicy;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
 import com.yahoo.vespa.orchestrator.policy.Policy;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
@@ -56,7 +60,7 @@ public class OrchestratorImpl implements Orchestrator {
                             OrchestratorConfig orchestratorConfig,
                             InstanceLookupService instanceLookupService)
     {
-        this(new HostedVespaPolicy(clusterControllerClientFactory),
+        this(new HostedVespaPolicy(new HostedVespaClusterPolicy(), clusterControllerClientFactory),
                 clusterControllerClientFactory,
                 statusService,
                 instanceLookupService,
@@ -116,19 +120,26 @@ public class OrchestratorImpl implements Orchestrator {
     @Override
     public void suspend(HostName hostName) throws HostStateChangeDeniedException, HostNameNotFoundException {
         ApplicationInstance<ServiceMonitorStatus> appInstance = getApplicationInstance(hostName);
+        NodeGroup nodeGroup = new NodeGroup(appInstance, hostName);
+        suspendGroup(nodeGroup);
+    }
 
+    // Public for testing purposes
+    @Override
+    public void suspendGroup(NodeGroup nodeGroup) throws HostStateChangeDeniedException, HostNameNotFoundException {
+        ApplicationInstanceReference applicationReference = nodeGroup.getApplicationReference();
 
-        try (MutableStatusRegistry hostStatusRegistry = statusService.lockApplicationInstance_forCurrentThreadOnly(appInstance.reference())) {
-            final HostStatus currentHostState = hostStatusRegistry.getHostStatus(hostName);
-
-            if (HostStatus.ALLOWED_TO_BE_DOWN == currentHostState) {
+        try (MutableStatusRegistry hostStatusRegistry = statusService.lockApplicationInstance_forCurrentThreadOnly(applicationReference)) {
+            ApplicationInstanceStatus appStatus = statusService.forApplicationInstance(applicationReference).getApplicationInstanceStatus();
+            if (appStatus == ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN) {
                 return;
             }
 
-            ApplicationInstanceStatus appStatus = statusService.forApplicationInstance(appInstance.reference()).getApplicationInstanceStatus();
-            if (appStatus == ApplicationInstanceStatus.NO_REMARKS) {
-                policy.grantSuspensionRequest(appInstance, hostName, hostStatusRegistry);
-            }
+            ApplicationApi applicationApi = new ApplicationApiImpl(
+                    nodeGroup,
+                    hostStatusRegistry,
+                    clusterControllerClientFactory);
+            policy.grantSuspensionRequest(applicationApi);
         }
     }
 
@@ -157,40 +168,45 @@ public class OrchestratorImpl implements Orchestrator {
     @Override
     public void suspendAll(HostName parentHostname, List<HostName> hostNames)
             throws BatchHostStateChangeDeniedException, BatchHostNameNotFoundException, BatchInternalErrorException {
+        List<NodeGroup> nodeGroupsOrderedByApplication;
         try {
-            hostNames = sortHostNamesForSuspend(hostNames);
+            nodeGroupsOrderedByApplication = nodeGroupsOrderedForSuspend(hostNames);
         } catch (HostNameNotFoundException e) {
             throw new BatchHostNameNotFoundException(parentHostname, hostNames, e);
         }
 
         try {
-            for (HostName hostName : hostNames) {
+            for (NodeGroup nodeGroup : nodeGroupsOrderedByApplication) {
                 try {
-                    suspend(hostName);
+                    suspendGroup(nodeGroup);
                 } catch (HostStateChangeDeniedException e) {
-                    throw new BatchHostStateChangeDeniedException(parentHostname, hostNames, e);
+                    throw new BatchHostStateChangeDeniedException(parentHostname, nodeGroup, e);
                 } catch (HostNameNotFoundException e) {
                     // Should never get here since since we would have received HostNameNotFoundException earlier.
                     throw new BatchHostNameNotFoundException(parentHostname, hostNames, e);
                 } catch (RuntimeException e) {
-                    throw new BatchInternalErrorException(parentHostname, hostNames, e);
+                    throw new BatchInternalErrorException(parentHostname, nodeGroup, e);
                 }
             }
         } catch (Exception e) {
-            rollbackSuspendAll(hostNames, e);
+            // Rollback causes extra noise in a content clusters due to cluster version changes and calm-periods,
+            // so consider not doing a full rollback.
+            rollbackSuspendAll(nodeGroupsOrderedByApplication, e);
             throw e;
         }
     }
 
-    private void rollbackSuspendAll(List<HostName> orderedHostNames, Exception exception) {
-        List<HostName> reverseOrderedHostNames = new ArrayList<>(orderedHostNames);
+    private void rollbackSuspendAll(List<NodeGroup> orderedGroups, Exception exception) {
+        List<NodeGroup> reverseOrderedHostNames = new ArrayList<>(orderedGroups);
         Collections.reverse(reverseOrderedHostNames);
-        for (HostName hostName : reverseOrderedHostNames) {
-            try {
-                resume(hostName);
-            } catch (HostStateChangeDeniedException | HostNameNotFoundException | RuntimeException e) {
-                // We're forced to ignore these since we're already rolling back a suspension.
-                exception.addSuppressed(e);
+        for (NodeGroup nodeGroup : reverseOrderedHostNames) {
+            for (HostName hostName : nodeGroup.getHostNames()) {
+                try {
+                    resume(hostName);
+                } catch (HostStateChangeDeniedException | HostNameNotFoundException | RuntimeException e) {
+                    // We're forced to ignore these since we're already rolling back a suspension.
+                    exception.addSuppressed(e);
+                }
             }
         }
     }
@@ -221,34 +237,35 @@ public class OrchestratorImpl implements Orchestrator {
      * The solution we're using is to order the hostnames by the globally unique application instance ID,
      * e.g. hosted-vespa:routing:dev:ci-corp-us-east-1:default. In the example above, it would guarantee
      * Docker host 2 would ensure ask to suspend B2 before A2. We take care of that ordering here.
+     *
+     * NodeGroups complicate the above picture a little:  Each A1, A2, B1, and B2 is a NodeGroup that may
+     * contain several nodes (on the same Docker host).  But the argument still applies.
      */
-    List<HostName> sortHostNamesForSuspend(List<HostName> hostNames) throws HostNameNotFoundException {
-        Map<HostName, ApplicationInstanceReference> applicationReferences = new HashMap<>(hostNames.size());
+    private List<NodeGroup> nodeGroupsOrderedForSuspend(List<HostName> hostNames) throws HostNameNotFoundException {
+        Map<ApplicationInstanceReference, NodeGroup> nodeGroupMap = new HashMap<>(hostNames.size());
         for (HostName hostName : hostNames) {
-            ApplicationInstance<?> appInstance = getApplicationInstance(hostName);
-            applicationReferences.put(hostName, appInstance.reference());
+            ApplicationInstance<ServiceMonitorStatus> application = getApplicationInstance(hostName);
+
+            NodeGroup nodeGroup = nodeGroupMap.get(application.reference());
+            if (nodeGroup == null) {
+                nodeGroup = new NodeGroup(application);
+                nodeGroupMap.put(application.reference(), nodeGroup);
+            }
+
+            nodeGroup.addNode(hostName);
         }
 
-        return hostNames.stream()
-                .sorted((leftHostname, rightHostname) -> compareHostNamesForSuspend(leftHostname, rightHostname, applicationReferences))
+        return nodeGroupMap.values().stream()
+                .sorted(OrchestratorImpl::compareNodeGroupsForSuspend)
                 .collect(Collectors.toList());
     }
 
-    private int compareHostNamesForSuspend(HostName leftHostname, HostName rightHostname,
-                                           Map<HostName, ApplicationInstanceReference> applicationReferences) {
-        ApplicationInstanceReference leftApplicationReference = applicationReferences.get(leftHostname);
-        assert leftApplicationReference != null;
-
-        ApplicationInstanceReference rightApplicationReference = applicationReferences.get(rightHostname);
-        assert rightApplicationReference != null;
+    private static int compareNodeGroupsForSuspend(NodeGroup leftNodeGroup, NodeGroup rightNodeGroup) {
+        ApplicationInstanceReference leftApplicationReference = leftNodeGroup.getApplicationReference();
+        ApplicationInstanceReference rightApplicationReference = rightNodeGroup.getApplicationReference();
 
         // ApplicationInstanceReference.toString() is e.g. "hosted-vespa:routing:dev:ci-corp-us-east-1:default"
-        int diff = leftApplicationReference.toString().compareTo(rightApplicationReference.toString());
-        if (diff != 0) {
-            return diff;
-        }
-
-        return leftHostname.toString().compareTo(rightHostname.toString());
+        return leftApplicationReference.asString().compareTo(rightApplicationReference.asString());
     }
 
     private HostStatus getNodeStatus(ApplicationInstanceReference applicationRef, HostName hostName) {
@@ -294,8 +311,9 @@ public class OrchestratorImpl implements Orchestrator {
         log.log(LogLevel.INFO, String.format("Setting content clusters %s for application %s to %s",
                 contentClusterIds,application.applicationInstanceId(),state));
         for (ClusterId clusterId : contentClusterIds) {
+            List<HostName> clusterControllers = VespaModelUtil.getClusterControllerInstancesInOrder(application, clusterId);
             ClusterControllerClient client = clusterControllerClientFactory.createClient(
-                    VespaModelUtil.getClusterControllerInstancesInOrder(application, clusterId),
+                    clusterControllers,
                     clusterId.s());
             try {
                 ClusterControllerStateResponse response = client.setApplicationState(state);

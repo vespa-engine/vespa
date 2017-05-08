@@ -2,15 +2,14 @@
 package com.yahoo.vespa.orchestrator;
 
 import com.yahoo.vespa.applicationmodel.HostName;
-
-import java.util.List;
+import com.yahoo.vespa.orchestrator.model.NodeGroup;
 
 public class BatchInternalErrorException extends OrchestrationException {
 
     public BatchInternalErrorException(HostName parentHostname,
-                                       List<HostName> orderedHostNames,
+                                       NodeGroup nodeGroup,
                                        RuntimeException e) {
-        super("Failed to suspend " + orderedHostNames + " with parent host "
+        super("Failed to suspend " + nodeGroup + " with parent host "
                 + parentHostname + ": " + e.getMessage(), e);
     }
 

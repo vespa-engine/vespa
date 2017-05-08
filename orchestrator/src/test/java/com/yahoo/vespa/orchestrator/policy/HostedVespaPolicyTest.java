@@ -16,12 +16,18 @@ import com.yahoo.vespa.orchestrator.controller.ClusterControllerClient;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerState;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerStateResponse;
+import com.yahoo.vespa.orchestrator.model.ApplicationApi;
+import com.yahoo.vespa.orchestrator.model.ClusterApi;
+import com.yahoo.vespa.orchestrator.model.StorageNode;
 import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
 import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.InOrder;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -38,6 +44,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -49,6 +56,66 @@ import static org.mockito.Mockito.when;
  * @author bakksjo
  */
 public class HostedVespaPolicyTest {
+
+    private final ClusterControllerClientFactory clientFactory = mock(ClusterControllerClientFactory.class);
+    private final ClusterControllerClient client = mock(ClusterControllerClient.class);
+
+    @Before
+    public void setUp() {
+        when(clientFactory.createClient(any(), any())).thenReturn(client);
+    }
+
+    @Test
+    public void testGrantSuspension() throws HostStateChangeDeniedException {
+        final HostedVespaClusterPolicy clusterPolicy = mock(HostedVespaClusterPolicy.class);
+        final HostedVespaPolicy policy = new HostedVespaPolicy(clusterPolicy, clientFactory);
+        final ApplicationApi applicationApi = mock(ApplicationApi.class);
+        when(applicationApi.applicationInfo()).thenReturn("tenant:app");
+
+        ClusterApi clusterApi1 = mock(ClusterApi.class);
+        ClusterApi clusterApi2 = mock(ClusterApi.class);
+        ClusterApi clusterApi3 = mock(ClusterApi.class);
+        List<ClusterApi> clusterApis = Arrays.asList(clusterApi1, clusterApi2, clusterApi3);
+        when(applicationApi.getClusters()).thenReturn(clusterApis);
+
+        StorageNode storageNode1 = mock(StorageNode.class);
+        HostName hostName1 = new HostName("storage-1");
+        when(storageNode1.hostName()).thenReturn(hostName1);
+
+        HostName hostName2 = new HostName("host-2");
+
+        StorageNode storageNode3 = mock(StorageNode.class);
+        HostName hostName3 = new HostName("storage-3");
+        when(storageNode1.hostName()).thenReturn(hostName3);
+
+        List<StorageNode> upStorageNodes = Arrays.asList(storageNode1, storageNode3);
+        when(applicationApi.getUpStorageNodesInGroupInClusterOrder()).thenReturn(upStorageNodes);
+        // setHostState
+
+        List<HostName> noRemarksHostNames = Arrays.asList(hostName1, hostName2, hostName3);
+        when(applicationApi.getNodesInGroupWithStatus(HostStatus.NO_REMARKS)).thenReturn(noRemarksHostNames);
+
+        InOrder order = inOrder(applicationApi, clusterPolicy, storageNode1, storageNode3);
+
+        policy.grantSuspensionRequest(applicationApi);
+
+        order.verify(applicationApi).getClusters();
+        order.verify(clusterPolicy).verifyGroupGoingDownIsFine(clusterApi1);
+        order.verify(clusterPolicy).verifyGroupGoingDownIsFine(clusterApi2);
+        order.verify(clusterPolicy).verifyGroupGoingDownIsFine(clusterApi3);
+
+        order.verify(applicationApi).getUpStorageNodesInGroupInClusterOrder();
+        order.verify(storageNode1).setNodeState(ClusterControllerState.MAINTENANCE);
+        order.verify(storageNode3).setNodeState(ClusterControllerState.MAINTENANCE);
+
+        order.verify(applicationApi).getNodesInGroupWithStatus(HostStatus.NO_REMARKS);
+        order.verify(applicationApi).setHostState(hostName1, HostStatus.ALLOWED_TO_BE_DOWN);
+        order.verify(applicationApi).setHostState(hostName2, HostStatus.ALLOWED_TO_BE_DOWN);
+        order.verify(applicationApi).setHostState(hostName3, HostStatus.ALLOWED_TO_BE_DOWN);
+
+        order.verifyNoMoreInteractions();
+    }
+
     private static final TenantId TENANT_ID = new TenantId("tenantId");
     private static final ApplicationInstanceId APPLICATION_INSTANCE_ID = new ApplicationInstanceId("applicationId");
     private static final HostName HOST_NAME_1 = new HostName("host-1");
@@ -59,15 +126,9 @@ public class HostedVespaPolicyTest {
     private static final ServiceType SERVICE_TYPE_1 = new ServiceType("service-1");
     private static final ServiceType SERVICE_TYPE_2 = new ServiceType("service-2");
 
-    private final ClusterControllerClientFactory clusterControllerClientFactory
-            = mock(ClusterControllerClientFactory.class);
-    private final ClusterControllerClient client = mock(ClusterControllerClient.class);
-    {
-        when(clusterControllerClientFactory.createClient(any(), any())).thenReturn(client);
-    }
-
-    private final HostedVespaPolicy policy
-            = new HostedVespaPolicy(clusterControllerClientFactory);
+    // TODO: Replace HostedVespaClusterPolicy with ClusterPolicy mock
+    private final HostedVespaPolicy policy =
+            new HostedVespaPolicy(new HostedVespaClusterPolicy(), clientFactory);
 
     private final MutableStatusRegistry mutablestatusRegistry = mock(MutableStatusRegistry.class);
     {
@@ -194,7 +255,7 @@ public class HostedVespaPolicyTest {
 
         policy.grantSuspensionRequest(applicationInstance, HOST_NAME_3, mutablestatusRegistry);
 
-        verify(mutablestatusRegistry, times(1)).setHostState(HOST_NAME_3, HostStatus.ALLOWED_TO_BE_DOWN);
+        verify(mutablestatusRegistry, times(0)).setHostState(HOST_NAME_3, HostStatus.ALLOWED_TO_BE_DOWN);
     }
 
     @Test
@@ -419,12 +480,13 @@ public class HostedVespaPolicyTest {
         // Verification phase.
 
         if (expectedNodeStateSentToClusterController.isPresent()) {
-            List<HostName> clusterControllers = CLUSTER_CONTROLLER_SERVICE_CLUSTER.serviceInstances().stream()
+            List<HostName> hostNames = CLUSTER_CONTROLLER_SERVICE_CLUSTER.serviceInstances().stream()
                     .map(service -> service.hostName())
                     .collect(Collectors.toList());
-            
-            verify(clusterControllerClientFactory, times(1))
-                    .createClient(clusterControllers, CONTENT_CLUSTER_NAME);
+            verify(clientFactory, times(1))
+                    .createClient(
+                            hostNames,
+                            CONTENT_CLUSTER_NAME);
             verify(client, times(1))
                     .setNodeState(
                             STORAGE_NODE_INDEX,
