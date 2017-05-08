@@ -49,7 +49,6 @@ RWLock::~RWLock(void)
 #ifndef DISABLE_THREADS
   pthread_rwlock_destroy(&(_impl->_rwlock));
 #endif
-  delete _impl;
 }
 
 bool RWLock::tryRdLock (void)
