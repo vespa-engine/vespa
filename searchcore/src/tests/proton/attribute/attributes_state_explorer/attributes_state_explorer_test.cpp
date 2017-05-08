@@ -6,19 +6,20 @@ LOG_SETUP("attributes_state_explorer_test");
 
 #include <vespa/searchcore/proton/attribute/attribute_manager_explorer.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
-#include <vespa/searchcore/proton/test/attribute_vectors.h>
-#include <vespa/searchcore/proton/test/directory_handler.h>
-#include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/common/foregroundtaskexecutor.h>
-#include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/searchcore/proton/test/attribute_vectors.h>
+#include <vespa/searchlib/common/foregroundtaskexecutor.h>
+#include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/searchlib/test/directory_handler.h>
+#include <vespa/vespalib/test/insertion_operators.h>
 
 using namespace proton;
 using namespace proton::test;
-using search::index::DummyFileHeaderContext;
 using search::AttributeVector;
-using search::TuneFileAttributes;
 using search::ForegroundTaskExecutor;
+using search::TuneFileAttributes;
+using search::index::DummyFileHeaderContext;
+using search::test::DirectoryHandler;
 
 const vespalib::string TEST_DIR = "test_output";
 

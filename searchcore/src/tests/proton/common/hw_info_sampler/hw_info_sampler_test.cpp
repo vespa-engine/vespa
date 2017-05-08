@@ -1,13 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
 
-#include <vespa/searchcore/proton/common/hw_info_sampler.h>
-#include <vespa/searchcore/config/config-hwinfo.h>
-#include <vespa/searchcore/proton/test/directory_handler.h>
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/config/print/fileconfigwriter.h>
+#include <vespa/searchcore/config/config-hwinfo.h>
+#include <vespa/searchcore/proton/common/hw_info_sampler.h>
+#include <vespa/searchlib/test/directory_handler.h>
+#include <vespa/vespalib/testkit/testapp.h>
 
 using proton::HwInfoSampler;
+using search::test::DirectoryHandler;
 using vespa::config::search::core::HwinfoConfig;
 using vespa::config::search::core::HwinfoConfigBuilder;
 
@@ -28,7 +29,7 @@ long time_point_to_long(Clock::time_point tp)
 
 struct Fixture
 {
-    proton::test::DirectoryHandler _dirHandler;
+    DirectoryHandler _dirHandler;
 
     Fixture()
         : _dirHandler(test_dir)

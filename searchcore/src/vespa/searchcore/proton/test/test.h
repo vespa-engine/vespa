@@ -9,7 +9,6 @@
 #include "dummy_document_sub_db.h"
 #include "dummy_feed_view.h"
 #include "dummy_summary_manager.h"
-#include "directory_handler.h"
 #include "resulthandler.h"
 #include "userdocuments.h"
 #include "userdocumentsbuilder.h"
