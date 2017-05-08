@@ -16,11 +16,8 @@ private:
     DocumentDBTaggedMetrics _taggedMetrics;
 
 public:
-    DocumentDBMetricsCollection(const vespalib::string &docTypeName, size_t maxNumThreads)
-        : _metrics(docTypeName, maxNumThreads),
-          _taggedMetrics(docTypeName)
-    {
-    }
+    DocumentDBMetricsCollection(const vespalib::string &docTypeName, size_t maxNumThreads);
+    ~DocumentDBMetricsCollection();
     LegacyDocumentDBMetrics &getLegacyMetrics() { return _metrics; }
     DocumentDBTaggedMetrics &getTaggedMetrics() { return _taggedMetrics; }
 };

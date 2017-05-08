@@ -56,6 +56,12 @@ protected:
                  bool forceFilter);
 
 public:
+    ProtonTermData();
+    ProtonTermData(const ProtonTermData &);
+    ProtonTermData & operator = (const ProtonTermData &);
+    ProtonTermData(ProtonTermData &&) = default;
+    ProtonTermData & operator = (ProtonTermData &&) = default;
+    ~ProtonTermData();
     void resolveFromChildren(const std::vector<search::query::Node *> &children);
     void allocateTerms(search::fef::MatchDataLayout &mdl);
     void setDocumentFrequency(uint32_t estHits, uint32_t numDocs);
@@ -75,7 +81,7 @@ inline uint32_t numTerms<search::query::Phrase>(const search::query::Phrase &n) 
 
 template <typename Base>
 struct ProtonTermBase : public Base,
-                          public ProtonTermData
+                        public ProtonTermData
 {
     using Base::Base;
 
@@ -96,6 +102,7 @@ struct ProtonTermBase : public Base,
 template <typename Base>
 struct ProtonTerm : public ProtonTermBase<Base> {
     using ProtonTermBase<Base>::ProtonTermBase;
+    ~ProtonTerm() {}
 };
 
 typedef search::query::SimpleAnd     ProtonAnd;
