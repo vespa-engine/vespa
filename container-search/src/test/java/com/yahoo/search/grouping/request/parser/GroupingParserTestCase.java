@@ -123,6 +123,7 @@ public class GroupingParserTestCase {
                                             "sinh",
                                             "size",
                                             "sort",
+                                            "stddev",
                                             "interpolatedlookup",
                                             "sqrt",
                                             "strcat",
@@ -543,6 +544,7 @@ public class GroupingParserTestCase {
                               "Encountered \"-\" at line 1, column 29");
         assertIllegalArgument("all(group(debugwait(artist, 3.3, lol)))",
                               "Encountered \"lol\" at line 1, column 34");
+        assertParse("all(group(artist) each(output(stddev(simple))))");
     }
 
     @Test
