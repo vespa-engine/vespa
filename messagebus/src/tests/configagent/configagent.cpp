@@ -18,6 +18,7 @@ private:
     bool checkTables(uint32_t numTables);
 
 public:
+    ~Test() {}
     int Main() override;
     bool setupRouting(const RoutingSpec &spec) override;
 };

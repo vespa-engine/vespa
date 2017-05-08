@@ -24,6 +24,8 @@ Hop::Hop(const std::vector<IHopDirective::SP> &selector,
     _ignoreResult(ignoreResult)
 { }
 
+Hop::Hop(const Hop &) = default;
+Hop & Hop::operator = (const Hop &) = default;
 Hop::~Hop() { }
 
 Hop &
