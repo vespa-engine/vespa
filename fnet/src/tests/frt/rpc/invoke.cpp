@@ -28,6 +28,7 @@ struct LockedReqWait : public FRT_IRequestWait
     bool         _wasLocked; // was 'locked' when req done
 
     LockedReqWait() : _cond(), _done(false), _lockLock(), _lock(false), _wasLocked(false) {}
+    ~LockedReqWait() {}
 
     void lock() {
         _lockLock.Lock();
