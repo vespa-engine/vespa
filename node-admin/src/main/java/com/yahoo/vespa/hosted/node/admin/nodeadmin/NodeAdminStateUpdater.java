@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.RESUMED;
 import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.SUSPENDED;
 import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Pulls information from node repository and forwards containers to run to node admin.
@@ -128,6 +127,8 @@ public class NodeAdminStateUpdater extends AbstractComponent {
                 logger.error("Failed to converge NodeAdminStateUpdater", e);
             }
         }
+
+        fetchContainersToRunFromNodeRepository();
     }
 
     /**
@@ -212,7 +213,11 @@ public class NodeAdminStateUpdater extends AbstractComponent {
                              .collect(Collectors.toList());
     }
 
-    public void start(long stateConvergeInterval, long fetchContainersInterval) {
+    public void start(long stateConvergeInterval, long foo) {
+        start(stateConvergeInterval);
+    }
+
+    public void start(long stateConvergeInterval) {
         delaysBetweenEachTickMillis = stateConvergeInterval;
         if (loopThread != null) {
             throw new RuntimeException("Can not restart NodeAdminStateUpdater");
@@ -223,12 +228,6 @@ public class NodeAdminStateUpdater extends AbstractComponent {
         });
         loopThread.setName("tick-NodeAdminStateUpdater");
         loopThread.start();
-
-        scheduler.scheduleWithFixedDelay(
-                this::fetchContainersToRunFromNodeRepository,
-                0,
-                fetchContainersInterval,
-                MILLISECONDS);
     }
 
     @Override
