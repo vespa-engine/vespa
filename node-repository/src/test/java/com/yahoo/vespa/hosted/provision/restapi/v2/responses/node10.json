@@ -22,7 +22,7 @@
     "clustertype": "container",
     "clusterid": "id1",
     "group": "0",
-    "index": 1,
+    "index": 0,
     "retired": false
   },
   "restartGeneration": 0,
