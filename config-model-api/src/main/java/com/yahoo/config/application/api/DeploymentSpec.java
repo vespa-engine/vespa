@@ -85,10 +85,8 @@ public class DeploymentSpec {
         return new DeploymentSpec(globalServiceId, readUpgradePolicy(root), zones);
     }
 
-    /** Returns whether we should assume this tag name is the name of an environment */
     private static boolean isEnvironmentName(String tagName) {
-        if (tagName.equals("upgrade")) return false;
-        return true; // by method of elimination
+        return tagName.equals("test") || tagName.equals("staging") || tagName.equals("prod");
     }
 
     private static Optional<String> readGlobalServiceId(Element environmentTag) {
