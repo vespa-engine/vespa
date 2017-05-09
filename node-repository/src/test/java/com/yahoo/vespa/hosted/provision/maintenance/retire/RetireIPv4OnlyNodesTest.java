@@ -1,14 +1,13 @@
 package com.yahoo.vespa.hosted.provision.maintenance.retire;
 
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.maintenance.NodeFailTester;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -68,13 +67,13 @@ public class RetireIPv4OnlyNodesTest {
 
     private Node createNodeWithAddresses(String... addresses) {
         Set<String> ipAddresses = Arrays.stream(addresses).collect(Collectors.toSet());
-        return Node.create("openstackid", ipAddresses, "hostname", Optional.empty(),
+        return Node.create("openstackid", ipAddresses, Collections.emptySet(), "hostname", Optional.empty(),
                 nodeFlavors.get(0), NodeType.tenant);
     }
 
     private Node createVMWithAddresses(String... addresses) {
         Set<String> ipAddresses = Arrays.stream(addresses).collect(Collectors.toSet());
-        return Node.create("openstackid", ipAddresses, "hostname", Optional.empty(),
+        return Node.create("openstackid", ipAddresses, Collections.emptySet(),  "hostname", Optional.empty(),
                 nodeFlavors.get(1), NodeType.tenant);
     }
 
