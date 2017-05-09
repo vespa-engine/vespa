@@ -50,17 +50,15 @@ bool
 FileReader::Reset()
 {
     _file->clear();
-    _file->seekg(0);
-    _nextReadPos = 0;
-    return bool(*_file);
+    return SetFilePos(0);
 }
 
 bool
 FileReader::SetFilePos(int64_t pos)
 {
-    _bufpos = 0;
+    _bufused = _bufpos = 0;
+    _lastReadPos = _nextReadPos = pos;
     _file->seekg(pos);
-    _nextReadPos = pos;
     return bool(*_file);
 }
 
@@ -76,10 +74,8 @@ FileReader::FindNewline(int64_t pos)
 {
     char buf[100];
     SetFilePos(pos);
-    ssize_t len = ReadLine(buf, 100);
-    ++_bufpos;
-
-    return pos+len;
+    ReadLine(buf, 100);
+    return GetFilePos();
 }
 
 void

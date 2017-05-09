@@ -96,10 +96,8 @@ public:
   int64_t GetFileSize();
 
   /**
-   * @returns _bufpos
+   * @return current position in file
    **/
-  uint64_t GetBufPos() const { return _bufpos; }
-
   uint64_t GetFilePos() const { return _lastReadPos + _bufpos; }
 
   /**
