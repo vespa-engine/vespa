@@ -102,7 +102,7 @@ LogDataStore::read(const LidVector & lids, IBufferVisitor & visitor) const
     LidInfoWithLidV orderedLids;
     GenerationHandler::Guard guard(_genHandler.takeGuard());
     for (uint32_t lid : lids) {
-        if (lid < _lidInfo.size()) {
+        if (lid < getDocIdLimit()) {
             LidInfo li = _lidInfo[lid];
             if (!li.empty() && li.valid()) {
                 orderedLids.emplace_back(li, lid);
@@ -131,7 +131,7 @@ ssize_t
 LogDataStore::read(uint32_t lid, vespalib::DataBuffer& buffer) const
 {
     ssize_t sz(0);
-    if (lid < _lidInfo.size()) {
+    if (lid < getDocIdLimit()) {
         LidInfo li(0);
         {
             GenerationHandler::Guard guard(_genHandler.takeGuard());
@@ -243,7 +243,7 @@ void
 LogDataStore::remove(uint64_t serialNum, uint32_t lid)
 {
     LockGuard guard(_updateLock);
-    if (lid < _lidInfo.size()) {
+    if (lid < getDocIdLimit()) {
         LidInfo lm = _lidInfo[lid];
         if (lm.valid()) {
             _fileChunks[lm.getFileId()]->remove(lid, lm.size());
@@ -860,13 +860,13 @@ LogDataStore::scanDir(const vespalib::string &dir, const vespalib::string &suffi
 }
 
 void
-LogDataStore::setLid(const LockGuard & guard, uint32_t lid, const LidInfo & meta)
+LogDataStore::setLid(const LockGuard &guard, uint32_t lid, const LidInfo &meta)
 {
     (void) guard;
     if (lid < _lidInfo.size()) {
         _genHandler.updateFirstUsedGeneration();
         _lidInfo.removeOldGenerations(_genHandler.getFirstUsedGeneration());
-        const LidInfo & prev = _lidInfo[lid];
+        const LidInfo &prev = _lidInfo[lid];
         if (prev.valid()) {
             _fileChunks[prev.getFileId()]->remove(lid, prev.size());
         }
@@ -890,7 +890,7 @@ LogDataStore::computeNumberOfSignificantBucketIdBits(const IBucketizer & bucketi
     timer.before();
     auto bucketizerGuard = bucketizer.getGuard();
     GenerationHandler::Guard lidGuard(_genHandler.takeGuard());
-    for (size_t i(0), m(_lidInfo.size()); i < m; i++) {
+    for (size_t i(0), m(getDocIdLimit()); i < m; i++) {
         LidInfo lid(_lidInfo[i]);
         if (lid.valid() && (lid.getFileId() == fileId.getId())) {
             BucketId bucketId = bucketizer.getBucketOf(bucketizerGuard, i);

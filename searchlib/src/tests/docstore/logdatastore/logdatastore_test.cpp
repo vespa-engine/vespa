@@ -11,6 +11,8 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/searchlib/test/directory_handler.h>
+#include <iomanip>
 
 using document::BucketId;
 using namespace search::docstore;
@@ -727,6 +729,73 @@ TEST("testBucketDensityComputer") {
     EXPECT_EQUAL(0u, nonRecording.getNumBuckets());
     nonRecording.recordLid(guard, 1, 1);
     EXPECT_EQUAL(0u, nonRecording.getNumBuckets());
+}
+
+LogDataStore::Config
+getBasicConfig(size_t maxFileSize)
+{
+    CompressionConfig compCfg;
+    WriteableFileChunk::Config fileCfg;
+    return LogDataStore::Config(maxFileSize, 0.2, 2.5, 0.2, 1, true, compCfg, fileCfg);
+}
+
+vespalib::string
+genData(uint32_t lid)
+{
+    std::ostringstream oss;
+    oss << "data_" << std::setw(5) << std::setfill('0') << lid;
+    return oss.str();
+}
+
+struct Fixture {
+    vespalib::ThreadStackExecutor executor;
+    search::test::DirectoryHandler dir;
+    uint64_t serialNum;
+    DummyFileHeaderContext fileHeaderCtx;
+    MyTlSyncer tlSyncer;
+    LogDataStore store;
+
+    uint64_t nextSerialNum() {
+        return serialNum++;
+    }
+
+    Fixture(const vespalib::string &dirName)
+        : executor(1, 0x10000),
+          dir(dirName),
+          fileHeaderCtx(),
+          tlSyncer(),
+          store(executor,
+                dirName,
+                getBasicConfig(1024),
+                GrowStrategy(),
+                TuneFileSummary(),
+                fileHeaderCtx,
+                tlSyncer,
+                nullptr)
+    {
+    }
+    void flush() {
+        store.flush(serialNum);
+    }
+    Fixture &write(uint32_t lid) {
+        vespalib::string data = genData(lid);
+        store.write(nextSerialNum(), lid, data.c_str(), data.size());
+        return *this;
+    }
+    void assertDocIdLimit(uint32_t expDocIdLimit) {
+        EXPECT_EQUAL(expDocIdLimit, store.getDocIdLimit());
+    }
+};
+
+TEST_F("require that docIdLimit is updated when inserting entries", Fixture("tmp"))
+{
+    f.assertDocIdLimit(0);
+    f.write(10);
+    f.assertDocIdLimit(11);
+    f.write(9);
+    f.assertDocIdLimit(11);
+    f.write(11);
+    f.assertDocIdLimit(12);
 }
 
 

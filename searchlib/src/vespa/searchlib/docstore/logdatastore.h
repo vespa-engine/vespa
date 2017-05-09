@@ -43,7 +43,8 @@ public:
               _numThreads(8),
               _skipCrcOnRead(false),
               _compactToActiveFile(true),
-              _compactCompression(CompressionConfig::LZ4)
+              _compactCompression(CompressionConfig::LZ4),
+              _fileConfig()
         { }
 
         Config(size_t maxFileSize,
