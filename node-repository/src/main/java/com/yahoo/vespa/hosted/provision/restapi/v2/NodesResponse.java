@@ -173,6 +173,7 @@ class NodesResponse extends HttpResponse {
         object.setBool("wantToRetire", node.status().wantToRetire());
         toSlime(node.history(), object.setArray("history"));
         ipAddressesToSlime(node.ipAddresses(), object.setArray("ipAddresses"));
+        ipAddressesToSlime(node.additionalIpAddresses(), object.setArray("additionalIpAddresses"));
     }
 
     private String toString(NodeType type) {

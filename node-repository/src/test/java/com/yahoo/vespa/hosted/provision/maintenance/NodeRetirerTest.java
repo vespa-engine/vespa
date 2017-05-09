@@ -143,6 +143,7 @@ public class NodeRetirerTest {
             return new Node(
                     UUID.randomUUID().toString(),
                     ipAddresses,
+                    Collections.emptySet(),
                     hostname,
                     Optional.empty(),
                     flavor,
