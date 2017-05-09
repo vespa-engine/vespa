@@ -58,21 +58,21 @@ public:
     int findUrl(char *buf, int buflen);
     int nextUrl(char *buf, int buflen);
     int getContent();
-    char *content() const { return _contentbuf; }
+    const char *content() const { return _contentbuf; }
     ~UrlReader() { delete [] _contentbuf; }
 };
 
 bool UrlReader::reset()
 {
-    _reader.Reset();
-    // Start reading from offset
-    if (_args._singleQueryFile) {
-        _reader.SetFilePos(_args._queryfileOffset);
-    }
     if (_restarts == _args._restartLimit) {
         return false;
     } else if (_args._restartLimit > 0) {
         _restarts++;
+    }
+    _reader.Reset();
+    // Start reading from offset
+    if (_args._singleQueryFile) {
+        _reader.SetFilePos(_args._queryfileOffset);
     }
     return true;
 }
@@ -121,10 +121,10 @@ int UrlReader::nextUrl(char *buf, int buflen)
 int UrlReader::getContent()
 {
     char *buf = _contentbuf;
-    int bufLen = _contentbufsize;
     int totLen = 0;
-    while (totLen < bufLen) {
-       int len = _reader.ReadLine(buf, bufLen);
+    while (totLen < _contentbufsize) {
+       int left = _contentbufsize - totLen;
+       int len = _reader.ReadLine(buf, left);
        if (len < 0) {
            // reached EOF
            return totLen;
@@ -136,7 +136,6 @@ int UrlReader::getContent()
            return totLen;
        }
        buf += len;
-       bufLen -= len;
        totLen += len;
     }
     return totLen;
