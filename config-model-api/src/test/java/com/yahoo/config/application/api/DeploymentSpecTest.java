@@ -82,6 +82,8 @@ public class DeploymentSpecTest {
         assertTrue(spec.includes(Environment.prod, Optional.of(RegionName.from("us-west1"))));
         assertFalse(spec.includes(Environment.prod, Optional.of(RegionName.from("no-such-region"))));
         assertFalse(spec.globalServiceId().isPresent());
+        
+        assertEquals(DeploymentSpec.UpgradePolicy.defaultPolicy, spec.upgradePolicy());
     }
 
     @Test
@@ -136,25 +138,24 @@ public class DeploymentSpecTest {
         assertEquals(spec.globalServiceId(), Optional.of("query"));
     }
 
-    @Test
-    public void productionSpecWithInvalidGlobalServiceId() {
-        for (Environment environment : Environment.values()) {
-            if (environment.equals(Environment.prod)) continue;
-
-            StringReader r = new StringReader(String.format(
+    @Test(expected=IllegalArgumentException.class)
+    public void globalServiceIdInTest() {
+        StringReader r = new StringReader(
                 "<deployment version='1.0'>" +
-                    "    <%s global-service-id='query' />" +
-                    "</deployment>",
-                environment.value()
-            ));
+                "    <test global-service-id='query' />" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+    }
 
-            try {
-                DeploymentSpec.fromXml(r);
-                fail("Expected IllegalArgumentException for environment: " + environment);
-            } catch (IllegalArgumentException e) {
-                assertEquals("Attribute 'global-service-id' is only valid on 'prod' tag.", e.getMessage());
-            }
-        }
+    @Test(expected=IllegalArgumentException.class)
+    public void globalServiceIdInStaging() {
+        StringReader r = new StringReader(
+                "<deployment version='1.0'>" +
+                "    <staging global-service-id='query' />" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
     }
 
     @Test
@@ -167,9 +168,7 @@ public class DeploymentSpecTest {
             "    <region active='true'>us-central-1</region>" +
             "    <region active='true'>us-east-3</region>" +
             "  </prod>" +
-            "  <staging>" +
-            "    <region active='true'>us-east-3</region>" +
-            "  </staging>" +
+            "  <staging/>" +
             "</deployment>"
         );
 
@@ -177,5 +176,21 @@ public class DeploymentSpecTest {
         assertEquals("qrs", spec.globalServiceId().get());
     }
 
+    @Test
+    public void productionSpecWithUpgradePolicy() {
+        StringReader r = new StringReader(
+                "<deployment>" +
+                "  <upgrade policy='canary'/>" +
+                "  <prod>" +
+                "    <region active='true'>us-west-1</region>" +
+                "    <region active='true'>us-central-1</region>" +
+                "    <region active='true'>us-east-3</region>" +
+                "  </prod>" +
+                "</deployment>"
+        );
+
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals("canary", spec.upgradePolicy().toString());
+    }
 
 }

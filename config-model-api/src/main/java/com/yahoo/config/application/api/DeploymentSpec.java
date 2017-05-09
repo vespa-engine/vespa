@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.text.XML;
@@ -10,7 +11,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,12 +25,22 @@ import java.util.Optional;
 public class DeploymentSpec {
 
     private final Optional<String> globalServiceId;
+    private final UpgradePolicy upgradePolicy;
     private final List<DeclaredZone> zones;
 
-    public DeploymentSpec(List<DeclaredZone> zones, Optional<String> globalServiceId) {
-        this.zones = Collections.unmodifiableList(new ArrayList<>(zones));
+    public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy, List<DeclaredZone> zones) {
         this.globalServiceId = globalServiceId;
+        this.upgradePolicy = upgradePolicy;
+        this.zones = ImmutableList.copyOf(zones);
     }
+
+    /** Returns the ID of the service to expose through global routing, if present */
+    public Optional<String> globalServiceId() {
+        return globalServiceId;
+    }
+
+    /** Returns the upgrade policy of this, which is defaultPolicy if none is specified */
+    public UpgradePolicy upgradePolicy() { return upgradePolicy; }
 
     /** Returns the zones this declares as a read-only list. */
     public List<DeclaredZone> zones() { return zones; }
@@ -39,11 +50,6 @@ public class DeploymentSpec {
         for (DeclaredZone declaredZone : zones)
             if (declaredZone.matches(environment, region)) return true;
         return false;
-    }
-
-    /** Returns the ID of the service to expose through global routing, if present */
-    public Optional<String> globalServiceId() {
-        return globalServiceId;
     }
 
     /**
@@ -56,6 +62,7 @@ public class DeploymentSpec {
         Element root = XML.getDocument(reader).getDocumentElement();
         Optional<String> globalServiceId = Optional.empty();
         for (Element environmentTag : XML.getChildren(root)) {
+            if ( ! isEnvironmentName(environmentTag.getTagName())) continue;
             Environment environment = Environment.from(environmentTag.getTagName());
             List<Element> regionTags = XML.getChildren(environmentTag, "region");
             if (regionTags.isEmpty()) {
@@ -75,7 +82,11 @@ public class DeploymentSpec {
                 throw new IllegalArgumentException("Attribute 'global-service-id' is only valid on 'prod' tag.");
             }
         }
-        return new DeploymentSpec(zones, globalServiceId);
+        return new DeploymentSpec(globalServiceId, readUpgradePolicy(root), zones);
+    }
+
+    private static boolean isEnvironmentName(String tagName) {
+        return tagName.equals("test") || tagName.equals("staging") || tagName.equals("prod");
     }
 
     private static Optional<String> readGlobalServiceId(Element environmentTag) {
@@ -85,6 +96,20 @@ public class DeploymentSpec {
         }
         else {
             return Optional.of(globalServiceId);
+        }
+    }
+    
+    private static UpgradePolicy readUpgradePolicy(Element root) {
+        Element upgradeElement = XML.getChild(root, "upgrade");
+        if (upgradeElement == null) return UpgradePolicy.defaultPolicy;
+
+        String policy = upgradeElement.getAttribute("policy");
+        switch (policy) {
+            case "canary" : return UpgradePolicy.canary;
+            case "default" : return UpgradePolicy.defaultPolicy;
+            case "conservative" : return UpgradePolicy.conservative;
+            default : throw new IllegalArgumentException("Illegal upgrade policy '" + policy + "': " +
+                                                         "Must be one of " + Arrays.toString(UpgradePolicy.values()));
         }
     }
 
@@ -177,6 +202,16 @@ public class DeploymentSpec {
             return false;
         }
 
+    }
+
+    /** Controls when this application will be upgraded to new Vespa versions */
+    public enum UpgradePolicy {
+        /** Canary: Applications with this policy will upgrade before any other */
+        canary,
+        /** Default: Will upgrade after all canary applications upgraded successfully. The default. */
+        defaultPolicy,
+        /** Will upgrade after most default applications upgraded successfully */
+        conservative
     }
 
 }
