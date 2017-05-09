@@ -101,9 +101,9 @@ public:
   uint64_t GetFilePos() const { return _lastReadPos + _bufpos; }
 
   /**
-   * @returns offset of next newline from pos
+   * @return offset to start of next line from pos
    **/
-  uint64_t FindNewline(int64_t pos);
+  uint64_t FindNextLine(int64_t pos);
 
   /**
    * Read the next line of text from the the currently open file into

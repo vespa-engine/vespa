@@ -70,7 +70,7 @@ FileReader::GetFileSize()
 }
 
 uint64_t
-FileReader::FindNewline(int64_t pos)
+FileReader::FindNextLine(int64_t pos)
 {
     char buf[100];
     SetFilePos(pos);

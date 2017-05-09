@@ -400,12 +400,12 @@ FBench::Main(int argc, char *argv[])
             FileReader r;
             r.Open(queryFilePattern);
             uint64_t clientOffset = std::max(i*perClient, _queryfileOffset.back() );
-            uint64_t newline = r.FindNewline(clientOffset) + 1;
+            uint64_t newline = r.FindNextLine(clientOffset);
             _queryfileOffset.push_back(newline);
         }
 
         // Add pos to end of file
-        _queryfileOffset.push_back( totalSize+1 );
+        _queryfileOffset.push_back(totalSize);
 
 
         // Print offset of clients
