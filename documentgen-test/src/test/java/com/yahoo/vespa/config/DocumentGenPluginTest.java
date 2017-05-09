@@ -14,6 +14,7 @@ import com.yahoo.document.datatypes.*;
 import com.yahoo.document.serialization.*;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.searchdefinition.derived.Deriver;
+import com.yahoo.tensor.Tensor;
 import com.yahoo.vespa.document.NodeImpl;
 import com.yahoo.vespa.document.dom.DocumentImpl;
 import com.yahoo.vespa.documentgen.test.*;
@@ -917,6 +918,14 @@ public class DocumentGenPluginTest {
         List <Method> unmasked = com.yahoo.protect.ClassValidator.unmaskedMethodsFromSuperclass(Common.class);
         System.out.println(unmasked);
         assertEquals(unmasked.size(), 0); // probably not needed
+    }
+
+    @Test
+    public void testTensorType() {
+        Book book = new Book(new DocumentId("doc:book:0"));
+        assertNull(book.getVector());
+        book.setVector(Tensor.from("{{x:0}:1.0, {x:1}:2.0, {x:2}:3.0}"));
+        assertEquals("{{x:0}:1.0,{x:1}:2.0,{x:2}:3.0}", book.getVector().toString());
     }
     
 }

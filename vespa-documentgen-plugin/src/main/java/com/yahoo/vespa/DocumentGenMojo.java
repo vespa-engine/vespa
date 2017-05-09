@@ -10,6 +10,7 @@ import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.UnprocessingSearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
+import com.yahoo.tensor.TensorType;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -841,6 +842,9 @@ public class DocumentGenMojo extends AbstractMojo {
         if (dt instanceof ReferenceDataType) {
             return "com.yahoo.document.DocumentId";
         }
+        if (dt instanceof TensorDataType) {
+            return "com.yahoo.tensor.Tensor";
+        }
         return "byte[]";
     }
 
@@ -871,7 +875,11 @@ public class DocumentGenMojo extends AbstractMojo {
             return String.format("new com.yahoo.document.ReferenceDataType(%s.type, %d)",
                     className(((ReferenceDataType) dt).getTargetType().getName()), dt.getId());
         }
-        return "DataType.RAW";
+        if (dt instanceof TensorDataType) {
+            return String.format("new com.yahoo.document.TensorDataType(com.yahoo.tensor.TensorType.fromSpec(\"%s\"))",
+                    ((TensorDataType)dt).getTensorType().toString());
+        }
+        return "com.yahoo.document.DataType.RAW";
     }
 
     @Override
