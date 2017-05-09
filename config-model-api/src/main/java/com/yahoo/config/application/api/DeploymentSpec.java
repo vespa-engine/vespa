@@ -10,6 +10,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -24,12 +25,22 @@ import java.util.Optional;
 public class DeploymentSpec {
 
     private final Optional<String> globalServiceId;
+    private final UpgradePolicy upgradePolicy;
     private final List<DeclaredZone> zones;
 
-    public DeploymentSpec(List<DeclaredZone> zones, Optional<String> globalServiceId) {
-        this.zones = Collections.unmodifiableList(new ArrayList<>(zones));
+    public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy, List<DeclaredZone> zones) {
         this.globalServiceId = globalServiceId;
+        this.upgradePolicy = upgradePolicy;
+        this.zones = Collections.unmodifiableList(new ArrayList<>(zones));
     }
+
+    /** Returns the ID of the service to expose through global routing, if present */
+    public Optional<String> globalServiceId() {
+        return globalServiceId;
+    }
+
+    /** Returns the upgrade policy of this, which is defaultPolicy if none is specified */
+    public UpgradePolicy upgradePolicy() { return upgradePolicy; }
 
     /** Returns the zones this declares as a read-only list. */
     public List<DeclaredZone> zones() { return zones; }
@@ -41,11 +52,6 @@ public class DeploymentSpec {
         return false;
     }
 
-    /** Returns the ID of the service to expose through global routing, if present */
-    public Optional<String> globalServiceId() {
-        return globalServiceId;
-    }
-
     /**
      * Creates a deployment spec from XML.
      *
@@ -54,8 +60,9 @@ public class DeploymentSpec {
     public static DeploymentSpec fromXml(Reader reader) {
         List<DeclaredZone> zones = new ArrayList<>();
         Element root = XML.getDocument(reader).getDocumentElement();
-        Optional<String> globalServiceId = Optional.empty();
+        Optional<String> globalServiceId = Optional.empty();        
         for (Element environmentTag : XML.getChildren(root)) {
+            if ( ! isEnvironmentName(environmentTag.getTagName())) continue;
             Environment environment = Environment.from(environmentTag.getTagName());
             List<Element> regionTags = XML.getChildren(environmentTag, "region");
             if (regionTags.isEmpty()) {
@@ -75,7 +82,13 @@ public class DeploymentSpec {
                 throw new IllegalArgumentException("Attribute 'global-service-id' is only valid on 'prod' tag.");
             }
         }
-        return new DeploymentSpec(zones, globalServiceId);
+        return new DeploymentSpec(globalServiceId, readUpgradePolicy(root), zones);
+    }
+
+    /** Returns whether we should assume this tag name is the name of an environment */
+    private static boolean isEnvironmentName(String tagName) {
+        if (tagName.equals("upgrade")) return false;
+        return true; // by method of elimination
     }
 
     private static Optional<String> readGlobalServiceId(Element environmentTag) {
@@ -85,6 +98,20 @@ public class DeploymentSpec {
         }
         else {
             return Optional.of(globalServiceId);
+        }
+    }
+    
+    private static UpgradePolicy readUpgradePolicy(Element root) {
+        Element upgradeElement = XML.getChild(root, "upgrade");
+        if (upgradeElement == null) return UpgradePolicy.defaultPolicy;
+
+        String policy = upgradeElement.getAttribute("policy");
+        switch (policy) {
+            case "canary" : return UpgradePolicy.canary;
+            case "default" : return UpgradePolicy.defaultPolicy;
+            case "conservative" : return UpgradePolicy.conservative;
+            default : throw new IllegalArgumentException("Illegal upgrade policy '" + policy + "': " +
+                                                         "Must be one of " + Arrays.toString(UpgradePolicy.values()));
         }
     }
 
@@ -177,6 +204,16 @@ public class DeploymentSpec {
             return false;
         }
 
+    }
+
+    /** Controls when this application will be upgraded to new Vespa versions */
+    public enum UpgradePolicy {
+        /** Canary: Applications with this policy will upgrade before any other */
+        canary,
+        /** Default: Will upgrade after all canary applications upgraded successfully. The default. */
+        defaultPolicy,
+        /** Will upgrade after most default applications upgraded successfully */
+        conservative
     }
 
 }
