@@ -29,6 +29,8 @@ public:
     const Value &map(const UnaryOperation &op, const Tensor &a, Stash &stash) const override;
     const Value &apply(const BinaryOperation &op, const Tensor &a, const Tensor &b, Stash &stash) const override;
 
+    void encode(const Value &value, nbostream &output, Stash &stash) const override;
+    const Value &decode(nbostream &input, Stash &stash) const override;
     const Value &map(const Value &a, const std::function<double(double)> &function, Stash &stash) const override;
     const Value &join(const Value &a, const Value &b, const std::function<double(double,double)> &function, Stash &stash) const override;
     const Value &reduce(const Value &a, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) const override;

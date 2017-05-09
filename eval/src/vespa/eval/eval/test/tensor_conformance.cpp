@@ -10,6 +10,7 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/aggr.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 namespace vespalib {
 namespace eval {
@@ -1219,6 +1220,39 @@ struct TestContext {
 
     //-------------------------------------------------------------------------
 
+    void verify_encode_decode(const TensorSpec &spec,
+                              const TensorEngine &encode_engine,
+                              const TensorEngine &decode_engine)
+    {
+        Stash stash;
+        nbostream data;
+        encode_engine.encode(make_value(encode_engine, spec, stash), data, stash);
+        TEST_DO(verify_result(Eval::Result(decode_engine.decode(data, stash)), spec));
+    }
+
+    void verify_encode_decode(const TensorSpec &spec) {
+        TEST_DO(verify_encode_decode(spec, engine, ref_engine));
+        if (&engine != &ref_engine) {
+            TEST_DO(verify_encode_decode(spec, ref_engine, engine));
+        }
+    }
+
+    void test_binary_format() {
+        TEST_DO(verify_encode_decode(spec(42)));
+        TEST_DO(verify_encode_decode(spec({x(3)}, N())));
+        TEST_DO(verify_encode_decode(spec({x(3),y(5)}, N())));
+        TEST_DO(verify_encode_decode(spec({x(3),y(5),z(7)}, N())));
+        TEST_DO(verify_encode_decode(spec({x({"a","b","c"})}, N())));
+        TEST_DO(verify_encode_decode(spec({x({"a","b","c"}),y({"foo","bar"})}, N())));
+        TEST_DO(verify_encode_decode(spec({x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}, N())));
+        if (mixed(2)) {
+            TEST_DO(verify_encode_decode(spec({x(3),y({"foo", "bar"}),z(7)}, N())));
+            TEST_DO(verify_encode_decode(spec({x({"a","b","c"}),y(5),z({"i","j","k","l"})}, N())));
+        }
+    }
+
+    //-------------------------------------------------------------------------
+
     void run_tests() {
         TEST_DO(test_tensor_create_type());
         TEST_DO(test_tensor_equality());
@@ -1230,6 +1264,7 @@ struct TestContext {
         TEST_DO(test_concat());
         TEST_DO(test_rename());
         TEST_DO(test_tensor_lambda());
+        TEST_DO(test_binary_format());
     }
 };
 

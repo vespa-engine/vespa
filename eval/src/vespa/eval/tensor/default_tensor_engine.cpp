@@ -7,6 +7,8 @@
 #include <vespa/eval/eval/operation_visitor.h>
 #include <vespa/eval/eval/simple_tensor_engine.h>
 #include "tensor.h"
+#include "serialization/typed_binary_format.h"
+#include "dense/dense_tensor.h"
 #include "dense/dense_tensor_builder.h"
 #include "dense/dense_tensor_function_compiler.h"
 #include "default_tensor.h"
@@ -15,10 +17,30 @@ namespace vespalib {
 namespace tensor {
 
 using Value = eval::Value;
+using ValueType = eval::ValueType;
 using ErrorValue = eval::ErrorValue;
 using DoubleValue = eval::DoubleValue;
 using TensorValue = eval::TensorValue;
 using TensorSpec = eval::TensorSpec;
+
+namespace {
+
+const Value &to_value(std::unique_ptr<Tensor> tensor, Stash &stash) {
+    if (tensor->getType().is_tensor()) {
+        return stash.create<TensorValue>(std::move(tensor));
+    }
+    return stash.create<DoubleValue>(tensor->sum());
+}
+
+const Tensor &to_tensor(const Value &value, Stash &stash) {
+    if (auto tensor = value.as_tensor()) {
+        return static_cast<const Tensor &>(*tensor);
+    }
+    return stash.create<DenseTensor>(ValueType::double_type(),
+                                     std::vector<double>({value.as_double()}));
+}
+
+} // namespace vespalib::tensor::<unnamed>
 
 const DefaultTensorEngine DefaultTensorEngine::_engine;
 
@@ -142,13 +164,7 @@ DefaultTensorEngine::reduce(const Tensor &tensor, const BinaryOperation &op, con
         result = my_tensor.reduce(op, dimensions);
     }
     if (result) {
-        eval::ValueType result_type(result->getType());
-        if (result_type.is_tensor()) {
-            return stash.create<TensorValue>(std::move(result));
-        }
-        if (result_type.is_double()) {
-            return stash.create<eval::DoubleValue>(result->sum());
-        }
+        return to_value(std::move(result), stash);
     }
     return stash.create<ErrorValue>();
 }
@@ -165,11 +181,7 @@ DefaultTensorEngine::map(const UnaryOperation &op, const Tensor &a, Stash &stash
     assert(&a.engine() == this);
     const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(a);
     CellFunctionAdapter cell_function(op);
-    auto result = my_a.apply(cell_function);
-    if (result->getType().is_double()) {
-        return stash.create<DoubleValue>(result->sum());
-    }
-    return stash.create<TensorValue>(std::move(result));
+    return to_value(my_a.apply(cell_function), stash);
 }
 
 struct TensorOperationOverride : eval::DefaultOperationVisitor {
@@ -221,10 +233,7 @@ DefaultTensorEngine::apply(const BinaryOperation &op, const Tensor &a, const Ten
     TensorOperationOverride tensor_override(my_a, my_b);
     op.accept(tensor_override);
     if (tensor_override.result) {
-        if (tensor_override.result->getType().is_double()) {
-            return stash.create<DoubleValue>(tensor_override.result->sum());
-        }
-        return stash.create<TensorValue>(std::move(tensor_override.result));
+        return to_value(std::move(tensor_override.result), stash);
     } else {
         return stash.create<ErrorValue>();
     }
@@ -256,6 +265,20 @@ const Value &to_default(const Value &value, Stash &stash) {
 }
 
 } // namespace vespalib::tensor::<unnamed>
+
+//-----------------------------------------------------------------------------
+
+void
+DefaultTensorEngine::encode(const Value &value, nbostream &output, Stash &stash) const
+{
+    TypedBinaryFormat::serialize(output, to_tensor(value, stash));
+}
+
+const Value &
+DefaultTensorEngine::decode(nbostream &input, Stash &stash) const
+{
+    return to_value(TypedBinaryFormat::deserialize(input), stash);
+}
 
 //-----------------------------------------------------------------------------
 

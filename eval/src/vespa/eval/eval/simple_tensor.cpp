@@ -4,6 +4,7 @@
 #include "simple_tensor.h"
 #include "simple_tensor_engine.h"
 #include "operation.h"
+#include <vespa/vespalib/objects/nbostream.h>
 #include <algorithm>
 
 namespace vespalib {
@@ -84,6 +85,34 @@ const vespalib::string &reverse_rename(const vespalib::string &name,
 }
 
 /**
+ * Meta information about how a type can be decomposed into mapped and
+ * indexed dimensions and also how large each block is. A block is a
+ * dense-subspace consisting of all indexed dimensions that is
+ * uniquely specified by the labels of all mapped dimensions.
+ **/
+struct TypeMeta {
+    IndexList mapped;
+    IndexList indexed;
+    size_t block_size;
+    explicit TypeMeta(const ValueType &type)
+        : mapped(),
+          indexed(),
+          block_size(1)
+    {
+        for (size_t i = 0; i < type.dimensions().size(); ++i) {
+            const auto &dimension = type.dimensions()[i];
+            if (dimension.is_mapped()) {
+                mapped.push_back(i);
+            } else {
+                block_size *= dimension.size;
+                indexed.push_back(i);
+            }
+        }
+    }
+    ~TypeMeta() {}
+};
+
+/**
  * Helper class used when building SimpleTensors. While a tensor
  * in its final form simply contains a collection of cells, the
  * builder keeps track of cell values as a block map instead. Each
@@ -97,60 +126,55 @@ const vespalib::string &reverse_rename(const vespalib::string &name,
  **/
 class Builder {
 private:
-    class Block {
-    private:
-        const ValueType &_type;
-        const IndexList &_indexed;
-        std::vector<double> _values;
-        size_t offset_of(const Address &address) const {
-            size_t offset = 0;
-            for (size_t index: _indexed) {
-                size_t label = address[index].index;
-                size_t size = _type.dimensions()[index].size;
-                offset = (offset * size) + label;
-            }
-            return offset;
-        }
-        void subconvert(Address &address, size_t n, Cells &cells_out) const {
-            if (n < _indexed.size()) {
-                Label &label = address[_indexed[n]];
-                size_t size = _type.dimensions()[_indexed[n]].size;
-                for (label.index = 0; label.index < size; ++label.index) {
-                    subconvert(address, n + 1, cells_out);
-                }
-            } else {
-                cells_out.emplace_back(address, _values[offset_of(address)]);
-            }
-        }
-    public:
-        Block(const ValueType &type, const IndexList &indexed, size_t num_values)
-            : _type(type), _indexed(indexed), _values(num_values, 0.0) {}
-        void set(const Address &address, double value) { _values[offset_of(address)] = value; }
-        void convert(const Address &block_key, const IndexList &mapped, Cells &cells_out) const {
-            Address address(_type.dimensions().size(), Label(size_t(0)));
-            for (size_t i = 0; i < mapped.size(); ++i) {
-                address[mapped[i]] = block_key[i];
-            }
-            subconvert(address, 0, cells_out);
-        }
-    };
+    using Block = std::vector<double>;
     using BlockMap = std::map<Address,Block>;
+
     ValueType _type;
-    IndexList _mapped;
-    IndexList _indexed;
-    size_t _block_size;
-    BlockMap _blocks;
+    TypeMeta  _meta;
+    BlockMap  _blocks;
+
+    size_t offset_of(const Address &address) const {
+        size_t offset = 0;
+        for (size_t index: _meta.indexed) {
+            size_t label = address[index].index;
+            size_t size = _type.dimensions()[index].size;
+            offset = (offset * size) + label;
+        }
+        return offset;
+    }
+
+    void convert(const Block &block, Address &address, size_t n, Cells &cells_out) const {
+        if (n < _meta.indexed.size()) {
+            Label &label = address[_meta.indexed[n]];
+            size_t size = _type.dimensions()[_meta.indexed[n]].size;
+            for (label.index = 0; label.index < size; ++label.index) {
+                convert(block, address, n + 1, cells_out);
+            }
+        } else {
+            cells_out.emplace_back(address, block[offset_of(address)]);
+        }
+    }
+
 public:
-    explicit Builder(const ValueType &type);
-    ~Builder();
+    explicit Builder(const ValueType &type)
+        : _type(type),
+          _meta(type),
+          _blocks()
+    {
+        assert_type(_type);
+        if (_meta.mapped.empty()) {
+            _blocks.emplace(Address(), Block(_meta.block_size, 0.0));
+        }
+    }
+    ~Builder() {}
     void set(const Address &address, double value) {
         assert_address(address, _type);
-        Address block_key = select(address, _mapped);
+        Address block_key = select(address, _meta.mapped);
         auto pos = _blocks.find(block_key);
         if (pos == _blocks.end()) {
-            pos = _blocks.emplace(block_key, Block(_type, _indexed, _block_size)).first;
+            pos = _blocks.emplace(block_key, Block(_meta.block_size, 0.0)).first;
         }
-        pos->second.set(address, value);
+        pos->second[offset_of(address)] = value;
     }
     void set(const TensorSpec::Address &label_map, double value) {
         Address address;
@@ -163,35 +187,16 @@ public:
     }
     std::unique_ptr<SimpleTensor> build() {
         Cells cells;
+        Address address(_type.dimensions().size(), Label(size_t(0)));
         for (const auto &entry: _blocks) {
-            entry.second.convert(entry.first, _mapped, cells);
+            for (size_t i = 0; i < _meta.mapped.size(); ++i) {
+                address[_meta.mapped[i]] = entry.first[i];
+            }
+            convert(entry.second, address, 0, cells);
         }
         return std::make_unique<SimpleTensor>(_type, std::move(cells));
     }
 };
-
-Builder::Builder(const ValueType &type)
-        : _type(type),
-          _mapped(),
-          _indexed(),
-          _block_size(1),
-          _blocks()
-{
-    assert_type(_type);
-    for (size_t i = 0; i < type.dimensions().size(); ++i) {
-        const auto &dimension = _type.dimensions()[i];
-        if (dimension.is_mapped()) {
-            _mapped.push_back(i);
-        } else {
-            _block_size *= dimension.size;
-            _indexed.push_back(i);
-        }
-    }
-    if (_mapped.empty()) {
-        _blocks.emplace(Address(), Block(_type, _indexed, _block_size));
-    }
-}
-Builder::~Builder() { }
 
 /**
  * Helper class used to calculate which dimensions are shared between
@@ -208,18 +213,42 @@ struct TypeAnalyzer {
     IndexList combine;
     size_t    ignored_a;
     size_t    ignored_b;
-    TypeAnalyzer(const ValueType &lhs, const ValueType &rhs, const vespalib::string &ignore = "");
-    ~TypeAnalyzer();
-};
-
-TypeAnalyzer::TypeAnalyzer(const ValueType &lhs, const ValueType &rhs, const vespalib::string &ignore)
-    : only_a(), overlap_a(), overlap_b(), only_b(), combine(), ignored_a(npos), ignored_b(npos)
-{
-    const auto &a = lhs.dimensions();
-    const auto &b = rhs.dimensions();
-    size_t b_idx = 0;
-    for (size_t a_idx = 0; a_idx < a.size(); ++a_idx) {
-        while ((b_idx < b.size()) && (b[b_idx].name < a[a_idx].name)) {
+    TypeAnalyzer(const ValueType &lhs, const ValueType &rhs, const vespalib::string &ignore = "")
+        : only_a(), overlap_a(), overlap_b(), only_b(), combine(), ignored_a(npos), ignored_b(npos)
+    {
+        const auto &a = lhs.dimensions();
+        const auto &b = rhs.dimensions();
+        size_t b_idx = 0;
+        for (size_t a_idx = 0; a_idx < a.size(); ++a_idx) {
+            while ((b_idx < b.size()) && (b[b_idx].name < a[a_idx].name)) {
+                if (b[b_idx].name != ignore) {
+                    only_b.push_back(b_idx);
+                    combine.push_back(a.size() + b_idx);
+                } else {
+                    ignored_b = b_idx;
+                }
+                ++b_idx;
+            }
+            if ((b_idx < b.size()) && (b[b_idx].name == a[a_idx].name)) {
+                if (a[a_idx].name != ignore) {
+                    overlap_a.push_back(a_idx);
+                    overlap_b.push_back(b_idx);
+                    combine.push_back(a_idx);
+                } else {
+                    ignored_a = a_idx;
+                    ignored_b = b_idx;
+                }
+                ++b_idx;
+            } else {
+                if (a[a_idx].name != ignore) {
+                    only_a.push_back(a_idx);
+                    combine.push_back(a_idx);
+                } else {
+                    ignored_a = a_idx;
+                }
+            }
+        }
+        while (b_idx < b.size()) {
             if (b[b_idx].name != ignore) {
                 only_b.push_back(b_idx);
                 combine.push_back(a.size() + b_idx);
@@ -228,37 +257,9 @@ TypeAnalyzer::TypeAnalyzer(const ValueType &lhs, const ValueType &rhs, const ves
             }
             ++b_idx;
         }
-        if ((b_idx < b.size()) && (b[b_idx].name == a[a_idx].name)) {
-            if (a[a_idx].name != ignore) {
-                overlap_a.push_back(a_idx);
-                overlap_b.push_back(b_idx);
-                combine.push_back(a_idx);
-            } else {
-                ignored_a = a_idx;
-                ignored_b = b_idx;
-            }
-            ++b_idx;
-        } else {
-            if (a[a_idx].name != ignore) {
-                only_a.push_back(a_idx);
-                combine.push_back(a_idx);
-            } else {
-                ignored_a = a_idx;
-            }
-        }
     }
-    while (b_idx < b.size()) {
-        if (b[b_idx].name != ignore) {
-            only_b.push_back(b_idx);
-            combine.push_back(a.size() + b_idx);
-        } else {
-            ignored_b = b_idx;
-        }
-        ++b_idx;
-    }
-}
-
-TypeAnalyzer::~TypeAnalyzer() { }
+    ~TypeAnalyzer() {}
+};
 
 /**
  * A view is a total ordering of cells from a SimpleTensor according
@@ -325,15 +326,13 @@ public:
         }
         std::sort(_refs.begin(), _refs.end(), _less);
     }
-    ~View();
+    ~View() {}
     const IndexList &selector() const { return _less.selector; }
     const CellRef *refs_begin() const { return &_refs[0]; }
     const CellRef *refs_end() const { return (refs_begin() + _refs.size()); }
     EqualRange first_range() const { return make_range(refs_begin()); }
     EqualRange next_range(const EqualRange &prev) const { return make_range(prev.end()); }
 };
-
-View::~View() { }
 
 /**
  * Helper class used to find matching EqualRanges from two different
@@ -355,7 +354,7 @@ public:
         {
             assert(a_selector.size() == b_selector.size());
         }
-        ~CrossCompare();
+        ~CrossCompare() {}
         Result compare(const Cell &a, const Cell &b) const {
             for (size_t i = 0; i < a_selector.size(); ++i) {
                 if (a.address[a_selector[i]] != b.address[b_selector[i]]) {
@@ -405,7 +404,7 @@ public:
     {
         find_match();
     }
-    ~ViewMatcher();
+    ~ViewMatcher() {}
     bool valid() const { return (has_a() && has_b()); }
     const EqualRange &get_a() const { return _a_range; }
     const EqualRange &get_b() const { return _b_range; }
@@ -416,9 +415,100 @@ public:
     }
 };
 
-ViewMatcher::~ViewMatcher() { }
+struct Format {
+    bool    is_sparse;
+    bool    is_dense;
+    uint8_t tag;
+    explicit Format(const TypeMeta &meta)
+        : is_sparse(meta.mapped.size() > 0),
+          is_dense((meta.indexed.size() > 0) || !is_sparse),
+          tag((is_sparse ? 0x1 : 0) | (is_dense ? 0x2 : 0)) {}
+    explicit Format(uint8_t tag_in)
+        : is_sparse((tag_in & 0x1) != 0),
+          is_dense((tag_in & 0x2) != 0),
+          tag(tag_in) {}
+    ~Format() {}
+};
 
-ViewMatcher::CrossCompare::~CrossCompare() { }
+void encode_type(nbostream &output, const Format &format, const ValueType &type, const TypeMeta &meta) {
+    if (format.is_sparse) {
+        output.putInt1_4Bytes(meta.mapped.size());
+        for (size_t idx: meta.mapped) {
+            output.writeSmallString(type.dimensions()[idx].name);
+        }
+    }
+    if (format.is_dense) {
+        output.putInt1_4Bytes(meta.indexed.size());
+        for (size_t idx: meta.indexed) {
+            output.writeSmallString(type.dimensions()[idx].name);
+            output.putInt1_4Bytes(type.dimensions()[idx].size);
+        }
+    }
+}
+
+void maybe_encode_num_blocks(nbostream &output, const TypeMeta &meta, size_t num_blocks) {
+    if ((meta.mapped.size() > 0)) {
+        output.putInt1_4Bytes(num_blocks);
+    }
+}
+
+void encode_mapped_labels(nbostream &output, const TypeMeta &meta, const Address &addr) {
+    for (size_t idx: meta.mapped) {
+        output.writeSmallString(addr[idx].name);
+    }
+}
+
+ValueType decode_type(nbostream &input, const Format &format) {
+    std::vector<ValueType::Dimension> dim_list;
+    if (format.is_sparse) {
+        size_t cnt = input.getInt1_4Bytes();
+        for (size_t i = 0; i < cnt; ++i) {
+            vespalib::string name;
+            input.readSmallString(name);
+            dim_list.emplace_back(name);
+        }
+    }
+    if (format.is_dense) {
+        size_t cnt = input.getInt1_4Bytes();
+        for (size_t i = 0; i < cnt; ++i) {
+            vespalib::string name;
+            input.readSmallString(name);
+            dim_list.emplace_back(name, input.getInt1_4Bytes());
+        }
+    }
+    return (dim_list.empty()
+            ? ValueType::double_type()
+            : ValueType::tensor_type(std::move(dim_list)));
+}
+
+size_t maybe_decode_num_blocks(nbostream &input, const TypeMeta &meta, const Format &format) {
+    if ((meta.mapped.size() > 0) || !format.is_dense) {
+        return input.getInt1_4Bytes();
+    }
+    return 1;
+}
+
+void decode_mapped_labels(nbostream &input, const TypeMeta &meta, Address &addr) {
+    for (size_t idx: meta.mapped) {
+        vespalib::string name;
+        input.readSmallString(name);
+        addr[idx] = Label(name);
+    }
+}
+
+void decode_cells(nbostream &input, const ValueType &type, const TypeMeta meta,
+                  Address &address, size_t n, Builder &builder)
+{
+    if (n < meta.indexed.size()) {
+        Label &label = address[meta.indexed[n]];
+        size_t size = type.dimensions()[meta.indexed[n]].size;
+        for (label.index = 0; label.index < size; ++label.index) {
+            decode_cells(input, type, meta, address, n + 1, builder);
+        }
+    } else {
+        builder.set(address, input.readValue<double>());
+    }
+}
 
 } // namespace vespalib::eval::<unnamed>
 
@@ -590,6 +680,40 @@ SimpleTensor::concat(const SimpleTensor &a, const SimpleTensor &b, const vespali
                 }
             }
         }
+    }
+    return builder.build();
+}
+
+void
+SimpleTensor::encode(const SimpleTensor &tensor, nbostream &output)
+{
+    TypeMeta meta(tensor.type());
+    Format format(meta);
+    output << format.tag;
+    encode_type(output, format, tensor.type(), meta);
+    maybe_encode_num_blocks(output, meta, tensor.cells().size() / meta.block_size);
+    View view(tensor, meta.mapped);
+    for (auto block = view.first_range(); !block.empty(); block = view.next_range(block)) {
+        encode_mapped_labels(output, meta, block.begin()->get().address);
+        View subview(block, meta.indexed);
+        for (auto cell = subview.first_range(); !cell.empty(); cell = subview.next_range(cell)) {
+            output << cell.begin()->get().value;
+        }
+    }
+}
+
+std::unique_ptr<SimpleTensor>
+SimpleTensor::decode(nbostream &input)
+{
+    Format format(input.readValue<uint8_t>());
+    ValueType type = decode_type(input, format);
+    TypeMeta meta(type);
+    Builder builder(type);
+    size_t num_blocks = maybe_decode_num_blocks(input, meta, format);
+    Address address(type.dimensions().size(), Label(size_t(0)));
+    for (size_t i = 0; i < num_blocks; ++i) {
+        decode_mapped_labels(input, meta, address);
+        decode_cells(input, type, meta, address, 0, builder);
     }
     return builder.build();
 }
