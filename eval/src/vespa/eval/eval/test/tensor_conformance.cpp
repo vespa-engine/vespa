@@ -11,11 +11,17 @@
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/aggr.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/io/mapped_file_input.h>
 
 namespace vespalib {
 namespace eval {
 namespace test {
 namespace {
+
+using slime::Cursor;
+using slime::Inspector;
+using slime::JsonFormat;
 
 // Random access sequence of numbers
 struct Sequence {
@@ -598,16 +604,57 @@ void verify_result(const Eval::Result &result, const TensorSpec &expect) {
     }
 }
 
+uint8_t unhex(char c) {
+    if (c >= '0' && c <= '9') {
+        return (c - '0');
+    }
+    if (c >= 'A' && c <= 'F') {
+        return ((c - 'A') + 10);
+    }
+    TEST_ERROR("bad hex char");
+    return 0;
+}
+
+nbostream extract_data(const Memory &hex_dump) {
+    nbostream data;
+    if ((hex_dump.size > 2) && (hex_dump.data[0] == '0') && (hex_dump.data[1] == 'x')) {
+        for (size_t i = 2; i < (hex_dump.size - 1); i += 2) {
+            data << uint8_t((unhex(hex_dump.data[i]) << 4) | unhex(hex_dump.data[i + 1]));
+        }
+    }
+    return data;
+}
+
+bool is_mixed(const vespalib::string &type_str) {
+    bool dense = false;
+    bool sparse = false;
+    ValueType type = ValueType::from_spec(type_str);
+    for (const auto &dim: type.dimensions()) {
+        dense = (dense || dim.is_indexed());
+        sparse = (sparse || dim.is_mapped());
+    }
+    return (dense && sparse);
+}
+
+bool is_mixed(nbostream &data) {
+    return ((data.size() > 0) && (data.peek()[0] == 0x3));
+}
+
+bool is_same(const nbostream &a, const nbostream &b) {
+    return (Memory(a.peek(), a.size()) == Memory(b.peek(), b.size()));
+}
+
 // Test wrapper to avoid passing global test parameters around
 struct TestContext {
 
+    vespalib::string module_path;
     const TensorEngine &ref_engine;
     const TensorEngine &engine;
     bool test_mixed_cases;
     size_t skip_count;
 
-    TestContext(const TensorEngine &engine_in, bool test_mixed_cases_in)
-        : ref_engine(SimpleTensorEngine::ref()), engine(engine_in),
+    TestContext(const vespalib::string &module_path_in, const TensorEngine &engine_in, bool test_mixed_cases_in)
+        : module_path(module_path_in), ref_engine(SimpleTensorEngine::ref()), engine(engine_in),
           test_mixed_cases(test_mixed_cases_in), skip_count(0) {}
 
     std::unique_ptr<Tensor> tensor(const TensorSpec &spec) {
@@ -1237,7 +1284,50 @@ struct TestContext {
         }
     }
 
+    void test_binary_format_spec(Cursor &test) {
+        Stash stash;
+        TensorSpec spec = TensorSpec::from_slime(test["tensor"]);
+        const Inspector &binary = test["binary"];
+        EXPECT_GREATER(binary.entries(), 0u);
+        if (!is_mixed(spec.type()) || mixed(binary.entries() + 1)) {
+            nbostream encoded;
+            engine.encode(make_value(engine, spec, stash), encoded, stash);
+            test.setData("encoded", Memory(encoded.peek(), encoded.size()));
+            bool matched_encode = false;
+            for (size_t i = 0; i < binary.entries(); ++i) {
+                nbostream data = extract_data(binary[i].asString());
+                matched_encode = (matched_encode || is_same(encoded, data));
+                if (!is_mixed(data) || mixed(1)) {
+                    TEST_DO(verify_result(Eval::Result(engine.decode(data, stash)), spec));
+                    EXPECT_EQUAL(data.size(), 0u);
+                }
+            }
+            EXPECT_TRUE(matched_encode);
+        }
+    }
+
+    void test_binary_format_spec() {
+        vespalib::string path = module_path;
+        path.append("src/apps/make_tensor_binary_format_test_spec/test_spec.json");
+        MappedFileInput file(path);
+        Slime slime;
+        EXPECT_TRUE(file.valid());
+        EXPECT_EQUAL(JsonFormat::decode(file, slime), file.get().size);
+        int64_t num_tests = slime.get()["num_tests"].asLong();
+        Cursor &tests = slime.get()["tests"];
+        EXPECT_GREATER(num_tests, 0u);
+        EXPECT_EQUAL(size_t(num_tests), tests.entries());
+        for (size_t i = 0; i < tests.entries(); ++i) {
+            size_t fail_cnt = TEST_MASTER.getProgress().failCnt; 
+            TEST_DO(test_binary_format_spec(tests[i]));
+            if (TEST_MASTER.getProgress().failCnt > fail_cnt) {
+                fprintf(stderr, "failed:\n%s", tests[i].toString().c_str());
+            }
+        }
+    }
+
     void test_binary_format() {
+        TEST_DO(test_binary_format_spec());
         TEST_DO(verify_encode_decode(spec(42)));
         TEST_DO(verify_encode_decode(spec({x(3)}, N())));
         TEST_DO(verify_encode_decode(spec({x(3),y(5)}, N())));
@@ -1271,9 +1361,10 @@ struct TestContext {
 } // namespace vespalib::eval::test::<unnamed>
 
 void
-TensorConformance::run_tests(const TensorEngine &engine, bool test_mixed_cases)
+TensorConformance::run_tests(const vespalib::string &module_path, const TensorEngine &engine, bool test_mixed_cases)
 {
-    TestContext ctx(engine, test_mixed_cases);
+    TestContext ctx(module_path, engine, test_mixed_cases);
+    fprintf(stderr, "module path: '%s'\n", ctx.module_path.c_str());
     ctx.run_tests();
     if (ctx.skip_count > 0) {
         fprintf(stderr, "WARNING: skipped %zu mixed test cases\n", ctx.skip_count);
