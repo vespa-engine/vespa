@@ -168,6 +168,7 @@ private:
     std::unique_ptr<FileReader>      _reader;
     std::unique_ptr<std::ofstream>   _output;
     int                              _linebufsize;
+    char                            *_linebuf;
     std::atomic<bool>                _stop;
     std::atomic<bool>                _done;
     std::thread                      _thread;
