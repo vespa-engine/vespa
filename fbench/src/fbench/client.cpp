@@ -56,12 +56,28 @@ public:
             _contentbuf = new char[_contentbufsize];
         }
     }
+    bool reset();
     int nextUrl();
     int getContent();
     char *url() const { return _linebuf; }
     char *contents() const { return _contentbuf; }
     ~UrlReader() {}
 };
+
+bool UrlReader::reset()
+{
+    _reader.Reset();
+    // Start reading from offset
+    if (_args._singleQueryFile) {
+        _reader.SetFilePos(_args._queryfileOffset);
+    }
+    if (_restarts == _args._restartLimit) {
+        return false;
+    } else if (_args._restartLimit > 0) {
+        _restarts++;
+    }
+    return true;
+}
 
 int UrlReader::nextUrl()
 {
@@ -78,40 +94,22 @@ int UrlReader::nextUrl()
         _leftOvers = NULL;
         return _leftOversLen;
     }
-    // Read maximum to _queryfileOffsetEnd
-    if ( _args._singleQueryFile && _reader.GetFilePos() >= _args._queryfileEndOffset ) {
-        _reader.SetFilePos(_args._queryfileOffset);
-        if (_restarts == _args._restartLimit) {
-            return 0;
-        } else if (_args._restartLimit > 0) {
-            _restarts++;
+    bool again = true;
+    for (int retry = 0; again && retry < 100; ++retry) {
+        // Read maximum to _queryfileEndOffset
+        if ( _args._singleQueryFile && _reader.GetFilePos() >= _args._queryfileEndOffset ) {
+            again = reset();
         }
-    }
-    int ll = _reader.ReadLine(buf, buflen);
-    while (ll > 0 && _args._usePostMode && buf[0] != '/') {
-        ll = _reader.ReadLine(buf, buflen);
-    }
-    if (ll > 0 && (buf[0] == '/' || !_args._usePostMode)) {
-        return ll;
-    }
-    if (_restarts == _args._restartLimit) {
-        return 0;
-    } else if (_args._restartLimit > 0) {
-        _restarts++;
-    }
-    if (ll < 0) {
-        _reader.Reset();
-        // Start reading from offset
-        if (_args._singleQueryFile) {
-            _reader.SetFilePos(_args._queryfileOffset);
+        int ll = _reader.ReadLine(buf, buflen);
+        if (ll > 0) {
+            if (buf[0] == '/' || !_args._usePostMode) {
+                return ll;
+            }
         }
-    }
-    ll = _reader.ReadLine(buf, buflen);
-    while (ll > 0 && _args._usePostMode && buf[0] != '/') {
-        ll = _reader.ReadLine(buf, buflen);
-    }
-    if (ll > 0 && (buf[0] == '/' || !_args._usePostMode)) {
-        return ll;
+        if (ll < 0) {
+            // reached EOF
+            again = reset();
+        }
     }
     return 0;
 }
