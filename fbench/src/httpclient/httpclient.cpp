@@ -121,28 +121,27 @@ HTTPClient::Connect(const char *url, bool usePost, const char *content, int cLen
         assert(req != NULL);
     }
 
+    if (!_keepAlive) {
+        headers += "Connection: close\r\n";
+    }
+    headers += "User-Agent: fbench/4.2.10\r\n";
+
     // create request
-    if(_keepAlive) {
+    if (usePost) {
         snprintf(req, req_max,
-                 "%s %s HTTP/1.1\r\n"
+                 "POST %s HTTP/1.1\r\n"
                  "Host: %s\r\n"
                  "Content-Length: %d\r\n"
-                 "User-Agent: fbench/4.2.10\r\n"
                  "%s"
                  "\r\n",
-                 usePost ? "POST" : "GET",
                  url, _authority.c_str(), cLen, headers.c_str());
     } else {
         snprintf(req, req_max,
-                 "%s %s HTTP/1.1\r\n"
+                 "GET %s HTTP/1.1\r\n"
                  "Host: %s\r\n"
-                 "Connection: close\r\n"
-                 "Content-Length: %d\r\n"
-                 "User-Agent: fbench/4.2.10\r\n"
                  "%s"
                  "\r\n",
-                 usePost ? "POST" : "GET",
-                 url, _authority.c_str(), cLen, headers.c_str());
+                 url, _authority.c_str(), headers.c_str());
     }
 
     // try to reuse connection if keep-alive is enabled
