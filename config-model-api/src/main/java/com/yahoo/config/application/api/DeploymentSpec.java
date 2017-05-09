@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.text.XML;
@@ -11,7 +12,6 @@ import java.io.FileReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,7 +31,7 @@ public class DeploymentSpec {
     public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy, List<DeclaredZone> zones) {
         this.globalServiceId = globalServiceId;
         this.upgradePolicy = upgradePolicy;
-        this.zones = Collections.unmodifiableList(new ArrayList<>(zones));
+        this.zones = ImmutableList.copyOf(zones);
     }
 
     /** Returns the ID of the service to expose through global routing, if present */
@@ -60,7 +60,7 @@ public class DeploymentSpec {
     public static DeploymentSpec fromXml(Reader reader) {
         List<DeclaredZone> zones = new ArrayList<>();
         Element root = XML.getDocument(reader).getDocumentElement();
-        Optional<String> globalServiceId = Optional.empty();        
+        Optional<String> globalServiceId = Optional.empty();
         for (Element environmentTag : XML.getChildren(root)) {
             if ( ! isEnvironmentName(environmentTag.getTagName())) continue;
             Environment environment = Environment.from(environmentTag.getTagName());
