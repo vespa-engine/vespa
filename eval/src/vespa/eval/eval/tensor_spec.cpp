@@ -12,6 +12,9 @@ TensorSpec::TensorSpec(const vespalib::string &type_spec)
       _cells()
 { }
 
+TensorSpec::TensorSpec(const TensorSpec &) = default;
+TensorSpec & TensorSpec::operator = (const TensorSpec &) = default;
+
 TensorSpec::~TensorSpec() { }
 
 vespalib::string

@@ -4,6 +4,7 @@ vespa_add_library(searchcore_proton_metrics STATIC
     attribute_metrics.cpp
     content_proton_metrics.cpp
     documentdb_job_trackers.cpp
+    documentdb_metrics_collection.cpp
     documentdb_tagged_metrics.cpp
     executor_metrics.cpp
     feed_metrics.cpp

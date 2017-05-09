@@ -42,6 +42,11 @@ public:
      */
     Hop(const std::vector<IHopDirective::SP> &selector, bool ignoreResult);
 
+    Hop(const Hop &);
+    Hop & operator = (const Hop &);
+    Hop(Hop &&) = default;
+    Hop & operator = (Hop &&) = default;
+
     ~Hop();
 
     /**

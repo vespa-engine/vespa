@@ -1,21 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vector>
 #include <vespa/searchlib/common/fslimits.h>
+#include <vector>
+#include <cstdint>
 
-namespace vespalib
-{
+namespace vespalib { class nbostream; }
 
-class nbostream;
-
-}
-
-namespace search
-{
-
-namespace index
-{
+namespace search::index {
 
 /*
  * The following feature classes are not self contained.  To reduce
@@ -33,14 +25,8 @@ class WordDocFeatures
 public:
     // TODO: add support for user features
 
-    WordDocFeatures(void)
-    {
-    }
-
-    void
-    clear(void)
-    {
-    }
+    WordDocFeatures() { }
+    void clear() { }
 };
 
 /*
@@ -54,28 +40,13 @@ public:
     uint32_t _numElements;	// Number of array indexes
     // TODO: add support for user features
 
-    WordDocFieldFeatures(void)
+    WordDocFieldFeatures()
         : _numElements(0u)
-    {
-    }
+    {}
 
-    uint32_t
-    getNumElements(void) const
-    {
-        return _numElements;
-    }
-
-    void
-    setNumElements(uint32_t numElements)
-    {
-        _numElements = numElements;
-    }
-
-    void
-    incNumElements(void)
-    {
-        ++_numElements;
-    }
+    uint32_t getNumElements() const { return _numElements; }
+    void setNumElements(uint32_t numElements) { _numElements = numElements; }
+    void incNumElements() { ++_numElements; }
 };
 
 /*
@@ -92,21 +63,19 @@ public:
     uint32_t _elementLen;
     // TODO: add support for user features
 
-    WordDocElementFeatures(void)
+    WordDocElementFeatures()
         : _elementId(0u),
           _numOccs(0u),
           _weight(1),
           _elementLen(SEARCHLIB_FEF_UNKNOWN_FIELD_LENGTH)
-    {
-    }
+    {}
 
     WordDocElementFeatures(uint32_t elementId)
         : _elementId(elementId),
           _numOccs(0u),
           _weight(1),
           _elementLen(SEARCHLIB_FEF_UNKNOWN_FIELD_LENGTH)
-    {
-    }
+    {}
 
     WordDocElementFeatures(uint32_t elementId,
                            uint32_t weight,
@@ -115,62 +84,18 @@ public:
           _numOccs(0u),
           _weight(weight),
           _elementLen(elementLen)
-    {
-    }
+    {}
 
-    uint32_t
-    getElementId(void) const
-    {
-        return _elementId;
-    }
+    uint32_t getElementId() const { return _elementId; } 
+    uint32_t getNumOccs() const { return _numOccs; } 
+    int32_t getWeight() const { return _weight; } 
+    uint32_t getElementLen() const { return _elementLen; }
 
-    uint32_t
-    getNumOccs(void) const
-    {
-        return _numOccs;
-    }
-
-    int32_t
-    getWeight(void) const
-    {
-        return _weight;
-    }
-
-    uint32_t
-    getElementLen(void) const
-    {
-        return _elementLen;
-    }
-
-    void
-    setElementId(uint32_t elementId)
-    {
-        _elementId = elementId;
-    }
-
-    void
-    setNumOccs(uint32_t numOccs)
-    {
-        _numOccs = numOccs;
-    }
-
-    void
-    setWeight(int32_t weight)
-    {
-        _weight = weight;
-    }
-
-    void
-    setElementLen(uint32_t elementLen)
-    {
-        _elementLen = elementLen;
-    }
-
-    void
-    incNumOccs(void)
-    {
-        ++_numOccs;
-    }
+    void setElementId(uint32_t elementId) { _elementId = elementId; }
+    void setNumOccs(uint32_t numOccs) { _numOccs = numOccs; }
+    void setWeight(int32_t weight) { _weight = weight; }
+    void setElementLen(uint32_t elementLen) { _elementLen = elementLen; }
+    void incNumOccs() { ++_numOccs; }
 };
 
 /*
@@ -184,27 +109,16 @@ public:
     uint32_t _wordPos;
     // TODO: add support for user features
 
-    WordDocElementWordPosFeatures(void)
+    WordDocElementWordPosFeatures()
         : _wordPos(0u)
-    {
-    }
+    {}
 
     WordDocElementWordPosFeatures(uint32_t wordPos)
         : _wordPos(wordPos)
-    {
-    }
+    {}
 
-    uint32_t
-    getWordPos(void) const
-    {
-        return _wordPos;
-    }
-
-    void
-    setWordPos(uint32_t wordPos)
-    {
-        _wordPos = wordPos;
-    }
+    uint32_t getWordPos() const { return _wordPos; }
+    void setWordPos(uint32_t wordPos) { _wordPos = wordPos; }
 };
 
 /**
@@ -233,25 +147,14 @@ public:
     uint32_t _bitLength;		// Length of features
     bool _raw;				//
 
-    DocIdAndFeatures(void)
-        : _docId(0),
-          _wordDocFeatures(),
-          _elements(),
-          _wordPositions(),
-          _blob(),
-          _bitOffset(0u),
-          _bitLength(0u),
-          _raw(false)
-    {
-    }
+    DocIdAndFeatures();
+    DocIdAndFeatures(const DocIdAndFeatures &);
+    DocIdAndFeatures & operator = (const DocIdAndFeatures &);
+    DocIdAndFeatures(DocIdAndFeatures &&) = default;
+    DocIdAndFeatures & operator = (DocIdAndFeatures &&) = default;
+    ~DocIdAndFeatures();
 
-    ~DocIdAndFeatures(void)
-    {
-    }
-
-    void
-    clearFeatures(void)
-    {
+    void clearFeatures() {
         _wordDocFeatures.clear();
         _elements.clear();
         _wordPositions.clear();
@@ -260,9 +163,7 @@ public:
         _blob.clear();
     }
 
-    void
-    clearFeatures(uint32_t bitOffset)
-    {
+    void clearFeatures(uint32_t bitOffset) {
         _wordDocFeatures.clear();
         _elements.clear();
         _wordPositions.clear();
@@ -271,33 +172,19 @@ public:
         _blob.clear();
     }
 
-    void
-    clear(uint32_t docId)
-    {
+    void clear(uint32_t docId) {
         _docId = docId;
         clearFeatures();
     }
 
 
-    void
-    clear(uint32_t docId,
-          uint32_t bitOffset)
-    {
+    void clear(uint32_t docId, uint32_t bitOffset) {
         _docId = docId;
         clearFeatures(bitOffset);
     }
 
-    void
-    setRaw(bool raw)
-    {
-        _raw = raw;
-    }
-
-    bool
-    getRaw(void) const
-    {
-        return _raw;
-    }
+    void setRaw(bool raw) { _raw = raw; }
+    bool getRaw() const { return _raw; }
 
     /**
      * Append features from a single field to a field collection.
@@ -305,25 +192,21 @@ public:
      * @param rhs	    features for a single field
      * @param localFieldId  local field id for the field
      */
-    void
-    append(const DocIdAndFeatures &rhs, uint32_t localFieldId);
+    void append(const DocIdAndFeatures &rhs, uint32_t localFieldId);
 };
 
 
 vespalib::nbostream &
-operator<<(vespalib::nbostream &out,
-           const WordDocElementFeatures &features);
+operator<<(vespalib::nbostream &out, const WordDocElementFeatures &features);
 
 vespalib::nbostream &
 operator>>(vespalib::nbostream &in, WordDocElementFeatures &features);
 
 vespalib::nbostream &
-operator<<(vespalib::nbostream &out,
-           const WordDocElementWordPosFeatures &features);
+operator<<(vespalib::nbostream &out, const WordDocElementWordPosFeatures &features);
 
 vespalib::nbostream &
-operator>>(vespalib::nbostream &in,
-           WordDocElementWordPosFeatures &features);
+operator>>(vespalib::nbostream &in, WordDocElementWordPosFeatures &features);
 
 vespalib::nbostream &
 operator<<(vespalib::nbostream &out, const DocIdAndFeatures &features);
@@ -331,8 +214,5 @@ operator<<(vespalib::nbostream &out, const DocIdAndFeatures &features);
 vespalib::nbostream &
 operator>>(vespalib::nbostream &in, DocIdAndFeatures &features);
 
-
-} // namespace index
-
-} // namespace search
+}
 

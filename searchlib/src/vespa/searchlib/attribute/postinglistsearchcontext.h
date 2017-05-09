@@ -190,6 +190,7 @@ protected:
     const EnumStore       &_enumStore;
     
     PostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const AttrT &toBeSearched);
+    ~PostingSearchContext();
 };
 
 template <typename BaseSC, typename AttrT, typename DataT>
@@ -287,6 +288,9 @@ PostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const AttrT &to
 {
     this->_plsc = static_cast<attribute::IPostingListSearchContext *>(this);
 }
+
+template <typename BaseSC, typename BaseSC2, typename AttrT>
+PostingSearchContext<BaseSC, BaseSC2, AttrT>::~PostingSearchContext() { }
 
 
 template <typename BaseSC, typename AttrT, typename DataT>

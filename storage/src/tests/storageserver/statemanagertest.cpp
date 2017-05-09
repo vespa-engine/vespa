@@ -133,6 +133,7 @@ namespace {
 
         MyStateListener(const NodeStateUpdater& upd)
             : updater(upd), current(*updater.getReportedNodeState()) {}
+        ~MyStateListener() { }
 
         void handleNewState() override {
             ost << current << " -> ";

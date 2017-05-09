@@ -358,10 +358,7 @@ extern inline bool isPlainFile(const vespalib::stringref & path) {
  * @return True if it is a directory, false if it don't exist or isn't.
  * @throw IoException If we failed to stat the file.
  */
-extern inline bool isDirectory(const vespalib::stringref & path) {
-    FileInfo::UP info(stat(path));
-    return (info.get() && info->_directory);
-}
+extern bool isDirectory(const vespalib::stringref & path);
 
 /**
  * Check whether a path is a symlink.

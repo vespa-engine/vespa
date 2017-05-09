@@ -814,4 +814,10 @@ getOpenErrorString(const int osError, const stringref filename)
     return os.str();
 }
 
+bool
+isDirectory(const vespalib::stringref & path) {
+    FileInfo::UP info(stat(path));
+    return (info.get() && info->_directory);
+}
+
 } // vespalib

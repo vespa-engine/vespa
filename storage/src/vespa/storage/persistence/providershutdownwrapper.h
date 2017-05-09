@@ -70,7 +70,7 @@ private:
      * internally since it calls non-const on _component.
      */
     template <typename ResultType>
-    inline ResultType checkResult(ResultType&& result) const;
+    ResultType checkResult(ResultType&& result) const;
 
     spi::PersistenceProvider& _impl;
     ServiceLayerComponent& _component;

@@ -49,6 +49,9 @@ public:
 
     struct WrappedEntry {
         WrappedEntry() : _exists(false), _lockKeeper(), _value() {}
+        WrappedEntry(WrappedEntry &&) = default;
+        WrappedEntry & operator = (WrappedEntry &&) = default;
+        ~WrappedEntry() { }
 
         mapped_type* operator->() { return &_value; }
         const mapped_type* operator->() const { return &_value; }

@@ -75,6 +75,11 @@ public:
     explicit ReturnCode(Result result, const vespalib::stringref & msg = "");
     ReturnCode(const document::DocumentTypeRepo &repo,
                document::ByteBuffer& buffer);
+    ReturnCode(const ReturnCode &);
+    ReturnCode & operator = (const ReturnCode &);
+    ReturnCode(ReturnCode &&) = default;
+    ReturnCode & operator = (ReturnCode &&);
+    ~ReturnCode();
 
     ReturnCode* clone() const override { return new ReturnCode(*this); }
 

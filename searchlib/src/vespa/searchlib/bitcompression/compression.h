@@ -892,16 +892,13 @@ public:
      * @param data      The bits to be written to file.
      * @param length    The number of bits to be written to file.
      */
-    void
-    writeBits(uint64_t data, uint32_t length);
+    void writeBits(uint64_t data, uint32_t length);
 
     /**
      * Flushes the last integer to disk if there are remaining bits left in
      * the _cacheInt. Padding of trailing 0-bits is automatically added.
      */
-    void
-    flush()
-    {
+    void flush() {
         if (_cacheFree < 64) {
             *_valI++ = bswap(_cacheInt);
             _cacheInt = 0;
@@ -909,16 +906,12 @@ public:
         }
     }
 
-    void
-    smallPadBits(uint32_t length)
-    {
+    void smallPadBits(uint32_t length) {
         if (length > 0)
             writeBits(0, length);
     }
 
-    virtual void
-    padBits(uint32_t length)
-    {
+    virtual void padBits(uint32_t length) {
         while (length > 64) {
             writeBits(0, 64);
             length -= 64;
@@ -926,25 +919,17 @@ public:
         smallPadBits(length);
     }
 
-    void
-    align(uint32_t alignment)
-    {
+    void align(uint32_t alignment) {
         uint64_t length = (- getWriteOffset()) & (alignment - 1);
         padBits(length);
     }
 
-    void
-    alignDirectIO()
-    {
-        align(4096*8);
-    }
+    void alignDirectIO() { align(4096*8); }
 
     /*
      * Small alignment (max 64 bits alignment)
      */
-    void
-    smallAlign(uint32_t alignment)
-    {
+    void smallAlign(uint32_t alignment) {
         uint64_t length = _cacheFree & (alignment - 1);
         smallPadBits(length);
     }
@@ -965,32 +950,6 @@ inline uint64_t
 EncodeContext64EBase<false>::bswap(uint64_t val)
 {
     return val;
-}
-
-
-template <>
-inline void
-EncodeContext64EBase<false>::writeBits(uint64_t data, uint32_t length)
-{
-    // While there are enough bits remaining in "data",
-    // fill the cacheInt and flush it to vector
-    if (length >= _cacheFree) {
-        // Shift new bits into cacheInt
-        _cacheInt |= (data << (64 - _cacheFree));
-        *_valI++ = bswap(_cacheInt);
-
-        data >>= _cacheFree;
-        // Initialize variables for receiving new bits
-        length -= _cacheFree;
-        _cacheInt = 0;
-        _cacheFree = 64;
-    }
-
-    if (length > 0) {
-        uint64_t dataFragment = (data & CodingTables::_intMask64[length]);
-        _cacheInt |= (dataFragment << (64 - _cacheFree));
-        _cacheFree -= length;
-    }
 }
 
 typedef EncodeContext64EBase<true> EncodeContext64BEBase;

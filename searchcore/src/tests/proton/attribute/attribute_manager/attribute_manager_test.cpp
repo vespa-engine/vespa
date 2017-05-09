@@ -206,6 +206,7 @@ struct SequentialAttributeManager
     {
         mgr.addInitializedAttributes(initializer.getInitializedAttributes());
     }
+    ~SequentialAttributeManager() {}
 };
 
 struct DummyInitializerTask : public InitializerTask

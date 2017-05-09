@@ -145,13 +145,8 @@ struct PercentageColumn : public ValueColumn<double> {
     uint64_t _total;
     std::map<uint16_t, uint64_t> _values;
 
-    PercentageColumn(const std::string& colName, uint64_t total = 0,
-                     HtmlTable* table = 0)
-        : ValueColumn<double>(colName, " %", table), _total(total),
-          _values()
-    {
-        if (total != 0) _totalIsAvg = true;
-    }
+    PercentageColumn(const std::string& colName, uint64_t total = 0, HtmlTable* table = 0);
+    ~PercentageColumn();
 
     void finalize() override;
 

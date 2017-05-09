@@ -18,6 +18,13 @@ namespace document
 
 IMPLEMENT_IDENTIFIABLE(RemoveValueUpdate, ValueUpdate);
 
+RemoveValueUpdate::RemoveValueUpdate(const FieldValue& key)
+    : ValueUpdate(),
+      _key(key.clone())
+{}
+
+RemoveValueUpdate::~RemoveValueUpdate() {}
+
 bool
 RemoveValueUpdate::operator==(const ValueUpdate& other) const
 {

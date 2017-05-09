@@ -36,6 +36,7 @@ struct Group {
     uint16_t index;
     boost::optional<double> capacity;
     Children children;
+    ~Group() {}
 };
 
 struct GroupSet {

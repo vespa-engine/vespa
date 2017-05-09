@@ -27,6 +27,8 @@ public:
     ConfigValue(const std::vector<vespalib::string> & lines, const vespalib::string & md5sum);
     ConfigValue(const PayloadPtr & data, const vespalib::string & md5sum);
     ConfigValue();
+    ConfigValue(const ConfigValue &);
+    ConfigValue & operator = (const ConfigValue &);
     ~ConfigValue();
 
     int operator==(const ConfigValue & rhs) const;

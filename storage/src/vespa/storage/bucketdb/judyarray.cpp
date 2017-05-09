@@ -11,6 +11,24 @@ JudyArray::~JudyArray()
     clear();
 }
 
+JudyArray::iterator
+JudyArray::find(key_type key, bool insertIfNonExisting, bool& preExisted)
+{
+    Iterator iter(*this, key);
+    if (insertIfNonExisting && (iter.end() || iter.key() != key)) {
+        preExisted = false;
+        insert(key, 0);
+        iter = Iterator(*this, key);
+        assert(iter.key() == key);
+    } else if (iter.key() != key) {
+        preExisted = false;
+        iter = Iterator(*this);
+    } else {
+        preExisted = true;
+    }
+    return iter;
+}
+
 void
 JudyArray::Iterator::setValue(data_type val)
 {

@@ -19,6 +19,7 @@ public:
     typedef std::shared_ptr<BatchDocumentUpdateReply> SP;
 
     BatchDocumentUpdateReply();
+    ~BatchDocumentUpdateReply();
 
     const std::vector<bool>& getDocumentsNotFound() const { return _documentsNotFound; }
     std::vector<bool>& getDocumentsNotFound() { return _documentsNotFound; }

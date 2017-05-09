@@ -148,7 +148,6 @@ RiseWand<Scorer, Cmp>::_moveStreamsToDocAndSort(const uint32_t numStreamsToMove,
 }
 
 template <typename Scorer, typename Cmp>
-inline
 void RiseWand<Scorer, Cmp>::_sortMerge(const uint32_t numStreamsToMove)
 {
     for (uint32_t i=0; i<numStreamsToMove; ++i) {

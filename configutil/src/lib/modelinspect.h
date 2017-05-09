@@ -12,10 +12,12 @@ public:
         bool makeuri;
         bool tagfilt;
         std::vector<vespalib::string> tagFilter;
-        Flags()
-            : verbose(false), makeuri(false), tagfilt(false),
-              tagFilter()
-        {}
+        Flags();
+        Flags(const Flags &);
+        Flags & operator = (const Flags &);
+        Flags(Flags &&) = default;
+        Flags & operator = (Flags &&) = default;
+        ~Flags();
     };
 
     ModelInspect(Flags flags, const config::ConfigUri uri, std::ostream &out);

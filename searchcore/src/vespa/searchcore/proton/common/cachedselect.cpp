@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.common.cachedselect");
 #include "cachedselect.h"
 #include <vespa/document/select/valuenode.h>
 #include <vespa/document/select/cloningvisitor.h>
@@ -11,13 +8,17 @@ LOG_SETUP(".proton.common.cachedselect");
 #include <vespa/document/select/parser.h>
 #include "selectpruner.h"
 
-namespace proton
-{
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.common.cachedselect");
+
+namespace proton {
 
 using search::AttributeVector;
 using search::AttributeGuard;
 using document::select::FieldValueNode;
 using search::attribute::CollectionType;
+
+namespace {
 
 class AttrVisitor : public document::select::CloningVisitor
 {
@@ -31,32 +32,24 @@ public:
     uint32_t _mvAttrs;
     uint32_t _complexAttrs;
 
-    uint32_t
-    getFieldNodes(void) const
-    {
-        return _fieldNodes;
-    }
+    uint32_t getFieldNodes() const { return _fieldNodes; }
 
-    static uint32_t
-    invalidIdx(void)
-    {
+    static uint32_t invalidIdx() {
         return std::numeric_limits<uint32_t>::max();
     }
     
-    AttrVisitor(const search::IAttributeManager &amgr,
-                CachedSelect &cachedSelect);
+    AttrVisitor(const search::IAttributeManager &amgr, CachedSelect &cachedSelect);
+    ~AttrVisitor();
 
     /*
      * Mutate field value nodes representing single value attributes into
      * attribute field valulue nodes.
      */
-    virtual void
-    visitFieldValueNode(const FieldValueNode &expr) override;
+    void visitFieldValueNode(const FieldValueNode &expr) override;
 };
 
 
-AttrVisitor::AttrVisitor(const search::IAttributeManager &amgr,
-                         CachedSelect &cachedSelect)
+AttrVisitor::AttrVisitor(const search::IAttributeManager &amgr, CachedSelect &cachedSelect)
     : CloningVisitor(),
       _amap(),
       _amgr(amgr),
@@ -64,9 +57,9 @@ AttrVisitor::AttrVisitor(const search::IAttributeManager &amgr,
       _svAttrs(0u),
       _mvAttrs(0u),
       _complexAttrs(0u)
-{
-}
+{}
 
+AttrVisitor::~AttrVisitor() { }
 
 void
 AttrVisitor::visitFieldValueNode(const FieldValueNode &expr)
@@ -107,9 +100,7 @@ AttrVisitor::visitFieldValueNode(const FieldValueNode &expr)
                 idx = it->second;
             }
             assert(idx != invalidIdx());
-            _valueNode.reset(new AttributeFieldValueNode(expr.getDocType(),
-                                                         name,
-                                                         av));
+            _valueNode.reset(new AttributeFieldValueNode(expr.getDocType(), name, av));
         } else {
             // Don't try to optimize multivalue attribute vectors yet
             ++_mvAttrs;
@@ -120,6 +111,7 @@ AttrVisitor::visitFieldValueNode(const FieldValueNode &expr)
     }
 }
 
+}
 
 CachedSelect::CachedSelect(void)
     : _attributes(),
@@ -141,8 +133,7 @@ CachedSelect::set(const vespalib::string &selection,
                   const document::DocumentTypeRepo &repo)
 {
     try {
-        document::select::Parser parser(repo,
-                                        document::BucketIdFactory());
+        document::select::Parser parser(repo, document::BucketIdFactory());
         _select = parser.parse(selection);
     } catch (document::select::ParsingFailedException &) {
         _select.reset(NULL);

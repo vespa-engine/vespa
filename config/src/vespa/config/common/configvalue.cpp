@@ -24,6 +24,9 @@ ConfigValue::ConfigValue(const PayloadPtr & payload, const vespalib::string & md
       _md5sum(md5)
 { }
 
+ConfigValue::ConfigValue(const ConfigValue &) = default;
+ConfigValue & ConfigValue::operator = (const ConfigValue &) = default;
+
 ConfigValue::~ConfigValue() { }
 
 int

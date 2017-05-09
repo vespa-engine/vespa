@@ -20,6 +20,8 @@ uint32_t calculateChecksum(const void* pos, uint32_t size) {
 
 }
 
+constexpr size_t SimpleMemFileIOBuffer::WORKING_BUFFER_SIZE;
+
 SimpleMemFileIOBuffer::SimpleMemFileIOBuffer(
         VersionSerializer& reader,
         vespalib::LazyFile::UP file,

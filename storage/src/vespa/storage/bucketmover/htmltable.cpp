@@ -54,6 +54,15 @@ void HtmlTable::print(std::ostream& out)
     out << "</table>\n";
 }
 
+PercentageColumn::PercentageColumn(const std::string& colName, uint64_t total, HtmlTable* table)
+    : ValueColumn<double>(colName, " %", table), _total(total),
+      _values()
+{
+    if (total != 0) _totalIsAvg = true;
+}
+
+PercentageColumn::~PercentageColumn() {}
+
 void
 PercentageColumn::finalize() {
     uint64_t total = _total;
