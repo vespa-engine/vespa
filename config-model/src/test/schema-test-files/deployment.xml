@@ -1,0 +1,10 @@
+<deployment version='1.0'>
+    <upgrade policy='canary'/>
+    <test/>
+    <staging/>
+    <prod global-service-id='qrs'>
+        <region active='true'>us-west-1</region>
+        <region active='true'>us-central-1</region>
+        <region active='true'>us-east-3</region>
+    </prod>
+</deployment>
