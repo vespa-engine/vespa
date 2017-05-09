@@ -104,7 +104,7 @@ public:
     FileChunk(FileId fileId, NameId nameId, const vespalib::string & baseName, const TuneFileSummary & tune, const IBucketizer * bucketizer, bool skipCrcOnRead);
     virtual ~FileChunk();
 
-    virtual size_t updateLidMap(const LockGuard & guard, ISetLid & lidMap, uint64_t serialNum);
+    virtual size_t updateLidMap(const LockGuard &guard, ISetLid &lidMap, uint64_t serialNum, uint32_t docIdLimit);
     virtual ssize_t read(uint32_t lid, SubChunkId chunk, vespalib::DataBuffer & buffer) const;
     virtual void read(LidInfoWithLidV::const_iterator begin, size_t count, IBufferVisitor & visitor) const;
     void remove(uint32_t lid, uint32_t size);
@@ -149,6 +149,7 @@ public:
     FileId getFileId() const { return _fileId; }
     NameId       getNameId() const { return _nameId; }
     size_t   getBloatCount() const { return _erasedCount; }
+    size_t   getErasedBytes() const { return _erasedBytes; }
     uint64_t getLastPersistedSerialNum() const;
     virtual fastos::TimeStamp getModificationTime() const;
     virtual bool frozen() const { return true; }

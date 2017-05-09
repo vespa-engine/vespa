@@ -5,7 +5,10 @@
 #include <vespa/searchlib/docstore/filechunk.h>
 #include <vespa/searchlib/docstore/writeablefilechunk.h>
 #include <vespa/searchlib/test/directory_handler.h>
+#include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <iomanip>
+#include <iostream>
 
 #include <vespa/log/log.h>
 LOG_SETUP("file_chunk_test");
@@ -15,8 +18,6 @@ using namespace search;
 using common::FileHeaderContext;
 using vespalib::ThreadStackExecutor;
 
-constexpr uint64_t initSerialNum = 10;
-
 struct MyFileHeaderContext : public FileHeaderContext {
     virtual void addTags(vespalib::GenericHeader &header, const vespalib::string &name) const override {
         (void) header;
@@ -24,27 +25,53 @@ struct MyFileHeaderContext : public FileHeaderContext {
     }
 };
 
+struct SetLidObserver : public ISetLid {
+    std::vector<uint32_t> lids;
+    virtual void setLid(const vespalib::LockGuard &guard, uint32_t lid, const LidInfo &lidInfo) override {
+        (void) guard;
+        (void) lidInfo;
+        lids.push_back(lid);
+    }
+};
+
+vespalib::string
+getData(uint32_t lid)
+{
+    std::ostringstream oss;
+    oss << "data_" << std::setw(5) << std::setfill('0') << lid;
+    return oss.str();
+}
+
 struct Fixture {
     test::DirectoryHandler dir;
     ThreadStackExecutor executor;
+    uint64_t serialNum;
     TuneFileSummary tuneFile;
     MyFileHeaderContext fileHeaderCtx;
+    vespalib::Lock updateLock;
+    SetLidObserver lidObserver;
     WriteableFileChunk chunk;
+
+    uint64_t nextSerialNum() {
+        return serialNum++;
+    };
 
     Fixture(const vespalib::string &baseName,
             uint32_t docIdLimit,
             bool dirCleanup = true)
         : dir(baseName),
           executor(1, 0x10000),
+          serialNum(1),
           tuneFile(),
           fileHeaderCtx(),
+          updateLock(),
           chunk(executor,
                 FileChunk::FileId(0),
                 FileChunk::NameId(1234),
                 baseName,
-                initSerialNum,
+                serialNum,
                 docIdLimit,
-                WriteableFileChunk::Config(),
+                WriteableFileChunk::Config(document::CompressionConfig(), 0x1000),
                 tuneFile,
                 fileHeaderCtx,
                 nullptr,
@@ -53,6 +80,22 @@ struct Fixture {
         dir.cleanup(dirCleanup);
     }
     ~Fixture() {}
+    void flush() {
+        chunk.flush(true, serialNum);
+        chunk.flushPendingChunks(serialNum);
+    }
+    Fixture &append(uint32_t lid) {
+        vespalib::string data = getData(lid);
+        chunk.append(nextSerialNum(), lid, data.c_str(), data.size());
+        return *this;
+    }
+    void updateLidMap(uint32_t docIdLimit) {
+        vespalib::LockGuard guard(updateLock);
+        chunk.updateLidMap(guard, lidObserver, serialNum, docIdLimit);
+    }
+    void assertLidMap(const std::vector<uint32_t> &expLids) {
+        EXPECT_EQUAL(expLids, lidObserver.lids);
+    }
 };
 
 TEST_F("require that idx file without docIdLimit in header can be read", Fixture("without_doc_id_limit", 1000, false))
@@ -68,6 +111,22 @@ TEST("require that docIdLimit is written to and read from idx file header")
     {
         Fixture f("tmp", 0);
         EXPECT_EQUAL(1000u, f.chunk.getDocIdLimit());
+    }
+}
+
+TEST("require that entries with lid >= docIdLimit are skipped in updateLidMap()")
+{
+    {
+        Fixture f("tmp", 0, false);
+        f.append(1).append(10).append(100).append(999).append(1000).append(1001).append(998).append(1002).append(999);
+        f.flush();
+    }
+    {
+        Fixture f("tmp", 0);
+        f.updateLidMap(1000);
+        f.assertLidMap({1,10,100,999,998,999});
+        EXPECT_EQUAL(3u, f.chunk.getBloatCount());
+        EXPECT_EQUAL(3u * (10 + 8), f.chunk.getErasedBytes());
     }
 }
 

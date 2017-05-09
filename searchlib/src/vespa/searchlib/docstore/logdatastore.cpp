@@ -91,7 +91,7 @@ LogDataStore::updateLidMap()
     uint64_t lastSerialNum(0);
     LockGuard guard(_updateLock);
     for (FileChunk::UP & fc : _fileChunks) {
-        fc->updateLidMap(guard, *this, lastSerialNum);
+        fc->updateLidMap(guard, *this, lastSerialNum, std::numeric_limits<uint32_t>::max());
         lastSerialNum = fc->getLastPersistedSerialNum();
     }
 }

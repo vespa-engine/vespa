@@ -153,7 +153,7 @@ FileChunk::erase()
 }
 
 size_t
-FileChunk::updateLidMap(const LockGuard & guard, ISetLid & ds, uint64_t serialNum)
+FileChunk::updateLidMap(const LockGuard &guard, ISetLid &ds, uint64_t serialNum, uint32_t docIdLimit)
 {
     size_t sz(0);
     assert(_chunkInfo.empty());
@@ -218,7 +218,12 @@ FileChunk::updateLidMap(const LockGuard & guard, ISetLid & ds, uint64_t serialNu
                             bucketMap.recordLid(bucketId);
                             globalBucketMap.recordLid(bucketId);
                         }
-                        ds.setLid(guard, lidMeta.getLid(), LidInfo(getFileId().getId(), _chunkInfo.size(), lidMeta.size()));
+                        if (lidMeta.getLid() < docIdLimit) {
+                            ds.setLid(guard, lidMeta.getLid(),
+                                      LidInfo(getFileId().getId(), _chunkInfo.size(), lidMeta.size()));
+                        } else {
+                            remove(lidMeta.getLid(), lidMeta.size());
+                        }
                         _addedBytes += adjustSize(lidMeta.size());
                     }
                     serialNum = chunkMeta.getLastSerial();
