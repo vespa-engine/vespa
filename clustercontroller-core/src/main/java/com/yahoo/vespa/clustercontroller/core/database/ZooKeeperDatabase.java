@@ -185,7 +185,7 @@ public class ZooKeeperDatabase extends Database {
     public boolean storeLatestSystemStateVersion(int version) throws InterruptedException {
         byte data[] = Integer.toString(version).getBytes(utf8);
         try{
-            log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": Setting new latest cluster state version " + version);
+            log.log(LogLevel.INFO, String.format("Fleetcontroller %d: Storing new cluster state version in ZooKeeper: %d", nodeIndex, version));
             session.setData(zooKeeperRoot + "latestversion", data, -1);
             return true;
         } catch (InterruptedException e) {
@@ -205,7 +205,9 @@ public class ZooKeeperDatabase extends Database {
         try{
             log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": Fetching latest cluster state at '" + zooKeeperRoot + "latestversion'");
             byte[] data = session.getData(zooKeeperRoot + "latestversion", false, stat);
-            return Integer.valueOf(new String(data, utf8));
+            final Integer versionNumber = Integer.valueOf(new String(data, utf8));
+            log.log(LogLevel.INFO, String.format("Fleetcontroller %d: Read cluster state version %d from ZooKeeper", nodeIndex, versionNumber));
+            return versionNumber;
         } catch (InterruptedException e) {
             throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
         } catch (Exception e) {
