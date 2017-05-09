@@ -16,9 +16,6 @@ Client::Client(ClientArguments *args)
       _reader(new FileReader()),
       _output(),
       _linebufsize(args->_maxLineSize),
-      _linebuf(new char[_linebufsize]),
-      _contentbufsize(16 * args->_maxLineSize),
-      _contentbuf(NULL),
       _stop(false),
       _done(false),
       _thread()
@@ -29,8 +26,6 @@ Client::Client(ClientArguments *args)
 
 Client::~Client()
 {
-    delete [] _contentbuf;
-    delete [] _linebuf;
 }
 
 void Client::runMe(Client * me) {
@@ -42,20 +37,36 @@ class UrlReader {
     FileReader &_reader;
     const ClientArguments &_args;
     int _restarts;
-    char *_leftOvers;
+    int _linebufsize;
+    int _contentbufsize;
     int _leftOversLen;
+    char *_linebuf;
+    char *_contentbuf;
+    char *_leftOvers;
 public:
     UrlReader(FileReader& reader, const ClientArguments &args)
         : _reader(reader), _args(args), _restarts(0),
-         _leftOvers(NULL), _leftOversLen(0)
-    {}
-    int nextUrl(char *buf, int bufLen);
-    int getContent(char *buf, int bufLen);
+          _linebufsize(args._maxLineSize),
+          _contentbufsize(0), _leftOversLen(0),
+          _linebuf(new char[_linebufsize]),
+          _contentbuf(0), _leftOvers(0)
+    {
+        if (_args._usePostMode) {
+            _contentbufsize = 16 * _linebufsize;
+            _contentbuf = new char[_contentbufsize];
+        }
+    }
+    int nextUrl();
+    int getContent();
+    char *url() const { return _linebuf; }
+    char *contents() const { return _contentbuf; }
     ~UrlReader() {}
 };
 
-int UrlReader::nextUrl(char *buf, int buflen)
+int UrlReader::nextUrl()
 {
+    char *buf = _linebuf;
+    int buflen = _linebufsize;
     if (_leftOvers) {
         if (_leftOversLen < buflen) {
             strncpy(buf, _leftOvers, _leftOversLen);
@@ -105,8 +116,10 @@ int UrlReader::nextUrl(char *buf, int buflen)
     return 0;
 }
 
-int UrlReader::getContent(char *buf, int bufLen)
+int UrlReader::getContent()
 {
+    char *buf = _contentbuf;
+    int bufLen = _contentbufsize;
     int totLen = 0;
     while (totLen < bufLen) {
        int len = _reader.ReadLine(buf, bufLen);
@@ -135,10 +148,6 @@ Client::run()
     char timestr[64];
     int  linelen;
     ///   int  reslen;
-
-    if (_args->_usePostMode) {
-        _contentbuf = new char[_contentbufsize];
-    }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(_args->_delay));
 
@@ -178,7 +187,7 @@ Client::run()
 
         _cycleTimer->Start();
 
-        linelen = urlSource.nextUrl(_linebuf, _linebufsize);
+        linelen = urlSource.nextUrl();
         if (linelen > 0) {
             ++urlNumber;
         } else {
@@ -190,17 +199,18 @@ Client::run()
             break;
         }
         if (linelen < _linebufsize) {
+            char *linebuf = urlSource.url();
             if (_output) {
                 _output->write("URL: ", strlen("URL: "));
-                _output->write(_linebuf, linelen);
+                _output->write(linebuf, linelen);
                 _output->write("\n\n", 2);
             }
             if (linelen + (int)_args->_queryStringToAppend.length() < _linebufsize) {
-                strcat(_linebuf, _args->_queryStringToAppend.c_str());
+                strcat(linebuf, _args->_queryStringToAppend.c_str());
             }
-            int cLen = _args->_usePostMode ? urlSource.getContent(_contentbuf, _contentbufsize) : 0;
+            int cLen = _args->_usePostMode ? urlSource.getContent() : 0;
             _reqTimer->Start();
-            auto fetch_status = _http->Fetch(_linebuf, _output.get(), _args->_usePostMode, _contentbuf, cLen);
+            auto fetch_status = _http->Fetch(linebuf, _output.get(), _args->_usePostMode, urlSource.contents(), cLen);
             _reqTimer->Stop();
             _status->AddRequestStatus(fetch_status.RequestStatus());
             if (fetch_status.Ok() && fetch_status.TotalHitCount() == 0)
