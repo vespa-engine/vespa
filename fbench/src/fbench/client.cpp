@@ -55,7 +55,8 @@ public:
         }
     }
     bool reset();
-    int nextUrl(char *buf, int bufLen);
+    int findUrl(char *buf, int buflen);
+    int nextUrl(char *buf, int buflen);
     int getContent();
     char *content() const { return _contentbuf; }
     ~UrlReader() { delete [] _contentbuf; }
@@ -76,6 +77,27 @@ bool UrlReader::reset()
     return true;
 }
 
+int UrlReader::findUrl(char *buf, int buflen)
+{
+    while (true) {
+        if ( _args._singleQueryFile && _reader.GetFilePos() >= _args._queryfileEndOffset ) {
+            // reached logical EOF
+            return -1;
+        }
+        int ll = _reader.ReadLine(buf, buflen);
+        if (ll < 0) {
+            // reached physical EOF
+            return ll;
+        }
+        if (ll > 0) {
+            if (buf[0] == '/' || !_args._usePostMode) {
+                // found URL
+                return ll;
+            }
+        }
+    }
+}
+
 int UrlReader::nextUrl(char *buf, int buflen)
 {
     if (_leftOvers) {
@@ -85,24 +107,15 @@ int UrlReader::nextUrl(char *buf, int buflen)
         _leftOvers = NULL;
         return _leftOversLen;
     }
-    bool again = true;
-    for (int retry = 0; again && retry < 100; ++retry) {
-        // Read maximum to _queryfileEndOffset
-        if ( _args._singleQueryFile && _reader.GetFilePos() >= _args._queryfileEndOffset ) {
-            again = reset();
-        }
-        int ll = _reader.ReadLine(buf, buflen);
-        if (ll > 0) {
-            if (buf[0] == '/' || !_args._usePostMode) {
-                return ll;
-            }
-        }
-        if (ll < 0) {
-            // reached EOF
-            again = reset();
-        }
+    int ll = findUrl(buf, buflen);
+    if (ll > 0) {
+        return ll;
     }
-    return 0;
+    if (reset()) {
+        // try again
+        ll = findUrl(buf, buflen);
+    }
+    return ll;
 }
 
 int UrlReader::getContent()
@@ -112,18 +125,19 @@ int UrlReader::getContent()
     int totLen = 0;
     while (totLen < bufLen) {
        int len = _reader.ReadLine(buf, bufLen);
-       if (len > 0) {
-           if (buf[0] == '/') {
-               _leftOvers = buf;
-               _leftOversLen = len;
-               return totLen;
-           }
-           buf += len;
-           bufLen -= len;
-           totLen += len;
-       } else {
+       if (len < 0) {
+           // reached EOF
            return totLen;
        }
+       if (len > 0 && buf[0] == '/') {
+           // reached next URL
+           _leftOvers = buf;
+           _leftOversLen = len;
+           return totLen;
+       }
+       buf += len;
+       bufLen -= len;
+       totLen += len;
     }
     return totLen;
 }
