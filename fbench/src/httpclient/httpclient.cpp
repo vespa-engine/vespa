@@ -148,7 +148,7 @@ HTTPClient::Connect(const char *url, bool usePost, const char *content, int cLen
     if (_keepAlive
         && _socket->IsOpened()
         && _socket->Write(req, strlen(req)) == (ssize_t)strlen(req)
-        && _socket->Write(content, cLen) == (ssize_t)cLen
+        && (!usePost || _socket->Write(content, cLen) == (ssize_t)cLen)
         && FillBuffer() > 0) {
 
         // DEBUG
