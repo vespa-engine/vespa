@@ -6,7 +6,7 @@
 namespace search {
 
 IDataStore::IDataStore(const vespalib::string& dirName) :
-    _nextId(0),
+    _docIdLimit(0),
     _dirName(dirName)
 {
 }

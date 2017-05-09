@@ -68,15 +68,15 @@ void BenchmarkDataStoreApp::read(size_t numReads, size_t perChunk, const IDataSt
     char state[8];
     memset(state, 0, sizeof(state));
     memset(&rstate, 0, sizeof(rstate));
-    const size_t numDocs(dataStore->nextId());
-    assert(numDocs > 0);
+    const size_t docIdLimit(dataStore->getDocIdLimit());
+    assert(docIdLimit > 0);
     initstate_r(getpid(), state, sizeof(state), &rstate);
     assert(srandom_r(getpid(), &rstate) == 0);
     int32_t rnd(0);
     for ( size_t i(0); i < numReads; i++) {
         random_r(&rstate, &rnd);
-        uint32_t lid(rnd%numDocs);
-        for (uint32_t j(lid); j < std::min(numDocs, lid+perChunk); j++) {
+        uint32_t lid(rnd%docIdLimit);
+        for (uint32_t j(lid); j < std::min(docIdLimit, lid+perChunk); j++) {
             dataStore->read(j, buf);
             buf.clear();
         }

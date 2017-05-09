@@ -175,9 +175,8 @@ public:
     /**
      * Get the number of entries (including removed IDs
      * or gaps in the local ID sequence) in the data store.
-     * @return The next local ID expected to be used
      */
-    uint64_t nextId() const { return _nextId; }
+    uint32_t getDocIdLimit() const { return _docIdLimit; }
 
     /**
      * Returns the name of the base directory where the data file is stored.
@@ -185,10 +184,17 @@ public:
     const vespalib::string & getBaseDir() const { return _dirName; }
 
 protected:
-    void setNextId(uint64_t id) { _nextId = id; }
+    void setDocIdLimit(uint32_t docIdLimit) {
+        _docIdLimit = docIdLimit;
+    }
+    void updateDocIdLimit(uint32_t docIdLimit) {
+        if (docIdLimit > _docIdLimit) {
+            setDocIdLimit(docIdLimit);
+        }
+    }
 
 private:
-    uint64_t         _nextId;
+    uint32_t         _docIdLimit;
     vespalib::string _dirName;
 };
 

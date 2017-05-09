@@ -29,7 +29,7 @@ struct DummyDocumentStore : public search::IDocumentStore
     virtual uint64_t lastSyncToken() const override { return 0; }
     virtual uint64_t tentativeLastSyncToken() const override { return 0; }
     virtual fastos::TimeStamp getLastFlushTime() const override { return fastos::TimeStamp(); }
-    virtual uint64_t nextId() const override { return 0; }
+    virtual uint32_t getDocIdLimit() const override { return 0; }
     virtual size_t memoryUsed() const override { return 0; }
     virtual size_t memoryMeta() const override { return 0; }
     virtual size_t getDiskFootprint() const override { return 0; }
