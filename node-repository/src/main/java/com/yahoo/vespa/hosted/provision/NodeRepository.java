@@ -241,7 +241,7 @@ public class NodeRepository extends AbstractComponent {
         if (ipAddresses.isEmpty()) {
             ipAddresses = nameResolver.getAllByNameOrThrow(hostname);
         }
-        return Node.create(openStackId, ImmutableSet.copyOf(ipAddresses), hostname, parentHostname, flavor, type);
+        return Node.create(openStackId, ImmutableSet.copyOf(ipAddresses), Collections.emptySet(), hostname, parentHostname, flavor, type);
     }
 
     public Node createNode(String openStackId, String hostname, Optional<String> parentHostname,
