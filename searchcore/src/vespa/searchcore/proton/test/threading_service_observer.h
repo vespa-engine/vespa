@@ -29,6 +29,7 @@ public:
           _attributeFieldWriter(_service.attributeFieldWriter())
     {
     }
+    virtual ~ThreadingServiceObserver() override { }
     const ThreadServiceObserver &masterObserver() const {
         return _master;
     }
