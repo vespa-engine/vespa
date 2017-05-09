@@ -8,7 +8,6 @@ import com.yahoo.jdisc.application.BindingRepository;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServerConfig;
-import com.yahoo.jdisc.http.ServletPathsConfig;
 import com.yahoo.jdisc.http.filter.RequestFilter;
 import com.yahoo.jdisc.http.filter.ResponseFilter;
 import com.yahoo.jdisc.http.guiceModules.ConnectorFactoryRegistryModule;
@@ -81,7 +80,6 @@ public class TestDrivers {
                 new AbstractModule() {
                     @Override
                     protected void configure() {
-                        bind(ServletPathsConfig.class).toInstance(new ServletPathsConfig(new ServletPathsConfig.Builder()));
                         bind(ServerConfig.class).toInstance(new ServerConfig(serverConfig));
                         bind(ConnectorConfig.class).toInstance(new ConnectorConfig(connectorConfigBuilder));
                         bind(FilterBindings.class).toInstance(
