@@ -149,6 +149,7 @@ public:
     FileId getFileId() const { return _fileId; }
     NameId       getNameId() const { return _nameId; }
     size_t   getBloatCount() const { return _erasedCount; }
+    size_t   getAddedBytes() const { return _addedBytes; }
     size_t   getErasedBytes() const { return _erasedBytes; }
     uint64_t getLastPersistedSerialNum() const;
     virtual fastos::TimeStamp getModificationTime() const;

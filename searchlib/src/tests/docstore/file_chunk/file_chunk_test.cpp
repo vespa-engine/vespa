@@ -34,6 +34,18 @@ struct SetLidObserver : public ISetLid {
     }
 };
 
+struct BucketizerObserver : public IBucketizer {
+    mutable std::vector<uint32_t> lids;
+    virtual document::BucketId getBucketOf(const vespalib::GenerationHandler::Guard &guard, uint32_t lid) const override {
+        (void) guard;
+        lids.push_back(lid);
+        return document::BucketId();
+    }
+    virtual vespalib::GenerationHandler::Guard getGuard() const override {
+        return vespalib::GenerationHandler::Guard();
+    }
+};
+
 vespalib::string
 getData(uint32_t lid)
 {
@@ -50,6 +62,7 @@ struct Fixture {
     MyFileHeaderContext fileHeaderCtx;
     vespalib::Lock updateLock;
     SetLidObserver lidObserver;
+    BucketizerObserver bucketizer;
     WriteableFileChunk chunk;
 
     uint64_t nextSerialNum() {
@@ -65,6 +78,8 @@ struct Fixture {
           tuneFile(),
           fileHeaderCtx(),
           updateLock(),
+          lidObserver(),
+          bucketizer(),
           chunk(executor,
                 FileChunk::FileId(0),
                 FileChunk::NameId(1234),
@@ -74,7 +89,7 @@ struct Fixture {
                 WriteableFileChunk::Config(document::CompressionConfig(), 0x1000),
                 tuneFile,
                 fileHeaderCtx,
-                nullptr,
+                &bucketizer,
                 false)
     {
         dir.cleanup(dirCleanup);
@@ -95,6 +110,9 @@ struct Fixture {
     }
     void assertLidMap(const std::vector<uint32_t> &expLids) {
         EXPECT_EQUAL(expLids, lidObserver.lids);
+    }
+    void assertBucketizer(const std::vector<uint32_t> &expLids) {
+        EXPECT_EQUAL(expLids, bucketizer.lids);
     }
 };
 
@@ -125,8 +143,11 @@ TEST("require that entries with lid >= docIdLimit are skipped in updateLidMap()"
         Fixture f("tmp", 0);
         f.updateLidMap(1000);
         f.assertLidMap({1,10,100,999,998,999});
+        f.assertBucketizer({1,10,100,999,998,999});
+        size_t entrySize = 10 + 8;
+        EXPECT_EQUAL(9 * entrySize, f.chunk.getAddedBytes());
         EXPECT_EQUAL(3u, f.chunk.getBloatCount());
-        EXPECT_EQUAL(3u * (10 + 8), f.chunk.getErasedBytes());
+        EXPECT_EQUAL(3 * entrySize, f.chunk.getErasedBytes());
     }
 }
 
