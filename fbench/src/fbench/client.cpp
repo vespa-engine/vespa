@@ -46,7 +46,7 @@ class UrlReader {
     int _leftOversLen;
 public:
     UrlReader(FileReader& reader, const ClientArguments &args)
-        : _reader(reader), _args(args), _restarts(args._restartLimit),
+        : _reader(reader), _args(args), _restarts(0),
          _leftOvers(NULL), _leftOversLen(0)
     {}
     int nextUrl(char *buf, int bufLen);
@@ -70,10 +70,10 @@ int UrlReader::nextUrl(char *buf, int buflen)
     // Read maximum to _queryfileOffsetEnd
     if ( _args._singleQueryFile && _reader.GetFilePos() >= _args._queryfileEndOffset ) {
         _reader.SetFilePos(_args._queryfileOffset);
-        if (_restarts == 0) {
+        if (_restarts == _args._restartLimit) {
             return 0;
-        } else if (_restarts > 0) {
-            _restarts--;
+        } else if (_args._restartLimit > 0) {
+            _restarts++;
         }
     }
     int ll = _reader.ReadLine(buf, buflen);
@@ -83,10 +83,10 @@ int UrlReader::nextUrl(char *buf, int buflen)
     if (ll > 0 && (buf[0] == '/' || !_args._usePostMode)) {
         return ll;
     }
-    if (_restarts == 0) {
+    if (_restarts == _args._restartLimit) {
         return 0;
-    } else if (_restarts > 0) {
-        _restarts--;
+    } else if (_args._restartLimit > 0) {
+        _restarts++;
     }
     if (ll < 0) {
         _reader.Reset();
