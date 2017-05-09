@@ -18,6 +18,5 @@
   "hardwareFailure" : false,
   "wantToRetire" : false,
   "history":[],
-  "ipAddresses":["127.0.0.1"],
-  "additionalIpAddresses":[]
+  "ipAddresses":["127.0.0.1"]
 }

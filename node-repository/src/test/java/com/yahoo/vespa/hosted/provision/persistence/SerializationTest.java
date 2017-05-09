@@ -24,11 +24,9 @@ import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -237,7 +235,7 @@ public class SerializationTest {
     @Test
     public void serialize_parentHostname() {
         final String parentHostname = "parent.yahoo.com";
-        Node node = Node.create("myId", singleton("127.0.0.1"), Collections.emptySet(), "myHostname", Optional.of(parentHostname), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
+        Node node = Node.create("myId", singleton("127.0.0.1"), "myHostname", Optional.of(parentHostname), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
 
         Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(node));
         assertEquals(parentHostname, deserializedNode.parentHostname().get());
@@ -248,64 +246,6 @@ public class SerializationTest {
         byte[] nodeWithMultipleIps = createNodeJson("node4.yahoo.tld", "127.0.0.4", "::4");
         Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeWithMultipleIps);
         assertEquals(ImmutableSet.of("127.0.0.4", "::4"), deserializedNode.ipAddresses());
-    }
-
-    @Test
-    public void serialize_additional_ip_addresses() throws IOException {
-        Node node = createNode();
-
-        // Test round-trip with additional addresses
-        node = node.withAdditionalIpAddresses(ImmutableSet.of("10.0.0.1", "10.0.0.2", "10.0.0.3"));
-        Node copy = nodeSerializer.fromJson(node.state(), nodeSerializer.toJson(node));
-        assertEquals(node.additionalIpAddresses(), copy.additionalIpAddresses());
-
-        // Test round-trip without additional addresses (handle empty ip set)
-        node = createNode();
-        copy = nodeSerializer.fromJson(node.state(), nodeSerializer.toJson(node));
-        assertEquals(node.additionalIpAddresses(), copy.additionalIpAddresses());
-
-        // TODO remove after MAI 2017
-        // Test deserialization of a json file without the additional ip addresses field
-        String json = "{\n" +
-                "  \"url\": \"http://localhost:8080/nodes/v2/node/host1.yahoo.com\",\n" +
-                "  \"id\": \"host1.yahoo.com\",\n" +
-                "  \"state\": \"active\",\n" +
-                "  \"type\": \"tenant\",\n" +
-                "  \"hostname\": \"host1.yahoo.com\",\n" +
-                "  \"openStackId\": \"node1\",\n" +
-                "  \"flavor\": \"default\",\n" +
-                "  \"canonicalFlavor\": \"default\",\n" +
-                "  \"minDiskAvailableGb\":400.0,\n" +
-                "  \"minMainMemoryAvailableGb\":16.0,\n" +
-                "  \"description\":\"Flavor-name-is-default\",\n" +
-                "  \"minCpuCores\":2.0,\n" +
-                "  \"environment\":\"BARE_METAL\",\n" +
-                "  \"owner\": {\n" +
-                "    \"tenant\": \"tenant2\",\n" +
-                "    \"application\": \"application2\",\n" +
-                "    \"instance\": \"instance2\"\n" +
-                "  },\n" +
-                "  \"membership\": {\n" +
-                "    \"clustertype\": \"content\",\n" +
-                "    \"clusterid\": \"id2\",\n" +
-                "    \"group\": \"0\",\n" +
-                "    \"index\": 0,\n" +
-                "    \"retired\": false\n" +
-                "  },\n" +
-                "  \"restartGeneration\": 0,\n" +
-                "  \"currentRestartGeneration\": 0,\n" +
-                "  \"wantedDockerImage\":\"docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.0\",\n" +
-                "  \"wantedVespaVersion\":\"6.42.0\",\n" +
-                "  \"rebootGeneration\": 1,\n" +
-                "  \"currentRebootGeneration\": 0,\n" +
-                "  \"failCount\": 0,\n" +
-                "  \"wantToRetire\" : false,\n" +
-                "  \"history\":[{\"type\":\"readied\",\"at\":123,\"type\":\"system\"},{\"type\":\"reserved\",\"at\":123,\"agent\":\"application\"},{\"type\":\"activated\",\"at\":123,\"agent\":\"application\"}],\n" +
-                "  \"ipAddresses\":[\"::1\", \"127.0.0.1\"]\n" +
-                "}";
-
-        node = nodeSerializer.fromJson(State.active, Utf8.toBytes(json));
-        assertEquals(Collections.emptySet(), node.additionalIpAddresses());
     }
 
     @Test
@@ -391,7 +331,7 @@ public class SerializationTest {
     }
 
     private Node createNode() {
-        return Node.create("myId", singleton("127.0.0.1"), Collections.emptySet(), "myHostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host);
+        return Node.create("myId", singleton("127.0.0.1"), "myHostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host);
     }
 
 }
