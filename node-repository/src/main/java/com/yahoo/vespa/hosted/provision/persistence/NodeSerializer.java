@@ -48,6 +48,7 @@ public class NodeSerializer {
     // Node fields
     private static final String hostnameKey = "hostname";
     private static final String ipAddressesKey = "ipAddresses";
+    private static final String additionalIpAddressesKey = "additionalIpAddresses";
     private static final String openStackIdKey = "openStackId";
     private static final String parentHostnameKey = "parentHostname";
     private static final String historyKey = "history";
@@ -102,6 +103,7 @@ public class NodeSerializer {
     private void toSlime(Node node, Cursor object) {
         object.setString(hostnameKey, node.hostname());
         toSlime(node.ipAddresses(), object.setArray(ipAddressesKey));
+        toSlime(node.additionalIpAddresses(), object.setArray(additionalIpAddressesKey));
         object.setString(openStackIdKey, node.openStackId());
         node.parentHostname().ifPresent(hostname -> object.setString(parentHostnameKey, hostname));
         object.setString(flavorKey, node.flavor().name());
@@ -152,7 +154,8 @@ public class NodeSerializer {
 
     private Node nodeFromSlime(Node.State state, Inspector object) {
         return new Node(object.field(openStackIdKey).asString(),
-                        ipAddressesFromSlime(object),
+                        ipAddressesFromSlime(object, ipAddressesKey),
+                        ipAddressesFromSlime(object, additionalIpAddressesKey),
                         object.field(hostnameKey).asString(),
                         parentHostnameFromSlime(object),
                         flavorFromSlime(object),
@@ -239,12 +242,12 @@ public class NodeSerializer {
             return Optional.empty();
     }
 
-    private Set<String> ipAddressesFromSlime(Inspector object) {
+    private Set<String> ipAddressesFromSlime(Inspector object, String key) {
         ImmutableSet.Builder<String> ipAddresses = ImmutableSet.builder();
-        object.field(ipAddressesKey).traverse((ArrayTraverser) (i, item) -> ipAddresses.add(item.asString()));
+        object.field(key).traverse((ArrayTraverser) (i, item) -> ipAddresses.add(item.asString()));
         return ipAddresses.build();
     }
-    
+
     private Optional<Status.HardwareFailureType> hardwareFailureFromSlime(Inspector object) {
         if ( ! object.valid()) return Optional.empty();
         return Optional.of(hardwareFailureFromString(object.asString()));
