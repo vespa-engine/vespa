@@ -35,18 +35,23 @@ SequencedTaskExecutor::setTaskLimit(uint32_t taskLimit)
     }
 }
 
-void
-SequencedTaskExecutor::executeTask(uint64_t id,
-                                   vespalib::Executor::Task::UP task)
+uint32_t
+SequencedTaskExecutor::getExecutorId(uint64_t componentId)
 {
-    auto itr = _ids.find(id);
+    auto itr = _ids.find(componentId);
     if (itr == _ids.end()) {
-        auto insarg = std::make_pair(id, _ids.size() % _executors.size());
+        auto insarg = std::make_pair(componentId, _ids.size() % _executors.size());
         auto insres = _ids.insert(insarg);
         assert(insres.second);
         itr = insres.first;
     }
-    size_t executorId = itr->second;
+    return itr->second;
+}
+
+void
+SequencedTaskExecutor::executeTask(uint32_t executorId, vespalib::Executor::Task::UP task)
+{
+    assert(executorId < _executors.size());
     vespalib::ThreadStackExecutorBase &executor(*_executors[executorId]);
     auto rejectedTask = executor.execute(std::move(task));
     assert(!rejectedTask);

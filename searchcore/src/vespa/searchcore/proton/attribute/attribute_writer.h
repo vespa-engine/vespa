@@ -19,15 +19,32 @@ private:
     typedef document::DataType DataType;
     typedef document::DocumentType DocumentType;
     typedef document::FieldValue FieldValue;
-    typedef std::vector<std::unique_ptr<FieldPath> > AttributeFieldPaths;
     const IAttributeManager::SP _mgr;
-    AttributeFieldPaths         _fieldPaths;
-    const DataType             *_dataType;
-    vespalib::string            _fieldPathsDocTypeName;
     search::ISequencedTaskExecutor &_attributeFieldWriter;
     const std::vector<search::AttributeVector *> &_writableAttributes;
+public:
+    class WriteContext
+    {
+        uint32_t _executorId;
+        std::vector<std::unique_ptr<FieldPath>> _fieldPaths;
+        std::vector<AttributeVector *> _attributes;
+    public:
+        WriteContext(uint32_t executorId);
+        WriteContext(WriteContext &&rhs);
+        ~WriteContext();
+        WriteContext &operator=(WriteContext &&rhs);
+        void buildFieldPaths(const DocumentType &docType);
+        void add(AttributeVector *attr);
+        uint32_t getExecutorId() const { return _executorId; }
+        const std::vector<std::unique_ptr<FieldPath>> &getFieldPaths() const { return _fieldPaths; }
+        const std::vector<AttributeVector *> &getAttributes() const { return _attributes; }
+    };
+private:
+    std::vector<WriteContext> _writeContexts;
+    const DataType           *_dataType;
 
-    void buildFieldPath(const DocumentType &docType, const DataType *dataType);
+    void setupWriteContexts();
+    void buildFieldPaths(const DocumentType &docType, const DataType *dataType);
     void internalPut(SerialNum serialNum, const Document &doc, DocumentIdT lid,
                      bool immediateCommit, OnWriteDoneType onWriteDone);
     void internalRemove(SerialNum serialNum, DocumentIdT lid,

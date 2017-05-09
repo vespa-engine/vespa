@@ -21,6 +21,7 @@ LOG_SETUP("attribute_test");
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/test/insertion_operators.h>
 
 #include <vespa/document/predicate/predicate_slime_builder.h>
 #include <vespa/document/update/assignvalueupdate.h>
@@ -30,6 +31,7 @@ LOG_SETUP("attribute_test");
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
 #include <vespa/searchlib/predicate/predicate_hash.h>
 #include <vespa/searchlib/common/foregroundtaskexecutor.h>
+#include <vespa/searchlib/common/sequencedtaskexecutorobserver.h>
 #include <vespa/searchcore/proton/test/directory_handler.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/types.h>
@@ -102,44 +104,61 @@ struct Fixture
 {
     test::DirectoryHandler _dirHandler;
     DummyFileHeaderContext   _fileHeaderContext;
-    ForegroundTaskExecutor   _attributeFieldWriter;
+    ForegroundTaskExecutor   _attributeFieldWriterReal;
+    SequencedTaskExecutorObserver _attributeFieldWriter;
     HwInfo                   _hwInfo;
     proton::AttributeManager::SP _m;
-    AttributeWriter aw;
+    std::unique_ptr<AttributeWriter> _aw;
 
-    Fixture()
+    Fixture(uint32_t threads)
         : _dirHandler(test_dir),
           _fileHeaderContext(),
-          _attributeFieldWriter(),
+          _attributeFieldWriterReal(threads),
+          _attributeFieldWriter(_attributeFieldWriterReal),
           _hwInfo(),
           _m(std::make_shared<proton::AttributeManager>
              (test_dir, "test.subdb", TuneFileAttributes(),
               _fileHeaderContext, _attributeFieldWriter, _hwInfo)),
-          aw(_m)
+          _aw()
+    {
+        allocAttributeWriter();
+    }
+    Fixture()
+        : Fixture(1)
     {
     }
+    void allocAttributeWriter() {
+        _aw = std::make_unique<AttributeWriter>(_m);
+    }
     AttributeVector::SP addAttribute(const vespalib::string &name) {
-        return _m->addAttribute({name, AVConfig(AVBasicType::INT32)},
-                                createSerialNum);
+        return addAttribute({name, AVConfig(AVBasicType::INT32)}, createSerialNum);
+    }
+    AttributeVector::SP addAttribute(const AttributeSpec &spec, SerialNum serialNum) {
+        auto ret = _m->addAttribute(spec, serialNum);
+        allocAttributeWriter();
+        return ret;
     }
     void put(SerialNum serialNum, const Document &doc, DocumentIdT lid,
              bool immediateCommit = true) {
-        aw.put(serialNum, doc, lid, immediateCommit, emptyCallback);
+        _aw->put(serialNum, doc, lid, immediateCommit, emptyCallback);
     }
     void update(SerialNum serialNum, const DocumentUpdate &upd,
                 DocumentIdT lid, bool immediateCommit) {
-        aw.update(serialNum, upd, lid, immediateCommit, emptyCallback);
+        _aw->update(serialNum, upd, lid, immediateCommit, emptyCallback);
     }
     void remove(SerialNum serialNum, DocumentIdT lid, bool immediateCommit = true) {
-        aw.remove(serialNum, lid, immediateCommit, emptyCallback);
+        _aw->remove(serialNum, lid, immediateCommit, emptyCallback);
     }
     void commit(SerialNum serialNum) {
-        aw.commit(serialNum, emptyCallback);
+        _aw->commit(serialNum, emptyCallback);
+    }
+    void assertExecuteHistory(std::vector<uint32_t> expExecuteHistory) {
+        EXPECT_EQUAL(expExecuteHistory, _attributeFieldWriter.getExecuteHistory());
     }
 };
 
 
-TEST_F("require that attribute adapter handles put", Fixture)
+TEST_F("require that attribute writer handles put", Fixture)
 {
     Schema s;
     s.addAttributeField(Schema::AttributeField("a1", schema::DataType::INT32, CollectionType::SINGLE));
@@ -149,11 +168,10 @@ TEST_F("require that attribute adapter handles put", Fixture)
 
     DocBuilder idb(s);
 
-    proton::AttributeManager & am = *f._m;
     AttributeVector::SP a1 = f.addAttribute("a1");
-    AttributeVector::SP a2 = am.addAttribute({"a2", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
-    AttributeVector::SP a3 = am.addAttribute({"a3", AVConfig(AVBasicType::FLOAT)}, createSerialNum);
-    AttributeVector::SP a4 = am.addAttribute({"a4", AVConfig(AVBasicType::STRING)}, createSerialNum);
+    AttributeVector::SP a2 = f.addAttribute({"a2", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)}, createSerialNum);
+    AttributeVector::SP a3 = f.addAttribute({"a3", AVConfig(AVBasicType::FLOAT)}, createSerialNum);
+    AttributeVector::SP a4 = f.addAttribute({"a4", AVConfig(AVBasicType::STRING)}, createSerialNum);
 
     attribute::IntegerContent ibuf;
     attribute::FloatContent fbuf;
@@ -225,14 +243,13 @@ TEST_F("require that attribute adapter handles put", Fixture)
     }
 }
 
-TEST_F("require that attribute adapter handles predicate put", Fixture)
+TEST_F("require that attribute writer handles predicate put", Fixture)
 {
     Schema s;
     s.addAttributeField(Schema::AttributeField("a1", schema::DataType::BOOLEANTREE, CollectionType::SINGLE));
     DocBuilder idb(s);
 
-    proton::AttributeManager & am = *f._m;
-    AttributeVector::SP a1 = am.addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)}, createSerialNum);
+    AttributeVector::SP a1 = f.addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)}, createSerialNum);
 
     PredicateIndex &index = static_cast<PredicateAttribute &>(*a1).getIndex();
 
@@ -269,7 +286,7 @@ TEST_F("require that attribute adapter handles predicate put", Fixture)
     EXPECT_TRUE(it.valid());
 }
 
-TEST_F("require that attribute adapter handles remove", Fixture)
+TEST_F("require that attribute writer handles remove", Fixture)
 {
     AttributeVector::SP a1 = f.addAttribute("a1");
     AttributeVector::SP a2 = f.addAttribute("a2");
@@ -307,8 +324,7 @@ void verifyAttributeContent(const AttributeVector & v, uint32_t lid, vespalib::s
 
 TEST_F("require that visibilitydelay is honoured", Fixture)
 {
-    proton::AttributeManager & am = *f._m;
-    AttributeVector::SP a1 = am.addAttribute({"a1", AVConfig(AVBasicType::STRING)}, createSerialNum);
+    AttributeVector::SP a1 = f.addAttribute({"a1", AVConfig(AVBasicType::STRING)}, createSerialNum);
     Schema s;
     s.addAttributeField(Schema::AttributeField("a1", schema::DataType::STRING, CollectionType::SINGLE));
     DocBuilder idb(s);
@@ -352,10 +368,9 @@ TEST_F("require that visibilitydelay is honoured", Fixture)
     
 }
 
-TEST_F("require that attribute adapter handles predicate remove", Fixture)
+TEST_F("require that attribute writer handles predicate remove", Fixture)
 {
-    proton::AttributeManager & am = *f._m;
-    AttributeVector::SP a1 = am.addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)}, createSerialNum);
+    AttributeVector::SP a1 = f.addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)}, createSerialNum);
     Schema s;
     s.addAttributeField(
             Schema::AttributeField("a1", schema::DataType::BOOLEANTREE, CollectionType::SINGLE));
@@ -375,7 +390,7 @@ TEST_F("require that attribute adapter handles predicate remove", Fixture)
     EXPECT_EQUAL(0u, index.getZeroConstraintDocs().size());
 }
 
-TEST_F("require that attribute adapter handles update", Fixture)
+TEST_F("require that attribute writer handles update", Fixture)
 {
     AttributeVector::SP a1 = f.addAttribute("a1");
     AttributeVector::SP a2 = f.addAttribute("a2");
@@ -415,10 +430,9 @@ TEST_F("require that attribute adapter handles update", Fixture)
     }
 }
 
-TEST_F("require that attribute adapter handles predicate update", Fixture)
+TEST_F("require that attribute writer handles predicate update", Fixture)
 {
-    proton::AttributeManager & am = *f._m;
-    AttributeVector::SP a1 = am.addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)}, createSerialNum);
+    AttributeVector::SP a1 = f.addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)}, createSerialNum);
     Schema schema;
     schema.addAttributeField(Schema::AttributeField("a1", schema::DataType::BOOLEANTREE, CollectionType::SINGLE));
 
@@ -558,7 +572,8 @@ AttributeVector::SP
 createTensorAttribute(Fixture &f) {
     AVConfig cfg(AVBasicType::TENSOR);
     cfg.setTensorType(ValueType::from_spec("tensor(x{},y{})"));
-    return f._m->addAttribute({"a1", cfg}, createSerialNum);
+    auto ret = f.addAttribute({"a1", cfg}, createSerialNum);
+    return ret;
 }
 
 Schema
@@ -631,6 +646,64 @@ TEST_F("require that attribute writer handles tensor assign update", Fixture)
     EXPECT_TRUE(!tensor->equals(*tensor2));
     EXPECT_TRUE(new_tensor->equals(*tensor2));
 
+}
+
+namespace {
+
+void
+assertPutDone(AttributeVector &attr, int32_t expVal)
+{
+    EXPECT_EQUAL(2u, attr.getNumDocs());
+    EXPECT_EQUAL(1u, attr.getStatus().getLastSyncToken());
+    attribute::IntegerContent ibuf;
+    ibuf.fill(attr, 1);
+    EXPECT_EQUAL(1u, ibuf.size());
+    EXPECT_EQUAL(expVal, ibuf[0]);
+}
+
+void
+putAttributes(Fixture &f, std::vector<uint32_t> expExecuteHistory)
+{
+    Schema s;
+    s.addAttributeField(Schema::AttributeField("a1", schema::DataType::INT32, CollectionType::SINGLE));
+    s.addAttributeField(Schema::AttributeField("a2", schema::DataType::INT32, CollectionType::SINGLE));
+    s.addAttributeField(Schema::AttributeField("a3", schema::DataType::INT32, CollectionType::SINGLE));
+
+    DocBuilder idb(s);
+
+    AttributeVector::SP a1 = f.addAttribute("a1");
+    AttributeVector::SP a2 = f.addAttribute("a2");
+    AttributeVector::SP a3 = f.addAttribute("a3");
+
+    EXPECT_EQUAL(1u, a1->getNumDocs());
+    EXPECT_EQUAL(1u, a2->getNumDocs());
+    EXPECT_EQUAL(1u, a3->getNumDocs());
+    f.put(1, *idb.startDocument("doc::1").
+          startAttributeField("a1").addInt(10).endField().
+          startAttributeField("a2").addInt(15).endField().
+          startAttributeField("a3").addInt(20).endField().
+          endDocument(), 1);
+    TEST_DO(assertPutDone(*a1, 10));
+    TEST_DO(assertPutDone(*a2, 15));
+    TEST_DO(assertPutDone(*a3, 20));
+    TEST_DO(f.assertExecuteHistory(expExecuteHistory));
+}
+
+}
+
+TEST_F("require that attribute writer spreads write over 1 write context", Fixture(1))
+{
+    TEST_DO(putAttributes(f, {0}));
+}
+
+TEST_F("require that attribute writer spreads write over 2 write contexts", Fixture(2))
+{
+    TEST_DO(putAttributes(f, {0, 1}));
+}
+
+TEST_F("require that attribute writer spreads write over 3 write contexts", Fixture(8))
+{
+    TEST_DO(putAttributes(f, {0, 1, 2}));
 }
 
 TEST_MAIN()

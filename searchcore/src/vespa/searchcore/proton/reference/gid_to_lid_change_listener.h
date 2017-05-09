@@ -17,6 +17,7 @@ namespace proton {
 class GidToLidChangeListener : public IGidToLidChangeListener
 {
     search::ISequencedTaskExecutor &_attributeFieldWriter;
+    uint32_t                        _executorId;
     std::shared_ptr<search::attribute::ReferenceAttribute> _attr;
     MonitoredRefCount              &_refCount;
     vespalib::string               _name;

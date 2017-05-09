@@ -269,6 +269,7 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot,
      * to ready document sub db.
      */
     if (params.shouldAttributeManagerChange() ||
+        params.shouldAttributeWriterChange() ||
         newConfigSnapshot.getDocumentTypeRepoSP().get() != oldConfigSnapshot.getDocumentTypeRepoSP().get()) {
         FastAccessDocSubDBConfigurer configurer(_fastAccessFeedView,
                 std::make_unique<AttributeWriterFactory>(), getSubDbName());
