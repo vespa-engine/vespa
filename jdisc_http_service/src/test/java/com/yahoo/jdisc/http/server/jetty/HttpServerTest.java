@@ -37,10 +37,10 @@ import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+import static com.yahoo.jdisc.Response.Status.GATEWAY_TIMEOUT;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static com.yahoo.jdisc.Response.Status.OK;
-import static com.yahoo.jdisc.Response.Status.REQUEST_TIMEOUT;
 import static com.yahoo.jdisc.Response.Status.REQUEST_URI_TOO_LONG;
 import static com.yahoo.jdisc.Response.Status.UNSUPPORTED_MEDIA_TYPE;
 import static com.yahoo.jdisc.http.HttpHeaders.Names.CONNECTION;
@@ -365,7 +365,7 @@ public class HttpServerTest {
         final UnresponsiveHandler requestHandler = new UnresponsiveHandler();
         final TestDriver driver = TestDrivers.newInstance(requestHandler);
         driver.client().get("/status.html")
-              .expectStatusCode(is(REQUEST_TIMEOUT));
+              .expectStatusCode(is(GATEWAY_TIMEOUT));
         ResponseDispatch.newInstance(OK).dispatch(requestHandler.responseHandler);
         assertThat(driver.close(), is(true));
     }
