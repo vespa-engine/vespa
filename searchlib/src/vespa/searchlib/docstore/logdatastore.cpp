@@ -1066,8 +1066,9 @@ LogDataStore::getStorageStats() const
     // Note: Naming consistency issue
     SerialNum lastSerialNum = tentativeLastSyncToken();
     SerialNum lastFlushedSerialNum = lastSyncToken();
+    uint32_t docIdLimit = getDocIdLimit();
     return DataStoreStorageStats(diskFootprint, diskBloat, maxBucketSpread,
-                                 lastSerialNum, lastFlushedSerialNum);
+                                 lastSerialNum, lastFlushedSerialNum, docIdLimit);
 }
 
 MemoryUsage

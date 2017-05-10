@@ -40,6 +40,7 @@ DocumentStoreExplorer::get_state(const Inserter &inserter, bool full) const
     object.setDouble("maxBucketSpread", storageStats.maxBucketSpread());
     object.setLong("lastFlushedSerialNum", storageStats.lastFlushedSerialNum());
     object.setLong("lastSerialNum", storageStats.lastSerialNum());
+    object.setLong("docIdLimit", storageStats.docIdLimit());
     setMemoryUsage(object, store.getMemoryUsage());
     if (full) {
         const vespalib::string &baseDir = store.getBaseDir();
@@ -51,9 +52,9 @@ DocumentStoreExplorer::get_state(const Inserter &inserter, bool full) const
             chunkCursor.setLong("diskUsage", chunk.diskUsage());
             chunkCursor.setLong("diskBloat", chunk.diskBloat());
             chunkCursor.setDouble("bucketSpread", chunk.maxBucketSpread());
-            chunkCursor.setLong("lastFlushedSerialNum",
-                                chunk.lastFlushedSerialNum());
+            chunkCursor.setLong("lastFlushedSerialNum", chunk.lastFlushedSerialNum());
             chunkCursor.setLong("lastSerialNum", chunk.lastSerialNum());
+            chunkCursor.setLong("docIdLimit", chunk.docIdLimit());
             chunkCursor.setLong("nameid", chunk.nameId());
             chunkCursor.setString("name", chunk.createName(baseDir));
         }

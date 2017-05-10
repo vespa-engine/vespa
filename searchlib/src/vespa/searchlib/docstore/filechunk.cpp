@@ -539,9 +539,10 @@ FileChunk::getStats() const
     uint64_t diskBloat = getDiskBloat();
     double bucketSpread = getBucketSpread();
     uint64_t serialNum = getLastPersistedSerialNum();
+    uint32_t docIdLimit = getDocIdLimit();
     uint64_t nameId = getNameId().getId();
     return DataStoreFileChunkStats(diskFootprint, diskBloat, bucketSpread,
-                                   serialNum, serialNum, nameId);
+                                   serialNum, serialNum, docIdLimit, nameId);
 }
 
 } // namespace search

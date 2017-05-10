@@ -907,7 +907,7 @@ WriteableFileChunk::getStats() const
     DataStoreFileChunkStats stats = FileChunk::getStats();
     uint64_t serialNum = getSerialNum();
     return DataStoreFileChunkStats(stats.diskUsage(), stats.diskBloat(), stats.maxBucketSpread(),
-                                   serialNum, stats.lastFlushedSerialNum(), stats.nameId());
+                                   serialNum, stats.lastFlushedSerialNum(), stats.docIdLimit(), stats.nameId());
 };
 
 PendingChunk::PendingChunk(uint64_t lastSerial, uint64_t dataOffset, uint32_t dataLen)
