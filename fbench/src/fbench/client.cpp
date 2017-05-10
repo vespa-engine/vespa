@@ -57,7 +57,7 @@ public:
     bool reset();
     int findUrl(char *buf, int buflen);
     int nextUrl(char *buf, int buflen);
-    int getContent();
+    int nextContent();
     const char *content() const { return _contentbuf; }
     ~UrlReader() { delete [] _contentbuf; }
 };
@@ -118,13 +118,15 @@ int UrlReader::nextUrl(char *buf, int buflen)
     return ll;
 }
 
-int UrlReader::getContent()
+int UrlReader::nextContent()
 {
     char *buf = _contentbuf;
     int totLen = 0;
-    while (totLen < _contentbufsize) {
+    int nl = 0;
+    while (totLen + 1 < _contentbufsize) {
        int left = _contentbufsize - totLen;
-       int len = _reader.ReadLine(buf, left);
+       // allow space for newline:
+       int len = _reader.ReadLine(buf, left - 1);
        if (len < 0) {
            // reached EOF
            return totLen;
@@ -136,7 +138,9 @@ int UrlReader::getContent()
            return totLen;
        }
        buf += len;
-       totLen += len;
+       *buf++ = '\n';
+       totLen += nl + len;
+       nl = 1;
     }
     return totLen;
 }
@@ -209,7 +213,7 @@ Client::run()
             if (linelen + (int)_args->_queryStringToAppend.length() < _linebufsize) {
                 strcat(_linebuf, _args->_queryStringToAppend.c_str());
             }
-            int cLen = _args->_usePostMode ? urlSource.getContent() : 0;
+            int cLen = _args->_usePostMode ? urlSource.nextContent() : 0;
             _reqTimer->Start();
             auto fetch_status = _http->Fetch(_linebuf, _output.get(), _args->_usePostMode, urlSource.content(), cLen);
             _reqTimer->Stop();
