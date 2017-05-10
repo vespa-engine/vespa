@@ -30,13 +30,16 @@ import java.util.concurrent.TimeUnit;
 /**
  * Zookeeper client for a specific session. Can be used to read and write session status
  * and create and get prepare and active barrier.
- *
+ * 
  * @author lulf
  * @since 5.1
  */
 public class SessionZooKeeperClient {
 
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(SessionZooKeeperClient.class.getName());
+
+    // NOTE: Any state added here MUST also be propagated in com.yahoo.vespa.config.server.deploy.Deployment.prepare()
+
     static final String APPLICATION_ID_PATH = "applicationId";
     static final String VERSION_PATH = "version";
     static final String CREATE_TIME_PATH = "createTime";
