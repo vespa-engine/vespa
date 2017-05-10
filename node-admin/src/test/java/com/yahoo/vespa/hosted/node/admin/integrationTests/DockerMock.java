@@ -159,6 +159,14 @@ public class DockerMock implements Docker {
         return new ProcessResult(0, null, "");
     }
 
+    @Override
+    public ProcessResult executeInContainerAsRoot(ContainerName containerName, Long timeoutSeconds, String... args) {
+        synchronized (monitor) {
+            callOrderVerifier.add("executeInContainerAsRoot with " + containerName + ", args: " + Arrays.toString(args));
+        }
+        return new ProcessResult(0, null, "");
+    }
+
 
     public static class StartContainerCommandMock implements CreateContainerCommand {
         @Override
@@ -212,10 +220,14 @@ public class DockerMock implements Docker {
         }
 
         @Override
-        public CreateContainerCommand withAddCapability(String capabilityName) {return this; }
+        public CreateContainerCommand withAddCapability(String capabilityName) {
+            return this;
+        }
 
         @Override
-        public CreateContainerCommand withDropCapability(String capabilityName) {return this; }
+        public CreateContainerCommand withDropCapability(String capabilityName) {
+            return this;
+        }
 
         @Override
         public void create() {

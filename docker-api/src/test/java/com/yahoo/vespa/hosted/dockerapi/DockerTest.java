@@ -115,6 +115,43 @@ public class DockerTest {
         assertThat(docker.getAllContainersManagedBy(MANAGER_NAME).isEmpty(), is(true));
     }
 
+    /**
+     * Test the expected behavior for exec when it times out - it should throw an exception when it times out,
+     * and before the process completes.
+     *
+     * The test timeout value is set quite high to avoid noise if screwdriver is slow but lower than the process time.
+     */
+    @Test(expected = DockerExecTimeoutException.class, timeout = 2000)
+    public void testContainerExecHounorsTimeout() throws IOException, InterruptedException, ExecutionException {
+        final ContainerName containerName = new ContainerName("docker-test-foo");
+        final String containerHostname = "hostName1";
+
+        docker.createContainerCommand(dockerImage, containerName, containerHostname).withManagedBy(MANAGER_NAME).create();
+        docker.startContainer(containerName);
+        docker.executeInContainerAsRoot(containerName, 1L, "sh", "-c", "sleep 5");
+    }
+
+    /**
+     * Test the expected behavior for exec that completes before specified timeout - it should return when the process finishes and not
+     * wait for the timeout. Some previous tests indicated that this was not behaving correctly.
+     *
+     * No timeout implies infinite timeout.
+     *
+     * The test timeout value is set quite high to avoid noise if screwdriver is slow
+     */
+    @Test(timeout = 4000)
+    public void testContainerExecDoesNotBlockUntilTimeoutWhenCommandFinishesBeforeTimeout() throws IOException, InterruptedException, ExecutionException {
+        final ContainerName containerName = new ContainerName("docker-test-foo");
+        final String containerHostname = "hostName1";
+
+        docker.createContainerCommand(dockerImage, containerName, containerHostname).withManagedBy(MANAGER_NAME).create();
+        docker.startContainer(containerName);
+        docker.executeInContainerAsRoot(containerName, 2L, "sh", "-c", "echo hei");
+
+        // Also test that this is the behavoir when not specifying timeout
+        docker.executeInContainerAsRoot(containerName,"sh", "-c", "echo hei");
+    }
+
     @Test
     public void testDockerNetworking() throws InterruptedException, ExecutionException, IOException {
         String hostName1 = "docker10.test.yahoo.com";

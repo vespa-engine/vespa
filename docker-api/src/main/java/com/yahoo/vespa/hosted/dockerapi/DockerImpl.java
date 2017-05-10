@@ -93,7 +93,7 @@ public class DockerImpl implements Docker {
                 true, /* fallback to 1.23 on errors */
                 metricReceiver);
 
-        if (! config.isRunningLocally()) {
+        if (!config.isRunningLocally()) {
             Duration minAgeToDelete = Duration.ofMinutes(config.imageGCMinTimeToLiveMinutes());
             dockerImageGC = Optional.of(new DockerImageGarbageCollector(minAgeToDelete));
 
@@ -121,7 +121,7 @@ public class DockerImpl implements Docker {
     }
 
     private void setupDockerNetworkIfNeeded() throws IOException {
-        if (! dockerClient.listNetworksCmd().withNameFilter(DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).exec().isEmpty()) return;
+        if (!dockerClient.listNetworksCmd().withNameFilter(DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).exec().isEmpty()) return;
 
         // Use IPv6 address if there is a mix of IP4 and IPv6 by taking the longest address.
         List<InetAddress> hostAddresses = Arrays.asList(InetAddress.getAllByName(com.yahoo.net.HostName.getLocalhost()));
@@ -225,22 +225,26 @@ public class DockerImpl implements Docker {
 
     @Override
     public ProcessResult executeInContainer(ContainerName containerName, String... args) {
-        return executeInContainerAsUser(containerName, "yahoo", args);
+        return executeInContainerAsUser(containerName, "yahoo", Optional.empty(), args);
     }
 
     @Override
     public ProcessResult executeInContainerAsRoot(ContainerName containerName, String... args) {
-        return executeInContainerAsUser(containerName, "root", args);
+        return executeInContainerAsUser(containerName, "root", Optional.empty(), args);
+    }
+
+    @Override
+    public ProcessResult executeInContainerAsRoot(ContainerName containerName, Long timeoutSeconds, String... args) {
+        return executeInContainerAsUser(containerName, "root", Optional.of(timeoutSeconds), args);
     }
 
     /**
      * Execute command in container as user, "user" can be "username", "username:group", "uid" or "uid:gid"
      */
-    private ProcessResult executeInContainerAsUser(ContainerName containerName, String user, String... args) {
-        assert args.length >= 1;
+    private ProcessResult executeInContainerAsUser(ContainerName containerName, String user, Optional<Long> timeoutSeconds, String... command) {
         try {
             final ExecCreateCmdResponse response = dockerClient.execCreateCmd(containerName.asString())
-                    .withCmd(args)
+                    .withCmd(command)
                     .withAttachStdout(true)
                     .withAttachStderr(true)
                     .withUser(user)
@@ -249,7 +253,16 @@ public class DockerImpl implements Docker {
             ByteArrayOutputStream output = new ByteArrayOutputStream();
             ByteArrayOutputStream errors = new ByteArrayOutputStream();
             ExecStartCmd execStartCmd = dockerClient.execStartCmd(response.getId());
-            execStartCmd.exec(new ExecStartResultCallback(output, errors)).awaitCompletion();
+            ExecStartResultCallback callback = execStartCmd.exec(new ExecStartResultCallback(output, errors));
+
+            if (timeoutSeconds.isPresent()) {
+                if (!callback.awaitCompletion(timeoutSeconds.get(), TimeUnit.SECONDS)) {
+                    throw new DockerExecTimeoutException(String.format("Command '%s' did not finish within %s seconds.", command[0], timeoutSeconds));
+                }
+            } else {
+                // Wait for completion no timeout
+                callback.awaitCompletion();
+            }
 
             final InspectExecResponse state = dockerClient.inspectExecCmd(execStartCmd.getExecId()).exec();
             assert !state.isRunning();
@@ -260,7 +273,7 @@ public class DockerImpl implements Docker {
         } catch (DockerException | InterruptedException e) {
             numberOfDockerDaemonFails.add();
             throw new RuntimeException("Container '" + containerName.asString()
-                    + "' failed to execute " + Arrays.toString(args), e);
+                    + "' failed to execute " + Arrays.toString(command), e);
         }
     }
 
@@ -413,7 +426,7 @@ public class DockerImpl implements Docker {
 
     @Override
     public void deleteUnusedDockerImages() {
-        if (! dockerImageGC.isPresent()) return;
+        if (!dockerImageGC.isPresent()) return;
 
         List<Image> images = listAllImages();
         List<com.github.dockerjava.api.model.Container> containers = listAllContainers();
@@ -481,7 +494,7 @@ public class DockerImpl implements Docker {
             remoteApiVersion = RemoteApiVersion.parseConfig(DockerClientImpl.getInstance(
                     buildDockerClientConfig(config).build())
                     .withDockerCmdExecFactory(dockerFactory).versionCmd().exec().getApiVersion());
-            logger.info("Found version of remote docker API: "+ remoteApiVersion);
+            logger.info("Found version of remote docker API: " + remoteApiVersion);
             // From version 1.24 a field was removed which causes trouble with the current docker java code.
             // When this is fixed, we can remove this and do not specify version.
             if (remoteApiVersion.isGreaterOrEqual(RemoteApiVersion.VERSION_1_24)) {
@@ -489,7 +502,7 @@ public class DockerImpl implements Docker {
                 logger.info("Found version 1.24 or newer of remote API, using 1.23.");
             }
         } catch (Exception e) {
-            if (! fallbackTo123orErrors) {
+            if (!fallbackTo123orErrors) {
                 throw e;
             }
             logger.log(LogLevel.ERROR, "Failed when trying to figure out remote API version of docker, using 1.23", e);

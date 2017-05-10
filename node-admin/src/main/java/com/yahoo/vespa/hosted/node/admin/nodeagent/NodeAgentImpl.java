@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
+import com.yahoo.vespa.hosted.dockerapi.DockerExecTimeoutException;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
@@ -80,6 +81,7 @@ public class NodeAgentImpl implements NodeAgent {
         RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN,
         RUNNING
     }
+
     private ContainerState containerState = ABSENT;
 
     // The attributes of the last successful node repo attribute update for this node. Used to avoid redundant calls.
@@ -172,7 +174,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
 
         loopThread = new Thread(() -> {
-            while (! terminated.get()) tick();
+            while (!terminated.get()) tick();
         });
         loopThread.setName("tick-" + hostname);
         loopThread.start();
@@ -199,7 +201,7 @@ public class NodeAgentImpl implements NodeAgent {
         try {
             FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(environment);
             Optional<String> config = filebeatConfigProvider.getConfig(nodeSpec);
-            if (! config.isPresent()) {
+            if (!config.isPresent()) {
                 logger.error("Was not able to generate a config for filebeat, ignoring filebeat file creation." + nodeSpec.toString());
                 return;
             }
@@ -250,16 +252,16 @@ public class NodeAgentImpl implements NodeAgent {
         // TODO: We should only update if the new current values do not match the node repo's current values
         if (!currentAttributes.equals(lastAttributesSet)) {
             logger.info("Publishing new set of attributes to node repo: "
-                                + lastAttributesSet + " -> " + currentAttributes);
+                    + lastAttributesSet + " -> " + currentAttributes);
             addDebugMessage("Publishing new set of attributes to node repo: {" +
-                                    lastAttributesSet + "} -> {" + currentAttributes + "}");
+                    lastAttributesSet + "} -> {" + currentAttributes + "}");
             nodeRepository.updateNodeAttributes(hostname, currentAttributes);
             lastAttributesSet = currentAttributes;
         }
     }
 
     private void startContainerIfNeeded(final ContainerNodeSpec nodeSpec) {
-        if (! getContainer().isPresent()) {
+        if (!getContainer().isPresent()) {
             aclMaintainer.ifPresent(AclMaintainer::run);
             dockerOperations.startContainer(containerName, nodeSpec);
             metricReceiver.unsetMetricsForContainer(hostname);
@@ -268,7 +270,7 @@ public class NodeAgentImpl implements NodeAgent {
 
             configureContainerMetrics(nodeSpec);
             addDebugMessage("startContainerIfNeeded: containerState " + containerState + " -> " +
-                            RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN);
+                    RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN);
             containerState = RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
             logger.info("Container successfully started, new containerState is " + containerState);
         }
@@ -279,13 +281,13 @@ public class NodeAgentImpl implements NodeAgent {
                 shouldRestartServices(nodeSpec).ifPresent(restartReason -> {
                     logger.info("Will restart services for container " + existingContainer + ": " + restartReason);
                     restartServices(nodeSpec, existingContainer);
-        }));
+                }));
     }
 
     private Optional<String> shouldRestartServices(ContainerNodeSpec nodeSpec) {
-        if ( ! nodeSpec.wantedRestartGeneration.isPresent()) return Optional.empty();
+        if (!nodeSpec.wantedRestartGeneration.isPresent()) return Optional.empty();
 
-        if (! nodeSpec.currentRestartGeneration.isPresent() ||
+        if (!nodeSpec.currentRestartGeneration.isPresent() ||
                 nodeSpec.currentRestartGeneration.get() < nodeSpec.wantedRestartGeneration.get()) {
             return Optional.of("Restart requested - wanted restart generation has been bumped: "
                     + nodeSpec.currentRestartGeneration.get() + " -> " + nodeSpec.wantedRestartGeneration.get());
@@ -317,7 +319,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
         if (nodeSpec.wantedDockerImage.isPresent() && !nodeSpec.wantedDockerImage.get().equals(existingContainer.image)) {
             return Optional.of("The node is supposed to run a new Docker image: "
-                                       + existingContainer + " -> " + nodeSpec.wantedDockerImage.get());
+                    + existingContainer + " -> " + nodeSpec.wantedDockerImage.get());
         }
         if (!existingContainer.state.isRunning()) {
             return Optional.of("Container no longer running");
@@ -372,7 +374,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void signalWorkToBeDone() {
         synchronized (monitor) {
-            if (! workToDoNow) {
+            if (!workToDoNow) {
                 workToDoNow = true;
                 addDebugMessage("Signaling work to be done");
                 monitor.notifyAll();
@@ -383,7 +385,7 @@ public class NodeAgentImpl implements NodeAgent {
     void tick() {
         boolean isFrozenCopy;
         synchronized (monitor) {
-            while (! workToDoNow) {
+            while (!workToDoNow) {
                 long remainder = delaysBetweenEachConvergeMillis - Duration.between(lastConverge, clock.instant()).toMillis();
                 if (remainder > 0) {
                     try {
@@ -526,7 +528,7 @@ public class NodeAgentImpl implements NodeAgent {
         // The remaining metrics require container to exists and be running
         if (containerState == ABSENT) return;
         Optional<Docker.ContainerStats> containerStats = dockerOperations.getContainerStats(containerName);
-        if ( ! containerStats.isPresent()) return;
+        if (!containerStats.isPresent()) return;
 
         Docker.ContainerStats stats = containerStats.get();
 
@@ -570,6 +572,15 @@ public class NodeAgentImpl implements NodeAgent {
 
         metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_HOST_LIFE, dimensions, "uptime").sample(lastCpuMetric.getUptime());
         metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_HOST_LIFE, dimensions, "alive").sample(1);
+
+        // Push metrics to the metrics proxy in each container - give it maximum 1 seconds to complete
+        try {
+            //TODO The command here is almost a dummy command until we have the proper RPC method in place
+            // Remember proper argument encoding
+            dockerOperations.executeCommandInContainerAsRoot(containerName, 1L, "sh", "-c", "'echo " + metricReceiver.toString() + "'");
+        } catch (DockerExecTimeoutException e) {
+            logger.warning("Unable to push metrics to container: " + containerName, e);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -578,7 +589,7 @@ public class NodeAgentImpl implements NodeAgent {
         if (metricsMap == null || !metricsMap.containsKey(metricName)) return;
         try {
             metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, yamasName)
-                          .sample(((Number) metricsMap.get(metricName)).doubleValue());
+                    .sample(((Number) metricsMap.get(metricName)).doubleValue());
         } catch (Throwable e) {
             logger.warning("Failed to update " + yamasName + " metric with value " + metricsMap.get(metricName), e);
         }
@@ -607,7 +618,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void configureContainerMetrics(ContainerNodeSpec nodeSpec) {
-        if (! storageMaintainer.isPresent()) return;
+        if (!storageMaintainer.isPresent()) return;
         final Path yamasAgentFolder = environment.pathInNodeAdminFromPathInNode(containerName, "/etc/yamas-agent/");
 
         Path vespaCheckPath = Paths.get(getDefaults().underVespaHome("libexec/yms/yms_check_vespa"));
@@ -633,7 +644,7 @@ public class NodeAgentImpl implements NodeAgent {
 
         try {
             scheduleMaker.writeTo(yamasAgentFolder);
-            final String[] restartYamasAgent = new String[] {"service" , "yamas-agent", "restart"};
+            final String[] restartYamasAgent = new String[]{"service", "yamas-agent", "restart"};
             dockerOperations.executeCommandInContainerAsRoot(containerName, restartYamasAgent);
         } catch (IOException e) {
             throw new RuntimeException("Failed to write secret-agent schedules for " + containerName, e);

@@ -22,11 +22,11 @@ import java.util.stream.Collectors;
  * The responsibility of this class is to configure ACLs for all running containers. The ACLs are fetched from the Node
  * repository. Based on those ACLs, iptables commands are created and then executed in each of the containers network
  * namespace.
- *
+ * <p>
  * If an ACL cannot be configured (e.g. iptables process execution fails), a rollback is attempted by setting the
  * default policy to ACCEPT which will allow any traffic. The configuration will be retried the next time the
  * maintainer runs.
- *
+ * <p>
  * The ACL maintainer does not handle IPv4 addresses and is thus only intended to configure ACLs for IPv6-only
  * containers (e.g. any container, except node-admin).
  *
@@ -43,7 +43,7 @@ public class AclMaintainer implements Runnable {
     private final Map<ContainerName, Acl> containerAcls;
 
     public AclMaintainer(DockerOperations dockerOperations, NodeRepository nodeRepository,
-                  String nodeAdminHostname) {
+                         String nodeAdminHostname) {
         this.dockerOperations = dockerOperations;
         this.nodeRepository = nodeRepository;
         this.nodeAdminHostname = nodeAdminHostname;
