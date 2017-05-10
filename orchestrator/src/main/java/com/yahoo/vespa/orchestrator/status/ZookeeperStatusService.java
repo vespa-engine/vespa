@@ -157,7 +157,7 @@ public class ZookeeperStatusService implements StatusService {
         boolean acquired = mutex.acquire(timeout, timeoutTimeUnit);
         if (!acquired) {
             log.log(LogLevel.DEBUG, "Timed out waiting for lock on " + lockPath);
-            throw new TimeoutException();
+            throw new TimeoutException("Timed out waiting for lock on " + lockPath);
         }
         log.log(LogLevel.DEBUG, "Successfully acquired lock on " + lockPath);
         return mutex;
