@@ -274,6 +274,7 @@ public:
      */
     void unblockShrinkLidSpace();
     void onShrinkLidSpace() override;
+    virtual size_t getEstimatedShrinkLidSpaceGain() const override;
     uint64_t getEstimatedSaveByteSize() const override;
     virtual uint32_t getVersion() const override;
     void setTrackDocumentSizes(bool trackDocumentSizes) { _trackDocumentSizes = trackDocumentSizes; }
