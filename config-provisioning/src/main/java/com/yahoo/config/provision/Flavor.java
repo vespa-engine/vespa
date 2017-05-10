@@ -77,9 +77,11 @@ public class Flavor {
 
     public Type getType() { return type; }
 
+    /** The free capacity we would like to preserve for this flavor */
     public int getIdealHeadroom() {
         return idealHeadroom;
     }
+
     /**
      * Returns the canonical name of this flavor - which is the name which should be used as an interface to users.
      * The canonical name of this flavor is:
