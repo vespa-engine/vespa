@@ -54,7 +54,7 @@ getData(uint32_t lid)
     return oss.str();
 }
 
-struct Fixture {
+struct FixtureBase {
     test::DirectoryHandler dir;
     ThreadStackExecutor executor;
     uint64_t serialNum;
@@ -63,15 +63,13 @@ struct Fixture {
     vespalib::Lock updateLock;
     SetLidObserver lidObserver;
     BucketizerObserver bucketizer;
-    WriteableFileChunk chunk;
 
     uint64_t nextSerialNum() {
         return serialNum++;
     };
 
-    Fixture(const vespalib::string &baseName,
-            uint32_t docIdLimit,
-            bool dirCleanup = true)
+    FixtureBase(const vespalib::string &baseName,
+                bool dirCleanup = true)
         : dir(baseName),
           executor(1, 0x10000),
           serialNum(1),
@@ -79,7 +77,47 @@ struct Fixture {
           fileHeaderCtx(),
           updateLock(),
           lidObserver(),
-          bucketizer(),
+          bucketizer()
+    {
+        dir.cleanup(dirCleanup);
+    }
+    ~FixtureBase() {}
+    void assertLidMap(const std::vector<uint32_t> &expLids) {
+        EXPECT_EQUAL(expLids, lidObserver.lids);
+    }
+    void assertBucketizer(const std::vector<uint32_t> &expLids) {
+        EXPECT_EQUAL(expLids, bucketizer.lids);
+    }
+};
+
+struct ReadFixture : public FixtureBase {
+    FileChunk chunk;
+
+    ReadFixture(const vespalib::string &baseName,
+                 bool dirCleanup = true)
+        : FixtureBase(baseName, dirCleanup),
+          chunk(FileChunk::FileId(0),
+                FileChunk::NameId(1234),
+                baseName,
+                tuneFile,
+                &bucketizer,
+                false)
+    {
+        dir.cleanup(dirCleanup);
+    }
+    void updateLidMap(uint32_t docIdLimit) {
+        vespalib::LockGuard guard(updateLock);
+        chunk.updateLidMap(guard, lidObserver, serialNum, docIdLimit);
+    }
+};
+
+struct WriteFixture : public FixtureBase {
+    WriteableFileChunk chunk;
+
+    WriteFixture(const vespalib::string &baseName,
+                 uint32_t docIdLimit,
+                 bool dirCleanup = true)
+        : FixtureBase(baseName, dirCleanup),
           chunk(executor,
                 FileChunk::FileId(0),
                 FileChunk::NameId(1234),
@@ -94,12 +132,11 @@ struct Fixture {
     {
         dir.cleanup(dirCleanup);
     }
-    ~Fixture() {}
     void flush() {
         chunk.flush(true, serialNum);
         chunk.flushPendingChunks(serialNum);
     }
-    Fixture &append(uint32_t lid) {
+    WriteFixture &append(uint32_t lid) {
         vespalib::string data = getData(lid);
         chunk.append(nextSerialNum(), lid, data.c_str(), data.size());
         return *this;
@@ -108,15 +145,17 @@ struct Fixture {
         vespalib::LockGuard guard(updateLock);
         chunk.updateLidMap(guard, lidObserver, serialNum, docIdLimit);
     }
-    void assertLidMap(const std::vector<uint32_t> &expLids) {
-        EXPECT_EQUAL(expLids, lidObserver.lids);
-    }
-    void assertBucketizer(const std::vector<uint32_t> &expLids) {
-        EXPECT_EQUAL(expLids, bucketizer.lids);
-    }
+
 };
 
-TEST_F("require that idx file without docIdLimit in header can be read", Fixture("without_doc_id_limit", 1000, false))
+TEST_F("require that idx file without docIdLimit in header can be read by FileChunk",
+       ReadFixture("without_doc_id_limit", false))
+{
+    EXPECT_EQUAL(std::numeric_limits<uint32_t>::max(), f.chunk.getDocIdLimit());
+}
+
+TEST_F("require that idx file without docIdLimit in header can be read by WriteableFileChunk",
+       WriteFixture("without_doc_id_limit", 1000, false))
 {
     EXPECT_EQUAL(std::numeric_limits<uint32_t>::max(), f.chunk.getDocIdLimit());
 }
@@ -124,30 +163,49 @@ TEST_F("require that idx file without docIdLimit in header can be read", Fixture
 TEST("require that docIdLimit is written to and read from idx file header")
 {
     {
-        Fixture f("tmp", 1000, false);
-    }
-    {
-        Fixture f("tmp", 0);
+        WriteFixture f("tmp", 1000, false);
         EXPECT_EQUAL(1000u, f.chunk.getDocIdLimit());
     }
+    {
+        ReadFixture f("tmp", false);
+        f.updateLidMap(std::numeric_limits<uint32_t>::max()); // trigger reading of idx file header
+        EXPECT_EQUAL(1000u, f.chunk.getDocIdLimit());
+    }
+    {
+        WriteFixture f("tmp", 0);
+        EXPECT_EQUAL(1000u, f.chunk.getDocIdLimit());
+    }
+}
+
+template <typename FixtureType>
+void
+assertUpdateLidMap(FixtureType &f)
+{
+    std::vector<uint32_t> expLids({1,10,100,999,998,999});
+    f.assertLidMap(expLids);
+    f.assertBucketizer(expLids);
+    size_t entrySize = 10 + 8;
+    EXPECT_EQUAL(9 * entrySize, f.chunk.getAddedBytes());
+    EXPECT_EQUAL(3u, f.chunk.getBloatCount());
+    EXPECT_EQUAL(3 * entrySize, f.chunk.getErasedBytes());
 }
 
 TEST("require that entries with lid >= docIdLimit are skipped in updateLidMap()")
 {
     {
-        Fixture f("tmp", 0, false);
+        WriteFixture f("tmp", 0, false);
         f.append(1).append(10).append(100).append(999).append(1000).append(1001).append(998).append(1002).append(999);
         f.flush();
     }
     {
-        Fixture f("tmp", 0);
+        ReadFixture f("tmp", false);
         f.updateLidMap(1000);
-        f.assertLidMap({1,10,100,999,998,999});
-        f.assertBucketizer({1,10,100,999,998,999});
-        size_t entrySize = 10 + 8;
-        EXPECT_EQUAL(9 * entrySize, f.chunk.getAddedBytes());
-        EXPECT_EQUAL(3u, f.chunk.getBloatCount());
-        EXPECT_EQUAL(3 * entrySize, f.chunk.getErasedBytes());
+        assertUpdateLidMap(f);
+    }
+    {
+        WriteFixture f("tmp", 0);
+        f.updateLidMap(1000);
+        assertUpdateLidMap(f);
     }
 }
 

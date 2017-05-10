@@ -60,7 +60,6 @@ public:
     void flush(bool block, uint64_t syncToken);
     uint64_t   getSerialNum() const { return _serialNum; }
     void setSerialNum(uint64_t serialNum) { _serialNum = std::max(_serialNum, serialNum); }
-    uint32_t getDocIdLimit() const { return _docIdLimit; }
 
     virtual fastos::TimeStamp getModificationTime() const override;
     void freeze();
@@ -109,7 +108,6 @@ private:
 
     Config            _config;
     SerialNum         _serialNum;
-    uint32_t          _docIdLimit;
     bool              _frozen;
     // Lock order is _writeLock, _flushLock, _lock
     vespalib::Monitor _lock;

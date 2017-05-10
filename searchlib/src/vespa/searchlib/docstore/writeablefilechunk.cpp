@@ -30,7 +30,6 @@ namespace {
 
 const uint64_t Alignment = 4096;
 const uint64_t headerAlign = 4096;
-const vespalib::string DOC_ID_LIMIT_KEY("docIdLimit");
 
 }
 
@@ -90,7 +89,6 @@ WriteableFileChunk(vespalib::ThreadExecutor &executor,
     : FileChunk(fileId, nameId, baseName, tune, bucketizer, skipCrcOnRead),
       _config(config),
       _serialNum(initialSerialNum),
-      _docIdLimit(docIdLimit),
       _frozen(false),
       _lock(),
       _writeLock(),
@@ -112,6 +110,7 @@ WriteableFileChunk(vespalib::ThreadExecutor &executor,
       _executor(executor),
       _bucketMap(bucketizer)
 {
+    _docIdLimit = docIdLimit;
     if (tune._write.getWantDirectIO()) {
         _dataFile.EnableDirectIO();
     }
@@ -754,11 +753,7 @@ WriteableFileChunk::readIdxHeader()
         FileHeader h;
         _idxHeaderLen = h.readFile(_idxFile);
         _idxFile.SetPosition(_idxHeaderLen);
-        if (h.hasTag(DOC_ID_LIMIT_KEY)) {
-            _docIdLimit = h.getTag(DOC_ID_LIMIT_KEY).asInteger();
-        } else {
-            _docIdLimit = std::numeric_limits<uint32_t>::max();
-        }
+        _docIdLimit = readDocIdLimit(h);
     } catch (IllegalHeaderException &e) {
         _idxFile.SetPosition(0);
         try {
@@ -807,7 +802,7 @@ WriteableFileChunk::writeIdxHeader(const FileHeaderContext &fileHeaderContext, u
     assert(file.GetPosition() == 0);
     fileHeaderContext.addTags(h, file.GetFileName());
     h.putTag(Tag("desc", "Log data store chunk index"));
-    h.putTag(Tag(DOC_ID_LIMIT_KEY, docIdLimit));
+    writeDocIdLimit(h, docIdLimit);
     return h.writeFile(file);
 }
 
