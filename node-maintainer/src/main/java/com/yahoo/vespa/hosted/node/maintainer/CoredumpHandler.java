@@ -117,9 +117,11 @@ public class CoredumpHandler {
         return Files.move(coredumpPath, folder.resolve(coredumpPath.getFileName()));
     }
 
-    String collectMetadata(Path coredumpPath, Map<String, Object> nodeAttributes) throws IOException {
-        Path metadataPath = coredumpPath.resolve(METADATA_FILE_NAME);
+    String collectMetadata(Path coredumpDirectory, Map<String, Object> nodeAttributes) throws IOException {
+        Path metadataPath = coredumpDirectory.resolve(METADATA_FILE_NAME);
         if (!Files.exists(metadataPath)) {
+            Path coredumpPath = Files.list(coredumpDirectory).findFirst()
+                    .orElseThrow(() -> new RuntimeException("No coredump file found in processing directory " + coredumpDirectory));
             Map<String, Object> metadata = coreCollector.collect(coredumpPath, yinstStatePath);
             metadata.putAll(nodeAttributes);
 
