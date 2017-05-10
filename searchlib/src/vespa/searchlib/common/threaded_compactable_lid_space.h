@@ -22,7 +22,7 @@ class ThreadedCompactableLidSpace : public ICompactableLidSpace
     ISequencedTaskExecutor &_executor;
     uint32_t                _executorId;
 public:
-    ThreadedCompactableLidSpace(std::shared_ptr<ICompactableLidSpace> target, ISequencedTaskExecutor &_executor, uint32_t executorId);
+    ThreadedCompactableLidSpace(std::shared_ptr<ICompactableLidSpace> target, ISequencedTaskExecutor &executor, uint32_t executorId);
     virtual ~ThreadedCompactableLidSpace() override;
     virtual void compactLidSpace(uint32_t wantedDocLidLimit) override;
     virtual bool canShrinkLidSpace() const override;
