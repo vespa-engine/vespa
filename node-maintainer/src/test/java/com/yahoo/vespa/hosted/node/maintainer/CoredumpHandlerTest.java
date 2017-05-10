@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
@@ -109,11 +110,11 @@ public class CoredumpHandlerTest {
 
     @Test
     public void coredumpMetadataCollectAndWriteTest() throws IOException, InterruptedException {
-        when(coreCollector.collect(any(), any())).thenReturn(metadata);
         createCoredump("core.dump");
         Path processingPath = coredumpHandler.processCoredumps();
         Path processingCoredumpPath = Files.list(processingPath).findFirst().orElseThrow(() ->
                 new RuntimeException("Expected to find directory with coredump in processing dir"));
+        when(coreCollector.collect(eq(processingCoredumpPath.resolve("core.dump")), any())).thenReturn(metadata);
 
         // Inside 'processing' directory, there should be a new directory containing 'core.dump' file
         String returnedMetadata = coredumpHandler.collectMetadata(processingCoredumpPath, attributes);
