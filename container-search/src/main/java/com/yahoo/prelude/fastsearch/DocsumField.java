@@ -75,7 +75,7 @@ public abstract class DocsumField {
 
     /* for unit test only */
     static DocsumField create(String name, String typename) {
-        return create(name, typename, new LegacyEmulationConfig(new LegacyEmulationConfig.Builder()));
+        return create(name, typename, new LegacyEmulationConfig());
     }
 
     public static DocsumField create(String name, String typename, LegacyEmulationConfig emulConfig) {
