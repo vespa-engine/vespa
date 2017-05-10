@@ -94,7 +94,7 @@ HTTPClient::ReadLine(char *buf, size_t bufsize)
 }
 
 bool
-HTTPClient::Connect(const char *url)
+HTTPClient::Connect(const char *url, bool usePost, const char *content, int cLen)
 {
     char tmp[4096];
     char *req = NULL;
@@ -121,24 +121,24 @@ HTTPClient::Connect(const char *url)
         assert(req != NULL);
     }
 
-    if (headers.length() > 0) {
-        headers += "\r\n";
+    if (!_keepAlive) {
+        headers += "Connection: close\r\n";
     }
+    headers += "User-Agent: fbench/4.2.10\r\n";
+
     // create request
-    if(_keepAlive) {
+    if (usePost) {
         snprintf(req, req_max,
-                 "GET %s HTTP/1.1\r\n"
+                 "POST %s HTTP/1.1\r\n"
                  "Host: %s\r\n"
-                 "User-Agent: fbench/4.2.10\r\n"
+                 "Content-Length: %d\r\n"
                  "%s"
                  "\r\n",
-                 url, _authority.c_str(), headers.c_str());
+                 url, _authority.c_str(), cLen, headers.c_str());
     } else {
         snprintf(req, req_max,
                  "GET %s HTTP/1.1\r\n"
                  "Host: %s\r\n"
-                 "Connection: close\r\n"
-                 "User-Agent: fbench/4.2.10\r\n"
                  "%s"
                  "\r\n",
                  url, _authority.c_str(), headers.c_str());
@@ -148,6 +148,7 @@ HTTPClient::Connect(const char *url)
     if (_keepAlive
         && _socket->IsOpened()
         && _socket->Write(req, strlen(req)) == (ssize_t)strlen(req)
+        && (!usePost || _socket->Write(content, cLen) == (ssize_t)cLen)
         && FillBuffer() > 0) {
 
         // DEBUG
@@ -167,7 +168,9 @@ HTTPClient::Connect(const char *url)
         && _socket->Connect()
         && _socket->SetNoDelay(true)
         && _socket->SetSoLinger(false, 0)
-        && _socket->Write(req, strlen(req)) == (ssize_t)strlen(req)) {
+        && _socket->Write(req, strlen(req)) == (ssize_t)strlen(req)
+        && (!usePost || _socket->Write(content, cLen) == (ssize_t)cLen))
+    {
 
         // DEBUG
         // printf("New Socket connection!\n");
@@ -186,6 +189,7 @@ HTTPClient::Connect(const char *url)
     }
     return false;
 }
+
 
 char *
 HTTPClient::SplitString(char *input, int &argc, char **argv, int maxargs)
@@ -338,7 +342,7 @@ HTTPClient::ReadChunkHeader()
 }
 
 bool
-HTTPClient::Open(const char *url)
+HTTPClient::Open(const char *url, bool usePost, const char *content, int cLen)
 {
     if (_isOpen)
         Close();
@@ -346,7 +350,7 @@ HTTPClient::Open(const char *url)
     ResetBuffer();
     _dataRead  = 0;
     _dataDone  = false;
-    _isOpen    = Connect(url);
+    _isOpen    = Connect(url, usePost, content, cLen);
     if(!_isOpen || !ReadHTTPHeader()) {
         Close();
         return false;
@@ -508,14 +512,15 @@ HTTPClient::Close()
 }
 
 HTTPClient::FetchStatus
-HTTPClient::Fetch(const char *url, std::ostream *file)
+HTTPClient::Fetch(const char *url, std::ostream *file,
+                  bool usePost, const char *content, int contentLen)
 {
     size_t  buflen   = FETCH_BUFLEN;
     char    buf[FETCH_BUFLEN];      // NB: ensure big enough thread stack.
     ssize_t readRes  = 0;
     ssize_t written  = 0;
 
-    if (!Open(url)) {
+    if (!Open(url, usePost, content, contentLen)) {
         return FetchStatus(false, _requestStatus, _totalHitCount, 0);
     }
 
