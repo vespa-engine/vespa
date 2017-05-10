@@ -122,27 +122,29 @@ int UrlReader::nextContent()
 {
     char *buf = _contentbuf;
     int totLen = 0;
-    int nl = 0;
-    while (totLen + 1 < _contentbufsize) {
-       int left = _contentbufsize - totLen;
+    // make sure we don't chop leftover URL
+    while (totLen + _args._maxLineSize < _contentbufsize) {
        // allow space for newline:
-       int len = _reader.ReadLine(buf, left - 1);
+       int room = _contentbufsize - totLen - 1;
+       int len = _reader.ReadLine(buf, room);
        if (len < 0) {
            // reached EOF
-           return totLen;
+           break;
        }
+       len = std::min(len, room);
        if (len > 0 && buf[0] == '/') {
            // reached next URL
            _leftOvers = buf;
            _leftOversLen = len;
-           return totLen;
+           break;
        }
        buf += len;
+       totLen += len;
        *buf++ = '\n';
-       totLen += nl + len;
-       nl = 1;
+       totLen++;
     }
-    return totLen;
+    // ignore last newline
+    return (totLen > 0) ? totLen-1 : 0;
 }
 
 
