@@ -29,6 +29,7 @@ vespa_add_library(searchlib_common OBJECT
     sortdata.cpp
     sortresults.cpp
     sortspec.cpp
+    threaded_compactable_lid_space.cpp
     tunefileinfo.cpp
     DEPENDS
 )
