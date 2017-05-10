@@ -619,8 +619,9 @@ LogDataStore::createWritableFile(FileId fileId, SerialNum serialNum, NameId name
             return FileChunk::UP();
         }
     }
+    uint32_t docIdLimit = (getDocIdLimit() != 0) ? getDocIdLimit() : std::numeric_limits<uint32_t>::max();
     FileChunk::UP file(new WriteableFileChunk(_executor, fileId, nameId, getBaseDir(),
-                                              serialNum, std::numeric_limits<uint32_t>::max(),
+                                              serialNum, docIdLimit,
                                               _config.getFileConfig(), _tune, _fileHeaderContext,
                                               _bucketizer.get(), _config.crcOnReadDisabled()));
     file->enableRead();

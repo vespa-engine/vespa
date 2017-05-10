@@ -1,18 +1,20 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/searchlib/docstore/logdocumentstore.h>
+#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchlib/docstore/chunkformats.h>
+#include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/searchlib/docstore/storebybucket.h>
 #include <vespa/searchlib/docstore/visitcache.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/document/repo/configbuilder.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/searchlib/test/directory_handler.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <iomanip>
+#include <iostream>
 
 using document::BucketId;
 using namespace search::docstore;
@@ -740,10 +742,14 @@ getBasicConfig(size_t maxFileSize)
 }
 
 vespalib::string
-genData(uint32_t lid)
+genData(uint32_t lid, size_t numBytes)
 {
+    assert(numBytes >= 6);
     std::ostringstream oss;
-    oss << "data_" << std::setw(5) << std::setfill('0') << lid;
+    for (size_t i = 0; i < (numBytes - 6); ++i) {
+        oss << 'a';
+    }
+    oss << std::setw(6) << std::setfill('0') << lid;
     return oss.str();
 }
 
@@ -759,31 +765,53 @@ struct Fixture {
         return serialNum++;
     }
 
-    Fixture(const vespalib::string &dirName)
+    Fixture(const vespalib::string &dirName,
+            bool dirCleanup = true,
+            size_t maxFileSize = 4096 * 2)
         : executor(1, 0x10000),
           dir(dirName),
+          serialNum(0),
           fileHeaderCtx(),
           tlSyncer(),
           store(executor,
                 dirName,
-                getBasicConfig(1024),
+                getBasicConfig(maxFileSize),
                 GrowStrategy(),
                 TuneFileSummary(),
                 fileHeaderCtx,
                 tlSyncer,
                 nullptr)
     {
+        dir.cleanup(dirCleanup);
     }
+    ~Fixture() {}
     void flush() {
+        store.initFlush(serialNum);
         store.flush(serialNum);
     }
     Fixture &write(uint32_t lid) {
-        vespalib::string data = genData(lid);
+        vespalib::string data = genData(lid, 256);
         store.write(nextSerialNum(), lid, data.c_str(), data.size());
         return *this;
     }
+    uint32_t writeUntilNewChunk(uint32_t startLid) {
+        size_t numChunksStart = store.getFileChunkStats().size();
+        for (uint32_t lid = startLid; ; ++lid) {
+            write(lid);
+            if (store.getFileChunkStats().size() > numChunksStart) {
+                return lid;
+            }
+        }
+    }
     void assertDocIdLimit(uint32_t expDocIdLimit) {
         EXPECT_EQUAL(expDocIdLimit, store.getDocIdLimit());
+    }
+    void assertDocIdLimitInFileChunks(const std::vector<uint32_t> expLimits) {
+        std::vector<uint32_t> actLimits;
+        for (const auto &stat : store.getFileChunkStats()) {
+            actLimits.push_back(stat.docIdLimit());
+        }
+        EXPECT_EQUAL(expLimits, actLimits);
     }
 };
 
@@ -796,6 +824,23 @@ TEST_F("require that docIdLimit is updated when inserting entries", Fixture("tmp
     f.assertDocIdLimit(11);
     f.write(11);
     f.assertDocIdLimit(12);
+}
+
+TEST("require that docIdLimit at idx file creation time is written to file header")
+{
+    std::vector<uint32_t> expLimits = {std::numeric_limits<uint32_t>::max(),24,114,214};
+    {
+        Fixture f("tmp", false);
+        f.writeUntilNewChunk(10);
+        f.writeUntilNewChunk(100);
+        f.writeUntilNewChunk(200);
+        f.assertDocIdLimitInFileChunks(expLimits);
+        f.flush();
+    }
+    {
+        Fixture f("tmp");
+        f.assertDocIdLimitInFileChunks(expLimits);
+    }
 }
 
 
