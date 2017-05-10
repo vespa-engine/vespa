@@ -45,3 +45,6 @@ flavor[].description string default=""
 
 # The flavor is retired and should no longer be used.
 flavor[].retired bool default=false
+
+# The capacity we would like to preserve for this flavor
+flavor[].idealHeadroom int default=0
