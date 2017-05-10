@@ -16,6 +16,7 @@ import com.yahoo.jdisc.handler.BufferedContentChannel;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.test.TestDriver;
+import com.yahoo.metrics.MetricsPresentationConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import org.junit.After;
 import org.junit.Test;
@@ -79,6 +80,8 @@ public class StateHandlerTest {
                 bind(MetricConsumer.class).toProvider(MetricConsumerProviders.wrap(monitor));
                 bind(ApplicationMetadataConfig.class).toInstance(new ApplicationMetadataConfig(
                         new ApplicationMetadataConfig.Builder().generation(META_GENERATION)));
+                bind(MetricsPresentationConfig.class)
+                        .toInstance(new MetricsPresentationConfig(new MetricsPresentationConfig.Builder()));
             }
         });
         builder.serverBindings().bind("http://*/*", builder.getInstance(StateHandler.class));
