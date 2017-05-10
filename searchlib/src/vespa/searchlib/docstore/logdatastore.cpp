@@ -53,14 +53,15 @@ LogDataStore::LogDataStore(vespalib::ThreadExecutor &executor,
       _executor(executor),
       _initFlushSyncToken(0),
       _tlSyncer(tlSyncer),
-      _bucketizer(bucketizer)
+      _bucketizer(bucketizer),
+      _currentlyCompacting()
 {
     // Reserve space for 1TB summary in order to avoid locking.
     _fileChunks.reserve(LidInfo::getFileIdLimit());
     _holdFileChunks.resize(LidInfo::getFileIdLimit());
 
     preload();
-    updateLidMap();
+    updateLidMap(getLastFileChunkDocIdLimit());
     updateSerialNum();
 }
 
@@ -86,13 +87,16 @@ LogDataStore::~LogDataStore()
 }
 
 void
-LogDataStore::updateLidMap()
+LogDataStore::updateLidMap(uint32_t lastFileChunkDocIdLimit)
 {
     uint64_t lastSerialNum(0);
     LockGuard guard(_updateLock);
-    for (FileChunk::UP & fc : _fileChunks) {
-        fc->updateLidMap(guard, *this, lastSerialNum, std::numeric_limits<uint32_t>::max());
-        lastSerialNum = fc->getLastPersistedSerialNum();
+    for (size_t i = 0; i < _fileChunks.size(); ++i) {
+        FileChunk::UP &chunk = _fileChunks[i];
+        bool lastChunk = ((i + 1) == _fileChunks.size());
+        uint32_t docIdLimit = lastChunk ? std::numeric_limits<uint32_t>::max() : lastFileChunkDocIdLimit;
+        chunk->updateLidMap(guard, *this, lastSerialNum, docIdLimit);
+        lastSerialNum = chunk->getLastPersistedSerialNum();
     }
 }
 
@@ -770,6 +774,15 @@ LogDataStore::preload()
     _prevActive = _active.prev();
 }
 
+uint32_t
+LogDataStore::getLastFileChunkDocIdLimit()
+{
+    if (!_fileChunks.empty()) {
+        return _fileChunks.back()->getDocIdLimit();
+    }
+    return std::numeric_limits<uint32_t>::max();
+}
+
 LogDataStore::NameIdSet
 LogDataStore::eraseEmptyIdxFiles(const NameIdSet &partList)
 {
@@ -1105,7 +1118,10 @@ LogDataStore::getFileChunkStats() const
 void
 LogDataStore::compactLidSpace(uint32_t wantedDocLidLimit)
 {
-    (void) wantedDocLidLimit;
+    for (size_t i = wantedDocLidLimit; i < _lidInfo.size(); ++i) {
+        _lidInfo[i] = LidInfo();
+    }
+    setDocIdLimit(wantedDocLidLimit);
 }
 
 bool

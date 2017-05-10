@@ -789,8 +789,8 @@ struct Fixture {
         store.initFlush(serialNum);
         store.flush(serialNum);
     }
-    Fixture &write(uint32_t lid) {
-        vespalib::string data = genData(lid, 256);
+    Fixture &write(uint32_t lid, size_t numBytes = 1024) {
+        vespalib::string data = genData(lid, numBytes);
         store.write(nextSerialNum(), lid, data.c_str(), data.size());
         return *this;
     }
@@ -806,6 +806,9 @@ struct Fixture {
     void assertDocIdLimit(uint32_t expDocIdLimit) {
         EXPECT_EQUAL(expDocIdLimit, store.getDocIdLimit());
     }
+    void assertNumChunks(size_t numChunks) {
+        EXPECT_EQUAL(numChunks, store.getFileChunkStats().size());
+    }
     void assertDocIdLimitInFileChunks(const std::vector<uint32_t> expLimits) {
         std::vector<uint32_t> actLimits;
         for (const auto &stat : store.getFileChunkStats()) {
@@ -813,22 +816,45 @@ struct Fixture {
         }
         EXPECT_EQUAL(expLimits, actLimits);
     }
+    void assertContent(const std::set<uint32_t> &lids, uint32_t docIdLimit, size_t numBytesPerEntry = 1024) {
+        for (uint32_t lid = 0; lid < docIdLimit; ++lid) {
+            vespalib::DataBuffer buffer;
+            size_t size = store.read(lid, buffer);
+            if (lids.find(lid) != lids.end()) {
+                vespalib::string expData = genData(lid, numBytesPerEntry);
+                EXPECT_EQUAL(expData, vespalib::string(buffer.getData(), buffer.getDataLen()));
+                EXPECT_GREATER(size, 0u);
+            } else {
+                EXPECT_EQUAL("", vespalib::string(buffer.getData(), buffer.getDataLen()));
+                EXPECT_EQUAL(0u, size);
+            }
+        }
+    }
 };
 
-TEST_F("require that docIdLimit is updated when inserting entries", Fixture("tmp"))
+TEST("require that docIdLimit is updated when inserting entries")
 {
-    f.assertDocIdLimit(0);
-    f.write(10);
-    f.assertDocIdLimit(11);
-    f.write(9);
-    f.assertDocIdLimit(11);
-    f.write(11);
-    f.assertDocIdLimit(12);
+    {
+        Fixture f("tmp", false);
+        f.assertDocIdLimit(0);
+        f.write(10);
+        f.assertDocIdLimit(11);
+        f.write(9);
+        f.assertDocIdLimit(11);
+        f.write(11);
+        f.assertDocIdLimit(12);
+        f.assertNumChunks(1);
+        f.flush();
+    }
+    {
+        Fixture f("tmp");
+        f.assertDocIdLimit(12);
+    }
 }
 
-TEST("require that docIdLimit at idx file creation time is written to file header")
+TEST("require that docIdLimit at idx file creation time is written to idx file header")
 {
-    std::vector<uint32_t> expLimits = {std::numeric_limits<uint32_t>::max(),24,114,214};
+    std::vector<uint32_t> expLimits = {std::numeric_limits<uint32_t>::max(),14,104,204};
     {
         Fixture f("tmp", false);
         f.writeUntilNewChunk(10);
@@ -843,6 +869,34 @@ TEST("require that docIdLimit at idx file creation time is written to file heade
     }
 }
 
+TEST("require that lid space can be compacted and entries from old files skipped during load")
+{
+    {
+        Fixture f("tmp", false);
+        f.write(10);
+        f.writeUntilNewChunk(100);
+        f.write(20);
+        f.writeUntilNewChunk(200);
+        f.write(30);
+        TEST_DO(f.assertContent({10,100,101,102,20,200,201,202,30}, 203));
+
+        f.assertDocIdLimit(203);
+        f.store.compactLidSpace(100);
+        f.assertDocIdLimit(100);
+        TEST_DO(f.assertContent({10,20,30}, 203));
+
+        f.writeUntilNewChunk(31);
+        f.write(99);
+        f.write(300);
+        TEST_DO(f.assertContent({10,20,30,31,32,33,99,300}, 301));
+        f.assertDocIdLimitInFileChunks({std::numeric_limits<uint32_t>::max(),103,203,100});
+        f.flush();
+    }
+    {
+        Fixture f("tmp");
+        TEST_DO(f.assertContent({10,20,30,31,32,33,99,300}, 301));
+    }
+}
 
 TEST_MAIN() {
     DummyFileHeaderContext::setCreator("logdatastore_test");

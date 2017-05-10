@@ -217,8 +217,9 @@ private:
     typedef attribute::RcuVector<uint64_t> LidInfoVector;
     typedef std::vector<FileChunk::UP> FileChunkVector;
 
-    void updateLidMap();
+    void updateLidMap(uint32_t lastFileChunkDocIdLimit);
     void preload();
+    uint32_t getLastFileChunkDocIdLimit();
     void verifyModificationTime(const NameIdSet & partList);
 
     void eraseDanglingDatFiles(const NameIdSet &partList, const NameIdSet &datPartList);
