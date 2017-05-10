@@ -32,12 +32,12 @@ public:
     int64_t getGeneration() const;
 
     /**
-     * Start configurer, callbacks may come from now on.
+     * Start config fetcher, callbacks may come from now on.
      */
     void start();
 
     /**
-     * Shutdown configurer, ensuring that no more callbacks arrive
+     * Shutdown config fetcher, ensuring that no more callbacks arrive
      */
     void close();
 

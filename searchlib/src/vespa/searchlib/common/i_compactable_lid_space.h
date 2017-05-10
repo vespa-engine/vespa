@@ -6,7 +6,7 @@ namespace search {
 namespace common {
 
 /**
- * Interface for a component that has a lid space that can be compacted and shrinked.
+ * Interface for a component that has a lid space that can be compacted and shrunk.
  */     
 struct ICompactableLidSpace {
     virtual ~ICompactableLidSpace() {}
@@ -18,10 +18,15 @@ struct ICompactableLidSpace {
     virtual void compactLidSpace(uint32_t wantedDocLidLimit) = 0;
 
     /**
-     * Returns whether this lid space can be shrinked down to the wanted doc id limit.
+     * Returns whether this lid space can be shrunk down to the wanted doc id limit.
      */ 
     virtual bool canShrinkLidSpace() const = 0;
 
+    /*
+     * Returns how much memory can be saved by shrinking lid space.
+     * TODO: Make method pure virtual when implemented in all derived classes.
+     */
+    virtual size_t getEstimatedShrinkLidSpaceGain() const { return 0; }
     /**
      * Shrinks this lid space down to the wanted doc id limit (frees memory resources).
      */

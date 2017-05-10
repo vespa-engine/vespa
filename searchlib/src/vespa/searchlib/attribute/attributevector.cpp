@@ -848,6 +848,33 @@ AttributeVector::getEstimatedSaveByteSize() const
     return datFileSize + weightFileSize + idxFileSize + udatFileSize;
 }
 
+size_t
+AttributeVector::getEstimatedShrinkLidSpaceGain() const
+{
+    size_t canFree = 0;
+    if (canShrinkLidSpace()) {
+        uint32_t committedDocIdLimit = getCommittedDocIdLimit();
+        uint32_t numDocs = getNumDocs();
+        const attribute::Config &cfg = getConfig();
+        if (committedDocIdLimit < numDocs) {
+            size_t elemSize = 4;
+            if (!cfg.collectionType().isMultiValue() && !cfg.fastSearch()) {
+                BasicType::Type basicType(getBasicType());
+                switch (basicType) {
+                case BasicType::Type::PREDICATE:
+                case BasicType::Type::TENSOR:
+                case BasicType::Type::REFERENCE:
+                    break;
+                default:
+                    elemSize = cfg.basicType().fixedSize();
+                }
+            }
+            canFree = elemSize * (numDocs - committedDocIdLimit);
+        }
+    }
+    return canFree;
+}
+
 MemoryUsage
 AttributeVector::getChangeVectorMemoryUsage() const
 {

@@ -1019,6 +1019,21 @@ DocumentMetaStore::onShrinkLidSpace()
     setNumDocs(committedDocIdLimit);
 }
 
+size_t
+DocumentMetaStore::getEstimatedShrinkLidSpaceGain() const
+{
+    size_t canFree = 0;
+    if (canShrinkLidSpace()) {
+        uint32_t committedDocIdLimit = getCommittedDocIdLimit();
+        uint32_t numDocs = getNumDocs();
+        if (committedDocIdLimit < numDocs) {
+            canFree = sizeof(RawDocumentMetaData) *
+                      (numDocs - committedDocIdLimit);
+        }
+    }
+    return canFree;
+}
+
 BucketId
 DocumentMetaStore::getBucketOf(const vespalib::GenerationHandler::Guard &, uint32_t lid) const
 {

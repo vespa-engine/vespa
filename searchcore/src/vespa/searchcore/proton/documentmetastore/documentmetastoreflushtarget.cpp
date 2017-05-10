@@ -209,16 +209,9 @@ IFlushTarget::MemoryGain
 DocumentMetaStoreFlushTarget::getApproxMemoryGain() const
 {
     int64_t used(_dms->getStatus().getUsed());
-    int64_t canFree = 0;
-    if (_dms->canShrinkLidSpace()) {
-        uint32_t committedDocIdLimit = _dms->getCommittedDocIdLimit();
-        uint32_t numDocs = _dms->getNumDocs();
-        if (committedDocIdLimit < numDocs) {
-            canFree = sizeof(RawDocumentMetaData) *
-                      (numDocs - committedDocIdLimit);
-            if (canFree > used)
-                canFree = used;
-        }
+    int64_t canFree = _dms->getEstimatedShrinkLidSpaceGain();
+    if (canFree > used) {
+        canFree = used;
     }
     return MemoryGain(used, used - canFree);
 }

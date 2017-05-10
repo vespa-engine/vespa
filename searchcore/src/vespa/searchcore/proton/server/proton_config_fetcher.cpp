@@ -7,7 +7,7 @@
 #include "proton_config_snapshot.h"
 #include "i_proton_configurer.h"
 #include <vespa/log/log.h>
-LOG_SETUP(".proton.server.protonconfigurer");
+LOG_SETUP(".proton.server.proton_config_fetcher");
 
 using namespace vespa::config::search;
 using namespace vespa::config::search::core;
@@ -159,7 +159,7 @@ ProtonConfigFetcher::start()
     fetchConfigs();
     if (_threadPool.NewThread(this, NULL) == NULL) {
         throw vespalib::IllegalStateException(
-                "Failed starting thread for proton configurer");
+                "Failed starting thread for proton config fetcher");
     }
 }
 
