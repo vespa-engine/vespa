@@ -448,7 +448,7 @@ public class FastSearcherTestCase {
     public void testPing() throws IOException, InterruptedException {
         Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
         BackendTestCase.MockServer server = new BackendTestCase.MockServer();
-        FS4ResourcePool listeners = new FS4ResourcePool(new Fs4Config());
+        FS4ResourcePool listeners = new FS4ResourcePool(new Fs4Config(new Fs4Config.Builder()));
         Backend backend = listeners.getBackend(server.host.getHostString(),server.host.getPort());
         FastSearcher fastSearcher = new FastSearcher(backend,
                                                      new FS4ResourcePool(1),

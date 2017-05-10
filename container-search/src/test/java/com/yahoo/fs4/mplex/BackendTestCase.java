@@ -143,7 +143,7 @@ public class BackendTestCase {
         logger = Logger.getLogger(Backend.class.getName());
         initUseParent = logger.getUseParentHandlers();
         logger.setUseParentHandlers(false);
-        listeners = new FS4ResourcePool(new Fs4Config());
+        listeners = new FS4ResourcePool(new Fs4Config(new Fs4Config.Builder()));
 
         server = new MockServer();
         backend = listeners.getBackend(server.host.getHostString(), server.host.getPort());
