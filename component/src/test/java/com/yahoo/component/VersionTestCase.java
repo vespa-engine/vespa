@@ -3,12 +3,18 @@ package com.yahoo.component;
 
 import com.yahoo.text.Utf8Array;
 import com.yahoo.text.Utf8String;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bratseth
  */
-public class VersionTestCase extends junit.framework.TestCase {
+public class VersionTestCase {
 
+    @Test
     public void testPrimitiveCreation() {
         Version version=new Version(1,2,3,"qualifier");
         assertEquals(1,version.getMajor());
@@ -17,6 +23,7 @@ public class VersionTestCase extends junit.framework.TestCase {
         assertEquals("qualifier",version.getQualifier());
     }
 
+    @Test
     public void testUnderspecifiedPrimitiveCreation() {
         Version version=new Version(1);
         assertEquals(1,version.getMajor());
@@ -26,6 +33,7 @@ public class VersionTestCase extends junit.framework.TestCase {
         assertEquals("",version.getQualifier());
     }
 
+    @Test
     public void testStringCreation() {
         Version version=new Version("1.2.3.qualifier");
         assertEquals(1,version.getMajor());
@@ -33,6 +41,8 @@ public class VersionTestCase extends junit.framework.TestCase {
         assertEquals(3,version.getMicro());
         assertEquals("qualifier",version.getQualifier());
     }
+
+    @Test
     public void testUtf8StringCreation() {
         Version version=new Version((Utf8Array)new Utf8String("1.2.3.qualifier"));
         assertEquals(1,version.getMajor());
@@ -41,6 +51,7 @@ public class VersionTestCase extends junit.framework.TestCase {
         assertEquals("qualifier",version.getQualifier());
     }
 
+    @Test
     public void testUnderspecifiedStringCreation() {
         Version version=new Version("1");
         assertEquals(1,version.getMajor());
@@ -49,6 +60,7 @@ public class VersionTestCase extends junit.framework.TestCase {
         assertEquals("",version.getQualifier());
     }
 
+    @Test
     public void testEquality() {
         assertEquals(new Version(),Version.emptyVersion);
         assertEquals(new Version(),new Version(""));
@@ -59,6 +71,7 @@ public class VersionTestCase extends junit.framework.TestCase {
         assertEquals(new Version(1,2,3,"qualifier"),new Version("1.2.3.qualifier"));
     }
 
+    @Test
     public void testToString() {
         assertEquals("",new Version().toString());
         assertEquals("1",new Version(1).toString());
@@ -67,6 +80,7 @@ public class VersionTestCase extends junit.framework.TestCase {
         assertEquals("1.2.3.qualifier",new Version(1,2,3,"qualifier").toString());
     }
 
+    @Test
     public void testToFullString() {
         assertEquals("0.0.0",new Version().toFullString());
         assertEquals("1.0.0",new Version(1).toFullString());
@@ -75,6 +89,7 @@ public class VersionTestCase extends junit.framework.TestCase {
         assertEquals("1.2.3.qualifier",new Version(1,2,3,"qualifier").toFullString());
     }
 
+    @Test
     public void testOrder() {
         assertTrue(new Version("1.2.3").compareTo(new Version("1.2.3"))==0);
         assertTrue(new Version("1.2.3").compareTo(new Version("1.2.4"))<0);
@@ -84,6 +99,28 @@ public class VersionTestCase extends junit.framework.TestCase {
         assertTrue(new Version("1.2.3").compareTo(new Version("1.3"))<0);
 
         assertTrue(new Version("1.0.0").compareTo(new Version("1"))==0);
+    }
+    
+    @Test
+    public void testBefore() {
+        assertFalse(new Version("1.2.3").isBefore(new Version("0.2.3")));
+        assertFalse(new Version("1.2.3").isBefore(new Version("1.1.3")));
+        assertFalse(new Version("1.2.3").isBefore(new Version("1.2.2")));
+        assertFalse(new Version("1.2.3").isBefore(new Version("1.2.3")));
+        assertTrue( new Version("1.2.3").isBefore(new Version("1.2.4")));
+        assertTrue( new Version("1.2.3").isBefore(new Version("1.3.3")));
+        assertTrue( new Version("1.2.3").isBefore(new Version("2.2.3")));
+    }
+
+    @Test
+    public void testAfter() {
+        assertTrue( new Version("1.2.3").isAfter(new Version("0.2.3")));
+        assertTrue( new Version("1.2.3").isAfter(new Version("1.1.3")));
+        assertTrue( new Version("1.2.3").isAfter(new Version("1.2.2")));
+        assertFalse(new Version("1.2.3").isAfter(new Version("1.2.3")));
+        assertFalse(new Version("1.2.3").isAfter(new Version("1.2.4")));
+        assertFalse(new Version("1.2.3").isAfter(new Version("1.3.3")));
+        assertFalse(new Version("1.2.3").isAfter(new Version("2.2.3")));
     }
 
 }
