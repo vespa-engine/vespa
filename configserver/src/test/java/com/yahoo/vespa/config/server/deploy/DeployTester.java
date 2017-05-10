@@ -108,7 +108,7 @@ public class DeployTester {
     /**
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
-    public ApplicationId deployApp(String appName){
+    public ApplicationId deployApp(String appName) {
         return deployApp(appName, Optional.empty());
     }
 
@@ -116,7 +116,7 @@ public class DeployTester {
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
     public ApplicationId deployApp(String appName, Optional<String> vespaVersion)  {
-        final Tenant tenant = tenant();
+        Tenant tenant = tenant();
         LocalSession session = tenant.getSessionFactory().createSession(testApp, appName, new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(60)));
         ApplicationId id = ApplicationId.from(tenant.getName(), ApplicationName.from(appName), InstanceName.defaultName());
         PrepareParams.Builder paramsBuilder = new PrepareParams.Builder()
@@ -134,7 +134,7 @@ public class DeployTester {
     }
 
     public ProvisionInfo getProvisionInfoFromDeployedApp(ApplicationId applicationId) {
-        final Tenant tenant = tenant();
+        Tenant tenant = tenant();
         LocalSession session = tenant.getLocalSessionRepo().getSession(tenant.getApplicationRepo()
                                                                              .getSessionIdForApplication(applicationId));
         return session.getProvisionInfo();

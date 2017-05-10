@@ -56,7 +56,6 @@ public class RetiredExpirer extends Expirer {
 
                 nodeRepository.setRemovable(application, nodesToRemove);
 
-                deployment.get().prepare();
                 deployment.get().activate();
 
                 log.info("Redeployed " + application + " to deactivate " + nodesToRemove.size() + " retired nodes");
