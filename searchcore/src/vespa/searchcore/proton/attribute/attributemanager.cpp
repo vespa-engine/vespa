@@ -91,6 +91,21 @@ AttributeManager::AttributeWrap::normalAttribute(const AttributeVectorSP &a)
     return AttributeWrap(a, false);
 }
 
+AttributeManager::FlushableWrap::FlushableWrap()
+    : _flusher(),
+      _shrinker()
+{
+}
+
+AttributeManager::FlushableWrap::FlushableWrap(FlushableAttributeSP flusher, ShrinkerSP shrinker)
+    : _flusher(std::move(flusher)),
+      _shrinker(std::move(shrinker))
+{
+}
+
+AttributeManager::FlushableWrap::~FlushableWrap()
+{
+}
 
 AttributeVector::SP
 AttributeManager::internalAddAttribute(const AttributeSpec &spec,
@@ -114,12 +129,15 @@ AttributeManager::addAttribute(const AttributeWrap &attribute)
     assert(attribute.getAttribute()->getInterlock() == _interlock);
     if ( ! attribute.isExtra() ) {
         // Flushing of extra attributes is handled elsewhere
-        _flushables[attribute.getAttribute()->getName()] = FlushableAttribute::SP
-                                                           (new FlushableAttribute(attribute.getAttribute(), _diskLayout->createAttributeDir(attribute.getAttribute()->getName()),
-                                        _tuneFileAttributes,
-                                        _fileHeaderContext,
-                                        _attributeFieldWriter,
-                                        _hwInfo));
+        auto flusher = std::make_shared<FlushableAttribute>
+                       (attribute.getAttribute(),
+                        _diskLayout->createAttributeDir(attribute.getAttribute()->getName()),
+                        _tuneFileAttributes,
+                        _fileHeaderContext,
+                        _attributeFieldWriter,
+                        _hwInfo);
+        auto shrinker = std::shared_ptr<ShrinkLidSpaceFlushTarget>();
+        _flushables[attribute.getAttribute()->getName()] = FlushableWrap(flusher, shrinker);
         _writableAttributes.push_back(attribute.getAttribute().get());
     }
 }
@@ -133,11 +151,11 @@ AttributeManager::findAttribute(const vespalib::string &name) const
         : AttributeVector::SP();
 }
 
-FlushableAttribute::SP
+const AttributeManager::FlushableWrap *
 AttributeManager::findFlushable(const vespalib::string &name) const
 {
     FlushableMap::const_iterator itr = _flushables.find(name);
-    return (itr != _flushables.end()) ? itr->second : FlushableAttribute::SP();
+    return (itr != _flushables.end()) ? &itr->second : nullptr;
 }
 
 void
@@ -296,7 +314,7 @@ AttributeManager::flushAll(SerialNum currentSerial)
 {
     for (const auto &kv : _flushables) {
         vespalib::Executor::Task::UP task;
-        task = kv.second->initFlush(currentSerial);
+        task = kv.second.getFlusher()->initFlush(currentSerial);
         if (task.get() != NULL) {
             task->run();
         }
@@ -306,7 +324,11 @@ AttributeManager::flushAll(SerialNum currentSerial)
 FlushableAttribute::SP
 AttributeManager::getFlushable(const vespalib::string &name)
 {
-    return findFlushable(name);
+    auto wrap = findFlushable(name);
+    if (wrap != nullptr) {
+        return wrap->getFlusher();
+    }
+    return FlushableAttribute::SP();
 }
 
 size_t
@@ -429,7 +451,7 @@ AttributeManager::getFlushTargets() const
     std::vector<IFlushTarget::SP> list;
     list.reserve(_flushables.size());
     for (const auto &kv : _flushables) {
-        list.push_back(kv.second);
+        list.push_back(kv.second.getFlusher());
     }
     return list;
 }
@@ -437,9 +459,12 @@ AttributeManager::getFlushTargets() const
 search::SerialNum
 AttributeManager::getFlushedSerialNum(const vespalib::string &name) const
 {
-    FlushableAttribute::SP flushable = findFlushable(name);
-    if (flushable.get() != nullptr) {
-        return flushable->getFlushedSerialNum();
+    auto wrap = findFlushable(name);
+    if (wrap != nullptr) {
+        const auto &flusher = wrap->getFlusher();
+        if (flusher) {
+            return flusher->getFlushedSerialNum();
+        }
     }
     return 0;
 }
@@ -449,7 +474,7 @@ AttributeManager::getOldestFlushedSerialNumber() const
 {
     SerialNum num = -1;
     for (const auto &kv : _flushables) {
-        num = std::min(num, kv.second->getFlushedSerialNum());
+        num = std::min(num, kv.second.getFlusher()->getFlushedSerialNum());
     }
     return num;
 }
@@ -459,7 +484,7 @@ AttributeManager::getNewestFlushedSerialNumber() const
 {
     SerialNum num = 0;
     for (const auto &kv : _flushables) {
-        num = std::max(num, kv.second->getFlushedSerialNum());
+        num = std::max(num, kv.second.getFlusher()->getFlushedSerialNum());
     }
     return num;
 }

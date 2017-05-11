@@ -35,6 +35,7 @@ namespace proton
 
 class AttributeDiskLayout;
 class FlushableAttribute;
+class ShrinkLidSpaceFlushTarget;
 
 /**
  * Specialized attribute manager for proton.
@@ -46,6 +47,7 @@ private:
     typedef search::SerialNum SerialNum;
     typedef AttributeCollectionSpec Spec;
     using FlushableAttributeSP = std::shared_ptr<FlushableAttribute>;
+    using ShrinkerSP = std::shared_ptr<ShrinkLidSpaceFlushTarget>;
     using IFlushTargetSP = std::shared_ptr<searchcorespi::IFlushTarget>;
     using AttributeVectorSP = std::shared_ptr<search::AttributeVector>;
 
@@ -64,8 +66,20 @@ private:
         const AttributeVectorSP getAttribute() const { return _attr; }
     };
 
+    class FlushableWrap
+    {
+        FlushableAttributeSP _flusher;
+        ShrinkerSP           _shrinker;
+    public:
+        FlushableWrap();
+        FlushableWrap(FlushableAttributeSP flusher, ShrinkerSP shrinker);
+        ~FlushableWrap();
+        const FlushableAttributeSP &getFlusher() const { return _flusher; }
+        const ShrinkerSP &getShrinker() const { return _shrinker; }
+    };
+
     typedef vespalib::hash_map<vespalib::string, AttributeWrap> AttributeMap;
-    typedef vespalib::hash_map<vespalib::string, FlushableAttributeSP> FlushableMap;
+    typedef vespalib::hash_map<vespalib::string, FlushableWrap> FlushableMap;
 
     AttributeMap _attributes;
     FlushableMap _flushables;
@@ -88,7 +102,7 @@ private:
 
     AttributeVectorSP findAttribute(const vespalib::string &name) const;
 
-    FlushableAttributeSP findFlushable(const vespalib::string &name) const;
+    const FlushableWrap *findFlushable(const vespalib::string &name) const;
 
     void transferExistingAttributes(const AttributeManager &currMgr,
                                     const Spec &newSpec,
