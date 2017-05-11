@@ -898,6 +898,14 @@ TEST("require that lid space can be compacted and entries from old files skipped
     }
 }
 
+TEST_F("require that getLid() is protected by docIdLimit", Fixture("tmp"))
+{
+    f.write(1);
+    vespalib::GenerationHandler::Guard guard = f.store.getLidReadGuard();
+    EXPECT_TRUE(f.store.getLid(guard, 1).valid());
+    EXPECT_FALSE(f.store.getLid(guard, 2).valid());
+}
+
 TEST_MAIN() {
     DummyFileHeaderContext::setCreator("logdatastore_test");
     TEST_RUN_ALL();

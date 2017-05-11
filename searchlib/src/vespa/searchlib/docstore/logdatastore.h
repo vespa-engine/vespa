@@ -178,7 +178,11 @@ public:
     // Implements IGetLid API
     LidInfo getLid(Guard & guard, uint32_t lid) const override {
         (void) guard;
-        return _lidInfo[lid];
+        if (lid < getDocIdLimit()) {
+            return _lidInfo[lid];
+        } else {
+            return LidInfo();
+        }
     }
     FileId getActiveFileId(const vespalib::LockGuard & guard) const {
         assert(guard.locks(_updateLock));
