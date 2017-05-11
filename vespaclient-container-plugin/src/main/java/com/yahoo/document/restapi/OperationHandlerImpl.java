@@ -16,7 +16,11 @@ import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorSession;
 import com.yahoo.documentapi.messagebus.MessageBusSyncSession;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
+import com.yahoo.documentapi.metrics.DocumentApiMetricsHelper;
+import com.yahoo.documentapi.metrics.DocumentOperationStatus;
+import com.yahoo.documentapi.metrics.DocumentOperationType;
 import com.yahoo.messagebus.StaticThrottlePolicy;
+import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.storage.searcher.ContinuationHit;
 import com.yahoo.vdslib.VisitorOrdering;
 import com.yahoo.vespaclient.ClusterDef;
@@ -30,6 +34,7 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Sends operations to messagebus via document api.
@@ -44,6 +49,7 @@ public class OperationHandlerImpl implements OperationHandler {
 
     public static final int VISIT_TIMEOUT_MS = 120000;
     private final DocumentAccess documentAccess;
+    private final DocumentApiMetricsHelper metricsHelper;
     private final ClusterEnumerator clusterEnumerator;
 
     private static final class SyncSessionFactory extends ResourceFactory<SyncSession> {
@@ -59,14 +65,15 @@ public class OperationHandlerImpl implements OperationHandler {
 
     private final ConcurrentResourcePool<SyncSession> syncSessions;
 
-    public OperationHandlerImpl(DocumentAccess documentAccess) {
-        this(documentAccess, () -> new ClusterList("client").getStorageClusters());
+    public OperationHandlerImpl(DocumentAccess documentAccess, MetricReceiver metricReceiver) {
+        this(documentAccess, () -> new ClusterList("client").getStorageClusters(), metricReceiver);
     }
 
-    public OperationHandlerImpl(DocumentAccess documentAccess, ClusterEnumerator clusterEnumerator) {
+    public OperationHandlerImpl(DocumentAccess documentAccess, ClusterEnumerator clusterEnumerator, MetricReceiver metricReceiver) {
         this.documentAccess = documentAccess;
         this.clusterEnumerator = clusterEnumerator;
         syncSessions = new ConcurrentResourcePool<>(new SyncSessionFactory(documentAccess));
+        metricsHelper = new DocumentApiMetricsHelper(metricReceiver, "/document/v1");
     }
 
     @Override
@@ -81,11 +88,11 @@ public class OperationHandlerImpl implements OperationHandler {
     private static final int HTTP_STATUS_INSUFFICIENT_STORAGE = 507;
     private static final int HTTP_PRE_CONDIDTION_FAILED = 412;
 
-    private static int getHTTPStatusCode(DocumentAccessException documentException) {
-        if (documentException.getErrorCodes().size() == 1 && documentException.getErrorCodes().contains(DocumentProtocol.ERROR_NO_SPACE)) {
+    public static int getHTTPStatusCode(Set<Integer> errorCodes) {
+        if (errorCodes.size() == 1 && errorCodes.contains(DocumentProtocol.ERROR_NO_SPACE)) {
             return HTTP_STATUS_INSUFFICIENT_STORAGE;
         }
-        if (documentException.hasConditionNotMetError()) {
+        if (errorCodes.contains(DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED)) {
             return HTTP_PRE_CONDIDTION_FAILED;
         }
         return HTTP_STATUS_BAD_REQUEST;
@@ -93,10 +100,10 @@ public class OperationHandlerImpl implements OperationHandler {
 
     private static Response createErrorResponse(DocumentAccessException documentException, RestUri restUri) {
         if (documentException.hasConditionNotMetError()) {
-            return Response.createErrorResponse(getHTTPStatusCode(documentException), "Condition did not match document.",
+            return Response.createErrorResponse(getHTTPStatusCode(documentException.getErrorCodes()), "Condition did not match document.",
                     restUri, RestUri.apiErrorCodes.DOCUMENT_CONDITION_NOT_MET);
         }
-        return Response.createErrorResponse(getHTTPStatusCode(documentException), documentException.getMessage(), restUri,
+        return Response.createErrorResponse(getHTTPStatusCode(documentException.getErrorCodes()), documentException.getMessage(), restUri,
                 RestUri.apiErrorCodes.DOCUMENT_EXCPETION);
     }
 
@@ -179,57 +186,79 @@ public class OperationHandlerImpl implements OperationHandler {
     @Override
     public void put(RestUri restUri, VespaXMLFeedReader.Operation data, Optional<String> route) throws RestApiException {
         SyncSession syncSession = syncSessions.alloc();
+        Response response;
         try {
+            long startTime = System.currentTimeMillis();
             DocumentPut put = new DocumentPut(data.getDocument());
             put.setCondition(data.getCondition());
             setRoute(syncSession, route);
             syncSession.put(put);
+            metricsHelper.reportSuccessful(DocumentOperationType.PUT, startTime);
+            return;
         } catch (DocumentAccessException documentException) {
-            throw new RestApiException(createErrorResponse(documentException, restUri));
+            response = createErrorResponse(documentException, restUri);
         } catch (Exception e) {
-            throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri, RestUri.apiErrorCodes.INTERNAL_EXCEPTION));
+            response = Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri, RestUri.apiErrorCodes.INTERNAL_EXCEPTION);
         } finally {
             syncSessions.free(syncSession);
         }
+
+        metricsHelper.reportFailure(DocumentOperationType.PUT, DocumentOperationStatus.fromHttpStatusCode(response.getStatus()));
+        throw new RestApiException(response);
     }
 
     @Override
     public void update(RestUri restUri, VespaXMLFeedReader.Operation data, Optional<String> route) throws RestApiException {
         SyncSession syncSession = syncSessions.alloc();
-        setRoute(syncSession, route);
+        Response response;
         try {
+            long startTime = System.currentTimeMillis();
+            setRoute(syncSession, route);
             syncSession.update(data.getDocumentUpdate());
+            metricsHelper.reportSuccessful(DocumentOperationType.UPDATE, startTime);
+            return;
         } catch (DocumentAccessException documentException) {
-            throw new RestApiException(createErrorResponse(documentException, restUri));
+            response = createErrorResponse(documentException, restUri);
         } catch (Exception e) {
-            throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri, RestUri.apiErrorCodes.INTERNAL_EXCEPTION));
+            response = Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri, RestUri.apiErrorCodes.INTERNAL_EXCEPTION);
         } finally {
             syncSessions.free(syncSession);
         }
+
+        metricsHelper.reportFailure(DocumentOperationType.UPDATE, DocumentOperationStatus.fromHttpStatusCode(response.getStatus()));
+        throw new RestApiException(response);
     }
 
     @Override
     public void delete(RestUri restUri, String condition, Optional<String> route) throws RestApiException {
         SyncSession syncSession = syncSessions.alloc();
-        setRoute(syncSession, route);
+        Response response;
         try {
+            long startTime = System.currentTimeMillis();
             DocumentId id = new DocumentId(restUri.generateFullId());
             DocumentRemove documentRemove = new DocumentRemove(id);
+            setRoute(syncSession, route);
             if (condition != null && ! condition.isEmpty()) {
                 documentRemove.setCondition(new TestAndSetCondition(condition));
             }
             syncSession.remove(documentRemove);
+            metricsHelper.reportSuccessful(DocumentOperationType.REMOVE, startTime);
+            return;
         } catch (DocumentAccessException documentException) {
             if (documentException.hasConditionNotMetError()) {
-                throw new RestApiException(Response.createErrorResponse(412, "Condition not met: " + documentException.getMessage(),
-                        restUri, RestUri.apiErrorCodes.DOCUMENT_CONDITION_NOT_MET));
+                response = Response.createErrorResponse(412, "Condition not met: " + documentException.getMessage(),
+                        restUri, RestUri.apiErrorCodes.DOCUMENT_CONDITION_NOT_MET);
+            } else {
+                response = Response.createErrorResponse(400, documentException.getMessage(), restUri, RestUri.apiErrorCodes.DOCUMENT_EXCPETION);
             }
-            throw new RestApiException(Response.createErrorResponse(400, documentException.getMessage(), restUri, RestUri.apiErrorCodes.DOCUMENT_EXCPETION));
         } catch (Exception e) {
-            throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri, RestUri.apiErrorCodes.UNSPECIFIED));
+            response = Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri, RestUri.apiErrorCodes.UNSPECIFIED);
         } finally {
             syncSessions.free(syncSession);
         }
+
+        metricsHelper.reportFailure(DocumentOperationType.REMOVE, DocumentOperationStatus.fromHttpStatusCode(response.getStatus()));
+        throw new RestApiException(response);
     }
 
     @Override
@@ -267,7 +296,7 @@ public class OperationHandlerImpl implements OperationHandler {
         }
         if (! wantedCluster.isPresent()) {
             if (clusters.size() != 1) {
-                new RestApiException(Response.createErrorResponse(400, "Several clusters exist: " +
+                throw new RestApiException(Response.createErrorResponse(400, "Several clusters exist: " +
                         clusterListToString(clusters) + " you must specify one. ", RestUri.apiErrorCodes.SEVERAL_CLUSTERS));
             }
             return clusterDefToRoute(clusters.get(0));
