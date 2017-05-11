@@ -5,6 +5,7 @@ vespa_define_module(
 
     APPS
     src/apps/eval_expr
+    src/apps/make_tensor_binary_format_test_spec
 
     TESTS
     src/tests/eval/aggr
@@ -18,6 +19,7 @@ vespa_define_module(
     src/tests/eval/param_usage
     src/tests/eval/simple_tensor
     src/tests/eval/tensor_function
+    src/tests/eval/tensor_spec
     src/tests/eval/value_cache
     src/tests/eval/value_type
     src/tests/tensor/dense_dot_product_function
