@@ -46,7 +46,7 @@ RPCHooks::RPCHooks(SBEnv &env,
                    RpcServerMap& rpcsrvmap,
                    RpcServerManager& rpcsrvman)
     : _env(env), _rpcsrvmap(rpcsrvmap), _rpcsrvmanager(rpcsrvman),
-      _cnts{0, 0, 0, 0, 0, 0, 0},
+      _cnts(Metrics::zero()),
       _m_reporter(nullptr)
 {
 }
@@ -60,6 +60,7 @@ RPCHooks::~RPCHooks()
 void
 RPCHooks::reportMetrics()
 {
+    EV_COUNT("heartbeats_failed", _cnts.heartBeatFails);
     EV_COUNT("register_reqs", _cnts.registerReqs);
     EV_COUNT("mirror_reqs", _cnts.mirrorReqs);
     EV_COUNT("wantadd_reqs", _cnts.wantAddReqs);
