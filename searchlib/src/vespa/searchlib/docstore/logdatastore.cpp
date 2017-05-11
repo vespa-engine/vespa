@@ -1118,6 +1118,7 @@ LogDataStore::getFileChunkStats() const
 void
 LogDataStore::compactLidSpace(uint32_t wantedDocLidLimit)
 {
+    LockGuard guard(_updateLock);
     for (size_t i = wantedDocLidLimit; i < _lidInfo.size(); ++i) {
         _lidInfo[i] = LidInfo();
     }
