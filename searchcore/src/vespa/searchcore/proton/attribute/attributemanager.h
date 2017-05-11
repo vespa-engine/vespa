@@ -98,7 +98,7 @@ private:
                                                      uint64_t serialNum,
                                                      const IAttributeFactory &factory);
 
-    void addAttribute(const AttributeWrap &attribute);
+    void addAttribute(const AttributeWrap &attribute, SerialNum shrinkSerialNum);
 
     AttributeVectorSP findAttribute(const vespalib::string &name) const;
 
@@ -148,6 +148,8 @@ public:
     void flushAll(SerialNum currentSerial);
 
     FlushableAttributeSP getFlushable(const vespalib::string &name);
+
+    ShrinkerSP getShrinker(const vespalib::string &name);
 
     size_t getNumDocs() const;
 

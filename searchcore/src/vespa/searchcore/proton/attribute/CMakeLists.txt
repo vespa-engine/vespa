@@ -33,4 +33,5 @@ vespa_add_library(searchcore_attribute STATIC
     initialized_attributes_result.cpp
     sequential_attributes_initializer.cpp
     DEPENDS
+    searchcore_flushengine
 )
