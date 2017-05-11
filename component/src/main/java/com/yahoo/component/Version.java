@@ -360,10 +360,20 @@ public final class Version implements Comparable<Version> {
 
         return getQualifier().compareTo(other.getQualifier());
     }
+    
+    /** Returns whether this version number (ignoring qualifier) is strictly lower than the given version */
+    public boolean isBefore(Version other) {
+        if (this.major == other.major && this.minor == other.minor) return this.micro < other.micro;
+        if (this.major == other.major) return this.minor < other.minor;
+        return this.major < other.major;
+    }
 
-    /**
-     * Creates a version specification that only matches this version.
-     */
+    /** Returns whether this version number (ignoring qualifier) is strictly higher than the given version */
+    public boolean isAfter(Version other) {
+        return ! this.isBefore(other) && ! this.equals(other);
+    }
+
+    /** Creates a version specification that only matches this version */
     public VersionSpecification toSpecification() {
         if (this == emptyVersion)
             return VersionSpecification.emptyVersionSpecification;
