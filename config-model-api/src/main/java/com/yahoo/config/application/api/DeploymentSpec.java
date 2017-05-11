@@ -19,11 +19,16 @@ import java.util.Optional;
  * Specifies the environments and regions to which an application should be deployed.
  * This may be used both for inspection as part of an application model and to answer
  * queries about deployment from the command line. A main method is included for the latter usage.
+ * 
+ * This is immutable.
  *
  * @author bratseth
  */
 public class DeploymentSpec {
 
+    /** The empty deployment spec, specifying no zones or rotation, and defaults for all settings */
+    public static final DeploymentSpec empty = new DeploymentSpec(Optional.empty(), UpgradePolicy.defaultPolicy, ImmutableList.of());
+    
     private final Optional<String> globalServiceId;
     private final UpgradePolicy upgradePolicy;
     private final List<DeclaredZone> zones;
