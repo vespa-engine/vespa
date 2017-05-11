@@ -9,7 +9,7 @@ import java.util.Set;
  * @author freva
  */
 public enum  DocumentOperationStatus {
-    OK, CLIENT_ERROR, SERVER_ERROR;
+    OK, REQUEST_ERROR, SERVER_ERROR;
 
     public static DocumentOperationStatus fromHttpStatusCode(int httpStatus) {
         switch (httpStatus / 100) {
@@ -17,7 +17,7 @@ public enum  DocumentOperationStatus {
                 return OK;
 
             case 4:
-                return CLIENT_ERROR;
+                return REQUEST_ERROR;
 
             case 5:
                 return SERVER_ERROR;

@@ -73,7 +73,7 @@ public class OperationHandlerImpl implements OperationHandler {
         this.documentAccess = documentAccess;
         this.clusterEnumerator = clusterEnumerator;
         syncSessions = new ConcurrentResourcePool<>(new SyncSessionFactory(documentAccess));
-        metricsHelper = new DocumentApiMetricsHelper(metricReceiver, "/document/v1");
+        metricsHelper = new DocumentApiMetricsHelper(metricReceiver, "documentV1");
     }
 
     @Override

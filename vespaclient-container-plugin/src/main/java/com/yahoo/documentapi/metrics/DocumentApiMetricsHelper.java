@@ -30,8 +30,8 @@ public class DocumentApiMetricsHelper {
             }
         }
 
-        feeds = metricReceiver.declareCounter("feed_operations");
-        feedLatency = metricReceiver.declareGauge("feed_latency");
+        feeds = metricReceiver.declareCounter("feed.operations");
+        feedLatency = metricReceiver.declareGauge("feed.latency");
     }
 
     public void reportSuccessful(DocumentOperationType documentOperationType, double latency) {

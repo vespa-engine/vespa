@@ -44,9 +44,9 @@ public class FeedReplyReader implements ReplyHandler {
         metric.set(MetricNames.LATENCY, latency, null);
 
         if (reply.hasErrors()) {
-            //Set<Integer> errorCodes = MessageBusAsyncSession.getErrorCodes(reply);
-            //metricsHelper.reportFailure(DocumentOperationType.fromMessage(reply.getMessage()),
-            //        DocumentOperationStatus.fromMessageBusErrorCodes(errorCodes));
+            Set<Integer> errorCodes = MessageBusAsyncSession.getErrorCodes(reply);
+            metricsHelper.reportFailure(DocumentOperationType.fromMessage(reply.getMessage()),
+                    DocumentOperationStatus.fromMessageBusErrorCodes(errorCodes));
             metric.add(MetricNames.FAILED, 1, null);
             enqueue(context, reply.getError(0).getMessage(), ErrorCode.ERROR,
                     reply.getError(0).getCode() == DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED, reply.getTrace());

@@ -198,8 +198,7 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
         return errors.toString();
     }
 
-    static Set<Integer>
-    getErrorCodes(Reply reply) {
+    public static Set<Integer> getErrorCodes(Reply reply) {
         Set<Integer> errorCodes = new HashSet<>();
         for (int i = 0; i < reply.getNumErrors(); ++i) {
             errorCodes.add(reply.getError(i).getCode());
