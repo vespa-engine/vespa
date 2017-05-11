@@ -116,7 +116,7 @@ public class VespaMetricSet extends MetricSet {
     private static Set<Metric> getQrserverMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
-        metrics.add(new Metric("peak_qps.average", "peak_qps"));
+        metrics.add(new Metric("peak_qps.max", "peak_qps"));
         metrics.add(new Metric("search_connections.average", "search_connections"));
         metrics.add(new Metric("active_queries.average", "active_queries"));
         metrics.add(new Metric("queries.rate", "queries"));
