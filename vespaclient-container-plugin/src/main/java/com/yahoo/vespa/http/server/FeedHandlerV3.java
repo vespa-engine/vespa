@@ -10,6 +10,7 @@ import com.yahoo.container.jdisc.messagebus.SessionCache;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.config.DocumentmanagerConfig;
+import com.yahoo.documentapi.metrics.DocumentApiMetricsHelper;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.ReferencedResource;
 import com.yahoo.log.LogLevel;
@@ -53,11 +54,12 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
             SessionCache sessionCache,
             Metric metric,
             AccessLog accessLog,
-            ThreadpoolConfig threadpoolConfig) throws Exception {
+            ThreadpoolConfig threadpoolConfig,
+            DocumentApiMetricsHelper metricsHelper) throws Exception {
         super(executor, accessLog);
         docTypeManager = new DocumentTypeManager(documentManagerConfig);
         this.sessionCache = sessionCache;
-        feedReplyHandler = new FeedReplyReader(metric);
+        feedReplyHandler = new FeedReplyReader(metric, metricsHelper);
         cron = new ScheduledThreadPoolExecutor(1, ThreadFactoryFactory.getThreadFactory("feedhandlerv3.cron"));
         cron.scheduleWithFixedDelay(this::removeOldClients, 16, 11, TimeUnit.MINUTES);
         this.metric = metric;

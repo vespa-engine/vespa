@@ -11,16 +11,19 @@ import com.yahoo.container.jdisc.messagebus.SessionCache;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.config.DocumentmanagerConfig;
+import com.yahoo.documentapi.metrics.DocumentApiMetricsHelper;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.HttpResponse.Status;
 import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.messagebus.SourceSessionParams;
+import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.net.HostName;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.vespa.http.client.core.Headers;
 import com.yahoo.vespa.http.client.core.OperationStatus;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
@@ -56,20 +59,23 @@ public class FeedHandler extends LoggingRequestHandler {
     private final String localHostname;
     private final FeedHandlerV3 feedHandlerV3;
 
+    @Inject
     public FeedHandler(
             Executor executor,
             DocumentmanagerConfig documentManagerConfig,
             SessionCache sessionCache,
             Metric metric,
             AccessLog accessLog,
-            ThreadpoolConfig threadpoolConfig) throws Exception {
+            ThreadpoolConfig threadpoolConfig,
+            MetricReceiver metricReceiver) throws Exception {
         super(executor, accessLog);
-        feedHandlerV3 = new FeedHandlerV3(executor, documentManagerConfig, sessionCache, metric, accessLog, threadpoolConfig);
+        DocumentApiMetricsHelper metricsHelper = new DocumentApiMetricsHelper(metricReceiver, "vespa.http.server");
+        feedHandlerV3 = new FeedHandlerV3(executor, documentManagerConfig, sessionCache, metric, accessLog, threadpoolConfig, metricsHelper);
         docTypeManager = createDocumentManager(documentManagerConfig);
         clients = new HashMap<>();
         this.sessionCache = sessionCache;
         sessionId = new AtomicLong(new Random(System.currentTimeMillis()).nextLong());
-        feedReplyHandler = new FeedReplyReader(metric);
+        feedReplyHandler = new FeedReplyReader(metric, metricsHelper);
         cron = new ScheduledThreadPoolExecutor(1, ThreadFactoryFactory.getThreadFactory("feedhandler.cron"));
         cron.scheduleWithFixedDelay(new CleanClients(), 16, 11, TimeUnit.MINUTES);
         this.metric = metric;
