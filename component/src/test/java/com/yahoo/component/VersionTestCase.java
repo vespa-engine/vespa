@@ -102,7 +102,7 @@ public class VersionTestCase {
     }
     
     @Test
-    public void testBefore() {
+    public void testIsBefore() {
         assertFalse(new Version("1.2.3").isBefore(new Version("0.2.3")));
         assertFalse(new Version("1.2.3").isBefore(new Version("1.1.3")));
         assertFalse(new Version("1.2.3").isBefore(new Version("1.2.2")));
@@ -113,7 +113,7 @@ public class VersionTestCase {
     }
 
     @Test
-    public void testAfter() {
+    public void testIsAfter() {
         assertTrue( new Version("1.2.3").isAfter(new Version("0.2.3")));
         assertTrue( new Version("1.2.3").isAfter(new Version("1.1.3")));
         assertTrue( new Version("1.2.3").isAfter(new Version("1.2.2")));
