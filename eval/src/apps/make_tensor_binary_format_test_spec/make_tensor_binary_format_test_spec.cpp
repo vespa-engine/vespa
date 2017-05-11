@@ -11,7 +11,7 @@ using namespace vespalib;
 using namespace vespalib::eval;
 using namespace vespalib::slime::convenience;
 
-using Opts = std::initializer_list<std::reference_wrapper<const nbostream>>;
+using Options = std::initializer_list<std::reference_wrapper<const nbostream>>;
 using Dict = std::vector<vespalib::string>;
 
 //-----------------------------------------------------------------------------
@@ -57,13 +57,13 @@ void add_binary(Cursor &test, const nbostream &data) {
     test["binary"].addData(Memory(data.peek(), data.size()));
 }
 
-void add_binary(Cursor &test, Opts opts) {
+void add_binary(Cursor &test, Options opts) {
     for (const nbostream &opt: opts) {
         add_binary(test, opt);
     }
 }
 
-std::vector<Dict> perm(const Dict &dict) {
+std::vector<Dict> make_permutations(const Dict &dict) {
     std::vector<Dict> list;
     if (dict.empty()) {
     } else if (dict.size() == 1) {
@@ -80,7 +80,7 @@ std::vector<Dict> perm(const Dict &dict) {
         list.push_back({dict[2], dict[1], dict[0]});
     } else {
         fprintf(stderr, "unsupported permutation size: %zu\n", dict.size());
-        abort(); // perm only implemented for sizes (0,1,2,3)
+        abort(); // only implemented for sizes (0,1,2,3)
     }
     return list;
 };
@@ -198,7 +198,7 @@ void make_map_test(Cursor &test, const Dict &x_dict_in) {
     mixed_base.writeSmallString("x");
     mixed_base.putInt1_4Bytes(0);
     mixed_base.putInt1_4Bytes(x_dict_in.size());
-    auto x_perm = perm(x_dict_in);
+    auto x_perm = make_permutations(x_dict_in);
     for (const Dict &x_dict: x_perm) {
         nbostream sparse = sparse_base;
         nbostream mixed = mixed_base;
@@ -232,7 +232,7 @@ void make_mesh_test(Cursor &test, const Dict &x_dict_in, const vespalib::string 
     mixed_base.writeSmallString("y");
     mixed_base.putInt1_4Bytes(0);
     mixed_base.putInt1_4Bytes(x_dict_in.size() * 1);
-    auto x_perm = perm(x_dict_in);
+    auto x_perm = make_permutations(x_dict_in);
     for (const Dict &x_dict: x_perm) {
         nbostream sparse = sparse_base;
         nbostream mixed = mixed_base;
@@ -272,7 +272,7 @@ void make_vector_map_test(Cursor &test,
     mixed_base.writeSmallString(indexed_name);
     mixed_base.putInt1_4Bytes(indexed_size);
     mixed_base.putInt1_4Bytes(mapped_dict.size());
-    auto mapped_perm = perm(mapped_dict);
+    auto mapped_perm = make_permutations(mapped_dict);
     for (const Dict &dict: mapped_perm) {
         nbostream mixed = mixed_base;
         for (vespalib::string label: dict) {
