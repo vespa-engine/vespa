@@ -85,6 +85,7 @@ public:
     OkState addPeer(const std::string& name, const std::string &spec);
     OkState removePeer(const std::string& name, const std::string &spec);
 
+    void countFailedHeartbeat() { _rpcHooks.countFailedHeartbeat(); }
 };
 
 } // namespace slobrok

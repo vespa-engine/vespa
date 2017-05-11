@@ -22,6 +22,7 @@ class RPCHooks : public FRT_Invokable
 public:
 
     struct Metrics {
+        unsigned long heartBeatFails;
         unsigned long registerReqs;
         unsigned long mirrorReqs;
         unsigned long wantAddReqs;
@@ -29,6 +30,7 @@ public:
         unsigned long doRemoveReqs;
         unsigned long adminReqs;
         unsigned long otherReqs;
+        static Metrics zero() { return Metrics{0,0,0,0,0,0,0,0}; }
     };
 
 private:
@@ -51,6 +53,7 @@ public:
     void initRPC(FRT_Supervisor *supervisor);
     void reportMetrics();
     const Metrics& getMetrics() const { return _cnts; }
+    void countFailedHeartbeat() { _cnts.heartBeatFails++; }
 
 private:
     void rpc_lookupRpcServer(FRT_RPCRequest *req);

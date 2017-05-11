@@ -74,6 +74,9 @@ makeSnapshot(const RPCHooks::Metrics &prev, const RPCHooks::Metrics &curr,
              uint32_t prevTime, uint32_t currTime)
 {
     MetricSnapshot snapshot(prevTime, currTime);
+    snapshot.addCount("slobrok.heartbeats.failed",
+             "count of failed heartbeat requests",
+             curr.heartBeatFails - prev.heartBeatFails);
     snapshot.addCount("slobrok.requests.register",
              "count of register requests received",
              curr.registerReqs - prev.registerReqs);
@@ -92,7 +95,7 @@ makeSnapshot(const RPCHooks::Metrics &prev, const RPCHooks::Metrics &curr,
 MetricsProducer::MetricsProducer(const RPCHooks &hooks,
                                                FNET_Transport &transport)
     : _rpcHooks(hooks),
-      _lastMetrics{ 0, 0, 0, 0, 0, 0, 0},
+      _lastMetrics(RPCHooks::Metrics::zero()),
       _producer(),
       _startTime(time(NULL)),
       _lastSnapshotStart(_startTime),
@@ -114,7 +117,7 @@ MetricsProducer::getTotalMetrics(const vespalib::string &)
 {
     uint32_t now = time(NULL);
     RPCHooks::Metrics current = _rpcHooks.getMetrics();
-    RPCHooks::Metrics start{0, 0, 0, 0, 0, 0, 0};
+    RPCHooks::Metrics start = RPCHooks::Metrics::zero();
     return makeSnapshot(start, current, _startTime, now);
 }
 
