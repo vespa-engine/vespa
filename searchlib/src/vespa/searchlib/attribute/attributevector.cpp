@@ -729,7 +729,10 @@ void
 AttributeVector::shrinkLidSpace(void)
 {
     commit();
-    assert(canShrinkLidSpace());
+    removeAllOldGenerations();
+    if (!canShrinkLidSpace()) {
+        return;
+    }
     uint32_t committedDocIdLimit = _committedDocIdLimit;
     clearDocs(committedDocIdLimit, getNumDocs());
     commit();
