@@ -13,6 +13,7 @@ import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.messagebus.*;
 import com.yahoo.messagebus.shared.SharedMessageBus;
 import com.yahoo.messagebus.shared.SharedSourceSession;
+import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.http.client.core.Headers;
 import com.yahoo.vespa.http.client.core.OperationStatus;
@@ -60,7 +61,7 @@ public class V2FailingMessagebusTestCase {
     private class LessConfiguredHandler extends FeedHandler {
 
         public LessConfiguredHandler(Executor executor) throws Exception {
-            super(executor, null, null, new DummyMetric(), AccessLog.voidAccessLog(), null);
+            super(executor, null, null, new DummyMetric(), AccessLog.voidAccessLog(), null, MetricReceiver.nullImplementation);
         }
 
         @Override

@@ -20,6 +20,7 @@ import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.network.Network;
 import com.yahoo.messagebus.shared.SharedMessageBus;
 import com.yahoo.messagebus.shared.SharedSourceSession;
+import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.http.client.config.FeedParams.DataFormat;
 import com.yahoo.vespa.http.client.core.Headers;
@@ -50,7 +51,6 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -115,7 +115,7 @@ public class V2ExternalFeedTestCase {
         volatile DataFormat lastFormatSeen;
 
         public LessConfiguredHandler(Executor executor) throws Exception {
-            super(executor, null, null, new DummyMetric(), AccessLog.voidAccessLog(), null);
+            super(executor, null, null, new DummyMetric(), AccessLog.voidAccessLog(), null, MetricReceiver.nullImplementation);
         }
 
         @Override

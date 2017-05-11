@@ -6,6 +6,7 @@ import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.documentapi.VisitorControlHandler;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorSession;
+import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vdslib.VisitorStatistics;
 import com.yahoo.vespaclient.ClusterDef;
 import org.junit.Test;
@@ -114,7 +115,7 @@ public class OperationHandlerImplTest {
                 return visitorSession;
             });
             OperationHandlerImpl.ClusterEnumerator clusterEnumerator = () -> Arrays.asList(new ClusterDef("foo", "configId"));
-            return new OperationHandlerImpl(documentAccess, clusterEnumerator);
+            return new OperationHandlerImpl(documentAccess, clusterEnumerator, MetricReceiver.nullImplementation);
         }
     }
 
