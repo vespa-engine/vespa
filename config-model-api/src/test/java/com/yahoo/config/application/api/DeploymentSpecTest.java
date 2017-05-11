@@ -19,13 +19,13 @@ public class DeploymentSpecTest {
 
     @Test
     public void testSpec() {
-        StringReader r = new StringReader(
-        "<deployment version='1.0'>" +
-        "   <test/>" +
-        "</deployment>"
-        );
+        String specXml = "<deployment version='1.0'>" +
+                         "   <test/>" +
+                         "</deployment>";
 
+        StringReader r = new StringReader(specXml);
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals(specXml, spec.xmlForm());
         assertEquals(1, spec.zones().size());
         assertEquals(Environment.test, spec.zones().get(0).environment());
         assertTrue(spec.includes(Environment.test, Optional.empty()));
@@ -191,6 +191,14 @@ public class DeploymentSpecTest {
 
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals("canary", spec.upgradePolicy().toString());
+    }
+    
+    @Test
+    public void testEmpty() {
+        assertFalse(DeploymentSpec.empty.globalServiceId().isPresent());
+        assertEquals(DeploymentSpec.UpgradePolicy.defaultPolicy, DeploymentSpec.empty.upgradePolicy());
+        assertTrue(DeploymentSpec.empty.zones().isEmpty());
+        assertEquals("<deployment version='1.0'/>", DeploymentSpec.empty.xmlForm());
     }
 
 }
