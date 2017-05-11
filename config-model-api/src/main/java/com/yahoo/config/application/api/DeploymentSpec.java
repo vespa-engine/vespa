@@ -80,35 +80,43 @@ public class DeploymentSpec {
      */
     public static DeploymentSpec fromXml(Reader reader) {
         try {
-            String xmlForm = IOUtils.readAll(reader);
-            List<DeclaredZone> zones = new ArrayList<>();
-            Optional<String> globalServiceId = Optional.empty();
-            Element root = XML.getDocument(xmlForm).getDocumentElement();
-            for (Element environmentTag : XML.getChildren(root)) {
-                if (!isEnvironmentName(environmentTag.getTagName())) continue;
-                Environment environment = Environment.from(environmentTag.getTagName());
-                List<Element> regionTags = XML.getChildren(environmentTag, "region");
-                if (regionTags.isEmpty()) {
-                    zones.add(new DeclaredZone(environment, Optional.empty(), false));
-                } else {
-                    for (Element regionTag : regionTags) {
-                        RegionName region = RegionName.from(XML.getValue(regionTag).trim());
-                        boolean active = environment == Environment.prod && readActive(regionTag);
-                        zones.add(new DeclaredZone(environment, Optional.of(region), active));
-                    }
-                }
-
-                if (Environment.prod.equals(environment)) {
-                    globalServiceId = readGlobalServiceId(environmentTag);
-                } else if (readGlobalServiceId(environmentTag).isPresent()) {
-                    throw new IllegalArgumentException("Attribute 'global-service-id' is only valid on 'prod' tag.");
-                }
-            }
-            return new DeploymentSpec(globalServiceId, readUpgradePolicy(root), zones, xmlForm);
+            return fromXml(IOUtils.readAll(reader));
         }
         catch (IOException e) {
             throw new IllegalArgumentException("Could not read deployment spec", e);
         }
+    }
+
+    /**
+     * Creates a deployment spec from XML.
+     *
+     * @throws IllegalArgumentException if the XML is invalid
+     */
+    public static DeploymentSpec fromXml(String xmlForm) {
+        List<DeclaredZone> zones = new ArrayList<>();
+        Optional<String> globalServiceId = Optional.empty();
+        Element root = XML.getDocument(xmlForm).getDocumentElement();
+        for (Element environmentTag : XML.getChildren(root)) {
+            if (!isEnvironmentName(environmentTag.getTagName())) continue;
+            Environment environment = Environment.from(environmentTag.getTagName());
+            List<Element> regionTags = XML.getChildren(environmentTag, "region");
+            if (regionTags.isEmpty()) {
+                zones.add(new DeclaredZone(environment, Optional.empty(), false));
+            } else {
+                for (Element regionTag : regionTags) {
+                    RegionName region = RegionName.from(XML.getValue(regionTag).trim());
+                    boolean active = environment == Environment.prod && readActive(regionTag);
+                    zones.add(new DeclaredZone(environment, Optional.of(region), active));
+                }
+            }
+
+            if (Environment.prod.equals(environment)) {
+                globalServiceId = readGlobalServiceId(environmentTag);
+            } else if (readGlobalServiceId(environmentTag).isPresent()) {
+                throw new IllegalArgumentException("Attribute 'global-service-id' is only valid on 'prod' tag.");
+            }
+        }
+        return new DeploymentSpec(globalServiceId, readUpgradePolicy(root), zones, xmlForm);
     }
 
     private static boolean isEnvironmentName(String tagName) {
