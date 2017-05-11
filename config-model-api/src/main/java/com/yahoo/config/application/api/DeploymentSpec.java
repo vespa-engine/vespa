@@ -89,7 +89,7 @@ public class DeploymentSpec {
         }
         return new DeploymentSpec(globalServiceId, readUpgradePolicy(root), zones);
     }
-    
+
     private static boolean isEnvironmentName(String tagName) {
         return tagName.equals("test") || tagName.equals("staging") || tagName.equals("prod");
     }
