@@ -287,7 +287,7 @@ public final class ConfiguredApplication implements Application {
             public void run() {
                 com.yahoo.protect.Process.logAndDie(
                         "Timed out waiting for application shutdown. Please check that all your request handlers " +
-                                "drain their request content channels.");
+                                "drain their request content channels.", true);
             }
         }, delayMillis, TimeUnit.MILLISECONDS);
     }
