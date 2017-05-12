@@ -4,6 +4,7 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.maintenance.retire.RetirementPolicy;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.Status;
@@ -67,6 +68,8 @@ public class NodeRetirerTest {
             // Lets change parked nodes IP address and set it back to ready
             tester.nodeRepository.getNodes(Node.State.parked)
                     .forEach(node -> {
+                        Agent parkingAgent = node.history().event(History.Event.Type.parked).orElseThrow(RuntimeException::new).agent();
+                        assertEquals(Agent.NodeRetirer, parkingAgent);
                         tester.nodeRepository.write(node.withIpAddresses(Collections.singleton("::2")));
                         tester.nodeRepository.setDirty(node.hostname());
                         tester.nodeRepository.setReady(node.hostname());

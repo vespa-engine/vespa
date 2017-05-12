@@ -263,6 +263,7 @@ public class NodeSerializer {
             case "activated" : return History.Event.Type.activated;
             case "retired" : return History.Event.Type.retired;
             case "deactivated" : return History.Event.Type.deactivated;
+            case "parked" : return History.Event.Type.parked;
             case "failed" : return History.Event.Type.failed;
             case "deallocated" : return History.Event.Type.deallocated;
             case "down" : return History.Event.Type.down;
@@ -278,6 +279,7 @@ public class NodeSerializer {
             case activated : return "activated";
             case retired : return "retired";
             case deactivated : return "deactivated";
+            case parked : return "parked";
             case failed : return "failed";
             case deallocated : return "deallocated";
             case down : return "down";
@@ -294,6 +296,7 @@ public class NodeSerializer {
             case "application" : return Agent.application;
             case "system" : return Agent.system;
             case "operator" : return Agent.operator;
+            case "NodeRetirer" : return Agent.NodeRetirer;
         }
         throw new IllegalArgumentException("Unknown node event agent '" + eventAgentField.asString() + "'");
     }
@@ -302,6 +305,7 @@ public class NodeSerializer {
             case application : return "application";
             case system : return "system";
             case operator : return "operator";
+            case NodeRetirer : return "NodeRetirer";
         }
         throw new IllegalArgumentException("Serialized form of '" + agent + "' not defined");
     }

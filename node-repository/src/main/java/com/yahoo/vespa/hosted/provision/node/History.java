@@ -71,6 +71,7 @@ public class History {
             case reserved: return this.with(new Event(Event.Type.reserved, agent, at));
             case failed:   return this.with(new Event(Event.Type.failed, agent, at));
             case dirty:    return this.with(new Event(Event.Type.deallocated, agent, at));
+            case parked:   return this.with(new Event(Event.Type.parked, agent, at));
             default:       return this;
         }
     }
@@ -111,7 +112,7 @@ public class History {
 
         public enum Type { 
             // State move events
-            readied, reserved, activated, deactivated, deallocated,
+            readied, reserved, activated, deactivated, deallocated, parked,
             // The active node was retired
             retired,
             // The active node went down according to the service monitor
