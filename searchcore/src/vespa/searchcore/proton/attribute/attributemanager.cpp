@@ -72,6 +72,17 @@ search::SerialNum estimateShrinkSerialNum(const AttributeVector &attr)
     return std::max(attr.getStatus().getLastSyncToken(), serialNum);
 }
 
+std::shared_ptr<ShrinkLidSpaceFlushTarget> allocShrinker(const AttributeVector::SP &attr, search::ISequencedTaskExecutor &attributeFieldWriter)
+{
+    using Type = IFlushTarget::Type;
+    using Component = IFlushTarget::Component;
+
+    const vespalib::string &name = attr->getName();
+    auto shrinkwrap = std::make_shared<ThreadedCompactableLidSpace>(attr, attributeFieldWriter, attributeFieldWriter.getExecutorId(name));
+    search::SerialNum shrinkSerialNum = estimateShrinkSerialNum(*attr);
+    return std::make_shared<ShrinkLidSpaceFlushTarget>("attributeshrink." + name, Type::GC, Component::ATTRIBUTE, shrinkSerialNum, shrinkwrap);
+}
+
 }
 
 AttributeManager::AttributeWrap::AttributeWrap(const AttributeVectorSP & a,
@@ -128,14 +139,14 @@ AttributeManager::internalAddAttribute(const AttributeSpec &spec,
     AttributeInitializerResult result = initializer.init();
     if (result) {
         result.getAttribute()->setInterlock(_interlock);
-        SerialNum shrinkSerialNum = estimateShrinkSerialNum(*result.getAttribute());
-        addAttribute(AttributeWrap::normalAttribute(result.getAttribute()), shrinkSerialNum);
+        auto shrinker = allocShrinker(result.getAttribute(), _attributeFieldWriter);
+        addAttribute(AttributeWrap::normalAttribute(result.getAttribute()), shrinker);
     }
     return result.getAttribute();
 }
 
 void
-AttributeManager::addAttribute(const AttributeWrap &attribute, SerialNum shrinkSerialNum)
+AttributeManager::addAttribute(const AttributeWrap &attribute, const ShrinkerSP &shrinker)
 {
     LOG(debug, "Adding attribute vector '%s'", attribute.getAttribute()->getBaseFileName().c_str());
     _attributes[attribute.getAttribute()->getName()] = attribute;
@@ -145,10 +156,6 @@ AttributeManager::addAttribute(const AttributeWrap &attribute, SerialNum shrinkS
         auto attr = attribute.getAttribute();
         const vespalib::string &name = attr->getName();
         auto flusher = std::make_shared<FlushableAttribute>(attr, _diskLayout->createAttributeDir(name), _tuneFileAttributes, _fileHeaderContext, _attributeFieldWriter, _hwInfo);
-        auto shrinkwrap = std::make_shared<ThreadedCompactableLidSpace>(attr, _attributeFieldWriter, _attributeFieldWriter.getExecutorId(name));
-        using Type = IFlushTarget::Type;
-        using Component = IFlushTarget::Component;
-        auto shrinker = std::make_shared<ShrinkLidSpaceFlushTarget>("attributeshrink." + name, Type::GC, Component::ATTRIBUTE, shrinkSerialNum, attr);
         _flushables[attribute.getAttribute()->getName()] = FlushableWrap(flusher, shrinker);
         _writableAttributes.push_back(attribute.getAttribute().get());
     }
@@ -184,8 +191,7 @@ AttributeManager::transferExistingAttributes(const AttributeManager &currMgr,
             assert(wrap != nullptr);
             auto shrinker = wrap->getShrinker();
             assert(shrinker);
-            SerialNum shrinkSerialNum = shrinker->getFlushedSerialNum();
-            addAttribute(AttributeWrap::normalAttribute(av), shrinkSerialNum);
+            addAttribute(AttributeWrap::normalAttribute(av), shrinker);
         } else {
             toBeAdded.push_back(aspec);
         }
@@ -316,8 +322,8 @@ AttributeManager::addInitializedAttributes(const std::vector<AttributeInitialize
         assert(result);
         auto attr = result.getAttribute();
         attr->setInterlock(_interlock);
-        SerialNum shrinkSerialNum = estimateShrinkSerialNum(*attr);
-        addAttribute(AttributeWrap::normalAttribute(attr), shrinkSerialNum);
+        auto shrinker = allocShrinker(attr, _attributeFieldWriter);
+        addAttribute(AttributeWrap::normalAttribute(attr), shrinker);
     }
 }
 
@@ -325,7 +331,7 @@ void
 AttributeManager::addExtraAttribute(const AttributeVector::SP &attribute)
 {
     attribute->setInterlock(_interlock);
-    addAttribute(AttributeWrap::extraAttribute(attribute), 0);
+    addAttribute(AttributeWrap::extraAttribute(attribute), ShrinkerSP());
 }
 
 void
