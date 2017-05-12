@@ -9,6 +9,7 @@ import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.server.Slobrok;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vdslib.state.ClusterState;
+import com.yahoo.vdslib.state.State;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -20,8 +21,10 @@ import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 
+import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class MasterElectionTest extends FleetControllerTest {
@@ -438,6 +441,58 @@ public class MasterElectionTest extends FleetControllerTest {
         log.log(LogLevel.INFO, "SHUTTING DOWN FLEET CONTROLLER 0");
         fleetControllers.get(0).shutdown();
         waitForMaster(1);
+    }
+
+    /**
+     * Should always write new version to ZooKeeper, even if the version will not
+     * be published to any nodes. External services may still observe the version
+     * number via the cluster REST API, and we should therefore ensure that we never
+     * risk rolling back the version number in the face of a reelection.
+     */
+    @Test
+    public void cluster_state_version_written_to_zookeeper_even_with_empty_send_set() throws Exception {
+        startingTest("MasterElectionTest::cluster_state_version_written_to_zookeeper_even_with_empty_send_set");
+        FleetControllerOptions options = new FleetControllerOptions("mycluster");
+        options.masterZooKeeperCooldownPeriod = 1;
+        options.minRatioOfDistributorNodesUp = 0;
+        options.minRatioOfStorageNodesUp = 0;
+        options.minDistributorNodesUp = 0;
+        options.minStorageNodesUp = 1;
+        setUpFleetController(3, true, options);
+        setUpVdsNodes(true, new DummyVdsNodeOptions());
+        fleetController = fleetControllers.get(0); // Required to prevent waitForStableSystem from NPE'ing
+        waitForStableSystem();
+        waitForMaster(0);
+
+        // Explanation for this convoluted sequence of actions: we want to trigger a scenario where
+        // we have a cluster state version bump _without_ there being any nodes to send the new state
+        // to. If there's an "optimization" to skip writing the version to ZooKeeper if there are no
+        // nodes in the version send set, a newly elected, different master will end up reusing the
+        // very same version number.
+        // We mark all nodes' Reported states as down (which means an empty send set, as no nodes are
+        // online), then mark one storage node as Wanted state as Maintenance. This forces a cluster
+        // state change.
+        this.nodes.forEach(n -> {
+            n.disconnectImmediately();
+            waitForCompleteCycle(0);
+        });
+        setWantedState(this.nodes.get(2*10 - 1), State.MAINTENANCE, "bar");
+        waitForCompleteCycle(0);
+
+        // This receives the version number of the highest _working_ cluster state, with
+        // no guarantees that it has been published to any nodes yet.
+        final long preElectionVersionNumber = fleetControllers.get(0).getSystemState().getVersion();
+
+        // Nuke controller 1, leaving controller 1 in charge.
+        // It should have observed the most recently written version number and increase this
+        // number before publishing its own new state.
+        fleetControllers.get(0).shutdown();
+        waitForMaster(1);
+        waitForCompleteCycle(1);
+
+        final long postElectionVersionNumber = fleetControllers.get(1).getSystemState().getVersion();
+
+        assertThat(postElectionVersionNumber, greaterThan(preElectionVersionNumber));
     }
 
 }
