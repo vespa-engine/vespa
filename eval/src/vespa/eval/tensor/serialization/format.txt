@@ -8,7 +8,7 @@ effortlessly as possible with both existing formats.
 
 //-----------------------------------------------------------------------------
 
-byte: type (1:sparse, 2:dense, 3:mixed)
+1_4_int: type (1:sparse, 2:dense, 3:mixed)
   bit 0 -> 'sparse'
   bit 1 -> 'dense'
   (mixed tensors are tagged as both 'sparse' and 'dense')

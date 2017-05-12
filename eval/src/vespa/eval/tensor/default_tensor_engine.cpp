@@ -12,6 +12,7 @@
 #include "dense/dense_tensor_builder.h"
 #include "dense/dense_tensor_function_compiler.h"
 #include "default_tensor.h"
+#include "wrapped_simple_tensor.h"
 
 namespace vespalib {
 namespace tensor {
@@ -25,19 +26,47 @@ using TensorSpec = eval::TensorSpec;
 
 namespace {
 
+const eval::TensorEngine &simple_engine() { return eval::SimpleTensorEngine::ref(); }
+const eval::TensorEngine &default_engine() { return DefaultTensorEngine::ref(); }
+
+// map tensors to simple tensors before fall-back evaluation
+
+const eval::SimpleTensor &to_simple(const eval::Tensor &tensor, Stash &stash) {
+    if (auto wrapped = dynamic_cast<const WrappedSimpleTensor *>(&tensor)) {
+        return wrapped->get();
+    }
+    TensorSpec spec = tensor.engine().to_spec(tensor);
+    using PTR = std::unique_ptr<eval::SimpleTensor>;
+    return *stash.create<PTR>(eval::SimpleTensor::create(spec));
+}
+
+const Value &to_simple(const Value &value, Stash &stash) {
+    if (auto tensor = value.as_tensor()) {
+        return stash.create<TensorValue>(to_simple(*tensor, stash));
+    }
+    return value;
+}
+
+// map tensors to default tensors after fall-back evaluation
+
+const Value &to_default(const Value &value, Stash &stash) {
+    if (auto tensor = value.as_tensor()) {
+        if (auto simple = dynamic_cast<const eval::SimpleTensor *>(tensor)) {
+            if (!Tensor::supported({simple->type()})) {
+                return stash.create<TensorValue>(std::make_unique<WrappedSimpleTensor>(*simple));
+            }
+        }
+        TensorSpec spec = tensor->engine().to_spec(*tensor);
+        return stash.create<TensorValue>(default_engine().create(spec));
+    }
+    return value;
+}
+
 const Value &to_value(std::unique_ptr<Tensor> tensor, Stash &stash) {
     if (tensor->getType().is_tensor()) {
         return stash.create<TensorValue>(std::move(tensor));
     }
     return stash.create<DoubleValue>(tensor->sum());
-}
-
-const Tensor &to_tensor(const Value &value, Stash &stash) {
-    if (auto tensor = value.as_tensor()) {
-        return static_cast<const Tensor &>(*tensor);
-    }
-    return stash.create<DenseTensor>(ValueType::double_type(),
-                                     std::vector<double>({value.as_double()}));
 }
 
 } // namespace vespalib::tensor::<unnamed>
@@ -59,9 +88,6 @@ DefaultTensorEngine::equal(const Tensor &a, const Tensor &b) const
     assert(&b.engine() == this);
     const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(a);
     const tensor::Tensor &my_b = static_cast<const tensor::Tensor &>(b);
-    if (my_a.getType().type() != my_b.getType().type()) {
-        return false;
-    }
     return my_a.equals(my_b);
 }
 
@@ -108,7 +134,7 @@ DefaultTensorEngine::create(const TensorSpec &spec) const
         }
     }
     if (is_dense && is_sparse) {
-        return DefaultTensor::builder().build();
+        return std::make_unique<WrappedSimpleTensor>(eval::SimpleTensor::create(spec));
     } else if (is_dense) {
         DenseTensorBuilder builder;
         std::map<vespalib::string,DenseTensorBuilder::Dimension> dimension_map;
@@ -145,6 +171,9 @@ DefaultTensorEngine::reduce(const Tensor &tensor, const BinaryOperation &op, con
 {
     assert(&tensor.engine() == this);
     const tensor::Tensor &my_tensor = static_cast<const tensor::Tensor &>(tensor);
+    if (!tensor::Tensor::supported({my_tensor.getType()})) {
+        return to_default(simple_engine().reduce(to_simple(my_tensor, stash), op, dimensions, stash), stash);
+    }
     IsAddOperation check;
     op.accept(check);
     tensor::Tensor::UP result;
@@ -180,6 +209,9 @@ DefaultTensorEngine::map(const UnaryOperation &op, const Tensor &a, Stash &stash
 {
     assert(&a.engine() == this);
     const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(a);
+    if (!tensor::Tensor::supported({my_a.getType()})) {
+        return to_default(simple_engine().map(op, to_simple(my_a, stash), stash), stash);
+    }
     CellFunctionAdapter cell_function(op);
     return to_value(my_a.apply(cell_function), stash);
 }
@@ -227,8 +259,8 @@ DefaultTensorEngine::apply(const BinaryOperation &op, const Tensor &a, const Ten
     assert(&b.engine() == this);
     const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(a);
     const tensor::Tensor &my_b = static_cast<const tensor::Tensor &>(b);
-    if (my_a.getType().type() != my_b.getType().type()) {
-        return stash.create<ErrorValue>();
+    if (!tensor::Tensor::supported({my_a.getType(), my_b.getType()})) {
+        return to_default(simple_engine().apply(op, to_simple(my_a, stash), to_simple(my_b, stash), stash), stash);
     }
     TensorOperationOverride tensor_override(my_a, my_b);
     op.accept(tensor_override);
@@ -241,37 +273,14 @@ DefaultTensorEngine::apply(const BinaryOperation &op, const Tensor &a, const Ten
 
 //-----------------------------------------------------------------------------
 
-namespace {
-
-const eval::TensorEngine &simple_engine() { return eval::SimpleTensorEngine::ref(); }
-const eval::TensorEngine &default_engine() { return DefaultTensorEngine::ref(); }
-
-// map tensors to simple tensors before fall-back evaluation
-const Value &to_simple(const Value &value, Stash &stash) {
-    if (auto tensor = value.as_tensor()) {
-        TensorSpec spec = tensor->engine().to_spec(*tensor);
-        return stash.create<TensorValue>(simple_engine().create(spec));
-    }
-    return value;
-}
-
-// map tensors to default tensors after fall-back evaluation
-const Value &to_default(const Value &value, Stash &stash) {
-    if (auto tensor = value.as_tensor()) {
-        TensorSpec spec = tensor->engine().to_spec(*tensor);
-        return stash.create<TensorValue>(default_engine().create(spec));
-    }
-    return value;
-}
-
-} // namespace vespalib::tensor::<unnamed>
-
-//-----------------------------------------------------------------------------
-
 void
-DefaultTensorEngine::encode(const Value &value, nbostream &output, Stash &stash) const
+DefaultTensorEngine::encode(const Value &value, nbostream &output, Stash &) const
 {
-    TypedBinaryFormat::serialize(output, to_tensor(value, stash));
+    if (auto tensor = value.as_tensor()) {
+        TypedBinaryFormat::serialize(output, static_cast<const tensor::Tensor &>(*tensor));
+    } else {
+        TypedBinaryFormat::serialize(output, DenseTensor(ValueType::double_type(), {value.as_double()}));
+    }
 }
 
 const Value &

@@ -416,14 +416,14 @@ public:
 };
 
 struct Format {
-    bool    is_sparse;
-    bool    is_dense;
-    uint8_t tag;
+    bool     is_sparse;
+    bool     is_dense;
+    uint32_t tag;
     explicit Format(const TypeMeta &meta)
         : is_sparse(meta.mapped.size() > 0),
           is_dense((meta.indexed.size() > 0) || !is_sparse),
           tag((is_sparse ? 0x1 : 0) | (is_dense ? 0x2 : 0)) {}
-    explicit Format(uint8_t tag_in)
+    explicit Format(uint32_t tag_in)
         : is_sparse((tag_in & 0x1) != 0),
           is_dense((tag_in & 0x2) != 0),
           tag(tag_in) {}
@@ -689,7 +689,7 @@ SimpleTensor::encode(const SimpleTensor &tensor, nbostream &output)
 {
     TypeMeta meta(tensor.type());
     Format format(meta);
-    output << format.tag;
+    output.putInt1_4Bytes(format.tag);
     encode_type(output, format, tensor.type(), meta);
     maybe_encode_num_blocks(output, meta, tensor.cells().size() / meta.block_size);
     View view(tensor, meta.mapped);
@@ -705,7 +705,7 @@ SimpleTensor::encode(const SimpleTensor &tensor, nbostream &output)
 std::unique_ptr<SimpleTensor>
 SimpleTensor::decode(nbostream &input)
 {
-    Format format(input.readValue<uint8_t>());
+    Format format(input.getInt1_4Bytes());
     ValueType type = decode_type(input, format);
     TypeMeta meta(type);
     Builder builder(type);

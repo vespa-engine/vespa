@@ -625,21 +625,6 @@ nbostream extract_data(const Memory &hex_dump) {
     return data;
 }
 
-bool is_mixed(const vespalib::string &type_str) {
-    bool dense = false;
-    bool sparse = false;
-    ValueType type = ValueType::from_spec(type_str);
-    for (const auto &dim: type.dimensions()) {
-        dense = (dense || dim.is_indexed());
-        sparse = (sparse || dim.is_mapped());
-    }
-    return (dense && sparse);
-}
-
-bool is_mixed(nbostream &data) {
-    return ((data.size() > 0) && (data.peek()[0] == 0x3));
-}
-
 bool is_same(const nbostream &a, const nbostream &b) {
     return (Memory(a.peek(), a.size()) == Memory(b.peek(), b.size()));
 }
@@ -650,24 +635,14 @@ struct TestContext {
     vespalib::string module_path;
     const TensorEngine &ref_engine;
     const TensorEngine &engine;
-    bool test_mixed_cases;
-    size_t skip_count;
 
-    TestContext(const vespalib::string &module_path_in, const TensorEngine &engine_in, bool test_mixed_cases_in)
-        : module_path(module_path_in), ref_engine(SimpleTensorEngine::ref()), engine(engine_in),
-          test_mixed_cases(test_mixed_cases_in), skip_count(0) {}
+    TestContext(const vespalib::string &module_path_in, const TensorEngine &engine_in)
+        : module_path(module_path_in), ref_engine(SimpleTensorEngine::ref()), engine(engine_in) {}
 
     std::unique_ptr<Tensor> tensor(const TensorSpec &spec) {
         auto result = engine.create(spec);
         EXPECT_EQUAL(spec.type(), engine.type_of(*result).to_spec());
         return result;
-    }
-
-    bool mixed(size_t n) {
-        if (!test_mixed_cases) {
-            skip_count += n;
-        }
-        return test_mixed_cases;
     }
 
     //-------------------------------------------------------------------------
@@ -684,10 +659,8 @@ struct TestContext {
         TEST_DO(verify_create_type("tensor(x{},y{})"));
         TEST_DO(verify_create_type("tensor(x[5])"));
         TEST_DO(verify_create_type("tensor(x[5],y[10])"));
-        if (mixed(2)) {
-            TEST_DO(verify_create_type("tensor(x{},y[10])"));
-            TEST_DO(verify_create_type("tensor(x[5],y{})"));
-        }
+        TEST_DO(verify_create_type("tensor(x{},y[10])"));
+        TEST_DO(verify_create_type("tensor(x[5],y{})"));
     }
 
     //-------------------------------------------------------------------------
@@ -710,10 +683,8 @@ struct TestContext {
         TEST_DO(verify_equal(spec({x({"a"}),y({"a"})}, Seq({1})), spec({y({"a"}),x({"a"})}, Seq({1}))));
         TEST_DO(verify_equal(spec(x(3)), spec(x(3))));
         TEST_DO(verify_equal(spec({x(1),y(1)}, Seq({1})), spec({y(1),x(1)}, Seq({1}))));
-        if (mixed(2)) {
-            TEST_DO(verify_equal(spec({x({"a"}),y(1)}, Seq({1})), spec({y(1),x({"a"})}, Seq({1}))));
-            TEST_DO(verify_equal(spec({y({"a"}),x(1)}, Seq({1})), spec({x(1),y({"a"})}, Seq({1}))));
-        }
+        TEST_DO(verify_equal(spec({x({"a"}),y(1)}, Seq({1})), spec({y(1),x({"a"})}, Seq({1}))));
+        TEST_DO(verify_equal(spec({y({"a"}),x(1)}, Seq({1})), spec({x(1),y({"a"})}, Seq({1}))));
     }
 
     //-------------------------------------------------------------------------
@@ -743,12 +714,10 @@ struct TestContext {
         TEST_DO(verify_not_equal(spec(x(2), Seq({1,1}), Bits({1,0})),
                                  spec(x(2), Seq({1,1}), Bits({0,1}))));
         TEST_DO(verify_not_equal(spec(x(1), Seq({1})), spec({x(1),y(1)}, Seq({1}))));
-        if (mixed(3)) {
-            TEST_DO(verify_not_equal(spec({x({"a"}),y(1)}, Seq({1})), spec({x({"a"}),y(1)}, Seq({2}))));
-            TEST_DO(verify_not_equal(spec({x({"a"}),y(1)}, Seq({1})), spec({x({"b"}),y(1)}, Seq({1}))));
-            TEST_DO(verify_not_equal(spec({x(2),y({"a"})}, Seq({1}), Bits({1,0})),
-                                     spec({x(2),y({"a"})}, Seq({X,1}), Bits({0,1}))));
-        }
+        TEST_DO(verify_not_equal(spec({x({"a"}),y(1)}, Seq({1})), spec({x({"a"}),y(1)}, Seq({2}))));
+        TEST_DO(verify_not_equal(spec({x({"a"}),y(1)}, Seq({1})), spec({x({"b"}),y(1)}, Seq({1}))));
+        TEST_DO(verify_not_equal(spec({x(2),y({"a"})}, Seq({1}), Bits({1,0})),
+                                 spec({x(2),y({"a"})}, Seq({X,1}), Bits({0,1}))));
     }
 
     //-------------------------------------------------------------------------
@@ -764,12 +733,10 @@ struct TestContext {
             {x(3),y(5),z(7)},
             {x({"a","b","c"})},
             {x({"a","b","c"}),y({"foo","bar"})},
-            {x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}
+            {x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})},
+            {x(3),y({"foo", "bar"}),z(7)},
+            {x({"a","b","c"}),y(5),z({"i","j","k","l"})}
         };
-        if (mixed(2 * 4)) {
-            layouts.push_back({x(3),y({"foo", "bar"}),z(7)});
-            layouts.push_back({x({"a","b","c"}),y(5),z({"i","j","k","l"})});
-        }
         for (const Layout &layout: layouts) {
             TensorSpec input = spec(layout, seq);
             for (const Domain &domain: layout) {
@@ -804,12 +771,10 @@ struct TestContext {
             {x(3),y(5),z(7)},
             {x({"a","b","c"})},
             {x({"a","b","c"}),y({"foo","bar"})},
-            {x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}
+            {x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})},
+            {x(3),y({"foo", "bar"}),z(7)},
+            {x({"a","b","c"}),y(5),z({"i","j","k","l"})}
         };
-        if (mixed(2 * 4)) {
-            layouts.push_back({x(3),y({"foo", "bar"}),z(7)});
-            layouts.push_back({x({"a","b","c"}),y(5),z({"i","j","k","l"})});
-        }
         for (const Layout &layout: layouts) {
             TensorSpec input = spec(layout, seq);
             for (const Domain &domain: layout) {
@@ -851,12 +816,10 @@ struct TestContext {
             {x(3),y(5),z(7)},
             {x({"a","b","c"})},
             {x({"a","b","c"}),y({"foo","bar"})},
-            {x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}
+            {x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})},
+            {x(3),y({"foo", "bar"}),z(7)},
+            {x({"a","b","c"}),y(5),z({"i","j","k","l"})}
         };
-        if (mixed(2)) {
-            layouts.push_back({x(3),y({"foo", "bar"}),z(7)});
-            layouts.push_back({x({"a","b","c"}),y(5),z({"i","j","k","l"})});
-        }
         for (const Layout &layout: layouts) {
             TEST_DO(verify_result(eval.eval(engine, spec(layout, seq)), spec(layout, OpSeq(seq, ref_op))));
         }
@@ -1121,14 +1084,10 @@ struct TestContext {
             {x({"a","b","c"})},                    {y({"foo","bar","baz"})},
             {x({"a","b","c"})},                    {x({"a","b","c"}),y({"foo","bar","baz"})},
             {x({"a","b"}),y({"foo","bar","baz"})}, {x({"a","b","c"}),y({"foo","bar"})},
-            {x({"a","b"}),y({"foo","bar","baz"})}, {y({"foo","bar"}),z({"i","j","k","l"})}
+            {x({"a","b"}),y({"foo","bar","baz"})}, {y({"foo","bar"}),z({"i","j","k","l"})},
+            {x(3),y({"foo", "bar"})},              {y({"foo", "bar"}),z(7)},
+            {x({"a","b","c"}),y(5)},               {y(5),z({"i","j","k","l"})}
         };
-        if (mixed(2)) {
-            layouts.push_back({x(3),y({"foo", "bar"})});
-            layouts.push_back({y({"foo", "bar"}),z(7)});
-            layouts.push_back({x({"a","b","c"}),y(5)});
-            layouts.push_back({y(5),z({"i","j","k","l"})});
-        }
         ASSERT_TRUE((layouts.size() % 2) == 0);
         for (size_t i = 0; i < layouts.size(); i += 2) {
             TensorSpec lhs_input = spec(layouts[i], seq);
@@ -1289,21 +1248,17 @@ struct TestContext {
         TensorSpec spec = TensorSpec::from_slime(test["tensor"]);
         const Inspector &binary = test["binary"];
         EXPECT_GREATER(binary.entries(), 0u);
-        if (!is_mixed(spec.type()) || mixed(binary.entries() + 1)) {
-            nbostream encoded;
-            engine.encode(make_value(engine, spec, stash), encoded, stash);
-            test.setData("encoded", Memory(encoded.peek(), encoded.size()));
-            bool matched_encode = false;
-            for (size_t i = 0; i < binary.entries(); ++i) {
-                nbostream data = extract_data(binary[i].asString());
-                matched_encode = (matched_encode || is_same(encoded, data));
-                if (!is_mixed(data) || mixed(1)) {
-                    TEST_DO(verify_result(Eval::Result(engine.decode(data, stash)), spec));
-                    EXPECT_EQUAL(data.size(), 0u);
-                }
-            }
-            EXPECT_TRUE(matched_encode);
+        nbostream encoded;
+        engine.encode(make_value(engine, spec, stash), encoded, stash);
+        test.setData("encoded", Memory(encoded.peek(), encoded.size()));
+        bool matched_encode = false;
+        for (size_t i = 0; i < binary.entries(); ++i) {
+            nbostream data = extract_data(binary[i].asString());
+            matched_encode = (matched_encode || is_same(encoded, data));
+            TEST_DO(verify_result(Eval::Result(engine.decode(data, stash)), spec));
+            EXPECT_EQUAL(data.size(), 0u);
         }
+        EXPECT_TRUE(matched_encode);
     }
 
     void test_binary_format_spec() {
@@ -1335,10 +1290,8 @@ struct TestContext {
         TEST_DO(verify_encode_decode(spec({x({"a","b","c"})}, N())));
         TEST_DO(verify_encode_decode(spec({x({"a","b","c"}),y({"foo","bar"})}, N())));
         TEST_DO(verify_encode_decode(spec({x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}, N())));
-        if (mixed(2)) {
-            TEST_DO(verify_encode_decode(spec({x(3),y({"foo", "bar"}),z(7)}, N())));
-            TEST_DO(verify_encode_decode(spec({x({"a","b","c"}),y(5),z({"i","j","k","l"})}, N())));
-        }
+        TEST_DO(verify_encode_decode(spec({x(3),y({"foo", "bar"}),z(7)}, N())));
+        TEST_DO(verify_encode_decode(spec({x({"a","b","c"}),y(5),z({"i","j","k","l"})}, N())));
     }
 
     //-------------------------------------------------------------------------
@@ -1361,14 +1314,11 @@ struct TestContext {
 } // namespace vespalib::eval::test::<unnamed>
 
 void
-TensorConformance::run_tests(const vespalib::string &module_path, const TensorEngine &engine, bool test_mixed_cases)
+TensorConformance::run_tests(const vespalib::string &module_path, const TensorEngine &engine)
 {
-    TestContext ctx(module_path, engine, test_mixed_cases);
+    TestContext ctx(module_path, engine);
     fprintf(stderr, "module path: '%s'\n", ctx.module_path.c_str());
     ctx.run_tests();
-    if (ctx.skip_count > 0) {
-        fprintf(stderr, "WARNING: skipped %zu mixed test cases\n", ctx.skip_count);
-    }
 }
 
 } // namespace vespalib::eval::test

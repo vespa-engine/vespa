@@ -28,6 +28,7 @@ private:
 
 public:
     DenseTensor();
+    ~DenseTensor() {}
     DenseTensor(const eval::ValueType &type_in,
                 const Cells &cells_in);
     DenseTensor(const eval::ValueType &type_in,
