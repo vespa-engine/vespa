@@ -9,32 +9,22 @@ import com.yahoo.vespa.model.content.Redundancy;
  */
 public class RedundancyBuilder {
     Redundancy build(ModelElement clusterXml) {
-        Integer initialRedundancy = 2;
-        Integer finalRedundancy = 3;
+        Integer redundancy = 3;
         Integer readyCopies = 2;
 
         ModelElement redundancyElement = clusterXml.getChild("redundancy");
         if (redundancyElement != null) {
-            initialRedundancy = redundancyElement.getIntegerAttribute("reply-after");
-            finalRedundancy = (int)redundancyElement.asLong();
-
-            if (initialRedundancy == null) {
-                initialRedundancy = finalRedundancy;
-            } else {
-                if (finalRedundancy < initialRedundancy) {
-                    throw new IllegalArgumentException("Final redundancy must be higher than or equal to initial redundancy");
-                }
-            }
+            redundancy = (int)redundancyElement.asLong();
 
             readyCopies = clusterXml.childAsInteger("engine.proton.searchable-copies");
             if (readyCopies == null) {
-                readyCopies = Math.min(finalRedundancy, 2);
+                readyCopies = Math.min(redundancy, 2);
             }
-            if (readyCopies > finalRedundancy) {
+            if (readyCopies > redundancy) {
                 throw new IllegalArgumentException("Number of searchable copies can not be higher than final redundancy");
             }
         }
 
-        return new Redundancy(initialRedundancy, finalRedundancy, readyCopies);
+        return new Redundancy(redundancy, readyCopies);
     }
 }

@@ -859,8 +859,7 @@ public class ModelProvisioningTest {
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         ContentCluster cluster = model.getContentClusters().get("bar");
-        assertEquals(2*3, cluster.redundancy().effectiveInitialRedundancy()); // Reduced from 3*3
-        assertEquals(2*3, cluster.redundancy().effectiveFinalRedundancy()); // Reduced from 3*4
+        assertEquals(2*3, cluster.redundancy().effectiveRedundancy()); // Reduced from 3*4
         assertEquals(2*3, cluster.redundancy().effectiveReadyCopies()); // Reduced from 3*3
         assertEquals("2|2|*", cluster.getRootGroup().getPartitions().get()); // Reduced from 4|4|*
         assertEquals(0, cluster.getRootGroup().getNodes().size());
@@ -911,8 +910,7 @@ public class ModelProvisioningTest {
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         ContentCluster cluster = model.getContentClusters().get("bar");
-        assertEquals(4, cluster.redundancy().effectiveInitialRedundancy());
-        assertEquals(4, cluster.redundancy().effectiveFinalRedundancy());
+        assertEquals(4, cluster.redundancy().effectiveRedundancy());
         assertEquals(4, cluster.redundancy().effectiveReadyCopies());
         assertEquals(4, cluster.getSearch().getIndexed().getDispatchSpec().getGroups().size());
         assertFalse(cluster.getRootGroup().getPartitions().isPresent());
@@ -958,8 +956,7 @@ public class ModelProvisioningTest {
         assertEquals(1, clusterControllers.getContainers().size());
         assertEquals("bar-controllers", clusterControllers.getName());
         assertEquals("default0", clusterControllers.getContainers().get(0).getHostName());
-        assertEquals(1, cluster.redundancy().effectiveInitialRedundancy()); // Reduced from 3*3
-        assertEquals(1, cluster.redundancy().effectiveFinalRedundancy()); // Reduced from 3*4
+        assertEquals(1, cluster.redundancy().effectiveRedundancy()); // Reduced from 3*4
         assertEquals(1, cluster.redundancy().effectiveReadyCopies()); // Reduced from 3*3
         assertFalse(cluster.getRootGroup().getPartitions().isPresent()); // 1 group - > flattened -> no distribution
         assertEquals(1, cluster.getRootGroup().getNodes().size());
@@ -1015,8 +1012,7 @@ public class ModelProvisioningTest {
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
 
         ContentCluster cluster = model.getContentClusters().get("bar");
-        assertEquals(1, cluster.redundancy().effectiveInitialRedundancy());
-        assertEquals(1, cluster.redundancy().effectiveFinalRedundancy());
+        assertEquals(1, cluster.redundancy().effectiveRedundancy());
         assertEquals(1, cluster.redundancy().effectiveReadyCopies());
 
         assertEquals(1, cluster.getSearch().getIndexed().getDispatchSpec().getGroups().size());
