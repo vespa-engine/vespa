@@ -1145,7 +1145,9 @@ LogDataStore::canShrinkLidSpace() const
 void
 LogDataStore::shrinkLidSpace()
 {
-    assert(canShrinkLidSpace());
+    if (!canShrinkLidSpace()) {
+        return;
+    }
     LockGuard guard(_updateLock);
     _lidInfo.shrink(getDocIdLimit());
     incGeneration();
