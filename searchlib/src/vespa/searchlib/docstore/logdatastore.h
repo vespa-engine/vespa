@@ -304,6 +304,7 @@ private:
     }
     bool shouldCompactToActiveFile(size_t compactedSize) const;
     std::pair<bool, FileId> findNextToCompact();
+    void incGeneration();
 
     typedef std::vector<FileId> FileIdxVector;
     Config                                   _config;
@@ -322,6 +323,7 @@ private:
     transactionlog::SyncProxy               &_tlSyncer;
     IBucketizer::SP                          _bucketizer;
     NameIdSet                                _currentlyCompacting;
+    uint64_t                                 _compactLidSpaceGeneration;
 };
 
 } // namespace search

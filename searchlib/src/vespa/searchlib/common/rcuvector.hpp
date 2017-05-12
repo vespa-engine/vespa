@@ -60,7 +60,7 @@ RcuVectorBase<T>::expand(size_t newCapacity) {
     size_t holdSize = tmpData->capacity() * sizeof(T);
     vespalib::GenerationHeldBase::UP hold(new RcuVectorHeld<Array>(holdSize, std::move(tmpData)));
     _genHolder.hold(std::move(hold));
-    onExpand();
+    onReallocation();
 }
 
 template <typename T>
@@ -95,6 +95,7 @@ RcuVectorBase<T>::shrink(size_t newSize)
         size_t holdSize = tmpData->capacity() * sizeof(T);
         vespalib::GenerationHeldBase::UP hold(new RcuVectorHeld<Array>(holdSize, std::move(tmpData)));
         _genHolder.hold(std::move(hold));
+        onReallocation();
     }
 }
 
@@ -144,11 +145,11 @@ RcuVectorBase<T>::getMemoryUsage() const
 
 template <typename T>
 void
-RcuVectorBase<T>::onExpand() { }
+RcuVectorBase<T>::onReallocation() { }
 
 template <typename T>
 void
-RcuVector<T>::onExpand() {
+RcuVector<T>::onReallocation() {
     _genHolderStore.transferHoldLists(_generation);
 }
 

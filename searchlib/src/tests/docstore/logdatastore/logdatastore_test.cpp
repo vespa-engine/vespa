@@ -765,7 +765,7 @@ struct Fixture {
         return serialNum++;
     }
 
-    Fixture(const vespalib::string &dirName,
+    Fixture(const vespalib::string &dirName = "tmp",
             bool dirCleanup = true,
             size_t maxFileSize = 4096 * 2)
         : executor(1, 0x10000),
@@ -802,6 +802,10 @@ struct Fixture {
                 return lid;
             }
         }
+    }
+    void compactLidSpace(uint32_t wantedDocIdLimit) {
+        store.compactLidSpace(wantedDocIdLimit);
+        assertDocIdLimit(wantedDocIdLimit);
     }
     void assertDocIdLimit(uint32_t expDocIdLimit) {
         EXPECT_EQUAL(expDocIdLimit, store.getDocIdLimit());
@@ -881,8 +885,7 @@ TEST("require that lid space can be compacted and entries from old files skipped
         TEST_DO(f.assertContent({10,100,101,102,20,200,201,202,30}, 203));
 
         f.assertDocIdLimit(203);
-        f.store.compactLidSpace(100);
-        f.assertDocIdLimit(100);
+        f.compactLidSpace(100);
         TEST_DO(f.assertContent({10,20,30}, 203));
 
         f.writeUntilNewChunk(31);
@@ -898,12 +901,51 @@ TEST("require that lid space can be compacted and entries from old files skipped
     }
 }
 
-TEST_F("require that getLid() is protected by docIdLimit", Fixture("tmp"))
+TEST_F("require that getLid() is protected by docIdLimit", Fixture)
 {
     f.write(1);
     vespalib::GenerationHandler::Guard guard = f.store.getLidReadGuard();
     EXPECT_TRUE(f.store.getLid(guard, 1).valid());
     EXPECT_FALSE(f.store.getLid(guard, 2).valid());
+}
+
+TEST_F("require that lid space can be compacted and shrunk", Fixture)
+{
+    f.write(1).write(2);
+    EXPECT_FALSE(f.store.canShrinkLidSpace());
+
+    f.compactLidSpace(2);
+    MemoryUsage before = f.store.getMemoryUsage();
+    EXPECT_TRUE(f.store.canShrinkLidSpace());
+    f.store.shrinkLidSpace();
+
+    MemoryUsage after = f.store.getMemoryUsage();
+    EXPECT_LESS(after.usedBytes(), before.usedBytes());
+}
+
+TEST_F("require that lid space can be increased after being compacted and then shrunk", Fixture)
+{
+    f.write(1).write(3);
+    TEST_DO(f.compactLidSpace(2));
+    f.write(2);
+    TEST_DO(f.assertDocIdLimit(3));
+    f.store.shrinkLidSpace();
+    TEST_DO(f.assertDocIdLimit(3));
+    TEST_DO(f.assertContent({1,2}, 3));
+}
+
+TEST_F("require that lid space can be shrunk only after read guards are deleted", Fixture)
+{
+    f.write(1).write(2);
+    EXPECT_FALSE(f.store.canShrinkLidSpace());
+    {
+        vespalib::GenerationHandler::Guard guard = f.store.getLidReadGuard();
+        f.compactLidSpace(2);
+        f.write(1); // trigger remove of old generations
+        EXPECT_FALSE(f.store.canShrinkLidSpace());
+    }
+    f.write(1); // trigger remove of old generations
+    EXPECT_TRUE(f.store.canShrinkLidSpace());
 }
 
 TEST_MAIN() {

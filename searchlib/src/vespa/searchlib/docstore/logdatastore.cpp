@@ -54,7 +54,8 @@ LogDataStore::LogDataStore(vespalib::ThreadExecutor &executor,
       _initFlushSyncToken(0),
       _tlSyncer(tlSyncer),
       _bucketizer(bucketizer),
-      _currentlyCompacting()
+      _currentlyCompacting(),
+      _compactLidSpaceGeneration()
 {
     // Reserve space for 1TB summary in order to avoid locking.
     _fileChunks.reserve(LidInfo::getFileIdLimit());
@@ -886,13 +887,19 @@ LogDataStore::setLid(const LockGuard &guard, uint32_t lid, const LidInfo &meta)
         }
     } else {
         _lidInfo.ensure_size(lid+1, LidInfo());
-        _lidInfo.setGeneration(_genHandler.getNextGeneration());
-        _genHandler.incGeneration();
-        _genHandler.updateFirstUsedGeneration();
-        _lidInfo.removeOldGenerations(_genHandler.getFirstUsedGeneration());
-        updateDocIdLimit(_lidInfo.size());
+        incGeneration();
     }
+    updateDocIdLimit(lid + 1);
     _lidInfo[lid] = meta;
+}
+
+void
+LogDataStore::incGeneration()
+{
+    _lidInfo.setGeneration(_genHandler.getNextGeneration());
+    _genHandler.incGeneration();
+    _genHandler.updateFirstUsedGeneration();
+    _lidInfo.removeOldGenerations(_genHandler.getFirstUsedGeneration());
 }
 
 size_t
@@ -1119,21 +1126,29 @@ void
 LogDataStore::compactLidSpace(uint32_t wantedDocLidLimit)
 {
     LockGuard guard(_updateLock);
+    assert(wantedDocLidLimit <= getDocIdLimit());
     for (size_t i = wantedDocLidLimit; i < _lidInfo.size(); ++i) {
         _lidInfo[i] = LidInfo();
     }
     setDocIdLimit(wantedDocLidLimit);
+    _compactLidSpaceGeneration = _genHandler.getCurrentGeneration();
+    incGeneration();
 }
 
 bool
 LogDataStore::canShrinkLidSpace() const
 {
-    return false;
+    return getDocIdLimit() < _lidInfo.size() &&
+           _compactLidSpaceGeneration < _genHandler.getFirstUsedGeneration();
 }
 
 void
 LogDataStore::shrinkLidSpace()
 {
+    assert(canShrinkLidSpace());
+    LockGuard guard(_updateLock);
+    _lidInfo.shrink(getDocIdLimit());
+    incGeneration();
 }
 
 } // namespace search
