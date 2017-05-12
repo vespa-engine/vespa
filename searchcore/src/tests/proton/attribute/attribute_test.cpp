@@ -13,6 +13,7 @@ LOG_SETUP("attribute_test");
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/attribute/filter_attribute_manager.h>
 #include <vespa/searchcore/proton/test/attribute_utils.h>
+#include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
@@ -550,6 +551,10 @@ TEST_F("require that filter attribute manager can filter attributes", FilterFixt
     f._filterMgr.getAttributeList(attrs);
     EXPECT_EQUAL(1u, attrs.size());
     EXPECT_EQUAL("a2", attrs[0]->getName());
+    searchcorespi::IFlushTarget::List targets = f._filterMgr.getFlushTargets();
+    EXPECT_EQUAL(2u, targets.size());
+    EXPECT_EQUAL("attribute.a2", targets[0]->getName());
+    EXPECT_EQUAL("attributeshrink.a2", targets[1]->getName());
 }
 
 TEST_F("require that filter attribute manager can return flushed serial number", FilterFixture)
