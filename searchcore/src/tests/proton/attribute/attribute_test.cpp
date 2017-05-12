@@ -553,8 +553,8 @@ TEST_F("require that filter attribute manager can filter attributes", FilterFixt
     EXPECT_EQUAL("a2", attrs[0]->getName());
     searchcorespi::IFlushTarget::List targets = f._filterMgr.getFlushTargets();
     EXPECT_EQUAL(2u, targets.size());
-    EXPECT_EQUAL("attribute.a2", targets[0]->getName());
-    EXPECT_EQUAL("attributeshrink.a2", targets[1]->getName());
+    EXPECT_EQUAL("attribute.flush.a2", targets[0]->getName());
+    EXPECT_EQUAL("attribute.shrink.a2", targets[1]->getName());
 }
 
 TEST_F("require that filter attribute manager can return flushed serial number", FilterFixture)

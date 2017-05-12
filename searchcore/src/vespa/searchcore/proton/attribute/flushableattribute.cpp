@@ -168,7 +168,7 @@ FlushableAttribute::FlushableAttribute(const AttributeVectorSP attr,
                                        attributeFieldWriter,
                                        const HwInfo &hwInfo)
     : IFlushTarget(vespalib::make_string(
-                           "attribute.%s",
+                           "attribute.flush.%s",
                            attr->getName().c_str()),
             Type::SYNC, Component::ATTRIBUTE),
       _attr(attr),

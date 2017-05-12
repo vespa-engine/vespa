@@ -13,8 +13,8 @@ namespace proton {
 
 namespace {
 
-const vespalib::string FLUSH_TARGET_NAME_PREFIX("attribute.");
-const vespalib::string SHRINK_TARGET_NAME_PREFIX("attributeshrink.");
+const vespalib::string FLUSH_TARGET_NAME_PREFIX("attribute.flush.");
+const vespalib::string SHRINK_TARGET_NAME_PREFIX("attribute.shrink.");
 
 class FlushTargetFilter
 {

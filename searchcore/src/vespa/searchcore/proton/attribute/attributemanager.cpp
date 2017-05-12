@@ -80,7 +80,7 @@ std::shared_ptr<ShrinkLidSpaceFlushTarget> allocShrinker(const AttributeVector::
     const vespalib::string &name = attr->getName();
     auto shrinkwrap = std::make_shared<ThreadedCompactableLidSpace>(attr, attributeFieldWriter, attributeFieldWriter.getExecutorId(name));
     search::SerialNum shrinkSerialNum = estimateShrinkSerialNum(*attr);
-    return std::make_shared<ShrinkLidSpaceFlushTarget>("attributeshrink." + name, Type::GC, Component::ATTRIBUTE, shrinkSerialNum, shrinkwrap);
+    return std::make_shared<ShrinkLidSpaceFlushTarget>("attribute.shrink." + name, Type::GC, Component::ATTRIBUTE, shrinkSerialNum, shrinkwrap);
 }
 
 }
