@@ -3,7 +3,7 @@ package com.yahoo.vespa.http.server;
 
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.document.DocumentTypeManager;
-import com.yahoo.documentapi.metrics.DocumentApiMetricsHelper;
+import com.yahoo.documentapi.metrics.DocumentApiMetrics;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.ReferencedResource;
 import com.yahoo.jdisc.References;
@@ -88,7 +88,7 @@ public class V3CongestionTestCase {
                 null /*DocTypeManager*/,
                 "clientID",
                 null/*metric*/,
-                new FeedReplyReader(null/*metric*/, new DocumentApiMetricsHelper(MetricReceiver.nullImplementation, "tester")),
+                new FeedReplyReader(null/*metric*/, new DocumentApiMetrics(MetricReceiver.nullImplementation, "tester")),
                 threadsAvail);
     }
 

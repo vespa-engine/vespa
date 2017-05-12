@@ -10,7 +10,7 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
-import com.yahoo.documentapi.metrics.DocumentApiMetricsHelper;
+import com.yahoo.documentapi.metrics.DocumentApiMetrics;
 import com.yahoo.feedhandler.NullFeedMetric;
 import com.yahoo.jdisc.ReferencedResource;
 import com.yahoo.messagebus.SourceSessionParams;
@@ -39,7 +39,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.yahoo.messagebus.Result;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 public class FeedTesterV3 {
@@ -102,7 +101,7 @@ public class FeedTesterV3 {
         Executor threadPool = Executors.newCachedThreadPool();
         DocumentmanagerConfig docMan = new DocumentmanagerConfig(new DocumentmanagerConfig.Builder().enablecompression(true));
         FeedHandlerV3 feedHandlerV3 = new FeedHandlerV3(
-                threadPool, docMan, null /* session cache */ , new NullFeedMetric(), AccessLog.voidAccessLog(), null, new DocumentApiMetricsHelper(MetricReceiver.nullImplementation, "test")) {
+                threadPool, docMan, null /* session cache */ , new NullFeedMetric(), AccessLog.voidAccessLog(), null, new DocumentApiMetrics(MetricReceiver.nullImplementation, "test")) {
             @Override
             protected ReferencedResource<SharedSourceSession> retainSource(
                     SessionCache sessionCache, SourceSessionParams sessionParams)  {

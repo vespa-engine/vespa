@@ -10,7 +10,7 @@ import com.yahoo.container.jdisc.messagebus.SessionCache;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.config.DocumentmanagerConfig;
-import com.yahoo.documentapi.metrics.DocumentApiMetricsHelper;
+import com.yahoo.documentapi.metrics.DocumentApiMetrics;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.ReferencedResource;
 import com.yahoo.log.LogLevel;
@@ -55,7 +55,7 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
             Metric metric,
             AccessLog accessLog,
             ThreadpoolConfig threadpoolConfig,
-            DocumentApiMetricsHelper metricsHelper) throws Exception {
+            DocumentApiMetrics metricsHelper) throws Exception {
         super(executor, accessLog);
         docTypeManager = new DocumentTypeManager(documentManagerConfig);
         this.sessionCache = sessionCache;

@@ -6,19 +6,23 @@ import com.yahoo.metrics.simple.Gauge;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.metrics.simple.Point;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
 
 /**
+ * This class reports metrics for feed operations by APIs that use documentapi.
+ *
  * @author freva
  */
-public class DocumentApiMetricsHelper {
+public class DocumentApiMetrics {
     private final Counter feeds;
     private final Gauge feedLatency;
     private final Map<DocumentOperationStatus, Map<DocumentOperationType, Point>> points = new HashMap<>();
 
-    public DocumentApiMetricsHelper(MetricReceiver metricReceiver, String apiName) {
+    public DocumentApiMetrics(MetricReceiver metricReceiver, String apiName) {
         Map<String, String> dimensions = new HashMap<>();
         dimensions.put("api", apiName);
         for (DocumentOperationStatus status : DocumentOperationStatus.values()) {
@@ -34,15 +38,15 @@ public class DocumentApiMetricsHelper {
         feedLatency = metricReceiver.declareGauge("feed.latency");
     }
 
-    public void reportSuccessful(DocumentOperationType documentOperationType, double latency) {
+    public void reportSuccessful(DocumentOperationType documentOperationType, double latencyInSeconds) {
         Point point = points.get(DocumentOperationStatus.OK).get(documentOperationType);
 
-        feedLatency.sample(latency, point);
+        feedLatency.sample(latencyInSeconds, point);
         feeds.add(point);
     }
 
-    public void reportSuccessful(DocumentOperationType documentOperationType, long startTime) {
-        final double latency = (System.currentTimeMillis() - startTime) / 1000.0d;
+    public void reportSuccessful(DocumentOperationType documentOperationType, Instant startTime) {
+        final double latency = Duration.between(startTime, Instant.now()).toMillis() / 1000.0d;
         reportSuccessful(documentOperationType, latency);
     }
 

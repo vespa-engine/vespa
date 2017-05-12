@@ -16,7 +16,7 @@ import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorSession;
 import com.yahoo.documentapi.messagebus.MessageBusSyncSession;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
-import com.yahoo.documentapi.metrics.DocumentApiMetricsHelper;
+import com.yahoo.documentapi.metrics.DocumentApiMetrics;
 import com.yahoo.documentapi.metrics.DocumentOperationStatus;
 import com.yahoo.documentapi.metrics.DocumentOperationType;
 import com.yahoo.messagebus.StaticThrottlePolicy;
@@ -32,6 +32,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -49,7 +50,7 @@ public class OperationHandlerImpl implements OperationHandler {
 
     public static final int VISIT_TIMEOUT_MS = 120000;
     private final DocumentAccess documentAccess;
-    private final DocumentApiMetricsHelper metricsHelper;
+    private final DocumentApiMetrics metricsHelper;
     private final ClusterEnumerator clusterEnumerator;
 
     private static final class SyncSessionFactory extends ResourceFactory<SyncSession> {
@@ -73,7 +74,7 @@ public class OperationHandlerImpl implements OperationHandler {
         this.documentAccess = documentAccess;
         this.clusterEnumerator = clusterEnumerator;
         syncSessions = new ConcurrentResourcePool<>(new SyncSessionFactory(documentAccess));
-        metricsHelper = new DocumentApiMetricsHelper(metricReceiver, "documentV1");
+        metricsHelper = new DocumentApiMetrics(metricReceiver, "documentV1");
     }
 
     @Override
@@ -188,7 +189,7 @@ public class OperationHandlerImpl implements OperationHandler {
         SyncSession syncSession = syncSessions.alloc();
         Response response;
         try {
-            long startTime = System.currentTimeMillis();
+            Instant startTime = Instant.now();
             DocumentPut put = new DocumentPut(data.getDocument());
             put.setCondition(data.getCondition());
             setRoute(syncSession, route);
@@ -212,7 +213,7 @@ public class OperationHandlerImpl implements OperationHandler {
         SyncSession syncSession = syncSessions.alloc();
         Response response;
         try {
-            long startTime = System.currentTimeMillis();
+            Instant startTime = Instant.now();
             setRoute(syncSession, route);
             syncSession.update(data.getDocumentUpdate());
             metricsHelper.reportSuccessful(DocumentOperationType.UPDATE, startTime);
@@ -234,7 +235,7 @@ public class OperationHandlerImpl implements OperationHandler {
         SyncSession syncSession = syncSessions.alloc();
         Response response;
         try {
-            long startTime = System.currentTimeMillis();
+            Instant startTime = Instant.now();
             DocumentId id = new DocumentId(restUri.generateFullId());
             DocumentRemove documentRemove = new DocumentRemove(id);
             setRoute(syncSession, route);

@@ -11,7 +11,7 @@ import com.yahoo.container.jdisc.messagebus.SessionCache;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.config.DocumentmanagerConfig;
-import com.yahoo.documentapi.metrics.DocumentApiMetricsHelper;
+import com.yahoo.documentapi.metrics.DocumentApiMetrics;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.HttpResponse.Status;
 import com.yahoo.log.LogLevel;
@@ -69,7 +69,7 @@ public class FeedHandler extends LoggingRequestHandler {
             ThreadpoolConfig threadpoolConfig,
             MetricReceiver metricReceiver) throws Exception {
         super(executor, accessLog);
-        DocumentApiMetricsHelper metricsHelper = new DocumentApiMetricsHelper(metricReceiver, "vespa.http.server");
+        DocumentApiMetrics metricsHelper = new DocumentApiMetrics(metricReceiver, "vespa.http.server");
         feedHandlerV3 = new FeedHandlerV3(executor, documentManagerConfig, sessionCache, metric, accessLog, threadpoolConfig, metricsHelper);
         docTypeManager = createDocumentManager(documentManagerConfig);
         clients = new HashMap<>();
