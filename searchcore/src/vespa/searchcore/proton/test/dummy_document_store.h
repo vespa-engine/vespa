@@ -57,6 +57,7 @@ struct DummyDocumentStore : public search::IDocumentStore
 
     virtual void compactLidSpace(uint32_t wantedDocLidLimit) override { (void) wantedDocLidLimit; }
     virtual bool canShrinkLidSpace() const override { return false; }
+    virtual size_t getEstimatedShrinkLidSpaceGain() const override { return 0; }
     virtual void shrinkLidSpace() override {}
 };
 

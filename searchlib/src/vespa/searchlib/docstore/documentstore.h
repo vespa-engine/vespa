@@ -165,9 +165,10 @@ public:
     /**
      * Implements common::ICompactableLidSpace
      */
-    void compactLidSpace(uint32_t wantedDocLidLimit) override;
-    bool canShrinkLidSpace() const override;
-    void shrinkLidSpace() override;
+    virtual void compactLidSpace(uint32_t wantedDocLidLimit) override;
+    virtual bool canShrinkLidSpace() const override;
+    virtual size_t getEstimatedShrinkLidSpaceGain() const override;
+    virtual void shrinkLidSpace() override;
 
 private:
     bool useCache() const;

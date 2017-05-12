@@ -1142,6 +1142,12 @@ LogDataStore::canShrinkLidSpace() const
            _compactLidSpaceGeneration < _genHandler.getFirstUsedGeneration();
 }
 
+size_t
+LogDataStore::getEstimatedShrinkLidSpaceGain() const
+{
+    return (_lidInfo.size() - getDocIdLimit()) * sizeof(uint64_t);
+}
+
 void
 LogDataStore::shrinkLidSpace()
 {

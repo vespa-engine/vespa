@@ -517,6 +517,12 @@ DocumentStore::canShrinkLidSpace() const
     return _backingStore.canShrinkLidSpace();
 }
 
+size_t
+DocumentStore::getEstimatedShrinkLidSpaceGain() const
+{
+    return _backingStore.getEstimatedShrinkLidSpaceGain();
+}
+
 void
 DocumentStore::shrinkLidSpace()
 {

@@ -202,6 +202,7 @@ public:
      */
     virtual void compactLidSpace(uint32_t wantedDocLidLimit) override;
     virtual bool canShrinkLidSpace() const override;
+    virtual size_t getEstimatedShrinkLidSpaceGain() const override;
     virtual void shrinkLidSpace() override;
 
 private:
