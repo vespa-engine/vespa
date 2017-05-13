@@ -78,6 +78,7 @@ public class BootstrapDaemon implements Daemon {
             task.run();
         } finally {
             complete.countDown();
+            thread.join();
         }
     }
 
