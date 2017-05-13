@@ -49,7 +49,14 @@ public:
     bool shouldBlockThisOperation(uint32_t messageType, uint8_t pri) const override ;
 private:
     static void addIdealNodes(
-            const std::vector<uint16_t>& idealNodes,
+            const lib::Distribution&,
+            const lib::ClusterState&,
+            const document::BucketId&,
+            const std::vector<MergeMetaData>& nodes,
+            std::vector<MergeMetaData>& result);
+
+    static void addTrustedNodesNotAlreadyAdded(
+            uint16_t redundancy,
             const std::vector<MergeMetaData>& nodes,
             std::vector<MergeMetaData>& result);
 
@@ -57,6 +64,8 @@ private:
             uint16_t redundancy,
             const std::vector<MergeMetaData>& nodes,
             std::vector<MergeMetaData>& result);
+
+    static uint16_t countTrusted(const std::vector<MergeMetaData>& nodes);
 
     void deleteSourceOnlyNodes(const BucketDatabase::Entry& currentState,
                                DistributorMessageSender& sender);
