@@ -26,7 +26,6 @@ class MergeOperationTest : public CppUnit::TestFixture,
     CPPUNIT_TEST(testDoNotRemoveActiveSourceOnlyCopies);
     CPPUNIT_TEST(testMarkRedundantTrustedCopiesAsSourceOnly);
     CPPUNIT_TEST(onlyMarkRedundantRetiredReplicasAsSourceOnly);
-    CPPUNIT_TEST(mark_post_merge_redundant_replicas_source_only);
     CPPUNIT_TEST_SUITE_END();
 
     std::unique_ptr<PendingMessageTracker> _pendingTracker;
@@ -39,7 +38,6 @@ protected:
     void testDoNotRemoveActiveSourceOnlyCopies();
     void testMarkRedundantTrustedCopiesAsSourceOnly();
     void onlyMarkRedundantRetiredReplicasAsSourceOnly();
-    void mark_post_merge_redundant_replicas_source_only();
 
 public:
     void setUp() override {
@@ -271,13 +269,13 @@ MergeOperationTest::testGenerateNodeList()
             std::string("3,5,7,6,8,0,9,2,1,4"),
             getNodeList("storage:10", 10, "9,8,7,6,5,4,3,2,1,0"));
 
-    // Trusted copies can be source-only if they are in the non-ideal node set.
+    // Trusted copies should not be source only.
     CPPUNIT_ASSERT_EQUAL(
-            std::string("3,5,7,6,8,0,9,1s,2s,4s"),
+            std::string("3,5,7,6,8,0,9,1,2,4s"),
             getNodeList("storage:10", 7, "0,1t,2t,3,4,5,6,7,8,9"));
 
     CPPUNIT_ASSERT_EQUAL(
-            std::string("3,5,7,6,8,0,9,1s,2s,4s"),
+            std::string("3,5,7,6,8,0,9,2,1s,4s"),
             getNodeList("storage:10", 7, "0,1,2t,3,4,5,6,7,8,9"));
 
     // Retired nodes are not in ideal state
@@ -378,31 +376,35 @@ MergeOperationTest::testMarkRedundantTrustedCopiesAsSourceOnly()
             std::string("3,5,7,6s,8s"),
             getNodeList("storage:10", 3, "3t,5t,7t,6,8"));
 
-    // Trusted-ness should not be taken into account when marking nodes as source-only.
-    // 2 out of 3 ideal replicas trusted.
+    // 3 redundancy, 4 trusted -> 1 source only trusted.
+    // We allow marking a trusted, non-ideal copy as source even when we don't
+    // have #redundancy trusted _ideal_ copies, as long as we're left with >=
+    // #redundancy trusted copies in total.
     CPPUNIT_ASSERT_EQUAL(
-            std::string("3,5,7,6s,8s"),
+            std::string("3,5,7,6,8s"),
             getNodeList("storage:10", 3, "3t,5t,7,6t,8t"));
 
-    // 1 out of 3 ideal replicas trusted.
+    // Not sufficient number of trusted copies to mark any as source only.
     CPPUNIT_ASSERT_EQUAL(
-            std::string("3,5,7,6s,8s"),
+            std::string("3,5,7,6,8"),
             getNodeList("storage:10", 3, "3t,5,7,6t,8t"));
 
-    // 0 out of 3 ideal replicas trusted.
+    // Same as above, with all trusted copies being non-ideal.
     CPPUNIT_ASSERT_EQUAL(
-            std::string("3,5,7,6s,8s"),
+            std::string("3,5,7,6,8"),
             getNodeList("storage:10", 3, "3,5,7,6t,8t"));
 
-    // #redundancy of trusted, but none are ideal. Non-ideal trusted may be
-    // marked as source only.
+    // #redundancy of trusted, but none are ideal. Non-ideal trusted should
+    // not be marked as source only (though we can mark non-trusted non-ideal
+    // node as source only).
+    // Note the node reordering since trusted are added before the rest.
     CPPUNIT_ASSERT_EQUAL(
-            std::string("3,5,7,6s,8s,0s,9s"),
+            std::string("3,5,7,8,0,9,6s"),
             getNodeList("storage:10", 3, "3,5,7,6,8t,0t,9t"));
 
-    // Allow for removing excess trusted, non-ideal copies.
+    // But allow for removing excess trusted, non-ideal copies.
     CPPUNIT_ASSERT_EQUAL(
-            std::string("3,5,7,6s,8s,0s,9s"),
+            std::string("3,5,7,6,8,0,9s"),
             getNodeList("storage:10", 3, "3,5,7,6t,8t,0t,9t"));
 }
 
@@ -415,41 +417,8 @@ MergeOperationTest::onlyMarkRedundantRetiredReplicasAsSourceOnly()
     // source-only nodes will have their replica removed after a successful
     // merge, which we cannot allow to happen here.
     CPPUNIT_ASSERT_EQUAL(
-            std::string("1,0,2s"),
-            getNodeList("storage:3 .0.s:r .1.s:r .2.s:r", 2, "1,0,2"));
-}
-
-void MergeOperationTest::mark_post_merge_redundant_replicas_source_only() {
-    // Ideal state sequence is [3, 5, 7, 6, 8, 0, 9, 2, 1, 4]
-
-    // Retired node 7 is not part of the #redundancy ideal state and should be moved
-    // to node 6. Once the merge is done we'll end up with too many replicas unless
-    // we allow marking the to-be-moved replica as source only.
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("3,5,6,7s"),
-            getNodeList("storage:10 .7.s:r", 3, "3t,5t,7t,6"));
-
-    // Should be allowed to mark as source only even if retired replica is the
-    // only trusted replica at the time the merge starts.
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("3,5,6,7s"),
-            getNodeList("storage:10 .7.s:r", 3, "3,5,7t,6"));
-
-    // This extends to multiple retired nodes.
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("3,6,8,5s,7s"),
-            getNodeList("storage:10 .5.s:r .7.s:r", 3, "3t,5t,7t,6,8"));
-
-    // If number of post-merge ideal nodes is lower than desired redundancy, don't
-    // mark any as source only.
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("3,5,7,6"),
-            getNodeList("storage:10", 5, "3,5,7,6"));
-
-    // Same applies to when post-merge ideal nodes is _equal_ to desired redundancy.
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("3,5,7,6"),
-            getNodeList("storage:10", 4, "3,5,7,6"));
+            std::string("0,1,2s"),
+            getNodeList("storage:3 .0.s.:r .1.s:r .2.s:r", 2, "1,0,2"));
 }
 
 } // distributor
