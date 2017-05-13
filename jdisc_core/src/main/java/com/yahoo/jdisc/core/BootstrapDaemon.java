@@ -1,10 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.core;
 
+import com.yahoo.protect.Process;
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 
 import java.util.Arrays;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,6 +40,48 @@ public class BootstrapDaemon implements Daemon {
         return loader;
     }
 
+    private static class WatchDog implements Runnable {
+        final String name;
+        final CountDownLatch complete;
+        final long timeout;
+        final TimeUnit timeUnit;
+        WatchDog(String name, CountDownLatch complete, long timeout, TimeUnit timeUnit) {
+            this.name = name;
+            this.complete = complete;
+            this.timeout = timeout;
+            this.timeUnit = timeUnit;
+        }
+        @Override
+        public void run() {
+            boolean dumpStack;
+            try {
+                dumpStack = !complete.await(timeout, timeUnit);
+            } catch (InterruptedException e) {
+                return;
+            }
+            if (dumpStack) {
+                log.warning("The watchdog for BootstrapDaemon." + name + " detected that it had not completed in "
+                        + timeUnit.toMillis(timeout) + "ms. Dumping stack.");
+                Process.dumpThreads();
+            }
+        }
+    }
+    private interface MyRunnable {
+        void run() throws Exception;
+    }
+    private void startWithWatchDog(String name, long timeout, TimeUnit timeUnit, MyRunnable task) throws Exception {
+        CountDownLatch complete = new CountDownLatch(1);
+        Thread thread = new Thread(new WatchDog(name, complete, timeout, timeUnit), name);
+        thread.setDaemon(true);
+        thread.start();
+        try {
+            task.run();
+        } finally {
+            complete.countDown();
+            thread.join();
+        }
+    }
+
     @Override
     public void init(DaemonContext context) throws Exception {
         String[] args = context.getArguments();
@@ -46,7 +91,7 @@ public class BootstrapDaemon implements Daemon {
         bundleLocation = args[0];
         if (privileged) {
             log.finer("Initializing application with privileges.");
-            loader.init(bundleLocation, true);
+            startWithWatchDog("init", 60, TimeUnit.SECONDS, () -> loader.init(bundleLocation, true));
         }
     }
 
@@ -55,9 +100,9 @@ public class BootstrapDaemon implements Daemon {
         try {
             if (!privileged) {
                 log.finer("Initializing application without privileges.");
-                loader.init(bundleLocation, false);
+                startWithWatchDog("init", 60, TimeUnit.SECONDS, () -> loader.init(bundleLocation, false));
             }
-            loader.start();
+            startWithWatchDog("start", 60, TimeUnit.SECONDS, () -> loader.start());
         } catch (Exception e) {
             try {
                 log.log(Level.SEVERE, "Failed starting container", e);

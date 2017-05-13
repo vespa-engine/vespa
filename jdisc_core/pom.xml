@@ -120,6 +120,12 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>vespajlib</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <!-- This seems odd. Used for export-package parsing. Lazy stuff. Should be separated out. -->
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>bundle-plugin</artifactId>
