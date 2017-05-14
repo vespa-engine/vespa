@@ -76,6 +76,14 @@ public class BootstrapDaemon implements Daemon {
         thread.start();
         try {
             task.run();
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Exception caught during BootstrapDaemon." + name, e);
+            throw e;
+        } catch (Error e) {
+            log.log(Level.WARNING, "Error caught during BootstrapDaemon." + name, e);
+            throw e;
+        } catch (Throwable thrown) {
+            log.log(Level.WARNING, "Throwable caught during BootstrapDaemon." + name, thrown);
         } finally {
             complete.countDown();
             thread.join();
@@ -115,12 +123,15 @@ public class BootstrapDaemon implements Daemon {
 
     @Override
     public void stop() throws Exception {
-        loader.stop();
+        startWithWatchDog("stop", 60, TimeUnit.SECONDS, () -> loader.stop());
     }
 
     @Override
     public void destroy() {
-        loader.destroy();
+        try {
+            startWithWatchDog("destroy", 60, TimeUnit.SECONDS, () -> loader.destroy());
+        } catch (Exception e) {
+        }
     }
 
 }
