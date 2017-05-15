@@ -48,14 +48,14 @@ public:
 
 class AttributeManagerInitializerTask : public vespalib::Executor::Task
 {
-    std::promise<bool> &_promise;
+    std::promise<bool> _promise;
     search::SerialNum _configSerialNum;
     DocumentMetaStore::SP _documentMetaStore;
     AttributeManager::SP _attrMgr;
     InitializedAttributesResult &_attributesResult;
 
 public:
-    AttributeManagerInitializerTask(std::promise<bool> &promise,
+    AttributeManagerInitializerTask(std::promise<bool> &&promise,
                                     search::SerialNum configSerialNum,
                                     DocumentMetaStore::SP documentMetaStore,
                                     AttributeManager::SP attrMgr,
@@ -65,12 +65,12 @@ public:
 };
 
 
-AttributeManagerInitializerTask::AttributeManagerInitializerTask(std::promise<bool> &promise,
+AttributeManagerInitializerTask::AttributeManagerInitializerTask(std::promise<bool> &&promise,
                                                                  search::SerialNum configSerialNum,
                                                                  DocumentMetaStore::SP documentMetaStore,
                                                                  AttributeManager::SP attrMgr,
                                                                  InitializedAttributesResult &attributesResult)
-    : _promise(promise),
+    : _promise(std::move(promise)),
       _configSerialNum(configSerialNum),
       _documentMetaStore(documentMetaStore),
       _attrMgr(attrMgr),
@@ -173,7 +173,7 @@ AttributeManagerInitializer::run()
 {
     std::promise<bool> promise;
     std::future<bool> future = promise.get_future();
-    _master.execute(std::make_unique<AttributeManagerInitializerTask>(promise,
+    _master.execute(std::make_unique<AttributeManagerInitializerTask>(std::move(promise),
                                                                       _configSerialNum,
                                                                       _documentMetaStore,
                                                                       _attrMgr,
