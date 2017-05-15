@@ -14,7 +14,6 @@ LOG_SETUP("attribute_manager_test");
 #include <vespa/searchcore/proton/attribute/i_attribute_functor.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/attribute/sequential_attributes_initializer.h>
-#include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
 #include <vespa/searchcore/proton/initializer/task_runner.h>
@@ -794,45 +793,6 @@ TEST_F("require that attribute vector of wrong type is dropped", BaseFixture)
     TEST_DO(assertCreateSerialNum(am2.mgr, "a4", 20));
     TEST_DO(assertCreateSerialNum(am2.mgr, "a5", 5));
     TEST_DO(assertCreateSerialNum(am2.mgr, "a6", 20));
-}
-
-void assertShrinkTargetSerial(proton::AttributeManager &mgr, const vespalib::string &name, search::SerialNum expSerialNum)
-{
-    auto shrinker = mgr.getShrinker(name);
-    EXPECT_EQUAL(expSerialNum, shrinker->getFlushedSerialNum());
-}
-
-TEST_F("require that we can guess flushed serial number for shrink flushtarget", BaseFixture)
-{
-    auto am1(std::make_shared<proton::AttributeManager>
-             (test_dir, "test.subdb", TuneFileAttributes(),
-              f._fileHeaderContext, f._attributeFieldWriter, f._hwInfo));
-    am1->addAttribute({"a1", INT32_SINGLE}, 1);
-    am1->addAttribute({"a2", INT32_SINGLE}, 2);
-    TEST_DO(assertShrinkTargetSerial(*am1, "a1", 0));
-    TEST_DO(assertShrinkTargetSerial(*am1, "a2", 1));
-    am1->flushAll(10);
-    am1 = std::make_shared<proton::AttributeManager>
-          (test_dir, "test.subdb", TuneFileAttributes(),
-           f._fileHeaderContext, f._attributeFieldWriter, f._hwInfo);
-    am1->addAttribute({"a1", INT32_SINGLE}, 1);
-    am1->addAttribute({"a2", INT32_SINGLE}, 2);
-    TEST_DO(assertShrinkTargetSerial(*am1, "a1", 10));
-    TEST_DO(assertShrinkTargetSerial(*am1, "a2", 10));
-}
-
-TEST_F("require that shrink flushtarget is handed over to new attribute manager", BaseFixture)
-{
-    auto am1(std::make_shared<proton::AttributeManager>
-             (test_dir, "test.subdb", TuneFileAttributes(),
-              f._fileHeaderContext, f._attributeFieldWriter, f._hwInfo));
-    am1->addAttribute({"a1", INT32_SINGLE}, 4);
-    AttrSpecList newSpec;
-    newSpec.push_back(AttributeSpec("a1", INT32_SINGLE));
-    auto am2 = am1->create(AttrMgrSpec(newSpec, 5, 20));
-    auto am3 = std::dynamic_pointer_cast<AttributeManager>(am2);
-    TEST_DO(assertShrinkTargetSerial(*am3, "a1", 3));
-    EXPECT_EQUAL(am1->getShrinker("a1"), am3->getShrinker("a1"));
 }
 
 TEST_MAIN()
