@@ -22,6 +22,7 @@ struct MFT : public test::DummyFlushTarget
 };
 
 struct AttributeFlush : public MFT { AttributeFlush() : MFT(FTT::SYNC, FTC::ATTRIBUTE) {} };
+struct AttributeShrink : public MFT { AttributeShrink() : MFT(FTT::GC, FTC::ATTRIBUTE) {} };
 struct MemoryIndexFlush : public MFT { MemoryIndexFlush() : MFT(FTT::FLUSH, FTC::INDEX) {} };
 struct DiskIndexFusion : public MFT { DiskIndexFusion() : MFT(FTT::GC, FTC::INDEX) {} };
 struct DocStoreFlush : public MFT { DocStoreFlush() : MFT(FTT::SYNC, FTC::DOCUMENT_STORE) {} };
@@ -93,14 +94,16 @@ TEST_F("require that known flush targets are tracked", Fixture)
     input.push_back(IFlushTarget::SP(new DiskIndexFusion()));
     input.push_back(IFlushTarget::SP(new DocStoreFlush()));
     input.push_back(IFlushTarget::SP(new DocStoreCompaction()));
+    input.push_back(IFlushTarget::SP(new AttributeShrink()));
 
     IFlushTarget::List output = f._trackers.trackFlushTargets(input);
-    EXPECT_EQUAL(5u, output.size());
+    EXPECT_EQUAL(6u, output.size());
     EXPECT_TRUE(assertFlushTarget(f._trackers.getAttributeFlush(), *output[0]));
     EXPECT_TRUE(assertFlushTarget(f._trackers.getMemoryIndexFlush(), *output[1]));
     EXPECT_TRUE(assertFlushTarget(f._trackers.getDiskIndexFusion(), *output[2]));
     EXPECT_TRUE(assertFlushTarget(f._trackers.getDocumentStoreFlush(), *output[3]));
     EXPECT_TRUE(assertFlushTarget(f._trackers.getDocumentStoreCompact(), *output[4]));
+    EXPECT_TRUE(assertFlushTarget(f._trackers.getAttributeFlush(), *output[5]));
 }
 
 TEST_F("require that un-known flush targets are not tracked", Fixture)

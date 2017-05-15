@@ -48,6 +48,8 @@ DocumentDBJobTrackers::trackFlushTargets(const IFlushTarget::List &flushTargets)
     for (const auto &ft : flushTargets) {
         if (ft->getComponent() == FTC::ATTRIBUTE && ft->getType() == FTT::SYNC) {
             retval.push_back(trackFlushTarget(_attributeFlush, ft));
+        } else if (ft->getComponent() == FTC::ATTRIBUTE && ft->getType() == FTT::GC) {
+            retval.push_back(trackFlushTarget(_attributeFlush, ft));
         } else if (ft->getComponent() == FTC::INDEX && ft->getType() == FTT::FLUSH) {
             retval.push_back(trackFlushTarget(_memoryIndexFlush, ft));
         } else if (ft->getComponent() == FTC::INDEX && ft->getType() == FTT::GC) {
