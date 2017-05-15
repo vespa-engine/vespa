@@ -13,39 +13,21 @@ namespace proton {
 
 namespace {
 
-const vespalib::string FLUSH_TARGET_NAME_PREFIX("attribute.flush.");
-const vespalib::string SHRINK_TARGET_NAME_PREFIX("attribute.shrink.");
+const vespalib::string FLUSH_TARGET_NAME_PREFIX("attribute.");
 
-class FlushTargetFilter
-{
-    const vespalib::string &_prefix;
-    const IFlushTarget::Type _type;
-public:
-    FlushTargetFilter(const vespalib::string &prefix, IFlushTarget::Type type)
-        : _prefix(prefix),
-          _type(type)
-    {
+bool isAttributeFlushTarget(const IFlushTarget::SP &flushTarget) {
+    const vespalib::string &targetName = flushTarget->getName();
+    if ((flushTarget->getType() != IFlushTarget::Type::SYNC) ||
+        (flushTarget->getComponent() != IFlushTarget::Component::ATTRIBUTE)) {
+        return false;
     }
+    return (targetName.substr(0, FLUSH_TARGET_NAME_PREFIX.size()) == FLUSH_TARGET_NAME_PREFIX);
+}
 
-    ~FlushTargetFilter() { }
-
-    bool match(const IFlushTarget::SP &flushTarget) const {
-        const vespalib::string &targetName = flushTarget->getName();
-        if ((flushTarget->getType() != _type) ||
-            (flushTarget->getComponent() != IFlushTarget::Component::ATTRIBUTE)) {
-            return false;
-        }
-        return (targetName.substr(0, _prefix.size()) == _prefix);
-    }
-
-    vespalib::string attributeName(const IFlushTarget::SP &flushTarget) {
-        const vespalib::string &targetName = flushTarget->getName();
-        return targetName.substr(_prefix.size());
-    }
-};
-
-FlushTargetFilter syncFilter(FLUSH_TARGET_NAME_PREFIX, IFlushTarget::Type::SYNC);
-FlushTargetFilter shrinkFilter(SHRINK_TARGET_NAME_PREFIX, IFlushTarget::Type::GC);
+vespalib::string attributeFlushTargetAttributeName(const IFlushTarget::SP &flushTarget) {
+    const vespalib::string &targetName = flushTarget->getName();
+    return targetName.substr(FLUSH_TARGET_NAME_PREFIX.size());
+}
 
 }
 
@@ -90,12 +72,8 @@ FilterAttributeManager::getFlushTargets() const {
     std::vector<searchcorespi::IFlushTarget::SP> list;
     list.reserve(completeList.size());
     for (const auto &flushTarget : completeList) {
-        if (syncFilter.match(flushTarget)) {
-            if (acceptAttribute(syncFilter.attributeName(flushTarget))) {
-                list.push_back(flushTarget);
-            }
-        } else if (shrinkFilter.match(flushTarget)) {
-            if (acceptAttribute(shrinkFilter.attributeName(flushTarget))) {
+        if (isAttributeFlushTarget(flushTarget)) {
+            if (acceptAttribute(attributeFlushTargetAttributeName(flushTarget))) {
                 list.push_back(flushTarget);
             }
         }

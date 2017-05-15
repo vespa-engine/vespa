@@ -2,7 +2,6 @@
 vespa_add_library(searchcore_flushengine STATIC
     SOURCES
     cachedflushtarget.cpp
-    shrink_lid_space_flush_target.cpp
     flush_all_strategy.cpp
     flushcontext.cpp
     flushengine.cpp

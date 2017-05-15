@@ -690,7 +690,6 @@ struct FixtureBase
     void assertChangeNotified(document::GlobalId gid, uint32_t expLid) {
         _gidToLidChangeHandler->assertLid(gid, expLid);
     }
-    void populateBeforeCompactLidSpace();
 };
 
 
@@ -721,14 +720,6 @@ FixtureBase::FixtureBase(TimeStamp visibilityDelay)
 FixtureBase::~FixtureBase() {
     _writeServiceReal.sync();
 }
-
-void
-FixtureBase::populateBeforeCompactLidSpace()
-{
-    putAndWait(makeDummyDocs(0, 2, 1000));
-    removeAndWait(makeDummyDocs(1, 1, 2000));
-}
-
 struct SearchableFeedViewFixture : public FixtureBase
 {
     SearchableFeedView fv;
@@ -1144,16 +1135,17 @@ TEST_F("require that compactLidSpace() propagates to document meta store and doc
        "blocks lid space shrinkage until generation is no longer used",
        SearchableFeedViewFixture)
 {
-    f.populateBeforeCompactLidSpace();
-    EXPECT_TRUE(assertThreadObserver(5, 3, f.writeServiceObserver()));
-    f.compactLidSpaceAndWait(2);
+    EXPECT_TRUE(assertThreadObserver(1, 0, f.writeServiceObserver()));
+    CompactLidSpaceOperation op(0, 99);
+    op.setSerialNum(1);
+    f.runInMaster([&] () { f.fv.handleCompactLidSpace(op); });
     // performIndexForceCommit in index thread, then completion callback
     // in master thread.
-    EXPECT_TRUE(assertThreadObserver(7, 4, f.writeServiceObserver()));
-    EXPECT_EQUAL(2u, f.metaStoreObserver()._compactLidSpaceLidLimit);
-    EXPECT_EQUAL(2u, f.getDocumentStore()._compactLidSpaceLidLimit);
+    EXPECT_TRUE(assertThreadObserver(3, 1, f.writeServiceObserver()));
+    EXPECT_EQUAL(99u, f.metaStoreObserver()._compactLidSpaceLidLimit);
+    EXPECT_EQUAL(99u, f.getDocumentStore()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(1u, f.metaStoreObserver()._holdUnblockShrinkLidSpaceCnt);
-    EXPECT_EQUAL(2u, f._docIdLimit.get());
+    EXPECT_EQUAL(99u, f._docIdLimit.get());
 }
 
 TEST_F("require that compactLidSpace() doesn't propagate to "
@@ -1161,13 +1153,12 @@ TEST_F("require that compactLidSpace() doesn't propagate to "
        "blocks lid space shrinkage until generation is no longer used",
        SearchableFeedViewFixture)
 {
-    f.populateBeforeCompactLidSpace();
-    EXPECT_TRUE(assertThreadObserver(5, 3, f.writeServiceObserver()));
-    CompactLidSpaceOperation op(0, 2);
+    EXPECT_TRUE(assertThreadObserver(1, 0, f.writeServiceObserver()));
+    CompactLidSpaceOperation op(0, 99);
     op.setSerialNum(0);
     f.runInMaster([&] () { f.fv.handleCompactLidSpace(op); });
     // Delayed holdUnblockShrinkLidSpace() in index thread, then master thread
-    EXPECT_TRUE(assertThreadObserver(6, 3, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(2, 0, f.writeServiceObserver()));
     EXPECT_EQUAL(0u, f.metaStoreObserver()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(0u, f.getDocumentStore()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(0u, f.metaStoreObserver()._holdUnblockShrinkLidSpaceCnt);
@@ -1176,9 +1167,8 @@ TEST_F("require that compactLidSpace() doesn't propagate to "
 TEST_F("require that compactLidSpace() propagates to attributeadapter",
        FastAccessFeedViewFixture)
 {
-    f.populateBeforeCompactLidSpace();
-    f.compactLidSpaceAndWait(2);
-    EXPECT_EQUAL(2u, f.maw._wantedLidLimit);
+    f.runInMaster([&] () { f.fv.handleCompactLidSpace(CompactLidSpaceOperation(0, 99)); });
+    EXPECT_EQUAL(99u, f.maw._wantedLidLimit);
 }
 
 

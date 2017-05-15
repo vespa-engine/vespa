@@ -8,11 +8,9 @@
 #include "imported_attributes_repo.h"
 #include "sequential_attributes_initializer.h"
 #include "flushableattribute.h"
-#include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
-#include <vespa/searchlib/common/threaded_compactable_lid_space.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -25,7 +23,6 @@ using search::AttributeContext;
 using search::AttributeEnumGuard;
 using search::AttributeGuard;
 using search::AttributeVector;
-using search::common::ThreadedCompactableLidSpace;
 using search::TuneFileAttributes;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
@@ -63,26 +60,6 @@ bool matchingTypes(const AttributeVector::SP &av, const search::attribute::Confi
     }
 }
 
-search::SerialNum estimateShrinkSerialNum(const AttributeVector &attr)
-{
-    search::SerialNum serialNum = attr.getCreateSerialNum();
-    if (serialNum > 0) {
-        --serialNum;
-    }
-    return std::max(attr.getStatus().getLastSyncToken(), serialNum);
-}
-
-std::shared_ptr<ShrinkLidSpaceFlushTarget> allocShrinker(const AttributeVector::SP &attr, search::ISequencedTaskExecutor &attributeFieldWriter)
-{
-    using Type = IFlushTarget::Type;
-    using Component = IFlushTarget::Component;
-
-    const vespalib::string &name = attr->getName();
-    auto shrinkwrap = std::make_shared<ThreadedCompactableLidSpace>(attr, attributeFieldWriter, attributeFieldWriter.getExecutorId(name));
-    search::SerialNum shrinkSerialNum = estimateShrinkSerialNum(*attr);
-    return std::make_shared<ShrinkLidSpaceFlushTarget>("attribute.shrink." + name, Type::GC, Component::ATTRIBUTE, shrinkSerialNum, shrinkwrap);
-}
-
 }
 
 AttributeManager::AttributeWrap::AttributeWrap(const AttributeVectorSP & a,
@@ -114,21 +91,6 @@ AttributeManager::AttributeWrap::normalAttribute(const AttributeVectorSP &a)
     return AttributeWrap(a, false);
 }
 
-AttributeManager::FlushableWrap::FlushableWrap()
-    : _flusher(),
-      _shrinker()
-{
-}
-
-AttributeManager::FlushableWrap::FlushableWrap(FlushableAttributeSP flusher, ShrinkerSP shrinker)
-    : _flusher(std::move(flusher)),
-      _shrinker(std::move(shrinker))
-{
-}
-
-AttributeManager::FlushableWrap::~FlushableWrap()
-{
-}
 
 AttributeVector::SP
 AttributeManager::internalAddAttribute(const AttributeSpec &spec,
@@ -139,24 +101,25 @@ AttributeManager::internalAddAttribute(const AttributeSpec &spec,
     AttributeInitializerResult result = initializer.init();
     if (result) {
         result.getAttribute()->setInterlock(_interlock);
-        auto shrinker = allocShrinker(result.getAttribute(), _attributeFieldWriter);
-        addAttribute(AttributeWrap::normalAttribute(result.getAttribute()), shrinker);
+        addAttribute(AttributeWrap::normalAttribute(result.getAttribute()));
     }
     return result.getAttribute();
 }
 
 void
-AttributeManager::addAttribute(const AttributeWrap &attribute, const ShrinkerSP &shrinker)
+AttributeManager::addAttribute(const AttributeWrap &attribute)
 {
     LOG(debug, "Adding attribute vector '%s'", attribute.getAttribute()->getBaseFileName().c_str());
     _attributes[attribute.getAttribute()->getName()] = attribute;
     assert(attribute.getAttribute()->getInterlock() == _interlock);
     if ( ! attribute.isExtra() ) {
         // Flushing of extra attributes is handled elsewhere
-        auto attr = attribute.getAttribute();
-        const vespalib::string &name = attr->getName();
-        auto flusher = std::make_shared<FlushableAttribute>(attr, _diskLayout->createAttributeDir(name), _tuneFileAttributes, _fileHeaderContext, _attributeFieldWriter, _hwInfo);
-        _flushables[attribute.getAttribute()->getName()] = FlushableWrap(flusher, shrinker);
+        _flushables[attribute.getAttribute()->getName()] = FlushableAttribute::SP
+                                                           (new FlushableAttribute(attribute.getAttribute(), _diskLayout->createAttributeDir(attribute.getAttribute()->getName()),
+                                        _tuneFileAttributes,
+                                        _fileHeaderContext,
+                                        _attributeFieldWriter,
+                                        _hwInfo));
         _writableAttributes.push_back(attribute.getAttribute().get());
     }
 }
@@ -170,11 +133,11 @@ AttributeManager::findAttribute(const vespalib::string &name) const
         : AttributeVector::SP();
 }
 
-const AttributeManager::FlushableWrap *
+FlushableAttribute::SP
 AttributeManager::findFlushable(const vespalib::string &name) const
 {
     FlushableMap::const_iterator itr = _flushables.find(name);
-    return (itr != _flushables.end()) ? &itr->second : nullptr;
+    return (itr != _flushables.end()) ? itr->second : FlushableAttribute::SP();
 }
 
 void
@@ -187,11 +150,7 @@ AttributeManager::transferExistingAttributes(const AttributeManager &currMgr,
         if (matchingTypes(av, aspec.getConfig())) { // transfer attribute
             LOG(debug, "Transferring attribute vector '%s' with %u docs and serial number %lu from current manager",
                        av->getName().c_str(), av->getNumDocs(), av->getStatus().getLastSyncToken());
-            auto wrap = currMgr.findFlushable(aspec.getName());
-            assert(wrap != nullptr);
-            auto shrinker = wrap->getShrinker();
-            assert(shrinker);
-            addAttribute(AttributeWrap::normalAttribute(av), shrinker);
+            addAttribute(AttributeWrap::normalAttribute(av));
         } else {
             toBeAdded.push_back(aspec);
         }
@@ -231,7 +190,7 @@ AttributeManager::transferExtraAttributes(const AttributeManager &currMgr)
 {
     for (const auto &kv : currMgr._attributes) {
         if (kv.second.isExtra()) {
-            addAttribute(kv.second, 0);
+            addAttribute(kv.second);
         }
     }
 }
@@ -320,10 +279,8 @@ AttributeManager::addInitializedAttributes(const std::vector<AttributeInitialize
 {
     for (const auto &result : attributes) {
         assert(result);
-        auto attr = result.getAttribute();
-        attr->setInterlock(_interlock);
-        auto shrinker = allocShrinker(attr, _attributeFieldWriter);
-        addAttribute(AttributeWrap::normalAttribute(attr), shrinker);
+        result.getAttribute()->setInterlock(_interlock);
+        addAttribute(AttributeWrap::normalAttribute(result.getAttribute()));
     }
 }
 
@@ -331,16 +288,15 @@ void
 AttributeManager::addExtraAttribute(const AttributeVector::SP &attribute)
 {
     attribute->setInterlock(_interlock);
-    addAttribute(AttributeWrap::extraAttribute(attribute), ShrinkerSP());
+    addAttribute(AttributeWrap::extraAttribute(attribute));
 }
 
 void
 AttributeManager::flushAll(SerialNum currentSerial)
 {
-    auto flushTargets = getFlushTargets();
-    for (const auto &ft : flushTargets) {
+    for (const auto &kv : _flushables) {
         vespalib::Executor::Task::UP task;
-        task = ft->initFlush(currentSerial);
+        task = kv.second->initFlush(currentSerial);
         if (task.get() != NULL) {
             task->run();
         }
@@ -350,15 +306,7 @@ AttributeManager::flushAll(SerialNum currentSerial)
 FlushableAttribute::SP
 AttributeManager::getFlushable(const vespalib::string &name)
 {
-    auto wrap = findFlushable(name);
-    return ((wrap != nullptr) ? wrap->getFlusher() : FlushableAttribute::SP());
-}
-
-AttributeManager::ShrinkerSP
-AttributeManager::getShrinker(const vespalib::string &name)
-{
-    auto wrap = findFlushable(name);
-    return ((wrap != nullptr) ? wrap->getShrinker() : ShrinkerSP());
+    return findFlushable(name);
 }
 
 size_t
@@ -481,8 +429,7 @@ AttributeManager::getFlushTargets() const
     std::vector<IFlushTarget::SP> list;
     list.reserve(_flushables.size());
     for (const auto &kv : _flushables) {
-        list.push_back(kv.second.getFlusher());
-        list.push_back(kv.second.getShrinker());
+        list.push_back(kv.second);
     }
     return list;
 }
@@ -490,12 +437,9 @@ AttributeManager::getFlushTargets() const
 search::SerialNum
 AttributeManager::getFlushedSerialNum(const vespalib::string &name) const
 {
-    auto wrap = findFlushable(name);
-    if (wrap != nullptr) {
-        const auto &flusher = wrap->getFlusher();
-        if (flusher) {
-            return flusher->getFlushedSerialNum();
-        }
+    FlushableAttribute::SP flushable = findFlushable(name);
+    if (flushable.get() != nullptr) {
+        return flushable->getFlushedSerialNum();
     }
     return 0;
 }
@@ -505,7 +449,7 @@ AttributeManager::getOldestFlushedSerialNumber() const
 {
     SerialNum num = -1;
     for (const auto &kv : _flushables) {
-        num = std::min(num, kv.second.getFlusher()->getFlushedSerialNum());
+        num = std::min(num, kv.second->getFlushedSerialNum());
     }
     return num;
 }
@@ -515,7 +459,7 @@ AttributeManager::getNewestFlushedSerialNumber() const
 {
     SerialNum num = 0;
     for (const auto &kv : _flushables) {
-        num = std::max(num, kv.second.getFlusher()->getFlushedSerialNum());
+        num = std::max(num, kv.second->getFlushedSerialNum());
     }
     return num;
 }

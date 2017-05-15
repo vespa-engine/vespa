@@ -6,7 +6,6 @@
 #include <vespa/searchcore/proton/attribute/attributedisklayout.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/flushableattribute.h>
-#include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/common/indexmetainfo.h>
@@ -390,11 +389,9 @@ Test::requireThatFlushTargetsCanBeRetrieved(void)
     f.addAttribute("a4");
     f.addAttribute("a5");
     std::vector<IFlushTarget::SP> ftl = am.getFlushTargets();
-    EXPECT_EQUAL(4u, ftl.size());
+    EXPECT_EQUAL(2u, ftl.size());
     EXPECT_EQUAL(am.getFlushable("a4").get(), ftl[0].get());
-    EXPECT_EQUAL(am.getShrinker("a4").get(),  ftl[1].get());
-    EXPECT_EQUAL(am.getFlushable("a5").get(), ftl[2].get());
-    EXPECT_EQUAL(am.getShrinker("a5").get(),  ftl[3].get());
+    EXPECT_EQUAL(am.getFlushable("a5").get(), ftl[1].get());
 }
 
 
@@ -531,7 +528,7 @@ Test::requireThatShrinkWorks()
     
     av->addDocs(1000 - av->getNumDocs());
     av->commit(10, 10);
-    IFlushTarget::SP ft = am.getShrinker("a10");
+    IFlushTarget::SP ft = am.getFlushable("a10");
     EXPECT_EQUAL(ft->getApproxMemoryGain().getBefore(),
                  ft->getApproxMemoryGain().getAfter());
     AttributeGuard::UP g = am.getAttribute("a10");
