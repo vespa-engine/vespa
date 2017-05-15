@@ -17,14 +17,18 @@ import java.util.Collection;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
+import java.util.zip.ZipEntry;
 
 import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.anyOf;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
-import static org.hamcrest.CoreMatchers.containsString;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Verifies the bundle jar file built and its manifest.
@@ -101,12 +105,23 @@ public class BundleIT {
     public void require_that_manifest_contains_bundle_class_path() {
         String bundleClassPath = mainAttributes.getValue("Bundle-ClassPath");
         assertThat(bundleClassPath, containsString(".,"));
-        assertThat(bundleClassPath, containsString("dependencies/jrt-6-SNAPSHOT.jar"));
+        // If bundle-plugin-test is compiled in a mvn command that also built jrt,
+        // the jrt artifact is jrt.jar, otherwise the installed and versioned artifact
+        // is used: jrt-6-SNAPSHOT.jar.
+        assertThat(bundleClassPath, anyOf(
+                containsString("dependencies/jrt-6-SNAPSHOT.jar"),
+                containsString("dependencies/jrt.jar")));
     }
 
     @Test
     public void require_that_component_jar_file_contains_compile_artifacts() {
-        assertNotNull(jarFile.getEntry("dependencies/jrt-6-SNAPSHOT.jar"));
+        ZipEntry versionedEntry = jarFile.getEntry("dependencies/jrt-6-SNAPSHOT.jar");
+        ZipEntry unversionedEntry = jarFile.getEntry("dependencies/jrt.jar");
+        if (versionedEntry == null) {
+            assertNotNull(unversionedEntry);
+        } else {
+            assertNull(unversionedEntry);
+        }
     }
 
 
@@ -134,6 +149,8 @@ public class BundleIT {
         assertThat(mainBundleClassPaths,
                 hasItems(
                         endsWith("target/classes"),
-                        allOf(containsString("jrt"), containsString(".jar"), containsString("m2/repository"))));
+                        anyOf(
+                                allOf(containsString("jrt"), containsString(".jar"), containsString("m2/repository")),
+                                containsString("jrt/target/jrt.jar"))));
     }
 }
