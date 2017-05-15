@@ -247,13 +247,6 @@ maybe_use_jsvc () {
     fi
 }
 
-maybe_run_extensions() {
-    vespa_extensions_script="${VESPA_HOME}libexec/vespa/jdisc-extensions.sh"
-    if [ -f "${vespa_extensions_script}" ]; then
-      . "${vespa_extensions_script}"
-    fi
-}
-
 getconfig
 configure_memory
 configure_gcopts
@@ -262,7 +255,6 @@ configure_classpath
 configure_numactl
 configure_preload
 maybe_use_jsvc
-maybe_run_extensions
 
 exec $numactlcmd $envcmd java \
         -Dconfig.id="${VESPA_CONFIG_ID}" \
