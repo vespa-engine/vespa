@@ -82,6 +82,7 @@ FastAccessDocSubDB::createAttributeManagerInitializer(const DocumentDBConfig &co
                                                          _attributeGrow,
                                                          _attributeGrowNumDocs,
                                                          _fastAccessAttributesOnly,
+                                                         _writeService.master(),
                                                          attrMgrResult);
 }
 

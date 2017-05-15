@@ -10,6 +10,8 @@
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/config-attributes.h>
 
+namespace searchcorespi { namespace index { class IThreadService; } }
+
 namespace proton {
 
 /**
@@ -25,6 +27,7 @@ private:
     search::GrowStrategy _attributeGrow;
     size_t _attributeGrowNumDocs;
     bool _fastAccessAttributesOnly;
+    searchcorespi::index::IThreadService &_master;
     InitializedAttributesResult _attributesResult;
     std::shared_ptr<AttributeManager::SP> _attrMgrResult;
 
@@ -39,6 +42,7 @@ public:
                                 const search::GrowStrategy &attributeGrow,
                                 size_t attributeGrowNumDocs,
                                 bool fastAccessAttributesOnly,
+                                searchcorespi::index::IThreadService &master,
                                 std::shared_ptr<AttributeManager::SP> attrMgrResult);
 
     virtual void run() override;
