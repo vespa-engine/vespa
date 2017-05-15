@@ -40,21 +40,6 @@ public final class ApplicationId implements Comparable<ApplicationId> {
         return new ApplicationId(TenantName.from(tenant), ApplicationName.from(application), InstanceName.from(instance));
     }
 
-    /** 
-     * Creates an application id from a string on the form application:environment:region:instance 
-     * 
-     * @deprecated don't pass TenantName
-     */
-    @Deprecated // TODO: Remove when no version older than 6.90 is in use
-    public static ApplicationId fromSerializedForm(TenantName tenant, String idString) {
-        String[] parts = idString.split(":");
-        if (parts.length < 3)
-            throw new IllegalArgumentException("Application ids must be on the form tenant:application:instance, but was " + idString);
-
-        return new Builder().tenant(parts[0]).applicationName(parts[1]).instanceName(parts[2]).build();
-    }
-
-    
     public static ApplicationId fromSerializedForm(String idString) {
         String[] parts = idString.split(":");
         if (parts.length < 3)

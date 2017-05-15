@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import com.yahoo.component.Vtag;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -28,7 +27,6 @@ public class ProvisionInfo {
     private static final String hostSpecMembership = "membership";
     private static final String hostSpecFlavor = "flavor";
     private static final String hostSpecVespaVersion = "vespaVersion";
-    private static final String dockerImage = "dockerImage";
 
     private final Set<HostSpec> hosts = new LinkedHashSet<>();
 
@@ -84,11 +82,8 @@ public class ProvisionInfo {
     }
 
     private static ClusterMembership readMembership(Inspector object) {
-        // TODO: When no version older than 6.97 is present anywhere, remove the possibility of the version field missing (and hence also remove reading of dockerImage)
         return ClusterMembership.from(object.field(hostSpecMembership).asString(),
-                                      object.field(hostSpecVespaVersion).valid() ? 
-                                      com.yahoo.component.Version.fromString(object.field(hostSpecVespaVersion).asString()) :
-                                      ( object.field(dockerImage).valid() ? new DockerImage(object.field(dockerImage).asString()).tagAsVersion() : Vtag.currentVersion));
+                                      com.yahoo.component.Version.fromString(object.field(hostSpecVespaVersion).asString()));
     }
 
     private static Optional<Flavor> readFlavor(Inspector object, Optional<NodeFlavors> nodeFlavors) {

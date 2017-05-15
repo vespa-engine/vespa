@@ -2,7 +2,6 @@
 package com.yahoo.config.provision;
 
 import com.yahoo.component.Version;
-import com.yahoo.component.Vtag;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -47,29 +46,9 @@ public final class ClusterSpec {
 
     public ClusterSpec changeGroup(Optional<Group> newGroup) { return new ClusterSpec(type, id, newGroup, vespaVersion); }
 
-    /** Create a specification <b>requesting</b> a cluster with these attributes */
-    @Deprecated
-    // TODO: April 2017 - Remove this when no version older than 6.94 is used anywhere
-    public static ClusterSpec request(Type type, Id id, Optional<String> dockerImage) {
-        return requestVersion(type, id, dockerImage.map(DockerImage::new).map(DockerImage::tagAsVersion));
-    }
-
-    /** Create a specification <b>requesting</b> a cluster with these attributes */
-    // TODO: April 2017 - Remove this when no version older than 6.97 is used anywhere
-    public static ClusterSpec requestVersion(Type type, Id id, Optional<Version> vespaVersion) {
-        return new ClusterSpec(type, id, Optional.empty(), vespaVersion.orElse(Vtag.currentVersion));
-    }
-
     public static ClusterSpec request(Type type, Id id, Version vespaVersion) {
         return new ClusterSpec(type, id, Optional.empty(), vespaVersion);
     }
-
-    /** Create a specification <b>specifying</b> an existing cluster group having these attributes */
-    // TODO: April 2017 - Remove this when no version older than 6.97 is used anywhere
-    public static ClusterSpec from(Type type, Id id, Group groupId, Optional<Version> vespaVersion) {
-        return new ClusterSpec(type, id, Optional.of(groupId), vespaVersion.orElse(Vtag.currentVersion));
-    }
-
     public static ClusterSpec from(Type type, Id id, Group groupId, Version vespaVersion) {
         return new ClusterSpec(type, id, Optional.of(groupId), vespaVersion);
     }
