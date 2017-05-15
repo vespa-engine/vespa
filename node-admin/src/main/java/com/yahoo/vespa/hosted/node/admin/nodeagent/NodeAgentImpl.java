@@ -522,8 +522,9 @@ public class NodeAgentImpl implements NodeAgent {
                         .add("clustertype", membership.clusterType)
                         .add("clusterid", membership.clusterId));
         Dimensions dimensions = dimensionsBuilder.build();
+        metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_NODE, dimensions, "alive").sample(1);
+        // TODO: REMOVE
         metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "node.alive").sample(1);
-
 
         // The remaining metrics require container to exists and be running
         if (containerState == ABSENT) return;
@@ -531,15 +532,48 @@ public class NodeAgentImpl implements NodeAgent {
         if (!containerStats.isPresent()) return;
 
         Docker.ContainerStats stats = containerStats.get();
-
-        long currentCpuContainerTotalTime = ((Number) ((Map) stats.getCpuStats().get("cpu_usage")).get("total_usage")).longValue();
-        long currentCpuSystemTotalTime = ((Number) stats.getCpuStats().get("system_cpu_usage")).longValue();
+        final String APP = MetricReceiverWrapper.APPLICATION_NODE;
+        final long bytesInGB = 1 << 30;
+        final long cpuContainerTotalTime = ((Number) ((Map) stats.getCpuStats().get("cpu_usage")).get("total_usage")).longValue();
+        final long cpuSystemTotalTime = ((Number) stats.getCpuStats().get("system_cpu_usage")).longValue();
+        final long memoryTotalBytes = ((Number) stats.getMemoryStats().get("limit")).longValue();
+        final long memoryTotalBytesUsage = ((Number) stats.getMemoryStats().get("usage")).longValue();
+        final long memoryTotalBytesCache = ((Number) ((Map) stats.getMemoryStats().get("stats")).get("cache")).longValue();
+        final Optional<Long> diskTotalBytes = nodeSpec.minDiskAvailableGb.map(size -> (long) (size * bytesInGB));
+        final Optional<Long> diskTotalBytesUsed = storageMaintainer.flatMap(maintainer -> maintainer
+                        .updateIfNeededAndGetDiskMetricsFor(containerName));
 
         // CPU usage by a container is given by dividing used CPU time by the container with CPU time used by the entire
         // system. Because each container is allocated same amount of CPU shares, no container should use more than 1/n
         // of the total CPU time, where n is the number of running containers.
-        double cpuPercentageOfHost = lastCpuMetric.getCpuUsagePercentage(currentCpuContainerTotalTime, currentCpuSystemTotalTime);
+        double cpuPercentageOfHost = lastCpuMetric.getCpuUsagePercentage(cpuContainerTotalTime, cpuSystemTotalTime);
         double cpuPercentageOfAllocated = numAllocatedContainersOnHost * cpuPercentageOfHost;
+        long memoryTotalBytesUsed = memoryTotalBytesUsage - memoryTotalBytesCache;
+        double memoryPercentUsed = 100.0 * memoryTotalBytesUsed / memoryTotalBytes;
+        Optional<Double> diskPercentUsed = diskTotalBytes.flatMap(total -> diskTotalBytesUsed.map(used -> 100.0 * used / total));
+
+        metricReceiver.declareGauge(APP, dimensions, "cpu.util").sample(cpuPercentageOfAllocated);
+        metricReceiver.declareGauge(APP, dimensions, "mem.limit").sample(memoryTotalBytes);
+        metricReceiver.declareGauge(APP, dimensions, "mem.used").sample(memoryTotalBytesUsed);
+        metricReceiver.declareGauge(APP, dimensions, "mem.util").sample(memoryPercentUsed);
+        diskTotalBytes.ifPresent(diskLimit -> metricReceiver.declareGauge(APP, dimensions, "disk.limit").sample(diskLimit));
+        diskTotalBytesUsed.ifPresent(diskUsed -> metricReceiver.declareGauge(APP, dimensions, "disk.used").sample(diskUsed));
+        diskPercentUsed.ifPresent(diskUtil -> metricReceiver.declareGauge(APP, dimensions, "disk.util").sample(diskUtil));
+
+        stats.getNetworks().forEach((interfaceName, interfaceStats) -> {
+            Dimensions netDims = dimensionsBuilder.add("interface", interfaceName).build();
+            Map<String, Number> infStats = (Map<String, Number>) interfaceStats;
+
+            metricReceiver.declareGauge(APP, netDims, "net.in.bytes").sample(infStats.get("rx_bytes").longValue());
+            metricReceiver.declareGauge(APP, netDims, "net.in.errors").sample(infStats.get("rx_errors").longValue());
+            metricReceiver.declareGauge(APP, netDims, "net.in.dropped").sample(infStats.get("rx_dropped").longValue());
+            metricReceiver.declareGauge(APP, netDims, "net.out.bytes").sample(infStats.get("tx_bytes").longValue());
+            metricReceiver.declareGauge(APP, netDims, "net.out.errors").sample(infStats.get("tx_errors").longValue());
+            metricReceiver.declareGauge(APP, netDims, "net.out.dropped").sample(infStats.get("tx_dropped").longValue());
+        });
+
+
+        // TODO: Remove when all alerts and dashboards have been updated to use new metric names
         metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "node.cpu.busy.pct").sample(cpuPercentageOfAllocated);
 
         addIfNotNull(dimensions, "node.cpu.throttled_time", stats.getCpuStats().get("throttling_data"), "throttled_time");
@@ -561,14 +595,11 @@ public class NodeAgentImpl implements NodeAgent {
             addIfNotNull(netDims, "node.net.out.dropped", interfaceStats, "tx_dropped");
         });
 
-        long bytesInGB = 1 << 30;
-        nodeSpec.minDiskAvailableGb.ifPresent(diskGB -> metricReceiver
-                .declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "node.disk.limit").sample(diskGB * bytesInGB));
-
-        storageMaintainer.ifPresent(maintainer -> maintainer
-                .updateIfNeededAndGetDiskMetricsFor(containerName)
-                .forEach((metricName, metricValue) ->
-                        metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, metricName).sample(metricValue.doubleValue())));
+        diskTotalBytes.ifPresent(diskLimit ->
+                metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "node.disk.limit").sample(diskLimit));
+        diskTotalBytesUsed.ifPresent(diskUsed ->
+                metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "node.disk.used").sample(diskUsed));
+        // TODO END REMOVE
 
         metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_HOST_LIFE, dimensions, "uptime").sample(lastCpuMetric.getUptime());
         metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_HOST_LIFE, dimensions, "alive").sample(1);

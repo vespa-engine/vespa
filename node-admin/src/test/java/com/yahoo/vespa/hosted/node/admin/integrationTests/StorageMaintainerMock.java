@@ -9,8 +9,7 @@ import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author freva
@@ -24,8 +23,8 @@ public class StorageMaintainerMock extends StorageMaintainer {
     }
 
     @Override
-    public Map<String, Number> updateIfNeededAndGetDiskMetricsFor(ContainerName containerName) {
-        return new HashMap<>();
+    public Optional<Long> updateIfNeededAndGetDiskMetricsFor(ContainerName containerName) {
+        return Optional.empty();
     }
 
     @Override

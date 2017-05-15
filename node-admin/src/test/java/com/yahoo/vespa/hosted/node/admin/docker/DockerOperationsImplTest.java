@@ -1,13 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.docker;
 
-import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
-import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import org.hamcrest.CoreMatchers;
 import org.junit.Test;
@@ -32,8 +30,7 @@ import static org.mockito.Mockito.when;
 public class DockerOperationsImplTest {
     private final Environment environment = new Environment.Builder().build();
     private final Docker docker = mock(Docker.class);
-    private final DockerOperationsImpl dockerOperations = new DockerOperationsImpl(docker, environment,
-            new MetricReceiverWrapper(MetricReceiver.nullImplementation));
+    private final DockerOperationsImpl dockerOperations = new DockerOperationsImpl(docker, environment);
 
     @Test
     public void processResultFromNodeProgramWhenSuccess() throws Exception {
@@ -108,8 +105,7 @@ public class DockerOperationsImplTest {
     public void runsCommandInNetworkNamespace() {
         Container container = makeContainer("container-42", Container.State.RUNNING, 42);
         List<String> capturedArgs = new ArrayList<>();
-        DockerOperationsImpl dockerOperations = new DockerOperationsImpl(docker, environment,
-                new MetricReceiverWrapper(MetricReceiver.nullImplementation), capturedArgs::addAll);
+        DockerOperationsImpl dockerOperations = new DockerOperationsImpl(docker, environment, capturedArgs::addAll);
 
         dockerOperations.executeCommandInNetworkNamespace(container.name, new String[]{"iptables", "-nvL"});
 

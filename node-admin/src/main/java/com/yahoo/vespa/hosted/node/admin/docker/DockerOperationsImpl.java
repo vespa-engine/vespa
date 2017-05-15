@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.google.common.base.Joiner;
 import com.google.common.io.CharStreams;
-import com.yahoo.net.HostName;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
@@ -12,9 +11,6 @@ import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.DockerImpl;
 import com.yahoo.vespa.hosted.dockerapi.DockerNetworkCreator;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
-import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
-import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
-import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
@@ -94,17 +90,14 @@ public class DockerOperationsImpl implements DockerOperations {
     private final Docker docker;
     private final Environment environment;
     private final Consumer<List<String>> commandExecutor;
-    private GaugeWrapper numberOfRunningContainersGauge;
 
-    public DockerOperationsImpl(Docker docker, Environment environment, MetricReceiverWrapper metricReceiver) {
-        this(docker, environment, metricReceiver, DockerOperationsImpl::runCommand);
+    public DockerOperationsImpl(Docker docker, Environment environment) {
+        this(docker, environment, DockerOperationsImpl::runCommand);
     }
 
-    DockerOperationsImpl(Docker docker, Environment environment, MetricReceiverWrapper metricReceiver,
-                         Consumer<List<String>> commandExecutor) {
+    DockerOperationsImpl(Docker docker, Environment environment, Consumer<List<String>> commandExecutor) {
         this.docker = docker;
         this.environment = environment;
-        setMetrics(metricReceiver);
         this.commandExecutor = commandExecutor;
     }
 
@@ -200,8 +193,6 @@ public class DockerOperationsImpl implements DockerOperations {
         } catch (IOException e) {
             throw new RuntimeException("Failed to create container " + containerName.asString(), e);
         }
-
-        numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
     }
 
     @Override
@@ -215,7 +206,6 @@ public class DockerOperationsImpl implements DockerOperations {
 
         logger.info("Deleting container " + containerName.asString());
         docker.deleteContainer(containerName);
-        numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
     }
 
     // Returns true if scheduling download
@@ -350,17 +340,6 @@ public class DockerOperationsImpl implements DockerOperations {
     @Override
     public void deleteUnusedDockerImages() {
         docker.deleteUnusedDockerImages();
-    }
-
-    private void setMetrics(MetricReceiverWrapper metricReceiver) {
-        Dimensions dimensions = new Dimensions.Builder()
-                .add("host", HostName.getLocalhost())
-                .add("role", "docker").build();
-
-        numberOfRunningContainersGauge = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "containers.running");
-
-        // Some containers could already be running, count them and initialize to that value
-        numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
     }
 
     private static void runCommand(List<String> command) {

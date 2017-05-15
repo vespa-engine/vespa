@@ -61,7 +61,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
         ConfigServerHttpRequestExecutor requestExecutor = ConfigServerHttpRequestExecutor.create(configServerHosts);
         Orchestrator orchestrator = new OrchestratorImpl(requestExecutor);
         NodeRepository nodeRepository = new NodeRepositoryImpl(requestExecutor, WEB_SERVICE_PORT, baseHostName);
-        DockerOperations dockerOperations = new DockerOperationsImpl(docker, environment, metricReceiver);
+        DockerOperations dockerOperations = new DockerOperationsImpl(docker, environment);
 
         Optional<StorageMaintainer> storageMaintainer = isRunningLocally ?
                 Optional.empty() : Optional.of(new StorageMaintainer(docker, metricReceiver, environment));

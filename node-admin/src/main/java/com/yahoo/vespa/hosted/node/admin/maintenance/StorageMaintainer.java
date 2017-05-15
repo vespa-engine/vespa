@@ -64,7 +64,7 @@ public class StorageMaintainer {
         numberOfNodeAdminMaintenanceFails = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.maintenance.fails");
     }
 
-    public Map<String, Number> updateIfNeededAndGetDiskMetricsFor(ContainerName containerName) {
+    public Optional<Long> updateIfNeededAndGetDiskMetricsFor(ContainerName containerName) {
         // Calculating disk usage is IO expensive operation and its value changes relatively slowly, we want to perform
         // that calculation rarely. Additionally, we spread out the calculation for different containers by adding
         // a random deviation.
@@ -79,7 +79,7 @@ public class StorageMaintainer {
                 Path containerDir = environment.pathInNodeAdminFromPathInNode(containerName, "/home/");
                 try {
                     long used = getDiscUsedInBytes(containerDir);
-                    metricsCache.metrics.put("node.disk.used", used);
+                    metricsCache.setDiskUsage(used);
                 } catch (Throwable e) {
                     logger.error("Problems during disk usage calculations: " + e.getMessage());
                 }
@@ -88,7 +88,7 @@ public class StorageMaintainer {
             metricsCacheByContainerName.put(containerName, metricsCache);
         }
 
-        return metricsCacheByContainerName.get(containerName).metrics;
+        return metricsCacheByContainerName.get(containerName).diskUsage;
     }
 
     // Public for testing
@@ -305,10 +305,14 @@ public class StorageMaintainer {
 
     private static class MetricsCache {
         private final Instant nextUpdateAt;
-        private final Map<String, Number> metrics = new HashMap<>();
+        private Optional<Long> diskUsage = Optional.empty();
 
         MetricsCache(Instant nextUpdateAt) {
             this.nextUpdateAt = nextUpdateAt;
+        }
+
+        void setDiskUsage(long diskUsage) {
+            this.diskUsage = Optional.of(diskUsage);
         }
     }
 }
