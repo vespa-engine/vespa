@@ -17,6 +17,7 @@ LOG_SETUP("attribute_manager_test");
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
 #include <vespa/searchcore/proton/initializer/task_runner.h>
+#include <vespa/searchcore/proton/server/executor_thread_service.h>
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchcore/proton/test/attribute_vectors.h>
 #include <vespa/searchcore/proton/test/directory_handler.h>
@@ -223,6 +224,8 @@ struct ParallelAttributeManager
     size_t attributeGrowNumDocs;
     bool fastAccessAttributesOnly;
     std::shared_ptr<AttributeManager::SP> mgr;
+    vespalib::ThreadStackExecutor masterExecutor;
+    ExecutorThreadService master;
     AttributeManagerInitializer::SP initializer;
 
     ParallelAttributeManager(search::SerialNum configSerialNum, AttributeManager::SP baseAttrMgr,
@@ -239,10 +242,12 @@ ParallelAttributeManager::ParallelAttributeManager(search::SerialNum configSeria
       attributeGrowNumDocs(1),
       fastAccessAttributesOnly(false),
       mgr(std::make_shared<AttributeManager::SP>()),
+      masterExecutor(1, 128 * 1024),
+      master(masterExecutor),
       initializer(std::make_shared<AttributeManagerInitializer>(configSerialNum, documentMetaStoreInitTask,
                                                                 documentMetaStore, baseAttrMgr, attrCfg,
                                                                 attributeGrow, attributeGrowNumDocs,
-                                                                fastAccessAttributesOnly, mgr))
+                                                                fastAccessAttributesOnly, master, mgr))
 {
     documentMetaStore->setCommittedDocIdLimit(docIdLimit);
     vespalib::ThreadStackExecutor executor(3, 128 * 1024);

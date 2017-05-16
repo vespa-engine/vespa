@@ -5,6 +5,8 @@
 #include "attribute_collection_spec_factory.h"
 #include "sequential_attributes_initializer.h"
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
+#include <vespa/searchcorespi/index/i_thread_service.h>
+#include <future>
 
 using search::AttributeVector;
 using search::GrowStrategy;
@@ -43,6 +45,51 @@ public:
         }
     }
 };
+
+class AttributeManagerInitializerTask : public vespalib::Executor::Task
+{
+    std::promise<bool> _promise;
+    search::SerialNum _configSerialNum;
+    DocumentMetaStore::SP _documentMetaStore;
+    AttributeManager::SP _attrMgr;
+    InitializedAttributesResult &_attributesResult;
+
+public:
+    AttributeManagerInitializerTask(std::promise<bool> &&promise,
+                                    search::SerialNum configSerialNum,
+                                    DocumentMetaStore::SP documentMetaStore,
+                                    AttributeManager::SP attrMgr,
+                                    InitializedAttributesResult &attributesResult);
+    virtual ~AttributeManagerInitializerTask() override;
+    virtual void run() override;
+};
+
+
+AttributeManagerInitializerTask::AttributeManagerInitializerTask(std::promise<bool> &&promise,
+                                                                 search::SerialNum configSerialNum,
+                                                                 DocumentMetaStore::SP documentMetaStore,
+                                                                 AttributeManager::SP attrMgr,
+                                                                 InitializedAttributesResult &attributesResult)
+    : _promise(std::move(promise)),
+      _configSerialNum(configSerialNum),
+      _documentMetaStore(documentMetaStore),
+      _attrMgr(attrMgr),
+      _attributesResult(attributesResult)
+{
+}
+
+AttributeManagerInitializerTask::~AttributeManagerInitializerTask()
+{
+}
+
+void
+AttributeManagerInitializerTask::run()
+{
+    _attrMgr->addExtraAttribute(_documentMetaStore);
+    _attrMgr->addInitializedAttributes(_attributesResult.get());
+    _attrMgr->pruneRemovedFields(_configSerialNum);
+    _promise.set_value(true);
+}
 
 class AttributeInitializerTasksBuilder : public IAttributeInitializerRegistry
 {
@@ -101,6 +148,8 @@ AttributeManagerInitializer::AttributeManagerInitializer(SerialNum configSerialN
                                                          const GrowStrategy &attributeGrow,
                                                          size_t attributeGrowNumDocs,
                                                          bool fastAccessAttributesOnly,
+                                                         searchcorespi::index::IThreadService &master,
+
                                                          std::shared_ptr<AttributeManager::SP> attrMgrResult)
     : _configSerialNum(configSerialNum),
       _documentMetaStore(documentMetaStore),
@@ -109,6 +158,7 @@ AttributeManagerInitializer::AttributeManagerInitializer(SerialNum configSerialN
       _attributeGrow(attributeGrow),
       _attributeGrowNumDocs(attributeGrowNumDocs),
       _fastAccessAttributesOnly(fastAccessAttributesOnly),
+      _master(master),
       _attributesResult(),
       _attrMgrResult(attrMgrResult)
 {
@@ -121,9 +171,18 @@ AttributeManagerInitializer::AttributeManagerInitializer(SerialNum configSerialN
 void
 AttributeManagerInitializer::run()
 {
-    _attrMgr->addExtraAttribute(_documentMetaStore);
-    _attrMgr->addInitializedAttributes(_attributesResult.get());
-    _attrMgr->pruneRemovedFields(_configSerialNum);
+    std::promise<bool> promise;
+    std::future<bool> future = promise.get_future();
+    /*
+     * Attribute manager and some its members (e.g. _attributeFieldWriter) assumes that work is performed
+     * by document db master thread and lacks locking to handle calls from multiple threads.
+     */
+    _master.execute(std::make_unique<AttributeManagerInitializerTask>(std::move(promise),
+                                                                      _configSerialNum,
+                                                                      _documentMetaStore,
+                                                                      _attrMgr,
+                                                                      _attributesResult));
+    (void) future.get();
     *_attrMgrResult = _attrMgr;
 }
 
