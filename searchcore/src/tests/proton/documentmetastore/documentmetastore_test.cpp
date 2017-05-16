@@ -2,7 +2,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
-#include <vespa/searchcore/proton/documentmetastore/documentmetastoreflushtarget.h>
+#include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
@@ -1874,13 +1874,10 @@ TEST("requireThatShrinkViaFlushTargetWorks")
     HwInfo hwInfo;
     vespalib::rmdir("dmsflush", true);
     vespalib::mkdir("dmsflush");
-    IFlushTarget::SP ft(new DocumentMetaStoreFlushTarget(dms,
-                                                         dummyTlsSyncer,
-                                                         "dmsflush",
-                                                         tuneFileAttributes,
-                                                         fileHeaderContext,
-                                                         hwInfo));
-    
+    using Type = IFlushTarget::Type;
+    using Component = IFlushTarget::Component;
+    IFlushTarget::SP ft(std::make_shared<ShrinkLidSpaceFlushTarget>
+                        ("documentmetastore.shrink", Type::GC, Component::ATTRIBUTE, 0, dms));
     populate(10, *dms);
 
     uint32_t shrinkTarget = 5;

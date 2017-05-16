@@ -685,25 +685,27 @@ assertTarget(const vespalib::string &name,
 TEST_F("require that flush targets can be retrieved", FastAccessFixture)
 {
 	IFlushTarget::List targets = getFlushTargets(f);
-	EXPECT_EQUAL(5u, targets.size());
+	EXPECT_EQUAL(6u, targets.size());
 	EXPECT_EQUAL("subdb.attribute.flush.attr1", targets[0]->getName());
 	EXPECT_EQUAL("subdb.attribute.shrink.attr1", targets[1]->getName());
-	EXPECT_EQUAL("subdb.documentmetastore", targets[2]->getName());
-	EXPECT_EQUAL("subdb.summary.compact", targets[3]->getName());
-	EXPECT_EQUAL("subdb.summary.flush", targets[4]->getName());
+	EXPECT_EQUAL("subdb.documentmetastore.flush", targets[2]->getName());
+	EXPECT_EQUAL("subdb.documentmetastore.shrink", targets[3]->getName());
+	EXPECT_EQUAL("subdb.summary.compact", targets[4]->getName());
+	EXPECT_EQUAL("subdb.summary.flush", targets[5]->getName());
 }
 
 TEST_F("require that flush targets can be retrieved", SearchableFixture)
 {
 	IFlushTarget::List targets = getFlushTargets(f);
-	EXPECT_EQUAL(7u, targets.size());
+	EXPECT_EQUAL(8u, targets.size());
 	EXPECT_TRUE(assertTarget("subdb.attribute.flush.attr1", FType::SYNC, FComponent::ATTRIBUTE, *targets[0]));
 	EXPECT_TRUE(assertTarget("subdb.attribute.shrink.attr1", FType::GC, FComponent::ATTRIBUTE, *targets[1]));
-	EXPECT_TRUE(assertTarget("subdb.documentmetastore", FType::SYNC, FComponent::ATTRIBUTE, *targets[2]));
-	EXPECT_TRUE(assertTarget("subdb.memoryindex.flush", FType::FLUSH, FComponent::INDEX, *targets[3]));
-	EXPECT_TRUE(assertTarget("subdb.memoryindex.fusion", FType::GC, FComponent::INDEX, *targets[4]));
-	EXPECT_TRUE(assertTarget("subdb.summary.compact", FType::GC, FComponent::DOCUMENT_STORE, *targets[5]));
-	EXPECT_TRUE(assertTarget("subdb.summary.flush", FType::SYNC, FComponent::DOCUMENT_STORE, *targets[6]));
+	EXPECT_TRUE(assertTarget("subdb.documentmetastore.flush", FType::SYNC, FComponent::ATTRIBUTE, *targets[2]));
+	EXPECT_TRUE(assertTarget("subdb.documentmetastore.shrink", FType::GC, FComponent::ATTRIBUTE, *targets[3]));
+	EXPECT_TRUE(assertTarget("subdb.memoryindex.flush", FType::FLUSH, FComponent::INDEX, *targets[4]));
+	EXPECT_TRUE(assertTarget("subdb.memoryindex.fusion", FType::GC, FComponent::INDEX, *targets[5]));
+	EXPECT_TRUE(assertTarget("subdb.summary.compact", FType::GC, FComponent::DOCUMENT_STORE, *targets[6]));
+	EXPECT_TRUE(assertTarget("subdb.summary.flush", FType::SYNC, FComponent::DOCUMENT_STORE, *targets[7]));
 }
 
 TEST_F("require that only fast-access attributes are instantiated", FastAccessOnlyFixture)

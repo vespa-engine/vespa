@@ -71,9 +71,6 @@ Flusher(DocumentMetaStoreFlushTarget &dmsft,
 {
     DocumentMetaStore &dms = *_dmsft._dms;
     // Called by document db executor
-    if (dms.canShrinkLidSpace()) {
-        dms.shrinkLidSpace();
-    }
     _flushDir = writer.getSnapshotDir(syncToken);
     vespalib::string newBaseFileName(_flushDir + "/" + dms.getName());
     dms.setBaseFileName(newBaseFileName);
@@ -176,7 +173,7 @@ DocumentMetaStoreFlushTarget(const DocumentMetaStore::SP dms,
                              const TuneFileAttributes &tuneFileAttributes,
                              const FileHeaderContext &fileHeaderContext,
                              const HwInfo &hwInfo)
-    : IFlushTarget("documentmetastore", Type::SYNC, Component::ATTRIBUTE),
+    : IFlushTarget("documentmetastore.flush", Type::SYNC, Component::ATTRIBUTE),
       _dms(dms),
       _tlsSyncer(tlsSyncer),
       _baseDir(baseDir),
@@ -209,11 +206,7 @@ IFlushTarget::MemoryGain
 DocumentMetaStoreFlushTarget::getApproxMemoryGain() const
 {
     int64_t used(_dms->getStatus().getUsed());
-    int64_t canFree = _dms->getEstimatedShrinkLidSpaceGain();
-    if (canFree > used) {
-        canFree = used;
-    }
-    return MemoryGain(used, used - canFree);
+    return MemoryGain(used, used);
 }
 
 
