@@ -87,6 +87,7 @@ class JDiscHttpServlet extends HttpServlet {
      * Override to set connector attribute before the request becomes an upgrade request in the web socket case.
      * (After the upgrade, the HttpConnection is no longer available.)
      */
+    @SuppressWarnings("deprecation")
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setAttribute(JDiscServerConnector.REQUEST_ATTRIBUTE, getConnector(request));

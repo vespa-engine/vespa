@@ -30,6 +30,7 @@ public class MetricReporter {
         this.requestStartTime = requestStartTime;
     }
 
+    @SuppressWarnings("deprecation")
     public void successfulWrite(int numBytes) {
         setTimeToFirstByteFirstTime();
 
@@ -38,6 +39,7 @@ public class MetricReporter {
         metric.set(Metrics.MANHATTAN_NUM_BYTES_SENT, numBytes, context);
     }
 
+    @SuppressWarnings("deprecation")
     private void setTimeToFirstByteFirstTime() {
         boolean isFirstWrite = firstSetOfTimeToFirstByte.getAndSet(false);
         if (isFirstWrite) {
@@ -51,6 +53,7 @@ public class MetricReporter {
         metric.add(Metrics.NUM_FAILED_WRITES, 1, context);
     }
 
+    @SuppressWarnings("deprecation")
     public void successfulResponse() {
         setTimeToFirstByteFirstTime();
 
@@ -69,6 +72,7 @@ public class MetricReporter {
         metric.add(Metrics.NUM_FAILED_RESPONSES, 1, context);
     }
 
+    @SuppressWarnings("deprecation")
     public void successfulRead(int bytes_received) {
         metric.set(JettyHttpServer.Metrics.NUM_BYTES_RECEIVED, bytes_received, context);
         metric.set(JettyHttpServer.Metrics.MANHATTAN_NUM_BYTES_RECEIVED, bytes_received, context);
