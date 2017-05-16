@@ -115,6 +115,8 @@ public class RunInContainerTest {
 
     @Test
     public void testGetContainersToRunAPi() throws IOException, InterruptedException {
+        doThrow(new OrchestratorException("Cannot suspend because...")).when(orchestrator).suspend(parentHostname);
+        when(ComponentsProviderWithMocks.nodeRepositoryMock.getContainersToRun()).thenReturn(Collections.emptyList());
         waitForJdiscContainerToServe();
 
         assertFalse(doPutCall("resume")); // Initial is false to force convergence
@@ -128,7 +130,6 @@ public class RunInContainerTest {
         assertFalse(doPutCall("suspend/node-admin"));
 
         // Orchestrator changes its mind, allows node-admin to suspend
-        when(ComponentsProviderWithMocks.nodeRepositoryMock.getContainersToRun()).thenReturn(Collections.emptyList());
         doNothing().when(orchestrator).suspend(parentHostname, Collections.singletonList(parentHostname));
         Thread.sleep(50);
         assertTrue(doPutCall("suspend/node-admin")); // Tick loop should've run several times by now, expect to be suspended
