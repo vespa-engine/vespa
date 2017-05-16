@@ -199,7 +199,6 @@ void MergeLimiterTest::non_source_only_replicas_preferred_when_replicas_not_in_s
 }
 
 void MergeLimiterTest::at_least_one_non_source_only_replica_chosen_when_all_trusted() {
-    std::cerr << "\n\n\n";
     MergeLimiter::NodeArray nodes(NodeFactory()
         .addTrusted(9, 0x6)
         .addTrusted(2, 0x6)
