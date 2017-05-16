@@ -131,7 +131,8 @@ public class SerializationTest {
                 "      \"serviceId\" : \"content/myId/0\",\n" +
                 "      \"restartGeneration\" : 3,\n" +
                 "      \"currentRestartGeneration\" : 4,\n" +
-                "      \"removable\" : true\n" +
+                "      \"removable\" : true,\n" +
+                "      \"wantedVespaVersion\": \"6.42.2\"\n" +
                 "   },\n" +
                 "   \"openStackId\" : \"myId\",\n" +
                 "   \"hostname\" : \"myHostname\",\n" +
@@ -188,7 +189,8 @@ public class SerializationTest {
                 "    \"applicationId\": \"ugc-assimilate\",\n" +
                 "    \"instanceId\": \"default\",\n" +
                 "    \"serviceId\": \"container/ugccloud-container/0/0\",\n" +
-                "    \"restartGeneration\": 0\n" +
+                "    \"restartGeneration\": 0,\n" +
+                "    \"wantedVespaVersion\": \"6.42.2\"\n" +
                 "  }\n" +
                 "}\n").getBytes());
         assertEquals(0, node.history().events().size());
@@ -323,24 +325,7 @@ public class SerializationTest {
     }
 
     @Test
-    // TODO: Remove after April 2017
     public void vespa_version_serialization() throws Exception {
-        String nodeWithDockerImage =
-                "{\n" +
-                        "   \"type\" : \"tenant\",\n" +
-                        "   \"flavor\" : \"large\",\n" +
-                        "   \"openStackId\" : \"myId\",\n" +
-                        "   \"hostname\" : \"myHostname\",\n" +
-                        "   \"ipAddresses\" : [\"127.0.0.1\"],\n" +
-                        "   \"instance\": {\n" +
-                        "     \"serviceId\": \"content/myId/0\",\n" +
-                        "     \"dockerImage\": \"docker-registry.some.domain:4443/vespa/ci:6.42.1\"\n" +
-                        "   }\n" +
-                        "}";
-        Node node = nodeSerializer.fromJson(State.active, Utf8.toBytes(nodeWithDockerImage));
-        assertEquals("6.42.1", node.allocation().get().membership().cluster().vespaVersion().toString());
-        assertEquals("docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.1", node.allocation().get().membership().cluster().dockerImage());
-
         String nodeWithWantedVespaVersion =
                 "{\n" +
                         "   \"type\" : \"tenant\",\n" +
@@ -353,7 +338,7 @@ public class SerializationTest {
                         "     \"wantedVespaVersion\": \"6.42.2\"\n" +
                         "   }\n" +
                         "}";
-        node = nodeSerializer.fromJson(State.active, Utf8.toBytes(nodeWithWantedVespaVersion));
+        Node node = nodeSerializer.fromJson(State.active, Utf8.toBytes(nodeWithWantedVespaVersion));
         assertEquals("6.42.2", node.allocation().get().membership().cluster().vespaVersion().toString());
         assertEquals("docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.2", node.allocation().get().membership().cluster().dockerImage());
     }
