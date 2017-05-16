@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_factory.h"
+#include "attribute_directory.h"
 #include "attributedisklayout.h"
 #include "attributemanager.h"
 #include "i_attribute_functor.h"
@@ -72,15 +73,16 @@ search::SerialNum estimateShrinkSerialNum(const AttributeVector &attr)
     return std::max(attr.getStatus().getLastSyncToken(), serialNum);
 }
 
-std::shared_ptr<ShrinkLidSpaceFlushTarget> allocShrinker(const AttributeVector::SP &attr, search::ISequencedTaskExecutor &attributeFieldWriter)
+std::shared_ptr<ShrinkLidSpaceFlushTarget> allocShrinker(const AttributeVector::SP &attr, search::ISequencedTaskExecutor &attributeFieldWriter, AttributeDiskLayout &diskLayout)
 {
     using Type = IFlushTarget::Type;
     using Component = IFlushTarget::Component;
 
     const vespalib::string &name = attr->getName();
     auto shrinkwrap = std::make_shared<ThreadedCompactableLidSpace>(attr, attributeFieldWriter, attributeFieldWriter.getExecutorId(name));
+    auto dir = diskLayout.createAttributeDir(name);
     search::SerialNum shrinkSerialNum = estimateShrinkSerialNum(*attr);
-    return std::make_shared<ShrinkLidSpaceFlushTarget>("attribute.shrink." + name, Type::GC, Component::ATTRIBUTE, shrinkSerialNum, shrinkwrap);
+    return std::make_shared<ShrinkLidSpaceFlushTarget>("attribute.shrink." + name, Type::GC, Component::ATTRIBUTE, shrinkSerialNum, dir->getLastFlushTime(), shrinkwrap);
 }
 
 }
@@ -139,7 +141,7 @@ AttributeManager::internalAddAttribute(const AttributeSpec &spec,
     AttributeInitializerResult result = initializer.init();
     if (result) {
         result.getAttribute()->setInterlock(_interlock);
-        auto shrinker = allocShrinker(result.getAttribute(), _attributeFieldWriter);
+        auto shrinker = allocShrinker(result.getAttribute(), _attributeFieldWriter, *_diskLayout);
         addAttribute(AttributeWrap::normalAttribute(result.getAttribute()), shrinker);
     }
     return result.getAttribute();
@@ -322,7 +324,7 @@ AttributeManager::addInitializedAttributes(const std::vector<AttributeInitialize
         assert(result);
         auto attr = result.getAttribute();
         attr->setInterlock(_interlock);
-        auto shrinker = allocShrinker(attr, _attributeFieldWriter);
+        auto shrinker = allocShrinker(attr, _attributeFieldWriter, *_diskLayout);
         addAttribute(AttributeWrap::normalAttribute(attr), shrinker);
     }
 }

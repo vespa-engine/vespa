@@ -292,6 +292,7 @@ StoreOnlyDocSubDB::setupDocumentMetaStore(DocumentMetaStoreInitializerResult::SP
                        ("documentmetastore.shrink",
                         Type::GC, Component::ATTRIBUTE,
                         _flushedDocumentMetaStoreSerialNum,
+                        _dmsFlushTarget->getLastFlushTime(),
                         dms);
 }
 
