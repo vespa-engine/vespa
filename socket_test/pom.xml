@@ -8,6 +8,11 @@
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>socket_test</artifactId>
     <version>6-SNAPSHOT</version>
+    <parent>
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>parent</artifactId>
+        <version>6-SNAPSHOT</version>
+    </parent>
     <packaging>jar</packaging>
     <build>
         <plugins>
