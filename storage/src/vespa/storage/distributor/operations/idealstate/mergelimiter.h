@@ -5,8 +5,7 @@
 #include <vespa/storage/distributor/operations/idealstate/mergemetadata.h>
 #include <vector>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class MergeLimiter {
     uint16_t _maxNodes;
@@ -19,5 +18,4 @@ public:
     void limitMergeToMaxNodes(NodeArray&);
 };
 
-} // distributor
-} // storage
+} // storage::distributor

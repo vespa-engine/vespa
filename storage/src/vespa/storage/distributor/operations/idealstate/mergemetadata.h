@@ -25,6 +25,7 @@ struct MergeMetaData {
         assert(_copy != 0);
         return _copy->getChecksum();
     }
+    bool source_only() const noexcept { return _sourceOnly; }
 };
 
 vespalib::asciistream& operator<<(vespalib::asciistream& out, const MergeMetaData& e);
