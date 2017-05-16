@@ -284,17 +284,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return currentActiveApplicationSet;
     }
 
-    public ConfigChangeActions prepare(Tenant tenant,
-                                       long sessionId,
-                                       DeployLogger logger,
-                                       PrepareParams params) {
+    public ConfigChangeActions prepare(Tenant tenant, long sessionId, DeployLogger logger, PrepareParams params) {
         LocalSession session = getLocalSession(tenant, sessionId);
         ApplicationId appId = params.getApplicationId();
         Optional<ApplicationSet> currentActiveApplicationSet = getCurrentActiveApplicationSet(tenant, appId);
-        return session.prepare(logger,
-                               params,
-                               currentActiveApplicationSet,
-                               tenant.getPath());
+        return session.prepare(logger, params, currentActiveApplicationSet, tenant.getPath());
     }
 
     private List<ApplicationId> listApplicationIds(Tenant tenant) {

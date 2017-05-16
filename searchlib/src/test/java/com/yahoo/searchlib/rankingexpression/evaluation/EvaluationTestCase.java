@@ -265,6 +265,16 @@ public class EvaluationTestCase {
         tester.assertEvaluates("1.0", "sum(tensor0 * tensor1 + 0.5)", "{}",                  "{ {x:0}:1, {x:1}:1 }");
         tester.assertEvaluates("0.0", "sum(tensor0 * tensor1 + 0.5)", "tensor(x{}):{}",                  "{ {x:0}:1, {x:1}:1 }");
 
+        tester.assertEvaluates("1",
+                               "reduce(join(tensor0, tensor1, f(x,y) (if(x > y, 1.0, 0.0))), sum, tag) == reduce(tensor0, count, tag)",
+                               "tensor(tag{}):{{tag:tag1}:10, {tag:tag2}:20}", "{5}");
+        tester.assertEvaluates("0",
+                               "reduce(join(tensor0, tensor1, f(x,y) (if(x > y, 1.0, 0.0))), sum, tag) == reduce(tensor0, count, tag)",
+                               "tensor(tag{}):{{tag:tag1}:10, {tag:tag2}:20}", "{15}");
+        tester.assertEvaluates("0",
+                               "reduce(join(tensor0, tensor1, f(x,y) (if(x > y, 1.0, 0.0))), sum, tag) == reduce(tensor0, count, tag)",
+                               "tensor(tag{}):{{tag:tag1}:10, {tag:tag2}:20}", "{25}");
+
         // tensor result dimensions are given from argument dimensions, not the resulting values
         tester.assertEvaluates("tensor(x{}):{}", "tensor0 * tensor1", "{ {x:0}:1 }", "tensor(x{}):{ {x:1}:1 }");
         tester.assertEvaluates("tensor(x{},y{}):{}", "tensor0 * tensor1", "{ {x:0}:1 }", "tensor(x{},y{}):{ {x:1,y:0}:1, {x:2,y:1}:1 }");

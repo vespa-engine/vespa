@@ -98,7 +98,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         if (prepared) return;
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
         session.prepare(logger,
-                        /** Assumes that session has already set application id, see {@link com.yahoo.vespa.config.server.session.SessionFactoryImpl}. */
+                        /** Assumes that session has already set application id and version, see {@link com.yahoo.vespa.config.server.session.SessionFactoryImpl}. */
                         new PrepareParams.Builder().applicationId(session.getApplicationId())
                                                    .timeoutBudget(timeoutBudget)
                                                    .ignoreValidationErrors( ! validate)
