@@ -3,11 +3,9 @@ package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
-import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterMembership;
-import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeFlavors;
@@ -75,7 +73,6 @@ public class NodeSerializer {
     private static final String currentRestartGenerationKey = "currentRestartGeneration";
     private static final String removableKey = "removable";
     // Saved as part of allocation instead of serviceId, since serviceId serialized form is not easily extendable.
-    private static final String dockerImageKey = "dockerImage";
     private static final String wantedVespaVersionKey = "wantedVespaVersion";
 
     // History event fields
@@ -168,8 +165,8 @@ public class NodeSerializer {
 
     private Status statusFromSlime(Inspector object) {
         return new Status(generationFromSlime(object, rebootGenerationKey, currentRebootGenerationKey),
-                          softwareVersionFromSlime(object.field(vespaVersionKey)),
-                          softwareVersionFromSlime(object.field(hostedVersionKey)),
+                          versionFromSlime(object.field(vespaVersionKey)),
+                          versionFromSlime(object.field(hostedVersionKey)),
                           optionalString(object.field(stateVersionKey)),
                           (int)object.field(failCountKey).asLong(),
                           hardwareFailureFromSlime(object.field(hardwareFailureKey)),
@@ -217,20 +214,12 @@ public class NodeSerializer {
         return new Generation(object.field(wantedField).asLong(), current.asLong());
     }
 
-    // TODO: Simplify and inline after April 2017
     private ClusterMembership clusterMembershipFromSlime(Inspector object) {
-        Optional<Version> vespaVersion;
-        if (object.field(dockerImageKey).valid()) {
-            vespaVersion = optionalString(object.field(dockerImageKey))
-                    .map(DockerImage::new)
-                    .map(DockerImage::tagAsVersion);
-        } else {
-            vespaVersion = softwareVersionFromSlime(object.field(wantedVespaVersionKey));
-        }
-        return ClusterMembership.from(object.field(serviceIdKey).asString(), vespaVersion.orElse(Vtag.currentVersion));
+        return ClusterMembership.from(object.field(serviceIdKey).asString(), 
+                                      versionFromSlime(object.field(wantedVespaVersionKey)).get());
     }
 
-    private Optional<Version> softwareVersionFromSlime(Inspector object) {
+    private Optional<Version> versionFromSlime(Inspector object) {
         if ( ! object.valid()) return Optional.empty();
         return Optional.of(Version.fromString(object.asString()));
     }

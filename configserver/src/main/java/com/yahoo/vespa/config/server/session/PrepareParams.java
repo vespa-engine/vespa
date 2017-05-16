@@ -48,6 +48,7 @@ public final class PrepareParams {
     }
 
     public static class Builder {
+
         private boolean ignoreValidationErrors = false;
         private boolean dryRun = false;
         private ApplicationId applicationId = ApplicationId.defaultId();

@@ -87,18 +87,18 @@ public class SessionPreparer {
      */
     public ConfigChangeActions prepare(SessionContext context, DeployLogger logger, PrepareParams params,
                                        Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath) {
-        Preparation prep = new Preparation(context, logger, params, currentActiveApplicationSet, tenantPath);
-        prep.preprocess();
+        Preparation preparation = new Preparation(context, logger, params, currentActiveApplicationSet, tenantPath);
+        preparation.preprocess();
         try {
-            prep.buildModels();
-            prep.makeResult();
-            if (!params.isDryRun()) {
-                prep.writeStateZK();
-                prep.writeRotZK();
-                prep.distribute();
-                prep.reloadDeployFileDistributor();
+            preparation.buildModels();
+            preparation.makeResult();
+            if ( ! params.isDryRun()) {
+                preparation.writeStateZK();
+                preparation.writeRotZK();
+                preparation.distribute();
+                preparation.reloadDeployFileDistributor();
             }
-            return prep.result();
+            return preparation.result();
         } catch (OutOfCapacityException e) {
             throw e;
         } catch (IllegalArgumentException e) {
