@@ -707,7 +707,7 @@ uint32_t AttributeVector::getVersion() const { return 0; }
 void
 AttributeVector::compactLidSpace(uint32_t wantedLidLimit) {
     commit();
-    assert(_uncommittedDocIdLimit <= wantedLidLimit);
+    assert(_committedDocIdLimit >= wantedLidLimit);
     if (wantedLidLimit < _committedDocIdLimit) {
         clearDocs(wantedLidLimit, _committedDocIdLimit);
     }
@@ -729,7 +729,10 @@ void
 AttributeVector::shrinkLidSpace(void)
 {
     commit();
-    assert(canShrinkLidSpace());
+    removeAllOldGenerations();
+    if (!canShrinkLidSpace()) {
+        return;
+    }
     uint32_t committedDocIdLimit = _committedDocIdLimit;
     clearDocs(committedDocIdLimit, getNumDocs());
     commit();

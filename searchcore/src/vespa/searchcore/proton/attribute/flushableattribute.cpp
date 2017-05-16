@@ -70,9 +70,6 @@ FlushableAttribute::Flusher::Flusher(FlushableAttribute & fattr, SerialNum syncT
     fattr._attr->commit(syncToken, syncToken);
     AttributeVector &attr = *_fattr._attr;
     // Called by attribute field writer executor
-    if (attr.canShrinkLidSpace()) {
-        attr.shrinkLidSpace();
-    }
     _flushFile = writer.getSnapshotDir(_syncToken) + "/" + attr.getName();
     attr.setBaseFileName(_flushFile);
     _saver = attr.initSave();
@@ -171,7 +168,7 @@ FlushableAttribute::FlushableAttribute(const AttributeVectorSP attr,
                                        attributeFieldWriter,
                                        const HwInfo &hwInfo)
     : IFlushTarget(vespalib::make_string(
-                           "attribute.%s",
+                           "attribute.flush.%s",
                            attr->getName().c_str()),
             Type::SYNC, Component::ATTRIBUTE),
       _attr(attr),
@@ -202,11 +199,7 @@ IFlushTarget::MemoryGain
 FlushableAttribute::getApproxMemoryGain() const
 {
     int64_t used(_attr->getStatus().getUsed());
-    int64_t canFree = _attr->getEstimatedShrinkLidSpaceGain();
-    if (canFree > used) {
-        canFree = used;
-    }
-    return MemoryGain(used, used - canFree);
+    return MemoryGain(used, used);
 }
 
 IFlushTarget::DiskGain
