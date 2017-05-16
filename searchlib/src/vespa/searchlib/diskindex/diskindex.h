@@ -2,12 +2,13 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/cache.h>
-#include <vespa/searchlib/diskindex/bitvectordictionary.h>
+#include "bitvectordictionary.h"
+#include "zcposoccrandread.h"
 #include <vespa/searchlib/index/dictionaryfile.h>
-#include <vespa/searchlib/diskindex/zcposoccrandread.h>
 #include <vespa/searchlib/queryeval/searchable.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/stllike/cache.h>
+
 
 namespace search {
 
@@ -79,16 +80,9 @@ private:
     uint64_t                               _size;
 
     void calculateSize();
-
-    bool
-    loadSchema(void);
-
-    bool
-    openDictionaries(const TuneFileSearch &tuneFileSearch);
-
-    bool
-    openField(const vespalib::string &fieldDir,
-              const TuneFileSearch &tuneFileSearch);
+    bool loadSchema();
+    bool openDictionaries(const TuneFileSearch &tuneFileSearch);
+    bool openField(const vespalib::string &fieldDir, const TuneFileSearch &tuneFileSearch);
 
 public:
     /**
@@ -98,17 +92,15 @@ public:
      * @param indexDir the directory where the disk index is located.
      **/
     DiskIndex(const vespalib::string &indexDir, size_t cacheSize=0);
+    ~DiskIndex();
 
     /**
      * Setup this instance by opening and loading relevant index files.
      *
      * @return true if this instance was successfully setup.
      **/
-    bool
-    setup(const TuneFileSearch &tuneFileSearch);
-
-    bool
-    setup(const TuneFileSearch &tuneFileSearch, const DiskIndex &old);
+    bool setup(const TuneFileSearch &tuneFileSearch);
+    bool setup(const TuneFileSearch &tuneFileSearch, const DiskIndex &old);
 
     /**
      * Perform a dictionary lookup for the given word in the given
@@ -119,11 +111,8 @@ public:
      * @param word the word to lookup.
      * @return the lookup result or NULL if the word is not found.
      **/
-    LookupResult::UP
-    lookup(uint32_t indexId, const vespalib::stringref & word);
-
-    LookupResultVector
-    lookup(const std::vector<uint32_t> & indexes, const vespalib::stringref & word);
+    LookupResult::UP lookup(uint32_t indexId, const vespalib::stringref & word);
+    LookupResultVector lookup(const std::vector<uint32_t> & indexes, const vespalib::stringref & word);
 
 
     /**
@@ -132,8 +121,7 @@ public:
      * @param lookupRes the result of the previous dictionary lookup.
      * @return a handle for the posting list in memory.
      **/
-    index::PostingListHandle::UP
-    readPostingList(const LookupResult &lookupRes) const;
+    index::PostingListHandle::UP readPostingList(const LookupResult &lookupRes) const;
 
     /**
      * Read the bit vector corresponding to the given lookup result.
@@ -142,8 +130,7 @@ public:
      * @return the bit vector or NULL if no bit vector exists for the
      *         word in the lookup result.
      **/
-    BitVector::UP
-    readBitVector(const LookupResult &lookupRes) const;
+    BitVector::UP readBitVector(const LookupResult &lookupRes) const;
 
     queryeval::Blueprint::UP
     createBlueprint(const queryeval::IRequestContext & requestContext,

@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-
-#include <vespa/fastos/fastos.h>
 #include "benchmark_headers.h"
 #include <map>
 
@@ -77,7 +75,7 @@ BenchmarkHeaders::toString() const
     struct HeaderToString : benchmark_headers::HeaderTraverser {
         string &str;
         HeaderToString(string &s) : str(s) {}
-        virtual void header(const string &name, double value) override {
+        void header(const string &name, double value) override {
             str += strfmt("  %s: %g\n", name.c_str(), value);
         }
     } headerToString(str);

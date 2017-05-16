@@ -39,6 +39,7 @@ private:
 
 public:
     DocumentReprocessingHandler(uint32_t docIdLimit);
+    ~DocumentReprocessingHandler();
 
     bool hasReaders() const {
         return !_readers.empty();

@@ -7,8 +7,7 @@
 #include <vespa/vespalib/objects/objectoperation.h>
 #include <vespa/vespalib/objects/objectpredicate.h>
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 class AttributeResult : public ResultNode
 {
@@ -74,6 +73,7 @@ public:
     AttributeNode(const search::attribute::IAttributeVector & attribute);
     AttributeNode(const AttributeNode & attribute);
     AttributeNode & operator = (const AttributeNode & attribute);
+    ~AttributeNode();
     void setDocId(DocId docId) const { _scratchResult->setDocId(docId); }
     const search::attribute::IAttributeVector *getAttribute() const {
         return _scratchResult ? _scratchResult->getAttribute() : nullptr;
@@ -154,5 +154,3 @@ private:
 };
 
 }
-}
-

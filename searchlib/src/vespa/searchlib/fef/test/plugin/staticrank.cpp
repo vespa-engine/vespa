@@ -34,6 +34,10 @@ StaticRankBlueprint::StaticRankBlueprint() :
 {
 }
 
+StaticRankBlueprint::~StaticRankBlueprint()
+{
+}
+
 bool
 StaticRankBlueprint::setup(const IIndexEnvironment & indexEnv, const StringVector & params)
 {

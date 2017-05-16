@@ -29,6 +29,7 @@ public:
           _attributeFieldWriter(_service.attributeFieldWriter())
     {
     }
+    virtual ~ThreadingServiceObserver() override { }
     const ThreadServiceObserver &masterObserver() const {
         return _master;
     }
@@ -55,30 +56,27 @@ public:
     /**
      * Implements vespalib::Syncable
      */
-    virtual vespalib::Syncable &sync() {
+    virtual vespalib::Syncable &sync() override {
         return _service.sync();
     }
 
     /**
      * Implements IThreadingService
      */
-    virtual searchcorespi::index::IThreadService &master() {
+    virtual searchcorespi::index::IThreadService &master() override {
         return _master;
     }
-    virtual searchcorespi::index::IThreadService &index() {
+    virtual searchcorespi::index::IThreadService &index() override {
         return _index;
     }
-    virtual search::ISequencedTaskExecutor &indexFieldInverter()
-    {
+    virtual search::ISequencedTaskExecutor &indexFieldInverter() override {
         return _indexFieldInverter;
     }
-    virtual search::ISequencedTaskExecutor &indexFieldWriter()
-    {
+    virtual search::ISequencedTaskExecutor &indexFieldWriter() override {
         return _indexFieldWriter;
     }
 
-    virtual search::ISequencedTaskExecutor &attributeFieldWriter()
-    {
+    virtual search::ISequencedTaskExecutor &attributeFieldWriter() override {
         return _attributeFieldWriter;
     }
 };

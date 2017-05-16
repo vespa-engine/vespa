@@ -2,14 +2,10 @@
 
 #pragma once
 
-#include <limits>
 #include <vespa/searchlib/bitcompression/countcompression.h>
+#include <limits>
 
-namespace search
-{
-
-namespace diskindex
-{
+namespace search::diskindex {
 
 class ThreeLevelCountWriteBuffers
 {
@@ -64,19 +60,11 @@ public:
     uint64_t _pFileBitSize;
 
     // Unit test usage constructor.
-    ThreeLevelCountReadBuffers(DC &ssd,
-                               DC &spd,
-                               DC &pd,
-                               ThreeLevelCountWriteBuffers &wb);
+    ThreeLevelCountReadBuffers(DC &ssd, DC &spd, DC &pd, ThreeLevelCountWriteBuffers &wb);
 
     // Normal usage constructor
-    ThreeLevelCountReadBuffers(DC &ssd,
-                               DC &spd,
-                               DC &pd);
+    ThreeLevelCountReadBuffers(DC &ssd, DC &spd, DC &pd);
+    ~ThreeLevelCountReadBuffers();
 };
 
-
-} // namespace diskindex
-
-} // namespace search
-
+}

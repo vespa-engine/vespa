@@ -1,10 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("attributeflush_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/attribute/attributedisklayout.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
@@ -12,13 +9,14 @@ LOG_SETUP("attributeflush_test");
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/common/indexmetainfo.h>
-#include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/common/foregroundtaskexecutor.h>
 #include <vespa/searchcore/proton/test/directory_handler.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
+#include <vespa/fastos/file.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("attributeflush_test");
 
 using namespace document;
 using namespace search;
@@ -36,8 +34,7 @@ typedef std::shared_ptr<Gate> GateSP;
 
 namespace proton {
 
-namespace
-{
+namespace {
 
 const uint64_t createSerialNum = 42u;
 
@@ -581,7 +578,7 @@ Test::requireThatFlushedAttributeCanBeLoaded(const HwInfo &hwInfo)
         AttributeManager &am = amf._m;
         AttributeVector::SP av = amf.addPostingAttribute(attrName);
         IntegerAttribute & ia = static_cast<IntegerAttribute &>(*av);
-        EXPECT_EQUAL(1, av->getNumDocs());
+        EXPECT_EQUAL(1u, av->getNumDocs());
         av->addDocs(numDocs);
         EXPECT_EQUAL(numDocs + 1, av->getNumDocs());
         for (uint32_t i = 0; i < numDocs; ++i) {

@@ -36,7 +36,7 @@ private:
     uint32_t          _numDocs;
     vespalib::Lock    _lock;
     std::vector<bool> _hiddenFields;
-    index::Schema::SP _wipeTimeSchema;
+    index::Schema::SP _prunedSchema;
     vespalib::hash_set<uint32_t> _indexedDocs; // documents in memory index
     const uint64_t    _staticMemoryFootprint;
 
@@ -162,10 +162,9 @@ public:
         return _dictionary.getNumUniqueWords();
     }
 
-    void
-    wipeHistory(const index::Schema &schema);
+    void pruneRemovedFields(const index::Schema &schema);
 
-    index::Schema::SP getWipeTimeSchema() const;
+    index::Schema::SP getPrunedSchema() const;
 
     /**
      * Gets an approximation of how much memory the index uses.

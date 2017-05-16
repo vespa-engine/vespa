@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("disk_mem_usage_filter_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcore/proton/server/disk_mem_usage_filter.h>
 
@@ -9,8 +7,7 @@ using proton::DiskMemUsageFilter;
 
 namespace fs = std::experimental::filesystem;
 
-namespace
-{
+namespace {
 
 struct Fixture
 {
@@ -66,9 +63,9 @@ TEST_F("Check that default filter allows write", Fixture)
 
 TEST_F("Check that stats are wired through", Fixture)
 {
-    EXPECT_EQUAL(42, f._filter.getMemoryStats().getMappingsCount());
+    EXPECT_EQUAL(42u, f._filter.getMemoryStats().getMappingsCount());
     f.triggerMemoryLimit();
-    EXPECT_EQUAL(43, f._filter.getMemoryStats().getMappingsCount());
+    EXPECT_EQUAL(43u, f._filter.getMemoryStats().getMappingsCount());
 }
 
 TEST_F("Check that disk limit can be reached", Fixture)

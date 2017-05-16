@@ -144,6 +144,12 @@ FastAccessDocSubDB::getFlushTargetsInternal()
 }
 
 void
+FastAccessDocSubDB::pruneRemovedFields(SerialNum serialNum)
+{
+    getAttributeManager()->pruneRemovedFields(serialNum);
+}
+
+void
 FastAccessDocSubDB::reconfigureAttributeMetrics(const proton::IAttributeManager &newMgr,
                                                 const proton::IAttributeManager &oldMgr)
 {
@@ -263,6 +269,7 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot,
      * to ready document sub db.
      */
     if (params.shouldAttributeManagerChange() ||
+        params.shouldAttributeWriterChange() ||
         newConfigSnapshot.getDocumentTypeRepoSP().get() != oldConfigSnapshot.getDocumentTypeRepoSP().get()) {
         FastAccessDocSubDBConfigurer configurer(_fastAccessFeedView,
                 std::make_unique<AttributeWriterFactory>(), getSubDbName());

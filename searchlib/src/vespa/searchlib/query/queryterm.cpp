@@ -96,6 +96,11 @@ QueryTerm::QueryTerm() :
     _fieldInfo()
 { }
 
+QueryTerm::QueryTerm(const QueryTerm &) = default;
+QueryTerm & QueryTerm::operator = (const QueryTerm &) = default;
+QueryTerm::QueryTerm(QueryTerm &&) = default;
+QueryTerm & QueryTerm::operator = (QueryTerm &&) = default;
+
 QueryTerm::~QueryTerm() { }
 
 void

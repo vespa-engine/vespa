@@ -42,6 +42,7 @@ public:
                IProtocol::SP protocol = IProtocol::SP());
     TestServer(const MessageBusParams &mbusParams,
                const RPCNetworkParams &netParams);
+    ~TestServer();
 
     bool waitSlobrok(const string &pattern, uint32_t cnt = 1);
     bool waitOOS(const string &service);
@@ -51,4 +52,3 @@ public:
 };
 
 } // namespace mbus
-

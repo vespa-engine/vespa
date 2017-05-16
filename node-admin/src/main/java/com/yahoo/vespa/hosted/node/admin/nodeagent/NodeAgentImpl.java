@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
+import com.yahoo.vespa.hosted.dockerapi.DockerExecTimeoutException;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
@@ -80,6 +81,7 @@ public class NodeAgentImpl implements NodeAgent {
         RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN,
         RUNNING
     }
+
     private ContainerState containerState = ABSENT;
 
     // The attributes of the last successful node repo attribute update for this node. Used to avoid redundant calls.
@@ -120,6 +122,7 @@ public class NodeAgentImpl implements NodeAgent {
                         lastCpuMetric = new CpuUsageReporter(container.created);
                     }
                     containerState = RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
+                    logger.info("Container is already running, setting containerState to " + containerState);
                 });
     }
 
@@ -171,7 +174,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
 
         loopThread = new Thread(() -> {
-            while (! terminated.get()) tick();
+            while (!terminated.get()) tick();
         });
         loopThread.setName("tick-" + hostname);
         loopThread.start();
@@ -198,7 +201,7 @@ public class NodeAgentImpl implements NodeAgent {
         try {
             FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(environment);
             Optional<String> config = filebeatConfigProvider.getConfig(nodeSpec);
-            if (! config.isPresent()) {
+            if (!config.isPresent()) {
                 logger.error("Was not able to generate a config for filebeat, ignoring filebeat file creation." + nodeSpec.toString());
                 return;
             }
@@ -217,9 +220,9 @@ public class NodeAgentImpl implements NodeAgent {
         experimentalWriteFile(nodeSpec);
 
         addDebugMessage("Starting optional node program resume command");
-        logger.info("Starting optional node program resume command");
         dockerOperations.resumeNode(containerName);
         containerState = RUNNING;
+        logger.info("Resume command successfully executed, new containerState is " + containerState);
     }
 
     private void updateNodeRepoAndMarkNodeAsReady(ContainerNodeSpec nodeSpec) {
@@ -249,16 +252,16 @@ public class NodeAgentImpl implements NodeAgent {
         // TODO: We should only update if the new current values do not match the node repo's current values
         if (!currentAttributes.equals(lastAttributesSet)) {
             logger.info("Publishing new set of attributes to node repo: "
-                                + lastAttributesSet + " -> " + currentAttributes);
+                    + lastAttributesSet + " -> " + currentAttributes);
             addDebugMessage("Publishing new set of attributes to node repo: {" +
-                                    lastAttributesSet + "} -> {" + currentAttributes + "}");
+                    lastAttributesSet + "} -> {" + currentAttributes + "}");
             nodeRepository.updateNodeAttributes(hostname, currentAttributes);
             lastAttributesSet = currentAttributes;
         }
     }
 
     private void startContainerIfNeeded(final ContainerNodeSpec nodeSpec) {
-        if (! getContainer().isPresent()) {
+        if (!getContainer().isPresent()) {
             aclMaintainer.ifPresent(AclMaintainer::run);
             dockerOperations.startContainer(containerName, nodeSpec);
             metricReceiver.unsetMetricsForContainer(hostname);
@@ -267,8 +270,9 @@ public class NodeAgentImpl implements NodeAgent {
 
             configureContainerMetrics(nodeSpec);
             addDebugMessage("startContainerIfNeeded: containerState " + containerState + " -> " +
-                            RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN);
+                    RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN);
             containerState = RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
+            logger.info("Container successfully started, new containerState is " + containerState);
         }
     }
 
@@ -277,13 +281,13 @@ public class NodeAgentImpl implements NodeAgent {
                 shouldRestartServices(nodeSpec).ifPresent(restartReason -> {
                     logger.info("Will restart services for container " + existingContainer + ": " + restartReason);
                     restartServices(nodeSpec, existingContainer);
-        }));
+                }));
     }
 
     private Optional<String> shouldRestartServices(ContainerNodeSpec nodeSpec) {
-        if ( ! nodeSpec.wantedRestartGeneration.isPresent()) return Optional.empty();
+        if (!nodeSpec.wantedRestartGeneration.isPresent()) return Optional.empty();
 
-        if (! nodeSpec.currentRestartGeneration.isPresent() ||
+        if (!nodeSpec.currentRestartGeneration.isPresent() ||
                 nodeSpec.currentRestartGeneration.get() < nodeSpec.wantedRestartGeneration.get()) {
             return Optional.of("Restart requested - wanted restart generation has been bumped: "
                     + nodeSpec.currentRestartGeneration.get() + " -> " + nodeSpec.wantedRestartGeneration.get());
@@ -315,7 +319,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
         if (nodeSpec.wantedDockerImage.isPresent() && !nodeSpec.wantedDockerImage.get().equals(existingContainer.image)) {
             return Optional.of("The node is supposed to run a new Docker image: "
-                                       + existingContainer + " -> " + nodeSpec.wantedDockerImage.get());
+                    + existingContainer + " -> " + nodeSpec.wantedDockerImage.get());
         }
         if (!existingContainer.state.isRunning()) {
             return Optional.of("Container no longer running");
@@ -347,6 +351,7 @@ public class NodeAgentImpl implements NodeAgent {
             dockerOperations.removeContainer(existingContainer.get());
             metricReceiver.unsetMetricsForContainer(hostname);
             containerState = ABSENT;
+            logger.info("Container successfully removed, new containerState is " + containerState);
             return Optional.empty();
         }
         return existingContainer;
@@ -369,7 +374,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void signalWorkToBeDone() {
         synchronized (monitor) {
-            if (! workToDoNow) {
+            if (!workToDoNow) {
                 workToDoNow = true;
                 addDebugMessage("Signaling work to be done");
                 monitor.notifyAll();
@@ -380,7 +385,7 @@ public class NodeAgentImpl implements NodeAgent {
     void tick() {
         boolean isFrozenCopy;
         synchronized (monitor) {
-            while (! workToDoNow) {
+            while (!workToDoNow) {
                 long remainder = delaysBetweenEachConvergeMillis - Duration.between(lastConverge, clock.instant()).toMillis();
                 if (remainder > 0) {
                     try {
@@ -395,6 +400,7 @@ public class NodeAgentImpl implements NodeAgent {
 
             if (isFrozen != wantFrozen) {
                 isFrozen = wantFrozen;
+                logger.info("Updated NodeAgent's frozen state, new value: isFrozen: " + isFrozen);
             }
             isFrozenCopy = isFrozen;
         }
@@ -516,24 +522,58 @@ public class NodeAgentImpl implements NodeAgent {
                         .add("clustertype", membership.clusterType)
                         .add("clusterid", membership.clusterId));
         Dimensions dimensions = dimensionsBuilder.build();
+        metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_NODE, dimensions, "alive").sample(1);
+        // TODO: REMOVE
         metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "node.alive").sample(1);
-
 
         // The remaining metrics require container to exists and be running
         if (containerState == ABSENT) return;
         Optional<Docker.ContainerStats> containerStats = dockerOperations.getContainerStats(containerName);
-        if ( ! containerStats.isPresent()) return;
+        if (!containerStats.isPresent()) return;
 
         Docker.ContainerStats stats = containerStats.get();
-
-        long currentCpuContainerTotalTime = ((Number) ((Map) stats.getCpuStats().get("cpu_usage")).get("total_usage")).longValue();
-        long currentCpuSystemTotalTime = ((Number) stats.getCpuStats().get("system_cpu_usage")).longValue();
+        final String APP = MetricReceiverWrapper.APPLICATION_NODE;
+        final long bytesInGB = 1 << 30;
+        final long cpuContainerTotalTime = ((Number) ((Map) stats.getCpuStats().get("cpu_usage")).get("total_usage")).longValue();
+        final long cpuSystemTotalTime = ((Number) stats.getCpuStats().get("system_cpu_usage")).longValue();
+        final long memoryTotalBytes = ((Number) stats.getMemoryStats().get("limit")).longValue();
+        final long memoryTotalBytesUsage = ((Number) stats.getMemoryStats().get("usage")).longValue();
+        final long memoryTotalBytesCache = ((Number) ((Map) stats.getMemoryStats().get("stats")).get("cache")).longValue();
+        final Optional<Long> diskTotalBytes = nodeSpec.minDiskAvailableGb.map(size -> (long) (size * bytesInGB));
+        final Optional<Long> diskTotalBytesUsed = storageMaintainer.flatMap(maintainer -> maintainer
+                        .updateIfNeededAndGetDiskMetricsFor(containerName));
 
         // CPU usage by a container is given by dividing used CPU time by the container with CPU time used by the entire
         // system. Because each container is allocated same amount of CPU shares, no container should use more than 1/n
         // of the total CPU time, where n is the number of running containers.
-        double cpuPercentageOfHost = lastCpuMetric.getCpuUsagePercentage(currentCpuContainerTotalTime, currentCpuSystemTotalTime);
+        double cpuPercentageOfHost = lastCpuMetric.getCpuUsagePercentage(cpuContainerTotalTime, cpuSystemTotalTime);
         double cpuPercentageOfAllocated = numAllocatedContainersOnHost * cpuPercentageOfHost;
+        long memoryTotalBytesUsed = memoryTotalBytesUsage - memoryTotalBytesCache;
+        double memoryPercentUsed = 100.0 * memoryTotalBytesUsed / memoryTotalBytes;
+        Optional<Double> diskPercentUsed = diskTotalBytes.flatMap(total -> diskTotalBytesUsed.map(used -> 100.0 * used / total));
+
+        metricReceiver.declareGauge(APP, dimensions, "cpu.util").sample(cpuPercentageOfAllocated);
+        metricReceiver.declareGauge(APP, dimensions, "mem.limit").sample(memoryTotalBytes);
+        metricReceiver.declareGauge(APP, dimensions, "mem.used").sample(memoryTotalBytesUsed);
+        metricReceiver.declareGauge(APP, dimensions, "mem.util").sample(memoryPercentUsed);
+        diskTotalBytes.ifPresent(diskLimit -> metricReceiver.declareGauge(APP, dimensions, "disk.limit").sample(diskLimit));
+        diskTotalBytesUsed.ifPresent(diskUsed -> metricReceiver.declareGauge(APP, dimensions, "disk.used").sample(diskUsed));
+        diskPercentUsed.ifPresent(diskUtil -> metricReceiver.declareGauge(APP, dimensions, "disk.util").sample(diskUtil));
+
+        stats.getNetworks().forEach((interfaceName, interfaceStats) -> {
+            Dimensions netDims = dimensionsBuilder.add("interface", interfaceName).build();
+            Map<String, Number> infStats = (Map<String, Number>) interfaceStats;
+
+            metricReceiver.declareGauge(APP, netDims, "net.in.bytes").sample(infStats.get("rx_bytes").longValue());
+            metricReceiver.declareGauge(APP, netDims, "net.in.errors").sample(infStats.get("rx_errors").longValue());
+            metricReceiver.declareGauge(APP, netDims, "net.in.dropped").sample(infStats.get("rx_dropped").longValue());
+            metricReceiver.declareGauge(APP, netDims, "net.out.bytes").sample(infStats.get("tx_bytes").longValue());
+            metricReceiver.declareGauge(APP, netDims, "net.out.errors").sample(infStats.get("tx_errors").longValue());
+            metricReceiver.declareGauge(APP, netDims, "net.out.dropped").sample(infStats.get("tx_dropped").longValue());
+        });
+
+
+        // TODO: Remove when all alerts and dashboards have been updated to use new metric names
         metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "node.cpu.busy.pct").sample(cpuPercentageOfAllocated);
 
         addIfNotNull(dimensions, "node.cpu.throttled_time", stats.getCpuStats().get("throttling_data"), "throttled_time");
@@ -555,17 +595,23 @@ public class NodeAgentImpl implements NodeAgent {
             addIfNotNull(netDims, "node.net.out.dropped", interfaceStats, "tx_dropped");
         });
 
-        long bytesInGB = 1 << 30;
-        nodeSpec.minDiskAvailableGb.ifPresent(diskGB -> metricReceiver
-                .declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "node.disk.limit").sample(diskGB * bytesInGB));
-
-        storageMaintainer.ifPresent(maintainer -> maintainer
-                .updateIfNeededAndGetDiskMetricsFor(containerName)
-                .forEach((metricName, metricValue) ->
-                        metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, metricName).sample(metricValue.doubleValue())));
+        diskTotalBytes.ifPresent(diskLimit ->
+                metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "node.disk.limit").sample(diskLimit));
+        diskTotalBytesUsed.ifPresent(diskUsed ->
+                metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "node.disk.used").sample(diskUsed));
+        // TODO END REMOVE
 
         metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_HOST_LIFE, dimensions, "uptime").sample(lastCpuMetric.getUptime());
         metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_HOST_LIFE, dimensions, "alive").sample(1);
+
+        // Push metrics to the metrics proxy in each container - give it maximum 1 seconds to complete
+        try {
+            //TODO The command here is almost a dummy command until we have the proper RPC method in place
+            // Remember proper argument encoding
+            dockerOperations.executeCommandInContainerAsRoot(containerName, 1L, "sh", "-c", "'echo " + metricReceiver.toString() + "'");
+        } catch (DockerExecTimeoutException e) {
+            logger.warning("Unable to push metrics to container: " + containerName, e);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -574,7 +620,7 @@ public class NodeAgentImpl implements NodeAgent {
         if (metricsMap == null || !metricsMap.containsKey(metricName)) return;
         try {
             metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, yamasName)
-                          .sample(((Number) metricsMap.get(metricName)).doubleValue());
+                    .sample(((Number) metricsMap.get(metricName)).doubleValue());
         } catch (Throwable e) {
             logger.warning("Failed to update " + yamasName + " metric with value " + metricsMap.get(metricName), e);
         }
@@ -603,7 +649,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void configureContainerMetrics(ContainerNodeSpec nodeSpec) {
-        if (! storageMaintainer.isPresent()) return;
+        if (!storageMaintainer.isPresent()) return;
         final Path yamasAgentFolder = environment.pathInNodeAdminFromPathInNode(containerName, "/etc/yamas-agent/");
 
         Path vespaCheckPath = Paths.get(getDefaults().underVespaHome("libexec/yms/yms_check_vespa"));
@@ -629,7 +675,7 @@ public class NodeAgentImpl implements NodeAgent {
 
         try {
             scheduleMaker.writeTo(yamasAgentFolder);
-            final String[] restartYamasAgent = new String[] {"service" , "yamas-agent", "restart"};
+            final String[] restartYamasAgent = new String[]{"service", "yamas-agent", "restart"};
             dockerOperations.executeCommandInContainerAsRoot(containerName, restartYamasAgent);
         } catch (IOException e) {
             throw new RuntimeException("Failed to write secret-agent schedules for " + containerName, e);

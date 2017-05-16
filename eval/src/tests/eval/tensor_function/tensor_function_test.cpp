@@ -20,6 +20,7 @@ struct EvalCtx : TensorFunction::Input {
     std::map<size_t, Value::UP> tensors;
     EvalCtx(const TensorEngine &engine_in)
         : engine(engine_in), stash(), neg(), error(), tensors() {}
+    ~EvalCtx() { }
     void add_tensor(std::unique_ptr<Tensor> tensor, size_t id) {
         tensors.emplace(id, std::make_unique<TensorValue>(std::move(tensor)));
     }

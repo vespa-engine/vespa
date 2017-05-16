@@ -48,6 +48,7 @@ public class NodeSerializer {
     // Node fields
     private static final String hostnameKey = "hostname";
     private static final String ipAddressesKey = "ipAddresses";
+    private static final String additionalIpAddressesKey = "additionalIpAddresses";
     private static final String openStackIdKey = "openStackId";
     private static final String parentHostnameKey = "parentHostname";
     private static final String historyKey = "history";
@@ -102,6 +103,7 @@ public class NodeSerializer {
     private void toSlime(Node node, Cursor object) {
         object.setString(hostnameKey, node.hostname());
         toSlime(node.ipAddresses(), object.setArray(ipAddressesKey));
+        toSlime(node.additionalIpAddresses(), object.setArray(additionalIpAddressesKey));
         object.setString(openStackIdKey, node.openStackId());
         node.parentHostname().ifPresent(hostname -> object.setString(parentHostnameKey, hostname));
         object.setString(flavorKey, node.flavor().name());
@@ -152,7 +154,8 @@ public class NodeSerializer {
 
     private Node nodeFromSlime(Node.State state, Inspector object) {
         return new Node(object.field(openStackIdKey).asString(),
-                        ipAddressesFromSlime(object),
+                        ipAddressesFromSlime(object, ipAddressesKey),
+                        ipAddressesFromSlime(object, additionalIpAddressesKey),
                         object.field(hostnameKey).asString(),
                         parentHostnameFromSlime(object),
                         flavorFromSlime(object),
@@ -239,12 +242,12 @@ public class NodeSerializer {
             return Optional.empty();
     }
 
-    private Set<String> ipAddressesFromSlime(Inspector object) {
+    private Set<String> ipAddressesFromSlime(Inspector object, String key) {
         ImmutableSet.Builder<String> ipAddresses = ImmutableSet.builder();
-        object.field(ipAddressesKey).traverse((ArrayTraverser) (i, item) -> ipAddresses.add(item.asString()));
+        object.field(key).traverse((ArrayTraverser) (i, item) -> ipAddresses.add(item.asString()));
         return ipAddresses.build();
     }
-    
+
     private Optional<Status.HardwareFailureType> hardwareFailureFromSlime(Inspector object) {
         if ( ! object.valid()) return Optional.empty();
         return Optional.of(hardwareFailureFromString(object.asString()));
@@ -260,6 +263,7 @@ public class NodeSerializer {
             case "activated" : return History.Event.Type.activated;
             case "retired" : return History.Event.Type.retired;
             case "deactivated" : return History.Event.Type.deactivated;
+            case "parked" : return History.Event.Type.parked;
             case "failed" : return History.Event.Type.failed;
             case "deallocated" : return History.Event.Type.deallocated;
             case "down" : return History.Event.Type.down;
@@ -275,6 +279,7 @@ public class NodeSerializer {
             case activated : return "activated";
             case retired : return "retired";
             case deactivated : return "deactivated";
+            case parked : return "parked";
             case failed : return "failed";
             case deallocated : return "deallocated";
             case down : return "down";
@@ -291,6 +296,7 @@ public class NodeSerializer {
             case "application" : return Agent.application;
             case "system" : return Agent.system;
             case "operator" : return Agent.operator;
+            case "NodeRetirer" : return Agent.NodeRetirer;
         }
         throw new IllegalArgumentException("Unknown node event agent '" + eventAgentField.asString() + "'");
     }
@@ -299,6 +305,7 @@ public class NodeSerializer {
             case application : return "application";
             case system : return "system";
             case operator : return "operator";
+            case NodeRetirer : return "NodeRetirer";
         }
         throw new IllegalArgumentException("Serialized form of '" + agent + "' not defined");
     }

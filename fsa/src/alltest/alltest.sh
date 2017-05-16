@@ -5,6 +5,8 @@ if [ -z "$SOURCE_DIRECTORY" ]; then
     SOURCE_DIRECTORY="."
 fi
 
+export LD_PRELOAD=../vespa/fsa/libfsa.so:../vespa/fsamanagers/libfsamanagers.so
+
 # first create the FSA
 ./fsa_fsa_create_test_app
 

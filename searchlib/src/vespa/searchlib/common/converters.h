@@ -3,7 +3,6 @@
 #pragma once
 
 #include <vespa/searchcommon/common/iblobconverter.h>
-#include <vector>
 #include <vespa/vespalib/stllike/string.h>
 
 namespace search {
@@ -12,7 +11,7 @@ namespace common {
 class PassThroughConverter : public BlobConverter
 {
 private:
-    virtual ConstBufferRef onConvert(const ConstBufferRef & src) const;
+    ConstBufferRef onConvert(const ConstBufferRef & src) const override;
 };
 
 class LowercaseConverter : public BlobConverter
@@ -20,7 +19,7 @@ class LowercaseConverter : public BlobConverter
 public:
     LowercaseConverter();
 private:
-    virtual ConstBufferRef onConvert(const ConstBufferRef & src) const;
+    ConstBufferRef onConvert(const ConstBufferRef & src) const override;
     mutable vespalib::string _buffer;
 };
 

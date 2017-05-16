@@ -6,14 +6,14 @@
 
 class Fast_BufferedOutputStream : public Fast_FilterOutputStream
 {
-  private:
+private:
 
     // Prevent use of:
     Fast_BufferedOutputStream(const Fast_BufferedOutputStream &);
     Fast_BufferedOutputStream & operator=(const Fast_BufferedOutputStream &);
 
 
-  protected:
+protected:
 
     // Buffer attributes
     char    *_buffer;
@@ -23,7 +23,7 @@ class Fast_BufferedOutputStream : public Fast_FilterOutputStream
     bool     _nextWillFail;
 
 
-  public:
+public:
 
     // Constructor
     Fast_BufferedOutputStream(Fast_OutputStream &out, size_t bufferSize = 1024);

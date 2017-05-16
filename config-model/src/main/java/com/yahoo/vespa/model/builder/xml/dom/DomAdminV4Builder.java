@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.builder.xml.dom;
 import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.admin.*;
@@ -50,16 +49,17 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         Optional<NodesSpecification> requestedLogservers = 
                 NodesSpecification.optionalDedicatedFromParent(adminElement.getChild("logservers"), version);
 
-        assignSlobroks(requestedSlobroks.orElse(NodesSpecification.nonDedicated(3, version)), admin);
+        int minSlobroksPerCluster = getMinSlobroksPerContainerCluster(adminElement);
+        assignSlobroks(requestedSlobroks.orElse(NodesSpecification.nonDedicated(3, version)), admin, minSlobroksPerCluster);
         assignLogserver(requestedLogservers.orElse(NodesSpecification.nonDedicated(1, version)), admin);
     }
 
-    private void assignSlobroks(NodesSpecification nodesSpecification, Admin admin) {
+    private void assignSlobroks(NodesSpecification nodesSpecification, Admin admin, int minSlobroksPerContainerCluster) {
         if (nodesSpecification.isDedicated()) {
             createSlobroks(admin, allocateHosts(admin.getHostSystem(), "slobroks", nodesSpecification));
         }
         else {
-            createSlobroks(admin, pickContainerHosts(nodesSpecification.count()));
+            createSlobroks(admin, pickContainerHosts(nodesSpecification.count(), minSlobroksPerContainerCluster));
         }
     }
 
@@ -88,14 +88,16 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
      *
      * @param count the desired number of nodes. More nodes may be returned to ensure a smooth transition
      *        on topology changes, and less nodes may be returned if fewer are available
+     * @param minHostsPerContainerCluster the desired number of hosts per cluster
      */
-    private List<HostResource> pickContainerHosts(int count) {
+    private List<HostResource> pickContainerHosts(int count, int minHostsPerContainerCluster) {
         // Pick from all container clusters to make sure we don't lose all nodes at once if some clusters are removed.
         // This will overshoot the desired size (due to ceil and picking at least one node per cluster).
         List<HostResource> picked = new ArrayList<>();
         for (ContainerModel containerModel : containerModels)
             picked.addAll(pickContainerHostsFrom(containerModel,
-                                                 (int)Math.max(1, Math.ceil((double)count/containerModels.size()))));
+                                                 (int) Math.max(minHostsPerContainerCluster,
+                                                                Math.ceil((double) count / containerModels.size()))));
         return picked;
     }
 
@@ -105,7 +107,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
 
         // if we can return multiple hosts, include retired nodes which would have been picked before
         // (probably - assuming all previous nodes were retired, which is always true for a single cluster
-        // at the moment (Sept 2015)) // to ensure a smoother transition between the old and new topology
+        // at the moment (Sept 2015)) to ensure a smoother transition between the old and new topology
         // by including both new and old nodes during the retirement period
         picked.addAll(sortedContainerHostsFrom(model, count, retired));
 
@@ -141,6 +143,13 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
             slobrok.initService();
         }
         admin.addSlobroks(slobroks);
+    }
+
+    private int getMinSlobroksPerContainerCluster(ModelElement adminElement) {
+        ModelElement minNodes = adminElement.getChild("minSlobroksPerCluster");
+        if (minNodes == null) return 1; //default
+
+        return (int) minNodes.asLong();
     }
 
 }

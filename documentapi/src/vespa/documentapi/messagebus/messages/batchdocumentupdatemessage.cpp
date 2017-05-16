@@ -22,6 +22,8 @@ BatchDocumentUpdateMessage::BatchDocumentUpdateMessage(const string& group)
     setBucketId(document::GroupDocIdString("groupdoc:foo:" + _group + ":bar"));
 }
 
+BatchDocumentUpdateMessage::~BatchDocumentUpdateMessage() {}
+
 void
 BatchDocumentUpdateMessage::setBucketId(const document::IdString& idString)
 {

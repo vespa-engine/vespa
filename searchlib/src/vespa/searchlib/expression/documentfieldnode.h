@@ -32,6 +32,7 @@ public:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     DECLARE_EXPRESSIONNODE(DocumentFieldNode);
     DocumentFieldNode() : _fieldPath(), _value(), _fieldName(), _doc(NULL) { }
+    ~DocumentFieldNode();
     DocumentFieldNode(const vespalib::stringref &name) : _fieldPath(), _value(), _fieldName(name), _doc(NULL) { }
     DocumentFieldNode(const DocumentFieldNode & rhs);
     DocumentFieldNode & operator = (const DocumentFieldNode & rhs);

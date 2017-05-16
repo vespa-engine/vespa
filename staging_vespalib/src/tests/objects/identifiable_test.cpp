@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/objects/identifiable.hpp>
 #include <vespa/vespalib/objects/namedobject.h>
@@ -40,7 +40,7 @@ class A : public Abstract
 public:
     DECLARE_IDENTIFIABLE(A);
     A() { }
-    virtual void someAbstractVirtualMethod() override { }
+    void someAbstractVirtualMethod() override { };
 };
 
 class B : public A

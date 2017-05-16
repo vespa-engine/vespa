@@ -28,7 +28,7 @@ public class ToWsetExpression extends Expression {
         return removeIfZero;
     }
 
-    @SuppressWarnings({ "unchecked" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     protected void doExecute(ExecutionContext ctx) {
         FieldValue input = ctx.getValue();

@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/buffer.h>
+#include <memory>
 
 namespace search {
 namespace common {

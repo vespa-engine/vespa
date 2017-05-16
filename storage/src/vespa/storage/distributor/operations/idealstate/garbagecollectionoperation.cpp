@@ -1,12 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/distributor/operations/idealstate/garbagecollectionoperation.h>
-#include <vespa/storageapi/messageapi/storagereply.h>
-#include <vespa/storageapi/message/bucket.h>
+
+#include "garbagecollectionoperation.h"
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/distributor.h>
-#include <vespa/storage/distributor/pendingmessagetracker.h>
-#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storageapi/message/removelocation.h>
 
 #include <vespa/log/log.h>
@@ -14,6 +10,13 @@
 LOG_SETUP(".distributor.operation.idealstate.remove");
 
 using namespace storage::distributor;
+
+GarbageCollectionOperation::GarbageCollectionOperation(const std::string& clusterName, const BucketAndNodes& nodes)
+    : IdealStateOperation(nodes),
+      _tracker(clusterName)
+{}
+
+GarbageCollectionOperation::~GarbageCollectionOperation() { }
 
 void
 GarbageCollectionOperation::onStart(DistributorMessageSender& sender)
@@ -76,4 +79,3 @@ GarbageCollectionOperation::shouldBlockThisOperation(uint32_t, uint8_t) const
 {
     return true;
 }
-

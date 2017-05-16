@@ -99,6 +99,10 @@ NativeFieldMatchBlueprint::NativeFieldMatchBlueprint() :
 {
 }
 
+NativeFieldMatchBlueprint::~NativeFieldMatchBlueprint()
+{
+}
+
 void
 NativeFieldMatchBlueprint::visitDumpFeatures(const IIndexEnvironment & env,
                                              IDumpFeatureVisitor & visitor) const

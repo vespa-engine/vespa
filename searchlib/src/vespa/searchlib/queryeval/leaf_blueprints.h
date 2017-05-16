@@ -41,6 +41,7 @@ protected:
 
 public:
     SimpleBlueprint(const SimpleResult &result);
+    ~SimpleBlueprint();
     SimpleBlueprint &tag(const vespalib::string &tag);
     const vespalib::string &tag() const { return _tag; }
 };
@@ -63,6 +64,7 @@ protected:
 public:
     FakeBlueprint(const FieldSpec &field,
                   const FakeResult &result);
+    ~FakeBlueprint();
 
     FakeBlueprint &tag(const vespalib::string &t) {
         _tag = t;

@@ -107,6 +107,7 @@ public:
     MemFile(const FileSpecification& spec,
             Environment& env,
             const LoadOptions& opts = LoadOptions());
+    ~MemFile();
 
     const FileSpecification& getFile() const { return _file; }
     const document::BucketId& getBucketId() const noexcept {

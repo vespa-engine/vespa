@@ -36,6 +36,16 @@ StringBucketResultNode::hash() const
 #endif
 }
 
+StringBucketResultNode::StringBucketResultNode()
+    : _from(new StringResultNode()),
+      _to(new StringResultNode())
+{}
+StringBucketResultNode::StringBucketResultNode(const vespalib::stringref & from, const vespalib::stringref & to)
+    : _from(new StringResultNode(from)),
+      _to(new StringResultNode(to))
+{}
+StringBucketResultNode::~StringBucketResultNode() {}
+
 int
 StringBucketResultNode::onCmp(const Identifiable & rhs) const
 {

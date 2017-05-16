@@ -1,15 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("postinglist_test");
-#include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/searchlib/util/rand48.h>
-#include <algorithm>
-#include <limits>
-#include <map>
-#include <set>
-
 #include <vespa/searchlib/datastore/datastore.h>
 #include <vespa/searchlib/btree/btreenodeallocator.hpp>
 #include <vespa/searchlib/btree/btreenode.hpp>
@@ -17,6 +7,12 @@ LOG_SETUP("postinglist_test");
 #include <vespa/searchlib/btree/btreeiterator.hpp>
 #include <vespa/searchlib/btree/btreeroot.hpp>
 #include <vespa/searchlib/btree/btreestore.hpp>
+#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/testkit/testapp.h>
+#include <set>
+
+#include <vespa/log/log.h>
+LOG_SETUP("postinglist_test");
 
 namespace search {
 
@@ -215,26 +211,27 @@ private:
         return frozen ? "frozen" : "thawed";
     }
 public:
-    AttributePostingListTest(void)
-        : vespalib::TestApp(),
-          _randomValues(),
-          _handler(),
-          _intKeyStore(NULL),
-          _intNodeAlloc(NULL),
-          _intTree(NULL),
-          _intPostings(NULL),
-          _stlTree(NULL),
-          _randomGenerator()
-    {
-    }
+    AttributePostingListTest();
+    ~AttributePostingListTest();
 
     int Main(void) override;
 };
 
-
+AttributePostingListTest::AttributePostingListTest()
+    : vespalib::TestApp(),
+      _randomValues(),
+      _handler(),
+      _intKeyStore(NULL),
+      _intNodeAlloc(NULL),
+      _intTree(NULL),
+      _intPostings(NULL),
+      _stlTree(NULL),
+      _randomGenerator()
+{}
+AttributePostingListTest::~AttributePostingListTest() {}
 
 void
-AttributePostingListTest::allocTree(void)
+AttributePostingListTest::allocTree()
 {
     _intKeyStore = new IntKeyStore;
     _intNodeAlloc = new IntEnumNodeAllocator();

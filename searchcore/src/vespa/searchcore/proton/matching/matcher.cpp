@@ -288,7 +288,7 @@ Matcher::match(const SearchRequest &request,
         coverage.setSoonActive(metaStore.getNumActiveLids());
         coverage.setCovered(std::min(static_cast<size_t>(metaStore.getNumActiveLids()),
                                      (estimate * metaStore.getNumActiveLids())/metaStore.getCommittedDocIdLimit()));
-        LOG(debug, "numThreadsPerSearch = %d. Configured = %d, estimated hits=%d, totalHits=%ld",
+        LOG(debug, "numThreadsPerSearch = %zu. Configured = %d, estimated hits=%d, totalHits=%ld",
             numThreadsPerSearch, _rankSetup->getNumThreadsPerSearch(), mtf->estimate().estHits, reply->totalHitCount);
     }
     total_matching_time.stop();

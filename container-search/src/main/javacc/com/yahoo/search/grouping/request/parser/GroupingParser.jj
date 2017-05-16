@@ -139,6 +139,7 @@ TOKEN :
     <SORT: "sort"> |
     <INTERPOLATEDLOOKUP: "interpolatedlookup"> |
     <SQRT: "sqrt"> |
+    <STDDEV: "stddev"> |
     <STRCAT: "strcat"> |
     <STRLEN: "strlen"> |
     <SUB: "sub"> |
@@ -358,6 +359,7 @@ GroupingExpression value(GroupingOperation grp) :
                    exp = sortFunction(grp)             |
                    exp = arrayAtLookup(grp)            |
                    exp = interpolatedLookup(grp)       |
+                   exp = stddevAggregator(grp)         |
                    exp = stringValue()                 |
                    exp = strCatFunction(grp)           |
                    exp = strLenFunction(grp)           |
@@ -695,6 +697,15 @@ RawValue rawValue(GroupingOperation grp) :
     { return new RawValue(buffer); }
 }
 
+StandardDeviationAggregator stddevAggregator(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+}
+{
+    ( <STDDEV> lbrace() exp = exp(grp) rbrace() )
+    { return new StandardDeviationAggregator(exp); }
+}
+
 StringValue stringValueUnquoted() :
 {
     String str;
@@ -1018,6 +1029,7 @@ String identifier() :
         <SORT> |
         <INTERPOLATEDLOOKUP> |
         <SQRT> |
+        <STDDEV> |
         <STRCAT> |
         <STRLEN> |
         <SUB> |

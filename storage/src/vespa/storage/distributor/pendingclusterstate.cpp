@@ -1,8 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/storage/distributor/pendingclusterstate.h>
-#include <vespa/storage/distributor/bucketdbupdater.h>
-#include <vespa/storage/distributor/distributormessagesender.h>
-#include <vespa/storage/storageutil/utils.h>
+
+#include "pendingclusterstate.h"
+#include "bucketdbupdater.h"
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/vespalib/util/xmlserializable.hpp>
@@ -10,9 +9,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".pendingclusterstate");
 
-namespace storage {
-
-namespace distributor {
+namespace storage::distributor {
 
 using lib::Node;
 using lib::NodeType;
@@ -26,10 +23,8 @@ PendingClusterState::PendingClusterState(
         const std::unordered_set<uint16_t>& outdatedNodes,
         api::Timestamp creationTimestamp)
     : _cmd(newStateCmd),
-      _requestedNodes(
-              newStateCmd->getSystemState().getNodeCount(lib::NodeType::STORAGE)),
-      _outdatedNodes(
-              newStateCmd->getSystemState().getNodeCount(lib::NodeType::STORAGE)),
+      _requestedNodes(newStateCmd->getSystemState().getNodeCount(lib::NodeType::STORAGE)),
+      _outdatedNodes(newStateCmd->getSystemState().getNodeCount(lib::NodeType::STORAGE)),
       _iter(0),
       _prevClusterState(clusterInfo->getClusterState()),
       _newClusterState(newStateCmd->getSystemState()),
@@ -37,8 +32,7 @@ PendingClusterState::PendingClusterState(
       _clusterInfo(clusterInfo),
       _creationTimestamp(creationTimestamp),
       _sender(sender),
-      _bucketOwnershipTransfer(distributorChanged(
-            _prevClusterState, _newClusterState))
+      _bucketOwnershipTransfer(distributorChanged(_prevClusterState, _newClusterState))
 {
     logConstructionInformation();
     if (hasBucketOwnershipTransfer()) {
@@ -74,6 +68,8 @@ PendingClusterState::PendingClusterState(
         requestNodes();
     }
 }
+
+PendingClusterState::~PendingClusterState() {}
 
 void
 PendingClusterState::logConstructionInformation() const
@@ -332,9 +328,21 @@ PendingClusterState::requestNode(uint16_t node)
     _sender.sendToNode(NodeType::STORAGE, node, cmd);
 }
 
+
+PendingClusterState::Summary::Summary(const std::string& prevClusterState,
+                                      const std::string& newClusterState,
+                                      uint32_t processingTime)
+    : _prevClusterState(prevClusterState),
+      _newClusterState(newClusterState),
+      _processingTime(processingTime)
+{}
+
+PendingClusterState::Summary::Summary(const Summary &) = default;
+PendingClusterState::Summary & PendingClusterState::Summary::operator = (const Summary &) = default;
+PendingClusterState::Summary::~Summary() { }
+
 bool
-PendingClusterState::onRequestBucketInfoReply(
-        const std::shared_ptr<api::RequestBucketInfoReply>& reply)
+PendingClusterState::onRequestBucketInfoReply(const std::shared_ptr<api::RequestBucketInfoReply>& reply)
 {
     auto iter = _sentMessages.find(reply->getMsgId());
 
@@ -607,8 +615,6 @@ PendingClusterState::getSummary() const
     return Summary(_prevClusterState.toString(),
                    _newClusterState.toString(),
                    (_clock.getTimeInMicros().getTime() - _creationTimestamp));
-}
-
 }
 
 }

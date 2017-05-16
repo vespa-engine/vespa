@@ -215,6 +215,6 @@ public class Response {
      * @param handler The handler to pass the timeout {@link Response} to.
      */
     public static void dispatchTimeout(ResponseHandler handler) {
-        ResponseDispatch.newInstance(Status.REQUEST_TIMEOUT).dispatch(handler);
+        ResponseDispatch.newInstance(Status.GATEWAY_TIMEOUT).dispatch(handler);
     }
 }

@@ -82,7 +82,7 @@ struct Fixture
         BuilderType builder;
         nbostream wrapStream(stream.peek(), stream.size());
         auto formatId = wrapStream.getInt1_4Bytes();
-        ASSERT_EQUAL(formatId, 1); // sparse format
+        ASSERT_EQUAL(formatId, 1u); // sparse format
         SparseBinaryFormat::deserialize(wrapStream, builder);
         EXPECT_TRUE(wrapStream.size() == 0);
         auto ret = builder.build();

@@ -59,6 +59,7 @@ public:
 
     /** Create another command with similar visitor settings. */
     CreateVisitorCommand(const CreateVisitorCommand& template_);
+    ~CreateVisitorCommand();
 
     void setVisitorCmdId(uint32_t id) { _visitorCmdId = id; }
     void setControlDestination(const vespalib::stringref & d)
@@ -214,6 +215,7 @@ private:
 
 public:
     VisitorInfoCommand();
+    ~VisitorInfoCommand();
 
     void setErrorCode(const ReturnCode& code) { _error = code; }
     void setCompleted() { _completed = true; }

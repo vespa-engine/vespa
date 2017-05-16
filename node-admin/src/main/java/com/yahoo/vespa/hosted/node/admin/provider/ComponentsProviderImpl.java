@@ -47,12 +47,8 @@ public class ComponentsProviderImpl implements ComponentsProvider {
     private static final int NODE_AGENT_SCAN_INTERVAL_MILLIS = 30000;
     private static final int WEB_SERVICE_PORT = Defaults.getDefaults().vespaWebServicePort();
 
-    // We only scan for new nodes within a host every 5 minutes. This is only if new nodes are added or removed
-    // which happens rarely. Changes of apps running etc. is detected by the NodeAgent.
-    private static final int NODE_ADMIN_CONTAINERS_TO_RUN_INTERVAL_MILLIS = 5 * 60000;
-
     // Converge towards desired node admin state every 30 seconds
-    private static final int NODE_ADMIN_CONVER_STATE_INTERVAL_MILLIS = 30000;
+    private static final int NODE_ADMIN_CONVERGE_STATE_INTERVAL_MILLIS = 30000;
 
     public ComponentsProviderImpl(Docker docker, MetricReceiverWrapper metricReceiver, Environment environment,
                                   boolean isRunningLocally) {
@@ -65,7 +61,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
         ConfigServerHttpRequestExecutor requestExecutor = ConfigServerHttpRequestExecutor.create(configServerHosts);
         Orchestrator orchestrator = new OrchestratorImpl(requestExecutor);
         NodeRepository nodeRepository = new NodeRepositoryImpl(requestExecutor, WEB_SERVICE_PORT, baseHostName);
-        DockerOperations dockerOperations = new DockerOperationsImpl(docker, environment, metricReceiver);
+        DockerOperations dockerOperations = new DockerOperationsImpl(docker, environment);
 
         Optional<StorageMaintainer> storageMaintainer = isRunningLocally ?
                 Optional.empty() : Optional.of(new StorageMaintainer(docker, metricReceiver, environment));
@@ -78,8 +74,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
         NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer,
                 NODE_AGENT_SCAN_INTERVAL_MILLIS, metricReceiver, aclMaintainer);
         nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepository, nodeAdmin, Clock.systemUTC(), orchestrator, baseHostName);
-        nodeAdminStateUpdater.start(NODE_ADMIN_CONVER_STATE_INTERVAL_MILLIS,
-                NODE_ADMIN_CONTAINERS_TO_RUN_INTERVAL_MILLIS);
+        nodeAdminStateUpdater.start(NODE_ADMIN_CONVERGE_STATE_INTERVAL_MILLIS);
 
         metricReceiverWrapper = metricReceiver;
     }
@@ -88,7 +83,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
     public ComponentsProviderImpl(final NodeAdminConfig config, final Docker docker, final MetricReceiverWrapper metricReceiver) {
         this(docker, metricReceiver, new Environment(), config.isRunningLocally());
 
-        if (! config.isRunningLocally()) {
+        if (!config.isRunningLocally()) {
             setCorePattern(docker);
             initializeNodeAgentSecretAgent(docker);
         }

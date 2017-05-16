@@ -1,16 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/storageapi/defs.h>
 #include <vespa/storage/distributor/operations/operation.h>
-#include <vespa/storageapi/messageapi/storagemessage.h>
-#include <vespa/storageapi/message/visitor.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storage/visiting/memory_bounded_trace.h>
+#include <vespa/storageapi/defs.h>
+#include <vespa/storageapi/messageapi/storagemessage.h>
+#include <vespa/storageapi/message/visitor.h>
 
-namespace document {
-class Document;
-}
+
+namespace document { class Document; }
 
 namespace storage {
 
@@ -43,16 +42,13 @@ public:
 
     ~VisitorOperation();
 
-    void onClose(DistributorMessageSender& sender);
-
-    void onStart(DistributorMessageSender& sender);
-
+    void onClose(DistributorMessageSender& sender) override;
+    void onStart(DistributorMessageSender& sender) override;
     void onReceive(DistributorMessageSender& sender,
-                   const std::shared_ptr<api::StorageReply> & msg);
+                   const std::shared_ptr<api::StorageReply> & msg) override;
 
-    const char* getName() const { return "visit"; }
-
-    std::string getStatus() const { return ""; }
+    const char* getName() const override { return "visit"; }
+    std::string getStatus() const override { return ""; }
 
 private:
     struct BucketInfo {
@@ -61,10 +57,7 @@ private:
         uint16_t failedCount;
         std::vector<uint16_t> triedNodes;
 
-        BucketInfo()
-            : done(false), activeNode(-1), failedCount(0), triedNodes()
-        {
-        }
+        BucketInfo() : done(false), activeNode(-1), failedCount(0), triedNodes() { }
 
         void print(vespalib::asciistream & out) const;
         vespalib::string toString() const;

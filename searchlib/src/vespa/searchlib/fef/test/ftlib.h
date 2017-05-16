@@ -101,6 +101,7 @@ class FtFeatureTest {
 public:
     FtFeatureTest(search::fef::BlueprintFactory &factory, const vespalib::string &feature);
     FtFeatureTest(search::fef::BlueprintFactory &factory, const std::vector<vespalib::string> &features);
+    ~FtFeatureTest();
 
     bool setup()                                                                    { return _test.setup(); }
     bool execute(feature_t expected, double epsilon = 0, uint32_t docId = 1)        { return _test.execute(expected, epsilon, docId); }
@@ -170,6 +171,7 @@ struct FtIndex {
     FieldMap index; // raw content of all fields
     vespalib::string cursor; // last referenced field
     FtIndex() : index(), cursor() {}
+    ~FtIndex();
     FtIndex &field(const vespalib::string &name) {
         cursor = name;
         index[name];

@@ -1,13 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespamalloc/malloc/common.h>
-#include <vespamalloc/malloc/datasegment.h>
-#include <vespamalloc/malloc/allocchunk.h>
-#include <vespamalloc/malloc/globalpool.h>
-#include <vespamalloc/malloc/threadpool.h>
-#include <vespamalloc/malloc/threadlist.h>
-#include <vespamalloc/malloc/threadproxy.h>
+#include "common.h"
+#include "datasegment.h"
+#include "allocchunk.h"
+#include "globalpool.h"
+#include "threadpool.h"
+#include "threadlist.h"
+#include "threadproxy.h"
 
 namespace vespamalloc {
 
@@ -16,12 +16,14 @@ class MemoryManager : public IAllocator
 {
 public:
     MemoryManager(size_t logLimitAtStart);
-    virtual ~MemoryManager();
-    virtual bool initThisThread();
-    virtual bool quitThisThread();
-    virtual void enableThreadSupport();
-    virtual void setReturnAddressStop(const void * returnAddressStop) { MemBlockPtrT::Stack::setStopAddress(returnAddressStop); }
-    virtual size_t getMaxNumThreads() const { return _threadList.getMaxNumThreads(); }
+    ~MemoryManager();
+    bool initThisThread() override;
+    bool quitThisThread() override;
+    void enableThreadSupport() override;
+    void setReturnAddressStop(const void * returnAddressStop) override {
+        MemBlockPtrT::Stack::setStopAddress(returnAddressStop);
+    }
+    virtual size_t getMaxNumThreads() const override { return _threadList.getMaxNumThreads(); }
 
     void *malloc(size_t sz);
     void *realloc(void *oldPtr, size_t sz);

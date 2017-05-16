@@ -9,14 +9,17 @@ namespace api {
 ReturnCode::ReturnCode()
     : _result(OK),
       _message()
-{
-}
+{}
+
+ReturnCode::ReturnCode(const ReturnCode &) = default;
+ReturnCode & ReturnCode::operator = (const ReturnCode &) = default;
+ReturnCode & ReturnCode::operator = (ReturnCode &&) = default;
+ReturnCode::~ReturnCode() {}
 
 ReturnCode::ReturnCode(Result result, const vespalib::stringref & msg)
     : _result(result),
       _message(msg)
-{
-}
+{}
 
 ReturnCode::ReturnCode(const document::DocumentTypeRepo &repo,
                        document::ByteBuffer& buffer)

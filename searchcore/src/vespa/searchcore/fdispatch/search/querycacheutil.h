@@ -46,6 +46,7 @@ public:
     static uint32_t _maxOffset;
 public:
     FastS_QueryCacheUtil();
+    ~FastS_QueryCacheUtil();
     bool AgeDropCheck(void);
     void DropResult(void);
     bool GotNoResultsYet(void) const { return _queryResult._hitbuf == NULL; }

@@ -55,12 +55,11 @@ public:
                               const vespalib::string &term,
                               const FakeResult &result);
 
-    // inherited from Searchable
     using Searchable::createBlueprint;
-    virtual Blueprint::UP createBlueprint(const IRequestContext & requestContext,
-                                          const FieldSpec &field,
-                                          const search::query::Node &term) override;
-    virtual ~FakeSearchable();
+    Blueprint::UP createBlueprint(const IRequestContext & requestContext,
+                                  const FieldSpec &field,
+                                  const search::query::Node &term) override;
+    ~FakeSearchable();
 };
 
 } // namespace search::queryeval

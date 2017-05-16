@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/eval/eval/tensor_engine.h>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace vespalib {
 namespace eval {
@@ -13,7 +14,7 @@ namespace test {
  * implementations of the TensorEngine interface.
  **/
 struct TensorConformance {
-    static void run_tests(const TensorEngine &engine, bool test_mixed_cases);
+    static void run_tests(const vespalib::string &module_path, const TensorEngine &engine, bool test_mixed_cases);
 };
 
 } // namespace vespalib::eval::test

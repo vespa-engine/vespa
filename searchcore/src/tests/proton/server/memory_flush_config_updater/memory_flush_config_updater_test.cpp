@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/vespalib/testkit/testapp.h>
 
+#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcore/proton/server/memory_flush_config_updater.h>
 
 using namespace proton;
@@ -50,7 +49,7 @@ struct Fixture
         : strategy(std::make_shared<MemoryFlush>(MemoryFlushConfigUpdater::convertConfig(getDefaultConfig()))),
           updater(strategy, getDefaultConfig())
     {}
-    void assertStrategyConfig(int64_t expMaxGlobalMemory, int64_t expMaxEachMemory, int64_t expMaxGlobalTlsSize) {
+    void assertStrategyConfig(uint64_t expMaxGlobalMemory, int64_t expMaxEachMemory, uint64_t expMaxGlobalTlsSize) {
         EXPECT_EQUAL(expMaxGlobalMemory, strategy->getConfig().maxGlobalMemory);
         EXPECT_EQUAL(expMaxEachMemory, strategy->getConfig().maxMemoryGain);
         EXPECT_EQUAL(expMaxGlobalTlsSize, strategy->getConfig().maxGlobalTlsSize);

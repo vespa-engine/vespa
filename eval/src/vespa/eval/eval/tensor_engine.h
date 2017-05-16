@@ -2,16 +2,18 @@
 
 #pragma once
 
-#include <memory>
-#include <vector>
-#include <vespa/vespalib/stllike/string.h>
 #include "value_type.h"
 #include "tensor_function.h"
 #include "aggr.h"
+#include <vespa/vespalib/stllike/string.h>
+#include <memory>
+#include <vector>
+#include <functional>
 
 namespace vespalib {
 
 class Stash;
+class nbostream;
 
 namespace eval {
 
@@ -53,6 +55,8 @@ struct TensorEngine
     virtual const Value &apply(const BinaryOperation &op, const Tensor &a, const Tensor &b, Stash &stash) const = 0;
 
     // havardpe: new API, WIP
+    virtual void encode(const Value &value, nbostream &output, Stash &stash) const = 0;
+    virtual const Value &decode(nbostream &input, Stash &stash) const = 0;
     virtual const Value &map(const Value &a, const std::function<double(double)> &function, Stash &stash) const = 0;
     virtual const Value &join(const Value &a, const Value &b, const std::function<double(double,double)> &function, Stash &stash) const = 0;
     virtual const Value &reduce(const Value &a, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) const = 0;

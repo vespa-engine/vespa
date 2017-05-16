@@ -1,15 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("multivaluemapping_test");
+
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/attribute/multi_value_mapping.h>
 #include <vespa/searchlib/attribute/multi_value_mapping.hpp>
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
+#include <vespa/searchlib/util/rand48.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/test/insertion_operators.h>
-#include <vespa/searchlib/util/rand48.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("multivaluemapping_test");
 
 using search::datastore::ArrayStoreConfig;
 
@@ -44,8 +45,7 @@ public:
     MyAttribute(MvMapping &mvMapping)
         : NotImplementedAttribute("test", AttributeVector::Config()),
           _mvMapping(mvMapping)
-    {
-    }
+    {}
     virtual bool addDoc(DocId &doc) override {
         _mvMapping.addDoc(doc);
         incNumDocs();
@@ -237,7 +237,7 @@ TEST_F("Test that old value is not overwritten while held", Fixture<int>(3, 32, 
 
 TEST_F("Test that addDoc works", Fixture<int>(3))
 {
-    EXPECT_EQUAL(0, f.size());
+    EXPECT_EQUAL(0u, f.size());
     f.addDocs(10);
     EXPECT_EQUAL(10u, f.size());
 }

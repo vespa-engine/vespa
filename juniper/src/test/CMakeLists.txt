@@ -7,6 +7,7 @@ vespa_add_executable(juniper_mcandTest_app TEST
     DEPENDS
     juniper
     vespalib
+    fastlib_fast
 )
 vespa_add_test(NAME juniper_mcandTest_app COMMAND juniper_mcandTest_app)
 vespa_add_executable(juniper_queryparserTest_app TEST
@@ -18,6 +19,7 @@ vespa_add_executable(juniper_queryparserTest_app TEST
     DEPENDS
     juniper
     vespalib
+    fastlib_fast
 )
 vespa_add_test(NAME juniper_queryparserTest_app COMMAND juniper_queryparserTest_app)
 vespa_add_executable(juniper_matchobjectTest_app TEST
@@ -29,6 +31,7 @@ vespa_add_executable(juniper_matchobjectTest_app TEST
     DEPENDS
     juniper
     vespalib
+    fastlib_fast
 )
 vespa_add_test(NAME juniper_matchobjectTest_app COMMAND juniper_matchobjectTest_app)
 vespa_add_executable(juniper_appender_test_app TEST
@@ -37,6 +40,7 @@ vespa_add_executable(juniper_appender_test_app TEST
     DEPENDS
     juniper
     vespalib
+    fastlib_fast
 )
 vespa_add_test(NAME juniper_appender_test_app COMMAND juniper_appender_test_app)
 vespa_add_executable(juniper_queryvisitor_test_app TEST
@@ -45,6 +49,7 @@ vespa_add_executable(juniper_queryvisitor_test_app TEST
     DEPENDS
     juniper
     vespalib
+    fastlib_fast
 )
 vespa_add_test(NAME juniper_queryvisitor_test_app COMMAND juniper_queryvisitor_test_app)
 vespa_add_executable(juniper_auxTest_app TEST
@@ -55,6 +60,7 @@ vespa_add_executable(juniper_auxTest_app TEST
     DEPENDS
     juniper
     vespalib
+    fastlib_fast
 )
 vespa_add_test(NAME juniper_auxTest_app COMMAND juniper_auxTest_app)
 vespa_add_executable(juniper_SrcTestSuite_app TEST
@@ -69,5 +75,6 @@ vespa_add_executable(juniper_SrcTestSuite_app TEST
     DEPENDS
     juniper
     vespalib
+    fastlib_fast
 )
 vespa_add_test(NAME juniper_SrcTestSuite_app COMMAND juniper_SrcTestSuite_app)

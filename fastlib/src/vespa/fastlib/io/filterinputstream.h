@@ -2,11 +2,8 @@
 /**
 *******************************************************************************
 *
-* @author          Stein Hardy Danielsen
+* @author Stein Hardy Danielsen
 * @date            Creation date: 2000-1-14
-* @version         $Id$
-*
-* @file
 *
 * Generic filter input stream
 *
@@ -16,15 +13,11 @@
 ******************************************************************************/
 #pragma once
 
-#include <vespa/fastlib/io/inputstream.h>
-
-
-
-
+#include "inputstream.h"
 
 class Fast_FilterInputStream : public Fast_InputStream
 {
-  private:
+private:
 
     // Prevent use of:
     Fast_FilterInputStream(void);
@@ -32,29 +25,24 @@ class Fast_FilterInputStream : public Fast_InputStream
     Fast_FilterInputStream &operator=(const Fast_FilterInputStream &);
 
 
-  protected:
+protected:
 
     /** The stream to forward data to */
     Fast_InputStream *_in;
 
 
-  public:
+public:
 
     // Constructors
     Fast_FilterInputStream(Fast_InputStream &in) : _in(&in) {}
 
-    virtual ~Fast_FilterInputStream(void) {};
+    ~Fast_FilterInputStream() {};
 
+    ssize_t Available()              override  { return _in->Available();      }
+    bool    Close()                  override  { return _in->Close();          }
+    ssize_t Skip(size_t skipNBytes)  override { return _in->Skip(skipNBytes); }
 
-    virtual ssize_t Available(void)          { return _in->Available();      }
-    virtual bool    Close(void)              { return _in->Close();          }
-    virtual ssize_t Skip(size_t skipNBytes)  { return _in->Skip(skipNBytes); }
-
-    virtual inline ssize_t Read(void *targetBuffer, size_t length)
-    {
-      return _in->Read(targetBuffer, length);
+    ssize_t Read(void *targetBuffer, size_t length) override {
+        return _in->Read(targetBuffer, length);
     }
-
 };
-
-

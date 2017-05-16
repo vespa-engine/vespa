@@ -14,6 +14,7 @@ class TestDocRepo {
 
 public:
     TestDocRepo();
+    ~TestDocRepo();
 
     static DocumenttypesConfig getDefaultConfig();
 

@@ -552,13 +552,13 @@ size_t Proton::getNumActiveDocs() const
 
 
 vespalib::string
-Proton::getBadConfigs(void) const
+Proton::getDelayedConfigs(void) const
 {
     std::ostringstream res;
     bool first = true;
     std::shared_lock<std::shared_timed_mutex> guard(_mutex);
     for (const auto &kv : _documentDBMap) {
-        if (kv.second->getRejectedConfig()) {
+        if (kv.second->getDelayedConfig()) {
             if (!first) {
                 res << ", ";
             }
@@ -895,8 +895,8 @@ Proton::getComponentConfig(Consumer &consumer)
         vespalib::string name("proton.documentdb.");
         name.append(docDb->getDocTypeName().getName());
         int64_t gen = docDb->getActiveGeneration();
-        if (docDb->getRejectedConfig()) {
-            consumer.add(Config(name, gen, "has rejected config"));
+        if (docDb->getDelayedConfig()) {
+            consumer.add(Config(name, gen, "has delayed attribute aspect change in config"));
         } else {
             consumer.add(Config(name, gen));
         }

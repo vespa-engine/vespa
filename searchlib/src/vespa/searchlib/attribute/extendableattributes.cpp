@@ -1,8 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "extendableattributes.h"
-#include <vespa/searchlib/attribute/attrvector.hpp>
+#include "attrvector.hpp"
 
 namespace search {
 
@@ -88,6 +87,8 @@ WeightedSetIntegerExtAttribute::WeightedSetIntegerExtAttribute(const vespalib::s
 {
 }
 
+WeightedSetIntegerExtAttribute::~WeightedSetIntegerExtAttribute() {}
+
 bool
 WeightedSetIntegerExtAttribute::add(int64_t v, int32_t w)
 {
@@ -111,6 +112,8 @@ WeightedSetFloatExtAttribute::WeightedSetFloatExtAttribute(const vespalib::strin
     WeightedSetExtAttributeBase<MultiFloatExtAttribute>(name)
 {
 }
+
+WeightedSetFloatExtAttribute::~WeightedSetFloatExtAttribute() {}
 
 bool
 WeightedSetFloatExtAttribute::add(double v, int32_t w)
@@ -138,6 +141,8 @@ WeightedSetStringExtAttribute::WeightedSetStringExtAttribute(const vespalib::str
     setSortedEnum(false);
 }
 
+WeightedSetStringExtAttribute::~WeightedSetStringExtAttribute() {}
+
 bool
 WeightedSetStringExtAttribute::add(const char * v, int32_t w)
 {
@@ -157,6 +162,5 @@ WeightedSetStringExtAttribute::get(DocId doc, AttributeVector::WeightedConstChar
 {
     return getAllHelper(doc, v, sz);
 }
-
 
 }

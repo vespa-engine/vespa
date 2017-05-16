@@ -119,10 +119,10 @@ private:
 
 public:
     RiseWand(const Terms &terms, uint32_t n);
-    virtual ~RiseWand();
+    ~RiseWand();
     void next();
-    virtual void doSeek(uint32_t docid) override;
-    virtual void doUnpack(uint32_t docid) override;
+    void doSeek(uint32_t docid) override;
+    void doUnpack(uint32_t docid) override;
 };
 
 typedef RiseWand<TermFreqScorer, std::greater_equal<uint64_t> > TermFrequencyRiseWand;

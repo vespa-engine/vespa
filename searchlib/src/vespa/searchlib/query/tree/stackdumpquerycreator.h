@@ -45,7 +45,7 @@ public:
             LOG(error, "Raw QueryStack = %s", vespalib::HexDump(stack.c_str(), stack.size()).toString().c_str());
             if (LOG_WOULD_LOG(debug)) {
                 vespalib::string query = SimpleQueryStack::StackbufToString(stack);
-                LOG(error, "QueryStack = %s", builder.error().c_str(), query.c_str());
+                LOG(error, "Error = %s, QueryStack = %s", builder.error().c_str(), query.c_str());
             }
         }
         return builder.build();

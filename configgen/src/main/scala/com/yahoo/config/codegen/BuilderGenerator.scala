@@ -85,7 +85,7 @@ object BuilderGenerator {
       case map if node.isMap =>
         "public Map<String, %s> %s = new LinkedHashMap<>()".format(builderType(map), map.getName)
       case struct: InnerCNode =>
-        "private %s %s = new %s()".format(builderType(struct), struct.getName, builderType(struct))
+        "public %s %s = new %s()".format(builderType(struct), struct.getName, builderType(struct))
       case scalar : LeafCNode =>
         "private " + boxedBuilderType(scalar) + " " + scalar.getName + " = null"
     }) + ";"

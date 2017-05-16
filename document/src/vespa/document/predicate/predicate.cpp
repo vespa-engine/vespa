@@ -2,7 +2,6 @@
 
 #include "predicate.h"
 #include <vespa/vespalib/data/slime/slime.h>
-#include <algorithm>
 #include <set>
 
 using std::mismatch;
@@ -128,6 +127,7 @@ FeatureSet::FeatureSet(const Inspector &inspector)
             make_insert_from_array(back_inserter(_features)).ref());
 }
 
+FeatureSet::~FeatureSet() {}
 
 FeatureRange::FeatureRange(const Inspector &inspector)
     : FeatureBase(inspector),

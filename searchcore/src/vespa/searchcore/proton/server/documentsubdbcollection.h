@@ -137,8 +137,7 @@ public:
     SerialNum getOldestFlushedSerial(void);
     SerialNum getNewestFlushedSerial(void);
 
-    void
-    wipeHistory(SerialNum wipeSerial);
+    void pruneRemovedFields(SerialNum serialNum);
 
     void
     applyConfig(const DocumentDBConfig &newConfigSnapshot,

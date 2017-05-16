@@ -75,4 +75,10 @@ ReconfigParams::shouldMaintenanceControllerChange() const
     return configHasChanged();
 }
 
+bool
+ReconfigParams::shouldAttributeWriterChange() const
+{
+    return shouldAttributeManagerChange() || _res.documentTypeRepoChanged;
+}
+
 } // namespace proton

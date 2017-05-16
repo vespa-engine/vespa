@@ -43,6 +43,7 @@ private:
 
 public:
     Test();
+    ~Test();
     int Main() override;
 };
 
@@ -51,10 +52,9 @@ TEST_APPHOOK(Test);
 Test::Test() :
     _session(),
     _handler()
-{
-    // empty
-}
+{}
 
+Test::~Test() {}
 bool
 Test::checkError(const string &dst, uint32_t error)
 {

@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/grouping/groupengine.h>
+#include "groupengine.h"
 
 namespace search {
 namespace grouping {
@@ -12,9 +12,9 @@ public:
     GroupAndCollectEngine(const aggregation::GroupingLevel * request, size_t level, GroupEngine * nextEngine, bool frozen);
     ~GroupAndCollectEngine();
 private:
-    virtual GroupRef group(Children & children, uint32_t docId, double rank);
-    virtual void group(uint32_t docId, double rank);
-    virtual GroupRef createGroup(const expression::ResultNode & id);
+    GroupRef group(Children & children, uint32_t docId, double rank) override;
+    void group(uint32_t docId, double rank) override;
+    GroupRef createGroup(const expression::ResultNode & id) override;
 };
 
 }

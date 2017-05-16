@@ -1,8 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include "frtconfigresponse.h"
-#include <vespa/config/common/misc.h>
 #include <vespa/fnet/frt/frt.h>
-#include <vespa/vespalib/stllike/string.h>
 
 namespace config {
 
@@ -54,6 +53,8 @@ FRTConfigResponseV1::FRTConfigResponseV1(FRT_RPCRequest * request)
       _value()
 {
 }
+
+FRTConfigResponseV1::~FRTConfigResponseV1() {}
 
 const vespalib::string &
 FRTConfigResponseV1::getResponseTypes() const

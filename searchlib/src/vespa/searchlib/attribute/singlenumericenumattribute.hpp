@@ -10,6 +10,7 @@
 #include "attributeiterators.hpp"
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/query/queryterm.h>
+#include <vespa/searchlib/util/fileutil.hpp>
 
 namespace search {
 
@@ -62,6 +63,9 @@ SingleValueNumericEnumAttribute(const vespalib::string & baseFileName,
       _currDocValues()
 {
 }
+
+template <typename B>
+SingleValueNumericEnumAttribute<B>::~SingleValueNumericEnumAttribute() {}
 
 template <typename B>
 void

@@ -51,7 +51,7 @@ void replace_file(const vespalib::string &path, const vespalib::string &data) {
     remove_file(path);
     int fd = creat(path.c_str(), 0600);
     ASSERT_NOT_EQUAL(fd, -1);
-    ASSERT_EQUAL(write(fd, data.data(), data.size()), data.size());
+    ASSERT_EQUAL(write(fd, data.data(), data.size()), ssize_t(data.size()));
     close(fd);
 }
 
@@ -94,12 +94,12 @@ void verify_socket_io(bool is_server, SocketHandle &socket) {
     vespalib::string client_message = "please pick up, I need to talk to you";
     if(is_server) {
         ssize_t written = socket.write(server_message.data(), server_message.size());
-        EXPECT_EQUAL(written, server_message.size());
+        EXPECT_EQUAL(written, ssize_t(server_message.size()));
         vespalib::string read = read_bytes(socket, client_message.size());
         EXPECT_EQUAL(client_message, read);
     } else {
         ssize_t written = socket.write(client_message.data(), client_message.size());
-        EXPECT_EQUAL(written, client_message.size());
+        EXPECT_EQUAL(written, ssize_t(client_message.size()));
         vespalib::string read = read_bytes(socket, server_message.size());
         EXPECT_EQUAL(server_message, read);
     }
@@ -229,7 +229,7 @@ TEST("require that socket file is removed by server socket when destructed") {
     ServerSocket server("ipc/file:my_socket");
     EXPECT_TRUE(server.valid());
     EXPECT_TRUE(is_socket("my_socket"));
-    server = ServerSocket("invalid");
+    server = ServerSocket();
     EXPECT_TRUE(!is_socket("my_socket"));
 }
 
@@ -239,7 +239,7 @@ TEST("require that socket file is only removed on destruction if it is a socket"
     EXPECT_TRUE(server.valid());
     EXPECT_TRUE(is_socket("my_socket"));
     replace_file("my_socket", "hello\n");
-    server = ServerSocket("invalid");
+    server = ServerSocket();
     EXPECT_TRUE(is_file("my_socket"));
     remove_file("my_socket");
 }
@@ -248,7 +248,7 @@ TEST("require that a server socket will fail to listen to a path that is already
     replace_file("my_socket", "hello\n");
     ServerSocket server("ipc/file:my_socket");
     EXPECT_TRUE(!server.valid());
-    server = ServerSocket("invalid");
+    server = ServerSocket();
     EXPECT_TRUE(is_file("my_socket"));
     remove_file("my_socket");
 }
@@ -260,7 +260,7 @@ TEST("require that a server socket will fail to listen to a path that is already
     EXPECT_TRUE(server1.valid());
     EXPECT_TRUE(!server2.valid());
     EXPECT_TRUE(is_socket("my_socket"));
-    server1 = ServerSocket("invalid");
+    server1 = ServerSocket();
     EXPECT_TRUE(!is_socket("my_socket"));
 }
 
@@ -273,7 +273,7 @@ TEST("require that a server socket will remove an old socket file if it cannot b
     EXPECT_TRUE(is_socket("my_socket"));
     ServerSocket server("ipc/file:my_socket");
     EXPECT_TRUE(server.valid());
-    server = ServerSocket("invalid");
+    server = ServerSocket();
     EXPECT_TRUE(!is_socket("my_socket"));
 }
 
@@ -289,7 +289,7 @@ TEST("require that abstract socket names are freed when the server socket is des
     vespalib::string spec = make_string("ipc/name:my_socket-%d", int(getpid()));
     ServerSocket server1(spec);
     EXPECT_TRUE(server1.valid());
-    server1 = ServerSocket("invalid");
+    server1 = ServerSocket();
     ServerSocket server2(spec);
     EXPECT_TRUE(server2.valid());
 }
@@ -385,33 +385,27 @@ SocketHandle connect_async(const SocketAddress &addr) {
         SocketHandle handle;
         bool connect_done = false;
         int error = 0;
-    };
-    struct ConnectHandler {
-        using context_type = ConnectContext;
-        int get_fd(ConnectContext &ctx) const { return ctx.handle.get(); }
         void handle_wakeup() {}
-        void handle_event(ConnectContext &ctx, bool read, bool write) {
-            (void) read;
-            if (write) {
-                ctx.connect_done = true;
-                ctx.error = ctx.handle.get_so_error();
+        void handle_event(ConnectContext &ctx, bool, bool write) {
+            if ((&ctx == this) && write) {
+                connect_done = true;
+                error = ctx.handle.get_so_error();
             }
         }
     };
-    ConnectHandler handler;
-    Selector<ConnectHandler> selector(handler, 4096);
+    Selector<ConnectContext> selector;
     ConnectContext ctx;
     ctx.handle = addr.connect_async();
     EXPECT_TRUE(ctx.handle.valid());
     test::SocketOptionsVerifier verifier(ctx.handle.get());
     TEST_DO(verifier.verify_blocking(false));
     if (ctx.handle.valid()) {
-        selector.add(ctx, true);
+        selector.add(ctx.handle.get(), ctx, true, true);
         while (!ctx.connect_done) {
             selector.poll(1000);
-            selector.dispatch();
+            selector.dispatch(ctx);
         }
-        selector.remove(ctx);
+        selector.remove(ctx.handle.get());
     }
     EXPECT_EQUAL(ctx.error, 0);
     return std::move(ctx.handle);

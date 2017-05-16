@@ -4,10 +4,10 @@
 
 int LatinTokenizerTestApp::Main()
 {
-  LatinTokenizerTest lta;
-  lta.SetStream(&std::cout);
-  lta.Run();
-  return lta.Report();
+    LatinTokenizerTest lta;
+    lta.SetStream(&std::cout);
+    lta.Run();
+    return lta.Report();
 }
 
 FASTOS_MAIN(LatinTokenizerTestApp);

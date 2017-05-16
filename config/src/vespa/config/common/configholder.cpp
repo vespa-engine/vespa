@@ -10,6 +10,8 @@ ConfigHolder::ConfigHolder()
 {
 }
 
+ConfigHolder::~ConfigHolder() {}
+
 ConfigUpdate::UP
 ConfigHolder::provide()
 {

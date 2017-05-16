@@ -1,12 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/storage/distributor/clusterinformation.h>
+#include "clusterinformation.h"
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class SimpleClusterInformation : public ClusterInformation
 {
@@ -21,19 +20,19 @@ public:
           _storageUpStates(storageUpStates)
     {}
 
-    uint16_t getDistributorIndex() const {
+    uint16_t getDistributorIndex() const override {
         return _myIndex;
     }
 
-    const lib::Distribution& getDistribution() const {
+    const lib::Distribution& getDistribution() const override {
         return _distribution;
     }
 
-    const lib::ClusterState& getClusterState() const {
+    const lib::ClusterState& getClusterState() const override {
         return _clusterState;
     }
 
-    const char* getStorageUpStates() const {
+    const char* getStorageUpStates() const override {
         return _storageUpStates;
     }
 
@@ -45,5 +44,3 @@ private:
 };
 
 }
-}
-

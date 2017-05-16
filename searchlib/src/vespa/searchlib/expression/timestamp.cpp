@@ -1,15 +1,25 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/expression/timestamp.h>
 
-namespace search {
-namespace expression {
+#include "timestamp.h"
+
+namespace search::expression {
 
 using vespalib::FieldBase;
 using vespalib::Serializer;
 using vespalib::Deserializer;
 
 IMPLEMENT_EXPRESSIONNODE(TimeStampFunctionNode, UnaryFunctionNode);
+
+TimeStampFunctionNode::TimeStampFunctionNode()
+    : _timePart(Year),
+      _isGmt(true)
+{ }
+TimeStampFunctionNode::TimeStampFunctionNode(ExpressionNode::UP arg, TimePart timePart, bool gmt)
+    : UnaryFunctionNode(std::move(arg)),
+      _timePart(timePart),
+      _isGmt(gmt)
+{ }
+TimeStampFunctionNode::~TimeStampFunctionNode() {}
 
 TimeStampFunctionNode::TimeStampFunctionNode(const TimeStampFunctionNode & rhs) :
     UnaryFunctionNode(rhs),
@@ -101,7 +111,6 @@ Deserializer & TimeStampFunctionNode::onDeserialize(Deserializer & is)
     return is;
 }
 
-}
 }
 
 // this function was added by ../../forcelink.sh

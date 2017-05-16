@@ -269,6 +269,7 @@ FlagAttributeIteratorT<SC>::doSeek(uint32_t docId)
 template <typename SC>
 void
 FlagAttributeIteratorT<SC>::or_hits_into(BitVector &result, uint32_t begin_id) {
+    (void) begin_id;
     const SC & sc(_sc);
     const typename SC::Attribute &attr = static_cast<const typename SC::Attribute &>(sc.attribute());
     for (int i = sc._low; (i <= sc._high); ++i) {

@@ -52,7 +52,7 @@
     "stats":{
       "active_anon":1326051328,
       "active_file":188919808,
-      "cache":426680320,
+      "cache":678965248,
       "hierarchical_memory_limit":4294967296,
       "hierarchical_memsw_limit":8589934592,
       "inactive_anon":0,

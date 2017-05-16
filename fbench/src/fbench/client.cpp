@@ -34,6 +34,120 @@ void Client::runMe(Client * me) {
     me->run();
 }
 
+
+class UrlReader {
+    FileReader &_reader;
+    const ClientArguments &_args;
+    int _restarts;
+    int _contentbufsize;
+    int _leftOversLen;
+    char *_contentbuf;
+    const char *_leftOvers;
+public:
+    UrlReader(FileReader& reader, const ClientArguments &args)
+        : _reader(reader), _args(args), _restarts(0),
+          _contentbufsize(0), _leftOversLen(0),
+          _contentbuf(0), _leftOvers(0)
+    {
+        if (_args._usePostMode) {
+            _contentbufsize = 16 * _args._maxLineSize;
+            _contentbuf = new char[_contentbufsize];
+        }
+    }
+    bool reset();
+    int findUrl(char *buf, int buflen);
+    int nextUrl(char *buf, int buflen);
+    int nextContent();
+    const char *content() const { return _contentbuf; }
+    ~UrlReader() { delete [] _contentbuf; }
+};
+
+bool UrlReader::reset()
+{
+    if (_restarts == _args._restartLimit) {
+        return false;
+    } else if (_args._restartLimit > 0) {
+        _restarts++;
+    }
+    _reader.Reset();
+    // Start reading from offset
+    if (_args._singleQueryFile) {
+        _reader.SetFilePos(_args._queryfileOffset);
+    }
+    return true;
+}
+
+int UrlReader::findUrl(char *buf, int buflen)
+{
+    while (true) {
+        if ( _args._singleQueryFile && _reader.GetFilePos() >= _args._queryfileEndOffset ) {
+            // reached logical EOF
+            return -1;
+        }
+        int ll = _reader.ReadLine(buf, buflen);
+        if (ll < 0) {
+            // reached physical EOF
+            return ll;
+        }
+        if (ll > 0) {
+            if (buf[0] == '/' || !_args._usePostMode) {
+                // found URL
+                return ll;
+            }
+        }
+    }
+}
+
+int UrlReader::nextUrl(char *buf, int buflen)
+{
+    if (_leftOvers) {
+        int sz = std::min(_leftOversLen, buflen-1);
+        strncpy(buf, _leftOvers, sz);
+        buf[sz] = '\0';
+        _leftOvers = NULL;
+        return _leftOversLen;
+    }
+    int ll = findUrl(buf, buflen);
+    if (ll > 0) {
+        return ll;
+    }
+    if (reset()) {
+        // try again
+        ll = findUrl(buf, buflen);
+    }
+    return ll;
+}
+
+int UrlReader::nextContent()
+{
+    char *buf = _contentbuf;
+    int totLen = 0;
+    // make sure we don't chop leftover URL
+    while (totLen + _args._maxLineSize < _contentbufsize) {
+       // allow space for newline:
+       int room = _contentbufsize - totLen - 1;
+       int len = _reader.ReadLine(buf, room);
+       if (len < 0) {
+           // reached EOF
+           break;
+       }
+       len = std::min(len, room);
+       if (len > 0 && buf[0] == '/') {
+           // reached next URL
+           _leftOvers = buf;
+           _leftOversLen = len;
+           break;
+       }
+       buf += len;
+       totLen += len;
+       *buf++ = '\n';
+       totLen++;
+    }
+    // ignore last newline
+    return (totLen > 0) ? totLen-1 : 0;
+}
+
+
 void
 Client::run()
 {
@@ -73,37 +187,24 @@ Client::run()
     if ( _args->_singleQueryFile )
         _reader->SetFilePos(_args->_queryfileOffset);
 
+    UrlReader urlSource(*_reader, *_args);
+    size_t urlNumber = 0;
+
     // run queries
     while (!_stop) {
 
         _cycleTimer->Start();
 
-        linelen = _reader->ReadLine(_linebuf, _linebufsize);
-
-        // Read maximum to _queryfileOffsetEnd
-        if ( _args->_singleQueryFile && _reader->GetBufPos() >= _args->_queryfileBytes ) {
-            _reader->SetFilePos(_args->_queryfileOffset);
-        }
-
-        if (linelen < 0) {
-            _reader->Reset();
-            // Start reading from offset
-            if ( _args->_singleQueryFile ) {
-                _reader->SetFilePos(_args->_queryfileOffset);
-            }
-
-            linelen = _reader->ReadLine(_linebuf, _linebufsize);
-            if (linelen < 0) {
+        linelen = urlSource.nextUrl(_linebuf, _linebufsize);
+        if (linelen > 0) {
+            ++urlNumber;
+        } else {
+            if (urlNumber == 0) {
                 fprintf(stderr, "Client %d: ERROR: could not read any lines from '%s'\n",
                         _args->_myNum, inputFilename);
                 _status->SetError("Could not read any lines from query file.");
-                break;
             }
-            if (_args->_restartLimit == 0) {
-                break;
-            } else if (_args->_restartLimit > 0) {
-                _args->_restartLimit--;
-            }
+            break;
         }
         if (linelen < _linebufsize) {
             if (_output) {
@@ -114,8 +215,9 @@ Client::run()
             if (linelen + (int)_args->_queryStringToAppend.length() < _linebufsize) {
                 strcat(_linebuf, _args->_queryStringToAppend.c_str());
             }
+            int cLen = _args->_usePostMode ? urlSource.nextContent() : 0;
             _reqTimer->Start();
-            auto fetch_status = _http->Fetch(_linebuf, _output.get());
+            auto fetch_status = _http->Fetch(_linebuf, _output.get(), _args->_usePostMode, urlSource.content(), cLen);
             _reqTimer->Stop();
             _status->AddRequestStatus(fetch_status.RequestStatus());
             if (fetch_status.Ok() && fetch_status.TotalHitCount() == 0)

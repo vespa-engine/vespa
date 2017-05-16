@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.google.common.base.Joiner;
 import com.google.common.io.CharStreams;
-import com.yahoo.net.HostName;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
@@ -12,9 +11,6 @@ import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.DockerImpl;
 import com.yahoo.vespa.hosted.dockerapi.DockerNetworkCreator;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
-import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
-import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
-import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
@@ -38,16 +34,17 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 /**
  * Class that wraps the Docker class and have some tools related to running programs in docker.
+ *
  * @author dybis
  */
 public class DockerOperationsImpl implements DockerOperations {
     public static final String NODE_PROGRAM = Defaults.getDefaults().underVespaHome("bin/vespa-nodectl");
     private static final String[] GET_VESPA_VERSION_COMMAND = new String[]{NODE_PROGRAM, "vespa-version"};
 
-    private static final String[] RESUME_NODE_COMMAND = new String[] {NODE_PROGRAM, "resume"};
-    private static final String[] SUSPEND_NODE_COMMAND = new String[] {NODE_PROGRAM, "suspend"};
-    private static final String[] RESTART_VESPA_ON_NODE_COMMAND = new String[] {NODE_PROGRAM, "restart-vespa"};
-    private static final String[] STOP_NODE_COMMAND = new String[] {NODE_PROGRAM, "stop"};
+    private static final String[] RESUME_NODE_COMMAND = new String[]{NODE_PROGRAM, "resume"};
+    private static final String[] SUSPEND_NODE_COMMAND = new String[]{NODE_PROGRAM, "suspend"};
+    private static final String[] RESTART_VESPA_ON_NODE_COMMAND = new String[]{NODE_PROGRAM, "restart-vespa"};
+    private static final String[] STOP_NODE_COMMAND = new String[]{NODE_PROGRAM, "stop"};
 
     private static final Pattern VESPA_VERSION_PATTERN = Pattern.compile("^(\\S*)$", Pattern.MULTILINE);
 
@@ -55,6 +52,7 @@ public class DockerOperationsImpl implements DockerOperations {
 
     // Map of directories to mount and whether they should be writable by everyone
     private static final Map<String, Boolean> DIRECTORIES_TO_MOUNT = new HashMap<>();
+
     static {
         DIRECTORIES_TO_MOUNT.put("/etc/yamas-agent", true);
         DIRECTORIES_TO_MOUNT.put("/etc/filebeat", true);
@@ -92,17 +90,14 @@ public class DockerOperationsImpl implements DockerOperations {
     private final Docker docker;
     private final Environment environment;
     private final Consumer<List<String>> commandExecutor;
-    private GaugeWrapper numberOfRunningContainersGauge;
 
-    public DockerOperationsImpl(Docker docker, Environment environment, MetricReceiverWrapper metricReceiver) {
-        this(docker, environment, metricReceiver, DockerOperationsImpl::runCommand);
+    public DockerOperationsImpl(Docker docker, Environment environment) {
+        this(docker, environment, DockerOperationsImpl::runCommand);
     }
 
-    DockerOperationsImpl(Docker docker, Environment environment, MetricReceiverWrapper metricReceiver,
-                         Consumer<List<String>> commandExecutor) {
+    DockerOperationsImpl(Docker docker, Environment environment, Consumer<List<String>> commandExecutor) {
         this.docker = docker;
         this.environment = environment;
-        setMetrics(metricReceiver);
         this.commandExecutor = commandExecutor;
     }
 
@@ -198,8 +193,6 @@ public class DockerOperationsImpl implements DockerOperations {
         } catch (IOException e) {
             throw new RuntimeException("Failed to create container " + containerName.asString(), e);
         }
-
-        numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
     }
 
     @Override
@@ -213,7 +206,6 @@ public class DockerOperationsImpl implements DockerOperations {
 
         logger.info("Deleting container " + containerName.asString());
         docker.deleteContainer(containerName);
-        numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
     }
 
     // Returns true if scheduling download
@@ -231,7 +223,7 @@ public class DockerOperationsImpl implements DockerOperations {
      * Try to suspend node. Suspending a node means the node should be taken offline,
      * such that maintenance can be done of the node (upgrading, rebooting, etc),
      * and such that we will start serving again as soon as possible afterwards.
-     *
+     * <p>
      * Any failures are logged and ignored.
      */
     @Override
@@ -244,7 +236,7 @@ public class DockerOperationsImpl implements DockerOperations {
             // It's bad to continue as-if nothing happened, but on the other hand if we do not proceed to
             // remove container, we will not be able to upgrade to fix any problems in the suspend logic!
             logger.warning("Failed trying to suspend container " + containerName.asString() + "  with "
-                   + Arrays.toString(SUSPEND_NODE_COMMAND), e);
+                    + Arrays.toString(SUSPEND_NODE_COMMAND), e);
         }
     }
 
@@ -274,10 +266,10 @@ public class DockerOperationsImpl implements DockerOperations {
         });
     }
 
-    ProcessResult executeCommandInContainer(ContainerName containerName, String[] command) {
+    ProcessResult executeCommandInContainer(ContainerName containerName, String... command) {
         ProcessResult result = docker.executeInContainerAsRoot(containerName, command);
 
-        if (! result.isSuccess()) {
+        if (!result.isSuccess()) {
             throw new RuntimeException("Container " + containerName.asString() +
                     ": command " + Arrays.toString(command) + " failed: " + result);
         }
@@ -285,12 +277,17 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public ProcessResult executeCommandInContainerAsRoot(ContainerName containerName, String[] command) {
+    public ProcessResult executeCommandInContainerAsRoot(ContainerName containerName, Long timeoutSeconds, String... command) {
+        return docker.executeInContainerAsRoot(containerName, timeoutSeconds, command);
+    }
+
+    @Override
+    public ProcessResult executeCommandInContainerAsRoot(ContainerName containerName, String... command) {
         return docker.executeInContainerAsRoot(containerName, command);
     }
 
     @Override
-    public void executeCommandInNetworkNamespace(ContainerName containerName, String[] command) {
+    public void executeCommandInNetworkNamespace(ContainerName containerName, String... command) {
         final PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         final Integer containerPid = docker.getContainer(containerName)
                 .filter(container -> container.state.isRunning())
@@ -345,17 +342,6 @@ public class DockerOperationsImpl implements DockerOperations {
         docker.deleteUnusedDockerImages();
     }
 
-    private void setMetrics(MetricReceiverWrapper metricReceiver) {
-        Dimensions dimensions = new Dimensions.Builder()
-                .add("host", HostName.getLocalhost())
-                .add("role", "docker").build();
-
-        numberOfRunningContainersGauge = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "containers.running");
-
-        // Some containers could already be running, count them and initialize to that value
-        numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
-    }
-
     private static void runCommand(List<String> command) {
         try {
             final Process process = new ProcessBuilder(command)
@@ -366,7 +352,7 @@ public class DockerOperationsImpl implements DockerOperations {
             if (resultCode != 0) {
                 throw new RuntimeException("Command " + Joiner.on(' ').join(command) + " failed: " + output);
             }
-        } catch (IOException|InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }

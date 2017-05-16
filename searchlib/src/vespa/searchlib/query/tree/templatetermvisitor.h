@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/query/tree/customtypetermvisitor.h>
+#include "customtypetermvisitor.h"
 
 namespace search {
 namespace query {
@@ -23,37 +23,36 @@ class TemplateTermVisitor : public CustomTypeTermVisitor<NodeTypes> {
         static_cast<Self &>(*this).template visitTerm(n);
     }
 
-    virtual void visit(typename NodeTypes::NumberTerm &n) { myVisit(n); }
-    virtual void visit(typename NodeTypes::LocationTerm &n) { myVisit(n); }
-    virtual void visit(typename NodeTypes::PrefixTerm &n) { myVisit(n); }
-    virtual void visit(typename NodeTypes::RangeTerm &n) { myVisit(n); }
-    virtual void visit(typename NodeTypes::StringTerm &n) { myVisit(n); }
-    virtual void visit(typename NodeTypes::SubstringTerm &n) { myVisit(n); }
-    virtual void visit(typename NodeTypes::SuffixTerm &n) { myVisit(n); }
-    virtual void visit(typename NodeTypes::PredicateQuery &n) { myVisit(n); }
-    virtual void visit(typename NodeTypes::RegExpTerm &n) { myVisit(n); }
+    void visit(typename NodeTypes::NumberTerm &n) override { myVisit(n); }
+    void visit(typename NodeTypes::LocationTerm &n) override { myVisit(n); }
+    void visit(typename NodeTypes::PrefixTerm &n) override { myVisit(n); }
+    void visit(typename NodeTypes::RangeTerm &n) override { myVisit(n); }
+    void visit(typename NodeTypes::StringTerm &n) override { myVisit(n); }
+    void visit(typename NodeTypes::SubstringTerm &n) override { myVisit(n); }
+    void visit(typename NodeTypes::SuffixTerm &n) override { myVisit(n); }
+    void visit(typename NodeTypes::PredicateQuery &n) override { myVisit(n); }
+    void visit(typename NodeTypes::RegExpTerm &n) override { myVisit(n); }
 
     // Phrases are terms with children. This visitor will not visit
     // the phrase's children, unless this member function is
     // overridden to do so.
-    virtual void visit(typename NodeTypes::Phrase &n) { myVisit(n); }
+    void visit(typename NodeTypes::Phrase &n) override { myVisit(n); }
 
     // WeightedSetTerms are terms with children. This visitor will not visit
     // the weighted set's children, unless this member function is
     // overridden to do so.
-    virtual void visit(typename NodeTypes::WeightedSetTerm &n) { myVisit(n); }
+    void visit(typename NodeTypes::WeightedSetTerm &n) override { myVisit(n); }
 
     // DotProducts have children. This visitor will not visit the dot
     // product's children, unless this member function is overridden
     // to do so.
-    virtual void visit(typename NodeTypes::DotProduct &n) { myVisit(n); }
+    void visit(typename NodeTypes::DotProduct &n) override { myVisit(n); }
 
     // WandTerms have children. This visitor will not visit the wand
     // term's children, unless this member function is overridden
     // to do so.
-    virtual void visit(typename NodeTypes::WandTerm &n) { myVisit(n); }
+    void visit(typename NodeTypes::WandTerm &n) override { myVisit(n); }
 };
 
 }  // namespace query
 }  // namespace search
-

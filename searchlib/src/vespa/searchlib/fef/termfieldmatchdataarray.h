@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <cassert>
+#include <cstddef>
 
 namespace search {
 namespace fef {

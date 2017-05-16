@@ -41,6 +41,9 @@ FastS_QueryCacheUtil::FastS_QueryCacheUtil()
     _searchInfo._maxHits = 10;
 }
 
+FastS_QueryCacheUtil::~FastS_QueryCacheUtil()
+{
+}
 
 void
 FastS_QueryCacheUtil::setSearchRequest(const search::engine::SearchRequest * request)

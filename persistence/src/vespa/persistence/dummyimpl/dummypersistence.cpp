@@ -304,8 +304,9 @@ DummyPersistence::DummyPersistence(
       _monitor(),
       _clusterState(),
       _simulateMaintainFailure(false)
-{
-}
+{}
+
+DummyPersistence::~DummyPersistence() {}
 
 document::select::Node::UP
 DummyPersistence::parseDocumentSelection(const string& documentSelection,

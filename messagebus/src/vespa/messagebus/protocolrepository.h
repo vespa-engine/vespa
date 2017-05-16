@@ -23,7 +23,8 @@ private:
 public:
     ProtocolRepository(const ProtocolRepository &) = delete;
     ProtocolRepository & operator = (const ProtocolRepository &) = delete;
-    ProtocolRepository() = default;
+    ProtocolRepository();
+    ~ProtocolRepository();
     /**
      * Registers a protocol with this repository. This will overwrite any protocol that was registered earlier
      * that has the same name. If this method detects a protocol replacement, it will clear its internal

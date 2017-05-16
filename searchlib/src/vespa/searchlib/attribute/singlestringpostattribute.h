@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/singlestringattribute.h>
-#include <vespa/searchlib/attribute/postinglistattribute.h>
+#include "singlestringattribute.h"
+#include "postinglistattribute.h"
 
 namespace search {
 
@@ -82,7 +82,7 @@ private:
                       const std::map<DocId, EnumIndex> &currEnumIndices,
                       PostingMap &changePost);
 
-    virtual void applyValueChanges(EnumStoreBase::IndexVector & unused) override;
+    void applyValueChanges(EnumStoreBase::IndexVector & unused) override;
 public:
     SingleValueStringPostingAttributeT(const vespalib::string & name, const AttributeVector::Config & c =
                                        AttributeVector::Config(AttributeVector::BasicType::STRING));
@@ -94,7 +94,7 @@ public:
     AttributeVector::SearchContext::UP
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
 
-    virtual bool onAddDoc(DocId doc) {
+    bool onAddDoc(DocId doc) override {
         return forwardedOnAddDoc(doc, this->_enumIndices.size(), this->_enumIndices.capacity());
     }
 
@@ -117,6 +117,4 @@ public:
 
 typedef SingleValueStringPostingAttributeT<EnumAttribute<StringAttribute> > SingleValueStringPostingAttribute;
 
-
 } // namespace search
-

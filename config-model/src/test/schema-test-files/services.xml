@@ -7,6 +7,7 @@
   </config>
 
   <admin version="2.0">
+    <minSlobroksPerCluster>1</minSlobroksPerCluster>
     <adminserver hostalias="adminserver" />
     <logserver hostalias="logserver" />
     <slobroks>

@@ -15,7 +15,7 @@ private:
 
 public:
     IndexWriter(const IIndexManager::SP &mgr);
-
+    ~IndexWriter();
     /**
      * Implements IIndexWriter.
      */

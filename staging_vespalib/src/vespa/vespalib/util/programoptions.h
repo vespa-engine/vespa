@@ -23,12 +23,10 @@
 
 #pragma once
 
+#include <vespa/vespalib/util/exception.h>
 #include <map>
 #include <set>
-#include <string>
 #include <vector>
-#include <stdint.h>
-#include <vespa/vespalib/util/exception.h>
 
 namespace vespalib {
 
@@ -173,7 +171,7 @@ public:
 private:
     void parseOption(const std::string& id, OptionParser&, uint32_t& argPos);
     void parseArgument(OptionParser& opt, uint32_t& pos);
-    OptionParser& addOption(std::shared_ptr<OptionParser> opt);
+    OptionParser& addOption(std::shared_ptr<OptionParser> && opt);
     OptionParser& addArgument(std::shared_ptr<OptionParser> arg);
     void setDefaults(bool failUnsetRequired);
 
@@ -237,9 +235,9 @@ struct ProgramOptions::OptionParser {
 
 struct ProgramOptions::OptionHeader : public OptionParser {
     OptionHeader(const std::string& desc) : OptionParser("", 0, desc) {}
-    virtual void set(const std::vector<std::string>&) override {}
-    virtual void setDefault() override {}
-    virtual bool isHeader() const override { return true; }
+    void set(const std::vector<std::string>&) override {}
+    void setDefault() override {}
+    bool isHeader() const override { return true; }
 };
 
 template<typename Number>
@@ -262,61 +260,45 @@ struct ProgramOptions::NumberOptionParser : public OptionParser {
         : OptionParser(nameList, 1, getStringValue(defValue), desc),
           _number(number),
           _defaultValue(defValue)
-    {
+    {}
+
+    void set(const std::vector<std::string>& arguments) override;
+    void setDefault() override { _number = _defaultValue; }
+    std::string getArgType(uint32_t /* index */) const override {
+        return getTypeName<Number>();
     }
-
-    virtual void set(const std::vector<std::string>& arguments) override;
-
-    virtual void setDefault() override { _number = _defaultValue; }
-
-    virtual std::string getArgType(uint32_t /* index */) const override
-        { return getTypeName<Number>(); }
-
 };
 
 struct ProgramOptions::BoolOptionParser : public OptionParser {
     bool& _value;
     bool _defaultValue;
 
-    BoolOptionParser(const std::string& nameList, bool& value,
-                     const std::string& description);
-
-    virtual void set(const std::vector<std::string>&) override { _value = true; }
-
-    virtual void setDefault() override { _value = false; }
+    BoolOptionParser(const std::string& nameList, bool& value, const std::string& description);
+    void set(const std::vector<std::string>&) override { _value = true; }
+    void setDefault() override { _value = false; }
 };
 
 struct ProgramOptions::FlagOptionParser : public OptionParser {
     bool& _value;
     bool _unsetValue;
 
-    FlagOptionParser(const std::string& nameList, bool& value,
-                     const std::string& description);
-    FlagOptionParser(const std::string& nameList, bool& value,
-                     const bool& unsetValue, const std::string& description);
-
-    virtual void set(const std::vector<std::string>&) override { _value = !_unsetValue; }
-
-    virtual void setDefault() override { _value = _unsetValue; }
+    FlagOptionParser(const std::string& nameList, bool& value, const std::string& description);
+    FlagOptionParser(const std::string& nameList, bool& value, const bool& unsetValue, const std::string& description);
+    void set(const std::vector<std::string>&) override { _value = !_unsetValue; }
+    void setDefault() override { _value = _unsetValue; }
 };
 
 struct ProgramOptions::StringOptionParser : public OptionParser {
     std::string& _value;
     std::string _defaultValue;
 
-    StringOptionParser(const std::string& nameList, std::string& value,
-                       const std::string& description);
-
+    StringOptionParser(const std::string& nameList, std::string& value, const std::string& description);
     StringOptionParser(const std::string& nameList, std::string& value,
                        const std::string& defVal, const std::string& desc);
 
-    virtual void set(const std::vector<std::string>& arguments) override
-        { _value = arguments[0]; }
-
-    virtual void setDefault() override { _value = _defaultValue; }
-
-    virtual std::string getArgType(uint32_t /* index */) const override
-        { return "string"; }
+    void set(const std::vector<std::string>& arguments) override { _value = arguments[0]; }
+    void setDefault() override { _value = _defaultValue; }
+    std::string getArgType(uint32_t /* index */) const override { return "string"; }
 };
 
 struct ProgramOptions::MapOptionParser : public OptionParser {
@@ -327,14 +309,14 @@ struct ProgramOptions::MapOptionParser : public OptionParser {
                     std::map<std::string, std::string>& value,
                     const std::string& description);
 
-    virtual void set(const std::vector<std::string>& arguments) override
-        { _value[arguments[0]] = arguments[1]; }
+    void set(const std::vector<std::string>& arguments) override {
+        _value[arguments[0]] = arguments[1];
+    }
 
-    virtual std::string getArgType(uint32_t /* index */) const override
-        { return "string"; }
+    std::string getArgType(uint32_t /* index */) const override { return "string"; }
 
-        // Default of map is just an empty map.
-    virtual void setDefault() override { _value.clear(); }
+    // Default of map is just an empty map.
+    void setDefault() override { _value.clear(); }
 };
 
 template<typename T>
@@ -356,9 +338,8 @@ struct ProgramOptions::ListOptionParser : public OptionParser {
     void setEntryParser(OptionParser::UP entryParser) {
         _entryParser = std::move(entryParser);
     }
-
-    virtual bool isRequired() const override { return false; }
-    virtual void set(const std::vector<std::string>& arguments) override {
+    bool isRequired() const override { return false; }
+    void set(const std::vector<std::string>& arguments) override {
         for (uint32_t i=0; i<arguments.size(); ++i) {
             std::vector<std::string> v;
             v.push_back(arguments[i]);
@@ -366,121 +347,13 @@ struct ProgramOptions::ListOptionParser : public OptionParser {
             _value.push_back(_singleValue);
         }
     }
-    virtual void setDefault() override {
+    void setDefault() override {
         _value.clear();
     }
-    virtual std::string getArgType(uint32_t index) const override {
+    std::string getArgType(uint32_t index) const override {
         return _entryParser->getArgType(index) + "[]";
     }
 };
-
-#define VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDOPTION(type, parsertype) \
-template<> \
-inline \
-ProgramOptions::OptionParser& \
-ProgramOptions::addOption(const std::string& optionNameList, \
-                          type& value, const std::string& desc) \
-{ \
-    return addOption(OptionParser::SP( \
-            new parsertype(optionNameList, value, desc))); \
-}
-
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDOPTION(bool, FlagOptionParser);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDOPTION(std::string, StringOptionParser);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDOPTION(int32_t, NumberOptionParser<int32_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDOPTION(uint32_t, NumberOptionParser<uint32_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDOPTION(int64_t, NumberOptionParser<int64_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDOPTION(uint64_t, NumberOptionParser<uint64_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDOPTION(float, NumberOptionParser<float>);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDOPTION(double, NumberOptionParser<double>);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDOPTION(MapOptionParser::MapType,
-                                             MapOptionParser);
-
-#define VESPALIB_PROGRAMOPTIONS_IMPL_ADDOPTION(type, parsertype) \
-template<> \
-inline \
-ProgramOptions::OptionParser& \
-ProgramOptions::addOption(const std::string& optionNameList, \
-                          type& value, const type& defVal, \
-                          const std::string& desc) \
-{ \
-    return addOption(OptionParser::SP( \
-            new parsertype(optionNameList, value, defVal, desc))); \
-}
-
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDOPTION(bool, FlagOptionParser);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDOPTION(std::string, StringOptionParser);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDOPTION(int32_t, NumberOptionParser<int32_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDOPTION(uint32_t, NumberOptionParser<uint32_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDOPTION(int64_t, NumberOptionParser<int64_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDOPTION(uint64_t, NumberOptionParser<uint64_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDOPTION(float, NumberOptionParser<float>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDOPTION(double, NumberOptionParser<double>);
-
-#define VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDARGUMENT(type, parsertype) \
-template<> \
-inline \
-ProgramOptions::OptionParser& \
-ProgramOptions::addArgument(const std::string& name, \
-                            type& value, \
-                            const std::string& desc) \
-{ \
-    return addArgument(OptionParser::SP( \
-                new parsertype(name, value, desc))); \
-}
-
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDARGUMENT(bool, BoolOptionParser);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDARGUMENT(std::string, StringOptionParser);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDARGUMENT(int32_t, NumberOptionParser<int32_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDARGUMENT(uint32_t, NumberOptionParser<uint32_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDARGUMENT(int64_t, NumberOptionParser<int64_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDARGUMENT(uint64_t, NumberOptionParser<uint64_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDARGUMENT(float, NumberOptionParser<float>);
-VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDARGUMENT(double, NumberOptionParser<double>);
-
-#define VESPALIB_PROGRAMOPTIONS_IMPL_ADDARGUMENT(type, parsertype) \
-template<> \
-inline \
-ProgramOptions::OptionParser& \
-ProgramOptions::addArgument(const std::string& name, \
-                            type& value, const type& defVal, \
-                            const std::string& desc) \
-{ \
-    return addArgument(OptionParser::SP( \
-                new parsertype(name, value, defVal, desc))); \
-}
-
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDARGUMENT(std::string, StringOptionParser);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDARGUMENT(int32_t, NumberOptionParser<int32_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDARGUMENT(uint32_t, NumberOptionParser<uint32_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDARGUMENT(int64_t, NumberOptionParser<int64_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDARGUMENT(uint64_t, NumberOptionParser<uint64_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDARGUMENT(float, NumberOptionParser<float>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDARGUMENT(double, NumberOptionParser<double>);
-
-#define VESPALIB_PROGRAMOPTIONS_IMPL_ADDLISTARGUMENT(type, parsertype) \
-template<> \
-inline \
-ProgramOptions::OptionParser& \
-ProgramOptions::addListArgument(const std::string& name, \
-                                std::vector<type>& value, \
-                                const std::string& desc) \
-{ \
-    ListOptionParser<type>* listParser( \
-            new ListOptionParser<type>(name, value, desc)); \
-    OptionParser::UP entryParser( \
-            new parsertype(name, listParser->getSingleValue(), desc)); \
-    listParser->setEntryParser(std::move(entryParser)); \
-    return addArgument(OptionParser::SP(listParser)); \
-}
-
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDLISTARGUMENT(std::string, StringOptionParser);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDLISTARGUMENT(int32_t, NumberOptionParser<int32_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDLISTARGUMENT(uint32_t, NumberOptionParser<uint32_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDLISTARGUMENT(int64_t, NumberOptionParser<int64_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDLISTARGUMENT(uint64_t, NumberOptionParser<uint64_t>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDLISTARGUMENT(float, NumberOptionParser<float>);
-VESPALIB_PROGRAMOPTIONS_IMPL_ADDLISTARGUMENT(double, NumberOptionParser<double>);
 
 } // vespalib
 

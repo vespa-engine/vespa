@@ -100,6 +100,9 @@ DenseTensorBuilder::DenseTensorBuilder()
 {
 }
 
+DenseTensorBuilder::~DenseTensorBuilder() {
+}
+
 DenseTensorBuilder::Dimension
 DenseTensorBuilder::defineDimension(const vespalib::string &dimension,
                                     size_t dimensionSize)

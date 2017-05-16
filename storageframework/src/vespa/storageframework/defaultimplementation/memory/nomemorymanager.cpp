@@ -3,9 +3,9 @@
 #include "nomemorymanager.h"
 #include <vespa/vespalib/util/exceptions.h>
 
-namespace storage {
-namespace framework {
-namespace defaultimplementation {
+namespace storage::framework::defaultimplementation {
+
+NoMemoryManager::~NoMemoryManager() {}
 
 const MemoryAllocationType&
 NoMemoryManager::registerAllocationType(const MemoryAllocationType& type)
@@ -42,6 +42,5 @@ NoMemoryManager::getAllocationTypes() const
     return types;
 }
 
-} // defaultimplementation
-} // framework
-} // storage
+}
+

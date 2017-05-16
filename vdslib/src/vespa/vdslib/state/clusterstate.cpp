@@ -3,13 +3,15 @@
 
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/document/util/stringutil.h>
-#include <sstream>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/log/log.h>
+#include <sstream>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".vdslib.state.cluster");
+
+using vespalib::IllegalArgumentException;
 
 namespace storage {
 namespace lib {
@@ -22,51 +24,36 @@ ClusterState::ClusterState()
       _nodeCount(2),
       _description(),
       _distributionBits(16)
-{
-}
+{ }
 
-ClusterState::ClusterState(const ClusterState& other)
-    : Printable(other),
-      _version(other._version),
-      _clusterState(other._clusterState),
-      _nodeStates(other._nodeStates),
-      _nodeCount(other._nodeCount),
-      _description(other._description),
-      _distributionBits(other._distributionBits)
-{
-}
+ClusterState::ClusterState(const ClusterState& other) = default;
+ClusterState::~ClusterState() { }
 
-ClusterState::~ClusterState()
-{
-}
+struct NodeData {
+    bool empty;
+    Node node;
+    vespalib::asciistream ost;
 
-namespace {
-    struct NodeData {
-        bool empty;
-        Node node;
-        vespalib::asciistream ost;
+    NodeData() : empty(true), node(NodeType::STORAGE, 0), ost() {}
 
-        NodeData() : empty(true), node(NodeType::STORAGE, 0), ost() {}
-
-        void addTo(std::map<Node, NodeState>& nodeStates,
-                   std::vector<uint16_t>& nodeCount)
-        {
-            if (!empty) {
-                NodeState state(ost.str(), &node.getType());
-                if (state != NodeState(node.getType(), State::UP)
-                    || state.getDescription().size() > 0)
-                {
-                    nodeStates.insert(std::make_pair(node, state));
-                }
-                if (nodeCount[node.getType()] <= node.getIndex()) {
-                    nodeCount[node.getType()] = node.getIndex() + 1;
-                }
-                empty = true;
-                ost.clear();
+    void addTo(std::map<Node, NodeState>& nodeStates,
+               std::vector<uint16_t>& nodeCount)
+    {
+        if (!empty) {
+            NodeState state(ost.str(), &node.getType());
+            if (state != NodeState(node.getType(), State::UP)
+                || state.getDescription().size() > 0)
+            {
+                nodeStates.insert(std::make_pair(node, state));
             }
+            if (nodeCount[node.getType()] <= node.getIndex()) {
+                nodeCount[node.getType()] = node.getIndex() + 1;
+            }
+            empty = true;
+            ost.clear();
         }
-    };
-}
+    }
+};
 
 ClusterState::ClusterState(const vespalib::stringref & serialized)
     : Printable(),
@@ -82,108 +69,113 @@ ClusterState::ClusterState(const vespalib::stringref & serialized)
     NodeData nodeData;
     vespalib::string lastAbsolutePath;
 
-    for (vespalib::StringTokenizer::Iterator it = st.begin();
-         it != st.end(); ++it)
-    {
+    for (vespalib::StringTokenizer::Iterator it = st.begin(); it != st.end(); ++it) {
         vespalib::string::size_type index = it->find(':');
         if (index == vespalib::string::npos) {
-            throw vespalib::IllegalArgumentException(
-                    "Token " + *it + " does not contain ':': " + serialized,
-                    VESPA_STRLOC);
+            throw IllegalArgumentException("Token " + *it + " does not contain ':': " + serialized, VESPA_STRLOC);
         }
         vespalib::stringref key = it->substr(0, index);
         vespalib::stringref value = it->substr(index + 1);
         if (key.size() > 0 && key[0] == '.') {
             if (lastAbsolutePath == "") {
-                throw vespalib::IllegalArgumentException(
-                        "The first path in system state string needs to be "
-                        "absolute", VESPA_STRLOC);
+                throw IllegalArgumentException("The first path in system state string needs to be absolute", VESPA_STRLOC);
             }
             key = lastAbsolutePath + key;
         } else {
             lastAbsolutePath = key;
         }
-        if (key.size() > 0) switch (key[0]) {
-        case 'c':
-            if (key == "cluster") {
-                setClusterState(State::get(value));
-                continue;
-            }
-            break;
-        case 'b':
-            if (key == "bits") {
-                _distributionBits = atoi(value.c_str());
-                continue;
-            }
-            break;
-        case 'v':
-            if (key == "version") {
-                _version = atoi(value.c_str());
-                continue;
-            }
-            break;
-        case 'm':
-            if (key.size() > 1) break;
-            _description = document::StringUtil::unescape(value);
-            continue;
-        case 'd':
-        case 's':
-        {
-            const NodeType* nodeType(0);
-            vespalib::string::size_type dot = key.find('.');
-            vespalib::stringref type(dot == vespalib::string::npos
-                             ? key : key.substr(0, dot));
-            if (type == "storage") {
-                nodeType = &NodeType::STORAGE;
-            } else if (type == "distributor") {
-                nodeType = &NodeType::DISTRIBUTOR;
-            }
-            if (nodeType == 0) break;
-            if (dot == vespalib::string::npos) { // Entry that set node counts
-                uint16_t nodeCount = 0;
-                nodeCount = atoi(value.c_str());
-
-                if (nodeCount > _nodeCount[*nodeType] ) {
-                    _nodeCount[*nodeType] = nodeCount;
-                }
-                continue;
-            }
-            vespalib::string::size_type dot2 = key.find('.', dot + 1);
-            Node node;
-            if (dot2 == vespalib::string::npos) {
-                node = Node(*nodeType, atoi(key.substr(dot + 1).c_str()));
-            } else {
-                node = Node(*nodeType, atoi(key.substr(dot + 1, dot2 - dot - 1).c_str()));
-            }
-
-            if (node.getIndex() >= _nodeCount[*nodeType]) {
-                vespalib::asciistream ost;
-                ost << "Cannot index " << *nodeType << " node "
-                    << node.getIndex() << " of " << _nodeCount[*nodeType];
-                throw vespalib::IllegalArgumentException(
-                        ost.str(), VESPA_STRLOC);
-            }
-            if (nodeData.node != node) {
-                nodeData.addTo(_nodeStates, _nodeCount);
-            }
-            if (dot2 == vespalib::string::npos) {
-                break; // No default key for nodes.
-            } else {
-                nodeData.ost << " " << key.substr(dot2 + 1) << ':' << value;
-            }
-            nodeData.node = node;
-            nodeData.empty = false;
-            continue;
+        
+        if (key.empty() || ! parse(key, value, nodeData) ) {
+            LOG(debug, "Unknown key %s in systemstate. Ignoring it, assuming it's "
+                       "a new feature from a newer version than ourself: %s",
+                       key.c_str(), serialized.c_str());
         }
-        default:
-            break;
-        }
-        LOG(debug, "Unknown key %s in systemstate. Ignoring it, assuming it's "
-            "a new feature from a newer version than ourself: %s",
-            key.c_str(), serialized.c_str());
     }
     nodeData.addTo(_nodeStates, _nodeCount);
     removeExtraElements();
+}
+
+bool
+ClusterState::parse(vespalib::stringref key, vespalib::stringref value, NodeData & nodeData) {
+    switch (key[0]) {
+    case 'c':
+        if (key == "cluster") {
+            setClusterState(State::get(value));
+            return true;
+        }
+        break;
+    case 'b':
+        if (key == "bits") {
+            _distributionBits = atoi(value.c_str());
+            return true;
+        }
+        break;
+    case 'v':
+        if (key == "version") {
+            _version = atoi(value.c_str());
+            return true;
+        }
+        break;
+    case 'm':
+        if (key.size() == 1) {
+            _description = document::StringUtil::unescape(value);
+            return true;
+        }
+        break;
+    case 'd':
+    case 's':
+        return parseSorD(key, value, nodeData);
+    default:
+        break;
+    }
+    return false;
+}
+
+bool
+ClusterState::parseSorD(vespalib::stringref key, vespalib::stringref value, NodeData & nodeData) {
+    const NodeType* nodeType(0);
+    vespalib::string::size_type dot = key.find('.');
+    vespalib::stringref type(dot == vespalib::string::npos
+                             ? key : key.substr(0, dot));
+    if (type == "storage") {
+        nodeType = &NodeType::STORAGE;
+    } else if (type == "distributor") {
+        nodeType = &NodeType::DISTRIBUTOR;
+    }
+    if (nodeType == 0) return false;
+    if (dot == vespalib::string::npos) { // Entry that set node counts
+        uint16_t nodeCount = 0;
+        nodeCount = atoi(value.c_str());
+
+        if (nodeCount > _nodeCount[*nodeType] ) {
+            _nodeCount[*nodeType] = nodeCount;
+        }
+        return true;
+    }
+    vespalib::string::size_type dot2 = key.find('.', dot + 1);
+    Node node;
+    if (dot2 == vespalib::string::npos) {
+        node = Node(*nodeType, atoi(key.substr(dot + 1).c_str()));
+    } else {
+        node = Node(*nodeType, atoi(key.substr(dot + 1, dot2 - dot - 1).c_str()));
+    }
+
+    if (node.getIndex() >= _nodeCount[*nodeType]) {
+        vespalib::asciistream ost;
+        ost << "Cannot index " << *nodeType << " node " << node.getIndex() << " of " << _nodeCount[*nodeType];
+        throw IllegalArgumentException( ost.str(), VESPA_STRLOC);
+    }
+    if (nodeData.node != node) {
+        nodeData.addTo(_nodeStates, _nodeCount);
+    }
+    if (dot2 == vespalib::string::npos) {
+        return false; // No default key for nodes.
+    } else {
+        nodeData.ost << " " << key.substr(dot2 + 1) << ':' << value;
+    }
+    nodeData.node = node;
+    nodeData.empty = false;
+    return true;
 }
 
 namespace {

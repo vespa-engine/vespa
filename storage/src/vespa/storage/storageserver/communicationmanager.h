@@ -10,25 +10,19 @@
 
 #pragma once
 
-#include <vespa/documentapi/documentapi.h>
 #include "communicationmanagermetrics.h"
 #include "messageallocationtypes.h"
 #include "documentapiconverter.h"
 #include <vespa/storage/common/storagelink.h>
+#include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/config/config-stor-communicationmanager.h>
 #include <vespa/storageframework/storageframework.h>
-#include <vespa/storageframework/storageframework.h>
-#include <vespa/storageapi/messageapi/storagecommand.h>
-#include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageapi/mbusprot/storagecommand.h>
 #include <vespa/storageapi/mbusprot/storagereply.h>
 #include <vespa/messagebus/rpcmessagebus.h>
-#include <vespa/metrics/metrics.h>
 #include <vespa/vespalib/util/document_runnable.h>
 #include <map>
-#include <memory>
 #include <queue>
-#include <vector>
 #include <atomic>
 
 namespace storage {

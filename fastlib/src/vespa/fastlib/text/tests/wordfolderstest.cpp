@@ -4,11 +4,10 @@
 
 int WordFoldersTestApp::Main()
 {
-  WordFoldersTest t;
-  t.SetStream(&std::cout);
-  t.Run();
-  return t.Report();
+    WordFoldersTest t;
+    t.SetStream(&std::cout);
+    t.Run();
+    return t.Report();
 }
 
 FASTOS_MAIN(WordFoldersTestApp)
-

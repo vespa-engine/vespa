@@ -37,6 +37,7 @@ IMPLEMENT_AGGREGATIONRESULT(MinAggregationResult,     AggregationResult);
 IMPLEMENT_AGGREGATIONRESULT(AverageAggregationResult, AggregationResult);
 IMPLEMENT_AGGREGATIONRESULT(XorAggregationResult,     AggregationResult);
 IMPLEMENT_AGGREGATIONRESULT(ExpressionCountAggregationResult, AggregationResult);
+IMPLEMENT_AGGREGATIONRESULT(StandardDeviationAggregationResult, AggregationResult);
 
 AggregationResult::AggregationResult() :
     _expressionTree(new ExpressionTree()),
@@ -239,6 +240,8 @@ void MinAggregationResult::onReset()
     _min->setMax();
 }
 
+AverageAggregationResult::~AverageAggregationResult() {}
+
 void AverageAggregationResult::onMerge(const AggregationResult & b)
 {
     const AverageAggregationResult & avg(static_cast<const AverageAggregationResult &>(b));
@@ -349,6 +352,16 @@ Deserializer & SumAggregationResult::onDeserialize(Deserializer & is)
     AggregationResult::onDeserialize(is);
     return is >> _sum;
 }
+
+SumAggregationResult::SumAggregationResult()
+    : AggregationResult(),
+      _sum()
+{ }
+SumAggregationResult::SumAggregationResult(SingleResultNode::UP sum)
+    : AggregationResult(),
+      _sum(sum.release())
+{ }
+SumAggregationResult::~SumAggregationResult() {}
 
 void
 SumAggregationResult::visitMembers(vespalib::ObjectVisitor &visitor) const
@@ -485,6 +498,86 @@ Deserializer &ExpressionCountAggregationResult::onDeserialize(
     _rank.set(calculateRank(_hll.getSketch()));
     return is;
 }
+
+ExpressionCountAggregationResult::ExpressionCountAggregationResult() : AggregationResult(), _hll() { }
+ExpressionCountAggregationResult::~ExpressionCountAggregationResult() {}
+
+StandardDeviationAggregationResult::StandardDeviationAggregationResult()
+        : AggregationResult(), _count(), _sum(), _sumOfSquared(), _stdDevScratchPad()
+{
+    _stdDevScratchPad.reset(new expression::FloatResultNode());
+}
+
+StandardDeviationAggregationResult::~StandardDeviationAggregationResult() {}
+
+const NumericResultNode& StandardDeviationAggregationResult::getStandardDeviation() const noexcept
+{
+    if (_count == 0) {
+        _stdDevScratchPad->set(Int64ResultNode(0));
+    } else {
+        double variance = (_sumOfSquared.getFloat() - _sum.getFloat() * _sum.getFloat() / _count) / _count;
+        double stddev = std::sqrt(variance);
+        _stdDevScratchPad->set(FloatResultNode(stddev));
+    }
+    return *_stdDevScratchPad;
+}
+
+void StandardDeviationAggregationResult::onMerge(const AggregationResult &r) {
+    const StandardDeviationAggregationResult &result =
+            Identifiable::cast<const StandardDeviationAggregationResult &>(r);
+    _count += result._count;
+    _sum.add(result._sum);
+    _sumOfSquared.add(result._sumOfSquared);
+}
+
+void StandardDeviationAggregationResult::onAggregate(const ResultNode &result) {
+    if (result.isMultiValue()) {
+        static_cast<const ResultNodeVector &>(result).flattenSum(_sum);
+        static_cast<const ResultNodeVector &>(result).flattenSumOfSquared(_sumOfSquared);
+        _count += static_cast<const ResultNodeVector &>(result).size();
+    } else {
+        _sum.add(result);
+        FloatResultNode squared(result.getFloat());
+        squared.multiply(result);
+        _sumOfSquared.add(squared);
+        _count++;
+    }
+}
+
+void StandardDeviationAggregationResult::onReset()
+{
+    _count = 0;
+    _sum.set(0.0);
+    _sumOfSquared.set(0.0);
+}
+
+Serializer & StandardDeviationAggregationResult::onSerialize(Serializer & os) const
+{
+    AggregationResult::onSerialize(os);
+    double sum = _sum.getFloat();
+    double sumOfSquared = _sumOfSquared.getFloat();
+    return os << _count << sum << sumOfSquared;
+}
+
+Deserializer & StandardDeviationAggregationResult::onDeserialize(Deserializer & is)
+{
+    AggregationResult::onDeserialize(is);
+    double sum;
+    double sumOfSquared;
+    auto& r = is >> _count >> sum >> sumOfSquared;
+    _sum.set(sum);
+    _sumOfSquared.set(sumOfSquared);
+    return r;
+}
+
+void StandardDeviationAggregationResult::visitMembers(vespalib::ObjectVisitor &visitor) const
+{
+    AggregationResult::visitMembers(visitor);
+    visit(visitor, "count", _count);
+    visit(visitor, "sum", _sum);
+    visit(visitor, "sumOfSquared", _sumOfSquared);
+}
+
 }  // namespace aggregation
 }  // namespace search
 

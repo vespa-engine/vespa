@@ -2,11 +2,8 @@
 /**
 *******************************************************************************
 *
-* @author          Stein Hardy Danielsen
+* @author Stein Hardy Danielsen
 * @date            Creation date: 2000-10-07
-* @version         $Id$
-*
-* @file
 *
 * FileOutputStream class implementation
 *

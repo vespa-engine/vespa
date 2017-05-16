@@ -19,6 +19,10 @@ public:
               const vespalib::stringref & defMd5,
               const std::vector<vespalib::string> & defSchema);
 
+    ConfigKey(const ConfigKey &);
+    ConfigKey & operator = (const ConfigKey &);
+    ConfigKey(ConfigKey &&) = default;
+    ConfigKey & operator = (ConfigKey &&) = default;
     ConfigKey();
     ~ConfigKey();
 
@@ -52,4 +56,3 @@ private:
 };
 
 } //namespace config
-

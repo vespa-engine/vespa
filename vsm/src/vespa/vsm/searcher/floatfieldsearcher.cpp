@@ -1,38 +1,39 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include "floatfieldsearcher.h"
-#include <vespa/document/fieldvalue/fieldvalue.h>
-#include <climits>
 
 using search::QueryTerm;
 using search::QueryTermList;
 
-namespace vsm
-{
+namespace vsm {
 
 IMPLEMENT_DUPLICATE(FloatFieldSearcher);
 IMPLEMENT_DUPLICATE(DoubleFieldSearcher);
 
 template<typename T>
 FloatFieldSearcherT<T>::FloatFieldSearcherT(FieldIdT fId) :
-  FieldSearcher(fId),
-  _floatTerm()
-{
-}
+    FieldSearcher(fId),
+    _floatTerm()
+{}
+
+template<typename T>
+FloatFieldSearcherT<T>::~FloatFieldSearcherT() {}
 
 template<typename T>
 void FloatFieldSearcherT<T>::prepare(QueryTermList & qtl, const SharedSearcherBuf & buf)
 {
-  FieldSearcher::prepare(qtl, buf);
-  for (QueryTermList::const_iterator it=qtl.begin(); it < qtl.end(); it++) {
+    _floatTerm.clear();
+    FieldSearcher::prepare(qtl, buf);
+    for (QueryTermList::const_iterator it=qtl.begin(); it < qtl.end(); it++) {
     const QueryTerm * qt = *it;
     size_t sz(qt->termLen());
-    if (sz) {
-      double low;
-      double high;
-      bool valid = qt->getAsDoubleTerm(low, high);
-      _floatTerm.push_back(FloatInfo(low, high, valid));
+        if (sz) {
+            double low;
+            double high;
+            bool valid = qt->getAsDoubleTerm(low, high);
+            _floatTerm.push_back(FloatInfo(low, high, valid));
+        }
     }
-  }
 }
 
 

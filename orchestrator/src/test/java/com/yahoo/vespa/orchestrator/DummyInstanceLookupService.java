@@ -12,6 +12,8 @@ import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
+import com.yahoo.vespa.orchestrator.model.NodeGroup;
+import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
 import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 
 import java.util.HashSet;
@@ -32,7 +34,6 @@ public class DummyInstanceLookupService implements InstanceLookupService {
     public static final HostName TEST6_HOST_NAME = new HostName("test6.prod.us-east-1.vespahosted.ne1.yahoo.com");
 
     private static final Set<ApplicationInstance<ServiceMonitorStatus>> apps = new HashSet<>();
-
 
     static {
         apps.add(new ApplicationInstance<>(
@@ -118,6 +119,11 @@ public class DummyInstanceLookupService implements InstanceLookupService {
                 )
         ));
     }
+
+    // A node group is tied to an application, so we need to define them after we have populated the above applications.
+    public final static NodeGroup TEST1_NODE_GROUP = new NodeGroup(new DummyInstanceLookupService().findInstanceByHost(TEST1_HOST_NAME).get(), TEST1_HOST_NAME);
+    public final static NodeGroup TEST3_NODE_GROUP = new NodeGroup(new DummyInstanceLookupService().findInstanceByHost(TEST3_HOST_NAME).get(), TEST3_HOST_NAME);
+    public final static NodeGroup TEST6_NODE_GROUP = new NodeGroup(new DummyInstanceLookupService().findInstanceByHost(TEST6_HOST_NAME).get(), TEST6_HOST_NAME);
 
 
     @Override

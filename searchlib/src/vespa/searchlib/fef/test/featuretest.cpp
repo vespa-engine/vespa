@@ -1,16 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".fef.featuretest");
 
-#include <sstream>
 #include "featuretest.h"
 #include <vespa/searchlib/fef/utils.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 
-namespace search {
-namespace fef {
-namespace test {
+#include <vespa/log/log.h>
+LOG_SETUP(".fef.featuretest");
+
+namespace search::fef::test {
 
 FeatureTest::FeatureTest(BlueprintFactory &factory,
                          const IndexEnvironment &indexEnv,
@@ -28,8 +25,9 @@ FeatureTest::FeatureTest(BlueprintFactory &factory,
     _rankProgram(new RankProgram(_resolver)),
     _doneSetup(false)
 {
-    // empty
 }
+
+FeatureTest::~FeatureTest() {}
 
 FeatureTest::FeatureTest(BlueprintFactory &factory,
                          const IndexEnvironment &indexEnv,
@@ -141,6 +139,4 @@ FeatureTest::clear()
     _doneSetup = false;
 }
 
-} // namespace test
-} // namespace fef
-} // namespace search
+}

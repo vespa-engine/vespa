@@ -24,8 +24,21 @@ import static org.junit.Assert.fail;
  * @author bratseth
  */
 public class HostedDeployTest {
+
     private static final String dockerRegistry = "foo.com:4443";
     private static final String dockerVespaBaseImage = "/vespa/ci";
+
+    @Test
+    public void testRedeployWithVersion() throws InterruptedException, IOException {
+        DeployTester tester = new DeployTester("src/test/apps/hosted/", createConfigserverConfig());
+        tester.deployApp("myApp", Optional.of("4.5.6"));
+
+        Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive();
+        assertTrue(deployment.isPresent());
+        deployment.get().prepare();
+        deployment.get().activate();
+        assertEquals("4.5.6", ((Deployment)deployment.get()).session().getVespaVersion().toString());
+    }
 
     @Test
     public void testRedeploy() throws InterruptedException, IOException {

@@ -22,7 +22,7 @@
     "clustertype": "container",
     "clusterid": "id1",
     "group": "0",
-    "index": 0,
+    "index": 1,
     "retired": false
   },
   "restartGeneration": 0,
@@ -37,5 +37,6 @@
   "hardwareFailure" : false,
   "wantToRetire" : false,
   "history":[{"event":"readied","at":123,"agent":"system"},{"event":"reserved","at":123,"agent":"application"}],
-  "ipAddresses":["::1", "127.0.0.1"]
+  "ipAddresses":["::1", "127.0.0.1"],
+  "additionalIpAddresses":[]
 }

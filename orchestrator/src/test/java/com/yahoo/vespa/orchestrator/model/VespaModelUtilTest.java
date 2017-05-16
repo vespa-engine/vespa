@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.orchestrator;
+package com.yahoo.vespa.orchestrator.model;
 
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
@@ -10,19 +10,21 @@ import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
+import com.yahoo.vespa.orchestrator.TestUtil;
 import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
-import static com.google.common.collect.Sets.newHashSet;
 import static com.yahoo.vespa.orchestrator.TestUtil.makeServiceClusterSet;
 import static com.yahoo.vespa.orchestrator.TestUtil.makeServiceInstanceSet;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.fest.assertions.Assertions.assertThat;
+import static org.junit.Assert.fail;
 
 /**
  * @author hakonhall
@@ -35,11 +37,11 @@ public class VespaModelUtilTest {
     public static final HostName controller0Host = new HostName("controller-0");
 
     private static final ServiceInstance<ServiceMonitorStatus> controller0 = new ServiceInstance<>(
-            TestUtil.clusterControllerConfigId(0),
+            TestUtil.clusterControllerConfigId(CONTENT_CLUSTER_ID.toString(), 0),
             controller0Host,
             ServiceMonitorStatus.UP);
     private static final ServiceInstance<ServiceMonitorStatus> controller1 = new ServiceInstance<>(
-            TestUtil.clusterControllerConfigId(1),
+            TestUtil.clusterControllerConfigId(CONTENT_CLUSTER_ID.toString(), 1),
             new HostName("controller-1"),
             ServiceMonitorStatus.UP);
 
@@ -169,9 +171,8 @@ public class VespaModelUtilTest {
 
     @Test
     public void testGettingClusterControllerInstances() {
-        Set<ServiceInstance<?>> controllers =
-                new HashSet<>(VespaModelUtil.getClusterControllerInstances(application, CONTENT_CLUSTER_ID));
-        Set<ServiceInstance<ServiceMonitorStatus>> expectedControllers = newHashSet(controller0, controller1);
+        List<HostName> controllers = VespaModelUtil.getClusterControllerInstancesInOrder(application, CONTENT_CLUSTER_ID);
+        List<HostName> expectedControllers = Arrays.asList(controller0.hostName(), controller1.hostName());
 
         assertThat(controllers).isEqualTo(expectedControllers);
     }
@@ -216,8 +217,21 @@ public class VespaModelUtilTest {
     }
 
     @Test
+    public void testGetClusterControllerIndexWithStandaloneClusterController() {
+        ConfigId configId = new ConfigId("fantasy_sports/standalone/fantasy_sports-controllers/1");
+        assertThat(VespaModelUtil.getClusterControllerIndex(configId)).isEqualTo(1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBadClusterControllerConfigId() {
+        ConfigId configId = new ConfigId("fantasy_sports/storage/9");
+        VespaModelUtil.getClusterControllerIndex(configId);
+        fail();
+    }
+
+    @Test
     public void testGetStorageNodeIndex() {
-        ConfigId configId = TestUtil.storageNodeConfigId(3);
+        ConfigId configId = TestUtil.storageNodeConfigId(CONTENT_CLUSTER_ID.toString(), 3);
         assertThat(VespaModelUtil.getStorageNodeIndex(configId)).isEqualTo(3);
     }
 }

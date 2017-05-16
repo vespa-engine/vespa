@@ -1,7 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.codegen;
 
-import java.io.*;
+import java.io.FileWriter;
+import java.io.File;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.FileReader;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -318,45 +324,29 @@ public class CppClassBuilder implements ClassBuilder {
         w.write(indent + "void serialize(vespalib::slime::Cursor & __cursor) const;\n");
     }
 
-    void writeClassCopyConstructorDeclaration(Writer w, String className, CNode node, String indent) throws IOException {
+    void writeClassCopyConstructorDeclaration(Writer w, String className, String indent) throws IOException {
         w.write(indent + className + "(const " + className + " & __rhs);\n");
     }
-
-
-    void writeClassCopyConstructorDefinitionCommon(Writer w, CNode node) throws IOException {
-        for (int i = 0; i < node.getChildren().length; ++i) {
-            CNode child = node.getChildren()[i];
-            String childName = getIdentifier(child.getName());
-            if (i == 0) {
-                w.write(" " + childName + "(__rhs." + childName + ")");
-            } else {
-                w.write(",\n      " + childName + "(__rhs." + childName + ")");
-            }
-        }
+    void writeClassAssignmentOperatorDeclaration(Writer w, String className, String indent) throws IOException {
+        w.write(indent + className + " & operator = (const " + className + " & __rhs);\n");
     }
 
-    void writeConfigClassCopyConstructorDefinition(Writer w, String parent, String className, CNode node) throws IOException {
-        w.write(parent + className + "(const " + className + " & __rhs)\n");
-        w.write("    : ConfigInstance(),\n     ");
-        writeClassCopyConstructorDefinitionCommon(w, node);
-        w.write("\n"
-                + "{\n"
-                + "}\n"
-                + "\n"
-                );
+    void writeConfigClassCopyConstructorDefinition(Writer w, String parent, String className) throws IOException {
+        w.write(parent + "::" + className + "(const " + className + " & __rhs) = default;\n");
+    }
+    void writeConfigClassAssignmentOperatorDefinition(Writer w, String parent, String className) throws IOException {
+        w.write(parent + " & " + parent + "::" + "operator =(const " + className + " & __rhs) = default;\n");
     }
 
     void writeClassCopyConstructorDefinition(Writer w, String parent, CNode node) throws IOException {
         String typeName = getTypeName(node, false);
+        w.write(parent + "::" + typeName + "(const " + typeName + " & __rhs) = default;\n");
+    }
+
+    void writeClassAssignmentOperatorDefinition(Writer w, String parent, CNode node) throws IOException {
+        String typeName = getTypeName(node, false);
         // Write empty constructor
-        w.write(parent + typeName + "(const " + typeName + " & __rhs)\n");
-        w.write("    :");
-        writeClassCopyConstructorDefinitionCommon(w, node);
-        w.write("\n"
-                + "{\n"
-                + "}\n"
-                + "\n"
-                );
+        w.write(parent + " & " + parent + "::" + "operator = (const " + typeName + " & __rhs) = default;\n");
     }
 
     void writeDestructor(Writer w, String parent, String className) throws IOException {
@@ -365,7 +355,8 @@ public class CppClassBuilder implements ClassBuilder {
 
     void writeCommonFunctionDeclarations(Writer w, String className, CNode node, String indent) throws IOException {
         w.write("" + indent + className + "();\n");
-        writeClassCopyConstructorDeclaration(w, className, node, indent);
+        writeClassCopyConstructorDeclaration(w, className, indent);
+        writeClassAssignmentOperatorDeclaration(w, className, indent);
         w.write("" + indent + "~" + className + "();\n");
         w.write("\n"
                 + indent + "bool operator==(const " + className + "& __rhs) const;\n"
@@ -597,12 +588,13 @@ public class CppClassBuilder implements ClassBuilder {
         w.write("\n");
     }
 
-    void writeDefinition(Writer w, CNode node, String parent) throws IOException {
+    void writeDefinition(Writer w, CNode node, String fullClassName) throws IOException {
         boolean root = false;
-        if (parent == null) {
-            parent = getInternalClassName(node) + "::";
+        if (fullClassName == null) {
+            fullClassName =  getInternalClassName(node);
             root = true;
         }
+        final String parent = fullClassName + "::";
         java.util.Set<String> declaredTypes = new java.util.HashSet<String>();
         for (CNode child : node.getChildren()) {
             boolean complexType = (child instanceof InnerCNode || child instanceof LeafCNode.EnumLeaf);
@@ -662,7 +654,7 @@ public class CppClassBuilder implements ClassBuilder {
                     w.write("    return __eDefault;\n");
                     w.write("}\n\n");
                 } else {
-                    writeDefinition(w, child, parent + typeName + "::");
+                    writeDefinition(w, child, parent + typeName);
                 }
             }
         }
@@ -711,10 +703,13 @@ public class CppClassBuilder implements ClassBuilder {
                 + "\n"
                 );
         // Write copy constructor
-        if (root)
-            writeConfigClassCopyConstructorDefinition(w, parent, typeName, node);
-        else
-            writeClassCopyConstructorDefinition(w, parent, node);
+        if (root) {
+            writeConfigClassCopyConstructorDefinition(w, fullClassName, typeName);
+            writeConfigClassAssignmentOperatorDefinition(w, fullClassName, typeName);
+        } else {
+            writeClassCopyConstructorDefinition(w, fullClassName, node);
+            writeClassAssignmentOperatorDefinition(w, fullClassName, node);
+        }
         writeDestructor(w, parent, typeName);
 
         // Write parsing constructor

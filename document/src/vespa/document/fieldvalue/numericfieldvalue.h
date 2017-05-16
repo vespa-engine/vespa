@@ -31,7 +31,7 @@ protected:
 public:
     typedef Number value_type;
 
-    NumericFieldValue(Number value=0) : NumericFieldValueBase(), _value(value) { }
+    NumericFieldValue(Number value=0) : NumericFieldValueBase(), _value(value), _altered(false) { }
 
     value_type getValue() const { return _value; }
     void setValue(Number newValue) { _value = newValue; }

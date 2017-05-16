@@ -26,6 +26,10 @@ AgeExecutor::AgeExecutor(const IAttributeVector *attribute) :
     }
 }
 
+AgeBlueprint::~AgeBlueprint()
+{
+}
+
 void
 AgeExecutor::execute(uint32_t docId)
 {

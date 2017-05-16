@@ -48,7 +48,7 @@ public:
 
     struct NoOpStorageLinkInjector : StorageLinkInjector
     {
-        void inject(DummyStorageLink&) const {}
+        void inject(DummyStorageLink&) const override {}
     };
 
     void

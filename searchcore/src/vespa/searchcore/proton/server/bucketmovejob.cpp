@@ -58,14 +58,19 @@ BucketMoveJob::checkBucket(const BucketId &bucket,
                            DocumentBucketMover &mover,
                            IFrozenBucketHandler::ExclusiveBucketGuard::UP & bucketGuard)
 {
-    bool hasReadyDocs = itr.hasReadyBucketDocs();
-    bool hasNotReadyDocs = itr.hasNotReadyBucketDocs();
+    const bool hasReadyDocs = itr.hasReadyBucketDocs();
+    const bool hasNotReadyDocs = itr.hasNotReadyBucketDocs();
     if (!hasReadyDocs && !hasNotReadyDocs) {
         return; // No documents for bucket in ready or notready subdbs
     }
-    bool shouldBeReady = _calc->shouldBeReady(bucket);
-    bool isActive = itr.isActive();
-    bool wantReady = shouldBeReady || isActive;
+    const bool isActive = itr.isActive();
+    // No point in moving buckets when node is retired and everything will be deleted soon.
+    // However, allow moving of explicitly activated buckets, as this implies a lack of other good replicas.
+    if (_calc->nodeRetired() && !isActive) {
+        return;
+    }
+    const bool shouldBeReady = _calc->shouldBeReady(bucket);
+    const bool wantReady = shouldBeReady || isActive;
     LOG(spam, "checkBucket(): bucket(%s), shouldBeReady(%s), active(%s)",
               bucket.toString().c_str(), bool2str(shouldBeReady), bool2str(isActive));
     if (wantReady) {

@@ -101,10 +101,10 @@ public:
      */
 
     static uint32_t hash(const char *orig_k,
-                         register uint32_t length,
-                         register uint32_t initval) {
-        register uint32_t a,b,c,len;
-        register const unsigned char *k;
+                         uint32_t length,
+                         uint32_t initval) {
+        uint32_t a,b,c,len;
+        const unsigned char *k;
         k = reinterpret_cast<const unsigned char *>(orig_k);
 
         /* Set up the internal state */

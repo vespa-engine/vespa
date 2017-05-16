@@ -63,6 +63,8 @@ CreateVisitorCommand::CreateVisitorCommand(const CreateVisitorCommand& o)
 {
 }
 
+CreateVisitorCommand::~CreateVisitorCommand() {}
+
 StorageCommand::UP
 CreateVisitorCommand::createCopyToForward(
             const document::BucketId& bucket, uint64_t) const
@@ -178,6 +180,9 @@ VisitorInfoCommand::VisitorInfoCommand()
       _bucketsCompleted(),
       _error(ReturnCode::OK)
 {
+}
+
+VisitorInfoCommand::~VisitorInfoCommand() {
 }
 
 void

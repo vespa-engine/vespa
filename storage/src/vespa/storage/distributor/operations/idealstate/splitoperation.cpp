@@ -1,19 +1,25 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/distributor/operations/idealstate/splitoperation.h>
-#include <vespa/storageapi/messageapi/storagereply.h>
-#include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/vdslib/state/clusterstate.h>
+
+#include "splitoperation.h"
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
-#include <algorithm>
-#include <vespa/storage/distributor/pendingmessagetracker.h>
+#include <vespa/storageapi/message/bucketsplitting.h>
 
 #include <vespa/log/log.h>
 
 LOG_SETUP(".distributor.operation.idealstate.split");
 
 using namespace storage::distributor;
+
+SplitOperation::SplitOperation(const std::string& clusterName, const BucketAndNodes& nodes,
+                               uint32_t maxBits, uint32_t splitCount, uint32_t splitSize)
+    : IdealStateOperation(nodes),
+      _tracker(clusterName),
+      _maxBits(maxBits),
+      _splitCount(splitCount),
+      _splitSize(splitSize)
+{}
+SplitOperation::~SplitOperation() {}
 
 void
 SplitOperation::onStart(DistributorMessageSender& sender)

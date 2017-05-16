@@ -1,10 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <sstream>
-#include <vespa/storage/distributor/maintenance/simplemaintenancescanner.h>
+#include "simplemaintenancescanner.h"
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
+
+SimpleMaintenanceScanner::~SimpleMaintenanceScanner() {}
+
+SimpleMaintenanceScanner::PendingMaintenanceStats::PendingMaintenanceStats() {}
+SimpleMaintenanceScanner::PendingMaintenanceStats::~PendingMaintenanceStats() {}
+SimpleMaintenanceScanner::PendingMaintenanceStats::PendingMaintenanceStats(const PendingMaintenanceStats &) = default;
+SimpleMaintenanceScanner::PendingMaintenanceStats &
+SimpleMaintenanceScanner::PendingMaintenanceStats::operator = (const PendingMaintenanceStats &) = default;
 
 MaintenanceScanner::ScanResult
 SimpleMaintenanceScanner::scanNext()
@@ -28,9 +33,7 @@ SimpleMaintenanceScanner::reset()
 void
 SimpleMaintenanceScanner::prioritizeBucket(const document::BucketId& id)
 {
-    MaintenancePriorityAndType pri(
-            _priorityGenerator.prioritize(
-                    id, _pendingMaintenance.perNodeStats));
+    MaintenancePriorityAndType pri(_priorityGenerator.prioritize(id, _pendingMaintenance.perNodeStats));
     if (pri.requiresMaintenance()) {
         _bucketPriorityDb.setPriority(PrioritizedBucket(id, pri.getPriority().getPriority()));
         assert(pri.getType() != MaintenanceOperation::OPERATION_COUNT);
@@ -52,5 +55,4 @@ operator<<(std::ostream& os,
     return os;
 }
 
-}
 }

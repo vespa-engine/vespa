@@ -344,6 +344,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
+        <version>3.0.2</version>
         <executions>
           <!-- for testing -->
           <execution>
@@ -379,6 +380,7 @@
               <classesDirectory>target/test-classes</classesDirectory>
               <outputDirectory>tmp/</outputDirectory>
               <finalName>apiplugin</finalName>
+              <classifier>apiplugin</classifier>
               <includes>
                 <include>**/test/ApiPlugin.class</include>
                 <include>**/test/ApiService.class</include>

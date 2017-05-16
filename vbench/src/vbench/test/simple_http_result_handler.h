@@ -19,6 +19,7 @@ private:
 
 public:
     SimpleHttpResultHandler();
+    ~SimpleHttpResultHandler();
     virtual void handleHeader(const string &name, const string &value) override;
     virtual void handleContent(const Memory &data) override;
     virtual void handleFailure(const string &reason) override;

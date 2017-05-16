@@ -4,6 +4,7 @@
 
 #include "nativerankfeature.h"
 #include "queryterm.h"
+#include <vespa/fastos/dynamiclibrary.h>
 
 namespace search {
 namespace features {
@@ -101,6 +102,7 @@ private:
 
 public:
     NativeFieldMatchBlueprint();
+    ~NativeFieldMatchBlueprint();
     void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
     fef::Blueprint::UP createInstance() const override;
     fef::ParameterDescriptions getDescriptions() const override {

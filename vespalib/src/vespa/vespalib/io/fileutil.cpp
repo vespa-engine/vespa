@@ -610,6 +610,11 @@ lstat(const stringref & path)
 }
 
 bool
+fileExists(const vespalib::stringref & path) {
+    return (stat(path).get() != 0);
+}
+
+bool
 unlink(const stringref & filename)
 {
     if (::unlink(filename.c_str()) != 0) {
@@ -807,6 +812,12 @@ getOpenErrorString(const int osError, const stringref filename)
     os << " dirStat";
     addStat(os, dirName.c_str());
     return os.str();
+}
+
+bool
+isDirectory(const vespalib::stringref & path) {
+    FileInfo::UP info(stat(path));
+    return (info.get() && info->_directory);
 }
 
 } // vespalib

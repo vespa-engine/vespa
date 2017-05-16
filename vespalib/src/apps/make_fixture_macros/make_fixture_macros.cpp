@@ -47,7 +47,7 @@ void make_wrapper(int n) {
     out_list_nn("        Test(", "F%d &f%d_in", ") : ", n);
     out_if("f(f1_in), ", n == 1);
     out_list_nn("", "f%d(f%d_in)", " {} \\\n", n);
-    out("        virtual void test_entry_point(); \\\n");
+    out("        void test_entry_point() override; \\\n");
     out("    }; \\\n");
 }
 
@@ -92,7 +92,7 @@ void make_macro_impl(int n) {
     out("    TEST_CAT(TestKitHook, __LINE__)() : vespalib::TestHook(__FILE__, name, ignore) {} \\\n");
     make_wrapper(n);
     make_dispatch(n);
-    out("    virtual bool run() { \\\n");
+    out("    bool run() override { \\\n");
     out("        TEST_STATE(name); \\\n");
     out_if("        size_t num_threads(threads); (void) num_threads; \\\n", n > 0);
     if (n > 0) {

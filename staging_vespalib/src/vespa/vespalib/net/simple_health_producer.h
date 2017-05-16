@@ -15,6 +15,7 @@ private:
 
 public:
     SimpleHealthProducer();
+    ~SimpleHealthProducer();
     void setOk();
     void setFailed(const vespalib::string &msg);
     Health getHealth() const override;

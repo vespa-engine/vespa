@@ -10,7 +10,6 @@ ValueExecutor::ValueExecutor(const std::vector<feature_t> & values) :
     search::fef::FeatureExecutor(),
     _values(values)
 {
-    // empty
 }
 
 void
@@ -31,14 +30,14 @@ ValueBlueprint::ValueBlueprint() :
     search::fef::Blueprint("value"),
     _values()
 {
-    // empty
 }
+
+ValueBlueprint::~ValueBlueprint() {}
 
 void
 ValueBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment &,
                                   search::fef::IDumpFeatureVisitor &) const
 {
-    // empty
 }
 
 bool

@@ -41,7 +41,7 @@ public:
     uint64_t setDomainPartSize();
     DomainStats getDomainStats() const;
 
-    virtual void commit(const vespalib::string & domainName, const Packet & packet) override;
+    void commit(const vespalib::string & domainName, const Packet & packet) override;
 
 
     class Session
@@ -56,8 +56,8 @@ public:
     };
 
 private:
-    virtual bool onStop() override;
-    virtual void run() override;
+    bool onStop() override;
+    void run() override;
     void exportRPC(FRT_Supervisor & supervisor);
     void relayToThreadRPC(FRT_RPCRequest *req);
 

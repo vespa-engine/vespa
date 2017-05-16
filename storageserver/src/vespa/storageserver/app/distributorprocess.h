@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <vespa/storageserver/app/process.h>
+#include "process.h"
 
 namespace storage {
 
@@ -24,19 +24,16 @@ public:
     DistributorProcess(const config::ConfigUri & configUri);
     ~DistributorProcess();
 
-    virtual void shutdown();
+    void shutdown() override;
+    void setupConfig(uint64_t subscribeTimeout) override;
+    void createNode() override;
+    bool configUpdated() override;
+    void updateConfig() override;
+    StorageNode& getNode() override { return *_node; }
+    StorageNodeContext& getContext() override { return _context; }
+    std::string getComponentName() const override { return "distributor"; }
 
-    virtual void setupConfig(uint64_t subscribeTimeout);
-    virtual void createNode();
-    virtual bool configUpdated();
-    virtual void updateConfig();
-
-    virtual StorageNode& getNode() { return *_node; }
-    virtual StorageNodeContext& getContext() { return _context; }
     virtual DistributorNodeContext& getDistributorContext() { return _context; }
-
-    virtual std::string getComponentName() const { return "distributor"; }
 };
 
 } // storage
-

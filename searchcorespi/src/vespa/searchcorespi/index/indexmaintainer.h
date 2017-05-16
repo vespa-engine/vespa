@@ -73,12 +73,12 @@ class IndexMaintainer : public IIndexManager,
     class ChangeGens
     {
     public:
-        uint32_t _wipeGen;
+        uint32_t _pruneGen;
 
-        ChangeGens() : _wipeGen(0) { }
-        void bumpWipeGen(void) { ++_wipeGen; }
-        bool operator==(const ChangeGens &rhs) const { return _wipeGen == rhs._wipeGen; }
-        bool operator!=(const ChangeGens &rhs) const { return _wipeGen != rhs._wipeGen; }
+        ChangeGens() : _pruneGen(0) { }
+        void bumpPruneGen(void) { ++_pruneGen; }
+        bool operator==(const ChangeGens &rhs) const { return _pruneGen == rhs._pruneGen; }
+        bool operator!=(const ChangeGens &rhs) const { return _pruneGen != rhs._pruneGen; }
     };
 
     typedef std::vector<uint32_t> FlushIds;
@@ -91,7 +91,7 @@ class IndexMaintainer : public IIndexManager,
     Schema                 _schema;             // Protected by SL + IUL
     Schema::SP             _activeFusionSchema; // Protected by SL + IUL
     // Protected by SL + IUL
-    Schema::SP             _activeFusionWipeTimeSchema;
+    Schema::SP             _activeFusionPrunedSchema;
     uint32_t               _source_selector_changes; // Protected by IUL
     // _selector is protected by SL + IUL
     ISourceSelector::SP             _selector;
@@ -134,8 +134,8 @@ class IndexMaintainer : public IIndexManager,
      *
      * Things get more complicated when handling multiple kinds of overlapping
      * flush operations, e.g. dump from memory to disk, fusion, schema changes
-     * and wipe of old fields, since this will trigger more retries for some
-     * of the operations.
+     * and pruning of removed fields, since this will trigger more retries for
+     * some of the operations.
      */
     vespalib::Lock _state_lock;  // Outer lock (SL)
     vespalib::Lock _index_update_lock;  // Inner lock (IUL)
@@ -168,14 +168,14 @@ class IndexMaintainer : public IIndexManager,
     void
     updateDiskIndexSchema(const vespalib::string &indexDir,
                           const Schema &schema,
-                          SerialNum wipeSerial);
+                          SerialNum serialNum);
 
     void
     updateIndexSchemas(IIndexCollection &coll,
                        const Schema &schema,
-                       SerialNum wipeSerial);
+                       SerialNum serialNum);
 
-    void updateActiveFusionWipeTimeSchema(const Schema &schema);
+    void updateActiveFusionPrunedSchema(const Schema &schema);
     void deactivateDiskIndexes(vespalib::string indexDir);
     IDiskIndex::SP loadDiskIndex(const vespalib::string &indexDir);
     IDiskIndex::SP reloadDiskIndex(const IDiskIndex &oldIndex);
@@ -208,7 +208,7 @@ class IndexMaintainer : public IIndexManager,
         // or data structure limitations).
         FrozenMemoryIndexRefs _extraIndexes;
         ChangeGens _changeGens;
-        Schema::SP _wtSchema;
+        Schema::SP _prunedSchema;
 
         FlushArgs();
         FlushArgs(const FlushArgs &) = delete;
@@ -235,14 +235,14 @@ class IndexMaintainer : public IIndexManager,
         uint32_t   _new_fusion_id;
         ChangeGens _changeGens;
         Schema     _schema;
-        Schema::SP _wtSchema;
+        Schema::SP _prunedSchema;
         ISearchableIndexCollection::SP _old_source_list; // Delays destruction
 
         FusionArgs()
             : _new_fusion_id(0u),
               _changeGens(),
               _schema(),
-              _wtSchema(),
+              _prunedSchema(),
               _old_source_list()
         { }
         ~FusionArgs();
@@ -273,7 +273,7 @@ class IndexMaintainer : public IIndexManager,
     void doneSetSchema(SetSchemaArgs &args, IMemoryIndex::SP &newIndex);
 
     Schema getSchema(void) const;
-    Schema::SP getActiveFusionWipeTimeSchema() const;
+    Schema::SP getActiveFusionPrunedSchema() const;
     search::TuneFileAttributes getAttrTune();
     ChangeGens getChangeGens();
 
@@ -287,7 +287,7 @@ class IndexMaintainer : public IIndexManager,
     bool makeSureAllRemainingWarmupIsDone(ISearchableIndexCollection::SP keepAlive);
     void scheduleCommit();
     void commit();
-    void internalWipeHistory(const Schema &schema, SerialNum wipeSerial);
+    void pruneRemovedFields(const Schema &schema, SerialNum serialNum);
 
 public:
     IndexMaintainer(const IndexMaintainer &) = delete;
@@ -383,7 +383,6 @@ public:
 
     IFlushTarget::List getFlushTargets() override;
     void setSchema(const Schema & schema, SerialNum serialNum) override ;
-    void wipeHistory(SerialNum wipeSerial) override;
 };
 
 } // namespace index

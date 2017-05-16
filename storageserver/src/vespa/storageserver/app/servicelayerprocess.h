@@ -16,7 +16,7 @@
  */
 #pragma once
 
-#include <vespa/storageserver/app/process.h>
+#include "process.h"
 #include <vespa/config/config.h>
 #include <vespa/config/helper/configfetcher.h>
 #include <vespa/config-persistence.h>
@@ -32,18 +32,17 @@ protected:
 
 public:
     ServiceLayerProcess(const config::ConfigUri & configUri);
+    ~ServiceLayerProcess();
 
-    virtual void shutdown() override;
+    void shutdown() override;
 
     virtual void setupProvider() = 0;
     virtual spi::PersistenceProvider& getProvider() = 0;
 
-    virtual void createNode() override;
-
-    virtual StorageNode& getNode() override { return *_node; }
-    virtual StorageNodeContext& getContext() override { return _context; }
-
-    virtual std::string getComponentName() const override { return "servicelayer"; }
+    void createNode() override;
+    StorageNode& getNode() override { return *_node; }
+    StorageNodeContext& getContext() override { return _context; }
+    std::string getComponentName() const override { return "servicelayer"; }
 };
 
 } // storage

@@ -1,7 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("flushengine_test");
 
 #include <vespa/searchcore/proton/flushengine/cachedflushtarget.h>
 #include <vespa/searchcore/proton/flushengine/flush_engine_explorer.h>
@@ -16,7 +13,9 @@ LOG_SETUP("flushengine_test");
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/test/insertion_operators.h>
-#include <memory>
+
+#include <vespa/log/log.h>
+LOG_SETUP("flushengine_test");
 
 // --------------------------------------------------------------------------------
 //
@@ -263,7 +262,7 @@ public:
     {
     }
 
-    SimpleTarget(const std::string &name = "anon", search::SerialNum flushedSerial = 0, bool proceedImmediately = true) :
+    SimpleTarget(const std::string &name, search::SerialNum flushedSerial = 0, bool proceedImmediately = true) :
         test::DummyFlushTarget(name),
         _flushedSerial(flushedSerial),
         _proceed(),
@@ -277,6 +276,9 @@ public:
             _proceed.countDown();
         }
     }
+    SimpleTarget(search::SerialNum flushedSerial = 0, bool proceedImmediately = true)
+        : SimpleTarget("anon", flushedSerial, proceedImmediately)
+    { }
 
     virtual Time
     getLastFlushTime() const override { return fastos::ClockSystem::now(); }
@@ -309,12 +311,11 @@ public:
 public:
     typedef std::shared_ptr<AssertedTarget> SP;
 
-    AssertedTarget(const std::string &name = "anon")
-        : SimpleTarget(name),
+    AssertedTarget()
+        : SimpleTarget("anon"),
           _mgain(false),
           _serial(false)
     {
-        // empty
     }
 
     virtual MemoryGain

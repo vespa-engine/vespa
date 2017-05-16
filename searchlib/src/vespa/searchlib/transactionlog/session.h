@@ -47,25 +47,25 @@ private:
     public:
         VisitTask(const Session::SP & session) : _session(session) { }
     private:
-        virtual void run();
+        void run() override;
         Session::SP _session;
     };
     class SubscribeTask : public Task {
     public:
         SubscribeTask(const Session::SP & session) : _session(session) { }
     private:
-        virtual void run();
+        void run() override;
         Session::SP _session;
     };
     class SendTask : public Task {
     public:
         SendTask(const Session::SP & session) : _session(session) { }
-        virtual void run();
+        void run() override;
     private:
         Session::SP _session;
     };
     bool send(FRT_RPCRequest * req, bool wait);
-    virtual void RequestDone(FRT_RPCRequest *req);
+    void RequestDone(FRT_RPCRequest *req) override;
     bool send(const Packet & packet);
     void sendPacket(SerialNum serial, const Packet & packet);
     bool sendDone();

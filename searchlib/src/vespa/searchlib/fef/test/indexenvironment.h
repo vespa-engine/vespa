@@ -11,9 +11,7 @@
 #include <string>
 #include <vector>
 
-namespace search {
-namespace fef {
-namespace test {
+namespace search::fef::test {
 
 /**
  * Implementation of the IIndexEnvironment interface used for testing.
@@ -49,37 +47,19 @@ public:
     };
 
     using ConstantsMap = std::map<vespalib::string, Constant>;
-    /**
-     * Constructs a new index environment.
-     */
+
     IndexEnvironment();
+    ~IndexEnvironment();
 
-    // Inherit doc from IIndexEnvironment.
-    virtual const Properties &getProperties() const override { return _properties; }
-
-    // Inherit doc from IIndexEnvironment.
-    virtual uint32_t getNumFields() const override { return _fields.size(); }
-
-    // Inherit doc from IIndexEnvironment.
-    virtual const FieldInfo *getField(uint32_t id) const override;
-
-    // Inherit doc from IIndexEnvironment.
-    virtual const FieldInfo *getFieldByName(const string &name) const override;
-
-    // Inherit doc from IIndexEnvironment.
-    virtual const ITableManager &getTableManager() const override { return _tableMan; }
-
-    // Inherit doc from IIndexEnvironment.
-    virtual FeatureMotivation getFeatureMotivation() const override { return UNKNOWN; }
-
-    // Inherit doc from IIndexEnvironment.
-    virtual void hintFeatureMotivation(FeatureMotivation) const override {}
-
-    // Inherit doc from IIndexEnvironment.
-    virtual void hintFieldAccess(uint32_t) const override {}
-
-    // Inherit doc from IIndexEnvironment.
-    virtual void hintAttributeAccess(const string &) const override {}
+    const Properties &getProperties() const override { return _properties; }
+    uint32_t getNumFields() const override { return _fields.size(); }
+    const FieldInfo *getField(uint32_t id) const override;
+    const FieldInfo *getFieldByName(const string &name) const override;
+    const ITableManager &getTableManager() const override { return _tableMan; }
+    FeatureMotivation getFeatureMotivation() const override { return UNKNOWN; }
+    void hintFeatureMotivation(FeatureMotivation) const override {}
+    void hintFieldAccess(uint32_t) const override {}
+    void hintAttributeAccess(const string &) const override {}
 
     /** Returns a reference to the properties map of this. */
     Properties &getProperties() { return _properties; }
@@ -114,7 +94,4 @@ private:
     ConstantsMap           _constants;
 };
 
-} // namespace test
-} // namespace fef
-} // namespace search
-
+}

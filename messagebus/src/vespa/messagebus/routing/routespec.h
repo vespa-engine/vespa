@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <string>
+#include <vespa/vespalib/stllike/string.h>
 #include <vector>
 
 namespace mbus {
@@ -28,6 +28,12 @@ public:
      * @param name A protocol-unique name for this route.
      */
     RouteSpec(const string &name);
+    RouteSpec(const RouteSpec &);
+    RouteSpec & operator = (const RouteSpec &);
+    RouteSpec(RouteSpec &&) = default;
+    RouteSpec & operator = (RouteSpec &&) = default;
+
+    ~RouteSpec();
 
     /**
      * Returns the protocol-unique name of this route.

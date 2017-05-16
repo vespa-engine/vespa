@@ -82,8 +82,8 @@ public class TimeoutManagerImplTestCase {
     @Test
     public void requireThatNullRequestContentCanTimeout() throws InterruptedException {
         Context ctx = new Context(MyRequestHandler.newNullContent());
-        assertEquals(Response.Status.REQUEST_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newInstance()));
-        assertEquals(Response.Status.REQUEST_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newInstance()));
+        assertEquals(Response.Status.GATEWAY_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newInstance()));
+        assertEquals(Response.Status.GATEWAY_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newInstance()));
         assertTrue(ctx.close());
     }
 
@@ -96,31 +96,31 @@ public class TimeoutManagerImplTestCase {
         } catch (RequestDeniedException e) {
 
         }
-        assertEquals(Response.Status.REQUEST_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newInstance()));
+        assertEquals(Response.Status.GATEWAY_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newInstance()));
         assertTrue(ctx.close());
     }
 
     @Test
     public void requireThatTimeoutWorksAfterResponseDenied() throws InterruptedException {
         Context ctx = new Context(MyRequestHandler.newInstance());
-        assertEquals(Response.Status.REQUEST_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newResponseDenied()));
-        assertEquals(Response.Status.REQUEST_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newInstance()));
+        assertEquals(Response.Status.GATEWAY_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newResponseDenied()));
+        assertEquals(Response.Status.GATEWAY_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newInstance()));
         assertTrue(ctx.close());
     }
 
     @Test
     public void requireThatTimeoutWorksAfterResponseThrowsException() throws InterruptedException {
         Context ctx = new Context(MyRequestHandler.newInstance());
-        assertEquals(Response.Status.REQUEST_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newThrowException()));
-        assertEquals(Response.Status.REQUEST_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newInstance()));
+        assertEquals(Response.Status.GATEWAY_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newThrowException()));
+        assertEquals(Response.Status.GATEWAY_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newInstance()));
         assertTrue(ctx.close());
     }
 
     @Test
     public void requireThatTimeoutWorksAfterResponseInterruptsThread() throws InterruptedException {
         Context ctx = new Context(MyRequestHandler.newInstance());
-        assertEquals(Response.Status.REQUEST_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newInterruptThread()));
-        assertEquals(Response.Status.REQUEST_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newInstance()));
+        assertEquals(Response.Status.GATEWAY_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newInterruptThread()));
+        assertEquals(Response.Status.GATEWAY_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newInstance()));
         assertTrue(ctx.close());
     }
 
@@ -154,7 +154,7 @@ public class TimeoutManagerImplTestCase {
     @Test
     public void requireThatResponseHandlerIsWellBehavedAfterTimeout() throws InterruptedException {
         Context ctx = new Context(MyRequestHandler.newInstance());
-        assertEquals(Response.Status.REQUEST_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newInstance()));
+        assertEquals(Response.Status.GATEWAY_TIMEOUT, ctx.awaitResponse(69L, MyResponseHandler.newInstance()));
 
         ContentChannel content = ctx.requestHandler.responseHandler.handleResponse(new Response(Response.Status.OK));
         assertNotNull(content);
@@ -246,7 +246,7 @@ public class TimeoutManagerImplTestCase {
 
         Response response = responseHandler.response.get();
         assertNotNull(response);
-        assertEquals(Response.Status.REQUEST_TIMEOUT, response.getStatus());
+        assertEquals(Response.Status.GATEWAY_TIMEOUT, response.getStatus());
         assertTrue(ctx.close());
     }
 

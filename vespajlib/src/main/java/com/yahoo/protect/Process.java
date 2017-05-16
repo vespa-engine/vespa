@@ -42,8 +42,10 @@ public final class Process {
      */
     public static void logAndDie(String message, Throwable thrown, boolean dumpThreads) {
         try {
-            if (dumpThreads)
+            if (dumpThreads) {
+                log.log(Level.INFO, "About to shut down.");
                 dumpThreads();
+            }
             if (thrown != null)
                 log.log(Level.SEVERE, message, thrown);
             else
@@ -60,9 +62,9 @@ public final class Process {
     }
 
 
-    private static void dumpThreads() {
+    public static void dumpThreads() {
         try {
-            log.log(Level.INFO, "About to shut down. Commencing full thread dump for diagnosis.");
+            log.log(Level.INFO, "Commencing full thread dump for diagnosis.");
             Map<Thread, StackTraceElement[]> allStackTraces = Thread.getAllStackTraces();
             for (Map.Entry<Thread, StackTraceElement[]> e : allStackTraces.entrySet()) {
                 Thread t = e.getKey();

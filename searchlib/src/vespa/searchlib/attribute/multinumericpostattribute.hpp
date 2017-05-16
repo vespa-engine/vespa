@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/multinumericpostattribute.h>
+#include "multinumericpostattribute.h"
 
 namespace search {
 

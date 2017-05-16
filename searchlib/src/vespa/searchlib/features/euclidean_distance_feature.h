@@ -44,29 +44,16 @@ private:
     vespalib::string _queryVector;
 
 public:
-    /**
-     * Constructs a blueprint.
-     */
     EuclideanDistanceBlueprint();
+    ~EuclideanDistanceBlueprint();
 
-    // Inherit doc from Blueprint.
-    virtual void visitDumpFeatures(const fef::IIndexEnvironment &env,
-                                   fef::IDumpFeatureVisitor &visitor) const override;
-
-    // Inherit doc from Blueprint.
-    virtual fef::Blueprint::UP createInstance() const override;
-
-    // Inherit doc from Blueprint.
-    virtual fef::ParameterDescriptions getDescriptions() const override {
+    void visitDumpFeatures(const fef::IIndexEnvironment &env, fef::IDumpFeatureVisitor &visitor) const override;
+    fef::Blueprint::UP createInstance() const override;
+    fef::ParameterDescriptions getDescriptions() const override {
         return fef::ParameterDescriptions().desc().attribute(fef::ParameterCollection::ANY).string();
     }
-
-    // Inherit doc from Blueprint.
-    virtual bool setup(const fef::IIndexEnvironment &env,
-                       const fef::ParameterList &params) override;
-
-    // Inherit doc from Blueprint.
-    virtual fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment &env, const fef::ParameterList &params) override;
+    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 
 };
 

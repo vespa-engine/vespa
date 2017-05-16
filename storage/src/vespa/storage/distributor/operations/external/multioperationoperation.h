@@ -2,19 +2,17 @@
 #pragma once
 
 #include <vespa/storage/distributor/persistencemessagetracker.h>
+#include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/vdslib/container/writabledocumentlist.h>
-#include <vespa/storage/bucketdb/bucketdatabase.h>
 
-namespace document {
-class Document;
-}
+namespace document { class Document; }
 
 namespace storage {
 
 namespace api {
-class CreateBucketReply;
-class MultiOperationCommand;
+    class CreateBucketReply;
+    class MultiOperationCommand;
 }
 
 namespace distributor {
@@ -25,26 +23,19 @@ public:
     MultiOperationOperation(DistributorComponent& manager,
                             const std::shared_ptr<api::MultiOperationCommand> & msg,
                             PersistenceOperationMetricSet& metric);
+    ~MultiOperationOperation();
 
-    void onStart(DistributorMessageSender& sender);
-
-    const char* getName() const { return "multioperation"; };
-
-    std::string getStatus() const { return ""; };
-
-    void onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> &);
-
-    void onClose(DistributorMessageSender& sender);
+    void onStart(DistributorMessageSender& sender) override;
+    const char* getName() const override { return "multioperation"; };
+    std::string getStatus() const override { return ""; };
+    void onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
+    void onClose(DistributorMessageSender& sender) override;
 private:
     std::shared_ptr<api::MultiOperationReply> _reply;
-
     PersistenceMessageTrackerImpl _trackerInstance;
     PersistenceMessageTracker& _tracker;
-
     std::shared_ptr<api::MultiOperationCommand> _msg;
-
     DistributorComponent& _manager;
-
     uint32_t _minUseBits;
 
     uint32_t getMinimumUsedBits(const vdslib::DocumentList& opList) const;
@@ -55,7 +46,4 @@ private:
 
 }
 
-
 }
-
-

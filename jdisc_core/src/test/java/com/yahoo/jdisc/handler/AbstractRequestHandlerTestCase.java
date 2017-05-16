@@ -40,7 +40,7 @@ public class AbstractRequestHandlerTestCase {
         }.handleTimeout(NonWorkingRequest.newInstance("http://localhost/"), handler);
         Response response = handler.get(600, TimeUnit.SECONDS);
         assertNotNull(response);
-        assertEquals(Response.Status.REQUEST_TIMEOUT, response.getStatus());
+        assertEquals(Response.Status.GATEWAY_TIMEOUT, response.getStatus());
     }
 
     @Test

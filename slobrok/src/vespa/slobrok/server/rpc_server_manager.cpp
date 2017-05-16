@@ -310,6 +310,7 @@ RpcServerManager::PerformTask()
 void
 RpcServerManager::notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errmsg)
 {
+    _env.countFailedHeartbeat();
     bool logged = false;
     NamedService *old = _rpcsrvmap.lookup(rpcsrv->getName());
     if (old == rpcsrv) {

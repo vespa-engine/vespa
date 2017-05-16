@@ -1,18 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-#include <cmath>
-LOG_SETUP(".features.euclidean_distance_feature");
-#include <vespa/searchcommon/attribute/attributecontent.h>
-#include <vespa/searchcommon/attribute/iattributevector.h>
-#include <vespa/searchlib/fef/properties.h>
 #include "valuefeature.h"
-
 #include "euclidean_distance_feature.h"
 #include "array_parser.hpp"
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/floatbase.h>
+#include <vespa/searchlib/fef/properties.h>
+#include <vespa/searchcommon/attribute/attributecontent.h>
+#include <cmath>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".features.euclidean_distance_feature");
 
 using namespace search::attribute;
 using namespace search::fef;
@@ -58,6 +56,8 @@ EuclideanDistanceBlueprint::EuclideanDistanceBlueprint() :
     _queryVector()
 {
 }
+
+EuclideanDistanceBlueprint::~EuclideanDistanceBlueprint() {}
 
 void
 EuclideanDistanceBlueprint::visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const

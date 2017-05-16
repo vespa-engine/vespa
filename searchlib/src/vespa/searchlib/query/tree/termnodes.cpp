@@ -11,6 +11,9 @@ PrefixTerm::~PrefixTerm() {}
 
 RangeTerm::~RangeTerm() {}
 
+StringTerm::StringTerm(const Type &term, const vespalib::stringref &view, int32_t id, Weight weight)
+    : QueryNodeMixinType(term, view, id, weight)
+{}
 StringTerm::~StringTerm() {}
 
 SubstringTerm::~SubstringTerm() {}

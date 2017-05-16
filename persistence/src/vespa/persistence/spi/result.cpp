@@ -4,10 +4,10 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
-namespace storage {
+namespace storage::spi {
 
-namespace spi {
-
+Result::Result(const Result &) = default;
+Result & Result::operator = (const Result &) = default;
 Result::~Result() { }
 
 vespalib::string
@@ -33,6 +33,5 @@ BucketIdListResult::~BucketIdListResult() { }
 
 IterateResult::~IterateResult() { }
 
-}  // namespace spi
-}  // namespace storage
+}
 

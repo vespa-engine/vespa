@@ -1,13 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.test.userdocumentsbuilder");
 
 #include "userdocumentsbuilder.h"
 
-namespace proton {
-
-namespace test {
+namespace proton::test {
 
 UserDocumentsBuilder::UserDocumentsBuilder()
     : _schema(),
@@ -16,6 +11,7 @@ UserDocumentsBuilder::UserDocumentsBuilder()
 {
 }
 
+UserDocumentsBuilder::~UserDocumentsBuilder() {}
 
 UserDocumentsBuilder &
 UserDocumentsBuilder::createDoc(uint32_t userId, search::DocumentIdT lid)
@@ -38,6 +34,4 @@ UserDocumentsBuilder::createDocs(uint32_t userId,
     return *this;
 }
 
-} // namespace test
-
-} // namespace proton
+}

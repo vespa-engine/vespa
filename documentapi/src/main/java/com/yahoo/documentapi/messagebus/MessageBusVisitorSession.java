@@ -883,8 +883,7 @@ public class MessageBusVisitorSession implements VisitorSession {
 
         if (isFatalError(reply)) {
             if (params.skipBucketsOnFatalErrors()) {
-                progress.getToken().addFailedBucket(bucket, subProgress, message);
-                progress.getIterator().update(bucket, ProgressToken.FINISHED_BUCKET);
+                markBucketProgressAsFailed(bucket, subProgress, message);
             } else {
                 reportVisitorError(message);
                 transitionTo(new StateDescription(State.FAILED, message));
@@ -901,6 +900,11 @@ public class MessageBusVisitorSession implements VisitorSession {
             // visitors from being scheduled from caller.
             scheduleSendCreateVisitorsIfApplicable(100, TimeUnit.MILLISECONDS);
         }
+    }
+
+    private void markBucketProgressAsFailed(BucketId bucket, BucketId subProgress, String message) {
+        progress.getToken().addFailedBucket(bucket, subProgress, message);
+        progress.getIterator().update(bucket, ProgressToken.FINISHED_BUCKET);
     }
 
     private boolean enoughHitsReceived() {
@@ -1024,7 +1028,6 @@ public class MessageBusVisitorSession implements VisitorSession {
 
     private void handleWrongDistributionReply(WrongDistributionReply reply) {
         try {
-            // Classnames clash with documentapi classes, so be explicit
             ClusterState newState = new ClusterState(reply.getSystemState());
             int stateBits = newState.getDistributionBitCount();
             if (stateBits != progress.getIterator().getDistributionBitCount()) {
@@ -1123,7 +1126,7 @@ public class MessageBusVisitorSession implements VisitorSession {
                 synchronized (completionMonitor) {
                     // If we are destroying the session before it has completed (e.g. because
                     // waitUntilDone timed out or an interactive visiting was interrupted)
-                    // set us to aborted state so that we'll seize
+                    // set us to aborted state so that we'll seize sending new visitors.
                     if (!done) {
                         transitionTo(new StateDescription(State.ABORTED, "Session explicitly destroyed before completion"));
                     }

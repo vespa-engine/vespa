@@ -2,10 +2,9 @@
 #pragma once
 
 #include "unaryfunctionnode.h"
-#include <vespa/searchlib/common/sortspec.h>
 #include "stringresultnode.h"
 #include "resultvector.h"
-
+#include <vespa/searchlib/common/sortspec.h>
 
 namespace search {
 namespace expression {
@@ -18,13 +17,12 @@ public:
     DebugWaitFunctionNode();
     ~DebugWaitFunctionNode();
     DebugWaitFunctionNode(ExpressionNode::UP arg, double waitTime, bool busyWait);
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 private:
-    virtual bool onExecute() const;
+    bool onExecute() const override;
     double _waitTime;
     bool   _busyWait;
 };
 
 }
 }
-

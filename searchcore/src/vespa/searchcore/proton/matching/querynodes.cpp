@@ -28,6 +28,11 @@ using vespalib::string;
 namespace proton {
 namespace matching {
 
+ProtonTermData::ProtonTermData() = default;
+ProtonTermData::ProtonTermData(const ProtonTermData &) = default;
+ProtonTermData & ProtonTermData::operator = (const ProtonTermData &) = default;
+ProtonTermData::~ProtonTermData() { }
+
 void
 ProtonTermData::setDocumentFrequency(double freq)
 {

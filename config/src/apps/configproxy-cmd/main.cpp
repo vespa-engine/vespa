@@ -10,8 +10,8 @@ class Application : public FastOS_Application
     Flags _flags;
     bool parseOpts();
 public:
-    void usage(void);
-    int Main(void) override;
+    void usage();
+    int Main() override;
 
     Application() : _flags() {}
 };

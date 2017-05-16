@@ -28,7 +28,6 @@
 #pragma once
 
 #include <unistd.h>
-#include <string>
 #include <memory>
 #include <vector>
 #include <vespa/vespalib/stllike/string.h>
@@ -319,9 +318,7 @@ extern FileInfo::UP lstat(const vespalib::stringref & path);
  *
  * @throw IoException If we failed to stat the file.
  */
-extern inline bool fileExists(const vespalib::stringref & path) {
-    return (stat(path).get() != 0);
-}
+extern bool fileExists(const vespalib::stringref & path);
 
 /**
  * Check if a path exists, i.e. whether it's a symbolic link, regular file,
@@ -361,10 +358,7 @@ extern inline bool isPlainFile(const vespalib::stringref & path) {
  * @return True if it is a directory, false if it don't exist or isn't.
  * @throw IoException If we failed to stat the file.
  */
-extern inline bool isDirectory(const vespalib::stringref & path) {
-    FileInfo::UP info(stat(path));
-    return (info.get() && info->_directory);
-}
+extern bool isDirectory(const vespalib::stringref & path);
 
 /**
  * Check whether a path is a symlink.
@@ -452,4 +446,3 @@ string dirname(const stringref name);
 string getOpenErrorString(const int osError, const stringref name);
 
 } // vespalib
-

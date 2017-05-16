@@ -7,9 +7,7 @@
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <string>
 
-namespace search {
-namespace queryeval {
-namespace test {
+namespace search::queryeval::test {
 
 /**
  * Proxy and wrapper for FakeSearch to track search history and
@@ -31,13 +29,13 @@ private:
     }
 
 protected:
-    virtual void doSeek(uint32_t docid) {
+    void doSeek(uint32_t docid) override {
         _history.seek(_name, docid);
         _search->seek(docid);
         setDocId(_search->getDocId());
         _history.step(_name, getDocId());
     }
-    virtual void doUnpack(uint32_t docid) {
+    void doUnpack(uint32_t docid) override {
         _history.unpack(_name, docid);
         _search->unpack(docid);
     }
@@ -63,12 +61,9 @@ public:
         : _name(name), _history(hist), _matchData(), _search(search), _minMaxPostingInfo()
     { setDocId(_search->getDocId()); }
 
-    virtual const PostingInfo *getPostingInfo() const {
+    const PostingInfo *getPostingInfo() const override {
         return _minMaxPostingInfo.get();
     }
 };
 
-} // namespace test
-} // namespace queryeval
-} // namespace search
-
+}

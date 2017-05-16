@@ -99,7 +99,11 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
         session.prepare(logger,
                         /** Assumes that session has already set application id, see {@link com.yahoo.vespa.config.server.session.SessionFactoryImpl}. */
-                        new PrepareParams.Builder().applicationId(session.getApplicationId()).timeoutBudget(timeoutBudget).ignoreValidationErrors( ! validate).build(),
+                        new PrepareParams.Builder().applicationId(session.getApplicationId())
+                                                   .timeoutBudget(timeoutBudget)
+                                                   .ignoreValidationErrors( ! validate)
+                                                   .vespaVersion(session.getVespaVersion().toString())
+                                                   .build(),
                         Optional.empty(),
                         tenantPath);
         this.prepared = true;
@@ -154,6 +158,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         hostProvisioner.get().restart(session.getApplicationId(), filter);
     }
 
+    /** Exposes the session of this for testing only */
+    public LocalSession session() { return session; }
+    
     private long validateSessionStatus(LocalSession localSession) {
         long sessionId = localSession.getSessionId();
         if (Session.Status.NEW.equals(localSession.getStatus())) {

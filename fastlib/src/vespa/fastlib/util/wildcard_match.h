@@ -3,53 +3,52 @@
 
 namespace fast
 {
-  namespace util
-  {
-    template<typename T>
-    bool wildcard_match(const T* word, const T* pattern, T multiple = '*',
-      T single = '?')
-      {
-        while (*word != 0)
-          if (*pattern == 0)
+namespace util
+{
+template<typename T>
+bool wildcard_match(const T* word, const T* pattern, T multiple = '*',
+                    T single = '?')
+{
+    while (*word != 0)
+        if (*pattern == 0)
             return false;
-          else if (*pattern == multiple)
-          {
+        else if (*pattern == multiple)
+        {
             // advance past occurrences of multiple
             while (*pattern == multiple)
-              ++pattern;
+                ++pattern;
 
             // if pattern ended with multiple, we're done
             if (*pattern == 0)
-              return true;
+                return true;
 
             while (*word != 0)
             {
-              // does this position in the word match
-              if (*pattern == single || *pattern == *word)
-              {
-                // test the rest of the word
-                if (wildcard_match(word, pattern, multiple, single) == true)
+                // does this position in the word match
+                if (*pattern == single || *pattern == *word)
                 {
-                  // it matched
-                  return true;
+                    // test the rest of the word
+                    if (wildcard_match(word, pattern, multiple, single) == true)
+                    {
+                        // it matched
+                        return true;
+                    }
                 }
-              }
 
-              // try next character
-              ++word;
+                // try next character
+                ++word;
             }
-          }
-          else if (*pattern != single && *pattern != *word)
+        }
+        else if (*pattern != single && *pattern != *word)
             return false;
-          else
-          {
+        else
+        {
             ++word;
             ++pattern;
-          }
+        }
 
-        // should be at end of pattern too if the word matched
-        return *pattern == 0;
-      }
-  }
+    // should be at end of pattern too if the word matched
+    return *pattern == 0;
 }
-
+}
+}

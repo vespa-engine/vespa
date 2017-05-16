@@ -48,6 +48,8 @@ public:
     GetDocumentMessage(const document::DocumentId &documentId,
                        const vespalib::stringref & fieldSet);
 
+    ~GetDocumentMessage();
+
     /**
      * Returns the identifier of the document to retrieve.
      *

@@ -1,6 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "indexenvironment.h"
+#include "indexenvironmentbuilder.h"
+#include "matchdatabuilder.h"
+#include "queryenvironment.h"
+#include "queryenvironmentbuilder.h"
+#include "rankresult.h"
 #include <vespa/searchlib/fef/blueprintfactory.h>
 #include <vespa/searchlib/fef/blueprintresolver.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
@@ -9,17 +15,9 @@
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/rank_program.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/fef/test/indexenvironment.h>
-#include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
-#include <vespa/searchlib/fef/test/matchdatabuilder.h>
-#include <vespa/searchlib/fef/test/queryenvironment.h>
-#include <vespa/searchlib/fef/test/queryenvironmentbuilder.h>
-#include <vespa/searchlib/fef/test/rankresult.h>
 #include <vespa/eval/eval/value.h>
 
-namespace search {
-namespace fef {
-namespace test {
+namespace search::fef::test {
 
 /**
  * This class wraps everything necessary to simulate a feature execution environment.
@@ -42,6 +40,7 @@ public:
                 MatchDataLayout &layout,
                 const std::vector<vespalib::string> &features,
                 const Properties &overrides);
+    ~FeatureTest();
 
     /**
      * Constructs a new feature test.
@@ -123,7 +122,4 @@ private:
     void clear();
 };
 
-} // namespace test
-} // namespace fef
-} // namespace search
-
+}

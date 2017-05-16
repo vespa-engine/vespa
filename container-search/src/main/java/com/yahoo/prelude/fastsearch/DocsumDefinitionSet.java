@@ -32,7 +32,7 @@ public final class DocsumDefinitionSet {
     private final LegacyEmulationConfig emulationConfig;
 
     public DocsumDefinitionSet(DocumentdbInfoConfig.Documentdb config) {
-        this.emulationConfig = new LegacyEmulationConfig();
+        this.emulationConfig = new LegacyEmulationConfig(new LegacyEmulationConfig.Builder());
         configure(config);
     }
 

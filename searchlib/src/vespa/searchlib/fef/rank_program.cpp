@@ -161,6 +161,8 @@ RankProgram::RankProgram(BlueprintResolver::SP resolver)
 {
 }
 
+RankProgram::~RankProgram() {}
+
 void
 RankProgram::setup(const MatchDataLayout &mdl_in,
                    const IQueryEnvironment &queryEnv,

@@ -17,6 +17,7 @@ private:
 
 public:
     CfgValueBlueprint();
+    ~CfgValueBlueprint();
     void visitDumpFeatures(const IIndexEnvironment & indexEnv, IDumpFeatureVisitor & visitor) const override;
     Blueprint::UP createInstance() const override { return Blueprint::UP(new CfgValueBlueprint()); }
     bool setup(const IIndexEnvironment & indexEnv, const StringVector & params) override;

@@ -23,6 +23,7 @@ private:
 public:
     StatBucketCommand(const document::BucketId& bucket,
                       const vespalib::stringref & documentSelection);
+    ~StatBucketCommand();
 
     const vespalib::string& getDocumentSelection() const { return _docSelection; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -79,6 +80,7 @@ private:
 
 public:
     GetBucketListReply(const GetBucketListCommand&);
+    ~GetBucketListReply();
     std::vector<BucketInfo>& getBuckets() { return _buckets; }
     const std::vector<BucketInfo>& getBuckets() const { return _buckets; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;

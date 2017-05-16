@@ -9,10 +9,9 @@
 #include "matchdatalayout.h"
 #include "feature_resolver.h"
 #include <vespa/vespalib/stllike/string.h>
-#include <vector>
-#include <memory.h>
 #include <vespa/vespalib/util/array.h>
 #include <set>
+#include <vector>
 
 namespace search {
 namespace fef {
@@ -60,6 +59,7 @@ public:
      * @param resolver description on how to set up executors
      **/
     RankProgram(BlueprintResolver::SP resolver);
+    ~RankProgram();
 
     size_t num_executors() const { return _executors.size(); }
 

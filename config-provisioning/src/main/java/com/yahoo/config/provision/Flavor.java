@@ -26,6 +26,7 @@ public class Flavor {
     private final String description;
     private final boolean retired;
     private List<Flavor> replacesFlavors;
+    private int idealHeadroom;
 
     /**
      * Creates a Flavor, but does not set the replacesFlavors.
@@ -43,6 +44,7 @@ public class Flavor {
         this.fastDisk = flavorConfig.fastDisk();
         this.description = flavorConfig.description();
         this.retired = flavorConfig.retired();
+        this.idealHeadroom = flavorConfig.idealHeadroom();
     }
 
     /** Returns the unique identity of this flavor */
@@ -74,6 +76,11 @@ public class Flavor {
     }
 
     public Type getType() { return type; }
+
+    /** The free capacity we would like to preserve for this flavor */
+    public int getIdealHeadroom() {
+        return idealHeadroom;
+    }
 
     /**
      * Returns the canonical name of this flavor - which is the name which should be used as an interface to users.

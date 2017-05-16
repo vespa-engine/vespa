@@ -1,17 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <pthread.h>
-#include <stdint.h>
-#include <errno.h>
-#include <vespa/vespalib/util/atomic.h>
-#include <sys/resource.h>
-#include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/log/log.h>
 
-LOG_SETUP("thread_test");
+#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/atomic.h>
 
 using namespace vespalib;
 

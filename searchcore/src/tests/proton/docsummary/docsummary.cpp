@@ -343,44 +343,22 @@ private:
                 uint32_t id,
                 bool relaxed = false);
 
-    void
-    requireThatAdapterHandlesAllFieldTypes();
-
-    void
-    requireThatAdapterHandlesMultipleDocuments();
-
-    void
-    requireThatAdapterHandlesDocumentIdField();
-
-    void
-    requireThatDocsumRequestIsProcessed();
-
-    void
-    requireThatRewritersAreUsed();
-
-    void
-    requireThatAttributesAreUsed();
-
-    void
-    requireThatSummaryAdapterHandlesPutAndRemove();
-
-    void
-    requireThatAnnotationsAreUsed();
-
-    void
-    requireThatUrisAreUsed();
-
-    void
-    requireThatPositionsAreUsed();
-
-    void
-    requireThatRawFieldsWorks();
-
-    void
-    requireThatFieldCacheRepoCanReturnDefaultFieldCache();
+    void requireThatAdapterHandlesAllFieldTypes();
+    void requireThatAdapterHandlesMultipleDocuments();
+    void requireThatAdapterHandlesDocumentIdField();
+    void requireThatDocsumRequestIsProcessed();
+    void requireThatRewritersAreUsed();
+    void requireThatAttributesAreUsed();
+    void requireThatSummaryAdapterHandlesPutAndRemove();
+    void requireThatAnnotationsAreUsed();
+    void requireThatUrisAreUsed();
+    void requireThatPositionsAreUsed();
+    void requireThatRawFieldsWorks();
+    void requireThatFieldCacheRepoCanReturnDefaultFieldCache();
 
 public:
     Test();
+    ~Test();
     int Main() override;
 };
 
@@ -1313,7 +1291,7 @@ Test::Test()
     }
 }
 
-
+Test::~Test() {}
 
 int
 Test::Main()

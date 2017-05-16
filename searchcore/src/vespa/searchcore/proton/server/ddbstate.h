@@ -117,20 +117,20 @@ public:
     }
     
     static bool
-    getRejectedConfig(ConfigState state)
+    getDelayedConfig(ConfigState state)
     {
         return state != ConfigState::OK;
     }
     
     bool
-    getRejectedConfig() const
+    getDelayedConfig() const
     {
         ConfigState state(_configState);
-        return getRejectedConfig(state);
+        return getDelayedConfig(state);
     }
 
     void
-    clearRejectedConfig();
+    clearDelayedConfig();
 
     ConfigState
     getConfigState() const

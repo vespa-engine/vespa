@@ -18,6 +18,8 @@ StatBucketCommand::StatBucketCommand(const document::BucketId& id,
 {
 }
 
+StatBucketCommand::~StatBucketCommand() {}
+
 void
 StatBucketCommand::print(std::ostream& out, bool verbose,
                          const std::string& indent) const
@@ -84,8 +86,9 @@ GetBucketListCommand::print(std::ostream& out, bool verbose,
 GetBucketListReply::GetBucketListReply(const GetBucketListCommand& cmd)
     : BucketReply(cmd),
       _buckets()
-{
-}
+{}
+
+GetBucketListReply::~GetBucketListReply() {}
 
 void
 GetBucketListReply::print(std::ostream& out, bool verbose,

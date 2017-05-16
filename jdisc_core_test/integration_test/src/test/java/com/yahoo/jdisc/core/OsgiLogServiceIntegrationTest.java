@@ -33,7 +33,7 @@ public class OsgiLogServiceIntegrationTest {
         long now = System.currentTimeMillis();
         TestDriver driver = TestDriver.newApplicationBundleInstance("app-h-log.jar", false);
         BundleContext ctx = driver.osgiFramework().bundleContext();
-        ServiceReference ref = ctx.getServiceReference(LogReaderService.class.getName());
+        ServiceReference<?> ref = ctx.getServiceReference(LogReaderService.class.getName());
         LogReaderService reader = (LogReaderService)ctx.getService(ref);
         Enumeration<LogEntry> log = (Enumeration<LogEntry>)reader.getLog();
 
@@ -52,10 +52,10 @@ public class OsgiLogServiceIntegrationTest {
         LogEntry entry = log.nextElement();
         assertNotNull(entry);
         System.err.println("log entry: "+entry.getMessage()+" bundle="+entry.getBundle());
+        assertEquals(expectedMessage, entry.getMessage());
         assertNull(entry.getBundle());
         assertNotNull(entry.getServiceReference());
         assertEquals(OsgiLogHandler.toServiceLevel(expectedLevel), entry.getLevel());
-        assertEquals(expectedMessage, entry.getMessage());
         assertEquals(expectedException, entry.getException());
         assertTrue(expectedTimeGE <= entry.getTime());
     }

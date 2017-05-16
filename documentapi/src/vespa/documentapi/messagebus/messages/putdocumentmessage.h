@@ -33,6 +33,7 @@ public:
      * @param document The document to put.
      */
     PutDocumentMessage(document::Document::SP document);
+    ~PutDocumentMessage();
 
     /**
      * Returns the document to put.

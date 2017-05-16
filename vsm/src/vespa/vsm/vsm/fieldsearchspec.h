@@ -4,8 +4,7 @@
 #include <vespa/vsm/searcher/fieldsearcher.h>
 #include <vespa/vsm/config/vsm-cfif.h>
 
-namespace vsm
-{
+namespace vsm {
 
 class FieldSearchSpec
 {
@@ -14,6 +13,7 @@ public:
     FieldSearchSpec(const FieldIdT & id, const vespalib::string & name,
                     VsmfieldsConfig::Fieldspec::Searchmethod searchMethod,
                     const vespalib::string & arg1, size_t maxLength);
+    ~FieldSearchSpec();
     const FieldSearcher & searcher() const { return *_searcher; }
     const vespalib::string &  name() const { return _name; }
     FieldIdT                    id() const { return _id; }
@@ -35,7 +35,6 @@ private:
     VsmfieldsConfig::Fieldspec::Searchmethod _searchMethod;
     vespalib::string       _arg1;
     bool                   _reconfigured;
-    static unsigned        _sse2WarnCount;
 };
 
 typedef std::map<FieldIdT, FieldSearchSpec> FieldSearchSpecMapT;
@@ -44,6 +43,7 @@ class FieldSearchSpecMap
 {
 public:
     FieldSearchSpecMap();
+    ~FieldSearchSpecMap();
 
     /**
      * Iterates over all fields in the vsmfields config and creates a mapping from field id to FieldSearchSpec objects

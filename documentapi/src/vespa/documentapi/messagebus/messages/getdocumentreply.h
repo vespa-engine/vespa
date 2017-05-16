@@ -22,6 +22,7 @@ public:
      * Constructs a new reply for deserialization.
      */
     GetDocumentReply();
+    ~GetDocumentReply();
 
     /**
      * Constructs a new document get reply.

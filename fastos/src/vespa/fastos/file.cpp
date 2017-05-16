@@ -8,7 +8,6 @@
 
 #include <vespa/fastos/file.h>
 #include <sstream>
-#include <stdexcept>
 
 
 DirectIOException::DirectIOException(const char * fileName, const void * buffer, size_t length, int64_t offset) :
@@ -24,6 +23,8 @@ DirectIOException::DirectIOException(const char * fileName, const void * buffer,
     os << " length=0x" << length << " offset=0x" << offset;
     _what = os.str();
 }
+
+DirectIOException::~DirectIOException() {}
 
 FastOS_FileInterface::FailedHandler FastOS_FileInterface::_failedHandler = NULL;
 int FastOS_FileInterface::_defaultFAdviseOptions = POSIX_FADV_NORMAL;

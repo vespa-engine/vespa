@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search.test;
 
+import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.defaults.Defaults;
@@ -12,6 +13,8 @@ import com.yahoo.vespa.model.search.TransactionLogServer;
 import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.Optional;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
@@ -45,10 +48,14 @@ public class SearchNodeTest {
         root.freezeModelTopology();
     }
 
+    private static SearchNode createSearchNode(AbstractConfigProducer parent, String name, int distributionKey, NodeSpec nodeSpec, boolean flushOnShutDown) {
+        return SearchNode.create(parent, name, distributionKey, nodeSpec, "mycluster", null, flushOnShutDown, Optional.empty());
+    }
+
     @Test
     public void requireThatBasedirIsCorrectForElasticMode() {
         MockRoot root = new MockRoot("");
-        SearchNode node = SearchNode.create(root, "mynode", 3, new NodeSpec(7, 5), "mycluster", null, false);
+        SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false);
         prepare(root, node);
         assertBaseDir(Defaults.getDefaults().vespaHome() + "var/db/vespa/search/cluster.mycluster/n3", node);
     }
@@ -56,7 +63,7 @@ public class SearchNodeTest {
     @Test
     public void requireThatPreShutdownCommandIsEmptyWhenNotActivated() {
         MockRoot root = new MockRoot("");
-        SearchNode node = SearchNode.create(root, "mynode", 3, new NodeSpec(7, 5), "mycluster", null, false);
+        SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false);
         node.setHostResource(new HostResource(new Host(node, "mynbode")));
         node.initService();
         assertFalse(node.getPreShutdownCommand().isPresent());
@@ -65,7 +72,7 @@ public class SearchNodeTest {
     @Test
     public void requireThatPreShutdownCommandUsesPrepareRestartWhenActivated() {
         MockRoot root = new MockRoot("");
-        SearchNode node = SearchNode.create(root, "mynode2", 4, new NodeSpec(7, 5), "mycluster", null, true);
+        SearchNode node = createSearchNode(root, "mynode2", 4, new NodeSpec(7, 5), true);
         node.setHostResource(new HostResource(new Host(node, "mynbode2")));
         node.initService();
         assertTrue(node.getPreShutdownCommand().isPresent());

@@ -23,11 +23,13 @@ vespa_add_library(searchlib_common OBJECT
     rcuvector.cpp
     resultset.cpp
     sequencedtaskexecutor.cpp
+    sequencedtaskexecutorobserver.cpp
     serialnumfileheadercontext.cpp
     sort.cpp
     sortdata.cpp
     sortresults.cpp
     sortspec.cpp
+    threaded_compactable_lid_space.cpp
     tunefileinfo.cpp
     DEPENDS
 )

@@ -1,13 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-
 #pragma once
 
-#include <map>
+#include "http_connection.h"
+#include <vbench/core/timer.h>
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/vespalib/util/sync.h>
-#include <vbench/core/timer.h>
-#include "http_connection.h"
+#include <map>
 
 namespace vbench {
 
@@ -29,6 +28,7 @@ private:
 
 public:
     HttpConnectionPool(Timer &timer);
+    ~HttpConnectionPool();
     HttpConnection::UP getConnection(const ServerSpec &server);
     void putConnection(HttpConnection::UP conn);
 };

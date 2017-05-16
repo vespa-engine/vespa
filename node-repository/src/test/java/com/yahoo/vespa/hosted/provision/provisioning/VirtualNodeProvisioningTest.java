@@ -45,32 +45,6 @@ public class VirtualNodeProvisioningTest {
     }
 
     @Test
-    public void optimize_sorts_by_more_vms() {
-        List<Node> readyList = new ArrayList<>();
-        readyList.addAll(tester.makeReadyNodes(2, flavor));
-        readyList.addAll(tester.makeReadyVirtualNodes(2, flavor, "parentHost1"));
-        readyList.addAll(tester.makeReadyNodes(2, flavor));
-        readyList.addAll(tester.makeReadyVirtualNodes(3, flavor, "parentHost2"));
-        readyList.addAll(tester.makeReadyVirtualNodes(2, flavor, "parentHost3"));
-        readyList.addAll(tester.makeReadyVirtualNodes(1, flavor, "parentHost4"));
-        readyList.addAll(tester.makeReadyNodes(3, flavor));
-        assertEquals(15, readyList.size());
-        List<Node> optimized = GroupPreparer.stripeOverHosts(readyList);
-        assertEquals(15, optimized.size());
-        assertEquals("parentHost2", optimized.get(0).parentHostname().get());
-        assertEquals("parentHost4", optimized.get(3).parentHostname().get());
-        assertEquals("parentHost2", optimized.get(4).parentHostname().get());
-        assertEquals("parentHost2", optimized.get(7).parentHostname().get());
-        assertEquals(false, optimized.get(8).parentHostname().isPresent());
-        assertEquals(false, optimized.get(9).parentHostname().isPresent());
-        assertEquals(false, optimized.get(10).parentHostname().isPresent());
-        assertEquals(false, optimized.get(11).parentHostname().isPresent());
-        assertEquals(false, optimized.get(12).parentHostname().isPresent());
-        assertEquals(false, optimized.get(13).parentHostname().isPresent());
-        assertEquals(false, optimized.get(14).parentHostname().isPresent());
-    }
-
-    @Test
     public void distinct_parent_host_for_each_node_in_a_cluster() {
         tester.makeReadyVirtualNodes(2, flavor, "parentHost1");
         tester.makeReadyVirtualNodes(2, flavor, "parentHost2");

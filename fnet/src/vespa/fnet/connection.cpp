@@ -8,7 +8,6 @@
 #include "iserveradapter.h"
 #include "config.h"
 #include "transport_thread.h"
-#include <vespa/fastos/socket.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".fnet");
@@ -213,11 +212,10 @@ FNET_Connection::Read()
     uint32_t readPackets = 0;     // total packets read
     int      readCnt     = 0;     // read count
     bool     broken      = false; // is this conn broken ?
-    int      error;               // socket error code
     ssize_t  res;                 // single read result
 
     _input.EnsureFree(FNET_READ_SIZE);
-    res = _socket->Read(_input.GetFree(), _input.GetFreeLen());
+    res = _socket.read(_input.GetFree(), _input.GetFreeLen());
     readCnt++;
 
     while (res > 0) {
@@ -248,7 +246,7 @@ FNET_Connection::Read()
             goto done_read;
 
         _input.EnsureFree(FNET_READ_SIZE);
-        res = _socket->Read(_input.GetFree(), _input.GetFreeLen());
+        res = _socket.read(_input.GetFree(), _input.GetFreeLen());
         readCnt++;
     }
 
@@ -271,13 +269,9 @@ done_read:
         if (res == 0) {
             broken = true; // handle EOF
         } else { // res < 0
-            error  = FastOS_Socket::GetLastError();
-            broken = (error != FastOS_Socket::ERR_WOULDBLOCK &&
-                      error != FastOS_Socket::ERR_AGAIN);
-
-            if (broken && error != FastOS_Socket::ERR_CONNRESET) {
-
-                LOG(debug, "Connection(%s): read error: %d", GetSpec(), error);
+            broken = ((errno != EWOULDBLOCK) && (errno != EAGAIN));
+            if (broken && (errno != ECONNRESET)) {
+                LOG(debug, "Connection(%s): read error: %d", GetSpec(), errno);
             }
         }
     }
@@ -293,7 +287,6 @@ FNET_Connection::Write(bool direct)
     uint32_t writtenPackets = 0;     // total packets written
     int      writeCnt       = 0;     // write count
     bool     broken         = false; // is this conn broken ?
-    int      error          = 0;     // no error (yet)
     ssize_t  res;                    // single write result
 
     FNET_Packet     *packet;
@@ -322,7 +315,7 @@ FNET_Connection::Write(bool direct)
 
         // write data
 
-        res = _socket->Write(_output.GetData(), _output.GetDataLen());
+        res = _socket.write(_output.GetData(), _output.GetDataLen());
         writeCnt++;
         if (res > 0) {
             _output.DataToDead((uint32_t)res);
@@ -342,12 +335,9 @@ FNET_Connection::Write(bool direct)
     }
 
     if (res < 0) {
-        error  = FastOS_Socket::GetLastError();
-        broken = (error != FastOS_Socket::ERR_WOULDBLOCK &&
-                  error != FastOS_Socket::ERR_AGAIN);
-
-        if (broken) {
-            LOG(debug, "Connection(%s): write error: %d", GetSpec(), error);
+        broken = ((errno != EWOULDBLOCK) && (errno != EAGAIN));
+        if (broken && (errno != ECONNRESET)) {
+            LOG(debug, "Connection(%s): write error: %d", GetSpec(), errno);
         }
     }
 
@@ -397,13 +387,13 @@ FNET_Connection::Write(bool direct)
 FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
                                  FNET_IPacketStreamer *streamer,
                                  FNET_IServerAdapter *serverAdapter,
-                                 FastOS_SocketInterface *mySocket,
+                                 vespalib::SocketHandle socket,
                                  const char *spec)
-    : FNET_IOComponent(owner, mySocket, spec, /* time-out = */ true),
+    : FNET_IOComponent(owner, socket.get(), spec, /* time-out = */ true),
       _streamer(streamer),
       _serverAdapter(serverAdapter),
       _adminChannel(nullptr),
-      _socket(mySocket),
+      _socket(std::move(socket)),
       _context(),
       _state(FNET_CONNECTED), // <-- NB
       _flags(),
@@ -420,7 +410,7 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
       _callbackTarget(nullptr),
       _cleanup(nullptr)
 {
-    assert(_socket != nullptr);
+    assert(_socket.valid());
     LOG(debug, "Connection(%s): State transition: %s -> %s", GetSpec(),
         GetStateString(FNET_CONNECTING), GetStateString(FNET_CONNECTED));
 }
@@ -432,13 +422,13 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
                                  FNET_IPacketHandler *adminHandler,
                                  FNET_Context adminContext,
                                  FNET_Context context,
-                                 FastOS_SocketInterface *mySocket,
+                                 vespalib::SocketHandle socket,
                                  const char *spec)
-    : FNET_IOComponent(owner, mySocket, spec, /* time-out = */ true),
+    : FNET_IOComponent(owner, socket.get(), spec, /* time-out = */ true),
       _streamer(streamer),
       _serverAdapter(serverAdapter),
       _adminChannel(nullptr),
-      _socket(mySocket),
+      _socket(std::move(socket)),
       _context(context),
       _state(FNET_CONNECTING),
       _flags(),
@@ -455,7 +445,7 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
       _callbackTarget(nullptr),
       _cleanup(nullptr)
 {
-    assert(_socket != nullptr);
+    assert(_socket.valid());
     if (adminHandler != nullptr) {
         FNET_Channel::UP admin(new FNET_Channel(FNET_NOID, this, adminHandler, adminContext));
         _adminChannel = admin.get();
@@ -471,38 +461,21 @@ FNET_Connection::~FNET_Connection()
         delete _adminChannel;
     }
     assert(_cleanup == nullptr);
-    assert(_socket->GetSocketEvent() == nullptr);
     assert(!_flags._writeLock);
-    delete _socket;
 }
 
 
 bool
 FNET_Connection::Init()
 {
-    bool rc = _socket->SetSoBlocking(false)
-              && _socket->TuneTransport();
-
-    if (rc) {
-        if (GetConfig()->_tcpNoDelay)
-            _socket->SetNoDelay(true);
-        EnableReadEvent(true);
-        if (IsClient()) {
-            EnableWriteEvent(true);
-            if (!_socket->Connect()) {
-                int error = FastOS_Socket::GetLastError();
-                if (error != FastOS_Socket::ERR_INPROGRESS &&
-                    error != FastOS_Socket::ERR_WOULDBLOCK)
-                {
-                    rc = false;
-                    LOG(debug, "Connection(%s): connect error: %d", GetSpec(), error);
-                }
-            }
-        }
+    // set up relevant events
+    EnableReadEvent(true);
+    if (IsClient()) {
+        EnableWriteEvent(true);
     }
 
     // init server admin channel
-    if (rc && CanAcceptChannels() && _adminChannel == nullptr) {
+    if (CanAcceptChannels() && _adminChannel == nullptr) {
         FNET_Channel::UP ach(new FNET_Channel(FNET_NOID, this));
         if (_serverAdapter->InitAdminChannel(ach.get())) {
             AddRef_NoLock();
@@ -511,7 +484,7 @@ FNET_Connection::Init()
     }
 
     // handle close by admin channel init
-    return (rc && _state <= FNET_CONNECTED);
+    return (_state <= FNET_CONNECTED);
 }
 
 
@@ -680,10 +653,10 @@ FNET_Connection::CleanupHook()
 void
 FNET_Connection::Close()
 {
-    SetSocketEvent(nullptr);
+    detach_selector();
     SetState(FNET_CLOSED);
-    _socket->Shutdown();
-    _socket->Close();
+    _ioc_socket_fd = -1;
+    _socket.reset();
 }
 
 
@@ -715,7 +688,7 @@ FNET_Connection::HandleWriteEvent()
 
     switch(_state) {
     case FNET_CONNECTING:
-        error = _socket->GetSoError();
+        error = _socket.get_so_error();
         if (error == 0) { // connect ok
             Lock();
             _state = FNET_CONNECTED; // SetState(FNET_CONNECTED)

@@ -35,6 +35,9 @@ ServerSocket::ServerSocket(const SocketSpec &spec)
             _handle = spec.server_address().listen();
         }
     }
+    if (!_handle.valid()) {
+        LOG(warning, "listen failed: '%s'", spec.spec().c_str());
+    }
 }
 
 ServerSocket::ServerSocket(const vespalib::string &spec)

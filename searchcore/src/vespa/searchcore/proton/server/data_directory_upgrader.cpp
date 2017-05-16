@@ -5,7 +5,6 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <algorithm>
 #include <iostream>
 #include <sys/stat.h>
 
@@ -122,6 +121,8 @@ DataDirectoryUpgrader::DataDirectoryUpgrader(const vespalib::string &scanDir,
       _destDir(destDir)
 {
 }
+
+DataDirectoryUpgrader::~DataDirectoryUpgrader() {}
 
 DataDirectoryUpgrader::ScanResult
 DataDirectoryUpgrader::scan() const

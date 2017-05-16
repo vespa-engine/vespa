@@ -1,46 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
-*******************************************************************************
-*
-* @author          Stein Hardy Danielsen
-* @date            Creation date: 2000-10-07
-* @version         $Id$
-*
-* @file
-*
-* FileInputStream class
-*
-* Copyright (c)  : 1997-2000 Fast Search & Transfer ASA
-*                  ALL RIGHTS RESERVED
-*
-******************************************************************************/
+
 #pragma once
 
-#include <vespa/fastlib/io/inputstream.h>
+#include "inputstream.h"
+#include <vespa/fastos/file.h>
 
-
-
-
-/**
-********************************************************************************
-*
-* FileInputStream class
-* @author          Stein Hardy Danielsen
-* @date            Creation date: 2000-10-07
-* @version         $Id$
-*
-*
-* Copyright (c)  : 1997-2000 Fast Search & Transfer ASA
-*                  ALL RIGHTS RESERVED
-*
-******************************************************************************/
 class Fast_FileInputStream  : public Fast_InputStream
 {
 private:
-  Fast_FileInputStream(const Fast_FileInputStream&);
-  Fast_FileInputStream& operator=(const Fast_FileInputStream&);
+    Fast_FileInputStream(const Fast_FileInputStream&);
+    Fast_FileInputStream& operator=(const Fast_FileInputStream&);
 
-  protected:
+protected:
 
     /** Pointer to the physical file object*/
     FastOS_FileInterface  *_theFile;
@@ -48,22 +19,14 @@ private:
     /** File opened ok flag */
     bool  _fileOpenedOk;
 
-
-  public:
-
-    /** Constructor */
+public:
     Fast_FileInputStream(const char *fileName);
-
-    /** Destructor */
-    virtual ~Fast_FileInputStream(void);
+    ~Fast_FileInputStream();
 
     // Implementation of Fast_InputStream interface
 
-    virtual ssize_t Read(void *targetBuffer, size_t bufferSize);
-    virtual bool Close();
-    virtual ssize_t Available();
-    virtual ssize_t Skip(size_t);
+    ssize_t Read(void *targetBuffer, size_t bufferSize) override;
+    bool Close() override;
+    ssize_t Available() override;
+    ssize_t Skip(size_t) override;
 };
-
-
-

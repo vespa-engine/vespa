@@ -75,6 +75,8 @@ SnippetModifier::SnippetModifier(const UTF8SubstringSnippetModifier::SP & search
 {
 }
 
+SnippetModifier::~SnippetModifier() {}
+
 FieldValue::UP
 SnippetModifier::modify(const FieldValue & fv, const document::FieldPath & path)
 {
@@ -92,6 +94,8 @@ SnippetModifierManager::SnippetModifierManager() :
     _modifierBuf(new CharBuffer(128))
 {
 }
+
+SnippetModifierManager::~SnippetModifierManager() {}
 
 void
 SnippetModifierManager::setup(const QueryTermList & queryTerms,

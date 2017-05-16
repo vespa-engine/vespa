@@ -50,6 +50,7 @@ public:
     struct SimpleObjectParams : LazyParams {
         std::vector<Value::CREF> params;
         explicit SimpleObjectParams(const std::vector<Value::CREF> &params_in) : params(params_in) {}
+        ~SimpleObjectParams();
         const Value &resolve(size_t idx, Stash &stash) const override;
     };
     struct State {
@@ -104,6 +105,7 @@ public:
     InterpretedFunction(const TensorEngine &engine, const Function &function, const NodeTypes &types)
         : InterpretedFunction(engine, function.root(), function.num_params(), types) {}
     InterpretedFunction(InterpretedFunction &&rhs) = default;
+    ~InterpretedFunction();
     size_t program_size() const { return _program.size(); }
     size_t num_params() const { return _num_params; }
     const Value &eval(Context &ctx, const LazyParams &params) const;

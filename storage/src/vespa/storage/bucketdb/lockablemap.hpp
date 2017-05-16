@@ -70,7 +70,11 @@ LockableMap<Map>::LockableMap()
     : _map(),
       _lock(),
       _lockedKeys(),
-      _lockWaiters() {}
+      _lockWaiters()
+{}
+
+template<typename Map>
+LockableMap<Map>::~LockableMap() {}
 
 template<typename Map>
 bool
@@ -463,8 +467,6 @@ LockableMap<Map>::unlock(const key_type& key)
     guard.broadcast();
 }
 
-namespace {
-
 /**
  * Check whether the given key contains the given bucket.
  * Sets result to the bucket corresponding to the key, and keyResult
@@ -472,19 +474,7 @@ namespace {
  */
 bool
 checkContains(document::BucketId::Type key, const document::BucketId& bucket,
-              document::BucketId& result, document::BucketId::Type& keyResult)
-{
-    document::BucketId id = document::BucketId(document::BucketId::keyToBucketId(key));
-    if (id.contains(bucket)) {
-        result = id;
-        keyResult = key;
-        return true;
-    }
-
-    return false;
-}
-
-} // anon namespace
+              document::BucketId& result, document::BucketId::Type& keyResult);
 
 /**
  * Retrieves the most specific bucket id (highest used bits) that contains
@@ -594,20 +584,7 @@ LockableMap<Map>::addAndLockResults(
     }
 }
 
-namespace {
-
-uint8_t getMinDiffBits(uint16_t minBits, const document::BucketId& a, const document::BucketId& b) {
-    for (uint32_t i = minBits; i <= std::min(a.getUsedBits(), b.getUsedBits()); i++) {
-        document::BucketId a1(i, a.getRawId());
-        document::BucketId b1(i, b.getRawId());
-        if (b1.getId() != a1.getId()) {
-            return i;
-        }
-    }
-    return minBits;
-};
-
-}
+uint8_t getMinDiffBits(uint16_t minBits, const document::BucketId& a, const document::BucketId& b);
 
 template<typename Map>
 typename LockableMap<Map>::WrappedEntry

@@ -130,6 +130,8 @@ StringAttribute::StringAttribute(const vespalib::string & name, const Config & c
 {
 }
 
+StringAttribute::~StringAttribute() {}
+
 uint32_t StringAttribute::get(DocId doc, WeightedInt * v, uint32_t sz) const
 {
     WeightedConstChar * s = new WeightedConstChar[sz];

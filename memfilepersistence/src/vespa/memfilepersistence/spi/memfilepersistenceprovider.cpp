@@ -1,15 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 
-#include <vespa/document/fieldset/fieldsetrepo.h>
-#include <vespa/memfilepersistence/spi/memfilepersistenceprovider.h>
+#include "memfilepersistenceprovider.h"
 #include <vespa/memfilepersistence/common/exceptions.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/config/helper/configgetter.hpp>
 
 #include <vespa/log/log.h>
-
 LOG_SETUP(".memfilepersistenceprovider");
 
 #define TRACE(context, level, func, message) \

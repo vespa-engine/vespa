@@ -23,13 +23,10 @@ class AssignValueUpdate : public ValueUpdate {
 public:
     typedef std::unique_ptr<AssignValueUpdate> UP;
 
-    AssignValueUpdate() : ValueUpdate(), _value() {}
+    AssignValueUpdate();
 
-    AssignValueUpdate(const FieldValue& value)
-        : ValueUpdate(),
-          _value(value.clone())
-    {
-    }
+    AssignValueUpdate(const FieldValue& value);
+    ~AssignValueUpdate();
 
     bool operator==(const ValueUpdate& other) const override;
 

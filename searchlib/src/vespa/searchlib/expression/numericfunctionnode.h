@@ -11,9 +11,10 @@ class NumericFunctionNode : public MultiArgFunctionNode
 {
 public:
     DECLARE_ABSTRACT_EXPRESSIONNODE(NumericFunctionNode);
-    NumericFunctionNode() : _handler() { }
+    NumericFunctionNode();
     NumericFunctionNode(const NumericFunctionNode & rhs);
     NumericFunctionNode & operator = (const NumericFunctionNode & rhs);
+    ~NumericFunctionNode();
     void reset() override { _handler.reset(); MultiArgFunctionNode::reset(); }
 protected:
     void onPrepare(bool preserveAccurateTypes) override;

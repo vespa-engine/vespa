@@ -122,6 +122,10 @@ ForeachBlueprint::ForeachBlueprint() :
 {
 }
 
+ForeachBlueprint::~ForeachBlueprint()
+{
+}
+
 void
 ForeachBlueprint::visitDumpFeatures(const IIndexEnvironment &,
                                     IDumpFeatureVisitor &) const

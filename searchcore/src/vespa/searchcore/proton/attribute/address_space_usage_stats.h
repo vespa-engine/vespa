@@ -20,6 +20,7 @@ class AddressSpaceUsageStats
 
 public:
     AddressSpaceUsageStats(const search::AddressSpace &usage);
+    ~AddressSpaceUsageStats();
     void merge(const search::AddressSpace &usage,
                const vespalib::string &attributeName,
                const vespalib::string &subDbName);

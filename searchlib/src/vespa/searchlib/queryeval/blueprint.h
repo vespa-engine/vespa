@@ -2,18 +2,19 @@
 
 #pragma once
 
+#include "field_spec.h"
 #include <vespa/searchlib/fef/handle.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
+
+#include <vespa/searchlib/queryeval/searchiterator.h>
+#include <vespa/searchlib/queryeval/multisearch.h>
+#include <vespa/searchlib/queryeval/unpackinfo.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vector>
 #include <memory>
-#include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/searchlib/queryeval/multisearch.h>
-#include <vespa/searchlib/queryeval/unpackinfo.h>
-#include "field_spec.h"
 
 namespace vespalib { class ObjectVisitor; };
 

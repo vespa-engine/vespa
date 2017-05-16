@@ -120,6 +120,12 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>vespajlib</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <!-- This seems odd. Used for export-package parsing. Lazy stuff. Should be separated out. -->
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>bundle-plugin</artifactId>
@@ -134,9 +140,11 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <compilerArgs>
-                        <arg>-Xlint:rawtypes</arg>
-                        <arg>-Xlint:unchecked</arg>
-                        <arg>-Xlint:deprecation</arg>
+                        <arg>-Xlint:all</arg>
+                        <arg>-Xlint:-processing</arg>
+                        <arg>-Xlint:-try</arg>
+                        <arg>-Xlint:-serial</arg>
+                        <arg>-Werror</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>

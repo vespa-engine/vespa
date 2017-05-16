@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "configretriever.h"
-#include <vespa/config/common/exceptions.h>
 
 namespace config {
 
@@ -20,6 +19,8 @@ ConfigRetriever::ConfigRetriever(const ConfigKeySet & bootstrapSet,
       _bootstrapRequired(true)
 {
 }
+
+ConfigRetriever::~ConfigRetriever() {}
 
 ConfigSnapshot
 ConfigRetriever::getBootstrapConfigs(int timeoutInMillis)

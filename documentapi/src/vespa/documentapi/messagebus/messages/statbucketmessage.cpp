@@ -17,6 +17,9 @@ StatBucketMessage::StatBucketMessage(document::BucketId bucket, const string& do
     _documentSelection(documentSelection)
 {}
 
+StatBucketMessage::~StatBucketMessage() {
+}
+
 DocumentReply::UP
 StatBucketMessage::doCreateReply() const
 {

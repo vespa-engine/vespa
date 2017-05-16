@@ -5,12 +5,11 @@
 #include "stats.h"
 #include <vespa/fastos/cond.h>
 #include <vespa/fastos/timestamp.h>
+#include <vespa/vespalib/net/selector.h>
 
 class FNET_TransportThread;
 class FNET_StatCounters;
-class FastOS_SocketInterface;
 class FNET_Config;
-class FastOS_SocketEvent;
 
 /**
  * This is the common superclass of all components that may be part of
@@ -24,6 +23,8 @@ class FNET_IOComponent
 
     FNET_IOComponent(const FNET_IOComponent &);
     FNET_IOComponent &operator=(const FNET_IOComponent &);
+
+    using Selector = vespalib::Selector<FNET_IOComponent>;
 
     struct Flags {
         Flags(bool shouldTimeout) :
@@ -44,7 +45,8 @@ protected:
     FNET_IOComponent        *_ioc_prev;          // prev in list
     FNET_TransportThread    *_ioc_owner;         // owner(TransportThread) ref.
     FNET_StatCounters       *_ioc_counters;      // stat counters
-    FastOS_SocketInterface  *_ioc_socket;        // source of events.
+    int                      _ioc_socket_fd;     // source of events.
+    Selector                *_ioc_selector;      // attached event selector
     char                    *_ioc_spec;          // connect/listen spec
     Flags                    _flags;             // Compressed representation of boolean flags;
     fastos::TimeStamp        _ioc_timestamp;     // last I/O activity
@@ -65,11 +67,11 @@ public:
      * subclasses.
      *
      * @param owner the TransportThread object owning this component
-     * @param mysocket the socket used by this IOC
+     * @param socket_fd the socket handle used by this IOC
      * @param spec listen/connect spec for this IOC
      * @param shouldTimeOut should this IOC time out if idle ?
      **/
-    FNET_IOComponent(FNET_TransportThread *owner, FastOS_SocketInterface *mysocket,
+    FNET_IOComponent(FNET_TransportThread *owner, int socket_fd,
                      const char *spec, bool shouldTimeOut);
 
 
@@ -267,13 +269,19 @@ public:
 
 
     /**
-     * Assign a FastOS_SocketEvent to this component. Before deleting an
-     * IOC, one must assign nullptr as the socket event.
+     * Attach an event selector to this component. Before deleting an
+     * IOC, one must first call detach_selector to detach the
+     * selector.
      *
-     * @param event the socket event to register with.
+     * @param selector event selector to be attached.
      **/
-    void SetSocketEvent(FastOS_SocketEvent *event);
+    void attach_selector(Selector &selector);
 
+    /**
+     * Detach from the attached event selector. This will disable
+     * future selector events.
+     **/
+    void detach_selector();
 
     /**
      * Enable or disable read events.

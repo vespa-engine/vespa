@@ -78,7 +78,7 @@ public class ApacheAsyncHttpClient implements AsyncHttpClient<HttpResult> {
     private boolean closed = false;
     private final int maxInstanceCacheSize; // Maximum number of currently unused instances.
     private final Map<Settings, LinkedList<SyncHttpClient>> apacheInstances = new LinkedHashMap<Settings, LinkedList<SyncHttpClient>>() {
-        protected boolean removeEldestEntry(Map.Entry eldest) {
+        protected @Override boolean removeEldestEntry(Map.Entry<Settings,LinkedList<SyncHttpClient>> eldest) {
             return getUnusedCacheSize() > maxInstanceCacheSize;
         }
     };

@@ -57,6 +57,7 @@ public:
 protected:
     StringAttribute(const vespalib::string & name);
     StringAttribute(const vespalib::string & name, const Config & c);
+    ~StringAttribute();
     static const char * defaultValue() { return ""; }
     typedef ChangeTemplate<StringChangeData> Change;
     typedef ChangeVectorT< Change > ChangeVector;

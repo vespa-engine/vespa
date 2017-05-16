@@ -31,6 +31,7 @@ class IndexCollection : public ISearchableIndexCollection
 public:
     IndexCollection(const ISourceSelectorSP & selector);
     IndexCollection(const ISourceSelectorSP & selector, const ISearchableIndexCollection &sources);
+    ~IndexCollection();
 
     void append(uint32_t id, const IndexSearchable::SP &source) override;
     void replace(uint32_t id, const IndexSearchable::SP &source) override;

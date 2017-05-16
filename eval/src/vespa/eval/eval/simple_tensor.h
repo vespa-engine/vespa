@@ -2,16 +2,20 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/stash.h>
-#include <memory>
-#include <map>
 #include "value_type.h"
 #include "tensor.h"
 #include "tensor_spec.h"
 #include "aggr.h"
+#include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/stash.h>
+#include <memory>
+#include <map>
+#include <functional>
 
 namespace vespalib {
+
+class nbostream;
+
 namespace eval {
 
 struct UnaryOperation;
@@ -83,6 +87,8 @@ public:
     static bool equal(const SimpleTensor &a, const SimpleTensor &b);
     static std::unique_ptr<SimpleTensor> join(const SimpleTensor &a, const SimpleTensor &b, const std::function<double(double,double)> &function);
     static std::unique_ptr<SimpleTensor> concat(const SimpleTensor &a, const SimpleTensor &b, const vespalib::string &dimension);
+    static void encode(const SimpleTensor &tensor, nbostream &output);
+    static std::unique_ptr<SimpleTensor> decode(nbostream &input);
 };
 
 } // namespace vespalib::eval

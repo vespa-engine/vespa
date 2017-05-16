@@ -5,8 +5,6 @@
 #include "slobrok.h"
 #include "slobrokstate.h"
 #include <vespa/vespalib/component/vtag.h>
-#include <vespa/vespalib/util/vstringfmt.h>
-#include <vespa/messagebus/network/rpcnetworkparams.h>
 
 namespace mbus {
 
@@ -42,9 +40,9 @@ TestServer::TestServer(const MessageBusParams &mbusParams,
                        const RPCNetworkParams &netParams) :
     net(netParams),
     mb(net, mbusParams)
-{
-    // empty
-}
+{}
+
+TestServer::~TestServer() {}
 
 bool
 TestServer::waitSlobrok(const string &pattern, uint32_t cnt)

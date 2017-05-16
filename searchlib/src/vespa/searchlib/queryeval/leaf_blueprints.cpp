@@ -56,6 +56,10 @@ SimpleBlueprint::SimpleBlueprint(const SimpleResult &result)
                             (result.getHitCount() == 0)));
 }
 
+SimpleBlueprint::~SimpleBlueprint()
+{
+}
+
 SimpleBlueprint &
 SimpleBlueprint::tag(const vespalib::string &t)
 {
@@ -83,6 +87,10 @@ FakeBlueprint::FakeBlueprint(const FieldSpec &field,
 {
     setEstimate(HitEstimate(result.inspect().size(),
                             result.inspect().empty()));
+}
+
+FakeBlueprint::~FakeBlueprint()
+{
 }
 
 //-----------------------------------------------------------------------------

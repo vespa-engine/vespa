@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchcommon/attribute/search_context_params.h>
 #include <vespa/searchlib/test/imported_attribute_fixture.h>
 #include <vespa/searchlib/attribute/imported_search_context.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vespa/searchcommon/attribute/search_context_params.h>
 
 namespace search {
 namespace attribute {
@@ -65,7 +65,7 @@ TEST_F("approximateHits() returns document count of reference attribute", Fixtur
     add_n_docs_with_undefined_values(*f.reference_attr, 101);
 
     auto ctx = f.create_context(word_term("foo"));
-    EXPECT_EQUAL(101, ctx->approximateHits());
+    EXPECT_EQUAL(101u, ctx->approximateHits());
 }
 
 TEST_F("attributeName() returns imported attribute name", Fixture) {

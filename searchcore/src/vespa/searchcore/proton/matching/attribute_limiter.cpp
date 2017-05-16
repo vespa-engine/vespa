@@ -35,6 +35,8 @@ AttributeLimiter::AttributeLimiter(Searchable &searchable_attributes,
 {
 }
 
+AttributeLimiter::~AttributeLimiter() {}
+
 namespace {
 
 vespalib::string STRICT_STR("strict");

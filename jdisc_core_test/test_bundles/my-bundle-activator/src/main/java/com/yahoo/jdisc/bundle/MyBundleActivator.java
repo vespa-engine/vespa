@@ -12,11 +12,11 @@ import org.osgi.framework.ServiceRegistration;
  */
 public class MyBundleActivator implements BundleActivator {
 
-    private ServiceRegistration registration;
+    private ServiceRegistration<?> registration;
 
     @Override
     public void start(BundleContext ctx) throws Exception {
-        ServiceReference seviceRef = ctx.getServiceReference(CurrentContainer.class.getName());
+        ServiceReference<?> seviceRef = ctx.getServiceReference(CurrentContainer.class.getName());
         if (seviceRef == null) {
             throw new IllegalStateException("Service reference '" + CurrentContainer.class.getName() + "' not found.");
         }

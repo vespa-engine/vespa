@@ -188,7 +188,7 @@ Fixture::initViewSet(ViewSet &views)
 {
     Matchers::SP matchers(new Matchers(_clock, _queryLimiter, _constantValueRepo));
     IndexManager::SP indexMgr(new IndexManager(BASE_DIR, searchcorespi::index::WarmupConfig(),
-                                      2, 0, Schema(), views._reconfigurer,
+                                      2, 0, Schema(), 1, views._reconfigurer,
                                       views._writeService, _summaryExecutor, TuneFileIndexManager(),
                                       TuneFileAttributes(), views._fileHeaderContext));
     AttributeManager::SP attrMgr(new AttributeManager(BASE_DIR,
@@ -531,6 +531,35 @@ TEST_F("require that we can reconfigure attribute manager", Fixture)
         cmp.expect_not_equal_schema();
     }
     EXPECT_TRUE(asAttributeManager(f._views.getViewPtrs().fv.get()->getAttributeWriter()->getAttributeManager())->getImportedAttributes() != nullptr);
+}
+
+AttributeWriter::SP
+getAttributeWriter(Fixture &f)
+{
+    return f._views.feedView.get()->getAttributeWriter();
+}
+
+void
+checkAttributeWriterChangeOnRepoChange(Fixture &f, bool docTypeRepoChanged)
+{
+    auto oldAttributeWriter = getAttributeWriter(f);
+    AttributeCollectionSpec::AttributeList specList;
+    AttributeCollectionSpec spec(specList, 1, 0);
+    ReconfigParams params(CCR().setDocumentTypeRepoChanged(docTypeRepoChanged));
+    // Use new config snapshot == old config snapshot (only relevant for reprocessing)
+    f._configurer->reconfigure(*createConfig(), *createConfig(), spec, params, f._resolver);
+    auto newAttributeWriter = getAttributeWriter(f);
+    if (docTypeRepoChanged) {
+        EXPECT_NOT_EQUAL(oldAttributeWriter, newAttributeWriter);
+    } else {
+        EXPECT_EQUAL(oldAttributeWriter, newAttributeWriter);
+    }
+}
+
+TEST_F("require that we get new attribute writer if document type repo changes", Fixture)
+{
+    checkAttributeWriterChangeOnRepoChange(f, false);
+    checkAttributeWriterChangeOnRepoChange(f, true);
 }
 
 TEST_F("require that reconfigure returns reprocessing initializer when changing attributes", Fixture)

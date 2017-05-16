@@ -51,7 +51,7 @@ public abstract class Expirer extends Maintainer {
                 expired.add(node);
         }
         if ( ! expired.isEmpty())
-            log.info(fromState + " expirer found " + expired.size() + " expired nodes");
+            log.info(fromState + " expirer found " + expired.size() + " expired nodes: " + expired);
         expire(expired);
     }
 

@@ -25,7 +25,7 @@ private:
     private:
         fastos::TimeStamp _createTime;
         int64_t		  _numDocs;
-        vespalib::string  _badConfigs;	
+        vespalib::string  _delayedConfigs;
         int64_t           _gen;
         bool		  _down;
     public:
@@ -40,12 +40,12 @@ private:
         bool getDown(void) const { return _down; }
         void setDown(void) { _down = true; }
 
-        const vespalib::string & getBadConfigs(void) const {
-            return _badConfigs;
+        const vespalib::string & getDelayedConfigs(void) const {
+            return _delayedConfigs;
         }
 
-        void setBadConfigs(const vespalib::string &badConfigs) {
-            _badConfigs = badConfigs;
+        void setDelayedConfigs(const vespalib::string &delayedConfigs) {
+            _delayedConfigs = delayedConfigs;
         }
 
     };
@@ -74,7 +74,6 @@ private:
 
     void triggerFlush(FRT_RPCRequest *req);
     void prepareRestart(FRT_RPCRequest *req);
-    void wipeHistory(FRT_RPCRequest * req);
     void enableSearching(FRT_RPCRequest * req);
     void disableSearching(FRT_RPCRequest * req);
     void checkState(StateArg::UP arg);
@@ -116,7 +115,6 @@ public:
     void rpc_die(FRT_RPCRequest *req);
     void rpc_triggerFlush(FRT_RPCRequest *req);
     void rpc_prepareRestart(FRT_RPCRequest *req);
-    void rpc_wipeHistory(FRT_RPCRequest *req);
     void rpc_listDocTypes(FRT_RPCRequest *req);
     void rpc_listSchema(FRT_RPCRequest *req);
     void rpc_getConfigGeneration(FRT_RPCRequest *req);

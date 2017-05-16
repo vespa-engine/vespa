@@ -6,9 +6,7 @@
 #include "bucket.h"
 #include "docentry.h"
 
-namespace storage {
-
-namespace spi {
+namespace storage::spi {
 
 class Result {
 public:
@@ -35,6 +33,9 @@ public:
     Result(ErrorType error, const vespalib::string& errorMessage)
         : _errorCode(error),
           _errorMessage(errorMessage) {}
+
+    Result(const Result &);
+    Result & operator = (const Result &);
 
     virtual ~Result();
 
@@ -307,6 +308,5 @@ private:
     PartitionStateList _list;
 };
 
-}  // namespace spi
-}  // namespace storage
+}
 

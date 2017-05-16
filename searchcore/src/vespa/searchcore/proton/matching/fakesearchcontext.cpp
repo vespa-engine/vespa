@@ -5,5 +5,16 @@
 namespace proton {
 namespace matching {
 
+FakeSearchContext::FakeSearchContext(size_t initialNumDocs)
+    : _clock(),
+      _doom(_clock, -1),
+      _selector(new search::FixedSourceSelector(0, "fs", initialNumDocs)),
+      _indexes(new IndexCollection(_selector)),
+      _attrSearchable(),
+      _docIdLimit(initialNumDocs)
+{}
+
+FakeSearchContext::~FakeSearchContext() {}
+
 } // namespace matching
 } // namespace proton

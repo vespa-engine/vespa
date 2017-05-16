@@ -7,14 +7,14 @@ using namespace vbench;
 struct MyHandler : public Handler<int> {
     int value;
     MyHandler() : value(-1) {}
-    virtual void handle(std::unique_ptr<int> v) override { value = (v.get() != 0) ? *v : 0; }
+    void handle(std::unique_ptr<int> v) override { value = (v.get() != 0) ? *v : 0; }
 };
 
 struct Fetcher : public vespalib::Runnable {
     Provider<int> &provider;
     Handler<int> &handler;
     Fetcher(Provider<int> &p, Handler<int> &h) : provider(p), handler(h) {}
-    virtual void run() override { handler.handle(provider.provide()); }
+    void run() override { handler.handle(provider.provide()); }
 };
 
 TEST("dispatcher") {

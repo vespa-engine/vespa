@@ -4,9 +4,7 @@
 #include <vespa/searchlib/docstore/cachestats.h>
 #include <vespa/searchlib/docstore/idocumentstore.h>
 
-namespace proton {
-
-namespace test {
+namespace proton::test {
 
 struct DummyDocumentStore : public search::IDocumentStore
 {
@@ -18,35 +16,36 @@ struct DummyDocumentStore : public search::IDocumentStore
     DummyDocumentStore(const vespalib::string &baseDir)
         : _baseDir(baseDir)
     {}
+    ~DummyDocumentStore() {}
     virtual document::Document::UP read(search::DocumentIdT,
-                                        const document::DocumentTypeRepo &) const {
+                                        const document::DocumentTypeRepo &) const override {
         return document::Document::UP();
     }
-    virtual void write(uint64_t, const document::Document &, search::DocumentIdT) {}
-    virtual void remove(uint64_t, search::DocumentIdT) {}
-    virtual void flush(uint64_t) {}
-    virtual uint64_t initFlush(uint64_t) { return 0; }
-    virtual void compact(uint64_t) {}
-    virtual uint64_t lastSyncToken() const { return 0; }
+    virtual void write(uint64_t, const document::Document &, search::DocumentIdT) override {}
+    virtual void remove(uint64_t, search::DocumentIdT) override {}
+    virtual void flush(uint64_t) override {}
+    virtual uint64_t initFlush(uint64_t) override { return 0; }
+    virtual void compact(uint64_t) override {}
+    virtual uint64_t lastSyncToken() const override { return 0; }
     virtual uint64_t tentativeLastSyncToken() const override { return 0; }
-    virtual fastos::TimeStamp getLastFlushTime() const { return fastos::TimeStamp(); }
-    virtual uint64_t nextId() const { return 0; }
-    virtual size_t memoryUsed() const { return 0; }
-    virtual size_t memoryMeta() const { return 0; }
-    virtual size_t getDiskFootprint() const { return 0; }
-    virtual size_t getDiskBloat() const { return 0; }
-    virtual size_t getMaxCompactGain() const { return getDiskBloat(); }
-    virtual search::CacheStats getCacheStats() const { return search::CacheStats(); }
-    virtual const vespalib::string &getBaseDir() const { return _baseDir; }
+    virtual fastos::TimeStamp getLastFlushTime() const override { return fastos::TimeStamp(); }
+    virtual uint64_t nextId() const override { return 0; }
+    virtual size_t memoryUsed() const override { return 0; }
+    virtual size_t memoryMeta() const override { return 0; }
+    virtual size_t getDiskFootprint() const override { return 0; }
+    virtual size_t getDiskBloat() const override { return 0; }
+    virtual size_t getMaxCompactGain() const override { return getDiskBloat(); }
+    virtual search::CacheStats getCacheStats() const override { return search::CacheStats(); }
+    virtual const vespalib::string &getBaseDir() const override { return _baseDir; }
     virtual void accept(search::IDocumentStoreReadVisitor &,
                         search::IDocumentStoreVisitorProgress &,
-                        const document::DocumentTypeRepo &) {}
+                        const document::DocumentTypeRepo &) override {}
 
     virtual void accept(search::IDocumentStoreRewriteVisitor &,
                         search::IDocumentStoreVisitorProgress &,
-                        const document::DocumentTypeRepo &) {}
+                        const document::DocumentTypeRepo &) override {}
 
-    virtual double getVisitCost() const { return 1.0; }
+    virtual double getVisitCost() const override { return 1.0; }
     virtual search::DataStoreStorageStats getStorageStats() const override {
         return search::DataStoreStorageStats(0, 0, 0.0, 0, 0);
     }
@@ -61,7 +60,4 @@ struct DummyDocumentStore : public search::IDocumentStore
     virtual void shrinkLidSpace() override {}
 };
 
-} // namespace test
-
-} // namespace proton
-
+}

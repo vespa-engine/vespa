@@ -1,18 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-
 #include "predicate_tree_annotator.h"
-
 #include "predicate_index.h"
 #include "predicate_range_expander.h"
 #include "predicate_tree_analyzer.h"
-#include "tree_crumbs.h"
 #include <vespa/document/predicate/predicate.h>
-#include "predicate_hash.h"
-#include <vespa/vespalib/data/slime/slime.h>
-#include <map>
-#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".predicate_tree_annotator");
@@ -235,6 +227,12 @@ void PredicateTreeAnnotatorImpl::assignIntervalMarkers(const Inspector &in) {
     }  // switch
 }
 }  // namespace
+
+
+PredicateTreeAnnotations::PredicateTreeAnnotations(uint32_t mf, uint16_t ir)
+    : min_feature(mf), interval_range(ir)
+{}
+PredicateTreeAnnotations::~PredicateTreeAnnotations(){}
 
 void PredicateTreeAnnotator::annotate(const Inspector &in,
                                       PredicateTreeAnnotations &result,

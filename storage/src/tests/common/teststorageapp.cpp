@@ -1,14 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/common/teststorageapp.h>
-#include <vespa/persistence/dummyimpl/dummypersistence.h>
+#include "teststorageapp.h"
 #include <vespa/storage/bucketdb/storagebucketdbinitializer.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/config-stor-distribution.h>
 #include <vespa/config-load-type.h>
-#include <vespa/storageframework/defaultimplementation/clock/realclock.h>
-#include <vespa/storageframework/defaultimplementation/memory/nomemorymanager.h>
 #include <vespa/config-fleetcontroller.h>
+#include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -38,8 +36,7 @@ TestStorageApp::TestStorageApp(StorageComponentRegisterImpl::UP compReg,
                                const lib::NodeType& type, NodeIndex index,
                                vespalib::stringref configId)
     : TestComponentRegister(ComponentRegisterImpl::UP(std::move(compReg))),
-      _compReg(dynamic_cast<StorageComponentRegisterImpl&>(
-                    TestComponentRegister::getComponentRegister())),
+      _compReg(dynamic_cast<StorageComponentRegisterImpl&>(TestComponentRegister::getComponentRegister())),
       _docMan(),
       _nodeStateUpdater(type),
       _configId(configId),
@@ -80,6 +77,8 @@ TestStorageApp::TestStorageApp(StorageComponentRegisterImpl::UP compReg,
                 redundancy, nodeCount)));
     _compReg.setDistribution(distr);
 }
+
+TestStorageApp::~TestStorageApp() {}
 
 void
 TestStorageApp::setDistribution(Redundancy redundancy, NodeCount nodeCount)
@@ -175,6 +174,8 @@ TestServiceLayerApp::TestServiceLayerApp(DiskCount dc, NodeIndex index,
         // detection, you should not need this utility.
     CPPUNIT_ASSERT(dc > 0);
 }
+
+TestServiceLayerApp::~TestServiceLayerApp() {}
 
 void
 TestServiceLayerApp::setupDummyPersistence()
@@ -272,6 +273,8 @@ TestDistributorApp::TestDistributorApp(NodeIndex index,
     _compReg.setTimeCalculator(*this);
     configure(configId);
 }
+
+TestDistributorApp::~TestDistributorApp() {}
 
 api::Timestamp
 TestDistributorApp::getUniqueTimestamp()

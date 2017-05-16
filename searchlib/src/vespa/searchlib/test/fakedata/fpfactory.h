@@ -41,9 +41,7 @@ public:
         (void) schema;
     }
 
-    virtual FakePosting::SP
-    make(const FakeWord &fw) override
-    {
+    FakePosting::SP make(const FakeWord &fw) override {
         return FakePosting::SP(new P(fw));
     }
 };

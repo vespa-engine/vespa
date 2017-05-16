@@ -17,6 +17,7 @@ private:
 
 public:
     DocumentDBExplorer(const DocumentDB::SP &docDb);
+    ~DocumentDBExplorer();
 
     // Implements vespalib::StateExplorer
     virtual void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;

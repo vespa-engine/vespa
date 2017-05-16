@@ -1,17 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/distributor/operationowner.h>
+
+#include "operationowner.h"
 #include <vespa/storage/distributor/operations/operation.h>
-#include <vespa/log/log.h>
-#include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".operationowner");
 
-namespace storage {
-
-namespace distributor {
+namespace storage::distributor {
 
 OperationOwner::~OperationOwner()
 {
@@ -82,7 +79,4 @@ OperationOwner::erase(api::StorageMessage::Id msgId)
     _sentMessageMap.pop(msgId);
 }
 
-
-} // distributor
-
-} // storage
+}

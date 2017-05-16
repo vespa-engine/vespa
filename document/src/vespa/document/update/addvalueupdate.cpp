@@ -14,11 +14,17 @@ using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
 using vespalib::nbostream;
 
-namespace document
-{
+namespace document {
 
 IMPLEMENT_IDENTIFIABLE(AddValueUpdate, ValueUpdate);
 
+AddValueUpdate:: AddValueUpdate(const FieldValue& value, int weight)
+    : ValueUpdate(),
+      _value(value.clone()),
+      _weight(weight)
+{}
+
+AddValueUpdate::~AddValueUpdate() { }
 bool
 AddValueUpdate::operator==(const ValueUpdate& other) const
 {

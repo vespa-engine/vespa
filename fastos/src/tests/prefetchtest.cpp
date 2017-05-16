@@ -12,25 +12,20 @@
  *                    ALL RIGHTS RESERVED
  *************************************************************************/
 
-
-
-#include <stdlib.h>
-#include <vespa/fastos/fastos.h>
 #include "tests.h"
-
+#include <vespa/fastos/time.h>
+#include <vespa/fastos/prefetch.h>
 
 class PrefetchTestApp : public BaseTest
 {
-private:
-
 public:
-   virtual ~PrefetchTestApp() {};
+   virtual ~PrefetchTestApp() {}
 
    bool PrefetchTest ()
    {
       bool rc = false;
       int j, size, *a;
-      register int or1, or2;
+      int or1, or2;
       FastOS_Time start, stop;
       double timeVal;
 

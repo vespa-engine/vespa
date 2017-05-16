@@ -48,11 +48,11 @@ public:
     typedef std::unique_ptr<CreateVisitorMessage> UP;
 
     CreateVisitorMessage(); // must be deserialized into
-
     CreateVisitorMessage(const string& libraryName,
                          const string& instanceId,
                          const string& controlDestination,
                          const string& dataDestination);
+    ~CreateVisitorMessage();
 
     const string& getLibraryName() const { return _libName; }
     void setLibraryName(const string& value) { _libName = value; }
@@ -136,6 +136,7 @@ public:
 
     DestroyVisitorMessage(); // must be deserialized into
     DestroyVisitorMessage(const string &instanceId);
+    ~DestroyVisitorMessage();
 
     const string& getInstanceId() const { return _instanceId; }
     void setInstanceId(const string& id) { _instanceId = id; }
@@ -200,6 +201,7 @@ public:
     typedef std::unique_ptr<VisitorInfoMessage> UP;
 
     VisitorInfoMessage();
+    ~VisitorInfoMessage();
 
     std::vector<document::BucketId>& getFinishedBuckets() { return _finishedBuckets; }
     const std::vector<document::BucketId>& getFinishedBuckets() const { return _finishedBuckets; }

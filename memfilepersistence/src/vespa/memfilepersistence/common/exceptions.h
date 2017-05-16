@@ -23,7 +23,11 @@
     struct name : public vespalib::Exception, public MemFileException { \
     name(const vespalib::string& message, const FileSpecification& file, \
          const vespalib::string& location, int skipStack = 0); \
-    ~name() throw(); \
+    name(const name &); \
+    name & operator = (const name &); \
+    name(name &&) = default; \
+    name & operator = (name &&) = default; \
+    ~name(); \
     VESPA_DEFINE_EXCEPTION_SPINE(name); \
 };
 
@@ -32,11 +36,12 @@
          const vespalib::string& location, int skipStack) \
         : vespalib::Exception(message, location, skipStack + 1), \
           MemFileException(file) {} \
-    name::~name() throw() {} \
+    name::name(const name &) = default; \
+    name & name::operator = (const name &) = default; \
+    name::~name() {} \
     VESPA_IMPLEMENT_EXCEPTION_SPINE(name);
 
-namespace storage {
-namespace memfile {
+namespace storage::memfile {
 
 VESPA_DEFINE_EXCEPTION(NoDisksException, vespalib::Exception);
 
@@ -84,7 +89,8 @@ public:
     TimestampExistException(const vespalib::string& message,
                             const FileSpecification&, Timestamp ts,
                             const vespalib::string& location, int skipstack = 0);
-    virtual ~TimestampExistException() throw() {}
+    TimestampExistException(const TimestampExistException &);
+    ~TimestampExistException();
 
     VESPA_DEFINE_EXCEPTION_SPINE(TimestampExistException);
 
@@ -104,7 +110,8 @@ public:
     InconsistentSlotException(const vespalib::string& message,
                               const FileSpecification&, const MemSlot& slot,
                               const vespalib::string& location, int skipstack = 0);
-    virtual ~InconsistentSlotException() throw() {}
+    InconsistentSlotException(const InconsistentSlotException &);
+    ~InconsistentSlotException();
 
     VESPA_DEFINE_EXCEPTION_SPINE(InconsistentSlotException);
 };
@@ -116,11 +123,10 @@ public:
     MemFileIoException(const vespalib::string& msg, const FileSpecification&,
                        Type type, const vespalib::string& location,
                        int skipStack = 0);
-    virtual ~MemFileIoException() throw() {}
+    MemFileIoException(const MemFileIoException &);
+    ~MemFileIoException();
 
     VESPA_DEFINE_EXCEPTION_SPINE(MemFileIoException);
 };
 
 } // memfile
-} // storage
-

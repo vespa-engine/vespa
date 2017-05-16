@@ -6,9 +6,7 @@
 
 namespace storage {
 
-namespace api {
-class RemoveCommand;
-}
+namespace api { class RemoveCommand; }
 
 namespace distributor {
 
@@ -19,16 +17,14 @@ public:
                     const std::shared_ptr<api::RemoveCommand> & msg,
                     PersistenceOperationMetricSet& metric,
                     SequencingHandle sequencingHandle = SequencingHandle());
+    ~RemoveOperation();
 
-    void onStart(DistributorMessageSender& sender);
+    void onStart(DistributorMessageSender& sender) override;
+    const char* getName() const override { return "remove"; };
+    std::string getStatus() const override { return ""; };
 
-    const char* getName() const { return "remove"; };
-
-    std::string getStatus() const { return ""; };
-
-    void onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> &);
-
-    void onClose(DistributorMessageSender& sender);
+    void onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
+    void onClose(DistributorMessageSender& sender) override;
 
 private:
     PersistenceMessageTrackerImpl _trackerInstance;
@@ -42,4 +38,3 @@ private:
 }
 
 }
-

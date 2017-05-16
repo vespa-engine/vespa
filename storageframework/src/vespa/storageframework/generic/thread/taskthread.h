@@ -30,14 +30,14 @@ public:
     TaskThread(ThreadLock& lock);
     
     void addTask(const Task& t);
-    virtual ThreadWaitInfo doCriticalTick(ThreadIndex);
+    ThreadWaitInfo doCriticalTick(ThreadIndex) override;
     
     bool empty() const { return _tasks.empty(); }
     const Task& peek() const { return _tasks.top(); }
     void pop() { _tasks.pop(); }
 
 private:
-    virtual ThreadWaitInfo doNonCriticalTick(ThreadIndex) = 0;
+    virtual ThreadWaitInfo doNonCriticalTick(ThreadIndex) override = 0;
 };
 
 template <typename Task>

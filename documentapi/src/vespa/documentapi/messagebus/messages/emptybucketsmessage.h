@@ -22,6 +22,7 @@ protected:
 public:
     EmptyBucketsMessage(); // must be serialized into
     EmptyBucketsMessage(const std::vector<document::BucketId> &bucketIds);
+    ~EmptyBucketsMessage();
 
     std::vector<document::BucketId> &getBucketIds() { return _bucketIds; }
     const std::vector<document::BucketId> &getBucketIds() const { return _bucketIds; }

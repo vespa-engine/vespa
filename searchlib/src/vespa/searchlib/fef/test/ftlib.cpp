@@ -1,14 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".ftlib");
 
-#include <boost/tokenizer.hpp>
-#include <vespa/searchlib/features/utils.h>
-#include <vespa/searchlib/fef/featurenamebuilder.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include "ftlib.h"
 #include "dummy_dependency_handler.h"
+#include <vespa/searchlib/features/utils.h>
+#include <boost/tokenizer.hpp>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".ftlib");
 
 using namespace search::features;
 using namespace search::fef;
@@ -18,7 +16,6 @@ FtIndexEnvironment::FtIndexEnvironment() :
     search::fef::test::IndexEnvironment(),
     _builder(*this)
 {
-    // empty
 }
 
 FtQueryEnvironment::FtQueryEnvironment(search::fef::test::IndexEnvironment &env)
@@ -26,7 +23,6 @@ FtQueryEnvironment::FtQueryEnvironment(search::fef::test::IndexEnvironment &env)
       _layout(),
       _builder(*this, _layout)
 {
-    // empty
 }
 
 FtQueryEnvironment::~FtQueryEnvironment() { }
@@ -42,7 +38,6 @@ FtFeatureTest::FtFeatureTest(search::fef::BlueprintFactory &factory, const vespa
     _overrides(),
     _test(factory, _indexEnv, _queryEnv, _queryEnv.getLayout(), feature, _overrides)
 {
-    // empty
 }
 
 FtFeatureTest::FtFeatureTest(search::fef::BlueprintFactory &factory, const std::vector<vespalib::string> &features)
@@ -53,6 +48,7 @@ FtFeatureTest::FtFeatureTest(search::fef::BlueprintFactory &factory, const std::
 {
 }
 
+FtFeatureTest::~FtFeatureTest() {}
 
 //---------------------------------------------------------------------------------------------------------------------
 // FtUtil
@@ -117,6 +113,7 @@ FtUtil::toRankResult(const vespalib::string & baseName, const vespalib::string &
     return retval;
 }
 
+FtIndex::~FtIndex() {}
 
 //---------------------------------------------------------------------------------------------------------------------
 // FtTestApp

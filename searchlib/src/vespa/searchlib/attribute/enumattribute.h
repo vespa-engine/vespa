@@ -2,15 +2,14 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/enumstore.h>
 #include "attributevector.h"
 #include "loadedenumvalue.h"
+#include "enumstore.h"
 #include <set>
 
 namespace search {
 
-namespace attribute
-{
+namespace attribute {
 
 template <typename, typename, typename > class PostingSearchContext;
 
@@ -56,23 +55,15 @@ protected:
     EnumStore &       getEnumStore()       { return _enumStore; }
     const EnumStore & getEnumStore() const { return _enumStore; }
 
-    virtual const EnumStoreBase * getEnumStoreBase() const { return &_enumStore; }
-    virtual void getEnumValue(const EnumHandle * v, uint32_t *e, uint32_t sz) const { _enumStore.getEnumValue(v, e, sz); }
-    virtual EnumType getFromEnum(EnumHandle e)        const { return _enumStore.getValue(e); }
+    const EnumStoreBase * getEnumStoreBase() const override { return &_enumStore; }
+    void getEnumValue(const EnumHandle * v, uint32_t *e, uint32_t sz) const override { _enumStore.getEnumValue(v, e, sz); }
+    EnumType getFromEnum(EnumHandle e)        const override { return _enumStore.getValue(e); }
 
-    virtual void fillPostings(LoadedVector & loaded) { (void) loaded; }
-    virtual void fillEnum(LoadedVector & loaded) override;
-
-    virtual void
-    fillEnum0(const void *src,
-              size_t srcLen,
-              EnumIndexVector &eidxs) override;
-
-    virtual void
-    fixupEnumRefCounts(const EnumVector &enumHist) override;
-
-    virtual uint64_t
-    getUniqueValueCount(void) const override;
+    void fillPostings(LoadedVector & loaded) override { (void) loaded; }
+    void fillEnum(LoadedVector & loaded) override;
+    void fillEnum0(const void *src, size_t srcLen, EnumIndexVector &eidxs) override;
+    void fixupEnumRefCounts(const EnumVector &enumHist) override;
+    uint64_t getUniqueValueCount(void) const override;
 
     static EnumType getDefaultEnumTypeValue() { return B::defaultValue(); }
 
@@ -83,16 +74,13 @@ protected:
     void insertNewUniqueValues(EnumStoreBase::IndexVector & newIndexes);
     virtual void considerAttributeChange(const Change & c, UniqueSet & newUniques) = 0;
     virtual void reEnumerate() = 0;
-    virtual bool hasEnum2Value() const { return true; }
-    virtual AddressSpace getEnumStoreAddressSpaceUsage() const override;
+    bool hasEnum2Value() const override { return true; }
+    AddressSpace getEnumStoreAddressSpaceUsage() const override;
 
 public:
-    EnumAttribute(const vespalib::string & baseFileName,
-                  const AttributeVector::Config & cfg);
-
-    virtual ~EnumAttribute();
-    virtual bool findEnum(EnumType v, EnumHandle & e) const { return _enumStore.findEnum(v, e); }
+    EnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
+    ~EnumAttribute();
+    bool findEnum(EnumType v, EnumHandle & e) const override { return _enumStore.findEnum(v, e); }
 };
 
 } // namespace search
-

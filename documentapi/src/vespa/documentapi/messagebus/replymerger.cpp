@@ -17,6 +17,8 @@ ReplyMerger::ReplyMerger()
 {
 }
 
+ReplyMerger::~ReplyMerger() {}
+
 ReplyMerger::Result::Result(uint32_t successIdx,
                             std::unique_ptr<mbus::Reply> generatedReply)
     : _generatedReply(std::move(generatedReply)),

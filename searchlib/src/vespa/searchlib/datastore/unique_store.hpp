@@ -84,7 +84,7 @@ void
 UniqueStore<EntryT, RefT>::remove(EntryRef ref)
 {
     assert(ref.valid());
-    EntryType unused;
+    EntryType unused{};
     Compare comp(_store, unused);
     auto itr = _dict.lowerBound(ref, comp);
     if (itr.valid() && itr.getKey() == ref) {

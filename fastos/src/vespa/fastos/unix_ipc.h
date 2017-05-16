@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/app.h>
-#include <vespa/fastos/process.h>
-#include <vespa/fastos/thread.h>
+#include "app.h"
+#include "process.h"
+#include "thread.h"
 #include <poll.h>
 
 class FastOS_RingBuffer;
@@ -24,26 +24,21 @@ protected:
     bool DoWrite (FastOS_UNIX_Process::DescriptorHandle &desc);
     bool DoRead (FastOS_UNIX_Process::DescriptorHandle &desc);
     bool SetBlocking (int fileDescriptor, bool doBlock);
-    void BuildPollCheck (bool isRead, int filedes,
-                         FastOS_RingBuffer *buffer, bool *check);
-    void BuildPollArray(pollfd **fds, unsigned int *nfds,
-                        unsigned int *allocnfds);
+    void BuildPollCheck (bool isRead, int filedes, FastOS_RingBuffer *buffer, bool *check);
+    void BuildPollArray(pollfd **fds, unsigned int *nfds, unsigned int *allocnfds);
     bool SavePollArray(pollfd *fds, unsigned int nfds);
     void PerformAsyncIO (void);
     void PerformAsyncIPCIO (void);
     void BuildPollChecks(void);
     void DeliverMessages (FastOS_RingBuffer *buffer);
-    void PipeData (FastOS_UNIX_Process *process,
-                   FastOS_UNIX_Process::DescriptorType type);
+    void PipeData (FastOS_UNIX_Process *process, FastOS_UNIX_Process::DescriptorType type);
     void RemoveClosingProcesses(void);
 
 public:
-    FastOS_UNIX_IPCHelper (FastOS_ApplicationInterface *app,
-                           int appDescriptor);
+    FastOS_UNIX_IPCHelper (FastOS_ApplicationInterface *app, int appDescriptor);
     ~FastOS_UNIX_IPCHelper ();
-    void Run (FastOS_ThreadInterface *thisThread, void *arg);
-    bool SendMessage (FastOS_UNIX_Process *xproc, const void *buffer,
-                      int length);
+    void Run (FastOS_ThreadInterface *thisThread, void *arg) override;
+    bool SendMessage (FastOS_UNIX_Process *xproc, const void *buffer, int length);
     void NotifyProcessListChange ();
     void AddProcess (FastOS_UNIX_Process *xproc);
     void RemoveProcess (FastOS_UNIX_Process *xproc);

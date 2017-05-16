@@ -22,6 +22,7 @@ private:
     int                 _restartLimit;
     int                 _maxLineSize;
     bool                _keepAlive;
+    bool                _usePostMode;
     bool                _headerBenchmarkdataCoverage;
     int                 _seconds;
     std::vector<uint64_t> _queryfileOffset;
@@ -36,7 +37,7 @@ private:
                        int byteLimit, int restartLimit, int maxLineSize,
                        bool keepAlive, bool headerBenchmarkdataCoverage, int seconds,
                        bool singleQueryFile, const std::string & queryStringToAppend, const std::string & extraHeaders,
-                       const std::string &authority);
+                       const std::string &authority, bool postMode);
 
     void CreateClients();
     void StartClients();

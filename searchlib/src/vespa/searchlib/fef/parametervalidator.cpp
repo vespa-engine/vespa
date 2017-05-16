@@ -46,6 +46,9 @@ ParameterValidator::Result::Result(size_t tag) :
 {
 }
 
+ParameterValidator::Result::Result(const Result &) = default;
+ParameterValidator::Result & ParameterValidator::Result::operator=(const Result &) = default;
+
 ParameterValidator::Result::~Result() { }
 
 void

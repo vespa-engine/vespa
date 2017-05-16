@@ -113,6 +113,8 @@ AdaptiveDocidRangeScheduler::AdaptiveDocidRangeScheduler(size_t num_threads, uin
     }
 }
 
+AdaptiveDocidRangeScheduler::~AdaptiveDocidRangeScheduler() {}
+
 DocidRange
 AdaptiveDocidRangeScheduler::first_range(size_t thread_id)
 {

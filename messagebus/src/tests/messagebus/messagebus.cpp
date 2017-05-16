@@ -117,6 +117,8 @@ private:
     std::vector<Search*>  searchVec;
 
 public:
+    Test();
+    ~Test();
     int Main() override;
     void testSendToAny();
     void testSendToCol();
@@ -136,6 +138,9 @@ private:
 };
 
 TEST_APPHOOK(Test);
+
+Test::Test() {}
+Test::~Test() {}
 
 int
 Test::Main()

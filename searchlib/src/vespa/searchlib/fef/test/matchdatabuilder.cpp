@@ -1,21 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
+#include "matchdatabuilder.h"
+#include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/attribute/attributevector.hpp>
+#include <vespa/searchlib/attribute/stringbase.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".fef.matchdatabuilder");
 
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/searchlib/attribute/attributeguard.h>
-#include <vespa/searchlib/attribute/attributemanager.h>
-#include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
-#include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/attribute/floatbase.h>
-#include <vespa/searchlib/attribute/stringbase.h>
-#include "matchdatabuilder.h"
-
-namespace search {
-namespace fef {
-namespace test {
+namespace search::fef::test {
 
 MatchDataBuilder::MatchDataBuilder(QueryEnvironment &queryEnv, MatchData &data) :
     _queryEnv(queryEnv),
@@ -28,6 +21,8 @@ MatchDataBuilder::MatchDataBuilder(QueryEnvironment &queryEnv, MatchData &data) 
         _data.resolveTermField(handle)->reset(TermFieldMatchData::invalidId());
     }
 }
+
+MatchDataBuilder::~MatchDataBuilder() {}
 
 TermFieldMatchData *
 MatchDataBuilder::getTermFieldMatchData(uint32_t termId, uint32_t fieldId)
@@ -176,6 +171,4 @@ MatchDataBuilder::apply(uint32_t docId)
     return true;
 }
 
-} // namespace test
-} // namespace fef
-} // namespace search
+}

@@ -2,18 +2,18 @@
 
 #include "iocomponent.h"
 #include "transport_thread.h"
-#include <vespa/fastos/socket.h>
 
 
 FNET_IOComponent::FNET_IOComponent(FNET_TransportThread *owner,
-                                   FastOS_SocketInterface *mysocket,
+                                   int socket_fd,
                                    const char *spec,
                                    bool shouldTimeOut)
     : _ioc_next(nullptr),
       _ioc_prev(nullptr),
       _ioc_owner(owner),
       _ioc_counters(_ioc_owner->GetStatCounters()),
-      _ioc_socket(mysocket),
+      _ioc_socket_fd(socket_fd),
+      _ioc_selector(nullptr),
       _ioc_spec(nullptr),
       _flags(shouldTimeOut),
       _ioc_timestamp(fastos::ClockSystem::now()),
@@ -30,6 +30,7 @@ FNET_IOComponent::FNET_IOComponent(FNET_TransportThread *owner,
 FNET_IOComponent::~FNET_IOComponent()
 {
     free(_ioc_spec);
+    assert(_ioc_selector == nullptr);
 }
 
 FNET_Config *
@@ -98,25 +99,30 @@ FNET_IOComponent::SubRef_NoLock()
 
 
 void
-FNET_IOComponent::SetSocketEvent(FastOS_SocketEvent *event)
+FNET_IOComponent::attach_selector(Selector &selector)
 {
-    bool rc = _ioc_socket->SetSocketEvent(event, this);
-    assert(rc); // XXX: error handling
-    (void) rc;
-
-    if (event != nullptr) {
-        _ioc_socket->EnableReadEvent(_flags._ioc_readEnabled);
-        _ioc_socket->EnableWriteEvent(_flags._ioc_writeEnabled);
-    }
+    detach_selector();
+    _ioc_selector = &selector;
+    _ioc_selector->add(_ioc_socket_fd, *this, _flags._ioc_readEnabled, _flags._ioc_writeEnabled);
 }
 
+
+void
+FNET_IOComponent::detach_selector()
+{
+    if (_ioc_selector != nullptr) {
+        _ioc_selector->remove(_ioc_socket_fd);
+    }
+    _ioc_selector = nullptr;
+}
 
 void
 FNET_IOComponent::EnableReadEvent(bool enabled)
 {
     _flags._ioc_readEnabled = enabled;
-    if (_ioc_socket->GetSocketEvent() != nullptr)
-        _ioc_socket->EnableReadEvent(enabled);
+    if (_ioc_selector != nullptr) {
+        _ioc_selector->update(_ioc_socket_fd, *this, _flags._ioc_readEnabled, _flags._ioc_writeEnabled);
+    }
 }
 
 
@@ -124,8 +130,9 @@ void
 FNET_IOComponent::EnableWriteEvent(bool enabled)
 {
     _flags._ioc_writeEnabled = enabled;
-    if (_ioc_socket->GetSocketEvent() != nullptr)
-        _ioc_socket->EnableWriteEvent(enabled);
+    if (_ioc_selector != nullptr) {
+        _ioc_selector->update(_ioc_socket_fd, *this, _flags._ioc_readEnabled, _flags._ioc_writeEnabled);
+    }
 }
 
 

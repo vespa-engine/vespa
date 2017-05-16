@@ -1,19 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "clusterinformation.h"
+#include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/state.h>
+#include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/util/xmlserializable.h>
-#include <vespa/storage/bucketdb/bucketdatabase.h>
-#include <vespa/storage/distributor/clusterinformation.h>
 #include <unordered_set>
 #include <deque>
 
-namespace storage {
-
-namespace distributor {
+namespace storage::distributor {
 
 class DistributorMessageSender;
 
@@ -28,7 +27,8 @@ public:
         Entry(const document::BucketId& bid,
               const BucketCopy& copy_)
             : bucketId(bid),
-              copy(copy_) {};
+              copy(copy_)
+        {}
 
         document::BucketId bucketId;
         BucketCopy copy;
@@ -39,12 +39,12 @@ public:
     };
 
     struct Summary {
-        Summary(const std::string& prevClusterState,
-                const std::string& newClusterState,
-                uint32_t processingTime)
-            : _prevClusterState(prevClusterState),
-              _newClusterState(newClusterState),
-              _processingTime(processingTime) {};
+        Summary(const std::string& prevClusterState, const std::string& newClusterState, uint32_t processingTime);
+        Summary(const Summary &);
+        Summary & operator = (const Summary &);
+        Summary(Summary &&) = default;
+        Summary & operator = (Summary &&) = default;
+        ~Summary();
 
         std::string _prevClusterState;
         std::string _newClusterState;
@@ -78,16 +78,18 @@ public:
             api::Timestamp creationTimestamp)
     {
         return std::unique_ptr<PendingClusterState>(
-                new PendingClusterState(clock, clusterInfo, sender,
-                                        creationTimestamp));
+                new PendingClusterState(clock, clusterInfo, sender, creationTimestamp));
     }
+
+    PendingClusterState(const PendingClusterState &) = delete;
+    PendingClusterState & operator = (const PendingClusterState &) = delete;
+    ~PendingClusterState();
 
     /**
      * Adds the info from the reply to our list of information.
      * Returns true if the reply was accepted by this object, false if not.
      */
-    bool onRequestBucketInfoReply(
-            const std::shared_ptr<api::RequestBucketInfoReply>& reply);
+    bool onRequestBucketInfoReply(const std::shared_ptr<api::RequestBucketInfoReply>& reply);
 
     /**
      * Tags the given node as having replied to the
@@ -100,8 +102,7 @@ public:
     /**
      * Adds info from a node to our list of information.
      */
-    void addNodeInfo(const document::BucketId& id,
-                     const BucketCopy& copy);
+    void addNodeInfo(const document::BucketId& id, const BucketCopy& copy);
 
     /** Called to resend delayed resends due to failures. */
     void resendDelayedMessages();
@@ -145,9 +146,7 @@ public:
      * Merges all the results with the given bucket database.
      */
     void mergeInto(BucketDatabase& db);
-
-    bool process(BucketDatabase::Entry& e);
-
+    bool process(BucketDatabase::Entry& e) override;
     const EntryList& results() const { return _entries; }
 
     /**
@@ -155,9 +154,7 @@ public:
      * change rather than an actual state change.
      */
     bool distributionChange() const { return _distributionChange; }
-
-    virtual void printXml(vespalib::XmlOutputStream&) const;
-
+    void printXml(vespalib::XmlOutputStream&) const override;
     Summary getSummary() const;
 
 private:
@@ -184,41 +181,26 @@ private:
             api::Timestamp creationTimestamp);
 
     void logConstructionInformation() const;
-
     void requestNode(uint16_t node);
-
-    bool distributorChanged(const lib::ClusterState& oldState,
-                            const lib::ClusterState& newState);
-
+    bool distributorChanged(const lib::ClusterState& oldState, const lib::ClusterState& newState);
     bool storageNodeMayHaveLostData(uint16_t index);
     bool storageNodeChanged(uint16_t index);
-
     void markAllAvailableNodesAsRequiringRequest();
-
-    void addAdditionalNodesToOutdatedSet(
-            const std::unordered_set<uint16_t>& nodes);
-
+    void addAdditionalNodesToOutdatedSet(const std::unordered_set<uint16_t>& nodes);
     void updateSetOfNodesThatAreOutdated();
-
     void requestNodes();
-
     void requestBucketInfoFromStorageNodesWithChangedState();
 
     /**
      * Number of nodes with node type 'storage' in _newClusterState.
      */
     uint16_t newStateStorageNodeCount() const;
-
     bool shouldRequestBucketInfo() const;
     bool clusterIsDown() const;
     bool iAmDown() const;
-
     bool nodeInSameGroupAsSelf(uint16_t index) const;
-    bool nodeNeedsOwnershipTransferFromGroupDown(
-            uint16_t nodeIndex,
-            const lib::ClusterState& state) const;
-    bool nodeWasUpButNowIsDown(const lib::State& old,
-                               const lib::State& nw) const;
+    bool nodeNeedsOwnershipTransferFromGroupDown(uint16_t nodeIndex, const lib::ClusterState& state) const;
+    bool nodeWasUpButNowIsDown(const lib::State& old, const lib::State& nw) const;
 
     typedef std::pair<uint32_t, uint32_t> Range;
 
@@ -232,23 +214,17 @@ private:
     void insertInfo(BucketDatabase::Entry& info, const Range& range);
     void addToBucketDB(BucketDatabase& db, const Range& range);
 
-    std::vector<BucketCopy> getCopiesThatAreNewOrAltered(
-            BucketDatabase::Entry& info,
-            const Range& range);
+    std::vector<BucketCopy> getCopiesThatAreNewOrAltered(BucketDatabase::Entry& info, const Range& range);
 
     std::string requestNodesToString();
 
     // Returns whether at least one replica was removed from the entry.
     // Does NOT implicitly update trusted status on remaining replicas; caller must do
     // this explicitly.
-    bool removeCopiesFromNodesThatWereRequested(
-            BucketDatabase::Entry& e,
-            const document::BucketId& bucketId);
+    bool removeCopiesFromNodesThatWereRequested(BucketDatabase::Entry& e, const document::BucketId& bucketId);
 
-    bool databaseIteratorHasPassedBucketInfoIterator(
-            const document::BucketId& bucketId) const;
-    bool bucketInfoIteratorPointsToBucket(
-            const document::BucketId& bucketId) const;
+    bool databaseIteratorHasPassedBucketInfoIterator(const document::BucketId& bucketId) const;
+    bool bucketInfoIteratorPointsToBucket(const document::BucketId& bucketId) const;
 
     bool nodeIsOutdated(uint16_t node) const {
         return (_outdatedNodes.find(node) != _outdatedNodes.end());
@@ -289,7 +265,3 @@ private:
 };
 
 }
-
-}
-
-

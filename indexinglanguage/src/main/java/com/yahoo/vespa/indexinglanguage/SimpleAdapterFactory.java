@@ -13,6 +13,7 @@ import java.util.List;
 /**
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
+@SuppressWarnings("rawtypes")
 public class SimpleAdapterFactory implements AdapterFactory {
     public static class SelectExpression {
         public Expression selectExpression(DocumentType documentType, String fieldName) {

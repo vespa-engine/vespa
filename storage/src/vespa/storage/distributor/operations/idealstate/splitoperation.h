@@ -1,45 +1,27 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/storage/distributor/operations/idealstate/idealstateoperation.h>
+#include "idealstateoperation.h"
 #include <vespa/storage/distributor/messagetracker.h>
 
-namespace storage
-{
-
-namespace distributor
-{
+namespace storage::distributor {
 
 class SplitOperation : public IdealStateOperation
 {
 public:
-    SplitOperation(const std::string& clusterName,
-                   const BucketAndNodes& nodes,
-                   uint32_t maxBits,
-                   uint32_t splitCount,
-                   uint32_t splitSize)
-        : IdealStateOperation(nodes),
-          _tracker(clusterName),
-          _maxBits(maxBits),
-          _splitCount(splitCount),
-          _splitSize(splitSize)
-    {}
+    SplitOperation(const std::string& clusterName, const BucketAndNodes& nodes,
+                   uint32_t maxBits, uint32_t splitCount, uint32_t splitSize);
+    SplitOperation(const SplitOperation &) = delete;
+    SplitOperation & operator = (const SplitOperation &) = delete;
+    ~SplitOperation();
 
     void onStart(DistributorMessageSender& sender) override;
-
-    void onReceive(DistributorMessageSender& sender,
-                   const std::shared_ptr<api::StorageReply> &) override;
-
+    void onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
     const char* getName() const override { return "split"; };
-
     Type getType() const override { return SPLIT_BUCKET; }
-
     uint32_t getMaxSplitBits() const { return _maxBits; }
-
     bool isBlocked(const PendingMessageTracker&) const override;
-
     bool shouldBlockThisOperation(uint32_t, uint8_t) const override;
-
 protected:
     MessageTracker _tracker;
 
@@ -50,6 +32,3 @@ protected:
 };
 
 }
-
-}
-

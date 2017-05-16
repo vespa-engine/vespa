@@ -30,6 +30,7 @@ public:
      * @param configId application config id
      **/
     Identity(const string &configId);
+    ~Identity();
 
     /**
      * Obtain the hostname held by this object.
@@ -55,4 +56,3 @@ public:
 };
 
 } // namespace mbus
-

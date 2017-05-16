@@ -213,7 +213,7 @@ FS4PersistentPacketStreamer::Encode(FNET_Packet *packet, uint32_t chid, FNET_Dat
 
 FS4Properties::FS4Properties()
     : _entries(),
-      _name(0),
+      _name(),
       _backing()
 { }
 

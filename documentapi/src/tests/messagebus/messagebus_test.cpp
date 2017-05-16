@@ -17,6 +17,8 @@ class Test : public vespalib::TestApp {
     DocumentTypeRepo::SP _repo;
 
 public:
+    Test();
+    ~Test();
     int Main() override;
 
 private:
@@ -38,6 +40,9 @@ Test::Main()
 
     TEST_DONE();
 }
+
+Test::Test() {}
+Test::~Test() {}
 
 void Test::testMessage() {
     const document::DataType *testdoc_type = _repo->getDocumentType("testdoc");

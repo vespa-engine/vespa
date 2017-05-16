@@ -73,7 +73,7 @@ if(VALGRIND_EXECUTABLE)
 endif()
 
 if(EXTRA_INCLUDE_DIRECTORY)
-    include_directories(${EXTRA_INCLUDE_DIRECTORY})
+    include_directories(SYSTEM ${EXTRA_INCLUDE_DIRECTORY})
 endif()
 if(EXTRA_LINK_DIRECTORY)
     link_directories(${EXTRA_LINK_DIRECTORY})

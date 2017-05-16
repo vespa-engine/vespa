@@ -2,17 +2,13 @@
 package com.yahoo.vespa.orchestrator.controller;
 
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.jaxrs.client.JaxRsClientFactory;
 import com.yahoo.vespa.jaxrs.client.JaxRsStrategy;
 import com.yahoo.vespa.jaxrs.client.NoRetryJaxRsStrategy;
-import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.applicationmodel.ServiceInstance;
 
-import java.util.Collection;
-import java.util.Comparator;
+import java.util.List;
 import java.util.logging.Logger;
-
-import static com.yahoo.vespa.orchestrator.VespaModelUtil.getClusterControllerIndex;
 
 /**
  * @author bakksjo
@@ -24,10 +20,6 @@ public class SingleInstanceClusterControllerClientFactory implements ClusterCont
 
     private static final Logger log = Logger.getLogger(SingleInstanceClusterControllerClientFactory.class.getName());
 
-    private static final Comparator<ServiceInstance<?>> CLUSTER_CONTROLLER_INDEX_COMPARATOR = Comparator.comparing(
-            serviceInstance ->
-                    getClusterControllerIndex(serviceInstance.configId()));
-
     private JaxRsClientFactory jaxRsClientFactory;
 
     public SingleInstanceClusterControllerClientFactory(JaxRsClientFactory jaxRsClientFactory) {
@@ -35,12 +27,12 @@ public class SingleInstanceClusterControllerClientFactory implements ClusterCont
     }
 
     @Override
-    public ClusterControllerClient createClient(Collection<? extends ServiceInstance<?>> clusterControllers,
+    public ClusterControllerClient createClient(List<HostName> clusterControllers,
                                                 String clusterName) {
-        ServiceInstance<?> serviceInstance = clusterControllers.stream()
-                .min(CLUSTER_CONTROLLER_INDEX_COMPARATOR)
-                .orElseThrow(() -> new IllegalArgumentException("No cluster controller instances found"));
-        HostName controllerHostName = serviceInstance.hostName();
+        if (clusterControllers.isEmpty()) {
+            throw new IllegalArgumentException("No cluster controller instances found");
+        }
+        HostName controllerHostName = clusterControllers.iterator().next();
         int port = CLUSTERCONTROLLER_HARDCODED_PORT;  // TODO: Get this from service monitor.
 
         log.log(LogLevel.DEBUG, () ->

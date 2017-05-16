@@ -39,6 +39,7 @@ FlowCompletenessExecutor::FlowCompletenessExecutor(const search::fef::IQueryEnvi
     LOG(spam, "added %zu terms", _terms.size());
 }
 
+namespace {
 typedef std::vector<uint32_t> TermIdxList;
 typedef std::vector<uint32_t> PosList;
 
@@ -67,6 +68,7 @@ struct State {
           posLimit(0),
           score(0.0), flow(0.0),
           completeness(0.0), fieldCompleteness(0.0), queryCompleteness(0.0) {}
+    ~State() { }
 
     void addMatch(int termWeight) {
         ++matchedTerms;
@@ -172,6 +174,8 @@ struct State {
         score = completeness * (double)sumTermWeight;
     }
 };
+
+}
 
 
 void

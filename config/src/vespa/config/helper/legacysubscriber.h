@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "legacy.h"
 #include "configfetcher.h"
 #include <vespa/config/subscription/sourcespec.h>
-#include "legacy.h"
 
 namespace config {
 
@@ -14,6 +14,7 @@ class LegacySubscriber
 {
 public:
     LegacySubscriber();
+    ~LegacySubscriber();
     const vespalib::string & id() const { return _configId; }
 
     template <typename ConfigType>

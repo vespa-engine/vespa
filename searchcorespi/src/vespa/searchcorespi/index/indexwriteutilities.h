@@ -37,7 +37,7 @@ struct IndexWriteUtilities
     static void
     updateDiskIndexSchema(const vespalib::string &indexDir,
                           const search::index::Schema &schema,
-                          search::SerialNum wipeSerial);
+                          search::SerialNum serialNum);
 };
 
 } // namespace index

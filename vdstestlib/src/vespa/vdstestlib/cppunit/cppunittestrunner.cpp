@@ -1,11 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/vdstestlib/cppunit/cppunittestrunner.h>
 
 #include <cppunit/extensions/TestFactoryRegistry.h>
 #include <cppunit/ui/text/TestRunner.h>
-#include <cppunit/TestSuite.h>
 #include <cppunit/TextTestProgressListener.h>
 #include <vespa/log/log.h>
 #include <iostream>
@@ -22,7 +20,7 @@ namespace {
         std::vector<std::string> _wanted;
         bool _includeStressTests;
 
-        WantedTestList(int argc, const char * const * argv,
+        WantedTestList(int argc, const char *argv[],
                        bool includeStressTests)
             : _wanted(),
               _includeStressTests(includeStressTests)
@@ -66,7 +64,7 @@ namespace {
             return (s[s.size() - 1] == '$');
         }
 
-        virtual bool include(const std::string& name) const override {
+        bool include(const std::string& name) const override {
             if ((name.find("stress") != std::string::npos ||
                  name.find("Stress") != std::string::npos)
                 && !_includeStressTests)
@@ -90,11 +88,11 @@ namespace {
 
     struct LogHook : public CppUnit::TextTestProgressListener::TestStartHook {
         std::string lastTest;
-        virtual void startedTest(const std::string& testName) override {
+        void startedTest(const std::string& testName) override {
             LOG(info, "Starting test: %s", testName.c_str());
             lastTest = testName;
         }
-        virtual void stoppedTest() override {
+        void stoppedTest() override {
             LOG(info, "Stopped test: %s", lastTest.c_str());
         }
     };
@@ -112,7 +110,7 @@ CppUnitTestRunner::CppUnitTestRunner()
 }
 
 int
-CppUnitTestRunner::run(int argc, const char * const * argv)
+CppUnitTestRunner::run(int argc, const char *argv[])
 {
     CppUnit::TextUi::TestRunner runner;
     CppUnit::TestFactoryRegistry& registry(

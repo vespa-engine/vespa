@@ -30,8 +30,21 @@ import static org.junit.Assert.assertNotNull;
  */
 public class DedicatedAdminV4Test {
 
-    private static final String services =
-                "<services>" +
+    private static final String hosts = "<hosts>"
+            + "  <host name=\"myhost0\">"
+            + "    <alias>node0</alias>"
+            + "  </host>"
+            + "  <host name=\"myhost1\">"
+            + "    <alias>node1</alias>"
+            + "  </host>"
+            + "  <host name=\"myhost2\">"
+            + "    <alias>node2</alias>"
+            + "  </host>"
+            + "</hosts>";
+
+    @Test
+    public void testModelBuilding() throws IOException, SAXException {
+        String services = "<services>" +
                 "  <admin version='4.0'>" +
                 "    <slobroks><nodes count='2' dedicated='true'/></slobroks>" +
                 "    <logservers><nodes count='1' dedicated='true'/></logservers>" +
@@ -46,45 +59,20 @@ public class DedicatedAdminV4Test {
                 "  </admin>" +
                 "</services>";
 
-    @Test
-    public void testModelBuilding() throws IOException, SAXException {
-        String hosts = "<hosts>"
-                + " <host name=\"myhost0\">"
-                + "  <alias>node0</alias>"
-                + " </host>"
-                + " <host name=\"myhost1\">"
-                + "  <alias>node1</alias>"
-                + " </host>"
-                + " <host name=\"myhost2\">"
-                + "  <alias>node2</alias>"
-                + " </host>"
-                + "</hosts>";
-        ApplicationPackage app = new MockApplicationPackage.Builder().withHosts(hosts).withServices(services).build();
-        VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder().applicationPackage(app).modelHostProvisioner(new InMemoryProvisioner(Hosts.readFrom(app.getHosts()), true)).build());
+        VespaModel model = createModel(hosts, services);
         assertEquals(3, model.getHosts().size());
 
-        Set<String> serviceNames0 = serviceNames(model.getConfig(SentinelConfig.class, "hosts/myhost0"));
-        assertEquals(3, serviceNames0.size());
-        assertTrue(serviceNames0.contains("slobrok"));
-        assertTrue(serviceNames0.contains("logd"));
-        assertTrue(serviceNames0.contains("filedistributorservice"));
+        assertHostContainsServices(model, "hosts/myhost0",
+                                   "slobrok", "logd", "filedistributorservice");
+        assertHostContainsServices(model, "hosts/myhost1",
+                                   "slobrok", "logd", "filedistributorservice");
+        assertHostContainsServices(model, "hosts/myhost2",
+                                   "logserver", "logd", "filedistributorservice");
 
-        Set<String> serviceNames1 = serviceNames(model.getConfig(SentinelConfig.class, "hosts/myhost1"));
-        assertEquals(3, serviceNames1.size());
-        assertTrue(serviceNames1.contains("slobrok"));
-        assertTrue(serviceNames1.contains("logd"));
-        assertTrue(serviceNames1.contains("filedistributorservice"));
-
-        Set<String> serviceNames2 = serviceNames(model.getConfig(SentinelConfig.class, "hosts/myhost2"));
-        assertEquals(3, serviceNames2.size());
-        assertTrue(serviceNames2.contains("logserver"));
-        assertTrue(serviceNames2.contains("logd"));
-        assertTrue(serviceNames2.contains("filedistributorservice"));
-        
         Yamas yamas = model.getAdmin().getYamas();
         assertEquals("vespa.routing", yamas.getClustername());
-        assertEquals(60L, (long)yamas.getIntervalSeconds());
-        
+        assertEquals(60L, (long) yamas.getIntervalSeconds());
+
         MetricsConsumer consumer = model.getAdmin().getLegacyUserMetricsConsumers().get(VESPA_CONSUMER_ID);
         assertNotNull(consumer);
         assertEquals(3, consumer.getMetrics().size());
@@ -93,8 +81,97 @@ public class DedicatedAdminV4Test {
         assertEquals("nginx.upstreams.down", metric.outputName);
     }
 
-    private Set<String> serviceNames(SentinelConfig config) {
+    @Test
+    public void testModelBuildingWithConfiguredMinSlobrokCountPerCluster() throws IOException, SAXException {
+        String hosts = "<hosts>"
+                + "  <host name=\"myhost0\">"
+                + "    <alias>node0</alias>"
+                + "  </host>"
+                + "  <host name=\"myhost1\">"
+                + "    <alias>node1</alias>"
+                + "  </host>"
+                + "  <host name=\"myhost2\">"
+                + "    <alias>node2</alias>"
+                + "  </host>"
+                + "  <host name=\"myhost3\">"
+                + "    <alias>node3</alias>"
+                + "  </host>"
+                + "</hosts>";
+
+        {
+            VespaModel model = createModel(hosts, servicesWithMinSlobroksPerCluster(1));
+            assertEquals(4, model.getHosts().size());
+
+            // 3 slobroks, 1 per cluster
+            assertHostContainsServices(model, "hosts/myhost0",
+                                       "slobrok", "logd", "filedistributorservice", "logserver", "qrserver");
+            assertHostContainsServices(model, "hosts/myhost1",
+                                       "logd", "filedistributorservice", "qrserver");
+            assertHostContainsServices(model, "hosts/myhost2",
+                                       "slobrok", "logd", "filedistributorservice", "qrserver");
+            assertHostContainsServices(model, "hosts/myhost3",
+                                       "slobrok", "logd", "filedistributorservice", "qrserver");
+        }
+
+        {
+            VespaModel model = createModel(hosts, servicesWithMinSlobroksPerCluster(2));
+            assertEquals(4, model.getHosts().size());
+
+            // 4 slobroks, 2 per cluster where possible
+            assertHostContainsServices(model, "hosts/myhost0",
+                                       "slobrok", "logd", "filedistributorservice", "logserver", "qrserver");
+            assertHostContainsServices(model, "hosts/myhost1",
+                                       "slobrok", "logd", "filedistributorservice", "qrserver");
+            assertHostContainsServices(model, "hosts/myhost2",
+                                       "slobrok", "logd", "filedistributorservice", "qrserver");
+            assertHostContainsServices(model, "hosts/myhost3",
+                                       "slobrok", "logd", "filedistributorservice", "qrserver");
+        }
+    }
+
+    private String servicesWithMinSlobroksPerCluster(int count) {
+        return "<services>" +
+                "  <admin version='4.0'>" +
+                "    <minSlobroksPerCluster>" + count + "</minSlobroksPerCluster>" +
+                "    <nodes count='1' dedicated='true' />" +
+                "  </admin>" +
+                "  <jdisc id='a' version='1.0'>" +
+                "    <search />" +
+                "    <nodes count='2' dedicated='true' />" +
+                "  </jdisc>" +
+                "  <jdisc id='b' version='1.0'>" +
+                "    <search />" +
+                "    <nodes count='1' dedicated='true' />" +
+                "  </jdisc>" +
+                "  <jdisc id='c' version='1.0'>" +
+                "    <search />" +
+                "    <nodes count='1' dedicated='true' />" +
+                "  </jdisc>" +
+                "</services>";
+    }
+
+    private Set<String> serviceNames(VespaModel model, String hostname) {
+        SentinelConfig config = model.getConfig(SentinelConfig.class, hostname);
         return config.service().stream().map(SentinelConfig.Service::name).collect(Collectors.toSet());
+    }
+
+    private void assertHostContainsServices(VespaModel model, String hostname, String... expectedServices) {
+        Set<String> serviceNames = serviceNames(model, hostname);
+        assertEquals(expectedServices.length, serviceNames.size());
+        for (String serviceName : expectedServices) {
+            assertTrue(serviceNames.contains(serviceName));
+        }
+    }
+
+    private VespaModel createModel(String hosts, String services) throws IOException, SAXException {
+        ApplicationPackage app = new MockApplicationPackage.Builder()
+                .withHosts(hosts)
+                .withServices(services)
+                .build();
+        return new VespaModel(new NullConfigModelRegistry(),
+                              new DeployState.Builder().applicationPackage(app).modelHostProvisioner(
+                                      new InMemoryProvisioner(Hosts.readFrom(app.getHosts()), true))
+                                                       .build());
     }
 
 }

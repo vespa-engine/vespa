@@ -5,11 +5,11 @@
 #include "document_features_store.h"
 #include "predicate_interval_store.h"
 #include "simple_index.h"
+#include "predicate_interval.h"
 #include <vespa/searchlib/common/bitvectorcache.h>
-#include <unordered_map>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/stllike/string.h>
-#include "predicate_interval.h"
+#include <unordered_map>
 
 namespace search {
 namespace predicate {
@@ -67,17 +67,7 @@ private:
 public:
     PredicateIndex(GenerationHandler &generation_handler, GenerationHolder &genHolder,
                    const DocIdLimitProvider &limit_provider,
-                   const SimpleIndexConfig &simple_index_config, uint32_t arity)
-        : _arity(arity),
-          _generation_handler(generation_handler),
-          _limit_provider(limit_provider),
-          _interval_index(genHolder, limit_provider, simple_index_config),
-          _bounds_index(genHolder, limit_provider, simple_index_config),
-          _interval_store(),
-          _zero_constraint_docs(),
-          _features_store(arity),
-          _cache(genHolder)  {
-    }
+                   const SimpleIndexConfig &simple_index_config, uint32_t arity);
     // deserializes PredicateIndex from buffer.
     // The observer can be used to gain some insight into what has been added to the index..
     PredicateIndex(GenerationHandler &generation_handler, GenerationHolder &genHolder,
@@ -85,6 +75,7 @@ public:
                    const SimpleIndexConfig &simple_index_config, vespalib::DataBuffer &buffer,
                    SimpleIndexDeserializeObserver<> & observer, uint32_t version);
 
+    ~PredicateIndex();
     void serialize(vespalib::DataBuffer &buffer) const;
     void onDeserializationCompleted();
 

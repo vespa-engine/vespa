@@ -1,16 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/document/base/testdocman.h>
-#include <vespa/storageframework/defaultimplementation/memory/nomemorymanager.h>
-#include <tests/distributor/distributortestutil.h>
+#include "distributortestutil.h"
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/config-stor-distribution.h>
 
-namespace storage {
-
-namespace distributor {
+namespace storage::distributor {
 
 DistributorTestUtil::DistributorTestUtil()
-        : _messageSender(_sender, _senderDown)
+    : _messageSender(_sender, _senderDown)
 {
     _config = getStandardConfig(false);
 }
@@ -358,7 +354,3 @@ DistributorTestUtil::getDistribution() const {
 }
 
 }
-
-}
-
-

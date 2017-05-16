@@ -21,6 +21,10 @@ IMPLEMENT_EXPRESSIONNODE(GetDocIdNamespaceSpecificFunctionNode, DocumentAccessor
 
 const vespalib::string DocumentAccessorNode::_S_docId("documentid");
 
+DocumentFieldNode::~DocumentFieldNode()
+{
+}
+
 DocumentFieldNode::DocumentFieldNode(const DocumentFieldNode & rhs) :
     DocumentAccessorNode(rhs),
     _fieldPath(rhs._fieldPath),

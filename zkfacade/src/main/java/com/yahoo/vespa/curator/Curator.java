@@ -191,7 +191,7 @@ public class Curator {
 
         String absolutePath = path.getAbsolute();
         try {
-            framework().create().creatingParentsIfNeeded().forPath(absolutePath);
+            framework().create().creatingParentsIfNeeded().forPath(absolutePath, new byte[0]);
         } catch (org.apache.zookeeper.KeeperException.NodeExistsException e) {
             // Path created between exists() and create() call, do nothing
         } catch (Exception e) {
@@ -207,7 +207,7 @@ public class Curator {
             CuratorTransaction transaction = framework().inTransaction();
             for (Path path : paths) {
                 if ( ! exists(path)) {
-                    transaction = transaction.create().forPath(path.getAbsolute()).and();
+                    transaction = transaction.create().forPath(path.getAbsolute(), new byte[0]).and();
                 }
             }
             ((CuratorTransactionFinal)transaction).commit();

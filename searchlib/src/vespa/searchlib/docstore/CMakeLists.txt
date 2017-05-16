@@ -7,11 +7,12 @@ vespa_add_library(searchlib_docstore OBJECT
     chunkformats.cpp
     compacter.cpp
     data_store_file_chunk_id.cpp
-    documentstore.cpp
     document_store_visitor_progress.cpp
+    documentstore.cpp
     filechunk.cpp
     idatastore.cpp
     idocumentstore.cpp
+    lid_info.cpp
     logdatastore.cpp
     logdocumentstore.cpp
     randreaders.cpp

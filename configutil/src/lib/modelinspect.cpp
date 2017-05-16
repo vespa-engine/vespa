@@ -1,13 +1,21 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <iostream>
 #include "modelinspect.h"
 #include <lib/tags.h>
 #include <vespa/config/helper/configgetter.hpp>
-
+#include <iostream>
 
 using configdefinitions::tagsContain;
 using configdefinitions::upcase;
+
+ModelInspect::Flags::Flags()
+    : verbose(false), makeuri(false), tagfilt(false),
+      tagFilter()
+{}
+
+ModelInspect::Flags::Flags(const Flags &) = default;
+ModelInspect::Flags & ModelInspect::Flags::operator = (const Flags &) = default;
+ModelInspect::Flags::~Flags() { }
 
 ModelInspect::ModelInspect(Flags flags, const config::ConfigUri uri, std::ostream &out)
     : _cfg(), _flags(flags), _out(out)

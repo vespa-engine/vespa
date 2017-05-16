@@ -42,6 +42,9 @@ public:
     BucketInfo(uint32_t checksum, uint32_t docCount, uint32_t totDocSize,
                uint32_t metaCount, uint32_t usedFileSize,
                bool ready, bool active, Timestamp lastModified);
+    BucketInfo(const BucketInfo &);
+    BucketInfo & operator = (const BucketInfo &);
+    ~BucketInfo();
 
     Timestamp getLastModified() const { return _lastModified; }
     uint32_t getChecksum() const { return _checksum; }

@@ -25,9 +25,11 @@ public interface DockerOperations {
 
     void scheduleDownloadOfImage(ContainerName containerName, ContainerNodeSpec nodeSpec, Runnable callback);
 
-    ProcessResult executeCommandInContainerAsRoot(ContainerName containerName, String[] command);
+    ProcessResult executeCommandInContainerAsRoot(ContainerName containerName, String... command);
 
-    void executeCommandInNetworkNamespace(ContainerName containerName, String[] command);
+    ProcessResult executeCommandInContainerAsRoot(ContainerName containerName, Long timeoutSeconds, String... command);
+
+    void executeCommandInNetworkNamespace(ContainerName containerName, String... command);
 
     void resumeNode(ContainerName containerName);
 

@@ -27,11 +27,11 @@ public class TestUtil {
         return new HashSet<>(Arrays.asList(serviceClusters));
     }
 
-    public static ConfigId storageNodeConfigId(int index) {
-        return new ConfigId("storage/storage/" + index);
+    public static ConfigId storageNodeConfigId(String contentClusterName, int index) {
+        return new ConfigId(contentClusterName + "/storage/" + index);
     }
 
-    public static ConfigId clusterControllerConfigId(int index) {
-        return new ConfigId("admin/cluster-controllers/" + index);
+    public static ConfigId clusterControllerConfigId(String contentClusterName, int index) {
+        return new ConfigId(contentClusterName + "/standalone/" + contentClusterName + "-controllers/" + index);
     }
 }

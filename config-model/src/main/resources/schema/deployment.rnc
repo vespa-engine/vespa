@@ -3,9 +3,14 @@
 
 start = element deployment {
    attribute version { "1.0" } &
+   Upgrade? &
    Test? &
    Staging? &
    Prod*
+}
+
+Upgrade = element upgrade {
+    attribute policy { xsd:string }
 }
 
 Test = element test {

@@ -9,9 +9,7 @@
 #include <vespa/searchlib/queryeval/wand/wand_parts.h>
 #include <vector>
 
-namespace search {
-namespace queryeval {
-namespace test {
+namespace search::queryeval::test {
 
 /**
  * Defines the overall behavior of a wand like search with tracked children.
@@ -27,6 +25,7 @@ private:
 
 public:
     WandSpec() : _leafs(), _layout(), _handles(), _history() {}
+    ~WandSpec() {}
     WandSpec &leaf(const LeafSpec &l) {
         _leafs.push_back(l);
         _handles.push_back(_layout.allocTermField(0));
@@ -47,7 +46,4 @@ public:
     fef::MatchData::UP createMatchData() const { return _layout.createMatchData(); }
 };
 
-} // namespace test
-} // namespace queryeval
-} // namespace search
-
+}

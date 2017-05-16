@@ -2,6 +2,7 @@
 vespa_add_library(fastlib_fast_testsuite
     SOURCES
     suite.cpp
+    test.cpp
     INSTALL lib64
     DEPENDS
 )

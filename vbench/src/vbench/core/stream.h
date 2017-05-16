@@ -20,6 +20,7 @@ struct Stream : public Input,
                 public Output,
                 public Taintable
 {
+    ~Stream() { }
     typedef std::unique_ptr<Stream> UP;
     virtual bool eof() const = 0;
 };

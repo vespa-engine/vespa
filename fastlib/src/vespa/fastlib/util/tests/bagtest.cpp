@@ -9,7 +9,7 @@ int BagTest::Main() {
     bt.SetStream(&std::cout);
     bt.Run();
     if (bt.Report() > 0) {
-      return 1;
+        return 1;
     }
 
     return 0;

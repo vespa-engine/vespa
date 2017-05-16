@@ -12,7 +12,7 @@ class GenericResultHandler : public IGenericResultHandler
 private:
     std::unique_ptr<storage::spi::Result> _result;
 public:
-    virtual void handle(const storage::spi::Result &result) {
+    void handle(const storage::spi::Result &result) override {
         _result.reset(new storage::spi::Result(result));
     }
     bool valid() const { return _result.get() != NULL; }
@@ -25,7 +25,7 @@ class BucketInfoResultHandler : public IBucketInfoResultHandler
 private:
     std::unique_ptr<storage::spi::BucketInfoResult> _result;
 public:
-    virtual void handle(const storage::spi::BucketInfoResult &result) {
+    void handle(const storage::spi::BucketInfoResult &result) override {
         _result.reset(new storage::spi::BucketInfoResult(result));
     }
     bool valid() const { return _result.get() != NULL; }
@@ -39,7 +39,7 @@ class BucketIdListResultHandler : public IBucketIdListResultHandler
 private:
     std::unique_ptr<storage::spi::BucketIdListResult> _result;
 public:
-    virtual void handle(const storage::spi::BucketIdListResult &result) {
+    void handle(const storage::spi::BucketIdListResult &result) override {
         _result.reset(new storage::spi::BucketIdListResult(result));
     }
     bool valid() const { return _result.get() != NULL; }

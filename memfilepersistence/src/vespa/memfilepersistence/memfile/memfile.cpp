@@ -3,15 +3,14 @@
 #include "memfile.h"
 #include "memfilecompactor.h"
 #include "shared_data_location_tracker.h"
-
-#include <ext/algorithm>
-#include <vespa/memfilepersistence/common/exceptions.h>
 #include <vespa/memfilepersistence/mapper/memfilemapper.h>
 #include <vespa/memfilepersistence/mapper/simplememfileiobuffer.h>
-#include <vespa/vespalib/util/crc.h>
 #include <vespa/memfilepersistence/common/environment.h>
-#include <iomanip>
+#include <vespa/memfilepersistence/common/exceptions.h>
 #include <vespa/document/util/stringutil.h>
+#include <vespa/vespalib/util/crc.h>
+#include <ext/algorithm>
+#include <iomanip>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.memfile.memfile");
@@ -80,6 +79,8 @@ MemFile::MemFile(const FileSpecification& file,
         env._memFileMapper.loadFile(*this, env, opts.autoRepair);
     } RETHROW_NON_MEMFILE_EXCEPTIONS;
 }
+
+MemFile::~MemFile() {}
 
 MemFile::MemFile(const FileSpecification& file, Environment& env,
                  bool callLoadFile)

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "doctypebuilder.h"
 #include <vespa/document/datatype/datatypes.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/annotation/annotation.h>
@@ -11,7 +12,6 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include "doctypebuilder.h"
 
 namespace vespalib { namespace tensor { class Tensor; } }
 namespace search {
@@ -266,6 +266,7 @@ private:
 
 public:
     DocBuilder(const Schema & schema);
+    ~DocBuilder();
 
     DocBuilder & startDocument(const vespalib::string & docId);
     document::Document::UP endDocument();

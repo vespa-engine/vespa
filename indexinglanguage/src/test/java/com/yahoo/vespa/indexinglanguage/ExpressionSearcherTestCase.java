@@ -26,6 +26,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
+@SuppressWarnings({ "rawtypes" })
 public class ExpressionSearcherTestCase {
 
     private static final ExpressionSearcher searcher = new ExpressionSearcher<>(IndexExpression.class);

@@ -16,7 +16,10 @@ CfgValueBlueprint::CfgValueBlueprint() :
     Blueprint("test_cfgvalue"),
     _values()
 {
-    // empty
+}
+
+CfgValueBlueprint::~CfgValueBlueprint()
+{
 }
 
 void

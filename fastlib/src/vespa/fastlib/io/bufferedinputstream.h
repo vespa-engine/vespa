@@ -5,7 +5,7 @@
 
 class Fast_BufferedInputStream : public Fast_FilterInputStream
 {
-  protected:
+protected:
     // Buffer attributes
     char          *_buffer;
     const size_t   _bufferSize;
@@ -14,7 +14,7 @@ class Fast_BufferedInputStream : public Fast_FilterInputStream
     bool           _nextWillFail;
 
 
-  public:
+public:
     Fast_BufferedInputStream(const Fast_BufferedInputStream &) = delete;
     Fast_BufferedInputStream & operator = (const Fast_BufferedInputStream &) = delete;
 
@@ -33,7 +33,3 @@ class Fast_BufferedInputStream : public Fast_FilterInputStream
     // Additional methods
     ssize_t  ReadBufferFullUntil(void *targetBuffer, size_t maxlength, char stopChar);
 };
-
-
-
-

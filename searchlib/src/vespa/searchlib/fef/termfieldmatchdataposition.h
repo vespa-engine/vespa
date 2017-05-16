@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/common/fslimits.h>
+#include <cstdint>
 
 namespace search {
 namespace fef {
@@ -106,4 +107,3 @@ public:
 
 } // namespace fef
 } // namespace search
-

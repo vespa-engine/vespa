@@ -1,20 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for feedoperation.
 
-#include <vespa/log/log.h>
-LOG_SETUP("feedoperation_test");
-#include <vespa/fastos/fastos.h>
 
-#include <vespa/document/base/documentid.h>
-#include <vespa/document/bucket/bucketid.h>
-#include <vespa/document/datatype/datatype.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/update/documentupdate.h>
-#include <vespa/document/update/assignvalueupdate.h>
-#include <vespa/document/update/fieldupdate.h>
-#include <vespa/document/update/valueupdate.h>
-#include <vespa/document/fieldvalue/fieldvalues.h>
-#include <persistence/spi/types.h>
 #include <vespa/searchcore/proton/feedoperation/compact_lid_space_operation.h>
 #include <vespa/searchcore/proton/feedoperation/deletebucketoperation.h>
 #include <vespa/searchcore/proton/feedoperation/joinbucketsoperation.h>
@@ -29,6 +16,13 @@ LOG_SETUP("feedoperation_test");
 #include <vespa/searchcore/proton/feedoperation/updateoperation.h>
 #include <vespa/searchcore/proton/feedoperation/wipehistoryoperation.h>
 #include <vespa/searchlib/query/base.h>
+#include <persistence/spi/types.h>
+#include <vespa/document/base/documentid.h>
+#include <vespa/document/datatype/datatype.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/update/documentupdate.h>
+#include <vespa/document/update/assignvalueupdate.h>
+#include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -91,12 +85,12 @@ uint32_t getDocIdSize(const DocumentId &doc_id)
 void assertDocumentOperation(DocumentOperation &op, BucketId expBucket, uint32_t expDocSize)
 {
     EXPECT_EQUAL(expBucket, op.getBucketId());
-    EXPECT_EQUAL(10, op.getTimestamp().getValue());
+    EXPECT_EQUAL(10u, op.getTimestamp().getValue());
     EXPECT_EQUAL(expDocSize, op.getSerializedDocSize());
-    EXPECT_EQUAL(1, op.getSubDbId());
-    EXPECT_EQUAL(2, op.getLid());
-    EXPECT_EQUAL(3, op.getPrevSubDbId());
-    EXPECT_EQUAL(4, op.getPrevLid());
+    EXPECT_EQUAL(1u, op.getSubDbId());
+    EXPECT_EQUAL(2u, op.getLid());
+    EXPECT_EQUAL(3u, op.getPrevSubDbId());
+    EXPECT_EQUAL(4u, op.getPrevLid());
 }
 
 DocumentTypeRepo::UP
@@ -277,7 +271,7 @@ TEST_F("require that we can serialize and deserialize update operations", Fixtur
         op.deserialize(stream, *f._repo);
         EXPECT_EQUAL(*upd, *op.getUpdate());
         EXPECT_EQUAL(bucket, op.getBucketId());
-        EXPECT_EQUAL(10, op.getTimestamp().getValue());
+        EXPECT_EQUAL(10u, op.getTimestamp().getValue());
     }
 }
 
@@ -295,7 +289,7 @@ TEST_F("require that we can deserialize old update operations", Fixture)
         op.deserialize(stream, *f._repo);
         EXPECT_EQUAL(*upd, *op.getUpdate());
         EXPECT_EQUAL(bucket, op.getBucketId());
-        EXPECT_EQUAL(10, op.getTimestamp().getValue());
+        EXPECT_EQUAL(10u, op.getTimestamp().getValue());
     }
 }
 
@@ -310,7 +304,7 @@ TEST_F("require that we can serialize and deserialize put operations", Fixture)
         PutOperation op(bucket, Timestamp(10), doc);
         op.setDbDocumentId({1, 2});
         op.setPrevDbDocumentId({3, 4});
-        EXPECT_EQUAL(0, op.getSerializedDocSize());
+        EXPECT_EQUAL(0u, op.getSerializedDocSize());
         op.serialize(stream);
         EXPECT_EQUAL(expSerializedDocSize, op.getSerializedDocSize());
     }
@@ -332,7 +326,7 @@ TEST_F("require that we can serialize and deserialize move operations", Fixture)
     {
         MoveOperation op(bucket, Timestamp(10), doc, {3, 4}, 1);
         op.setTargetLid(2);
-        EXPECT_EQUAL(0, op.getSerializedDocSize());
+        EXPECT_EQUAL(0u, op.getSerializedDocSize());
         op.serialize(stream);
         EXPECT_EQUAL(expSerializedDocSize, op.getSerializedDocSize());
     }
@@ -354,7 +348,7 @@ TEST_F("require that we can serialize and deserialize remove operations", Fixtur
         RemoveOperation op(bucket, Timestamp(10), docId);
         op.setDbDocumentId({1, 2});
         op.setPrevDbDocumentId({3, 4});
-        EXPECT_EQUAL(0, op.getSerializedDocSize());
+        EXPECT_EQUAL(0u, op.getSerializedDocSize());
         op.serialize(stream);
         EXPECT_EQUAL(expSerializedDocSize, op.getSerializedDocSize());
     }

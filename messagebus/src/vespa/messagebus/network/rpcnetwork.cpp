@@ -31,6 +31,7 @@ public:
         _gate() {
         ScheduleNow();
     }
+    ~SyncTask() {}
 
     void await() {
         _gate.await();

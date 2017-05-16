@@ -56,6 +56,8 @@ public class MapConfigModelRegistry extends ConfigModelRegistry {
      * @param builders A variable argument list of builders to use in this map
      * @return a ConfigModelRegistry instance.
      */
+    @SafeVarargs
+    @SuppressWarnings("varargs")
     public static ConfigModelRegistry createFromList(ConfigModelBuilder<? extends ConfigModel> ... builders) {
         return new MapConfigModelRegistry(Arrays.asList(builders));
     }

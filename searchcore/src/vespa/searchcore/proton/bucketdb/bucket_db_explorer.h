@@ -17,6 +17,7 @@ private:
 
 public:
     BucketDBExplorer(BucketDBOwner::Guard bucketDb);
+    ~BucketDBExplorer();
 
     // Implements vespalib::StateExplorer
     virtual void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;

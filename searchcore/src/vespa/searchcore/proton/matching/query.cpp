@@ -79,6 +79,8 @@ void AddLocationNode(const string &location_str, Node::UP &query_tree, Location 
 }
 }  // namespace
 
+Query::~Query() {}
+
 bool
 Query::buildTree(const vespalib::stringref &stack, const string &location,
                  const ViewResolver &resolver, const IIndexEnvironment &indexEnv)

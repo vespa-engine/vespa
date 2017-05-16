@@ -1,10 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/storageutil/piechart.h>
+#include "piechart.h"
 
 #include <iomanip>
-#include <sstream>
 #include <vespa/vespalib/util/exceptions.h>
 
 namespace storage {
@@ -30,8 +28,9 @@ PieChart::PieChart(const std::string& name, ColorScheme cs)
     _values(),
     _colors(cs),
     _printLabels(true)
-{
-}
+{}
+
+PieChart::~PieChart() {}
 
 void
 PieChart::add(double value, const std::string& name)

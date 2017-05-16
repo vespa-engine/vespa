@@ -49,10 +49,10 @@ public:
     }
 
     Test() : _dir(""), _blobs(), _randomgenerator(42) {}
+    ~Test() {}
 };
 
 TEST_APPHOOK(Test);
-
 
 void
 Test::makeBlobs()

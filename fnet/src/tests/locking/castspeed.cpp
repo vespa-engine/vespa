@@ -18,14 +18,14 @@ class C: public A
 {
 public:
     B *otherB;
-    virtual B* asB() override { return otherB; }
+    B* asB() override { return otherB; }
     C() : otherB(nullptr) {}
 };
 
 class B: public C
 {
 public:
-    virtual B* asB() override { return this; }
+    B* asB() override { return this; }
 };
 
 

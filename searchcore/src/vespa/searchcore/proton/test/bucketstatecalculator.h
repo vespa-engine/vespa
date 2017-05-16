@@ -1,12 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/document/bucket/bucketid.h>
 #include <vespa/searchcore/proton/server/ibucketstatecalculator.h>
+#include <vespa/document/bucket/bucketid.h>
 
-namespace proton {
-
-namespace test {
+namespace proton::test {
 
 typedef document::BucketId::List BucketIdVector;
 typedef std::set<document::BucketId>    BucketIdSet;
@@ -18,6 +16,7 @@ private:
     mutable BucketIdVector _asked;
     bool                   _clusterUp;
     bool                   _nodeUp;
+    bool                   _nodeRetired;
 
 public:
     typedef std::shared_ptr<BucketStateCalculator> SP;
@@ -25,7 +24,8 @@ public:
         _ready(),
         _asked(),
         _clusterUp(true),
-        _nodeUp(true)
+        _nodeUp(true),
+        _nodeRetired(false)
     {
     }
     BucketStateCalculator &addReady(const document::BucketId &bucket) {
@@ -36,45 +36,34 @@ public:
         _ready.erase(bucket);
         return *this;
     }
-    BucketStateCalculator &setClusterUp(bool value) {
+    BucketStateCalculator &setClusterUp(bool value) noexcept {
         _clusterUp = value;
         return *this;
     }
 
-    BucketStateCalculator &
-    setNodeUp(bool value)
-    {
+    BucketStateCalculator & setNodeUp(bool value) noexcept {
         _nodeUp = value;
         return *this;
     }
 
-    const BucketIdVector &asked() const { return _asked; }
+    BucketStateCalculator& setNodeRetired(bool retired) noexcept {
+        _nodeRetired = retired;
+        return *this;
+    }
+
+    const BucketIdVector &asked() const noexcept { return _asked; }
     void resetAsked() { _asked.clear(); }
 
     // Implements IBucketStateCalculator
-    virtual bool shouldBeReady(const document::BucketId &bucket) const {
+    bool shouldBeReady(const document::BucketId &bucket) const override {
         _asked.push_back(bucket);
         return _ready.count(bucket) == 1;
     }
-    virtual bool clusterUp() const {
-        return _clusterUp;
-    }
-    
-    virtual bool
-    nodeUp(void) const
-    {
-        return _nodeUp;
-    }
 
-    virtual bool
-    nodeInitializing(void) const
-    {
-        return false;
-    }
+    bool clusterUp() const override { return _clusterUp; }
+    bool nodeUp() const override { return _nodeUp; }
+    bool nodeRetired() const override { return _nodeRetired; }
+    bool nodeInitializing() const override { return false; }
 };
 
-
-} // namespace test
-
-} // namespace proton
-
+}

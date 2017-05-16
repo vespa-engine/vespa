@@ -30,6 +30,7 @@ private:
 
 public:
     DenseTensorBuilder();
+    ~DenseTensorBuilder();
 
     Dimension defineDimension(const vespalib::string &dimension, size_t dimensionSize);
     DenseTensorBuilder &addLabel(Dimension dimension, size_t label);

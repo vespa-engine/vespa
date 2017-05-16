@@ -484,6 +484,7 @@ public class NodeAgentImplTest {
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
 
         when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(nodeSpec));
+        when(storageMaintainer.updateIfNeededAndGetDiskMetricsFor(eq(containerName))).thenReturn(Optional.of(42547019776L));
         when(dockerOperations.shouldScheduleDownloadOfImage(eq(dockerImage))).thenReturn(false);
         when(dockerOperations.getContainerStats(eq(containerName)))
                 .thenReturn(Optional.of(stats1))

@@ -17,4 +17,6 @@ StateServer::StateServer(int port,
     _server.start();
 }
 
+StateServer::~StateServer() {}
+
 } // namespace vespalib

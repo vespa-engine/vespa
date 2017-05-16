@@ -23,10 +23,11 @@ protected:
 
     bool extractSource(const vespalib::string &source);
     TensorFactoryBlueprint(const vespalib::string &baseName);
+    ~TensorFactoryBlueprint();
 
 public:
-    virtual void visitDumpFeatures(const search::fef::IIndexEnvironment &,
-                                   search::fef::IDumpFeatureVisitor &) const override {}
+    void visitDumpFeatures(const search::fef::IIndexEnvironment &,
+                           search::fef::IDumpFeatureVisitor &) const override {}
 };
 
 } // namespace features

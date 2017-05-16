@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vdstestlib/cppunit/dirconfig.hpp>
+#include "dirconfig.hpp"
 
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -25,6 +25,7 @@ public:
         sprintf(_dirname, "dirconfig.tmp.XXXXXX");
         char * realName = mkdtemp(_dirname);
         assert(realName == _dirname);
+        assert(strlen(realName) < sizeof(_dirname));
         (void) realName;
     }
     ~Root() {
@@ -41,7 +42,7 @@ public:
     }
 private:
     std::string dir() const { return _dirname; }
-    char                  _dirname[64];
+    char                  _dirname[32];
     std::atomic<uint32_t> _nextDir;
 };
 
@@ -55,6 +56,8 @@ DirConfig::Config::Config(const ConfigName& name)
       dirtyCache(false)
 {
 }
+
+DirConfig::Config::~Config() {}
 
 void
 DirConfig::Config::set(const ConfigKey& key)
@@ -112,6 +115,8 @@ DirConfig::DirConfig()
 {
     vespalib::mkdir(_dirName, true);
 }
+
+DirConfig::~DirConfig() {}
 
 DirConfig::Config&
 DirConfig::addConfig(const ConfigName& name)

@@ -1,31 +1,23 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/distributor/bucketdbupdater.h>
-#include <vespa/storageapi/messageapi/storagereply.h>
-#include <vespa/storageapi/message/state.h>
-#include <vespa/storageapi/message/bucket.h>
-#include <vespa/log/log.h>
+#include "bucketdbupdater.h"
+#include "distributor.h"
+#include "simpleclusterinformation.h"
+#include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/multioperation.h>
-#include <vespa/storage/common/bucketoperationlogger.h>
-#include <vespa/storage/storageutil/utils.h>
-#include <vespa/storage/distributor/distributor.h>
-#include <vespa/storage/distributor/simpleclusterinformation.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".distributor.bucketdb.updater");
 
 using storage::lib::Node;
 using storage::lib::NodeType;
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
-BucketDBUpdater::BucketDBUpdater(Distributor& owner,
-                                 ManagedBucketSpace& bucketSpace,
-                                 DistributorMessageSender& sender,
-                                 DistributorComponentRegister& compReg)
+BucketDBUpdater::BucketDBUpdater(Distributor& owner, ManagedBucketSpace& bucketSpace,
+                                 DistributorMessageSender& sender, DistributorComponentRegister& compReg)
     : framework::StatusReporter("bucketdb", "Bucket DB Updater"),
       _bucketSpaceComponent(owner, bucketSpace, compReg, "Bucket DB Updater"),
       _sender(sender),
@@ -33,9 +25,7 @@ BucketDBUpdater::BucketDBUpdater(Distributor& owner,
 {
 }
 
-BucketDBUpdater::~BucketDBUpdater()
-{
-}
+BucketDBUpdater::~BucketDBUpdater() {}
 
 void
 BucketDBUpdater::flush()
@@ -774,4 +764,3 @@ BucketDBUpdater::NodeRemover::~NodeRemover()
 }
 
 } // distributor
-} // storage

@@ -11,6 +11,10 @@ SimpleMetricsProducer::SimpleMetricsProducer()
 {
 }
 
+SimpleMetricsProducer::~SimpleMetricsProducer()
+{
+}
+
 void
 SimpleMetricsProducer::setMetrics(const vespalib::string &metrics)
 {

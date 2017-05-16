@@ -35,7 +35,7 @@ public abstract class FieldValueConverter {
         return value;
     }
 
-    @SuppressWarnings({ "unchecked" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     private FieldValue convertArray(Array val) {
         List<FieldValue> next = new LinkedList<FieldValue>();
         DataType nextType = null;
@@ -63,7 +63,7 @@ public abstract class FieldValueConverter {
         return ret;
     }
 
-    @SuppressWarnings({ "unchecked" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     private FieldValue convertMap(MapFieldValue<FieldValue, FieldValue> val) {
         Map<FieldValue, FieldValue> next = new LinkedHashMap<FieldValue, FieldValue>();
         DataType nextKeyType = null, nextValType = null;
@@ -102,7 +102,7 @@ public abstract class FieldValueConverter {
         return ret;
     }
 
-    @SuppressWarnings({ "unchecked" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     private FieldValue convertWset(WeightedSet val) {
         Map<FieldValue, Integer> next = new LinkedHashMap<FieldValue, Integer>();
         DataType nextType = null;

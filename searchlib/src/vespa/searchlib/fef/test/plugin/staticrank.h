@@ -27,6 +27,7 @@ private:
 
 public:
     StaticRankBlueprint();
+    ~StaticRankBlueprint();
     void visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const override {}
     Blueprint::UP createInstance() const override { return Blueprint::UP(new StaticRankBlueprint()); }
     bool setup(const IIndexEnvironment & indexEnv, const StringVector & params) override;

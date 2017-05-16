@@ -40,6 +40,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB
           _writeService(std::make_unique<ExecutorThreadingService>(1))
     {
     }
+    ~DummyDocumentSubDb() {}
     void close() override { }
     uint32_t getSubDbId() const override { return _subDbId; }
     vespalib::string getName() const override { return "dummysubdb"; }
@@ -81,7 +82,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     void onReprocessDone(SerialNum) override { }
     SerialNum getOldestFlushedSerial() override { return 0; }
     SerialNum getNewestFlushedSerial() override { return 0; }
-    void wipeHistory(SerialNum) override { }
+    void pruneRemovedFields(SerialNum) override { }
     void setIndexSchema(const Schema::SP &, SerialNum) override { }
     search::SearchableStats getSearchableStats() const override {
         return search::SearchableStats();

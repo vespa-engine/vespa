@@ -1,16 +1,20 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.io.IOUtils;
 import com.yahoo.text.XML;
 import org.w3c.dom.Element;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,21 +22,49 @@ import java.util.Optional;
  * Specifies the environments and regions to which an application should be deployed.
  * This may be used both for inspection as part of an application model and to answer
  * queries about deployment from the command line. A main method is included for the latter usage.
+ * 
+ * This is immutable.
  *
  * @author bratseth
  */
 public class DeploymentSpec {
 
+    /** The empty deployment spec, specifying no zones or rotation, and defaults for all settings */
+    public static final DeploymentSpec empty = new DeploymentSpec(Optional.empty(), 
+                                                                  UpgradePolicy.defaultPolicy, 
+                                                                  ImmutableList.of(),
+                                                                  "<deployment version='1.0'/>");
+    
     private final Optional<String> globalServiceId;
+    private final UpgradePolicy upgradePolicy;
     private final List<DeclaredZone> zones;
+    private final String xmlForm;
 
-    public DeploymentSpec(List<DeclaredZone> zones, Optional<String> globalServiceId) {
-        this.zones = Collections.unmodifiableList(new ArrayList<>(zones));
-        this.globalServiceId = globalServiceId;
+    public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy, List<DeclaredZone> zones) {
+        this(globalServiceId, upgradePolicy, zones, null);
     }
+
+    private DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy, 
+                           List<DeclaredZone> zones, String xmlForm) {
+        this.globalServiceId = globalServiceId;
+        this.upgradePolicy = upgradePolicy;
+        this.zones = ImmutableList.copyOf(zones);
+        this.xmlForm = xmlForm;
+    }
+
+    /** Returns the ID of the service to expose through global routing, if present */
+    public Optional<String> globalServiceId() {
+        return globalServiceId;
+    }
+
+    /** Returns the upgrade policy of this, which is defaultPolicy if none is specified */
+    public UpgradePolicy upgradePolicy() { return upgradePolicy; }
 
     /** Returns the zones this declares as a read-only list. */
     public List<DeclaredZone> zones() { return zones; }
+    
+    /** Returns the XML form of this spec, or null if it was not created by fromXml or is the empty spec */
+    public String xmlForm() { return xmlForm; }
 
     /** Returns whether this deployment spec specifies the given zone, either implicitly or explicitly */
     public boolean includes(Environment environment, Optional<RegionName> region) {
@@ -41,9 +73,18 @@ public class DeploymentSpec {
         return false;
     }
 
-    /** Returns the ID of the service to expose through global routing, if present */
-    public Optional<String> globalServiceId() {
-        return globalServiceId;
+    /**
+     * Creates a deployment spec from XML.
+     *
+     * @throws IllegalArgumentException if the XML is invalid
+     */
+    public static DeploymentSpec fromXml(Reader reader) {
+        try {
+            return fromXml(IOUtils.readAll(reader));
+        }
+        catch (IOException e) {
+            throw new IllegalArgumentException("Could not read deployment spec", e);
+        }
     }
 
     /**
@@ -51,17 +92,17 @@ public class DeploymentSpec {
      *
      * @throws IllegalArgumentException if the XML is invalid
      */
-    public static DeploymentSpec fromXml(Reader reader) {
+    public static DeploymentSpec fromXml(String xmlForm) {
         List<DeclaredZone> zones = new ArrayList<>();
-        Element root = XML.getDocument(reader).getDocumentElement();
         Optional<String> globalServiceId = Optional.empty();
+        Element root = XML.getDocument(xmlForm).getDocumentElement();
         for (Element environmentTag : XML.getChildren(root)) {
+            if (!isEnvironmentName(environmentTag.getTagName())) continue;
             Environment environment = Environment.from(environmentTag.getTagName());
             List<Element> regionTags = XML.getChildren(environmentTag, "region");
             if (regionTags.isEmpty()) {
                 zones.add(new DeclaredZone(environment, Optional.empty(), false));
-            }
-            else {
+            } else {
                 for (Element regionTag : regionTags) {
                     RegionName region = RegionName.from(XML.getValue(regionTag).trim());
                     boolean active = environment == Environment.prod && readActive(regionTag);
@@ -75,7 +116,11 @@ public class DeploymentSpec {
                 throw new IllegalArgumentException("Attribute 'global-service-id' is only valid on 'prod' tag.");
             }
         }
-        return new DeploymentSpec(zones, globalServiceId);
+        return new DeploymentSpec(globalServiceId, readUpgradePolicy(root), zones, xmlForm);
+    }
+
+    private static boolean isEnvironmentName(String tagName) {
+        return tagName.equals("test") || tagName.equals("staging") || tagName.equals("prod");
     }
 
     private static Optional<String> readGlobalServiceId(Element environmentTag) {
@@ -85,6 +130,20 @@ public class DeploymentSpec {
         }
         else {
             return Optional.of(globalServiceId);
+        }
+    }
+    
+    private static UpgradePolicy readUpgradePolicy(Element root) {
+        Element upgradeElement = XML.getChild(root, "upgrade");
+        if (upgradeElement == null) return UpgradePolicy.defaultPolicy;
+
+        String policy = upgradeElement.getAttribute("policy");
+        switch (policy) {
+            case "canary" : return UpgradePolicy.canary;
+            case "default" : return UpgradePolicy.defaultPolicy;
+            case "conservative" : return UpgradePolicy.conservative;
+            default : throw new IllegalArgumentException("Illegal upgrade policy '" + policy + "': " +
+                                                         "Must be one of " + Arrays.toString(UpgradePolicy.values()));
         }
     }
 
@@ -177,6 +236,16 @@ public class DeploymentSpec {
             return false;
         }
 
+    }
+
+    /** Controls when this application will be upgraded to new Vespa versions */
+    public enum UpgradePolicy {
+        /** Canary: Applications with this policy will upgrade before any other */
+        canary,
+        /** Default: Will upgrade after all canary applications upgraded successfully. The default. */
+        defaultPolicy,
+        /** Will upgrade after most default applications upgraded successfully */
+        conservative
     }
 
 }

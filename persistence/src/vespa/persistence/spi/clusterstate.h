@@ -53,9 +53,14 @@ public:
     bool nodeUp() const;
 
     /**
-     * Returns true if this node is marked as Initializing in the cluster state.
+     * Returns true iff this node is marked as Initializing in the cluster state.
      */
     bool nodeInitializing() const;
+
+    /**
+     * Returns true iff this node is marked as Retired in the cluster state.
+     */
+    bool nodeRetired() const;
 
     /**
      * Returns a serialized form of this object.
@@ -68,6 +73,7 @@ private:
     std::unique_ptr<lib::Distribution> _distribution;
 
     void deserialize(vespalib::nbostream&);
+    bool nodeHasStateOneOf(const char* states) const;
 };
 
 }

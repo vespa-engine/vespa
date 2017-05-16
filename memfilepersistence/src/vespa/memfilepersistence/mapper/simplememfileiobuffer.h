@@ -63,7 +63,7 @@ public:
      * allocated buffer. For all other cases, we'll attempt to squeeze as many
      * documents as possible into the same (shared) buffer.
      */
-    static const size_t WORKING_BUFFER_SIZE = 16*1024; // TODO(vekterli): make configurable
+    static constexpr size_t WORKING_BUFFER_SIZE = 16*1024; // TODO(vekterli): make configurable
 
     class SharedBuffer
     {
@@ -209,6 +209,7 @@ public:
             FileInfo::UP fileInfo,
             const FileSpecification& fileSpec,
             const Environment& env);
+    ~SimpleMemFileIOBuffer();
 
     Document::UP getDocumentHeader(const document::DocumentTypeRepo& repo, DataLocation loc) const override;
     document::DocumentId getDocumentId(DataLocation loc) const override;

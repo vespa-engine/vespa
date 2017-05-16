@@ -1,7 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("fake_searchable_test");
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/searchlib/queryeval/fake_searchable.h>
@@ -11,12 +8,16 @@ LOG_SETUP("fake_searchable_test");
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/fef/matchdata.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("fake_searchable_test");
+
 using namespace search::queryeval;
 using namespace search::query;
 using namespace search::fef;
 
 class Test : public vespalib::TestApp {
 public:
+    ~Test();
     int Main() override;
     void testTestFakeResult();
     void testTerm();
@@ -28,6 +29,7 @@ private:
     FakeRequestContext _requestContext;
 };
 
+Test::~Test() {}
 void
 Test::testTestFakeResult()
 {

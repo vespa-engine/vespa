@@ -16,12 +16,9 @@ ClusterState::ClusterState(const lib::ClusterState& state,
       _nodeIndex(nodeIndex),
       _distribution(new lib::Distribution(distribution.serialize()))
 {
-
 }
 
-void
-ClusterState::deserialize(vespalib::nbostream& i)
-{
+void ClusterState::deserialize(vespalib::nbostream& i) {
     vespalib::string clusterState;
     vespalib::string distribution;
 
@@ -33,13 +30,11 @@ ClusterState::deserialize(vespalib::nbostream& i)
     _distribution.reset(new lib::Distribution(distribution));
 }
 
-ClusterState::ClusterState(vespalib::nbostream& i)
-{
+ClusterState::ClusterState(vespalib::nbostream& i) {
     deserialize(i);
 }
 
-ClusterState::ClusterState(const ClusterState& other)
-{
+ClusterState::ClusterState(const ClusterState& other) {
     vespalib::nbostream o;
     other.serialize(o);
     deserialize(o);
@@ -47,9 +42,7 @@ ClusterState::ClusterState(const ClusterState& other)
 
 ClusterState::~ClusterState() { }
 
-ClusterState&
-ClusterState::operator=(const ClusterState& other)
-{
+ClusterState& ClusterState::operator=(const ClusterState& other) {
     ClusterState copy(other);
     _state = std::move(copy._state);
     _nodeIndex = copy._nodeIndex;
@@ -57,9 +50,7 @@ ClusterState::operator=(const ClusterState& other)
     return *this;
 }
 
-bool
-ClusterState::shouldBeReady(const Bucket& b) const
-{
+bool ClusterState::shouldBeReady(const Bucket& b) const {
     assert(_distribution.get());
     assert(_state.get());
 
@@ -77,31 +68,29 @@ ClusterState::shouldBeReady(const Bucket& b) const
     return false;
 }
 
-bool
-ClusterState::clusterUp() const
-{
+bool ClusterState::clusterUp() const {
     return _state.get() && _state->getClusterState() == lib::State::UP;
 }
 
-bool
-ClusterState::nodeUp() const
-{
+bool ClusterState::nodeHasStateOneOf(const char* states) const {
     return _state.get() &&
-        _state->getNodeState(lib::Node(lib::NodeType::STORAGE, _nodeIndex)).
-        getState().oneOf("uir");
+           _state->getNodeState(lib::Node(lib::NodeType::STORAGE, _nodeIndex)).
+                   getState().oneOf(states);
 }
 
-bool
-ClusterState::nodeInitializing() const
-{
-    return _state.get() &&
-        _state->getNodeState(lib::Node(lib::NodeType::STORAGE, _nodeIndex)).
-        getState().oneOf("i");
+bool ClusterState::nodeUp() const {
+    return nodeHasStateOneOf("uir");
 }
 
-void
-ClusterState::serialize(vespalib::nbostream& o) const
-{
+bool ClusterState::nodeInitializing() const {
+    return nodeHasStateOneOf("i");
+}
+
+bool ClusterState::nodeRetired() const {
+    return nodeHasStateOneOf("r");
+}
+
+void ClusterState::serialize(vespalib::nbostream& o) const {
     assert(_distribution.get());
     assert(_state.get());
     vespalib::asciistream tmp;

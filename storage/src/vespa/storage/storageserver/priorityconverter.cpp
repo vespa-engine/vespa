@@ -12,6 +12,10 @@ PriorityConverter::PriorityConverter(const config::ConfigUri & configUri)
     _configFetcher.start();
 }
 
+PriorityConverter::~PriorityConverter()
+{
+}
+
 uint8_t
 PriorityConverter::toStoragePriority(documentapi::Priority::Value documentApiPriority) const
 {

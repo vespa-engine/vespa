@@ -6,7 +6,7 @@ class Fast_BufferedInputStream;
 
 class Fast_HTTPHeaderParser
 {
-  public:
+public:
     Fast_HTTPHeaderParser(const Fast_HTTPHeaderParser &) = delete;
     Fast_HTTPHeaderParser & operator = (const Fast_HTTPHeaderParser &) = delete;
     Fast_HTTPHeaderParser(Fast_BufferedInputStream &in);
@@ -15,7 +15,7 @@ class Fast_HTTPHeaderParser
     // Methods
     bool ReadRequestLine(const char *&method, const char *&url, int &versionMajor, int &versionMinor);
     bool ReadHeader(const char *&name, const char *&value);
-  private:
+private:
     char                      _pushBack;
     bool                      _isPushBacked;
     const size_t              _bufferSize;

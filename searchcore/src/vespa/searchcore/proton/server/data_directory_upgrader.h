@@ -72,6 +72,7 @@ private:
 
 public:
     DataDirectoryUpgrader(const vespalib::string &scanDir, const vespalib::string &destDir);
+    ~DataDirectoryUpgrader();
     ScanResult scan() const;
     UpgradeResult upgrade(const ScanResult &scanResult) const;
 };

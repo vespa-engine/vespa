@@ -12,22 +12,17 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/printable.h>
-#include <vespa/vespalib/util/document_runnable.h>
-#include <memory>
 #include <vespa/storage/bucketdb/config-stor-bucketdb.h>
-#include <vespa/storage/bucketdb/storbucketdb.h>
+#include "storbucketdb.h"
+#include "bucketmanagermetrics.h"
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/common/servicelayercomponent.h>
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/storage/common/storagelinkqueued.h>
-#include <vespa/storage/bucketdb/bucketmanagermetrics.h>
-#include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
 #include <vespa/storageframework/storageframework.h>
+#include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
 #include <vespa/storageapi/message/bucket.h>
-#include <unordered_set>
 #include <vespa/config/subscription/configuri.h>
-
+#include <unordered_set>
 
 namespace storage {
 

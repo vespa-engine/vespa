@@ -31,13 +31,8 @@ private:
     uint32_t                               _docIdLimit;
 
 public:
-    FakeSearchContext(size_t initialNumDocs=0)
-        : _clock(),
-          _doom(_clock, -1),
-          _selector(new search::FixedSourceSelector(0, "fs", initialNumDocs)),
-          _indexes(new IndexCollection(_selector)),
-          _attrSearchable(),
-          _docIdLimit(initialNumDocs) {}
+    FakeSearchContext(size_t initialNumDocs=0);
+    ~FakeSearchContext();
 
     FakeSearchContext &addIdx(uint32_t id) {
         _indexes->append(id, IndexSearchable::SP(new FakeIndexSearchable()));

@@ -1,11 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchcommon/attribute/config.h>
-#include <vespa/vespalib/util/exceptions.h>
-#include <limits.h>
+#include "config.h"
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 Config::Config() :
     _basicType(BasicType::NONE),
@@ -42,5 +39,8 @@ Config::Config(BasicType bt,
 {
 }
 
-}
+Config::Config(const Config &) = default;
+Config & Config::operator = (const Config &) = default;
+Config::~Config() {}
+
 }

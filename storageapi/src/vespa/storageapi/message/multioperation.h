@@ -36,6 +36,7 @@ public:
                                    const std::vector<char>& buffer,
                                    bool keepTimeStamps = false);
     explicit MultiOperationCommand(const MultiOperationCommand& template_);
+    ~MultiOperationCommand();
 
     std::vector<char>& getBuffer() { return _buffer; };
     const std::vector<char>& getBuffer() const { return _buffer; };

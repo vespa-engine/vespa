@@ -202,30 +202,11 @@ IFlushTarget::MemoryGain
 FlushableAttribute::getApproxMemoryGain() const
 {
     int64_t used(_attr->getStatus().getUsed());
-    int64_t canFree = 0;
-    if (_attr->canShrinkLidSpace()) {
-        uint32_t committedDocIdLimit = _attr->getCommittedDocIdLimit();
-        uint32_t numDocs = _attr->getNumDocs();
-        const attribute::Config &cfg = _attr->getConfig();
-        if (committedDocIdLimit < numDocs) {
-            uint32_t elemSize = 4;
-            if (cfg.collectionType().isMultiValue()) {
-                if (cfg.huge()) {
-                    elemSize = 8;
-                }
-            } else if (cfg.fastSearch()) {
-                // keep elemSize at 4
-            } else {
-                elemSize = cfg.basicType().fixedSize();
-            }
-            canFree = static_cast<int64_t>(elemSize) * 
-                      (numDocs - committedDocIdLimit);
-            if (canFree > used)
-                canFree = used;
-        }
+    int64_t canFree = _attr->getEstimatedShrinkLidSpaceGain();
+    if (canFree > used) {
+        canFree = used;
     }
-    return MemoryGain(used,
-                      used - canFree);
+    return MemoryGain(used, used - canFree);
 }
 
 IFlushTarget::DiskGain

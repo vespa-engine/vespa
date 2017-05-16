@@ -70,6 +70,8 @@ DocumentDBConfigBuilder::DocumentDBConfigBuilder(const DocumentDBConfig &cfg)
 {
 }
 
+DocumentDBConfigBuilder::~DocumentDBConfigBuilder() {}
+
 DocumentDBConfig::SP
 DocumentDBConfigBuilder::build()
 {

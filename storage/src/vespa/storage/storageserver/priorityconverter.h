@@ -4,9 +4,9 @@
 
 #include <vespa/storage/config/config-stor-prioritymapping.h>
 #include <vespa/config/config.h>
+#include <vespa/documentapi/messagebus/priority.h>
 #include <atomic>
 #include <array>
-#include <vespa/documentapi/messagebus/priority.h>
 
 namespace storage {
 
@@ -18,6 +18,7 @@ public:
     typedef vespa::config::content::core::StorPrioritymappingConfig Config;
 
     PriorityConverter(const config::ConfigUri& configUri);
+    ~PriorityConverter();
 
     /** Converts the given priority into a storage api priority number. */
     uint8_t toStoragePriority(documentapi::Priority::Value) const;

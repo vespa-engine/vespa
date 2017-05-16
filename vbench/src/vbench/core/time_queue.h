@@ -2,11 +2,10 @@
 
 #pragma once
 
+#include "closeable.h"
 #include <vespa/vespalib/util/priority_queue.h>
 #include <vespa/vespalib/util/sync.h>
 #include <memory>
-
-#include "closeable.h"
 
 namespace vbench {
 
@@ -43,7 +42,7 @@ private:
 
 public:
     TimeQueue(double window, double tick);
-    virtual void close();
+    void close() override;
     void discard();
     void insert(std::unique_ptr<T> obj, double time);
     bool extract(double time, std::vector<std::unique_ptr<T> > &list, double &delay);

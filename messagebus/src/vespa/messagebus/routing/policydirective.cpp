@@ -9,6 +9,8 @@ PolicyDirective::PolicyDirective(const vespalib::stringref &name, const vespalib
     _param(param)
 { }
 
+PolicyDirective::~PolicyDirective() {}
+
 string
 PolicyDirective::toString() const
 {

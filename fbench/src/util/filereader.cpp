@@ -20,6 +20,8 @@ FileReader::FileReader()
       _file(&std::cin),
       _bufsize(1024*1024),
       _buf(_bufsize),
+      _lastReadPos(0),
+      _nextReadPos(0),
       _bufused(0),
       _bufpos(0)
 {
@@ -48,14 +50,14 @@ bool
 FileReader::Reset()
 {
     _file->clear();
-    _file->seekg(0);
-    return bool(*_file);
+    return SetFilePos(0);
 }
 
 bool
 FileReader::SetFilePos(int64_t pos)
 {
-    _bufpos = 0;
+    _bufused = _bufpos = 0;
+    _lastReadPos = _nextReadPos = pos;
     _file->seekg(pos);
     return bool(*_file);
 }
@@ -68,21 +70,22 @@ FileReader::GetFileSize()
 }
 
 uint64_t
-FileReader::FindNewline(int64_t pos)
+FileReader::FindNextLine(int64_t pos)
 {
     char buf[100];
     SetFilePos(pos);
-    ssize_t len = ReadLine(buf, 100);
-    ++_bufpos;
-
-    return pos+len;
+    ReadLine(buf, 100);
+    return GetFilePos();
 }
 
 void
 FileReader::FillBuffer()
 {
+    _lastReadPos = _nextReadPos;
     _file->read(&_buf[0], _bufsize);
-    _bufused = _file->gcount(); // may be -1
+    auto wasRead = _file->gcount(); // may be -1
+    _nextReadPos += wasRead;
+    _bufused = wasRead;
     _bufpos  = 0;
 }
 

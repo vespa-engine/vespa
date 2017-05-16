@@ -56,6 +56,7 @@ public:
               _writeBuffer()
         {
         }
+        ~DescriptorHandle() { }
         void CloseHandle(void)
         {
             _wantRead = false;

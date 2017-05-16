@@ -8,6 +8,14 @@
 #include <map>
 
 namespace vespalib {
+
+namespace slime {
+
+class Cursor;
+class Inspector;
+
+} // namespace vespalib::slime
+
 namespace eval {
 
 /**
@@ -55,6 +63,8 @@ private:
     Cells _cells;
 public:
     TensorSpec(const vespalib::string &type_spec);
+    TensorSpec(const TensorSpec &);
+    TensorSpec & operator = (const TensorSpec &);
     ~TensorSpec();
     TensorSpec &add(const Address &address, double value) {
         _cells.emplace(address, value);
@@ -63,6 +73,8 @@ public:
     const vespalib::string &type() const { return _type; }
     const Cells &cells() const { return _cells; }
     vespalib::string to_string() const;
+    void to_slime(slime::Cursor &tensor) const;
+    static TensorSpec from_slime(const slime::Inspector &tensor);
 };
 
 bool operator==(const TensorSpec &lhs, const TensorSpec &rhs);

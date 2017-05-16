@@ -72,13 +72,36 @@ public interface Docker {
     void deleteUnusedDockerImages();
 
     /**
-     * Execute a command in docker container as "yahoo" user
-     * TODO: Make this function interruptible
+     * Execute a command in docker container as "yahoo". Will block until the command is finished.
      *
-     * @param args          Program arguments. args[0] must be the program filename.
-     * @throws RuntimeException  (or some subclass thereof) on failure, including docker failure, command failure
+     * @param containerName The name of the container
+     * @param command The command with arguments to run.
+     *
+     * @return exitcodes, stdout and stderr in the ProcessResult
      */
-    ProcessResult executeInContainer(ContainerName containerName, String... args);
+    ProcessResult executeInContainer(ContainerName containerName, String... command);
 
-    ProcessResult executeInContainerAsRoot(ContainerName containerName, String... args);
+    /**
+     * Execute a command in docker container as "root". Will block until the command is finished.
+     *
+     * @param containerName The name of the container
+     * @param command The command with arguments to run.
+     *
+     * @return exitcodes, stdout and stderr in the ProcessResult
+     */
+    ProcessResult executeInContainerAsRoot(ContainerName containerName, String... command);
+
+    /**
+     * Execute a command in docker container as "root"
+     * The timeout will not kill the process spawned.
+     *
+     * @param containerName The name of the container
+     * @param timeoutSeconds Timeout for the process to finish in seconds or without timeout if empty
+     * @param command The command with arguments to run.
+     *
+     * @return exitcodes, stdout and stderr in the ProcessResult
+     */
+    ProcessResult executeInContainerAsRoot(ContainerName containerName, Long timeoutSeconds, String... command);
+
+
 }

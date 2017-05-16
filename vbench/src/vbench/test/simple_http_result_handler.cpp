@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-
-#include <vespa/fastos/fastos.h>
 #include "simple_http_result_handler.h"
 
 namespace vbench {
@@ -14,6 +12,8 @@ SimpleHttpResultHandler::SimpleHttpResultHandler()
       _failures()
 {
 }
+
+SimpleHttpResultHandler::~SimpleHttpResultHandler() {}
 
 void
 SimpleHttpResultHandler::handleHeader(const string &name, const string &value)

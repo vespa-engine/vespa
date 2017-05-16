@@ -34,6 +34,8 @@ Result::Result(const Handover &rhs)
       _msg(rhs._msg)
 { }
 
+Result::~Result() {}
+
 bool
 Result::isAccepted() const
 {

@@ -669,6 +669,7 @@ public:
     virtual bool canShrinkLidSpace() const override;
     virtual void shrinkLidSpace() override;
     virtual void onShrinkLidSpace();
+    virtual size_t getEstimatedShrinkLidSpaceGain() const override;
 
     void setInterlock(const std::shared_ptr<attribute::Interlock> &interlock);
 

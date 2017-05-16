@@ -2,7 +2,6 @@
 #pragma once
 
 #include "filedistributionmodel.h"
-
 #include <algorithm>
 #include <vector>
 
@@ -11,12 +10,11 @@ namespace filedistribution {
 class MockFileDBModel : public FileDBModel {
     std::vector<std::string> _fileReferences;
 public:
-//Overrides
-    bool hasFile(const std::string& fileReference) {
+    bool hasFile(const std::string& fileReference) override {
         return std::find(_fileReferences.begin(), _fileReferences.end(), fileReference) != _fileReferences.end();
     }
 
-    void addFile(const std::string& fileReference, const Buffer & buffer) {
+    void addFile(const std::string& fileReference, const Buffer & buffer) override {
         (void)buffer;
         _fileReferences.push_back(fileReference);
     }
@@ -28,28 +26,24 @@ public:
         return result;
     }
 
-    virtual void cleanFiles(const std::vector<std::string> &) {}
+    void cleanFiles(const std::vector<std::string> &) override {}
 
+    void setDeployedFilesToDownload(const std::string&, const std::string&,
+                                    const std::vector<std::string> &) override {}
+    void cleanDeployedFilesToDownload(const std::vector<std::string> &,
+                                      const std::string&) override {}
+    void removeDeploymentsThatHaveDifferentApplicationId(const std::vector<std::string> &,
+                                                         const std::string&) override {}
 
-    virtual void setDeployedFilesToDownload(const std::string&,
-            const std::string&,
-            const std::vector<std::string> &) {}
-    virtual void cleanDeployedFilesToDownload(
-            const std::vector<std::string> &,
-            const std::string&) {}
-    virtual void removeDeploymentsThatHaveDifferentApplicationId(
-            const std::vector<std::string> &,
-            const std::string&) {}
-
-    virtual std::vector<std::string> getHosts() {
+    std::vector<std::string> getHosts() override {
         return std::vector<std::string>();
     }
 
-    virtual HostStatus getHostStatus(const std::string&) {
+    HostStatus getHostStatus(const std::string&) override {
         return HostStatus();
     }
 
-    Progress getProgress(const std::string&, const std::vector<std::string>&) {
+    Progress getProgress(const std::string&, const std::vector<std::string>&) override {
         return Progress();
     }
 };

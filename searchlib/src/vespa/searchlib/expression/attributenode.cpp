@@ -3,8 +3,7 @@
 #include "attributenode.h"
 #include <vespa/searchlib/attribute/singleenumattribute.h>
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 using namespace vespalib;
 using search::attribute::IAttributeContext;
@@ -52,8 +51,9 @@ AttributeNode::AttributeNode() :
     _useEnumOptimization(false),
     _handler(),
     _attributeName()
-{
-}
+{}
+
+AttributeNode::~AttributeNode() {}
 
 AttributeNode::AttributeNode(const vespalib::stringref &name) :
     FunctionNode(),
@@ -62,8 +62,7 @@ AttributeNode::AttributeNode(const vespalib::stringref &name) :
     _useEnumOptimization(false),
     _handler(),
     _attributeName(name)
-{
-}
+{}
 AttributeNode::AttributeNode(const IAttributeVector & attribute) :
     FunctionNode(),
     _scratchResult(createResult(&attribute)),
@@ -71,8 +70,7 @@ AttributeNode::AttributeNode(const IAttributeVector & attribute) :
     _useEnumOptimization(false),
     _handler(),
     _attributeName(attribute.getName())
-{
-}
+{}
 
 AttributeNode::AttributeNode(const AttributeNode & attribute) :
     FunctionNode(attribute),
@@ -275,7 +273,6 @@ AttributeNode::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "attributeName", _attributeName);
 }
 
-}
 }
 
 // this function was added by ../../forcelink.sh

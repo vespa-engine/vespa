@@ -34,6 +34,7 @@ public:
      */
     RPCServiceAddress(const string &serviceName,
                       const string &connectionSpec);
+    ~RPCServiceAddress();
 
     /**
      * Returns whether or not this service address is malformed.

@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include <vbench/core/socket.h>
 #include "http_connection.h"
 #include "http_connection_pool.h"
 #include "http_result_handler.h"
+#include <vbench/core/socket.h>
 
 namespace vbench {
 
@@ -59,6 +59,7 @@ private:
     bool perform();
 
 public:
+    ~HttpClient();
     static bool fetch(const ServerSpec &server, const string &url,
                       HttpResultHandler &handler)
     {

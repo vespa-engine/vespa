@@ -5,8 +5,7 @@
 
 using document::DocumentTypeRepo;
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 IMPLEMENT_COMMAND(MultiOperationCommand, MultiOperationReply)
 IMPLEMENT_REPLY(MultiOperationReply)
@@ -57,6 +56,8 @@ MultiOperationCommand::MultiOperationCommand(const MultiOperationCommand& o)
     }
 }
 
+MultiOperationCommand::~MultiOperationCommand() {}
+
 void
 MultiOperationCommand::print(std::ostream& out, bool verbose,
                              const std::string& indent) const
@@ -104,5 +105,4 @@ MultiOperationReply::print(std::ostream& out, bool verbose,
     }
 }
 
-} // api
-} // storage
+}

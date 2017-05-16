@@ -114,9 +114,12 @@ vespa_define_module(
     src/tests/diskindex/fieldwriter
     src/tests/diskindex/fusion
     src/tests/diskindex/pagedict4
+    src/tests/docstore/chunk
     src/tests/docstore/document_store
     src/tests/docstore/document_store_visitor
+    src/tests/docstore/lid_info
     src/tests/docstore/logdatastore
+    src/tests/docstore/store_by_bucket
     src/tests/engine/docsumapi
     src/tests/engine/monitorapi
     src/tests/engine/searchapi

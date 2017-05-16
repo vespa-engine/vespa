@@ -90,6 +90,8 @@ DocumentIterator::DocumentIterator(const storage::spi::Bucket &bucket,
 {
 }
 
+DocumentIterator::~DocumentIterator() {}
+
 void
 DocumentIterator::add(const IDocumentRetriever::SP &retriever)
 {

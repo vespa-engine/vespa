@@ -3,13 +3,12 @@ package com.yahoo.vespa.orchestrator.controller;
 
 import com.google.inject.Inject;
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.jaxrs.client.JaxRsClientFactory;
 import com.yahoo.vespa.jaxrs.client.JaxRsStrategy;
 import com.yahoo.vespa.jaxrs.client.JaxRsStrategyFactory;
 import com.yahoo.vespa.jaxrs.client.JerseyJaxRsClientFactory;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -36,13 +35,11 @@ public class RetryingClusterControllerClientFactory implements ClusterController
     }
 
     @Override
-    public ClusterControllerClient createClient(Collection<? extends ServiceInstance<?>> clusterControllers,
+    public ClusterControllerClient createClient(List<HostName> clusterControllers,
                                                 String clusterName) {
-        Set<HostName> hostNames = clusterControllers.stream()
-                .map(ServiceInstance::hostName)
-                .collect(Collectors.toSet());
+        Set<HostName> clusterControllerSet = clusterControllers.stream().collect(Collectors.toSet());
         JaxRsStrategy<ClusterControllerJaxRsApi> jaxRsApi
-                = new JaxRsStrategyFactory(hostNames, HARDCODED_CLUSTERCONTROLLER_PORT, jaxRsClientFactory)
+                = new JaxRsStrategyFactory(clusterControllerSet, HARDCODED_CLUSTERCONTROLLER_PORT, jaxRsClientFactory)
                 .apiWithRetries(ClusterControllerJaxRsApi.class, CLUSTERCONTROLLER_API_PATH);
         return new ClusterControllerClientImpl(jaxRsApi, clusterName);
     }

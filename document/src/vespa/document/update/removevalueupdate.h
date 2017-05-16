@@ -24,9 +24,8 @@ public:
      *
      * @param value The identifier of the field value to update.
      */
-    RemoveValueUpdate(const FieldValue& key)
-        : ValueUpdate(),
-          _key(key.clone()) {}
+    RemoveValueUpdate(const FieldValue& key);
+    ~RemoveValueUpdate();
 
     bool operator==(const ValueUpdate& other) const override;
 

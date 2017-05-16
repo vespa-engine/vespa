@@ -15,6 +15,7 @@ public:
 
     WrongDistributionReply();
     WrongDistributionReply(const string &systemState);
+    ~WrongDistributionReply();
     const string &getSystemState() const { return _systemState; };
     void setSystemState(const string &state) { _systemState = state; };
     string toString() const override { return "wrongdistributionreply"; }

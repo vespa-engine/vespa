@@ -1,11 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/storage/distributor/operationstarter.h>
+#include "operationstarter.h"
 #include <vespa/storage/distributor/operations/operation.h>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class ThrottlingOperationStarter : public OperationStarter
 {
@@ -26,39 +25,34 @@ class ThrottlingOperationStarter : public OperationStarter
         ThrottlingOperation(const ThrottlingOperation&);
         ThrottlingOperation& operator=(const ThrottlingOperation&);
         
-        virtual void onClose(DistributorMessageSender& sender) {
+        void onClose(DistributorMessageSender& sender) override {
             _operation->onClose(sender);
         }
-        virtual const char* getName() const {
+        const char* getName() const override {
             return _operation->getName();
         }
-        virtual std::string getStatus() const {
+        std::string getStatus() const override {
             return _operation->getStatus();
         }
-        virtual std::string toString() const {
+        std::string toString() const override {
             return _operation->toString();
         }
-        virtual void start(DistributorMessageSender& sender,
-                           framework::MilliSecTime startTime)
-        {
+        void start(DistributorMessageSender& sender, framework::MilliSecTime startTime) override {
             _operation->start(sender, startTime);
         }
-        virtual void receive(DistributorMessageSender& sender,
-                             const std::shared_ptr<api::StorageReply> & msg)
-        {
+        void receive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg) override {
             _operation->receive(sender, msg);
         }
         framework::MilliSecTime getStartTime() const {
             return _operation->getStartTime();
         }
-        virtual void onStart(DistributorMessageSender&) {
+        void onStart(DistributorMessageSender&) override {
             // Should never be called directly on the throttled operation
             // instance, but rather on its wrapped implementation.
             assert(false);
         }
-        virtual void onReceive(DistributorMessageSender&,
-                               const std::shared_ptr<api::StorageReply>&)
-        {
+        void onReceive(DistributorMessageSender&,
+                               const std::shared_ptr<api::StorageReply>&) override {
             assert(false);
         }
     };
@@ -72,11 +66,9 @@ public:
           _pendingCount(0)
     {}
 
-    virtual bool start(const std::shared_ptr<Operation>& operation,
-                       Priority priority);
+    bool start(const std::shared_ptr<Operation>& operation, Priority priority) override;
 
-    bool canStart(uint32_t currentOperationCount,
-                  Priority priority) const;
+    bool canStart(uint32_t currentOperationCount, Priority priority) const;
 
     void setMaxPendingRange(uint32_t minPending, uint32_t maxPending) {
         _minPending = minPending;
@@ -96,5 +88,3 @@ private:
 };
 
 }
-}
-

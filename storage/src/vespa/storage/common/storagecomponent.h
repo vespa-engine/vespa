@@ -31,9 +31,9 @@
 
 #pragma once
 
-#include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/storageframework/generic/component/component.h>
 #include <vespa/storageframework/generic/component/componentregister.h>
+#include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/vdslib/state/node.h>
 #include <vespa/vespalib/util/sync.h>
 
@@ -122,4 +122,3 @@ struct StorageComponentRegister : public virtual framework::ComponentRegister
 };
 
 } // storage
-

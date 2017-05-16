@@ -27,6 +27,8 @@ public:
      */
     StatBucketMessage(document::BucketId bucket, const string& documentSelection);
 
+    ~StatBucketMessage();
+
     /**
      * Returns the bucket to stat.
      *

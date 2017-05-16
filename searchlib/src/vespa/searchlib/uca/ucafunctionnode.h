@@ -21,8 +21,8 @@ public:
     UcaFunctionNode(const UcaFunctionNode & rhs);
     UcaFunctionNode & operator = (const UcaFunctionNode & rhs);
 private:
-    virtual bool onExecute() const;
-    virtual void onPrepareResult();
+    bool onExecute() const override;
+    void onPrepareResult() override;
     class Handler {
     public:
         Handler(const UcaFunctionNode & uca);
@@ -38,14 +38,14 @@ private:
     class SingleValueHandler : public Handler {
     public:
         SingleValueHandler(UcaFunctionNode & uca) : Handler(uca), _result(static_cast<RawResultNode &>(uca.updateResult())) { }
-        virtual void handle(const ResultNode & arg);
+        void handle(const ResultNode & arg) override;
     private:
         RawResultNode & _result;
     };
     class MultiValueHandler : public Handler {
     public:
         MultiValueHandler(UcaFunctionNode & uca) : Handler(uca), _result(static_cast<RawResultNodeVector &>(uca.updateResult())) { }
-        virtual void handle(const ResultNode & arg);
+        void handle(const ResultNode & arg) override;
     private:
         RawResultNodeVector & _result;
     };

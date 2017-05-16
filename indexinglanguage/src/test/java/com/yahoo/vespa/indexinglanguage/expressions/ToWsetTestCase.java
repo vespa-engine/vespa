@@ -16,6 +16,7 @@ import static org.junit.Assert.assertFalse;
 /**
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
+@SuppressWarnings({ "rawtypes" })
 public class ToWsetTestCase {
 
     @Test
