@@ -136,8 +136,10 @@ EventLogger::flushComplete(const string &name,
     jstr.beginObject();
     jstr.appendKey("name").appendString(name);
     jstr.appendKey("time.elapsed.ms").appendInt64(elapsedTimeMs);
-    jstr.appendKey("output");
-    LogUtil::logDir(jstr, outputPath, outputPathElems);
+    if (!outputPath.empty()) {
+        jstr.appendKey("output");
+        LogUtil::logDir(jstr, outputPath, outputPathElems);
+    }
     jstr.endObject();
     EV_STATE("flush.complete", jstr.toString().c_str());
 }

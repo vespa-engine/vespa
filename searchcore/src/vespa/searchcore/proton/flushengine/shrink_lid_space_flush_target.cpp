@@ -1,0 +1,111 @@
+// Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/fastos/fastos.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.flushengine.shrink_lid_space_flush_target");
+
+#include "shrink_lid_space_flush_target.h"
+#include <vespa/searchlib/common/i_compactable_lid_space.h>
+
+namespace proton {
+
+using searchcorespi::IFlushTarget;
+using searchcorespi::FlushStats;
+using searchcorespi::FlushTask;
+
+class ShrinkLidSpaceFlushTarget::Flusher : public FlushTask
+{
+    ShrinkLidSpaceFlushTarget &_target;
+    SerialNum _flushSerialNum;
+public:
+    Flusher(ShrinkLidSpaceFlushTarget &target, SerialNum flushSerialNum);
+    virtual void run() override;
+    virtual search::SerialNum getFlushSerial() const override;
+};
+
+ShrinkLidSpaceFlushTarget::Flusher::Flusher(ShrinkLidSpaceFlushTarget &target, SerialNum flushSerialNum)
+    : FlushTask(),
+      _target(target),
+      _flushSerialNum(flushSerialNum)
+{
+    _target._target->shrinkLidSpace();
+}
+
+void
+ShrinkLidSpaceFlushTarget::Flusher::run()
+{
+    _target._flushedSerialNum = _flushSerialNum;
+}
+
+search::SerialNum
+ShrinkLidSpaceFlushTarget::Flusher::getFlushSerial() const
+{
+    return _flushSerialNum;
+}
+
+ShrinkLidSpaceFlushTarget::ShrinkLidSpaceFlushTarget(const vespalib::string &name,
+                                                     Type type,
+                                                     Component component,
+                                                     SerialNum flushedSerialNum,
+                                                     std::shared_ptr<ICompactableLidSpace> target)
+    : IFlushTarget(name, type, component),
+
+      _target(std::move(target)),
+      _flushedSerialNum(flushedSerialNum),
+      _lastStats()
+{
+}
+
+IFlushTarget::MemoryGain
+ShrinkLidSpaceFlushTarget::getApproxMemoryGain() const
+{
+    int64_t canFree = _target->getEstimatedShrinkLidSpaceGain();
+    return MemoryGain(canFree, 0);
+}
+
+IFlushTarget::DiskGain
+ShrinkLidSpaceFlushTarget::getApproxDiskGain() const
+{
+    return DiskGain(0, 0);
+}
+
+IFlushTarget::SerialNum
+ShrinkLidSpaceFlushTarget::getFlushedSerialNum() const
+{
+    return _flushedSerialNum;
+}
+
+IFlushTarget::Time
+ShrinkLidSpaceFlushTarget::getLastFlushTime() const
+{
+    return fastos::ClockSystem::now();
+}
+
+bool
+ShrinkLidSpaceFlushTarget::needUrgentFlush() const
+{
+    return false;
+}
+
+IFlushTarget::Task::UP
+ShrinkLidSpaceFlushTarget::initFlush(SerialNum currentSerial)
+{
+    if (!_target->canShrinkLidSpace() && currentSerial <= _flushedSerialNum) {
+        return IFlushTarget::Task::UP();
+    } else {
+        return std::make_unique<Flusher>(*this, currentSerial);
+    }
+}
+
+FlushStats
+ShrinkLidSpaceFlushTarget::getLastFlushStats() const
+{
+    return _lastStats;
+}
+
+uint64_t
+ShrinkLidSpaceFlushTarget::getApproxBytesToWriteToDisk() const
+{
+    return 0;
+}
+
+} // namespace proton
