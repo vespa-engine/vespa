@@ -32,9 +32,10 @@ implements all of the basic methods you need to get started.
 To start a local zone, simply run:
 ```
     DockerImage vespaDockerBase = new DockerImage("docker-registry.ops.yahoo.com:4443/vespa/ci:6.53.134");
+    Path pathToVespaRoot = Paths.get("/home/valerijf/dev/vespa");
     Path pathToContainerStorage = Paths.get("/home/docker/container-storage");
-    
-    RunVespaLocal runVespaLocal = new RunVespaLocal();
+
+    RunVespaLocal runVespaLocal = new RunVespaLocal(pathToVespaRoot);
     runVespaLocal.buildVespaLocalImage(vespaDockerBase);
     runVespaLocal.startLocalZoneWithNodes(5);
     runVespaLocal.startNodeAdminAsContainer(pathToContainerStorage);

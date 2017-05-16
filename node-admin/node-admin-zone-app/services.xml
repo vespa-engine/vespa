@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<services version="1.0" application-type="hosted-infrastructure" xmlns:deploy="vespa" xmlns:preprocess="properties">
+
+    <jdisc id="node-admin" jetty="true" version="1.0">
+        <handler id="com.yahoo.vespa.hosted.node.admin.restapi.RestApiHandler" bundle="node-admin">
+            <binding>http://*/rest/*</binding>
+        </handler>
+        <component id="node-admin" class="com.yahoo.vespa.hosted.node.admin.provider.ComponentsProviderImpl" bundle="node-admin"/>
+        <component id="docker-api" class="com.yahoo.vespa.hosted.dockerapi.DockerImpl" bundle="docker-api"/>
+        <component id="metrics-wrapper" class="com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper" bundle="docker-api"/>
+
+        <config name='vespa.hosted.dockerapi.docker'>
+            <isRunningLocally>true</isRunningLocally>
+        </config>
+
+        <config name='vespa.hosted.node.admin.node-admin'>
+            <isRunningLocally>true</isRunningLocally>
+        </config>
+
+        <nodes jvmargs="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=localhost:5555 -Dvespa.freezedetector.disable=true" type="host"/>
+    </jdisc>
+
+</services>
