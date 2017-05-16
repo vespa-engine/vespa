@@ -28,6 +28,7 @@ class LegacyDocumentDBMetrics;
 class FeedHandler;
 class DocumentMetaStoreInitializerResult;
 class IDocumentSubDBOwner;
+class ShrinkLidSpaceFlushTarget;
 namespace initializer { class InitializerTask; }
 
 namespace bucketdb { class IBucketDBHandlerInitializer; }
@@ -166,6 +167,7 @@ private:
     const IGetSerialNum             &_getSerialNum;
     TlsSyncer                        _tlsSyncer;
     DocumentMetaStoreFlushTarget::SP _dmsFlushTarget;
+    std::shared_ptr<ShrinkLidSpaceFlushTarget> _dmsShrinkTarget;
 
     IFlushTargetList getFlushTargets() override;
 protected:

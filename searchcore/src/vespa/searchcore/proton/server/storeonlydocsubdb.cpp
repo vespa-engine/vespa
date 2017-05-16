@@ -14,6 +14,7 @@
 #include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoreinitializer.h>
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
+#include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/metrics/legacy_documentdb_metrics.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
@@ -128,6 +129,7 @@ StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config &cfg, const Context &ctx)
       _getSerialNum(ctx._getSerialNum),
       _tlsSyncer(ctx._writeService.master(), ctx._getSerialNum, ctx._tlSyncer),
       _dmsFlushTarget(),
+      _dmsShrinkTarget(),
       _subDbId(cfg._subDbId),
       _subDbType(cfg._subDbType),
       _fileHeaderContext(*this, ctx._fileHeaderContext, _docTypeName, _baseDir),
@@ -191,6 +193,7 @@ StoreOnlyDocSubDB::getOldestFlushedSerial()
 {
     SerialNum lowest(_iSummaryMgr->getBackingStore().lastSyncToken());
     lowest = std::min(lowest, _dmsFlushTarget->getFlushedSerialNum());
+    lowest = std::min(lowest, _dmsShrinkTarget->getFlushedSerialNum());
     return lowest;
 }
 
@@ -200,6 +203,7 @@ StoreOnlyDocSubDB::getNewestFlushedSerial()
 {
     SerialNum highest(_iSummaryMgr->getBackingStore().lastSyncToken());
     highest = std::max(highest, _dmsFlushTarget->getFlushedSerialNum());
+    highest = std::max(highest, _dmsShrinkTarget->getFlushedSerialNum());
     return highest;
 }
 
@@ -282,6 +286,13 @@ StoreOnlyDocSubDB::setupDocumentMetaStore(DocumentMetaStoreInitializerResult::SP
                                   baseDir,
                                   dmsResult->tuneFile(),
                                   _fileHeaderContext, _hwInfo));
+    using Type = IFlushTarget::Type;
+    using Component = IFlushTarget::Component;
+    _dmsShrinkTarget = std::make_shared<ShrinkLidSpaceFlushTarget>
+                       ("documentmetastore.shrink",
+                        Type::GC, Component::ATTRIBUTE,
+                        _flushedDocumentMetaStoreSerialNum,
+                        dms);
 }
 
 DocumentSubDbInitializer::UP
@@ -345,6 +356,7 @@ StoreOnlyDocSubDB::getFlushTargetsInternal()
 {
     IFlushTarget::List ret(_rSummaryMgr->getFlushTargets());
     ret.push_back(_dmsFlushTarget);
+    ret.push_back(_dmsShrinkTarget);
     return ret;
 }
 
