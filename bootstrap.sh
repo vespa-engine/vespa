@@ -80,7 +80,8 @@ case "$MODE" in
         mvn_install -rf config-lib -am "$@"
         ;;
     full)
-        mvn_install -am -pl filedistributionmanager,jrt,linguistics,messagebus -rf yolean
+        mvn_install -am -rf yolean -pl vespajlib
+        mvn_install -am -pl filedistributionmanager,jrt,linguistics,messagebus -rf config-lib
         ;;
     default)
         mvn_install -am -pl filedistributionmanager -rf yolean
