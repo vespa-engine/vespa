@@ -2,9 +2,6 @@
 package com.yahoo.config.provision;
 
 import com.yahoo.component.Version;
-import com.yahoo.component.Vtag;
-
-import java.util.Optional;
 
 /**
  * A node's membership in a cluster.
@@ -112,18 +109,6 @@ public class ClusterMembership {
 
     @Override
     public String toString() { return stringValue(); }
-
-    @Deprecated
-    // TODO: April 2017 - Remove this when no version older than 6.92 is in production
-    public static ClusterMembership from(String stringValue, Optional<String> dockerImage) {
-        return from(stringValue, dockerImage.map(DockerImage::new).map(DockerImage::tagAsVersion).orElse(Vtag.currentVersion));
-    }
-
-    @Deprecated
-    // TODO: April 2017 - Remove this when no version older than 6.97 is in production
-    public static ClusterMembership fromVersion(String stringValue, Optional<Version> vespaVersion) {
-        return new ClusterMembership(stringValue, vespaVersion.orElse(Vtag.currentVersion));
-    }
 
     public static ClusterMembership from(String stringValue, Version vespaVersion) {
         return new ClusterMembership(stringValue, vespaVersion);
