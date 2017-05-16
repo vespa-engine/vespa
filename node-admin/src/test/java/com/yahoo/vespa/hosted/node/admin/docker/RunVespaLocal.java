@@ -16,8 +16,9 @@ import com.yahoo.vespa.hosted.provision.Node;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.UnknownHostException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -45,11 +46,13 @@ public class RunVespaLocal {
             .parentHostHostname(HostName.getLocalhost())
             .inetAddressResolver(new InetAddressResolver());
 
-    private final Docker docker;
     private final Logger logger = Logger.getLogger("RunVespaLocal");
+    private final Docker docker;
+    private final Path pathToVespaRoot;
 
-    public RunVespaLocal() {
+    public RunVespaLocal(Path pathToVespaRoot) {
         this.docker = DockerTestUtils.getDocker();
+        this.pathToVespaRoot = pathToVespaRoot;
     }
 
     /**
@@ -107,11 +110,10 @@ public class RunVespaLocal {
 
     /**
      * Starts node-admin inside a container
-     * @param pathToNodeAdminApp Path to node-admin application.zip
      * @param pathToContainerStorage Path to where the container data will be stored, the path must exist and must
      *                               be writeable by user, normally /home/docker/container-storage
      */
-    public void startNodeAdminAsContainer(Path pathToNodeAdminApp, Path pathToContainerStorage) throws UnknownHostException {
+    public void startNodeAdminAsContainer(Path pathToContainerStorage) throws IOException {
         logger.info("Starting node-admin");
         String parentHostHostname = LocalZoneUtils.NODE_ADMIN_HOSTNAME;
         LocalZoneUtils.startNodeAdminIfNeeded(docker, environmentBuilder.build(), pathToContainerStorage);
@@ -120,11 +122,23 @@ public class RunVespaLocal {
         LocalZoneUtils.provisionHost(parentHostHostname);
         LocalZoneUtils.getContainerNodeSpec(parentHostHostname)
                 .ifPresent(nodeSpec -> {
-                    if (nodeSpec.nodeState == Node.State.provisioned) LocalZoneUtils.setState(Node.State.dirty, nodeSpec.hostname);
-                    if (nodeSpec.nodeState == Node.State.dirty) LocalZoneUtils.setState(Node.State.ready, nodeSpec.hostname);
+                    if (nodeSpec.nodeState == Node.State.provisioned) {
+                        LocalZoneUtils.setState(Node.State.dirty, nodeSpec.hostname);
+                        LocalZoneUtils.setState(Node.State.ready, nodeSpec.hostname);
+                    }
                 });
 
         logger.info("Deploying node-admin app");
+        Path pathToNodeAdminApp = pathToVespaRoot.resolve("node-admin/node-admin-zone-app");
+        Path pathToNodeAdminAppComponents = pathToNodeAdminApp.resolve("components");
+        Files.createDirectories(pathToNodeAdminAppComponents);
+        Path[] appComponents = {pathToVespaRoot.resolve("node-admin/target/node-admin-jar-with-dependencies.jar"),
+                pathToVespaRoot.resolve("docker-api/target/docker-api-jar-with-dependencies.jar")};
+
+        for (Path path : appComponents) {
+            Files.copy(path, pathToNodeAdminAppComponents.resolve(path.getFileName()), StandardCopyOption.REPLACE_EXISTING);
+        }
+
         LocalZoneUtils.deployApp(docker, pathToNodeAdminApp, "vespa", "node-admin");
 
         logger.info("Waiting for node-admin to serve");
@@ -149,7 +163,7 @@ public class RunVespaLocal {
         Set<String> containers = LocalZoneUtils.getContainersForApp();
         try {
             URL nodeUrl = new URL("http://" + containers.iterator().next() + ":" + System.getenv("VESPA_WEB_SERVICE_PORT") + "/");
-            assertTrue(LocalZoneUtils.isReachableURL(nodeUrl, Duration.ofSeconds(120)));
+            assertTrue(LocalZoneUtils.isReachableURL(nodeUrl, Duration.ofMinutes(3)));
             logger.info("Endpoint " + nodeUrl + " is now ready");
         } catch (MalformedURLException e) {
             e.printStackTrace();

@@ -94,7 +94,11 @@ public class LocalZoneUtils {
                 .withVolume(pathToContainerStorage.toString(), "/host" + pathToContainerStorage.toString())
                 .withEnvironment("ENVIRONMENT", environment.getEnvironment())
                 .withEnvironment("REGION", environment.getRegion())
-                .withEnvironment("CONFIG_SERVER_ADDRESS", CONFIG_SERVER_HOSTNAME);
+                .withEnvironment("CONFIG_SERVER_ADDRESS", CONFIG_SERVER_HOSTNAME)
+                .withEnvironment("ATHENS_DOMAIN", "fake.env")
+                .withUlimit("nofile", 262_144, 262_144)
+                .withUlimit("nproc", 32_768, 409_600)
+                .withUlimit("core", -1, -1);
 
         if (DockerTestUtils.getSystemOS() == DockerTestUtils.OS.Mac_OS_X) {
             createCmd.withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
@@ -134,6 +138,7 @@ public class LocalZoneUtils {
 
         createCmd.create();
         docker.startContainer(NODE_ADMIN_CONTAINER_NAME);
+        docker.executeInContainerAsRoot(NODE_ADMIN_CONTAINER_NAME, "chown", "yahoo", "/host/var/run/docker.sock");
     }
 
     public static void buildVespaLocalDockerImage(Docker docker, DockerImage vespaBaseImage) throws IOException {
@@ -216,9 +221,8 @@ public class LocalZoneUtils {
     }
 
     public static void deployApp(Docker docker, Path pathToApp, String tenantName, String applicationName) {
-        Path pathToAppOnConfigServer = Paths.get("/tmp");
-        docker.copyArchiveToContainer(pathToApp.toAbsolutePath().toString(),
-                CONFIG_SERVER_CONTAINER_NAME, pathToAppOnConfigServer.toString());
+        Path pathToAppOnConfigServer = Paths.get("/tmp").resolve(pathToApp.getFileName());
+        docker.copyArchiveToContainer(pathToApp.toString(), CONFIG_SERVER_CONTAINER_NAME, pathToAppOnConfigServer.getParent().toString() + "/");
 
         try { // Add tenant, ignore exception if tenant already exists
             requestExecutor.put("/application/v2/tenant/" + tenantName, CONFIG_SERVER_WEB_SERVICE_PORT, Optional.empty(), Map.class);
@@ -230,7 +234,7 @@ public class LocalZoneUtils {
         System.out.println("prepare " + applicationName);
         final String deployPath = Defaults.getDefaults().underVespaHome("bin/deploy");
         ProcessResult copyProcess = docker.executeInContainer(CONFIG_SERVER_CONTAINER_NAME, deployPath, "-e",
-                tenantName, "-a", applicationName, "prepare", pathToAppOnConfigServer.resolve(pathToApp.getFileName()).toString());
+                tenantName, "-a", applicationName, "prepare", pathToAppOnConfigServer.toString());
         if (! copyProcess.isSuccess()) {
             throw new RuntimeException("Could not prepare " + pathToApp + " on " + CONFIG_SERVER_CONTAINER_NAME.asString() +
                     "\n" + copyProcess.getOutput() + "\n" + copyProcess.getErrors());
