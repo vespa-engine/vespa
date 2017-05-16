@@ -33,8 +33,8 @@ import java.util.stream.Collectors;
  * @author mpolden
  */
 public class AclMaintainer implements Runnable {
-    private static final PrefixLogger log = PrefixLogger.getNodeAdminLogger(AclMaintainer.class);
 
+    private static final PrefixLogger log = PrefixLogger.getNodeAdminLogger(AclMaintainer.class);
     private static final String IPTABLES_COMMAND = "ip6tables";
 
     private final DockerOperations dockerOperations;
@@ -77,7 +77,7 @@ public class AclMaintainer implements Runnable {
         }
     }
 
-    private void configureAcls() {
+    private synchronized void configureAcls() {
         final Map<ContainerName, List<ContainerAclSpec>> aclSpecsGroupedByHostname = nodeRepository
                 .getContainerAclSpecs(nodeAdminHostname).stream()
                 .collect(Collectors.groupingBy(ContainerAclSpec::trustedBy));
