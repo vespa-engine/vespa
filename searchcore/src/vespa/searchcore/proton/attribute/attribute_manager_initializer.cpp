@@ -173,6 +173,10 @@ AttributeManagerInitializer::run()
 {
     std::promise<bool> promise;
     std::future<bool> future = promise.get_future();
+    /*
+     * Attribute manager and some its members (e.g. _attributeFieldWriter) assumes that work is performed
+     * by document db master thread and lacks locking to handle calls from multiple threads.
+     */
     _master.execute(std::make_unique<AttributeManagerInitializerTask>(std::move(promise),
                                                                       _configSerialNum,
                                                                       _documentMetaStore,
