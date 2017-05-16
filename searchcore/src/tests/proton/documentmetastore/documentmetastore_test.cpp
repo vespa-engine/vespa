@@ -1877,7 +1877,7 @@ TEST("requireThatShrinkViaFlushTargetWorks")
     using Type = IFlushTarget::Type;
     using Component = IFlushTarget::Component;
     IFlushTarget::SP ft(std::make_shared<ShrinkLidSpaceFlushTarget>
-                        ("documentmetastore.shrink", Type::GC, Component::ATTRIBUTE, 0, dms));
+                        ("documentmetastore.shrink", Type::GC, Component::ATTRIBUTE, 0, IFlushTarget::Time(), dms));
     populate(10, *dms);
 
     uint32_t shrinkTarget = 5;

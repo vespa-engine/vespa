@@ -34,6 +34,7 @@ void
 ShrinkLidSpaceFlushTarget::Flusher::run()
 {
     _target._flushedSerialNum = _flushSerialNum;
+    _target._lastFlushTime = fastos::ClockSystem::now();
 }
 
 search::SerialNum
@@ -46,11 +47,13 @@ ShrinkLidSpaceFlushTarget::ShrinkLidSpaceFlushTarget(const vespalib::string &nam
                                                      Type type,
                                                      Component component,
                                                      SerialNum flushedSerialNum,
+                                                     Time lastFlushTime,
                                                      std::shared_ptr<ICompactableLidSpace> target)
     : IFlushTarget(name, type, component),
 
       _target(std::move(target)),
       _flushedSerialNum(flushedSerialNum),
+      _lastFlushTime(lastFlushTime),
       _lastStats()
 {
 }
@@ -77,7 +80,7 @@ ShrinkLidSpaceFlushTarget::getFlushedSerialNum() const
 IFlushTarget::Time
 ShrinkLidSpaceFlushTarget::getLastFlushTime() const
 {
-    return fastos::ClockSystem::now();
+    return _lastFlushTime;
 }
 
 bool

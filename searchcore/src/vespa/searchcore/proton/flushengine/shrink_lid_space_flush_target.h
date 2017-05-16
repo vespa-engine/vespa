@@ -21,6 +21,7 @@ class ShrinkLidSpaceFlushTarget : public searchcorespi::IFlushTarget
     using FlushStats = searchcorespi::FlushStats;
     std::shared_ptr<ICompactableLidSpace> _target;
     SerialNum                             _flushedSerialNum;
+    Time                                  _lastFlushTime;
     FlushStats                            _lastStats;
 
 public:
@@ -37,6 +38,7 @@ public:
                               Type type,
                               Component component,
                               SerialNum flushedSerialNum,
+                              Time lastFlushTime,
                               std::shared_ptr<ICompactableLidSpace> target);
 
     // Implements IFlushTarget.
