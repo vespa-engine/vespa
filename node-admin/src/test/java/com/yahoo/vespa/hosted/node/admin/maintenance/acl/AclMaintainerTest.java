@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyVararg;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -26,6 +27,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class AclMaintainerTest {
+
     private static final String NODE_ADMIN_HOSTNAME = "node-admin.region-1.yahoo.com";
 
     private AclMaintainer aclMaintainer;
@@ -95,15 +97,16 @@ public class AclMaintainerTest {
         doThrow(new RuntimeException("iptables command failed"))
                 .doNothing()
                 .when(dockerOperations)
-                .executeCommandInNetworkNamespace(any(), any());
+                .executeCommandInNetworkNamespace(any(), anyVararg());
 
         aclMaintainer.run();
 
         verify(dockerOperations).executeCommandInNetworkNamespace(
                 eq(container.name),
                 eq("ip6tables"),
-                eq("-F"),
-                eq("INPUT")
+                eq("-P"),
+                eq("INPUT"),
+                eq("ACCEPT")
         );
     }
 
@@ -209,4 +212,5 @@ public class AclMaintainerTest {
                 .mapToObj(i -> new ContainerAclSpec("node-" + i, "::" + i, containerName))
                 .collect(Collectors.toList());
     }
+
 }
