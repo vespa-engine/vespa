@@ -12,7 +12,7 @@ elif [ "$1" = "full" ]; then
     # Build all java modules required by C++ testing
     MODE=full
 elif [ "$1" = "java" ]; then
-    # Build minmial set of java modules, then run mvn install with arguments $2,
+    # Build minimal set of java modules, then run mvn install with arguments $2,
     # $3, etc.
     MODE=java
 elif [ "$1" = "default" ]; then
@@ -53,7 +53,7 @@ $top/dist/getversion.pl -M $top > $top/dist/vtag.map
 mvn_install -N
 
 # and build plugins first:
-(cd maven-plugins && mvn_install)
+mvn_install -f maven-plugins
 
 # now everything else should just work with normal maven dependency resolution:
 
