@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
@@ -19,16 +18,13 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
 import javax.ws.rs.core.Response;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Retries request on config server a few times before giving up. Assumes that all requests should be sent with
@@ -59,8 +55,8 @@ public class ConfigServerHttpRequestExecutor {
         PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
         // Increase max total connections to 200, which should be enough
         cm.setMaxTotal(200);
-        return new ConfigServerHttpRequestExecutor(configServerHosts, HttpClientBuilder.create()
-                .setConnectionManager(cm).build());
+        return new ConfigServerHttpRequestExecutor(configServerHosts,
+                                                   HttpClientBuilder.create().disableAutomaticRetries().setConnectionManager(cm).build());
     }
 
     ConfigServerHttpRequestExecutor(Set<String> configServerHosts, CloseableHttpClient client) {
@@ -151,16 +147,6 @@ public class ConfigServerHttpRequestExecutor {
             post.setEntity(new StringEntity(mapper.writeValueAsString(bodyJsonPojo)));
             return post;
         }, wantedReturnType);
-    }
-
-    private  static String read(HttpEntity input)  {
-        try {
-            try (BufferedReader buffer = new BufferedReader(new InputStreamReader(input.getContent()))) {
-                return buffer.lines().collect(Collectors.joining("\n"));
-            }
-        } catch (IOException e) {
-            return "Failed reading stream: " + e.getMessage();
-        }
     }
 
     private void setContentTypeToApplicationJson(HttpRequestBase request) {
