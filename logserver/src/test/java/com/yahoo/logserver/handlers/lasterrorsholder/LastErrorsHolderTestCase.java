@@ -53,7 +53,8 @@ public class LastErrorsHolderTestCase {
         Instant start = Instant.now();
         while (Instant.now().isBefore(start.plus(Duration.ofMinutes(1)))) {
             try {
-                socket = SocketChannel.open(new InetSocketAddress(lastErrorsHolderPort));
+                InetSocketAddress address = new InetSocketAddress("localhost", lastErrorsHolderPort);
+                socket = SocketChannel.open(address);
                 break;
             } catch (Exception e) {
                 Thread.sleep(100);
