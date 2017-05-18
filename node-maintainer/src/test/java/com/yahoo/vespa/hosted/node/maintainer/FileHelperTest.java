@@ -192,14 +192,27 @@ public class FileHelperTest {
     @Test
     public void testDeleteDirectoriesBasedOnAge() throws IOException {
         initSubDirectories();
+        // Create folder3 which is older than maxAge, inside have a single directory, subSubFolder3, inside it which is
+        // also older than maxAge inside the sub directory, create some files which are newer than maxAge.
+        // deleteDirectories() should NOT delete folder3
+        File subFolder3 = folder.newFolder("test_folder3");
+        File subSubFolder3 = folder.newFolder("test_folder3/subSubFolder3");
+
+        for (int j=0; j<11; j++) {
+            File.createTempFile("test_", ".json", subSubFolder3);
+        }
+
+        subFolder3.setLastModified(System.currentTimeMillis() - Duration.ofHours(1).toMillis());
+        subSubFolder3.setLastModified(System.currentTimeMillis() - Duration.ofHours(3).toMillis());
 
         FileHelper.deleteDirectories(folder.getRoot().toPath(), Duration.ofSeconds(50), Optional.of(".*folder.*"));
 
         //23 files in root
         // + 13 in test_folder2
         // + 13 in subSubFolder2
-        // + test_folder2 + subSubFolder2 itself
-        assertEquals(51, getNumberOfFilesAndDirectoriesIn(folder.getRoot()));
+        // + 11 in subSubFolder3
+        // + test_folder2 + subSubFolder2 + folder3 + subSubFolder3 itself
+        assertEquals(64, getNumberOfFilesAndDirectoriesIn(folder.getRoot()));
     }
 
     @Test
