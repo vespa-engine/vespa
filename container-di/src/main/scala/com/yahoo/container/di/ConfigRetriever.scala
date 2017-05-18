@@ -77,7 +77,13 @@ final class ConfigRetriever(bootstrapKeys: Set[ConfigKeyT],
       componentSubscriber.close()
 
       componentSubscriberKeys = keys
-      componentSubscriber = subscribe(keys)
+      try {
+        componentSubscriber = subscribe(keys)
+      } catch {
+        case e: Throwable =>
+          log.warning(s"Could not set up subscriptions for component configs: ${e.getMessage} - Config keys: $keys")
+          throw e
+      }
     }
   }
 
