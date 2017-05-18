@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di
 
-import com.yahoo.container.di.ConfigRetriever.{ComponentsConfigs, BootstrapConfigs}
-import com.yahoo.container.di.componentgraph.core.{JerseyNode, ComponentGraph, ComponentNode}
+import com.yahoo.container.di.ConfigRetriever.{BootstrapConfigs, ComponentsConfigs}
+import com.yahoo.container.di.componentgraph.core.{ComponentGraph, ComponentNode, JerseyNode}
 import com.yahoo.container.di.config.{RestApiContext, SubscriberFactory}
 import Container._
 
@@ -11,10 +11,13 @@ import scala.math.max
 import com.yahoo.config._
 import com.yahoo.vespa.config.ConfigKey
 import java.util.IdentityHashMap
-import java.util.logging.Logger
+import java.util.logging.{Level, Logger}
+
 import com.yahoo.container.bundle.BundleInstantiationSpecification
-import com.google.inject.{Injector, Guice}
+import com.google.inject.{Guice, Injector}
+import com.yahoo.container.di.componentgraph.core.ComponentNode.ComponentConstructorException
 import com.yahoo.container.{BundlesConfig, ComponentsConfig}
+import com.yahoo.log.LogLevel
 
 
 /**
@@ -49,20 +52,23 @@ class Container(
     }
 
     try {
-      //TODO: wrap user exceptions.
       val newGraph = createNewGraph(oldGraph, fallbackInjector)
       newGraph.reuseNodes(oldGraph)
       constructComponents(newGraph)
       deconstructObsoleteComponents(oldGraph, newGraph)
       newGraph
     } catch {
-      case e : Throwable =>
-        invalidateGeneration()
-        throw e
+      case userException : ComponentConstructorException =>
+        invalidateGeneration("Failed to set up new component graph due to error when constructing one of the components.", userException)
+        throw userException
+      case t : Throwable =>
+        invalidateGeneration("Failed to set up new component graph.", t)
+        throw t
     }
   }
 
-  private def invalidateGeneration() {
+  private def invalidateGeneration(message: String, cause: Throwable) {
+    log.log(Level.WARNING, message, cause)
     leastGeneration = max(configurer.getComponentsGeneration, configurer.getBootstrapGeneration) + 1
   }
 
