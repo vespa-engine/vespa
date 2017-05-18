@@ -1,27 +1,25 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di
 
-import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.{SimpleComponent, SimpleComponent2}
-import com.yahoo.container.di.componentgraph.Provider
-import com.yahoo.container.di.componentgraph.core.{ComponentGraph, Node}
-import org.junit.{After, Before, Test}
-import org.junit.Assert._
-import org.hamcrest.CoreMatchers._
-import com.yahoo.config.test.TestConfig
 import com.yahoo.component.AbstractComponent
-import ContainerTest._
+import com.yahoo.config.di.IntConfig
+import com.yahoo.config.test.TestConfig
+import com.yahoo.container.bundle.MockBundle
+import com.yahoo.container.di.ContainerTest._
+import com.yahoo.container.di.componentgraph.Provider
+import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.{SimpleComponent, SimpleComponent2}
+import com.yahoo.container.di.componentgraph.core.{ComponentGraph, Node}
+import com.yahoo.container.di.config.RestApiContext
+import org.hamcrest.CoreMatchers._
+import org.junit.Assert._
+import org.junit.{After, Before, Test}
 
 import scala.collection.JavaConversions
-import com.yahoo.config.di.IntConfig
-
-import scala.concurrent.{Await, future}
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.Try
-import com.yahoo.container.di.config.RestApiContext
-import com.yahoo.container.bundle.MockBundle
-
+import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
+import scala.util.Try
 
 /**
  * @author tonytv
@@ -164,7 +162,7 @@ class ContainerTest {
       case e: Exception =>
     }
 
-    val newGraph = future {
+    val newGraph = Future {
       currentGraph = container.runOnce(currentGraph)
       currentGraph
     }
