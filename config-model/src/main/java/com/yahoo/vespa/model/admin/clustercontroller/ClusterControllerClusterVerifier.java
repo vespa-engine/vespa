@@ -14,7 +14,7 @@ import java.util.Set;
  * @author baldersheim
  * Verifies that all containers added are ClusterControllerContainers and that filters away Linguistics components.
  */
-public class VerifyClusterControllerCluster implements ContainerClusterVerifier {
+public class ClusterControllerClusterVerifier implements ContainerClusterVerifier {
     static final Set<ComponentSpecification> unwantedComponents = Collections.singleton(new SimpleComponent(ContainerCluster.SIMPLE_LINGUISTICS_PROVIDER).getClassId());
     @Override
     public boolean acceptComponent(Component component) {

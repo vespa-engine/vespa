@@ -17,7 +17,7 @@ import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
-import com.yahoo.vespa.model.admin.clustercontroller.VerifyClusterControllerCluster;
+import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerClusterVerifier;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
@@ -91,7 +91,7 @@ public class ContainerClusterTest {
     }
 
     private ContainerCluster createClusterControllerCluster() {
-        return createContainerCluster(false, false, new VerifyClusterControllerCluster());
+        return createContainerCluster(false, false, new ClusterControllerClusterVerifier());
     }
 
     private ContainerCluster createContainerCluster(boolean isHosted, boolean isCombinedCluster, ContainerClusterVerifier extraComponents) {

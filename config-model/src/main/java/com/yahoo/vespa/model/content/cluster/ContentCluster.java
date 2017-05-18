@@ -26,7 +26,7 @@ import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerCluster;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerComponent;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerConfigurer;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
-import com.yahoo.vespa.model.admin.clustercontroller.VerifyClusterControllerCluster;
+import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerClusterVerifier;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.NodesSpecification;
 import com.yahoo.vespa.model.container.Container;
@@ -416,7 +416,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
         }
 
         private ContainerCluster createClusterControllers(AbstractConfigProducer parent, Collection<HostResource> hosts, String name, boolean multitenant) {
-            ContainerCluster clusterControllers = new ContainerCluster(parent, name, name, new VerifyClusterControllerCluster());
+            ContainerCluster clusterControllers = new ContainerCluster(parent, name, name, new ClusterControllerClusterVerifier());
             List<Container> containers = new ArrayList<>();
             // Add a cluster controller on each config server (there is always at least one).
             if (clusterControllers.getContainers().isEmpty()) {
