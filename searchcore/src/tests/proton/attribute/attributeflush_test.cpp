@@ -530,7 +530,7 @@ Test::requireThatShrinkWorks()
     AttributeVector::SP av = f.addAttribute("a10");
     
     av->addDocs(1000 - av->getNumDocs());
-    av->commit(10, 10);
+    av->commit(50, 50);
     IFlushTarget::SP ft = am.getShrinker("a10");
     EXPECT_EQUAL(ft->getApproxMemoryGain().getBefore(),
                  ft->getApproxMemoryGain().getAfter());
@@ -544,21 +544,22 @@ Test::requireThatShrinkWorks()
     EXPECT_FALSE(av->canShrinkLidSpace());
     EXPECT_EQUAL(1000u, av->getNumDocs());
     EXPECT_EQUAL(100u, av->getCommittedDocIdLimit());
-    f._aw.heartBeat(11);
+    f._aw.heartBeat(51);
     EXPECT_TRUE(av->wantShrinkLidSpace());
     EXPECT_FALSE(av->canShrinkLidSpace());
     EXPECT_EQUAL(ft->getApproxMemoryGain().getBefore(),
                  ft->getApproxMemoryGain().getAfter());
     g.reset();
-    f._aw.heartBeat(11);
+    f._aw.heartBeat(52);
     EXPECT_TRUE(av->wantShrinkLidSpace());
     EXPECT_TRUE(av->canShrinkLidSpace());
     EXPECT_TRUE(ft->getApproxMemoryGain().getBefore() >
                 ft->getApproxMemoryGain().getAfter());
     EXPECT_EQUAL(1000u, av->getNumDocs());
     EXPECT_EQUAL(100u, av->getCommittedDocIdLimit());
+    EXPECT_EQUAL(createSerialNum - 1, ft->getFlushedSerialNum());
     vespalib::ThreadStackExecutor exec(1, 128 * 1024);
-    vespalib::Executor::Task::UP task = ft->initFlush(11);
+    vespalib::Executor::Task::UP task = ft->initFlush(53);
     exec.execute(std::move(task));
     exec.sync();
     exec.shutdown();

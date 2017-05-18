@@ -92,7 +92,12 @@ ShrinkLidSpaceFlushTarget::needUrgentFlush() const
 IFlushTarget::Task::UP
 ShrinkLidSpaceFlushTarget::initFlush(SerialNum currentSerial)
 {
-    if (!_target->canShrinkLidSpace() && currentSerial <= _flushedSerialNum) {
+    if (currentSerial < _flushedSerialNum) {
+        _lastFlushTime = fastos::ClockSystem::now();
+        return IFlushTarget::Task::UP();
+    } else if (!_target->canShrinkLidSpace()) {
+        _flushedSerialNum = currentSerial;
+        _lastFlushTime = fastos::ClockSystem::now();
         return IFlushTarget::Task::UP();
     } else {
         return std::make_unique<Flusher>(*this, currentSerial);
