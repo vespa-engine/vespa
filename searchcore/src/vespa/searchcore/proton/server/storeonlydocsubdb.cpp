@@ -176,7 +176,8 @@ StoreOnlyDocSubDB::hasDocument(const document::DocumentId &id)
 void
 StoreOnlyDocSubDB::onReplayDone()
 {
-    _metaStoreCtx->get().constructFreeList();
+    _dms->constructFreeList();
+    _dms->shrinkLidSpace();
 }
 
 

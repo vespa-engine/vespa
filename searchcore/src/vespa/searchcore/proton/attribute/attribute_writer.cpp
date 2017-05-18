@@ -119,6 +119,7 @@ applyReplayDone(uint32_t docIdLimit, AttributeVector &attr)
 {
     AttributeManager::padAttribute(attr, docIdLimit);
     attr.compactLidSpace(docIdLimit);
+    attr.shrinkLidSpace();
 }
 
 
