@@ -566,17 +566,43 @@ public class Execution extends com.yahoo.processing.execution.Execution {
     /** Calls fill on the next searcher in this chain. If there is no next, nothing is done. */
     public void fill(Result result, String summaryClass) {
         timer.sampleFill(nextIndex(), context.getDetailedDiagnostics());
-        Searcher next = (Searcher)next(); // TODO: Allow but skip processors which are not searchers
-        if (next == null) return;
+        Searcher current = (Searcher)next(); // TODO: Allow but skip processors which are not searchers
+        if (current == null) return;
 
         try {
             nextProcessor();
-            next.ensureFilled(result, summaryClass, this);
+            onInvokingFill(current, result, summaryClass);
+            current.ensureFilled(result, summaryClass, this);
         }
         finally {
             previousProcessor();
+            onReturningFill(current, result, summaryClass);
             timer.sampleFillReturn(nextIndex(), context.getDetailedDiagnostics(), result);
         }
+    }
+
+    private void onInvokingFill(Searcher searcher, Result result, String summaryClass) {
+        /* TODO
+        final int traceDependencies = 6;
+        Query query = (Query) request;
+        if (query.getTraceLevel() >= traceDependencies) {
+            query.trace(new StringBuilder().append(processor.getId())
+                                .append(" ").append(processor.getDependencies().toString())
+                                .toString(), traceDependencies);
+        }
+        */
+    }
+
+    private void onReturningFill(Searcher searcher, Result result, String summaryClass) {
+        /* TODO
+        final int traceDependencies = 6;
+        Query query = (Query) request;
+        if (query.getTraceLevel() >= traceDependencies) {
+            query.trace(new StringBuilder().append(processor.getId())
+                                .append(" ").append(processor.getDependencies().toString())
+                                .toString(), traceDependencies);
+        }
+        */
     }
 
     /** Calls ping on the next search in this chain. If there is no next, a Pong is created and returned. */
