@@ -45,10 +45,10 @@ $top/dist/getversion.pl -M $top > $top/dist/vtag.map
 # The 'full' mode also builds modules needed by C++ tests.
 
 # must install parent pom first:
-mvn_install -N || exit 1
+mvn_install -N
 
 # and build plugins first:
-mvn_install -f maven-plugins || exit 1
+mvn_install -f maven-plugins
 
 # now everything else should just work with normal maven dependency resolution:
 
