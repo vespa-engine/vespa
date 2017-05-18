@@ -4,7 +4,7 @@ package com.yahoo.container.di
 import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.{SimpleComponent, SimpleComponent2}
 import com.yahoo.container.di.componentgraph.Provider
 import com.yahoo.container.di.componentgraph.core.{ComponentGraph, Node}
-import org.junit.{After, Before, Test}
+import org.junit.{After, Before, Ignore, Test}
 import org.junit.Assert._
 import org.hamcrest.CoreMatchers._
 import com.yahoo.config.test.TestConfig
@@ -116,6 +116,20 @@ class ContainerTest {
     container.reloadConfig(2)
     container.runOnce(oldGraph)
     assertTrue(componentToDestruct.deconstructed)
+  }
+
+  @Ignore
+  @Test
+  def manually_verify_what_happens_when_first_graph_contains_component_that_throws_exception_in_ctor() {
+    writeBootstrapConfigs("thrower", classOf[ComponentThrowingExceptionInConstructor])
+    val container = newContainer(dirConfigSource)
+    var currentGraph: ComponentGraph = null
+    try {
+      currentGraph = container.runOnce()
+      fail("Expected to log and die.")
+    } catch {
+      case _: Throwable => fail("Expected to log and die")
+    }
   }
 
   @Test
