@@ -13,6 +13,11 @@ import com.yahoo.container.di.componentgraph.core.Node.equalEdges
 import com.yahoo.container.di.{ConfigKeyT, JavaAnnotation, createKey, makeClassCovariant, preserveStackTrace, removeStackTrace}
 import com.yahoo.vespa.config.ConfigKey
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
+import scala.concurrent.{Await, Future, TimeoutException}
+import scala.language.postfixOps
+
 /**
  * @author tonytv
  * @author gjoranv
@@ -90,17 +95,29 @@ class ComponentNode(componentId: ComponentId,
       case other => other
     }
 
-    val instance =
-    try {
-      constructor.newInstance(actualArguments: _*)
-    } catch {
-      case e: InvocationTargetException =>
-        throw removeStackTrace(ErrorOrComponentConstructorException(cutStackTraceAtConstructor(e.getCause), s"Error constructing $idAndType"))
+    val instanceFuture = Future {
+        try {
+          constructor.newInstance(actualArguments: _*)
+        } catch {
+          case e: InvocationTargetException =>
+            throw removeStackTrace(ErrorOrComponentConstructorException(cutStackTraceAtConstructor(e.getCause), s"Error constructing $idAndType"))
+        }
     }
 
-    initId(instance)
+    try {
+      val instance = Await.result(instanceFuture, ComponentConstructTimeout)
+      initId(instance)
+    } catch {
+      case constructorException: ComponentConstructorException =>
+        throw constructorException
+      case _:TimeoutException =>
+        throw new ComponentConstructorException(s"Timed out after $ComponentConstructTimeout while constructing component $idAndType.")
+      case _: InterruptedException =>
+        Thread.currentThread().interrupt()
+        throw new RuntimeException(s"Interrupted while constructing component $idAndType")
+    }
   }
-  
+
   private def ErrorOrComponentConstructorException(cause: Throwable, message: String) : Throwable = {
     if (cause != null && cause.isInstanceOf[Error]) // don't convert Errors to RuntimeExceptions
       new Error(message, cause)
@@ -168,6 +185,9 @@ class ComponentNode(componentId: ComponentId,
 
 object ComponentNode {
   val log = Logger.getLogger(classOf[ComponentNode].getName)
+
+  // XXX: var for testing only. Do not reset in production code!
+  var ComponentConstructTimeout: FiniteDuration = 60 seconds
 
   private def bestConstructor(clazz: Class[AnyRef]) = {
     val publicConstructors = clazz.getConstructors.asInstanceOf[Array[Constructor[AnyRef]]]
