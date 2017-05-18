@@ -1138,6 +1138,13 @@ LogDataStore::compactLidSpace(uint32_t wantedDocLidLimit)
 bool
 LogDataStore::canShrinkLidSpace() const
 {
+    LockGuard guard(_updateLock);
+    return canShrinkLidSpace(guard);
+}
+
+bool
+LogDataStore::canShrinkLidSpace(const vespalib::LockGuard &) const
+{
     return getDocIdLimit() < _lidInfo.size() &&
            _compactLidSpaceGeneration < _genHandler.getFirstUsedGeneration();
 }
@@ -1145,16 +1152,20 @@ LogDataStore::canShrinkLidSpace() const
 size_t
 LogDataStore::getEstimatedShrinkLidSpaceGain() const
 {
+    LockGuard guard(_updateLock);
+    if (!canShrinkLidSpace(guard)) {
+        return 0;
+    }
     return (_lidInfo.size() - getDocIdLimit()) * sizeof(uint64_t);
 }
 
 void
 LogDataStore::shrinkLidSpace()
 {
-    if (!canShrinkLidSpace()) {
+    LockGuard guard(_updateLock);
+    if (!canShrinkLidSpace(guard)) {
         return;
     }
-    LockGuard guard(_updateLock);
     _lidInfo.shrink(getDocIdLimit());
     incGeneration();
 }

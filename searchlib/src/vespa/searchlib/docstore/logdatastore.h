@@ -306,6 +306,7 @@ private:
     bool shouldCompactToActiveFile(size_t compactedSize) const;
     std::pair<bool, FileId> findNextToCompact();
     void incGeneration();
+    bool canShrinkLidSpace(const vespalib::LockGuard &guard) const;
 
     typedef std::vector<FileId> FileIdxVector;
     Config                                   _config;
