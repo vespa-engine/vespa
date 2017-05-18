@@ -103,6 +103,7 @@ vespa_define_module(
     src/tests/proton/feedtoken
     src/tests/proton/flushengine
     src/tests/proton/flushengine/prepare_restart_flush_strategy
+    src/tests/proton/flushengine/shrink_lid_space_flush_target
     src/tests/proton/index
     src/tests/proton/index/index_writer
     src/tests/proton/initializer
