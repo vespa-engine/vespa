@@ -135,11 +135,12 @@ public class NodeAdminStateUpdater extends AbstractComponent {
      * This method attempts to converge node-admin towards one of the {@link State}
      */
     private void convergeState(State wantedState) {
-        if (wantedState == RESUMED) {
-            if (!nodeAdmin.setFrozen(false)) {
-                throw new RuntimeException("NodeAdmin has not yet converged to unfrozen");
-            }
+        boolean wantFrozen = wantedState != RESUMED;
+        if (!nodeAdmin.setFrozen(wantFrozen)) {
+            throw new RuntimeException("NodeAdmin has not yet converged to " + (wantFrozen ? "frozen" : "unfrozen"));
+        }
 
+        if (wantedState == RESUMED) {
             orchestrator.resume(dockerHostHostName);
             if (wantedState == updateAndGetCurrentState(RESUMED)) return;
         }
@@ -160,10 +161,14 @@ public class NodeAdminStateUpdater extends AbstractComponent {
         if (currentState == RESUMED) {
             List<String> nodesToSuspend = new ArrayList<>(nodesInActiveState);
             nodesToSuspend.add(dockerHostHostName);
-            orchestrator.suspend(dockerHostHostName, nodesToSuspend);
 
-            if (!nodeAdmin.setFrozen(true)) {
-                throw new RuntimeException("NodeAdmin has not yet converged to frozen");
+            try {
+                orchestrator.suspend(dockerHostHostName, nodesToSuspend);
+            } catch (RuntimeException e) {
+                // Because upgrades may take a while, we should unfreeze everything in the mean time
+                // and try again next tick, since wantedState is still to suspend
+                nodeAdmin.setFrozen(false);
+                throw e;
             }
 
             if (wantedState == updateAndGetCurrentState(SUSPENDED_NODE_ADMIN)) return;
@@ -182,6 +187,8 @@ public class NodeAdminStateUpdater extends AbstractComponent {
 
     private void fetchContainersToRunFromNodeRepository() {
         synchronized (monitor) {
+            // Refresh containers to run even if we would like to suspend but have failed to do so yet,
+            // because it may take a long time to get permission to suspend.
             if (currentState != RESUMED) {
                 logger.info("Frozen, skipping fetching info from node repository");
                 return;
