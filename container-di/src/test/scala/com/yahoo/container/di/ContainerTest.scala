@@ -1,25 +1,27 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di
 
-import com.yahoo.component.AbstractComponent
-import com.yahoo.config.di.IntConfig
-import com.yahoo.config.test.TestConfig
-import com.yahoo.container.bundle.MockBundle
-import com.yahoo.container.di.ContainerTest._
-import com.yahoo.container.di.componentgraph.Provider
 import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.{SimpleComponent, SimpleComponent2}
+import com.yahoo.container.di.componentgraph.Provider
 import com.yahoo.container.di.componentgraph.core.{ComponentGraph, Node}
-import com.yahoo.container.di.config.RestApiContext
-import org.hamcrest.CoreMatchers._
-import org.junit.Assert._
 import org.junit.{After, Before, Test}
+import org.junit.Assert._
+import org.hamcrest.CoreMatchers._
+import com.yahoo.config.test.TestConfig
+import com.yahoo.component.AbstractComponent
+import ContainerTest._
 
 import scala.collection.JavaConversions
-import scala.concurrent.ExecutionContext.Implicits.global
+import com.yahoo.config.di.IntConfig
+
+import scala.concurrent.{Await, Future, future}
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
-import scala.language.postfixOps
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Try
+import com.yahoo.container.di.config.RestApiContext
+import com.yahoo.container.bundle.MockBundle
+
+import scala.language.postfixOps
 
 /**
  * @author tonytv
@@ -116,7 +118,7 @@ class ContainerTest {
   }
 
   @Test
-  def previous_graph_is_retained_when_new_graph_throws_exception() {
+  def previous_graph_is_retained_when_new_graph_throws_exception_for_missing_config() {
     val simpleComponentEntry = ComponentEntry("simpleComponent", classOf[SimpleComponent])
 
     writeBootstrapConfigs(Array(simpleComponentEntry))
@@ -125,7 +127,7 @@ class ContainerTest {
 
     val simpleComponent = currentGraph.getInstance(classOf[SimpleComponent])
 
-    writeBootstrapConfigs("thrower", classOf[ComponentThrowingException])
+    writeBootstrapConfigs("thrower", classOf[ComponentThrowingExceptionForMissingConfig])
     dirConfigSource.writeConfig("test", """stringVal "myString" """)
     container.reloadConfig(2)
     try {
@@ -134,12 +136,14 @@ class ContainerTest {
     } catch {
       case e: Exception => e.printStackTrace()
     }
+    assertEquals(1, currentGraph.generation)
 
     val componentTakingConfigEntry = ComponentEntry("componentTakingConfig", classOf[ComponentTakingConfig])
     writeBootstrapConfigs(Array(simpleComponentEntry, componentTakingConfigEntry))
     container.reloadConfig(3)
     currentGraph = container.runOnce(currentGraph)
 
+    assertEquals(3, currentGraph.generation)
     assertSame(simpleComponent, currentGraph.getInstance(classOf[SimpleComponent]))
     assertNotNull(currentGraph.getInstance(classOf[ComponentTakingConfig]))
   }
@@ -152,7 +156,7 @@ class ContainerTest {
     val container = newContainer(dirConfigSource)
     var currentGraph = container.runOnce()
 
-    writeBootstrapConfigs("thrower", classOf[ComponentThrowingException])
+    writeBootstrapConfigs("thrower", classOf[ComponentThrowingExceptionForMissingConfig])
     container.reloadConfig(2)
 
     try {
@@ -318,8 +322,8 @@ object ContainerTest {
     require(config != null)
   }
 
-  class ComponentThrowingException(config:IntConfig) extends AbstractComponent {
-    throw new RuntimeException("This component can never be created")
+  class ComponentThrowingExceptionForMissingConfig(intConfig: IntConfig) extends AbstractComponent {
+    fail("This component should never be created. Only used for tests where 'int' config is missing.")
   }
 
   class DestructableComponent extends AbstractComponent {
