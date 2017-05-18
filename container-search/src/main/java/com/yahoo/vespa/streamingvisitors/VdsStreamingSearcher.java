@@ -39,7 +39,7 @@ import com.yahoo.vdslib.SearchResult;
  * visitors in storage and collecting and merging the results.
  *
  * @author  baldersheim
- * @author  <a href="mailto:ulf@yahoo-inc.com">Ulf Carlin</a>
+ * @author  Ulf Carlin
  */
 @SuppressWarnings("deprecation")
 public class VdsStreamingSearcher extends VespaBackEndSearcher {

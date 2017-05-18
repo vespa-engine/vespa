@@ -117,6 +117,16 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         setVisitorParameters(searchCluster, route);
     }
 
+    private static int inferSessionTraceLevel(final Query query) {
+        int implicitLevel = 0;
+        if (log.isLoggable(LogLevel.SPAM)) {
+            implicitLevel = 9;
+        } else if (log.isLoggable(LogLevel.DEBUG)) {
+            implicitLevel = 7;
+        }
+        return Math.max(query.getTraceLevel(), implicitLevel);
+    }
+
     private void setVisitorParameters(String searchCluster, Route route) {
         if (query.properties().getString(streamingUserid) != null) {
             params.setDocumentSelection("id.user==" + query.properties().getString(streamingUserid));
@@ -154,7 +164,8 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
 
         params.setMaxPending(Integer.MAX_VALUE);
         params.setMaxBucketsPerVisitor(Integer.MAX_VALUE);
-        params.setTraceLevel(query.getTraceLevel());
+        params.setTraceLevel(inferSessionTraceLevel(query));
+
 
         String ordering = query.properties().getString(streamingOrdering);
         if (ordering != null) {
@@ -300,6 +311,9 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         }
 
         query.trace(session.getTrace().toString(), false, 9);
+        if (log.isLoggable(LogLevel.DEBUG)) {
+            log.log(LogLevel.DEBUG, session.getTrace().toString());
+        }
 
         if (params.getControlHandler().getResult().code == VisitorControlHandler.CompletionCode.SUCCESS) {
             if (log.isLoggable(LogLevel.DEBUG)) {
