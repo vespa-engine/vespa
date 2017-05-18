@@ -1,6 +1,7 @@
 package com.yahoo.vespa.model.admin.clustercontroller;
 
 import com.yahoo.component.ComponentSpecification;
+import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerClusterVerifier;
@@ -24,5 +25,10 @@ public class ClusterControllerClusterVerifier implements ContainerClusterVerifie
     @Override
     public boolean acceptContainer(Container container) {
         return container instanceof ClusterControllerContainer;
+    }
+
+    @Override
+    public void getConfig(ThreadpoolConfig.Builder builder) {
+        builder.maxthreads(10);
     }
 }

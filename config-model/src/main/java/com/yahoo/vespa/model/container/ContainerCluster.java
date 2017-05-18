@@ -24,6 +24,7 @@ import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
 import com.yahoo.container.handler.ThreadPoolProvider;
+import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
@@ -133,7 +134,9 @@ public final class ContainerCluster
         ClusterInfoConfig.Producer,
         ServletPathsConfig.Producer,
         RoutingProviderConfig.Producer,
-        ConfigserverConfig.Producer {
+        ConfigserverConfig.Producer,
+        ThreadpoolConfig.Producer
+{
 
     /**
      * URI prefix used for internal, usually programmatic, APIs. URIs using this
@@ -190,6 +193,11 @@ public final class ContainerCluster
 
         @Override
         public boolean acceptContainer(Container container) { return true; }
+
+        @Override
+        public void getConfig(ThreadpoolConfig.Builder builder) {
+
+        }
     }
 
     public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name) {
@@ -571,7 +579,12 @@ public final class ContainerCluster
         allJersey1Handlers().forEach(handler ->
                         builder.handlers.putAll(DiscBindingsConfigGenerator.generate(handler))
         );
-     }
+    }
+
+    @Override
+    public void getConfig(ThreadpoolConfig.Builder builder) {
+        clusterVerifier.getConfig(builder);
+    }
 
     private Stream<JerseyHandler> allJersey1Handlers() {
         return restApiGroup.getComponents().stream().flatMap(streamOf(RestApi::getJersey1Handler));

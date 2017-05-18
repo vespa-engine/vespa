@@ -1,5 +1,6 @@
 package com.yahoo.vespa.model.container;
 
+import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.vespa.model.container.component.Component;
 
 /**
@@ -24,4 +25,9 @@ public interface ContainerClusterVerifier {
      * @return true if you accept it
      */
     boolean acceptContainer(Container container);
+
+    /**
+     * Produce threadpool config
+     */
+    void getConfig(ThreadpoolConfig.Builder builder);
 }
