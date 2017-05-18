@@ -39,3 +39,4 @@ Testing
 *_test_app
 /hadoop/dependency-reduced-pom.xml
 /vespa-hadoop/dependency-reduced-pom.xml
+.preprocessed/

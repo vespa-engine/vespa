@@ -1,18 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.logserver.handlers.replicator;
 
-import static org.junit.Assert.*;
-
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import com.yahoo.io.Listener;
 import com.yahoo.log.InvalidLogFormatException;
 import com.yahoo.log.LogLevel;
@@ -21,6 +9,18 @@ import com.yahoo.logserver.Server;
 import com.yahoo.logserver.filter.LogFilter;
 import com.yahoo.logserver.filter.LogFilterManager;
 import com.yahoo.logserver.formatter.LogFormatterManager;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class ReplicatorTestCase {
     Server server;
@@ -40,7 +40,7 @@ public class ReplicatorTestCase {
         long timeout = 60000;
         while (System.currentTimeMillis() < (start + timeout)) {
             try {
-                socket = SocketChannel.open(new InetSocketAddress(18321));
+                socket = SocketChannel.open(new InetSocketAddress("localhost", 18321));
                 break;
             } catch (Exception e) {
                 Thread.sleep(100);
@@ -122,7 +122,7 @@ public class ReplicatorTestCase {
         assertTrue(conn.isLoggable(LogMessage.
                 parseNativeFormat("1343996283.239582\texample.yahoo.com\t27301/7637\tconfig-sentinel\trunserver\terror\tbar")));
         assertEquals(conn.description(), "No filter defined");
-        assertEquals(conn.getRemoteHost(), "0.0.0.0");
+        assertEquals(conn.getRemoteHost(), "localhost");
         conn.onFormatter("nonexistant");
         assertEquals(conn.formatter, LogFormatterManager.getLogFormatter("system.nullformatter")); // unchanged
         conn.onUse("nonexistant");
