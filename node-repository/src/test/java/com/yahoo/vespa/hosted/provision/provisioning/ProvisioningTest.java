@@ -692,8 +692,9 @@ public class ProvisioningTest {
     }
 
     private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size, int content1Size, String flavor, ProvisioningTester tester) {
-        prepare(application, container0Size, container1Size, content0Size, content1Size, flavor, Version.fromString("6.42"), tester);
+        return prepare(application, container0Size, container1Size, content0Size, content1Size, flavor, Version.fromString("6.42"), tester);
     }
+
     private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size, int content1Size, String flavor, Version wantedVersion, ProvisioningTester tester) {
         // "deploy prepare" with a two container clusters and a storage cluster having of two groups
         ClusterSpec containerCluster0 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container0"), wantedVersion);
