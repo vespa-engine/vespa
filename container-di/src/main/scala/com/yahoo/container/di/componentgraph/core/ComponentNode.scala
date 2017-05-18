@@ -1,21 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di.componentgraph.core
 
-import java.lang.reflect.{Modifier, ParameterizedType, Constructor, Type, InvocationTargetException}
+import java.lang.reflect.{Constructor, InvocationTargetException, Modifier, ParameterizedType, Type}
 import java.util.logging.Logger
+
 import com.google.inject.Inject
-
+import com.yahoo.component.{AbstractComponent, ComponentId}
 import com.yahoo.config.ConfigInstance
-import com.yahoo.vespa.config.ConfigKey
-import com.yahoo.component.{ComponentId, AbstractComponent}
-import com.yahoo.container.di.{ConfigKeyT, JavaAnnotation, createKey, makeClassCovariant, removeStackTrace, preserveStackTrace}
 import com.yahoo.container.di.componentgraph.Provider
-
-import Node.equalEdges
-import ComponentNode._
-import java.lang.IllegalStateException
-import scala.Some
-import scala.Array
+import com.yahoo.container.di.componentgraph.core.ComponentNode._
+import com.yahoo.container.di.componentgraph.core.Node.equalEdges
+import com.yahoo.container.di.{ConfigKeyT, JavaAnnotation, createKey, makeClassCovariant, preserveStackTrace, removeStackTrace}
+import com.yahoo.vespa.config.ConfigKey
 
 /**
  * @author tonytv
