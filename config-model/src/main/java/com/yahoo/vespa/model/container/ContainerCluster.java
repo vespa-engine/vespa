@@ -147,6 +147,7 @@ public final class ContainerCluster
     public static final String BINDINGS_OVERVIEW_HANDLER_CLASS = BindingsOverviewHandler.class.getName();
     public static final String STATE_HANDLER_CLASS = "com.yahoo.container.jdisc.state.StateHandler";
     public static final String STATISTICS_HANDLER_CLASS = "com.yahoo.container.config.StatisticsRequestHandler";
+    public static final String SIMPLE_LINGUISTICS_PROVIDER = "com.yahoo.language.provider.SimpleLinguisticsProvider";
 
     public static final String ROOT_HANDLER_BINDING = "*://*/";
 
@@ -170,6 +171,7 @@ public final class ContainerCluster
     protected final ComponentGroup<Component<?, ?>> componentGroup;
     private final ConfigProducerGroup<RestApi> restApiGroup;
     private final ConfigProducerGroup<Servlet> servletGroup;
+    private final ContainerClusterVerifier clusterVerifier;
 
     private Map<String, String> concreteDocumentTypes = new LinkedHashMap<>();
     private MetricDefaultsConfig.Factory.Enum defaultMetricConsumerFactory;
@@ -182,8 +184,21 @@ public final class ContainerCluster
     private Optional<String> hostClusterId = Optional.empty();
     private Optional<Integer> memoryPercentage = Optional.empty();
 
+    private static class AcceptAll implements ContainerClusterVerifier {
+        @Override
+        public boolean acceptComponent(Component component) { return true; }
+
+        @Override
+        public boolean acceptContainer(Container container) { return true; }
+    }
+
     public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name) {
+        this(parent, subId, name, new AcceptAll());
+    }
+
+    public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, ContainerClusterVerifier verifier) {
         super(parent, subId);
+        this.clusterVerifier = verifier;
         this.name = name;
         this.zone = getRoot() != null ? getRoot().getDeployState().zone() : Zone.defaultZone();
         componentGroup = new ComponentGroup<>(this, "component");
@@ -195,7 +210,7 @@ public final class ContainerCluster
         // TODO better modelling
         addSimpleComponent(ThreadPoolProvider.class);
         addSimpleComponent("com.yahoo.jdisc.http.filter.SecurityFilterInvoker");
-        addSimpleComponent("com.yahoo.language.provider.SimpleLinguisticsProvider");
+        addSimpleComponent(SIMPLE_LINGUISTICS_PROVIDER);
         addSimpleComponent("com.yahoo.container.jdisc.SslKeyStoreFactoryProvider");
         addSimpleComponent("com.yahoo.container.jdisc.SecretStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.CertificateStoreProvider");
@@ -280,7 +295,9 @@ public final class ContainerCluster
     }
 
     public final void addComponent(Component<?, ?> component) {
-        componentGroup.addComponent(component);
+        if (clusterVerifier.acceptComponent(component)) {
+            componentGroup.addComponent(component);
+        }
     }
 
     public final void addComponents(Collection<Component<?, ?>> components) {
@@ -354,16 +371,22 @@ public final class ContainerCluster
         return Collections.unmodifiableList(containers);
     }
 
-    public void addContainers(Collection<Container> containers) {
-        int index = this.containers.size();
-        for (Container container : containers) {
-            container.setClusterName(name);
-            container.setProp("clustername", name)
-                     .setProp("index", index++);
-            setRotations(container, getRotations(), getGlobalServiceId(), name);
-            container.setProp("activeRotation", Boolean.toString(getActiveRotation()));
+    public void addContainer(Container container) {
+        if ( ! clusterVerifier.acceptContainer(container)) {
+            throw new IllegalArgumentException("Cluster " + name + " does not accept container " + container);
         }
-        this.containers.addAll(containers);
+        container.setClusterName(name);
+        container.setProp("clustername", name)
+                .setProp("index", this.containers.size());
+        setRotations(container, getRotations(), getGlobalServiceId(), name);
+        container.setProp("activeRotation", Boolean.toString(getActiveRotation()));
+        containers.add(container);
+    }
+
+    public void addContainers(Collection<Container> containers) {
+        for (Container container : containers) {
+            addContainer(container);
+        }
     }
 
     private Optional<String> getGlobalServiceId() {
@@ -412,10 +435,6 @@ public final class ContainerCluster
                 container.setProp("rotations", rotations.stream().map(Rotation::getId).collect(Collectors.joining(",")));
             }
         }
-    }
-
-    public void addContainer(Container container) {
-        addContainers(Collections.singletonList(container));
     }
 
     public void setProcessingChains(ProcessingChains processingChains, String... serverBindings) {

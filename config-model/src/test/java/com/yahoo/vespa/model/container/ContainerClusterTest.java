@@ -17,16 +17,21 @@ import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
+import com.yahoo.vespa.model.admin.clustercontroller.VerifyClusterControllerCluster;
+import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import org.junit.Test;
 
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
@@ -38,14 +43,14 @@ public class ContainerClusterTest {
         ContainerCluster cluster = newContainerCluster();
         cluster.setDefaultMetricConsumerFactory(MetricDefaultsConfig.Factory.Enum.YAMAS_SCOREBOARD);
         assertEquals(MetricDefaultsConfig.Factory.Enum.YAMAS_SCOREBOARD,
-                     getMetricDefaultsConfig(cluster).factory());
+                getMetricDefaultsConfig(cluster).factory());
     }
 
     @Test
     public void requireThatDefaultMetricConsumerFactoryMatchesConfigDefault() {
         ContainerCluster cluster = newContainerCluster();
         assertEquals(new MetricDefaultsConfig(new MetricDefaultsConfig.Builder()).factory(),
-                     getMetricDefaultsConfig(cluster).factory());
+                getMetricDefaultsConfig(cluster).factory());
     }
 
     @Test
@@ -71,7 +76,7 @@ public class ContainerClusterTest {
     @Test
     public void requreThatWeCanGetTheZoneConfig() {
         DeployState state = new DeployState.Builder().properties(new DeployProperties.Builder().hostedVespa(true).build())
-                                                     .zone(new Zone(SystemName.cd, Environment.test, RegionName.from("some-region"))).build();
+                .zone(new Zone(SystemName.cd, Environment.test, RegionName.from("some-region"))).build();
         MockRoot root = new MockRoot("foo", state);
         ContainerCluster cluster = new ContainerCluster(root, "container0", "container1");
         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
@@ -83,13 +88,29 @@ public class ContainerClusterTest {
     }
 
     private ContainerCluster createContainerCluster(boolean isHosted, boolean isCombinedCluster) {
-        return createContainerCluster(isHosted, isCombinedCluster, Optional.empty());
+        return createContainerCluster(isHosted, isCombinedCluster, Optional.empty(), Optional.empty());
+    }
+
+    private ContainerCluster createClusterControllerCluster() {
+        return createContainerCluster(false, false, new VerifyClusterControllerCluster());
+    }
+
+    private ContainerCluster createContainerCluster(boolean isHosted, boolean isCombinedCluster, ContainerClusterVerifier extraComponents) {
+        return createContainerCluster(isHosted, isCombinedCluster, Optional.empty(), Optional.of(extraComponents));
+    }
+
+    private ContainerCluster createContainerCluster(boolean isHosted, boolean isCombinedCluster,
+                                                    Optional<Integer> memoryPercentage) {
+        return createContainerCluster(isHosted, isCombinedCluster, memoryPercentage, Optional.empty());
     }
     private ContainerCluster createContainerCluster(boolean isHosted, boolean isCombinedCluster, 
-                                                    Optional<Integer> memoryPercentage) {
+                                                    Optional<Integer> memoryPercentage, Optional<ContainerClusterVerifier> extraComponents) {
         DeployState state = new DeployState.Builder().properties(new DeployProperties.Builder().hostedVespa(isHosted).build()).build();
         MockRoot root = new MockRoot("foo", state);
-        ContainerCluster cluster = new ContainerCluster(root, "container0", "container1");
+
+        ContainerCluster cluster = extraComponents.isPresent()
+                ? new ContainerCluster(root, "container0", "container1", extraComponents.get())
+                : new ContainerCluster(root, "container0", "container1");
         if (isCombinedCluster)
             cluster.setHostClusterId("test-content-cluster");
         cluster.setMemoryPercentage(memoryPercentage);
@@ -152,8 +173,7 @@ public class ContainerClusterTest {
 
     @Test
     public void testClusterControllerResourceUsage() {
-        boolean isHosted = false;
-        ContainerCluster cluster = createContainerCluster(isHosted, false);
+        ContainerCluster cluster = createClusterControllerCluster();
         addClusterController(cluster, "host-c1");
         assertEquals(1, cluster.getContainers().size());
         ClusterControllerContainer container = (ClusterControllerContainer) cluster.getContainers().get(0);
@@ -166,6 +186,40 @@ public class ContainerClusterTest {
         container.getConfig(tpBuilder);
         ThreadpoolConfig threadpoolConfig = new ThreadpoolConfig(tpBuilder);
         assertEquals(10, threadpoolConfig.maxthreads());
+
+    }
+
+    @Test
+    public void testThatYouCanNotAddNonClusterControllerContainerToClusterControllerCluster() {
+        ContainerCluster cluster = createClusterControllerCluster();
+        addClusterController(cluster, "host-c1");
+        try {
+            addContainer(cluster, "c2", "host-c2");
+            assertTrue(false);
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().startsWith("Cluster container1 does not accept container com.yahoo.vespa.model.container.Container"));
+        }
+    }
+
+    @Test
+    public void testThatLinguisticsIsExcludedForClusterControllerCluster() {
+        ContainerCluster cluster = createClusterControllerCluster();
+        addClusterController(cluster, "host-c1");
+        assertFalse(contains("com.yahoo.language.provider.SimpleLinguisticsProvider", cluster.getAllComponents()));
+    }
+
+    @Test
+    public void testThatLinguisticsIsIncludedForNonClusterControllerClusters() {
+        ContainerCluster cluster = createContainerCluster(false, false);
+        addClusterController(cluster, "host-c1");
+        assertTrue(contains("com.yahoo.language.provider.SimpleLinguisticsProvider", cluster.getAllComponents()));
+    }
+
+    private static boolean contains(String componentId, Collection<Component<?, ?>> componentList) {
+        for (Component<?, ?> component : componentList)
+            if (component.getClassId().toId().getName().equals(componentId))
+                return true;
+        return false;
     }
 
     @Test

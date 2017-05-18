@@ -10,6 +10,7 @@ import com.yahoo.vespa.model.*;
 import com.yahoo.vespa.model.admin.*;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerCluster;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
+import com.yahoo.vespa.model.admin.clustercontroller.VerifyClusterControllerCluster;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder.DomConfigProducerBuilder;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -17,8 +18,7 @@ import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import com.yahoo.config.application.api.FileRegistry;
 import org.w3c.dom.Element;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 
 /**
@@ -81,7 +81,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         if (standaloneZooKeeper) {
             parent = new ClusterControllerCluster(parent, "standalone");
         }
-        ContainerCluster cluster = new ContainerCluster(parent, "cluster-controllers", "cluster-controllers");
+        ContainerCluster cluster = new ContainerCluster(parent, "cluster-controllers", "cluster-controllers", new VerifyClusterControllerCluster());
         ContainerModelBuilder.addDefaultHandler_legacyBuilder(cluster);
 
         List<Container> containers = new ArrayList<>();
