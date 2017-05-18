@@ -516,9 +516,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
         final int traceDependencies = 6;
         Query query = (Query) request;
         if (query.getTraceLevel() >= traceDependencies) {
-            query.trace(new StringBuilder().append(processor.getId())
-                    .append(" ").append(processor.getDependencies().toString())
-                    .toString(), traceDependencies);
+            query.trace(processor.getId() + " " + processor.getDependencies(), traceDependencies);
         }
     }
 
@@ -582,27 +580,15 @@ public class Execution extends com.yahoo.processing.execution.Execution {
     }
 
     private void onInvokingFill(Searcher searcher, Result result, String summaryClass) {
-        /* TODO
-        final int traceDependencies = 6;
-        Query query = (Query) request;
-        if (query.getTraceLevel() >= traceDependencies) {
-            query.trace(new StringBuilder().append(processor.getId())
-                                .append(" ").append(processor.getDependencies().toString())
-                                .toString(), traceDependencies);
-        }
-        */
+        int traceFillAt = 5;
+        if (trace().getTraceLevel() < traceFillAt) return;
+        trace().trace("Invoke fill(" + summaryClass + ") on " + searcher, traceFillAt);
     }
 
     private void onReturningFill(Searcher searcher, Result result, String summaryClass) {
-        /* TODO
-        final int traceDependencies = 6;
-        Query query = (Query) request;
-        if (query.getTraceLevel() >= traceDependencies) {
-            query.trace(new StringBuilder().append(processor.getId())
-                                .append(" ").append(processor.getDependencies().toString())
-                                .toString(), traceDependencies);
-        }
-        */
+        int traceFillAt = 5;
+        if (trace().getTraceLevel() < traceFillAt) return;
+        trace().trace("Return fill(" + summaryClass + ") on " + searcher, traceFillAt);
     }
 
     /** Calls ping on the next search in this chain. If there is no next, a Pong is created and returned. */

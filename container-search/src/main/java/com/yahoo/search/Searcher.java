@@ -161,6 +161,13 @@ public abstract class Searcher extends Processor {
         if ( ! result.isFilled(summaryClass)) {
             fill(result, summaryClass, execution);
         }
+        else {
+            int fillRejectTraceAt = 3;
+            if (result.getQuery().getTraceLevel() >= fillRejectTraceAt)
+                result.getQuery().trace("Ignoring fill(" + summaryClass + "): " +
+                                        ( result.hits().getFilled() == null ? "Hits are unfillable" : "Hits already filled" ) +
+                                        ": result.hits().getFilled()=" + result.hits().getFilled(), fillRejectTraceAt);
+        }
     }
 
     /** Returns a logger unique for the instance subclass */

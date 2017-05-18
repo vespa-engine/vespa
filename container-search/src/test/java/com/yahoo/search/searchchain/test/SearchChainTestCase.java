@@ -2,6 +2,7 @@
 package com.yahoo.search.searchchain.test;
 
 import static com.yahoo.search.searchchain.test.SimpleSearchChain.searchChain;
+import static org.junit.Assert.assertEquals;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,6 +19,7 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.SearchChain;
+import org.junit.Test;
 
 /**
  * Tests basic search chain functionality - creation, inheritance and ordering
@@ -25,17 +27,15 @@ import com.yahoo.search.searchchain.SearchChain;
  * @author bratseth
  */
 @SuppressWarnings("deprecation")
-public class SearchChainTestCase extends junit.framework.TestCase {
+public class SearchChainTestCase {
 
-    public SearchChainTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testEmptySearchChain() {
         SearchChain empty = new SearchChain(new ComponentId("empty"));
         assertEquals("empty", empty.getId().getName());
     }
 
+    @Test
     public void testSearchChainCreation() {
         assertEquals("test",searchChain.getId().stringValue());
         assertEquals("test",searchChain.getId().getName());
@@ -59,22 +59,27 @@ public class SearchChainTestCase extends junit.framework.TestCase {
         assertEquals(new HashSet<>(correct),new HashSet<>(test));
     }
 
+    @Test
     public void testSearchChainToStringEmpty() {
         assertEquals("chain 'test' []", new Chain<>(new ComponentId("test"), createSearchers(0)).toString());
     }
 
+    @Test
     public void testSearchChainToStringVeryShort() {
         assertEquals("chain 'test' [s1]", new Chain<>(new ComponentId("test"),createSearchers(1)).toString());
     }
 
+    @Test
     public void testSearchChainToStringShort() {
         assertEquals("chain 'test' [s1 -> s2 -> s3]", new Chain<>(new ComponentId("test"),createSearchers(3)).toString());
     }
 
+    @Test
     public void testSearchChainToStringLong() {
         assertEquals("chain 'test' [s1 -> s2 -> ... -> s4]", new Chain<>(new ComponentId("test"),createSearchers(4)).toString());
     }
 
+    @Test
     public void testSearchChainToStringVeryLong() {
         assertEquals("chain 'test' [s1 -> s2 -> ... -> s10]", new Chain<>(new ComponentId("test"),createSearchers(10)).toString());
     }
