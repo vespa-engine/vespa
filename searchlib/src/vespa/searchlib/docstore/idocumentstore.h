@@ -122,9 +122,8 @@ public:
     /**
      * Get the number of entries (including removed IDs
      * or gaps in the local ID sequence) in the document store.
-     * @return The next local ID expected to be used.
      */
-    virtual uint64_t nextId() const = 0;
+    virtual uint32_t getDocIdLimit() const = 0;
 
     /**
      * Calculate memory used by this instance.  During flush() actual

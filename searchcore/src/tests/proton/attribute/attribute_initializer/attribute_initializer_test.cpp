@@ -1,19 +1,20 @@
 // Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/searchcore/proton/test/directory_handler.h>
-#include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchcore/proton/test/attribute_utils.h>
-#include <vespa/searchcore/proton/attribute/attributedisklayout.h>
 #include <vespa/searchcore/proton/attribute/attribute_directory.h>
 #include <vespa/searchcore/proton/attribute/attribute_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_initializer.h>
+#include <vespa/searchcore/proton/attribute/attributedisklayout.h>
+#include <vespa/searchcore/proton/test/attribute_utils.h>
+#include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/test/directory_handler.h>
+#include <vespa/vespalib/stllike/string.h>
 
 using search::attribute::Config;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::SerialNum;
+using search::test::DirectoryHandler;
 
 const vespalib::string test_dir = "test_output";
 
@@ -69,7 +70,7 @@ saveAttr(const vespalib::string &name, const Config &cfg, SerialNum serialNum, S
 
 struct Fixture
 {
-    test::DirectoryHandler _dirHandler;
+    DirectoryHandler _dirHandler;
     std::shared_ptr<AttributeDiskLayout> _diskLayout;
     AttributeFactory       _factory;
     Fixture();

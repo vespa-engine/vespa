@@ -5,7 +5,7 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace proton {
+namespace search {
 namespace test {
 
 class DirectoryHandler

@@ -1,16 +1,20 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/searchlib/docstore/logdocumentstore.h>
+#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchlib/docstore/chunkformats.h>
+#include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/searchlib/docstore/storebybucket.h>
 #include <vespa/searchlib/docstore/visitcache.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/document/repo/configbuilder.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <iomanip>
+#include <iostream>
 
 using document::BucketId;
 using namespace search::docstore;
@@ -729,6 +733,224 @@ TEST("testBucketDensityComputer") {
     EXPECT_EQUAL(0u, nonRecording.getNumBuckets());
 }
 
+LogDataStore::Config
+getBasicConfig(size_t maxFileSize)
+{
+    CompressionConfig compCfg;
+    WriteableFileChunk::Config fileCfg;
+    return LogDataStore::Config(maxFileSize, 0.2, 2.5, 0.2, 1, true, compCfg, fileCfg);
+}
+
+vespalib::string
+genData(uint32_t lid, size_t numBytes)
+{
+    assert(numBytes >= 6);
+    std::ostringstream oss;
+    for (size_t i = 0; i < (numBytes - 6); ++i) {
+        oss << 'a';
+    }
+    oss << std::setw(6) << std::setfill('0') << lid;
+    return oss.str();
+}
+
+struct Fixture {
+    vespalib::ThreadStackExecutor executor;
+    search::test::DirectoryHandler dir;
+    uint64_t serialNum;
+    DummyFileHeaderContext fileHeaderCtx;
+    MyTlSyncer tlSyncer;
+    LogDataStore store;
+
+    uint64_t nextSerialNum() {
+        return serialNum++;
+    }
+
+    Fixture(const vespalib::string &dirName = "tmp",
+            bool dirCleanup = true,
+            size_t maxFileSize = 4096 * 2)
+        : executor(1, 0x10000),
+          dir(dirName),
+          serialNum(0),
+          fileHeaderCtx(),
+          tlSyncer(),
+          store(executor,
+                dirName,
+                getBasicConfig(maxFileSize),
+                GrowStrategy(),
+                TuneFileSummary(),
+                fileHeaderCtx,
+                tlSyncer,
+                nullptr)
+    {
+        dir.cleanup(dirCleanup);
+    }
+    ~Fixture() {}
+    void flush() {
+        store.initFlush(serialNum);
+        store.flush(serialNum);
+    }
+    Fixture &write(uint32_t lid, size_t numBytes = 1024) {
+        vespalib::string data = genData(lid, numBytes);
+        store.write(nextSerialNum(), lid, data.c_str(), data.size());
+        return *this;
+    }
+    uint32_t writeUntilNewChunk(uint32_t startLid) {
+        size_t numChunksStart = store.getFileChunkStats().size();
+        for (uint32_t lid = startLid; ; ++lid) {
+            write(lid);
+            if (store.getFileChunkStats().size() > numChunksStart) {
+                return lid;
+            }
+        }
+    }
+    void compactLidSpace(uint32_t wantedDocIdLimit) {
+        store.compactLidSpace(wantedDocIdLimit);
+        assertDocIdLimit(wantedDocIdLimit);
+    }
+    void assertDocIdLimit(uint32_t expDocIdLimit) {
+        EXPECT_EQUAL(expDocIdLimit, store.getDocIdLimit());
+    }
+    void assertNumChunks(size_t numChunks) {
+        EXPECT_EQUAL(numChunks, store.getFileChunkStats().size());
+    }
+    void assertDocIdLimitInFileChunks(const std::vector<uint32_t> expLimits) {
+        std::vector<uint32_t> actLimits;
+        for (const auto &stat : store.getFileChunkStats()) {
+            actLimits.push_back(stat.docIdLimit());
+        }
+        EXPECT_EQUAL(expLimits, actLimits);
+    }
+    void assertContent(const std::set<uint32_t> &lids, uint32_t docIdLimit, size_t numBytesPerEntry = 1024) {
+        for (uint32_t lid = 0; lid < docIdLimit; ++lid) {
+            vespalib::DataBuffer buffer;
+            size_t size = store.read(lid, buffer);
+            if (lids.find(lid) != lids.end()) {
+                vespalib::string expData = genData(lid, numBytesPerEntry);
+                EXPECT_EQUAL(expData, vespalib::string(buffer.getData(), buffer.getDataLen()));
+                EXPECT_GREATER(size, 0u);
+            } else {
+                EXPECT_EQUAL("", vespalib::string(buffer.getData(), buffer.getDataLen()));
+                EXPECT_EQUAL(0u, size);
+            }
+        }
+    }
+};
+
+TEST("require that docIdLimit is updated when inserting entries")
+{
+    {
+        Fixture f("tmp", false);
+        f.assertDocIdLimit(0);
+        f.write(10);
+        f.assertDocIdLimit(11);
+        f.write(9);
+        f.assertDocIdLimit(11);
+        f.write(11);
+        f.assertDocIdLimit(12);
+        f.assertNumChunks(1);
+        f.flush();
+    }
+    {
+        Fixture f("tmp");
+        f.assertDocIdLimit(12);
+    }
+}
+
+TEST("require that docIdLimit at idx file creation time is written to idx file header")
+{
+    std::vector<uint32_t> expLimits = {std::numeric_limits<uint32_t>::max(),14,104,204};
+    {
+        Fixture f("tmp", false);
+        f.writeUntilNewChunk(10);
+        f.writeUntilNewChunk(100);
+        f.writeUntilNewChunk(200);
+        f.assertDocIdLimitInFileChunks(expLimits);
+        f.flush();
+    }
+    {
+        Fixture f("tmp");
+        f.assertDocIdLimitInFileChunks(expLimits);
+    }
+}
+
+TEST("require that lid space can be compacted and entries from old files skipped during load")
+{
+    {
+        Fixture f("tmp", false);
+        f.write(10);
+        f.writeUntilNewChunk(100);
+        f.write(20);
+        f.writeUntilNewChunk(200);
+        f.write(30);
+        TEST_DO(f.assertContent({10,100,101,102,20,200,201,202,30}, 203));
+
+        f.assertDocIdLimit(203);
+        f.compactLidSpace(100);
+        TEST_DO(f.assertContent({10,20,30}, 203));
+
+        f.writeUntilNewChunk(31);
+        f.write(99);
+        f.write(300);
+        TEST_DO(f.assertContent({10,20,30,31,32,33,99,300}, 301));
+        f.assertDocIdLimitInFileChunks({std::numeric_limits<uint32_t>::max(),103,203,100});
+        f.flush();
+    }
+    {
+        Fixture f("tmp");
+        TEST_DO(f.assertContent({10,20,30,31,32,33,99,300}, 301));
+    }
+}
+
+TEST_F("require that getLid() is protected by docIdLimit", Fixture)
+{
+    f.write(1);
+    vespalib::GenerationHandler::Guard guard = f.store.getLidReadGuard();
+    EXPECT_TRUE(f.store.getLid(guard, 1).valid());
+    EXPECT_FALSE(f.store.getLid(guard, 2).valid());
+}
+
+TEST_F("require that lid space can be compacted and shrunk", Fixture)
+{
+    f.write(1).write(2);
+    EXPECT_FALSE(f.store.canShrinkLidSpace());
+
+    f.compactLidSpace(2);
+    MemoryUsage before = f.store.getMemoryUsage();
+    EXPECT_TRUE(f.store.canShrinkLidSpace());
+    EXPECT_EQUAL(8u, f.store.getEstimatedShrinkLidSpaceGain()); // one lid info entry
+    f.store.shrinkLidSpace();
+
+    MemoryUsage after = f.store.getMemoryUsage();
+    EXPECT_LESS(after.usedBytes(), before.usedBytes());
+    EXPECT_EQUAL(8u, before.usedBytes() - after.usedBytes());
+}
+
+TEST_F("require that lid space can be increased after being compacted and then shrunk", Fixture)
+{
+    f.write(1).write(3);
+    TEST_DO(f.compactLidSpace(2));
+    f.write(2);
+    TEST_DO(f.assertDocIdLimit(3));
+    f.store.shrinkLidSpace();
+    TEST_DO(f.assertDocIdLimit(3));
+    TEST_DO(f.assertContent({1,2}, 3));
+}
+
+TEST_F("require that lid space can be shrunk only after read guards are deleted", Fixture)
+{
+    f.write(1).write(2);
+    EXPECT_FALSE(f.store.canShrinkLidSpace());
+    {
+        vespalib::GenerationHandler::Guard guard = f.store.getLidReadGuard();
+        f.compactLidSpace(2);
+        f.write(1); // trigger remove of old generations
+        EXPECT_FALSE(f.store.canShrinkLidSpace());
+        EXPECT_EQUAL(0u, f.store.getEstimatedShrinkLidSpaceGain());
+    }
+    f.write(1); // trigger remove of old generations
+    EXPECT_TRUE(f.store.canShrinkLidSpace());
+    EXPECT_EQUAL(8u, f.store.getEstimatedShrinkLidSpaceGain());
+}
 
 TEST_MAIN() {
     DummyFileHeaderContext::setCreator("logdatastore_test");

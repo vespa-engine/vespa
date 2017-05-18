@@ -43,7 +43,8 @@ public:
               _numThreads(8),
               _skipCrcOnRead(false),
               _compactToActiveFile(true),
-              _compactCompression(CompressionConfig::LZ4)
+              _compactCompression(CompressionConfig::LZ4),
+              _fileConfig()
         { }
 
         Config(size_t maxFileSize,
@@ -177,7 +178,11 @@ public:
     // Implements IGetLid API
     LidInfo getLid(Guard & guard, uint32_t lid) const override {
         (void) guard;
-        return _lidInfo[lid];
+        if (lid < getDocIdLimit()) {
+            return _lidInfo[lid];
+        } else {
+            return LidInfo();
+        }
     }
     FileId getActiveFileId(const vespalib::LockGuard & guard) const {
         assert(guard.locks(_updateLock));
@@ -197,6 +202,7 @@ public:
      */
     virtual void compactLidSpace(uint32_t wantedDocLidLimit) override;
     virtual bool canShrinkLidSpace() const override;
+    virtual size_t getEstimatedShrinkLidSpaceGain() const override;
     virtual void shrinkLidSpace() override;
 
 private:
@@ -216,8 +222,9 @@ private:
     typedef attribute::RcuVector<uint64_t> LidInfoVector;
     typedef std::vector<FileChunk::UP> FileChunkVector;
 
-    void updateLidMap();
+    void updateLidMap(uint32_t lastFileChunkDocIdLimit);
     void preload();
+    uint32_t getLastFileChunkDocIdLimit();
     void verifyModificationTime(const NameIdSet & partList);
 
     void eraseDanglingDatFiles(const NameIdSet &partList, const NameIdSet &datPartList);
@@ -298,6 +305,8 @@ private:
     }
     bool shouldCompactToActiveFile(size_t compactedSize) const;
     std::pair<bool, FileId> findNextToCompact();
+    void incGeneration();
+    bool canShrinkLidSpace(const vespalib::LockGuard &guard) const;
 
     typedef std::vector<FileId> FileIdxVector;
     Config                                   _config;
@@ -316,6 +325,7 @@ private:
     transactionlog::SyncProxy               &_tlSyncer;
     IBucketizer::SP                          _bucketizer;
     NameIdSet                                _currentlyCompacting;
+    uint64_t                                 _compactLidSpaceGeneration;
 };
 
 } // namespace search

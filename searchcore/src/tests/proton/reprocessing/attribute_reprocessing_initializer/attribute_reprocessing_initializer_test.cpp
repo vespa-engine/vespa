@@ -3,29 +3,32 @@
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_reprocessing_initializer_test");
 
-#include <vespa/searchcore/proton/attribute/attribute_populator.h>
-#include <vespa/searchcore/proton/attribute/attributemanager.h>
-#include <vespa/searchcore/proton/attribute/attributedisklayout.h>
 #include <vespa/searchcore/proton/attribute/attribute_directory.h>
+#include <vespa/searchcore/proton/attribute/attribute_populator.h>
+#include <vespa/searchcore/proton/attribute/attributedisklayout.h>
+#include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/attribute/document_field_populator.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/common/i_indexschema_inspector.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
 #include <vespa/searchcore/proton/reprocessing/i_reprocessing_handler.h>
 #include <vespa/searchcore/proton/test/attribute_utils.h>
-#include <vespa/searchcore/proton/test/directory_handler.h>
-#include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/common/foregroundtaskexecutor.h>
+#include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
-#include <vespa/searchlib/common/foregroundtaskexecutor.h>
 
 using namespace proton;
 using namespace search;
 using namespace search::index;
-using search::attribute::Config;
+
+using proton::test::AttributeUtils;
 using search::attribute::BasicType;
+using search::attribute::Config;
 using search::index::schema::DataType;
+using search::test::DirectoryHandler;
 
 const vespalib::string TEST_DIR = "test_output";
 const SerialNum INIT_SERIAL_NUM = 10;
@@ -64,13 +67,13 @@ struct MyConfig
     void addAttrs(const StringVector &attrs) {
         for (auto attr : attrs) {
             if (attr == "tensor") {
-                _mgr->addAttribute({attr, test::AttributeUtils::getTensorConfig()}, 1);
+                _mgr->addAttribute({attr, AttributeUtils::getTensorConfig()}, 1);
                 _schema.addAttributeField(Schema::AttributeField(attr, DataType::TENSOR));
             } else if (attr == "predicate") {
-                _mgr->addAttribute({attr, test::AttributeUtils::getPredicateConfig()}, 1);
+                _mgr->addAttribute({attr, AttributeUtils::getPredicateConfig()}, 1);
                 _schema.addAttributeField(Schema::AttributeField(attr, DataType::BOOLEANTREE));
             } else {
-                _mgr->addAttribute({attr, test::AttributeUtils::getStringConfig()}, 1);
+                _mgr->addAttribute({attr, AttributeUtils::getStringConfig()}, 1);
                 _schema.addAttributeField(Schema::AttributeField(attr, DataType::STRING));
             }
         }
@@ -125,7 +128,7 @@ struct MyIndexschemaInspector : public IIndexschemaInspector
 
 struct Fixture
 {
-    test::DirectoryHandler _dirHandler;
+    DirectoryHandler _dirHandler;
     DummyFileHeaderContext _fileHeaderContext;
     ForegroundTaskExecutor _attributeFieldWriter;
     HwInfo _hwInfo;

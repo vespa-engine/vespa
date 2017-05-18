@@ -5,22 +5,25 @@ LOG_SETUP("attribute_populator_test");
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/searchcommon/common/schema.h>
-#include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/attribute/attribute_populator.h>
+#include <vespa/searchcore/proton/attribute/attributemanager.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/test/test.h>
+#include <vespa/searchlib/common/foregroundtaskexecutor.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
-#include <vespa/searchlib/common/foregroundtaskexecutor.h>
 
 using namespace document;
 using namespace proton;
 using namespace search;
 using namespace search::index;
 
-typedef search::attribute::Config AVConfig;
-typedef search::attribute::BasicType AVBasicType;
+using search::test::DirectoryHandler;
+
+using AVBasicType = search::attribute::BasicType;
+using AVConfig = search::attribute::Config;
 
 const vespalib::string TEST_DIR = "testdir";
 const uint64_t CREATE_SERIAL_NUM = 8u;
@@ -53,7 +56,7 @@ struct DocContext
 
 struct Fixture
 {
-    test::DirectoryHandler _testDir;
+    DirectoryHandler _testDir;
     DummyFileHeaderContext _fileHeader;
     ForegroundTaskExecutor _attributeFieldWriter;
     HwInfo                 _hwInfo;

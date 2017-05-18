@@ -33,7 +33,8 @@ int DocumentStoreInspectApp::dumpIdxFile(const vespalib::string & file)
     if (idxFile.OpenReadOnly()) {
         if (idxFile.IsMemoryMapped()) {
             int64_t fileSize = idxFile.GetSize();
-            uint64_t idxHeaderLen = FileChunk::readIdxHeader(idxFile);
+            uint32_t docIdLimit = std::numeric_limits<uint32_t>::max();
+            uint64_t idxHeaderLen = FileChunk::readIdxHeader(idxFile, docIdLimit);
             vespalib::nbostream is(static_cast<const char *>
                                    (idxFile.MemoryMapPtr(0)) + idxHeaderLen,
                                    fileSize - idxHeaderLen);

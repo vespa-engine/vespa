@@ -53,14 +53,16 @@ LogDataStore::LogDataStore(vespalib::ThreadExecutor &executor,
       _executor(executor),
       _initFlushSyncToken(0),
       _tlSyncer(tlSyncer),
-      _bucketizer(bucketizer)
+      _bucketizer(bucketizer),
+      _currentlyCompacting(),
+      _compactLidSpaceGeneration()
 {
     // Reserve space for 1TB summary in order to avoid locking.
     _fileChunks.reserve(LidInfo::getFileIdLimit());
     _holdFileChunks.resize(LidInfo::getFileIdLimit());
 
     preload();
-    updateLidMap();
+    updateLidMap(getLastFileChunkDocIdLimit());
     updateSerialNum();
 }
 
@@ -86,13 +88,16 @@ LogDataStore::~LogDataStore()
 }
 
 void
-LogDataStore::updateLidMap()
+LogDataStore::updateLidMap(uint32_t lastFileChunkDocIdLimit)
 {
     uint64_t lastSerialNum(0);
     LockGuard guard(_updateLock);
-    for (FileChunk::UP & fc : _fileChunks) {
-        fc->updateLidMap(guard, *this, lastSerialNum);
-        lastSerialNum = fc->getLastPersistedSerialNum();
+    for (size_t i = 0; i < _fileChunks.size(); ++i) {
+        FileChunk::UP &chunk = _fileChunks[i];
+        bool lastChunk = ((i + 1) == _fileChunks.size());
+        uint32_t docIdLimit = lastChunk ? std::numeric_limits<uint32_t>::max() : lastFileChunkDocIdLimit;
+        chunk->updateLidMap(guard, *this, lastSerialNum, docIdLimit);
+        lastSerialNum = chunk->getLastPersistedSerialNum();
     }
 }
 
@@ -102,7 +107,7 @@ LogDataStore::read(const LidVector & lids, IBufferVisitor & visitor) const
     LidInfoWithLidV orderedLids;
     GenerationHandler::Guard guard(_genHandler.takeGuard());
     for (uint32_t lid : lids) {
-        if (lid < _lidInfo.size()) {
+        if (lid < getDocIdLimit()) {
             LidInfo li = _lidInfo[lid];
             if (!li.empty() && li.valid()) {
                 orderedLids.emplace_back(li, lid);
@@ -131,7 +136,7 @@ ssize_t
 LogDataStore::read(uint32_t lid, vespalib::DataBuffer& buffer) const
 {
     ssize_t sz(0);
-    if (lid < _lidInfo.size()) {
+    if (lid < getDocIdLimit()) {
         LidInfo li(0);
         {
             GenerationHandler::Guard guard(_genHandler.takeGuard());
@@ -243,7 +248,7 @@ void
 LogDataStore::remove(uint64_t serialNum, uint32_t lid)
 {
     LockGuard guard(_updateLock);
-    if (lid < _lidInfo.size()) {
+    if (lid < getDocIdLimit()) {
         LidInfo lm = _lidInfo[lid];
         if (lm.valid()) {
             _fileChunks[lm.getFileId()]->remove(lid, lm.size());
@@ -619,8 +624,10 @@ LogDataStore::createWritableFile(FileId fileId, SerialNum serialNum, NameId name
             return FileChunk::UP();
         }
     }
+    uint32_t docIdLimit = (getDocIdLimit() != 0) ? getDocIdLimit() : std::numeric_limits<uint32_t>::max();
     FileChunk::UP file(new WriteableFileChunk(_executor, fileId, nameId, getBaseDir(),
-                                              serialNum, _config.getFileConfig(), _tune, _fileHeaderContext,
+                                              serialNum, docIdLimit,
+                                              _config.getFileConfig(), _tune, _fileHeaderContext,
                                               _bucketizer.get(), _config.crcOnReadDisabled()));
     file->enableRead();
     return file;
@@ -768,6 +775,15 @@ LogDataStore::preload()
     _prevActive = _active.prev();
 }
 
+uint32_t
+LogDataStore::getLastFileChunkDocIdLimit()
+{
+    if (!_fileChunks.empty()) {
+        return _fileChunks.back()->getDocIdLimit();
+    }
+    return std::numeric_limits<uint32_t>::max();
+}
+
 LogDataStore::NameIdSet
 LogDataStore::eraseEmptyIdxFiles(const NameIdSet &partList)
 {
@@ -859,25 +875,31 @@ LogDataStore::scanDir(const vespalib::string &dir, const vespalib::string &suffi
 }
 
 void
-LogDataStore::setLid(const LockGuard & guard, uint32_t lid, const LidInfo & meta)
+LogDataStore::setLid(const LockGuard &guard, uint32_t lid, const LidInfo &meta)
 {
     (void) guard;
     if (lid < _lidInfo.size()) {
         _genHandler.updateFirstUsedGeneration();
         _lidInfo.removeOldGenerations(_genHandler.getFirstUsedGeneration());
-        const LidInfo & prev = _lidInfo[lid];
+        const LidInfo &prev = _lidInfo[lid];
         if (prev.valid()) {
             _fileChunks[prev.getFileId()]->remove(lid, prev.size());
         }
     } else {
         _lidInfo.ensure_size(lid+1, LidInfo());
-        _lidInfo.setGeneration(_genHandler.getNextGeneration());
-        _genHandler.incGeneration();
-        _genHandler.updateFirstUsedGeneration();
-        _lidInfo.removeOldGenerations(_genHandler.getFirstUsedGeneration());
-        setNextId(_lidInfo.size());
+        incGeneration();
     }
+    updateDocIdLimit(lid + 1);
     _lidInfo[lid] = meta;
+}
+
+void
+LogDataStore::incGeneration()
+{
+    _lidInfo.setGeneration(_genHandler.getNextGeneration());
+    _genHandler.incGeneration();
+    _genHandler.updateFirstUsedGeneration();
+    _lidInfo.removeOldGenerations(_genHandler.getFirstUsedGeneration());
 }
 
 size_t
@@ -889,7 +911,7 @@ LogDataStore::computeNumberOfSignificantBucketIdBits(const IBucketizer & bucketi
     timer.before();
     auto bucketizerGuard = bucketizer.getGuard();
     GenerationHandler::Guard lidGuard(_genHandler.takeGuard());
-    for (size_t i(0), m(_lidInfo.size()); i < m; i++) {
+    for (size_t i(0), m(getDocIdLimit()); i < m; i++) {
         LidInfo lid(_lidInfo[i]);
         if (lid.valid() && (lid.getFileId() == fileId.getId())) {
             BucketId bucketId = bucketizer.getBucketOf(bucketizerGuard, i);
@@ -1065,8 +1087,9 @@ LogDataStore::getStorageStats() const
     // Note: Naming consistency issue
     SerialNum lastSerialNum = tentativeLastSyncToken();
     SerialNum lastFlushedSerialNum = lastSyncToken();
+    uint32_t docIdLimit = getDocIdLimit();
     return DataStoreStorageStats(diskFootprint, diskBloat, maxBucketSpread,
-                                 lastSerialNum, lastFlushedSerialNum);
+                                 lastSerialNum, lastFlushedSerialNum, docIdLimit);
 }
 
 MemoryUsage
@@ -1102,18 +1125,49 @@ LogDataStore::getFileChunkStats() const
 void
 LogDataStore::compactLidSpace(uint32_t wantedDocLidLimit)
 {
-    (void) wantedDocLidLimit;
+    LockGuard guard(_updateLock);
+    assert(wantedDocLidLimit <= getDocIdLimit());
+    for (size_t i = wantedDocLidLimit; i < _lidInfo.size(); ++i) {
+        _lidInfo[i] = LidInfo();
+    }
+    setDocIdLimit(wantedDocLidLimit);
+    _compactLidSpaceGeneration = _genHandler.getCurrentGeneration();
+    incGeneration();
 }
 
 bool
 LogDataStore::canShrinkLidSpace() const
 {
-    return false;
+    LockGuard guard(_updateLock);
+    return canShrinkLidSpace(guard);
+}
+
+bool
+LogDataStore::canShrinkLidSpace(const vespalib::LockGuard &) const
+{
+    return getDocIdLimit() < _lidInfo.size() &&
+           _compactLidSpaceGeneration < _genHandler.getFirstUsedGeneration();
+}
+
+size_t
+LogDataStore::getEstimatedShrinkLidSpaceGain() const
+{
+    LockGuard guard(_updateLock);
+    if (!canShrinkLidSpace(guard)) {
+        return 0;
+    }
+    return (_lidInfo.size() - getDocIdLimit()) * sizeof(uint64_t);
 }
 
 void
 LogDataStore::shrinkLidSpace()
 {
+    LockGuard guard(_updateLock);
+    if (!canShrinkLidSpace(guard)) {
+        return;
+    }
+    _lidInfo.shrink(getDocIdLimit());
+    incGeneration();
 }
 
 } // namespace search

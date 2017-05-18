@@ -15,7 +15,10 @@
 
 class FastOS_FileInterface;
 
-namespace vespalib { class DataBuffer; }
+namespace vespalib {
+    class DataBuffer;
+    class GenericHeader;
+}
 
 namespace search {
 
@@ -101,10 +104,11 @@ public:
     typedef vespalib::hash_map<uint32_t, std::unique_ptr<vespalib::DataBuffer>> LidBufferMap;
     typedef std::unique_ptr<FileChunk> UP;
     typedef uint32_t SubChunkId;
-    FileChunk(FileId fileId, NameId nameId, const vespalib::string & baseName, const TuneFileSummary & tune, const IBucketizer * bucketizer, bool skipCrcOnRead);
+    FileChunk(FileId fileId, NameId nameId, const vespalib::string &baseName, const TuneFileSummary &tune,
+              const IBucketizer *bucketizer, bool skipCrcOnRead);
     virtual ~FileChunk();
 
-    virtual size_t updateLidMap(const LockGuard & guard, ISetLid & lidMap, uint64_t serialNum);
+    virtual size_t updateLidMap(const LockGuard &guard, ISetLid &lidMap, uint64_t serialNum, uint32_t docIdLimit);
     virtual ssize_t read(uint32_t lid, SubChunkId chunk, vespalib::DataBuffer & buffer) const;
     virtual void read(LidInfoWithLidV::const_iterator begin, size_t count, IBufferVisitor & visitor) const;
     void remove(uint32_t lid, uint32_t size);
@@ -149,7 +153,10 @@ public:
     FileId getFileId() const { return _fileId; }
     NameId       getNameId() const { return _nameId; }
     size_t   getBloatCount() const { return _erasedCount; }
+    size_t   getAddedBytes() const { return _addedBytes; }
+    size_t   getErasedBytes() const { return _erasedBytes; }
     uint64_t getLastPersistedSerialNum() const;
+    uint32_t getDocIdLimit() const { return _docIdLimit; }
     virtual fastos::TimeStamp getModificationTime() const;
     virtual bool frozen() const { return true; }
     const vespalib::string & getName() const { return _name; }
@@ -181,7 +188,7 @@ public:
     /**
      * Read header and return number of bytes it consist of.
      */
-    static uint64_t readIdxHeader(FastOS_FileInterface &idxFile);
+    static uint64_t readIdxHeader(FastOS_FileInterface &idxFile, uint32_t &docIdLimit);
     static uint64_t readDataHeader(FileRandRead &idxFile);
     static bool isIdxFileEmpty(const vespalib::string & name);
     static void eraseIdxFile(const vespalib::string & name);
@@ -224,6 +231,8 @@ protected:
     void setNumUniqueBuckets(size_t numUniqueBuckets) { _numUniqueBuckets = numUniqueBuckets; }
     ssize_t read(uint32_t lid, SubChunkId chunkId, const ChunkInfo & chunkInfo, vespalib::DataBuffer & buffer) const;
     void read(LidInfoWithLidV::const_iterator begin, size_t count, ChunkInfo ci, IBufferVisitor & visitor) const;
+    static uint32_t readDocIdLimit(vespalib::GenericHeader &header);
+    static void writeDocIdLimit(vespalib::GenericHeader &header, uint32_t docIdLimit);
 
     typedef vespalib::Array<ChunkInfo> ChunkInfoVector;
     const IBucketizer * _bucketizer;
@@ -235,6 +244,7 @@ protected:
     uint32_t            _dataHeaderLen;
     uint32_t            _idxHeaderLen;
     uint64_t            _lastPersistedSerialNum;
+    uint32_t            _docIdLimit; // Limit when the file was created. Stored in idx file header.
     fastos::TimeStamp   _modificationTime;
 };
 

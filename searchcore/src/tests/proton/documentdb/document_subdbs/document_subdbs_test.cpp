@@ -16,14 +16,15 @@
 #include <vespa/searchcore/proton/server/document_subdb_explorer.h>
 #include <vespa/searchcore/proton/server/emptysearchview.h>
 #include <vespa/searchcore/proton/server/fast_access_document_retriever.h>
+#include <vespa/searchcore/proton/server/i_document_subdb_owner.h>
 #include <vespa/searchcore/proton/server/minimal_document_retriever.h>
 #include <vespa/searchcore/proton/server/searchabledocsubdb.h>
-#include <vespa/searchcore/proton/server/i_document_subdb_owner.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchcorespi/plugin/iindexmanagerfactory.h>
-#include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/common/lambdatask.h>
+#include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/test_kit.h>
@@ -40,10 +41,11 @@ using namespace search::transactionlog;
 using namespace cloud::config::filedistribution;
 using namespace searchcorespi;
 using namespace vespalib;
+
 using proton::bucketdb::BucketDBHandler;
 using proton::bucketdb::IBucketDBHandler;
 using proton::bucketdb::IBucketDBHandlerInitializer;
-
+using search::test::DirectoryHandler;
 using searchcorespi::IFlushTarget;
 using searchcorespi::index::IThreadingService;
 using storage::spi::Timestamp;
@@ -295,7 +297,7 @@ struct FixtureBase
 	typename Traits::Context _ctx;
 	typename Traits::Schema _baseSchema;
 	MyConfigSnapshot::UP _snapshot;
-	test::DirectoryHandler _baseDir;
+	DirectoryHandler _baseDir;
 	typename Traits::SubDB _subDb;
 	IFeedView::SP _tmpFeedView;
 	FixtureBase()
@@ -321,7 +323,7 @@ struct FixtureBase
 	}
     template <typename FunctionType>
     void runInMaster(FunctionType func) {
-        test::runInMaster(_writeService, func);
+        proton::test::runInMaster(_writeService, func);
     }
 	void init() {
                 DocumentSubDbInitializer::SP task =
@@ -741,7 +743,7 @@ struct DocumentHandler
                 startAttributeField("attr2").addInt(attr2Value).endField().endDocument();
     }
     PutOperation createPut(Document::UP doc, Timestamp timestamp, SerialNum serialNum) {
-        test::Document testDoc(Document::SP(doc.release()), 0, timestamp);
+        proton::test::Document testDoc(Document::SP(doc.release()), 0, timestamp);
         PutOperation op(testDoc.getBucket(), testDoc.getTimestamp(), testDoc.getDoc());
         op.setSerialNum(serialNum);
         return op;
@@ -751,7 +753,7 @@ struct DocumentHandler
                              uint32_t targetSubDbId,
                              SerialNum serialNum)
     {
-        test::Document testDoc(Document::SP(doc.release()), 0, timestamp);
+        proton::test::Document testDoc(Document::SP(doc.release()), 0, timestamp);
         MoveOperation op(testDoc.getBucket(), testDoc.getTimestamp(), testDoc.getDoc(), sourceDbdId, targetSubDbId);
         op.setSerialNum(serialNum);
         return op;

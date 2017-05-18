@@ -6,6 +6,7 @@ LOG_SETUP("attribute_manager_test");
 #include <vespa/config-attributes.h>
 #include <vespa/fastos/file.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
+#include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_manager_initializer.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
@@ -21,12 +22,12 @@ LOG_SETUP("attribute_manager_test");
 #include <vespa/searchcore/proton/server/executor_thread_service.h>
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchcore/proton/test/attribute_vectors.h>
-#include <vespa/searchcore/proton/test/directory_handler.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
+#include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
 #include <vespa/searchlib/common/foregroundtaskexecutor.h>
@@ -34,11 +35,10 @@ LOG_SETUP("attribute_manager_test");
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/predicate/predicate_tree_annotator.h>
+#include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/searchlib/attribute/reference_attribute.h>
-#include <vespa/searchcommon/attribute/iattributevector.h>
 
 namespace vespa { namespace config { namespace search {}}}
 
@@ -62,6 +62,7 @@ using search::attribute::ReferenceAttribute;
 using search::index::DummyFileHeaderContext;
 using search::predicate::PredicateIndex;
 using search::predicate::PredicateTreeAnnotations;
+using search::test::DirectoryHandler;
 using vespa::config::search::AttributesConfig;
 using vespa::config::search::AttributesConfigBuilder;
 using vespalib::eval::ValueType;
@@ -105,13 +106,13 @@ const AVConfig INT32_ARRAY = AttributeUtils::getInt32ArrayConfig();
 void
 fillAttribute(const AttributeVector::SP &attr, uint32_t numDocs, int64_t value, uint64_t lastSyncToken)
 {
-    test::AttributeUtils::fillAttribute(attr, numDocs, value, lastSyncToken);
+    AttributeUtils::fillAttribute(attr, numDocs, value, lastSyncToken);
 }
 
 void
 fillAttribute(const AttributeVector::SP &attr, uint32_t from, uint32_t to, int64_t value, uint64_t lastSyncToken)
 {
-    test::AttributeUtils::fillAttribute(attr, from, to, value, lastSyncToken);
+    AttributeUtils::fillAttribute(attr, from, to, value, lastSyncToken);
 }
 
 search::SerialNum getCreateSerialNum(const AttributeGuard::UP &guard)
@@ -143,7 +144,7 @@ struct ImportedAttributesRepoBuilder {
 
 struct BaseFixture
 {
-    test::DirectoryHandler _dirHandler;
+    DirectoryHandler _dirHandler;
     DummyFileHeaderContext _fileHeaderContext;
     ForegroundTaskExecutor _attributeFieldWriter;
     HwInfo                 _hwInfo;

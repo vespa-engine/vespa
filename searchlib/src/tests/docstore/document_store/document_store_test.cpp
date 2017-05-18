@@ -28,7 +28,7 @@ struct NullDataStore : IDataStore {
     void accept(IDataStoreVisitor &, IDataStoreVisitorProgress &, bool) override { }
     double getVisitCost() const override { return 1.0; }
     virtual DataStoreStorageStats getStorageStats() const override {
-        return DataStoreStorageStats(0, 0, 0.0, 0, 0);
+        return DataStoreStorageStats(0, 0, 0.0, 0, 0, 0);
     }
     virtual MemoryUsage getMemoryUsage() const override { return MemoryUsage(); }
     virtual std::vector<DataStoreFileChunkStats>
@@ -38,6 +38,7 @@ struct NullDataStore : IDataStore {
     }
     virtual void compactLidSpace(uint32_t wantedDocLidLimit) override { (void) wantedDocLidLimit; }
     virtual bool canShrinkLidSpace() const override { return false; }
+    virtual size_t getEstimatedShrinkLidSpaceGain() const override { return 0; }
     virtual void shrinkLidSpace() override {}
 };
 

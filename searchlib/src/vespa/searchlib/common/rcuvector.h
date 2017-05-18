@@ -58,7 +58,7 @@ private:
     }
     void expand(size_t newCapacity);
     void expandAndInsert(const T & v);
-    virtual void onExpand();
+    virtual void onReallocation();
 
 public:
     using ValueType = T;
@@ -133,7 +133,7 @@ private:
     generation_t       _generation;
     GenerationHolder   _genHolderStore;
 
-    void onExpand() override;
+    void onReallocation() override;
 
 public:
     RcuVector();

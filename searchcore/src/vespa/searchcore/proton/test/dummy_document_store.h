@@ -29,7 +29,7 @@ struct DummyDocumentStore : public search::IDocumentStore
     virtual uint64_t lastSyncToken() const override { return 0; }
     virtual uint64_t tentativeLastSyncToken() const override { return 0; }
     virtual fastos::TimeStamp getLastFlushTime() const override { return fastos::TimeStamp(); }
-    virtual uint64_t nextId() const override { return 0; }
+    virtual uint32_t getDocIdLimit() const override { return 0; }
     virtual size_t memoryUsed() const override { return 0; }
     virtual size_t memoryMeta() const override { return 0; }
     virtual size_t getDiskFootprint() const override { return 0; }
@@ -47,7 +47,7 @@ struct DummyDocumentStore : public search::IDocumentStore
 
     virtual double getVisitCost() const override { return 1.0; }
     virtual search::DataStoreStorageStats getStorageStats() const override {
-        return search::DataStoreStorageStats(0, 0, 0.0, 0, 0);
+        return search::DataStoreStorageStats(0, 0, 0.0, 0, 0, 0);
     }
     virtual search::MemoryUsage getMemoryUsage() const override { return search::MemoryUsage(); }
     virtual std::vector<search::DataStoreFileChunkStats> getFileChunkStats() const override {
@@ -57,6 +57,7 @@ struct DummyDocumentStore : public search::IDocumentStore
 
     virtual void compactLidSpace(uint32_t wantedDocLidLimit) override { (void) wantedDocLidLimit; }
     virtual bool canShrinkLidSpace() const override { return false; }
+    virtual size_t getEstimatedShrinkLidSpaceGain() const override { return 0; }
     virtual void shrinkLidSpace() override {}
 };
 

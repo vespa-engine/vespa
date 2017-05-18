@@ -117,6 +117,7 @@ vespa_define_module(
     src/tests/docstore/chunk
     src/tests/docstore/document_store
     src/tests/docstore/document_store_visitor
+    src/tests/docstore/file_chunk
     src/tests/docstore/lid_info
     src/tests/docstore/logdatastore
     src/tests/docstore/store_by_bucket

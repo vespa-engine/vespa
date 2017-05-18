@@ -23,6 +23,7 @@ namespace {
 
 constexpr size_t ALIGNMENT=0x1000;
 constexpr size_t ENTRY_BIAS_SIZE=8;
+const vespalib::string DOC_ID_LIMIT_KEY("docIdLimit");
 
 }
 
@@ -75,6 +76,7 @@ FileChunk::FileChunk(FileId fileId, NameId nameId, const vespalib::string & base
       _dataHeaderLen(0u),
       _idxHeaderLen(0u),
       _lastPersistedSerialNum(0),
+      _docIdLimit(std::numeric_limits<uint32_t>::max()),
       _modificationTime()
 {
     FastOS_File dataFile(_dataFileName.c_str());
@@ -153,7 +155,7 @@ FileChunk::erase()
 }
 
 size_t
-FileChunk::updateLidMap(const LockGuard & guard, ISetLid & ds, uint64_t serialNum)
+FileChunk::updateLidMap(const LockGuard &guard, ISetLid &ds, uint64_t serialNum, uint32_t docIdLimit)
 {
     size_t sz(0);
     assert(_chunkInfo.empty());
@@ -164,7 +166,7 @@ FileChunk::updateLidMap(const LockGuard & guard, ISetLid & ds, uint64_t serialNu
         if (idxFile.IsMemoryMapped()) {
             const int64_t fileSize = idxFile.GetSize();
             if (_idxHeaderLen == 0) {
-                _idxHeaderLen = readIdxHeader(idxFile);
+                _idxHeaderLen = readIdxHeader(idxFile, _docIdLimit);
             }
             vespalib::nbostream is(static_cast<const char *>(idxFile.MemoryMapPtr(0)) + _idxHeaderLen,
                                    fileSize - _idxHeaderLen);
@@ -213,12 +215,16 @@ FileChunk::updateLidMap(const LockGuard & guard, ISetLid & ds, uint64_t serialNu
                     BucketDensityComputer bucketMap(_bucketizer);
                     for (size_t i(0), m(chunkMeta.getNumEntries()); i < m; i++) {
                         const LidMeta & lidMeta(chunkMeta[i]);
-                        if (_bucketizer && (lidMeta.size() > 0)) {
-                            document::BucketId bucketId = _bucketizer->getBucketOf(bucketizerGuard, lidMeta.getLid());
-                            bucketMap.recordLid(bucketId);
-                            globalBucketMap.recordLid(bucketId);
+                        if (lidMeta.getLid() < docIdLimit) {
+                            if (_bucketizer && (lidMeta.size() > 0)) {
+                                document::BucketId bucketId = _bucketizer->getBucketOf(bucketizerGuard, lidMeta.getLid());
+                                bucketMap.recordLid(bucketId);
+                                globalBucketMap.recordLid(bucketId);
+                            }
+                            ds.setLid(guard, lidMeta.getLid(), LidInfo(getFileId().getId(), _chunkInfo.size(), lidMeta.size()));
+                        } else {
+                            remove(lidMeta.getLid(), lidMeta.size());
                         }
-                        ds.setLid(guard, lidMeta.getLid(), LidInfo(getFileId().getId(), _chunkInfo.size(), lidMeta.size()));
                         _addedBytes += adjustSize(lidMeta.size());
                     }
                     serialNum = chunkMeta.getLastSerial();
@@ -392,7 +398,7 @@ FileChunk::readDataHeader(FileRandRead &datFile)
 
 
 uint64_t
-FileChunk::readIdxHeader(FastOS_FileInterface &idxFile)
+FileChunk::readIdxHeader(FastOS_FileInterface &idxFile, uint32_t &docIdLimit)
 {
     int64_t fileSize = idxFile.GetSize();
     uint32_t hl = GenericHeader::getMinSize();
@@ -407,7 +413,27 @@ FileChunk::readIdxHeader(FastOS_FileInterface &idxFile)
     if (idxHeaderLen == 0u) {
         throw SummaryException("bad file header", idxFile, VESPA_STRLOC);
     }
+    GenericHeader::MMapReader reader(static_cast<const char *> (idxFile.MemoryMapPtr(0)), idxHeaderLen);
+    GenericHeader header;
+    header.read(reader);
+    docIdLimit = readDocIdLimit(header);
     return idxHeaderLen;
+}
+
+uint32_t
+FileChunk::readDocIdLimit(vespalib::GenericHeader &header)
+{
+    if (header.hasTag(DOC_ID_LIMIT_KEY)) {
+        return header.getTag(DOC_ID_LIMIT_KEY).asInteger();
+    } else {
+        return std::numeric_limits<uint32_t>::max();
+    }
+}
+
+void
+FileChunk::writeDocIdLimit(vespalib::GenericHeader &header, uint32_t docIdLimit)
+{
+    header.putTag(vespalib::GenericHeader::Tag(DOC_ID_LIMIT_KEY, docIdLimit));
 }
 
 void
@@ -482,7 +508,8 @@ FileChunk::isIdxFileEmpty(const vespalib::string & name)
     if (idxFile.OpenReadOnly()) {
         if (idxFile.IsMemoryMapped()) {
             int64_t fileSize = idxFile.getSize();
-            int64_t idxHeaderLen = FileChunk::readIdxHeader(idxFile);
+            uint32_t docIdLimit = std::numeric_limits<uint32_t>::max();
+            int64_t idxHeaderLen = FileChunk::readIdxHeader(idxFile, docIdLimit);
             return fileSize <= idxHeaderLen;
         } else if ( idxFile.getSize() == 0u) {
             return true;
@@ -512,9 +539,10 @@ FileChunk::getStats() const
     uint64_t diskBloat = getDiskBloat();
     double bucketSpread = getBucketSpread();
     uint64_t serialNum = getLastPersistedSerialNum();
+    uint32_t docIdLimit = getDocIdLimit();
     uint64_t nameId = getNameId().getId();
     return DataStoreFileChunkStats(diskFootprint, diskBloat, bucketSpread,
-                                   serialNum, serialNum, nameId);
+                                   serialNum, serialNum, docIdLimit, nameId);
 }
 
 } // namespace search

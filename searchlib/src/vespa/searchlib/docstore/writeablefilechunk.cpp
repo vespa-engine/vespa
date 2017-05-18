@@ -80,6 +80,7 @@ WriteableFileChunk(vespalib::ThreadExecutor &executor,
                    FileId fileId, NameId nameId,
                    const vespalib::string &baseName,
                    SerialNum initialSerialNum,
+                   uint32_t docIdLimit,
                    const Config &config,
                    const TuneFileSummary &tune,
                    const FileHeaderContext &fileHeaderContext,
@@ -109,6 +110,7 @@ WriteableFileChunk(vespalib::ThreadExecutor &executor,
       _executor(executor),
       _bucketMap(bucketizer)
 {
+    _docIdLimit = docIdLimit;
     if (tune._write.getWantDirectIO()) {
         _dataFile.EnableDirectIO();
     }
@@ -131,7 +133,7 @@ WriteableFileChunk(vespalib::ThreadExecutor &executor,
         if (_idxFile.OpenReadWrite()) {
             readIdxHeader();
             if (_idxHeaderLen == 0) {
-                _idxHeaderLen = writeIdxHeader(fileHeaderContext, _idxFile);
+                _idxHeaderLen = writeIdxHeader(fileHeaderContext, _docIdLimit, _idxFile);
             }
             _idxFile.SetPosition(_idxFile.GetSize());
         } else {
@@ -168,9 +170,9 @@ WriteableFileChunk::~WriteableFileChunk()
 }
 
 size_t
-WriteableFileChunk::updateLidMap(const LockGuard & guard, ISetLid & ds, uint64_t serialNum)
+WriteableFileChunk::updateLidMap(const LockGuard &guard, ISetLid &ds, uint64_t serialNum, uint32_t docIdLimit)
 {
-    size_t sz = FileChunk::updateLidMap(guard, ds, serialNum);
+    size_t sz = FileChunk::updateLidMap(guard, ds, serialNum, docIdLimit);
     _nextChunkId = _chunkInfo.size();
     _active.reset( new Chunk(_nextChunkId++, Chunk::Config(_config.getMaxChunkBytes())));
     _serialNum = getLastPersistedSerialNum();
@@ -744,13 +746,14 @@ WriteableFileChunk::readDataHeader(void)
 
 
 void
-WriteableFileChunk::readIdxHeader(void)
+WriteableFileChunk::readIdxHeader()
 {
     int64_t fSize(_idxFile.GetSize());
     try {
         FileHeader h;
         _idxHeaderLen = h.readFile(_idxFile);
         _idxFile.SetPosition(_idxHeaderLen);
+        _docIdLimit = readDocIdLimit(h);
     } catch (IllegalHeaderException &e) {
         _idxFile.SetPosition(0);
         try {
@@ -790,7 +793,7 @@ WriteableFileChunk::writeDataHeader(const FileHeaderContext &fileHeaderContext)
 
 
 uint64_t
-WriteableFileChunk::writeIdxHeader(const FileHeaderContext &fileHeaderContext, FastOS_FileInterface & file)
+WriteableFileChunk::writeIdxHeader(const FileHeaderContext &fileHeaderContext, uint32_t docIdLimit, FastOS_FileInterface &file)
 {
     typedef FileHeader::Tag Tag;
     FileHeader h;
@@ -799,6 +802,7 @@ WriteableFileChunk::writeIdxHeader(const FileHeaderContext &fileHeaderContext, F
     assert(file.GetPosition() == 0);
     fileHeaderContext.addTags(h, file.GetFileName());
     h.putTag(Tag("desc", "Log data store chunk index"));
+    writeDocIdLimit(h, docIdLimit);
     return h.writeFile(file);
 }
 
@@ -903,7 +907,7 @@ WriteableFileChunk::getStats() const
     DataStoreFileChunkStats stats = FileChunk::getStats();
     uint64_t serialNum = getSerialNum();
     return DataStoreFileChunkStats(stats.diskUsage(), stats.diskBloat(), stats.maxBucketSpread(),
-                                   serialNum, stats.lastFlushedSerialNum(), stats.nameId());
+                                   serialNum, stats.lastFlushedSerialNum(), stats.docIdLimit(), stats.nameId());
 };
 
 PendingChunk::PendingChunk(uint64_t lastSerial, uint64_t dataOffset, uint32_t dataLen)

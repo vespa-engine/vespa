@@ -23,10 +23,10 @@ struct ICompactableLidSpace {
     virtual bool canShrinkLidSpace() const = 0;
 
     /*
-     * Returns how much memory can be saved by shrinking lid space.
-     * TODO: Make method pure virtual when implemented in all derived classes.
+     * Returns how much memory (in bytes) that can be saved by shrinking lid space.
      */
-    virtual size_t getEstimatedShrinkLidSpaceGain() const { return 0; }
+    virtual size_t getEstimatedShrinkLidSpaceGain() const = 0;
+
     /**
      * Shrinks this lid space down to the wanted doc id limit (frees memory resources).
      */

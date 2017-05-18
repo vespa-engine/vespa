@@ -1,16 +1,19 @@
 // Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/testapp.h>
+
 #include <vespa/searchcore/proton/attribute/attribute_directory.h>
 #include <vespa/searchcore/proton/attribute/attributedisklayout.h>
-#include <vespa/searchcore/proton/test/directory_handler.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/testkit/testapp.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_directory_test");
 
 using search::IndexMetaInfo;
 using search::SerialNum;
+using search::test::DirectoryHandler;
 
 namespace proton {
 
@@ -44,13 +47,13 @@ bool hasWriter(const std::unique_ptr<AttributeDirectory::Writer> &writer) {
 
 }
 
-struct Fixture : public test::DirectoryHandler
+struct Fixture : public DirectoryHandler
 {
 
     std::shared_ptr<AttributeDiskLayout> _diskLayout;
 
     Fixture()
-        : test::DirectoryHandler("attributes"),
+        : DirectoryHandler("attributes"),
           _diskLayout(AttributeDiskLayout::create("attributes"))
     {
     }

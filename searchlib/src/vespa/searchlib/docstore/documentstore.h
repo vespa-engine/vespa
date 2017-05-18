@@ -105,9 +105,8 @@ public:
     /**
      * Get the number of entries (including removed IDs
      * or gaps in the local ID sequence) in the document store.
-     * @return The next local ID expected to be used.
      */
-    uint64_t nextId() const override { return _backingStore.nextId(); }
+    uint32_t getDocIdLimit() const override { return _backingStore.getDocIdLimit(); }
 
     /**
      * Calculate memory used by this instance.  During flush() actual
@@ -166,9 +165,10 @@ public:
     /**
      * Implements common::ICompactableLidSpace
      */
-    void compactLidSpace(uint32_t wantedDocLidLimit) override;
-    bool canShrinkLidSpace() const override;
-    void shrinkLidSpace() override;
+    virtual void compactLidSpace(uint32_t wantedDocLidLimit) override;
+    virtual bool canShrinkLidSpace() const override;
+    virtual size_t getEstimatedShrinkLidSpaceGain() const override;
+    virtual void shrinkLidSpace() override;
 
 private:
     bool useCache() const;

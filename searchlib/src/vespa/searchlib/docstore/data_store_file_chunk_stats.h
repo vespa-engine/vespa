@@ -18,10 +18,11 @@ public:
                             double maxBucketSpread_in,
                             uint64_t lastSerialNum_in,
                             uint64_t lastFlushedSerialNum_in,
+                            uint32_t docIdLimit_in,
                             uint64_t nameId_in)
         : DataStoreStorageStats(diskUsage_in, diskBloat_in,
-                                maxBucketSpread_in,
-                                lastSerialNum_in, lastFlushedSerialNum_in),
+                                maxBucketSpread_in, lastSerialNum_in,
+                                lastFlushedSerialNum_in, docIdLimit_in),
           DataStoreFileChunkId(nameId_in)
     {
     }

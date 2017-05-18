@@ -33,7 +33,7 @@ LOG_SETUP("attribute_test");
 #include <vespa/searchlib/predicate/predicate_hash.h>
 #include <vespa/searchlib/common/foregroundtaskexecutor.h>
 #include <vespa/searchlib/common/sequencedtaskexecutorobserver.h>
-#include <vespa/searchcore/proton/test/directory_handler.h>
+#include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/types.h>
 #include <vespa/eval/tensor/default_tensor.h>
@@ -51,12 +51,14 @@ using namespace search::index;
 using namespace search;
 using namespace vespa::config::search;
 
+using proton::test::AttributeUtils;
 using search::TuneFileAttributes;
 using search::index::DummyFileHeaderContext;
 using search::index::schema::CollectionType;
 using search::predicate::PredicateHash;
 using search::predicate::PredicateIndex;
 using search::tensor::TensorAttribute;
+using search::test::DirectoryHandler;
 using std::string;
 using vespalib::eval::ValueType;
 using vespalib::tensor::Tensor;
@@ -89,13 +91,13 @@ const AVConfig INT32_ARRAY = unregister(AVConfig(AVBasicType::INT32, AVCollectio
 void
 fillAttribute(const AttributeVector::SP &attr, uint32_t numDocs, int64_t value, uint64_t lastSyncToken)
 {
-    test::AttributeUtils::fillAttribute(attr, numDocs, value, lastSyncToken);
+    AttributeUtils::fillAttribute(attr, numDocs, value, lastSyncToken);
 }
 
 void
 fillAttribute(const AttributeVector::SP &attr, uint32_t from, uint32_t to, int64_t value, uint64_t lastSyncToken)
 {
-    test::AttributeUtils::fillAttribute(attr, from, to, value, lastSyncToken);
+    AttributeUtils::fillAttribute(attr, from, to, value, lastSyncToken);
 }
 
 const std::shared_ptr<IDestructorCallback> emptyCallback;
@@ -103,7 +105,7 @@ const std::shared_ptr<IDestructorCallback> emptyCallback;
 
 struct Fixture
 {
-    test::DirectoryHandler _dirHandler;
+    DirectoryHandler _dirHandler;
     DummyFileHeaderContext   _fileHeaderContext;
     ForegroundTaskExecutor   _attributeFieldWriterReal;
     SequencedTaskExecutorObserver _attributeFieldWriter;
@@ -519,7 +521,7 @@ const FilterAttributeManager::AttributeSet ACCEPTED_ATTRIBUTES = {"a2"};
 
 struct FilterFixture
 {
-    test::DirectoryHandler _dirHandler;
+    DirectoryHandler _dirHandler;
     DummyFileHeaderContext _fileHeaderContext;
     ForegroundTaskExecutor _attributeFieldWriter;
     HwInfo                 _hwInfo;
