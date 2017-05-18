@@ -118,7 +118,7 @@ class ContainerTest {
     assertTrue(componentToDestruct.deconstructed)
   }
 
-  @Ignore
+  @Ignore  // because logAndDie is impossible(?) to verify programmatically
   @Test
   def manually_verify_what_happens_when_first_graph_contains_component_that_throws_exception_in_ctor() {
     writeBootstrapConfigs("thrower", classOf[ComponentThrowingExceptionInConstructor])
