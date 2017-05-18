@@ -95,5 +95,10 @@ public class TensorFieldValue extends FieldValue {
         return true;
     }
 
+    @Override
+    public Object getWrappedValue() {
+        return tensor.orElse(null);
+    }
+
 }
 

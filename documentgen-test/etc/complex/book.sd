@@ -69,6 +69,10 @@ search book {
         field ref type reference<parent> {
             indexing: attribute
         }
+        field vector type tensor(x{}) {
+            indexing: attribute | summary
+            attribute: tensor(x{})
+        }
     }
     field sw1 type float {
     }
