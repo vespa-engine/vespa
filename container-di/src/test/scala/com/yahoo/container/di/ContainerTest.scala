@@ -20,6 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Try
 import com.yahoo.container.di.config.RestApiContext
 import com.yahoo.container.bundle.MockBundle
+import com.yahoo.container.di.componentgraph.core.ComponentNode.ComponentConstructorException
 
 import scala.language.postfixOps
 
@@ -118,6 +119,38 @@ class ContainerTest {
   }
 
   @Test
+  def previous_graph_is_retained_when_new_graph_contains_component_that_throws_exception_in_ctor() {
+    val simpleComponentEntry = ComponentEntry("simpleComponent", classOf[SimpleComponent])
+
+    writeBootstrapConfigs(Array(simpleComponentEntry))
+    val container = newContainer(dirConfigSource)
+    var currentGraph = container.runOnce()
+
+    val simpleComponent = currentGraph.getInstance(classOf[SimpleComponent])
+
+    writeBootstrapConfigs("thrower", classOf[ComponentThrowingExceptionInConstructor])
+    container.reloadConfig(2)
+    try {
+      currentGraph = container.runOnce(currentGraph)
+      fail("Expected exception")
+    } catch {
+      case _:ComponentConstructorException => // Expected, do nothing
+      case _: Throwable => fail("Expected ComponentConstructorException")
+    }
+    assertEquals(1, currentGraph.generation)
+
+    val componentTakingConfigEntry = ComponentEntry("componentTakingConfig", classOf[ComponentTakingConfig])
+    dirConfigSource.writeConfig("test", """stringVal "myString" """)
+    writeBootstrapConfigs(Array(simpleComponentEntry, componentTakingConfigEntry))
+    container.reloadConfig(3)
+    currentGraph = container.runOnce(currentGraph)
+
+    assertEquals(3, currentGraph.generation)
+    assertSame(simpleComponent, currentGraph.getInstance(classOf[SimpleComponent]))
+    assertNotNull(currentGraph.getInstance(classOf[ComponentTakingConfig]))
+  }
+
+  @Test
   def previous_graph_is_retained_when_new_graph_throws_exception_for_missing_config() {
     val simpleComponentEntry = ComponentEntry("simpleComponent", classOf[SimpleComponent])
 
@@ -134,7 +167,8 @@ class ContainerTest {
       currentGraph = container.runOnce(currentGraph)
       fail("Expected exception")
     } catch {
-      case e: Exception => e.printStackTrace()
+      case _:IllegalArgumentException => // Expected, do nothing
+      case _: Throwable => fail("Expected IllegalArgumentException")
     }
     assertEquals(1, currentGraph.generation)
 
@@ -320,6 +354,10 @@ object ContainerTest {
 
   class ComponentTakingConfig(val config: TestConfig) extends AbstractComponent {
     require(config != null)
+  }
+
+  class ComponentThrowingExceptionInConstructor() {
+    throw new RuntimeException("This component fails upon construction.")
   }
 
   class ComponentThrowingExceptionForMissingConfig(intConfig: IntConfig) extends AbstractComponent {
