@@ -91,7 +91,7 @@ class Container(
     }
 
     def logAndDie(message: String, cause: Throwable): Unit = {
-      log.log(Level.SEVERE, message)
+      log.log(Level.SEVERE, message, cause)
       try {
         Thread.sleep((new Random(System.nanoTime).nextDouble * maxWaitToExit * 1000).toLong)
       } catch {
