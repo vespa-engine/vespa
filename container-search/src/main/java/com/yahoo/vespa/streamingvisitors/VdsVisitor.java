@@ -117,7 +117,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         setVisitorParameters(searchCluster, route);
     }
 
-    private static int inferSessionTraceLevel(final Query query) {
+    private static int inferSessionTraceLevel(Query query) {
         int implicitLevel = 0;
         if (log.isLoggable(LogLevel.SPAM)) {
             implicitLevel = 9;
