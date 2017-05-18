@@ -101,9 +101,8 @@ class Container(
     configurer.getComponentsGeneration
   }
 
-  private def createAndConfigureComponentsGraph[T](
-                                                    componentsConfigs: Map[ConfigKeyT, ConfigInstance],
-                                                    fallbackInjector: Injector): ComponentGraph = {
+  private def createAndConfigureComponentsGraph[T](componentsConfigs: Map[ConfigKeyT, ConfigInstance],
+                                                   fallbackInjector: Injector): ComponentGraph = {
 
     val componentGraph = createComponentsGraph(componentsConfigs, getComponentsGeneration, fallbackInjector)
     componentGraph.setAvailableConfigs(componentsConfigs)

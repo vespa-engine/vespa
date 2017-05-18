@@ -1,30 +1,34 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di
 
-import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.{SimpleComponent2, SimpleComponent}
+import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.{SimpleComponent, SimpleComponent2}
 import com.yahoo.container.di.componentgraph.Provider
-import com.yahoo.container.di.componentgraph.core.{Node, ComponentGraph}
-import org.junit.{Test, Before, After}
+import com.yahoo.container.di.componentgraph.core.{ComponentGraph, Node}
+import org.junit.{After, Before, Test}
 import org.junit.Assert._
 import org.hamcrest.CoreMatchers._
 import com.yahoo.config.test.TestConfig
 import com.yahoo.component.AbstractComponent
 import ContainerTest._
+
 import scala.collection.JavaConversions
 import com.yahoo.config.di.IntConfig
-import scala.concurrent.{future, Await}
+
+import scala.concurrent.{Await, future}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Try
 import com.yahoo.container.di.config.RestApiContext
 import com.yahoo.container.bundle.MockBundle
 
+import scala.language.postfixOps
+
 /**
  * @author tonytv
  * @author gjoranv
  */
 class ContainerTest {
-  var dirConfigSource: DirConfigSource = null
+  var dirConfigSource: DirConfigSource = _
 
   @Before def setup()  {
     dirConfigSource = new DirConfigSource("ContainerTest-")
@@ -88,8 +92,8 @@ class ContainerTest {
     container.reloadConfig(2)
     val newGraph = container.runOnce(graph)
 
-    assertThat(ComponentGraph.getNode(newGraph, "id1"), notNullValue(classOf[Node]));
-    assertThat(ComponentGraph.getNode(newGraph, "id2"), notNullValue(classOf[Node]));
+    assertThat(ComponentGraph.getNode(newGraph, "id1"), notNullValue(classOf[Node]))
+    assertThat(ComponentGraph.getNode(newGraph, "id2"), notNullValue(classOf[Node]))
 
     container.shutdownConfigurer()
   }
@@ -216,7 +220,7 @@ class ContainerTest {
     val anotherComponentClass = classOf[SimpleComponent2]
     val anotherComponentId = "anotherComponent"
 
-    val componentsConfig =
+    val componentsConfig: String =
       ComponentEntry(injectedComponentId, injectedClass).asConfig(0) + "\n" +
         ComponentEntry(anotherComponentId, anotherComponentClass).asConfig(1) + "\n" +
         ComponentEntry("restApiContext", restApiClass).asConfig(2) + "\n" +
@@ -240,7 +244,7 @@ class ContainerTest {
   }
 
   case class ComponentEntry(componentId: String,  classId: Class[_]) {
-    def asConfig(position: Int) = {
+    def asConfig(position: Int): String = {
       <config>
       |components[{position}].id "{componentId}"
       |components[{position}].classId "{classId.getName}"
@@ -307,7 +311,7 @@ object ContainerTest {
     def get() = instance
 
     def deconstruct() {
-      require(instance.deconstructed == false)
+      require(! instance.deconstructed)
       instance.deconstructed = true
     }
   }
@@ -346,5 +350,5 @@ object ContainerTest {
     componentGraph.getInstance(classOf[ComponentTakingConfig])
   }
 
-  def convertMap[K, V](map: java.util.Map[K, V]) = JavaConversions.mapAsScalaMap(map).toMap
+  def convertMap[K, V](map: java.util.Map[K, V]): Map[K, V] = JavaConversions.mapAsScalaMap(map).toMap
 }
