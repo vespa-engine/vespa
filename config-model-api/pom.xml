@@ -96,6 +96,7 @@
               <goal>test-jar</goal>
             </goals>
             <configuration>
+              <!-- ugly workaround for https://issues.apache.org/jira/browse/MJAR-138 -->
               <skip>false</skip>
             </configuration>
           </execution>
