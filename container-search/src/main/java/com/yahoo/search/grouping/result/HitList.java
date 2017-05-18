@@ -10,7 +10,7 @@ import com.yahoo.search.result.Hit;
  * contains one or more {@link Hit hits} itself, making this the parent of leaf nodes in the hierarchy of grouping
  * results. Use the {@link GroupingRequest#getResultGroup(Result)} to retrieve grouping results.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class HitList extends AbstractList {
 

@@ -12,7 +12,7 @@ import java.util.Set;
  * En error hit maintains a main error - the main error of the result.
  *
  * @author bratseth
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class DefaultErrorHit extends Hit implements ErrorHit, Cloneable {
 
@@ -53,15 +53,6 @@ public class DefaultErrorHit extends Hit implements ErrorHit, Cloneable {
     @Deprecated
     public ErrorMessage getMainError() {
         return errors.get(0);
-    }
-
-    /**
-     * Insert the new "main" error at head of list, remove from the list if it
-     * already exists elsewhere.
-     */
-    private void removeAndAddAtHead(ErrorMessage mainError) {
-        errors.remove(mainError); // avoid error duplication
-        errors.add(0, mainError);
     }
 
     /**

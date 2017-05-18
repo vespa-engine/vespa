@@ -153,13 +153,20 @@ public abstract class Searcher extends Processor {
     /**
      * Fills the result if it is not already filled for the given summary class.
      * See the fill method.
-     **/
+     */
     public final void ensureFilled(Result result, String summaryClass, Execution execution) {
         if (summaryClass == null)
             summaryClass = result.getQuery().getPresentation().getSummary();
 
-        if (!result.isFilled(summaryClass)) {
+        if ( ! result.isFilled(summaryClass)) {
             fill(result, summaryClass, execution);
+        }
+        else {
+            int fillRejectTraceAt = 3;
+            if (result.getQuery().getTraceLevel() >= fillRejectTraceAt)
+                result.getQuery().trace("Ignoring fill(" + summaryClass + "): " +
+                                        ( result.hits().getFilled() == null ? "Hits are unfillable" : "Hits already filled" ) +
+                                        ": result.hits().getFilled()=" + result.hits().getFilled(), fillRejectTraceAt);
         }
     }
 

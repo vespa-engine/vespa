@@ -516,9 +516,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
         final int traceDependencies = 6;
         Query query = (Query) request;
         if (query.getTraceLevel() >= traceDependencies) {
-            query.trace(new StringBuilder().append(processor.getId())
-                    .append(" ").append(processor.getDependencies().toString())
-                    .toString(), traceDependencies);
+            query.trace(processor.getId() + " " + processor.getDependencies(), traceDependencies);
         }
     }
 
@@ -564,19 +562,33 @@ public class Execution extends com.yahoo.processing.execution.Execution {
     }
 
     /** Calls fill on the next searcher in this chain. If there is no next, nothing is done. */
-    public void fill(Result result,String summaryClass) {
+    public void fill(Result result, String summaryClass) {
         timer.sampleFill(nextIndex(), context.getDetailedDiagnostics());
-        Searcher next = (Searcher)next(); // TODO: Allow but skip processors which are not searchers
-        if (next==null) return;
+        Searcher current = (Searcher)next(); // TODO: Allow but skip processors which are not searchers
+        if (current == null) return;
 
         try {
             nextProcessor();
-            next.ensureFilled(result, summaryClass, this);
+            onInvokingFill(current, result, summaryClass);
+            current.ensureFilled(result, summaryClass, this);
         }
         finally {
             previousProcessor();
+            onReturningFill(current, result, summaryClass);
             timer.sampleFillReturn(nextIndex(), context.getDetailedDiagnostics(), result);
         }
+    }
+
+    private void onInvokingFill(Searcher searcher, Result result, String summaryClass) {
+        int traceFillAt = 5;
+        if (trace().getTraceLevel() < traceFillAt) return;
+        trace().trace("Invoke fill(" + summaryClass + ") on " + searcher, traceFillAt);
+    }
+
+    private void onReturningFill(Searcher searcher, Result result, String summaryClass) {
+        int traceFillAt = 5;
+        if (trace().getTraceLevel() < traceFillAt) return;
+        trace().trace("Return fill(" + summaryClass + ") on " + searcher, traceFillAt);
     }
 
     /** Calls ping on the next search in this chain. If there is no next, a Pong is created and returned. */
@@ -586,7 +598,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
 
         timer.samplePing(nextIndex(), context.getDetailedDiagnostics());
         Searcher next = (Searcher)next(); // TODO: Allow but skip processors which are not searchers
-        if (next==null) {
+        if (next == null) {
             annotationReference = new Pong();
             return annotationReference;
         }
