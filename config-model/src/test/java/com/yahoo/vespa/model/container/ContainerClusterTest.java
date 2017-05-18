@@ -26,7 +26,6 @@ import org.junit.Test;
 
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
