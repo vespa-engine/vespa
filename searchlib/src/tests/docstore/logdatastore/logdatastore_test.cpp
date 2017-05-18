@@ -913,7 +913,6 @@ TEST_F("require that lid space can be compacted and shrunk", Fixture)
 {
     f.write(1).write(2);
     EXPECT_FALSE(f.store.canShrinkLidSpace());
-    EXPECT_EQUAL(0u, f.store.getEstimatedShrinkLidSpaceGain());
 
     f.compactLidSpace(2);
     MemoryUsage before = f.store.getMemoryUsage();
@@ -946,9 +945,11 @@ TEST_F("require that lid space can be shrunk only after read guards are deleted"
         f.compactLidSpace(2);
         f.write(1); // trigger remove of old generations
         EXPECT_FALSE(f.store.canShrinkLidSpace());
+        EXPECT_EQUAL(0u, f.store.getEstimatedShrinkLidSpaceGain());
     }
     f.write(1); // trigger remove of old generations
     EXPECT_TRUE(f.store.canShrinkLidSpace());
+    EXPECT_EQUAL(8u, f.store.getEstimatedShrinkLidSpaceGain());
 }
 
 TEST_MAIN() {
