@@ -337,6 +337,17 @@ public class ProvisioningTest {
     }
 
     @Test
+    public void deploy_specific_vespa_version() {
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.dev, RegionName.from("us-east")));
+
+        ApplicationId application = tester.makeApplicationId();
+        tester.makeReadyNodes(4, "default");
+        SystemState state = prepare(application, 2, 2, 3, 3, "default", Version.fromString("6.91"), tester);
+        assertEquals(4, state.allHosts.size());
+        tester.activate(application, state.allHosts);
+    }
+
+    @Test
     public void test_deployment_size() {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.test, RegionName.from("us-east")));
 
@@ -681,11 +692,14 @@ public class ProvisioningTest {
     }
 
     private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size, int content1Size, String flavor, ProvisioningTester tester) {
+        prepare(application, container0Size, container1Size, content0Size, content1Size, flavor, Version.fromString("6.42"), tester);
+    }
+    private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size, int content1Size, String flavor, Version wantedVersion, ProvisioningTester tester) {
         // "deploy prepare" with a two container clusters and a storage cluster having of two groups
-        ClusterSpec containerCluster0 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container0"), Version.fromString("6.42"));
-        ClusterSpec containerCluster1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1"), Version.fromString("6.42"));
-        ClusterSpec contentCluster0 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content0"), Version.fromString("6.42"));
-        ClusterSpec contentCluster1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1"), Version.fromString("6.42"));
+        ClusterSpec containerCluster0 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container0"), wantedVersion);
+        ClusterSpec containerCluster1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1"), wantedVersion);
+        ClusterSpec contentCluster0 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content0"), wantedVersion);
+        ClusterSpec contentCluster1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1"), wantedVersion);
 
         Set<HostSpec> container0 = prepare(application, containerCluster0, container0Size, 1, flavor, tester);
         Set<HostSpec> container1 = prepare(application, containerCluster1, container1Size, 1, flavor, tester);

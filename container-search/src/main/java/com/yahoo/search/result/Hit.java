@@ -420,7 +420,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      * to look at it that way.
      *
      * Note that you might need to overload isFilled if you overload this one.
-     **/
+     */
     public Set<String> getFilled() {
         return unmodifiableFilled;
     }

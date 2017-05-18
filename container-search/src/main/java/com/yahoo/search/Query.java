@@ -182,9 +182,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     /** The time this query was created */
     private long startTime;
 
-    /** Error conditions stemming from the query itself */
-    private List<ErrorMessage> errors = new ArrayList<>(0);
-
     //---------------- Static property handling ------------------------------------
 
     public static final CompoundName OFFSET = new CompoundName("offset");
@@ -938,9 +935,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         clone.ranking = (Ranking) ranking.clone();
         clone.presentation = (Presentation) presentation.clone();
         clone.context = getContext(true).cloneFor(clone);
-
-        if (errors != null)
-            clone.errors = new ArrayList<>(errors);
 
         // Correct the Query instance in properties
         clone.properties().setParentQuery(clone);

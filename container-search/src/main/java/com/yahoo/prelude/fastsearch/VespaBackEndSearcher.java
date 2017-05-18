@@ -276,11 +276,11 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         List<Result> parts = new ArrayList<>();
         TinyIdentitySet<Query> queryMap = new TinyIdentitySet<>(4);
 
-        for (Iterator<Hit> itr = hitIterator(result); itr.hasNext(); ) {
-            Hit hit = itr.next();
+        for (Iterator<Hit> i = hitIterator(result); i.hasNext(); ) {
+            Hit hit = i.next();
             if (hit instanceof FastHit) {
                 FastHit fastHit = (FastHit) hit;
-                if (!fastHit.isFilled(summaryClass)) {
+                if ( ! fastHit.isFilled(summaryClass)) {
                     Query q = fastHit.getQuery();
                     if (q == null) {
                         q = result.hits().getQuery(); // fallback for untagged hits

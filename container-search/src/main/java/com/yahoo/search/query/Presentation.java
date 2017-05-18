@@ -21,7 +21,7 @@ import java.util.Set;
 /**
  * Parameters deciding how the result of a query should be presented
  *
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
+ * @author Arne Bergene Fossaa
  */
 public class Presentation implements Cloneable {
 

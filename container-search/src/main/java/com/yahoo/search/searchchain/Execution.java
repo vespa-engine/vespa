@@ -564,10 +564,10 @@ public class Execution extends com.yahoo.processing.execution.Execution {
     }
 
     /** Calls fill on the next searcher in this chain. If there is no next, nothing is done. */
-    public void fill(Result result,String summaryClass) {
+    public void fill(Result result, String summaryClass) {
         timer.sampleFill(nextIndex(), context.getDetailedDiagnostics());
         Searcher next = (Searcher)next(); // TODO: Allow but skip processors which are not searchers
-        if (next==null) return;
+        if (next == null) return;
 
         try {
             nextProcessor();
@@ -586,7 +586,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
 
         timer.samplePing(nextIndex(), context.getDetailedDiagnostics());
         Searcher next = (Searcher)next(); // TODO: Allow but skip processors which are not searchers
-        if (next==null) {
+        if (next == null) {
             annotationReference = new Pong();
             return annotationReference;
         }
