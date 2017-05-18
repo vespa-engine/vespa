@@ -136,10 +136,8 @@ public class FileHelper {
         }
     }
 
-    private static Optional<Path> getMostRecentlyModifiedFileIn(Path basePath) {
-        return listContentsOfDirectory(basePath).stream()
-                .filter(Files::isRegularFile)
-                .max(Comparator.comparing(FileHelper::getLastModifiedTime));
+    private static Optional<Path> getMostRecentlyModifiedFileIn(Path basePath) throws IOException {
+        return Files.walk(basePath).max(Comparator.comparing(FileHelper::getLastModifiedTime));
     }
 
     private static boolean isTimeSinceLastModifiedMoreThan(Path path, Duration duration) {
