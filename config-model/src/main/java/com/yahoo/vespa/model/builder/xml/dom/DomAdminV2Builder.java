@@ -6,10 +6,14 @@ import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.text.XML;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.model.*;
-import com.yahoo.vespa.model.admin.*;
+import com.yahoo.vespa.model.SimpleConfigProducer;
+import com.yahoo.vespa.model.admin.Admin;
+import com.yahoo.vespa.model.admin.Configserver;
+import com.yahoo.vespa.model.admin.Logserver;
+import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerCluster;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
+import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerClusterVerifier;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder.DomConfigProducerBuilder;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -17,8 +21,8 @@ import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import com.yahoo.config.application.api.FileRegistry;
 import org.w3c.dom.Element;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.logging.Level;
 
 /**
@@ -81,7 +85,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         if (standaloneZooKeeper) {
             parent = new ClusterControllerCluster(parent, "standalone");
         }
-        ContainerCluster cluster = new ContainerCluster(parent, "cluster-controllers", "cluster-controllers");
+        ContainerCluster cluster = new ContainerCluster(parent, "cluster-controllers", "cluster-controllers", new ClusterControllerClusterVerifier());
         ContainerModelBuilder.addDefaultHandler_legacyBuilder(cluster);
 
         List<Container> containers = new ArrayList<>();
