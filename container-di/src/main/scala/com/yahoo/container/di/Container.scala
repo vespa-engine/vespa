@@ -18,6 +18,8 @@ import com.yahoo.vespa.config.ConfigKey
 
 import scala.collection.JavaConversions._
 import scala.math.max
+import scala.concurrent.duration._
+import scala.language.postfixOps
 
 
 /**
@@ -68,13 +70,13 @@ class Container(
   }
 
   private def invalidateGeneration(generation: Long, cause: Throwable) {
-    val maxWaitToExit = 180L
+    val maxWaitToExit = 180 seconds
 
     def newGraphErrorMessage(generation: Long, cause: Throwable): String = {
       val failedFirstMessage = "Failed to set up first component graph"
       val failedNewMessage = "Failed to set up new component graph"
       val constructMessage = "due to error when constructing one of the components"
-      val exitMessage = s"Exiting within $maxWaitToExit seconds."
+      val exitMessage = s"Exiting within $maxWaitToExit."
       val retainMessage = "Retaining previous component generation."
       generation match {
         case 0 =>
@@ -93,11 +95,11 @@ class Container(
     def logAndDie(message: String, cause: Throwable): Unit = {
       log.log(Level.SEVERE, message, cause)
       try {
-        Thread.sleep((new Random(System.nanoTime).nextDouble * maxWaitToExit * 1000).toLong)
+        Thread.sleep((new Random(System.nanoTime).nextDouble * maxWaitToExit.toMillis).toLong)
       } catch {
         case _: InterruptedException => // Do nothing
       }
-      Process.logAndDie("Exited.", cause)
+      Process.logAndDie("Exited for reason (repeated from above):", cause)
     }
 
     val message = newGraphErrorMessage(generation, cause)
