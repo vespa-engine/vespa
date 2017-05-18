@@ -184,7 +184,7 @@ public final class ContainerCluster
     private Optional<String> hostClusterId = Optional.empty();
     private Optional<Integer> memoryPercentage = Optional.empty();
 
-    private static class AcceptAll implements ContainerClusterVerifier {
+    private static class AcceptAllVerifier implements ContainerClusterVerifier {
         @Override
         public boolean acceptComponent(Component component) { return true; }
 
@@ -193,7 +193,7 @@ public final class ContainerCluster
     }
 
     public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name) {
-        this(parent, subId, name, new AcceptAll());
+        this(parent, subId, name, new AcceptAllVerifier());
     }
 
     public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, ContainerClusterVerifier verifier) {
