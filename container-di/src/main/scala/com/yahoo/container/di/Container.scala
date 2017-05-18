@@ -71,18 +71,21 @@ class Container(
     val maxWaitToExit = 180L
 
     def newGraphErrorMessage(generation: Long, cause: Throwable): String = {
+      val failedFirstMessage = "Failed to set up first component graph"
+      val failedNewMessage = "Failed to set up new component graph"
+      val constructMessage = "due to error when constructing one of the components"
       val exitMessage = s"Exiting within $maxWaitToExit seconds."
       val retainMessage = "Retaining previous component generation."
       generation match {
         case 0 =>
           cause match {
-            case _: ComponentConstructorException => s"Failed to set up first component graph due to error when constructing one of the components. $exitMessage"
-            case _ => s"Failed to set up first component graph. $exitMessage"
+            case _: ComponentConstructorException => s"$failedFirstMessage $constructMessage. $exitMessage"
+            case _ => s"$failedFirstMessage. $exitMessage"
           }
         case _ =>
           cause match {
-            case _: ComponentConstructorException => s"Failed to set up new component graph due to error when constructing one of the components. $retainMessage"
-            case _ => s"Failed to set up new component graph. $retainMessage"
+            case _: ComponentConstructorException => s"$failedNewMessage $constructMessage. $retainMessage"
+            case _ => s"$failedNewMessage. $retainMessage"
           }
       }
     }
