@@ -6,8 +6,11 @@ import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.text.XML;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.model.*;
-import com.yahoo.vespa.model.admin.*;
+import com.yahoo.vespa.model.SimpleConfigProducer;
+import com.yahoo.vespa.model.admin.Admin;
+import com.yahoo.vespa.model.admin.Configserver;
+import com.yahoo.vespa.model.admin.Logserver;
+import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerCluster;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
 import com.yahoo.vespa.model.admin.clustercontroller.VerifyClusterControllerCluster;
@@ -18,7 +21,8 @@ import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import com.yahoo.config.application.api.FileRegistry;
 import org.w3c.dom.Element;
 
-import java.util.*;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.logging.Level;
 
 /**
