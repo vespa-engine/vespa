@@ -6,10 +6,12 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
+import com.yahoo.vespa.clustercontroller.core.hostinfo.Metrics;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.StorageNode;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Checks if a node can be upgraded.
@@ -17,6 +19,7 @@ import java.util.List;
  * @author dybis
  */
 public class NodeStateChangeChecker {
+    public static final String BUCKETS_METRIC_NAME = "vds.datastored.alldisks.buckets";
 
     private final int minStorageNodesUp;
     private double minRatioOfStorageNodesUp;
@@ -108,10 +111,44 @@ public class NodeStateChangeChecker {
             case UP:
                 return canSetStateUp(node, oldState.getState());
             case MAINTENANCE:
-                return canSetStateMaintenance(node, clusterState);
+                return canSetStateMaintenanceTemporarily(node, clusterState);
+            case DOWN:
+                return canSetStateDownPermanently(node, clusterState);
             default:
                 return Result.createDisallowed("Safe only supports state UP and MAINTENANCE, you tried: " + newState);
         }
+    }
+
+    private Result canSetStateDownPermanently(Node node, ClusterState clusterState) {
+        NodeInfo nodeInfo = clusterInfo.getNodeInfo(node);
+        if (nodeInfo == null) {
+            return Result.createDisallowed("Unknown node " + node);
+        }
+
+        NodeState currentState = clusterState.getNodeState(node);
+        if (currentState.getState() != State.RETIRED) {
+            return Result.createDisallowed("Only retired nodes are allowed to be set to DOWN in safe mode - is "
+                    + currentState.getState());
+        }
+
+        Result thresholdCheckResult = checkUpThresholds(clusterState);
+        if (!thresholdCheckResult.settingWantedStateIsAllowed()) {
+            return thresholdCheckResult;
+        }
+
+        Optional<Metrics.Value> bucketsMetric = clusterInfo.getStorageNodeInfo(node.getIndex())
+                .getHostInfo().getMetrics().getValue(BUCKETS_METRIC_NAME);
+        if (!bucketsMetric.isPresent() || bucketsMetric.get().getLast() == null) {
+            return Result.createDisallowed("Missing last value of the " + BUCKETS_METRIC_NAME +
+                    " metric for storage node " + node.getIndex());
+        }
+
+        long lastBuckets = bucketsMetric.get().getLast();
+        if (lastBuckets > 0) {
+            return Result.createDisallowed("The storage node manages " + lastBuckets + " buckets");
+        }
+
+        return Result.allowSettingOfWantedState();
     }
 
     private Result canSetStateUp(Node node, State oldState) {
@@ -128,7 +165,7 @@ public class NodeStateChangeChecker {
         return Result.allowSettingOfWantedState();
     }
 
-    private Result canSetStateMaintenance(Node node, ClusterState clusterState) {
+    private Result canSetStateMaintenanceTemporarily(Node node, ClusterState clusterState) {
         NodeInfo nodeInfo = clusterInfo.getNodeInfo(node);
         if (nodeInfo == null) {
             return Result.createDisallowed("Unknown node " + node);
@@ -148,13 +185,9 @@ public class NodeStateChangeChecker {
             return ongoingChanges;
         }
 
-        if (clusterInfo.getStorageNodeInfo().size() < minStorageNodesUp) {
-            return Result.createDisallowed("There are only " + clusterInfo.getStorageNodeInfo().size() +
-                    " storage nodes up, while config requires at least " + minStorageNodesUp);
-        }
-        Result fractionCheck = isFractionHighEnough(clusterState);
-        if (!fractionCheck.settingWantedStateIsAllowed()) {
-            return fractionCheck;
+        Result thresholdCheckResult = checkUpThresholds(clusterState);
+        if (!thresholdCheckResult.settingWantedStateIsAllowed()) {
+            return thresholdCheckResult;
         }
 
         return Result.allowSettingOfWantedState();
@@ -182,17 +215,22 @@ public class NodeStateChangeChecker {
         return upNodesCount;
     }
 
-    private Result isFractionHighEnough(ClusterState clusterState) {
+    private Result checkUpThresholds(ClusterState clusterState) {
+        if (clusterInfo.getStorageNodeInfo().size() < minStorageNodesUp) {
+            return Result.createDisallowed("There are only " + clusterInfo.getStorageNodeInfo().size() +
+                    " storage nodes up, while config requires at least " + minStorageNodesUp);
+        }
+
         final int nodesCount = clusterInfo.getStorageNodeInfo().size();
         final int upNodesCount = contentNodesWithAvailableNodeState(clusterState);
 
         if (nodesCount == 0) {
-            return Result.createDisallowed("No storage nodes in cluster state, not safe to restart.");
+            return Result.createDisallowed("No storage nodes in cluster state");
         }
         if (((double)upNodesCount) / nodesCount < minRatioOfStorageNodesUp) {
-            return Result.createDisallowed("Not enough storage nodes running, running: " + upNodesCount
-                    + " total storage nodes " +  nodesCount +
-                    " required fraction " + minRatioOfStorageNodesUp);
+            return Result.createDisallowed("Not enough storage nodes running: " + upNodesCount
+                    + " of " +  nodesCount + " storage nodes are up which is less that the required fraction of "
+                    + minRatioOfStorageNodesUp);
         }
         return Result.allowSettingOfWantedState();
     }

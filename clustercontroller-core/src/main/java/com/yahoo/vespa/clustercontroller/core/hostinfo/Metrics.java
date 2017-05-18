@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Keeper for Metrics for HostInfo.
@@ -13,7 +14,17 @@ import java.util.List;
  */
 public class Metrics {
 
-    public List<Metric> getValues() { return Collections.unmodifiableList(metricsList); }
+    public Optional<Value> getValue(String name) {
+        for (Metric metric : metricsList) {
+            if (name.equals(metric.getName())) {
+                return Optional.ofNullable(metric.getValue());
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    public List<Metric> getMetrics() { return Collections.unmodifiableList(metricsList); }
 
     public static class Metric {
         private final String name;
