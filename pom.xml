@@ -1077,7 +1077,6 @@
         <module>application-deploy-plugin</module>
         <module>application-model</module>
         <module>application-preprocessor</module>
-        <module>bundle-plugin</module>
         <module>bundle-plugin-test</module>
         <module>chain</module>
         <module>clustercontroller-apps</module>
@@ -1088,9 +1087,7 @@
         <module>component</module>
         <module>config-application-package</module>
         <module>configdefinitions</module>
-        <module>configgen</module>
         <module>config-bundle</module>
-        <module>config-class-plugin</module>
         <module>config-lib</module>
         <module>config-model-api</module>
         <module>config-model-fat</module>
