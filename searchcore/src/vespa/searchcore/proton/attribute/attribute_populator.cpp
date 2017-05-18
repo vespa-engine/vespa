@@ -70,8 +70,10 @@ AttributePopulator::done()
     for (const auto &flushTarget : flushTargets) {
         assert(flushTarget->getFlushedSerialNum() < _configSerialNum);
         auto task = flushTarget->initFlush(_configSerialNum);
-        assert(task);
-        task->run();
+        // shrink target only return task if able to shrink.
+        if (task) {
+            task->run();
+        }
         assert(flushTarget->getFlushedSerialNum() == _configSerialNum);
     }
 }
