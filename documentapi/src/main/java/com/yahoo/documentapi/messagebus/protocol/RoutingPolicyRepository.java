@@ -55,22 +55,18 @@ class RoutingPolicyRepository {
             log.log(LogLevel.ERROR, "No routing policy factory found for name '" + name + "'.");
             return null;
         }
-        DocumentProtocolRoutingPolicy ret;
-        try {
-            ret = factory.createPolicy(param);
-        } catch (Exception e) {
-            ret = new ErrorPolicy(e.getMessage());
+        final DocumentProtocolRoutingPolicy ret = factory.createPolicy(param);
+
+        if (ret == null) {
+            log.log(LogLevel.ERROR, "Routing policy factory " + factory.getClass().getName() + " failed to create a " +
+                    "routing policy for parameter '" + name + "'.");
+            return null;
         }
 
         if (ret.getMetrics() != null) {
             metrics.routingPolicyMetrics.addMetric(ret.getMetrics());
         }
 
-        if (ret == null) {
-            log.log(LogLevel.ERROR, "Routing policy factory " + factory.getClass().getName() + " failed to create a " +
-                                    "routing policy for parameter '" + name + "'.");
-            return null;
-        }
         return ret;
     }
 }
