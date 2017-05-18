@@ -53,15 +53,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class GroupingExecutorTestCase {
-
-    // --------------------------------------------------------------------------------
-    //
-    // Tests
-    //
-    // --------------------------------------------------------------------------------
 
     @Test
     public void requireThatNullRequestsPass() {
@@ -262,11 +256,21 @@ public class GroupingExecutorTestCase {
                                               new GroupingListHit(Arrays.asList(grp1), null))),
                                       new FillRequestThrower());
         Result res = exec.search(query);
+        
+        // Fill with summary specified in grouping
         try {
             exec.fill(res);
             fail();
         } catch (FillRequestException e) {
             assertEquals("bar", e.summaryClass);
+        }
+
+        // Fill again, with another summary
+        try {
+            exec.fill(res, "otherSummary");
+            fail();
+        } catch (FillRequestException e) {
+            assertEquals("otherSummary", e.summaryClass);
         }
     }
 
