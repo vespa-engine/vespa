@@ -104,7 +104,8 @@ class Container(
 
     val message = newGraphErrorMessage(generation, cause)
     generation match {
-      case 0 => logAndDie(message, cause)
+      // Disabled, as it breaks application based tests.
+      // case 0 => logAndDie(message, cause)
       case _ =>
         log.log(Level.WARNING, message, cause)
         leastGeneration = max(configurer.getComponentsGeneration, configurer.getBootstrapGeneration) + 1
