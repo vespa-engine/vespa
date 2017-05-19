@@ -12,11 +12,11 @@ vespalib::string module_path(TEST_PATH("../../../../"));
 
 
 TEST("require that reference tensor implementation passes all conformance tests") {
-    TEST_DO(TensorConformance::run_tests(module_path, SimpleTensorEngine::ref(), true));
+    TEST_DO(TensorConformance::run_tests(module_path, SimpleTensorEngine::ref()));
 }
 
-IGNORE_TEST("require that production tensor implementation passes non-mixed conformance tests") {
-    TEST_DO(TensorConformance::run_tests(module_path, DefaultTensorEngine::ref(), false));
+TEST("require that production tensor implementation passes all conformance tests") {
+    TEST_DO(TensorConformance::run_tests(module_path, DefaultTensorEngine::ref()));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

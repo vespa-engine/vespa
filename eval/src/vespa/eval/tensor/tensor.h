@@ -50,6 +50,9 @@ struct Tensor : public eval::Tensor
     virtual Tensor::UP clone() const = 0;
     virtual eval::TensorSpec toSpec() const = 0;
     virtual void accept(TensorVisitor &visitor) const = 0;
+
+    using TypeList = std::initializer_list<std::reference_wrapper<const eval::ValueType>>;
+    static bool supported(TypeList types);
 };
 
 std::ostream &operator<<(std::ostream &out, const Tensor &value);

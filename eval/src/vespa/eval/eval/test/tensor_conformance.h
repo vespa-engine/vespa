@@ -14,7 +14,7 @@ namespace test {
  * implementations of the TensorEngine interface.
  **/
 struct TensorConformance {
-    static void run_tests(const vespalib::string &module_path, const TensorEngine &engine, bool test_mixed_cases);
+    static void run_tests(const vespalib::string &module_path, const TensorEngine &engine);
 };
 
 } // namespace vespalib::eval::test

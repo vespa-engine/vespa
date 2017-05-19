@@ -13,6 +13,21 @@ Tensor::Tensor()
 {
 }
 
+bool
+Tensor::supported(TypeList types)
+{
+    bool sparse = false;
+    bool dense = false;
+    for (const eval::ValueType &type: types) {
+        dense = (dense || type.is_double());
+        for (const auto &dim: type.dimensions()) {
+            dense = (dense || dim.is_indexed());
+            sparse = (sparse || dim.is_mapped());
+        }
+    }
+    return (dense != sparse);
+}
+
 std::ostream &
 operator<<(std::ostream &out, const Tensor &value)
 {
