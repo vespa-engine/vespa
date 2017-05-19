@@ -13,11 +13,9 @@ import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
-import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.HttpResponse;
 import com.yahoo.jdisc.http.ServerConfig;
-import com.yahoo.jdisc.http.ServletPathsConfig;
 import com.yahoo.jdisc.http.filter.RequestFilter;
 import com.yahoo.jdisc.http.filter.chain.RequestFilterChain;
 import com.yahoo.jdisc.http.filter.ResponseFilter;
@@ -404,8 +402,6 @@ public class FilterTestCase {
                                         requestFilters != null ? requestFilters : EMPTY_REQUEST_FILTER_REPOSITORY,
                                         responseFilters != null ? responseFilters : EMPTY_RESPONSE_FILTER_REPOSITORY));
                         bind(ServerConfig.class).toInstance(new ServerConfig(new ServerConfig.Builder()));
-                        bind(ConnectorConfig.class).toInstance(new ConnectorConfig(new ConnectorConfig.Builder()));
-                        bind(ServletPathsConfig.class).toInstance(new ServletPathsConfig(new ServletPathsConfig.Builder()));
                     }
                 },
                 new ConnectorFactoryRegistryModule());

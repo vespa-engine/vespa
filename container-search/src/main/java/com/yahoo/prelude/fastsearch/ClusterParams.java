@@ -19,7 +19,7 @@ public class ClusterParams {
      * for compatibility
      **/
     public ClusterParams(int number, String name, int rowbits) {
-        this(number, name, rowbits, new LegacyEmulationConfig(new LegacyEmulationConfig.Builder()));
+        this(number, name, rowbits, new LegacyEmulationConfig());
     }
 
     /**
