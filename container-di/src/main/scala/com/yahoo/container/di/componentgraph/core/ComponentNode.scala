@@ -112,9 +112,9 @@ class ComponentNode(componentId: ComponentId,
         throw constructorException
       case _:TimeoutException =>
         throw new ComponentConstructorException(s"Timed out after $ComponentConstructTimeout while constructing component $idAndType.")
-      case _: InterruptedException =>
+      case e: InterruptedException =>
         Thread.currentThread().interrupt()
-        throw new RuntimeException(s"Interrupted while constructing component $idAndType")
+        throw new RuntimeException(s"Interrupted while constructing component $idAndType", e)
     }
   }
 
