@@ -70,7 +70,7 @@ class Container(
   }
 
   private def invalidateGeneration(generation: Long, cause: Throwable) {
-    val maxWaitToExit = 180 seconds
+    val maxWaitToExit = 60 seconds
 
     def newGraphErrorMessage(generation: Long, cause: Throwable): String = {
       val failedFirstMessage = "Failed to set up first component graph"
