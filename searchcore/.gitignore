@@ -8,7 +8,6 @@ public_html
 .Install_completed
 .PreBuild_completed
 update.log
-
 /target
 /pom.xml.build
 Makefile

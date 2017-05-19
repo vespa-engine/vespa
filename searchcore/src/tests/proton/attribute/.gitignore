@@ -4,6 +4,5 @@ Makefile
 test
 test_output
 flush
-
 searchcore_attribute_test_app
 searchcore_attributeflush_test_app

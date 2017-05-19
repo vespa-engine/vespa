@@ -6,5 +6,4 @@
 Makefile
 config-metricsmanager.h
 config-metricsmanager.cpp
-
 /libmetrics.so.5.1
