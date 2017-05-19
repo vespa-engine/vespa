@@ -10,7 +10,7 @@ secondsToWaitBeforeKillingContainer int default = 10
 maxPerRouteConnections int default = 10
 maxTotalConnections int default = 100
 connectTimeoutMillis int default = 100000 # 100 sec
-readTimeoutMillis int default = 1800000 # 30 min
+readTimeoutMillis int default = 60000 # 1 min
 
 isRunningLocally bool default = false
 imageGCMinTimeToLiveMinutes int default = 45
