@@ -61,6 +61,10 @@ public class FlavorConfigBuilder {
         for (String flavorName : flavors) {
             if (flavorName.equals("docker"))
                 flavorConfigBuilder.addFlavor(flavorName, 1. /* cpu*/, 3. /* mem GB*/, 2. /*disk GB*/, Flavor.Type.DOCKER_CONTAINER);
+            else if (flavorName.equals("docker2"))
+                flavorConfigBuilder.addFlavor(flavorName, 2. /* cpu*/, 4. /* mem GB*/, 4. /*disk GB*/, Flavor.Type.DOCKER_CONTAINER);
+            else if (flavorName.equals("host"))
+                flavorConfigBuilder.addFlavor(flavorName, 7. /* cpu*/, 10. /* mem GB*/, 12. /*disk GB*/, Flavor.Type.BARE_METAL);
             else
                 flavorConfigBuilder.addFlavor(flavorName, 1. /* cpu*/, 3. /* mem GB*/, 2. /*disk GB*/, Flavor.Type.BARE_METAL);
         }
