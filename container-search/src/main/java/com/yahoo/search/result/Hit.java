@@ -709,10 +709,12 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         }
     }
 
-    // TODO: Move out? If not, delegate here from subclass
     /**
+     * @deprecated do not use
+     * 
      * @return a field without bolding markup
      */
+    @Deprecated // TODO: Remove on Vespa 7
     public String getUnboldedField(String key, boolean escape) {
         Object p = getField(key);
 
@@ -732,7 +734,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     }
 
     /**
-     * set meta data describing how a given searcher should treat this hit.
+     * Set meta data describing how a given searcher should treat this hit.
      * It is currently recommended that the invoker == searcher.
      * <b>Internal. Do not use!</b>
      */

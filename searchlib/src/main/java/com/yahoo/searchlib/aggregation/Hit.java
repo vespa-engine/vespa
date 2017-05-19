@@ -9,7 +9,7 @@ import com.yahoo.vespa.objects.Serializer;
 /**
  * This class represents a generic hit with a rank value. Actual hits are represented using subclasses of this class.
  *
- * @author <a href="mailto:havardpe@yahoo-inc.com">Haavard Pettersen</a>
+ * @author havardpe
  */
 public abstract class Hit extends Identifiable {
 

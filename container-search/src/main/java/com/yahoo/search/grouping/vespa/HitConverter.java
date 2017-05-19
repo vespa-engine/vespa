@@ -14,7 +14,7 @@ import com.yahoo.searchlib.aggregation.VdsHit;
 /**
  * Implementation of the {@link ResultBuilder.HitConverter} interface for {@link GroupingExecutor}.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 class HitConverter implements ResultBuilder.HitConverter {
 
@@ -43,32 +43,32 @@ class HitConverter implements ResultBuilder.HitConverter {
         }
     }
 
-    private Hit convertFs4Hit(String summaryClass, FS4Hit grpHit) {
-        FastHit ret = new FastHit();
-        ret.setRelevance(grpHit.getRank());
-        ret.setGlobalId(grpHit.getGlobalId());
-        ret.setPartId(grpHit.getPath(), 0);
-        ret.setDistributionKey(grpHit.getDistributionKey());
-        ret.setFillable();
-        ret.setSearcherSpecificMetaData(searcher, summaryClass);
+    private Hit convertFs4Hit(String summaryClass, FS4Hit groupHit) {
+        FastHit hit = new FastHit();
+        hit.setRelevance(groupHit.getRank());
+        hit.setGlobalId(groupHit.getGlobalId());
+        hit.setPartId(groupHit.getPath(), 0);
+        hit.setDistributionKey(groupHit.getDistributionKey());
+        hit.setFillable();
+        hit.setSearcherSpecificMetaData(searcher, summaryClass);
 
-        Hit ctxHit = (Hit)grpHit.getContext();
+        Hit ctxHit = (Hit)groupHit.getContext();
         if (ctxHit == null) {
             throw new NullPointerException("Hit has no context.");
         }
-        ret.setSource(ctxHit.getSource());
-        ret.setSourceNumber(ctxHit.getSourceNumber());
-        ret.setQuery(ctxHit.getQuery());
+        hit.setSource(ctxHit.getSource());
+        hit.setSourceNumber(ctxHit.getSourceNumber());
+        hit.setQuery(ctxHit.getQuery());
 
         if (ctxHit instanceof GroupingListHit) {
             // in a live system the ctxHit can only by GroupingListHit, but because the code used Hit prior to version
             // 5.10 we need to check to avoid breaking existing unit tests -- both internally and with customers
             QueryPacketData queryPacketData = ((GroupingListHit)ctxHit).getQueryPacketData();
             if (queryPacketData != null) {
-                ret.setQueryPacketData(queryPacketData);
+                hit.setQueryPacketData(queryPacketData);
             }
         }
-        return ret;
+        return hit;
     }
 
     private Hit convertVdsHit(String summaryClass, VdsHit grpHit) {

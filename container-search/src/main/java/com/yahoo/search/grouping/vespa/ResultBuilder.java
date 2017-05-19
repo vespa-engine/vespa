@@ -52,7 +52,7 @@ import java.util.Map;
  * This class implements the necessary logic to build a {@link RootGroup} from a list of {@link Grouping} objects. It is
  * used by the {@link GroupingExecutor}.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 class ResultBuilder {
 
@@ -383,7 +383,7 @@ class ResultBuilder {
      * Defines a helper interface to convert Vespa style grouping hits into corresponding instances of {@link Hit}. It
      * is an interface to simplify testing.
      *
-     * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+     * @author Simon Thoresen
      */
     public interface HitConverter {
 

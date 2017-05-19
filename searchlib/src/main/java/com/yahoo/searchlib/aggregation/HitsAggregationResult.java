@@ -14,9 +14,9 @@ import java.util.List;
 /**
  * This is an aggregated result holding the top n hits for a single group.
  *
- * @author <a href="mailto:havardpe@yahoo-inc.com">Haavard Pettersen</a>
+ * @author havardpe
  * @author baldersheim
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class HitsAggregationResult extends AggregationResult {
 
