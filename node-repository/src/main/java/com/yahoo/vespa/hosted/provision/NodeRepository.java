@@ -233,6 +233,10 @@ public class NodeRepository extends AbstractComponent {
         return db.getDefaultFlavorForApplication(applicationId);
     }
 
+    public NodeFlavors getAvailableFlavors() {
+        return flavors;
+    }
+
     // ----------------- Node lifecycle -----------------------------------------------------------
 
     /** Creates a new node object, without adding it to the node repo. If no IP address is given, it will be resolved */
@@ -247,6 +251,24 @@ public class NodeRepository extends AbstractComponent {
     public Node createNode(String openStackId, String hostname, Optional<String> parentHostname,
                            Flavor flavor, NodeType type) {
         return createNode(openStackId, hostname, Collections.emptySet(), parentHostname, flavor, type);
+    }
+
+    /** Adds a list of newly created docker container nodes to the node repository as <i>reserved</i> nodes */
+    public List<Node> addDockerNodes(List<Node> nodes) {
+        for (Node node : nodes) {
+            if (!node.flavor().getType().equals(Flavor.Type.DOCKER_CONTAINER)) {
+                throw new IllegalArgumentException("Cannot add " + node.hostname() + ": This is not a docker node");
+            }
+            if (!node.allocation().isPresent()) {
+                throw new IllegalArgumentException("Cannot add " + node.hostname() + ": Docker containers needs to be allocated");
+            }
+            Optional<Node> existing = getNode(node.hostname());
+            if (existing.isPresent())
+                throw new IllegalArgumentException("Cannot add " + node.hostname() + ": A node with this name already exists");
+        }
+        try (Mutex lock = lockUnallocated()) {
+            return db.addNodesInState(nodes, Node.State.reserved);
+        }
     }
 
     /** Adds a list of (newly created) nodes to the node repository as <i>provisioned</i> nodes */

@@ -5,10 +5,10 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.Status;
@@ -44,6 +44,12 @@ public final class Node {
 
     /** The current allocation of this node, if any */
     private Optional<Allocation> allocation;
+
+    /** Temporary method until we can merge it with the other create method */
+    public static Node createDockerNode(String openStackId, Set<String> ipAddresses, Set<String> additionalIpAddresses, String hostname, Optional<String> parentHostname, Flavor flavor, NodeType type) {
+        return new Node(openStackId, ipAddresses, additionalIpAddresses, hostname, parentHostname, flavor, Status.initial(), State.reserved,
+            Optional.empty(), History.empty(), type);
+    }
 
     /** Creates a node in the initial state (provisioned) */
     public static Node create(String openStackId, Set<String> ipAddresses, Set<String> additionalIpAddresses, String hostname, Optional<String> parentHostname, Flavor flavor, NodeType type) {
@@ -228,7 +234,7 @@ public final class Node {
             newHistory = history.with(new History.Event(History.Event.Type.rebooted, Agent.system, instant));
         return this.with(newStatus).with(newHistory);
     }
-    
+
     /** Returns a copy of this node with the given history. */
     public Node with(History history) {
         return new Node(openStackId, ipAddresses, additionalIpAddresses, hostname, parentHostname, flavor, status, state, allocation, history, type);
@@ -256,7 +262,7 @@ public final class Node {
             throw new IllegalArgumentException(message, e);
         }
     }
-    
+
     @Override
     public int hashCode() {
         return id.hashCode();
@@ -300,9 +306,9 @@ public final class Node {
         /** This node has failed and must be repaired or removed. The node retains any allocation data for diagnosis. */
         failed,
 
-        /** 
-         * This node should not currently be used. 
-         * This state follows the same rules as failed except that it will never be automatically moved out of 
+        /**
+         * This node should not currently be used.
+         * This state follows the same rules as failed except that it will never be automatically moved out of
          * this state.
          */
         parked;
