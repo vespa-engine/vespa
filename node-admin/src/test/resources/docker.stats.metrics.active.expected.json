@@ -30,7 +30,7 @@
         }
     },
     {
-        "application": "node",
+        "application": "vespa.node",
         "dimensions": {
             "flavor": "docker",
             "applicationName": "testapp",
@@ -64,7 +64,7 @@
         }
     },
     {
-        "application": "node",
+        "application": "vespa.node",
         "dimensions": {
             "flavor": "docker",
             "applicationName": "testapp",
@@ -97,7 +97,7 @@
         }
     },
     {
-        "application": "node",
+        "application": "vespa.node",
         "dimensions": {
             "flavor": "docker",
             "applicationName": "testapp",

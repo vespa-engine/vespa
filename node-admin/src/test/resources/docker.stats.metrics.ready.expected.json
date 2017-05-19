@@ -1,6 +1,6 @@
 [
     {
-        "application": "node",
+        "application": "vespa.node",
         "dimensions": {
             "flavor": "docker",
             "role": "tenants",
