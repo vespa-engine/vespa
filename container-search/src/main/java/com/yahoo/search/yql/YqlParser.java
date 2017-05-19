@@ -1267,8 +1267,10 @@ public class YqlParser implements Parser {
                                      boolean exactMatch,
                                      Language language) {
         String wordData = rawWord;
-        if (getAnnotation(ast, NFKC, Boolean.class, Boolean.TRUE,
+        if (getAnnotation(ast, NFKC, Boolean.class, Boolean.FALSE,
                           "setting for whether to NFKC normalize input data")) {
+            // NOTE: If this is set to FALSE (default), we will still NFKC normalize text data
+            // during tokenization/segmentation, as that is always turned on also on the indexing side.
             wordData = normalizer.normalize(wordData);
         }
         boolean fromQuery = getAnnotation(ast, IMPLICIT_TRANSFORMS,
