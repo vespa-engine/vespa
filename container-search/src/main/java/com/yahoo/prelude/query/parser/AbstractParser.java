@@ -267,9 +267,8 @@ public abstract class AbstractParser implements CustomParser {
      * @return The normalized string.
      */
     protected String normalize(String input) {
-        if (input == null || input.length() == 0) {
-            return input;
-        }
+        if (input == null || input.length() == 0) return input;
+
         return environment.getLinguistics().getNormalizer().normalize(input);
     }
 

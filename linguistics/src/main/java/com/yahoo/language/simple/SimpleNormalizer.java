@@ -4,7 +4,7 @@ package com.yahoo.language.simple;
 import com.yahoo.language.process.Normalizer;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class SimpleNormalizer implements Normalizer {
 

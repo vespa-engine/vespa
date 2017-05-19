@@ -4,7 +4,7 @@ package com.yahoo.language.process;
 /**
  * <p>This interface provides NFKC normalization of Strings through the underlying linguistics library.</p>
  *
- * @author <a href="mailto:mathiasm@yahoo-inc.com">Mathias M\u00F8lster Lidal</a>
+ * @author Mathias Mølster Lidal
  */
 public interface Normalizer {
 
@@ -15,5 +15,6 @@ public interface Normalizer {
      * @return The normalized String.
      * @throws ProcessingException If underlying library throws an Exception.
      */
-    public String normalize(String input);
+    String normalize(String input);
+
 }

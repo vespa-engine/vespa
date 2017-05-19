@@ -16,7 +16,7 @@ import java.util.List;
  *
  * <p>This is not multithread safe.</p>
  *
- * @author <a href="mailto:mathiasm@yahoo-inc.com">Mathias Mølster Lidal</a>
+ * @author Mathias Mølster Lidal
  * @author bratseth
  */
 public class SimpleTokenizer implements Tokenizer {

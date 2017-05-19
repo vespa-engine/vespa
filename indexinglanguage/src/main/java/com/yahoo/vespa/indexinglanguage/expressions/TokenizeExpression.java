@@ -11,7 +11,7 @@ import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 import com.yahoo.vespa.indexinglanguage.linguistics.LinguisticsAnnotator;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class TokenizeExpression extends Expression {
 
