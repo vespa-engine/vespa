@@ -354,9 +354,10 @@ public class YqlParserTestCase {
         assertEquals("\u00e5",
                      getRootWord("select foo from bar where baz contains " +
                                  "([ {\"nfkc\": true} ]\"a\\u030a\");").getWord());
-        assertEquals("\u00e5",
+        assertEquals("No NKFC by default", 
+                     "a\u030a",
                      getRootWord("select foo from bar where baz contains " +
-                                 "\"a\\u030a\";").getWord());
+                                 "(\"a\\u030a\");").getWord());
     }
 
     @Test

@@ -6,11 +6,11 @@ import com.yahoo.language.Language;
 import java.util.List;
 
 /**
- * <p>Interface providing segmentation, i.e. splitting of CJK character blocks into separate tokens. This is primarily a
+ * Interface providing segmentation, i.e. splitting of CJK character blocks into separate tokens. This is primarily a
  * convenience feature for users who don't need full tokenization (or who use a separate tokenizer and only need CJK
- * processing).</p>
+ * processing).
  *
- * @author <a href="mailto:mathiasm@yahoo-inc.com">Mathias Mølster Lidal</a>
+ * @author Mathias Mølster Lidal
  */
 public interface Segmenter {
 
