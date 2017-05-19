@@ -2,6 +2,5 @@
 Makefile
 translogserver_test
 translogclient_test
-
 searchlib_translogclient_test_app
 searchlib_translogserver_test_app
