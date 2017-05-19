@@ -172,6 +172,17 @@ public class ContainerClusterTest {
     }
 
     @Test
+    public void testContainerClusterMaxThreads() {
+        ContainerCluster cluster = createContainerCluster(false, false);
+        addContainer(cluster, "c1","host-c1");
+
+        ThreadpoolConfig.Builder tpBuilder = new ThreadpoolConfig.Builder();
+        cluster.getConfig(tpBuilder);
+        ThreadpoolConfig threadpoolConfig = new ThreadpoolConfig(tpBuilder);
+        assertEquals(500, threadpoolConfig.maxthreads());
+    }
+
+    @Test
     public void testClusterControllerResourceUsage() {
         ContainerCluster cluster = createClusterControllerCluster();
         addClusterController(cluster, "host-c1");
@@ -183,10 +194,9 @@ public class ContainerClusterTest {
         assertEquals(512, qrStartConfig.jvm().heapsize());
 
         ThreadpoolConfig.Builder tpBuilder = new ThreadpoolConfig.Builder();
-        container.getConfig(tpBuilder);
+        cluster.getConfig(tpBuilder);
         ThreadpoolConfig threadpoolConfig = new ThreadpoolConfig(tpBuilder);
         assertEquals(10, threadpoolConfig.maxthreads());
-
     }
 
     @Test

@@ -28,8 +28,7 @@ import java.util.TreeSet;
 public class ClusterControllerContainer extends Container implements
         BundlesConfig.Producer,
         ZookeeperServerConfig.Producer,
-        QrStartConfig.Producer,
-        ThreadpoolConfig.Producer
+        QrStartConfig.Producer
 {
     private static final ComponentSpecification CLUSTERCONTROLLER_BUNDLE = new ComponentSpecification("clustercontroller-apps");
     private static final ComponentSpecification ZKFACADE_BUNDLE = new ComponentSpecification("zkfacade");
@@ -114,10 +113,6 @@ public class ClusterControllerContainer extends Container implements
     @Override
     public void getConfig(QrStartConfig.Builder builder) {
         builder.jvm(new QrStartConfig.Jvm.Builder().heapsize(512));
-    }
-    @Override
-    public void getConfig(ThreadpoolConfig.Builder builder) {
-        builder.maxthreads(10);
     }
 
     int getIndex() {
