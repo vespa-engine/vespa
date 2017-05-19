@@ -12,7 +12,6 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
-import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -27,17 +26,8 @@ public class DatabaseTest extends FleetControllerTest {
 
     private static Logger log = Logger.getLogger(DatabaseTest.class.getName());
 
-    protected Supervisor supervisor;
-
-    @After
-    public void tearDown() throws Exception {
-        if (supervisor != null) {
-            supervisor.transport().shutdown().join();
-        }
-        super.tearDown();
-    }
-
-    private void setWantedState(Node n, NodeState ns, Map<Node, NodeState> wantedStates) {
+    // Note: different semantics than FleetControllerTest.setWantedState
+    protected void setWantedState(Node n, NodeState ns, Map<Node, NodeState> wantedStates) {
         int rpcPort = fleetController.getRpcPort();
         if (supervisor == null) {
             supervisor = new Supervisor(new Transport());

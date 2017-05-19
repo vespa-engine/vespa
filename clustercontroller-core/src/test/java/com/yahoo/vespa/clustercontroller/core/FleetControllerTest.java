@@ -1,6 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.jrt.Request;
+import com.yahoo.jrt.Spec;
+import com.yahoo.jrt.StringValue;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Target;
+import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.api.BackOffPolicy;
 import com.yahoo.jrt.slobrok.server.Slobrok;
 import com.yahoo.log.LogLevel;
@@ -10,6 +16,7 @@ import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 import com.yahoo.vespa.clustercontroller.core.rpc.RPCCommunicator;
 import com.yahoo.vespa.clustercontroller.core.rpc.RpcServer;
@@ -26,6 +33,7 @@ import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
@@ -38,13 +46,14 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * @author humbe
+ * @author Håkon Humberset
  */
 public abstract class FleetControllerTest implements Waiter {
 
     private static Logger log = Logger.getLogger(FleetControllerTest.class.getName());
     protected static final int DEFAULT_NODE_COUNT = 10;
 
+    protected Supervisor supervisor;
     protected FakeTimer timer = new FakeTimer();
     protected boolean usingFakeTimer = false;
     protected Slobrok slobrok;
@@ -276,6 +285,9 @@ public abstract class FleetControllerTest implements Waiter {
             System.err.println("STOPPING TEST " + testName);
             testName = null;
         }
+        if (supervisor != null) {
+            supervisor.transport().shutdown().join();
+        }
         if (fleetController != null) {
             fleetController.shutdown();
             fleetController = null;
@@ -502,6 +514,25 @@ public abstract class FleetControllerTest implements Waiter {
         return Arrays.asList(indexes).stream()
                 .map(i -> new ConfiguredNode(i, false))
                 .collect(Collectors.toSet());
+    }
+
+    protected void setWantedState(DummyVdsNode node, State state, String reason) {
+        if (supervisor == null) {
+            supervisor = new Supervisor(new Transport());
+        }
+        NodeState ns = new NodeState(node.getType(), state);
+        if (reason != null) ns.setDescription(reason);
+        Target connection = supervisor.connect(new Spec("localhost", fleetController.getRpcPort()));
+        Request req = new Request("setNodeState");
+        req.parameters().add(new StringValue(node.getSlobrokName()));
+        req.parameters().add(new StringValue(ns.serialize()));
+        connection.invokeSync(req, timeoutS);
+        if (req.isError()) {
+            assertTrue("Failed to invoke setNodeState(): " + req.errorCode() + ": " + req.errorMessage(), false);
+        }
+        if (!req.checkReturnTypes("s")) {
+            assertTrue("Failed to invoke setNodeState(): Invalid return types.", false);
+        }
     }
 
 }
