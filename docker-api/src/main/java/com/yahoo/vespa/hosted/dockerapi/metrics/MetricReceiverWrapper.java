@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 public class MetricReceiverWrapper {
     // Application names used
     public static final String APPLICATION_DOCKER = "docker";
-    public static final String APPLICATION_NODE = "node";
+    public static final String APPLICATION_NODE = "vespa.node";
     public static final String APPLICATION_HOST_LIFE = "host_life";
 
     private final static ObjectMapper objectMapper = new ObjectMapper();
