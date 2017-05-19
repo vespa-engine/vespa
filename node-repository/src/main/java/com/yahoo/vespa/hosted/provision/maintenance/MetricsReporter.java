@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 public class MetricsReporter extends Maintainer {
 
     private final Metric metric;
+    private final HashMap<Flavor, Metric.Context> contextMap = new HashMap<>();
 
     public MetricsReporter(NodeRepository nodeRepository, Metric metric, Duration interval, JobControl jobControl) {
         super(nodeRepository, interval, jobControl);
@@ -35,9 +36,6 @@ public class MetricsReporter extends Maintainer {
 
         // Capacity flavors for docker
         DockerHostCapacity capacity = new DockerHostCapacity(nodeRepository().getNodes(Node.State.values()));
-        List<Flavor> dockerFlavors = nodeRepository().getAvailableFlavors().getFlavors().stream()
-                .filter(f -> f.getType().equals(Flavor.Type.DOCKER_CONTAINER))
-                .collect(Collectors.toList());
         metric.set("hostedVespa.docker.totalCapacityCpu", capacity.getCapacityTotal().getCpu(), null);
         metric.set("hostedVespa.docker.totalCapacityMem", capacity.getCapacityTotal().getMemory(), null);
         metric.set("hostedVespa.docker.totalCapacityDisk", capacity.getCapacityTotal().getDisk(), null);
@@ -45,10 +43,16 @@ public class MetricsReporter extends Maintainer {
         metric.set("hostedVespa.docker.freeCapacityMem", capacity.getFreeCapacityTotal().getMemory(), null);
         metric.set("hostedVespa.docker.freeCapacityDisk", capacity.getFreeCapacityTotal().getDisk(), null);
 
+        List<Flavor> dockerFlavors = nodeRepository().getAvailableFlavors().getFlavors().stream()
+                .filter(f -> f.getType().equals(Flavor.Type.DOCKER_CONTAINER))
+                .collect(Collectors.toList());
         for (Flavor flavor : dockerFlavors) {
-            Map<String, String> dimensions = new HashMap<>();
-            dimensions.put("flavor", flavor.name());
-            Metric.Context context = metric.createContext(dimensions);
+            if (!contextMap.containsKey(flavor)) {
+                Map<String, String> dimensions = new HashMap<>();
+                dimensions.put("flavor", flavor.name());
+                contextMap.put(flavor, metric.createContext(dimensions));
+            }
+            Metric.Context context = contextMap.get(flavor);
             metric.set("hostedVespa.docker.freeCapacityFlavor", capacity.freeCapacityInFlavorEquivalence(flavor), context);
             metric.set("hostedVespa.docker.idealHeadroomFlavor", flavor.getIdealHeadroom(), context);
             metric.set("hostedVespa.docker.hostsAvailableFlavor", capacity.getNofHostsAvailableFor(flavor), context);
