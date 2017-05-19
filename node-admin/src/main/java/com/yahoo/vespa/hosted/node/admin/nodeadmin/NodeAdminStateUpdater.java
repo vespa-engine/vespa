@@ -16,9 +16,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -39,7 +36,6 @@ public class NodeAdminStateUpdater extends AbstractComponent {
 
     private final Object monitor = new Object();
 
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private final PrefixLogger logger = PrefixLogger.getNodeAdminLogger(NodeAdminStateUpdater.class);
     private Thread loopThread;
 
@@ -236,10 +232,6 @@ public class NodeAdminStateUpdater extends AbstractComponent {
             loopThread.join(10000);
             if (loopThread.isAlive()) {
                 logger.error("Could not stop NodeAdminStateUpdater tick thread");
-            }
-            scheduler.shutdown();
-            if (! scheduler.awaitTermination(30, TimeUnit.SECONDS)) {
-                throw new RuntimeException("Could not stop NodeAdminStateUpdater fetch containers scheduler.");
             }
         } catch (InterruptedException e1) {
             logger.error("Interrupted; Could not stop NodeAdminStateUpdater thread");

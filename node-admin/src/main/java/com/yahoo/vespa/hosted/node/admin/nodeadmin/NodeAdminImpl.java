@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
@@ -35,8 +36,10 @@ import java.util.stream.Stream;
  */
 public class NodeAdminImpl implements NodeAdmin {
     private static final PrefixLogger logger = PrefixLogger.getNodeAdminLogger(NodeAdmin.class);
-    private final ScheduledExecutorService aclScheduler = Executors.newScheduledThreadPool(1);
-    private final ScheduledExecutorService metricsScheduler = Executors.newScheduledThreadPool(1);
+    private final ScheduledExecutorService aclScheduler =
+            Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("aclscheduler"));
+    private final ScheduledExecutorService metricsScheduler =
+            Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("metricsscheduler"));
 
     private final DockerOperations dockerOperations;
     private final Function<String, NodeAgent> nodeAgentFactory;
