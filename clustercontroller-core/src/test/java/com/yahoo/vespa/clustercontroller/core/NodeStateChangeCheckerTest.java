@@ -413,38 +413,24 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testDisallowedByNonRetiredState() {
-        ContentCluster cluster = createCluster(createNodes(4));
-        NodeStateChangeChecker nodeStateChangeChecker = createChangeChecker(cluster);
-
-        StorageNodeInfo nodeInfo = cluster.clusterInfo().getStorageNodeInfo(nodeStorage.getIndex());
-        nodeInfo.setReportedState(new NodeState(NodeType.STORAGE, State.UP), 0);
-        nodeInfo.setHostInfo(createHostInfoWithMetrics(currentClusterStateVersion, 1));
-
-        NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
-                nodeStorage, defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE,
-                UP_NODE_STATE, DOWN_NODE_STATE);
+    public void testDownDisallowedByNonRetiredState() {
+        NodeStateChangeChecker.Result result = evaluateDownTransition(
+                defaultAllUpClusterState(),
+                State.UP,
+                currentClusterStateVersion,
+                0);
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
         assertEquals("Only retired nodes are allowed to be set to DOWN in safe mode - is Up", result.getReason());
     }
 
     @Test
-    public void testDisallowedByBuckets() {
-        ContentCluster cluster = createCluster(createNodes(4));
-        NodeStateChangeChecker nodeStateChangeChecker = createChangeChecker(cluster);
-
-        ClusterState stateWithRetiredNode = clusterState(String.format(
-                "version:%d distributor:4 storage:4 .%d.s:r",
-                currentClusterStateVersion, nodeStorage.getIndex()));
-
-        StorageNodeInfo nodeInfo = cluster.clusterInfo().getStorageNodeInfo(nodeStorage.getIndex());
-        nodeInfo.setReportedState(new NodeState(NodeType.STORAGE, State.UP), 0);
-        nodeInfo.setHostInfo(createHostInfoWithMetrics(currentClusterStateVersion, 1));
-
-        NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
-                nodeStorage, stateWithRetiredNode, SetUnitStateRequest.Condition.SAFE,
-                UP_NODE_STATE, DOWN_NODE_STATE);
+    public void testDownDisallowedByBuckets() {
+        NodeStateChangeChecker.Result result = evaluateDownTransition(
+                retiredClusterStateSuffix(),
+                State.UP,
+                currentClusterStateVersion,
+                1);
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
         assertEquals("The storage node manages 1 buckets", result.getReason());
@@ -452,20 +438,11 @@ public class NodeStateChangeCheckerTest {
 
     @Test
     public void testDownDisallowedByReportedState() {
-        ContentCluster cluster = createCluster(createNodes(4));
-        NodeStateChangeChecker nodeStateChangeChecker = createChangeChecker(cluster);
-
-        ClusterState stateWithRetiredNode = clusterState(String.format(
-                "version:%d distributor:4 storage:4 .%d.s:r",
-                currentClusterStateVersion, nodeStorage.getIndex()));
-
-        StorageNodeInfo nodeInfo = cluster.clusterInfo().getStorageNodeInfo(nodeStorage.getIndex());
-        nodeInfo.setReportedState(new NodeState(NodeType.STORAGE, State.INITIALIZING), 0);
-        nodeInfo.setHostInfo(createHostInfoWithMetrics(currentClusterStateVersion, 0));
-
-        NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
-                nodeStorage, stateWithRetiredNode, SetUnitStateRequest.Condition.SAFE,
-                UP_NODE_STATE, DOWN_NODE_STATE);
+        NodeStateChangeChecker.Result result = evaluateDownTransition(
+                retiredClusterStateSuffix(),
+                State.INITIALIZING,
+                currentClusterStateVersion,
+                0);
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
         assertEquals("Reported state (Initializing) is not UP, so no bucket data is available", result.getReason());
@@ -473,20 +450,11 @@ public class NodeStateChangeCheckerTest {
 
     @Test
     public void testDownDisallowedByVersionMismatch() {
-        ContentCluster cluster = createCluster(createNodes(4));
-        NodeStateChangeChecker nodeStateChangeChecker = createChangeChecker(cluster);
-
-        ClusterState stateWithRetiredNode = clusterState(String.format(
-                "version:%d distributor:4 storage:4 .%d.s:r",
-                currentClusterStateVersion, nodeStorage.getIndex()));
-
-        StorageNodeInfo nodeInfo = cluster.clusterInfo().getStorageNodeInfo(nodeStorage.getIndex());
-        nodeInfo.setReportedState(new NodeState(NodeType.STORAGE, State.UP), 0);
-        nodeInfo.setHostInfo(createHostInfoWithMetrics(currentClusterStateVersion - 1, 0));
-
-        NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
-                nodeStorage, stateWithRetiredNode, SetUnitStateRequest.Condition.SAFE,
-                UP_NODE_STATE, DOWN_NODE_STATE);
+        NodeStateChangeChecker.Result result = evaluateDownTransition(
+                retiredClusterStateSuffix(),
+                State.UP,
+                currentClusterStateVersion - 1,
+                0);
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
         assertEquals("Cluster controller at version 2 got info for storage node 1 at a different version 1",
@@ -495,22 +463,36 @@ public class NodeStateChangeCheckerTest {
 
     @Test
     public void testAllowedToSetDown() {
+        NodeStateChangeChecker.Result result = evaluateDownTransition(
+                retiredClusterStateSuffix(),
+                State.UP,
+                currentClusterStateVersion,
+                0);
+        assertTrue(result.settingWantedStateIsAllowed());
+        assertFalse(result.wantedStateAlreadySet());
+    }
+
+    private NodeStateChangeChecker.Result evaluateDownTransition(
+            ClusterState clusterState,
+            State reportedState,
+            int hostInfoClusterStateVersion,
+            int lastAlldisksBuckets) {
         ContentCluster cluster = createCluster(createNodes(4));
         NodeStateChangeChecker nodeStateChangeChecker = createChangeChecker(cluster);
 
-        ClusterState stateWithRetiredNode = clusterState(String.format(
-                "version:%d distributor:4 storage:4 .%d.s:r",
-                currentClusterStateVersion, nodeStorage.getIndex()));
-
         StorageNodeInfo nodeInfo = cluster.clusterInfo().getStorageNodeInfo(nodeStorage.getIndex());
-        nodeInfo.setReportedState(new NodeState(NodeType.STORAGE, State.UP), 0);
-        nodeInfo.setHostInfo(createHostInfoWithMetrics(currentClusterStateVersion, 0));
+        nodeInfo.setReportedState(new NodeState(NodeType.STORAGE, reportedState), 0);
+        nodeInfo.setHostInfo(createHostInfoWithMetrics(hostInfoClusterStateVersion, lastAlldisksBuckets));
 
-        NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
-                nodeStorage, stateWithRetiredNode, SetUnitStateRequest.Condition.SAFE,
+        return nodeStateChangeChecker.evaluateTransition(
+                nodeStorage, clusterState, SetUnitStateRequest.Condition.SAFE,
                 UP_NODE_STATE, DOWN_NODE_STATE);
-        assertTrue(result.settingWantedStateIsAllowed());
-        assertFalse(result.wantedStateAlreadySet());
+    }
+
+    private ClusterState retiredClusterStateSuffix() {
+        return clusterState(String.format("version:%d distributor:4 storage:4 .%d.s:r",
+                currentClusterStateVersion,
+                nodeStorage.getIndex()));
     }
 
     private static HostInfo createHostInfoWithMetrics(int clusterStateVersion, int lastAlldisksBuckets) {
