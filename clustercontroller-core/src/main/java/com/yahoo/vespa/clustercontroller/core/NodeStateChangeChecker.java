@@ -6,6 +6,7 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
+import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.Metrics;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.StorageNode;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest;
@@ -120,9 +121,15 @@ public class NodeStateChangeChecker {
     }
 
     private Result canSetStateDownPermanently(Node node, ClusterState clusterState) {
-        NodeInfo nodeInfo = clusterInfo.getNodeInfo(node);
+        StorageNodeInfo nodeInfo = clusterInfo.getStorageNodeInfo(node.getIndex());
         if (nodeInfo == null) {
             return Result.createDisallowed("Unknown node " + node);
+        }
+
+        State reportedState = nodeInfo.getReportedState().getState();
+        if (reportedState != State.UP) {
+            return Result.createDisallowed("Reported state (" + reportedState
+                    + ") is not UP, so no bucket data is available");
         }
 
         NodeState currentState = clusterState.getNodeState(node);
@@ -136,8 +143,16 @@ public class NodeStateChangeChecker {
             return thresholdCheckResult;
         }
 
-        Optional<Metrics.Value> bucketsMetric = clusterInfo.getStorageNodeInfo(node.getIndex())
-                .getHostInfo().getMetrics().getValue(BUCKETS_METRIC_NAME);
+        HostInfo hostInfo = nodeInfo.getHostInfo();
+        Integer hostInfoNodeVersion = hostInfo.getClusterStateVersionOrNull();
+        int clusterControllerVersion = clusterState.getVersion();
+        if (hostInfoNodeVersion == null || hostInfoNodeVersion != clusterControllerVersion) {
+            return Result.createDisallowed("Cluster controller at version " + clusterControllerVersion
+                    + " got info for storage node " + node.getIndex() + " at a different version "
+                    + hostInfoNodeVersion);
+        }
+
+        Optional<Metrics.Value> bucketsMetric = hostInfo.getMetrics().getValue(BUCKETS_METRIC_NAME);
         if (!bucketsMetric.isPresent() || bucketsMetric.get().getLast() == null) {
             return Result.createDisallowed("Missing last value of the " + BUCKETS_METRIC_NAME +
                     " metric for storage node " + node.getIndex());
