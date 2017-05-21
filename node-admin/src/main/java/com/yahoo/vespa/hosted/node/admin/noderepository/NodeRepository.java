@@ -23,5 +23,5 @@ public interface NodeRepository {
 
     void markAsDirty(String hostName);
 
-    void markAsReady(String hostName);
+    void markNodeAvailableForNewAllocation(String hostName);
 }

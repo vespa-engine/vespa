@@ -451,13 +451,22 @@ public class NodeRepository extends AbstractComponent {
     }
 
     /**
-     * Removes a node. A node must be in the provisioned, failed or parked state before it can be removed.
+     * Removes a node. A node must be in a legal state before it can be removed.
      *
-     * @return true if the node was removed, false if it was not found in one of these states
+     * @return true if the node was removed, false if it was not found in one of the legal states
      */
     public boolean remove(String hostname) {
-        Optional<Node> nodeToRemove = getNode(hostname, Node.State.provisioned, Node.State.failed, Node.State.parked);
+
+        Node.State[] legalStates = {Node.State.provisioned, Node.State.failed, Node.State.parked};
+        Node.State[] legalDynamicStates = {Node.State.provisioned, Node.State.failed, Node.State.parked, Node.State.dirty};
+
+        Optional<Node> nodeToRemove = getNode(hostname, dynamicAllocationEnabled() ? legalDynamicStates : legalStates);
         if ( ! nodeToRemove.isPresent()) return false;
+
+        // Only docker nodes are allowed to be deleted in state dirty.
+        if ( nodeToRemove.get().state().equals(Node.State.dirty)) {
+            if (!(nodeToRemove.get().flavor().getType().equals(Flavor.Type.DOCKER_CONTAINER))) return false;
+        }
 
         try (Mutex lock = lock(nodeToRemove.get())) {
             return db.removeNode(nodeToRemove.get().state(), hostname);

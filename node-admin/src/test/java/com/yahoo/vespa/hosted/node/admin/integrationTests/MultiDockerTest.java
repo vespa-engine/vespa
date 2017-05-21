@@ -56,7 +56,7 @@ public class MultiDockerTest {
             callOrderVerifier.assertInOrder(
                     "updateNodeAttributes with HostName: host1.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image1, vespaVersion=''}",
                     "updateNodeAttributes with HostName: host2.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image2, vespaVersion=''}",
-                    "markAsReady with HostName: host2.test.yahoo.com",
+                    "markNodeAvailableForNewAllocation with HostName: host2.test.yahoo.com",
                     "updateNodeAttributes with HostName: host3.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image1, vespaVersion=''}");
         }
     }

@@ -149,17 +149,17 @@ public class NodeRepositoryImplTest {
         NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor, port, "dockerhost4");
         waitForJdiscContainerToServe();
 
-        nodeRepositoryApi.markAsReady("host55.yahoo.com");
+        nodeRepositoryApi.markNodeAvailableForNewAllocation("host55.yahoo.com");
 
         try {
-            nodeRepositoryApi.markAsReady("host1.yahoo.com");
+            nodeRepositoryApi.markNodeAvailableForNewAllocation("host1.yahoo.com");
             fail("Expected failure because host1 is not registered as provisioned, dirty, failed or parked");
         } catch (RuntimeException ignored) {
             // expected
         }
 
         try {
-            nodeRepositoryApi.markAsReady("host101.yahoo.com");
+            nodeRepositoryApi.markNodeAvailableForNewAllocation("host101.yahoo.com");
             fail("Expected failure because host101 does not exist");
         } catch (RuntimeException ignored) {
             // expected

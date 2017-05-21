@@ -73,10 +73,10 @@ public class NodesApiHandler extends LoggingRequestHandler {
                 case PATCH: return handlePATCH(request);
                 default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
             }
-        } 
+        }
         catch (NotFoundException | NoSuchNodeException e) {
             return ErrorResponse.notFoundError(Exceptions.toMessageString(e));
-        } 
+        }
         catch (IllegalArgumentException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
         }
@@ -124,6 +124,20 @@ public class NodesApiHandler extends LoggingRequestHandler {
             nodeRepository.reactivate(lastElement(path), Agent.operator);
             return new MessageResponse("Moved " + lastElement(path) + " to active");
         }
+        else if (path.startsWith("/nodes/v2/state/availablefornewallocations/")) {
+            /**
+             * This is a temporary "state" or rest call that we use to enable a smooth rollout of
+             * dynamic docker flavor allocations. Once we have switch everything we remove this
+             * and change the code in the nodeadmin to delete directly.
+             */
+            if (nodeRepository.dynamicAllocationEnabled()) {
+                nodeRepository.remove(lastElement(path));
+                return new MessageResponse("Removed " + lastElement(path));
+            } else {
+                nodeRepository.setReady(lastElement(path));
+                return new MessageResponse("Moved " + lastElement(path) + " to ready");
+            }
+        }
 
         throw new NotFoundException("Cannot put to path '" + path + "'");
     }
@@ -141,11 +155,11 @@ public class NodesApiHandler extends LoggingRequestHandler {
         if (path.equals("/nodes/v2/command/restart")) {
             int restartCount = nodeRepository.restart(toNodeFilter(request)).size();
             return new MessageResponse("Scheduled restart of " + restartCount + " matching nodes");
-        } 
+        }
         else if (path.equals("/nodes/v2/command/reboot")) {
             int rebootCount = nodeRepository.reboot(toNodeFilter(request)).size();
             return new MessageResponse("Scheduled reboot of " + rebootCount + " matching nodes");
-        } 
+        }
         else if (path.equals("/nodes/v2/node")) {
             int addedNodes = addNodes(request.getData());
             return new MessageResponse("Added " + addedNodes + " nodes to the provisioned state");
