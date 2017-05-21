@@ -133,6 +133,19 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
+    public void testUnknownStorageNode() {
+        ContentCluster cluster = createCluster(createNodes(4));
+        NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
+                5 /* min storage nodes */, minRatioOfStorageNodesUp, requiredRedundancy, cluster.clusterInfo());
+        NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
+                new Node(NodeType.STORAGE, 10), defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE,
+                UP_NODE_STATE, MAINTENANCE_NODE_STATE);
+        assertFalse(result.settingWantedStateIsAllowed());
+        assertFalse(result.wantedStateAlreadySet());
+        assertThat(result.getReason(), is("Unknown node storage.10"));
+    }
+
+    @Test
     public void testSafeSetStateDistributors() {
         NodeStateChangeChecker nodeStateChangeChecker = createChangeChecker(createCluster(createNodes(1)));
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
