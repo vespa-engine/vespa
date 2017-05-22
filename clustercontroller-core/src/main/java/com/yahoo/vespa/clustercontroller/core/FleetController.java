@@ -348,6 +348,22 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         newStates.add(state);
         metricUpdater.updateClusterStateMetrics(cluster, state);
         systemStateBroadcaster.handleNewSystemState(state);
+        // Iff master, always store new version in ZooKeeper _before_ publishing to any
+        // nodes so that a cluster controller crash after publishing but before a successful
+        // ZK store will not risk reusing the same version number.
+        if (masterElectionHandler.isMaster()) {
+            storeClusterStateVersionToZooKeeper(state);
+        }
+    }
+
+    private void storeClusterStateVersionToZooKeeper(ClusterState state) {
+        try {
+            database.saveLatestSystemStateVersion(databaseContext, state.getVersion());
+        } catch (InterruptedException e) {
+            // Rethrow as RuntimeException to propagate exception up to main thread method.
+            // Don't want to hide failures to write cluster state version.
+            throw new RuntimeException("ZooKeeper write interrupted", e);
+        }
     }
 
     /**

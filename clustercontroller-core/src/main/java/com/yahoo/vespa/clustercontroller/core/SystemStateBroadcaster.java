@@ -110,11 +110,7 @@ public class SystemStateBroadcaster {
         if (systemState == null) return false;
 
         List<NodeInfo> recipients = resolveStateVersionSendSet(dbContext);
-        // Store new version in ZooKeeper _before_ publishing to any nodes so that a
-        // cluster controller crash after publishing but before a successful ZK store
-        // will not risk reusing the same version number.
         if (!systemState.isOfficial()) {
-            database.saveLatestSystemStateVersion(dbContext, systemState.getVersion());
             systemState.setOfficial(true);
         }
 
