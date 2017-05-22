@@ -4,6 +4,7 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 
 import static java.lang.Long.min;
+import static java.lang.Integer.max;
 
 /**
  * Tuning of proton config for a search node based on the node flavor of that node.
@@ -23,7 +24,8 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
     @Override
     public void getConfig(ProtonConfig.Builder builder) {
         tuneDiskWriteSpeed(builder);
-        tuneDocumentStoreMaxFileSize(builder);
+        tuneDocumentStoreMaxFileSize(builder.summary.log);
+        tuneDocumentStoreNumThreads(builder.summary.log);
         tuneFlushStrategyMemoryLimits(builder.flush.memory);
         tuneFlushStrategyTlsSize(builder.flush.memory);
     }
@@ -34,7 +36,7 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
         }
     }
 
-    private void tuneDocumentStoreMaxFileSize(ProtonConfig.Builder builder) {
+    private void tuneDocumentStoreMaxFileSize(ProtonConfig.Summary.Log.Builder builder) {
         double memoryGb = nodeFlavor.getMinMainMemoryAvailableGb();
         long fileSizeBytes = 4 * GB;
         if (memoryGb <= 12.0) {
@@ -44,7 +46,11 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
         } else if (memoryGb <= 64.0) {
             fileSizeBytes = 1 * GB;
         }
-        builder.summary.log.maxfilesize(fileSizeBytes);
+        builder.maxfilesize(fileSizeBytes);
+    }
+
+    private void tuneDocumentStoreNumThreads(ProtonConfig.Summary.Log.Builder builder) {
+        builder.numthreads(max(1, (int)nodeFlavor.getMinCpuCores()/2));
     }
 
     private void tuneFlushStrategyMemoryLimits(ProtonConfig.Flush.Memory.Builder builder) {
