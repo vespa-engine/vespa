@@ -26,3 +26,9 @@ filter[].binding string
 
 # Max number of threads in pool
 maxWorkerThreads                      int    default = 200
+
+# Enable embedded JMX server. Note: only accessible through the loopback interface.
+jmx.enabled                           bool   default = false
+
+# Listen port for the JMX server.
+jmx.listenPort                        int    default = 1099

@@ -15,6 +15,8 @@ import com.yahoo.jdisc.http.server.FilterBindings;
 import com.yahoo.jdisc.service.AbstractServerProvider;
 import com.yahoo.jdisc.service.CurrentContainer;
 import org.eclipse.jetty.http.HttpField;
+import org.eclipse.jetty.jmx.ConnectorServer;
+import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.RequestLog;
@@ -37,8 +39,11 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 
+import javax.management.remote.JMXServiceURL;
 import javax.servlet.DispatcherType;
+import java.lang.management.ManagementFactory;
 import java.net.BindException;
+import java.net.MalformedURLException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.file.Path;
@@ -138,6 +143,7 @@ public class JettyHttpServer extends AbstractServerProvider {
         initializeJettyLogging();
 
         server = new Server();
+        setupJmx(server, serverConfig);
         ((QueuedThreadPool)server.getThreadPool()).setMaxThreads(serverConfig.maxWorkerThreads());
 
         Map<Path, FileChannel> keyStoreChannels = getKeyStoreFileChannels(osgiFramework.bundleContext());
@@ -190,6 +196,27 @@ public class JettyHttpServer extends AbstractServerProvider {
             Log.setLog(new JavaUtilLog());
         } catch (Exception e) {
             throw new RuntimeException("Unable to initialize logging framework for Jetty");
+        }
+    }
+
+    private static void setupJmx(Server server, ServerConfig serverConfig) {
+        if (serverConfig.jmx().enabled()) {
+            System.setProperty("java.rmi.server.hostname", "localhost");
+            server.addBean(
+                    new MBeanContainer(ManagementFactory.getPlatformMBeanServer()));
+            server.addBean(
+                    new ConnectorServer(
+                            createJmxLoopbackOnlyServiceUrl(serverConfig.jmx().listenPort()),
+                            "org.eclipse.jetty.jmx:name=rmiconnectorserver"));
+        }
+    }
+
+    private static JMXServiceURL createJmxLoopbackOnlyServiceUrl(int port) {
+        try {
+            return new JMXServiceURL(
+                    "rmi", "localhost", port, "/jndi/rmi://localhost:" + port + "/jmxrmi");
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
         }
     }
 
