@@ -882,8 +882,7 @@ Proton::getComponentConfig(Consumer &consumer)
 int64_t
 Proton::getConfigGeneration(void)
 {
-    int64_t g = _protonConfigurer.getActiveConfigSnapshot()->getBootstrapConfig()->getGeneration();
-    return g;
+    return _protonConfigurer.getActiveConfigSnapshot()->getBootstrapConfig()->getGeneration();
 }
 
 
