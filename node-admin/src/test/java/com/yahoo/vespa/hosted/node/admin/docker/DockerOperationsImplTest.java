@@ -11,13 +11,9 @@ import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.mockito.InOrder;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyVararg;
@@ -104,19 +100,13 @@ public class DockerOperationsImplTest {
     @Test
     public void runsCommandInNetworkNamespace() {
         Container container = makeContainer("container-42", Container.State.RUNNING, 42);
-        List<String> capturedArgs = new ArrayList<>();
-        DockerOperationsImpl dockerOperations = new DockerOperationsImpl(docker, environment, capturedArgs::addAll);
+        DockerOperationsImpl dockerOperations = new DockerOperationsImpl(docker, environment);
 
-        dockerOperations.executeCommandInNetworkNamespace(container.name, new String[]{"iptables", "-nvL"});
+        when(docker.executeInContainerAsRoot(eq(new ContainerName("node-admin")), eq(60L),
+                eq("nsenter"), eq("--net=/host/proc/42/ns/net"), eq("--"), eq("iptables"), eq("-nvL")))
+                .thenReturn(new ProcessResult(0, "", ""));
 
-        assertEquals(Arrays.asList(
-                "sudo",
-                "-n",
-                "nsenter",
-                "--net=/host/proc/42/ns/net",
-                "--",
-                "iptables",
-                "-nvL"), capturedArgs);
+        dockerOperations.executeCommandInNetworkNamespace(container.name, "iptables", "-nvL");
     }
 
     private Container makeContainer(String name, Container.State state, int pid) {
