@@ -61,8 +61,8 @@
         throw;                                                                 \
     }
 
-#define EXPECT_TRUE(rc) TEST_MASTER.check(rc, __FILE__, __LINE__, TEST_STR(rc), false)
-#define EXPECT_FALSE(rc) TEST_MASTER.check(!(rc), __FILE__, __LINE__, TEST_STR(rc), false)
+#define EXPECT_TRUE(rc) TEST_MASTER.check(bool(rc), __FILE__, __LINE__, TEST_STR(rc), false)
+#define EXPECT_FALSE(rc) TEST_MASTER.check(!(bool(rc)), __FILE__, __LINE__, TEST_STR(rc), false)
 #define EXPECT_APPROX(a, b, eps) TEST_MASTER.compare(__FILE__, __LINE__, TEST_STR(a), TEST_STR(b), " ~= ", a, b, vespalib::TestComparators::approx(eps), false)
 #define EXPECT_NOT_APPROX(a, b, eps) TEST_MASTER.compare(__FILE__, __LINE__, TEST_STR(a), TEST_STR(b), " !~= ", a, b, vespalib::TestComparators::not_approx(eps), false)
 #define EXPECT_EQUAL(a, b) TEST_MASTER.compare(__FILE__, __LINE__, TEST_STR(a), TEST_STR(b), " == ", a, b, vespalib::TestComparators::equal(), false)
@@ -76,8 +76,8 @@
 #define TEST_ERROR(msg) TEST_MASTER.check(false, __FILE__, __LINE__, msg, false)
 
 
-#define ASSERT_TRUE(rc) TEST_MASTER.check(rc, __FILE__, __LINE__, TEST_STR(rc), true)
-#define ASSERT_FALSE(rc) TEST_MASTER.check(!(rc), __FILE__, __LINE__, TEST_STR(rc), true)
+#define ASSERT_TRUE(rc) TEST_MASTER.check(bool(rc), __FILE__, __LINE__, TEST_STR(rc), true)
+#define ASSERT_FALSE(rc) TEST_MASTER.check(!(bool(rc)), __FILE__, __LINE__, TEST_STR(rc), true)
 #define ASSERT_APPROX(a, b, eps) TEST_MASTER.compare(__FILE__, __LINE__, TEST_STR(a), TEST_STR(b), " ~= ", a, b, vespalib::TestComparators::approx(eps), true)
 #define ASSERT_NOT_APPROX(a, b, eps) TEST_MASTER.compare(__FILE__, __LINE__, TEST_STR(a), TEST_STR(b), " !~= ", a, b, vespalib::TestComparators::not_approx(eps), true)
 #define ASSERT_EQUAL(a, b) TEST_MASTER.compare(__FILE__, __LINE__, TEST_STR(a), TEST_STR(b), " == ", a, b, vespalib::TestComparators::equal(), true)

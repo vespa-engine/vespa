@@ -35,6 +35,9 @@ public:
     static std::unique_ptr<Tensor>
     mapToDense(const Tensor &tensor, const eval::ValueType &type);
 
+    static std::unique_ptr<Tensor>
+    mapToWrapped(const Tensor &tensor, const eval::ValueType &type);
+
     std::unique_ptr<Tensor> map(const Tensor &tensor) const;
 };
 
