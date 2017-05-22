@@ -17,6 +17,7 @@ public class ContainerNodeSpec {
     public final Node.State nodeState;
     public final String nodeType;
     public final String nodeFlavor;
+    public final Optional<String> wantedVespaVersion;
     public final Optional<String> vespaVersion;
     public final Optional<Owner> owner;
     public final Optional<Membership> membership;
@@ -34,6 +35,7 @@ public class ContainerNodeSpec {
             final Node.State nodeState,
             final String nodeType,
             final String nodeFlavor,
+            final Optional<String> wantedVespaVersion,
             final Optional<String> vespaVersion,
             final Optional<Owner> owner,
             final Optional<Membership> membership,
@@ -54,6 +56,7 @@ public class ContainerNodeSpec {
         this.nodeState = nodeState;
         this.nodeType = nodeType;
         this.nodeFlavor = nodeFlavor;
+        this.wantedVespaVersion = wantedVespaVersion;
         this.vespaVersion = vespaVersion;
         this.owner = owner;
         this.membership = membership;
@@ -78,6 +81,7 @@ public class ContainerNodeSpec {
                 Objects.equals(nodeState, that.nodeState) &&
                 Objects.equals(nodeType, that.nodeType) &&
                 Objects.equals(nodeFlavor, that.nodeFlavor) &&
+                Objects.equals(wantedVespaVersion, that.wantedVespaVersion) &&
                 Objects.equals(vespaVersion, that.vespaVersion) &&
                 Objects.equals(owner, that.owner) &&
                 Objects.equals(membership, that.membership) &&
@@ -98,6 +102,7 @@ public class ContainerNodeSpec {
                 nodeState,
                 nodeType,
                 nodeFlavor,
+                wantedVespaVersion,
                 vespaVersion,
                 owner,
                 membership,
@@ -118,6 +123,7 @@ public class ContainerNodeSpec {
                 + " nodeState=" + nodeState
                 + " nodeType = " + nodeType
                 + " nodeFlavor = " + nodeFlavor
+                + " wantedVespaVersion = " + wantedVespaVersion
                 + " vespaVersion = " + vespaVersion
                 + " owner = " + owner
                 + " membership = " + membership
@@ -230,6 +236,7 @@ public class ContainerNodeSpec {
         private Node.State nodeState;
         private String nodeType;
         private String nodeFlavor;
+        private Optional<String> wantedVespaVersion = Optional.empty();
         private Optional<String> vespaVersion = Optional.empty();
         private Optional<Owner> owner = Optional.empty();
         private Optional<Membership> membership = Optional.empty();
@@ -250,6 +257,7 @@ public class ContainerNodeSpec {
             nodeFlavor(nodeSpec.nodeFlavor);
 
             nodeSpec.wantedDockerImage.ifPresent(this::wantedDockerImage);
+            nodeSpec.wantedVespaVersion.ifPresent(this::wantedVespaVersion);
             nodeSpec.vespaVersion.ifPresent(this::vespaVersion);
             nodeSpec.owner.ifPresent(this::owner);
             nodeSpec.membership.ifPresent(this::membership);
@@ -283,6 +291,11 @@ public class ContainerNodeSpec {
 
         public Builder nodeFlavor(String nodeFlavor) {
             this.nodeFlavor = nodeFlavor;
+            return this;
+        }
+
+        public Builder wantedVespaVersion(String wantedVespaVersion) {
+            this.wantedVespaVersion = Optional.of(wantedVespaVersion);
             return this;
         }
 
@@ -338,7 +351,7 @@ public class ContainerNodeSpec {
 
         public ContainerNodeSpec build() {
             return new ContainerNodeSpec(hostname, wantedDockerImage, nodeState, nodeType, nodeFlavor,
-                                         vespaVersion, owner, membership,
+                                         wantedVespaVersion, vespaVersion, owner, membership,
                                          wantedRestartGeneration, currentRestartGeneration,
                                          wantedRebootGeneration, currentRebootGeneration,
                                          minCpuCores, minMainMemoryAvailableGb, minDiskAvailableGb);

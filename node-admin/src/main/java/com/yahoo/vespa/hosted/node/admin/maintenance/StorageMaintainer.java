@@ -15,13 +15,17 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.logging.FilebeatConfigProvider;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
+import com.yahoo.vespa.hosted.node.admin.util.SecretAgentScheduleMaker;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -62,6 +66,56 @@ public class StorageMaintainer {
                 .add("role", "docker").build();
 
         numberOfNodeAdminMaintenanceFails = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.maintenance.fails");
+    }
+
+    public void writeMetricsConfig(ContainerName containerName, ContainerNodeSpec nodeSpec) {
+        final Path yamasAgentFolder = environment.pathInNodeAdminFromPathInNode(containerName, "/etc/yamas-agent/");
+
+        Path vespaCheckPath = Paths.get(getDefaults().underVespaHome("libexec/yms/yms_check_vespa"));
+        SecretAgentScheduleMaker scheduleMaker = new SecretAgentScheduleMaker("vespa", 60, vespaCheckPath, "all")
+                .withTag("namespace", "Vespa")
+                .withTag("role", "tenants")
+                .withTag("flavor", nodeSpec.nodeFlavor)
+                .withTag("state", nodeSpec.nodeState.toString())
+                .withTag("zone", environment.getZone())
+                .withTag("parentHostname", environment.getParentHostHostname());
+
+        nodeSpec.owner.ifPresent(owner ->
+                scheduleMaker
+                        .withTag("tenantName", owner.tenant)
+                        .withTag("app", owner.application + "." + owner.instance));
+
+        nodeSpec.membership.ifPresent(membership ->
+                scheduleMaker
+                        .withTag("clustertype", membership.clusterType)
+                        .withTag("clusterid", membership.clusterId));
+
+        nodeSpec.vespaVersion.ifPresent(version -> scheduleMaker.withTag("vespaVersion", version));
+
+        try {
+            scheduleMaker.writeTo(yamasAgentFolder);
+            final String[] restartYamasAgent = new String[]{"service", "yamas-agent", "restart"};
+            docker.executeInContainerAsRoot(containerName, restartYamasAgent);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to write secret-agent schedules for " + containerName, e);
+        }
+    }
+
+    public void writeFilebeatConfig(ContainerName containerName, ContainerNodeSpec nodeSpec) {
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
+        try {
+            FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(environment);
+            Optional<String> config = filebeatConfigProvider.getConfig(nodeSpec);
+            if (!config.isPresent()) {
+                logger.error("Was not able to generate a config for filebeat, ignoring filebeat file creation." + nodeSpec.toString());
+                return;
+            }
+            Path filebeatPath = environment.pathInNodeAdminFromPathInNode(containerName, "/etc/filebeat/filebeat.yml");
+            Files.write(filebeatPath, config.get().getBytes());
+            logger.info("Wrote filebeat config.");
+        } catch (Throwable t) {
+            logger.error("Failed writing filebeat config; " + nodeSpec, t);
+        }
     }
 
     public Optional<Long> updateIfNeededAndGetDiskMetricsFor(ContainerName containerName) {

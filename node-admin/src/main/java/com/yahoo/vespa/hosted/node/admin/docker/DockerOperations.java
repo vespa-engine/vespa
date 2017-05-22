@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface DockerOperations {
-    Optional<String> getVespaVersion(ContainerName containerName);
 
     void startContainer(ContainerName containerName, ContainerNodeSpec nodeSpec);
 

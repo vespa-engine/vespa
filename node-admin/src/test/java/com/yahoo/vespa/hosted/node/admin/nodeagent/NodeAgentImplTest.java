@@ -94,6 +94,7 @@ public class NodeAgentImplTest {
         final ContainerNodeSpec nodeSpec = nodeSpecBuilder
                 .wantedDockerImage(dockerImage)
                 .nodeState(Node.State.active)
+                .wantedVespaVersion(vespaVersion)
                 .vespaVersion(vespaVersion)
                 .wantedRestartGeneration(restartGeneration)
                 .currentRestartGeneration(restartGeneration)
@@ -131,6 +132,7 @@ public class NodeAgentImplTest {
         final ContainerNodeSpec nodeSpec = nodeSpecBuilder
                 .wantedDockerImage(dockerImage)
                 .nodeState(Node.State.active)
+                .wantedVespaVersion(vespaVersion)
                 .vespaVersion(vespaVersion)
                 .wantedRestartGeneration(restartGeneration)
                 .currentRestartGeneration(restartGeneration)
@@ -224,6 +226,7 @@ public class NodeAgentImplTest {
         final ContainerNodeSpec nodeSpec = nodeSpecBuilder
                 .wantedDockerImage(dockerImage)
                 .nodeState(Node.State.failed)
+                .wantedVespaVersion(vespaVersion)
                 .vespaVersion(vespaVersion)
                 .wantedRestartGeneration(restartGeneration)
                 .currentRestartGeneration(restartGeneration)
@@ -285,6 +288,7 @@ public class NodeAgentImplTest {
         final ContainerNodeSpec nodeSpec = nodeSpecBuilder
                 .wantedDockerImage(dockerImage)
                 .nodeState(Node.State.inactive)
+                .wantedVespaVersion(vespaVersion)
                 .vespaVersion(vespaVersion)
                 .wantedRestartGeneration(restartGeneration)
                 .currentRestartGeneration(restartGeneration)
@@ -544,8 +548,9 @@ public class NodeAgentImplTest {
                 Optional.empty();
 
         when(dockerOperations.getContainerStats(any())).thenReturn(Optional.of(emptyContainerStats));
-        when(dockerOperations.getVespaVersion(eq(containerName))).thenReturn(Optional.of(vespaVersion));
         when(dockerOperations.getContainer(eq(containerName))).thenReturn(container);
+        doNothing().when(storageMaintainer).writeFilebeatConfig(any(), any());
+        doNothing().when(storageMaintainer).writeMetricsConfig(any(), any());
 
         return new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
                 Optional.of(storageMaintainer), metricReceiver, environment, clock, Optional.of(aclMaintainer));
