@@ -57,5 +57,13 @@ public class NodeRepositoryTest {
                 ApplicationId.from(TenantName.from("does"), ApplicationName.from("not"), InstanceName.from("exist"));
         assertFalse(tester.nodeRepository().getDefaultFlavorOverride(applicationWithoutDefaultFlavor).isPresent());
     }
-    
+
+    @Test
+    public void featureToggleDynamicAllocationTest() {
+        NodeRepositoryTester tester = new NodeRepositoryTester();
+        assertFalse(tester.nodeRepository().dynamicAllocationEnabled());
+
+        tester.curator().set(Path.fromString("/provision/v1/dynamicDockerAllocation"), new byte[0]);
+        assertTrue(tester.nodeRepository().dynamicAllocationEnabled());
+    }
 }
