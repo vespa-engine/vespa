@@ -40,7 +40,7 @@ public class ReservationExpirerTest {
         NodeFlavors flavors = FlavorConfigBuilder.createDummies("default");
         NodeRepository nodeRepository = new NodeRepository(flavors, curator, clock, Zone.defaultZone(),
                 new MockNameResolver().mockAnyLookup());
-        NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, flavors, Zone.defaultZone(), clock);
+        NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, flavors, Zone.defaultZone(), clock, (x,y) -> {});
 
         List<Node> nodes = new ArrayList<>(2);
         nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));

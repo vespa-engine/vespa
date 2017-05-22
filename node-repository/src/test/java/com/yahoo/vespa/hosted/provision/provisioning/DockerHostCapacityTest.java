@@ -29,8 +29,6 @@ import static org.junit.Assert.assertFalse;
  */
 public class DockerHostCapacityTest {
 
-    private static final String HEADROOM_TENANT = "-__!@#$$%THISisHEADroom";
-
     private DockerHostCapacity capacity;
     private List<Node> nodes;
     private Node host1, host2, host3;
@@ -74,24 +72,17 @@ public class DockerHostCapacityTest {
         assertEquals(host1, nodes.get(1));
         assertEquals(host2, nodes.get(2));
 
-        // Add a headroom node to host1 and the host2 should be prioritized
-        Allocation allocation = new Allocation(app(HEADROOM_TENANT), ClusterMembership.from("container/id1/3", new Version()), Generation.inital(), false);
-        Node nodeF = Node.create("nodeF", Collections.singleton("::6"), Collections.emptySet(), "nodeF", Optional.of("host1"), flavorDocker, NodeType.tenant);
-        nodeF.with(allocation);
-        nodes.add(nodeF);
+        // Replace a node for host 2 with a headroom node - host2 should then be prioritized
+        Allocation allocation = new Allocation(app(DockerHostCapacity.HEADROOM_TENANT), ClusterMembership.from("container/id1/3", new Version()), Generation.inital(), false);
+        Node nodeF = Node.create("nodeF", Collections.singleton("::6"), Collections.emptySet(), "nodeF", Optional.of("host2"), flavorDocker, NodeType.tenant);
+        Node nodeFWithAllocation = nodeF.with(allocation);
+        nodes.add(nodeFWithAllocation);
+        nodes.remove(nodeC);
         capacity = new DockerHostCapacity(nodes);
         Collections.sort(nodes, capacity::compare);
         assertEquals(host3, nodes.get(0));
         assertEquals(host2, nodes.get(1));
         assertEquals(host1, nodes.get(2));
-
-        // Remove a node from host1 and it should be prioritized again
-        nodes.remove(nodeA);
-        capacity = new DockerHostCapacity(nodes);
-        Collections.sort(nodes, capacity::compare);
-        assertEquals(host3, nodes.get(0));
-        assertEquals(host1, nodes.get(1));
-        assertEquals(host2, nodes.get(2));
     }
 
     @Test

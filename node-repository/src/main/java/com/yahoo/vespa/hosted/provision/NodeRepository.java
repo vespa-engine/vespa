@@ -241,12 +241,17 @@ public class NodeRepository extends AbstractComponent {
     // ----------------- Node lifecycle -----------------------------------------------------------
 
     /** Creates a new node object, without adding it to the node repo. If no IP address is given, it will be resolved */
-    public Node createNode(String openStackId, String hostname, Set<String> ipAddresses, Optional<String> parentHostname,
+    public Node createNode(String openStackId, String hostname, Set<String> ipAddresses, Set<String> additionalIpAddresses, Optional<String> parentHostname,
                            Flavor flavor, NodeType type) {
         if (ipAddresses.isEmpty()) {
             ipAddresses = nameResolver.getAllByNameOrThrow(hostname);
         }
-        return Node.create(openStackId, ImmutableSet.copyOf(ipAddresses), Collections.emptySet(), hostname, parentHostname, flavor, type);
+        return Node.create(openStackId, ImmutableSet.copyOf(ipAddresses), additionalIpAddresses, hostname, parentHostname, flavor, type);
+    }
+
+    public Node createNode(String openStackId, String hostname, Set<String> ipAddresses, Optional<String> parentHostname,
+                           Flavor flavor, NodeType type) {
+        return createNode(openStackId, hostname, ipAddresses, Collections.emptySet(), parentHostname, flavor, type);
     }
 
     public Node createNode(String openStackId, String hostname, Optional<String> parentHostname,

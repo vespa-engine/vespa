@@ -51,10 +51,10 @@ public final class Node {
             Optional.empty(), History.empty(), type);
     }
 
-    /** Creates a node in the initial state (provisioned) */
+    /** Creates a node in the initial state (reserved for docker containers, provisioned otherwise) */
     public static Node create(String openStackId, Set<String> ipAddresses, Set<String> additionalIpAddresses, String hostname, Optional<String> parentHostname, Flavor flavor, NodeType type) {
         return new Node(openStackId, ipAddresses, additionalIpAddresses, hostname, parentHostname, flavor, Status.initial(), State.provisioned,
-                        Optional.empty(), History.empty(), type);
+                Optional.empty(), History.empty(), type);
     }
 
     /** Do not use. Construct nodes by calling {@link NodeRepository#createNode} */

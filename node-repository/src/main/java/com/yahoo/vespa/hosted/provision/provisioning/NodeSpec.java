@@ -58,6 +58,12 @@ public interface NodeSpec {
             this.flavor = flavor;
         }
 
+        public Flavor getFlavor() {
+            return flavor;
+        }
+
+        public int getCount()  { return count; }
+
         @Override
         public NodeType type() { return NodeType.tenant; }
 

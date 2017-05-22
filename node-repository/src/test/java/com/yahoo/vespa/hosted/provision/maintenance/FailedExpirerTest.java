@@ -85,7 +85,7 @@ public class FailedExpirerTest {
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default", flavorName);
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, Zone.defaultZone(),
                 new MockNameResolver().mockAnyLookup());
-        NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, Zone.defaultZone(), clock);
+        NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, Zone.defaultZone(), clock, (x,y) -> {});
 
         Flavor defaultFlavor = nodeFlavors.getFlavorOrThrow("default");
         List<Node> hostNodes = new ArrayList<>(3);
