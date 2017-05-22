@@ -16,6 +16,8 @@ class IDocumentDBConfigOwner
 public:
     virtual ~IDocumentDBConfigOwner() { }
     virtual void reconfigure(const std::shared_ptr<DocumentDBConfig> & config) = 0;
+    virtual bool getDelayedConfig() const = 0;
+    virtual int64_t getActiveGeneration() const = 0;
 };
 
 } // namespace proton

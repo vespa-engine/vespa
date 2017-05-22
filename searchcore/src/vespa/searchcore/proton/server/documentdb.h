@@ -397,7 +397,6 @@ public:
     void retain() { _refCount.retain(); }
     void release() { _refCount.release(); }
 
-    bool getDelayedConfig() const { return _state.getDelayedConfig(); }
 
     /**
      * Implements IReplayConfig API.
@@ -416,8 +415,8 @@ public:
 
     // Implements DocumentDBConfigOwner
     void reconfigure(const DocumentDBConfig::SP & snapshot) override;
-
-    int64_t getActiveGeneration() const;
+    virtual bool getDelayedConfig() const override;
+    virtual int64_t getActiveGeneration() const override;
 
     // Implements IDocumentSubDBOwner
     void syncFeedView() override;
