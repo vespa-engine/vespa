@@ -2,7 +2,9 @@
 package com.yahoo.messagebus;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -138,4 +140,16 @@ public abstract class Reply extends Routable {
     public Stream<Error> getErrors() {
         return errors.stream();
     }
+
+    /**
+     * Retrieves a set of integer error codes
+     */
+    public Set<Integer> getErrorCodes() {
+        Set<Integer> errorCodes = new HashSet<>();
+        for (Error error : errors) {
+            errorCodes.add(error.getCode());
+        }
+        return errorCodes;
+    }
+
 }

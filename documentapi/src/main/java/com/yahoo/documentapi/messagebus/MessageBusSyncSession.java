@@ -167,8 +167,7 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
         msg.setPriority(pri);
         Reply reply = syncSend(msg);
         if (reply.hasErrors()) {
-            throw new DocumentAccessException(MessageBusAsyncSession.getErrorMessage(reply),
-                    MessageBusAsyncSession.getErrorCodes(reply));
+            throw new DocumentAccessException(MessageBusAsyncSession.getErrorMessage(reply), reply.getErrorCodes());
         }
         if (reply.getType() != DocumentProtocol.REPLY_UPDATEDOCUMENT) {
             throw new DocumentAccessException("Received unknown response: " + reply);
@@ -218,8 +217,7 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
     private void syncSendPutDocumentMessage(PutDocumentMessage putDocumentMessage) {
         Reply reply = syncSend(putDocumentMessage);
         if (reply.hasErrors()) {
-            throw new DocumentAccessException(MessageBusAsyncSession.getErrorMessage(reply),
-                    MessageBusAsyncSession.getErrorCodes(reply));
+            throw new DocumentAccessException(MessageBusAsyncSession.getErrorMessage(reply), reply.getErrorCodes());
         }
     }
 }

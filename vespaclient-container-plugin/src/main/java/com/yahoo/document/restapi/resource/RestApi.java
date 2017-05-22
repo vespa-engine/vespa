@@ -24,6 +24,7 @@ import com.yahoo.document.restapi.RestUri;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusParams;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
+import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 
@@ -58,12 +59,12 @@ public class RestApi extends LoggingRequestHandler {
     private final AtomicInteger threadsAvailableForApi;
 
     @Inject
-    public RestApi(Executor executor, AccessLog accessLog, DocumentmanagerConfig documentManagerConfig, 
-                   LoadTypeConfig loadTypeConfig, ThreadpoolConfig threadpoolConfig) {
+    public RestApi(Executor executor, AccessLog accessLog, DocumentmanagerConfig documentManagerConfig,
+                   LoadTypeConfig loadTypeConfig, ThreadpoolConfig threadpoolConfig, MetricReceiver metricReceiver) {
         super(executor, accessLog);
         MessageBusParams params = new MessageBusParams(new LoadTypeSet(loadTypeConfig));
         params.setDocumentmanagerConfig(documentManagerConfig);
-        this.operationHandler = new OperationHandlerImpl(new MessageBusDocumentAccess(params));
+        this.operationHandler = new OperationHandlerImpl(new MessageBusDocumentAccess(params), metricReceiver);
         this.singleDocumentParser = new SingleDocumentParser(new DocumentTypeManager(documentManagerConfig));
         // 40% of the threads can be blocked before we deny requests.
         if (threadpoolConfig != null) {

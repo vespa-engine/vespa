@@ -5,6 +5,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.jdisc.HeaderFields;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.container.logging.AccessLog;
+import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.http.client.core.Headers;
 import com.yahoo.vespa.http.client.core.OperationStatus;
 import com.yahoo.vespa.http.server.FeedHandler;
@@ -38,7 +39,7 @@ public class FeedHandlerTest {
         private final CountDownLatch countDownLatch = new CountDownLatch(1);
 
         public TestFeedHandler() throws Exception {
-            super(Executors.newCachedThreadPool(), null, null, mock(Metric.class), mock(AccessLog.class), null);
+            super(Executors.newCachedThreadPool(), null, null, mock(Metric.class), mock(AccessLog.class), null, MetricReceiver.nullImplementation);
         }
 
         /**

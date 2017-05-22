@@ -19,7 +19,7 @@ public class VespaMetricSet extends MetricSet {
     }
 
     private static Set<Metric> getVespaMetrics() {
-        Set<Metric> metrics =new LinkedHashSet<>();
+        Set<Metric> metrics = new LinkedHashSet<>();
 
         metrics.addAll(getSearchNodeMetrics());
         metrics.addAll(getStorageMetrics());
@@ -48,7 +48,7 @@ public class VespaMetricSet extends MetricSet {
     }
 
     private static Set<Metric> getContainerMetrics() {
-        Set<Metric> metrics =new LinkedHashSet<>();
+        Set<Metric> metrics = new LinkedHashSet<>();
 
         metrics.add(new Metric("serverRejectedRequests.rate"));
         metrics.add(new Metric("serverRejectedRequests.count"));
@@ -105,7 +105,7 @@ public class VespaMetricSet extends MetricSet {
     }
 
     private static Set<Metric> getDocprocMetrics() {
-        Set<Metric> metrics =new LinkedHashSet<>();
+        Set<Metric> metrics = new LinkedHashSet<>();
 
         // per chain
         metrics.add(new Metric("documents_processed.rate", "documents_processed"));
@@ -119,6 +119,8 @@ public class VespaMetricSet extends MetricSet {
         metrics.add(new Metric("peak_qps.max", "peak_qps"));
         metrics.add(new Metric("search_connections.average", "search_connections"));
         metrics.add(new Metric("active_queries.average", "active_queries"));
+        metrics.add(new Metric("feed.operations.rate"));
+        metrics.add(new Metric("feed.latency.average"));
         metrics.add(new Metric("queries.rate", "queries"));
         metrics.add(new Metric("query_latency.average", "mean_query_latency"));
         metrics.add(new Metric("query_latency.max", "max_query_latency"));
@@ -154,7 +156,7 @@ public class VespaMetricSet extends MetricSet {
     }
 
     private static Set<Metric> getSearchNodeMetrics() {
-        Set<Metric> metrics =new LinkedHashSet<>();
+        Set<Metric> metrics = new LinkedHashSet<>();
 
         metrics.add(new Metric("proton.numstoreddocs.last", "documents_total"));
         metrics.add(new Metric("proton.numindexeddocs.last", "documents_ready"));
@@ -245,7 +247,7 @@ public class VespaMetricSet extends MetricSet {
     }
 
     private static Set<Metric> getStorageMetrics() {
-        Set<Metric> metrics =new LinkedHashSet<>();
+        Set<Metric> metrics = new LinkedHashSet<>();
 
         metrics.add(new Metric("vds.datastored.alldisks.docs.average","docs"));
         metrics.add(new Metric("vds.datastored.alldisks.bytes.average","bytes"));

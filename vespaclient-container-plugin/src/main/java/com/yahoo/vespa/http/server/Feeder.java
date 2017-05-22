@@ -13,6 +13,7 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
+import com.yahoo.documentapi.metrics.DocumentOperationType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.ReferencedResource;
 import com.yahoo.log.LogLevel;
@@ -350,7 +351,7 @@ public class Feeder implements Runnable {
     }
 
     private void setMessageParameters(Tuple2<String, Message> msg) {
-        msg.second.setContext(new ReplyContext(msg.first, feedReplies));
+        msg.second.setContext(new ReplyContext(msg.first, feedReplies, DocumentOperationType.fromMessage(msg.second)));
         if (settings.traceLevel != null) {
             msg.second.getTrace().setLevel(settings.traceLevel);
         }
