@@ -72,7 +72,7 @@ abstract class Node(val componentId: ComponentId) {
     val className = instanceType.getName
 
     if (className == componentId.getName) s"'$componentId'"
-    else s"'$componentId' of type '$className'"
+    else s"'$componentId of type '$className'"
   }
 
 }

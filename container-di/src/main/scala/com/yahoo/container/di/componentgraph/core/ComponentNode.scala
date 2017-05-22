@@ -1,22 +1,21 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di.componentgraph.core
 
-import java.lang.reflect.{Constructor, InvocationTargetException, Modifier, ParameterizedType, Type}
+import java.lang.reflect.{Modifier, ParameterizedType, Constructor, Type, InvocationTargetException}
 import java.util.logging.Logger
-
 import com.google.inject.Inject
-import com.yahoo.component.{AbstractComponent, ComponentId}
-import com.yahoo.config.ConfigInstance
-import com.yahoo.container.di.componentgraph.Provider
-import com.yahoo.container.di.componentgraph.core.ComponentNode._
-import com.yahoo.container.di.componentgraph.core.Node.equalEdges
-import com.yahoo.container.di.{ConfigKeyT, JavaAnnotation, createKey, makeClassCovariant, preserveStackTrace, removeStackTrace}
-import com.yahoo.vespa.config.ConfigKey
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
-import scala.concurrent.{Await, Future, TimeoutException}
-import scala.language.postfixOps
+import com.yahoo.config.ConfigInstance
+import com.yahoo.vespa.config.ConfigKey
+import com.yahoo.component.{ComponentId, AbstractComponent}
+import com.yahoo.container.di.{ConfigKeyT, JavaAnnotation, createKey, makeClassCovariant, removeStackTrace, preserveStackTrace}
+import com.yahoo.container.di.componentgraph.Provider
+
+import Node.equalEdges
+import ComponentNode._
+import java.lang.IllegalStateException
+import scala.Some
+import scala.Array
 
 /**
  * @author tonytv
@@ -95,36 +94,24 @@ class ComponentNode(componentId: ComponentId,
       case other => other
     }
 
-    val instanceFuture = Future {
-        try {
-          constructor.newInstance(actualArguments: _*)
-        } catch {
-          case e: InvocationTargetException =>
-            throw removeStackTrace(ErrorOrComponentConstructorException(cutStackTraceAtConstructor(e.getCause), s"Error constructing $idAndType"))
-        }
-    }
-
+    val instance =
     try {
-      val instance = Await.result(instanceFuture, ComponentConstructTimeout)
-      initId(instance)
+      constructor.newInstance(actualArguments: _*)
     } catch {
-      case constructorException: ComponentConstructorException =>
-        throw constructorException
-      case _:TimeoutException =>
-        throw new ComponentConstructorException(s"Timed out after $ComponentConstructTimeout while constructing component $idAndType.")
-      case e: InterruptedException =>
-        Thread.currentThread().interrupt()
-        throw new RuntimeException(s"Interrupted while constructing component $idAndType", e)
+      case e: InvocationTargetException =>
+        throw removeStackTrace(constructThrowable(cutStackTraceAtConstructor(e.getCause), s"Error constructing $idAndType"))
     }
-  }
 
-  private def ErrorOrComponentConstructorException(cause: Throwable, message: String) : Throwable = {
+    initId(instance)
+  }
+  
+  private def constructThrowable(cause: Throwable, message: String) : Throwable = {
     if (cause != null && cause.isInstanceOf[Error]) // don't convert Errors to RuntimeExceptions
       new Error(message, cause)
     else
-      new ComponentConstructorException(message, cause)
+      new RuntimeException(message, cause)
   }
-
+  
   private def initId(component: AnyRef) = {
     def checkAndSetId(c: AbstractComponent) {
       if (c.hasInitializedId && c.getId != componentId )
@@ -186,9 +173,6 @@ class ComponentNode(componentId: ComponentId,
 object ComponentNode {
   val log = Logger.getLogger(classOf[ComponentNode].getName)
 
-  // XXX: var for testing only. Do not reset in production code!
-  var ComponentConstructTimeout: FiniteDuration = 60 seconds
-
   private def bestConstructor(clazz: Class[AnyRef]) = {
     val publicConstructors = clazz.getConstructors.asInstanceOf[Array[Constructor[AnyRef]]]
 
@@ -196,7 +180,7 @@ object ComponentNode {
       publicConstructors filter {_.getAnnotation(classOf[Inject]) != null} match {
         case Array() => None
         case Array(single) => Some(single)
-        case _ => throwComponentConstructorException("Multiple constructors annotated with inject in class " + clazz.getName)
+        case _ => throwRuntimeExceptionRemoveStackTrace("Multiple constructors annotated with inject in class " + clazz.getName)
       }
     }
 
@@ -204,7 +188,7 @@ object ComponentNode {
       def isConfigInstance(clazz: Class[_]) = classOf[ConfigInstance].isAssignableFrom(clazz)
 
       publicConstructors match {
-        case Array() => throwComponentConstructorException("No public constructors in class " + clazz.getName)
+        case Array() => throwRuntimeExceptionRemoveStackTrace("No public constructors in class " + clazz.getName)
         case Array(single) => single
         case _ =>
           log.warning("Multiple public constructors found in class %s, there should only be one. ".format(clazz.getName) +
@@ -218,12 +202,9 @@ object ComponentNode {
     constructorAnnotatedWithInject getOrElse constructorWithMostConfigParameters
   }
 
-  private def throwComponentConstructorException(message: String) =
-    throw removeStackTrace(new ComponentConstructorException(message))
+  private def throwRuntimeExceptionRemoveStackTrace(message: String) =
+    throw removeStackTrace(new RuntimeException(message))
 
-  class ComponentConstructorException(message: String, cause: Throwable) extends RuntimeException(message, cause) {
-    def this(message: String) = this(message, null)
-  }
 
   def isAbstract(clazz: Class[_ <: AnyRef]) = Modifier.isAbstract(clazz.getModifiers)
 }
