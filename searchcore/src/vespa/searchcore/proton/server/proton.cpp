@@ -178,6 +178,7 @@ Proton::Proton(const config::ConfigUri & configUri,
       _flushEngine(),
       _rpcHooks(),
       _healthAdapter(*this),
+      _componentConfig(),
       _genericStateHandler(CUSTOM_COMPONENT_API_PATH, *this),
       _customComponentBindToken(),
       _customComponentRootToken(),
@@ -249,6 +250,10 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>
                            (protonConfig.basedir,
                             diskMemUsageSamplerConfig(protonConfig));
+
+    _componentConfig.addConfig(vespalib::ComponentConfigProducer::Config("proton",
+                                       configSnapshot->getGeneration(),
+                                       "config obtained at startup"));
 
     _metricsEngine.reset(new MetricsEngine());
     _metricsEngine->addMetricsHook(_metricsHook);
@@ -420,6 +425,8 @@ Proton::applyConfig(const BootstrapConfig::SP & configSnapshot)
     if (_persistenceProxy.get() != NULL) {
         _persistenceProxy->setRepo(*repo);
     }
+    _componentConfig.addConfig(vespalib::ComponentConfigProducer::Config("proton.documentdbs",
+                                       configSnapshot->getGeneration()));
     _diskMemUsageSampler->
         setConfig(diskMemUsageSamplerConfig(protonConfig));
     if (_memoryFlushConfigUpdater) {
@@ -876,13 +883,42 @@ Proton::waitForOnlineState()
 void
 Proton::getComponentConfig(Consumer &consumer)
 {
-    _protonConfigurer.getComponentConfig().getComponentConfig(consumer);
+    _componentConfig.getComponentConfig(consumer);
+    std::vector<DocumentDB::SP> dbs;
+    {
+        std::shared_lock<std::shared_timed_mutex> guard(_mutex);
+        for (const auto &kv : _documentDBMap) {
+            dbs.push_back(kv.second);
+        }
+    }
+    for (const auto &docDb : dbs) {
+        vespalib::string name("proton.documentdb.");
+        name.append(docDb->getDocTypeName().getName());
+        int64_t gen = docDb->getActiveGeneration();
+        if (docDb->getDelayedConfig()) {
+            consumer.add(Config(name, gen, "has delayed attribute aspect change in config"));
+        } else {
+            consumer.add(Config(name, gen));
+        }
+    }
 }
 
 int64_t
 Proton::getConfigGeneration(void)
 {
-    return _protonConfigurer.getActiveConfigSnapshot()->getBootstrapConfig()->getGeneration();
+    int64_t g = _protonConfigurer.getActiveConfigSnapshot()->getBootstrapConfig()->getGeneration();
+    std::vector<DocumentDB::SP> dbs;
+    {
+        std::shared_lock<std::shared_timed_mutex> guard(_mutex);
+        for (const auto &kv : _documentDBMap) {
+            dbs.push_back(kv.second);
+        }
+    }
+    for (const auto &docDb : dbs) {
+        int64_t ddbActiveGen = docDb->getActiveGeneration();
+        g = std::min(g, ddbActiveGen);
+    }
+    return g;
 }
 
 

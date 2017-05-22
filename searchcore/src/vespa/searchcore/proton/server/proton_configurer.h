@@ -4,7 +4,6 @@
 
 #include "i_proton_configurer.h"
 #include <vespa/searchcore/proton/common/doctypename.h>
-#include <vespa/vespalib/net/simple_component_config_producer.h>
 #include <map>
 #include <mutex>
 #include "executor_thread_service.h"
@@ -31,7 +30,6 @@ class ProtonConfigurer : public IProtonConfigurer
     std::shared_ptr<ProtonConfigSnapshot> _activeConfigSnapshot;
     mutable std::mutex _mutex;
     bool _allowReconfig;
-    vespalib::SimpleComponentConfigProducer _componentConfig;
 
     void performReconfigure();
     bool skipConfig(const ProtonConfigSnapshot *configSnapshot, bool initialConfig);
@@ -54,7 +52,6 @@ public:
     virtual void reconfigure(std::shared_ptr<ProtonConfigSnapshot> configSnapshot) override;
 
     void applyInitialConfig(InitializeThreads initializeThreads);
-    vespalib::SimpleComponentConfigProducer &getComponentConfig() { return _componentConfig; }
 };
 
 } // namespace proton
