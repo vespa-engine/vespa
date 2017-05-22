@@ -10,6 +10,7 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.path.Path;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
@@ -569,4 +570,11 @@ public class NodeRepository extends AbstractComponent {
         return node.allocation().isPresent() ? lock(node.allocation().get().owner()) : lockUnallocated();
     }
 
+    /*
+     * Temporary feature toggle to enable/disable dynamic docker allocation
+     * TODO: Remove when enabled in all zones
+     */
+    public boolean dynamicAllocationEnabled() {
+        return curator.exists(Path.fromString("/provision/v1/dynamicDockerAllocation"));
+    }
 }
