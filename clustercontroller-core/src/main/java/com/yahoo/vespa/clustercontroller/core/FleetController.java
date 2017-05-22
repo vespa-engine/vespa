@@ -360,7 +360,6 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         try {
             database.saveLatestSystemStateVersion(databaseContext, state.getVersion());
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
             // Rethrow as RuntimeException to propagate exception up to main thread method.
             // Don't want to hide failures to write cluster state version.
             throw new RuntimeException("ZooKeeper write interrupted", e);
