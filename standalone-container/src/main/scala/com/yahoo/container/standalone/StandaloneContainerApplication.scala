@@ -1,36 +1,36 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.standalone
 
-import com.google.inject.{Key, AbstractModule, Injector, Inject}
-import com.yahoo.config.application.api.{RuleConfigDeriver, FileRegistry, ApplicationPackage}
-import com.yahoo.config.provision.Zone
-import com.yahoo.jdisc.application.Application
-import com.yahoo.container.jdisc.ConfiguredApplication
-import java.io.{IOException, File}
-import com.yahoo.config.model.test.MockRoot
+import java.io.{File, IOException}
+import java.lang.{Boolean => JBoolean}
+import java.nio.file.{FileSystems, Files, Path, Paths}
+
+import com.google.inject.name.Names
+import com.google.inject.{AbstractModule, Inject, Injector, Key}
+import com.yahoo.collections.CollectionUtil.first
+import com.yahoo.config.application.api.{ApplicationPackage, FileRegistry, RuleConfigDeriver}
 import com.yahoo.config.model.application.provider._
+import com.yahoo.config.model.builder.xml.XmlHelper
+import com.yahoo.config.model.deploy.DeployState
+import com.yahoo.config.model.{ApplicationConfigProducerRoot, ConfigModelRepo}
+import com.yahoo.config.provision.Zone
+import com.yahoo.container.di.config.SubscriberFactory
+import com.yahoo.container.jdisc.ConfiguredApplication
+import com.yahoo.container.standalone.Environment._
+import com.yahoo.container.standalone.StandaloneContainerApplication._
+import com.yahoo.io.IOUtils
+import com.yahoo.jdisc.application.Application
+import com.yahoo.text.XML
 import com.yahoo.vespa.defaults.Defaults
 import com.yahoo.vespa.model.VespaModel
-import com.yahoo.vespa.model.container.xml.{ConfigServerContainerModelBuilder, ManhattanContainerModelBuilder, ContainerModelBuilder}
-import org.w3c.dom.Element
-import com.yahoo.config.model.builder.xml.XmlHelper
-import com.yahoo.vespa.model.container.Container
-import com.yahoo.collections.CollectionUtil.first
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder
-import com.yahoo.io.IOUtils
-import com.yahoo.container.di.config.SubscriberFactory
-import StandaloneContainerApplication._
-import com.google.inject.name.Names
-import scala.util.Try
-import java.nio.file.{FileSystems, Path, Paths, Files}
-import com.yahoo.config.model.{ConfigModelRepo, ApplicationConfigProducerRoot}
-import scala.collection.JavaConversions._
-import com.yahoo.text.XML
+import com.yahoo.vespa.model.container.Container
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder.Networking
+import com.yahoo.vespa.model.container.xml.{ConfigServerContainerModelBuilder, ContainerModelBuilder}
+import org.w3c.dom.Element
 
-import java.lang.{ Boolean => JBoolean }
-import Environment._
-import com.yahoo.config.model.deploy.DeployState
+import scala.collection.JavaConversions._
+import scala.util.Try
 
 /**
  * @author tonytv
@@ -99,7 +99,6 @@ object StandaloneContainerApplication {
   val packageName = "standalone_jdisc_container"
   val applicationLocationYinstVariable = s"$packageName.app_location"
   val deploymentProfileYinstVariable = s"$packageName.deployment_profile"
-  val manhattanHttpPortYinstVariable = s"$packageName.manhattan_http_port"
 
   val applicationPathName = Names.named(applicationLocationYinstVariable)
 
@@ -146,18 +145,8 @@ object StandaloneContainerApplication {
   def newContainerModelBuilder(networkingOption: Networking): ContainerModelBuilder = {
     optionalYinstVariable(deploymentProfileYinstVariable) match {
       case None => new ContainerModelBuilder(true, networkingOption)
-      case Some("manhattan") => new ManhattanContainerModelBuilder(manhattanHttpPort)
       case Some("configserver") => new ConfigServerContainerModelBuilder(new CloudConfigYinstVariables)
       case profileName => throw new RuntimeException(s"Invalid deployment profile '$profileName'")
-    }
-  }
-
-  def manhattanHttpPort: Int = {
-    val port = yinstVariable(manhattanHttpPortYinstVariable)
-    Try {
-      Integer.parseInt(port)
-    } filter( _ > 0) getOrElse {
-      throw new RuntimeException(s"$manhattanHttpPortYinstVariable is not a valid port: '$port'")
     }
   }
 

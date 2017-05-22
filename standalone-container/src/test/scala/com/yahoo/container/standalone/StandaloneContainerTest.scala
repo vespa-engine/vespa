@@ -2,13 +2,11 @@
 package com.yahoo.container.standalone
 
 
+import com.yahoo.container.standalone.StandaloneContainerTest._
+import com.yahoo.vespa.model.AbstractService
 import org.junit.Assert._
 import org.junit.Test
-import org.hamcrest.CoreMatchers.is
-import org.hamcrest.text.StringContainsInOrder.stringContainsInOrder
-import StandaloneContainerTest._
-import com.yahoo.vespa.model.AbstractService
-import java.util.Arrays.asList
+
 import scala.util.Try
 
 
@@ -79,29 +77,6 @@ class StandaloneContainerTest {
     }
   }
 
-  @Test
-  def manhattan_http_port_yinst_variable_must_be_set() {
-    System.clearProperty(StandaloneContainerApplication.manhattanHttpPortYinstVariable)
-    try {
-      StandaloneContainerApplication.manhattanHttpPort
-      fail("Port should be a required setting")
-    } catch {
-      case e: Exception =>
-        assertThat(e.getMessage, stringContainsInOrder(asList("Environment variable not set",  "manhattan_http_port")))
-    }
-  }
-
-  @Test
-  def manhattan_http_port_must_be_positive_integer() {
-    assertThat(setAndGetPort(1234), is(1234))
-    assertTrue(Try { setAndGetPort(-1) }.isFailure)
-    assertTrue(Try { setAndGetPort( 0) }.isFailure)
-  }
-
-  def setAndGetPort(port: Int): Int = {
-    System.setProperty(StandaloneContainerApplication.manhattanHttpPortYinstVariable, Integer.toString(port))
-    StandaloneContainerApplication.manhattanHttpPort
-  }
 }
 
 object StandaloneContainerTest {
