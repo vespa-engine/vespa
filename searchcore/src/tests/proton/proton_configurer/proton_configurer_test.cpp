@@ -210,6 +210,8 @@ struct MyDocumentDBConfigOwner : public IDocumentDBConfigOwner
     virtual ~MyDocumentDBConfigOwner() { }
 
     virtual void reconfigure(const DocumentDBConfig::SP & config) override;
+    virtual bool getDelayedConfig() const override { return false; }
+    virtual int64_t getActiveGeneration() const override { return 0; }
 };
 
 struct MyProtonConfigurerOwner : public IProtonConfigurerOwner

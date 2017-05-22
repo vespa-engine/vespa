@@ -32,7 +32,6 @@
 #include <vespa/vespalib/net/component_config_producer.h>
 #include <vespa/vespalib/net/generic_state_handler.h>
 #include <vespa/vespalib/net/json_get_handler.h>
-#include <vespa/vespalib/net/simple_component_config_producer.h>
 #include <vespa/vespalib/net/state_explorer.h>
 #include <vespa/vespalib/net/state_server.h>
 #include <vespa/vespalib/util/varholder.h>
@@ -118,7 +117,6 @@ private:
     FlushEngine::UP                 _flushEngine;
     RPCHooks::UP                    _rpcHooks;
     HealthAdapter                   _healthAdapter;
-    vespalib::SimpleComponentConfigProducer _componentConfig;
     vespalib::GenericStateHandler   _genericStateHandler;
     vespalib::JsonHandlerRepo::Token::UP _customComponentBindToken;
     vespalib::JsonHandlerRepo::Token::UP _customComponentRootToken;
