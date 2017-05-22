@@ -36,7 +36,6 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
  */
 public class DockerOperationsImpl implements DockerOperations {
     public static final String NODE_PROGRAM = Defaults.getDefaults().underVespaHome("bin/vespa-nodectl");
-    private static final String[] GET_VESPA_VERSION_COMMAND = new String[]{NODE_PROGRAM, "vespa-version"};
 
     private static final String[] RESUME_NODE_COMMAND = new String[]{NODE_PROGRAM, "resume"};
     private static final String[] SUSPEND_NODE_COMMAND = new String[]{NODE_PROGRAM, "suspend"};
@@ -91,26 +90,6 @@ public class DockerOperationsImpl implements DockerOperations {
     public DockerOperationsImpl(Docker docker, Environment environment) {
         this.docker = docker;
         this.environment = environment;
-    }
-
-    @Override
-    public Optional<String> getVespaVersion(ContainerName containerName) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
-
-        ProcessResult result = docker.executeInContainer(containerName, DockerOperationsImpl.GET_VESPA_VERSION_COMMAND);
-        if (!result.isSuccess()) {
-            logger.warning("Container " + containerName.asString() + ": Command "
-                    + Arrays.toString(DockerOperationsImpl.GET_VESPA_VERSION_COMMAND) + " failed: " + result);
-            return Optional.empty();
-        }
-        Optional<String> vespaVersion = parseVespaVersion(result.getOutput());
-        if (vespaVersion.isPresent()) {
-            return vespaVersion;
-        } else {
-            logger.warning("Container " + containerName.asString() + ": Failed to parse vespa version from "
-                    + result.getOutput());
-            return Optional.empty();
-        }
     }
 
     // Returns empty if vespa version cannot be parsed.

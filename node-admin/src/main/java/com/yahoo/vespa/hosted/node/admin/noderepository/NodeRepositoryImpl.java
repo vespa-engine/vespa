@@ -101,6 +101,7 @@ public class NodeRepositoryImpl implements NodeRepository {
         Objects.requireNonNull(node.nodeState, "Unknown node state");
         Node.State nodeState = Node.State.valueOf(node.nodeState);
         if (nodeState == Node.State.active) {
+            Objects.requireNonNull(node.wantedVespaVersion, "Unknown vespa version for active node");
             Objects.requireNonNull(node.wantedDockerImage, "Unknown docker image for active node");
             Objects.requireNonNull(node.wantedRestartGeneration, "Unknown wantedRestartGeneration for active node");
             Objects.requireNonNull(node.currentRestartGeneration, "Unknown currentRestartGeneration for active node");
@@ -125,6 +126,7 @@ public class NodeRepositoryImpl implements NodeRepository {
                 nodeState,
                 node.nodeType,
                 node.nodeFlavor,
+                Optional.ofNullable(node.wantedVespaVersion),
                 Optional.ofNullable(node.vespaVersion),
                 Optional.ofNullable(owner),
                 Optional.ofNullable(membership),

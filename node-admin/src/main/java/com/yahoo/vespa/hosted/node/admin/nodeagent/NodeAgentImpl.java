@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
-import com.yahoo.vespa.hosted.node.admin.logging.FilebeatConfigProvider;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
@@ -18,13 +17,8 @@ import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
-import com.yahoo.vespa.hosted.node.admin.util.SecretAgentScheduleMaker;
 import com.yahoo.vespa.hosted.provision.Node;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.time.Duration;
@@ -36,7 +30,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.ABSENT;
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.RUNNING;
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
@@ -88,7 +81,6 @@ public class NodeAgentImpl implements NodeAgent {
     private NodeAttributes lastAttributesSet = null;
     private ContainerNodeSpec lastNodeSpec = null;
     private CpuUsageReporter lastCpuMetric;
-    private Optional<String> vespaVersion = Optional.empty();
 
     public NodeAgentImpl(
             final String hostName,
@@ -118,7 +110,6 @@ public class NodeAgentImpl implements NodeAgent {
         dockerOperations.getContainer(containerName)
                 .ifPresent(container -> {
                     if (container.state.isRunning()) {
-                        vespaVersion = dockerOperations.getVespaVersion(container.name);
                         lastCpuMetric = new CpuUsageReporter(container.created);
                     }
                     containerState = RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
@@ -197,27 +188,10 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    private void experimentalWriteFile(final ContainerNodeSpec nodeSpec) {
-        try {
-            FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(environment);
-            Optional<String> config = filebeatConfigProvider.getConfig(nodeSpec);
-            if (!config.isPresent()) {
-                logger.error("Was not able to generate a config for filebeat, ignoring filebeat file creation." + nodeSpec.toString());
-                return;
-            }
-            Path filebeatPath = environment.pathInNodeAdminFromPathInNode(containerName, "/etc/filebeat/filebeat.yml");
-            Files.write(filebeatPath, config.get().getBytes());
-            logger.info("Wrote filebeat config.");
-        } catch (Throwable t) {
-            logger.error("Failed writing filebeat config; " + nodeSpec, t);
-        }
-    }
-
     private void runLocalResumeScriptIfNeeded(final ContainerNodeSpec nodeSpec) {
         if (containerState != RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN) {
             return;
         }
-        experimentalWriteFile(nodeSpec);
 
         addDebugMessage("Starting optional node program resume command");
         dockerOperations.resumeNode(containerName);
@@ -243,7 +217,7 @@ public class NodeAgentImpl implements NodeAgent {
                 // want the two to be equal in node repo
                 .withRebootGeneration(nodeSpec.wantedRebootGeneration.orElse(0L))
                 .withDockerImage(nodeSpec.wantedDockerImage.orElse(new DockerImage("")))
-                .withVespaVersion(vespaVersion.orElse(""));
+                .withVespaVersion(nodeSpec.wantedVespaVersion.orElse(""));
 
         publishStateToNodeRepoIfChanged(nodeAttributes);
     }
@@ -264,11 +238,8 @@ public class NodeAgentImpl implements NodeAgent {
         if (!getContainer().isPresent()) {
             aclMaintainer.ifPresent(AclMaintainer::run);
             dockerOperations.startContainer(containerName, nodeSpec);
-            metricReceiver.unsetMetricsForContainer(hostname);
             lastCpuMetric = new CpuUsageReporter(clock.instant());
-            vespaVersion = dockerOperations.getVespaVersion(containerName);
 
-            configureContainerMetrics(nodeSpec);
             addDebugMessage("startContainerIfNeeded: containerState " + containerState + " -> " +
                     RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN);
             containerState = RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
@@ -347,7 +318,6 @@ public class NodeAgentImpl implements NodeAgent {
                     logger.info("Failed stopping services, ignoring", e);
                 }
             }
-            vespaVersion = Optional.empty();
             dockerOperations.removeContainer(existingContainer.get());
             metricReceiver.unsetMetricsForContainer(hostname);
             containerState = ABSENT;
@@ -437,6 +407,10 @@ public class NodeAgentImpl implements NodeAgent {
             // Every time the node spec changes, we should clear the metrics for this container as the dimensions
             // will change and we will be reporting duplicate metrics.
             metricReceiver.unsetMetricsForContainer(hostname);
+            storageMaintainer.ifPresent(maintainer -> {
+                maintainer.writeMetricsConfig(containerName, nodeSpec);
+                maintainer.writeFilebeatConfig(containerName, nodeSpec);
+            });
         }
 
         switch (nodeSpec.nodeState) {
@@ -507,7 +481,7 @@ public class NodeAgentImpl implements NodeAgent {
                 .add("state", nodeSpec.nodeState.toString())
                 .add("zone", environment.getZone())
                 .add("parentHostname", environment.getParentHostHostname());
-        vespaVersion.ifPresent(version -> dimensionsBuilder.add("vespaVersion", version));
+        nodeSpec.vespaVersion.ifPresent(version -> dimensionsBuilder.add("vespaVersion", version));
 
         nodeSpec.owner.ifPresent(owner ->
                 dimensionsBuilder
@@ -646,40 +620,6 @@ public class NodeAgentImpl implements NodeAgent {
         int temp = numberOfUnhandledException;
         numberOfUnhandledException = 0;
         return temp;
-    }
-
-    private void configureContainerMetrics(ContainerNodeSpec nodeSpec) {
-        if (!storageMaintainer.isPresent()) return;
-        final Path yamasAgentFolder = environment.pathInNodeAdminFromPathInNode(containerName, "/etc/yamas-agent/");
-
-        Path vespaCheckPath = Paths.get(getDefaults().underVespaHome("libexec/yms/yms_check_vespa"));
-        SecretAgentScheduleMaker scheduleMaker = new SecretAgentScheduleMaker("vespa", 60, vespaCheckPath, "all")
-                .withTag("namespace", "Vespa")
-                .withTag("role", "tenants")
-                .withTag("flavor", nodeSpec.nodeFlavor)
-                .withTag("state", nodeSpec.nodeState.toString())
-                .withTag("zone", environment.getZone())
-                .withTag("parentHostname", environment.getParentHostHostname());
-
-        nodeSpec.owner.ifPresent(owner ->
-                scheduleMaker
-                        .withTag("tenantName", owner.tenant)
-                        .withTag("app", owner.application + "." + owner.instance));
-
-        nodeSpec.membership.ifPresent(membership ->
-                scheduleMaker
-                        .withTag("clustertype", membership.clusterType)
-                        .withTag("clusterid", membership.clusterId));
-
-        vespaVersion.ifPresent(version -> scheduleMaker.withTag("vespaVersion", version));
-
-        try {
-            scheduleMaker.writeTo(yamasAgentFolder);
-            final String[] restartYamasAgent = new String[]{"service", "yamas-agent", "restart"};
-            dockerOperations.executeCommandInContainerAsRoot(containerName, restartYamasAgent);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to write secret-agent schedules for " + containerName, e);
-        }
     }
 
     class CpuUsageReporter {
