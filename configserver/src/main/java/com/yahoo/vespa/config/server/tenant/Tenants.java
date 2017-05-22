@@ -326,6 +326,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
         pathChildrenExecutor.shutdown();
     }
 
+    // TODO: Deploy applications in parallel (with throttling)
     public void redeployApplications(Deployer deployer) {
         Set<Tenant> allTenants = ImmutableSet.copyOf(tenants.values());
         int totalNumberOfApplications = allTenants.stream()
