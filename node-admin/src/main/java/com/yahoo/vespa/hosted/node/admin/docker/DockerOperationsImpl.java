@@ -1,12 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.docker;
 
-import com.google.common.base.Joiner;
-import com.google.common.io.CharStreams;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
+import com.yahoo.vespa.hosted.dockerapi.DockerExecTimeoutException;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.DockerImpl;
 import com.yahoo.vespa.hosted.dockerapi.DockerNetworkCreator;
@@ -16,19 +15,17 @@ import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
@@ -89,16 +86,10 @@ public class DockerOperationsImpl implements DockerOperations {
 
     private final Docker docker;
     private final Environment environment;
-    private final Consumer<List<String>> commandExecutor;
 
     public DockerOperationsImpl(Docker docker, Environment environment) {
-        this(docker, environment, DockerOperationsImpl::runCommand);
-    }
-
-    DockerOperationsImpl(Docker docker, Environment environment, Consumer<List<String>> commandExecutor) {
         this.docker = docker;
         this.environment = environment;
-        this.commandExecutor = commandExecutor;
     }
 
     @Override
@@ -246,8 +237,8 @@ public class DockerOperationsImpl implements DockerOperations {
      */
     private void setupContainerNetworkingWithScript(ContainerName containerName) throws IOException {
         InetAddress hostDefaultGateway = DockerNetworkCreator.getDefaultGatewayLinux(true);
-        executeCommandInNetworkNamespace(containerName, new String[]{
-                "route", "-A", "inet6", "add", "default", "gw", hostDefaultGateway.getHostAddress(), "dev", "eth1"});
+        executeCommandInNetworkNamespace(containerName,
+                "route", "-A", "inet6", "add", "default", "gw", hostDefaultGateway.getHostAddress(), "dev", "eth1");
     }
 
     @Override
@@ -295,20 +286,23 @@ public class DockerOperationsImpl implements DockerOperations {
                 .orElseThrow(() -> new RuntimeException("PID not found for container with name: " +
                         containerName.asString()));
 
-        final List<String> wrappedCommand = new LinkedList<>();
-        wrappedCommand.add("sudo");
-        wrappedCommand.add("-n"); // Run non-interactively and fail if a password is required
-        wrappedCommand.add("nsenter");
-        wrappedCommand.add(String.format("--net=/host/proc/%d/ns/net", containerPid));
-        wrappedCommand.add("--");
-        wrappedCommand.addAll(Arrays.asList(command));
+        final String[] wrappedCommand = Stream.concat(
+                Stream.of("nsenter", String.format("--net=/host/proc/%d/ns/net", containerPid), "--"),
+                Stream.of(command))
+        .toArray(String[]::new);
 
         try {
-            commandExecutor.accept(wrappedCommand);
-        } catch (Exception e) {
-            logger.error(String.format("Failed to execute %s in network namespace for %s (PID = %d)",
-                    Arrays.toString(command), containerName.asString(), containerPid));
-            throw new RuntimeException(e);
+            ProcessResult result = docker.executeInContainerAsRoot(new ContainerName("node-admin"), 60L, wrappedCommand);
+            if (! result.isSuccess()) {
+                String msg = String.format("Failed to execute %s in network namespace for %s (PID = %d)",
+                        Arrays.toString(wrappedCommand), containerName.asString(), containerPid);
+                logger.error(msg);
+                throw new RuntimeException(msg);
+            }
+        } catch (DockerExecTimeoutException e) {
+            logger.warning(String.format("Timed out while executing %s in network namespace for %s (PID = %d)",
+                    Arrays.toString(wrappedCommand), containerName.asString(), containerPid));
+            throw e;
         }
     }
 
@@ -340,20 +334,5 @@ public class DockerOperationsImpl implements DockerOperations {
     @Override
     public void deleteUnusedDockerImages() {
         docker.deleteUnusedDockerImages();
-    }
-
-    private static void runCommand(List<String> command) {
-        try {
-            final Process process = new ProcessBuilder(command)
-                    .redirectErrorStream(true)
-                    .start();
-            final String output = CharStreams.toString(new InputStreamReader(process.getInputStream()));
-            final int resultCode = process.waitFor();
-            if (resultCode != 0) {
-                throw new RuntimeException("Command " + Joiner.on(' ').join(command) + " failed: " + output);
-            }
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
-        }
     }
 }
