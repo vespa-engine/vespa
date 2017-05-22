@@ -827,12 +827,6 @@ DocumentDB::reconfigure(const DocumentDBConfig::SP & snapshot)
     }
 }
 
-bool
-DocumentDB::getDelayedConfig() const
-{
-    return _state.getDelayedConfig();
-}
-
 void
 DocumentDB::enterRedoReprocessState()
 {

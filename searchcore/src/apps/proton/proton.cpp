@@ -114,7 +114,6 @@ public:
         // down component.
         _metricManager = &mm;
     }
-    virtual int64_t getGeneration() const override;
 };
 
 ProtonServiceLayerProcess::ProtonServiceLayerProcess(const config::ConfigUri &
@@ -150,14 +149,6 @@ storage::spi::PersistenceProvider &
 ProtonServiceLayerProcess::getProvider()
 {
     return _downPersistence ? *_downPersistence : _proton.getPersistence();
-}
-
-int64_t
-ProtonServiceLayerProcess::getGeneration() const
-{
-    int64_t slGen = storage::ServiceLayerProcess::getGeneration();
-    int64_t protonGen = _proton.getConfigGeneration();
-    return std::min(slGen, protonGen);
 }
 
 int

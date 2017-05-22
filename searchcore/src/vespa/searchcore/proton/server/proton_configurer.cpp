@@ -23,8 +23,7 @@ ProtonConfigurer::ProtonConfigurer(vespalib::ThreadStackExecutorBase &executor,
       _pendingConfigSnapshot(),
       _activeConfigSnapshot(),
       _mutex(),
-      _allowReconfig(false),
-      _componentConfig()
+      _allowReconfig(false)
 {
 }
 
@@ -117,8 +116,6 @@ ProtonConfigurer::applyConfig(std::shared_ptr<ProtonConfigSnapshot> configSnapsh
         configureDocumentDB(*configSnapshot, docTypeName, ddbConfig.configid, initializeThreads);
     }
     pruneDocumentDBs(*configSnapshot);
-    size_t gen = bootstrapConfig->getGeneration();
-    _componentConfig.addConfig({"proton", gen});
     std::lock_guard<std::mutex> guard(_mutex);
     _activeConfigSnapshot = configSnapshot;
 }
@@ -138,19 +135,9 @@ ProtonConfigurer::configureDocumentDB(const ProtonConfigSnapshot &configSnapshot
         if (newdb != nullptr) {
             auto insres = _documentDBs.insert(std::make_pair(docTypeName, newdb));
             assert(insres.second);
-            dbitr = insres.first;
-        } else {
-            return;
         }
     } else {
         dbitr->second->reconfigure(documentDBConfig);
-    }
-    vespalib::string componentName("proton.documentdb." + docTypeName.getName());
-    size_t gen = dbitr->second->getActiveGeneration();
-    if (dbitr->second->getDelayedConfig()) {
-        _componentConfig.addConfig({componentName, gen, "has delayed attribute aspect change in config"});
-    } else {
-        _componentConfig.addConfig({componentName, gen});
     }
 }
 
@@ -170,10 +157,8 @@ ProtonConfigurer::pruneDocumentDBs(const ProtonConfigSnapshot &configSnapshot)
     while (dbitr != _documentDBs.end()) {
         auto found(newDocTypes.find(dbitr->first));
         if (found == newDocTypes.end()) {
-            vespalib::string componentName("proton.documentdb." + dbitr->first.getName());
             _owner.removeDocumentDB(dbitr->first);
             dbitr = _documentDBs.erase(dbitr);
-            _componentConfig.removeConfig(componentName);
         } else {
             ++dbitr;
         }
