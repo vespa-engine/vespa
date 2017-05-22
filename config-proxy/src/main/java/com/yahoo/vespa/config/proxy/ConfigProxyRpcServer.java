@@ -110,7 +110,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
      */
     @SuppressWarnings({"UnusedDeclaration"})
     public final void getConfigV3(Request req) {
-        log.log(LogLevel.SPAM, "getConfigV3");
+        log.log(LogLevel.SPAM, () -> "getConfigV3");
         JRTServerConfigRequest request = JRTServerConfigRequestV3.createFromRequest(req);
         if (isProtocolVersionSupported(request)) {
             preHandle(req);
@@ -144,9 +144,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
      */
     private void getConfigImpl(JRTServerConfigRequest request) {
         request.getRequestTrace().trace(TRACELEVEL, "Config proxy getConfig()");
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "getConfig: " + request.getShortDescription() + ",configmd5=" + request.getRequestConfigMd5());
-        }
+        log.log(LogLevel.DEBUG, () ->"getConfig: " + request.getShortDescription() + ",configmd5=" + request.getRequestConfigMd5());
         if (!request.validateParameters()) {
             // Error code is set in verifyParameters if parameters are not OK.
             log.log(LogLevel.WARNING, "Parameters for request " + request + " did not validate: " + request.errorCode() + " : " + request.errorMessage());
@@ -156,15 +154,11 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         try {
             RawConfig config = proxyServer.resolveConfig(request);
             if (config == null) {
-                if (log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, "No config received yet for " + request.getShortDescription() + ", not sending response");
-                }
+                log.log(LogLevel.SPAM, () -> "No config received yet for " + request.getShortDescription() + ", not sending response");
             } else if (ProxyServer.configOrGenerationHasChanged(config, request)) {
                 returnOkResponse(request, config);
             } else {
-                if (log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, "No new config for " + request.getShortDescription() + ", not sending response");
-                }
+                log.log(LogLevel.SPAM, "No new config for " + request.getShortDescription() + ", not sending response");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -245,7 +239,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
 
     public final void setMode(Request req) {
         String suppliedMode = req.parameters().get(0).asString();
-        log.log(LogLevel.DEBUG, "Supplied mode=" + suppliedMode);
+        log.log(LogLevel.DEBUG, () -> "Supplied mode=" + suppliedMode);
         String[] s = new String[2];
         if (Mode.validModeName(suppliedMode.toLowerCase())) {
             proxyServer.setMode(suppliedMode);
@@ -303,12 +297,12 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
      */
     @Override
     public void notifyTargetInvalid(Target target) {
-        log.log(LogLevel.DEBUG, "Target invalid " + target);
+        log.log(LogLevel.DEBUG, () -> "Target invalid " + target);
         for (Iterator<DelayedResponse> it = proxyServer.delayedResponses.responses().iterator(); it.hasNext(); ) {
             DelayedResponse delayed = it.next();
             JRTServerConfigRequest request = delayed.getRequest();
             if (request.getRequest().target().equals(target)) {
-                log.log(LogLevel.DEBUG, "Removing " + request.getShortDescription());
+                log.log(LogLevel.DEBUG, () -> "Removing " + request.getShortDescription());
                 it.remove();
             }
         }
@@ -319,17 +313,17 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
     public void returnOkResponse(JRTServerConfigRequest request, RawConfig config) {
         request.getRequestTrace().trace(TRACELEVEL, "Config proxy returnOkResponse()");
         request.addOkResponse(config.getPayload(), config.getGeneration(), config.getConfigMd5());
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Return response: " + request.getShortDescription() + ",configMd5=" + config.getConfigMd5() +
-                    ",config=" + config.getPayload() + ",generation=" + config.getGeneration());
-        }
+        log.log(LogLevel.DEBUG, () -> "Return response: " + request.getShortDescription() + ",configMd5=" + config.getConfigMd5() +
+                ",generation=" + config.getGeneration());
+        log.log(LogLevel.SPAM, () -> "Config payload in response for " + request.getShortDescription() + ":" + config.getPayload());
+
 
         // TODO Catch exception for now, since the request might have been returned in CheckDelayedResponse
         // TODO Move logic so that all requests are returned in CheckDelayedResponse
         try {
             request.getRequest().returnRequest();
         } catch (IllegalStateException e) {
-            log.log(LogLevel.DEBUG, "Something bad happened when sending response for '" + request.getShortDescription() + "':" + e.getMessage());
+            log.log(LogLevel.DEBUG, () -> "Something bad happened when sending response for '" + request.getShortDescription() + "':" + e.getMessage());
         }
     }
 
