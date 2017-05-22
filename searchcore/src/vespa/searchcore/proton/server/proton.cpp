@@ -883,17 +883,6 @@ int64_t
 Proton::getConfigGeneration(void)
 {
     int64_t g = _protonConfigurer.getActiveConfigSnapshot()->getBootstrapConfig()->getGeneration();
-    std::vector<DocumentDB::SP> dbs;
-    {
-        std::shared_lock<std::shared_timed_mutex> guard(_mutex);
-        for (const auto &kv : _documentDBMap) {
-            dbs.push_back(kv.second);
-        }
-    }
-    for (const auto &docDb : dbs) {
-        int64_t ddbActiveGen = docDb->getActiveGeneration();
-        g = std::min(g, ddbActiveGen);
-    }
     return g;
 }
 
