@@ -156,9 +156,10 @@ public class RunInContainerTest {
         doThrow(new OrchestratorException("Cannot suspend because...")).when(orchestrator)
                 .suspend("localhost.test.yahoo.com", Arrays.asList("host1.test.yahoo.com", parentHostname));
 
-        // Orchestrator doesn't allow to suspend either the container or the node-admin
+        // Initially we are denied to suspend because we have to freeze all the node-agents
         assertFalse(doPutCall("suspend/node-admin"));
         Thread.sleep(50);
+        // At this point they should be frozen, but Orchestrator doesn't allow to suspend either the container or the node-admin
         assertFalse(doPutCall("suspend/node-admin"));
 
         doNothing().when(orchestrator)
