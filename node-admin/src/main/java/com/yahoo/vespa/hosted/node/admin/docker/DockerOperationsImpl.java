@@ -53,6 +53,7 @@ public class DockerOperationsImpl implements DockerOperations {
     static {
         DIRECTORIES_TO_MOUNT.put("/etc/yamas-agent", true);
         DIRECTORIES_TO_MOUNT.put("/etc/filebeat", true);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/start-services.out"), false);
         DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/daemontools_y"), false);
         DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/jdisc_core"), false);
         DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs/langdetect/"), false);
