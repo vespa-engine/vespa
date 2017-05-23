@@ -93,6 +93,7 @@ public class NodeAgentImplTest {
         final long rebootGeneration = 0;
         final ContainerNodeSpec nodeSpec = nodeSpecBuilder
                 .wantedDockerImage(dockerImage)
+                .currentDockerImage(dockerImage)
                 .nodeState(Node.State.active)
                 .wantedVespaVersion(vespaVersion)
                 .vespaVersion(vespaVersion)
@@ -103,7 +104,6 @@ public class NodeAgentImplTest {
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
-        when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(false);
 
         nodeAgent.converge();
 
@@ -133,7 +133,6 @@ public class NodeAgentImplTest {
                 .wantedDockerImage(dockerImage)
                 .nodeState(Node.State.active)
                 .wantedVespaVersion(vespaVersion)
-                .vespaVersion(vespaVersion)
                 .wantedRestartGeneration(restartGeneration)
                 .currentRestartGeneration(restartGeneration)
                 .wantedRebootGeneration(rebootGeneration)
@@ -142,7 +141,6 @@ public class NodeAgentImplTest {
         NodeAgentImpl nodeAgent = makeNodeAgent(null, false);
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
-        when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(false);
         when(pathResolver.getApplicationStoragePathForNodeAdmin()).thenReturn(Files.createTempDirectory("foo"));
 
         nodeAgent.converge();
@@ -171,7 +169,9 @@ public class NodeAgentImplTest {
         final long currentRestartGeneration = 1;
         final ContainerNodeSpec nodeSpec = nodeSpecBuilder
                 .wantedDockerImage(newDockerImage)
+                .currentDockerImage(dockerImage)
                 .nodeState(Node.State.active)
+                .wantedVespaVersion(vespaVersion)
                 .vespaVersion(vespaVersion)
                 .wantedRestartGeneration(wantedRestartGeneration)
                 .currentRestartGeneration(currentRestartGeneration)
@@ -190,7 +190,7 @@ public class NodeAgentImplTest {
 
         final InOrder inOrder = inOrder(dockerOperations);
         inOrder.verify(dockerOperations, times(1)).shouldScheduleDownloadOfImage(eq(newDockerImage));
-        inOrder.verify(dockerOperations, times(1)).scheduleDownloadOfImage(eq(containerName), eq(nodeSpec), any());
+        inOrder.verify(dockerOperations, times(1)).scheduleDownloadOfImage(eq(containerName), eq(newDockerImage), any());
     }
 
     @Test
@@ -199,15 +199,15 @@ public class NodeAgentImplTest {
         final long currentRestartGeneration = 1;
         final ContainerNodeSpec nodeSpec = nodeSpecBuilder
                 .wantedDockerImage(dockerImage)
+                .currentDockerImage(dockerImage)
                 .nodeState(Node.State.active)
+                .wantedVespaVersion(vespaVersion)
                 .vespaVersion(vespaVersion)
                 .wantedRestartGeneration(wantedRestartGeneration)
                 .currentRestartGeneration(currentRestartGeneration)
                 .build();
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
-
-        when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(false);
 
         try {
             nodeAgent.converge();
@@ -225,6 +225,7 @@ public class NodeAgentImplTest {
         final long rebootGeneration = 0;
         final ContainerNodeSpec nodeSpec = nodeSpecBuilder
                 .wantedDockerImage(dockerImage)
+                .currentDockerImage(dockerImage)
                 .nodeState(Node.State.failed)
                 .wantedVespaVersion(vespaVersion)
                 .vespaVersion(vespaVersion)
@@ -287,6 +288,7 @@ public class NodeAgentImplTest {
 
         final ContainerNodeSpec nodeSpec = nodeSpecBuilder
                 .wantedDockerImage(dockerImage)
+                .currentDockerImage(dockerImage)
                 .nodeState(Node.State.inactive)
                 .wantedVespaVersion(vespaVersion)
                 .vespaVersion(vespaVersion)
@@ -321,6 +323,7 @@ public class NodeAgentImplTest {
 
         final ContainerNodeSpec nodeSpec = nodeSpecBuilder
                 .wantedDockerImage(dockerImage)
+                .currentDockerImage(dockerImage)
                 .nodeState(nodeState)
                 .build();
 
@@ -375,6 +378,7 @@ public class NodeAgentImplTest {
     @Test
     public void testRestartDeadContainerAfterNodeAdminRestart() throws IOException {
         final ContainerNodeSpec nodeSpec = nodeSpecBuilder
+                .currentDockerImage(dockerImage)
                 .wantedDockerImage(dockerImage)
                 .nodeState(Node.State.active)
                 .vespaVersion(vespaVersion)
@@ -383,7 +387,6 @@ public class NodeAgentImplTest {
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, false);
 
         when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(nodeSpec));
-        when(dockerOperations.shouldScheduleDownloadOfImage(eq(dockerImage))).thenReturn(false);
         when(pathResolver.getApplicationStoragePathForNodeAdmin()).thenReturn(Files.createTempDirectory("foo"));
 
         nodeAgent.tick();
@@ -397,6 +400,7 @@ public class NodeAgentImplTest {
         final long restartGeneration = 1;
         final ContainerNodeSpec nodeSpec = nodeSpecBuilder
                 .wantedDockerImage(dockerImage)
+                .currentDockerImage(dockerImage)
                 .nodeState(Node.State.active)
                 .vespaVersion(vespaVersion)
                 .wantedRestartGeneration(restartGeneration)
@@ -406,7 +410,6 @@ public class NodeAgentImplTest {
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
 
         when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(nodeSpec));
-        when(dockerOperations.shouldScheduleDownloadOfImage(eq(dockerImage))).thenReturn(false);
 
         final InOrder inOrder = inOrder(orchestrator, dockerOperations, nodeRepository);
         doThrow(new RuntimeException("Failed 1st time"))
@@ -479,6 +482,7 @@ public class NodeAgentImplTest {
         ContainerNodeSpec.Membership membership = new ContainerNodeSpec.Membership("clustType", "clustId", "grp", 3, false);
         final ContainerNodeSpec nodeSpec = nodeSpecBuilder
                 .wantedDockerImage(dockerImage)
+                .currentDockerImage(dockerImage)
                 .nodeState(Node.State.active)
                 .vespaVersion(vespaVersion)
                 .owner(owner)
@@ -489,7 +493,6 @@ public class NodeAgentImplTest {
 
         when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(nodeSpec));
         when(storageMaintainer.updateIfNeededAndGetDiskMetricsFor(eq(containerName))).thenReturn(Optional.of(42547019776L));
-        when(dockerOperations.shouldScheduleDownloadOfImage(eq(dockerImage))).thenReturn(false);
         when(dockerOperations.getContainerStats(eq(containerName)))
                 .thenReturn(Optional.of(stats1))
                 .thenReturn(Optional.of(stats2));
@@ -521,7 +524,6 @@ public class NodeAgentImplTest {
         NodeAgentImpl nodeAgent = makeNodeAgent(null, false);
 
         when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(nodeSpec));
-        when(dockerOperations.shouldScheduleDownloadOfImage(eq(dockerImage))).thenReturn(false);
         when(dockerOperations.getContainerStats(eq(containerName))).thenReturn(Optional.empty());
 
         nodeAgent.converge(); // Run the converge loop once to initialize lastNodeSpec

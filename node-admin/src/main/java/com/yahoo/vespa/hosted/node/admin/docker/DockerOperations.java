@@ -22,7 +22,7 @@ public interface DockerOperations {
 
     Optional<Container> getContainer(ContainerName containerName);
 
-    void scheduleDownloadOfImage(ContainerName containerName, ContainerNodeSpec nodeSpec, Runnable callback);
+    void scheduleDownloadOfImage(ContainerName containerName, DockerImage dockerImage, Runnable callback);
 
     ProcessResult executeCommandInContainerAsRoot(ContainerName containerName, String... command);
 
