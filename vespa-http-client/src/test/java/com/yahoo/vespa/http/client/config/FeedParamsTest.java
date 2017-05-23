@@ -20,7 +20,7 @@ public class FeedParamsTest {
     public void testDefaults() {
         FeedParams params = new FeedParams.Builder().build();
 
-        assertThat(params.getDataFormat(), equalTo(FeedParams.DataFormat.XML_UTF8));
+        assertThat(params.getDataFormat(), equalTo(FeedParams.DataFormat.JSON_UTF8));
         assertThat(params.getMaxChunkSizeBytes(), is(50 * 1024));
         assertThat(params.getRoute(), nullValue());
         assertThat(params.getServerTimeout(TimeUnit.SECONDS), is(180L));
