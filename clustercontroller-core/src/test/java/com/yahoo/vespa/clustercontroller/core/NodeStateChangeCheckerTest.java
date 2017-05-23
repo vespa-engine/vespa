@@ -20,9 +20,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.hamcrest.core.StringContains.containsString;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -36,8 +40,9 @@ public class NodeStateChangeCheckerTest {
     private static final Node nodeDistributor = new Node(NodeType.DISTRIBUTOR, 1);
     private static final Node nodeStorage = new Node(NodeType.STORAGE, 1);
 
-    private static final NodeState upNodeState = new NodeState(NodeType.STORAGE, State.UP);
-    public static final NodeState maintenanceNodeState = createNodeState(State.MAINTENANCE, "Orchestrator");
+    private static final NodeState UP_NODE_STATE = new NodeState(NodeType.STORAGE, State.UP);
+    public static final NodeState MAINTENANCE_NODE_STATE = createNodeState(State.MAINTENANCE, "Orchestrator");
+    public static final NodeState DOWN_NODE_STATE = createNodeState(State.DOWN, "RetireEarlyExpirer");
 
     private static NodeState createNodeState(State state, String description) {
         return new NodeState(NodeType.STORAGE, state).setDescription(description);
@@ -122,9 +127,22 @@ public class NodeStateChangeCheckerTest {
         NodeState newState = new NodeState(NodeType.STORAGE, State.INITIALIZING);
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                 nodeDistributor, defaultAllUpClusterState(), SetUnitStateRequest.Condition.FORCE,
-                upNodeState, newState);
+                UP_NODE_STATE, newState);
         assertTrue(result.settingWantedStateIsAllowed());
         assertTrue(!result.wantedStateAlreadySet());
+    }
+
+    @Test
+    public void testUnknownStorageNode() {
+        ContentCluster cluster = createCluster(createNodes(4));
+        NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
+                5 /* min storage nodes */, minRatioOfStorageNodesUp, requiredRedundancy, cluster.clusterInfo());
+        NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
+                new Node(NodeType.STORAGE, 10), defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE,
+                UP_NODE_STATE, MAINTENANCE_NODE_STATE);
+        assertFalse(result.settingWantedStateIsAllowed());
+        assertFalse(result.wantedStateAlreadySet());
+        assertThat(result.getReason(), is("Unknown node storage.10"));
     }
 
     @Test
@@ -132,7 +150,7 @@ public class NodeStateChangeCheckerTest {
         NodeStateChangeChecker nodeStateChangeChecker = createChangeChecker(createCluster(createNodes(1)));
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                 nodeDistributor, defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE,
-                upNodeState, maintenanceNodeState);
+                UP_NODE_STATE, MAINTENANCE_NODE_STATE);
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
         assertThat(result.getReason(), containsString("Safe-set of node state is only supported for storage nodes"));
@@ -146,7 +164,7 @@ public class NodeStateChangeCheckerTest {
                 5 /* min storage nodes */, minRatioOfStorageNodesUp, requiredRedundancy, cluster.clusterInfo());
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                 nodeStorage, defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE,
-                upNodeState, maintenanceNodeState);
+                UP_NODE_STATE, MAINTENANCE_NODE_STATE);
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
         assertThat(result.getReason(), is("There are only 4 storage nodes up, while config requires at least 5"));
@@ -167,7 +185,7 @@ public class NodeStateChangeCheckerTest {
 
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                 nodeStorage, defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE,
-                maintenanceNodeState, upNodeState);
+                MAINTENANCE_NODE_STATE, UP_NODE_STATE);
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
     }
@@ -187,7 +205,7 @@ public class NodeStateChangeCheckerTest {
 
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                 nodeStorage, stateWithNodeDown, SetUnitStateRequest.Condition.SAFE,
-                maintenanceNodeState, upNodeState);
+                MAINTENANCE_NODE_STATE, UP_NODE_STATE);
         assertTrue(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
     }
@@ -200,7 +218,7 @@ public class NodeStateChangeCheckerTest {
 
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                 nodeStorage, defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE,
-                new NodeState(NodeType.STORAGE, State.DOWN), upNodeState);
+                new NodeState(NodeType.STORAGE, State.DOWN), UP_NODE_STATE);
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
         assertThat(result.getReason(), is("Refusing to set wanted state to up when it is currently in Down"));
@@ -214,7 +232,7 @@ public class NodeStateChangeCheckerTest {
 
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                 nodeStorage, defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE,
-                upNodeState, maintenanceNodeState);
+                UP_NODE_STATE, MAINTENANCE_NODE_STATE);
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
         assertThat(result.getReason(), is("Distributor 0 says storage node 1 " +
@@ -229,7 +247,7 @@ public class NodeStateChangeCheckerTest {
 
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                 new Node(NodeType.STORAGE, 3), defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE,
-                upNodeState, maintenanceNodeState);
+                UP_NODE_STATE, MAINTENANCE_NODE_STATE);
         assertTrue(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
     }
@@ -253,7 +271,7 @@ public class NodeStateChangeCheckerTest {
 
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                 new Node(NodeType.STORAGE, 1), defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE,
-                upNodeState, maintenanceNodeState);
+                UP_NODE_STATE, MAINTENANCE_NODE_STATE);
         assertTrue(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
     }
@@ -265,7 +283,7 @@ public class NodeStateChangeCheckerTest {
         cluster.clusterInfo().getStorageNodeInfo(1).setReportedState(new NodeState(NodeType.STORAGE, State.UP), 0);
 
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
-                nodeStorage, defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE, upNodeState, maintenanceNodeState);
+                nodeStorage, defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
         assertThat(result.getReason(), is("Distributor node (0) has not reported any cluster state version yet."));
@@ -332,7 +350,7 @@ public class NodeStateChangeCheckerTest {
         }
 
         return nodeStateChangeChecker.evaluateTransition(
-                nodeStorage, clusterState, SetUnitStateRequest.Condition.SAFE, upNodeState, maintenanceNodeState);
+                nodeStorage, clusterState, SetUnitStateRequest.Condition.SAFE, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
     }
 
     private void setAllNodesUp(ContentCluster cluster, HostInfo distributorHostInfo) {
@@ -402,9 +420,142 @@ public class NodeStateChangeCheckerTest {
 
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                 nodeStorage, stateWithNodeDown, SetUnitStateRequest.Condition.SAFE,
-                upNodeState, maintenanceNodeState);
+                UP_NODE_STATE, MAINTENANCE_NODE_STATE);
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
+    }
+
+    @Test
+    public void testDownDisallowedByNonRetiredState() {
+        NodeStateChangeChecker.Result result = evaluateDownTransition(
+                defaultAllUpClusterState(),
+                State.UP,
+                currentClusterStateVersion,
+                0);
+        assertFalse(result.settingWantedStateIsAllowed());
+        assertFalse(result.wantedStateAlreadySet());
+        assertEquals("Only retired nodes are allowed to be set to DOWN in safe mode - is Up", result.getReason());
+    }
+
+    @Test
+    public void testDownDisallowedByBuckets() {
+        NodeStateChangeChecker.Result result = evaluateDownTransition(
+                retiredClusterStateSuffix(),
+                State.UP,
+                currentClusterStateVersion,
+                1);
+        assertFalse(result.settingWantedStateIsAllowed());
+        assertFalse(result.wantedStateAlreadySet());
+        assertEquals("The storage node manages 1 buckets", result.getReason());
+    }
+
+    @Test
+    public void testDownDisallowedByReportedState() {
+        NodeStateChangeChecker.Result result = evaluateDownTransition(
+                retiredClusterStateSuffix(),
+                State.INITIALIZING,
+                currentClusterStateVersion,
+                0);
+        assertFalse(result.settingWantedStateIsAllowed());
+        assertFalse(result.wantedStateAlreadySet());
+        assertEquals("Reported state (Initializing) is not UP, so no bucket data is available", result.getReason());
+    }
+
+    @Test
+    public void testDownDisallowedByVersionMismatch() {
+        NodeStateChangeChecker.Result result = evaluateDownTransition(
+                retiredClusterStateSuffix(),
+                State.UP,
+                currentClusterStateVersion - 1,
+                0);
+        assertFalse(result.settingWantedStateIsAllowed());
+        assertFalse(result.wantedStateAlreadySet());
+        assertEquals("Cluster controller at version 2 got info for storage node 1 at a different version 1",
+                result.getReason());
+    }
+
+    @Test
+    public void testAllowedToSetDown() {
+        NodeStateChangeChecker.Result result = evaluateDownTransition(
+                retiredClusterStateSuffix(),
+                State.UP,
+                currentClusterStateVersion,
+                0);
+        assertTrue(result.settingWantedStateIsAllowed());
+        assertFalse(result.wantedStateAlreadySet());
+    }
+
+    private NodeStateChangeChecker.Result evaluateDownTransition(
+            ClusterState clusterState,
+            State reportedState,
+            int hostInfoClusterStateVersion,
+            int lastAlldisksBuckets) {
+        ContentCluster cluster = createCluster(createNodes(4));
+        NodeStateChangeChecker nodeStateChangeChecker = createChangeChecker(cluster);
+
+        StorageNodeInfo nodeInfo = cluster.clusterInfo().getStorageNodeInfo(nodeStorage.getIndex());
+        nodeInfo.setReportedState(new NodeState(NodeType.STORAGE, reportedState), 0);
+        nodeInfo.setHostInfo(createHostInfoWithMetrics(hostInfoClusterStateVersion, lastAlldisksBuckets));
+
+        return nodeStateChangeChecker.evaluateTransition(
+                nodeStorage, clusterState, SetUnitStateRequest.Condition.SAFE,
+                UP_NODE_STATE, DOWN_NODE_STATE);
+    }
+
+    private ClusterState retiredClusterStateSuffix() {
+        return clusterState(String.format("version:%d distributor:4 storage:4 .%d.s:r",
+                currentClusterStateVersion,
+                nodeStorage.getIndex()));
+    }
+
+    private static HostInfo createHostInfoWithMetrics(int clusterStateVersion, int lastAlldisksBuckets) {
+        return HostInfo.createHostInfo(String.format("{\n" +
+                        "  \"metrics\":\n" +
+                        "  {\n" +
+                        "    \"snapshot\":\n" +
+                        "    {\n" +
+                        "      \"from\":1494940706,\n" +
+                        "      \"to\":1494940766\n" +
+                        "    },\n" +
+                        "    \"values\":\n" +
+                        "    [\n" +
+                        "      {\n" +
+                        "        \"name\":\"vds.datastored.alldisks.buckets\",\n" +
+                        "        \"description\":\"buckets managed\",\n" +
+                        "        \"values\":\n" +
+                        "        {\n" +
+                        "          \"average\":262144.0,\n" +
+                        "          \"count\":1,\n" +
+                        "          \"rate\":0.016666,\n" +
+                        "          \"min\":262144,\n" +
+                        "          \"max\":262144,\n" +
+                        "          \"last\":%d\n" +
+                        "        },\n" +
+                        "        \"dimensions\":\n" +
+                        "        {\n" +
+                        "        }\n" +
+                        "      },\n" +
+                        "      {\n" +
+                        "        \"name\":\"vds.datastored.alldisks.docs\",\n" +
+                        "        \"description\":\"documents stored\",\n" +
+                        "        \"values\":\n" +
+                        "        {\n" +
+                        "          \"average\":154689587.0,\n" +
+                        "          \"count\":1,\n" +
+                        "          \"rate\":0.016666,\n" +
+                        "          \"min\":154689587,\n" +
+                        "          \"max\":154689587,\n" +
+                        "          \"last\":154689587\n" +
+                        "        },\n" +
+                        "        \"dimensions\":\n" +
+                        "        {\n" +
+                        "        }\n" +
+                        "      }\n" +
+                        "    ]\n" +
+                        "  },\n" +
+                        "  \"cluster-state-version\":%d\n" +
+                        "}",
+                lastAlldisksBuckets, clusterStateVersion));
     }
 
     private List<ConfiguredNode> createNodes(int count) {

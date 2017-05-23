@@ -39,7 +39,7 @@ public class PartitionStateRequest extends Request<Response.PartitionResponse> {
     }
 
     private static void fillInMetrics(Metrics metrics, Response.PartitionResponse result) {
-        for (Metrics.Metric metric: metrics.getValues()) {
+        for (Metrics.Metric metric: metrics.getMetrics()) {
             fillInMetricValue(metric.getName(), metric.getValue(), result);
         }
     }

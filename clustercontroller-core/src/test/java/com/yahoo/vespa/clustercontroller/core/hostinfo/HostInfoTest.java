@@ -32,7 +32,7 @@ public class HostInfoTest {
         HostInfo hostInfo = HostInfo.createHostInfo("{}");
         assertThat(hostInfo.getVtag().getVersionOrNull(), is(nullValue()));
         assertThat(hostInfo.getDistributor().getStorageNodes().size(), is(0));
-        assertThat(hostInfo.getMetrics().getValues().size(), is(0));
+        assertThat(hostInfo.getMetrics().getMetrics().size(), is(0));
         assertThat(hostInfo.getClusterStateVersionOrNull(), is(nullValue()));
     }
 
@@ -51,7 +51,7 @@ public class HostInfoTest {
         assertThat(storageNodeList.get(0).getOpsLatenciesOrNull().getPut().getCount(), is(16L));
         assertThat(storageNodeList.get(1).getOpsLatenciesOrNull().getPut().getCount(), is(18L));
         assertThat(storageNodeList.get(0).getOpsLatenciesOrNull().getPut().getLatencyMsSum(), is(15L));
-        List<Metrics.Metric> metrics = hostInfo.getMetrics().getValues();
+        List<Metrics.Metric> metrics = hostInfo.getMetrics().getMetrics();
         assertThat(metrics.size(), is(2));
         Metrics.Value value = metrics.get(0).getValue();
         assertThat(value.getLast(), is(5095L));
@@ -70,7 +70,7 @@ public class HostInfoTest {
             }
             HostInfo hostInfo = HostInfo.createHostInfo(json);
             // Check a value so not all code is removed by optimizer.
-            if (hostInfo.getMetrics().getValues().size() == -1) return;
+            if (hostInfo.getMetrics().getMetrics().size() == -1) return;
         }
         long end = System.currentTimeMillis();
         System.out.println("Should take about 1.5 ms on fast machine, actually " + (end - start) / 10. + " ms.");
