@@ -33,6 +33,8 @@ public:
     vespalib::string toString() const override;
     eval::TensorSpec toSpec() const override;
     double sum() const override;
+    void accept(TensorVisitor &visitor) const override;
+    void print(std::ostream &out) const override;
     // functions below should not be used for this implementation
     Tensor::UP add(const Tensor &) const override;
     Tensor::UP subtract(const Tensor &) const override;
@@ -44,9 +46,7 @@ public:
     Tensor::UP sum(const vespalib::string &) const override;
     Tensor::UP apply(const eval::BinaryOperation &, const Tensor &) const override;
     Tensor::UP reduce(const eval::BinaryOperation &, const std::vector<vespalib::string> &) const override;
-    void print(std::ostream &out) const override;
     Tensor::UP clone() const override;
-    void accept(TensorVisitor &visitor) const override;
 };
 
 } // namespace vespalib::tensor

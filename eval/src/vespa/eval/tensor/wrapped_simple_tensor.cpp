@@ -1,7 +1,10 @@
 // Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "wrapped_simple_tensor.h"
+#include "tensor_address_builder.h"
+#include "tensor_visitor.h"
 #include <vespa/eval/eval/simple_tensor_engine.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 namespace vespalib::tensor {
 
@@ -34,6 +37,30 @@ WrappedSimpleTensor::sum() const
         result += cell.value;
     }
     return result;
+}
+
+void
+WrappedSimpleTensor::accept(TensorVisitor &visitor) const
+{
+    TensorAddressBuilder addr;
+    const auto &dimensions = _tensor.type().dimensions();
+    for (const auto &cell: _tensor.cells()) {
+        addr.clear();
+        for (size_t i = 0; i < dimensions.size(); ++i) {
+            if (dimensions[i].is_indexed()) {
+                addr.add(dimensions[i].name, make_string("%zu", cell.address[i].index));
+            } else {
+                addr.add(dimensions[i].name, cell.address[i].name);
+            }
+        }
+        visitor.visit(addr.build(), cell.value);
+    }
+}
+
+void
+WrappedSimpleTensor::print(std::ostream &out) const
+{
+    out << toString();
 }
 
 //-----------------------------------------------------------------------------
@@ -108,23 +135,11 @@ WrappedSimpleTensor::reduce(const eval::BinaryOperation &, const std::vector<ves
     return Tensor::UP();
 }
 
-void
-WrappedSimpleTensor::print(std::ostream &) const
-{
-    abort();
-}
-
 Tensor::UP
 WrappedSimpleTensor::clone() const
 {
     abort();
     return Tensor::UP();
-}
-
-void
-WrappedSimpleTensor::accept(TensorVisitor &) const
-{
-    abort();
 }
 
 } // namespace vespalib::tensor
