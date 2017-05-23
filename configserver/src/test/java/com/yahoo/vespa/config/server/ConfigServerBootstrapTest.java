@@ -44,10 +44,10 @@ public class ConfigServerBootstrapTest extends TestWithTenant {
         VersionState versionState = new VersionState(versionFile);
         assertTrue(versionState.isUpgraded());
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tenants, rpc, (application, timeout) -> Optional.empty(), versionState);
+        waitUntilStarted(rpc, 60000);
         assertFalse(versionState.isUpgraded());
         assertThat(versionState.currentVersion(), is(versionState.storedVersion()));
         assertThat(IOUtils.readAll(new FileReader(versionFile)), is(versionState.currentVersion().toSerializedForm()));
-        waitUntilStarted(rpc, 60000);
         assertTrue(rpc.started);
         assertFalse(rpc.stopped);
         bootstrap.deconstruct();
