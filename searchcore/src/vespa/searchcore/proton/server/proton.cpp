@@ -151,7 +151,6 @@ Proton::Proton(const config::ConfigUri & configUri,
       search::engine::MonitorServer(),
       IDocumentDBOwner(),
       StatusProducer(),
-      PersistenceProviderFactory(),
       IPersistenceEngineOwner(),
       ComponentConfigProducer(),
       _configUri(configUri),
@@ -162,7 +161,6 @@ Proton::Proton(const config::ConfigUri & configUri,
       _tls(),
       _diskMemUsageSampler(),
       _persistenceEngine(),
-      _persistenceProxy(),
       _documentDBMap(),
       _matchEngine(),
       _summaryEngine(),
@@ -295,13 +293,6 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _protonConfigurer.applyInitialConfig(initializeThreads);
     initializeThreads.reset();
 
-    if (_persistenceEngine.get() != NULL) {
-        _persistenceProxy.reset(new ProviderStub(protonConfig.persistenceprovider.port,
-                                                 protonConfig.persistenceprovider.threads,
-                                                 *configSnapshot->getDocumentTypeRepoSP(),
-                                                 *this));
-    }
-
     RPCHooks::Params rpcParams(*this, protonConfig.rpcport, _configUri.getConfigId());
     rpcParams.slobrok_config = _configUri.createWithNewId(protonConfig.slobrokconfigid);
     _rpcHooks.reset(new RPCHooks(rpcParams));
@@ -336,18 +327,6 @@ Proton::getActiveConfigSnapshot() const
     return _protonConfigurer.getActiveConfigSnapshot()->getBootstrapConfig();
 }
 
-storage::spi::PersistenceProvider::UP
-Proton::create() const
-{
-    //TODO : Might be an idea to grab a lock here as this is not
-    //controlled by you.  Must lock with add/remove documentdb or
-    //reconfig or whatever.
-    if (_persistenceEngine.get() == NULL)
-        return storage::spi::PersistenceProvider::UP();
-    return storage::spi::PersistenceProvider::
-        UP(new PersistenceProviderProxy(*_persistenceEngine));
-}
-
 void
 Proton::applyConfig(const BootstrapConfig::SP & configSnapshot)
 {
@@ -359,13 +338,8 @@ Proton::applyConfig(const BootstrapConfig::SP & configSnapshot)
                             protonConfig.search.memory.limiter.mincoverage,
                             protonConfig.search.memory.limiter.minhits);
     const DocumentTypeRepo::SP repo = configSnapshot->getDocumentTypeRepoSP();
-    // XXX: This assumes no feeding during reconfig.  Otherwise queued messages
-    // might incorrectly use freed document type repo.
-    if (_persistenceProxy.get() != NULL) {
-        _persistenceProxy->setRepo(*repo);
-    }
-    _diskMemUsageSampler->
-        setConfig(diskMemUsageSamplerConfig(protonConfig));
+
+    _diskMemUsageSampler->setConfig(diskMemUsageSamplerConfig(protonConfig));
     if (_memoryFlushConfigUpdater) {
         _memoryFlushConfigUpdater->setConfig(protonConfig.flush.memory);
         _flushEngine->kick();
@@ -383,11 +357,8 @@ Proton::addDocumentDB(const DocTypeName & docTypeName,
         const DocumentTypeRepo::SP repo = bootstrapConfig->getDocumentTypeRepoSP();
         const document::DocumentType *docType = repo->getDocumentType(docTypeName.getName());
         if (docType != NULL) {
-            LOG(info,
-                "Add document database: "
-                "doctypename(%s), configid(%s)",
-                docTypeName.toString().c_str(),
-                configId.c_str());
+            LOG(info, "Add document database: doctypename(%s), configid(%s)",
+                docTypeName.toString().c_str(), configId.c_str());
             return addDocumentDB(*docType, bootstrapConfig, documentDBConfig, initializeThreads).get();
         } else {
 
@@ -453,7 +424,6 @@ Proton::~Proton()
     if (_fs4Server) {
         _fs4Server->shutDown();
     }
-    _persistenceProxy.reset();
     while (!_documentDBMap.empty()) {
         const DocTypeName docTypeName(_documentDBMap.begin()->first);
         removeDocumentDB(docTypeName);

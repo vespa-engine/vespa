@@ -12,7 +12,6 @@
 #include "proton_configurer.h"
 #include "rpc_hooks.h"
 #include "bootstrapconfig.h"
-#include <vespa/persistence/proxy/providerstub.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/flushengine/flushengine.h>
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
@@ -46,7 +45,6 @@ class Proton : public IProtonConfigurerOwner,
                public search::engine::MonitorServer,
                public IDocumentDBOwner,
                public StatusProducer,
-               public storage::spi::ProviderStub::PersistenceProviderFactory,
                public IPersistenceEngineOwner,
                public vespalib::ComponentConfigProducer,
                public vespalib::StateExplorer
@@ -57,7 +55,6 @@ private:
     typedef search::engine::MonitorRequest                MonitorRequest;
     typedef search::engine::MonitorReply                  MonitorReply;
     typedef search::engine::MonitorClient                 MonitorClient;
-    typedef storage::spi::ProviderStub                    ProviderStub;
     typedef std::map<DocTypeName, DocumentDB::SP>         DocumentDBMap;
     typedef BootstrapConfig::ProtonConfigSP               ProtonConfigSP;
     typedef std::shared_ptr<FastOS_DynamicLibrary>      DynamicLibrarySP;
@@ -106,8 +103,7 @@ private:
     TLS::UP                         _tls;
     std::unique_ptr<DiskMemUsageSampler> _diskMemUsageSampler;
     PersistenceEngine::UP           _persistenceEngine;
-    ProviderStub::UP                _persistenceProxy;
-    DocumentDBMap                   _documentDBMap;
+     DocumentDBMap                   _documentDBMap;
     MatchEngine::UP                 _matchEngine;
     SummaryEngine::UP               _summaryEngine;
     DocsumBySlime::UP               _docsumBySlime;
@@ -161,7 +157,6 @@ private:
 
     void waitForInitDone();
     void waitForOnlineState();
-    virtual storage::spi::PersistenceProvider::UP create() const override;
     uint32_t getDistributionKey() const override { return _distributionKey; }
     BootstrapConfig::SP getActiveConfigSnapshot() const;
     virtual std::shared_ptr<IDocumentDBReferenceRegistry> getDocumentDBReferenceRegistry() const override;
