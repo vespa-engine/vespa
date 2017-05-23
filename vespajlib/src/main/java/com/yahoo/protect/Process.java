@@ -70,14 +70,9 @@ public final class Process {
                 Thread t = e.getKey();
                 StackTraceElement[] stack = e.getValue();
                 StringBuilder forOneThread = new StringBuilder();
-                int initLen;
                 forOneThread.append("Stack for thread: ").append(t.getName()).append(": ");
-                initLen = forOneThread.length();
                 for (StackTraceElement s : stack) {
-                    if (forOneThread.length() > initLen) {
-                        forOneThread.append(" ");
-                    }
-                    forOneThread.append(s.toString());
+                    forOneThread.append('\n').append(s.toString());
                 }
                 log.log(Level.INFO, forOneThread.toString());
             }
