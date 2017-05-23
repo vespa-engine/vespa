@@ -29,7 +29,6 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -119,30 +118,27 @@ public class RunInContainerTest {
         when(ComponentsProviderWithMocks.nodeRepositoryMock.getContainersToRun()).thenReturn(Collections.emptyList());
         waitForJdiscContainerToServe();
 
-        assertFalse(doPutCall("resume")); // Initial is false to force convergence
+        assertTrue("The initial resume command should fail because it needs to converge first",
+                verifyWithRetries("resume", false));
         doNothing().when(orchestrator).resume(parentHostname);
-        Thread.sleep(50);
-        assertTrue(doPutCall("resume"));
+        assertTrue(verifyWithRetries("resume", true));
 
-        // No nodes are allocated to this host yet, so freezing should be fine, but orchestrator doesnt allow node-admin suspend
         doThrow(new OrchestratorException("Cannot suspend because..."))
                 .when(orchestrator).suspend(parentHostname, Collections.singletonList(parentHostname));
-        assertFalse(doPutCall("suspend/node-admin"));
+        assertTrue("Should fail because orchestrator does not allow node-admin to suspend",
+                verifyWithRetries("suspend/node-admin", false));
 
         // Orchestrator changes its mind, allows node-admin to suspend
         doNothing().when(orchestrator).suspend(parentHostname, Collections.singletonList(parentHostname));
-        Thread.sleep(50);
-        assertTrue(doPutCall("suspend/node-admin")); // Tick loop should've run several times by now, expect to be suspended
+        assertTrue(verifyWithRetries("suspend/node-admin", true));
 
         // Lets try to suspend everything now, should be trivial as we have no active containers to stop services at
-        assertFalse(doPutCall("suspend"));
-        Thread.sleep(50);
-        assertTrue(doPutCall("suspend"));
+        assertTrue(verifyWithRetries("suspend", false));
+        assertTrue(verifyWithRetries("suspend", true));
 
         // Back to resume
-        assertFalse(doPutCall("resume"));
-        Thread.sleep(50);
-        assertTrue(doPutCall("resume"));
+        assertTrue(verifyWithRetries("resume", false));
+        assertTrue(verifyWithRetries("resume", true));
 
         // Lets try the same, but with an active container running on this host
         when(ComponentsProviderWithMocks.nodeRepositoryMock.getContainersToRun()).thenReturn(
@@ -157,17 +153,15 @@ public class RunInContainerTest {
                 .suspend("localhost.test.yahoo.com", Arrays.asList("host1.test.yahoo.com", parentHostname));
 
         // Initially we are denied to suspend because we have to freeze all the node-agents
-        assertFalse(doPutCall("suspend/node-admin"));
-        Thread.sleep(50);
+        assertTrue(verifyWithRetries("suspend/node-admin", false));
         // At this point they should be frozen, but Orchestrator doesn't allow to suspend either the container or the node-admin
-        assertFalse(doPutCall("suspend/node-admin"));
+        assertTrue(verifyWithRetries("suspend/node-admin", false));
 
         doNothing().when(orchestrator)
                 .suspend("localhost.test.yahoo.com", Arrays.asList("host1.test.yahoo.com", parentHostname));
 
         // Orchestrator successfully suspended everything
-        Thread.sleep(50);
-        assertTrue(doPutCall("suspend/node-admin"));
+        assertTrue(verifyWithRetries("suspend/node-admin", true));
 
         // Allow stopping services in active nodes
         doNothing().when(ComponentsProviderWithMocks.dockerOperationsMock)
@@ -175,9 +169,16 @@ public class RunInContainerTest {
         doNothing().when(ComponentsProviderWithMocks.dockerOperationsMock)
                 .stopServicesOnNode(eq(new ContainerName("host1")));
 
-        assertFalse(doPutCall("suspend"));
-        Thread.sleep(50);
-        assertTrue(doPutCall("suspend"));
+        assertTrue(verifyWithRetries("suspend", false));
+        assertTrue(verifyWithRetries("suspend", true));
+    }
+
+    private boolean verifyWithRetries(String command, boolean expectedResult) throws IOException, InterruptedException {
+        for (int i = 0; i < 10; i++) {
+            if (doPutCall(command) == expectedResult) return true;
+            Thread.sleep(25);
+        }
+        return false;
     }
 
 
