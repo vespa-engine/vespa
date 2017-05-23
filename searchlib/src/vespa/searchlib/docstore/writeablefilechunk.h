@@ -61,16 +61,16 @@ public:
     uint64_t   getSerialNum() const { return _serialNum; }
     void setSerialNum(uint64_t serialNum) { _serialNum = std::max(_serialNum, serialNum); }
 
-    virtual fastos::TimeStamp getModificationTime() const override;
+    fastos::TimeStamp getModificationTime() const override;
     void freeze();
     size_t getDiskFootprint() const override;
     size_t getMemoryFootprint() const override;
     size_t getMemoryMetaFootprint() const override;
-    virtual MemoryUsage getMemoryUsage() const override;
+    MemoryUsage getMemoryUsage() const override;
     size_t updateLidMap(const LockGuard &guard, ISetLid &lidMap, uint64_t serialNum, uint32_t docIdLimit) override;
     void waitForDiskToCatchUpToNow() const;
     void flushPendingChunks(uint64_t serialNum);
-    virtual DataStoreFileChunkStats getStats() const override;
+    DataStoreFileChunkStats getStats() const override;
 
     static uint64_t writeIdxHeader(const common::FileHeaderContext &fileHeaderContext, uint32_t docIdLimit, FastOS_FileInterface &file);
 private:
@@ -86,17 +86,17 @@ private:
     void internalFlush(uint32_t, uint64_t serialNum);
     void enque(ProcessedChunkUP);
     int32_t flushLastIfNonEmpty(bool force);
-    void restart(const vespalib::MonitorGuard & guard, uint32_t nextChunkId);
+    // _writeMonitor should not be held when calling restart
+    void restart(uint32_t nextChunkId);
     ProcessedChunkQ drainQ();
-    void readDataHeader(void);
-    void readIdxHeader(void);
+    void readDataHeader();
+    void readIdxHeader();
     void writeDataHeader(const common::FileHeaderContext &fileHeaderContext);
     bool needFlushPendingChunks(uint64_t serialNum, uint64_t datFileLen);
     bool needFlushPendingChunks(const vespalib::MonitorGuard & guard, uint64_t serialNum, uint64_t datFileLen);
     fastos::TimeStamp unconditionallyFlushPendingChunks(const vespalib::LockGuard & flushGuard, uint64_t serialNum, uint64_t datFileLen);
     static void insertChunks(ProcessedChunkMap & orderedChunks, ProcessedChunkQ & newChunks, const uint32_t nextChunkId);
     static ProcessedChunkQ fetchNextChain(ProcessedChunkMap & orderedChunks, const uint32_t firstChunkId);
-    size_t computeDataLen(const ProcessedChunk & tmp, const Chunk & active);
     ChunkMeta computeChunkMeta(const vespalib::LockGuard & guard,
                                const vespalib::GenerationHandler::Guard & bucketizerGuard,
                                size_t offset, const ProcessedChunk & tmp, const Chunk & active);
@@ -137,4 +137,3 @@ private:
 };
 
 } // namespace search
-
