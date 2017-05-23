@@ -123,6 +123,7 @@ public class NodeRepositoryImpl implements NodeRepository {
         return new ContainerNodeSpec(
                 hostName,
                 Optional.ofNullable(node.wantedDockerImage).map(DockerImage::new),
+                Optional.ofNullable(node.currentDockerImage).map(DockerImage::new),
                 nodeState,
                 node.nodeType,
                 node.nodeFlavor,

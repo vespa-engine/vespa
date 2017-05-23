@@ -14,6 +14,7 @@ import java.util.Optional;
 public class ContainerNodeSpec {
     public final String hostname;
     public final Optional<DockerImage> wantedDockerImage;
+    public final Optional<DockerImage> currentDockerImage;
     public final Node.State nodeState;
     public final String nodeType;
     public final String nodeFlavor;
@@ -32,6 +33,7 @@ public class ContainerNodeSpec {
     public ContainerNodeSpec(
             final String hostname,
             final Optional<DockerImage> wantedDockerImage,
+            final Optional<DockerImage> currentDockerImage,
             final Node.State nodeState,
             final String nodeType,
             final String nodeFlavor,
@@ -53,6 +55,7 @@ public class ContainerNodeSpec {
 
         this.hostname = hostname;
         this.wantedDockerImage = wantedDockerImage;
+        this.currentDockerImage = currentDockerImage;
         this.nodeState = nodeState;
         this.nodeType = nodeType;
         this.nodeFlavor = nodeFlavor;
@@ -78,6 +81,7 @@ public class ContainerNodeSpec {
 
         return Objects.equals(hostname, that.hostname) &&
                 Objects.equals(wantedDockerImage, that.wantedDockerImage) &&
+                Objects.equals(currentDockerImage, that.currentDockerImage) &&
                 Objects.equals(nodeState, that.nodeState) &&
                 Objects.equals(nodeType, that.nodeType) &&
                 Objects.equals(nodeFlavor, that.nodeFlavor) &&
@@ -99,6 +103,7 @@ public class ContainerNodeSpec {
         return Objects.hash(
                 hostname,
                 wantedDockerImage,
+                currentDockerImage,
                 nodeState,
                 nodeType,
                 nodeFlavor,
@@ -120,6 +125,7 @@ public class ContainerNodeSpec {
         return getClass().getSimpleName() + " {"
                 + " hostname=" + hostname
                 + " wantedDockerImage=" + wantedDockerImage
+                + " currentDockerImage=" + currentDockerImage
                 + " nodeState=" + nodeState
                 + " nodeType = " + nodeType
                 + " nodeFlavor = " + nodeFlavor
@@ -233,6 +239,7 @@ public class ContainerNodeSpec {
     public static class Builder {
         private String hostname;
         private Optional<DockerImage> wantedDockerImage = Optional.empty();
+        private Optional<DockerImage> currentDockerImage = Optional.empty();
         private Node.State nodeState;
         private String nodeType;
         private String nodeFlavor;
@@ -257,6 +264,7 @@ public class ContainerNodeSpec {
             nodeFlavor(nodeSpec.nodeFlavor);
 
             nodeSpec.wantedDockerImage.ifPresent(this::wantedDockerImage);
+            nodeSpec.currentDockerImage.ifPresent(this::currentDockerImage);
             nodeSpec.wantedVespaVersion.ifPresent(this::wantedVespaVersion);
             nodeSpec.vespaVersion.ifPresent(this::vespaVersion);
             nodeSpec.owner.ifPresent(this::owner);
@@ -277,6 +285,11 @@ public class ContainerNodeSpec {
 
         public Builder wantedDockerImage(DockerImage wantedDockerImage) {
             this.wantedDockerImage = Optional.of(wantedDockerImage);
+            return this;
+        }
+
+        public Builder currentDockerImage(DockerImage currentDockerImage) {
+            this.currentDockerImage = Optional.of(currentDockerImage);
             return this;
         }
 
@@ -350,7 +363,7 @@ public class ContainerNodeSpec {
         }
 
         public ContainerNodeSpec build() {
-            return new ContainerNodeSpec(hostname, wantedDockerImage, nodeState, nodeType, nodeFlavor,
+            return new ContainerNodeSpec(hostname, wantedDockerImage, currentDockerImage, nodeState, nodeType, nodeFlavor,
                                          wantedVespaVersion, vespaVersion, owner, membership,
                                          wantedRestartGeneration, currentRestartGeneration,
                                          wantedRebootGeneration, currentRebootGeneration,
