@@ -18,21 +18,22 @@ import com.yahoo.vespa.config.server.version.VersionState;
 public class ConfigServerBootstrap extends AbstractComponent implements Runnable {
 
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(ConfigServerBootstrap.class.getName());
+
+    private final Tenants tenants;
     private final RpcServer server;
     private final Thread serverThread;
+    private final Deployer deployer;
+    private final VersionState versionState;
 
     // The tenants object is injected so that all initial requests handlers are
-    // added to the rpcserver before it starts answering rpc requests.
+    // added to the rpc server before it starts answering rpc requests.
     @SuppressWarnings("UnusedParameters")
     @Inject
     public ConfigServerBootstrap(Tenants tenants, RpcServer server, Deployer deployer, VersionState versionState) {
+        this.tenants = tenants;
         this.server = server;
-        if (versionState.isUpgraded()) {
-            log.log(LogLevel.INFO, "Configserver upgraded from " + versionState.storedVersion() + " to " + versionState.currentVersion() + ". Redeploying all applications");
-            tenants.redeployApplications(deployer);
-            log.log(LogLevel.INFO, "All applications redeployed");
-        }
-        versionState.saveNewVersion();
+        this.deployer = deployer;
+        this.versionState = versionState;
         this.serverThread = new Thread(this, "configserver main");
         serverThread.start();
     }
@@ -50,6 +51,12 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
     @Override
     public void run() {
+        if (versionState.isUpgraded()) {
+            log.log(LogLevel.INFO, "Configserver upgraded from " + versionState.storedVersion() + " to " + versionState.currentVersion() + ". Redeploying all applications");
+            tenants.redeployApplications(deployer);
+            log.log(LogLevel.INFO, "All applications redeployed");
+        }
+        versionState.saveNewVersion();
         log.log(LogLevel.DEBUG, "Starting RPC server");
         server.run();
         log.log(LogLevel.DEBUG, "RPC server stopped");
