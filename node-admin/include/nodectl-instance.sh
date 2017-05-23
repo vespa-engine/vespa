@@ -22,6 +22,10 @@
 # BEGIN environment bootstrap section
 # Do not edit between here and END as this section should stay identical in all scripts
 
+function debug {
+    echo "$(date -Is) $*"
+}
+
 findpath () {
     myname=${0}
     mypath=${myname%/*}
@@ -109,37 +113,37 @@ Resume() {
 
 # Start all services, can be seen as a reboot of a non-Docker node
 Start() {
-    echo "Configuring rsyslog service to work"
+    debug "Configuring rsyslog service to work"
     # Disable kernel log module
     sed -i.bak 's/^\$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf
-    echo "Starting rsyslog service"
+    debug "Starting rsyslog service"
     service rsyslog start
 
-    echo "Starting crond service"
+    debug "Starting crond service"
     service crond start
 
-    echo "Yinst settings"
+    debug "Yinst settings"
     yinst set zpe_policy_updater.domains=$ATHENS_DOMAIN
     yinst set zpe_policy_updater.autostart=on
     yinst set zpe_policy_updater.cron_start_hour=*
     yinst set zpe_policy_updater.cron_start_min=*/30
     yinst set zpe_policy_updater.cron_start_delay=30
-    echo "Starting all yinst packages"
+    debug "Starting all yinst packages"
     # Start yinst the way it is done when a non-Docker node is booted.
     # As this is implemented in yinst now (2017-02-08), this will take care of
     # cleaning up /home/y/tmp and /home/y/var/run
     /etc/rc.d/init.d/yinst start
-    echo "yinst started, exited with $?"
+    debug "yinst started, exited with $?"
 }
 
 # Stop all services, can be seen as a shutdown of a non-Docker node
 Stop() {
-    echo "Stopping services and other yinst packages running"
+    debug "Stopping services and other yinst packages running"
     # Stop yinst the way it is done when a non-Docker node is shutdown.
     /etc/rc.d/init.d/yinst stop
-    echo "Stopping crond service"
+    debug "Stopping crond service"
     service crond stop
-    echo "Stopping rsyslog service"
+    debug "Stopping rsyslog service"
     service rsyslog stop
 }
 
