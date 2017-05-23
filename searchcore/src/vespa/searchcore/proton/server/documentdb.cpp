@@ -651,9 +651,8 @@ DocumentDB::saveInitialConfig(const DocumentDBConfig &configSnapshot)
     _config_store->saveConfig(configSnapshot, confSerial);
 }
 
-
 void
-DocumentDB::resumeSaveConfig(void)
+DocumentDB::resumeSaveConfig()
 {
     SerialNum bestSerial = _config_store->getBestSerialNum();
     if (bestSerial == 0)
@@ -692,13 +691,11 @@ DocumentDB::onPerformPrune(SerialNum flushedSerial)
     _config_store->prune(flushedSerial);
 }
 
-
 bool
-DocumentDB::getAllowPrune(void) const
+DocumentDB::getAllowPrune() const
 {
     return _state.getAllowPrune();
 }
-
 
 void
 DocumentDB::start()
@@ -710,13 +707,11 @@ DocumentDB::start()
     internalInit();
 }
 
-
 void
 DocumentDB::waitForInitDone()
 {
     _initGate.await();
 }
-
 
 void
 DocumentDB::startTransactionLogReplay()
@@ -737,9 +732,7 @@ DocumentDB::startTransactionLogReplay()
                                       *_config_store);
     _initGate.countDown();
 
-    LOG(debug,
-        "DocumentDB(%s): Database started.",
-        _docTypeName.toString().c_str());
+    LOG(debug, "DocumentDB(%s): Database started.", _docTypeName.toString().c_str());
 }
 
 BucketGuard::UP DocumentDB::lockBucket(const document::BucketId &bucket)
@@ -814,15 +807,13 @@ DocumentDB::setIndexSchema(const DocumentDBConfig &configSnapshot, SerialNum ser
     // TODO: Adjust tune.
 }
 
-
 void
 DocumentDB::reconfigure(const DocumentDBConfig::SP & snapshot)
 {
     masterExecute([this, snapshot]() { newConfigSnapshot(snapshot); });
     // Wait for config to be applied, or for document db close
     std::unique_lock<std::mutex> guard(_configMutex);
-    while ((_activeConfigSnapshotGeneration < snapshot->getGeneration()) &&
-           !_state.getClosed()) {
+    while ((_activeConfigSnapshotGeneration < snapshot->getGeneration()) && !_state.getClosed()) {
         _configCV.wait(guard);
     }
 }
@@ -880,21 +871,17 @@ DocumentDB::reportStatus() const
         float progress = _feedHandler.getReplayProgress() * 100.0f;
         vespalib::string msg = vespalib::make_string("DocumentDB replay transaction log on startup (%u%% done)",
                 static_cast<uint32_t>(progress));
-        return StatusReport::create(params.state(StatusReport::PARTIAL).
-                progress(progress).
-                message(msg));
+        return StatusReport::create(params.state(StatusReport::PARTIAL).progress(progress).message(msg));
     } else if (rawState == DDBState::State::APPLY_LIVE_CONFIG) {
-        return StatusReport::create(params.state(StatusReport::PARTIAL).
-                message("DocumentDB apply live config on startup"));
+        return StatusReport::create(params.state(StatusReport::PARTIAL)
+                                          .message("DocumentDB apply live config on startup"));
     } else if (rawState == DDBState::State::REPROCESS ||
                rawState == DDBState::State::REDO_REPROCESS)
     {
         float progress = _subDBs.getReprocessingProgress() * 100.0f;
         vespalib::string msg = make_string("DocumentDB reprocess on startup (%u%% done)",
-                        static_cast<uint32_t>(progress));
-        return StatusReport::create(params.state(StatusReport::PARTIAL).
-                progress(progress).
-                message(msg));
+                                           static_cast<uint32_t>(progress));
+        return StatusReport::create(params.state(StatusReport::PARTIAL).progress(progress).message(msg));
     } else if (_state.getDelayedConfig()) {
         return StatusReport::create(params.state(StatusReport::PARTIAL).
                 message("DocumentDB delaying attribute aspects changes in config"));
@@ -947,15 +934,13 @@ DocumentDB::listSchema(std::vector<vespalib::string> &fieldNames,
                            fieldLocations);
 }
 
-
 int64_t DocumentDB::getActiveGeneration() const {
     lock_guard guard(_configMutex);
     return _activeConfigSnapshotGeneration;
 }
 
-
 void
-DocumentDB::syncFeedView(void)
+DocumentDB::syncFeedView()
 {
     // Called by executor or while in rendezvous with executor
 
@@ -973,13 +958,11 @@ DocumentDB::syncFeedView(void)
     performDropFeedView(oldFeedView);
 }
 
-
 bool
 DocumentDB::hasDocument(const document::DocumentId &id)
 {
     return _subDBs.getReadySubDB()->hasDocument(id);
 }
-
 
 void
 DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config)
@@ -1009,7 +992,7 @@ DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config)
 }
 
 void
-DocumentDB::performStartMaintenance(void)
+DocumentDB::performStartMaintenance()
 {
     // Called by executor thread
     // Only start once, after replay done
@@ -1030,13 +1013,13 @@ DocumentDB::performStartMaintenance(void)
 }
 
 void
-DocumentDB::stopMaintenance(void)
+DocumentDB::stopMaintenance()
 {
     _maintenanceController.stop();
 }
 
 void
-DocumentDB::forwardMaintenanceConfig(void)
+DocumentDB::forwardMaintenanceConfig()
 {
     // Called by executor thread
     DocumentDBConfig::SP activeConfig = getActiveConfig();
@@ -1053,8 +1036,7 @@ DocumentDB::forwardMaintenanceConfig(void)
 }
 
 void
-DocumentDB::notifyClusterStateChanged(
-        const IBucketStateCalculator::SP &newCalc)
+DocumentDB::notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc)
 {
     // Called by executor thread
     _calc = newCalc; // Save for maintenance job injection
@@ -1062,8 +1044,7 @@ DocumentDB::notifyClusterStateChanged(
     IFeedView::SP feedView(_feedView.get());
     if (feedView.get() != NULL) {
         // Try downcast to avoid polluting API
-        CombiningFeedView *cfv = dynamic_cast<CombiningFeedView *>
-                                 (feedView.get());
+        CombiningFeedView *cfv = dynamic_cast<CombiningFeedView *>(feedView.get());
         if (cfv != NULL)
             cfv->setCalculator(newCalc);
     }
@@ -1376,12 +1357,9 @@ DocumentDB::updateMetrics(DocumentDBTaggedMetrics &metrics)
     _jobTrackers.updateMetrics(metrics.job);
 
     updateMetrics(metrics.attribute);
-    updateDocumentStoreMetrics(metrics.ready.documentStore,
-                               _subDBs.getReadySubDB());
-    updateDocumentStoreMetrics(metrics.removed.documentStore,
-                               _subDBs.getRemSubDB());
-    updateDocumentStoreMetrics(metrics.notReady.documentStore,
-                               _subDBs.getNotReadySubDB());
+    updateDocumentStoreMetrics(metrics.ready.documentStore, _subDBs.getReadySubDB());
+    updateDocumentStoreMetrics(metrics.removed.documentStore, _subDBs.getRemSubDB());
+    updateDocumentStoreMetrics(metrics.notReady.documentStore, _subDBs.getNotReadySubDB());
     DocumentMetaStoreReadGuards dmss(_subDBs);
     updateLidSpaceMetrics(metrics.ready.lidSpace, dmss.readydms->get());
     updateLidSpaceMetrics(metrics.notReady.lidSpace, dmss.notreadydms->get());
@@ -1391,12 +1369,9 @@ DocumentDB::updateMetrics(DocumentDBTaggedMetrics &metrics)
 void
 DocumentDB::sync(SerialNum syncTo)
 {
-    LOG(spam,
-        "DocumentDB(%s): sync(): serialNum=%" PRIu64,
-        _docTypeName.toString().c_str(), syncTo);
+    LOG(spam, "DocumentDB(%s): sync(): serialNum=%zu", _docTypeName.toString().c_str(), syncTo);
     _feedHandler.syncTls(syncTo);
 }
-
 
 void
 DocumentDB::waitForOnlineState()
@@ -1409,6 +1384,5 @@ DocumentDB::getDistributionKey() const
 {
     return _owner.getDistributionKey();
 }
-
 
 } // namespace proton

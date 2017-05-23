@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "data_directory_upgrader.h"
 #include "disk_mem_usage_sampler.h"
 #include "document_db_explorer.h"
 #include "flushhandlerproxy.h"
@@ -221,11 +220,6 @@ Proton::init()
     auto bootstrapConfig = configSnapshot->getBootstrapConfig();
     assert(bootstrapConfig);
 
-    const ProtonConfig &protonConfig = bootstrapConfig->getProtonConfig();
-
-    if (!performDataDirectoryUpgrade(protonConfig.basedir)) {
-        _abortInit = true;
-    }
     return bootstrapConfig;
 }
 
@@ -338,40 +332,6 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _isInitializing = false;
     _protonConfigurer.setAllowReconfig(true);
     _initComplete = true;
-}
-
-bool
-Proton::performDataDirectoryUpgrade(const vespalib::string &baseDir)
-{
-    // TODO: Remove this functionality when going to Vespa 6.
-    vespalib::string scanDir = baseDir.substr(0, baseDir.rfind('/'));
-    LOG(debug, "About to perform data directory upgrade: scanDir='%s', destDir='%s'",
-        scanDir.c_str(), baseDir.c_str());
-    DataDirectoryUpgrader upgrader(scanDir, baseDir);
-    DataDirectoryUpgrader::ScanResult scanResult = upgrader.scan();
-    DataDirectoryUpgrader::UpgradeResult upgradeResult = upgrader.upgrade(scanResult);
-    if (upgradeResult.getStatus() == DataDirectoryUpgrader::ERROR) {
-        LOG(error, "Data directory upgrade failed: '%s'. Please consult Vespa release notes on how to manually fix this issue. "
-            "The search node will not start until this issue has been fixed", upgradeResult.getDesc().c_str());
-        return false;
-    } else if (upgradeResult.getStatus() == DataDirectoryUpgrader::IGNORE) {
-        LOG(debug, "Data directory upgrade ignored: %s", upgradeResult.getDesc().c_str());
-    } else if (upgradeResult.getStatus() == DataDirectoryUpgrader::COMPLETE) {
-        LOG(info, "Data directory upgrade completed: %s", upgradeResult.getDesc().c_str());
-    }
-    return true;
-}
-
-void
-Proton::loadLibrary(const vespalib::string &libName)
-{
-    searchcorespi::IIndexManagerFactory::SP factory(_libraries.create(libName));
-    if (factory.get() != NULL) {
-        LOG(info, "Successfully created index manager factory from library '%s'", libName.c_str());
-        _indexManagerFactoryRegistry.add(libName, factory);
-    } else {
-        LOG(error, "Failed creating index manager factory from library '%s'", libName.c_str());
-    }
 }
 
 searchcorespi::IIndexManagerFactory::SP
@@ -539,7 +499,7 @@ size_t Proton::getNumActiveDocs() const
 
 
 vespalib::string
-Proton::getDelayedConfigs(void) const
+Proton::getDelayedConfigs() const
 {
     std::ostringstream res;
     bool first = true;
@@ -891,7 +851,7 @@ Proton::getComponentConfig(Consumer &consumer)
 }
 
 int64_t
-Proton::getConfigGeneration(void)
+Proton::getConfigGeneration()
 {
     return _protonConfigurer.getActiveConfigSnapshot()->getBootstrapConfig()->getGeneration();
 }

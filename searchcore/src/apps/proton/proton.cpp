@@ -1,15 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/vespalib/util/signalhandler.h>
-#include <vespa/vespalib/util/programoptions.h>
-#include <string>
-#include <iostream>
+
 #include <vespa/searchcore/proton/server/proton.h>
 #include <vespa/searchlib/util/statefile.h>
 #include <vespa/searchlib/util/sigbushandler.h>
 #include <vespa/searchlib/util/ioerrorhandler.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/metrics/metricmanager.h>
+#include <vespa/vespalib/util/signalhandler.h>
+#include <vespa/vespalib/util/programoptions.h>
+#include <vespa/vespalib/io/fileutil.h>
+#include <vespa/fastos/app.h>
+
+#include <string>
+#include <iostream>
+
 #include <vespa/log/log.h>
 LOG_SETUP("proton");
 
@@ -43,8 +46,7 @@ App::setupSignals()
     SIG::TERM.hook();
 }
 
-namespace
-{
+namespace {
 
 vespalib::string
 getStateString(search::StateFile &stateFile)
@@ -60,7 +62,6 @@ bool stateIsDown(const vespalib::string &stateString)
 {
     return strstr(stateString.c_str(), "state=down") != nullptr;
 }
-
 
 }
 
@@ -102,9 +103,9 @@ public:
                               PersistenceProvider *downPersistence);
     ~ProtonServiceLayerProcess() { shutdown(); }
 
-    virtual void shutdown() override;
-    virtual void setupProvider() override;
-    virtual storage::spi::PersistenceProvider& getProvider() override;
+    void shutdown() override;
+    void setupProvider() override;
+    storage::spi::PersistenceProvider& getProvider() override;
 
     void setMetricManager(metrics::MetricManager& mm) {
         // The service layer will call init(...) and stop() on the metric
@@ -114,7 +115,7 @@ public:
         // down component.
         _metricManager = &mm;
     }
-    virtual int64_t getGeneration() const override;
+    int64_t getGeneration() const override;
 };
 
 ProtonServiceLayerProcess::ProtonServiceLayerProcess(const config::ConfigUri &
@@ -179,8 +180,7 @@ App::Main()
         if (proton.hasAbortedInit()) {
             EV_STOPPING("proton", "shutdown after aborted init");
         } else {
-            const ProtonConfig &protonConfig =
-                configSnapshot->getProtonConfig();
+            const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
             vespalib::string basedir = protonConfig.basedir;
             bool stopOnIOErrors = protonConfig.stoponioerrors;
             vespalib::mkdir(basedir, true);
@@ -193,19 +193,15 @@ App::Main()
                 LOG(error, "proton state string is %s", stateString.c_str());
                 if (stopOnIOErrors) {
                     if ( !params.serviceidentity.empty()) {
-                        downPersistence.reset(
-                                new DownPersistence("proton state string is " +
-                                                    stateString));
+                        downPersistence.reset(new DownPersistence("proton state string is " + stateString));
                     } else {
                         LOG(info, "Sleeping 900 seconds due to proton state");
                         int sleepLeft = 900;
-                        while (!(SIG::INT.check() || SIG::TERM.check()) &&
-                               sleepLeft > 0) {
+                        while (!(SIG::INT.check() || SIG::TERM.check()) && sleepLeft > 0) {
                             FastOS_Thread::Sleep(1000);
                             --sleepLeft;
                         }
-                        EV_STOPPING("proton",
-                                    "shutdown after stop on io errors");
+                        EV_STOPPING("proton", "shutdown after stop on io errors");
                         return 1;
                     }
                 }
@@ -236,20 +232,14 @@ App::Main()
                     stateGen = stateFile->getGen();
                     stateString = getStateString(*stateFile);
                     if (stateIsDown(stateString)) {
-                        LOG(error, "proton state string is %s",
-                            stateString.c_str());
+                        LOG(error, "proton state string is %s", stateString.c_str());
                         if (stopOnIOErrors) {
                             if (spiProton) {
                                 // report down state to cluster controller.
-                                spiProton->getNode().
-                                    notifyPartitionDown(0,
-                                                        "proton state "
-                                                        "string is " +
-                                                        stateString);
+                                spiProton->getNode().notifyPartitionDown(0, "proton state string is " + stateString);
                                 FastOS_Thread::Sleep(1000);
                             }
-                            EV_STOPPING("proton",
-                                        "shutdown after new stop on io errors");
+                            EV_STOPPING("proton", "shutdown after new stop on io errors");
                             return 1;
                         }
                     }

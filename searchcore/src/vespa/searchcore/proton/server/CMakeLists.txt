@@ -7,7 +7,6 @@ vespa_add_library(searchcore_server STATIC
     bucketmovejob.cpp
     clusterstatehandler.cpp
     combiningfeedview.cpp
-    data_directory_upgrader.cpp
     ddbstate.cpp
     disk_mem_usage_filter.cpp
     disk_mem_usage_sampler.cpp

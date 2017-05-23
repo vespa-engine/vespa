@@ -145,9 +145,6 @@ private:
     std::unique_ptr<HwInfoSampler>  _hwInfoSampler;
     std::shared_ptr<IDocumentDBReferenceRegistry> _documentDBReferenceRegistry;
 
-    bool performDataDirectoryUpgrade(const vespalib::string &baseDir);
-    void loadLibrary(const vespalib::string &libName);
-
     virtual IDocumentDBConfigOwner *addDocumentDB(const DocTypeName & docTypeName,
                                                   const vespalib::string & configid,
                                                   const BootstrapConfig::SP & bootstrapConfig,
@@ -192,18 +189,15 @@ public:
      *
      * 1st phase init: start cheap clock thread and get initial config
      */
-    BootstrapConfig::SP
-    init();
+    BootstrapConfig::SP init();
 
     /*
      * 2nd phase init: setup data structures.
      */
-    void
-    init(const BootstrapConfig::SP & configSnapshot);
+    void init(const BootstrapConfig::SP & configSnapshot);
 
 
-    DocumentDB::SP
-    getDocumentDB(const document::DocumentType &docType);
+    DocumentDB::SP getDocumentDB(const document::DocumentType &docType);
 
     DocumentDB::SP
     addDocumentDB(const document::DocumentType &docType,
@@ -235,18 +229,17 @@ public:
     /**
      * Return the oldest active config generation used by proton.
      */
-    int64_t getConfigGeneration(void);
+    int64_t getConfigGeneration();
 
     size_t getNumDocs() const;
     size_t getNumActiveDocs() const;
     DocsumBySlime & getDocsumBySlime() { return *_docsumBySlime; }
 
-    vespalib::string getDelayedConfigs(void) const;
+    vespalib::string getDelayedConfigs() const;
 
     virtual StatusReport::List getStatusReports() const override;
 
     MatchEngine & getMatchEngine() { return *_matchEngine; }
-    FlushEngine & getFlushEngine() { return *_flushEngine; }
     vespalib::ThreadStackExecutorBase & getExecutor() { return _executor; }
 
     bool isReplayDone() const { return _isReplayDone; }
@@ -265,4 +258,3 @@ public:
 };
 
 } // namespace proton
-

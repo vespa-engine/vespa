@@ -59,7 +59,6 @@ tests/proton/reprocessing/attribute_reprocessing_initializer
 tests/proton/reprocessing/document_reprocessing_handler
 tests/proton/reprocessing/reprocessing_runner
 tests/proton/server
-tests/proton/server/data_directory_upgrader
 tests/proton/server/disk_mem_usage_filter
 tests/proton/server/health_adapter
 tests/proton/server/memoryflush
