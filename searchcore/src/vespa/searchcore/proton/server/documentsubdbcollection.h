@@ -1,28 +1,27 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/util/varholder.h>
-#include <vespa/searchcore/config/config-proton.h>
-#include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchcore/proton/reprocessing/reprocessingrunner.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
+#include <vespa/searchcore/config/config-proton.h>
+#include <vespa/searchlib/common/serialnum.h>
+#include <vespa/vespalib/util/varholder.h>
 #include <mutex>
 
-namespace vespalib
-{
-class Clock;
-class ThreadExecutor;
-class ThreadStackExecutorBase;
+namespace vespalib {
+    class Clock;
+    class ThreadExecutor;
+    class ThreadStackExecutorBase;
 }
 
 namespace search {
-namespace common { class FileHeaderContext; }
-namespace transactionlog { class SyncProxy; }
+    namespace common { class FileHeaderContext; }
+    namespace transactionlog { class SyncProxy; }
 }
 
 namespace searchcorespi {
-class IFlushTarget;
-namespace index { class IThreadingService; }
+    class IFlushTarget;
+    namespace index { class IThreadingService; }
 }
 
 namespace proton {
@@ -44,8 +43,8 @@ class IRreprocessingTask;
 class ReconfigParams;
 
 namespace matching {
-class QueryLimiter;
-class SessionManager;
+    class QueryLimiter;
+    class SessionManager;
 }
 
 namespace initializer { class InitializerTask; }

@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-
 #include "buckethandler.h"
 #include "clusterstatehandler.h"
 #include "configstore.h"
@@ -18,6 +17,7 @@
 #include "executorthreadingservice.h"
 #include "visibilityhandler.h"
 #include "i_document_subdb_owner.h"
+#include "disk_mem_usage_forwarder.h"
 
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/monitored_refcount.h>
@@ -30,23 +30,14 @@
 #include <vespa/searchlib/transactionlog/syncproxy.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
-#include "disk_mem_usage_forwarder.h"
 #include <vespa/metrics/updatehook.h>
 #include <mutex>
 #include <condition_variable>
 
-namespace search
-{
-
-namespace common
-{
-
-class FileHeaderContext;
-
+namespace search {
+    namespace common { class FileHeaderContext; }
+    namespace transactionlog { class TransLogClient; }
 }
-
-namespace transactionlog { class TransLogClient; }
-}  // namespace search
 
 namespace proton {
 class IDocumentDBOwner;

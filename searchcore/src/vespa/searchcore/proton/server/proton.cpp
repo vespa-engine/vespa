@@ -14,28 +14,24 @@
 #include "proton_config_snapshot.h"
 #include "fileconfigmanager.h"
 
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/messagebus/emptyreply.h>
-#include <vespa/searchcommon/common/schemaconfigurer.h>
+#include <vespa/searchcore/proton/common/hw_info_sampler.h>
+#include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
+#include <vespa/searchcore/proton/reference/i_document_db_reference.h>
 #include <vespa/searchcore/proton/flushengine/flush_engine_explorer.h>
 #include <vespa/searchcore/proton/flushengine/prepare_restart_flush_strategy.h>
 #include <vespa/searchcore/proton/flushengine/tls_stats_factory.h>
-#include <vespa/searchcorespi/plugin/iindexmanagerfactory.h>
-#include <vespa/searchlib/aggregation/forcelink.hpp>
-#include <vespa/searchlib/common/packets.h>
-#include <vespa/searchlib/expression/forcelink.hpp>
 #include <vespa/searchlib/transactionlog/trans_log_server_explorer.h>
 #include <vespa/searchlib/util/fileheadertk.h>
-#include <vespa/vespalib/data/fileheader.h>
-#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/searchcommon/common/schemaconfigurer.h>
+#include <vespa/document/base/exceptions.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/random.h>
-#include <vespa/searchcore/proton/common/hw_info_sampler.h>
-#include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
-#include <vespa/searchcore/proton/reference/i_document_db_reference.h>
-#include <vespa/document/base/exceptions.h>
+
+#include <vespa/searchlib/aggregation/forcelink.hpp>
+#include <vespa/searchlib/expression/forcelink.hpp>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.proton");
 
@@ -298,7 +294,8 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
 
     vespalib::string fileConfigId;
     _warmupExecutor.reset(new vespalib::ThreadStackExecutor(4, 128*1024));
-    _summaryExecutor.reset(new vespalib::ThreadStackExecutor(protonConfig.summary.log.numthreads, 128*1024));
+    const size_t summaryThreads = protonConfig.summary.log.numthreads;
+    _summaryExecutor.reset(new vespalib::BlockingThreadStackExecutor(summaryThreads, 128*1024, summaryThreads*16));
     InitializeThreads initializeThreads;
     if (protonConfig.initialize.threads > 0) {
         initializeThreads = std::make_shared<vespalib::ThreadStackExecutor>
@@ -309,12 +306,9 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     initializeThreads.reset();
 
     if (_persistenceEngine.get() != NULL) {
-        _persistenceProxy.reset(new ProviderStub(protonConfig.
-                                                 persistenceprovider.port,
-                                                 protonConfig.
-                                                 persistenceprovider.threads,
-                                                 *configSnapshot->
-                                                 getDocumentTypeRepoSP(),
+        _persistenceProxy.reset(new ProviderStub(protonConfig.persistenceprovider.port,
+                                                 protonConfig.persistenceprovider.threads,
+                                                 *configSnapshot->getDocumentTypeRepoSP(),
                                                  *this));
     }
 
@@ -992,6 +986,5 @@ Proton::getDocumentDBReferenceRegistry() const
 {
     return _documentDBReferenceRegistry;
 }
-
 
 } // namespace proton
