@@ -129,13 +129,17 @@ public class NodesApiHandler extends LoggingRequestHandler {
              * This is a temporary "state" or rest call that we use to enable a smooth rollout of
              * dynamic docker flavor allocations. Once we have switch everything we remove this
              * and change the code in the nodeadmin to delete directly.
+             *
+             * Should only be called by node-admin for docker containers (the docker constraint is
+             * enforced in the remove method)
              */
+            String hostname = lastElement(path);
             if (nodeRepository.dynamicAllocationEnabled()) {
-                nodeRepository.remove(lastElement(path));
-                return new MessageResponse("Removed " + lastElement(path));
+                nodeRepository.remove(hostname);
+                return new MessageResponse("Removed " + hostname);
             } else {
-                nodeRepository.setReady(lastElement(path));
-                return new MessageResponse("Moved " + lastElement(path) + " to ready");
+                nodeRepository.setReady(hostname);
+                return new MessageResponse("Moved " + hostname + " to ready");
             }
         }
 
