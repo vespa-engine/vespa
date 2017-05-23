@@ -23,7 +23,8 @@ ProtonConfigurer::ProtonConfigurer(vespalib::ThreadStackExecutorBase &executor,
       _pendingConfigSnapshot(),
       _activeConfigSnapshot(),
       _mutex(),
-      _allowReconfig(false)
+      _allowReconfig(false),
+      _componentConfig()
 {
 }
 
@@ -116,6 +117,8 @@ ProtonConfigurer::applyConfig(std::shared_ptr<ProtonConfigSnapshot> configSnapsh
         configureDocumentDB(*configSnapshot, docTypeName, ddbConfig.configid, initializeThreads);
     }
     pruneDocumentDBs(*configSnapshot);
+    size_t gen = bootstrapConfig->getGeneration();
+    _componentConfig.addConfig({"proton", gen});
     std::lock_guard<std::mutex> guard(_mutex);
     _activeConfigSnapshot = configSnapshot;
 }
