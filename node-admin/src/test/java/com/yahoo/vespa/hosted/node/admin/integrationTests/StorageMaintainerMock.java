@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 
+import java.time.Clock;
 import java.util.Optional;
 
 /**
@@ -17,8 +18,8 @@ import java.util.Optional;
 public class StorageMaintainerMock extends StorageMaintainer {
     private final CallOrderVerifier callOrderVerifier;
 
-    public StorageMaintainerMock(Docker docker, Environment environment, CallOrderVerifier callOrderVerifier) {
-        super(docker, new MetricReceiverWrapper(MetricReceiver.nullImplementation), environment);
+    public StorageMaintainerMock(Docker docker, Environment environment, CallOrderVerifier callOrderVerifier, Clock clock) {
+        super(docker, new MetricReceiverWrapper(MetricReceiver.nullImplementation), environment, clock);
         this.callOrderVerifier = callOrderVerifier;
     }
 
