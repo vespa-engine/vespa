@@ -23,8 +23,6 @@
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
 #include <vespa/searchcore/proton/summaryengine/summaryengine.h>
 #include <vespa/searchcore/proton/summaryengine/docsum_by_slime.h>
-#include <vespa/searchcorespi/plugin/factoryloader.h>
-#include <vespa/searchcorespi/plugin/factoryregistry.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/engine/monitorapi.h>
 #include <vespa/searchlib/engine/transportserver.h>
@@ -130,8 +128,6 @@ private:
     matching::QueryLimiter          _queryLimiter;
     vespalib::Clock                 _clock;
     FastOS_ThreadPool               _threadPool;
-    searchcorespi::FactoryLoader    _libraries;
-    searchcorespi::FactoryRegistry  _indexManagerFactoryRegistry;
     vespalib::Monitor               _configGenMonitor;
     int64_t                         _configGen;
     uint32_t                        _distributionKey;
@@ -166,8 +162,6 @@ private:
     void waitForInitDone();
     void waitForOnlineState();
     virtual storage::spi::PersistenceProvider::UP create() const override;
-    searchcorespi::IIndexManagerFactory::SP
-    getIndexManagerFactory(const vespalib::stringref & name) const override;
     uint32_t getDistributionKey() const override { return _distributionKey; }
     BootstrapConfig::SP getActiveConfigSnapshot() const;
     virtual std::shared_ptr<IDocumentDBReferenceRegistry> getDocumentDBReferenceRegistry() const override;

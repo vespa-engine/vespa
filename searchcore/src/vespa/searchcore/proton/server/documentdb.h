@@ -413,9 +413,6 @@ public:
     // Implements IDocumentSubDBOwner
     void syncFeedView() override;
 
-    std::shared_ptr<searchcorespi::IIndexManagerFactory>
-    getIndexManagerFactory(const vespalib::stringref & name) const override;
-
     vespalib::string getName() const override { return _docTypeName.getName(); }
     uint32_t getDistributionKey() const override;
 

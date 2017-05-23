@@ -48,7 +48,6 @@ using search::transactionlog::DomainStats;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::search::core::internal::InternalProtonType;
 using document::CompressionConfig;
-using searchcorespi::IIndexManagerFactory;
 
 namespace proton {
 
@@ -187,8 +186,6 @@ Proton::Proton(const config::ConfigUri & configUri,
       _queryLimiter(),
       _clock(0.010),
       _threadPool(128 * 1024),
-      _libraries(),
-      _indexManagerFactoryRegistry(),
       _configGenMonitor(),
       _configGen(0),
       _distributionKey(-1),
@@ -331,12 +328,6 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _isInitializing = false;
     _protonConfigurer.setAllowReconfig(true);
     _initComplete = true;
-}
-
-searchcorespi::IIndexManagerFactory::SP
-Proton::getIndexManagerFactory(const vespalib::stringref & name) const
-{
-    return _indexManagerFactoryRegistry.get(name);
 }
 
 BootstrapConfig::SP

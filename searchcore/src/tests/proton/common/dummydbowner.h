@@ -4,27 +4,20 @@
 
 #include <vespa/searchcore/proton/server/idocumentdbowner.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
-#include <vespa/searchcorespi/plugin/iindexmanagerfactory.h>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace proton
-{
+namespace proton {
 
 struct DummyDBOwner : IDocumentDBOwner {
     std::shared_ptr<IDocumentDBReferenceRegistry> _registry;
 
     DummyDBOwner()
         : _registry(std::make_shared<DocumentDBReferenceRegistry>())
-    {
-    }
+    {}
     ~DummyDBOwner() {}
 
     bool isInitializing() const override { return false; }
 
-    searchcorespi::IIndexManagerFactory::SP
-    getIndexManagerFactory(const vespalib::stringref & ) const override {
-        return searchcorespi::IIndexManagerFactory::SP();
-    }
     uint32_t getDistributionKey() const override { return -1; }
     std::shared_ptr<IDocumentDBReferenceRegistry> getDocumentDBReferenceRegistry() const override {
         return _registry;
@@ -32,4 +25,3 @@ struct DummyDBOwner : IDocumentDBOwner {
 };
 
 } // namespace proton
-

@@ -178,15 +178,12 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
     _feedHandler.setBucketDBHandler(&_subDBs.getBucketDBHandler());
     saveInitialConfig(*configSnapshot);
     resumeSaveConfig();
-    SerialNum configSerial = _config_store->getPrevValidSerial(
-            _feedHandler.getPrunedSerialNum() + 1);
+    SerialNum configSerial = _config_store->getPrevValidSerial(_feedHandler.getPrunedSerialNum() + 1);
     assert(configSerial > 0);
     DocumentDBConfig::SP loaded_config;
-    _config_store->loadConfig(*configSnapshot, configSerial,
-                              loaded_config);
+    _config_store->loadConfig(*configSnapshot, configSerial, loaded_config);
     // Grab relevant parts from pending config
-    loaded_config = DocumentDBConfigScout::scout(loaded_config,
-                                                 *_pendingConfigSnapshot.get());
+    loaded_config = DocumentDBConfigScout::scout(loaded_config, *_pendingConfigSnapshot.get());
     // Ignore configs that are not relevant during replay of transaction log
     loaded_config = DocumentDBConfig::makeReplayConfig(loaded_config);
 
@@ -198,13 +195,10 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
     _clusterStateHandler.addClusterStateChangedHandler(&_bucketHandler);
     for (auto subDb : _subDBs) {
         _lidSpaceCompactionHandlers.push_back(ILidSpaceCompactionHandler::UP
-                (new LidSpaceCompactionHandler(*subDb,
-                        _docTypeName.getName())));
+                (new LidSpaceCompactionHandler(*subDb, _docTypeName.getName())));
     }
-    _writeFilter.setConfig(loaded_config->getMaintenanceConfigSP()->
-                           getAttributeUsageFilterConfig());
-    fastos::TimeStamp visibilityDelay =
-        loaded_config->getMaintenanceConfigSP()->getVisibilityDelay();
+    _writeFilter.setConfig(loaded_config->getMaintenanceConfigSP()->getAttributeUsageFilterConfig());
+    fastos::TimeStamp visibilityDelay = loaded_config->getMaintenanceConfigSP()->getVisibilityDelay();
     _visibility.setVisibilityDelay(visibilityDelay);
     if (_visibility.getVisibilityDelay() > 0) {
         _writeService.setTaskLimit(semiUnboundTaskLimit(_semiUnboundExecutorTaskLimit, _indexingThreads));
@@ -285,12 +279,10 @@ DocumentDB::initManagers()
     _initConfigSnapshot.reset();
     InitializerTask::SP rootTask =
         _subDBs.createInitializer(*configSnapshot, _initConfigSerialNum,
-                                  _protonSummaryCfg,
-                                  _protonIndexCfg);
+                                  _protonSummaryCfg, _protonIndexCfg);
     InitializeThreads initializeThreads = _initializeThreads;
     _initializeThreads.reset();
-    std::shared_ptr<TaskRunner> taskRunner(std::make_shared<TaskRunner>
-                                           (*initializeThreads));
+    std::shared_ptr<TaskRunner> taskRunner(std::make_shared<TaskRunner>(*initializeThreads));
     auto doneTask = std::make_unique<InitDoneTask>(std::move(initializeThreads), taskRunner,
                                                    std::move(configSnapshot), *this);
     taskRunner->runTask(rootTask, _writeService.master(), std::move(doneTask));
@@ -300,8 +292,7 @@ void
 DocumentDB::initFinish(DocumentDBConfig::SP configSnapshot)
 {
     // Called by executor thread
-    _bucketHandler.setReadyBucketHandler(
-            _subDBs.getReadySubDB()->getDocumentMetaStoreContext().get());
+    _bucketHandler.setReadyBucketHandler(_subDBs.getReadySubDB()->getDocumentMetaStoreContext().get());
     _subDBs.initViews(*configSnapshot, _sessionManager);
     _syncFeedViewEnabled = true;
     syncFeedView();
@@ -1080,13 +1071,6 @@ DocumentDB::notifyAllBucketsChanged()
                          _clusterStateHandler, "notready");
 }
 
-
-searchcorespi::IIndexManagerFactory::SP
-DocumentDB::getIndexManagerFactory(const vespalib::stringref &name) const
-{
-    return _owner.getIndexManagerFactory(name);
-}
-
 namespace {
 
 void
@@ -1110,8 +1094,7 @@ struct TempAttributeMetric
     TempAttributeMetric()
         : _memoryUsage(),
           _bitVectors(0)
-    {
-    }
+    {}
 };
 
 struct TempAttributeMetrics

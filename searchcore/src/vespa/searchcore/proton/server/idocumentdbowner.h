@@ -2,26 +2,21 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/searchcorespi/plugin/iindexmanagerfactory.h>
+#include <memory>
+#include <cstdint>
 
-namespace proton
-{
+namespace proton {
 
 class IDocumentDBReferenceRegistry;
 
 class IDocumentDBOwner
 {
 public:
-    virtual ~IDocumentDBOwner(void);
+    virtual ~IDocumentDBOwner();
 
     virtual bool isInitializing() const = 0;
-
-    virtual searchcorespi::IIndexManagerFactory::SP
-    getIndexManagerFactory(const vespalib::stringref & name) const = 0;
     virtual uint32_t getDistributionKey() const = 0;
     virtual std::shared_ptr<IDocumentDBReferenceRegistry> getDocumentDBReferenceRegistry() const = 0;
 };
 
 } // namespace proton
-
