@@ -46,13 +46,13 @@ class PendingChunk
 public:
     typedef std::shared_ptr<PendingChunk> SP;
     PendingChunk(uint64_t lastSerial, uint64_t dataOffset, uint32_t dataLen);
-    ~PendingChunk(void);
-    vespalib::nbostream & getSerializedIdx(void) { return _idx; }
-    const vespalib::nbostream & getSerializedIdx(void) const { return _idx; }
-    uint64_t getDataOffset(void) const { return _dataOffset; }
-    uint32_t getDataLen(void) const { return _dataLen; }
-    uint32_t getIdxLen(void) const { return _idx.size(); }
-    uint64_t getLastSerial(void) const { return _lastSerial; }
+    ~PendingChunk();
+    vespalib::nbostream & getSerializedIdx() { return _idx; }
+    const vespalib::nbostream & getSerializedIdx() const { return _idx; }
+    uint64_t getDataOffset() const { return _dataOffset; }
+    uint32_t getDataLen() const { return _dataLen; }
+    uint32_t getIdxLen() const { return _idx.size(); }
+    uint64_t getLastSerial() const { return _lastSerial; }
 };
 
 class ProcessedChunk
@@ -183,10 +183,8 @@ WriteableFileChunk::updateLidMap(const LockGuard &guard, ISetLid &ds, uint64_t s
 }
 
 void
-WriteableFileChunk::restart(const MonitorGuard & guard, uint32_t nextChunkId)
+WriteableFileChunk::restart(uint32_t nextChunkId)
 {
-    (void) guard;
-    _writeTaskIsRunning = true;
     _executor.execute(makeTask(makeClosure(this, &WriteableFileChunk::fileWriter, nextChunkId)));
 }
 
@@ -298,9 +296,14 @@ WriteableFileChunk::enque(ProcessedChunk::UP tmp)
     MonitorGuard guard(_writeMonitor);
     _writeQ.push_back(std::move(tmp));
     if (_writeTaskIsRunning == false) {
-        restart(guard, _firstChunkIdToBeWritten);
+        _writeTaskIsRunning = true;
+        uint32_t nextChunkId = _firstChunkIdToBeWritten;
+        guard.signal();
+        guard.unlock();
+        restart(nextChunkId);
+    } else {
+        guard.signal();
     }
-    guard.signal();
 }
 
 namespace {
@@ -507,8 +510,8 @@ WriteableFileChunk::fileWriter(const uint32_t firstChunkId)
     LOG(debug,
         "Stopping the filewriter with startchunkid = %d and ending chunkid = %d done=%d",
         firstChunkId, nextChunkId, done);
+    MonitorGuard guard(_writeMonitor);
     if (done) {
-        MonitorGuard guard(_writeMonitor);
         assert(_writeQ.empty());
         assert(_chunkMap.empty());
         for (const ChunkInfo & cm : _chunkInfo) {
@@ -518,12 +521,13 @@ WriteableFileChunk::fileWriter(const uint32_t firstChunkId)
         _writeTaskIsRunning = false;
         guard.broadcast();
     } else {
-        MonitorGuard guard(_writeMonitor);
         if (_writeQ.empty()) {
             _firstChunkIdToBeWritten = nextChunkId;
             _writeTaskIsRunning = false;
         } else {
-            restart(guard, nextChunkId);
+            _writeTaskIsRunning = true;
+            guard.unlock();
+            restart(nextChunkId);
         }
     }
 }
@@ -714,7 +718,7 @@ WriteableFileChunk::append(uint64_t serialNum,
 
 
 void
-WriteableFileChunk::readDataHeader(void)
+WriteableFileChunk::readDataHeader()
 {
     int64_t fSize(_dataFile.GetSize());
     try {
