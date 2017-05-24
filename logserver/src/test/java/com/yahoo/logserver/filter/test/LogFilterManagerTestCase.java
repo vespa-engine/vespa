@@ -10,12 +10,13 @@ import com.yahoo.logserver.filter.NullFilter;
 import com.yahoo.logserver.filter.MuteFilter;
 
 import org.junit.*;
+
 import static org.junit.Assert.*;
 
 public class LogFilterManagerTestCase {
 
     @Test
-    public void testSystemFilters () {
+    public void testSystemFilters() {
         LogFilter f;
 
         f = LogFilterManager.getLogFilter("system.allevents");

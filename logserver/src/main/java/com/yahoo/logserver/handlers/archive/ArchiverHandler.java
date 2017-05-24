@@ -24,56 +24,65 @@ import com.yahoo.logserver.handlers.AbstractLogHandler;
  * messages based on their timestamp.  The goal of this archiver
  * is to make it easy to locate messages in a time interval, while
  * ensuring that no log file exceeds the maximum allowed size.
- *
+ * <p>
  * <p>
  * This class is not thread safe.
  * </p>
- *
+ * <p>
  * <p>
  * TODO:
  * </p>
  * <ul>
- *  <li> Add file locking support in order to make it
- *       possible to do concurrent compression of log
- *       files.
- *
- *  <li> Add support for disk monitoring.  Should have
- *       high/low watermark mechanism and three modes
- *       of operation: normal, tight and full.  In
- *       "tight" mode disk is running low and compression
- *       and cleanup should possibly be more frequent.
- *
- *  <li> Add compression task which periodically scans
- *       the log directory looking for uncompressed
- *       candidate log files.
- *
+ * <li> Add file locking support in order to make it
+ * possible to do concurrent compression of log
+ * files.
+ * <p>
+ * <li> Add support for disk monitoring.  Should have
+ * high/low watermark mechanism and three modes
+ * of operation: normal, tight and full.  In
+ * "tight" mode disk is running low and compression
+ * and cleanup should possibly be more frequent.
+ * <p>
+ * <li> Add compression task which periodically scans
+ * the log directory looking for uncompressed
+ * candidate log files.
+ * <p>
  * </ul>
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ *
+ * @author Bjorn Borud
  */
-public class ArchiverHandler extends AbstractLogHandler
-{
-    private static final Logger log
-        = Logger.getLogger(ArchiverHandler.class.getName());
+public class ArchiverHandler extends AbstractLogHandler {
+    private static final Logger log = Logger.getLogger(ArchiverHandler.class.getName());
 
-    /** File instance representing root directory for logging */
+    /**
+     * File instance representing root directory for logging
+     */
     private File root;
 
-    /** Root directory for logging */
+    /**
+     * Root directory for logging
+     */
     private String absoluteRootDir;
 
-    /** Max number of log files open at any given time */
+    /**
+     * Max number of log files open at any given time
+     */
     private final int maxFilesOpen = 100;
 
     /**
-     *The maximum number of bytes we allow a file to grow to
+     * The maximum number of bytes we allow a file to grow to
      * before we rotate it
      */
     private int maxFileSize;
 
-    /** Calendar instance for operating on Date objects */
+    /**
+     * Calendar instance for operating on Date objects
+     */
     private final Calendar calendar;
 
-    /** DateFormat instance for building filenames */
+    /**
+     * DateFormat instance for building filenames
+     */
     private final SimpleDateFormat dateformat;
 
     /**
@@ -91,14 +100,14 @@ public class ArchiverHandler extends AbstractLogHandler
      * Creates an ArchiverHandler which puts files under
      * the given root directory.
      */
-    public ArchiverHandler () {
+    public ArchiverHandler() {
         calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
         dateformat = new SimpleDateFormat("yyyy/MM/dd/HH");
         dateformat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
         // Set up filtering
         String archiveMetrics = System.getProperty("vespa_log_server__archive_metric");
-        if ("off".equals(archiveMetrics)){
+        if ("off".equals(archiveMetrics)) {
             filter = LogFilterManager.getLogFilter("system.nometricsevents");
         }
 
@@ -106,14 +115,14 @@ public class ArchiverHandler extends AbstractLogHandler
 
         // set up LRU for files
         logWriterLRUCache = new LogWriterLRUCache(maxFilesOpen,
-                                                  (float)0.75);
+                                                  (float) 0.75);
     }
 
     /**
      * Creates an ArchiverHandler which puts files under
      * the given root directory.
      */
-    public ArchiverHandler (String rootDir, int maxFileSize) {
+    public ArchiverHandler(String rootDir, int maxFileSize) {
         this();
         setRootDir(rootDir);
         this.maxFileSize = maxFileSize;
@@ -123,8 +132,8 @@ public class ArchiverHandler extends AbstractLogHandler
     /**
      * Return the appropriate LogWriter given a log message.
      */
-    private synchronized LogWriter getLogWriter (LogMessage m) throws IOException {
-        Integer slot = new Integer(dateHash(m.getTime()));
+    private synchronized LogWriter getLogWriter(LogMessage m) throws IOException {
+        Integer slot = dateHash(m.getTime());
         LogWriter logWriter = logWriterLRUCache.get(slot);
         if (logWriter != null) {
             return logWriter;
@@ -141,34 +150,34 @@ public class ArchiverHandler extends AbstractLogHandler
      * This method is just a fancy way of generating a stripped
      * down number representing year, month, day and hour in order
      * to partition logging in time.
-     *
-     * <P>
+     * <p>
+     * <p>
      * This method is not thread-safe.
      */
-    public int dateHash (long time) {
+    public int dateHash(long time) {
         calendar.setTimeInMillis(time);
-        int year   = calendar.get(Calendar.YEAR);
-        int month  = calendar.get(Calendar.MONTH) + 1;
-        int day    = calendar.get(Calendar.DAY_OF_MONTH);
-        int hour   = calendar.get(Calendar.HOUR_OF_DAY);
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH) + 1;
+        int day = calendar.get(Calendar.DAY_OF_MONTH);
+        int hour = calendar.get(Calendar.HOUR_OF_DAY);
 
         return year * 1000000
-            + month * 10000
-            + day   * 100
-            + hour;
+                + month * 10000
+                + day * 100
+                + hour;
     }
 
     /**
      * Generate prefix for log filenames based on log message.
-     *
-     * <P>
+     * <p>
+     * <p>
      * <EM>This message is <code>public</code> only because we need
      * access to it in unit tests.  For all practical purposes this
      * method does not exist to you, the application programmer, OK? :-)</EM>
-     * <P>
+     * <p>
      * XXX optimize!
      */
-    public String getPrefix (LogMessage msg) {
+    public String getPrefix(LogMessage msg) {
         calendar.setTimeInMillis(msg.getTime());
 /*
         int year   = calendar.get(Calendar.YEAR);
@@ -177,50 +186,47 @@ public class ArchiverHandler extends AbstractLogHandler
         int hour   = calendar.get(Calendar.HOUR_OF_DAY);
 */
         StringBuffer result = new StringBuffer(absoluteRootDir.length()
-                + 1 // slash
-                + 4 // year
-                + 1 // slash
-                + 2 // month
-                + 1 // slash
-                + 2 // day
-                + 1 // slash
-                + 2 // hour
+                                                       + 1 // slash
+                                                       + 4 // year
+                                                       + 1 // slash
+                                                       + 2 // month
+                                                       + 1 // slash
+                                                       + 2 // day
+                                                       + 1 // slash
+                                                       + 2 // hour
         )
                 .append(absoluteRootDir).append("/")
                 .append(dateformat.format(calendar.getTime()));
         return result.toString();
     }
 
-    public boolean doHandle (LogMessage msg) {
+    public boolean doHandle(LogMessage msg) {
         try {
             LogWriter logWriter = getLogWriter(msg);
             logWriter.write(msg.toString());
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
         return true;
     }
 
-    public synchronized void flush () {
+    public synchronized void flush() {
         for (LogWriter l : logWriterLRUCache.values()) {
             try {
                 l.flush();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 log.log(Level.WARNING, "Flushing failed", e);
             }
         }
     }
 
-    public synchronized void close () {
+    public synchronized void close() {
         Iterator<LogWriter> it = logWriterLRUCache.values().iterator();
         while (it.hasNext()) {
             LogWriter l = it.next();
             try {
                 l.close();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 log.log(Level.WARNING, "Closing failed", e);
             }
             it.remove();
@@ -249,7 +255,7 @@ public class ArchiverHandler extends AbstractLogHandler
 
     }
 
-    public String toString () {
+    public String toString() {
         return ArchiverHandler.class.getName() + ": root=" + absoluteRootDir;
     }
 }

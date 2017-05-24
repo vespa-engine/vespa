@@ -13,29 +13,26 @@ import java.util.logging.Logger;
 import java.nio.channels.SocketChannel;
 
 /**
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
+public class LogConnectionFactory implements ConnectionFactory {
+    private static final Logger log = Logger.getLogger(LogConnectionFactory.class.getName());
 
-public class LogConnectionFactory implements ConnectionFactory
-{
-    private static final Logger log
-        = Logger.getLogger(LogConnectionFactory.class.getName());
+    private final LogDispatcher dispatcher;
+    private final Levels defaultLogLevels;
 
-    final LogDispatcher dispatcher;
-    final Levels defaultLogLevels;
-
-    public LogConnectionFactory (LogDispatcher dispatcher) {
+    public LogConnectionFactory(LogDispatcher dispatcher) {
         this.dispatcher = dispatcher;
         defaultLogLevels = Levels.parse(System.getProperty("logserver.default.loglevels", ""));
     }
 
-    public Connection newConnection (SocketChannel socket, Listener listener) {
+    public Connection newConnection(SocketChannel socket, Listener listener) {
         if (log.isLoggable(Level.FINE)) {
             log.fine("New connection: " + socket);
         }
         return new LogConnection(socket,
                                  listener,
                                  dispatcher,
-                                 (Levels)defaultLogLevels.clone());
+                                 (Levels) defaultLogLevels.clone());
     }
 }

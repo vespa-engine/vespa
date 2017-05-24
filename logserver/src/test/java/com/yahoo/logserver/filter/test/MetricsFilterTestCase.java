@@ -12,25 +12,23 @@ import com.yahoo.log.LogMessage;
 import com.yahoo.logserver.filter.MetricsFilter;
 
 import org.junit.*;
+
 import static org.junit.Assert.*;
 
 public class MetricsFilterTestCase {
 
     @Test
-    public void testValueEvents ()
-        throws InvalidLogFormatException, IOException {
+    public void testValueEvents() throws InvalidLogFormatException, IOException {
         MetricsFilter filter = new MetricsFilter();
         String filename = "src/test/files/value-events.txt";
         BufferedReader br = new BufferedReader(new FileReader(filename));
-        for (String line = br.readLine(); line != null; line = br.readLine())
-        {
+        for (String line = br.readLine(); line != null; line = br.readLine()) {
             LogMessage m = LogMessage.parseNativeFormat(line);
             assertNotNull(m);
             try {
                 Event event = m.getEvent();
                 assertNotNull(event);
-            }
-            catch (MalformedEventException e) {
+            } catch (MalformedEventException e) {
                 fail();
             }
 

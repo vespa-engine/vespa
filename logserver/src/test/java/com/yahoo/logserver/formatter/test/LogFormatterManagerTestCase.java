@@ -11,12 +11,13 @@ import com.yahoo.logserver.formatter.NullFormatter;
 import com.yahoo.logserver.formatter.TextFormatter;
 
 import org.junit.*;
+
 import static org.junit.Assert.*;
 
 /**
  * Test the LogFormatterManager
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public class LogFormatterManagerTestCase {
 

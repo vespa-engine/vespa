@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.IdentityHashMap;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+
 import com.yahoo.log.LogMessage;
 import com.yahoo.logserver.formatter.LogFormatter;
 import com.yahoo.logserver.formatter.LogFormatterManager;
@@ -15,16 +16,16 @@ import com.yahoo.logserver.formatter.LogFormatterManager;
  * is to make it easier to support multiple message formats while
  * still ensuring we don't format more messages than we strictly need
  * to and that we don't keep around more buffers that we ought to.
- *
- * <P>
+ * <p>
+ * <p>
  * This is not a general purpose class, I think, so please
  * refer to the source code of the Replicator class for
  * information on how to use this.
- *
- * <P>
+ * <p>
+ * <p>
  * This class is not threadsafe.
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public class FormattedBufferCache {
     // the documentation says " All of the methods defined in this
@@ -35,7 +36,7 @@ public class FormattedBufferCache {
 
     private final IdentityHashMap<LogFormatter, ByteBuffer> buffers;
 
-    public FormattedBufferCache () {
+    public FormattedBufferCache() {
         // hope this is a good hash size
         int initialSize = LogFormatterManager.getFormatterNames().length * 2;
         buffers = new IdentityHashMap<LogFormatter, ByteBuffer>(initialSize);
@@ -47,11 +48,11 @@ public class FormattedBufferCache {
      * exist in the cache from before, it will after this
      * method returns.
      *
-     * @param msg The log message you wish to format
+     * @param msg       The log message you wish to format
      * @param formatter The log formatter you wish to use for formatting
      * @return Returns a ByteBuffer slice
      */
-    public ByteBuffer getFormatted (LogMessage msg, LogFormatter formatter) {
+    public ByteBuffer getFormatted(LogMessage msg, LogFormatter formatter) {
         ByteBuffer bb = buffers.get(formatter);
         if (bb == null) {
             bb = charset.encode(formatter.format(msg));
@@ -65,14 +66,14 @@ public class FormattedBufferCache {
      * clients we clear the cache so we are ready for the next
      * message.
      */
-    public void reset () {
+    public void reset() {
         buffers.clear();
     }
 
     /**
      * This is here for test purposes.  Don't get any bright ideas.
      */
-    public Map<LogFormatter,ByteBuffer> getUnderlyingMapOnlyForTesting() {
+    public Map<LogFormatter, ByteBuffer> getUnderlyingMapOnlyForTesting() {
         return buffers;
     }
 }

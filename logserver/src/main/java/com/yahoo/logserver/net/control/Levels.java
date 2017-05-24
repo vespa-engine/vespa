@@ -8,7 +8,7 @@ import java.util.Map;
  * This class is used to represent the state of each log level
  * in a set of states.
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author  Bjorn Borud
  */
 public class Levels implements Cloneable {
     private final Map<String, State> levelsMap = new LinkedHashMap<String, State>(10);

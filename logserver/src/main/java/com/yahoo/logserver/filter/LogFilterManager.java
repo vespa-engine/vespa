@@ -12,9 +12,8 @@ import com.yahoo.log.LogLevel;
  * is truly global.  It also manages the LogFilter namespace
  * to ensure that system-defined filters are not tampered with.
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
-
 public class LogFilterManager {
     private static final LogFilterManager instance;
 
@@ -30,20 +29,20 @@ public class LogFilterManager {
         instance.addLogFilterInternal("system.mute", MuteFilter.getInstance());
     }
 
-    private final Map<String,LogFilter> filters = new HashMap<String,LogFilter>();
+    private final Map<String, LogFilter> filters = new HashMap<String, LogFilter>();
 
-    private LogFilterManager () {
+    private LogFilterManager() {
     }
 
     /**
      * Public interface for adding a name-logfilter mapping. If
      * there exists a mapping already the old mapping is replaced
      * with the new mapping.
-     *
+     * <p>
      * If the name is within the namespace reserved for internal
      * built-in filters it will throw an exception
      */
-    public static void addLogFilter (String name, LogFilter filter) {
+    public static void addLogFilter(String name, LogFilter filter) {
         if (filter == null) {
             throw new NullPointerException("filter cannot be null");
         }
@@ -66,9 +65,9 @@ public class LogFilterManager {
      *
      * @param name The name of the LogFilter to be looked up.
      * @return Returns the LogFilter associated with this name or
-     *         <code>null</code> if not found.
+     * <code>null</code> if not found.
      */
-    public static LogFilter getLogFilter (String name) {
+    public static LogFilter getLogFilter(String name) {
         return instance.filters.get(name);
     }
 
@@ -77,12 +76,11 @@ public class LogFilterManager {
      * Get the names of the defined filters.
      *
      * @return Returns an array containing the names of filters that
-     *         have been registered.
-     *
+     * have been registered.
      */
-    public static String[] getFilterNames () {
-        synchronized(instance.filters) {
-            String[] filterNames= new String[instance.filters.keySet().size()];
+    public static String[] getFilterNames() {
+        synchronized (instance.filters) {
+            String[] filterNames = new String[instance.filters.keySet().size()];
             instance.filters.keySet().toArray(filterNames);
             return filterNames;
         }
@@ -93,7 +91,7 @@ public class LogFilterManager {
      * LogFilter mappings but doesn't perform any of the checks
      * performed by the public method for adding mappings.
      */
-    private void addLogFilterInternal (String name, LogFilter filter) {
+    private void addLogFilterInternal(String name, LogFilter filter) {
         filters.put(name, filter);
     }
 }

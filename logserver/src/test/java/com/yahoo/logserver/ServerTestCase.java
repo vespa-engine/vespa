@@ -2,7 +2,6 @@
 package com.yahoo.logserver;
 
 import com.yahoo.log.LogSetup;
-import com.yahoo.logserver.Server;
 import com.yahoo.logserver.handlers.LogHandler;
 import com.yahoo.logserver.handlers.logmetrics.LogMetricsPlugin;
 import com.yahoo.logserver.test.LogDispatcherTestCase;
@@ -10,17 +9,18 @@ import com.yahoo.logserver.test.LogDispatcherTestCase;
 import java.io.IOException;
 
 import org.junit.*;
+
 import static org.junit.Assert.*;
 
 /**
  * Unit tests for the Server class.
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public class ServerTestCase {
 
     @Test
-	public void testStartupAndRegHandlers() throws IOException, InterruptedException {
+    public void testStartupAndRegHandlers() throws IOException, InterruptedException {
         Server.help();
         Server server = Server.getInstance();
         server.initialize(18322);
@@ -29,20 +29,19 @@ public class ServerTestCase {
         serverThread.start();
         assertTrue(serverThread.isAlive());
         LogHandler handler = new LogDispatcherTestCase.MockHandler();
-        server.registerLogHandler(handler , "foo");
+        server.registerLogHandler(handler, "foo");
         assertEquals(Server.threadNameForHandler().get(handler), "foo");
         server.unregisterLogHandler(handler);
         assertEquals(Server.threadNameForHandler().get(handler), null);
-		serverThread.interrupt();
-		try {
-			serverThread.join();
-			assertTrue(true);
-		}
-		catch (InterruptedException e) {
-			fail();
-		}
-	}
-    
+        serverThread.interrupt();
+        try {
+            serverThread.join();
+            assertTrue(true);
+        } catch (InterruptedException e) {
+            fail();
+        }
+    }
+
     @Test
     public void testPluginLoaderClassLoading() {
         AbstractPluginLoader loader = new BuiltinPluginLoader();
@@ -51,5 +50,5 @@ public class ServerTestCase {
         System.setProperty("logserver.logmetrics.enable", "true");
         loader.loadFromClass(LogMetricsPlugin.class); // Hm, no way to verify it was loaded
     }
-    
+
 }

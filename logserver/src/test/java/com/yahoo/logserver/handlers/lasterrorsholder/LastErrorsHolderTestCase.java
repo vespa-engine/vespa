@@ -26,9 +26,9 @@ public class LastErrorsHolderTestCase {
 
     private static final int serverPort = 18324;
     private static final int lastErrorsHolderPort = 18326;
-    Server server;
-    Thread serverThread;
-    LastErrorsHolder lastErrorsHolder;
+    private Server server;
+    private Thread serverThread;
+    private LastErrorsHolder lastErrorsHolder;
 
     @Before
     public void setUp() throws InterruptedException, IOException {
@@ -41,11 +41,11 @@ public class LastErrorsHolderTestCase {
 
     @After
     public void tearDown() throws InterruptedException {
-        if (serverThread!=null) {
+        if (serverThread != null) {
             serverThread.interrupt();
             serverThread.join();
         }
-        if (lastErrorsHolder !=null) lastErrorsHolder.close();
+        if (lastErrorsHolder != null) lastErrorsHolder.close();
     }
 
     public String connectAndGetLogMessages() throws InterruptedException, IOException {
@@ -77,9 +77,12 @@ public class LastErrorsHolderTestCase {
 
     @Test
     public void testLastErrorsHolder() throws IOException, InvalidLogFormatException, InterruptedException {
-        LastErrorsHolder.Message logMessage1 = new LastErrorsHolder.Message(1433996283, "host1.yahoo.com", "container", LogLevel.ERROR.getName(), "foo");
-        LastErrorsHolder.Message logMessage2 = new LastErrorsHolder.Message(1433996284, "host2.yahoo.com", "container", LogLevel.ERROR.getName(), "bar");
-        LastErrorsHolder.Message logMessage3 = new LastErrorsHolder.Message(1433996285, "host2.yahoo.com", "container", LogLevel.INFO.getName(), "bar");
+        LastErrorsHolder.Message logMessage1 = new LastErrorsHolder.Message(1433996283, "host1.yahoo.com", "container", LogLevel.ERROR
+                .getName(), "foo");
+        LastErrorsHolder.Message logMessage2 = new LastErrorsHolder.Message(1433996284, "host2.yahoo.com", "container", LogLevel.ERROR
+                .getName(), "bar");
+        LastErrorsHolder.Message logMessage3 = new LastErrorsHolder.Message(1433996285, "host2.yahoo.com", "container", LogLevel.INFO
+                .getName(), "bar");
 
         LastErrorsHolder.Messages messages = new LastErrorsHolder.Messages();
 
@@ -107,11 +110,13 @@ public class LastErrorsHolderTestCase {
     }
 
     private LogMessage createLogMessage(LastErrorsHolder.Message message) throws InvalidLogFormatException {
-        return createLogMessage(message.getTime(), message.getHostname(), message.getService(), message.getLogLevel(), message.getMessage());
+        return createLogMessage(message.getTime(), message.getHostname(), message.getService(), message.getLogLevel(), message
+                .getMessage());
     }
 
     private LogMessage createLogMessage(long time, String hostname, String service, String logLevel, String message) throws InvalidLogFormatException {
-        return LogMessage.parseNativeFormat(String.format("%d\t%s\t1/1\t%s\tcomponent\t%s\t%s", time, hostname, service, logLevel.toLowerCase(), message));
+        return LogMessage.parseNativeFormat(String.format("%d\t%s\t1/1\t%s\tcomponent\t%s\t%s", time, hostname, service, logLevel
+                .toLowerCase(), message));
     }
 
 }

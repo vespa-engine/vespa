@@ -13,30 +13,30 @@ import java.util.Map;
  * This singleton class implements a central registry of LogFormatter
  * instances.
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public class LogFormatterManager {
     private static final LogFormatterManager instance;
+
     static {
         instance = new LogFormatterManager();
         instance.addLogFormatterInternal("system.textformatter", new TextFormatter());
         instance.addLogFormatterInternal("system.nullformatter", new NullFormatter());
     }
 
-    private final Map<String,LogFormatter> logFormatters =
-    	new HashMap<String,LogFormatter>();
+    private final Map<String, LogFormatter> logFormatters = new HashMap<String, LogFormatter>();
 
-    private LogFormatterManager () {}
+    private LogFormatterManager() {}
 
     /**
      * LogFormatter lookup function
      *
      * @param name The name of the LogFormatter to be looked up.
      * @return Returns the LogFormatter associated with this name or
-     *         <code>null</code> if not found.
+     * <code>null</code> if not found.
      */
-    public static LogFormatter getLogFormatter (String name) {
-        synchronized(instance.logFormatters) {
+    public static LogFormatter getLogFormatter(String name) {
+        synchronized (instance.logFormatters) {
             return instance.logFormatters.get(name);
         }
     }
@@ -45,11 +45,10 @@ public class LogFormatterManager {
      * Get the names of the defined formatters.
      *
      * @return Returns an array containing the names of formatters that
-     *         have been registered.
-     *
+     * have been registered.
      */
-    public static String[] getFormatterNames () {
-        synchronized(instance.logFormatters) {
+    public static String[] getFormatterNames() {
+        synchronized (instance.logFormatters) {
             String[] formatterNames = new String[instance.logFormatters.keySet().size()];
             instance.logFormatters.keySet().toArray(formatterNames);
             return formatterNames;
@@ -61,8 +60,8 @@ public class LogFormatterManager {
      * LogFormatter mappings but doesn't perform any of the checks
      * performed by the public method for adding mappings.
      */
-    private void addLogFormatterInternal (String name, LogFormatter logFormatter) {
-        synchronized(logFormatters) {
+    private void addLogFormatterInternal(String name, LogFormatter logFormatter) {
+        synchronized (logFormatters) {
             logFormatters.put(name, logFormatter);
         }
     }

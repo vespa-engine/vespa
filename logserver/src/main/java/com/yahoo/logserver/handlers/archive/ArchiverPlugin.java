@@ -2,13 +2,13 @@
 package com.yahoo.logserver.handlers.archive;
 
 import java.util.logging.Logger;
+
 import com.yahoo.logserver.Server;
 import com.yahoo.plugin.Config;
 import com.yahoo.plugin.Plugin;
 
 
-public class ArchiverPlugin implements Plugin
-{
+public class ArchiverPlugin implements Plugin {
     /**
      * Default log archive dir (relative to current directory
      * at startup).
@@ -21,8 +21,7 @@ public class ArchiverPlugin implements Plugin
     private static final String DEFAULT_MAXFILESIZE = "20971520";
 
     private final Server server = Server.getInstance();
-    private static final Logger log =
-        Logger.getLogger(ArchiverPlugin.class.getName());
+    private static final Logger log = Logger.getLogger(ArchiverPlugin.class.getName());
     private ArchiverHandler archiver;
 
     /**
@@ -32,20 +31,21 @@ public class ArchiverPlugin implements Plugin
         return "logarchive";
     }
 
-    /** Initialize the archiver plugin
-     *
+    /**
+     * Initialize the archiver plugin
+     * <p>
      * Config keys used:
-     *
-     *   maxfilesize
-     *   dir            The root of the logarchive, make sure this does
-     *                  <b>not</b> end with a '/' character.
+     * <p>
+     * maxfilesize
+     * dir            The root of the logarchive, make sure this does
+     * <b>not</b> end with a '/' character.
      */
     public void initPlugin(Config config) {
 
         if (archiver != null) {
-        	log.finer("ArchivePlugin doubly initialized");
+            log.finer("ArchivePlugin doubly initialized");
             throw new IllegalStateException("plugin already initialized: "
-                                            + getPluginName());
+                                                    + getPluginName());
         }
 
         // Possible to disable logarchive for testing
@@ -65,9 +65,9 @@ public class ArchiverPlugin implements Plugin
     public void shutdownPlugin() {
 
         if (archiver == null) {
-        	log.finer("ArchiverPlugin shutdown before initialize");
+            log.finer("ArchiverPlugin shutdown before initialize");
             throw new IllegalStateException("plugin not initialized: "
-                                            + getPluginName());
+                                                    + getPluginName());
         }
         server.unregisterLogHandler(archiver);
         server.unregisterFlusher(archiver);

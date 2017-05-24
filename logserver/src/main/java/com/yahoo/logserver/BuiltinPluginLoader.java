@@ -12,7 +12,7 @@ import com.yahoo.logserver.handlers.replicator.ReplicatorPlugin;
 /**
  * Load a set of builtin plugins
  *
- * @author <a href="mailto:stig@yahoo-inc.com">Stig Bakken</a>
+ * @author Stig Bakken
  */
 public class BuiltinPluginLoader extends AbstractPluginLoader {
     private static final Logger log = Logger.getLogger(BuiltinPluginLoader.class.getName());

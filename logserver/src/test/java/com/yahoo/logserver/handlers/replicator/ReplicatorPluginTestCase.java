@@ -12,19 +12,19 @@ import com.yahoo.plugin.SystemPropertyConfig;
 public class ReplicatorPluginTestCase {
 
     ReplicatorPlugin rp;
-    
+
     @Before
     public void setUp() {
         rp = new ReplicatorPlugin();
     }
-    
+
     @After
     public void tearDown() {
-        if (rp!=null) {
+        if (rp != null) {
             rp.shutdownPlugin();
         }
     }
-    
+
     @Test
     public void testReplicatorPlugin() {
         System.setProperty("replicatorplugin.test.port", "18325");

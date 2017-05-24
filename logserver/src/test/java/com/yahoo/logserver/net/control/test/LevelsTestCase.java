@@ -5,10 +5,11 @@ import com.yahoo.logserver.net.control.Levels;
 import com.yahoo.logserver.net.control.State;
 
 import org.junit.*;
+
 import static org.junit.Assert.*;
 
 /**
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public class LevelsTestCase {
     /**
@@ -29,10 +30,9 @@ public class LevelsTestCase {
      * which has been deemed to be "reasonable".  In general, it will
      * specify forwarding all log levels except "debug" and it will
      * specify "spam" to be turned off.
-     *
      */
     @Test
-    public void testDefaultLevels () {
+    public void testDefaultLevels() {
         Levels levels = new Levels();
         assertSame(State.FORWARD, levels.getLevelState("event"));
         assertSame(State.FORWARD, levels.getLevelState("fatal"));
@@ -47,7 +47,6 @@ public class LevelsTestCase {
     /**
      * This test also documents/verifies the default behavior
      * of the Levels class.
-     *
      */
     @Test
     public void testToString() {
@@ -62,20 +61,20 @@ public class LevelsTestCase {
      * Clone testing
      */
     @Test
-    public void testClone () {
+    public void testClone() {
         Levels l1 = Levels.parse("error=noforward");
         assertEquals(l1.toString(), l1.clone().toString());
         assertSame(State.NOFORWARD, l1.getLevelState("error"));
-        assertSame(State.NOFORWARD, ((Levels)l1.clone()).getLevelState("error"));
+        assertSame(State.NOFORWARD, ((Levels) l1.clone()).getLevelState("error"));
         assertSame(l1.getLevelState("error"),
-                   ((Levels)l1.clone()).getLevelState("error"));
+                   ((Levels) l1.clone()).getLevelState("error"));
     }
 
     /**
      * test parser
      */
     @Test
-    public void testUpdateLevels () {
+    public void testUpdateLevels() {
         Levels l1 = Levels.parse("error=noforward");
         assertSame(State.NOFORWARD, l1.getLevelState("error"));
 

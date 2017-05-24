@@ -14,11 +14,11 @@ import com.yahoo.log.LogMessage;
  * pointless and silly, but we include it for symmetry...
  * or completeness....or...whatever.
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public class NullFormatter implements LogFormatter {
 
-    public String format (LogMessage msg) {
+    public String format(LogMessage msg) {
         return msg.toString();
     }
 

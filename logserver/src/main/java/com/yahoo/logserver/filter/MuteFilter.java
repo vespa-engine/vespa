@@ -6,7 +6,7 @@ import com.yahoo.log.LogMessage;
 /**
  * Filter which always returns false.
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public class MuteFilter implements LogFilter {
     private static final MuteFilter instance = new MuteFilter();
@@ -14,17 +14,17 @@ public class MuteFilter implements LogFilter {
     /**
      * Singleton, private constructor.
      */
-    private MuteFilter () {}
+    private MuteFilter() {}
 
     public static MuteFilter getInstance() {
         return instance;
     }
 
-    public boolean isLoggable (LogMessage msg) {
+    public boolean isLoggable(LogMessage msg) {
         return false;
     }
 
-    public String description () {
+    public String description() {
         return "Matches no messages.  Mute.";
     }
 }

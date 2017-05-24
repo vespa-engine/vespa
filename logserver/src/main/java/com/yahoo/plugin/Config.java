@@ -5,10 +5,9 @@ package com.yahoo.plugin;
  * This interface specifies an API for configuring runtime-loadable
  * server plugins.
  *
- * @author  <a href="mailto:stig@yahoo-inc.com">Stig Bakken</a>
+ * @author Stig Bakken
  */
-public abstract class Config
-{
+public abstract class Config {
     /**
      * @return a config value for the specified key
      */

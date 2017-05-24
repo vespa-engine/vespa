@@ -27,7 +27,7 @@ import static org.junit.Assert.*;
  * Unit tests for the log connection class.  Wow is this too
  * complex!
  *
- * @author <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public class LogConnectionTestCase {
     private static final Logger log = Logger.getLogger(LogConnectionTestCase.class.getName());

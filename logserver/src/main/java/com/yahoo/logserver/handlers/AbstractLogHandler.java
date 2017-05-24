@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.logserver.handlers;
 
-import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.List;
 
@@ -14,11 +13,11 @@ import com.yahoo.logserver.filter.LogFilter;
  * of quite a bit of tedious work for you (log message counting,
  * handling of lists of messages versus single instances etc).
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public abstract class AbstractLogHandler implements LogHandler {
-    private long count       = 0;
-    private long filtered    = 0;
+    private long count = 0;
+    private long filtered = 0;
     private LogFilter filter = null;
     private String name;
 
@@ -29,7 +28,7 @@ public abstract class AbstractLogHandler implements LogHandler {
      *
      * @param msg The message we are about to handle
      */
-    public final void handle (LogMessage msg) {
+    public final void handle(LogMessage msg) {
         if ((filter != null) && (! filter.isLoggable(msg))) {
             filtered++;
             return;
@@ -45,7 +44,7 @@ public abstract class AbstractLogHandler implements LogHandler {
      *
      * @param messages List of LogMessage instances.
      */
-    public final void handle (List<LogMessage> messages) {
+    public final void handle(List<LogMessage> messages) {
         Iterator<LogMessage> it = messages.iterator();
         while (it.hasNext()) {
             handle(it.next());
@@ -58,17 +57,16 @@ public abstract class AbstractLogHandler implements LogHandler {
      * off.
      *
      * @param filter The filter to be used for this handler
-     *
      */
-    public void setLogFilter (LogFilter filter) {
+    public void setLogFilter(LogFilter filter) {
         this.filter = filter;
     }
 
     /**
      * @return Returns the log filter for this handler or
-     *         <code>null</code> if no filter is in effect.
+     * <code>null</code> if no filter is in effect.
      */
-    public LogFilter getLogFilter () {
+    public LogFilter getLogFilter() {
         return filter;
     }
 
@@ -78,23 +76,23 @@ public abstract class AbstractLogHandler implements LogHandler {
      *
      * @return Returns the number of times doHandle has been called.
      */
-    public final long getCount () {
+    public final long getCount() {
         return count;
     }
 
-    public String getName () {
+    public String getName() {
         if (name == null) {
             String n = this.getClass().getName();
             int x = n.lastIndexOf('.');
-            if (x != -1) {
-                n = n.substring(x+1);
+            if (x != - 1) {
+                n = n.substring(x + 1);
             }
             name = n;
         }
         return name;
     }
 
-    public void setName (String name) {
+    public void setName(String name) {
         this.name = name;
     }
 
@@ -102,8 +100,8 @@ public abstract class AbstractLogHandler implements LogHandler {
      * The method which actually handles the log message and
      * does something to it.  This is the one you wish to
      * override when you write a new handler.
-     *
-     * <P>
+     * <p>
+     * <p>
      * <em>
      * If your handle method is slow you should document this fact
      * so that decisions can be made with regard to configuration.
@@ -111,24 +109,24 @@ public abstract class AbstractLogHandler implements LogHandler {
      *
      * @param msg The LogMessage we are about to handle
      * @return Returns <code>true</code> if the message was
-     *         handled and <code>false</code> if it was ignored.
+     * handled and <code>false</code> if it was ignored.
      */
-    public abstract boolean doHandle (LogMessage msg);
+    public abstract boolean doHandle(LogMessage msg);
 
     /**
      * Flush LogMessages.
      */
-    public abstract void flush ();
+    public abstract void flush();
 
     /**
      * Close this loghandler.  After a loghandler is closed calling
      * the #handle() has undefined behavior, but it should be assumed
      * that log messages will be silently dropped.
-     *
-     * <P>
+     * <p>
+     * <p>
      * #close() usually implies #flush() but don't bet on it.
      */
-    public abstract void close ();
+    public abstract void close();
 
     /**
      * Force implementation of (hopefully meaningful) toString()

@@ -23,18 +23,22 @@ import com.yahoo.logserver.formatter.LogFormatterManager;
 /**
  * Replication client connection.
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
-public class ReplicatorConnection implements Connection, LogFilter
-{
-    private static final Logger log
-        = Logger.getLogger(ReplicatorConnection.class.getName());
+public class ReplicatorConnection implements Connection, LogFilter {
+    private static final Logger log = Logger.getLogger(ReplicatorConnection.class.getName());
 
-    /** The maximum number of queued messages before we start dropping */
+    /**
+     * The maximum number of queued messages before we start dropping
+     */
     private static final int maxQueueLength;
-    /** The maximum number of times we go over maxQueueLength before we log a warning */
+    /**
+     * The maximum number of times we go over maxQueueLength before we log a warning
+     */
     private static final int maxRetriesBeforeWarning = 10;
-    /** Count of how many times we have received a message while the queue is full */
+    /**
+     * Count of how many times we have received a message while the queue is full
+     */
     private static int queueFullCount = 0;
 
     static {
@@ -64,11 +68,8 @@ public class ReplicatorConnection implements Connection, LogFilter
      * Constructs a ReplicatorConnection.  Note that initially the
      * filter of this connection is set to MuteFilter, which mutes
      * all log messages.
-     *
      */
-    public ReplicatorConnection (SocketChannel socket,
-                                 Listener listener,
-                                 Replicator replicator) {
+    public ReplicatorConnection(SocketChannel socket, Listener listener, Replicator replicator) {
         this.socket = socket;
         this.listener = listener;
         this.replicator = replicator;
@@ -97,9 +98,8 @@ public class ReplicatorConnection implements Connection, LogFilter
      * serialize it into.
      *
      * @param msg The log message offered
-     *
      */
-    public boolean isLoggable (LogMessage msg) {
+    public boolean isLoggable(LogMessage msg) {
         if (filter == null) {
             return true;
         }
@@ -109,7 +109,7 @@ public class ReplicatorConnection implements Connection, LogFilter
     /**
      * Return the description of the currently active filter.
      */
-    public String description () {
+    public String description() {
         if (filter == null) {
             return "No filter defined";
         }
@@ -124,7 +124,7 @@ public class ReplicatorConnection implements Connection, LogFilter
      * @param buffer the ByteBuffer into which the log message is
      *               serialized.
      */
-    public synchronized void enqueue (ByteBuffer buffer) throws IOException {
+    public synchronized void enqueue(ByteBuffer buffer) throws IOException {
         if (writeBuffer == null) {
             writeBuffer = buffer;
         } else {
@@ -133,7 +133,7 @@ public class ReplicatorConnection implements Connection, LogFilter
                 queueFullCount++;
                 if (! droppingMode) {
                     droppingMode = true;
-                    String message = "client at "  + remoteHost + " can't keep up, dropping messages";
+                    String message = "client at " + remoteHost + " can't keep up, dropping messages";
                     if (queueFullCount > maxRetriesBeforeWarning) {
                         log.log(LogLevel.WARNING, message);
                         queueFullCount = 0;
@@ -154,38 +154,38 @@ public class ReplicatorConnection implements Connection, LogFilter
     }
 
 
-    public void read () throws IOException  {
+    public void read() throws IOException {
         if (! readBuffer.hasRemaining()) {
             log.warning("Log message too long. Message exceeds "
-                        + readBuffer.capacity()
-                        + " bytes.  Connection dropped.");
+                                + readBuffer.capacity()
+                                + " bytes.  Connection dropped.");
             close();
             return;
         }
 
 
-         int ret = socket.read(readBuffer);
-         if (ret == -1) {
-             close();
-             return;
-         }
+        int ret = socket.read(readBuffer);
+        if (ret == - 1) {
+            close();
+            return;
+        }
 
-         if (ret == 0) {
-             if (log.isLoggable(LogLevel.DEBUG)) {
-                 log.fine("zero byte read occurred");
-             }
-         }
+        if (ret == 0) {
+            if (log.isLoggable(LogLevel.DEBUG)) {
+                log.fine("zero byte read occurred");
+            }
+        }
 
-         readBuffer.flip();
+        readBuffer.flip();
 
-         String s;
-         while ((s = ReadLine.readLine(readBuffer)) != null) {
-             onCommand(s);
-         }
+        String s;
+        while ((s = ReadLine.readLine(readBuffer)) != null) {
+            onCommand(s);
+        }
 
     }
 
-    public synchronized void write () throws IOException {
+    public synchronized void write() throws IOException {
         if (! socket.isOpen()) {
             // throw new IllegalStateException("SocketChannel not open in write()");
             close();
@@ -218,8 +218,7 @@ public class ReplicatorConnection implements Connection, LogFilter
             //
             try {
                 bytesWritten = socket.write(writeBuffer);
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 close();
                 return;
             }
@@ -227,13 +226,13 @@ public class ReplicatorConnection implements Connection, LogFilter
 
             // buffer drained so we forget it and see what happens when we
             // go around.  if indeed we go around
-            if ((writeBuffer != null) && (!writeBuffer.hasRemaining())) {
+            if ((writeBuffer != null) && (! writeBuffer.hasRemaining())) {
                 writeBuffer = null;
             }
         } while (bytesWritten > 0);
     }
 
-    public synchronized void close () throws IOException {
+    public synchronized void close() throws IOException {
         replicator.deRegisterConnection(this);
         socket.close();
         writeBuffer = null;
@@ -241,15 +240,15 @@ public class ReplicatorConnection implements Connection, LogFilter
         log.log(LogLevel.DEBUG, "closing connection to " + remoteHost);
     }
 
-    public int selectOps () {
+    public int selectOps() {
         return SelectionKey.OP_READ;
     }
 
-    public SocketChannel socketChannel () {
+    public SocketChannel socketChannel() {
         return socket;
     }
 
-    public void connect () {
+    public void connect() {
     }
 
 
@@ -257,7 +256,7 @@ public class ReplicatorConnection implements Connection, LogFilter
     // ==== command processing
     // ========================================================
 
-    void onCommand (String s) {
+    void onCommand(String s) {
         log.log(LogLevel.DEBUG, "COMMAND: '" + s + "' from " + remoteHost);
         StringTokenizer st = new StringTokenizer(s.toLowerCase());
         while (st.hasMoreTokens()) {
@@ -308,7 +307,7 @@ public class ReplicatorConnection implements Connection, LogFilter
         }
     }
 
-    void onFormatter (String formatterName) {
+    void onFormatter(String formatterName) {
         LogFormatter newFormatter = LogFormatterManager.getLogFormatter(formatterName);
         if (newFormatter == null) {
             print("# 405 formatter not found '" + formatterName + "'\n");
@@ -319,7 +318,7 @@ public class ReplicatorConnection implements Connection, LogFilter
         print("# 202 using '" + formatter + "'\n");
     }
 
-    void onUse (String filterName) {
+    void onUse(String filterName) {
         LogFilter newFilter = LogFilterManager.getLogFilter(filterName);
         if (newFilter == null) {
             print("# 404 filter not found '" + filterName + "'\n");
@@ -331,8 +330,7 @@ public class ReplicatorConnection implements Connection, LogFilter
     }
 
 
-
-    void onList () {
+    void onList() {
         print("# 203 filter list\n");
         String filterNames[] = LogFilterManager.getFilterNames();
         for (int i = 0; i < filterNames.length; i++) {
@@ -342,7 +340,7 @@ public class ReplicatorConnection implements Connection, LogFilter
         print("# 205 end filter list\n");
     }
 
-    void onListFormatters () {
+    void onListFormatters() {
         print("# 206 formatter list\n");
         String formatterNames[] = LogFormatterManager.getFormatterNames();
         for (int i = 0; i < formatterNames.length; i++) {
@@ -352,60 +350,58 @@ public class ReplicatorConnection implements Connection, LogFilter
         print("# 208 end formatter list\n");
     }
 
-    private void print (String s) {
+    private void print(String s) {
         try {
             enqueue(IOUtils.utf8ByteBuffer(s));
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             log.log(LogLevel.WARNING, "error printing", e);
             try {
                 close();
-            }
-            catch (IOException e2) {
+            } catch (IOException e2) {
                 // ignore
             }
         }
     }
 
-    void onStats () {
+    void onStats() {
 
         print(new StringBuilder(80)
-              .append("# 206 stats start (this connection)\n")
-              .append("# 207 ").append(numHandled).append(" handled\n")
-              .append("# 208 ").append(numDropped).append(" dropped\n")
-              .append("# 209 ").append(numQueued)
-              .append(" handled and queued\n")
-              .append("# 210 ").append(totalBytesWritten)
-              .append(" total bytes written\n")
-              .append("# 211 stats end\n")
-              .toString()
-              );
+                      .append("# 206 stats start (this connection)\n")
+                      .append("# 207 ").append(numHandled).append(" handled\n")
+                      .append("# 208 ").append(numDropped).append(" dropped\n")
+                      .append("# 209 ").append(numQueued)
+                      .append(" handled and queued\n")
+                      .append("# 210 ").append(totalBytesWritten)
+                      .append(" total bytes written\n")
+                      .append("# 211 stats end\n")
+                      .toString()
+        );
     }
 
 
-    public int getNumHandled () {
+    public int getNumHandled() {
         return numHandled;
     }
 
-    public int getNumQueued () {
+    public int getNumQueued() {
         return numQueued;
     }
 
-    public int getNumDropped () {
+    public int getNumDropped() {
         return numDropped;
     }
 
-    public long getTotalBytesWritten () {
+    public long getTotalBytesWritten() {
         return totalBytesWritten;
     }
 
-    public String getLogFilterName () {
+    public String getLogFilterName() {
         return filterName;
     }
-    
+
     void setFilter(LogFilter filter) {
         this.filter = filter;
     }
-    
+
 }
 

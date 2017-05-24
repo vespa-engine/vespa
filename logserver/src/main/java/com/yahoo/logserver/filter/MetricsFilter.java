@@ -15,7 +15,7 @@ import com.yahoo.log.LogMessage;
  * This filter matches events that are used for monitoring, specificly
  * the Count and Value events.
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public class MetricsFilter implements LogFilter {
     public boolean isLoggable (LogMessage msg) {

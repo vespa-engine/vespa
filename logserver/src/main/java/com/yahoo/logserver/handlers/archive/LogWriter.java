@@ -12,23 +12,21 @@ import com.yahoo.log.LogLevel;
 /**
  * This class is not thread-safe.
  *
- *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
-public class LogWriter extends Writer
-{
+public class LogWriter extends Writer {
     private static final Logger log = Logger.getLogger(LogWriter.class.getName());
 
-    private long bytesWritten      = 0;
-    private int generation         = 0;
-    private int maxSize            = 20 * (1024*1024);
-    private final int resumeLimit        = 95;
-    private final int resumeLimitSize    = (maxSize * resumeLimit / 100);
+    private long bytesWritten = 0;
+    private int generation = 0;
+    private int maxSize = 20 * (1024 * 1024);
+    private final int resumeLimit = 95;
+    private final int resumeLimitSize = (maxSize * resumeLimit / 100);
     private File currentFile;
     private Writer writer;
     private final String prefix;
 
-    public LogWriter (String prefix, int maxSize) throws IOException {
+    public LogWriter(String prefix, int maxSize) throws IOException {
         this.prefix = prefix;
         this.maxSize = maxSize;
         writer = nextWriter();
@@ -38,14 +36,13 @@ public class LogWriter extends Writer
      * This is called when we want to rotate the output file to
      * start writing the next file.  There are two scenarios when
      * we do this:
-     *
+     * <p>
      * <UL>
-     *  <LI> initial case, when we have no file
-     *  <LI> when we have filled the file and want to rotate it
+     * <LI> initial case, when we have no file
+     * <LI> when we have filled the file and want to rotate it
      * </UL>
-     *
      */
-    private Writer nextWriter () throws IOException {
+    private Writer nextWriter() throws IOException {
 
         if (writer != null) {
             writer.close();
@@ -64,7 +61,7 @@ public class LogWriter extends Writer
 
             // if compressed version exists we skip it
             if ((new File(name + ".gz").exists())
-                || (new File(name + ".bz2").exists())) {
+                    || (new File(name + ".bz2").exists())) {
                 continue;
             }
 
@@ -91,9 +88,9 @@ public class LogWriter extends Writer
             } else {
 
                 log.fine("nextWriter, not resuming " + name
-                         + " because it is bigger than "
-                         + resumeLimit
-                         + " percent of max");
+                                 + " because it is bigger than "
+                                 + resumeLimit
+                                 + " percent of max");
             }
         }
 
@@ -104,13 +101,13 @@ public class LogWriter extends Writer
      * Note that this method should not be used directly since
      * that would circumvent rotation when it grows past its
      * maximum size.  use the one that takes String instead.
-     *
-     * <P>
+     * <p>
+     * <p>
      * <em>
      * (This is a class which is only used internally anyway)
      * </em>
      */
-    public void write (char[] cbuff, int offset, int len) throws IOException {
+    public void write(char[] cbuff, int offset, int len) throws IOException {
         throw new RuntimeException("This method should not be used");
     }
 
@@ -124,14 +121,14 @@ public class LogWriter extends Writer
 
         if (bytesWritten >= maxSize) {
             log.fine("logfile '"
-                     + currentFile.getAbsolutePath()
-                     + "' full, rotating");
+                             + currentFile.getAbsolutePath()
+                             + "' full, rotating");
             writer = nextWriter();
         }
     }
 
 
-    public void flush() throws IOException{
+    public void flush() throws IOException {
         if (writer != null) {
             writer.flush();
         }
