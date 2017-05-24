@@ -327,6 +327,8 @@ public class NodeAgentImpl implements NodeAgent {
 
 
     private void scheduleDownLoadIfNeeded(ContainerNodeSpec nodeSpec) {
+        if (nodeSpec.currentDockerImage.equals(nodeSpec.wantedDockerImage)) return;
+
         if (dockerOperations.shouldScheduleDownloadOfImage(nodeSpec.wantedDockerImage.get())) {
             if (nodeSpec.wantedDockerImage.get().equals(imageBeingDownloaded)) {
                 // Downloading already scheduled, but not done.
@@ -334,7 +336,7 @@ public class NodeAgentImpl implements NodeAgent {
             }
             imageBeingDownloaded = nodeSpec.wantedDockerImage.get();
             // Create a signalWorkToBeDone when download is finished.
-            dockerOperations.scheduleDownloadOfImage(containerName, nodeSpec, this::signalWorkToBeDone);
+            dockerOperations.scheduleDownloadOfImage(containerName, imageBeingDownloaded, this::signalWorkToBeDone);
         } else if (imageBeingDownloaded != null) { // Image was downloading, but now it's ready
             imageBeingDownloaded = null;
         }
@@ -429,7 +431,7 @@ public class NodeAgentImpl implements NodeAgent {
                     maintainer.handleCoreDumpsForContainer(containerName, nodeSpec, environment);
                 });
                 scheduleDownLoadIfNeeded(nodeSpec);
-                if (imageBeingDownloaded != null) {
+                if (isDownloadingImage()) {
                     addDebugMessage("Waiting for image to download " + imageBeingDownloaded.asString());
                     return;
                 }
