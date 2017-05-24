@@ -1,20 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("");
-#include <vespa/fnet/fnet.h>
-#include <vespa/searchcore/util/log.h>
+#include "mergehits.h"
+#include "querycacheutil.h"
+#include "fnet_dataset.h"
+#include "fnet_search.h"
 #include <vespa/searchcore/util/stlishheap.h>
-#include <vespa/searchlib/common/packets.h>
-#include <vespa/searchcore/fdispatch/common/appcontext.h>
-#include <vespa/searchcore/fdispatch/search/querycacheutil.h>
-#include <vespa/searchcore/fdispatch/search/fnet_dataset.h>
-#include <vespa/searchcore/fdispatch/search/fnet_engine.h>
-#include <vespa/searchcore/fdispatch/search/fnet_search.h>
-#include <vespa/searchcore/fdispatch/search/mergehits.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".fdispatch.mergehits");
 
 using search::common::SortData;
 using search::common::SortDataIterator;
@@ -212,8 +205,7 @@ FastS_HitMerger<T>::MergeHits()
         if (sortDataDocs == numDocs) {
             useSortData = true;
         } else {
-            LOG(warning,
-                "Some results are missing sort data, sorting by rank instead");
+            LOG(warning, "Some results are missing sort data, sorting by rank instead");
         }
     }
 

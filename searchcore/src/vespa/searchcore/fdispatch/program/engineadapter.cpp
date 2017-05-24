@@ -1,17 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".fdispatch.engineadapter");
 #include "engineadapter.h"
-#include <vespa/searchlib/common/packets.h>
-#include <vespa/searchcore/fdispatch/search/child_info.h>
-#include <vespa/searchcore/fdispatch/search/nodemanager.h>
-#include <vespa/searchcore/fdispatch/search/datasetcollection.h>
-#include <vespa/searchcore/fdispatch/search/dataset_base.h>
-#include <vespa/searchcore/fdispatch/common/search.h>
 #include "searchadapter.h"
 #include "docsumadapter.h"
+#include <vespa/searchcore/fdispatch/search/child_info.h>
+#include <vespa/searchcore/fdispatch/search/nodemanager.h>
+#include <vespa/searchcore/fdispatch/search/dataset_base.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".fdispatch.engineadapter");
 
 namespace fdispatch {
 

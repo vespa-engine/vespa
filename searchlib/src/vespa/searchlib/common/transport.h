@@ -2,9 +2,9 @@
 
 #pragma once
 
-namespace search {
+#include <cstdint>
 
-namespace fs4transport {
+namespace search::fs4transport {
 
 /**
  * Instead of using a 32-bit number to send the 'usehardware' flag, we
@@ -281,6 +281,4 @@ enum packetcode {
     PCODE_LastCode = 223	// Used for consistency checking only, must be last.
 };
 
-} // namespace fs4transport
-} // namespace search
-
+}

@@ -1,16 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/common/sortdata.h>
+#include "sortdata.h"
+#include <cassert>
+#include <cstring>
 
 namespace search {
 namespace common {
 
 uint32_t
-SortData::GetSize(uint32_t        hitcnt,
-                        const uint32_t *sortIndex)
+SortData::GetSize(uint32_t hitcnt, const uint32_t *sortIndex)
 {
     if (hitcnt == 0)
         return 0;
@@ -20,11 +18,9 @@ SortData::GetSize(uint32_t        hitcnt,
 
 
 bool
-SortData::Equals(uint32_t        hitcnt,
-                       const uint32_t *sortIndex_1,
-                       const char     *sortData_1,
-                       const uint32_t *sortIndex_2,
-                       const char     *sortData_2)
+SortData::Equals(uint32_t hitcnt,
+                 const uint32_t *sortIndex_1, const char *sortData_1,
+                 const uint32_t *sortIndex_2, const char *sortData_2)
 {
     if (hitcnt == 0)
         return true;
@@ -42,11 +38,9 @@ SortData::Equals(uint32_t        hitcnt,
 
 
 void
-SortData::Copy(uint32_t        hitcnt,
-                     uint32_t       *sortIndex_dst,
-                     char           *sortData_dst,
-                     const uint32_t *sortIndex_src,
-                     const char     *sortData_src)
+SortData::Copy(uint32_t hitcnt,
+               uint32_t *sortIndex_dst, char *sortData_dst,
+               const uint32_t *sortIndex_src, const char *sortData_src)
 {
     if (hitcnt == 0)
         return;
@@ -59,6 +53,23 @@ SortData::Copy(uint32_t        hitcnt,
     memcpy(sortData_dst + sortIndex_dst[0],
            sortData_src + sortIndex_src[0],
            sortIndex_dst[hitcnt] - sortIndex_dst[0]);
+}
+
+bool
+SortDataIterator::Before(SortDataIterator *other, bool beforeOnMatch)
+{
+    uint32_t tlen = GetLen();
+    uint32_t olen = other->GetLen();
+    uint32_t mlen = (tlen <= olen) ? tlen : olen;
+
+    if (mlen == 0)
+        return (tlen != 0 || beforeOnMatch);
+
+    int res = memcmp(GetBuf(), other->GetBuf(), mlen);
+
+    if (res != 0)
+        return (res < 0);
+    return (tlen < olen || (tlen == olen && beforeOnMatch));
 }
 
 }

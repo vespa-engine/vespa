@@ -4,8 +4,9 @@
 
 #pragma once
 
-#include <vespa/searchcore/fdispatch/search/plain_dataset.h>
+#include "plain_dataset.h"
 
+class FNET_Transport;
 
 class FastS_FNET_DataSet : public FastS_PlainDataSet
 {

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/attributevector.h>
+#include "attributevector.h"
 
 namespace search {
 

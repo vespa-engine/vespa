@@ -1,26 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
-#include <functional>
+#include "plain_dataset.h"
+#include "datasetcollection.h"
+#include "engine_base.h"
+#include "nodemanager.h"
+#include <vespa/searchcore/fdispatch/common/search.h>
+#include <vespa/vespalib/util/host_name.h>
 #include <iomanip>
-#include <sstream>
 
 #include <vespa/log/log.h>
-#include <vespa/fnet/fnet.h>
-#include <vespa/vespalib/util/host_name.h>
-#include <vespa/searchcore/fdispatch/common/stdincl.h>
-#include <vespa/searchlib/common/fslimits.h>
-#include <vespa/searchcore/util/log.h>
-#include <vespa/searchcore/fdispatch/search/configdesc.h>
-#include <vespa/searchcore/fdispatch/common/search.h>
-
-#include <vespa/searchcore/fdispatch/search/datasetcollection.h>
-#include <vespa/searchcore/fdispatch/search/engine_base.h>
-#include <vespa/searchcore/fdispatch/search/plain_dataset.h>
-#include <vespa/searchcore/fdispatch/search/nodemanager.h>
-
 LOG_SETUP(".search.plain_dataset");
 
 //--------------------------------------------------------------------------
@@ -70,9 +58,7 @@ FastS_PartitionMap::FastS_PartitionMap(FastS_DataSetDesc *desc)
 {
     // finalize config settings
     if (_num_partitions > (1U << _partBits)) {
-        LOG(error,
-            "Too many partitions %d constrained by partbits %d",
-            _num_partitions, _partBits);
+        LOG(error, "Too many partitions %d constrained by partbits %d", _num_partitions, _partBits);
         _num_partitions = (1U << _partBits);
     }
 
@@ -567,19 +553,9 @@ FastS_PlainDataSet::AreEnginesReady()
 void
 FastS_PlainDataSet::Ping()
 {
-#ifdef FNET_SANITY_CHECKS
-    FastOS_Time beforePing;
-    beforePing.SetNow();
-#endif
     for (FastS_EngineBase* engine : _enginesArray) {
         engine->Ping();
     }
-#ifdef FNET_SANITY_CHECKS
-    double pingTime = beforePing.MilliSecsToNow();
-    if (pingTime > 100.0) {
-        LOG(warning, "SANITY: Dataset (%d) ping time: %.2f ms", GetID(), pingTime);
-    }
-#endif
 }
 
 

@@ -1,12 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
 #pragma once
 
+#include <vespa/searchlib/common/sortdata.h>
+#include <vespa/searchlib/common/packets.h>
 #include <vespa/document/base/globalid.h>
 
 //-----------------------------------------------------------------------------
+
+class FastS_hitresult;
+class FastS_QueryResult;
+class FastS_FNET_Search;
+class FastS_FNET_SearchNode;
 
 // T::HitType API
 
@@ -29,10 +34,8 @@ struct FastS_MergeHits_DummyHit
 
 struct FastS_MergeHits_DummyNode
 {
-    bool                      NT_InitMerge(uint32_t *numDocs,
-                                           uint64_t *totalHits,
-                                           search::HitRank *maxRank,
-                                           uint32_t *sortDataDocs)
+    bool NT_InitMerge(uint32_t *numDocs, uint64_t *totalHits,
+                      search::HitRank *maxRank, uint32_t *sortDataDocs)
     {
         (void) numDocs;
         (void) totalHits;
@@ -40,7 +43,7 @@ struct FastS_MergeHits_DummyNode
         (void) sortDataDocs;
         return false;
     }
-    search::common::SortDataIterator   *NT_GetSortDataIterator() { return NULL; }
+    search::common::SortDataIterator *NT_GetSortDataIterator() { return NULL; }
     FastS_MergeHits_DummyHit *NT_GetHit()              { return NULL; }
     uint32_t                  NT_GetNumHitsUsed()      {    return 0; }
     uint32_t                  NT_GetNumHitsLeft()      {    return 0; }
@@ -85,7 +88,7 @@ struct FastS_MergeHits_DummyMerge
 
 struct FastS_FNETMerge
 {
-    typedef FS4Packet_QUERYRESULTX::FS4_hit HitType;
+    typedef search::fs4transport::FS4Packet_QUERYRESULTX::FS4_hit HitType;
     typedef FastS_FNET_SearchNode           NodeType;
     typedef FastS_FNET_Search               SearchType;
 };
@@ -100,7 +103,6 @@ private:
     FastS_HitMerger& operator=(const FastS_HitMerger &);
 
 
-    typedef typename T::HitType    HIT;
     typedef typename T::NodeType   NODE;
     typedef typename T::SearchType SEARCH;
 
@@ -153,6 +155,3 @@ public:
 
     void MergeHits();
 };
-
-//-----------------------------------------------------------------------------
-

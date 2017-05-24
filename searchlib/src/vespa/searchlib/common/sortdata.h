@@ -1,12 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
 #pragma once
 
+#include <cstdint>
 
-namespace search {
-namespace common {
+namespace search::common {
 
 class SortData
 {
@@ -46,13 +44,13 @@ private:
 
 public:
     SortDataIterator()
-        : _ofs(NULL), _ofs_end(NULL), _data(NULL),
-          _buf(NULL), _len(0) {}
+        : _ofs(nullptr), _ofs_end(nullptr), _data(nullptr),
+          _buf(nullptr), _len(0) {}
 
     void Next()
     {
         if (_ofs >= _ofs_end) {
-            _buf = NULL;
+            _buf = nullptr;
             _len = 0;
             return;
         }
@@ -69,30 +67,14 @@ public:
         _ofs     = idx;
         _ofs_end = idx + cnt;
         _data    = data;
-        _buf     = NULL;
+        _buf     = nullptr;
         _len     = 0;
         Next();
     }
 
     uint32_t GetLen() const { return _len; }
     const char *GetBuf() const { return _buf; }
-    bool Before(SortDataIterator *other, bool beforeOnMatch = false)
-    {
-        uint32_t tlen = GetLen();
-        uint32_t olen = other->GetLen();
-        uint32_t mlen = (tlen <= olen) ? tlen : olen;
-
-        if (mlen == 0)
-            return (tlen != 0 || beforeOnMatch);
-
-        int res = memcmp(GetBuf(), other->GetBuf(), mlen);
-
-        if (res != 0)
-            return (res < 0);
-        return (tlen < olen || (tlen == olen && beforeOnMatch));
-    }
+    bool Before(SortDataIterator *other, bool beforeOnMatch = false);
 };
 
 }
-}
-

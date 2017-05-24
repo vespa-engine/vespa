@@ -1,17 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 
-#include <vespa/searchcore/fdispatch/common/appcontext.h>
-#include <vespa/searchcore/fdispatch/search/datasetcollection.h>
-#include <vespa/searchcore/fdispatch/search/nodemanager.h>
-
-#include <vespa/searchcore/fdispatch/search/plain_dataset.h>
+#include "nodemanager.h"
+#include "datasetcollection.h"
+#include "plain_dataset.h"
 #include "engine_base.h"
+#include <vespa/searchcore/fdispatch/common/appcontext.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".search.nodemanager");
 
 void
