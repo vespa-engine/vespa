@@ -17,11 +17,9 @@ import com.yahoo.logserver.formatter.LogFormatterManager;
  * still ensuring we don't format more messages than we strictly need
  * to and that we don't keep around more buffers that we ought to.
  * <p>
- * <p>
  * This is not a general purpose class, I think, so please
  * refer to the source code of the Replicator class for
  * information on how to use this.
- * <p>
  * <p>
  * This class is not threadsafe.
  *

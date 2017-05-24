@@ -71,16 +71,16 @@ public class LogDispatcher implements LogHandler, SelectLoopHook {
     }
 
     private void flushBatch() {
-        if (currentBatchList == null) {
-            return;
+        List<LogMessage> todo;
+        synchronized(this) {
+            todo = currentBatchList;
+            currentBatchList = null;
         }
-
+        if (todo == null) return;
         for (LogHandler ht : handlers) {
-            ht.handle(currentBatchList);
+            ht.handle(todo);
         }
-        currentBatchList = null;
     }
-
 
     public void handle(List<LogMessage> messages) {
         throw new IllegalStateException("method not supported");
@@ -131,7 +131,6 @@ public class LogDispatcher implements LogHandler, SelectLoopHook {
      * Register handler thread with the dispatcher.  If the handler
      * thread has already been registered, we log a warning and
      * just do nothing.
-     * <p>
      * <p>
      * If the thread is not alive it will be start()'ed.
      */

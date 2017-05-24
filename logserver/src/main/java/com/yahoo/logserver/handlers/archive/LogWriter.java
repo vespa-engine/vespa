@@ -36,7 +36,6 @@ public class LogWriter extends Writer {
      * This is called when we want to rotate the output file to
      * start writing the next file.  There are two scenarios when
      * we do this:
-     * <p>
      * <UL>
      * <LI> initial case, when we have no file
      * <LI> when we have filled the file and want to rotate it
@@ -101,7 +100,6 @@ public class LogWriter extends Writer {
      * Note that this method should not be used directly since
      * that would circumvent rotation when it grows past its
      * maximum size.  use the one that takes String instead.
-     * <p>
      * <p>
      * <em>
      * (This is a class which is only used internally anyway)

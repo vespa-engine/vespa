@@ -25,10 +25,8 @@ import com.yahoo.logserver.handlers.AbstractLogHandler;
  * is to make it easy to locate messages in a time interval, while
  * ensuring that no log file exceeds the maximum allowed size.
  * <p>
- * <p>
  * This class is not thread safe.
  * </p>
- * <p>
  * <p>
  * TODO:
  * </p>
@@ -36,17 +34,17 @@ import com.yahoo.logserver.handlers.AbstractLogHandler;
  * <li> Add file locking support in order to make it
  * possible to do concurrent compression of log
  * files.
- * <p>
+ * </li>
  * <li> Add support for disk monitoring.  Should have
  * high/low watermark mechanism and three modes
  * of operation: normal, tight and full.  In
  * "tight" mode disk is running low and compression
  * and cleanup should possibly be more frequent.
- * <p>
+ * </li>
  * <li> Add compression task which periodically scans
  * the log directory looking for uncompressed
  * candidate log files.
- * <p>
+ * </li>
  * </ul>
  *
  * @author Bjorn Borud
@@ -151,7 +149,6 @@ public class ArchiverHandler extends AbstractLogHandler {
      * down number representing year, month, day and hour in order
      * to partition logging in time.
      * <p>
-     * <p>
      * This method is not thread-safe.
      */
     public int dateHash(long time) {
@@ -169,7 +166,6 @@ public class ArchiverHandler extends AbstractLogHandler {
 
     /**
      * Generate prefix for log filenames based on log message.
-     * <p>
      * <p>
      * <EM>This message is <code>public</code> only because we need
      * access to it in unit tests.  For all practical purposes this
