@@ -48,7 +48,7 @@ $top/dist/getversion.pl -M $top > $top/dist/vtag.map
 mvn_install -N
 
 # and build plugins first:
-mvn_install -f maven-plugins
+mvn_install -f maven-plugins/pom.xml
 
 # now everything else should just work with normal maven dependency resolution:
 
