@@ -36,8 +36,8 @@ public:
                 const TransLogServer::Session::SP &session,
                 SerialNum syncTo);
 
-    ~SyncHandler(void);
-    void PerformTask(void) override;
+    ~SyncHandler();
+    void PerformTask() override;
 };
 
 
@@ -55,13 +55,13 @@ SyncHandler::SyncHandler(FRT_Supervisor *supervisor,
 }
 
 
-SyncHandler::~SyncHandler(void)
+SyncHandler::~SyncHandler()
 {
 }
 
 
 void
-SyncHandler::PerformTask(void)
+SyncHandler::PerformTask()
 {
     SerialNum synced(_domain->getSynced());
     if (_session->getDown() ||

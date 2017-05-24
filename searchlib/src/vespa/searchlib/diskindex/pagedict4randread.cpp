@@ -23,7 +23,7 @@ namespace search {
 namespace diskindex {
 
 
-PageDict4RandRead::PageDict4RandRead(void)
+PageDict4RandRead::PageDict4RandRead()
     : DictionaryFileRandRead(),
       _ssReader(),
       _ssd(),
@@ -80,7 +80,7 @@ PageDict4RandRead::readSSHeader()
 
 
 void
-PageDict4RandRead::readSPHeader(void)
+PageDict4RandRead::readSPHeader()
 {
     DC d;
     ComprFileReadContext rc(d);
@@ -113,7 +113,7 @@ PageDict4RandRead::readSPHeader(void)
 
 
 void
-PageDict4RandRead::readPHeader(void)
+PageDict4RandRead::readPHeader()
 {
     DC d;
     ComprFileReadContext rc(d);
@@ -254,7 +254,7 @@ PageDict4RandRead::open(const vespalib::string &name,
 
 
 bool
-PageDict4RandRead::close(void)
+PageDict4RandRead::close()
 {
     _ssReader.reset();
 
@@ -268,7 +268,7 @@ PageDict4RandRead::close(void)
 
 
 uint64_t
-PageDict4RandRead::getNumWordIds(void) const
+PageDict4RandRead::getNumWordIds() const
 {
     return _ssd._numWordIds;
 }

@@ -180,7 +180,7 @@ public:
      */
     virtual void getFeatureParams(PostingListParams &params);
 
-    PostingListCounts &getCounts(void) { return _counts; }
+    PostingListCounts &getCounts() { return _counts; }
 };
 
 

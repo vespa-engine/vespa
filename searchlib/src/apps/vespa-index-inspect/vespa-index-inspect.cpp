@@ -118,7 +118,7 @@ unpackFeatures(std::vector<PosEntry> &entries,
 
 
 void
-usageHeader(void)
+usageHeader()
 {
     using std::cerr;
     cerr <<
@@ -140,20 +140,9 @@ public:
     {
     }
 
-    void
-    addField(const vespalib::string &field)
-    {
-        _fields.push_back(field);
-    }
-
-    bool
-    empty(void) const
-    {
-        return _ids.empty();
-    }
-
-    void
-    validateFields(const Schema &schema);
+    void addField(const vespalib::string &field) { _fields.push_back(field); }
+    bool empty() const { return _ids.empty(); }
+    void validateFields(const Schema &schema);
 };
 
 
@@ -188,19 +177,10 @@ public:
     {
     }
 
-    virtual
-    ~SubApp(void)
-    {
-    }
-
-    virtual void
-    usage(bool showHeader) = 0;
-
-    virtual bool
-    getOptions(void) = 0;
-
-    virtual int
-    run(void) = 0;
+    virtual ~SubApp() { }
+    virtual void  usage(bool showHeader) = 0;
+    virtual bool getOptions() = 0;
+    virtual int run() = 0;
 };
 
 
@@ -220,51 +200,20 @@ class ShowPostingListSubApp : public SubApp
     uint32_t _docIdLimit;
     uint32_t _minDocId;
 
-    static uint64_t
-    noWordNumHigh(void)
-    {
-        return std::numeric_limits<uint64_t>::max();
-    }
-
-    static uint64_t
-    noWordNum(void)
-    {
-        return 0u;
-    }
+    static uint64_t noWordNumHigh() { return std::numeric_limits<uint64_t>::max(); }
+    static uint64_t noWordNum() { return 0u; }
 public:
-
     ShowPostingListSubApp(FastOS_Application &app);
-
-    virtual
-    ~ShowPostingListSubApp(void);
-
-    virtual void
-    usage(bool showHeader) override;
-
-    virtual bool
-    getOptions(void) override;
-
-    virtual int
-    run(void) override;
-
-    void
-    showPostingList(void);
-
-    bool
-    readDocIdLimit(const Schema &schema);
-
-    bool
-    readWordList(const SchemaUtil::IndexIterator &index);
-
-    bool
-    readWordList(const Schema &schema);
-
-    void
-    readPostings(const SchemaUtil::IndexIterator &index,
-                 std::vector<PosEntry> &entries);
-
-    void
-    showTransposedPostingList();
+    virtual ~ShowPostingListSubApp();
+    virtual void usage(bool showHeader) override;
+    virtual bool getOptions() override;
+    virtual int run() override;
+    void showPostingList();
+    bool readDocIdLimit(const Schema &schema);
+    bool readWordList(const SchemaUtil::IndexIterator &index);
+    bool readWordList(const Schema &schema);
+    void readPostings(const SchemaUtil::IndexIterator &index, std::vector<PosEntry> &entries);
+    void showTransposedPostingList();
 };
 
 
@@ -287,7 +236,7 @@ ShowPostingListSubApp::ShowPostingListSubApp(FastOS_Application &app)
 }
 
 
-ShowPostingListSubApp::~ShowPostingListSubApp(void)
+ShowPostingListSubApp::~ShowPostingListSubApp()
 {
 }
 
@@ -312,7 +261,7 @@ ShowPostingListSubApp::usage(bool showHeader)
 
 
 bool
-ShowPostingListSubApp::getOptions(void)
+ShowPostingListSubApp::getOptions()
 {
     int c;
     const char *optArgument = NULL;
@@ -509,7 +458,7 @@ ShowPostingListSubApp::readPostings(const SchemaUtil::IndexIterator &index,
 
 
 void
-ShowPostingListSubApp::showTransposedPostingList(void)
+ShowPostingListSubApp::showTransposedPostingList()
 {
     Schema schema;
     std::string schemaName = _indexDir + "/schema.txt";
@@ -579,7 +528,7 @@ ShowPostingListSubApp::showTransposedPostingList(void)
 
 
 void
-ShowPostingListSubApp::showPostingList(void)
+ShowPostingListSubApp::showPostingList()
 {
     Schema schema;
     uint32_t numFields = 1;
@@ -715,7 +664,7 @@ ShowPostingListSubApp::showPostingList(void)
 
 
 int
-ShowPostingListSubApp::run(void)
+ShowPostingListSubApp::run()
 {
     if (_transpose)
         showTransposedPostingList();
@@ -736,21 +685,11 @@ class DumpWordsSubApp : public SubApp
 
 public:
     DumpWordsSubApp(FastOS_Application &app);
-
-    virtual
-    ~DumpWordsSubApp(void);
-
-    virtual void
-    usage(bool showHeader) override;
-
-    virtual bool
-    getOptions(void) override;
-
-    virtual int
-    run(void) override;
-
-    void
-    dumpWords(void);
+    virtual ~DumpWordsSubApp();
+    virtual void usage(bool showHeader) override;
+    virtual bool getOptions() override;
+    virtual int run() override;
+    void dumpWords();
 };
 
 
@@ -765,7 +704,7 @@ DumpWordsSubApp::DumpWordsSubApp(FastOS_Application &app)
 }
 
 
-DumpWordsSubApp::~DumpWordsSubApp(void)
+DumpWordsSubApp::~DumpWordsSubApp()
 {
 }
 
@@ -785,7 +724,7 @@ DumpWordsSubApp::usage(bool showHeader)
 
 
 bool
-DumpWordsSubApp::getOptions(void)
+DumpWordsSubApp::getOptions()
 {
     int c;
     const char *optArgument = NULL;
@@ -853,7 +792,7 @@ DumpWordsSubApp::getOptions(void)
 
 
 void
-DumpWordsSubApp::dumpWords(void)
+DumpWordsSubApp::dumpWords()
 {
     search::index::Schema schema;
     std::string schemaName = _indexDir + "/schema.txt";
@@ -907,7 +846,7 @@ DumpWordsSubApp::dumpWords(void)
 
 
 int
-DumpWordsSubApp::run(void)
+DumpWordsSubApp::run()
 {
     dumpWords();
     return 0;
@@ -917,24 +856,20 @@ DumpWordsSubApp::run(void)
 class VespaIndexInspectApp : public FastOS_Application
 {
 public:
-    VespaIndexInspectApp(void);
-
-    void
-    usage(void);
-
-    int
-    Main(void) override;
+    VespaIndexInspectApp();
+    void usage();
+    int Main() override;
 };
 
 
-VespaIndexInspectApp::VespaIndexInspectApp(void)
+VespaIndexInspectApp::VespaIndexInspectApp()
     : FastOS_Application()
 {
 }
 
 
 void
-VespaIndexInspectApp::usage(void)
+VespaIndexInspectApp::usage()
 {
     ShowPostingListSubApp(*this).usage(true);
     DumpWordsSubApp(*this).usage(false);
@@ -942,7 +877,7 @@ VespaIndexInspectApp::usage(void)
 
 
 int
-VespaIndexInspectApp::Main(void)
+VespaIndexInspectApp::Main()
 {
     if (_argc < 2) {
         usage();

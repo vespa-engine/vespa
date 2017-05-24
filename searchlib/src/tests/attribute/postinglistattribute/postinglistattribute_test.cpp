@@ -165,8 +165,8 @@ private:
     template <typename VectorType>
     void testMinMax(AttributePtr &ptr1, AttributePtr &ptr2);
 
-    void testMinMax(void);
-    void testStringFold(void);
+    void testMinMax();
+    void testStringFold();
     void testDupValuesInIntArray();
     void testDupValuesInStringArray();
 public:
@@ -990,7 +990,7 @@ PostingListAttributeTest::testMinMax(AttributePtr &ptr1, AttributePtr &ptr2)
 }
 
 void
-PostingListAttributeTest::testMinMax(void)
+PostingListAttributeTest::testMinMax()
 {
     {
         Config cfg(Config(BasicType::INT32, CollectionType::SINGLE));
@@ -1026,7 +1026,7 @@ PostingListAttributeTest::testMinMax(void)
 
 
 void
-PostingListAttributeTest::testStringFold(void)
+PostingListAttributeTest::testStringFold()
 {
     Config cfg(Config(BasicType::STRING, CollectionType::SINGLE));
     cfg.setFastSearch(true);

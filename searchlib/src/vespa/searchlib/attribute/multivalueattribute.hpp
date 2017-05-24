@@ -176,7 +176,7 @@ MultiValueAttribute<B, M>::getValueCount(DocId doc) const
 
 template <typename B, typename M>
 uint64_t
-MultiValueAttribute<B, M>::getTotalValueCount(void) const
+MultiValueAttribute<B, M>::getTotalValueCount() const
 {
     return _mvMapping.getTotalValueCnt();
 }

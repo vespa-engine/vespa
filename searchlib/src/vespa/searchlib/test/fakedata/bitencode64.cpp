@@ -13,7 +13,7 @@ namespace fakedata
 {
 
 template <bool bigEndian>
-BitEncode64<bigEndian>::BitEncode64(void)
+BitEncode64<bigEndian>::BitEncode64()
     : bitcompression::EncodeContext64<bigEndian>(),
       _cbuf(*this)
 {
@@ -23,7 +23,7 @@ BitEncode64<bigEndian>::BitEncode64(void)
 
 
 template <bool bigEndian>
-BitEncode64<bigEndian>::~BitEncode64(void)
+BitEncode64<bigEndian>::~BitEncode64()
 {
 }
 

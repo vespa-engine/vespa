@@ -32,7 +32,7 @@ namespace diskindex
 {
 
 
-FieldReader::FieldReader(void)
+FieldReader::FieldReader()
     : _wordNum(noWordNumHigh()),
       _docIdAndFeatures(),
       _dictFile(),
@@ -48,13 +48,13 @@ FieldReader::FieldReader(void)
 }
 
 
-FieldReader::~FieldReader(void)
+FieldReader::~FieldReader()
 {
 }
 
 
 void
-FieldReader::readCounts(void)
+FieldReader::readCounts()
 {
     PostingListCounts counts;
     _dictFile->readWord(_word, _oldWordNum, counts);
@@ -70,7 +70,7 @@ FieldReader::readCounts(void)
 
 
 void
-FieldReader::readDocIdAndFeatures(void)
+FieldReader::readDocIdAndFeatures()
 {
     _oldposoccfile->readDocIdAndFeatures(_docIdAndFeatures);
     _docIdAndFeatures._docId = _docIdMapper.mapDocId(_docIdAndFeatures._docId);
@@ -78,7 +78,7 @@ FieldReader::readDocIdAndFeatures(void)
 
 
 void
-FieldReader::read(void)
+FieldReader::read()
 {
     for (;;) {
         while (_residue == 0) {
@@ -98,7 +98,7 @@ FieldReader::read(void)
 
 
 bool
-FieldReader::allowRawFeatures(void)
+FieldReader::allowRawFeatures()
 {
     return true;
 }
@@ -182,7 +182,7 @@ FieldReader::open(const vespalib::string &prefix,
 
 
 bool
-FieldReader::close(void)
+FieldReader::close()
 {
     bool ret = true;
 
@@ -320,14 +320,14 @@ FieldReaderStripInfo::FieldReaderStripInfo(const IndexIterator &index)
 
 
 bool
-FieldReaderStripInfo::allowRawFeatures(void)
+FieldReaderStripInfo::allowRawFeatures()
 {
     return false;
 }
 
 
 void
-FieldReaderStripInfo::read(void)
+FieldReaderStripInfo::read()
 {
     typedef search::index::WordDocElementFeatures Element;
 

@@ -34,7 +34,7 @@ public:
     }
 
     virtual bool inheritStrict(size_t i) const override {
-        (void)i;
+        (void) i;
         return true;
     }
 

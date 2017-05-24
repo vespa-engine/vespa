@@ -103,7 +103,7 @@ public:
 
     BTreeStore(bool init);
 
-    ~BTreeStore(void);
+    ~BTreeStore();
 
     const NodeAllocatorType &getAllocator() const { return _allocator; }
 
@@ -153,7 +153,7 @@ public:
     allocKeyDataCopy(const KeyDataType *rhs, uint32_t clusterSize);
 
     std::vector<uint32_t>
-    startCompact(void);
+    startCompact();
 
     void
     finishCompact(const std::vector<uint32_t> &toHold);
@@ -354,7 +354,7 @@ public:
     }
 
     void
-    clearHoldLists(void)
+    clearHoldLists()
     {
         _allocator.clearHoldLists();
         _store.clearHoldLists();
@@ -370,7 +370,7 @@ public:
     }
 
     void
-    clearBuilder(void)
+    clearBuilder()
     {
         _builder.clear();
     }

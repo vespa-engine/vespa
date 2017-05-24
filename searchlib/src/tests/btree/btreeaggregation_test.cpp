@@ -136,7 +136,7 @@ class WrapInt
 public:
     int _val;
     WrapInt(int val) : _val(val) {}
-    WrapInt(void) : _val(0) {}
+    WrapInt() : _val(0) {}
     bool operator==(const WrapInt & rhs) const { return _val == rhs._val; }
 };
 
@@ -1031,7 +1031,7 @@ Test::requireThatUpdateOfDataWorks()
 
 template <typename TreeStore>
 void
-Test::requireThatSmallNodesWorks(void)
+Test::requireThatSmallNodesWorks()
 {
     GenerationHandler g;
     TreeStore s;

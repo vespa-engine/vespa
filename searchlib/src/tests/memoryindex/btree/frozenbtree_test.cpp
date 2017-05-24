@@ -49,7 +49,7 @@ private:
 
     Rand48 _randomGenerator;
 
-    void allocTree(void);
+    void allocTree();
     void freeTree(bool verbose);
     void fillRandomValues(unsigned int count);
     void insertRandomValues(Tree &tree, NodeAllocator &allocator, const std::vector<KeyType> &values);
@@ -282,7 +282,7 @@ lookupFrozenRandomValues(const Tree &tree,
 
 
 void
-FrozenBTreeTest::sortRandomValues(void)
+FrozenBTreeTest::sortRandomValues()
 {
     std::vector<KeyType>::iterator i;
     std::vector<KeyType>::iterator ie;

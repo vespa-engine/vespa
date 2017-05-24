@@ -3,7 +3,7 @@
 
 namespace search {
 
-Object::~Object(void) { }
+Object::~Object() { }
 
 vespalib::string Object::toString() const
 {

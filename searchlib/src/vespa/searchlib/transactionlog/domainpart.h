@@ -45,7 +45,7 @@ public:
     void sync();
     SerialNumRange range() const { return _range; }
 
-    SerialNum getSynced(void) const {
+    SerialNum getSynced() const {
         vespalib::LockGuard guard(_writeLock);
         return _syncedSerial; 
     }

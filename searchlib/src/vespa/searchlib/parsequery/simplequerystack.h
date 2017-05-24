@@ -50,11 +50,11 @@ public:
     /**
      * Constructor for SimpleQueryStack.
      */
-    SimpleQueryStack(void);
+    SimpleQueryStack();
     /**
      * Destructor for SimpleQueryStack.
      */
-    ~SimpleQueryStack(void);
+    ~SimpleQueryStack();
     /**
      * Push an item on the stack.
      * @param item The search::ParseItem to push.
@@ -64,12 +64,12 @@ public:
      * Pop an item of the stack.
      * @return Pointer to the search::ParseItem poped, or NULL if stack is empty.
      */
-    search::ParseItem *Pop(void);
+    search::ParseItem *Pop();
     /**
      * Top node of the stack.
      * @return Pointer to the top search::ParseItem, or NULL if stack is empty.
      */
-    search::ParseItem *Top(void) { return _stack; }
+    search::ParseItem *Top() { return _stack; }
 
     /**
      * Encode the contents of the stack in a binary buffer.
@@ -77,12 +77,12 @@ public:
      */
     void AppendBuffer(search::RawBuf *buf) const;
 
-    size_t GetBufferLen(void) const;
+    size_t GetBufferLen() const;
     /**
      * Return the number of items on the stack.
      * @return The number of items on the stack.
      */
-    uint32_t GetSize(void);
+    uint32_t GetSize();
     /**
      * Set the number of items on the stack.
      * This can be used by QTs that change the stack
@@ -95,7 +95,7 @@ public:
      * Is it possible to run this query on FirstPage?
      * @return true if ok
      */
-    bool _FP_isAllowed(void);
+    bool _FP_isAllowed();
     /**
      * Make a string representation of the search::RawBuf representing a querystack.
      * @param theBuf The querystack encoded buffer.

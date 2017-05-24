@@ -48,7 +48,7 @@ const uint32_t headerAlign = 4096;
 
 }
 
-PageDict4FileSeqRead::PageDict4FileSeqRead(void)
+PageDict4FileSeqRead::PageDict4FileSeqRead()
     : _pReader(NULL),
       _ssReader(NULL),
       _ssd(),
@@ -78,7 +78,7 @@ PageDict4FileSeqRead::PageDict4FileSeqRead(void)
 }
 
 
-PageDict4FileSeqRead::~PageDict4FileSeqRead(void)
+PageDict4FileSeqRead::~PageDict4FileSeqRead()
 {
     delete _pReader;
     delete _ssReader;
@@ -120,7 +120,7 @@ PageDict4FileSeqRead::readSSHeader()
 
 
 void
-PageDict4FileSeqRead::readSPHeader(void)
+PageDict4FileSeqRead::readSPHeader()
 {
     DC &spd = _spd;
 
@@ -145,7 +145,7 @@ PageDict4FileSeqRead::readSPHeader(void)
 
 
 void
-PageDict4FileSeqRead::readPHeader(void)
+PageDict4FileSeqRead::readPHeader()
 {
     DC &pd = _pd;
 
@@ -284,7 +284,7 @@ PageDict4FileSeqRead::open(const vespalib::string &name,
 
 
 bool
-PageDict4FileSeqRead::close(void)
+PageDict4FileSeqRead::close()
 {
     delete _pReader;
     delete _ssReader;
@@ -350,7 +350,7 @@ PageDict4FileSeqRead::getParams(PostingListParams &params)
 }
 
 
-PageDict4FileSeqWrite::PageDict4FileSeqWrite(void)
+PageDict4FileSeqWrite::PageDict4FileSeqWrite()
     : _pWriter(NULL),
       _spWriter(NULL),
       _ssWriter(NULL),
@@ -373,7 +373,7 @@ PageDict4FileSeqWrite::PageDict4FileSeqWrite(void)
 }
 
 
-PageDict4FileSeqWrite::~PageDict4FileSeqWrite(void)
+PageDict4FileSeqWrite::~PageDict4FileSeqWrite()
 {
     delete _pWriter;
     delete _spWriter;
@@ -484,7 +484,7 @@ PageDict4FileSeqWrite::open(const vespalib::string &name,
 
 
 bool
-PageDict4FileSeqWrite::close(void)
+PageDict4FileSeqWrite::close()
 {
     _pWriter->flush();
     uint64_t usedPBits = _pe.getWriteOffset();

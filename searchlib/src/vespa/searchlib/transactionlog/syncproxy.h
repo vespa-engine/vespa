@@ -12,13 +12,8 @@ namespace transactionlog
 class SyncProxy
 {
 public:
-    virtual
-    ~SyncProxy(void)
-    {
-    }
-
-    virtual void
-    sync(SerialNum syncTo) = 0;
+    virtual ~SyncProxy() { }
+    virtual void sync(SerialNum syncTo) = 0;
 };
 
 }

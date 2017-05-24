@@ -10,40 +10,12 @@ namespace btree
 class MinMaxAggrCalc
 {
 public:
-    MinMaxAggrCalc(void)
-    {
-    }
-
-    static bool
-    hasAggregated(void)
-    {
-        return true;
-    }
-
-    static int32_t
-    getVal(int32_t val)
-    {
-        return val;
-    }
-
-    static void
-    add(MinMaxAggregated &a, int32_t val)
-    {
-        a.add(val);
-    }
-
-    static void
-    add(MinMaxAggregated &a, const MinMaxAggregated &ca)
-    {
-        a.add(ca);
-    }
-
-    static void
-    add(MinMaxAggregated &a, const MinMaxAggregated &oldca,
-        const MinMaxAggregated &ca)
-    {
-        a.add(oldca, ca);
-    }
+    MinMaxAggrCalc() { }
+    static bool hasAggregated() { return true; }
+    static int32_t getVal(int32_t val) { return val; }
+    static void add(MinMaxAggregated &a, int32_t val) { a.add(val); }
+    static void add(MinMaxAggregated &a, const MinMaxAggregated &ca) { a.add(ca); }
+    static void add(MinMaxAggregated &a, const MinMaxAggregated &oldca, const MinMaxAggregated &ca) { a.add(oldca, ca); }
 
     /* Returns true if recalculation is needed */
     static bool

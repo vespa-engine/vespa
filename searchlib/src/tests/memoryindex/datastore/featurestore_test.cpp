@@ -25,29 +25,15 @@ class Test : public vespalib::TestApp
 private:
     Schema _schema;
 
-    const Schema &
-    getSchema(void) const
-    {
-        return _schema;
-    }
-
-    bool
-    assertFeatures(const DocIdAndFeatures &exp,
-                   const DocIdAndFeatures &act);
-
-    void
-    requireThatFeaturesCanBeAddedAndRetrieved(void);
-
-    void
-    requireThatNextWordsAreWorking(void);
-    void
-    requireThatAddFeaturesTriggersChangeOfBuffer(void);
+    const Schema & getSchema() const { return _schema; }
+    bool assertFeatures(const DocIdAndFeatures &exp, const DocIdAndFeatures &act);
+    void requireThatFeaturesCanBeAddedAndRetrieved();
+    void requireThatNextWordsAreWorking();
+    void requireThatAddFeaturesTriggersChangeOfBuffer();
 
 public:
-    Test(void);
-
-    int
-    Main(void) override;
+    Test();
+    int Main() override;
 };
 
 
@@ -101,7 +87,7 @@ getFeatures(uint32_t numOccs,
 
 
 void
-Test::requireThatFeaturesCanBeAddedAndRetrieved(void)
+Test::requireThatFeaturesCanBeAddedAndRetrieved()
 {
     FeatureStore fs(getSchema());
     DocIdAndFeatures act;
@@ -145,7 +131,7 @@ Test::requireThatFeaturesCanBeAddedAndRetrieved(void)
 
 
 void
-Test::requireThatNextWordsAreWorking(void)
+Test::requireThatNextWordsAreWorking()
 {
     FeatureStore fs(getSchema());
     DocIdAndFeatures act;
@@ -189,7 +175,7 @@ Test::requireThatNextWordsAreWorking(void)
 
 
 void
-Test::requireThatAddFeaturesTriggersChangeOfBuffer(void)
+Test::requireThatAddFeaturesTriggersChangeOfBuffer()
 {
     FeatureStore fs(getSchema());
     size_t cnt = 1;

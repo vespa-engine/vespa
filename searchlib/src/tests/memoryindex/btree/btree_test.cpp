@@ -51,7 +51,7 @@ class WrapInt
 public:
     int _val;
     WrapInt(int val) : _val(val) {}
-    WrapInt(void) : _val(0) {}
+    WrapInt() : _val(0) {}
     bool operator==(const WrapInt & rhs) const { return _val == rhs._val; }
 };
 
@@ -944,7 +944,7 @@ Test::requireThatUpdateOfKeyWorks()
 
 
 void
-Test::requireThatSmallNodesWorks(void)
+Test::requireThatSmallNodesWorks()
 {
     typedef BTreeStore<MyKey, std::string, btree::NoAggregated, MyComp,
         BTreeDefaultTraits> TreeStore;
@@ -1018,7 +1018,7 @@ Test::requireThatSmallNodesWorks(void)
 
 
 void
-Test::requireThatApplyWorks(void)
+Test::requireThatApplyWorks()
 {
     typedef BTreeStore<MyKey, std::string, btree::NoAggregated, MyComp,
         BTreeDefaultTraits> TreeStore;
@@ -1154,11 +1154,7 @@ public:
     {
     }
 
-    int
-    getPathSize(void) const
-    {
-        return _pathSize;
-    }
+    int getPathSize() const { return _pathSize; }
 };
 
 

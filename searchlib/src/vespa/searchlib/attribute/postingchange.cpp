@@ -108,7 +108,7 @@ EnumIndexMapper::map(EnumStoreBase::Index original, const EnumStoreComparator & 
 
 template <>
 void
-PostingChange<AttributePosting>::removeDups(void)
+PostingChange<AttributePosting>::removeDups()
 {
     removeDupAdditions(_additions);
     removeDupRemovals(_removals);
@@ -117,7 +117,7 @@ PostingChange<AttributePosting>::removeDups(void)
 
 template <>
 void
-PostingChange<AttributeWeightPosting>::removeDups(void)
+PostingChange<AttributeWeightPosting>::removeDups()
 {
     removeDupAdditions(_additions);
     removeDupRemovals(_removals);

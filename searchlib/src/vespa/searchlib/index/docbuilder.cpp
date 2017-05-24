@@ -270,7 +270,7 @@ DocBuilder::IndexFieldHandle::addStr(const vespalib::string &val)
 
 
 void
-DocBuilder::IndexFieldHandle::addSpace(void)
+DocBuilder::IndexFieldHandle::addSpace()
 {
     addNoWordStr(" ");
 }
@@ -345,7 +345,7 @@ DocBuilder::IndexFieldHandle::addSpan(size_t start, size_t len)
 
 
 void
-DocBuilder::IndexFieldHandle::addSpan(void)
+DocBuilder::IndexFieldHandle::addSpan()
 {
     size_t endPos = _strSymbols;
     assert(endPos > _spanStart);
@@ -355,7 +355,7 @@ DocBuilder::IndexFieldHandle::addSpan(void)
 
 
 void
-DocBuilder::IndexFieldHandle::addSpaceTokenAnnotation(void)
+DocBuilder::IndexFieldHandle::addSpaceTokenAnnotation()
 {
     assert(_spanTree.get() != NULL);
     assert(_lastSpan != NULL);
@@ -364,7 +364,7 @@ DocBuilder::IndexFieldHandle::addSpaceTokenAnnotation(void)
 
 
 void
-DocBuilder::IndexFieldHandle::addNumericTokenAnnotation(void)
+DocBuilder::IndexFieldHandle::addNumericTokenAnnotation()
 {
     assert(_spanTree.get() != NULL);
     assert(_lastSpan != NULL);
@@ -373,7 +373,7 @@ DocBuilder::IndexFieldHandle::addNumericTokenAnnotation(void)
 
 
 void
-DocBuilder::IndexFieldHandle::addAlphabeticTokenAnnotation(void)
+DocBuilder::IndexFieldHandle::addAlphabeticTokenAnnotation()
 {
     assert(_spanTree.get() != NULL);
     assert(_lastSpan != NULL);
@@ -382,7 +382,7 @@ DocBuilder::IndexFieldHandle::addAlphabeticTokenAnnotation(void)
 
 
 void
-DocBuilder::IndexFieldHandle::addTermAnnotation(void)
+DocBuilder::IndexFieldHandle::addTermAnnotation()
 {
     assert(_spanTree.get() != NULL);
     assert(_lastSpan != NULL);
@@ -402,7 +402,7 @@ DocBuilder::IndexFieldHandle::addTermAnnotation(const vespalib::string &val)
 
 
 void
-DocBuilder::IndexFieldHandle::onEndElement(void)
+DocBuilder::IndexFieldHandle::onEndElement()
 {
     // Flush data for index field.
     assert(_subField.empty());
@@ -434,7 +434,7 @@ DocBuilder::IndexFieldHandle::onEndElement(void)
 
 
 void
-DocBuilder::IndexFieldHandle::onEndField(void)
+DocBuilder::IndexFieldHandle::onEndField()
 {
     if (_sfield.getCollectionType() == CollectionType::SINGLE)
         onEndElement();
@@ -442,7 +442,7 @@ DocBuilder::IndexFieldHandle::onEndField(void)
 
 
 void
-DocBuilder::IndexFieldHandle::startAnnotate(void)
+DocBuilder::IndexFieldHandle::startAnnotate()
 {
     SpanList::UP span_list(new SpanList);
     _spanList = span_list.get();
@@ -475,7 +475,7 @@ DocBuilder::IndexFieldHandle::startSubField(const vespalib::string &subField)
 
 
 void
-DocBuilder::IndexFieldHandle::endSubField(void)
+DocBuilder::IndexFieldHandle::endSubField()
 {
     assert(!_subField.empty());
     assert(_uriField);
@@ -739,7 +739,7 @@ DocBuilder::addStr(const vespalib::string & str)
 }
 
 DocBuilder &
-DocBuilder::addSpace(void)
+DocBuilder::addSpace()
 {
     assert(_currDoc != NULL);
     _currDoc->getFieldHandle()->addSpace();
@@ -815,7 +815,7 @@ DocBuilder::addSpan(size_t start, size_t len)
 
 
 DocBuilder &
-DocBuilder::addSpan(void)
+DocBuilder::addSpan()
 {
     assert(_currDoc != NULL);
     _currDoc->getFieldHandle()->addSpan();
@@ -824,7 +824,7 @@ DocBuilder::addSpan(void)
 
 
 DocBuilder &
-DocBuilder::addSpaceTokenAnnotation(void)
+DocBuilder::addSpaceTokenAnnotation()
 {
     assert(_currDoc != NULL);
     _currDoc->getFieldHandle()->addSpaceTokenAnnotation();
@@ -833,7 +833,7 @@ DocBuilder::addSpaceTokenAnnotation(void)
 
 
 DocBuilder &
-DocBuilder::addNumericTokenAnnotation(void)
+DocBuilder::addNumericTokenAnnotation()
 {
     assert(_currDoc != NULL);
     _currDoc->getFieldHandle()->addNumericTokenAnnotation();
@@ -842,7 +842,7 @@ DocBuilder::addNumericTokenAnnotation(void)
 
 
 DocBuilder &
-DocBuilder::addAlphabeticTokenAnnotation(void)
+DocBuilder::addAlphabeticTokenAnnotation()
 {
     assert(_currDoc != NULL);
     _currDoc->getFieldHandle()->addAlphabeticTokenAnnotation();
@@ -851,7 +851,7 @@ DocBuilder::addAlphabeticTokenAnnotation(void)
 
 
 DocBuilder&
-DocBuilder::addTermAnnotation(void)
+DocBuilder::addTermAnnotation()
 {
     assert(_currDoc != NULL);
     _currDoc->getFieldHandle()->addTermAnnotation();
@@ -896,7 +896,7 @@ DocBuilder::startSubField(const vespalib::string &subField)
 
 
 DocBuilder &
-DocBuilder::endSubField(void)
+DocBuilder::endSubField()
 {
     assert(_currDoc != NULL);
     _currDoc->getFieldHandle()->endSubField();

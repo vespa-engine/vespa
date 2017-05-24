@@ -95,7 +95,7 @@ fillcorrelatedbitset(search::BitVector &bitvector,
 }
 
 
-FakeWord::DocWordPosFeature::DocWordPosFeature(void)
+FakeWord::DocWordPosFeature::DocWordPosFeature()
     : _elementId(0),
       _wordPos(0),
       _elementWeight(1),
@@ -104,22 +104,22 @@ FakeWord::DocWordPosFeature::DocWordPosFeature(void)
 }
 
 
-FakeWord::DocWordPosFeature::~DocWordPosFeature(void)
+FakeWord::DocWordPosFeature::~DocWordPosFeature()
 {
 }
 
 
-FakeWord::DocWordCollapsedFeature::DocWordCollapsedFeature(void)
+FakeWord::DocWordCollapsedFeature::DocWordCollapsedFeature()
 {
 }
 
 
-FakeWord::DocWordCollapsedFeature::~DocWordCollapsedFeature(void)
+FakeWord::DocWordCollapsedFeature::~DocWordCollapsedFeature()
 {
 }
 
 
-FakeWord::DocWordFeature::DocWordFeature(void)
+FakeWord::DocWordFeature::DocWordFeature()
     : _docId(0),
       _collapsedDocWordFeatures(),
       _positions(0),
@@ -127,7 +127,7 @@ FakeWord::DocWordFeature::DocWordFeature(void)
 {
 }
 
-FakeWord::DocWordFeature::~DocWordFeature(void)
+FakeWord::DocWordFeature::~DocWordFeature()
 {
 }
 
@@ -208,7 +208,7 @@ FakeWord::FakeWord(uint32_t docIdLimit,
 }
 
 
-FakeWord::~FakeWord(void)
+FakeWord::~FakeWord()
 {
 }
 
@@ -752,7 +752,7 @@ FakeWord::dump(std::shared_ptr<FieldWriter> &fieldWriter,
 }
 
 
-FakeWord::RandomizedReader::RandomizedReader(void)
+FakeWord::RandomizedReader::RandomizedReader()
     : _r(),
       _fw(NULL),
       _wordIdx(0u),
@@ -764,7 +764,7 @@ FakeWord::RandomizedReader::RandomizedReader(void)
 
 
 void
-FakeWord::RandomizedReader::read(void)
+FakeWord::RandomizedReader::read()
 {
     if (_ri != _re) {
         _r = *_ri;
@@ -786,7 +786,7 @@ FakeWord::RandomizedReader::setup(const FakeWord *fw,
 }
 
 
-FakeWord::RandomizedWriter::~RandomizedWriter(void)
+FakeWord::RandomizedWriter::~RandomizedWriter()
 {
 }
 

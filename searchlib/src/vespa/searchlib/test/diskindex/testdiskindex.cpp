@@ -55,7 +55,7 @@ struct Builder
 
 
 void
-TestDiskIndex::buildSchema(void)
+TestDiskIndex::buildSchema()
 {
     _schema.addIndexField(Schema::IndexField("f1", DataType::STRING));
     _schema.addIndexField(Schema::IndexField("f2", DataType::STRING));

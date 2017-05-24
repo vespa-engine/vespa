@@ -23,25 +23,15 @@ class UniformApp : public FastOS_Application
     uint64_t _bits[MAXK + 1];
     uint64_t _next;
 
-    static uint32_t
-    encodeSpace(uint64_t x, uint32_t k)
-    {
-        return EC64::encodeExpGolombSpace(x, k);
-    }
-
-    void
-    clearBits(void);
-
-    void
-    reportBits(void);
-
-    int
-    Main(void) override;
+    static uint32_t encodeSpace(uint64_t x, uint32_t k) { return EC64::encodeExpGolombSpace(x, k); }
+    void clearBits();
+    void reportBits();
+    int Main() override;
 };
 
 
 void
-UniformApp::clearBits(void)
+UniformApp::clearBits()
 {
     for (unsigned int k = 0; k <= MAXK; ++k)
         _bits[k] = 0;
@@ -50,7 +40,7 @@ UniformApp::clearBits(void)
 
 
 void
-UniformApp::reportBits(void)
+UniformApp::reportBits()
 {
     printf("next=%" PRIu64 " ", _next);
     for (unsigned int k = 0; k <= MAXK; ++k)
@@ -64,7 +54,7 @@ UniformApp::reportBits(void)
 
 
 int
-UniformApp::Main(void)
+UniformApp::Main()
 {
     int k, l, m, bestmask, oldbestmask;
     printf("Hello world\n");

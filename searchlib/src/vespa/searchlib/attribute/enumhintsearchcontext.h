@@ -30,7 +30,7 @@ protected:
     EnumHintSearchContext(const EnumStoreDictBase &dictionary,
                           uint32_t docIdLimit,
                           uint64_t numValues);
-    ~EnumHintSearchContext(void);
+    ~EnumHintSearchContext();
 
     void lookupTerm(const EnumStoreComparator &comp);
     void lookupRange(const EnumStoreComparator &low, const EnumStoreComparator &high);
@@ -39,7 +39,7 @@ protected:
     createPostingIterator(fef::TermFieldMatchData *matchData, bool strict) override;
 
     void fetchPostings(bool strict) override;
-    unsigned int approximateHits(void) const override;
+    unsigned int approximateHits() const override;
 };
 
 

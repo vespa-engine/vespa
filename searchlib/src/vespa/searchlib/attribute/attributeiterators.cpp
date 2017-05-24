@@ -138,7 +138,7 @@ doUnpack(uint32_t docId)
 template <>
 void
 AttributePostingListIteratorT<InnerAttributePostingListIterator>::
-setupPostingInfo(void)
+setupPostingInfo()
 {
     if (_iterator.valid()) {
         _postingInfo = MinMaxPostingInfo(1, 1);
@@ -150,7 +150,7 @@ setupPostingInfo(void)
 template <>
 void
 AttributePostingListIteratorT<WeightedInnerAttributePostingListIterator>::
-setupPostingInfo(void)
+setupPostingInfo()
 {
     if (_iterator.valid()) {
         const btree::MinMaxAggregated &a(_iterator.getAggregated());
@@ -163,7 +163,7 @@ setupPostingInfo(void)
 template <>
 void
 AttributePostingListIteratorT<DocIdMinMaxIterator<AttributePosting> >::
-setupPostingInfo(void)
+setupPostingInfo()
 {
     if (_iterator.valid()) {
         _postingInfo = MinMaxPostingInfo(1, 1);
@@ -175,7 +175,7 @@ setupPostingInfo(void)
 template <>
 void
 AttributePostingListIteratorT<DocIdMinMaxIterator<AttributeWeightPosting> >::
-setupPostingInfo(void)
+setupPostingInfo()
 {
     if (_iterator.valid()) {
         const btree::MinMaxAggregated a(_iterator.getAggregated());
@@ -187,7 +187,7 @@ setupPostingInfo(void)
 template <>
 void
 FilterAttributePostingListIteratorT<InnerAttributePostingListIterator>::
-setupPostingInfo(void)
+setupPostingInfo()
 {
     if (_iterator.valid()) {
         _postingInfo = MinMaxPostingInfo(1, 1);
@@ -199,7 +199,7 @@ setupPostingInfo(void)
 template <>
 void
 FilterAttributePostingListIteratorT<WeightedInnerAttributePostingListIterator>::
-setupPostingInfo(void)
+setupPostingInfo()
 {
     if (_iterator.valid()) {
         _postingInfo = MinMaxPostingInfo(1, 1);
@@ -211,7 +211,7 @@ setupPostingInfo(void)
 template <>
 void
 FilterAttributePostingListIteratorT<DocIdMinMaxIterator<AttributePosting> >::
-setupPostingInfo(void)
+setupPostingInfo()
 {
     if (_iterator.valid()) {
         _postingInfo = MinMaxPostingInfo(1, 1);
@@ -223,7 +223,7 @@ setupPostingInfo(void)
 template <>
 void
 FilterAttributePostingListIteratorT<DocIdMinMaxIterator<AttributeWeightPosting> >::
-setupPostingInfo(void)
+setupPostingInfo()
 {
     if (_iterator.valid()) {
         _postingInfo = MinMaxPostingInfo(1, 1);

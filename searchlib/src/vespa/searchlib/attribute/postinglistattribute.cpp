@@ -217,7 +217,7 @@ PostingListAttributeSubBase(AttributeVector &attr,
 template <typename P, typename LoadedVector, typename LoadedValueType,
           typename EnumStoreType>
 PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::
-~PostingListAttributeSubBase(void)
+~PostingListAttributeSubBase()
 {
 }
 

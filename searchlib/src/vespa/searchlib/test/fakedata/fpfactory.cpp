@@ -72,7 +72,7 @@ getFPFactory(const std::string &name, const Schema &schema)
 
 
 std::vector<std::string>
-getPostingTypes(void)
+getPostingTypes()
 {
     std::vector<std::string> res;
 
@@ -93,7 +93,7 @@ FPFactoryInit::FPFactoryInit(const FPFactoryMapEntry &fpFactoryMapEntry)
     fpFactoryMap->insert(fpFactoryMapEntry);
 }
 
-FPFactoryInit::~FPFactoryInit(void)
+FPFactoryInit::~FPFactoryInit()
 {
     assert(fpFactoryMap != NULL);
     size_t eraseRes = fpFactoryMap->erase(_key);
@@ -106,7 +106,7 @@ FPFactoryInit::~FPFactoryInit(void)
 }
 
 void
-FPFactoryInit::forceLink(void)
+FPFactoryInit::forceLink()
 {
     FakeEGCompr64FilterOcc::forceLink();
     FakeFilterOcc::forceLink();

@@ -64,7 +64,7 @@ public:
 private:
     int32_t getWeight(DocId doc, uint32_t idx) const override;
 
-    uint64_t getTotalValueCount(void) const override;
+    uint64_t getTotalValueCount() const override;
 
 public:
     void clearDocs(DocId lidLow, DocId lidLimit) override;

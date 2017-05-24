@@ -319,7 +319,7 @@ EnumStoreDictBase::EnumStoreDictBase(EnumStoreBase &enumStore)
 }
 
 
-EnumStoreDictBase::~EnumStoreDictBase(void)
+EnumStoreDictBase::~EnumStoreDictBase()
 {
 }
 
@@ -332,14 +332,14 @@ EnumStoreDict<Dictionary>::EnumStoreDict(EnumStoreBase &enumStore)
 }
 
 template <typename Dictionary>
-EnumStoreDict<Dictionary>::~EnumStoreDict(void)
+EnumStoreDict<Dictionary>::~EnumStoreDict()
 {
 }
 
 
 template <typename Dictionary>
 void
-EnumStoreDict<Dictionary>::freezeTree(void)
+EnumStoreDict<Dictionary>::freezeTree()
 {
     _dict.getAllocator().freeze();
 }
@@ -361,7 +361,7 @@ EnumStoreDict<Dictionary>::getTreeMemoryUsage() const
 
 template <typename Dictionary>
 void
-EnumStoreDict<Dictionary>::reEnumerate(void)
+EnumStoreDict<Dictionary>::reEnumerate()
 {
     _enumStore.reEnumerate(_dict);
 }
@@ -505,7 +505,7 @@ EnumStoreDict<Dictionary>::findFrozenIndex(const EnumStoreComparator &cmp,
 
 template <typename Dictionary>
 void
-EnumStoreDict<Dictionary>::onReset(void)
+EnumStoreDict<Dictionary>::onReset()
 {
     _dict.clear();
 }
@@ -529,7 +529,7 @@ EnumStoreDict<Dictionary>::onTrimHoldLists(generation_t firstUsed)
 
 template <typename Dictionary>
 BTreeNode::Ref
-EnumStoreDict<Dictionary>::getFrozenRootRef(void) const
+EnumStoreDict<Dictionary>::getFrozenRootRef() const
 {
     return _dict.getFrozenView().getRoot();
 }
@@ -570,7 +570,7 @@ lookupFrozenRange(BTreeNode::Ref frozenRootRef,
 
 template <>
 EnumPostingTree &
-EnumStoreDict<EnumTree>::getPostingDictionary(void)
+EnumStoreDict<EnumTree>::getPostingDictionary()
 {
     abort();
 }
@@ -578,7 +578,7 @@ EnumStoreDict<EnumTree>::getPostingDictionary(void)
 
 template <>
 EnumPostingTree &
-EnumStoreDict<EnumPostingTree>::getPostingDictionary(void)
+EnumStoreDict<EnumPostingTree>::getPostingDictionary()
 {
     return _dict;
 }
@@ -586,7 +586,7 @@ EnumStoreDict<EnumPostingTree>::getPostingDictionary(void)
 
 template <>
 const EnumPostingTree &
-EnumStoreDict<EnumTree>::getPostingDictionary(void) const
+EnumStoreDict<EnumTree>::getPostingDictionary() const
 {
     abort();
 }
@@ -594,7 +594,7 @@ EnumStoreDict<EnumTree>::getPostingDictionary(void) const
 
 template <>
 const EnumPostingTree &
-EnumStoreDict<EnumPostingTree>::getPostingDictionary(void) const
+EnumStoreDict<EnumPostingTree>::getPostingDictionary() const
 {
     return _dict;
 }
@@ -602,7 +602,7 @@ EnumStoreDict<EnumPostingTree>::getPostingDictionary(void) const
 
 template <typename Dictionary>
 bool
-EnumStoreDict<Dictionary>::hasData(void) const
+EnumStoreDict<Dictionary>::hasData() const
 {
     return Dictionary::LeafNodeType::hasData();
 }

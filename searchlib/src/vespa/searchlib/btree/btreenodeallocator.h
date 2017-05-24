@@ -61,9 +61,9 @@ private:
     RefVector _leafHoldUntilFreeze;
 
 public:
-    BTreeNodeAllocator(void);
+    BTreeNodeAllocator();
 
-    ~BTreeNodeAllocator(void);
+    ~BTreeNodeAllocator();
 
     void
     disableFreeLists() {
@@ -86,7 +86,7 @@ public:
      * Allocate leaf node.
      */
     LeafNodeTypeRefPair
-    allocLeafNode(void);
+    allocLeafNode();
 
     InternalNodeTypeRefPair
     thawNode(BTreeNode::Ref nodeRef, InternalNodeType *node);
@@ -120,7 +120,7 @@ public:
      * Freeze all nodes that are not already frozen.
      */
     void
-    freeze(void);
+    freeze();
 
     /**
      * Try to free held nodes if nobody can be referencing them.
@@ -138,7 +138,7 @@ public:
     transferHoldLists(generation_t generation);
 
     void
-    clearHoldLists(void);
+    clearHoldLists();
 
     static bool
     isValidRef(BTreeNode::Ref ref)
@@ -226,7 +226,7 @@ public:
     }
 
     std::vector<uint32_t>
-    startCompact(void)
+    startCompact()
     {
         return _nodeStore.startCompact();
     }

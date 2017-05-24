@@ -347,7 +347,7 @@ readHeader(const vespalib::GenericHeader &header,
 
 template <bool bigEndian>
 const vespalib::string &
-FeatureDecodeContext<bigEndian>::getIdentifier(void) const
+FeatureDecodeContext<bigEndian>::getIdentifier() const
 {
     return noFeatures;
 }
@@ -423,7 +423,7 @@ writeHeader(vespalib::GenericHeader &header,
 
 template <bool bigEndian>
 const vespalib::string &
-FeatureEncodeContext<bigEndian>::getIdentifier(void) const
+FeatureEncodeContext<bigEndian>::getIdentifier() const
 {
     return noFeatures;
 }

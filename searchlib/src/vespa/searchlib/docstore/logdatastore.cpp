@@ -562,7 +562,7 @@ LogDataStore::getDiskFootprint() const
 
 
 size_t
-LogDataStore::getDiskHeaderFootprint(void) const
+LogDataStore::getDiskHeaderFootprint() const
 {
     LockGuard guard(_updateLock);
     size_t sz(0);

@@ -63,7 +63,7 @@ protected:
     void fillEnum(LoadedVector & loaded) override;
     void fillEnum0(const void *src, size_t srcLen, EnumIndexVector &eidxs) override;
     void fixupEnumRefCounts(const EnumVector &enumHist) override;
-    uint64_t getUniqueValueCount(void) const override;
+    uint64_t getUniqueValueCount() const override;
 
     static EnumType getDefaultEnumTypeValue() { return B::defaultValue(); }
 

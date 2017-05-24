@@ -33,7 +33,7 @@ public:
     getStr(const vespalib::string &key) const;
 
     void
-    clear(void);
+    clear();
 
     void
     erase(const vespalib::string &key);

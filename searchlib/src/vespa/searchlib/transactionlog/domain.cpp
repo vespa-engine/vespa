@@ -390,7 +390,7 @@ int Domain::subscribe(const Domain::SP & domain, const SerialNum & from, FRT_Sup
 
 
 Domain::SerialNumList
-Domain::scanDir(void)
+Domain::scanDir()
 {
     SerialNumList res;
 

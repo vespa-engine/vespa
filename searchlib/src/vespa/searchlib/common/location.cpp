@@ -7,7 +7,7 @@
 namespace search {
 namespace common {
 
-Location::Location(void) :
+Location::Location() :
       _zBoundingBox(0,0,0,0),
       _x(0),
       _y(0),

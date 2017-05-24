@@ -11,16 +11,16 @@ using namespace search;
 
 class DocumentStoreInspectApp : public FastOS_Application
 {
-    void usage(void);
+    void usage();
     int verify(const vespalib::string & directory);
     int dumpIdxFile(const vespalib::string & file);
-    int Main(void) override;
+    int Main() override;
 };
 
 
 
 void
-DocumentStoreInspectApp::usage(void)
+DocumentStoreInspectApp::usage()
 {
     printf("Usage: %s dumpidxfile [--idxfile idxFile]\n", _argv[0]);
     fflush(stdout);
@@ -62,7 +62,7 @@ int DocumentStoreInspectApp::dumpIdxFile(const vespalib::string & file)
 }
 
 int
-DocumentStoreInspectApp::Main(void)
+DocumentStoreInspectApp::Main()
 {
     vespalib::string cmd;
     if (_argc >= 2) {

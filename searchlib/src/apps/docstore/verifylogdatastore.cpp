@@ -12,22 +12,22 @@ using namespace search;
 
 class VerifyLogDataStoreApp : public FastOS_Application
 {
-    void usage(void);
+    void usage();
     int verify(const vespalib::string & directory);
-    int Main(void) override;
+    int Main() override;
 };
 
 
 
 void
-VerifyLogDataStoreApp::usage(void)
+VerifyLogDataStoreApp::usage()
 {
     printf("Usage: %s <direcory>\n", _argv[0]);
     fflush(stdout);
 }
 
 int
-VerifyLogDataStoreApp::Main(void)
+VerifyLogDataStoreApp::Main()
 {
     if (_argc >= 2) {
         vespalib::string directory(_argv[1]);

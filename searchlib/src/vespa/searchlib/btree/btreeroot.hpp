@@ -211,7 +211,7 @@ template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
           typename TraitsT>
 size_t
 BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
-FrozenView::size(void) const
+FrozenView::size() const
 {
     if (NodeAllocatorType::isValidRef(_frozenRoot)) {
         return _allocator.validLeaves(_frozenRoot);

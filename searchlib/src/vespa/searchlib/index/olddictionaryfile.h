@@ -35,12 +35,12 @@ private:
     setupHelper(const Schema &schema);
 
 public:
-    OldDictionaryIndexMapping(void);
+    OldDictionaryIndexMapping();
 
-    ~OldDictionaryIndexMapping(void);
+    ~OldDictionaryIndexMapping();
 
     static uint32_t
-    noLocalId(void)
+    noLocalId()
     {
         return std::numeric_limits<uint32_t>::max();
     }
@@ -69,25 +69,25 @@ public:
           const std::vector<uint32_t> &indexes);
 
     const std::vector<uint32_t> &
-    getIndexIds(void) const
+    getIndexIds() const
     {
         return _indexIds;
     }
 
     const std::vector<uint32_t> &
-    getWashedIndexIds(void) const
+    getWashedIndexIds() const
     {
         return _washedIndexIds;
     }
 
     const std::vector<vespalib::string> &
-    getIndexNames(void) const
+    getIndexNames() const
     {
         return _indexNames;
     }
 
     uint32_t
-    getNumIndexes(void) const
+    getNumIndexes() const
     {
         return _indexIds.size();
     }
@@ -102,12 +102,12 @@ public:
 class OldDictionaryFileSeqRead
 {
 public:
-    OldDictionaryFileSeqRead(void)
+    OldDictionaryFileSeqRead()
     {
     }
 
     virtual
-    ~OldDictionaryFileSeqRead(void);
+    ~OldDictionaryFileSeqRead();
 
     /**
      * Read word and counts.  Only nonzero counts are returned. If at
@@ -133,7 +133,7 @@ public:
      * Close dictionary file.
      */
     virtual bool
-    close(void) = 0;
+    close() = 0;
 
     /*
      * Get visible indexes available in dictionary.
@@ -142,13 +142,13 @@ public:
     getIndexes(std::vector<uint32_t> &indexes) = 0;
 
     static uint64_t
-    noWordNum(void)
+    noWordNum()
     {
         return 0u;
     }
 
     static uint64_t
-    noWordNumHigh(void)
+    noWordNumHigh()
     {
         return std::numeric_limits<uint64_t>::max();
     }
@@ -166,12 +166,12 @@ class OldDictionaryFileSeqWrite
 {
 protected:
 public:
-    OldDictionaryFileSeqWrite(void)
+    OldDictionaryFileSeqWrite()
     {
     }
 
     virtual
-    ~OldDictionaryFileSeqWrite(void);
+    ~OldDictionaryFileSeqWrite();
 
     /**
      * Write word and counts.  Only nonzero counts should be supplied.
@@ -198,7 +198,7 @@ public:
      * Close dictionary file.
      */
     virtual bool
-    close(void) = 0;
+    close() = 0;
 };
 
 

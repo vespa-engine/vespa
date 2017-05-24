@@ -63,7 +63,7 @@ mystderr(const char *msg) noexcept
 }
 
 void
-SigBusHandler::trap(void)
+SigBusHandler::trap()
 {
     struct sigaction sa;
     _instance = this;
@@ -78,7 +78,7 @@ SigBusHandler::trap(void)
 
 
 void
-SigBusHandler::untrap(void)
+SigBusHandler::untrap()
 {
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));

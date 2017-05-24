@@ -29,7 +29,7 @@ public:
         {
             _name = strdup(name);
         }
-        ~Name(void) { free(_name); }
+        ~Name() { free(_name); }
         static Name *sort(Name *head, int count);
     };
 private:
@@ -46,21 +46,21 @@ private:
     char *_fullName;
     char *_relName;
 public:
-    const char *GetFullName(void) const { return _fullName; }
-    const char *GetRelName(void) const { return _relName; }
+    const char *GetFullName() const { return _fullName; }
+    const char *GetRelName() const { return _relName; }
     void QueueDir(const char *name);
     void PushDir(const char *name);
     void PushRemoveDir(const char *name);
-    void PushPushedDirs(void);
-    Name *UnQueueDir(void);
-    Name *UnQueueName(void);
-    void ScanSingleDir(void);
-    bool NextName(void);
-    bool NextRemoveDir(void);
-    bool RemoveTree(void);
+    void PushPushedDirs();
+    Name *UnQueueDir();
+    Name *UnQueueName();
+    void ScanSingleDir();
+    bool NextName();
+    bool NextRemoveDir();
+    bool RemoveTree();
     uint64_t GetTreeSize(); // Returns size of directory in bytes
     explicit DirectoryTraverse(const char *baseDir);
-    ~DirectoryTraverse(void);
+    ~DirectoryTraverse();
 };
 
 } // namespace search

@@ -29,7 +29,7 @@ SingleValueStringAttributeT<B>::~SingleValueStringAttributeT() { }
 
 template <typename B>
 void
-SingleValueStringAttributeT<B>::freezeEnumDictionary(void) {
+SingleValueStringAttributeT<B>::freezeEnumDictionary() {
     this->getEnumStore().freezeTree();
 }
 

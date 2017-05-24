@@ -321,7 +321,7 @@ ComprFileReadContext(uint32_t unitSize)
 }
 
 
-ComprFileReadContext::~ComprFileReadContext(void)
+ComprFileReadContext::~ComprFileReadContext()
 {
 }
 
@@ -341,7 +341,7 @@ ComprFileReadContext::readComprBuffer(uint64_t stopOffset, bool readAll)
 
 
 void
-ComprFileReadContext::readComprBuffer(void)
+ComprFileReadContext::readComprBuffer()
 {
     search::ComprFileReadBase::ReadComprBuffer(_stopOffset,
             _readAll,
@@ -545,7 +545,7 @@ ComprFileWriteContext(uint32_t unitSize)
 }
 
 
-ComprFileWriteContext::~ComprFileWriteContext(void)
+ComprFileWriteContext::~ComprFileWriteContext()
 {
 }
 
@@ -599,7 +599,7 @@ ComprFileWriteContext::allocComprBuf(unsigned int comprBufSize,
 
 
 void
-ComprFileWriteContext::allocComprBuf(void)
+ComprFileWriteContext::allocComprBuf()
 {
     allocComprBuf(32768, 32768);
 }

@@ -113,7 +113,7 @@ FieldWriter::lateOpen(const TuneFileSeqWrite &tuneFileWrite,
 
 
 void
-FieldWriter::flush(void)
+FieldWriter::flush()
 {
     _posoccfile->flushWord();
     PostingListCounts &counts = _posoccfile->getCounts();
@@ -155,7 +155,7 @@ FieldWriter::newWord(const vespalib::stringref &word)
 
 
 bool
-FieldWriter::close(void)
+FieldWriter::close()
 {
     bool ret = true;
     flush();

@@ -16,23 +16,23 @@ using namespace search;
 
 class BenchmarkDataStoreApp : public FastOS_Application
 {
-    void usage(void);
+    void usage();
     int benchmark(const vespalib::string & directory, size_t numReads, size_t numThreads, size_t perChunk, const vespalib::string & readType);
-    int Main(void) override;
+    int Main() override;
     void read(size_t numReads, size_t perChunk, const IDataStore * dataStore);
 };
 
 
 
 void
-BenchmarkDataStoreApp::usage(void)
+BenchmarkDataStoreApp::usage()
 {
     printf("Usage: %s <direcory> <numreads> <numthreads> <objects per read> <normal,directio,mmap,mlock>\n", _argv[0]);
     fflush(stdout);
 }
 
 int
-BenchmarkDataStoreApp::Main(void)
+BenchmarkDataStoreApp::Main()
 {
     if (_argc >= 2) {
         size_t numThreads(16);

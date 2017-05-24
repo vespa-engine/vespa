@@ -65,15 +65,14 @@ public:
     {
     }
 
-    ~Writer(void)
+    ~Writer()
     {
         delete _ssw;
         delete _spw;
         delete _pw;
     }
 
-    void
-    allocWriters()
+    void allocWriters()
     {
         _ssw = new PageDict4SSWriter(_sse);
         _spw = new PageDict4SPWriter(*_ssw, _spe);
@@ -82,16 +81,14 @@ public:
         _pw->setup();
     }
 
-    void
-    flush(void)
+    void flush()
     {
         _pw->flush();
         ThreeLevelCountWriteBuffers::flush();
     }
 
-    void
-    addCounts(const std::string &word,
-              const PostingListCounts &counts)
+    void addCounts(const std::string &word,
+                   const PostingListCounts &counts)
     {
         _pw->addCounts(word, counts);
     }
@@ -119,10 +116,9 @@ public:
         _pr.setup();
     }
 
-    void
-    readCounts(vespalib::string &word,
-               uint64_t &wordNum,
-               PostingListCounts &counts)
+    void readCounts(vespalib::string &word,
+                    uint64_t &wordNum,
+                    PostingListCounts &counts)
     {
         _pr.readCounts(word, wordNum, counts);
     }
@@ -215,16 +211,10 @@ public:
     bool _firstWordForcedCommon;
     bool _lastWordForcedCommon;
 
-    void
-    usage(void);
-
-    int
-    Main(void) override;
-
-    void
-    testWords(void);
-
-    PageDict4TestApp(void)
+    void usage();
+    int Main() override;
+    void testWords();
+    PageDict4TestApp()
         : _rnd(),
           _stress(false),
           _emptyWord(false),
@@ -236,7 +226,7 @@ public:
 
 
 void
-PageDict4TestApp::usage(void)
+PageDict4TestApp::usage()
 {
     printf("Usage: wordnumbers\n");
     fflush(stdout);
@@ -244,7 +234,7 @@ PageDict4TestApp::usage(void)
 
 
 int
-PageDict4TestApp::Main(void)
+PageDict4TestApp::Main()
 {
     if (_argc > 0) {
         DummyFileHeaderContext::setCreator(_argv[0]);
@@ -836,7 +826,7 @@ testWords(const std::string &logname,
 
 
 void
-PageDict4TestApp::testWords(void)
+PageDict4TestApp::testWords()
 {
     ::testWords("smallchunkwordsempty", _rnd,
                 1000000, 0,

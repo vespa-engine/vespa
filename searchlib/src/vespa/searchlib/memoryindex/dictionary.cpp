@@ -37,7 +37,7 @@ Dictionary::Dictionary(const Schema & schema)
     }
 }
 
-Dictionary::~Dictionary(void)
+Dictionary::~Dictionary()
 {
 }
 

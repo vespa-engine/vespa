@@ -17,20 +17,20 @@ class BitEncode64 : public bitcompression::EncodeContext64<bigEndian>
     search::ComprFileWriteContext _cbuf;
 
 public:
-    BitEncode64(void);
+    BitEncode64();
 
-    ~BitEncode64(void);
+    ~BitEncode64();
 
     typedef bitcompression::EncodeContext64<bigEndian> EC;
 
     void
-    writeComprBuffer(void)
+    writeComprBuffer()
     {
         _cbuf.writeComprBuffer(true);
     }
 
     void
-    writeComprBufferIfNeeded(void)
+    writeComprBufferIfNeeded()
     {
         if (this->_valI >= this->_valE)
             _cbuf.writeComprBuffer(false);

@@ -19,10 +19,10 @@ namespace common
 class FileHeaderContext
 {
 public:
-    FileHeaderContext(void);
+    FileHeaderContext();
 
     virtual
-    ~FileHeaderContext(void);
+    ~FileHeaderContext();
 
     virtual void
     addTags(vespalib::GenericHeader &header,

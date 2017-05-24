@@ -35,7 +35,7 @@ struct FastS_IResultSorter {
     /**
      * Destructor.  No cleanup needed for base class.
      */
-    virtual ~FastS_IResultSorter(void) {}
+    virtual ~FastS_IResultSorter() {}
 
     /**
      * @return should bitvector hits also be sorted?

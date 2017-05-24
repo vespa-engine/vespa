@@ -67,7 +67,7 @@ insertStructType(document::DocumenttypesConfig::Documenttype & cfg,
 
 }
 
-DocTypeBuilder::UriField::UriField(void)
+DocTypeBuilder::UriField::UriField()
     : _all(Schema::UNKNOWN_FIELD_ID),
       _scheme(Schema::UNKNOWN_FIELD_ID),
       _host(Schema::UNKNOWN_FIELD_ID),

@@ -49,7 +49,7 @@ BTreeBuilder(NodeAllocatorType &allocator, const AggrCalcT &aggrCalc)
 template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
 BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::
-~BTreeBuilder(void)
+~BTreeBuilder()
 {
     clear();
 }
@@ -80,7 +80,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
 void
 BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::
-normalize(void)
+normalize()
 {
     std::vector<NodeRef> leftInodes;	// left to rightmost nodes in tree
     LeafNodeType *leftLeaf;
@@ -302,7 +302,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
 void
 BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::
-allocNewLeafNode(void)
+allocNewLeafNode()
 {
     InternalNodeType  *inode;
     NodeRef child;
@@ -392,7 +392,7 @@ template <typename KeyT, typename DataT, typename AggrT,
 typename BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS,
                       AggrCalcT>::NodeRef
 BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::
-handover(void)
+handover()
 {
     NodeRef ret;
 
@@ -417,7 +417,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
 void
 BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::
-reuse(void)
+reuse()
 {
     clear();
     _leaf = _allocator.allocLeafNode();
@@ -430,7 +430,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
 void
 BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::
-clear(void)
+clear()
 {
     if (!_inodes.empty()) {
         recursiveDelete(_inodes.back().ref);

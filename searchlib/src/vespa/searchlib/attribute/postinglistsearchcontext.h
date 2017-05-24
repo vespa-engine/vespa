@@ -53,17 +53,17 @@ protected:
                              uint32_t minBvDocFreq,
                              bool useBitVector);
 
-    ~PostingListSearchContext(void);
+    ~PostingListSearchContext();
 
     void lookupTerm(const EnumStoreComparator &comp);
     void lookupRange(const EnumStoreComparator &low, const EnumStoreComparator &high);
-    void lookupSingle(void);
+    void lookupSingle();
     virtual bool useThis(const DictionaryConstIterator & it) const {
         (void) it;
         return true;
     }
 
-    float calculateFilteringCost(void) const {
+    float calculateFilteringCost() const {
         // filtering search time (ms) ~ FSTC * numValues; (FSTC =
         // Filtering Search Time Constant)
         return _FSTC * _numValues;
@@ -75,13 +75,13 @@ protected:
         return _PLSTC * approxNumHits;
     }
 
-    uint32_t calculateApproxNumHits(void) const {
+    uint32_t calculateApproxNumHits() const {
         float docsPerUniqueValue = static_cast<float>(_docIdLimit) /
                                    static_cast<float>(_dictSize);
         return static_cast<uint32_t>(docsPerUniqueValue * _uniqueValues);
     }
 
-    virtual bool fallbackToFiltering(void) const {
+    virtual bool fallbackToFiltering() const {
         uint32_t numHits = calculateApproxNumHits();
         // numHits > 1000: make sure that posting lists are unit tested.
         return (numHits > 1000) &&
@@ -127,10 +127,10 @@ protected:
                               bool useBitVector);
     ~PostingListSearchContextT();
 
-    void lookupSingle(void);
-    size_t countHits(void) const;
+    void lookupSingle();
+    size_t countHits() const;
     void fillArray(size_t numDocs);
-    void fillBitVector(void);
+    void fillBitVector();
 
     PostingVector &
     merge(PostingVector &v, PostingVector &temp,
@@ -145,8 +145,8 @@ protected:
     queryeval::SearchIterator::UP
     createPostingIterator(fef::TermFieldMatchData *matchData, bool strict) override;
 
-    unsigned int singleHits(void) const;
-    unsigned int approximateHits(void) const override;
+    unsigned int singleHits() const;
+    unsigned int approximateHits() const override;
     void applyRangeLimit(int rangeLimit);
 };
 
@@ -174,7 +174,7 @@ protected:
                                     uint32_t minBvCocFreq,
                                     bool useBitVector);
 
-    unsigned int approximateHits(void) const override;
+    unsigned int approximateHits() const override;
 };
 
 
@@ -241,12 +241,12 @@ private:
     void getIterators(bool shouldApplyRangeLimit);
     bool valid() const override { return this->isValid(); }
 
-    bool fallbackToFiltering(void) const override {
+    bool fallbackToFiltering() const override {
         return (this->getRangeLimit() != 0)
             ? false
             : Parent::fallbackToFiltering();
     }
-    unsigned int approximateHits(void) const override {
+    unsigned int approximateHits() const override {
         const unsigned int estimate = PostingListSearchContextT<DataT>::approximateHits();
         const unsigned int limit = std::abs(this->getRangeLimit());
         return ((limit > 0) && (limit < estimate))

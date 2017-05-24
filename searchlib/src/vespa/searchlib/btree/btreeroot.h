@@ -84,16 +84,16 @@ public:
         }
 
         BTreeNode::Ref
-        getRoot(void) const
+        getRoot() const
         {
             return _frozenRoot;
         }
 
         size_t
-        size(void) const;
+        size() const;
 
         const NodeAllocatorType &
-        getAllocator(void) const
+        getAllocator() const
         {
             return _allocator;
         }

@@ -493,20 +493,20 @@ FakeZcFilterOcc::setupT(const FakeWord &fw, bool doFeatures,
 }
 
 
-FakeZcFilterOcc::~FakeZcFilterOcc(void)
+FakeZcFilterOcc::~FakeZcFilterOcc()
 {
     free(_compressedMalloc);
 }
 
 
 void
-FakeZcFilterOcc::forceLink(void)
+FakeZcFilterOcc::forceLink()
 {
 }
 
 
 size_t
-FakeZcFilterOcc::bitSize(void) const
+FakeZcFilterOcc::bitSize() const
 {
     return _compressedBits -
         (_l1SkipSize + _l2SkipSize + _l3SkipSize + _l4SkipSize) * 8;
@@ -514,56 +514,56 @@ FakeZcFilterOcc::bitSize(void) const
 
 
 bool
-FakeZcFilterOcc::hasWordPositions(void) const
+FakeZcFilterOcc::hasWordPositions() const
 {
     return false;
 }
 
 
 size_t
-FakeZcFilterOcc::skipBitSize(void) const
+FakeZcFilterOcc::skipBitSize() const
 {
     return (_l1SkipSize + _l2SkipSize + _l3SkipSize + _l4SkipSize) * 8;
 }
 
 
 size_t
-FakeZcFilterOcc::l1SkipBitSize(void) const
+FakeZcFilterOcc::l1SkipBitSize() const
 {
     return _l1SkipSize * 8;
 }
 
 
 size_t
-FakeZcFilterOcc::l2SkipBitSize(void) const
+FakeZcFilterOcc::l2SkipBitSize() const
 {
     return _l2SkipSize * 8;
 }
 
 
 size_t
-FakeZcFilterOcc::l3SkipBitSize(void) const
+FakeZcFilterOcc::l3SkipBitSize() const
 {
     return _l3SkipSize * 8;
 }
 
 
 size_t
-FakeZcFilterOcc::l4SkipBitSize(void) const
+FakeZcFilterOcc::l4SkipBitSize() const
 {
     return _l4SkipSize * 8;
 }
 
 
 int
-FakeZcFilterOcc::lowLevelSinglePostingScan(void) const
+FakeZcFilterOcc::lowLevelSinglePostingScan() const
 {
     return 0;
 }
 
 
 int
-FakeZcFilterOcc::lowLevelSinglePostingScanUnpack(void) const
+FakeZcFilterOcc::lowLevelSinglePostingScanUnpack() const
 {
     return 0;
 }
@@ -612,7 +612,7 @@ public:
                                  uint32_t docIdLimit,
                                  const fef::TermFieldMatchDataArray &matchData);
 
-    ~FakeFilterOccZCArrayIterator(void);
+    ~FakeFilterOccZCArrayIterator();
 
     void doUnpack(uint32_t docId) override; 
     void doSeek(uint32_t docId) override;
@@ -702,7 +702,7 @@ FakeFilterOccZCArrayIterator::initRange(uint32_t begin, uint32_t end)
 
 
 FakeFilterOccZCArrayIterator::
-~FakeFilterOccZCArrayIterator(void)
+~FakeFilterOccZCArrayIterator()
 {
 }
 
@@ -789,7 +789,7 @@ FakeZcSkipFilterOcc<true>::FakeZcSkipFilterOcc(const FakeWord &fw)
 
 
 template <bool doSkip>
-FakeZcSkipFilterOcc<doSkip>::~FakeZcSkipFilterOcc(void)
+FakeZcSkipFilterOcc<doSkip>::~FakeZcSkipFilterOcc()
 {
 }
 
@@ -842,7 +842,7 @@ public:
                                      uint32_t docIdLimit,
                                      const TermFieldMatchDataArray &matchData);
 
-    ~FakeFilterOccZCSkipArrayIterator(void);
+    ~FakeFilterOccZCSkipArrayIterator();
 
     void doL4SkipSeek(uint32_t docId);
     void doL3SkipSeek(uint32_t docId);
@@ -1021,7 +1021,7 @@ initRange(uint32_t begin, uint32_t end)
 
 template <bool doSkip>
 FakeFilterOccZCSkipArrayIterator<doSkip>::
-~FakeFilterOccZCSkipArrayIterator(void)
+~FakeFilterOccZCSkipArrayIterator()
 {
 }
 
@@ -1390,7 +1390,7 @@ FakeEGCompr64PosOcc<bigEndian>::FakeEGCompr64PosOcc(const FakeWord &fw)
 
 
 template <bool bigEndian>
-FakeEGCompr64PosOcc<bigEndian>::~FakeEGCompr64PosOcc(void)
+FakeEGCompr64PosOcc<bigEndian>::~FakeEGCompr64PosOcc()
 {
 }
 
@@ -1517,7 +1517,7 @@ FakeEG2Compr64PosOcc<bigEndian>::FakeEG2Compr64PosOcc(const FakeWord &fw)
 
 
 template <bool bigEndian>
-FakeEG2Compr64PosOcc<bigEndian>::~FakeEG2Compr64PosOcc(void)
+FakeEG2Compr64PosOcc<bigEndian>::~FakeEG2Compr64PosOcc()
 {
 }
 
@@ -1596,7 +1596,7 @@ FakeEG2Compr64PosOcc<bigEndian>::setup(const FakeWord &fw)
 
 template <bool bigEndian>
 size_t
-FakeEG2Compr64PosOcc<bigEndian>::bitSize(void) const
+FakeEG2Compr64PosOcc<bigEndian>::bitSize() const
 {
     return _compressedBits;
 }
@@ -1604,7 +1604,7 @@ FakeEG2Compr64PosOcc<bigEndian>::bitSize(void) const
 
 template <bool bigEndian>
 bool
-FakeEG2Compr64PosOcc<bigEndian>::hasWordPositions(void) const
+FakeEG2Compr64PosOcc<bigEndian>::hasWordPositions() const
 {
     return true;
 }

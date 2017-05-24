@@ -198,7 +198,7 @@ size_t AttributeVector::getFixedWidth() const { return _config.basicType().fixed
 bool AttributeVector::hasEnum() const { return _hasEnum; }
 bool AttributeVector::hasEnum2Value() const { return false; }
 uint32_t AttributeVector::getMaxValueCount() const { return _highestValueCount; }
-uint32_t AttributeVector::getNumDocs(void) const { return _status.getNumDocs(); }
+uint32_t AttributeVector::getNumDocs() const { return _status.getNumDocs(); }
 
 bool
 AttributeVector::isEnumerated(const vespalib::GenericHeader &header)
@@ -511,7 +511,7 @@ AttributeVector::hasLoadData() const {
 
 
 bool
-AttributeVector::isEnumeratedSaveFormat(void) const
+AttributeVector::isEnumeratedSaveFormat() const
 {
     vespalib::string datName(vespalib::make_string("%s.dat", getBaseFileName().c_str()));
     Fast_BufferedFile   datFile;
@@ -663,7 +663,7 @@ AttributeVector::performCompactionWarning()
 
 
 void
-AttributeVector::addReservedDoc(void)
+AttributeVector::addReservedDoc()
 {
     uint32_t docId = 42;
     addDoc(docId);		// Reserved
@@ -701,7 +701,7 @@ bool AttributeVector::hasPostings() { return getIPostingListAttributeBase() != n
 uint64_t AttributeVector::getUniqueValueCount() const { return getTotalValueCount(); }
 uint64_t AttributeVector::getTotalValueCount() const { return getNumDocs(); }
 void AttributeVector::setCreateSerialNum(uint64_t createSerialNum) { _createSerialNum = createSerialNum; }
-uint64_t AttributeVector::getCreateSerialNum(void) const { return _createSerialNum; }
+uint64_t AttributeVector::getCreateSerialNum() const { return _createSerialNum; }
 uint32_t AttributeVector::getVersion() const { return 0; }
 
 void
@@ -719,14 +719,14 @@ AttributeVector::compactLidSpace(uint32_t wantedLidLimit) {
 
 
 bool
-AttributeVector::canShrinkLidSpace(void) const {
+AttributeVector::canShrinkLidSpace() const {
     return wantShrinkLidSpace() &&
         _compactLidSpaceGeneration < getFirstUsedGeneration();
 }
 
 
 void
-AttributeVector::shrinkLidSpace(void)
+AttributeVector::shrinkLidSpace()
 {
     commit();
     removeAllOldGenerations();
@@ -746,7 +746,7 @@ AttributeVector::shrinkLidSpace(void)
     updateStat(true);
 }
 
-void AttributeVector::onShrinkLidSpace(void) {}
+void AttributeVector::onShrinkLidSpace() {}
 
 void
 AttributeVector::clearDocs(DocId lidLow, DocId lidLimit)

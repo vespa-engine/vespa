@@ -17,41 +17,41 @@ FakePosting::FakePosting(const std::string &name)
 }
 
 
-FakePosting::~FakePosting(void)
+FakePosting::~FakePosting()
 {
 }
 
 
 size_t
-FakePosting::skipBitSize(void) const
+FakePosting::skipBitSize() const
 {
     return l1SkipBitSize() + l2SkipBitSize() + l3SkipBitSize() +
         l4SkipBitSize();
 }
 
 size_t
-FakePosting::l1SkipBitSize(void) const
+FakePosting::l1SkipBitSize() const
 {
     return 0;
 }
 
 
 size_t
-FakePosting::l2SkipBitSize(void) const
+FakePosting::l2SkipBitSize() const
 {
     return 0;
 }
 
 
 size_t
-FakePosting::l3SkipBitSize(void) const
+FakePosting::l3SkipBitSize() const
 {
     return 0;
 }
 
 
 size_t
-FakePosting::l4SkipBitSize(void) const
+FakePosting::l4SkipBitSize() const
 {
     return 0;
 }

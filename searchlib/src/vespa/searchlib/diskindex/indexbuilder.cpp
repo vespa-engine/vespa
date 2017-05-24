@@ -29,7 +29,7 @@ using index::schema::DataType;
 using vespalib::getLastErrorString;
 
 static uint32_t
-noWordPos(void)
+noWordPos()
 {
     return std::numeric_limits<uint32_t>::max();
 }
@@ -41,9 +41,9 @@ public:
     FieldWriter *_fieldWriter;
     DocIdAndFeatures _docIdAndFeatures;
 
-    FileHandle(void);
+    FileHandle();
 
-    ~FileHandle(void);
+    ~FileHandle();
 
     void
     open(const vespalib::stringref &dir,
@@ -53,7 +53,7 @@ public:
          const FileHeaderContext &fileHeaderContext);
 
     void
-    close(void);
+    close();
 };
 
 
@@ -73,16 +73,16 @@ public:
                 uint32_t fieldId,
                 IndexBuilder *ib);
 
-    ~FieldHandle(void);
+    ~FieldHandle();
 
     static uint32_t
-    noDocRef(void)
+    noDocRef()
     {
         return std::numeric_limits<uint32_t>::max();
     }
 
     static uint32_t
-    noElRef(void)
+    noElRef()
     {
         return std::numeric_limits<uint32_t>::max();
     }
@@ -100,19 +100,19 @@ public:
         }
 
         uint32_t
-        getDocId(void) const
+        getDocId() const
         {
             return _docId;
         }
 
         uint32_t
-        getNumElements(void) const
+        getNumElements() const
         {
             return _numElements;
         }
 
         void
-        incNumElements(void)
+        incNumElements()
         {
             ++_numElements;
         }
@@ -175,13 +175,13 @@ public:
     startWord(const vespalib::stringref &word);
 
     void
-    endWord(void);
+    endWord();
 
     void
     startDocument(uint32_t docId);
 
     void
-    endDocument(void);
+    endDocument();
 
     void
     startElement(uint32_t elementId,
@@ -189,31 +189,31 @@ public:
                  uint32_t elementLen);
 
     void
-    endElement(void);
+    endElement();
 
     void
     addOcc(const WordDocElementWordPosFeatures &features);
 
     void
-    setValid(void)
+    setValid()
     {
         _valid = true;
     }
 
     bool
-    getValid(void) const
+    getValid() const
     {
         return _valid;
     }
 
     const Schema::IndexField &
-    getSchemaField(void);
+    getSchemaField();
 
     const vespalib::string &
-    getName(void);
+    getName();
 
     vespalib::string
-    getDir(void);
+    getDir();
 
     void
     open(uint32_t docIdLimit, uint64_t numWordIds,
@@ -221,10 +221,10 @@ public:
          const FileHeaderContext &fileHeaderContext);
 
     void
-    close(void);
+    close();
 
     uint32_t
-    getIndexId(void) const
+    getIndexId() const
     {
         return _fieldId;
     }
@@ -250,7 +250,7 @@ public:
     appendFeatures(DocIdAndFeatures &features);
 
     bool
-    isValid(void) const
+    isValid() const
     {
         return _dFeatures != _dFeaturesE;
     }
@@ -268,14 +268,14 @@ public:
 }
 
 
-FileHandle::FileHandle(void)
+FileHandle::FileHandle()
     : _fieldWriter(NULL),
       _docIdAndFeatures()
 {
 }
 
 
-FileHandle::~FileHandle(void)
+FileHandle::~FileHandle()
 {
     delete _fieldWriter;
 }
@@ -307,7 +307,7 @@ FileHandle::open(const vespalib::stringref &dir,
 
 
 void
-FileHandle::close(void)
+FileHandle::close()
 {
     bool ret = true;
     if (_fieldWriter != NULL) {
@@ -344,7 +344,7 @@ IndexBuilder::FieldHandle::FieldHandle(const Schema &schema,
 }
 
 
-IndexBuilder::FieldHandle::~FieldHandle(void)
+IndexBuilder::FieldHandle::~FieldHandle()
 {
 }
 
@@ -389,7 +389,7 @@ IndexBuilder::FieldHandle::startDocument(uint32_t docId)
 
 
 void
-IndexBuilder::FieldHandle::endDocument(void)
+IndexBuilder::FieldHandle::endDocument()
 {
     assert(_docRef != noDocRef());
     assert(_elRef == noElRef());
@@ -423,7 +423,7 @@ startElement(uint32_t elementId,
 
 
 void
-IndexBuilder::FieldHandle::endElement(void)
+IndexBuilder::FieldHandle::endElement()
 {
     assert(_elRef != noElRef());
     FHWordDocElementFeatures &ef = _wdfef[_elRef];
@@ -451,14 +451,14 @@ addOcc(const WordDocElementWordPosFeatures &features)
 
 
 const Schema::IndexField &
-IndexBuilder::FieldHandle::getSchemaField(void)
+IndexBuilder::FieldHandle::getSchemaField()
 {
     return _schema->getIndexField(_fieldId);
 }
 
 
 const vespalib::string &
-IndexBuilder::FieldHandle::getName(void)
+IndexBuilder::FieldHandle::getName()
 {
     return getSchemaField().getName();
 
@@ -466,7 +466,7 @@ IndexBuilder::FieldHandle::getName(void)
 
 
 vespalib::string
-IndexBuilder::FieldHandle::getDir(void)
+IndexBuilder::FieldHandle::getDir()
 {
     return _ib->appendToPrefix(getName());
 }
@@ -484,7 +484,7 @@ IndexBuilder::FieldHandle::open(uint32_t docIdLimit, uint64_t numWordIds,
 
 
 void
-IndexBuilder::FieldHandle::close(void)
+IndexBuilder::FieldHandle::close()
 {
     _files.close();
 }
@@ -551,7 +551,7 @@ IndexBuilder::IndexBuilder(const Schema &schema)
 }
 
 
-IndexBuilder::~IndexBuilder(void)
+IndexBuilder::~IndexBuilder()
 {
 }
 
@@ -569,7 +569,7 @@ IndexBuilder::startWord(const vespalib::stringref &word)
 
 
 void
-IndexBuilder::endWord(void)
+IndexBuilder::endWord()
 {
     assert(_inWord);
     assert(_currentField != NULL);
@@ -593,7 +593,7 @@ IndexBuilder::startDocument(uint32_t docId)
 
 
 void
-IndexBuilder::endDocument(void)
+IndexBuilder::endDocument()
 {
     assert(_curDocId != noDocId());
     assert(_currentField != NULL);
@@ -616,7 +616,7 @@ IndexBuilder::startField(uint32_t fieldId)
 
 
 void
-IndexBuilder::endField(void)
+IndexBuilder::endField()
 {
     assert(_curDocId == noDocId());
     assert(!_inWord);
@@ -637,7 +637,7 @@ IndexBuilder::startElement(uint32_t elementId,
 
 
 void
-IndexBuilder::endElement(void)
+IndexBuilder::endElement()
 {
     assert(_currentField != NULL);
     _currentField->endElement();
@@ -698,7 +698,7 @@ IndexBuilder::open(uint32_t docIdLimit, uint64_t numWordIds,
 
 
 void
-IndexBuilder::close(void)
+IndexBuilder::close()
 {
     // TODO: Filter for text indexes
     for (FieldHandle & fh : _fields) {

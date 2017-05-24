@@ -5,7 +5,7 @@
 
 namespace search {
 
-IDocumentStore::IDocumentStore(void)
+IDocumentStore::IDocumentStore()
 {
 }
 

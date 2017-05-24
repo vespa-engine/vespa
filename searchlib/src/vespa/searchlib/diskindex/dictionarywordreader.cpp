@@ -17,7 +17,7 @@ namespace diskindex
 using vespalib::getLastErrorString;
 using index::SchemaUtil;
 
-DictionaryWordReader::DictionaryWordReader(void)
+DictionaryWordReader::DictionaryWordReader()
     : _word(),
       _wordNum(noWordNumHigh()),
       _old2newwordfile(),
@@ -26,7 +26,7 @@ DictionaryWordReader::DictionaryWordReader(void)
 }
 
 
-DictionaryWordReader::~DictionaryWordReader(void)
+DictionaryWordReader::~DictionaryWordReader()
 {
 }
 
@@ -56,7 +56,7 @@ DictionaryWordReader::open(const vespalib::stringref &dictionaryName,
 }
 
 void
-DictionaryWordReader::close(void)
+DictionaryWordReader::close()
 {
     if (!_dictFile->close())
         LOG(error, "Error closing input dictionary");

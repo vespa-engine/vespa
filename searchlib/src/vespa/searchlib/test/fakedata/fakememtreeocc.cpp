@@ -72,40 +72,40 @@ FakeMemTreeOcc::FakeMemTreeOcc(const FakeWord &fw,
 }
 
 
-FakeMemTreeOcc::~FakeMemTreeOcc(void)
+FakeMemTreeOcc::~FakeMemTreeOcc()
 {
 }
 
 
 void
-FakeMemTreeOcc::forceLink(void)
+FakeMemTreeOcc::forceLink()
 {
 }
 
 
 size_t
-FakeMemTreeOcc::bitSize(void) const
+FakeMemTreeOcc::bitSize() const
 {
     return _tree.bitSize(_allocator) + _featureBitSize;
 }
 
 
 bool
-FakeMemTreeOcc::hasWordPositions(void) const
+FakeMemTreeOcc::hasWordPositions() const
 {
     return true;
 }
 
 
 int
-FakeMemTreeOcc::lowLevelSinglePostingScan(void) const
+FakeMemTreeOcc::lowLevelSinglePostingScan() const
 {
     return 0;
 }
 
 
 int
-FakeMemTreeOcc::lowLevelSinglePostingScanUnpack(void) const
+FakeMemTreeOcc::lowLevelSinglePostingScanUnpack() const
 {
     return 0;
 }
@@ -152,7 +152,7 @@ FakeMemTreeOccMgr::FakeMemTreeOccMgr(const Schema &schema)
 }
 
 
-FakeMemTreeOccMgr::~FakeMemTreeOccMgr(void)
+FakeMemTreeOccMgr::~FakeMemTreeOccMgr()
 {
     std::vector<std::shared_ptr<PostingIdx> >::iterator
         it(_postingIdxs.begin());
@@ -167,34 +167,34 @@ FakeMemTreeOccMgr::~FakeMemTreeOccMgr(void)
 
 
 void
-FakeMemTreeOccMgr::freeze(void)
+FakeMemTreeOccMgr::freeze()
 {
     _allocator.freeze();
 }
 
 
 void
-FakeMemTreeOccMgr::transferHoldLists(void)
+FakeMemTreeOccMgr::transferHoldLists()
 {
     _allocator.transferHoldLists(_generationHandler.getCurrentGeneration());
 }
 
 void
-FakeMemTreeOccMgr::incGeneration(void)
+FakeMemTreeOccMgr::incGeneration()
 {
     _generationHandler.incGeneration();
 }
 
 
 void
-FakeMemTreeOccMgr::trimHoldLists(void)
+FakeMemTreeOccMgr::trimHoldLists()
 {
     _allocator.trimHoldLists(_generationHandler.getFirstUsedGeneration());
 }
 
 
 void
-FakeMemTreeOccMgr::sync(void)
+FakeMemTreeOccMgr::sync()
 {
     freeze();
     transferHoldLists();
@@ -233,7 +233,7 @@ FakeMemTreeOccMgr::remove(uint32_t wordIdx, uint32_t docId)
 
 
 void
-FakeMemTreeOccMgr::sortUnflushed(void)
+FakeMemTreeOccMgr::sortUnflushed()
 {
     typedef std::vector<PendingOp>::iterator I;
     uint32_t seq = 0;
@@ -245,7 +245,7 @@ FakeMemTreeOccMgr::sortUnflushed(void)
 
 
 void
-FakeMemTreeOccMgr::flush(void)
+FakeMemTreeOccMgr::flush()
 {
     typedef FeatureStore::RefType RefType;
     typedef std::vector<PendingOp>::iterator I;
@@ -286,7 +286,7 @@ FakeMemTreeOccMgr::flush(void)
 }
 
 void
-FakeMemTreeOccMgr::compactTrees(void)
+FakeMemTreeOccMgr::compactTrees()
 {
     // compact full trees by calling incremental compaction methods in a loop
 
@@ -307,7 +307,7 @@ FakeMemTreeOccMgr::compactTrees(void)
 }
 
 void
-FakeMemTreeOccMgr::finalize(void)
+FakeMemTreeOccMgr::finalize()
 {
     flush();
 }
@@ -319,7 +319,7 @@ FakeMemTreeOccFactory::FakeMemTreeOccFactory(const Schema &schema)
 }
 
 
-FakeMemTreeOccFactory::~FakeMemTreeOccFactory(void)
+FakeMemTreeOccFactory::~FakeMemTreeOccFactory()
 {
 }
 
@@ -389,7 +389,7 @@ FakeMemTreeOcc2Factory::FakeMemTreeOcc2Factory(const Schema &schema)
 }
 
 
-FakeMemTreeOcc2Factory::~FakeMemTreeOcc2Factory(void)
+FakeMemTreeOcc2Factory::~FakeMemTreeOcc2Factory()
 {
 }
 

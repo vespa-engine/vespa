@@ -21,31 +21,31 @@ public:
     IndexBuilder(const Schema &schema);
 
     virtual
-    ~IndexBuilder(void);
+    ~IndexBuilder();
 
     virtual void
     startWord(const vespalib::stringref & word) = 0;
 
     virtual void
-    endWord(void) = 0;
+    endWord() = 0;
 
     virtual void
     startDocument(uint32_t docId) = 0;
 
     virtual void
-    endDocument(void) = 0;
+    endDocument() = 0;
 
     virtual void
     startField(uint32_t fieldId) = 0;
 
     virtual void
-    endField(void) = 0;
+    endField() = 0;
 
     virtual void
     startElement(uint32_t elementId, int32_t weight, uint32_t elementLen) = 0;
 
     virtual void
-    endElement(void) = 0;
+    endElement() = 0;
 
     virtual void
     addOcc(const WordDocElementWordPosFeatures &features) = 0;

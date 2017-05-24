@@ -258,7 +258,7 @@ AttributeFile::AttributeFile(const vespalib::string &fileName,
 }
 
 
-AttributeFile::~AttributeFile(void)
+AttributeFile::~AttributeFile()
 {
     Close();
 }

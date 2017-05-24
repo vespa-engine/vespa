@@ -41,7 +41,7 @@ PostingListSearchContextT<DataT>::~PostingListSearchContextT() {}
 
 template <typename DataT>
 void
-PostingListSearchContextT<DataT>::lookupSingle(void)
+PostingListSearchContextT<DataT>::lookupSingle()
 {
     PostingListSearchContext::lookupSingle();
     if (!_pidx.valid())
@@ -82,7 +82,7 @@ PostingListSearchContextT<DataT>::lookupSingle(void)
 
 template <typename DataT>
 size_t
-PostingListSearchContextT<DataT>::countHits(void) const
+PostingListSearchContextT<DataT>::countHits() const
 {
     size_t sum(0);
     for (auto it(_lowerDictItr); it != _upperDictItr; ++it) {
@@ -122,7 +122,7 @@ PostingListSearchContextT<DataT>::fillArray(size_t numDocs)
 
 template <typename DataT>
 void
-PostingListSearchContextT<DataT>::fillBitVector(void)
+PostingListSearchContextT<DataT>::fillBitVector()
 {
     _bitVector = BitVector::create(_docIdLimit);
     BitVector &bv(*_bitVector);
@@ -272,7 +272,7 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
 
 template <typename DataT>
 unsigned int
-PostingListSearchContextT<DataT>::singleHits(void) const
+PostingListSearchContextT<DataT>::singleHits() const
 {
     if (_gbv) {
         // Some inaccuracy is expected, data changes underfeet
@@ -290,7 +290,7 @@ PostingListSearchContextT<DataT>::singleHits(void) const
 
 template <typename DataT>
 unsigned int
-PostingListSearchContextT<DataT>::approximateHits(void) const
+PostingListSearchContextT<DataT>::approximateHits() const
 {
     unsigned int numHits = 0;
     if (_uniqueValues == 0u) {
@@ -362,7 +362,7 @@ PostingListFoldedSearchContextT(const Dictionary &dictionary,
 
 template <typename DataT>
 unsigned int
-PostingListFoldedSearchContextT<DataT>::approximateHits(void) const
+PostingListFoldedSearchContextT<DataT>::approximateHits() const
 {
     unsigned int numHits = 0;
     if (_uniqueValues == 0u) {

@@ -49,18 +49,14 @@ protected:
     uint32_t _idxHeaderLen;
     BitVectorKeyScope _scope;
 
-    uint64_t
-    idxSize(void) const;
-
-    void
-    checkPointWriteCommon(vespalib::nbostream &out);
-
+    uint64_t idxSize() const;
+    void checkPointWriteCommon(vespalib::nbostream &out);
     void syncCommon();
 
 public:
     BitVectorIdxFileWrite(BitVectorKeyScope scope);
 
-    ~BitVectorIdxFileWrite(void);
+    ~BitVectorIdxFileWrite();
 
     /**
      * Checkpoint write.  Used at semi-regular intervals during indexing
@@ -88,13 +84,13 @@ public:
     addWordSingle(uint64_t wordNum, uint32_t numDocs);
 
     void
-    flush(void);
+    flush();
 
     void
-    sync(void);
+    sync();
 
     void
-    close(void);
+    close();
 
     static uint32_t
     getBitVectorLimit(uint32_t docIdLimit)

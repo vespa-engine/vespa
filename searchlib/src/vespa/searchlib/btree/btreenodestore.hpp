@@ -44,7 +44,7 @@ BTreeNodeBufferType<EntryType>::cleanHold(void *buffer,
 template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 BTreeNodeStore<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
-BTreeNodeStore(void)
+BTreeNodeStore()
     : _store(),
       _internalNodeType(MIN_CLUSTERS, RefType::offsetSize()),
       _leafNodeType(MIN_CLUSTERS, RefType::offsetSize())
@@ -58,7 +58,7 @@ BTreeNodeStore(void)
 template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 BTreeNodeStore<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
-~BTreeNodeStore(void)
+~BTreeNodeStore()
 {
     _store.dropBuffers(); // Drop buffers before type handlers are dropped
 }
@@ -68,7 +68,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 std::vector<uint32_t>
 BTreeNodeStore<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
-startCompact(void)
+startCompact()
 {
     std::vector<uint32_t> iToHold =
         _store.startCompact(NODETYPE_INTERNAL);

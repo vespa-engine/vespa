@@ -18,7 +18,7 @@ namespace diskindex
 {
 
 
-DocIdMapping::DocIdMapping(void)
+DocIdMapping::DocIdMapping()
     : _docIdLimit(0u),
       _selector(NULL),
       _selectorId(0)
@@ -27,7 +27,7 @@ DocIdMapping::DocIdMapping(void)
 
 
 void
-DocIdMapping::clear(void)
+DocIdMapping::clear()
 {
     _docIdLimit = 0;
     _selector = NULL;

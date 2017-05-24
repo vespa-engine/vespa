@@ -215,7 +215,7 @@ public:
      * End an element.
      */
     void
-    endElement(void);
+    endElement();
 
 private:
     /**
@@ -305,7 +305,7 @@ private:
     }
 
     void
-    stepWordPos(void)
+    stepWordPos()
     {
         ++_wpos;
     }
@@ -330,7 +330,7 @@ private:
      * @return schema used by this index
      */
     const index::Schema &
-    getSchema(void) const
+    getSchema() const
     {
         return _schema;
     }
@@ -339,14 +339,14 @@ private:
      * Clear internal memory structures.
      */
     void
-    reset(void);
+    reset();
 
     /**
      * Calculate word numbers and replace word references with word
      * numbers in internal memory structures.
      */
     void
-    sortWords(void);
+    sortWords();
 
     void
     moveNotAbortedDocs(uint32_t &dstIdx, uint32_t srcIdx, uint32_t nextTrimIdx);

@@ -35,11 +35,8 @@ class IterateSpeed : public FastOS_Application
     void
     workLoop(int loops, bool enableForward, bool enableBackwards,
              bool enableLambda, int leafSlots);
-
     void usage();
-
-    int
-    Main(void) override;
+    int Main() override;
 };
 
 

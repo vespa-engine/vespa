@@ -77,7 +77,7 @@ DirectoryTraverse::PushRemoveDir(const char *name)
 
 
 void
-DirectoryTraverse::PushPushedDirs(void)
+DirectoryTraverse::PushPushedDirs()
 {
     Name *n;
     while (_pdirHead != NULL) {
@@ -92,7 +92,7 @@ DirectoryTraverse::PushPushedDirs(void)
 
 
 DirectoryTraverse::Name *
-DirectoryTraverse::UnQueueDir(void)
+DirectoryTraverse::UnQueueDir()
 {
     Name *n;
     PushPushedDirs();
@@ -107,7 +107,7 @@ DirectoryTraverse::UnQueueDir(void)
 }
 
 DirectoryTraverse::Name *
-DirectoryTraverse::UnQueueName(void)
+DirectoryTraverse::UnQueueName()
 {
     Name *n;
     if (_nameHead == NULL)
@@ -121,7 +121,7 @@ DirectoryTraverse::UnQueueName(void)
 
 
 void
-DirectoryTraverse::ScanSingleDir(void)
+DirectoryTraverse::ScanSingleDir()
 {
     assert(_nameHead == NULL);
     assert(_nameCount == 0);
@@ -156,7 +156,7 @@ DirectoryTraverse::ScanSingleDir(void)
 
 
 bool
-DirectoryTraverse::NextName(void)
+DirectoryTraverse::NextName()
 {
     delete _curName;
     _curName = NULL;
@@ -177,7 +177,7 @@ DirectoryTraverse::NextName(void)
 
 
 bool
-DirectoryTraverse::NextRemoveDir(void)
+DirectoryTraverse::NextRemoveDir()
 {
     Name *curName;
 
@@ -200,7 +200,7 @@ DirectoryTraverse::NextRemoveDir(void)
 
 
 bool
-DirectoryTraverse::RemoveTree(void)
+DirectoryTraverse::RemoveTree()
 {
     FastOS_StatInfo statInfo;
 
@@ -265,7 +265,7 @@ DirectoryTraverse::DirectoryTraverse(const char *baseDir)
 }
 
 
-DirectoryTraverse::~DirectoryTraverse(void)
+DirectoryTraverse::~DirectoryTraverse()
 {
     free(_fullDirName);
     free(_fullName);

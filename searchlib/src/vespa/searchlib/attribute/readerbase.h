@@ -24,7 +24,7 @@ public:
         return (_idxFileSize - _idxHeaderLen) /sizeof(uint32_t);
     }
 
-    size_t getEnumCount(void) const {
+    size_t getEnumCount() const {
         size_t dataSize(_datFileSize - _datHeaderLen);
         assert((dataSize % sizeof(uint32_t)) == 0);
         return dataSize / sizeof(uint32_t);

@@ -48,7 +48,7 @@ BitVectorIdxFileWrite::BitVectorIdxFileWrite(BitVectorKeyScope scope)
 }
 
 
-BitVectorIdxFileWrite::~BitVectorIdxFileWrite(void)
+BitVectorIdxFileWrite::~BitVectorIdxFileWrite()
 {
     // No implicit close() call, but cleanup memory allocations.
     delete _idxFile;
@@ -56,7 +56,7 @@ BitVectorIdxFileWrite::~BitVectorIdxFileWrite(void)
 
 
 uint64_t
-BitVectorIdxFileWrite::idxSize(void) const
+BitVectorIdxFileWrite::idxSize() const
 {
     return _idxHeaderLen +
         static_cast<int64_t>(_numKeys) * sizeof(BitVectorWordSingleKey);
@@ -186,7 +186,7 @@ BitVectorIdxFileWrite::addWordSingle(uint64_t wordNum, uint32_t numDocs)
 
 
 void
-BitVectorIdxFileWrite::flush(void)
+BitVectorIdxFileWrite::flush()
 {
     _idxFile->Flush();
 
@@ -204,7 +204,7 @@ BitVectorIdxFileWrite::syncCommon()
 
 
 void
-BitVectorIdxFileWrite::sync(void)
+BitVectorIdxFileWrite::sync()
 {
     flush();
     syncCommon();
@@ -212,7 +212,7 @@ BitVectorIdxFileWrite::sync(void)
 
 
 void
-BitVectorIdxFileWrite::close(void)
+BitVectorIdxFileWrite::close()
 {
     if (_idxFile != NULL) {
         if (_idxFile->IsOpened()) {

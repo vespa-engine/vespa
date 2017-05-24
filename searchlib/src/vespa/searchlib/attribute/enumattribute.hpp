@@ -75,7 +75,7 @@ EnumAttribute<B>::fixupEnumRefCounts(
 
 template <typename B>
 uint64_t
-EnumAttribute<B>::getUniqueValueCount(void) const
+EnumAttribute<B>::getUniqueValueCount() const
 {
     return _enumStore.getNumUniques();
 }

@@ -41,7 +41,7 @@ RawBuf::RawBuf(char *start, size_t size)
 }
 
 
-RawBuf::~RawBuf(void)
+RawBuf::~RawBuf()
 {
     if (_bufStart != _initialBufStart)
         free(_bufStart);
@@ -113,7 +113,7 @@ RawBuf::appendCompressedNumber(int64_t n)
  * Has the entire contents of the buffer been used up, i.e. freed?
  */
 bool
-RawBuf::IsEmpty(void)
+RawBuf::IsEmpty()
 {
     return _bufFillPos == _bufDrainPos;
 }
@@ -159,7 +159,7 @@ RawBuf::preAlloc(size_t len)
 
 
 void
-RawBuf::Compact(void)
+RawBuf::Compact()
 {
     if (_bufDrainPos == _bufStart)
         return;
@@ -171,7 +171,7 @@ RawBuf::Compact(void)
 
 
 void
-RawBuf::Reuse(void)
+RawBuf::Reuse()
 {
     if (static_cast<size_t>(_bufEnd - _bufStart) > _initialSize * 4) {
         free(_bufStart);

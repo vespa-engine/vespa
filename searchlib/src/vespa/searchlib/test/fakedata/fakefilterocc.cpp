@@ -44,40 +44,40 @@ FakeFilterOcc::FakeFilterOcc(const FakeWord &fw)
 }
 
 
-FakeFilterOcc::~FakeFilterOcc(void)
+FakeFilterOcc::~FakeFilterOcc()
 {
 }
 
 
 void
-FakeFilterOcc::forceLink(void)
+FakeFilterOcc::forceLink()
 {
 }
 
 
 size_t
-FakeFilterOcc::bitSize(void) const
+FakeFilterOcc::bitSize() const
 {
     return 32 * _uncompressed.size();
 }
 
 
 bool
-FakeFilterOcc::hasWordPositions(void) const
+FakeFilterOcc::hasWordPositions() const
 {
     return false;
 }
 
 
 int
-FakeFilterOcc::lowLevelSinglePostingScan(void) const
+FakeFilterOcc::lowLevelSinglePostingScan() const
 {
     return 0;
 }
 
 
 int
-FakeFilterOcc::lowLevelSinglePostingScanUnpack(void) const
+FakeFilterOcc::lowLevelSinglePostingScanUnpack() const
 {
     return 0;
 }
@@ -116,7 +116,7 @@ public:
                                const uint32_t *arrEnd,
                                const fef::TermFieldMatchDataArray &matchData);
 
-    ~FakeFilterOccArrayIterator(void);
+    ~FakeFilterOccArrayIterator();
 
     void doUnpack(uint32_t docId) override;
     void doSeek(uint32_t docId) override;
@@ -175,7 +175,7 @@ FakeFilterOccArrayIterator::initRange(uint32_t begin, uint32_t end)
 }
 
 
-FakeFilterOccArrayIterator::~FakeFilterOccArrayIterator(void)
+FakeFilterOccArrayIterator::~FakeFilterOccArrayIterator()
 {
 }
 

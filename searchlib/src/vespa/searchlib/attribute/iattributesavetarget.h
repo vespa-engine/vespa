@@ -22,7 +22,7 @@ public:
     IAttributeSaveTarget() : _header() {}
     void setHeader(const attribute::AttributeHeader & header) { _header = header; }
 
-    bool getEnumerated(void) const { return _header.getEnumerated(); }
+    bool getEnumerated() const { return _header.getEnumerated(); }
 
     /**
      * Setups this saveTarget before any data is written. Returns true

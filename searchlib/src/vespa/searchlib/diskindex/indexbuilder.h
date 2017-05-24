@@ -36,11 +36,11 @@ private:
 
     const Schema &_schema;	// Ptr to allow being std::vector member
 
-    static uint32_t noDocId(void) {
+    static uint32_t noDocId() {
         return std::numeric_limits<uint32_t>::max();
     }
 
-    static uint64_t noWordNumHigh(void) {
+    static uint64_t noWordNumHigh() {
         return std::numeric_limits<uint64_t>::max();
     }
 
@@ -49,16 +49,16 @@ public:
 
     // schema argument must live until indexbuilder has been deleted.
     IndexBuilder(const Schema &schema); 
-    virtual ~IndexBuilder(void);
+    virtual ~IndexBuilder();
 
-    virtual void startWord(const vespalib::stringref &word) override; 
-    virtual void endWord(void) override; 
-    virtual void startDocument(uint32_t docId) override; 
-    virtual void endDocument(void) override; 
-    virtual void startField(uint32_t fieldId) override; 
-    virtual void endField(void) override; 
+    virtual void startWord(const vespalib::stringref &word) override;
+    virtual void endWord() override;
+    virtual void startDocument(uint32_t docId) override;
+    virtual void endDocument() override;
+    virtual void startField(uint32_t fieldId) override;
+    virtual void endField() override;
     virtual void startElement(uint32_t elementId, int32_t weight, uint32_t elementLen) override;
-    virtual void endElement(void) override; 
+    virtual void endElement() override;
     virtual void addOcc(const WordDocElementWordPosFeatures &features) override;
 
     // TODO: methods for attribute vectors.
@@ -74,7 +74,7 @@ public:
          const TuneFileIndexing &tuneFileIndexing,
          const search::common::FileHeaderContext &fileHandleContext);
 
-    void close(void);
+    void close();
 };
 
 } // namespace diskindex

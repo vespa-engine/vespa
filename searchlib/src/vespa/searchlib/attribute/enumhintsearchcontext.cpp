@@ -28,7 +28,7 @@ EnumHintSearchContext(const EnumStoreDictBase &dictionary,
 }
 
 
-EnumHintSearchContext::~EnumHintSearchContext(void)
+EnumHintSearchContext::~EnumHintSearchContext()
 {
 }
 
@@ -67,7 +67,7 @@ EnumHintSearchContext::createPostingIterator(TermFieldMatchData *matchData,
 
 
 unsigned int
-EnumHintSearchContext::approximateHits(void) const
+EnumHintSearchContext::approximateHits() const
 {
     return (_uniqueValues == 0u)
         ? 0u

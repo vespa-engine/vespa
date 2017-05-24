@@ -13,7 +13,7 @@ struct CacheStats {
     size_t elements;
     size_t memory_used;
 
-    CacheStats(void)
+    CacheStats()
         : hits(0),
           misses(0),
           elements(0),

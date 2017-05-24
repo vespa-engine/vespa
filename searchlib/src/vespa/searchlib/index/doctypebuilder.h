@@ -37,7 +37,7 @@ public:
                           const Schema::CollectionType &collectionType);
 
     public:
-        UriField(void);
+        UriField();
 
         bool broken(const Schema &schema, const Schema::CollectionType &collectionType) const;
         bool valid(const Schema &schema, const Schema::CollectionType &collectionType) const;

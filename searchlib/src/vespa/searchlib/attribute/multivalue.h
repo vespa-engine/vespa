@@ -27,7 +27,7 @@ public:
     bool operator ==(const Value<T> & rhs) const { return _v == rhs._v; }
     bool operator <(const Value<T> & rhs) const { return _v < rhs._v; }
     bool operator >(const Value<T> & rhs) const { return _v > rhs._v; }
-    static bool hasWeight(void) { return false; }
+    static bool hasWeight() { return false; }
 
     static const bool _hasWeight = false;
 private:
@@ -50,7 +50,7 @@ public:
     bool operator==(const WeightedValue<T> & rhs) const { return _v == rhs._v; }
     bool operator <(const WeightedValue<T> & rhs) const { return _v < rhs._v; }
     bool operator >(const WeightedValue<T> & rhs) const { return _v > rhs._v; }
-    static bool hasWeight(void) { return true; }
+    static bool hasWeight() { return true; }
 
     static const bool _hasWeight = true;
 private:

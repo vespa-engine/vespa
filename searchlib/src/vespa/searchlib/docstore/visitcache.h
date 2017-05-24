@@ -117,7 +117,7 @@ private:
         bool read(const KeySet &key, CompressedBlobSet &blobs) const;
         void write(const KeySet &, const CompressedBlobSet &) { }
         void erase(const KeySet &) { }
-        const document::CompressionConfig &getCompression(void) const { return _compression; }
+        const document::CompressionConfig &getCompression() const { return _compression; }
     private:
         IDataStore                        &_backingStore;
         const document::CompressionConfig  _compression;

@@ -30,12 +30,7 @@ public:
     typedef T Type;
     static uint32_t size(Type)  { return fixedSize(); }
     static uint32_t fixedSize() { return sizeof(T); }
-
-    static bool
-    hasFold(void)
-    {
-        return false;
-    }
+    static bool hasFold() { return false; }
 };
 
 /**
@@ -47,12 +42,7 @@ public:
     typedef const char * Type;
     static uint32_t size(Type value) { return strlen(value) + fixedSize(); }
     static uint32_t fixedSize()      { return 1; }
-
-    static bool
-    hasFold(void)
-    {
-        return true;
-    }
+    static bool hasFold() { return true; }
 };
 
 

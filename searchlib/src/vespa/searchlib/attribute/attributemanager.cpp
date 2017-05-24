@@ -108,7 +108,7 @@ AttributeManager::setBaseDir(const string & base)
 }
 
 
-AttributeManager::~AttributeManager(void)
+AttributeManager::~AttributeManager()
 {
     _attributes.clear();
     LOG(debug,

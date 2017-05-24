@@ -105,7 +105,7 @@ FeatureStore::FeatureStore(const Schema &schema)
 }
 
 
-FeatureStore::~FeatureStore(void)
+FeatureStore::~FeatureStore()
 {
     _store.dropBuffers();
 }

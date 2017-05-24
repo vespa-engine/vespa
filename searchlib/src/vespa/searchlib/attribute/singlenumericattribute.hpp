@@ -22,7 +22,7 @@ SingleValueNumericAttribute(const vespalib::string & baseFileName, const Attribu
 { }
 
 template <typename B>
-SingleValueNumericAttribute<B>::~SingleValueNumericAttribute(void)
+SingleValueNumericAttribute<B>::~SingleValueNumericAttribute()
 {
     getGenerationHolder().clearHoldLists();
 }

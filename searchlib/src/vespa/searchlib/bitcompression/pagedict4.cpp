@@ -246,7 +246,7 @@ PageDict4SSWriter::PageDict4SSWriter(SSEC &sse)
 {
 }
 
-PageDict4SSWriter::~PageDict4SSWriter(void)
+PageDict4SSWriter::~PageDict4SSWriter()
 {
 }
 
@@ -355,7 +355,7 @@ addOverflowCounts(const vespalib::stringref &word,
 
 
 void
-PageDict4SSWriter::flush(void)
+PageDict4SSWriter::flush()
 {
 }
 
@@ -454,13 +454,13 @@ PageDict4SPWriter::setup()
 }
 
 
-PageDict4SPWriter::~PageDict4SPWriter(void)
+PageDict4SPWriter::~PageDict4SPWriter()
 {
 }
 
 
 void
-PageDict4SPWriter::flushPage(void)
+PageDict4SPWriter::flushPage()
 {
     assert(_l3Entries > 0);
     assert(_l3Size > 0);
@@ -523,7 +523,7 @@ PageDict4SPWriter::flushPage(void)
 
 
 void
-PageDict4SPWriter::flush(void)
+PageDict4SPWriter::flush()
 {
     if (!empty()) {
         flushPage();
@@ -537,7 +537,7 @@ PageDict4SPWriter::flush(void)
 
 
 void
-PageDict4SPWriter::resetPage(void)
+PageDict4SPWriter::resetPage()
 {
     _eL3.setupWrite(_wcL3);
     _eL4.setupWrite(_wcL4);
@@ -837,13 +837,13 @@ PageDict4PWriter::setup()
 }
 
 
-PageDict4PWriter::~PageDict4PWriter(void)
+PageDict4PWriter::~PageDict4PWriter()
 {
 }
 
 
 void
-PageDict4PWriter::flushPage(void)
+PageDict4PWriter::flushPage()
 {
     assert(_countsEntries > 0);
     assert(_countsSize > 0);
@@ -904,7 +904,7 @@ PageDict4PWriter::flushPage(void)
 
 
 void
-PageDict4PWriter::flush(void)
+PageDict4PWriter::flush()
 {
     if (!empty()) {
         flushPage();
@@ -918,7 +918,7 @@ PageDict4PWriter::flush(void)
 
 
 void
-PageDict4PWriter::resetPage(void)
+PageDict4PWriter::resetPage()
 {
     _eCounts.setupWrite(_wcCounts);
     _eL1.setupWrite(_wcL1);
@@ -1195,7 +1195,7 @@ PageDict4PWriter::checkPointRead(vespalib::nbostream &in)
 
 
 PageDict4SSLookupRes::
-PageDict4SSLookupRes(void)
+PageDict4SSLookupRes()
     : _l6Word(),
       _lastWord(),
       _l6StartOffset(),
@@ -1211,7 +1211,7 @@ PageDict4SSLookupRes(void)
 
 
 PageDict4SSLookupRes::
-~PageDict4SSLookupRes(void)
+~PageDict4SSLookupRes()
 {
 }
 
@@ -1246,7 +1246,7 @@ PageDict4SSReader(ComprBuffer &cb,
 
 
 PageDict4SSReader::
-~PageDict4SSReader(void)
+~PageDict4SSReader()
 {
 }
 
@@ -1689,7 +1689,7 @@ PageDict4SSReader::checkPointRead(vespalib::nbostream &in)
 
 
 PageDict4SPLookupRes::
-PageDict4SPLookupRes(void)
+PageDict4SPLookupRes()
     : _l3Word(),
       _lastWord(),
       _l3StartOffset(),
@@ -1700,7 +1700,7 @@ PageDict4SPLookupRes(void)
 
 
 PageDict4SPLookupRes::
-~PageDict4SPLookupRes(void)
+~PageDict4SPLookupRes()
 {
 }
 
@@ -1888,7 +1888,7 @@ lookup(const SSReader &ssReader,
 
 
 PageDict4PLookupRes::
-PageDict4PLookupRes(void)
+PageDict4PLookupRes()
     : _counts(),
       _startOffset(),
       _wordNum(1u),
@@ -1899,7 +1899,7 @@ PageDict4PLookupRes(void)
 
 
 PageDict4PLookupRes::
-~PageDict4PLookupRes(void)
+~PageDict4PLookupRes()
 {
 }
 
@@ -2132,13 +2132,13 @@ PageDict4Reader::setup()
 }
 
 
-PageDict4Reader::~PageDict4Reader(void)
+PageDict4Reader::~PageDict4Reader()
 {
 }
 
 
 void
-PageDict4Reader::setupPage(void)
+PageDict4Reader::setupPage()
 {
 #if 0
     LOG(info,
@@ -2224,7 +2224,7 @@ PageDict4Reader::setupPage(void)
 
 
 void
-PageDict4Reader::setupSPage(void)
+PageDict4Reader::setupSPage()
 {
 #if 0
     LOG(info, "setupSPage(%d),", (int) _spd.getReadOffset());

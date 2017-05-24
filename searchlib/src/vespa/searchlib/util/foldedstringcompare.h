@@ -9,7 +9,7 @@ namespace search {
 class FoldedStringCompare
 {
 public:
-    FoldedStringCompare(void) {}
+    FoldedStringCompare() {}
 
     /**
      * count number of UCS-4 characters in utf8 string

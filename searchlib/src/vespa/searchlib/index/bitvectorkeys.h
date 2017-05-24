@@ -17,7 +17,7 @@ public:
     uint32_t _numDocs;
     uint32_t _pad;
 
-    BitVectorWordSingleKey(void)
+    BitVectorWordSingleKey()
         : _wordNum(0),
           _numDocs(0),
           _pad(0)

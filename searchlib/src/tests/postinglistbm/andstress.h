@@ -22,9 +22,9 @@ namespace postinglistbm
 class AndStress
 {
 public:
-    AndStress(void);
+    AndStress();
 
-    ~AndStress(void);
+    ~AndStress();
 
     void
     run(search::Rand48 &rnd,

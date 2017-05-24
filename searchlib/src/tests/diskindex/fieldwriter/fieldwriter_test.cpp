@@ -62,22 +62,19 @@ uint32_t minChunkDocs = 262144;
 
 vespalib::string dirprefix = "index/";
 
-void
-disableSkip(void)
+void disableSkip()
 {
     minSkipDocs = 10000000;
     minChunkDocs = 1 << 30;
 }
 
-void
-enableSkip(void)
+void enableSkip()
 {
     minSkipDocs = 64;
     minChunkDocs = 1 << 30;
 }
 
-void
-enableSkipChunks(void)
+void enableSkipChunks()
 {
     minSkipDocs = 64;
     minChunkDocs = 9000;	// Unrealistic low for testing
@@ -110,17 +107,17 @@ public:
     search::Rand48 _rnd;
 
 private:
-    void Usage(void);
+    void Usage();
     void testFake(const std::string &postingType, FakeWord &fw);
 public:
-    FieldWriterTest(void);
-    ~FieldWriterTest(void);
-    int Main(void) override;
+    FieldWriterTest();
+    ~FieldWriterTest();
+    int Main() override;
 };
 
 
 void
-FieldWriterTest::Usage(void)
+FieldWriterTest::Usage()
 {
     printf("fieldwriter_test "
            "[-c <commonDocFreq>] "
@@ -130,7 +127,7 @@ FieldWriterTest::Usage(void)
 }
 
 
-FieldWriterTest::FieldWriterTest(void)
+FieldWriterTest::FieldWriterTest()
     : _verbose(false),
       _numDocs(3000000),
       _commonDocFreq(50000),
@@ -142,7 +139,7 @@ FieldWriterTest::FieldWriterTest(void)
 }
 
 
-FieldWriterTest::~FieldWriterTest(void)
+FieldWriterTest::~FieldWriterTest()
 {
 }
 
@@ -197,7 +194,7 @@ WrappedFieldWriter::WrappedFieldWriter(const vespalib::string &namepref,
 
 
 void
-WrappedFieldWriter::earlyOpen(void)
+WrappedFieldWriter::earlyOpen()
 {
     TuneFileSeqWrite tuneFileWrite;
     _fieldWriter.reset(new  FieldWriter(_docIdLimit, _numWordIds));
@@ -209,7 +206,7 @@ WrappedFieldWriter::earlyOpen(void)
 
 
 void
-WrappedFieldWriter::lateOpen(void)
+WrappedFieldWriter::lateOpen()
 {
     TuneFileSeqWrite tuneFileWrite;
     DummyFileHeaderContext fileHeaderContext;
@@ -219,7 +216,7 @@ WrappedFieldWriter::lateOpen(void)
 
 
 void
-WrappedFieldWriter::open(void)
+WrappedFieldWriter::open()
 {
     earlyOpen();
     lateOpen();
@@ -227,7 +224,7 @@ WrappedFieldWriter::open(void)
 
 
 void
-WrappedFieldWriter::close(void)
+WrappedFieldWriter::close()
 {
     _fieldWriter->close();
     _fieldWriter.reset();
@@ -235,7 +232,7 @@ WrappedFieldWriter::close(void)
 
 
 void
-WrappedFieldWriter::writeCheckPoint(void)
+WrappedFieldWriter::writeCheckPoint()
 {
     CheckPointFile chkptfile("chkpt");
     nbostream out;
@@ -260,7 +257,7 @@ WrappedFieldWriter::readCheckPoint(bool first)
 
 
 void
-WrappedFieldWriter::checkPoint(void)
+WrappedFieldWriter::checkPoint()
 {
     writeCheckPoint();
     _fieldWriter.reset();
@@ -288,28 +285,14 @@ public:
                       uint32_t numWordIds,
                       uint32_t docIdLimit);
 
-    ~WrappedFieldReader(void);
-
-    void
-    earlyOpen(void);
-
-    void
-    lateOpen(void);
-
-    void
-    open(void);
-
-    void
-    close(void);
-
-    void
-    writeCheckPoint(void);
-
-    void
-    readCheckPoint(bool first);
-
-    virtual void
-    checkPoint(void) override;
+    ~WrappedFieldReader();
+    void earlyOpen();
+    void lateOpen();
+    void open();
+    void close();
+    void writeCheckPoint();
+    void readCheckPoint(bool first);
+    virtual void checkPoint() override;
 };
 
 
@@ -336,13 +319,13 @@ WrappedFieldReader::WrappedFieldReader(const vespalib::string &namepref,
 }
 
 
-WrappedFieldReader::~WrappedFieldReader(void)
+WrappedFieldReader::~WrappedFieldReader()
 {
 }
 
 
 void
-WrappedFieldReader::earlyOpen(void)
+WrappedFieldReader::earlyOpen()
 {
     TuneFileSeqRead tuneFileRead;
     _fieldReader.reset(new FieldReader());
@@ -351,7 +334,7 @@ WrappedFieldReader::earlyOpen(void)
 
 
 void
-WrappedFieldReader::lateOpen(void)
+WrappedFieldReader::lateOpen()
 {
     TuneFileSeqRead tuneFileRead;
     _wmap.setup(_numWordIds);
@@ -362,7 +345,7 @@ WrappedFieldReader::lateOpen(void)
 
 
 void
-WrappedFieldReader::open(void)
+WrappedFieldReader::open()
 {
     earlyOpen();
     lateOpen();
@@ -370,7 +353,7 @@ WrappedFieldReader::open(void)
 
 
 void
-WrappedFieldReader::close(void)
+WrappedFieldReader::close()
 {
     _fieldReader->close();
     _fieldReader.reset();
@@ -378,7 +361,7 @@ WrappedFieldReader::close(void)
 
 
 void
-WrappedFieldReader::writeCheckPoint(void)
+WrappedFieldReader::writeCheckPoint()
 {
     CheckPointFile chkptfile("chkpt");
     nbostream out;
@@ -403,7 +386,7 @@ WrappedFieldReader::readCheckPoint(bool first)
 
 
 void
-WrappedFieldReader::checkPoint(void)
+WrappedFieldReader::checkPoint()
 {
     writeCheckPoint();
     _fieldReader.reset();
@@ -898,7 +881,7 @@ testFieldWriterVariantsWithHighLids(FakeWordSet &wordSet, uint32_t docIdLimit,
 }
 
 int
-FieldWriterTest::Main(void)
+FieldWriterTest::Main()
 {
     int argi;
     char c;

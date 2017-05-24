@@ -57,7 +57,7 @@ ZcBuf::clearReserve(size_t reserveSize)
 
 
 void
-ZcBuf::expand(void)
+ZcBuf::expand()
 {
     size_t newSize = _mallocSize * 2;
     size_t oldSize = size();
@@ -138,7 +138,7 @@ Zc4PostingSeqRead(PostingListCountFileSeqRead *countFile)
 }
 
 
-Zc4PostingSeqRead::~Zc4PostingSeqRead(void)
+Zc4PostingSeqRead::~Zc4PostingSeqRead()
 {
 }
 
@@ -302,7 +302,7 @@ Zc4PostingSeqRead::checkPointRead(nbostream &in)
 
 
 void
-Zc4PostingSeqRead::readWordStartWithSkip(void)
+Zc4PostingSeqRead::readWordStartWithSkip()
 {
     typedef FeatureEncodeContextBE EC;
     DecodeContext &d = *_decodeContext;
@@ -486,7 +486,7 @@ Zc4PostingSeqRead::readWordStartWithSkip(void)
 
 
 void
-Zc4PostingSeqRead::readWordStart(void)
+Zc4PostingSeqRead::readWordStart()
 {
     typedef FeatureEncodeContextBE EC;
     UC64_DECODECONTEXT_CONSTRUCTOR(o, _decodeContext->_);
@@ -591,7 +591,7 @@ Zc4PostingSeqRead::open(const vespalib::string &name,
 
 
 bool
-Zc4PostingSeqRead::close(void)
+Zc4PostingSeqRead::close()
 {
     _readContext.dropComprBuf();
     _file.Close();
@@ -630,7 +630,7 @@ Zc4PostingSeqRead::getFeatureParams(PostingListParams &params)
 
 
 void
-Zc4PostingSeqRead::readHeader(void)
+Zc4PostingSeqRead::readHeader()
 {
     FeatureDecodeContextBE &d = *_decodeContext;
     const vespalib::string &myId = _dynamicK ? myId5 : myId4;
@@ -672,14 +672,14 @@ Zc4PostingSeqRead::readHeader(void)
 
 
 const vespalib::string &
-Zc4PostingSeqRead::getIdentifier(void)
+Zc4PostingSeqRead::getIdentifier()
 {
     return myId4;
 }
 
 
 uint64_t
-Zc4PostingSeqRead::getCurrentPostingOffset(void) const
+Zc4PostingSeqRead::getCurrentPostingOffset() const
 {
     FeatureDecodeContextBE &d = *_decodeContext;
     return d.getReadOffset() - _headerBitLen;
@@ -743,7 +743,7 @@ Zc4PostingSeqWrite(PostingListCountFileSeqWrite *countFile)
 }
 
 
-Zc4PostingSeqWrite::~Zc4PostingSeqWrite(void)
+Zc4PostingSeqWrite::~Zc4PostingSeqWrite()
 {
 }
 
@@ -765,7 +765,7 @@ writeDocIdAndFeatures(const DocIdAndFeatures &features)
 
 
 void
-Zc4PostingSeqWrite::flushWord(void)
+Zc4PostingSeqWrite::flushWord()
 {
     if (__builtin_expect(_docIds.size() >= _minSkipDocs ||
                          !_counts._segments.empty(), false)) {
@@ -904,7 +904,7 @@ Zc4PostingSeqWrite::makeHeader(const FileHeaderContext &fileHeaderContext)
 
 
 void
-Zc4PostingSeqWrite::updateHeader(void)
+Zc4PostingSeqWrite::updateHeader()
 {
     vespalib::FileHeader h;
     FastOS_File f;
@@ -978,7 +978,7 @@ Zc4PostingSeqWrite::open(const vespalib::string &name,
 
 
 bool
-Zc4PostingSeqWrite::close(void)
+Zc4PostingSeqWrite::close()
 {
     EncodeContext &e = _encodeContext;
 
@@ -1059,7 +1059,7 @@ getFeatureParams(PostingListParams &params)
 
 
 void
-Zc4PostingSeqWrite::flushChunk(void)
+Zc4PostingSeqWrite::flushChunk()
 {
     /* TODO: Flush chunk and prepare for new (possible short) chunk  */
     flushWordWithSkip(true);
@@ -1072,7 +1072,7 @@ Zc4PostingSeqWrite::flushChunk(void)
 
 
 void
-Zc4PostingSeqWrite::calcSkipInfo(void)
+Zc4PostingSeqWrite::calcSkipInfo()
 {
     uint32_t lastDocId = 0u;
     uint32_t lastL1SkipDocId = 0u;
@@ -1322,7 +1322,7 @@ Zc4PostingSeqWrite::flushWordWithSkip(bool hasMore)
 
 
 void
-Zc4PostingSeqWrite::flushWordNoSkip(void)
+Zc4PostingSeqWrite::flushWordNoSkip()
 {
     // Too few document ids for skip info.
     assert(_docIds.size() < _minSkipDocs && _counts._segments.empty());
@@ -1357,7 +1357,7 @@ Zc4PostingSeqWrite::flushWordNoSkip(void)
 
 
 void
-Zc4PostingSeqWrite::resetWord(void)
+Zc4PostingSeqWrite::resetWord()
 {
     _docIds.clear();
     _encodeFeatures->setupWrite(_featureWriteContext);
@@ -1417,7 +1417,7 @@ readDocIdAndFeatures(DocIdAndFeatures &features)
 
 
 const vespalib::string &
-ZcPostingSeqRead::getIdentifier(void)
+ZcPostingSeqRead::getIdentifier()
 {
     return myId5;
 }
@@ -1431,7 +1431,7 @@ ZcPostingSeqWrite::ZcPostingSeqWrite(PostingListCountFileSeqWrite *countFile)
 
 
 void
-ZcPostingSeqWrite::flushWordNoSkip(void)
+ZcPostingSeqWrite::flushWordNoSkip()
 {
     // Too few document ids for skip info.
     assert(_docIds.size() < _minSkipDocs && _counts._segments.empty());

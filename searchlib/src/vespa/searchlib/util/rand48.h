@@ -21,7 +21,7 @@ public:
         _state = ((static_cast<uint64_t>(seed & 0xffffffffu)) << 16) + 0x330e;
     }
 
-    Rand48(void)
+    Rand48()
         : _state(0)
     {
         srand48(0x1234abcd);

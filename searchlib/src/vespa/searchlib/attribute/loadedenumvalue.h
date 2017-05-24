@@ -49,7 +49,7 @@ public:
         }
     };
 
-    LoadedEnumAttribute(void)
+    LoadedEnumAttribute()
         : _enum(0),
           _docId(0),
           _weight(1)
@@ -65,23 +65,9 @@ public:
     {
     }
         
-    uint32_t
-    getEnum(void) const
-    {
-        return _enum;
-    }
-
-    uint32_t
-    getDocId(void) const
-    {
-        return _docId;
-    }
-
-    int32_t
-    getWeight(void) const
-    {
-        return _weight;
-    }
+    uint32_t getEnum() const  { return _enum; }
+    uint32_t getDocId() const { return _docId; }
+    int32_t getWeight() const { return _weight; }
 };
     
 typedef vespalib::Array<LoadedEnumAttribute> LoadedEnumAttributeVector;

@@ -104,7 +104,7 @@ private:
     int         _mmapFlags;
     int         _advise;
 public:
-    TuneFileRandRead(void)
+    TuneFileRandRead()
         : _tuneControl(NORMAL),
           _mmapFlags(0),
           _advise(0)
@@ -163,7 +163,7 @@ public:
     TuneFileSeqRead _read;
     TuneFileSeqWrite _write;
 
-    TuneFileIndexing(void) : _read(), _write() {}
+    TuneFileIndexing() : _read(), _write() {}
 
     TuneFileIndexing(const TuneFileSeqRead &r, const TuneFileSeqWrite &w) : _read(r), _write(w) { }
 
@@ -222,7 +222,7 @@ class TuneFileAttributes
 public:
     TuneFileSeqWrite _write;
 
-    TuneFileAttributes(void) : _write() { }
+    TuneFileAttributes() : _write() { }
 
     bool operator==(const TuneFileAttributes &rhs) const {
         return _write == rhs._write;
@@ -244,7 +244,7 @@ public:
     TuneFileSeqWrite _write;
     TuneFileRandRead _randRead;
 
-    TuneFileSummary(void) : _seqRead(), _write(), _randRead() { }
+    TuneFileSummary() : _seqRead(), _write(), _randRead() { }
 
     bool operator==(const TuneFileSummary &rhs) const {
         return _seqRead == rhs._seqRead &&

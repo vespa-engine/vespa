@@ -52,7 +52,7 @@ PostingListParams::getStr(const vespalib::string &key) const
 
 
 void
-PostingListParams::clear(void)
+PostingListParams::clear()
 {
     _map.clear();
 }

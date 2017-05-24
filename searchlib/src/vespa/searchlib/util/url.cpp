@@ -195,7 +195,7 @@ URL::URL(const unsigned char *url, size_t len) :
 
 
 void
-URL::Reset(void)
+URL::Reset()
 {
     _gotCompleteURL = false;
 
@@ -410,7 +410,7 @@ URL::SetURL(const unsigned char *url, size_t length)
 }
 
 bool
-URL::IsBaseURL(void) const
+URL::IsBaseURL() const
 {
     return (_scheme[0] != '\0' &&
             _host[0] != '\0' &&
@@ -494,7 +494,7 @@ URL::ContextName(URL_CONTEXT ctx)
 }
 
 void
-URL::Dump(void)
+URL::Dump()
 {
     printf("URL: '%s'\n", _url);
 

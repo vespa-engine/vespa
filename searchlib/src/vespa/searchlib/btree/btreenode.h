@@ -134,7 +134,7 @@ public:
         (void) data;
     }
 
-    static bool hasData(void) { return false; }
+    static bool hasData() { return false; }
 };
 
 
@@ -159,7 +159,7 @@ public:
     {}
 
     void setData(const DataT &data) { _data = data; }
-    const DataT &getData(void) const { return _data; }
+    const DataT &getData() const { return _data; }
 
     /**
      * This operator only works when using direct keys.  References to
@@ -189,7 +189,7 @@ public:
     }
 
     void setData(const BTreeNoLeafData &data) { (void) data; }
-    const BTreeNoLeafData &getData(void) const { return BTreeNoLeafData::_instance; }
+    const BTreeNoLeafData &getData() const { return BTreeNoLeafData::_instance; }
 
     /**
      * This operator only works when using direct keys.  References to

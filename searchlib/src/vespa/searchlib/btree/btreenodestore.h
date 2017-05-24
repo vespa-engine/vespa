@@ -76,9 +76,9 @@ private:
     BTreeNodeBufferType<LeafNodeType> _leafNodeType;
 
 public:
-    BTreeNodeStore(void);
+    BTreeNodeStore();
 
-    ~BTreeNodeStore(void);
+    ~BTreeNodeStore();
 
     void
     disableFreeLists() {
@@ -207,7 +207,7 @@ public:
     }
 
     std::vector<uint32_t>
-    startCompact(void);
+    startCompact();
 
     void
     finishCompact(const std::vector<uint32_t> &toHold);
@@ -231,7 +231,7 @@ public:
     }
 
     void
-    clearHoldLists(void)
+    clearHoldLists()
     {
         _store.clearHoldLists();
     }

@@ -100,7 +100,7 @@ public:
      * Get current state generation (bumped whenever new state is written).
      */
     int
-    getGen(void) const;
+    getGen() const;
 };
 
 }

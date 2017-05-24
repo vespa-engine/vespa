@@ -104,7 +104,7 @@ public:
     // Pass on hold list management to underlying store
     void transferHoldLists(generation_t generation);
     void trimHoldLists(generation_t firstUsed);
-    vespalib::GenerationHolder &getGenerationHolder(void) { return _store.getGenerationHolder(); }
+    vespalib::GenerationHolder &getGenerationHolder() { return _store.getGenerationHolder(); }
     void setInitializing(bool initializing) { _store.setInitializing(initializing); }
     void freeze();
     uint32_t getNumUniques() const;

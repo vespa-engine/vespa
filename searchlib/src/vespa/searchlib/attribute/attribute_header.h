@@ -59,10 +59,10 @@ public:
     bool hasWeightedSetType() const;
     uint32_t getNumDocs() const { return _numDocs; }
     size_t getFixedWidth() const { return _fixedWidth; }
-    uint64_t getUniqueValueCount(void) const { return _uniqueValueCount; }
-    uint64_t getTotalValueCount(void) const { return _totalValueCount; }
-    bool getEnumerated(void) const { return _enumerated; }
-    uint64_t getCreateSerialNum(void) const { return _createSerialNum; }
+    uint64_t getUniqueValueCount() const { return _uniqueValueCount; }
+    uint64_t getTotalValueCount() const { return _totalValueCount; }
+    bool getEnumerated() const { return _enumerated; }
+    uint64_t getCreateSerialNum() const { return _createSerialNum; }
     uint32_t getVersion() const  { return _version; }
     const PersistentPredicateParams &getPredicateParams() const { return _predicateParams; }
     bool getPredicateParamsSet() const { return _predicateParamsSet; }

@@ -11,7 +11,7 @@ namespace search {
 class ComprBuffer
 {
 private:
-    void allocComprBuf(void);
+    void allocComprBuf();
 public:
     void *_comprBuf;
     size_t _comprBufSize;

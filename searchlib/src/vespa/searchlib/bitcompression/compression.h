@@ -1136,7 +1136,7 @@ public:
     // minus sizeof uint64_t.  Then shifted left by 3 to represent bits.
     uint64_t _fileReadBias;
 
-    DecodeContext64Base(void)
+    DecodeContext64Base()
         : search::ComprFileDecodeContext(),
           _valI(NULL),
           _valE(NULL),
@@ -1167,7 +1167,7 @@ public:
     }
 
     virtual
-    ~DecodeContext64Base(void)
+    ~DecodeContext64Base()
     {
     }
 
@@ -1261,11 +1261,11 @@ public:
             _valE += END_BUFFER_SAFETY;
     }
 
-    const uint64_t *getCompr(void) const {
+    const uint64_t *getCompr() const {
         return (_preRead == 0) ? (_valI - 1) : (_valI - 2);
     }
 
-    int getBitOffset(void) const {
+    int getBitOffset() const {
         return (_preRead == 0) ? 0 : 64 - _preRead;
     }
 
@@ -1290,7 +1290,7 @@ private:
 public:
     typedef EncodeContext64<bigEndian> EC;
 
-    DecodeContext64(void)
+    DecodeContext64()
         : DecodeContext64Base()
     {
     }
@@ -1415,7 +1415,7 @@ public:
      * Used by iterators when switching from bitwise to bytewise decoding.
      */
     const uint8_t *
-    getByteCompr(void) const
+    getByteCompr() const
     {
         assert((_preRead & 7) == 0);
         return reinterpret_cast<const uint8_t *>(getCompr()) +
@@ -1501,7 +1501,7 @@ public:
     using ParentClass::readBits;
     using ParentClass::ReadBits;
 
-    FeatureDecodeContext(void)
+    FeatureDecodeContext()
         : ParentClass(),
           _readContext(NULL)
     {
@@ -1537,19 +1537,19 @@ public:
     }
 
     search::ComprFileReadContext *
-    getReadContext(void) const
+    getReadContext() const
     {
         return _readContext;
     }
 
     void
-    readComprBuffer(void)
+    readComprBuffer()
     {
         _readContext->readComprBuffer();
     }
 
     void
-    readComprBufferIfNeeded(void)
+    readComprBufferIfNeeded()
     {
         if (__builtin_expect(_valI >= _valE, false))
             readComprBuffer();
@@ -1566,7 +1566,7 @@ public:
                const vespalib::string &prefix);
 
     virtual const vespalib::string &
-    getIdentifier(void) const;
+    getIdentifier() const;
 
     virtual void
     readFeatures(DocIdAndFeatures &features);
@@ -1641,7 +1641,7 @@ public:
     using ParentClass::smallPadBits;
 
 public:
-    FeatureEncodeContext(void)
+    FeatureEncodeContext()
         : ParentClass(),
           _writeContext(NULL)
     {

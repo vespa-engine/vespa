@@ -23,7 +23,7 @@ public:
     uint64_t _numWordIds;	// Number of words in dictionary
     uint64_t _minWordNum;	// Minimum word number
 
-    PostingListCountFileDecodeContext(void)
+    PostingListCountFileDecodeContext()
         : ParentClass(),
           _avgBitsPerDoc(10),
           _minChunkDocs(262144),
@@ -57,7 +57,7 @@ public:
     uint64_t _numWordIds;	// Number of words in dictionary
     uint64_t _minWordNum;	// Mininum word number
 
-    PostingListCountFileEncodeContext(void)
+    PostingListCountFileEncodeContext()
         : ParentClass(),
           _avgBitsPerDoc(10),
           _minChunkDocs(262144),
@@ -72,7 +72,7 @@ public:
     void writeCounts(const PostingListCounts &counts);
     void writeWordNum(uint64_t wordNum);
 
-    static uint64_t noWordNum(void) {
+    static uint64_t noWordNum() {
         return std::numeric_limits<uint64_t>::max();
     }
 

@@ -55,7 +55,7 @@ protected:
     virtual void updatePostings(PostingMap & changePost) = 0;
 
     void updatePostings(PostingMap &changePost, EnumStoreComparator &cmp);
-    void clearAllPostings(void);
+    void clearAllPostings();
     void disableFreeLists() { _postingList.disableFreeLists(); }
     void disableElemHoldList() { _postingList.disableElemHoldList(); }
     void fillPostingsFixupEnumBase(const LoadedEnumAttributeVector &loaded);
@@ -101,7 +101,7 @@ private:
 
 public:
     PostingListAttributeSubBase(AttributeVector &attr, EnumStore &enumStore);
-    virtual ~PostingListAttributeSubBase(void);
+    virtual ~PostingListAttributeSubBase();
 
     void handleFillPostings(LoadedVector &loaded);
     void updatePostings(PostingMap &changePost) override;

@@ -84,7 +84,7 @@ public:
     }
 
     void
-    updateFirstUsedGen(void)
+    updateFirstUsedGen()
     {
         updateFirstUsedGeneration();
     }

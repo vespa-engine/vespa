@@ -35,12 +35,12 @@ public:
     Schema _schema;
     std::vector<PosOccFieldsParams> _fieldsParams;
 
-    FakeWordSet(void);
+    FakeWordSet();
 
     FakeWordSet(bool hasElements,
                 bool hasElementWeights);
 
-    ~FakeWordSet(void);
+    ~FakeWordSet();
 
     void
     setupParams(bool hasElements,
@@ -53,31 +53,31 @@ public:
                unsigned int numWordsPerWordClass);
 
     void
-    dropWords(void);
+    dropWords();
 
     int
-    getNumWords(void);
+    getNumWords();
 
     const PosOccFieldsParams &
-    getFieldsParams(void) const
+    getFieldsParams() const
     {
         return _fieldsParams.back();
     }
 
     uint32_t
-    getPackedIndex(void) const
+    getPackedIndex() const
     {
         return _fieldsParams.size() - 1;
     }
 
     const std::vector<PosOccFieldsParams> &
-    getAllFieldsParams(void) const
+    getAllFieldsParams() const
     {
         return _fieldsParams;
     }
 
     const Schema &
-    getSchema(void) const
+    getSchema() const
     {
         return _schema;
     }

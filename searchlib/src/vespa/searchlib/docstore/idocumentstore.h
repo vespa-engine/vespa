@@ -64,7 +64,7 @@ public:
      * @param docMan   The document type manager to use when deserializing.
      * @param baseDir  The path to a directory where the implementaion specific files will reside.
      **/
-    IDocumentStore(void);
+    IDocumentStore();
     virtual ~IDocumentStore();
 
     /**

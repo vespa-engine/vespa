@@ -8,13 +8,13 @@ using vespalib::alloc::Alloc;
 namespace search {
 namespace datastore {
 
-BufferState::FreeListList::~FreeListList(void)
+BufferState::FreeListList::~FreeListList()
 {
     assert(_head == NULL);	// Owner should have disabled free lists
 }
 
 
-BufferState::BufferState(void)
+BufferState::BufferState()
     : _usedElems(0),
       _allocElems(0),
       _deadElems(0u),
@@ -36,7 +36,7 @@ BufferState::BufferState(void)
 }
 
 
-BufferState::~BufferState(void)
+BufferState::~BufferState()
 {
     assert(_state == FREE);
     assert(_freeListList == NULL);
@@ -86,7 +86,7 @@ BufferState::onActive(uint32_t bufferId, uint32_t typeId,
 
 
 void
-BufferState::onHold(void)
+BufferState::onHold()
 {
     assert(_state == ACTIVE);
     assert(_typeHandler != NULL);
@@ -180,7 +180,7 @@ BufferState::setFreeListList(FreeListList *freeListList)
 
 
 void
-BufferState::addToFreeListList(void)
+BufferState::addToFreeListList()
 {
     assert(_freeListList != NULL && _freeListList->_head != this);
     assert(_nextHasFree == NULL);
@@ -199,7 +199,7 @@ BufferState::addToFreeListList(void)
 
 
 void
-BufferState::removeFromFreeListList(void)
+BufferState::removeFromFreeListList()
 {
     assert(_freeListList != NULL);
     assert(_nextHasFree != NULL);
@@ -220,7 +220,7 @@ BufferState::removeFromFreeListList(void)
 
 
 void
-BufferState::disableElemHoldList(void)
+BufferState::disableElemHoldList()
 {
     _disableElemHoldList = true;
 }

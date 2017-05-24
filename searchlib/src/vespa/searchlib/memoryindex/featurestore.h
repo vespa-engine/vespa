@@ -97,7 +97,7 @@ public:
      */
     FeatureStore(const Schema &schema);
 
-    ~FeatureStore(void);
+    ~FeatureStore();
 
     /**
      * Add features to feature store
@@ -233,7 +233,7 @@ public:
     }
 
     void
-    clearHoldLists(void)
+    clearHoldLists()
     {
         _store.clearHoldLists();
     }

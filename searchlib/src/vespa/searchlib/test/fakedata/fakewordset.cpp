@@ -33,7 +33,7 @@ applyDocIdBiasToVector(std::vector<FakeWord *> &v, uint32_t docIdBias)
 }
 
 
-FakeWordSet::FakeWordSet(void)
+FakeWordSet::FakeWordSet()
     : _words(NUM_WORDCLASSES),
       _schema(),
       _fieldsParams()
@@ -52,7 +52,7 @@ FakeWordSet::FakeWordSet(bool hasElements,
 }
 
 
-FakeWordSet::~FakeWordSet(void)
+FakeWordSet::~FakeWordSet()
 {
     dropWords();
 }
@@ -130,7 +130,7 @@ FakeWordSet::setupWords(search::Rand48 &rnd,
 
 
 void
-FakeWordSet::dropWords(void)
+FakeWordSet::dropWords()
 {
     for (unsigned int i = 0; i < _words.size(); ++i)
         clearFakeWordVector(_words[i]);
@@ -138,7 +138,7 @@ FakeWordSet::dropWords(void)
 
 
 int
-FakeWordSet::getNumWords(void)
+FakeWordSet::getNumWords()
 {
     int ret = 0;
     for (unsigned int i = 0; i < _words.size(); ++i)

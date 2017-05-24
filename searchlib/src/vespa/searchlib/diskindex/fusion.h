@@ -45,7 +45,7 @@ private:
     index::Schema::SP _schema;
 
 public:
-    FusionInputIndex(void)
+    FusionInputIndex()
         : _path(),
           _wordNumMapping(),
           _docIdMapping(),
@@ -55,7 +55,7 @@ public:
     }
 
     virtual
-    ~FusionInputIndex(void)
+    ~FusionInputIndex()
     {
     }
 
@@ -66,7 +66,7 @@ public:
     }
 
     const vespalib::string &
-    getPath(void) const
+    getPath() const
     {
         return _path;
     }
@@ -78,37 +78,37 @@ public:
     }
 
     const vespalib::string &
-    getTmpPath(void) const
+    getTmpPath() const
     {
         return _tmpPath;
     }
 
     const WordNumMapping &
-    getWordNumMapping(void) const
+    getWordNumMapping() const
     {
         return _wordNumMapping;
     }
 
     WordNumMapping &
-    getWordNumMapping(void)
+    getWordNumMapping()
     {
         return _wordNumMapping;
     }
 
     const DocIdMapping &
-    getDocIdMapping(void) const
+    getDocIdMapping() const
     {
         return _docIdMapping;
     }
 
     DocIdMapping &
-    getDocIdMapping(void)
+    getDocIdMapping()
     {
         return _docIdMapping;
     }
 
     const index::Schema &
-    getSchema(void) const
+    getSchema() const
     {
         assert(_schema.get() != NULL);
         return *_schema.get();
@@ -135,7 +135,7 @@ public:
            const search::common::FileHeaderContext &fileHeaderContext);
 
     virtual
-    ~Fusion(void);
+    ~Fusion();
 
     void SetOldIndexList(const std::vector<vespalib::string> &oldIndexList);
 
@@ -166,13 +166,13 @@ public:
 
     void makeTmpDirs();
 
-    bool CleanTmpDirs(void);
+    bool CleanTmpDirs();
 
     bool
-    readSchemaFiles(void);
+    readSchemaFiles();
 
     bool
-    checkSchemaCompat(void);
+    checkSchemaCompat();
 
     template <class Reader, class Writer>
     static bool
@@ -182,7 +182,7 @@ protected:
     bool ReadMappingFiles(const SchemaUtil::IndexIterator *index);
     bool ReleaseMappingTables();
 
-    static unsigned int noGen(void)
+    static unsigned int noGen()
     {
         return static_cast<unsigned int>(-1);
     }
@@ -215,7 +215,7 @@ protected:
     const search::common::FileHeaderContext &_fileHeaderContext;
 
     const Schema &
-    getSchema(void) const
+    getSchema() const
     {
         assert(_schema != NULL);
         return *_schema;
@@ -235,13 +235,13 @@ public:
     }
 
     std::vector<std::shared_ptr<OldIndex> > &
-    getOldIndexes(void)
+    getOldIndexes()
     {
         return _oldIndexes;
     }
 
     virtual OldIndex *
-    allocOldIndex(void)
+    allocOldIndex()
     {
         return new OldIndex;
     }
