@@ -594,6 +594,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
         if (zone.region().equals(RegionName.from("us-west-1"))) return 16; // TODO: Enable for all hosted zones (i.e when zone isn't default)
         if (zone.region().equals(RegionName.from("us-central-1"))) return 16; // TODO: Enable for all hosted zones (i.e when zone isn't default)
         if (zone.region().equals(RegionName.from("eu-west-1"))) return 16; // TODO: Enable for all hosted zones (i.e when zone isn't default)
+        if (zone.region().equals(RegionName.from("ap-northeast-1"))) return 16; // TODO: Enable for all hosted zones (i.e when zone isn't default)
         return DistributionBitCalculator.getDistributionBits(getNodeCountPerGroup(), getDistributionMode());
     }
 
