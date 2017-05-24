@@ -515,7 +515,7 @@ StoreOnlyDocSubDB::close()
 {
     assert(_writeService.master().isCurrentThread());
     search::IDocumentStore & store(_rSummaryMgr->getBackingStore());
-    SerialNum syncToken = store.initFlush(store.lastSyncToken());
+    SerialNum syncToken = store.initFlush(store.tentativeLastSyncToken());
     _tlSyncer.sync(syncToken);
     store.flush(syncToken);
 }
