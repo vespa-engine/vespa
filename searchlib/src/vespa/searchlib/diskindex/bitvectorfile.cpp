@@ -46,7 +46,7 @@ BitVectorFileWrite::BitVectorFileWrite(BitVectorKeyScope scope)
 }
 
 
-BitVectorFileWrite::~BitVectorFileWrite(void)
+BitVectorFileWrite::~BitVectorFileWrite()
 {
     // No implicit close() call, but cleanup memory allocations.
     delete _datFile;
@@ -167,7 +167,7 @@ BitVectorFileWrite::addWordSingle(uint64_t wordNum,
 
 
 void
-BitVectorFileWrite::flush(void)
+BitVectorFileWrite::flush()
 {
     Parent::flush();
     _datFile->Flush();
@@ -175,7 +175,7 @@ BitVectorFileWrite::flush(void)
 
 
 void
-BitVectorFileWrite::sync(void)
+BitVectorFileWrite::sync()
 {
     flush();
     Parent::syncCommon();
@@ -184,7 +184,7 @@ BitVectorFileWrite::sync(void)
 
 
 void
-BitVectorFileWrite::close(void)
+BitVectorFileWrite::close()
 {
     size_t bitmapbytes = BitVector::getFileBytes(_docIdLimit);
 

@@ -17,7 +17,7 @@ namespace diskindex
 
 using bitcompression::FeatureDecodeContextBE;
 
-FileHeader::FileHeader(void)
+FileHeader::FileHeader()
     : _bigEndian(false),
       _hostEndian(false),
       _completed(false),
@@ -30,7 +30,7 @@ FileHeader::FileHeader(void)
 }
 
 
-FileHeader::~FileHeader(void)
+FileHeader::~FileHeader()
 {
 }
 

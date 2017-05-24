@@ -99,7 +99,7 @@ public:
     }
 
     std::string
-    toStr(void) const
+    toStr() const
     {
         return _ss.str();
     }

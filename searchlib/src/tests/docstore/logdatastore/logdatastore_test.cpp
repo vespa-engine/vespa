@@ -25,7 +25,7 @@ using search::index::DummyFileHeaderContext;
 class MyTlSyncer : public transactionlog::SyncProxy {
     SerialNum _syncedTo;
 public:
-    MyTlSyncer(void) : _syncedTo(0) { }
+    MyTlSyncer() : _syncedTo(0) { }
 
     void sync(SerialNum syncTo) override {
         _syncedTo = syncTo;

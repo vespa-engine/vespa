@@ -412,7 +412,7 @@ setupT(const FakeWord &fw)
 }
 
 
-FakeEGCompr64FilterOcc::~FakeEGCompr64FilterOcc(void)
+FakeEGCompr64FilterOcc::~FakeEGCompr64FilterOcc()
 {
     free(_compressedMalloc);
     free(_l1SkipCompressedMalloc);
@@ -423,69 +423,69 @@ FakeEGCompr64FilterOcc::~FakeEGCompr64FilterOcc(void)
 
 
 void
-FakeEGCompr64FilterOcc::forceLink(void)
+FakeEGCompr64FilterOcc::forceLink()
 {
 }
 
 
 size_t
-FakeEGCompr64FilterOcc::bitSize(void) const
+FakeEGCompr64FilterOcc::bitSize() const
 {
     return _bitSize;
 }
 
 
 bool
-FakeEGCompr64FilterOcc::hasWordPositions(void) const
+FakeEGCompr64FilterOcc::hasWordPositions() const
 {
     return false;
 }
 
 
 size_t
-FakeEGCompr64FilterOcc::skipBitSize(void) const
+FakeEGCompr64FilterOcc::skipBitSize() const
 {
     return _l1SkipBitSize + _l2SkipBitSize + _l3SkipBitSize + _l4SkipBitSize;
 }
 
 
 size_t
-FakeEGCompr64FilterOcc::l1SkipBitSize(void) const
+FakeEGCompr64FilterOcc::l1SkipBitSize() const
 {
     return _l1SkipBitSize;
 }
 
 
 size_t
-FakeEGCompr64FilterOcc::l2SkipBitSize(void) const
+FakeEGCompr64FilterOcc::l2SkipBitSize() const
 {
     return _l2SkipBitSize;
 }
 
 
 size_t
-FakeEGCompr64FilterOcc::l3SkipBitSize(void) const
+FakeEGCompr64FilterOcc::l3SkipBitSize() const
 {
     return _l3SkipBitSize;
 }
 
 
 size_t
-FakeEGCompr64FilterOcc::l4SkipBitSize(void) const
+FakeEGCompr64FilterOcc::l4SkipBitSize() const
 {
     return _l4SkipBitSize;
 }
 
 
 int
-FakeEGCompr64FilterOcc::lowLevelSinglePostingScan(void) const
+FakeEGCompr64FilterOcc::lowLevelSinglePostingScan() const
 {
     return 0;
 }
 
 
 int
-FakeEGCompr64FilterOcc::lowLevelSinglePostingScanUnpack(void) const
+FakeEGCompr64FilterOcc::lowLevelSinglePostingScanUnpack() const
 {
     return 0;
 }
@@ -559,7 +559,7 @@ public:
     }
 
     uint32_t
-    getDocIdDelta(void)
+    getDocIdDelta()
     {
         uint32_t ret;
         unsigned int length;
@@ -571,7 +571,7 @@ public:
     }
 
     uint32_t
-    getL1SkipDocIdDelta(void)
+    getL1SkipDocIdDelta()
     {
         uint32_t ret;
         unsigned int length;
@@ -583,7 +583,7 @@ public:
     }
 
     uint32_t
-    getL2SkipDocIdDelta(void)
+    getL2SkipDocIdDelta()
     {
         uint32_t ret;
         unsigned int length;
@@ -595,7 +595,7 @@ public:
     }
 
     uint32_t
-    getL3SkipDocIdDelta(void)
+    getL3SkipDocIdDelta()
     {
         uint32_t ret;
         unsigned int length;
@@ -631,7 +631,7 @@ public:
                                              uint32_t lastDocId,
                                              const search::fef::TermFieldMatchDataArray &matchData);
 
-    ~FakeFilterOccEGCompressed64ArrayIterator(void);
+    ~FakeFilterOccEGCompressed64ArrayIterator();
 
     void doUnpack(uint32_t docId) override;
     void doSeek(uint32_t docId) override;
@@ -688,7 +688,7 @@ initRange(uint32_t begin, uint32_t end)
 
 template <bool bigEndian>
 FakeFilterOccEGCompressed64ArrayIterator<bigEndian>::
-~FakeFilterOccEGCompressed64ArrayIterator(void)
+~FakeFilterOccEGCompressed64ArrayIterator()
 {
 }
 
@@ -763,7 +763,7 @@ class FakeEGCompr64LEFilterOcc : public FakeEGCompr64FilterOcc
 public:
     FakeEGCompr64LEFilterOcc(const FakeWord &fw);
 
-    ~FakeEGCompr64LEFilterOcc(void);
+    ~FakeEGCompr64LEFilterOcc();
 };
 
 
@@ -773,7 +773,7 @@ FakeEGCompr64LEFilterOcc::FakeEGCompr64LEFilterOcc(const FakeWord &fw)
 }
 
 
-FakeEGCompr64LEFilterOcc::~FakeEGCompr64LEFilterOcc(void)
+FakeEGCompr64LEFilterOcc::~FakeEGCompr64LEFilterOcc()
 {
 }
 
@@ -818,7 +818,7 @@ FakeEGCompr64SkipFilterOcc<false>::FakeEGCompr64SkipFilterOcc(const FakeWord &fw
 
 
 template <bool doSkip>
-FakeEGCompr64SkipFilterOcc<doSkip>::~FakeEGCompr64SkipFilterOcc(void)
+FakeEGCompr64SkipFilterOcc<doSkip>::~FakeEGCompr64SkipFilterOcc()
 {
 }
 
@@ -873,7 +873,7 @@ public:
             const std::string &name,	
             const fef::TermFieldMatchDataArray &matchData);
 
-    ~FakeFilterOccEGCompressed64SkipArrayIterator(void);
+    ~FakeFilterOccEGCompressed64SkipArrayIterator();
 
 
     void doL4SkipSeek(uint32_t docid);
@@ -1003,7 +1003,7 @@ initRange(uint32_t begin, uint32_t end)
 
 template <bool doSkip>
 FakeFilterOccEGCompressed64SkipArrayIterator<doSkip>::
-~FakeFilterOccEGCompressed64SkipArrayIterator(void)
+~FakeFilterOccEGCompressed64SkipArrayIterator()
 {
 }
 

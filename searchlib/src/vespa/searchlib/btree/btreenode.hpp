@@ -229,7 +229,7 @@ BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::cleanRange(uint32_t from,
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 void
-BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::clean(void)
+BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::clean()
 {
     if (validSlots() == 0)
         return;
@@ -240,7 +240,7 @@ BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::clean(void)
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 void
-BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::cleanFrozen(void)
+BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::cleanFrozen()
 {
     assert(validSlots() <= NodeType::maxSlots());
     assert(getFrozen());
@@ -368,7 +368,7 @@ stealSomeFromRightNode(BTreeInternalNode *victim, NodeAllocatorType &allocator)
 
 template <typename KeyT, typename AggrT, uint32_t NumSlots>
 void
-BTreeInternalNode<KeyT, AggrT, NumSlots>::clean(void)
+BTreeInternalNode<KeyT, AggrT, NumSlots>::clean()
 {
     ParentType::clean();
     _validLeaves = 0;
@@ -377,7 +377,7 @@ BTreeInternalNode<KeyT, AggrT, NumSlots>::clean(void)
 
 template <typename KeyT, typename AggrT, uint32_t NumSlots>
 void
-BTreeInternalNode<KeyT, AggrT, NumSlots>::cleanFrozen(void)
+BTreeInternalNode<KeyT, AggrT, NumSlots>::cleanFrozen()
 {
     ParentType::cleanFrozen();
     _validLeaves = 0;

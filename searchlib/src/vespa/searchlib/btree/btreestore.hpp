@@ -60,7 +60,7 @@ BTreeStore(bool init)
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
           typename TraitsT, typename AggrCalcT>
-BTreeStore<KeyT, DataT, AggrT, CompareT,TraitsT, AggrCalcT>::~BTreeStore(void)
+BTreeStore<KeyT, DataT, AggrT, CompareT,TraitsT, AggrCalcT>::~BTreeStore()
 {
     _builder.clear();
     _store.dropBuffers();	// Drop buffers before type handlers are dropped
@@ -123,7 +123,7 @@ allocKeyDataCopy(const KeyDataType *rhs, uint32_t clusterSize)
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
           typename TraitsT, typename AggrCalcT>
 std::vector<uint32_t>
-BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::startCompact(void)
+BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::startCompact()
 {
     std::vector<uint32_t> ret = _store.startCompact(clusterLimit);
     for (uint32_t clusterSize = 1; clusterSize <= clusterLimit; ++clusterSize) {

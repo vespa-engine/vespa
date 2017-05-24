@@ -32,7 +32,7 @@ public:
         return _source.getFast(docId);
     }
 
-    uint32_t getDocIdLimit(void) const {
+    uint32_t getDocIdLimit() const {
         return _source.getCommittedDocIdLimit();
     }
 private:

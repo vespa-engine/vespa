@@ -42,7 +42,7 @@ namespace search {
 namespace bitcompression {
 
 
-PosOccFieldParams::PosOccFieldParams(void)
+PosOccFieldParams::PosOccFieldParams()
     : _elemLenK(0),
       _hasElements(false),
       _hasElementWeights(false),
@@ -217,7 +217,7 @@ PosOccFieldParams::writeHeader(vespalib::GenericHeader &header,
 }
 
 
-PosOccFieldsParams::PosOccFieldsParams(void)
+PosOccFieldsParams::PosOccFieldsParams()
     : _numFields(0u),
       _fieldParams(NULL),
       _params()
@@ -710,7 +710,7 @@ readHeader(const vespalib::GenericHeader &header,
 
 template <bool bigEndian>
 const vespalib::string &
-EG2PosOccDecodeContext<bigEndian>::getIdentifier(void) const
+EG2PosOccDecodeContext<bigEndian>::getIdentifier() const
 {
     return EG64PosOccId2;
 }
@@ -728,7 +728,7 @@ writeHeader(vespalib::GenericHeader &header,
 
 template <bool bigEndian>
 const vespalib::string &
-EG2PosOccEncodeContext<bigEndian>::getIdentifier(void) const
+EG2PosOccEncodeContext<bigEndian>::getIdentifier() const
 {
     return EG64PosOccId2;
 }
@@ -1205,7 +1205,7 @@ readHeader(const vespalib::GenericHeader &header,
 
 template <bool bigEndian>
 const vespalib::string &
-EGPosOccDecodeContext<bigEndian>::getIdentifier(void) const
+EGPosOccDecodeContext<bigEndian>::getIdentifier() const
 {
     return EG64PosOccId;
 }
@@ -1223,7 +1223,7 @@ writeHeader(vespalib::GenericHeader &header,
 
 template <bool bigEndian>
 const vespalib::string &
-EGPosOccEncodeContext<bigEndian>::getIdentifier(void) const
+EGPosOccEncodeContext<bigEndian>::getIdentifier() const
 {
     return EG64PosOccId;
 }

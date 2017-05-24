@@ -69,7 +69,7 @@ private:
      * @return schema used by this index
      */
     const index::Schema &
-    getSchema(void) const
+    getSchema() const
     {
         return _schema;
     }

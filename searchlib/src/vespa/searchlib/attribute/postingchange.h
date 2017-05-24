@@ -32,7 +32,7 @@ public:
         return *this;
     }
 
-    void clear(void) {
+    void clear() {
         _additions.clear();
         _removals.clear();
     }
@@ -41,7 +41,7 @@ public:
      * Remove duplicates in additions and removals vectors, since new
      * posting list tree doesn't support duplicate entries.
      */
-    void removeDups(void);
+    void removeDups();
     void apply(GrowableBitVector &bv);
 };
 

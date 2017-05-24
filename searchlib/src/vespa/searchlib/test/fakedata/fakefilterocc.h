@@ -25,9 +25,9 @@ public:
     static void forceLink();
 
     size_t bitSize() const override;
-    bool hasWordPositions(void) const override;
-    int lowLevelSinglePostingScan(void) const override;
-    int lowLevelSinglePostingScanUnpack(void) const override;
+    bool hasWordPositions() const override;
+    int lowLevelSinglePostingScan() const override;
+    int lowLevelSinglePostingScanUnpack() const override;
     int lowLevelAndPairPostingScan(const FakePosting &rhs) const override;
     int lowLevelAndPairPostingScanUnpack(const FakePosting &rhs) const override;
     queryeval::SearchIterator * createIterator(const fef::TermFieldMatchDataArray &matchData) const override;

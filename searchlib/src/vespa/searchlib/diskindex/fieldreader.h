@@ -60,34 +60,34 @@ protected:
     vespalib::string _word;
 
     static uint64_t
-    noWordNumHigh(void)
+    noWordNumHigh()
     {
         return std::numeric_limits<uint64_t>::max();
     }
 
     static uint64_t
-    noWordNum(void)
+    noWordNum()
     {
         return 0u;
     }
 
     void
-    readCounts(void);
+    readCounts();
 
     void
-    readDocIdAndFeatures(void);
+    readDocIdAndFeatures();
 
 public:
-    FieldReader(void);
+    FieldReader();
 
     virtual
-    ~FieldReader(void);
+    ~FieldReader();
 
     virtual void
-    read(void);
+    read();
 
     virtual bool
-    allowRawFeatures(void);
+    allowRawFeatures();
 
     void
     write(FieldWriter &writer)
@@ -99,7 +99,7 @@ public:
     }
 
     bool
-    isValid(void) const
+    isValid() const
     {
         return _wordNum != noWordNumHigh();
     }
@@ -128,7 +128,7 @@ public:
     open(const vespalib::string &prefix, const TuneFileSeqRead &tuneFileRead);
 
     virtual bool
-    close(void);
+    close();
 
     /*
      * To be called between words, not in the middle of one.
@@ -149,7 +149,7 @@ public:
     getFeatureParams(PostingListParams &params);
 
     uint32_t
-    getDocIdLimit(void) const
+    getDocIdLimit() const
     {
         return _docIdLimit;
     }
@@ -200,10 +200,10 @@ public:
     FieldReaderStripInfo(const IndexIterator &index);
 
     virtual bool
-    allowRawFeatures(void) override;
+    allowRawFeatures() override;
 
     virtual void
-    read(void) override;
+    read() override;
 
     virtual void
     getFeatureParams(PostingListParams &params) override;

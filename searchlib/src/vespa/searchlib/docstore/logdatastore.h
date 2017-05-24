@@ -229,7 +229,7 @@ private:
 
     void eraseDanglingDatFiles(const NameIdSet &partList, const NameIdSet &datPartList);
     NameIdSet eraseEmptyIdxFiles(const NameIdSet &partList);
-    void internalFlushAll(void);
+    void internalFlushAll();
 
     NameIdSet scanDir(const vespalib::string &dir, const vespalib::string &suffix);
     FileId allocateFileId(const LockGuard & guard);

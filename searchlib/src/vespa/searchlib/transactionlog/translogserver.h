@@ -50,9 +50,9 @@ public:
     public:
         typedef std::shared_ptr<Session> SP;
 
-        Session(void) : _down(false) { }
-        bool getDown(void) const { return _down; }
-        void setDown(void) { _down = true; }
+        Session() : _down(false) { }
+        bool getDown() const { return _down; }
+        void setDown() { _down = true; }
     };
 
 private:

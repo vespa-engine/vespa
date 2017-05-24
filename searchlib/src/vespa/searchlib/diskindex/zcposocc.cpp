@@ -55,7 +55,7 @@ setFeatureParams(const PostingListParams &params)
 
 
 const vespalib::string &
-Zc4PosOccSeqRead::getSubIdentifier(void)
+Zc4PosOccSeqRead::getSubIdentifier()
 {
     PosOccFieldsParams fieldsParams;
     EG2PosOccDecodeContext<true> d(&fieldsParams);
@@ -110,7 +110,7 @@ setFeatureParams(const PostingListParams &params)
 
 
 const vespalib::string &
-ZcPosOccSeqRead::getSubIdentifier(void)
+ZcPosOccSeqRead::getSubIdentifier()
 {
     PosOccFieldsParams fieldsParams;
     EGPosOccDecodeContext<true> d(&fieldsParams);

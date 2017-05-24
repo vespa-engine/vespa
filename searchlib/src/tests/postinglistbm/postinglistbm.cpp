@@ -47,24 +47,20 @@ public:
     search::Rand48 _rnd;
 
 private:
-    void Usage(void);
-
-    void
-    badPostingType(const std::string &postingType);
-
-    void
-    testFake(const std::string &postingType,
-             const Schema &schema,
-             const FakeWord &fw);
+    void Usage();
+    void badPostingType(const std::string &postingType);
+    void testFake(const std::string &postingType,
+                  const Schema &schema,
+                  const FakeWord &fw);
 public:
-    PostingListBM(void);
-    ~PostingListBM(void);
-    int Main(void) override;
+    PostingListBM();
+    ~PostingListBM();
+    int Main() override;
 };
 
 
 void
-PostingListBM::Usage(void)
+PostingListBM::Usage()
 {
     printf("postinglistbm "
            "[-C <skipCommonPairsRate>] "
@@ -102,7 +98,7 @@ PostingListBM::badPostingType(const std::string &postingType)
 }
 
 
-PostingListBM::PostingListBM(void)
+PostingListBM::PostingListBM()
     : _verbose(false),
       _numDocs(10000000),
       _commonDocFreq(50000),
@@ -118,7 +114,7 @@ PostingListBM::PostingListBM(void)
 }
 
 
-PostingListBM::~PostingListBM(void)
+PostingListBM::~PostingListBM()
 {
 }
 
@@ -323,7 +319,7 @@ testFakePair(const std::string &postingType,
 
 
 int
-PostingListBM::Main(void)
+PostingListBM::Main()
 {
     int argi;
     char c;

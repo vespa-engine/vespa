@@ -16,7 +16,7 @@ namespace index
 
 vespalib::string DummyFileHeaderContext::_creator;
 
-DummyFileHeaderContext::DummyFileHeaderContext(void)
+DummyFileHeaderContext::DummyFileHeaderContext()
     : common::FileHeaderContext(),
       _disableFileName(false),
       _hostName(),
@@ -27,13 +27,13 @@ DummyFileHeaderContext::DummyFileHeaderContext(void)
 }
 
 
-DummyFileHeaderContext::~DummyFileHeaderContext(void)
+DummyFileHeaderContext::~DummyFileHeaderContext()
 {
 }
 
 
 void
-DummyFileHeaderContext::disableFileName(void)
+DummyFileHeaderContext::disableFileName()
 {
     _disableFileName = true;
 }

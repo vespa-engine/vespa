@@ -25,9 +25,9 @@ private:
     std::vector<vespalib::string> _formats;
 
 public:
-    FileHeader(void);
+    FileHeader();
 
-    ~FileHeader(void);
+    ~FileHeader();
 
     bool
     taste(const vespalib::string &name,
@@ -42,31 +42,31 @@ public:
           const TuneFileRandRead &tuneFileSearch);
 
     bool
-    getBigEndian(void) const
+    getBigEndian() const
     {
         return _bigEndian;
     }
 
     bool
-    getHostEndian(void) const
+    getHostEndian() const
     {
         return _hostEndian;
     }
 
     uint32_t
-    getVersion(void) const
+    getVersion() const
     {
         return _version;
     }
 
     uint32_t
-    getHeaderLen(void) const
+    getHeaderLen() const
     {
         return _headerLen;
     }
 
     const std::vector<vespalib::string> &
-    getFormats(void) const
+    getFormats() const
     {
         return _formats;
     }

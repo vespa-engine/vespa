@@ -30,7 +30,7 @@ MultiValueStringAttributeT<B, M>::~MultiValueStringAttributeT() { }
 
 template <typename B, typename M>
 void
-MultiValueStringAttributeT<B, M>::freezeEnumDictionary(void)
+MultiValueStringAttributeT<B, M>::freezeEnumDictionary()
 {
     this->getEnumStore().freezeTree();
 }

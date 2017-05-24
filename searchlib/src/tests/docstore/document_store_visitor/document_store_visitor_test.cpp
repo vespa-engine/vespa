@@ -35,7 +35,7 @@ const string header_name = doc_type_name + ".header";
 const string body_name = doc_type_name + ".body";
 
 document::DocumenttypesConfig
-makeDocTypeRepoConfig(void)
+makeDocTypeRepoConfig()
 {
     const int32_t doc_type_id = 787121340;
     document::config_builder::DocumenttypesConfigBuilderHelper builder;
@@ -79,7 +79,7 @@ class MyTlSyncer : public transactionlog::SyncProxy
     SerialNum _syncedTo;
     
 public:
-    MyTlSyncer(void)
+    MyTlSyncer()
         : _syncedTo(0)
     {
     }

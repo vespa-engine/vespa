@@ -19,7 +19,7 @@ public:
     uint64_t _fileOffset;
     uint64_t _accNumDocs;
 
-    PageDict4StartOffset(void)
+    PageDict4StartOffset()
         : _fileOffset(0u),
           _accNumDocs(0u)
     {
@@ -86,91 +86,21 @@ public:
     using Counts = index::PostingListCounts;
     typedef PageDict4StartOffset StartOffset;
 
-    static uint32_t
-    getPageByteSize(void)
-    {
-        return 4096;
-    }
-
-    static uint32_t
-    getPageBitSize(void)
-    {
-        return getPageByteSize() * 8;
-    }
-
-    static uint32_t
-    getPageHeaderBitSize(void)
-    {
-        return 15u + 15u + 15u + 12u;
-    }
-
-    static uint32_t
-    getMaxFileHeaderPad(void)
-    {
-        return 999u;
-    }
-
-    static uint32_t
-    getFileHeaderPad(uint32_t offset);
-
-    static uint32_t
-    getL1SkipStride(void)
-    {
-        return 16;
-    }
-
-    static uint32_t
-    getL2SkipStride(void)
-    {
-        return 8;
-    }
-
-    static uint32_t
-    getL4SkipStride(void)
-    {
-        return 16;
-    }
-
-    static uint32_t
-    getL5SkipStride(void)
-    {
-        return 8;
-    }
-
-    static uint32_t
-    getL7SkipStride(void)
-    {
-        return 8;
-    }
-
-    static uint32_t
-    noL7Ref(void)
-    {
-        return std::numeric_limits<uint32_t>::max();
-    }
-
-    static uint32_t
-    getL1Entries(uint32_t countsEntries)
-    {
-        return (countsEntries - 1) / getL1SkipStride();
-    }
-
-    static uint32_t
-    getL2Entries(uint32_t l1Entries)
-    {
-        return l1Entries / getL2SkipStride();
-    }
-
-    static uint32_t
-    getL4Entries(uint32_t l3Entries)
-    {
-        return (l3Entries - 1) / getL4SkipStride();
-    }
-
-    static uint32_t
-    getL5Entries(uint32_t l4Entries)
-    {
-        return l4Entries / getL5SkipStride();
+    static uint32_t getPageByteSize()      { return 4096; }
+    static uint32_t getPageBitSize()       { return getPageByteSize() * 8; }
+    static uint32_t getPageHeaderBitSize() { return 15u + 15u + 15u + 12u; }
+    static uint32_t getMaxFileHeaderPad()  { return 999u; }
+    static uint32_t getFileHeaderPad(uint32_t offset);
+    static uint32_t getL1SkipStride()      { return 16; }
+    static uint32_t getL2SkipStride()      { return 8; }
+    static uint32_t getL4SkipStride()      { return 16; }
+    static uint32_t getL5SkipStride()      { return 8; }
+    static uint32_t getL7SkipStride()      { return 8; }
+    static uint32_t noL7Ref() { return std::numeric_limits<uint32_t>::max(); }
+    static uint32_t getL1Entries(uint32_t countsEntries) { return (countsEntries - 1) / getL1SkipStride(); }
+    static uint32_t getL2Entries(uint32_t l1Entries) { return l1Entries / getL2SkipStride(); }
+    static uint32_t getL4Entries(uint32_t l3Entries) { return (l3Entries - 1) / getL4SkipStride(); }
+    static uint32_t getL5Entries(uint32_t l4Entries) { return l4Entries / getL5SkipStride();
     }
 };
 /*
@@ -203,7 +133,7 @@ private:
 public:
     PageDict4SSWriter(SSEC &sse);
 
-    ~PageDict4SSWriter(void);
+    ~PageDict4SSWriter();
 
     /*
      * Add L6 skip entry.
@@ -229,7 +159,7 @@ public:
                       uint64_t wordNum);
 
     void
-    flush(void);
+    flush();
 
 
     void
@@ -325,19 +255,19 @@ public:
     PageDict4SPWriter(SSWriter &sparseSparsewriter,
                       EC &spe);
 
-    ~PageDict4SPWriter(void);
+    ~PageDict4SPWriter();
 
     void
     setup();
 
     void
-    flushPage(void);
+    flushPage();
 
     void
-    flush(void);
+    flush();
 
     void
-    resetPage(void);
+    resetPage();
 
     void
     addL3Skip(const vespalib::stringref &word,
@@ -353,13 +283,13 @@ public:
     addL5Skip(size_t &lcp);
 
     bool
-    empty(void) const
+    empty() const
     {
         return _l3Entries == 0;
     }
 
     uint32_t
-    getSparsePageNum(void) const
+    getSparsePageNum() const
     {
         return _sparsePageNum;
     }
@@ -476,19 +406,19 @@ public:
     PageDict4PWriter(SPWriter &spWriter,
                      EC &pe);
 
-    ~PageDict4PWriter(void);
+    ~PageDict4PWriter();
 
     void
     setup();
 
     void
-    flushPage(void);
+    flushPage();
 
     void
-    flush(void);
+    flush();
 
     void
-    resetPage(void);
+    resetPage();
 
     void
     addCounts(const vespalib::stringref &word,
@@ -501,13 +431,13 @@ public:
     addL2Skip(size_t &lcp);
 
     bool
-    empty(void) const
+    empty() const
     {
         return _countsEntries == 0;
     }
 
     uint64_t
-    getPageNum(void) const
+    getPageNum() const
     {
         return _pageNum;
     }
@@ -543,9 +473,9 @@ public:
     bool _res;
     bool _overflow;
 
-    PageDict4SSLookupRes(void);
+    PageDict4SSLookupRes();
 
-    ~PageDict4SSLookupRes(void);
+    ~PageDict4SSLookupRes();
 };
 
 /* Reader for sparse sparse file.
@@ -671,7 +601,7 @@ public:
                       uint32_t pFileHeaderSize,
                       uint64_t pFileBitLen);
 
-    ~PageDict4SSReader(void);
+    ~PageDict4SSReader();
 
     void
     setup(DC &ssd);
@@ -683,7 +613,7 @@ public:
     lookupOverflow(uint64_t wordNum) const;
 
     const DC &
-    getSSD(void) const
+    getSSD() const
     {
         return _ssd;
     }
@@ -710,9 +640,9 @@ public:
     uint64_t _l3WordNum;
 
 public:
-    PageDict4SPLookupRes(void);
+    PageDict4SPLookupRes();
 
-    ~PageDict4SPLookupRes(void);
+    ~PageDict4SPLookupRes();
 
     void
     lookup(const SSReader &ssReader,
@@ -741,9 +671,9 @@ public:
     vespalib::string *_nextWord;
 
 public:
-    PageDict4PLookupRes(void);
+    PageDict4PLookupRes();
 
-    ~PageDict4PLookupRes(void);
+    ~PageDict4PLookupRes();
 
     bool
     lookup(const SSReader &ssReader,
@@ -794,7 +724,7 @@ public:
                     DC &spd,
                     DC &pd);
 
-    ~PageDict4Reader(void);
+    ~PageDict4Reader();
 
     void
     setup();

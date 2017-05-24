@@ -30,7 +30,7 @@ public:
     ComponentGuard(const Component & component);
     const T * get()          const { return _component.get(); }
 
-    const Component & getSP(void) const { return _component; }
+    const Component & getSP() const { return _component; }
     const T * operator -> () const { return _component.get(); }
     const T & operator * ()  const { return *_component.get(); }
     T * get()                      { return _component.get(); }

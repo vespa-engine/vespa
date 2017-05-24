@@ -24,7 +24,7 @@ WordStore::WordStore()
 }
 
 
-WordStore::~WordStore(void)
+WordStore::~WordStore()
 {
     _store.dropBuffers();
 }

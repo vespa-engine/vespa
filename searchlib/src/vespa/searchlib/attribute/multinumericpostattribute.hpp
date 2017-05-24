@@ -45,8 +45,7 @@ MultiValueNumericPostingAttribute<B, M>::MultiValueNumericPostingAttribute(const
 }
 
 template <typename B, typename M>
-MultiValueNumericPostingAttribute<B, M>::
-~MultiValueNumericPostingAttribute(void)
+MultiValueNumericPostingAttribute<B, M>::~MultiValueNumericPostingAttribute()
 {
     this->disableFreeLists();
     this->disableElemHoldList();

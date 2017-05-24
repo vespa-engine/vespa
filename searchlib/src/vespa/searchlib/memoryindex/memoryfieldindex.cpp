@@ -43,7 +43,7 @@ MemoryFieldIndex::MemoryFieldIndex(const Schema & schema, uint32_t fieldId)
       _inserter(std::make_unique<OrderedDocumentInserter>(*this))
 { }
 
-MemoryFieldIndex::~MemoryFieldIndex(void)
+MemoryFieldIndex::~MemoryFieldIndex()
 {
     _postingListStore.disableFreeLists();
     _postingListStore.disableElemHoldList();
@@ -96,7 +96,7 @@ MemoryFieldIndex::findFrozen(const vespalib::stringref word) const
 
 
 void
-MemoryFieldIndex::compactFeatures(void)
+MemoryFieldIndex::compactFeatures()
 {
     std::vector<uint32_t> toHold;
 

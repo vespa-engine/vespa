@@ -47,7 +47,7 @@ typedef std::unique_ptr<AttributeVector::SearchContext> SearchContextPtr;
 typedef std::unique_ptr<search::queryeval::SearchIterator> SearchBasePtr;
 
 bool
-FastOS_UNIX_File::Sync(void)
+FastOS_UNIX_File::Sync()
 {
     // LOG(info, "Skip sync");
     return true;

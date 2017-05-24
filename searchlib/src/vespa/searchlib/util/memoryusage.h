@@ -28,10 +28,10 @@ public:
           _allocatedBytesOnHold(onHold)
     { }
 
-    size_t allocatedBytes(void) const { return _allocatedBytes; }
-    size_t usedBytes(void) const { return _usedBytes; }
-    size_t deadBytes(void) const { return _deadBytes; }
-    size_t allocatedBytesOnHold(void) const { return _allocatedBytesOnHold; }
+    size_t allocatedBytes() const { return _allocatedBytes; }
+    size_t usedBytes() const { return _usedBytes; }
+    size_t deadBytes() const { return _deadBytes; }
+    size_t allocatedBytesOnHold() const { return _allocatedBytesOnHold; }
     void incAllocatedBytes(size_t inc) { _allocatedBytes += inc; }
     void decAllocatedBytes(size_t dec) { _allocatedBytes -= dec; }
     void incUsedBytes(size_t inc) { _usedBytes += inc; }

@@ -30,7 +30,7 @@ public:
         }
 
         IN *
-        get(void) const
+        get() const
         {
             return _ref;
         }
@@ -39,19 +39,19 @@ public:
     typedef std::vector<Ref> Vector;
     Vector _vec;
 
-    PostingPriorityQueue(void)
+    PostingPriorityQueue()
         : _vec()
     {
     }
 
     bool
-    empty(void) const
+    empty() const
     {
         return _vec.empty();
     }
 
     void
-    clear(void)
+    clear()
     {
         _vec.clear();
     }
@@ -67,7 +67,7 @@ public:
      * and adjust() can be used.
      */
     void
-    sort(void)
+    sort()
     {
         std::sort(_vec.begin(), _vec.end());
     }
@@ -76,7 +76,7 @@ public:
      * Return lowest value.  Assumes vector is sorted.
      */
     IN *
-    lowest(void) const
+    lowest() const
     {
         return _vec.front().get();
     }
@@ -86,7 +86,7 @@ public:
      * value.  Perform adjustments to make vector sorted again.
      */
     void
-    adjust(void);
+    adjust();
 
 
     template <class OUT>
@@ -116,7 +116,7 @@ public:
 
 template <class IN>
 void
-PostingPriorityQueue<IN>::adjust(void)
+PostingPriorityQueue<IN>::adjust()
 {
     typedef typename Vector::iterator VIT;
     if (!_vec.front().get()->isValid()) {

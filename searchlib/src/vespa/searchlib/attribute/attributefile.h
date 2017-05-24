@@ -63,7 +63,7 @@ protected:
     typedef attribute::Config Config;
 public:
     AttributeFile(const vespalib::string & fileName, const Config & config);
-    ~AttributeFile(void);
+    ~AttributeFile();
 
     std::unique_ptr<Record> getRecord();
     bool read(Record & record);
@@ -72,7 +72,7 @@ public:
 protected:
     void OpenReadOnly();
     void OpenWriteOnly(const search::common::FileHeaderContext &fileHeaderContext, uint32_t docIdLimit);
-    void Close(void);
+    void Close();
     bool seekIdxPos(size_t idxPos);
 private:
     uint32_t                          _currIdx;

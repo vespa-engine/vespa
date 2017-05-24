@@ -36,7 +36,7 @@ private:
 public:
     BitVectorFileWrite(BitVectorKeyScope scope);
 
-    ~BitVectorFileWrite(void);
+    ~BitVectorFileWrite();
 
     /**
      * Checkpoint write.  Used at semi-regular intervals during indexing
@@ -63,13 +63,13 @@ public:
     addWordSingle(uint64_t wordNum, const BitVector &bitVector);
 
     void
-    flush(void);
+    flush();
 
     void
-    sync(void);
+    sync();
 
     void
-    close(void);
+    close();
 
     void
     makeDatHeader(const common::FileHeaderContext &fileHeaderContext);
@@ -113,7 +113,7 @@ public:
     ~BitVectorCandidate();
 
     void
-    clear(void)
+    clear()
     {
         if (__builtin_expect(_numDocs > _bitVectorLimit, false)) {
             _bv->clear();
@@ -156,13 +156,13 @@ public:
      * Get number of documents buffered.  This might include duplicates.
      */
     uint64_t
-    getNumDocs(void) const
+    getNumDocs() const
     {
         return _numDocs;
     }
 
     bool
-    empty(void) const
+    empty() const
     {
         return _numDocs == 0;
     }
@@ -172,13 +172,13 @@ public:
      * populated.
      */
     bool
-    getCrossedBitVectorLimit(void) const
+    getCrossedBitVectorLimit() const
     {
         return _numDocs > _bitVectorLimit;
     }
 
     BitVector &
-    getBitVector(void)
+    getBitVector()
     {
         return *_bv;
     }

@@ -69,9 +69,9 @@ public:
         {}
 
         void setSeq(uint32_t seq) { _seq = seq; }
-        uint32_t getWordIdx(void) const { return _wordIdx; }
-        uint32_t getDocId(void) const { return _docId; }
-        EntryRef getFeatureRef(void) const { return _features; }
+        uint32_t getWordIdx() const { return _wordIdx; }
+        uint32_t getDocId() const { return _docId; }
+        EntryRef getFeatureRef() const { return _features; }
         bool getRemove() const { return _removal; }
 
         bool operator<(const PendingOp &rhs) const {

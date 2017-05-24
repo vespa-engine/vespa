@@ -214,8 +214,7 @@ private:
     void testGeneration(const AttributePtr & attr, bool exactStatus);
     void testGeneration();
 
-    void
-    testCreateSerialNum(void);
+    void testCreateSerialNum();
 
     void testPredicateHeaderTags();
 
@@ -232,8 +231,7 @@ private:
     void
     testCompactLidSpace(const Config &config);
 
-    void
-    testCompactLidSpace(void);
+    void testCompactLidSpace();
 
     template <typename AttributeType>
     void requireThatAddressSpaceUsageIsReported(const Config &config, bool fastSearch);

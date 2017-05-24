@@ -51,7 +51,7 @@ public:
      */
     virtual void setupBits(int bitOffset) = 0;
     virtual uint64_t getBitPos(int bitOffset, uint64_t bufferEndFilePos) const = 0;
-    virtual uint64_t getBitPosV(void) const = 0;
+    virtual uint64_t getBitPosV() const = 0;
     virtual void skipBits(int bits) = 0;
     virtual void adjUnitPtr(int newRemainingUnits) = 0;
     virtual void emptyBuffer(uint64_t newBitPosition) = 0;
@@ -59,7 +59,7 @@ public:
     /**
      * Get size of each unit (typically 4 or 8)
      */
-    virtual uint32_t getUnitByteSize(void) const = 0;
+    virtual uint32_t getUnitByteSize() const = 0;
 
     /**
      * Checkpoint write.  Used at semi-regular intervals during indexing
@@ -97,7 +97,7 @@ public:
                             ComprBuffer &cbuf);
 
 protected:
-    virtual ~ComprFileReadBase(void) { }
+    virtual ~ComprFileReadBase() { }
 };
 
 
@@ -229,7 +229,7 @@ public:
      */
     virtual void checkPointRead(vespalib::nbostream &in) = 0;
 
-    virtual uint64_t getBitPosV(void) const = 0;
+    virtual uint64_t getBitPosV() const = 0;
 };
 
 class ComprFileWriteBase
@@ -260,16 +260,16 @@ public:
 
     void writeComprBuffer(bool flushSlack);
     void allocComprBuf(unsigned int comprBufSize, size_t preferredFileAlignment);
-    void allocComprBuf(void);
+    void allocComprBuf();
     void setEncodeContext(ComprFileEncodeContext *encodeContext) { _encodeContext = encodeContext; }
-    ComprFileEncodeContext *getEncodeContext(void) const { return _encodeContext; }
+    ComprFileEncodeContext *getEncodeContext() const { return _encodeContext; }
     void setFile(FastOS_FileInterface *file) { _file = file; }
-    FastOS_FileInterface *getFile(void) const { return _file; }
+    FastOS_FileInterface *getFile() const { return _file; }
 
     /**
      * Get file offset for start of compressed buffer.
      */
-    uint64_t getBufferStartFilePos(void) const { return _fileWriteByteOffset; }
+    uint64_t getBufferStartFilePos() const { return _fileWriteByteOffset; }
 
     /**
      * Set file offset for start of compressed byffer.

@@ -45,7 +45,7 @@ BufferTypeBase::getReservedElements(uint32_t bufferId) const
 }
 
 void
-BufferTypeBase::flushLastUsed(void)
+BufferTypeBase::flushLastUsed()
 {
     if (_lastUsedElems != NULL) {
         _activeUsedElems += *_lastUsedElems;

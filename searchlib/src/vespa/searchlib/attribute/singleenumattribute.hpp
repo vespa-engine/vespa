@@ -282,7 +282,7 @@ SingleValueEnumAttribute<B>::clearDocs(DocId lidLow, DocId lidLimit)
 
 template <typename B>
 void
-SingleValueEnumAttribute<B>::onShrinkLidSpace(void)
+SingleValueEnumAttribute<B>::onShrinkLidSpace()
 {
     EnumHandle e;
     bool findDefaultEnumRes(this->findEnum(this->getDefaultEnumTypeValue(), e));

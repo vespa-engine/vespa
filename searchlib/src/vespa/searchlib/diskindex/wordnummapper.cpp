@@ -13,7 +13,7 @@ namespace search
 namespace diskindex
 {
 
-WordNumMapping::WordNumMapping(void)
+WordNumMapping::WordNumMapping()
     : _old2newwords(),
       _oldDictSize(0u)
 {
@@ -46,7 +46,7 @@ WordNumMapping::readMappingFile(const vespalib::string &name,
 
 
 void
-WordNumMapping::noMappingFile(void)
+WordNumMapping::noMappingFile()
 {
     Array &map = _old2newwords;
     map.resize(2);
@@ -57,7 +57,7 @@ WordNumMapping::noMappingFile(void)
 
 
 void
-WordNumMapping::clear(void)
+WordNumMapping::clear()
 {
     Array &map = _old2newwords;
     map.clear();
@@ -90,7 +90,7 @@ WordNumMapper::sanityCheck(bool allowHoles)
 
 
 uint64_t
-WordNumMapping::getMaxMappedWordNum(void) const
+WordNumMapping::getMaxMappedWordNum() const
 {
     WordNumMapper mapper(*this);
     return mapper.getMaxMappedWordNum();

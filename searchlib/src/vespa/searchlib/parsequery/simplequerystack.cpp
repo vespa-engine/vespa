@@ -20,14 +20,14 @@ using vespalib::make_vespa_string;
 
 namespace search {
 
-SimpleQueryStack::SimpleQueryStack(void)
+SimpleQueryStack::SimpleQueryStack()
     : _numItems(0),
       _stack(NULL),
       _FP_queryOK(true)
 {
 }
 
-SimpleQueryStack::~SimpleQueryStack(void)
+SimpleQueryStack::~SimpleQueryStack()
 {
     delete _stack;
 }
@@ -49,7 +49,7 @@ SimpleQueryStack::Push(search::ParseItem *item)
 }
 
 search::ParseItem *
-SimpleQueryStack::Pop(void)
+SimpleQueryStack::Pop()
 {
     search::ParseItem *item = _stack;
     if (_stack != NULL) {
@@ -69,7 +69,7 @@ SimpleQueryStack::AppendBuffer(search::RawBuf *buf) const
 }
 
 size_t
-SimpleQueryStack::GetBufferLen(void) const
+SimpleQueryStack::GetBufferLen() const
 {
     size_t result;
 
@@ -83,13 +83,13 @@ SimpleQueryStack::GetBufferLen(void) const
 }
 
 uint32_t
-SimpleQueryStack::GetSize(void)
+SimpleQueryStack::GetSize()
 {
     return _numItems;
 }
 
 bool
-SimpleQueryStack::_FP_isAllowed(void)
+SimpleQueryStack::_FP_isAllowed()
 {
     return _FP_queryOK;
 }

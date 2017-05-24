@@ -33,7 +33,7 @@ SingleValueSmallNumericAttribute(const vespalib::string & baseFileName,
 }
 
 
-SingleValueSmallNumericAttribute::~SingleValueSmallNumericAttribute(void)
+SingleValueSmallNumericAttribute::~SingleValueSmallNumericAttribute()
 {
     getGenerationHolder().clearHoldLists();
 }
@@ -253,11 +253,11 @@ namespace
 
 template <typename TT>
 uint32_t
-log2bits(void);
+log2bits();
 
 template <>
 uint32_t
-log2bits<uint32_t>(void)
+log2bits<uint32_t>()
 {
     return 0x05u;
 }

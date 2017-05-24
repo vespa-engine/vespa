@@ -64,17 +64,17 @@ class PageDict4FileSeqRead : public index::DictionaryFileSeqRead
     readSSHeader();
 
     void
-    readSPHeader(void);
+    readSPHeader();
 
     void
-    readPHeader(void);
+    readPHeader();
 
 public:
 
-    PageDict4FileSeqRead(void);
+    PageDict4FileSeqRead();
 
     virtual
-    ~PageDict4FileSeqRead(void);
+    ~PageDict4FileSeqRead();
 
     /**
      * Read word and counts.  Only nonzero counts are returned. If at
@@ -91,7 +91,7 @@ public:
     /**
      * Close dictionary file.
      */
-    virtual bool close(void) override;
+    virtual bool close() override;
 
     /**
      * Checkpoint write.  Used at semi-regular intervals during indexing
@@ -177,10 +177,10 @@ class PageDict4FileSeqWrite : public index::DictionaryFileSeqWrite
     updateSSHeader(uint64_t fileBitSize);
 
 public:
-    PageDict4FileSeqWrite(void);
+    PageDict4FileSeqWrite();
 
     virtual
-    ~PageDict4FileSeqWrite(void);
+    ~PageDict4FileSeqWrite();
 
     /**
      * Write word and counts.  Only nonzero counts should be supplied.
@@ -202,7 +202,7 @@ public:
      * Close dictionary file.
      */
     virtual bool
-    close(void) override;
+    close() override;
 
     /**
      * Checkpoint write.  Used at semi-regular intervals during indexing

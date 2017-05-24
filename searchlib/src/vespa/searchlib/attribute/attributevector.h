@@ -454,12 +454,12 @@ public:
     /** Returns whether this attribute has load data files on disk **/
     bool hasLoadData() const;
 
-    bool isEnumeratedSaveFormat(void) const;
+    bool isEnumeratedSaveFormat() const;
     bool load();
     void commit(bool forceStatUpdate = false);
     void commit(uint64_t firstSyncToken, uint64_t lastSyncToken);
     void setCreateSerialNum(uint64_t createSerialNum);
-    uint64_t getCreateSerialNum(void) const;
+    uint64_t getCreateSerialNum() const;
     virtual uint32_t getVersion() const;
 
 ////// Interface to access single documents.
@@ -665,7 +665,7 @@ public:
     virtual uint64_t getTotalValueCount() const;
     virtual void compactLidSpace(uint32_t wantedLidLimit) override;
     virtual void clearDocs(DocId lidLow, DocId lidLimit);
-    bool wantShrinkLidSpace(void) const { return _committedDocIdLimit < getNumDocs(); }
+    bool wantShrinkLidSpace() const { return _committedDocIdLimit < getNumDocs(); }
     virtual bool canShrinkLidSpace() const override;
     virtual void shrinkLidSpace() override;
     virtual void onShrinkLidSpace();

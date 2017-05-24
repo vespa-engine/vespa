@@ -102,40 +102,40 @@ FakeZcbFilterOcc::FakeZcbFilterOcc(const FakeWord &fw)
 }
 
 
-FakeZcbFilterOcc::~FakeZcbFilterOcc(void)
+FakeZcbFilterOcc::~FakeZcbFilterOcc()
 {
 }
 
 
 void
-FakeZcbFilterOcc::forceLink(void)
+FakeZcbFilterOcc::forceLink()
 {
 }
 
 
 size_t
-FakeZcbFilterOcc::bitSize(void) const
+FakeZcbFilterOcc::bitSize() const
 {
     // Do not count the 3 padding bytes here.
     return 8 * (_compressed.size() - 3) ;
 }
 
 bool
-FakeZcbFilterOcc::hasWordPositions(void) const
+FakeZcbFilterOcc::hasWordPositions() const
 {
     return false;
 }
 
 
 int
-FakeZcbFilterOcc::lowLevelSinglePostingScan(void) const
+FakeZcbFilterOcc::lowLevelSinglePostingScan() const
 {
     return 0;
 }
 
 
 int
-FakeZcbFilterOcc::lowLevelSinglePostingScanUnpack(void) const
+FakeZcbFilterOcc::lowLevelSinglePostingScanUnpack() const
 {
     return 0;
 }
@@ -178,7 +178,7 @@ public:
                                   unsigned int residue,
                                   const fef::TermFieldMatchDataArray &matchData);
 
-    ~FakeFilterOccZCBArrayIterator(void);
+    ~FakeFilterOccZCBArrayIterator();
 
     void doUnpack(uint32_t docId) override;
     void doSeek(uint32_t docId) override;
@@ -212,8 +212,7 @@ FakeFilterOccZCBArrayIterator::initRange(uint32_t begin, uint32_t end)
 }
 
 
-FakeFilterOccZCBArrayIterator::
-~FakeFilterOccZCBArrayIterator(void)
+FakeFilterOccZCBArrayIterator::~FakeFilterOccZCBArrayIterator()
 {
 }
 

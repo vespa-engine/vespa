@@ -34,13 +34,13 @@ protected:
     static_assert(sizeof(_root) == sizeof(_frozenRoot),
                   "BTree root reference size mismatch");
 
-    BTreeRootBase(void);
+    BTreeRootBase();
 
     BTreeRootBase(const BTreeRootBase &rhs);
 
     BTreeRootBase &operator=(const BTreeRootBase &rhs);
 
-    ~BTreeRootBase(void);
+    ~BTreeRootBase();
 
 public:
     void
@@ -67,19 +67,19 @@ public:
     }
 
     BTreeNode::Ref
-    getRoot(void) const
+    getRoot() const
     {
         return _root;
     }
 
     BTreeNode::Ref
-    getFrozenRoot(void) const
+    getFrozenRoot() const
     {
         return BTreeNode::Ref(_frozenRoot.load(std::memory_order_acquire));
     }
 
     BTreeNode::Ref
-    getFrozenRootRelaxed(void) const
+    getFrozenRootRelaxed() const
     {
         return BTreeNode::Ref(_frozenRoot.load(std::memory_order_relaxed));
     }
@@ -91,7 +91,7 @@ public:
     }
 
     void
-    recycle(void)
+    recycle()
     {
         _root = BTreeNode::Ref();
         _frozenRoot = BTreeNode::Ref().ref();

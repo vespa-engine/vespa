@@ -64,7 +64,7 @@ public:
 class Zc4PosOccRandRead : public ZcPosOccRandRead
 {
 public:
-    Zc4PosOccRandRead(void);
+    Zc4PosOccRandRead();
 
     /**
      * Create iterator for single word.  Semantic lifetime of counts and

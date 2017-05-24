@@ -51,7 +51,7 @@ public:
     const string & getBaseDir()       const { return _baseDir; }
     void setSnapshot(const Snapshot &snap)       { _snapShot = snap; }
     void setBaseDir(const string & base);
-    bool hasReaders(void) const;
+    bool hasReaders() const;
     uint64_t getMemoryFootprint() const;
 protected:
     typedef vespalib::hash_map<string, VectorHolder> AttributeMap;

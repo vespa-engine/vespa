@@ -18,7 +18,7 @@ public:
     typedef std::shared_ptr<FastOS_FileInterface> FSP;
     virtual ~FileRandRead() { }
     virtual FSP read(size_t offset, vespalib::DataBuffer & buffer, size_t sz) = 0;
-    virtual int64_t getSize(void) = 0;
+    virtual int64_t getSize() = 0;
 };
 
 }

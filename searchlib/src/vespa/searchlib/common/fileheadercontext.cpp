@@ -14,12 +14,12 @@ namespace common
 
 using vespalib::GenericHeader;
 
-FileHeaderContext::FileHeaderContext(void)
+FileHeaderContext::FileHeaderContext()
 {
 }
 
 
-FileHeaderContext::~FileHeaderContext(void)
+FileHeaderContext::~FileHeaderContext()
 {
 }
 

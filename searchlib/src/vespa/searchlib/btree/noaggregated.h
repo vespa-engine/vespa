@@ -10,9 +10,7 @@ namespace btree
 class NoAggregated
 {
 public:
-    NoAggregated(void)
-    {
-    }
+    NoAggregated() { }
 };
 
 

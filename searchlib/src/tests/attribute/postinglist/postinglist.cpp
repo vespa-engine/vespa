@@ -36,7 +36,7 @@ private:
         int _value;
         uint32_t _order;
 
-        RandomValue(void)
+        RandomValue()
             : _docId(0),
               _value(0u),
               _order(0u)
@@ -146,7 +146,7 @@ private:
     uint32_t _generation;
 
     void
-    allocTree(void);
+    allocTree();
 
     void
     freeTree(bool verbose);
@@ -180,7 +180,7 @@ private:
                        RandomValuesVector &values);
 
     void
-    sortRandomValues(void);
+    sortRandomValues();
 
     void
     doCompactEnumStore(Tree &tree,
@@ -214,7 +214,7 @@ public:
     AttributePostingListTest();
     ~AttributePostingListTest();
 
-    int Main(void) override;
+    int Main() override;
 };
 
 AttributePostingListTest::AttributePostingListTest()

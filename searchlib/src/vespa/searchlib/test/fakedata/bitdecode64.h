@@ -51,7 +51,7 @@ public:
     }
 
     uint64_t
-    getOffset(void) const
+    getOffset() const
     {
         return 64 * (_valI - _comprBase - 1) - this->_preRead -
             _bitOffsetBase;
@@ -64,13 +64,13 @@ public:
     }
 
     const uint64_t *
-    getComprBase(void) const
+    getComprBase() const
     {
         return _comprBase;
     }
 
     int
-    getBitOffsetBase(void) const
+    getBitOffsetBase() const
     {
         return _bitOffsetBase;
     }

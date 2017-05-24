@@ -45,7 +45,7 @@ private:
 public:
     ZcPosOccSeqRead(index::PostingListCountFileSeqRead *countFile);
     void setFeatureParams(const PostingListParams &params) override;
-    static const vespalib::string &getSubIdentifier(void);
+    static const vespalib::string &getSubIdentifier();
 };
 
 

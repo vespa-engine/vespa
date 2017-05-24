@@ -446,7 +446,7 @@ Fusion::makeTmpDirs()
 }
 
 bool
-Fusion::CleanTmpDirs(void)
+Fusion::CleanTmpDirs()
 {
     uint32_t i = 0;
     for (;;) {
@@ -483,14 +483,14 @@ Fusion::CleanTmpDirs(void)
 
 
 bool
-Fusion::checkSchemaCompat(void)
+Fusion::checkSchemaCompat()
 {
     return true;
 }
 
 
 bool
-Fusion::readSchemaFiles(void)
+Fusion::readSchemaFiles()
 {
     OldIndexIterator oldIndexIt = _oldIndexes.begin();
     OldIndexIterator oldIndexIte = _oldIndexes.end();

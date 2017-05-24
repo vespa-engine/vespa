@@ -7,12 +7,12 @@ namespace search
 namespace transactionlog
 {
 
-NoSyncProxy::NoSyncProxy(void)
+NoSyncProxy::NoSyncProxy()
 {
 }
 
 
-NoSyncProxy::~NoSyncProxy(void)
+NoSyncProxy::~NoSyncProxy()
 {
 }
 

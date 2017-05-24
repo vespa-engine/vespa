@@ -22,7 +22,7 @@ private:
 
 public:
     Dictionary(const index::Schema &schema);
-    ~Dictionary(void);
+    ~Dictionary();
     PostingList::Iterator find(const vespalib::stringref word,
                                uint32_t fieldId) const
     {

@@ -35,7 +35,7 @@ public:
 
     RawBuf(char *start, size_t size);// Initially use provided buffer
     RawBuf(size_t size);	// malloc-s given size, assigns to _bufStart
-    ~RawBuf(void);		// Frees _bufStart, i.e. the char[].
+    ~RawBuf();		// Frees _bufStart, i.e. the char[].
 
     void	operator+=(const char *src);
     void	operator+=(const RawBuf& buffer);
@@ -52,23 +52,23 @@ public:
     void    appendLong(uint64_t n);
     void    appendCompressedPositiveNumber(uint64_t n);
     void    appendCompressedNumber(int64_t n);
-    bool	IsEmpty(void);	// Return whether all written.
+    bool	IsEmpty();	// Return whether all written.
     void 	expandBuf(size_t needlen);
-    size_t      GetFreeLen(void) const { return _bufEnd - _bufFillPos; }
-    size_t      GetDrainLen(void) const { return _bufDrainPos - _bufStart; }
-    const char *GetDrainPos(void) const { return _bufDrainPos; }
-    const char *GetFillPos(void) const { return _bufFillPos; }
-    char *      GetWritableFillPos(void) const { return _bufFillPos; }
+    size_t      GetFreeLen() const { return _bufEnd - _bufFillPos; }
+    size_t      GetDrainLen() const { return _bufDrainPos - _bufStart; }
+    const char *GetDrainPos() const { return _bufDrainPos; }
+    const char *GetFillPos() const { return _bufFillPos; }
+    char *      GetWritableFillPos() const { return _bufFillPos; }
     char *      GetWritableFillPos(size_t len) { preAlloc(len); return _bufFillPos; }
     char *      GetWritableDrainPos(size_t offset) { return _bufDrainPos + offset; }
     void    truncate(size_t offset) { _bufFillPos = _bufDrainPos + offset; }
     void	preAlloc(size_t len);	// Ensure room for 'len' more bytes.
     size_t  readFile(FastOS_FileInterface &file, size_t maxlen);
-    void	reset(void) { _bufDrainPos = _bufFillPos = _bufStart; }
-    void    Compact(void);
-    void    Reuse(void);
-    size_t  GetUsedAndDrainLen(void) const { return _bufFillPos - _bufStart; }
-    size_t  GetUsedLen(void) const { return _bufFillPos - _bufDrainPos; }
+    void	reset() { _bufDrainPos = _bufFillPos = _bufStart; }
+    void    Compact();
+    void    Reuse();
+    size_t  GetUsedAndDrainLen() const { return _bufFillPos - _bufStart; }
+    size_t  GetUsedLen() const { return _bufFillPos - _bufDrainPos; }
     void	Drain(size_t len);	// Adjust drain pos.
     void    Fill(size_t len) { _bufFillPos += len; }
 

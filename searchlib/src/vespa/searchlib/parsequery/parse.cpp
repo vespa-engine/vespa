@@ -74,7 +74,7 @@ ParseItem::ParseItem(ItemType type, const char *term)
     SetTerm(term);
 }
 
-ParseItem::~ParseItem(void)
+ParseItem::~ParseItem()
 {
     delete _next;
     delete _sibling;
@@ -159,7 +159,7 @@ ParseItem::AppendBuffer(RawBuf *buf) const
 }
 
 size_t
-ParseItem::GetBufferLen(void) const
+ParseItem::GetBufferLen() const
 {
     // Calculate the length of the buffer.
     uint32_t indexLen = _indexName.size();

@@ -50,7 +50,7 @@ public:
     }
 
     void
-    switchActiveBuffer(void)
+    switchActiveBuffer()
     {
         ParentType::switchActiveBuffer(0, 0u);
     }
@@ -140,7 +140,7 @@ private:
     void requireThatWeCanUseFreeLists();
     void requireThatMemoryStatsAreCalculated();
     void requireThatMemoryUsageIsCalculated();
-    void requireThatWecanDisableElemHoldList(void);
+    void requireThatWecanDisableElemHoldList();
     void requireThatBufferGrowthWorks();
 public:
     int Main() override;
@@ -442,7 +442,7 @@ Test::requireThatMemoryUsageIsCalculated()
 
 
 void
-Test::requireThatWecanDisableElemHoldList(void)
+Test::requireThatWecanDisableElemHoldList()
 {
     MyStore s;
     MyRef r1 = s.addEntry(10);

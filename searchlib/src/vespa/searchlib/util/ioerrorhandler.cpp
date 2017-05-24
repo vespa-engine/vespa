@@ -20,7 +20,7 @@ std::atomic<int> nesting;
 }
 
 void
-IOErrorHandler::trap(void)
+IOErrorHandler::trap()
 {
     _instance = this;
     FastOS_File::SetFailedHandler(forward);
@@ -29,7 +29,7 @@ IOErrorHandler::trap(void)
 
 
 void
-IOErrorHandler::untrap(void)
+IOErrorHandler::untrap()
 {
 #ifdef notyet
     FastOS_File::SetFailedHandler(nullptr);

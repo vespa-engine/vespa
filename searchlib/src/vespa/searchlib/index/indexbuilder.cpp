@@ -18,7 +18,7 @@ IndexBuilder::IndexBuilder(const Schema &schema)
 }
 
 
-IndexBuilder::~IndexBuilder(void)
+IndexBuilder::~IndexBuilder()
 {
 }
 

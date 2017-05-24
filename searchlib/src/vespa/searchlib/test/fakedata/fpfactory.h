@@ -19,7 +19,7 @@ class FPFactory
 {
 public:
     virtual
-    ~FPFactory(void);
+    ~FPFactory();
 
     virtual FakePosting::SP
     make(const FakeWord &fw) = 0;
@@ -62,7 +62,7 @@ FPFactory *
 getFPFactory(const std::string &name, const index::Schema &schema);
 
 std::vector<std::string>
-getPostingTypes(void);
+getPostingTypes();
 
 class FPFactoryInit
 {
@@ -70,10 +70,10 @@ class FPFactoryInit
 public:
     FPFactoryInit(const FPFactoryMapEntry &fpFactoryMapEntry);
 
-    ~FPFactoryInit(void);
+    ~FPFactoryInit();
 
     static void
-    forceLink(void);
+    forceLink();
 };
 
 } // namespace fakedata

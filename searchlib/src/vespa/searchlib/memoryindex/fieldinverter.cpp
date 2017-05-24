@@ -182,7 +182,7 @@ struct WordRefRadix {
 };
 
 void
-FieldInverter::sortWords(void)
+FieldInverter::sortWords()
 {
     assert(_wordRefs.size() > 1);
 
@@ -235,7 +235,7 @@ FieldInverter::startElement(int32_t weight)
 
 
 void
-FieldInverter::endElement(void)
+FieldInverter::endElement()
 {
     _elems.back().setLen(_wpos);
     _wpos = 0;

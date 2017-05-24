@@ -64,27 +64,27 @@ private:
     std::unique_ptr<DictionaryFileSeqRead> _dictFile;
 
     void
-    allocFiles(void);
+    allocFiles();
 
     static uint64_t
-    noWordNumHigh(void)
+    noWordNumHigh()
     {
         return std::numeric_limits<uint64_t>::max();
     }
 
     static uint64_t
-    noWordNum(void)
+    noWordNum()
     {
         return 0u;
     }
 
 public:
-    DictionaryWordReader(void);
+    DictionaryWordReader();
 
-    ~DictionaryWordReader(void);
+    ~DictionaryWordReader();
 
     bool
-    isValid(void) const
+    isValid() const
     {
         return _wordNum != noWordNumHigh();
     }
@@ -100,7 +100,7 @@ public:
     }
 
     void
-    read(void)
+    read()
     {
         _dictFile->readWord(_word, _wordNum, _counts);
     }
@@ -111,7 +111,7 @@ public:
          const TuneFileSeqRead &tuneFileRead);
 
     void
-    close(void);
+    close();
 
     void
     writeNewWordNum(uint64_t newWordNum)

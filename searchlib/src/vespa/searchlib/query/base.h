@@ -60,7 +60,7 @@ typedef std::vector<DocumentIdT> DocumentIdList;
 class Object
 {
  public:
-  virtual ~Object(void);
+  virtual ~Object();
   /// Returns an allocated(new) object that is identical to this one.
   virtual Object * duplicate() const = 0;
   /// Gives you streamability of the object. Object does nothing.

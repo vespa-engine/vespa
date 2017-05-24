@@ -11,12 +11,12 @@ namespace search
 namespace index
 {
 
-PostingListCountFileSeqRead::PostingListCountFileSeqRead(void)
+PostingListCountFileSeqRead::PostingListCountFileSeqRead()
 {
 }
 
 
-PostingListCountFileSeqRead::~PostingListCountFileSeqRead(void)
+PostingListCountFileSeqRead::~PostingListCountFileSeqRead()
 {
 }
 
@@ -29,12 +29,12 @@ getParams(PostingListParams &params)
 }
 
 
-PostingListCountFileSeqWrite::PostingListCountFileSeqWrite(void)
+PostingListCountFileSeqWrite::PostingListCountFileSeqWrite()
 {
 }
 
 
-PostingListCountFileSeqWrite::~PostingListCountFileSeqWrite(void)
+PostingListCountFileSeqWrite::~PostingListCountFileSeqWrite()
 {
 }
 

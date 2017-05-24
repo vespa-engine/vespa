@@ -134,7 +134,7 @@ public:
     }
 
     uint32_t getNumFields() const { return _numFields; }
-    const PosOccFieldParams *getFieldParams(void) const { return _fieldParams; }
+    const PosOccFieldParams *getFieldParams() const { return _fieldParams; }
     void getParams(PostingListParams &params) const;
     void setParams(const PostingListParams &params);
     void setSchemaParams(const Schema &schema, const uint32_t indexId);
@@ -195,7 +195,7 @@ public:
     }
 
     void readHeader(const vespalib::GenericHeader &header, const vespalib::string &prefix) override;
-    const vespalib::string &getIdentifier(void) const override;
+    const vespalib::string &getIdentifier() const override;
     void readFeatures(search::index::DocIdAndFeatures &features) override;
     void skipFeatures(unsigned int count) override;
     void unpackFeatures(const search::fef::TermFieldMatchDataArray &matchData, uint32_t docId) override;
@@ -290,7 +290,7 @@ public:
 
     void readHeader(const vespalib::GenericHeader &header, const vespalib::string &prefix) override;
     void writeHeader(vespalib::GenericHeader &header, const vespalib::string &prefix) const override;
-    const vespalib::string &getIdentifier(void) const override;
+    const vespalib::string &getIdentifier() const override;
     void writeFeatures(const DocIdAndFeatures &features) override;
     void setParams(const PostingListParams &params) override;
     void getParams(PostingListParams &params) const override;
@@ -347,7 +347,7 @@ public:
     }
 
     void readHeader(const vespalib::GenericHeader &header, const vespalib::string &prefix) override;
-    const vespalib::string &getIdentifier(void) const override;
+    const vespalib::string &getIdentifier() const override;
     void readFeatures(search::index::DocIdAndFeatures &features) override;
     void skipFeatures(unsigned int count) override;
     void unpackFeatures(const search::fef::TermFieldMatchDataArray &matchData, uint32_t docId) override;
@@ -441,7 +441,7 @@ public:
 
     void readHeader(const vespalib::GenericHeader &header, const vespalib::string &prefix) override;
     void writeHeader(vespalib::GenericHeader &header, const vespalib::string &prefix) const override;
-    const vespalib::string &getIdentifier(void) const override;
+    const vespalib::string &getIdentifier() const override;
     void writeFeatures(const DocIdAndFeatures &features) override;
     void setParams(const PostingListParams &params) override;
     void getParams(PostingListParams &params) const override;

@@ -6,23 +6,16 @@
 
 class ExpGolombApp : public FastOS_Application
 {
-    void
-    usage(void);
-
-    int
-    testExpGolomb64(int kValue);
-
-    int
-    testExpGolomb64le(int kValue);
-
-    int
-    Main(void) override;
+    void usage();
+    int testExpGolomb64(int kValue);
+    int testExpGolomb64le(int kValue);
+    int Main() override;
 };
 
 
 
 void
-ExpGolombApp::usage(void)
+ExpGolombApp::usage()
 {
     printf("Usage: expgolomb testeg64 <kValue>]\n");
     fflush(stdout);
@@ -139,7 +132,7 @@ ExpGolombApp::testExpGolomb64le(int kValue)
 
 
 int
-ExpGolombApp::Main(void)
+ExpGolombApp::Main()
 {
     printf("Hello world\n");
     if (_argc >= 2) {

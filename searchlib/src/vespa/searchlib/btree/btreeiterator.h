@@ -41,13 +41,13 @@ class NodeElement
     uint32_t _idx;
 
     NodeType *
-    getWNode(void) const
+    getWNode() const
     {
         return const_cast<NodeType *>(_node);
     }
 
 public:
-    NodeElement(void)
+    NodeElement()
         : _node(NULL),
           _idx(0u)
     {
@@ -66,7 +66,7 @@ public:
     }
 
     const NodeType *
-    getNode(void) const
+    getNode() const
     {
         return _node;
     }
@@ -78,19 +78,19 @@ public:
     }
 
     uint32_t
-    getIdx(void) const
+    getIdx() const
     {
         return _idx;
     }
 
     void
-    incIdx(void)
+    incIdx()
     {
         ++_idx;
     }
 
     void
-    decIdx(void)
+    decIdx()
     {
         --_idx;
     }
@@ -121,7 +121,7 @@ public:
     }
 
     void
-    adjustLeftVictimKilled(void)
+    adjustLeftVictimKilled()
     {
         assert(_idx > 0);
         --_idx;
@@ -383,7 +383,7 @@ public:
      * Return if the tree has data or not (e.g. keys and data or only keys).
      */
     static bool
-    hasData(void)
+    hasData()
     {
         return LeafNodeType::hasData();
     }
@@ -392,19 +392,19 @@ public:
      * Move the iterator directly to end.  Used by findHelper method in BTree.
      */
     void
-    setupEnd(void);
+    setupEnd();
 
     /**
      * Setup iterator to be empty and not be associated with any tree.
      */
     void
-    setupEmpty(void);
+    setupEmpty();
 
     /**
      * Move iterator to beyond last element in the current tree.
      */
     void
-    end(void) __attribute__((noinline));
+    end() __attribute__((noinline));
 
     /**
      * Move iterator to beyond last element in the given tree.
@@ -418,7 +418,7 @@ public:
      * Move iterator to first element in the current tree.
      */
     void
-    begin(void);
+    begin();
 
     /**
      * Move iterator to first element in the given tree.
@@ -432,13 +432,13 @@ public:
      * Move iterator to last element in the current tree.
      */
     void
-    rbegin(void);
+    rbegin();
 
     /*
      * Get aggregated values for the current tree. 
      */
     const AggrT &
-    getAggregated(void) const;
+    getAggregated() const;
 
     bool
     identical(const BTreeIteratorBase &rhs) const;
@@ -756,7 +756,7 @@ public:
     }
 
     NodeAllocatorType &
-    getAllocator(void) const
+    getAllocator() const
     {
         return const_cast<NodeAllocatorType &>(*_allocator);
     }
@@ -808,7 +808,7 @@ private:
                 const AggrCalcT &aggrCalc);
 
     LeafNodeType *
-    getLeafNode(void) const
+    getLeafNode() const
     {
         return _leaf.getWNode();
     }
@@ -823,13 +823,13 @@ private:
     }
 
     uint32_t
-    getLeafNodeIdx(void) const
+    getLeafNodeIdx() const
     {
         return _leaf.getIdx();
     }
 
     uint32_t
-    getPathSize(void) const
+    getPathSize() const
     {
         return _pathSize;
     }

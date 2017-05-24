@@ -29,7 +29,7 @@ public:
     ThreeLevelCountWriteBuffers(EC &sse, EC &spe, EC &pe);
 
     void
-    flush(void);
+    flush();
 
     // unit test method.  Just pads without writing proper header
     void

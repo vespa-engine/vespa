@@ -104,7 +104,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 void
 BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-setupEnd(void)
+setupEnd()
 {
     _leaf.setNodeAndIdx(NULL, 0u);
 }
@@ -114,7 +114,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 void
 BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-setupEmpty(void)
+setupEmpty()
 {
     clearPath(0u);
     _leaf.setNodeAndIdx(NULL, 0u);
@@ -126,7 +126,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 void
 BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-end(void)
+end()
 {
     if (_pathSize == 0) {
         if (_leafRoot == NULL)
@@ -257,7 +257,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 void
 BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-begin(void)
+begin()
 {
     uint32_t pidx = _pathSize;
     if (pidx > 0u) {
@@ -320,7 +320,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 void
 BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-rbegin(void)
+rbegin()
 {
     uint32_t pidx = _pathSize;
     if (pidx > 0u) {
@@ -353,7 +353,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 const AggrT &
 BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-getAggregated(void) const
+getAggregated() const
 {
     // XXX: Undefined behavior if tree is empty.
     uint32_t pidx = _pathSize;

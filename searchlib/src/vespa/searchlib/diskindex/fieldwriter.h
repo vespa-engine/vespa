@@ -32,7 +32,7 @@ private:
     uint64_t _wordNum;
     uint32_t _prevDocId;
 
-    static uint64_t noWordNum(void) { return 0u; }
+    static uint64_t noWordNum() { return 0u; }
 public:
 
     using DictionaryFileSeqWrite = index::DictionaryFileSeqWrite;

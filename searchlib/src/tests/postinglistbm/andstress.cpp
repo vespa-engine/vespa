@@ -71,45 +71,19 @@ public:
                     uint32_t stride,
                     bool unpack);
 
-    ~AndStressMaster(void);
-
-    void
-    run(void);
-
-    void
-    makePostingsHelper(FPFactory *postingFactory,
-                       const std::string &postingFormat,
-                       bool validate, bool verbose);
-
-    void
-    dropPostings(void);
-
-    void
-    dropTasks(void);
-
-    void
-    resetTasks(void);	// Prepare for rerun
-
-    void
-    setupTasks(unsigned int numTasks);
-
-    Task *
-    getTask(void);
-
-    unsigned int
-    getNumDocs(void) const
-    {
-        return _numDocs;
-    }
-
-    bool
-    getUnpack(void) const
-    {
-        return _unpack;
-    }
-
-    double
-    runWorkers(const std::string &postingFormat);
+    ~AndStressMaster();
+    void run();
+    void makePostingsHelper(FPFactory *postingFactory,
+                            const std::string &postingFormat,
+                            bool validate, bool verbose);
+    void dropPostings();
+    void dropTasks();
+    void resetTasks();	// Prepare for rerun
+    void setupTasks(unsigned int numTasks);
+    Task *getTask();
+    unsigned int getNumDocs() const { return _numDocs; }
+    bool getUnpack() const { return _unpack; }
+    double runWorkers(const std::string &postingFormat);
 };
 
 
@@ -125,11 +99,8 @@ private:
     unsigned int _id;
 public:
     AndStressWorker(AndStressMaster &master, unsigned int id);
-
-    ~AndStressWorker(void);
-
-    virtual void
-    Run(FastOS_ThreadInterface *thisThread, void *arg) override;
+    ~AndStressWorker();
+    virtual void Run(FastOS_ThreadInterface *thisThread, void *arg) override;
 };
 
 
@@ -184,7 +155,7 @@ clearPtrVector(std::vector<C> &v)
 }
 
 
-AndStressMaster::~AndStressMaster(void)
+AndStressMaster::~AndStressMaster()
 {
     LOG(info, "AndStressMaster::~AndStressMaster");
 
@@ -197,7 +168,7 @@ AndStressMaster::~AndStressMaster(void)
 
 
 void
-AndStressMaster::dropPostings(void)
+AndStressMaster::dropPostings()
 {
     for (unsigned int i = 0; i < _postings.size(); ++i)
         _postings[i].clear();
@@ -206,7 +177,7 @@ AndStressMaster::dropPostings(void)
 
 
 void
-AndStressMaster::dropTasks(void)
+AndStressMaster::dropTasks()
 {
     _tasks.clear();
     _taskIdx = 0;
@@ -214,7 +185,7 @@ AndStressMaster::dropTasks(void)
 
 
 void
-AndStressMaster::resetTasks(void)
+AndStressMaster::resetTasks()
 {
     _taskIdx = 0;
 }
@@ -302,7 +273,7 @@ AndStressMaster::setupTasks(unsigned int numTasks)
 
 
 AndStressMaster::Task *
-AndStressMaster::getTask(void)
+AndStressMaster::getTask()
 {
     Task *result = NULL;
     _taskCond.Lock();
@@ -319,7 +290,7 @@ AndStressMaster::getTask(void)
 }
 
 void
-AndStressMaster::run(void)
+AndStressMaster::run()
 {
     LOG(info, "AndStressMaster::run");
 
@@ -381,7 +352,7 @@ AndStressWorker::AndStressWorker(AndStressMaster &master, unsigned int id)
     LOG(debug, "AndStressWorker::AndStressWorker, id=%u", id);
 }
 
-AndStressWorker::~AndStressWorker(void)
+AndStressWorker::~AndStressWorker()
 {
     LOG(debug, "AndStressWorker::~AndStressWorker, id=%u", _id);
 }
@@ -500,13 +471,13 @@ AndStressWorker::Run(FastOS_ThreadInterface *thisThread, void *arg)
 }
 
 
-AndStress::AndStress(void)
+AndStress::AndStress()
 {
     LOG(debug, "Andstress::AndStress");
 }
 
 
-AndStress::~AndStress(void)
+AndStress::~AndStress()
 {
     LOG(debug, "Andstress::~AndStress");
 }

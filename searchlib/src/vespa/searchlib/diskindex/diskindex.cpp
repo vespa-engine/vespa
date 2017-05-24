@@ -61,7 +61,7 @@ DiskIndex::DiskIndex(const vespalib::string &indexDir, size_t cacheSize)
 DiskIndex::~DiskIndex() {}
 
 bool
-DiskIndex::loadSchema(void)
+DiskIndex::loadSchema()
 {
     vespalib::string schemaName = _indexDir + "/schema.txt";
     if (!_schema.loadFromFile(schemaName)) {

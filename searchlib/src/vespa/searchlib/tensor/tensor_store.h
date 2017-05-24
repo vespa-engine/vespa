@@ -50,7 +50,7 @@ public:
     }
 
     void
-    clearHoldLists(void)
+    clearHoldLists()
     {
         _store.clearHoldLists();
     }

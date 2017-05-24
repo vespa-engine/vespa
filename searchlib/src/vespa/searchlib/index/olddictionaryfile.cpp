@@ -12,7 +12,7 @@ namespace index
 {
 
 
-OldDictionaryIndexMapping::OldDictionaryIndexMapping(void)
+OldDictionaryIndexMapping::OldDictionaryIndexMapping()
     : _fieldIdToLocalId(),
       _indexNames(),
       _indexIds(),
@@ -21,7 +21,7 @@ OldDictionaryIndexMapping::OldDictionaryIndexMapping(void)
 }
 
 
-OldDictionaryIndexMapping::~OldDictionaryIndexMapping(void)
+OldDictionaryIndexMapping::~OldDictionaryIndexMapping()
 {
 }
 
@@ -100,12 +100,12 @@ OldDictionaryIndexMapping::setupHelper(const Schema &schema)
 }
 
 
-OldDictionaryFileSeqRead::~OldDictionaryFileSeqRead(void)
+OldDictionaryFileSeqRead::~OldDictionaryFileSeqRead()
 {
 }
 
 
-OldDictionaryFileSeqWrite::~OldDictionaryFileSeqWrite(void)
+OldDictionaryFileSeqWrite::~OldDictionaryFileSeqWrite()
 {
 }
 

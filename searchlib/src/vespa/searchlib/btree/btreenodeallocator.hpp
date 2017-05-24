@@ -14,7 +14,7 @@ namespace btree {
 template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
-BTreeNodeAllocator(void)
+BTreeNodeAllocator()
     : _nodeStore(),
       _internalToFreeze(),
       _leafToFreeze(),
@@ -28,7 +28,7 @@ BTreeNodeAllocator(void)
 template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
-~BTreeNodeAllocator(void)
+~BTreeNodeAllocator()
 {
     assert(_internalToFreeze.empty());
     assert(_leafToFreeze.empty());
@@ -70,7 +70,7 @@ template <typename KeyT, typename DataT, typename AggrT,
 typename BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
 LeafNodeTypeRefPair
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
-allocLeafNode(void)
+allocLeafNode()
 {
     if (_leafHoldUntilFreeze.empty()) {
         LeafNodeTypeRefPair nodeRef = _nodeStore.allocLeafNode();
@@ -191,7 +191,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 void
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
-freeze(void)
+freeze()
 {
     // Freeze nodes.
 
@@ -286,7 +286,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 void
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
-clearHoldLists(void)
+clearHoldLists()
 {
     _nodeStore.clearHoldLists();
 }

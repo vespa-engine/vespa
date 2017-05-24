@@ -138,7 +138,7 @@ public:
     }
 
     const AggrT &
-    getAggregated(void) const
+    getAggregated() const
     {
         return _tree.getAggregated(_alloc);
     }

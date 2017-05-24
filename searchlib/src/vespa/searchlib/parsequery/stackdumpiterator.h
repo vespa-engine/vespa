@@ -93,25 +93,25 @@ public:
      * @return true if there is a new item, false if there are no more items
      * or if there was errors in extracting the next item.
      */
-    bool next(void);
+    bool next();
 
     /**
      * Get the number of the current item.
      *
      * @return The ordinal of the current item. -1 if at the start.
      */
-    int getNum(void) const { return _currNum; }
+    int getNum() const { return _currNum; }
 
     /**
      * Get the type of the current item.
      * @return the type.
      */
-    ParseItem::ItemType getType(void) const { return _currType; }
+    ParseItem::ItemType getType() const { return _currType; }
     /**
      * Get the type of the current item.
      * @return the type.
      */
-    ParseItem::ItemCreator getCreator(void) const { return _currCreator; }
+    ParseItem::ItemCreator getCreator() const { return _currCreator; }
 
     /**
      * Get the rank weight of the current item.
@@ -141,9 +141,9 @@ public:
      **/
     uint32_t getFlags() const { return _currFlags; }
 
-    uint32_t getArity(void) const { return _currArity; }
+    uint32_t getArity() const { return _currArity; }
 
-    uint32_t getArg1(void) const { return _currArg1; }
+    uint32_t getArg1() const { return _currArg1; }
 
     double getArg2() const { return _currArg2; }
 

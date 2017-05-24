@@ -36,43 +36,43 @@ public:
 
     FakePosting(const std::string &name);
 
-    virtual ~FakePosting(void);
+    virtual ~FakePosting();
 
     /*
      * Size of posting list, in bits.
      */
     virtual size_t
-    bitSize(void) const = 0;
+    bitSize() const = 0;
 
     virtual size_t
-    skipBitSize(void) const;
+    skipBitSize() const;
 
     virtual size_t
-    l1SkipBitSize(void) const;
+    l1SkipBitSize() const;
 
     virtual size_t
-    l2SkipBitSize(void) const;
+    l2SkipBitSize() const;
 
     virtual size_t
-    l3SkipBitSize(void) const;
+    l3SkipBitSize() const;
 
     virtual size_t
-    l4SkipBitSize(void) const;
+    l4SkipBitSize() const;
 
     virtual bool
-    hasWordPositions(void) const = 0;
+    hasWordPositions() const = 0;
 
     /*
      * Single posting list performance, without feature unpack.
      */
     virtual int
-    lowLevelSinglePostingScan(void) const = 0;
+    lowLevelSinglePostingScan() const = 0;
 
     /*
      * Single posting list performance, with feature unpack.
      */
     virtual int
-    lowLevelSinglePostingScanUnpack(void) const = 0;
+    lowLevelSinglePostingScanUnpack() const = 0;
 
     /*
      * Two posting lists performance (same format) without feature unpack.
@@ -93,7 +93,7 @@ public:
     virtual search::queryeval::SearchIterator *
     createIterator(const fef::TermFieldMatchDataArray &matchData) const = 0;
 
-    const std::string &getName(void) const
+    const std::string &getName() const
     {
         return _name;
     }

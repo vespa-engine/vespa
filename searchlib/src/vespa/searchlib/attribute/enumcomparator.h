@@ -75,29 +75,14 @@ public:
      **/
     EnumStoreFoldedComparatorT(const EnumStoreType & enumStore,
                                EntryValue value, bool prefix = false);
-
-    inline bool
-    getUsePrefix(void) const
-    {
-        return false;
-    }
-
-    static int
-    compareFolded(EntryValue lhs, EntryValue rhs)
-    {
-        return ParentType::compare(lhs, rhs);
-    }
-
-    static int
-    compareFoldedPrefix(EntryValue lhs, EntryValue rhs, size_t prefixLen)
-    {
+    inline bool getUsePrefix() const { return false; }
+    static int compareFolded(EntryValue lhs, EntryValue rhs) { return ParentType::compare(lhs, rhs); }
+    static int compareFoldedPrefix(EntryValue lhs, EntryValue rhs, size_t prefixLen) {
         (void) prefixLen;
         return ParentType::compare(lhs, rhs);
     }
 
-    bool
-    operator() (const EnumIndex & lhs, const EnumIndex & rhs) const override
-    {
+    bool operator() (const EnumIndex & lhs, const EnumIndex & rhs) const override {
         if (getUsePrefix())
             return compareFoldedPrefix(getValue(lhs),
                                        getValue(rhs), _prefixLen) < 0;
@@ -170,7 +155,7 @@ compareFoldedPrefix(EntryValue lhs, EntryValue rhs, size_t prefixLen);
 
 template <>
 inline bool
-EnumStoreFoldedComparatorT<StringEntryType>::getUsePrefix(void) const
+EnumStoreFoldedComparatorT<StringEntryType>::getUsePrefix() const
 {
     return _prefix;
 }

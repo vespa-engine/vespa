@@ -17,7 +17,7 @@ private:
     bool getDimensionality(const char **pp);
 
 public:
-    Location(void);
+    Location();
     bool getRankOnDistance()       const { return _rankOnDistance; }
     bool getPruneOnDistance()      const { return _pruneOnDistance; }
     uint32_t getXAspect()          const { return _xAspect; }

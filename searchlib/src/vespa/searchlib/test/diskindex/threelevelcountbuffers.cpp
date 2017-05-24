@@ -37,7 +37,7 @@ ThreeLevelCountWriteBuffers(EC &sse, EC &spe, EC &pe)
 
 
 void
-ThreeLevelCountWriteBuffers::flush(void)
+ThreeLevelCountWriteBuffers::flush()
 {
     _ssFileBitSize = _sse.getWriteOffset();
     _spFileBitSize = _spe.getWriteOffset();

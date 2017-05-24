@@ -216,7 +216,7 @@ public:
      */
     void AppendBuffer(RawBuf *buf) const;
 
-    size_t GetBufferLen(void) const;
+    size_t GetBufferLen() const;
 };
 
 }

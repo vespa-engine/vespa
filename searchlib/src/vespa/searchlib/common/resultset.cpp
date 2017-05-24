@@ -13,7 +13,7 @@ namespace search {
 //Above 32M we hand back to the OS directly.
 constexpr size_t MMAP_LIMIT = 0x2000000;
 
-ResultSet::ResultSet(void)
+ResultSet::ResultSet()
     : _elemsUsedInRankedHitsArray(0u),
       _rankedHitsArrayAllocElements(0u),
       _bitOverflow(),
@@ -41,7 +41,7 @@ ResultSet::ResultSet(const ResultSet &other)
 }
 
 
-ResultSet::~ResultSet(void)
+ResultSet::~ResultSet()
 {
 }
 
@@ -78,14 +78,14 @@ ResultSet::setBitOverflow(BitVector::UP newBitOverflow)
 // Find number of hits
 //////////////////////////////////////////////////////////////////////
 unsigned int
-ResultSet::getNumHits(void) const
+ResultSet::getNumHits() const
 {
     return (_bitOverflow) ? _bitOverflow->countTrueBits() : _elemsUsedInRankedHitsArray;
 }
 
 
 void
-ResultSet::mergeWithBitOverflow(void)
+ResultSet::mergeWithBitOverflow()
 {
     if ( ! _bitOverflow) {
         return;

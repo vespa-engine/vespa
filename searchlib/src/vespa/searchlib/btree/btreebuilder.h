@@ -50,19 +50,19 @@ private:
     const AggrCalcT &_aggrCalc;
 
     void
-    normalize(void);
+    normalize();
 
     void
-    allocNewLeafNode(void);
+    allocNewLeafNode();
 
     InternalNodeType *
-    createInternalNode(void);
+    createInternalNode();
 public:
     BTreeBuilder(NodeAllocatorType &allocator);
 
     BTreeBuilder(NodeAllocatorType &allocator, const AggrCalcT &aggrCalc);
 
-    ~BTreeBuilder(void);
+    ~BTreeBuilder();
 
     void
     recursiveDelete(NodeRef node);
@@ -71,13 +71,13 @@ public:
     insert(const KeyT &key, const DataT &data);
 
     NodeRef
-    handover(void);
+    handover();
 
     void
-    reuse(void);
+    reuse();
 
     void
-    clear(void);
+    clear();
 };
 
 extern template class BTreeBuilder<uint32_t, uint32_t,

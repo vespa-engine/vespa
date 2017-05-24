@@ -10,12 +10,12 @@ namespace btree
 class NoAggrCalc
 {
 public:
-    NoAggrCalc(void)
+    NoAggrCalc()
     {
     }
 
     static bool
-    hasAggregated(void)
+    hasAggregated()
     {
         return false;
     }

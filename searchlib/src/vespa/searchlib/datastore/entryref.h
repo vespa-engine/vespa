@@ -11,10 +11,10 @@ class EntryRef {
 protected:
     uint32_t _ref;
 public:
-    EntryRef(void) : _ref(0u) { }
+    EntryRef() : _ref(0u) { }
     EntryRef(uint32_t ref_) : _ref(ref_) { }
-    uint32_t ref(void) const { return _ref; }
-    bool valid(void) const { return _ref != 0u; }
+    uint32_t ref() const { return _ref; }
+    bool valid() const { return _ref != 0u; }
     bool operator==(const EntryRef &rhs) const { return _ref == rhs._ref; }
     bool operator!=(const EntryRef &rhs) const { return _ref != rhs._ref; }
     bool operator <(const EntryRef &rhs) const { return _ref < rhs._ref; }

@@ -70,7 +70,7 @@ makeSchema()
 }
 
 document::DocumenttypesConfig
-makeDocTypeRepoConfig(void)
+makeDocTypeRepoConfig()
 {
     const int32_t doc_type_id = 787121340;
     document::config_builder::DocumenttypesConfigBuilderHelper builder;

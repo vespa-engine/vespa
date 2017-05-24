@@ -11,13 +11,13 @@ using namespace search;
 
 class CreateIdxFileFromDatApp : public FastOS_Application
 {
-    void usage(void);
+    void usage();
     int createIdxFile(const vespalib::string & datFileName, const vespalib::string & idxFileName);
-    int Main(void) override;
+    int Main() override;
 };
 
 void
-CreateIdxFileFromDatApp::usage(void)
+CreateIdxFileFromDatApp::usage()
 {
     printf("Usage: %s <datfile> <idxfile>\n", _argv[0]);
     fflush(stdout);
@@ -149,7 +149,7 @@ int CreateIdxFileFromDatApp::createIdxFile(const vespalib::string & datFileName,
 }
 
 int
-CreateIdxFileFromDatApp::Main(void)
+CreateIdxFileFromDatApp::Main()
 {
     vespalib::string cmd;
     if (_argc == 3) {

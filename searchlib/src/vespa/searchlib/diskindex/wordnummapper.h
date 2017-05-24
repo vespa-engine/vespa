@@ -17,13 +17,13 @@ class WordNumMapping
     typedef vespalib::Array<uint64_t> Array;
 
     static uint64_t
-    noWordNumHigh(void)
+    noWordNumHigh()
     {
         return std::numeric_limits<uint64_t>::max();
     }
 
     static uint64_t
-    noWordNum(void)
+    noWordNum()
     {
         return 0u;
     }
@@ -32,10 +32,10 @@ class WordNumMapping
     uint64_t _oldDictSize;
 public:
 
-    WordNumMapping(void);
+    WordNumMapping();
 
     const uint64_t *
-    getOld2NewWordNums(void) const
+    getOld2NewWordNums() const
     {
         return (_old2newwords.empty())
             ? NULL
@@ -43,7 +43,7 @@ public:
     }
 
     uint64_t
-    getOldDictSize(void) const
+    getOldDictSize() const
     {
         return _oldDictSize;
     }
@@ -53,16 +53,16 @@ public:
                     const TuneFileSeqRead &tuneFileRead);
 
     void
-    noMappingFile(void);
+    noMappingFile();
 
     void
-    clear(void);
+    clear();
 
     void
     setup(uint32_t numWordIds);
 
     uint64_t
-    getMaxMappedWordNum(void) const;
+    getMaxMappedWordNum() const;
 
     void
     sanityCheck(bool allowHoles);
@@ -72,13 +72,13 @@ public:
 class WordNumMapper
 {
     static uint64_t
-    noWordNumHigh(void)
+    noWordNumHigh()
     {
         return std::numeric_limits<uint64_t>::max();
     }
 
     static uint64_t
-    noWordNum(void)
+    noWordNum()
     {
         return 0u;
     }
@@ -87,7 +87,7 @@ class WordNumMapper
     uint64_t _oldDictSize;
 
 public:
-    WordNumMapper(void)
+    WordNumMapper()
         : _old2newwords(NULL),
           _oldDictSize(0)
     {
@@ -116,13 +116,13 @@ public:
     }
 
     uint64_t
-    getMaxWordNum(void) const
+    getMaxWordNum() const
     {
         return _oldDictSize;
     }
 
     uint64_t
-    getMaxMappedWordNum(void) const
+    getMaxMappedWordNum() const
     {
         return map(_oldDictSize);
     }

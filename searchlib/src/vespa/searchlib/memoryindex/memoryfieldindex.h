@@ -100,7 +100,7 @@ public:
     }
 
     MemoryFieldIndex(const index::Schema &schema, uint32_t fieldId);
-    ~MemoryFieldIndex(void);
+    ~MemoryFieldIndex();
     PostingList::Iterator find(const vespalib::stringref word) const;
 
     PostingList::ConstIterator
@@ -138,7 +138,7 @@ private:
     }
 
     void
-    incGeneration(void)
+    incGeneration()
     {
         _generationHandler.incGeneration();
     }
@@ -149,7 +149,7 @@ public:
     }
 
     void
-    compactFeatures(void);
+    compactFeatures();
 
     void dump(search::index::IndexBuilder & indexBuilder);
 

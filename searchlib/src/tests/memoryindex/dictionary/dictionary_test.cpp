@@ -81,7 +81,7 @@ public:
     }
 
     virtual void
-    endWord(void) override
+    endWord() override
     {
         assert(_insideWord);
         assert(!_insideDoc);
@@ -122,7 +122,7 @@ public:
     }
 
     virtual void
-    endDocument(void) override
+    endDocument() override
     {
         assert(_insideDoc);
         assert(!_insideElem);
@@ -147,7 +147,7 @@ public:
     }
 
     virtual void
-    endElement(void) override
+    endElement() override
     {
         assert(_insideElem);
         _ss << "]";
@@ -165,7 +165,7 @@ public:
     }
 
     std::string
-    toStr(void) const
+    toStr() const
     {
         return _ss.str();
     }

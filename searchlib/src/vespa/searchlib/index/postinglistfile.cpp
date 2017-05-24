@@ -11,14 +11,14 @@ namespace search
 namespace index
 {
 
-PostingListFileSeqRead::PostingListFileSeqRead(void)
+PostingListFileSeqRead::PostingListFileSeqRead()
     : _counts(),
       _residueDocs(0)
 {
 }
 
 
-PostingListFileSeqRead::~PostingListFileSeqRead(void)
+PostingListFileSeqRead::~PostingListFileSeqRead()
 {
 }
 
@@ -47,13 +47,13 @@ getFeatureParams(PostingListParams &params)
 }
 
 
-PostingListFileSeqWrite::PostingListFileSeqWrite(void)
+PostingListFileSeqWrite::PostingListFileSeqWrite()
     : _counts()
 {
 }
 
 
-PostingListFileSeqWrite::~PostingListFileSeqWrite(void)
+PostingListFileSeqWrite::~PostingListFileSeqWrite()
 {
 }
 
@@ -91,13 +91,13 @@ getFeatureParams(PostingListParams &params)
 
 
 PostingListFileRandRead::
-PostingListFileRandRead(void)
+PostingListFileRandRead()
     : _memoryMapped(false)
 {
 }
 
 
-PostingListFileRandRead::~PostingListFileRandRead(void)
+PostingListFileRandRead::~PostingListFileRandRead()
 {
 }
 
@@ -118,7 +118,7 @@ PostingListFileRandReadPassThrough(PostingListFileRandRead *lower,
 }
 
 
-PostingListFileRandReadPassThrough::~PostingListFileRandReadPassThrough(void)
+PostingListFileRandReadPassThrough::~PostingListFileRandReadPassThrough()
 {
     if (_ownLower)
         delete _lower;
@@ -159,7 +159,7 @@ PostingListFileRandReadPassThrough::open(const vespalib::string &name,
 
 
 bool
-PostingListFileRandReadPassThrough::close(void)
+PostingListFileRandReadPassThrough::close()
 {
     return _lower->close();
 }

@@ -14,7 +14,7 @@ class MinMaxAggregated
     int32_t _max;
     
 public:
-    MinMaxAggregated(void)
+    MinMaxAggregated()
         : _min(std::numeric_limits<int32_t>::max()),
           _max(std::numeric_limits<int32_t>::min())
     { }
@@ -24,8 +24,8 @@ public:
           _max(max)
     { }
 
-    int32_t getMin(void) const { return _min; }
-    int32_t getMax(void) const { return _max; }
+    int32_t getMin() const { return _min; }
+    int32_t getMax() const { return _max; }
 
     void
     add(int32_t val)

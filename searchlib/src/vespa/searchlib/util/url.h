@@ -87,7 +87,7 @@ protected:
 
     bool _gotCompleteURL;
 
-    void Reset(void);
+    void Reset();
 
     template <bool (*IsPartChar)(unsigned char c)>
     static unsigned char *ParseURLPart(unsigned char *url,
@@ -138,7 +138,7 @@ public:
      *
      * @return true if this is an absolute URL, false otherwise.
      */
-    bool IsBaseURL(void) const;
+    bool IsBaseURL() const;
 
     /**
      * Get a pointer to the current URL.
@@ -268,7 +268,7 @@ public:
      * Dump the contents of the URL and subelements to stdout. Only
      * elements that contains information are shown.
      */
-    void Dump(void);
+    void Dump();
 };
 
 }

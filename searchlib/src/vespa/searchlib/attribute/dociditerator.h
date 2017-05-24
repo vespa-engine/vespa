@@ -63,7 +63,7 @@ protected:
 
 template <>
 inline int32_t
-DocIdIterator<AttributePosting>::getData(void) const
+DocIdIterator<AttributePosting>::getData() const
 {
     return 1;	// default weight 1 for single value attributes
 }
@@ -78,20 +78,16 @@ template <typename P>
 class DocIdMinMaxIterator : public DocIdIterator<P>
 {
 public:
-    DocIdMinMaxIterator(void)
+    DocIdMinMaxIterator()
         : DocIdIterator<P>()
     { }
-    
-    inline btree::MinMaxAggregated
-    getAggregated() const {
-        return btree::MinMaxAggregated(1, 1);
-    }
+    inline btree::MinMaxAggregated getAggregated() const { return btree::MinMaxAggregated(1, 1); }
 };
 
 
 template<>
 inline btree::MinMaxAggregated
-DocIdMinMaxIterator<AttributeWeightPosting>::getAggregated(void) const
+DocIdMinMaxIterator<AttributeWeightPosting>::getAggregated() const
 {
     btree::MinMaxAggregated a;
     for (const AttributeWeightPosting *cur = _cur, *end = _end; cur != end; ++cur) {
