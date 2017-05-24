@@ -18,7 +18,6 @@ import com.yahoo.logserver.handlers.AbstractLogHandler;
  * The Replicator plugin is used for replicating log messages sent
  * to the logserver.
  * <p>
- * <p>
  * Per default the replicator will start dropping messages enqueued
  * to a client if the outbound message queue reaches 5000 messages.
  * This limit can be configured by setting the system property

@@ -101,7 +101,6 @@ public abstract class AbstractLogHandler implements LogHandler {
      * does something to it.  This is the one you wish to
      * override when you write a new handler.
      * <p>
-     * <p>
      * <em>
      * If your handle method is slow you should document this fact
      * so that decisions can be made with regard to configuration.
@@ -122,7 +121,6 @@ public abstract class AbstractLogHandler implements LogHandler {
      * Close this loghandler.  After a loghandler is closed calling
      * the #handle() has undefined behavior, but it should be assumed
      * that log messages will be silently dropped.
-     * <p>
      * <p>
      * #close() usually implies #flush() but don't bet on it.
      */

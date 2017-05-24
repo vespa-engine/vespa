@@ -7,7 +7,6 @@ package com.yahoo.logserver;
  * all of its knows plugins.  In addition, if a plugin loader's
  * canReload() method returns <code>true</code>, plugins may be loaded
  * again after they are unloaded.
- * <p>
  * <p> Plugins loaded through such reload-capable plugin loaders may
  * be upgraded without restarting the server.
  *
