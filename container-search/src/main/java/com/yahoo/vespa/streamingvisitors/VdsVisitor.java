@@ -308,12 +308,10 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
             }
         } finally {
             session.destroy();
+            log.log(LogLevel.DEBUG, () -> session.getTrace().toString());
         }
 
         query.trace(session.getTrace().toString(), false, 9);
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, session.getTrace().toString());
-        }
 
         if (params.getControlHandler().getResult().code == VisitorControlHandler.CompletionCode.SUCCESS) {
             if (log.isLoggable(LogLevel.DEBUG)) {
