@@ -45,6 +45,19 @@ public class NodeFlavorTuningTest {
     }
 
     @Test
+    public void require_that_documentstore_numthreads_is_based_on_num_cores() {
+        assertDocumentStoreNumThreads(1, 0);
+        assertDocumentStoreNumThreads(1, 1.0);
+        assertDocumentStoreNumThreads(1, 3.0);
+        assertDocumentStoreNumThreads(2, 4.0);
+        assertDocumentStoreNumThreads(4, 8.0);
+        assertDocumentStoreNumThreads(12, 24.0);
+        assertDocumentStoreNumThreads(16, 32.0);
+        assertDocumentStoreNumThreads(24, 48.0);
+        assertDocumentStoreNumThreads(32, 64.0);
+    }
+
+    @Test
     public void require_that_flush_strategy_memory_limits_are_set_based_on_available_memory() {
         assertFlushStrategyMemory(512 * MB, 4);
         assertFlushStrategyMemory(1 * GB, 8);
@@ -70,6 +83,10 @@ public class NodeFlavorTuningTest {
         assertEquals(expMemoryBytes, configFromMemorySetting(memoryGb).flush().memory().each().maxmemory());
     }
 
+    private static void assertDocumentStoreNumThreads(int numThreads, double numCores) {
+        assertEquals(numThreads, configFromNumCoresSetting(numCores).summary().log().numthreads());
+    }
+
     private static void assertFlushStrategyTlsSize(long expTlsSizeBytes, int diskGb) {
         assertEquals(expTlsSizeBytes, configFromDiskSetting(diskGb).flush().memory().maxtlssize());
     }
@@ -87,6 +104,10 @@ public class NodeFlavorTuningTest {
     private static ProtonConfig configFromMemorySetting(int memoryGb) {
         return getConfig(new FlavorsConfig.Flavor.Builder().
                 minMainMemoryAvailableGb(memoryGb));
+    }
+
+    private static ProtonConfig configFromNumCoresSetting(double numCores) {
+        return getConfig(new FlavorsConfig.Flavor.Builder().minCpuCores(numCores));
     }
 
     private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder) {
