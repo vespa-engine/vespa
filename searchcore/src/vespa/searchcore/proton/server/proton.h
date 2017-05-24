@@ -12,7 +12,6 @@
 #include "proton_configurer.h"
 #include "rpc_hooks.h"
 #include "bootstrapconfig.h"
-#include <vespa/persistence/proxy/providerstub.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/flushengine/flushengine.h>
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
@@ -23,8 +22,6 @@
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
 #include <vespa/searchcore/proton/summaryengine/summaryengine.h>
 #include <vespa/searchcore/proton/summaryengine/docsum_by_slime.h>
-#include <vespa/searchcorespi/plugin/factoryloader.h>
-#include <vespa/searchcorespi/plugin/factoryregistry.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/engine/monitorapi.h>
 #include <vespa/searchlib/engine/transportserver.h>
@@ -48,7 +45,6 @@ class Proton : public IProtonConfigurerOwner,
                public search::engine::MonitorServer,
                public IDocumentDBOwner,
                public StatusProducer,
-               public storage::spi::ProviderStub::PersistenceProviderFactory,
                public IPersistenceEngineOwner,
                public vespalib::ComponentConfigProducer,
                public vespalib::StateExplorer
@@ -59,7 +55,6 @@ private:
     typedef search::engine::MonitorRequest                MonitorRequest;
     typedef search::engine::MonitorReply                  MonitorReply;
     typedef search::engine::MonitorClient                 MonitorClient;
-    typedef storage::spi::ProviderStub                    ProviderStub;
     typedef std::map<DocTypeName, DocumentDB::SP>         DocumentDBMap;
     typedef BootstrapConfig::ProtonConfigSP               ProtonConfigSP;
     typedef std::shared_ptr<FastOS_DynamicLibrary>      DynamicLibrarySP;
@@ -108,8 +103,7 @@ private:
     TLS::UP                         _tls;
     std::unique_ptr<DiskMemUsageSampler> _diskMemUsageSampler;
     PersistenceEngine::UP           _persistenceEngine;
-    ProviderStub::UP                _persistenceProxy;
-    DocumentDBMap                   _documentDBMap;
+     DocumentDBMap                   _documentDBMap;
     MatchEngine::UP                 _matchEngine;
     SummaryEngine::UP               _summaryEngine;
     DocsumBySlime::UP               _docsumBySlime;
@@ -130,8 +124,6 @@ private:
     matching::QueryLimiter          _queryLimiter;
     vespalib::Clock                 _clock;
     FastOS_ThreadPool               _threadPool;
-    searchcorespi::FactoryLoader    _libraries;
-    searchcorespi::FactoryRegistry  _indexManagerFactoryRegistry;
     vespalib::Monitor               _configGenMonitor;
     int64_t                         _configGen;
     uint32_t                        _distributionKey;
@@ -144,9 +136,6 @@ private:
     HwInfo                          _hwInfo;
     std::unique_ptr<HwInfoSampler>  _hwInfoSampler;
     std::shared_ptr<IDocumentDBReferenceRegistry> _documentDBReferenceRegistry;
-
-    bool performDataDirectoryUpgrade(const vespalib::string &baseDir);
-    void loadLibrary(const vespalib::string &libName);
 
     virtual IDocumentDBConfigOwner *addDocumentDB(const DocTypeName & docTypeName,
                                                   const vespalib::string & configid,
@@ -168,9 +157,6 @@ private:
 
     void waitForInitDone();
     void waitForOnlineState();
-    virtual storage::spi::PersistenceProvider::UP create() const override;
-    searchcorespi::IIndexManagerFactory::SP
-    getIndexManagerFactory(const vespalib::stringref & name) const override;
     uint32_t getDistributionKey() const override { return _distributionKey; }
     BootstrapConfig::SP getActiveConfigSnapshot() const;
     virtual std::shared_ptr<IDocumentDBReferenceRegistry> getDocumentDBReferenceRegistry() const override;
@@ -192,18 +178,15 @@ public:
      *
      * 1st phase init: start cheap clock thread and get initial config
      */
-    BootstrapConfig::SP
-    init();
+    BootstrapConfig::SP init();
 
     /*
      * 2nd phase init: setup data structures.
      */
-    void
-    init(const BootstrapConfig::SP & configSnapshot);
+    void init(const BootstrapConfig::SP & configSnapshot);
 
 
-    DocumentDB::SP
-    getDocumentDB(const document::DocumentType &docType);
+    DocumentDB::SP getDocumentDB(const document::DocumentType &docType);
 
     DocumentDB::SP
     addDocumentDB(const document::DocumentType &docType,
@@ -235,18 +218,17 @@ public:
     /**
      * Return the oldest active config generation used by proton.
      */
-    int64_t getConfigGeneration(void);
+    int64_t getConfigGeneration();
 
     size_t getNumDocs() const;
     size_t getNumActiveDocs() const;
     DocsumBySlime & getDocsumBySlime() { return *_docsumBySlime; }
 
-    vespalib::string getDelayedConfigs(void) const;
+    vespalib::string getDelayedConfigs() const;
 
     virtual StatusReport::List getStatusReports() const override;
 
     MatchEngine & getMatchEngine() { return *_matchEngine; }
-    FlushEngine & getFlushEngine() { return *_flushEngine; }
     vespalib::ThreadStackExecutorBase & getExecutor() { return _executor; }
 
     bool isReplayDone() const { return _isReplayDone; }
@@ -265,4 +247,3 @@ public:
 };
 
 } // namespace proton
-

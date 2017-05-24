@@ -134,7 +134,6 @@ vespa_define_module(
     src/tests/proton/reprocessing/document_reprocessing_handler
     src/tests/proton/reprocessing/reprocessing_runner
     src/tests/proton/server
-    src/tests/proton/server/data_directory_upgrader
     src/tests/proton/server/disk_mem_usage_filter
     src/tests/proton/server/health_adapter
     src/tests/proton/server/memory_flush_config_updater

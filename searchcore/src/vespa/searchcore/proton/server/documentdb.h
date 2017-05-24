@@ -154,7 +154,7 @@ private:
     /**
      * Resume interrupted config save if needed.
      */
-    void resumeSaveConfig(void);
+    void resumeSaveConfig();
 
     void setIndexSchema(const DocumentDBConfig &configSnapshot, SerialNum serialNum);
 
@@ -186,7 +186,7 @@ private:
     /**
      * Implements IFeedHandlerOwner
      **/
-    virtual bool getAllowPrune(void) const override;
+    virtual bool getAllowPrune() const override;
 
     void startTransactionLogReplay();
 
@@ -292,7 +292,7 @@ public:
      *
      * @return metrics update hook
      **/
-    metrics::UpdateHook & getMetricsUpdateHook(void) {
+    metrics::UpdateHook & getMetricsUpdateHook() {
         return _metricsHook;
     }
 
@@ -328,12 +328,12 @@ public:
     /**
      * Returns the feed handler for this database.
      */
-    FeedHandler & getFeedHandler(void) { return _feedHandler; }
+    FeedHandler & getFeedHandler() { return _feedHandler; }
 
     /**
      * Returns the bucket handler for this database.
      */
-    BucketHandler & getBucketHandler(void) { return _bucketHandler; }
+    BucketHandler & getBucketHandler() { return _bucketHandler; }
 
     /**
      * Returns the cluster state handler for this database.
@@ -395,7 +395,7 @@ public:
      */
     virtual void replayConfig(SerialNum serialNum) override;
 
-    const DocTypeName & getDocTypeName(void) const { return _docTypeName; }
+    const DocTypeName & getDocTypeName() const { return _docTypeName; }
 
     void
     listSchema(std::vector<vespalib::string> &fieldNames,
@@ -413,9 +413,6 @@ public:
     // Implements IDocumentSubDBOwner
     void syncFeedView() override;
 
-    std::shared_ptr<searchcorespi::IIndexManagerFactory>
-    getIndexManagerFactory(const vespalib::stringref & name) const override;
-
     vespalib::string getName() const override { return _docTypeName.getName(); }
     uint32_t getDistributionKey() const override;
 
@@ -423,9 +420,9 @@ public:
      * Implements IFeedHandlerOwner
      **/
     void injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config);
-    void performStartMaintenance(void);
-    void stopMaintenance(void);
-    void forwardMaintenanceConfig(void);
+    void performStartMaintenance();
+    void stopMaintenance();
+    void forwardMaintenanceConfig();
 
     /**
      * Updates metrics collection object, and resets executor stats.

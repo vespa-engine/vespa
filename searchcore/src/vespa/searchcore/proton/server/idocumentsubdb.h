@@ -8,21 +8,19 @@
 #include <vespa/searchlib/util/searchable_stats.h>
 
 
-namespace search {
-    namespace index {
-        class Schema;
-    }
+namespace search::index {
+    class Schema;
 }
 
 namespace document { class DocumentId; }
 
 namespace searchcorespi {
-class IFlushTarget;
-class IIndexManagerFactory;
-class IIndexManager;
+    class IFlushTarget;
+    class IIndexManager;
 }
 namespace proton {
-    namespace matching { class SessionManager; }
+
+namespace matching { class SessionManager; }
 
 class DocumentDBConfig;
 class DocumentSubDbInitializer;

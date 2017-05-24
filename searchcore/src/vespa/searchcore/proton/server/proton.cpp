@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "data_directory_upgrader.h"
 #include "disk_mem_usage_sampler.h"
 #include "document_db_explorer.h"
 #include "flushhandlerproxy.h"
@@ -16,7 +15,6 @@
 
 #include <vespa/searchcore/proton/common/hw_info_sampler.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
-#include <vespa/searchcore/proton/reference/i_document_db_reference.h>
 #include <vespa/searchcore/proton/flushengine/flush_engine_explorer.h>
 #include <vespa/searchcore/proton/flushengine/prepare_restart_flush_strategy.h>
 #include <vespa/searchcore/proton/flushengine/tls_stats_factory.h>
@@ -50,7 +48,6 @@ using search::transactionlog::DomainStats;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::search::core::internal::InternalProtonType;
 using document::CompressionConfig;
-using searchcorespi::IIndexManagerFactory;
 
 namespace proton {
 
@@ -154,7 +151,6 @@ Proton::Proton(const config::ConfigUri & configUri,
       search::engine::MonitorServer(),
       IDocumentDBOwner(),
       StatusProducer(),
-      PersistenceProviderFactory(),
       IPersistenceEngineOwner(),
       ComponentConfigProducer(),
       _configUri(configUri),
@@ -165,7 +161,6 @@ Proton::Proton(const config::ConfigUri & configUri,
       _tls(),
       _diskMemUsageSampler(),
       _persistenceEngine(),
-      _persistenceProxy(),
       _documentDBMap(),
       _matchEngine(),
       _summaryEngine(),
@@ -189,8 +184,6 @@ Proton::Proton(const config::ConfigUri & configUri,
       _queryLimiter(),
       _clock(0.010),
       _threadPool(128 * 1024),
-      _libraries(),
-      _indexManagerFactoryRegistry(),
       _configGenMonitor(),
       _configGen(0),
       _distributionKey(-1),
@@ -221,11 +214,6 @@ Proton::init()
     auto bootstrapConfig = configSnapshot->getBootstrapConfig();
     assert(bootstrapConfig);
 
-    const ProtonConfig &protonConfig = bootstrapConfig->getProtonConfig();
-
-    if (!performDataDirectoryUpgrade(protonConfig.basedir)) {
-        _abortInit = true;
-    }
     return bootstrapConfig;
 }
 
@@ -305,13 +293,6 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _protonConfigurer.applyInitialConfig(initializeThreads);
     initializeThreads.reset();
 
-    if (_persistenceEngine.get() != NULL) {
-        _persistenceProxy.reset(new ProviderStub(protonConfig.persistenceprovider.port,
-                                                 protonConfig.persistenceprovider.threads,
-                                                 *configSnapshot->getDocumentTypeRepoSP(),
-                                                 *this));
-    }
-
     RPCHooks::Params rpcParams(*this, protonConfig.rpcport, _configUri.getConfigId());
     rpcParams.slobrok_config = _configUri.createWithNewId(protonConfig.slobrokconfigid);
     _rpcHooks.reset(new RPCHooks(rpcParams));
@@ -340,62 +321,10 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _initComplete = true;
 }
 
-bool
-Proton::performDataDirectoryUpgrade(const vespalib::string &baseDir)
-{
-    // TODO: Remove this functionality when going to Vespa 6.
-    vespalib::string scanDir = baseDir.substr(0, baseDir.rfind('/'));
-    LOG(debug, "About to perform data directory upgrade: scanDir='%s', destDir='%s'",
-        scanDir.c_str(), baseDir.c_str());
-    DataDirectoryUpgrader upgrader(scanDir, baseDir);
-    DataDirectoryUpgrader::ScanResult scanResult = upgrader.scan();
-    DataDirectoryUpgrader::UpgradeResult upgradeResult = upgrader.upgrade(scanResult);
-    if (upgradeResult.getStatus() == DataDirectoryUpgrader::ERROR) {
-        LOG(error, "Data directory upgrade failed: '%s'. Please consult Vespa release notes on how to manually fix this issue. "
-            "The search node will not start until this issue has been fixed", upgradeResult.getDesc().c_str());
-        return false;
-    } else if (upgradeResult.getStatus() == DataDirectoryUpgrader::IGNORE) {
-        LOG(debug, "Data directory upgrade ignored: %s", upgradeResult.getDesc().c_str());
-    } else if (upgradeResult.getStatus() == DataDirectoryUpgrader::COMPLETE) {
-        LOG(info, "Data directory upgrade completed: %s", upgradeResult.getDesc().c_str());
-    }
-    return true;
-}
-
-void
-Proton::loadLibrary(const vespalib::string &libName)
-{
-    searchcorespi::IIndexManagerFactory::SP factory(_libraries.create(libName));
-    if (factory.get() != NULL) {
-        LOG(info, "Successfully created index manager factory from library '%s'", libName.c_str());
-        _indexManagerFactoryRegistry.add(libName, factory);
-    } else {
-        LOG(error, "Failed creating index manager factory from library '%s'", libName.c_str());
-    }
-}
-
-searchcorespi::IIndexManagerFactory::SP
-Proton::getIndexManagerFactory(const vespalib::stringref & name) const
-{
-    return _indexManagerFactoryRegistry.get(name);
-}
-
 BootstrapConfig::SP
 Proton::getActiveConfigSnapshot() const
 {
     return _protonConfigurer.getActiveConfigSnapshot()->getBootstrapConfig();
-}
-
-storage::spi::PersistenceProvider::UP
-Proton::create() const
-{
-    //TODO : Might be an idea to grab a lock here as this is not
-    //controlled by you.  Must lock with add/remove documentdb or
-    //reconfig or whatever.
-    if (_persistenceEngine.get() == NULL)
-        return storage::spi::PersistenceProvider::UP();
-    return storage::spi::PersistenceProvider::
-        UP(new PersistenceProviderProxy(*_persistenceEngine));
 }
 
 void
@@ -409,13 +338,8 @@ Proton::applyConfig(const BootstrapConfig::SP & configSnapshot)
                             protonConfig.search.memory.limiter.mincoverage,
                             protonConfig.search.memory.limiter.minhits);
     const DocumentTypeRepo::SP repo = configSnapshot->getDocumentTypeRepoSP();
-    // XXX: This assumes no feeding during reconfig.  Otherwise queued messages
-    // might incorrectly use freed document type repo.
-    if (_persistenceProxy.get() != NULL) {
-        _persistenceProxy->setRepo(*repo);
-    }
-    _diskMemUsageSampler->
-        setConfig(diskMemUsageSamplerConfig(protonConfig));
+
+    _diskMemUsageSampler->setConfig(diskMemUsageSamplerConfig(protonConfig));
     if (_memoryFlushConfigUpdater) {
         _memoryFlushConfigUpdater->setConfig(protonConfig.flush.memory);
         _flushEngine->kick();
@@ -433,11 +357,8 @@ Proton::addDocumentDB(const DocTypeName & docTypeName,
         const DocumentTypeRepo::SP repo = bootstrapConfig->getDocumentTypeRepoSP();
         const document::DocumentType *docType = repo->getDocumentType(docTypeName.getName());
         if (docType != NULL) {
-            LOG(info,
-                "Add document database: "
-                "doctypename(%s), configid(%s)",
-                docTypeName.toString().c_str(),
-                configId.c_str());
+            LOG(info, "Add document database: doctypename(%s), configid(%s)",
+                docTypeName.toString().c_str(), configId.c_str());
             return addDocumentDB(*docType, bootstrapConfig, documentDBConfig, initializeThreads).get();
         } else {
 
@@ -503,7 +424,6 @@ Proton::~Proton()
     if (_fs4Server) {
         _fs4Server->shutDown();
     }
-    _persistenceProxy.reset();
     while (!_documentDBMap.empty()) {
         const DocTypeName docTypeName(_documentDBMap.begin()->first);
         removeDocumentDB(docTypeName);
@@ -539,7 +459,7 @@ size_t Proton::getNumActiveDocs() const
 
 
 vespalib::string
-Proton::getDelayedConfigs(void) const
+Proton::getDelayedConfigs() const
 {
     std::ostringstream res;
     bool first = true;
@@ -891,7 +811,7 @@ Proton::getComponentConfig(Consumer &consumer)
 }
 
 int64_t
-Proton::getConfigGeneration(void)
+Proton::getConfigGeneration()
 {
     return _protonConfigurer.getActiveConfigSnapshot()->getBootstrapConfig()->getGeneration();
 }

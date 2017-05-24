@@ -76,11 +76,6 @@ struct MySubDBOwner : public IDocumentSubDBOwner
     uint32_t _syncCnt;
     MySubDBOwner() : _syncCnt(0) {}
     void syncFeedView() override { ++_syncCnt; }
-    IIndexManagerFactory::SP
-    getIndexManagerFactory(const vespalib::stringref &name) const override {
-        (void) name;
-        return IIndexManagerFactory::SP();
-    }
     vespalib::string getName() const override { return "owner"; }
     uint32_t getDistributionKey() const override { return -1; }
 };
@@ -995,4 +990,3 @@ TEST_MAIN()
 {
     TEST_RUN_ALL();
 }
-
