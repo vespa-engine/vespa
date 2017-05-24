@@ -1,14 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include "bucketdb.h"
 #include "bucketsessionbase.h"
 
-namespace proton
-{
-
-namespace bucketdb
-{
+namespace proton::bucketdb {
 
 BucketSessionBase::BucketSessionBase(BucketDBOwner &bucketDB)
     : _bucketDB(bucketDB.takeGuard())
@@ -37,9 +31,6 @@ BucketSessionBase::calcFixupNeed(BucketState *state, bool wantActive,
         return state->getReadyCount() != 0;
     }
     return false;
-}
-
-
 }
 
 }

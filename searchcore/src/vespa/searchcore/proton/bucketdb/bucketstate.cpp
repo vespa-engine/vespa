@@ -1,17 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
+#include "bucketstate.h"
+#include <cassert>
 
-#include "bucketdb.h"
+namespace proton::bucketdb {
 
-namespace proton
-{
-
-namespace bucketdb
-{
-
-namespace
-{
+namespace {
 
 uint32_t
 gidChecksum(const document::GlobalId &gid)
@@ -181,7 +175,5 @@ BucketState::operator storage::spi::BucketInfo() const
                       _active ? BucketInfo::ACTIVE : BucketInfo::NOT_ACTIVE);
 }
 
-
 }
 
-}

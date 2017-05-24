@@ -2,16 +2,12 @@
 
 #pragma once
 
-#include <vespa/document/base/globalid.h>
-#include <vespa/document/bucket/bucketid.h>
-#include <vespa/persistence/spi/bucketinfo.h>
-#include <vespa/searchcore/proton/common/subdbtype.h>
-#include <vespa/persistence/spi/result.h>
 #include "bucketstate.h"
+#include <vespa/document/bucket/bucketid.h>
+#include <vespa/persistence/spi/result.h>
 #include <map>
 
-namespace proton
-{
+namespace proton {
 
 class BucketDB
 {

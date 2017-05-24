@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <mutex>
 #include "bucketdb.h"
+#include <mutex>
 
 namespace proton {
 

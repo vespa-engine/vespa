@@ -2,11 +2,11 @@
 
 #pragma once
 
-namespace proton
-{
+#include <vespa/searchcore/proton/common/subdbtype.h>
+#include <vespa/document/base/globalid.h>
+#include <vespa/persistence/spi/bucketinfo.h>
 
-namespace bucketdb
-{
+namespace proton::bucketdb {
 
 /**
  * Class BucketState represent the known state of a bucket in raw form.
@@ -34,85 +34,33 @@ public:
 
     static uint32_t calcChecksum(const GlobalId &gid, const Timestamp &timestamp);
 
-    void
-    add(const GlobalId &gid, const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType);
+    void add(const GlobalId &gid, const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType);
+    void remove(const GlobalId &gid, const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType);
 
-    void
-    remove(const GlobalId &gid, const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType);
+    void modify(const Timestamp &oldTimestamp, uint32_t oldDocSize,
+                const Timestamp &newTimestamp, uint32_t newDocSize,
+                SubDbType subDbType);
 
-    void
-    modify(const Timestamp &oldTimestamp, uint32_t oldDocSize,
-           const Timestamp &newTimestamp, uint32_t newDocSize,
-           SubDbType subDbType);
-
-    bool
-    isActive() const
-    {
-        return _active;
-    }
-
-    BucketState &
-    setActive(bool active)
-    {
+    BucketState &setActive(bool active) {
         _active = active;
         return *this;
     }
 
-    uint32_t
-    getReadyCount() const
-    {
-        return _docCount[READY];
-    }
-
-    uint32_t
-    getRemovedCount() const
-    {
-        return _docCount[REMOVED];
-    }
-
-    uint32_t
-    getNotReadyCount() const
-    {
-        return _docCount[NOTREADY];
-    }
-
+    bool isActive() const { return _active; }
+    uint32_t getReadyCount() const { return _docCount[READY]; }
+    uint32_t getRemovedCount() const { return _docCount[REMOVED]; }
+    uint32_t getNotReadyCount() const { return _docCount[NOTREADY]; }
     size_t getReadyDocSizes() const { return _docSizes[READY]; }
     size_t getRemovedDocSizes() const { return _docSizes[REMOVED]; }
     size_t getNotReadyDocSizes() const { return _docSizes[NOTREADY]; }
-
-    uint32_t
-    getDocumentCount() const
-    {
-        return getReadyCount() + getNotReadyCount();
-    }
-
-    uint32_t
-    getEntryCount() const
-    {
-        return getDocumentCount() + getRemovedCount();
-    }
-
-    storage::spi::BucketChecksum
-    getChecksum() const
-    {
-        return storage::spi::BucketChecksum(_checksum);
-    }
-
-    bool
-    empty() const;
-
-    BucketState &
-    operator+=(const BucketState &rhs);
-
-    BucketState &
-    operator-=(const BucketState &rhs);
-
-    void
-    applyDelta(BucketState *src, BucketState *dst) const;
-
+    uint32_t getDocumentCount() const { return getReadyCount() + getNotReadyCount(); }
+    uint32_t getEntryCount() const { return getDocumentCount() + getRemovedCount(); }
+    storage::spi::BucketChecksum getChecksum() const { return storage::spi::BucketChecksum(_checksum); }
+    bool empty() const;
+    BucketState &operator+=(const BucketState &rhs);
+    BucketState &operator-=(const BucketState &rhs);
+    void applyDelta(BucketState *src, BucketState *dst) const;
     operator storage::spi::BucketInfo() const;
 };
-
-}
 
 }

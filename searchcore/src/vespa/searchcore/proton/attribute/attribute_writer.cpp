@@ -1,19 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.server.attributeadapter");
 
 #include "attribute_writer.h"
 #include "attributemanager.h"
 #include <vespa/searchcore/proton/common/attrupdate.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
-#include <vespa/searchlib/attribute/floatbase.h>
-#include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
-#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
-#include <vespa/document/fieldvalue/arrayfieldvalue.h>
-#include <type_traits>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.server.attributeadapter");
 
 using namespace document;
 using namespace search;
