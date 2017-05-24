@@ -79,7 +79,7 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
-    public void markAsReady(String hostName) {
+    public void markNodeAvailableForNewAllocation(String hostName) {
         Optional<ContainerNodeSpec> cns = getContainerNodeSpec(hostName);
 
         synchronized (monitor) {
@@ -90,7 +90,7 @@ public class NodeRepoMock implements NodeRepository {
                         .nodeFlavor("docker")
                         .build());
             }
-            callOrderVerifier.add("markAsReady with HostName: " + hostName);
+            callOrderVerifier.add("markNodeAvailableForNewAllocation with HostName: " + hostName);
         }
     }
 

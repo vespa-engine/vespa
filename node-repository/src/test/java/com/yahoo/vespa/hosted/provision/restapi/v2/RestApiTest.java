@@ -149,6 +149,11 @@ public class RestApiTest {
                                    new byte[0], Request.Method.PUT),
                        "{\"message\":\"Moved host6.yahoo.com to dirty\"}");
 
+        // ... and set it back to ready as if this was from the node-admin with the temporary state rest api
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/availablefornewallocations/host6.yahoo.com",
+                        new byte[0], Request.Method.PUT),
+                "{\"message\":\"Moved host6.yahoo.com to ready\"}");
+
         // Put a host in failed and make sure it's children are also failed
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/parent1.yahoo.com", new byte[0], Request.Method.PUT),
                 "{\"message\":\"Moved host10.yahoo.com, host5.yahoo.com, parent1.yahoo.com to failed\"}");

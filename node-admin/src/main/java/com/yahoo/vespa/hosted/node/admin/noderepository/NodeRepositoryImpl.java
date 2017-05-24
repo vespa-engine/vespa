@@ -155,15 +155,17 @@ public class NodeRepositoryImpl implements NodeRepository {
 
     @Override
     public void markAsDirty(String hostName) {
-        markNodeToState(hostName, Node.State.dirty);
+        // This will never happen once the new allocation scheme is rolled out.
+        markNodeToState(hostName, Node.State.dirty.name());
     }
 
     @Override
-    public void markAsReady(final String hostName) {
-        markNodeToState(hostName, Node.State.ready);
+    public void markNodeAvailableForNewAllocation(final String hostName) {
+        // TODO replace with call to delete node when everything has been migrated to dynamic docker allocation
+        markNodeToState(hostName, "availablefornewallocations");
     }
 
-    private void markNodeToState(String hostName, Node.State state) {
+    private void markNodeToState(String hostName, String state) {
         NodeMessageResponse response = requestExecutor.put(
                 "/nodes/v2/state/" + state + "/" + hostName,
                 port,

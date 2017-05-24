@@ -66,4 +66,21 @@ public class NodeRepositoryTest {
         tester.curator().set(Path.fromString("/provision/v1/dynamicDockerAllocation"), new byte[0]);
         assertTrue(tester.nodeRepository().dynamicAllocationEnabled());
     }
+
+    @Test
+    public void only_allow_to_delete_dirty_nodes_when_dynamic_allocation_feature_enabled() {
+        NodeRepositoryTester tester = new NodeRepositoryTester();
+        try {
+            tester.addNode("id1", "host1", "default", NodeType.host);
+            tester.addNode("id2", "host2", "docker", NodeType.tenant);
+            tester.nodeRepository().setDirty("host2");
+
+            assertFalse(tester.nodeRepository().remove("host2"));
+
+            tester.curator().set(Path.fromString("/provision/v1/dynamicDockerAllocation"), new byte[0]);
+            assertTrue(tester.nodeRepository().remove("host2"));
+        } finally {
+            tester.curator().delete(Path.fromString("/provision/v1/dynamicDockerAllocation"));
+        }
+    }
 }

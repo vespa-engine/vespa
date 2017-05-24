@@ -207,7 +207,7 @@ public class NodeAgentImpl implements NodeAgent {
                         .withRebootGeneration(nodeSpec.wantedRebootGeneration.orElse(0L))
                         .withDockerImage(new DockerImage(""))
                         .withVespaVersion(""));
-        nodeRepository.markAsReady(nodeSpec.hostname);
+        nodeRepository.markNodeAvailableForNewAllocation(nodeSpec.hostname);
     }
 
     private void updateNodeRepoWithCurrentAttributes(final ContainerNodeSpec nodeSpec) {
