@@ -73,10 +73,18 @@ public final class PositionDataType {
             DegreesParser d = new DegreesParser(str);
             return valueOf((int)(d.longitude * 1000000), (int)(d.latitude * 1000000));
         } catch (IllegalArgumentException e) {
-            // empty
+            try {
+                String[] arr = str.split(";");
+                if (arr.length == 2) {
+                    int x = Integer.parseInt(arr[0]);
+                    int y = Integer.parseInt(arr[1]);
+                    return valueOf(x, y);
+                }
+            } catch (NumberFormatException nfe) {
+                // empty
+            }
+            throw new IllegalArgumentException("Could not parse '"+str+"' as geo coordinates: "+e.getMessage());
         }
-        String[] arr = str.split(";", 2);
-        return valueOf(Integer.parseInt(arr[0]), Integer.parseInt(arr[1]));
     }
 
     public static IntegerFieldValue getXValue(FieldValue pos) {
