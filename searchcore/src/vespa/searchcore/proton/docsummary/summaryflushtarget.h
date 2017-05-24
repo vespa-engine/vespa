@@ -6,7 +6,6 @@
 
 namespace proton {
 
-
 /**
  * This class implements the IFlushTarget interface to proxy a summary manager.
  */
