@@ -81,7 +81,7 @@ TransactionLogManagerBase::internalStartReplay()
 
 
 void
-TransactionLogManagerBase::markReplayStarted(void)
+TransactionLogManagerBase::markReplayStarted()
 {
     vespalib::MonitorGuard guard(_replayMonitor);
     _replayStarted = true;

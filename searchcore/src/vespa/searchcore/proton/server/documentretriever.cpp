@@ -138,7 +138,7 @@ void DocumentRetriever::populate(DocumentIdT lid, Document & doc) const
 }
 
 const IAttributeManager *
-DocumentRetriever::getAttrMgr(void) const
+DocumentRetriever::getAttrMgr() const
 {
     return &_attr_manager;
 }

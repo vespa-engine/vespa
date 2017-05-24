@@ -115,7 +115,7 @@ FastS_QueryCacheUtil::AdjustSearchParametersFinal(uint32_t partitions)
 }
 
 void
-FastS_QueryCacheUtil::DropResult(void)
+FastS_QueryCacheUtil::DropResult()
 {
     _queryResult._groupResultLen = 0;
     _queryResult._groupResult = NULL;
@@ -148,13 +148,13 @@ FastS_QueryCacheUtil::DropResult(void)
 
 
 bool
-FastS_QueryCacheUtil::IsEstimate(void) const
+FastS_QueryCacheUtil::IsEstimate() const
 {
     return _query.IsFlagSet(search::fs4transport::QFLAG_ESTIMATE);
 }
 
 void
-FastS_QueryCacheUtil::InitEstimateMode(void)
+FastS_QueryCacheUtil::InitEstimateMode()
 {
     _searchInfo._searchOffset = 0;
     _searchInfo._maxHits  = 0;

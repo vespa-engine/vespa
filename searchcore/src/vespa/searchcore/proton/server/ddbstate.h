@@ -87,7 +87,7 @@ public:
     enterDeadState();
 
     State
-    getState(void) const
+    getState() const
     {
         return _state;
     }
@@ -96,21 +96,21 @@ public:
     getStateString(State state);
     
     bool
-    getClosed(void) const
+    getClosed() const
     {
         State state(_state);
         return state >= State::SHUTDOWN;
     }
 
     bool
-    getAllowReconfig(void) const
+    getAllowReconfig() const
     {
         State state(_state);
         return state >= State::APPLY_LIVE_CONFIG && state < State::SHUTDOWN;
     }
 
     bool
-    getAllowPrune(void) const
+    getAllowPrune() const
     {
         State state(_state);
         return state == State::ONLINE;

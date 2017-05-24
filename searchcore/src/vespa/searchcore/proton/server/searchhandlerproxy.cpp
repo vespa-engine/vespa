@@ -17,7 +17,7 @@ SearchHandlerProxy::SearchHandlerProxy(const DocumentDB::SP &documentDB)
     _documentDB->retain();
 }
 
-SearchHandlerProxy::~SearchHandlerProxy(void)
+SearchHandlerProxy::~SearchHandlerProxy()
 {
     _documentDB->release();
 }

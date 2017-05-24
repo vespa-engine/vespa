@@ -13,7 +13,7 @@ LOG_SETUP(".query");
 
 /** Marks as empty
  */
-FastS_query::FastS_query(void)
+FastS_query::FastS_query()
     : _dataset(0),
       _flags(0),
       _stackDump(),
@@ -57,7 +57,7 @@ FastS_query::getPrintableQuery()
     return  _printableQuery.c_str();
 }
 
-FastS_query::~FastS_query(void)
+FastS_query::~FastS_query()
 {
 }
 
@@ -95,7 +95,7 @@ class SizeCollector : public search::fef::IPropertiesVisitor
     static const size_t _mapFuzz = 15;
     size_t _size;
 public:
-    SizeCollector(void)
+    SizeCollector()
         : _size(0)
     {
     }
@@ -121,7 +121,7 @@ public:
     }
 
     size_t
-    getSize(void) const
+    getSize() const
     {
         return _size;
     }

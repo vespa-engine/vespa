@@ -12,7 +12,7 @@ namespace proton
 class ITlsSyncer
 {
 public:
-    virtual ~ITlsSyncer(void) = default;
+    virtual ~ITlsSyncer() = default;
     virtual void sync() = 0;
 };
 

@@ -53,7 +53,7 @@ FastS_EngineBase::reported_t::reported_t()
 }
 
 
-FastS_EngineBase::reported_t::~reported_t(void)
+FastS_EngineBase::reported_t::~reported_t()
 {
 }
 

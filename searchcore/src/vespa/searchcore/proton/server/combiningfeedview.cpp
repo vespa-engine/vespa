@@ -53,13 +53,13 @@ CombiningFeedView::CombiningFeedView(const std::vector<IFeedView::SP> &views,
 }
 
 
-CombiningFeedView::~CombiningFeedView(void)
+CombiningFeedView::~CombiningFeedView()
 {
 }
 
 
 const ISimpleDocumentMetaStore *
-CombiningFeedView::getDocumentMetaStorePtr(void) const
+CombiningFeedView::getDocumentMetaStorePtr() const
 {
     return NULL;
 }
@@ -94,7 +94,7 @@ CombiningFeedView::findPrevDbdId(const document::GlobalId &gid,
 
 
 const DocumentTypeRepo::SP &
-CombiningFeedView::getDocumentTypeRepo(void) const
+CombiningFeedView::getDocumentTypeRepo() const
 {
     return _repo;
 }
@@ -247,7 +247,7 @@ CombiningFeedView::heartBeat(search::SerialNum serialNum)
 
 
 void
-CombiningFeedView::sync(void)
+CombiningFeedView::sync()
 {
     getReadyFeedView()->sync();
     // Assume this synced all feed views due to sharing of threads.

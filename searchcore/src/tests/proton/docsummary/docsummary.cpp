@@ -106,7 +106,7 @@ public:
     {
     }
 
-    ~BuildContext(void)
+    ~BuildContext()
     {
     }
 
@@ -126,7 +126,7 @@ public:
 namespace {
 
 const char *
-getDocTypeName(void)
+getDocTypeName()
 {
     return "searchdocument";
 }
@@ -306,7 +306,7 @@ private:
     }
 
     const std::set<vespalib::string> &
-    getMarkupFields(void) const
+    getMarkupFields() const
     {
         return _markupFields;
     }

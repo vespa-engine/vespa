@@ -591,7 +591,7 @@ FeedHandler::flushDone(SerialNum flushedSerial)
                             flushedSerial)));
 }
 
-void FeedHandler::changeToNormalFeedState(void) {
+void FeedHandler::changeToNormalFeedState() {
     changeFeedState(FeedState::SP(new NormalState(*this)));
 }
 
@@ -743,7 +743,7 @@ FeedHandler::handleMove(MoveOperation &op)
 
 
 void
-FeedHandler::heartBeat(void)
+FeedHandler::heartBeat()
 {
     assert(_writeService.master().isCurrentThread());
     _activeFeedView->heartBeat(_serialNum);

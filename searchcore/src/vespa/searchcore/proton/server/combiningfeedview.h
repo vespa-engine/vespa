@@ -30,7 +30,7 @@ private:
     bool                                          _clusterUp;
     bool                                          _forceReady;
 
-    const ISimpleDocumentMetaStore * getDocumentMetaStorePtr(void) const override;
+    const ISimpleDocumentMetaStore * getDocumentMetaStorePtr() const override;
 
     void findPrevDbdId(const document::GlobalId &gid, DocumentOperation &op);
     uint32_t getReadyFeedViewId() const { return 0u; }
@@ -63,7 +63,7 @@ public:
 
     virtual ~CombiningFeedView();
 
-    const document::DocumentTypeRepo::SP & getDocumentTypeRepo(void) const override;
+    const document::DocumentTypeRepo::SP & getDocumentTypeRepo() const override;
 
     /**
      * Similar to IPersistenceHandler functions.

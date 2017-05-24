@@ -11,10 +11,10 @@ class IHeartBeatHandler
 {
 public:
     virtual void
-    heartBeat(void) = 0;
+    heartBeat() = 0;
 
     virtual
-    ~IHeartBeatHandler(void)
+    ~IHeartBeatHandler()
     {
     }
 };

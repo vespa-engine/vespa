@@ -42,7 +42,7 @@ public:
     DocumentDBConfig::SP getConfig() const;
 
     void forwardConfig(const BootstrapConfigSP & config);
-    const config::ConfigKeySet createConfigKeySet(void) const;
+    const config::ConfigKeySet createConfigKeySet() const;
     void setExtraConfigKeys(const config::ConfigKeySet & extraConfigKeys) { _extraConfigKeys = extraConfigKeys; }
     const config::ConfigKeySet & getExtraConfigKeys() const { return _extraConfigKeys; }
     const vespalib::string & getConfigId() const { return _configId; }

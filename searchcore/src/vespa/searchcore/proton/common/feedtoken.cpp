@@ -77,7 +77,7 @@ FeedToken::State::ack(const FeedOperation::Type opType,
 
 
 void
-FeedToken::State::incNeededAcks(void)
+FeedToken::State::incNeededAcks()
 {
     assert(_reply.get() != NULL);
     uint32_t prev(_unAckedCount++);

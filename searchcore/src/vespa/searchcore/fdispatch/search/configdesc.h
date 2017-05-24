@@ -38,17 +38,17 @@ public:
 
     void SetNext(FastS_EngineDesc *next) { _next = next; }
     void SetConfPartID(int32_t value) { assert(value >= 0); _confPartID = value; }
-    void SetConfPartIDOverrides(void) { _confPartIDOverrides = true; }
+    void SetConfPartIDOverrides() { _confPartIDOverrides = true; }
     void SetConfRowID(int32_t value) { assert(value >= 0); _confRowID = value; }
     void SetUnitRefCost(uint32_t value) { _unitrefcost = value; }
-    void MarkBad(void) { _isBad = true; }
-    FastS_EngineDesc * GetNext(void) const { return _next; }
-    const char * GetName(void) const { return _name.c_str(); }
-    uint32_t GetConfPartID(void) const { return _confPartID; }
-    bool GetConfPartIDOverrides(void) const { return _confPartIDOverrides; }
-    uint32_t GetConfRowID(void) const { return _confRowID; }
-    uint32_t GetUnitRefCost(void) const { return _unitrefcost; }
-    bool IsBad(void) const { return _isBad; }
+    void MarkBad() { _isBad = true; }
+    FastS_EngineDesc * GetNext() const { return _next; }
+    const char * GetName() const { return _name.c_str(); }
+    uint32_t GetConfPartID() const { return _confPartID; }
+    bool GetConfPartIDOverrides() const { return _confPartIDOverrides; }
+    uint32_t GetConfRowID() const { return _confRowID; }
+    uint32_t GetUnitRefCost() const { return _unitrefcost; }
+    bool IsBad() const { return _isBad; }
 };
 
 //-----------------------------------------------------------------------
@@ -168,9 +168,9 @@ private:
     uint32_t _mpp;	// Minimum number of engines per partition
 public:
     explicit FastS_DataSetDesc(uint32_t datasetid);
-    ~FastS_DataSetDesc(void);
+    ~FastS_DataSetDesc();
 
-    uint32_t GetID(void) const { return _id; }
+    uint32_t GetID() const { return _id; }
     void SetUnitRefCost(uint32_t value) { _unitRefCost = value; }
 
     void SetPartBits(uint32_t value) {
@@ -219,40 +219,40 @@ public:
     QueryDistributionMode GetQueryDistributionMode() { return _queryDistributionMode; }
 
     FastS_EngineDesc * AddEngine(const char *name);
-    uint32_t GetUnitRefCost(void) const { return _unitRefCost; }
-    uint32_t GetPartBits(void) const { return _partBits; }
+    uint32_t GetUnitRefCost() const { return _unitRefCost; }
+    uint32_t GetPartBits() const { return _partBits; }
 
-    uint32_t GetRowBits(void) const { return _rowBits; }
-    uint32_t GetNumParts(void) const { return _numParts; }
-    uint32_t GetFirstPart(void) const { return _firstPart; }
-    uint32_t GetMinChildParts(void) const { return _minChildParts; }
-    uint32_t getMaxNodesDownPerFixedRow(void) const { return _maxNodesDownPerFixedRow; }
-    bool useRoundRobinForFixedRow(void) const { return _useRoundRobinForFixedRow; }
-    uint32_t GetMaxHitsPerNode(void) const { return _maxHitsPerNode; }
-    uint32_t GetEstimateParts(void) const { return _estimateParts; }
-    uint32_t GetEstPartCutoff(void) const { return _estPartCutoff; }
-    bool IsEstimatePartsSet(void) const { return _estimatePartsSet; }
-    bool IsEstPartCutoffSet(void) const { return _estPartCutoffSet; }
-    uint32_t GetMinOurActive(void) const { return _minOurActive; }
-    uint32_t GetMaxOurActive(void) const { return _maxOurActive; }
-    uint32_t GetCutoffOurActive(void) const { return _cutoffOurActive; }
-    uint32_t GetMinEstActive(void) const { return _minEstActive; }
-    uint32_t GetMaxEstActive(void) const { return _maxEstActive; }
-    uint32_t GetCutoffEstActive(void) const { return _cutoffEstActive; }
-    double GetQueueDrainRate(void) const { return _queueDrainRate; }
-    double GetQueueMaxDrain(void) const { return _queueMaxDrain; }
-    double GetSlowQueryLimitFactor(void) const { return _slowQueryLimitFactor; }
-    double GetSlowQueryLimitBias(void) const { return _slowQueryLimitBias; }
-    double GetSlowDocsumLimitFactor(void) const { return _slowDocsumLimitFactor; }
-    double GetSlowDocsumLimitBias(void) const { return _slowDocsumLimitBias; }
-    uint32_t GetEngineCnt(void) const { return _engineCnt; }
-    FastS_EngineDesc * GetEngineList(void) const { return _enginesHead; }
+    uint32_t GetRowBits() const { return _rowBits; }
+    uint32_t GetNumParts() const { return _numParts; }
+    uint32_t GetFirstPart() const { return _firstPart; }
+    uint32_t GetMinChildParts() const { return _minChildParts; }
+    uint32_t getMaxNodesDownPerFixedRow() const { return _maxNodesDownPerFixedRow; }
+    bool useRoundRobinForFixedRow() const { return _useRoundRobinForFixedRow; }
+    uint32_t GetMaxHitsPerNode() const { return _maxHitsPerNode; }
+    uint32_t GetEstimateParts() const { return _estimateParts; }
+    uint32_t GetEstPartCutoff() const { return _estPartCutoff; }
+    bool IsEstimatePartsSet() const { return _estimatePartsSet; }
+    bool IsEstPartCutoffSet() const { return _estPartCutoffSet; }
+    uint32_t GetMinOurActive() const { return _minOurActive; }
+    uint32_t GetMaxOurActive() const { return _maxOurActive; }
+    uint32_t GetCutoffOurActive() const { return _cutoffOurActive; }
+    uint32_t GetMinEstActive() const { return _minEstActive; }
+    uint32_t GetMaxEstActive() const { return _maxEstActive; }
+    uint32_t GetCutoffEstActive() const { return _cutoffEstActive; }
+    double GetQueueDrainRate() const { return _queueDrainRate; }
+    double GetQueueMaxDrain() const { return _queueMaxDrain; }
+    double GetSlowQueryLimitFactor() const { return _slowQueryLimitFactor; }
+    double GetSlowQueryLimitBias() const { return _slowQueryLimitBias; }
+    double GetSlowDocsumLimitFactor() const { return _slowDocsumLimitFactor; }
+    double GetSlowDocsumLimitBias() const { return _slowDocsumLimitBias; }
+    uint32_t GetEngineCnt() const { return _engineCnt; }
+    FastS_EngineDesc * GetEngineList() const { return _enginesHead; }
     void setMPP(uint32_t mpp) { _mpp = mpp; }
-    uint32_t getMPP(void) const { return _mpp; }
+    uint32_t getMPP() const { return _mpp; }
 
     void
     setMonitorInterval(double monitorInterval) { _monitorInterval = monitorInterval; }
-    double getMonitorInterval(void) const { return _monitorInterval; }
+    double getMonitorInterval() const { return _monitorInterval; }
 
     void
     setHigherCoverageMaxSearchWait(double higherCoverageMaxSearchWait) {
@@ -260,7 +260,7 @@ public:
     }
 
     double
-    getHigherCoverageMaxSearchWait(void) const {
+    getHigherCoverageMaxSearchWait() const {
         return _higherCoverageMaxSearchWait;
     }
 
@@ -270,7 +270,7 @@ public:
     }
 
     double
-    getHigherCoverageMinSearchWait(void) const {
+    getHigherCoverageMinSearchWait() const {
         return _higherCoverageMinSearchWait;
     }
 
@@ -280,7 +280,7 @@ public:
     }
 
     double
-    getHigherCoverageBaseSearchWait(void) const {
+    getHigherCoverageBaseSearchWait() const {
         return _higherCoverageBaseSearchWait;
     }
 
@@ -290,7 +290,7 @@ public:
     }
 
     double
-    getMinimalSearchCoverage(void) const {
+    getMinimalSearchCoverage() const {
         return _minimalSearchCoverage;
     }
 
@@ -300,7 +300,7 @@ public:
     }
 
     double
-    getHigherCoverageMaxDocSumWait(void) const {
+    getHigherCoverageMaxDocSumWait() const {
         return _higherCoverageMaxDocSumWait;
     }
 
@@ -310,7 +310,7 @@ public:
     }
 
     double
-    getHigherCoverageMinDocSumWait(void) const {
+    getHigherCoverageMinDocSumWait() const {
         return _higherCoverageMinDocSumWait;
     }
 
@@ -320,7 +320,7 @@ public:
     }
 
     double
-    getHigherCoverageBaseDocSumWait(void) const {
+    getHigherCoverageBaseDocSumWait() const {
         return _higherCoverageBaseDocSumWait;
     }
 
@@ -330,11 +330,11 @@ public:
     }
 
     double
-    getMinimalDocSumCoverage(void) const {
+    getMinimalDocSumCoverage() const {
         return _minimalDocSumCoverage;
     }
 
-    void FinalizeConfig(void);
+    void FinalizeConfig();
 };
 
 //-----------------------------------------------------------------------
@@ -351,18 +351,18 @@ private:
     bool                _frozen;
     bool                _error;
 
-    void HandleDeprecatedFPEstPartsOption(void);
-    bool CheckIntegrity(void);
+    void HandleDeprecatedFPEstPartsOption();
+    bool CheckIntegrity();
 
 public:
-    FastS_DataSetCollDesc(void);
-    ~FastS_DataSetCollDesc(void);
+    FastS_DataSetCollDesc();
+    ~FastS_DataSetCollDesc();
 
     FastS_DataSetDesc *LookupCreateDataSet(uint32_t datasetid);
 
-    bool Freeze(void);
+    bool Freeze();
 
-    uint32_t GetMaxNumDataSets(void) const { return _datasets_size; }
+    uint32_t GetMaxNumDataSets() const { return _datasets_size; }
 
     FastS_DataSetDesc *GetDataSet(uint32_t datasetid) const {
         return (datasetid < _datasets_size)

@@ -6,7 +6,7 @@
 namespace proton
 {
 
-IReplayConfig::~IReplayConfig(void)
+IReplayConfig::~IReplayConfig()
 {
 }
 

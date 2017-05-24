@@ -31,11 +31,11 @@ private:
     BucketId _cachedBucketId;
     BucketState _cachedBucketState;
 
-    void clear(void);
-    void checkEmpty(void) const;
+    void clear();
+    void checkEmpty() const;
 public:
-    BucketDB(void);
-    virtual ~BucketDB(void);
+    BucketDB();
+    virtual ~BucketDB();
 
     const BucketState &
     add(const GlobalId &gid,
@@ -72,7 +72,7 @@ public:
     BucketState cachedGet(const BucketId &bucketId) const;
     bool hasBucket(const BucketId &bucketId) const;
     void getBuckets(BucketId::List & buckets) const;
-    bool empty(void) const;
+    bool empty() const;
     void setBucketState(const BucketId &bucketId, bool active);
     void createBucket(const BucketId &bucketId);
     void deleteEmptyBucket(const BucketId &bucketId);

@@ -35,12 +35,12 @@ private:
         fastos::TimeStamp getCreateTime() const { return _createTime; }
         Session & setGen(int64_t gen) { _gen = gen; return *this; }
 
-        int64_t getNumDocs(void) const { return _numDocs; }
+        int64_t getNumDocs() const { return _numDocs; }
         void setNumDocs(int64_t numDocs) { _numDocs = numDocs; }
-        bool getDown(void) const { return _down; }
-        void setDown(void) { _down = true; }
+        bool getDown() const { return _down; }
+        void setDown() { _down = true; }
 
-        const vespalib::string & getDelayedConfigs(void) const {
+        const vespalib::string & getDelayedConfigs() const {
             return _delayedConfigs;
         }
 

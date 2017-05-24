@@ -12,23 +12,23 @@ private:
     FastS_AutoPtr& operator=(const FastS_AutoPtr &);
 
     T *_val;
-    void Clean(void) {
+    void Clean() {
         if (_val != NULL) {
             delete _val;
             _val = NULL;
         }
     }
 public:
-    FastS_AutoPtr(void) : _val(NULL) { }
+    FastS_AutoPtr() : _val(NULL) { }
     explicit FastS_AutoPtr(T *val)
         : _val(val)
     {
     }
-    ~FastS_AutoPtr(void) { Clean(); }
+    ~FastS_AutoPtr() { Clean(); }
     void Set(T *val) { Clean(); _val = val; }
-    T *Get(void) const { return _val; }
-    T *HandOver(void) { T *ret = _val; _val = NULL; return ret; }
-    void Drop(void) {
+    T *Get() const { return _val; }
+    T *HandOver() { T *ret = _val; _val = NULL; return ret; }
+    void Drop() {
         if (_val != NULL) {
             delete _val;
             _val = NULL;
@@ -45,14 +45,14 @@ private:
     FastS_AutoRefCntPtr& operator=(const FastS_AutoRefCntPtr &);
 
     T *_val;
-    void Clean(void) {
+    void Clean() {
         if (_val != NULL)
             _val->subRef();
     }
 public:
-    FastS_AutoRefCntPtr(void) : _val(NULL) { }
+    FastS_AutoRefCntPtr() : _val(NULL) { }
     explicit FastS_AutoRefCntPtr(T *val) {_val = val; }
-    ~FastS_AutoRefCntPtr(void) { Clean(); }
+    ~FastS_AutoRefCntPtr() { Clean(); }
     void Set(T *val) { Clean(); _val = val; }
     void SetDup(T *val) {
         Clean();
@@ -60,14 +60,14 @@ public:
             val->addRef();
         _val = val;
     }
-    T *Get(void) const { return _val; }
-    T *GetDup(void) {
+    T *Get() const { return _val; }
+    T *GetDup() {
         if (_val != NULL)
             _val->addRef();
         return _val;
     }
-    T *HandOver(void) { T *ret = _val; _val = NULL; return ret; }
-    void Drop(void) {
+    T *HandOver() { T *ret = _val; _val = NULL; return ret; }
+    void Drop() {
         if (_val != NULL) {
             _val->subRef();
             _val = NULL;
@@ -83,12 +83,12 @@ private:
     FastS_AutoCharPtr& operator=(const FastS_AutoCharPtr &);
 
     char *_val;
-    void Clean(void) {
+    void Clean() {
         if (_val != NULL)
             free(_val);
     }
 public:
-    FastS_AutoCharPtr(void)
+    FastS_AutoCharPtr()
         : _val(NULL)
     {
     }
@@ -96,11 +96,11 @@ public:
         : _val(val)
     {
     }
-    ~FastS_AutoCharPtr(void) { Clean(); }
+    ~FastS_AutoCharPtr() { Clean(); }
     void Set(char *val) { Clean(); _val = val; }
-    char *Get(void) const { return _val; }
-    char *HandOver(void)  { char *ret = _val; _val = NULL; return ret; }
-    void Drop(void) {
+    char *Get() const { return _val; }
+    char *HandOver()  { char *ret = _val; _val = NULL; return ret; }
+    void Drop() {
         if (_val != NULL) {
             free(_val);
             _val = NULL;

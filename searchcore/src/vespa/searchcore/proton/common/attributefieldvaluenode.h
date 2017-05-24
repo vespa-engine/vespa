@@ -25,7 +25,7 @@ public:
                std::ostream& out) const override;
 
     document::select::ValueNode::UP
-    clone(void) const override
+    clone() const override
     {
         return wrapParens(new AttributeFieldValueNode(getDocType(),
                                                       getFieldName(),

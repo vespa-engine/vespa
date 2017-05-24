@@ -61,7 +61,7 @@ DocumentRetrieverBase::getDocumentMetaData(const DocumentId &id) const {
 
 
 const search::IAttributeManager *
-DocumentRetrieverBase::getAttrMgr(void) const
+DocumentRetrieverBase::getAttrMgr() const
 {
     return NULL;
 }

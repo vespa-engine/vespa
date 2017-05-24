@@ -439,7 +439,7 @@ SelectPruner::visitFieldValueNode(const FieldValueNode &expr)
 
 
 void
-SelectPruner::invertNode(void)
+SelectPruner::invertNode()
 {
     _resultSet = _resultSet.calcNot();
     if (isInvalid()) {
@@ -498,7 +498,7 @@ SelectPruner::addNodeCount(const SelectPruner &rhs)
 
 
 void
-SelectPruner::setInvalidVal(void)
+SelectPruner::setInvalidVal()
 {
     _constVal = true;
     _priority = InvalidValPriority;
@@ -507,7 +507,7 @@ SelectPruner::setInvalidVal(void)
 
 
 void
-SelectPruner::setInvalidConst(void)
+SelectPruner::setInvalidConst()
 {
     _constVal = true;
     _priority = InvalidConstPriority;
@@ -542,7 +542,7 @@ SelectPruner::resolveTernaryConst(bool wantInverted)
 
 
 bool
-SelectPruner::isFalse(void) const
+SelectPruner::isFalse() const
 {
     if (!_constVal)
         return false;
@@ -560,7 +560,7 @@ SelectPruner::isFalse(void) const
 
 
 bool
-SelectPruner::isTrue(void) const
+SelectPruner::isTrue() const
 {
     if (!_constVal)
         return false;
@@ -578,7 +578,7 @@ SelectPruner::isTrue(void) const
 
 
 bool
-SelectPruner::isInvalid(void) const
+SelectPruner::isInvalid() const
 {
     if (!_constVal)
         return false;
@@ -596,7 +596,7 @@ SelectPruner::isInvalid(void) const
 
 
 bool
-SelectPruner::isInvalidVal(void) const
+SelectPruner::isInvalidVal() const
 {
     if (!_constVal)
         return false;
@@ -606,7 +606,7 @@ SelectPruner::isInvalidVal(void) const
 
 
 bool
-SelectPruner::isNullVal(void) const
+SelectPruner::isNullVal() const
 {
     if (!_constVal)
         return false;
@@ -616,7 +616,7 @@ SelectPruner::isNullVal(void) const
 
 
 bool
-SelectPruner::isConst(void) const
+SelectPruner::isConst() const
 {
     return _constVal;
 }

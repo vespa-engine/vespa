@@ -77,7 +77,7 @@ FastS_FNETAdapter::fini()
     }
 }
 
-Fdispatch::~Fdispatch(void)
+Fdispatch::~Fdispatch()
 {
     if (_transportServer) {
         _transportServer->shutDown(); // sync shutdown
@@ -135,13 +135,13 @@ Fdispatch::GetThreadPool()
 }
 
 bool
-Fdispatch::Failed(void)
+Fdispatch::Failed()
 {
     return ( (_transportServer && _transportServer->isFailed())) || _needRestart;
 }
 
 bool
-Fdispatch::CheckTempFail(void)
+Fdispatch::CheckTempFail()
 {
     bool ret;
     bool failflag = _nodeManager->GetTempFail();
@@ -281,7 +281,7 @@ convert(InternalFdispatchrcType::Packetcompresstype type)
 }
 
 bool
-Fdispatch::Init(void)
+Fdispatch::Init()
 {
     int  maxthreads;
 

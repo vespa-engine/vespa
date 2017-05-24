@@ -20,7 +20,7 @@ FastS_TimeStatHistory::Reset()
 
 
 double
-FastS_TimeStatHistory::GetMaxTime(void) const
+FastS_TimeStatHistory::GetMaxTime() const
 {
     double max = 0.0;
     uint32_t idx = _sampleIdx;

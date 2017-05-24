@@ -47,7 +47,7 @@ public:
     void moveDocuments(size_t maxDocsToMove);
     void cancel() { setBucketDone(); }
     bool bucketDone() const { return _bucketDone; }
-    const MaintenanceDocumentSubDB * getSource(void) const { return _source; }
+    const MaintenanceDocumentSubDB * getSource() const { return _source; }
 };
 
 } // namespace proton

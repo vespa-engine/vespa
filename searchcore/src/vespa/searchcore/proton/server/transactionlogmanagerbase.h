@@ -68,7 +68,7 @@ public:
     { return _tlc.getRPCTarget(); }
 
     void
-    markReplayStarted(void);
+    markReplayStarted();
 };
 
 } // namespace proton

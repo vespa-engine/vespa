@@ -23,7 +23,7 @@ struct RawDocumentMetaData
     uint16_t  _docSizeHigh;
     Timestamp _timestamp;
 
-    RawDocumentMetaData(void)
+    RawDocumentMetaData()
         : _gid(),
           _bucketUsedBits(BucketId::minNumBits),
           _docSizeLow(0),
@@ -80,7 +80,7 @@ struct RawDocumentMetaData
         _bucketUsedBits = bucketUsedBits;
     }
 
-    Timestamp getTimestamp(void) const { return _timestamp; }
+    Timestamp getTimestamp() const { return _timestamp; }
 
     void setTimestamp(const Timestamp &timestamp) { _timestamp = timestamp; }
 

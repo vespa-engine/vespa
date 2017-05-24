@@ -11,7 +11,7 @@ class IReplayConfig
 {
 public:
     virtual
-    ~IReplayConfig(void);
+    ~IReplayConfig();
 
     virtual void
     replayConfig(search::SerialNum serialNum) = 0;

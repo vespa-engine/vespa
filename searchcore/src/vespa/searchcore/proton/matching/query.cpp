@@ -144,7 +144,7 @@ Query::optimize()
 }
 
 void
-Query::fetchPostings(void)
+Query::fetchPostings()
 {
     _blueprint->fetchPostings(true);
 }

@@ -22,7 +22,7 @@ using namespace search::fs4transport;
 //----------------------------------------------------------------------
 
 void
-FastS_StaticMonitorQuery::Free(void)
+FastS_StaticMonitorQuery::Free()
 {
     _lock.Lock();
     _refcnt--;
@@ -34,7 +34,7 @@ FastS_StaticMonitorQuery::Free(void)
 }
 
 
-FastS_StaticMonitorQuery::FastS_StaticMonitorQuery(void)
+FastS_StaticMonitorQuery::FastS_StaticMonitorQuery()
     : FS4Packet_MONITORQUERYX(),
       _lock(),
       _refcnt(1)
@@ -43,7 +43,7 @@ FastS_StaticMonitorQuery::FastS_StaticMonitorQuery(void)
 }
 
 
-FastS_StaticMonitorQuery::~FastS_StaticMonitorQuery(void)
+FastS_StaticMonitorQuery::~FastS_StaticMonitorQuery()
 {
     FastS_assert(_refcnt == 0);
 }

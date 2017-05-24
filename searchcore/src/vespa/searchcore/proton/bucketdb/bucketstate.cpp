@@ -104,7 +104,7 @@ BucketState::modify(const Timestamp &oldTimestamp, uint32_t oldDocSize,
 
 
 bool
-BucketState::empty(void) const
+BucketState::empty() const
 {
     if (getReadyCount() != 0 || getRemovedCount() != 0 ||
         getNotReadyCount() != 0)

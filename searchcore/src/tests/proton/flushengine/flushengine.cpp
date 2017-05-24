@@ -231,7 +231,7 @@ public:
     }
 
     virtual search::SerialNum
-    getFlushSerial(void) const override
+    getFlushSerial() const override
     {
         return 0u;
     }
@@ -421,7 +421,7 @@ public:
         _done.countDown();
     }
     virtual search::SerialNum
-    getFlushSerial(void) const override
+    getFlushSerial() const override
     {
         return 0u;
     }

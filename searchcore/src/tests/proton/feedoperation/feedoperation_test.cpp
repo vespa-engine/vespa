@@ -94,7 +94,7 @@ void assertDocumentOperation(DocumentOperation &op, BucketId expBucket, uint32_t
 }
 
 DocumentTypeRepo::UP
-makeDocTypeRepo(void)
+makeDocTypeRepo()
 {
     DocumenttypesConfigBuilderHelper builder;
     builder.document(doc_type_id, type_name,

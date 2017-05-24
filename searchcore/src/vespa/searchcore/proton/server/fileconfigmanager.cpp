@@ -268,13 +268,13 @@ FileConfigManager::FileConfigManager(const vespalib::string &baseDir,
 }
 
 
-FileConfigManager::~FileConfigManager(void)
+FileConfigManager::~FileConfigManager()
 {
 }
 
 
 SerialNum
-FileConfigManager::getBestSerialNum(void) const
+FileConfigManager::getBestSerialNum() const
 {
     Snapshot snap = _info.getBestSnapshot();
     return snap.valid ? snap.syncToken : UINT64_C(0);
@@ -282,7 +282,7 @@ FileConfigManager::getBestSerialNum(void) const
 
 
 SerialNum
-FileConfigManager::getOldestSerialNum(void) const
+FileConfigManager::getOldestSerialNum() const
 {
     SerialNum res = 0;
     const SnapshotList &snaps = _info.snapshots();
@@ -410,7 +410,7 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
 
 
 void
-FileConfigManager::removeInvalid(void)
+FileConfigManager::removeInvalid()
 {
     typedef std::vector<SerialNum> RemVec;
     RemVec toRem;

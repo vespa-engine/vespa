@@ -11,7 +11,7 @@ class IPersistenceEngineOwner
 {
 public:
     virtual
-    ~IPersistenceEngineOwner(void)
+    ~IPersistenceEngineOwner()
     {
     }
 

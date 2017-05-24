@@ -65,7 +65,7 @@ PruneRemovedDocumentsJob::flush(DocId lowLid, DocId nextLowLid,
 
 
 bool
-PruneRemovedDocumentsJob::run(void)
+PruneRemovedDocumentsJob::run()
 {
     uint64_t tshz = 1000000;
     fastos::TimeStamp now = fastos::ClockSystem::now();

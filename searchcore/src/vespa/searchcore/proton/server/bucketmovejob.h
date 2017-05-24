@@ -70,7 +70,7 @@ public:
         bool      hasReadyBucketDocs() const { return _itr->second.getReadyCount() != 0; }
         bool   hasNotReadyBucketDocs() const { return _itr->second.getNotReadyCount() != 0; }
 
-        ScanIterator & operator++(void) {
+        ScanIterator & operator++() {
             ++_itr;
             return *this;
         }

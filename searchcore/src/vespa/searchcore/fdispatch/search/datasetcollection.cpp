@@ -256,7 +256,7 @@ FastS_DataSetCollection::CheckQueryQueues(FastS_TimeKeeper *timeKeeper)
 
 
 void
-FastS_DataSetCollection::AbortQueryQueues(void)
+FastS_DataSetCollection::AbortQueryQueues()
 {
     for (uint32_t datasetidx(0); datasetidx < GetMaxNumDataSets(); datasetidx++) {
         FastS_DataSetBase *dataset = PeekDataSet(datasetidx);

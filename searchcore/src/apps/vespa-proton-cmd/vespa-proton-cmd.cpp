@@ -87,7 +87,7 @@ public:
     }
 
     void
-    monitorLoop(void);
+    monitorLoop();
 
     void
     scanSpecs(slobrok::api::MirrorAPI::SpecList &specs,
@@ -421,7 +421,7 @@ public:
 
 
 void
-App::monitorLoop(void)
+App::monitorLoop()
 {
     for (;;) {
         FRT_RPCRequest *req = _supervisor->AllocRPCRequest();

@@ -54,7 +54,7 @@ struct MyTask : public IReprocessingTask
     }
 
     virtual Progress
-    getProgress(void) const override
+    getProgress() const override
     {
         return Progress(_myProgress, _weight);
     }

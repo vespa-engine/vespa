@@ -24,7 +24,7 @@ public:
     virtual void visit(uint32_t lid, const document::Document &doc) override;
     virtual void visit(uint32_t lid) override;
 
-    void visitDone(void);
+    void visitDone();
     void killOrphans(search::IDocumentStore &store, search::SerialNum serialNum);
     uint32_t getInvalidCount() const;
     uint32_t getOrphanCount() const;

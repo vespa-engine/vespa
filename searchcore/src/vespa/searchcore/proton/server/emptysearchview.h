@@ -11,7 +11,7 @@ class EmptySearchView : public ISearchHandler
 public:
     typedef std::shared_ptr<EmptySearchView> SP;
 
-    EmptySearchView(void);
+    EmptySearchView();
 
     /**
      * Implements ISearchHandler

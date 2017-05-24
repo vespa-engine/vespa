@@ -47,35 +47,35 @@ public:
 public:
     FastS_QueryCacheUtil();
     ~FastS_QueryCacheUtil();
-    bool AgeDropCheck(void);
-    void DropResult(void);
-    bool GotNoResultsYet(void) const { return _queryResult._hitbuf == NULL; }
-    uint32_t GetSearchOffset(void) const { return _searchInfo._searchOffset; }
-    uint32_t GetMaxHits(void) const { return _searchInfo._maxHits; }
-    uint32_t GetAlignedMaxHits(void) const { return _alignedMaxHits; }
-    uint32_t GetAlignedSearchOffset(void) const { return _alignedSearchOffset; }
-    const vespalib::string & GetRanking(void) const { return _ranking; }
-    uint32_t GetRandomSeed(void) const { return _randomSeed; }
-    uint32_t GetDateTime(void) const { return _dateTime; }
-    FastS_query &GetQuery(void) { return _query; }
+    bool AgeDropCheck();
+    void DropResult();
+    bool GotNoResultsYet() const { return _queryResult._hitbuf == NULL; }
+    uint32_t GetSearchOffset() const { return _searchInfo._searchOffset; }
+    uint32_t GetMaxHits() const { return _searchInfo._maxHits; }
+    uint32_t GetAlignedMaxHits() const { return _alignedMaxHits; }
+    uint32_t GetAlignedSearchOffset() const { return _alignedSearchOffset; }
+    const vespalib::string & GetRanking() const { return _ranking; }
+    uint32_t GetRandomSeed() const { return _randomSeed; }
+    uint32_t GetDateTime() const { return _dateTime; }
+    FastS_query &GetQuery() { return _query; }
     const char *GetSortSpec() const { return _query.GetSortSpec(); }
     const char *GetLocation() const { return _query.GetLocation(); }
     bool ShouldDropSortData() const {
         return _query.IsFlagSet(search::fs4transport::QFLAG_DROP_SORTDATA);
     }
     bool IsQueryFlagSet(uint32_t flag) const { return _query.IsFlagSet(flag); }
-    FastS_QueryResult *GetQueryResult(void) {
+    FastS_QueryResult *GetQueryResult() {
         return &_queryResult;
     }
-    FastS_DocsumsResult *GetDocsumsResult(void) { return &_docsumsResult; }
-    FastS_SearchInfo *GetSearchInfo(void) { return &_searchInfo; }
+    FastS_DocsumsResult *GetDocsumsResult() { return &_docsumsResult; }
+    FastS_SearchInfo *GetSearchInfo() { return &_searchInfo; }
     void SetStartTime(double timeref) { _startTime = timeref; }
     void AdjustSearchParameters(uint32_t partitions);
     void AdjustSearchParametersFinal(uint32_t partitions);
     void SetupQuery(uint32_t maxhits, uint32_t offset);
-    bool IsEstimate(void) const;
-    void ForceStrictLimits(void);
-    void InitEstimateMode(void);
+    bool IsEstimate() const;
+    void ForceStrictLimits();
+    void InitEstimateMode();
     double ElapsedSecs(double now) const {
         double ret = now - _startTime;
         if (ret < 0.0)
@@ -95,7 +95,7 @@ public:
         }
         _alignedHitCount = alignedHitCount;
     }
-    void CalcHitCount(void) {
+    void CalcHitCount() {
         if (_alignedHitCount + _alignedSearchOffset > _searchInfo._searchOffset) {
             _queryResult._hitCount = _alignedHitCount + _alignedSearchOffset - _searchInfo._searchOffset;
         } else {
@@ -105,7 +105,7 @@ public:
             _queryResult._hitCount = _searchInfo._maxHits;
         }
     }
-    void AllocAlignedHitBuf(void) {
+    void AllocAlignedHitBuf() {
         FastS_assert(_alignedHitBuf == NULL);
         if (_alignedHitCount != 0) {
             _alignedHitBuf = (FastS_hitresult*)malloc(sizeof(FastS_hitresult) * _alignedHitCount);
@@ -134,11 +134,11 @@ public:
     }
     uint32_t *GetSortIndex() const { return _sortIndex; }
     char *GetSortData() const { return _sortData; }
-    FastS_hitresult *GetAlignedHitBuf(void) const { return _alignedHitBuf; }
-    FastS_hitresult *GetAlignedHitBufEnd(void) const {
+    FastS_hitresult *GetAlignedHitBuf() const { return _alignedHitBuf; }
+    FastS_hitresult *GetAlignedHitBufEnd() const {
         return _alignedHitBuf + _alignedHitCount;
     }
-    uint32_t GetAlignedHitCount(void) const { return _alignedHitCount; }
+    uint32_t GetAlignedHitCount() const { return _alignedHitCount; }
     void SetGroupResult(const char *groupResult) {
         _queryResult._groupResult = groupResult;
     }

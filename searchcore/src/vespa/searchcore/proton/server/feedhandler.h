@@ -285,10 +285,10 @@ public:
      * Implements IHeartBeatHandler
      */
     virtual void
-    heartBeat(void) override;
+    heartBeat() override;
 
     virtual void
-    sync(void);
+    sync();
 
     /**
      * Implements TransLogClient::Session::Callback.
@@ -297,10 +297,10 @@ public:
     receive(const Packet &packet) override;
 
     virtual void
-    eof(void) override;
+    eof() override;
 
     virtual void
-    inSync(void) override;
+    inSync() override;
 
     /**
      * Implements IPruneRemovedDocumentsHandler

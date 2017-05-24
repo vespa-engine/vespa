@@ -60,7 +60,7 @@ const document::DocumentId docId("doc:test:1");
 
 
 DocumentTypeRepo::UP
-makeDocTypeRepo(void)
+makeDocTypeRepo()
 {
     DocumenttypesConfigBuilderHelper builder;
     builder.document(doc_type_id, type_name,
@@ -131,9 +131,9 @@ public:
     DocumentTypeRepo::UP _repoUP;
     bool _hasFields;
 
-    TestFixture(void);
+    TestFixture();
 
-    ~TestFixture(void);
+    ~TestFixture();
 
     void
     testParse(const string &selection);
@@ -152,7 +152,7 @@ public:
 };
 
 
-TestFixture::TestFixture(void)
+TestFixture::TestFixture()
     : _amgr(),
       _repoUP(),
       _hasFields(true)
@@ -164,7 +164,7 @@ TestFixture::TestFixture(void)
 }
 
 
-TestFixture::~TestFixture(void)
+TestFixture::~TestFixture()
 {
 }
 

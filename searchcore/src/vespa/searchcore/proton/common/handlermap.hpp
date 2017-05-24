@@ -148,7 +148,7 @@ public:
      * Clear all handlers.
      */
     void
-    clear(void)
+    clear()
     {
         _handlers.clear();
     }

@@ -34,7 +34,7 @@ public:
                       const vespalib::string &docTypeName);
 
     virtual
-    ~FileConfigManager(void);
+    ~FileConfigManager();
 
     virtual SerialNum getBestSerialNum() const override;
     virtual SerialNum getOldestSerialNum() const override;

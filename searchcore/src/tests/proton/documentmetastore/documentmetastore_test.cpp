@@ -69,7 +69,7 @@ class ReverseGidCompare : public DocumentMetaStore::IGidCompare
 {
     GlobalId::BucketOrderCmp _comp;
 public:
-    ReverseGidCompare(void)
+    ReverseGidCompare()
         : IGidCompare(),
           _comp()
     {
@@ -90,7 +90,7 @@ struct BoolVector : public std::vector<bool> {
     BoolVector &F() { push_back(false); return *this; }
 
     uint32_t
-    countTrue(void) const
+    countTrue() const
     {
         uint32_t res(0);
         for (uint32_t i = 0; i < size(); ++i)

@@ -144,7 +144,7 @@ public:
 
     const vespalib::string &getDocTypeName() const { return _docTypeName; }
 
-    int64_t getGeneration(void) const { return _generation; }
+    int64_t getGeneration() const { return _generation; }
 
     const RankProfilesConfig &getRankProfilesConfig() const { return *_rankProfiles; }
     const RankingConstants &getRankingConstants() const { return *_rankingConstants; }

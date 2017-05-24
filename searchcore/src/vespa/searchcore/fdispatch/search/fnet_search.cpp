@@ -584,7 +584,7 @@ FastS_FNET_Search::~FastS_FNET_Search()
 
 
 void
-FastS_FNET_Search::dropDatasetActiveCostRef(void)
+FastS_FNET_Search::dropDatasetActiveCostRef()
 {
     if (_datasetActiveCostRef) {
         _dataset->SubCost();
@@ -1483,7 +1483,7 @@ FastS_FNET_Search::adjustQueryTimeout()
 
 
 void
-FastS_FNET_Search::adjustDocsumTimeout(void)
+FastS_FNET_Search::adjustDocsumTimeout()
 {
     uint32_t pendingDocsums = getPendingDocsums();
 

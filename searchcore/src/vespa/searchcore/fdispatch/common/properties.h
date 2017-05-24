@@ -10,7 +10,7 @@ public:
     /**
      * Destructor.  No cleanup needed for base class.
      */
-    virtual ~FastS_IProperties(void) { }
+    virtual ~FastS_IProperties() { }
 
     virtual bool        IsSet    (const char *key)                         = 0;
     virtual bool        BoolVal  (const char *key)                         = 0;

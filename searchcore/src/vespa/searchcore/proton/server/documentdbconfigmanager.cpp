@@ -351,7 +351,7 @@ DocumentDBConfigHelper::nextGeneration(int timeoutInMillis)
 }
 
 DocumentDBConfig::SP
-DocumentDBConfigHelper::getConfig(void) const
+DocumentDBConfigHelper::getConfig() const
 {
     return _mgr.getConfig();
 }

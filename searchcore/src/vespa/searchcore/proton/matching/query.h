@@ -84,7 +84,7 @@ public:
      * test to verify the original query without optimization.
      **/
     void optimize();
-    void fetchPostings(void);
+    void fetchPostings();
     void freeze();
 
     /**

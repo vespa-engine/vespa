@@ -95,12 +95,12 @@ public:
     }
 
     uint8_t
-    getNextBucketUsedBits(void) {
+    getNextBucketUsedBits() {
         return _bucketUsedBitsReader.readHostOrder();
     }
 
     Timestamp
-    getNextTimestamp(void) {
+    getNextTimestamp() {
         return _timestampReader.readHostOrder();
     }
 
@@ -988,7 +988,7 @@ DocumentMetaStore::compactLidSpace(uint32_t wantedLidLimit)
 }
 
 void
-DocumentMetaStore::holdUnblockShrinkLidSpace(void)
+DocumentMetaStore::holdUnblockShrinkLidSpace()
 {
     assert(_shrinkLidSpaceBlockers > 0);
     GenerationHeldBase::UP hold(new ShrinkBlockHeld(*this));
@@ -997,14 +997,14 @@ DocumentMetaStore::holdUnblockShrinkLidSpace(void)
 }
 
 void
-DocumentMetaStore::unblockShrinkLidSpace(void)
+DocumentMetaStore::unblockShrinkLidSpace()
 {
     assert(_shrinkLidSpaceBlockers > 0);
     --_shrinkLidSpaceBlockers;
 }
 
 bool
-DocumentMetaStore::canShrinkLidSpace(void) const
+DocumentMetaStore::canShrinkLidSpace() const
 {
     return AttributeVector::canShrinkLidSpace() &&
         _shrinkLidSpaceBlockers == 0;

@@ -15,7 +15,7 @@ private:
     double _age;
 
 public:
-    DocumentDBPruneConfig(void);
+    DocumentDBPruneConfig();
     DocumentDBPruneConfig(double interval, double age);
 
     bool operator==(const DocumentDBPruneConfig &rhs) const;
@@ -32,11 +32,11 @@ private:
     double _interval;
 
 public:
-    DocumentDBHeartBeatConfig(void);
+    DocumentDBHeartBeatConfig();
     DocumentDBHeartBeatConfig(double interval);
 
     bool operator==(const DocumentDBHeartBeatConfig &rhs) const;
-    double getInterval(void) const { return _interval; }
+    double getInterval() const { return _interval; }
 };
 
 class DocumentDBLidSpaceCompactionConfig
@@ -83,7 +83,7 @@ private:
     double                                _resourceLimitFactor;
 
 public:
-    DocumentDBMaintenanceConfig(void);
+    DocumentDBMaintenanceConfig();
 
     DocumentDBMaintenanceConfig(const DocumentDBPruneRemovedDocumentsConfig &pruneRemovedDocuments,
                                 const DocumentDBHeartBeatConfig &heartBeat,
@@ -98,13 +98,13 @@ public:
     operator==(const DocumentDBMaintenanceConfig &rhs) const;
 
     const DocumentDBPruneRemovedDocumentsConfig &
-    getPruneRemovedDocumentsConfig(void) const
+    getPruneRemovedDocumentsConfig() const
     {
         return _pruneRemovedDocuments;
     }
 
     const DocumentDBHeartBeatConfig &
-    getHeartBeatConfig(void) const
+    getHeartBeatConfig() const
     {
         return _heartBeat;
     }

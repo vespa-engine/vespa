@@ -161,7 +161,7 @@ public:
 
     bool IsUp() const { return _isUp; }
     bool IsRealBad() const { return (_badness > BAD_NOT); }
-    bool isAdminBad(void) const { return _badness == BAD_ADMIN; }
+    bool isAdminBad() const { return _badness == BAD_ADMIN; }
     
     bool IsReady() const { return (IsUp() || IsRealBad()); }
     void SlowQuery(double limit, double secs, bool silent);
