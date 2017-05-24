@@ -54,7 +54,7 @@ public:
     }
 
     virtual void
-    run(void) override
+    run() override
     {
         _task->run();
         _gate->countDown();
@@ -104,7 +104,7 @@ public:
     startFlushing(uint64_t syncToken, FlushHandler & handler);
 
     void
-    run(void);
+    run();
 };
 
 
@@ -119,7 +119,7 @@ UpdaterTask::startFlushing(uint64_t syncToken, FlushHandler & handler)
 
 
 void
-UpdaterTask::run(void)
+UpdaterTask::run()
 {
     LOG(info, "UpdaterTask::run(begin)");
     uint32_t totalDocs = 2000000;
@@ -195,28 +195,28 @@ class Test : public vespalib::TestApp
 {
 private:
     void
-    requireThatUpdaterAndFlusherCanRunConcurrently(void);
+    requireThatUpdaterAndFlusherCanRunConcurrently();
 
     void
-    requireThatFlushableAttributeReportsMemoryUsage(void);
+    requireThatFlushableAttributeReportsMemoryUsage();
 
     void
     requireThatFlushableAttributeManagesSyncTokenInfo();
 
     void
-    requireThatFlushTargetsCanBeRetrieved(void);
+    requireThatFlushTargetsCanBeRetrieved();
 
     void
-    requireThatCleanUpIsPerformedAfterFlush(void);
+    requireThatCleanUpIsPerformedAfterFlush();
 
     void
-    requireThatFlushStatsAreUpdated(void);
+    requireThatFlushStatsAreUpdated();
 
     void
-    requireThatOnlyOneFlusherCanRunAtTheSameTime(void);
+    requireThatOnlyOneFlusherCanRunAtTheSameTime();
 
     void
-    requireThatLastFlushTimeIsReported(void);
+    requireThatLastFlushTimeIsReported();
 
     void
     requireThatShrinkWorks();
@@ -225,7 +225,7 @@ private:
     void requireThatFlushedAttributeCanBeLoaded();
 public:
     int
-    Main(void) override;
+    Main() override;
 };
 
 
@@ -298,7 +298,7 @@ struct Fixture : public BaseFixture, public AttributeManagerFixture
 
 
 void
-Test::requireThatUpdaterAndFlusherCanRunConcurrently(void)
+Test::requireThatUpdaterAndFlusherCanRunConcurrently()
 {
     Fixture f;
     AttributeManager &am = f._m;
@@ -330,7 +330,7 @@ Test::requireThatUpdaterAndFlusherCanRunConcurrently(void)
 
 
 void
-Test::requireThatFlushableAttributeReportsMemoryUsage(void)
+Test::requireThatFlushableAttributeReportsMemoryUsage()
 {
     Fixture f;
     AttributeManager &am = f._m;
@@ -383,7 +383,7 @@ Test::requireThatFlushableAttributeManagesSyncTokenInfo()
 
 
 void
-Test::requireThatFlushTargetsCanBeRetrieved(void)
+Test::requireThatFlushTargetsCanBeRetrieved()
 {
     Fixture f;
     AttributeManager &am = f._m;
@@ -399,7 +399,7 @@ Test::requireThatFlushTargetsCanBeRetrieved(void)
 
 
 void
-Test::requireThatCleanUpIsPerformedAfterFlush(void)
+Test::requireThatCleanUpIsPerformedAfterFlush()
 {
     Fixture f;
     AttributeVector::SP av = f.addAttribute("a6");
@@ -435,7 +435,7 @@ Test::requireThatCleanUpIsPerformedAfterFlush(void)
 
 
 void
-Test::requireThatFlushStatsAreUpdated(void)
+Test::requireThatFlushStatsAreUpdated()
 {
     Fixture f;
     AttributeManager &am = f._m;
@@ -451,7 +451,7 @@ Test::requireThatFlushStatsAreUpdated(void)
 
 
 void
-Test::requireThatOnlyOneFlusherCanRunAtTheSameTime(void)
+Test::requireThatOnlyOneFlusherCanRunAtTheSameTime()
 {
     Fixture f;
     AttributeManager &am = f._m;
@@ -484,7 +484,7 @@ Test::requireThatOnlyOneFlusherCanRunAtTheSameTime(void)
 
 
 void
-Test::requireThatLastFlushTimeIsReported(void)
+Test::requireThatLastFlushTimeIsReported()
 {
     BaseFixture f;
     FastOS_StatInfo stat;
@@ -610,7 +610,7 @@ Test::requireThatFlushedAttributeCanBeLoaded()
 }
 
 int
-Test::Main(void)
+Test::Main()
 {
     TEST_INIT("attributeflush_test");
 

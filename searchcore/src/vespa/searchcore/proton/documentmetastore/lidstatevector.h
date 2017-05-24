@@ -17,20 +17,20 @@ class LidStateVector
     bool _trackHighest;
 
     void
-    updateLowest(void);
+    updateLowest();
 
     void
-    updateHighest(void);
+    updateHighest();
 
     inline void
-    maybeUpdateLowest(void)
+    maybeUpdateLowest()
     {
         if (_trackLowest && _lowest < _bv.size() && !_bv.testBit(_lowest))
             updateLowest();
     }
 
     inline void
-    maybeUpdateHighest(void)
+    maybeUpdateHighest()
     {
         if (_trackHighest && _highest != 0 && !_bv.testBit(_highest))
             updateHighest();
@@ -41,7 +41,7 @@ class LidStateVector
      * write thread.
      */
     uint32_t
-    internalCount(void);
+    internalCount();
 public:
     
     LidStateVector(unsigned int newSize,
@@ -68,32 +68,32 @@ public:
     }
 
     inline unsigned int
-    size(void) const
+    size() const
     {
         return _bv.size();
     }
 
     inline unsigned int
-    byteSize(void) const
+    byteSize() const
     {
         return _bv.extraByteSize() + sizeof(LidStateVector);
     }
 
     bool
-    empty(void) const;
+    empty() const;
 
     unsigned int
-    getLowest(void) const;
+    getLowest() const;
     
     unsigned int
-    getHighest(void) const;
+    getHighest() const;
 
     /**
      * Get cached number of bits set in vector.  Called by read or
      * write thread.  Write thread must updated cached number as needed.
      */
     uint32_t
-    count(void) const;
+    count() const;
 
     unsigned int
     getNextTrueBit(unsigned int idx) const

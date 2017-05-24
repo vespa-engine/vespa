@@ -43,7 +43,7 @@ private:
 
         void ack(const FeedOperation::Type opType, PerDocTypeFeedMetrics &metrics);
 
-        void incNeededAcks(void);
+        void incNeededAcks();
 
         void fail(uint32_t errNum, const vespalib::string &errMsg);
         void trace(uint32_t traceLevel, const vespalib::string &traceMsg);
@@ -95,7 +95,7 @@ public:
     }
 
     void
-    incNeededAcks(void) const
+    incNeededAcks() const
     {
         _state->incNeededAcks();
     }

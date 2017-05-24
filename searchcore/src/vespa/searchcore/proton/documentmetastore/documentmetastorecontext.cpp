@@ -31,7 +31,7 @@ DocumentMetaStoreContext::DocumentMetaStoreContext(const search::AttributeVector
 DocumentMetaStoreContext::~DocumentMetaStoreContext() {}
 
 void
-DocumentMetaStoreContext::constructFreeList(void)
+DocumentMetaStoreContext::constructFreeList()
 {
     _metaStore->constructFreeList();
 }

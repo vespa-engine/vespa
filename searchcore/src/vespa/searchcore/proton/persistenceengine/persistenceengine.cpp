@@ -656,7 +656,7 @@ PersistenceEngine::maintain(const Bucket& , MaintenanceLevel)
 }
 
 void
-PersistenceEngine::destroyIterators(void)
+PersistenceEngine::destroyIterators()
 {
     Context context(storage::spi::LoadType(0, "default"),
                     storage::spi::Priority(0x80),
@@ -689,7 +689,7 @@ PersistenceEngine::saveClusterState(const ClusterState &calc)
 }
 
 PersistenceEngine::ClusterState::SP
-PersistenceEngine::savedClusterState(void) const
+PersistenceEngine::savedClusterState() const
 {
     LockGuard guard(_lock);
     return _clusterState;
@@ -738,7 +738,7 @@ public:
         }
     }
 
-    const BucketIdMap & getBucketMap(void) const { return _bucketMap; }
+    const BucketIdMap & getBucketMap() const { return _bucketMap; }
 };
 
 void
@@ -773,7 +773,7 @@ PersistenceEngine::populateInitialBucketDB(IPersistenceHandler &targetHandler)
 }
 
 std::unique_lock<std::shared_timed_mutex>
-PersistenceEngine::getWLock(void) const
+PersistenceEngine::getWLock() const
 {
     return std::unique_lock<std::shared_timed_mutex>(_rwMutex);
 }

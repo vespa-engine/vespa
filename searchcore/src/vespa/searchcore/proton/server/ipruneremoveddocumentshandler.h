@@ -14,7 +14,7 @@ public:
     performPruneRemovedDocuments(PruneRemovedDocumentsOperation &pruneOp) = 0;
 
     virtual
-    ~IPruneRemovedDocumentsHandler(void)
+    ~IPruneRemovedDocumentsHandler()
     {
     }
 };

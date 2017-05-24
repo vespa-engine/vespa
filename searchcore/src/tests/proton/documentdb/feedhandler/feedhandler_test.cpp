@@ -111,7 +111,7 @@ struct MyOwner : public IFeedHandlerOwner
     virtual void onPerformPrune(SerialNum) override {}
 
     virtual bool
-    getAllowPrune(void) const override
+    getAllowPrune() const override
     {
         return _allowPrune;
     }
@@ -394,7 +394,7 @@ struct MyFeedMetrics : public metrics::MetricSet
 {
     PerDocTypeFeedMetrics       _feed;
 
-    MyFeedMetrics(void)
+    MyFeedMetrics()
         : metrics::MetricSet("myfeedmetrics", "", "My feed metrics", NULL),
           _feed(this)
     {

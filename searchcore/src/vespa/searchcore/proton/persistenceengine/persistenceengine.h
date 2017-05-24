@@ -92,7 +92,7 @@ private:
     HandlerSnapshot::UP getHandlerSnapshot(const document::DocumentId &) const;
 
     void saveClusterState(const ClusterState &calc);
-    ClusterState::SP savedClusterState(void) const;
+    ClusterState::SP savedClusterState() const;
 
 public:
     typedef std::unique_ptr<PersistenceEngine> UP;
@@ -134,7 +134,7 @@ public:
     void propagateSavedClusterState(IPersistenceHandler &handler);
     void grabExtraModifiedBuckets(IPersistenceHandler &handler);
     void populateInitialBucketDB(IPersistenceHandler &targetHandler);
-    std::unique_lock<std::shared_timed_mutex> getWLock(void) const;
+    std::unique_lock<std::shared_timed_mutex> getWLock() const;
 };
 
 }

@@ -101,28 +101,28 @@ public:
         {
         }
 
-        ~queryQueued_t(void)
+        ~queryQueued_t()
         {
             FastS_assert(!_isQueued);
         }
-        void Wait(void) {
+        void Wait() {
             _queueCond.Lock();
             while (_isQueued) {
                 _queueCond.Wait();
             }
             _queueCond.Unlock();
         }
-        bool IsAborted(void) const { return _isAborted; }
-        void MarkAbort(void) { _isAborted = true; }
-        void MarkQueued(void) { _isQueued = true; }
-        void UnmarkQueued(void) { _isQueued = false; }
-        bool IsQueued(void) const { return _isQueued; }
-        void LockCond(void) { _queueCond.Lock(); }
-        void UnlockCond(void) { _queueCond.Unlock(); }
-        void SignalCond(void) { _queueCond.Signal(); }
+        bool IsAborted() const { return _isAborted; }
+        void MarkAbort() { _isAborted = true; }
+        void MarkQueued() { _isQueued = true; }
+        void UnmarkQueued() { _isQueued = false; }
+        bool IsQueued() const { return _isQueued; }
+        void LockCond() { _queueCond.Lock(); }
+        void UnlockCond() { _queueCond.Unlock(); }
+        void SignalCond() { _queueCond.Signal(); }
 
         FNET_Task *
-        getDequeuedTask(void) const
+        getDequeuedTask() const
         {
             return _deQueuedTask;
         }
@@ -154,12 +154,12 @@ public:
         queryQueue_t(FastS_DataSetDesc *desc);
         ~queryQueue_t();
         void QueueTail(queryQueued_t *newquery);
-        void DeQueueHead(void);
+        void DeQueueHead();
         unsigned int GetQueueLen() const        { return _queueLen; }
         unsigned int GetActiveQueries() const   { return _active; }
         void SetActiveQuery()                   { _active++; }
         void ClearActiveQuery()                 { _active--; }
-        queryQueued_t *GetFirst(void) const { return _head; }
+        queryQueued_t *GetFirst() const { return _head; }
     };
 
     //----------------------------------------------------------------
@@ -209,9 +209,9 @@ public:
     void CountTimeout();
 
     void ScheduleCheckTempFail();
-    virtual void DeQueueHeadWakeup_HasLock(void);
+    virtual void DeQueueHeadWakeup_HasLock();
     virtual ChildInfo getChildInfo() const;
-    uint32_t GetMldDocStamp(void) const { return _mldDocStamp; }
+    uint32_t GetMldDocStamp() const { return _mldDocStamp; }
     void SetMldDocStamp(uint32_t mldDocStamp) { _mldDocStamp = mldDocStamp; }
 
     // common dataset API

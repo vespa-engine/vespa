@@ -47,10 +47,10 @@ class ConfigFile
     std::vector<char> _content;
 
 public:
-    ConfigFile(void);
+    ConfigFile();
 
     const vespalib::string &
-    getName(void) const
+    getName() const
     {
         return _name;
     }
@@ -59,11 +59,11 @@ public:
     deserialize(vespalib::nbostream &stream);
 
     void
-    print(void) const;
+    print() const;
 };
 
 
-ConfigFile::ConfigFile(void)
+ConfigFile::ConfigFile()
     : _name(),
       _modTime(0),
       _content()
@@ -87,7 +87,7 @@ ConfigFile::deserialize(vespalib::nbostream &stream)
 }
 
 void
-ConfigFile::print(void) const
+ConfigFile::print() const
 {
     std::cout << "Name: " << _name << "\n" <<
         "ModTime: " << _modTime << "\n" <<
@@ -108,7 +108,7 @@ operator>>(vespalib::nbostream &stream, ConfigFile &configFile)
 struct DummyStreamHandler : public NewConfigOperation::IStreamHandler {
     std::map<std::string, ConfigFile> _cfs;
 
-    DummyStreamHandler(void)
+    DummyStreamHandler()
         : NewConfigOperation::IStreamHandler(),
           _cfs()
     {

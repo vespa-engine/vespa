@@ -68,7 +68,7 @@ LidStateVector::resizeVector(uint32_t newSize, uint32_t newCapacity)
 
 
 void
-LidStateVector::updateLowest(void)
+LidStateVector::updateLowest()
 {
     if (_lowest >= _bv.size())
         return;
@@ -81,7 +81,7 @@ LidStateVector::updateLowest(void)
 
 
 void
-LidStateVector::updateHighest(void)
+LidStateVector::updateHighest()
 {
     if (_highest == 0)
         return;
@@ -124,28 +124,28 @@ LidStateVector::clearBit(unsigned int idx)
 
 
 bool
-LidStateVector::empty(void) const
+LidStateVector::empty() const
 {
     return _count == 0u;
 }
 
 
 unsigned int
-LidStateVector::getLowest(void) const
+LidStateVector::getLowest() const
 {
     return _lowest;
 }
 
 
 unsigned int
-LidStateVector::getHighest(void) const
+LidStateVector::getHighest() const
 {
     return _highest;
 }
 
 
 uint32_t
-LidStateVector::internalCount(void)
+LidStateVector::internalCount()
 {
     // Called by document db executor thread.
     return _bv.countTrueBits();
@@ -153,7 +153,7 @@ LidStateVector::internalCount(void)
 
 
 uint32_t
-LidStateVector::count(void) const
+LidStateVector::count() const
 {
     // Called by document db executor thread or metrics related threads
     return _count;

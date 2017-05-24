@@ -62,19 +62,19 @@ public:
     }
 
     const vespa::config::search::core::ProtonConfig &
-    getProtonConfig(void) const
+    getProtonConfig() const
     {
         return *_proton;
     }
 
     const ProtonConfigSP &
-    getProtonConfigSP(void) const
+    getProtonConfigSP() const
     {
         return _proton;
     }
 
     const search::TuneFileDocumentDB::SP &
-    getTuneFileDocumentDBSP(void) const
+    getTuneFileDocumentDBSP() const
     {
         return _tuneFileDocumentDB;
     }
@@ -98,7 +98,7 @@ public:
     operator==(const BootstrapConfig &rhs) const;
 
     bool
-    valid(void) const;
+    valid() const;
 };
 
 } // namespace proton

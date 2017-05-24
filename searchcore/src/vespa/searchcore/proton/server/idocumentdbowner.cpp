@@ -6,7 +6,7 @@
 namespace proton
 {
 
-IDocumentDBOwner::~IDocumentDBOwner(void)
+IDocumentDBOwner::~IDocumentDBOwner()
 {
 }
 

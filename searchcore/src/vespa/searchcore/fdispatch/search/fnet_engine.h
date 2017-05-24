@@ -18,19 +18,19 @@ class FastS_StaticMonitorQuery : public FS4Packet_MONITORQUERYX
 public:
     virtual void Free() override;
 
-    bool getBusy(void) const
+    bool getBusy() const
     {
         return _refcnt > 1;
     }
 
-    void markBusy(void)
+    void markBusy()
     {
         _lock.Lock();
         _refcnt++;
         _lock.Unlock();
     }
-    FastS_StaticMonitorQuery(void);
-    ~FastS_StaticMonitorQuery(void);
+    FastS_StaticMonitorQuery();
+    ~FastS_StaticMonitorQuery();
 };
 
 //----------------------------------------------------------------------

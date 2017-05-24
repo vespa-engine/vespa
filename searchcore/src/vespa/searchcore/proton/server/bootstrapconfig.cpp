@@ -51,7 +51,7 @@ BootstrapConfig::operator==(const BootstrapConfig &rhs) const
 
 
 bool
-BootstrapConfig::valid(void) const
+BootstrapConfig::valid() const
 {
     return _documenttypes.get() != NULL &&
                     _repo.get() != NULL &&

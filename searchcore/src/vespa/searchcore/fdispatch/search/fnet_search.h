@@ -103,15 +103,15 @@ public:
     uint32_t NT_GetNumHits() const { return (_hit_end - _hit_beg); }
     void NT_NextHit() { _hit_cur++; }
 
-    uint32_t getPartID(void) const     { return _partid; }
-    uint32_t GetRowID(void) const     { return _rowid; }
-    uint32_t GetTimeStamp(void) const { return _stamp; }
+    uint32_t getPartID() const     { return _partid; }
+    uint32_t GetRowID() const     { return _rowid; }
+    uint32_t GetTimeStamp() const { return _stamp; }
 
     FastS_FNET_SearchNode * allocExtraDocsumNode(bool mld, uint32_t rowid, uint32_t rowbits);
 
-    FastS_FNET_Engine *GetEngine(void) const { return _engine; }
+    FastS_FNET_Engine *GetEngine() const { return _engine; }
 
-    bool IsConnected(void) const { return _channel != NULL; }
+    bool IsConnected() const { return _channel != NULL; }
     void Connect(FastS_FNET_Engine *engine);
     void Connect_HasDSLock(FastS_FNET_Engine *engine);
     FastS_EngineBase * getPartition(const FastOS_Mutex & dsMutex, bool userow, FastS_FNET_DataSet *dataset);
@@ -126,7 +126,7 @@ public:
         return (_engine == NULL ? 0 : _engine->getPortNumber());
     }
 
-    void dropCost(void) {
+    void dropCost() {
         if (_engine != NULL && _flags._needSubCost) {
             _engine->SubCost();
             _flags._needSubCost = false;
@@ -174,13 +174,13 @@ public:
     {
     }
 
-    ExtraDocsumNodesIter & operator++(void) {
+    ExtraDocsumNodesIter & operator++() {
         _cur = _cur->_nextExtraDocsumNode;
         return *this;
     }
 
-    bool valid(void) const { return _cur != _head; }
-    FastS_FNET_SearchNode *operator*(void) const { return _cur; }
+    bool valid() const { return _cur != _head; }
+    FastS_FNET_SearchNode *operator*() const { return _cur; }
 };
 
 
@@ -258,7 +258,7 @@ private:
 
     std::vector<FastS_fullresult>  _resbuf;
 
-    void dropDatasetActiveCostRef(void);
+    void dropDatasetActiveCostRef();
 
     typedef std::vector<std::pair<FastS_EngineBase *, FastS_FNET_SearchNode *>> EngineNodeMap;
     void connectNodes(const EngineNodeMap & engines);
@@ -284,7 +284,7 @@ private:
                        FS4Packet_QUERYRESULTX::FS4_hit *pt,
                        FS4Packet_QUERYRESULTX::FS4_hit *end);
 
-    FastS_TimeKeeper *GetTimeKeeper(void) const { return _timeKeeper; }
+    FastS_TimeKeeper *GetTimeKeeper() const { return _timeKeeper; }
 
     FastS_FNET_SearchNode * getNode(size_t i) { return &_nodes[i]; }
 public:
@@ -345,23 +345,23 @@ public:
     FastS_QueryResult *ST_GetQueryResult() { return _util.GetQueryResult(); }
 
     void adjustQueryTimeout();
-    void adjustDocsumTimeout(void);
-    uint32_t getGoodQueries(void) const { return _goodQueries; }
-    uint32_t getRequestedQueries(void) const { return _queryNodes; }
-    uint32_t getPendingQueries(void) const { return _pendingQueries; }
-    uint32_t getDoneQueries(void) const {
+    void adjustDocsumTimeout();
+    uint32_t getGoodQueries() const { return _goodQueries; }
+    uint32_t getRequestedQueries() const { return _queryNodes; }
+    uint32_t getPendingQueries() const { return _pendingQueries; }
+    uint32_t getDoneQueries() const {
         return getRequestedQueries() - getPendingQueries();
     }
-    uint32_t getBadQueries(void) const {
+    uint32_t getBadQueries() const {
         return getDoneQueries() - getGoodQueries();
     }
-    uint32_t getGoodDocsums(void) const { return _goodDocsums; }
-    uint32_t getRequestedDocsums(void) const { return _requestedDocsums; }
-    uint32_t getPendingDocsums(void) const { return _pendingDocsums; }
-    uint32_t getDoneDocsums(void) const {
+    uint32_t getGoodDocsums() const { return _goodDocsums; }
+    uint32_t getRequestedDocsums() const { return _requestedDocsums; }
+    uint32_t getPendingDocsums() const { return _pendingDocsums; }
+    uint32_t getDoneDocsums() const {
         return getRequestedDocsums() - getPendingDocsums();
     }
-    uint32_t getBadDocsums(void) const {
+    uint32_t getBadDocsums() const {
         return getDoneDocsums() - getGoodDocsums();
     }
 

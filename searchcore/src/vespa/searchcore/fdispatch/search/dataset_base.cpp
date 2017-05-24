@@ -68,7 +68,7 @@ FastS_DataSetBase::queryQueue_t::QueueTail(queryQueued_t *newqueued)
 
 
 void
-FastS_DataSetBase::queryQueue_t::DeQueueHead(void)
+FastS_DataSetBase::queryQueue_t::DeQueueHead()
 {
     queryQueued_t *queued = _head;
     FastS_assert(_queueLen > 0);
@@ -112,7 +112,7 @@ FastS_DataSetBase::ScheduleCheckTempFail()
 
 
 void
-FastS_DataSetBase::DeQueueHeadWakeup_HasLock(void)
+FastS_DataSetBase::DeQueueHeadWakeup_HasLock()
 {
     queryQueued_t *queued;
     queued = _queryQueue.GetFirst();

@@ -18,21 +18,21 @@ FlushHandlerProxy::FlushHandlerProxy(const DocumentDB::SP &documentDB)
 }
 
 
-FlushHandlerProxy::~FlushHandlerProxy(void)
+FlushHandlerProxy::~FlushHandlerProxy()
 {
     _documentDB->release();
 }
 
 
 std::vector<IFlushTarget::SP>
-FlushHandlerProxy::getFlushTargets(void)
+FlushHandlerProxy::getFlushTargets()
 {
     return _documentDB->getFlushTargets();
 }
 
 
 IFlushHandler::SerialNum
-FlushHandlerProxy::getCurrentSerialNumber(void) const
+FlushHandlerProxy::getCurrentSerialNumber() const
 {
     return _documentDB->getCurrentSerialNumber();
 }

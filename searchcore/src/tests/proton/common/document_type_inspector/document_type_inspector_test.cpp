@@ -16,7 +16,7 @@ const vespalib::string header_name = type_name + ".header";
 const vespalib::string body_name = type_name + ".body";
 
 DocumentTypeRepo::UP
-makeOldDocTypeRepo(void)
+makeOldDocTypeRepo()
 {
     DocumenttypesConfigBuilderHelper builder;
     builder.document(doc_type_id, type_name,
@@ -29,7 +29,7 @@ makeOldDocTypeRepo(void)
 }
 
 DocumentTypeRepo::UP
-makeNewDocTypeRepo(void)
+makeNewDocTypeRepo()
 {
     DocumenttypesConfigBuilderHelper builder;
     builder.document(doc_type_id, type_name,

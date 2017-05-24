@@ -23,9 +23,9 @@ public:
     FastS_query(const FastS_query &other);
     FastS_query &operator=(const FastS_query &other);
 public:
-    FastS_query(void);
+    FastS_query();
     FastS_query(const search::docsummary::GetDocsumArgs &docsumArgs);
-    ~FastS_query(void);
+    ~FastS_query();
 
     void SetStackDump(const vespalib::stringref& stackDump);
     void SetSortSpec(const char *spec) { _sortSpec = spec; }
@@ -42,7 +42,7 @@ public:
     const search::fef::Properties &GetRankProperties() const { return _rankProperties; }
     const search::fef::Properties &GetFeatureOverrides() const { return _featureOverrides; }
 
-    uint32_t GetQueryFlags(void) const { return _flags; }
+    uint32_t GetQueryFlags() const { return _flags; }
     const char *getPrintableQuery();
     bool IsFlagSet(uint32_t flag) const { return (_flags & flag) != 0; }
 

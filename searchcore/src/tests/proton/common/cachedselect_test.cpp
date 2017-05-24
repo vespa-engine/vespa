@@ -88,7 +88,7 @@ const int32_t noIntVal = std::numeric_limits<int32_t>::min();
 
 
 DocumentTypeRepo::UP
-makeDocTypeRepo(void)
+makeDocTypeRepo()
 {
     DocumenttypesConfigBuilderHelper builder;
     builder.document(doc_type_id, type_name,
@@ -194,7 +194,7 @@ public:
     }
 
     uint32_t
-    getGets(void) const
+    getGets() const
     {
         return _gets;
     }
@@ -293,9 +293,9 @@ public:
     MyAttributeManager _amgr;
     MyDB::UP _db;
 
-    TestFixture(void);
+    TestFixture();
 
-    ~TestFixture(void);
+    ~TestFixture();
 
     CachedSelect::SP
     testParse(const string &selection,
@@ -304,7 +304,7 @@ public:
 };
 
 
-TestFixture::TestFixture(void)
+TestFixture::TestFixture()
     : _repoUP(),
       _hasFields(true),
       _amgr(),
@@ -320,7 +320,7 @@ TestFixture::TestFixture(void)
 }
 
 
-TestFixture::~TestFixture(void)
+TestFixture::~TestFixture()
 {
 }
 

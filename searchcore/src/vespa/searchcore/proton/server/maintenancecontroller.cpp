@@ -132,7 +132,7 @@ MaintenanceController::performClearJobs()
 
 
 void
-MaintenanceController::stop(void)
+MaintenanceController::stop()
 {
     assert(!_masterThread.isCurrentThread());
     _stopping = true;
@@ -160,7 +160,7 @@ MaintenanceController::start(const DocumentDBMaintenanceConfig::SP &config)
 
 
 void
-MaintenanceController::restart(void)
+MaintenanceController::restart()
 {
     // Called by master write thread
     if (!_started || _stopping || !_readySubDB.valid()) {

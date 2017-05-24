@@ -82,8 +82,8 @@ public:
     FastS_ISearch *CreateSearch(uint32_t dataSetID, FastS_TimeKeeper *timeKeeper);
 
     // handle old query queues
-    bool IsLastRef(void) { return (refCount() == 1); }
+    bool IsLastRef() { return (refCount() == 1); }
     void CheckQueryQueues(FastS_TimeKeeper *timeKeeper);
-    void AbortQueryQueues(void);
+    void AbortQueryQueues();
 };
 

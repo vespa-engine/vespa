@@ -34,17 +34,17 @@ protected:
         return (vespalib::SignalHandler::INT.check() || vespalib::SignalHandler::TERM.check());
     }
 
-    void Usage(void);
+    void Usage();
     bool GetOptions(int *exitCode);
 
 public:
     int Main() override;
-    FastS_FDispatchApp(void);
-    ~FastS_FDispatchApp(void);
+    FastS_FDispatchApp();
+    ~FastS_FDispatchApp();
 };
 
 
-FastS_FDispatchApp::FastS_FDispatchApp(void)
+FastS_FDispatchApp::FastS_FDispatchApp()
 {
 }
 
@@ -174,7 +174,7 @@ FastS_FDispatchApp::GetOptions(int *exitCode)
 }
 
 void
-FastS_FDispatchApp::Usage(void)
+FastS_FDispatchApp::Usage()
 {
     printf("FAST Search - fdispatch %s\n", FastS_VersionTag);
     printf("\n"
@@ -192,7 +192,7 @@ FastS_FDispatchApp::Usage(void)
 }
 
 
-FastS_FDispatchApp::~FastS_FDispatchApp(void)
+FastS_FDispatchApp::~FastS_FDispatchApp()
 {
 }
 

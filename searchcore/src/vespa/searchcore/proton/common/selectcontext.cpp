@@ -29,7 +29,7 @@ SelectContext::SelectContext(const CachedSelect &cachedSelect)
 SelectContext::~SelectContext() { }
 
 void
-SelectContext::getAttributeGuards(void)
+SelectContext::getAttributeGuards()
 {
     _guards->resize(_cachedSelect._attributes.size());
     auto j(_cachedSelect._attributes.begin());
@@ -40,7 +40,7 @@ SelectContext::getAttributeGuards(void)
 
 
 void
-SelectContext::dropAttributeGuards(void)
+SelectContext::dropAttributeGuards()
 {
     _guards->clear();
 }

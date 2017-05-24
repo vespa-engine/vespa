@@ -38,7 +38,7 @@ private:
      * up to down in cluster state.  Called by document db executor thread.
      */
     void
-    deactivateAllActiveBuckets(void);
+    deactivateAllActiveBuckets();
 
 public:
     /**

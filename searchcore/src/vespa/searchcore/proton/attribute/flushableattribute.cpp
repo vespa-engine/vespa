@@ -53,7 +53,7 @@ public:
     virtual void run() override;
 
     virtual SerialNum
-    getFlushSerial(void) const override
+    getFlushSerial() const override
     {
         return _syncToken;
     }

@@ -30,7 +30,7 @@ public:
     heartBeat(search::SerialNum serialNum) = 0;
 
     virtual const search::IDocumentStore &
-    getDocumentStore(void) const = 0;
+    getDocumentStore() const = 0;
 
     virtual std::unique_ptr<document::Document>
     get(const search::DocumentIdT lid,

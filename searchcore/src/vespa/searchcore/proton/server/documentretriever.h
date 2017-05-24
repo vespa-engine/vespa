@@ -34,7 +34,7 @@ private:
     PositionFields                   _possiblePositionFields;
     AttributeFields                  _attributeFields;
 
-    const search::IAttributeManager * getAttrMgr(void) const override;
+    const search::IAttributeManager * getAttrMgr() const override;
 };
 
 }  // namespace proton

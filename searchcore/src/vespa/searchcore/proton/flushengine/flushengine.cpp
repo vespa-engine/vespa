@@ -118,7 +118,7 @@ FlushEngine::triggerFlush()
 }
 
 void
-FlushEngine::kick(void)
+FlushEngine::kick()
 {
     MonitorGuard guard(_monitor);
     LOG(debug, "Kicking flush engine");

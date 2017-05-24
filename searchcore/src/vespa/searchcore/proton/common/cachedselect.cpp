@@ -113,7 +113,7 @@ AttrVisitor::visitFieldValueNode(const FieldValueNode &expr)
 
 }
 
-CachedSelect::CachedSelect(void)
+CachedSelect::CachedSelect()
     : _attributes(),
       _select(),
       _fieldNodes(0u),

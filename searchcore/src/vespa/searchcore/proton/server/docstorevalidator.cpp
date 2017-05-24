@@ -59,7 +59,7 @@ DocStoreValidator::visit(uint32_t lid)
 
 
 void
-DocStoreValidator::visitDone(void)
+DocStoreValidator::visitDone()
 {
     _invalid->invalidateCachedCount();
     _orphans->invalidateCachedCount();
@@ -68,13 +68,13 @@ DocStoreValidator::visitDone(void)
 }
 
 uint32_t
-DocStoreValidator::getInvalidCount(void) const
+DocStoreValidator::getInvalidCount() const
 {
     return _invalid->countTrueBits();
 }
 
 uint32_t
-DocStoreValidator::getOrphanCount(void) const
+DocStoreValidator::getOrphanCount() const
 {
     return _orphans->countTrueBits();
 }
@@ -93,7 +93,7 @@ DocStoreValidator::killOrphans(search::IDocumentStore &store,
 
 
 LidVectorContext::SP
-DocStoreValidator::getInvalidLids(void) const
+DocStoreValidator::getInvalidLids() const
 {
     LidVectorContext::SP res(new LidVectorContext(_docIdLimit));
     assert(_invalid->size() == _docIdLimit);

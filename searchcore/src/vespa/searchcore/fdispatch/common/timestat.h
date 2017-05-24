@@ -12,7 +12,7 @@ public:
     uint32_t _totalTimeouts;
     double _totalAccTime;
 
-    FastS_TimeStatTotals(void)
+    FastS_TimeStatTotals()
         : _totalCount(0),
           _totalTimeouts(0u),
           _totalAccTime(0)
@@ -38,7 +38,7 @@ public:
     }
 
     double
-    getAvgTime(void) const
+    getAvgTime() const
     {
         if (_totalCount == 0)
             return 0.0;
@@ -46,7 +46,7 @@ public:
     }
 
     double
-    getTimeoutRate(void) const
+    getTimeoutRate() const
     {
         if (_totalCount == 0)
             return 0.0;
@@ -153,7 +153,7 @@ class FastS_TimeStatHistory
         return static_cast<double>(timeIdx) * SLOT_SIZE;
     }
 public:
-    FastS_TimeStatHistory(void)
+    FastS_TimeStatHistory()
         : _sampleAccTime(0.0),
           _totalAccTime(0.0),
           _sampleIdx(0),
@@ -169,13 +169,13 @@ public:
         Reset();
     }
 
-    void Reset(void);
+    void Reset();
 
-    double  GetSampleAccTime(void) const { return _sampleAccTime; }
-    uint32_t GetSampleCount(void) const { return _sampleCount; }
+    double  GetSampleAccTime() const { return _sampleAccTime; }
+    uint32_t GetSampleCount() const { return _sampleCount; }
 
     uint32_t
-    getSampleTimeouts(void) const
+    getSampleTimeouts() const
     {
         return _sampleTimeouts;
     }
@@ -186,15 +186,15 @@ public:
             return 0.0;
         return (_sampleAccTime / _sampleCount);
     }
-    double GetMaxTime(void) const;
+    double GetMaxTime() const;
 
     void Update(double tnow, double t, bool timedout);
 
-    uint32_t GetTotalCount(void) const { return _totalCount; }
-    double  GetTotalAccTime(void) const { return _totalAccTime; }
+    uint32_t GetTotalCount() const { return _totalCount; }
+    double  GetTotalAccTime() const { return _totalAccTime; }
 
     uint32_t
-    getTotalTimeouts(void) const
+    getTotalTimeouts() const
     {
         return _totalTimeouts;
     }

@@ -50,7 +50,7 @@ public:
     /**
      * Destructor.  No cleanup needed for base class.
      */
-    virtual ~FastS_ISearchOwner(void) { }
+    virtual ~FastS_ISearchOwner() { }
 
     virtual void DoneQuery(FastS_ISearch *search,
                            FastS_SearchContext context) = 0;
@@ -177,7 +177,7 @@ public:
     /**
      * Destructor.  No cleanup needed for base class.
      */
-    virtual ~FastS_ISearch(void) { }
+    virtual ~FastS_ISearch() { }
 
 
     enum RetCode {

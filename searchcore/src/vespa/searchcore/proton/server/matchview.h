@@ -43,7 +43,7 @@ public:
     const IAttributeManager::SP & getAttributeManager() const { return _attrMgr; }
     const matching::SessionManager::SP & getSessionManager() const { return _sessionMgr; }
     const IDocumentMetaStoreContext::SP & getDocumentMetaStore() const { return _metaStore; }
-    DocIdLimit & getDocIdLimit(void) const { return _docIdLimit; }
+    DocIdLimit & getDocIdLimit() const { return _docIdLimit; }
 
     // Throws on error.
     matching::Matcher::SP getMatcher(const vespalib::string & rankProfile) const;

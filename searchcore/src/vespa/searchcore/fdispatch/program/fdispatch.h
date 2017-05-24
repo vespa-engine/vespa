@@ -98,14 +98,14 @@ public:
     virtual FastOS_ThreadPool *GetThreadPool() override;
     virtual void logPerformance() override;
     virtual uint32_t getDispatchLevel() override;
-    bool CheckTempFail(void);
-    bool Failed(void);
-    bool Init(void);
+    bool CheckTempFail();
+    bool Failed();
+    bool Init();
     int getHealthPort() const { return _healthPort; }
     vespalib::SimpleComponentConfigProducer &getComponentConfig() { return _componentConfig; }
 
     Fdispatch(const config::ConfigUri &configUri);
-    ~Fdispatch(void);
+    ~Fdispatch();
 };
 
 }

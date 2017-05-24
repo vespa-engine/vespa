@@ -130,11 +130,11 @@ public:
     initViews(const DocumentDBConfig &configSnapshot,
               const SessionManagerSP &sessionManager);
 
-    void clearViews(void);
-    void onReplayDone(void);
+    void clearViews();
+    void onReplayDone();
     void onReprocessDone(SerialNum serialNum);
-    SerialNum getOldestFlushedSerial(void);
-    SerialNum getNewestFlushedSerial(void);
+    SerialNum getOldestFlushedSerial();
+    SerialNum getNewestFlushedSerial();
 
     void pruneRemovedFields(SerialNum serialNum);
 

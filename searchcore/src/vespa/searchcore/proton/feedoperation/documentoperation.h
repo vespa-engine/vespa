@@ -31,19 +31,19 @@ protected:
 
 public:
     virtual
-    ~DocumentOperation(void)
+    ~DocumentOperation()
     {
     }
 
     const
     document::BucketId &
-    getBucketId(void) const
+    getBucketId() const
     {
         return _bucketId;
     }
 
     storage::spi::Timestamp
-    getTimestamp(void) const
+    getTimestamp() const
     {
         return _timestamp;
     }
@@ -61,19 +61,19 @@ public:
     }
 
     uint32_t
-    getSubDbId(void) const
+    getSubDbId() const
     {
         return _dbdId.getSubDbId();
     }
 
     uint32_t
-    getPrevSubDbId(void) const
+    getPrevSubDbId() const
     {
         return _prevDbdId.getSubDbId();
     }
 
     bool
-    getValidDbdId(void) const
+    getValidDbdId() const
     {
         return _dbdId.valid();
     }
@@ -85,7 +85,7 @@ public:
     }
 
     bool
-    getValidPrevDbdId(void) const
+    getValidPrevDbdId() const
     {
         return _prevDbdId.valid();
     }
@@ -97,12 +97,12 @@ public:
     }
 
     bool
-    changedDbdId(void) const
+    changedDbdId() const
     {
         return _dbdId != _prevDbdId;
     }
     bool
-    getPrevMarkedAsRemoved(void) const
+    getPrevMarkedAsRemoved() const
     {
         return _prevMarkedAsRemoved;
     }
@@ -114,13 +114,13 @@ public:
     }
 
     DbDocumentId
-    getDbDocumentId(void) const
+    getDbDocumentId() const
     {
         return _dbdId;
     }
 
     DbDocumentId
-    getPrevDbDocumentId(void) const
+    getPrevDbDocumentId() const
     {
         return _prevDbdId;
     }
@@ -148,13 +148,13 @@ public:
     }
 
     bool
-    getValidNewOrPrevDbdId(void) const
+    getValidNewOrPrevDbdId() const
     {
         return getValidDbdId() || getValidPrevDbdId();
     }
 
     bool
-    notMovingLidInSameSubDb(void) const
+    notMovingLidInSameSubDb() const
     {
         return !getValidDbdId() ||
             !getValidPrevDbdId() ||
@@ -163,7 +163,7 @@ public:
     }
 
     bool
-    movingLidIfInSameSubDb(void) const
+    movingLidIfInSameSubDb() const
     {
         return !getValidDbdId() ||
             !getValidPrevDbdId() ||
@@ -172,7 +172,7 @@ public:
     }
 
     storage::spi::Timestamp
-    getPrevTimestamp(void) const
+    getPrevTimestamp() const
     {
         return _prevTimestamp;
     }

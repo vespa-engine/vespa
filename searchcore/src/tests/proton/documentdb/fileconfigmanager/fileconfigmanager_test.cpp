@@ -63,7 +63,7 @@ saveBaseConfigSnapshot(const DocumentDBConfig &snap, SerialNum num)
 
 
 DocumentDBConfig::SP
-makeEmptyConfigSnapshot(void)
+makeEmptyConfigSnapshot()
 {
     return test::DocumentDBConfigBuilder(0, std::make_shared<Schema>(), "client", "test").build();
 }

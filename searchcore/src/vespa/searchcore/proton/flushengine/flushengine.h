@@ -130,7 +130,7 @@ public:
      */
     void triggerFlush();
 
-    void kick(void);
+    void kick();
 
     /**
      * Registers a new flush handler for the given document type. If another

@@ -150,21 +150,21 @@ public:
     }
     uint32_t getNumRows() const { return _partMap.getNumRows(); }
     uint32_t getNumPartitions(size_t rowId) { return _partMap.getNumPartitions(rowId); }
-    uint32_t GetRowBits(void) const { return _partMap._rowBits; }
-    uint32_t GetPartBits(void) const { return _partMap._partBits; }
-    uint32_t GetFirstPart(void) const { return _partMap._first_partition; }
-    uint32_t GetLastPart(void) const {
+    uint32_t GetRowBits() const { return _partMap._rowBits; }
+    uint32_t GetPartBits() const { return _partMap._partBits; }
+    uint32_t GetFirstPart() const { return _partMap._first_partition; }
+    uint32_t GetLastPart() const {
         return _partMap._first_partition + _partMap._num_partitions;
     }
-    uint32_t GetPartitions(void) const { return _partMap._num_partitions; }
-    uint32_t GetEstimateParts(void) const { return _estimateParts; }
-    uint32_t GetEstimatePartCutoff(void) const { return _estimatePartCutoff; }
-    uint32_t GetMaxHitsPerNode(void) const { return _maxHitsPerNode; }
-    double GetSlowQueryLimitFactor(void) const { return _slowQueryLimitFactor; }
-    double GetSlowQueryLimitBias(void) const { return _slowQueryLimitBias; }
-    double GetSlowDocsumLimitFactor(void) const { return _slowDocsumLimitFactor; }
-    double GetSlowDocsumLimitBias(void) const { return _slowDocsumLimitBias; }
-    bool GetTempFail(void) const { return _partMap._childparts < _partMap._minchildparts; }
+    uint32_t GetPartitions() const { return _partMap._num_partitions; }
+    uint32_t GetEstimateParts() const { return _estimateParts; }
+    uint32_t GetEstimatePartCutoff() const { return _estimatePartCutoff; }
+    uint32_t GetMaxHitsPerNode() const { return _maxHitsPerNode; }
+    double GetSlowQueryLimitFactor() const { return _slowQueryLimitFactor; }
+    double GetSlowQueryLimitBias() const { return _slowQueryLimitBias; }
+    double GetSlowDocsumLimitFactor() const { return _slowDocsumLimitFactor; }
+    double GetSlowDocsumLimitBias() const { return _slowDocsumLimitBias; }
+    bool GetTempFail() const { return _partMap._childparts < _partMap._minchildparts; }
     void UpdateMaxHitsPerNodeLog(bool incomplete, bool fuzzy);
     uint32_t getMaxNodesDownPerFixedRow() const { return _partMap._maxNodesDownPerFixedRow; }
     uint32_t useRoundRobinForFixedRow() const { return _partMap._useRoundRobinForFixedRow; }
@@ -191,16 +191,16 @@ public:
 
     virtual ChildInfo getChildInfo() const override;
 
-    uint32_t getMPP(void) const { return _partMap._mpp; }
-    double getMonitorInterval(void) const { return _monitorInterval; }
-    double getHigherCoverageMaxSearchWait(void) const { return _higherCoverageMaxSearchWait; }
-    double getHigherCoverageMinSearchWait(void) const { return _higherCoverageMinSearchWait; }
-    double getHigherCoverageBaseSearchWait(void) const { return _higherCoverageBaseSearchWait; }
-    double getMinimalSearchCoverage(void) const { return _minimalSearchCoverage; }
-    double getHigherCoverageMaxDocSumWait(void) const { return _higherCoverageMaxDocSumWait; }
-    double getHigherCoverageMinDocSumWait(void) const { return _higherCoverageMinDocSumWait; }
-    double getHigherCoverageBaseDocSumWait(void) const { return _higherCoverageBaseDocSumWait; }
-    double getMinimalDocSumCoverage(void) const { return _minimalDocSumCoverage; }
+    uint32_t getMPP() const { return _partMap._mpp; }
+    double getMonitorInterval() const { return _monitorInterval; }
+    double getHigherCoverageMaxSearchWait() const { return _higherCoverageMaxSearchWait; }
+    double getHigherCoverageMinSearchWait() const { return _higherCoverageMinSearchWait; }
+    double getHigherCoverageBaseSearchWait() const { return _higherCoverageBaseSearchWait; }
+    double getMinimalSearchCoverage() const { return _minimalSearchCoverage; }
+    double getHigherCoverageMaxDocSumWait() const { return _higherCoverageMaxDocSumWait; }
+    double getHigherCoverageMinDocSumWait() const { return _higherCoverageMinDocSumWait; }
+    double getHigherCoverageBaseDocSumWait() const { return _higherCoverageBaseDocSumWait; }
+    double getMinimalDocSumCoverage() const { return _minimalDocSumCoverage; }
 
     // API
     //----
@@ -210,7 +210,7 @@ public:
 
     // Downcast
     //---------
-    virtual FastS_PlainDataSet * GetPlainDataSet(void) override { return this; }
+    virtual FastS_PlainDataSet * GetPlainDataSet() override { return this; }
 
     template <class FUN>
     FUN ForEachEngine(FUN fun) {

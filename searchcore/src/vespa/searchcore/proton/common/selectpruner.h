@@ -52,37 +52,37 @@ public:
     SelectPruner(const SelectPruner *rhs);
 
     virtual
-    ~SelectPruner(void);
+    ~SelectPruner();
 
     uint32_t
-    getFieldNodes(void) const
+    getFieldNodes() const
     {
         return _fieldNodes;
     }
 
     uint32_t
-    getAttrFieldNodes(void) const
+    getAttrFieldNodes() const
     {
         return _attrFieldNodes;
     }
 
     const document::select::ResultSet &
-    getResultSet(void) const
+    getResultSet() const
     {
         return _resultSet;
     }
 
     bool
-    isFalse(void) const;
+    isFalse() const;
 
     bool
-    isTrue(void) const;
+    isTrue() const;
 
     bool
-    isInvalid(void) const;
+    isInvalid() const;
 
     bool
-    isConst(void) const;
+    isConst() const;
 
     void
     trace(std::ostream &t);
@@ -115,7 +115,7 @@ private:
     visitFieldValueNode(const document::select::FieldValueNode &expr) override;
 
     void
-    invertNode(void);
+    invertNode();
 
     const document::select::Operator &
     getOperator(const document::select::Operator &op);
@@ -124,10 +124,10 @@ private:
     addNodeCount(const SelectPruner &rhs);
 
     void
-    setInvalidVal(void);
+    setInvalidVal();
 
     void
-    setInvalidConst(void);
+    setInvalidConst();
 
     void
     setTernaryConst(bool val);
@@ -136,10 +136,10 @@ private:
     resolveTernaryConst(bool wantInverted);
 
     bool
-    isInvalidVal(void) const;
+    isInvalidVal() const;
 
     bool
-    isNullVal(void) const;
+    isNullVal() const;
 
     void
     swap(SelectPruner &rhs);

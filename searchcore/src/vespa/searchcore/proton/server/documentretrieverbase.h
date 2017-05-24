@@ -25,7 +25,7 @@ class DocumentRetrieverBase : public IDocumentRetriever
     const bool             _hasFields;
 
 protected:
-    virtual const search::IAttributeManager * getAttrMgr(void) const;
+    virtual const search::IAttributeManager * getAttrMgr() const;
 public:
     DocumentRetrieverBase(const DocTypeName &docTypeName,
                           const document::DocumentTypeRepo &repo,

@@ -40,7 +40,7 @@ public:
     }
 
     virtual SerialNum
-    getFlushSerial(void) const override
+    getFlushSerial() const override
     {
         return _currSerial;
     }

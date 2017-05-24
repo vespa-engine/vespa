@@ -12,7 +12,7 @@ namespace proton
 {
 
 
-BucketDB::BucketDB(void)
+BucketDB::BucketDB()
     : _map(),
       _cachedBucketId(),
       _cachedBucketState()
@@ -20,7 +20,7 @@ BucketDB::BucketDB(void)
 }
 
 
-BucketDB::~BucketDB(void)
+BucketDB::~BucketDB()
 {
     checkEmpty();
     clear();
@@ -161,20 +161,20 @@ BucketDB::getBuckets(BucketId::List &buckets) const
 }
 
 bool
-BucketDB::empty(void) const
+BucketDB::empty() const
 {
     return _map.empty();
 }
 
 void
-BucketDB::clear(void)
+BucketDB::clear()
 {
     _map.clear();
 }
 
 
 void
-BucketDB::checkEmpty(void) const
+BucketDB::checkEmpty() const
 {
     for (auto &entry : _map) {
         const BucketState &state = entry.second;

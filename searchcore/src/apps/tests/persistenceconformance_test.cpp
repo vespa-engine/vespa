@@ -232,7 +232,7 @@ public:
     }
 
     void
-    close(void)
+    close()
     {
         for (DocumentDBMap::iterator itr = _docDbs.begin();
              itr != _docDbs.end(); ++itr) {
@@ -259,12 +259,12 @@ protected:
     }
 
     virtual
-    ~DocDBRepoHolder(void)
+    ~DocDBRepoHolder()
     {
     }
 
     void
-    close(void)
+    close()
     {
         if (_docDbRepo.get() != NULL)
             _docDbRepo->close();
@@ -320,7 +320,7 @@ public:
     }
 
     void
-    removeHandlers(void)
+    removeHandlers()
     {
         if (_docDbRepo.get() == NULL)
             return;
@@ -332,7 +332,7 @@ public:
     }
 
     virtual
-    ~MyPersistenceEngine(void)
+    ~MyPersistenceEngine()
     {
         destroyIterators();
         removeHandlers(); // Block calls to document db from engine
@@ -385,12 +385,12 @@ public:
 
 struct FixtureBaseBase
 {
-    FixtureBaseBase(void)
+    FixtureBaseBase()
     {
         FastOS_FileInterface::EmptyAndRemoveDirectory("testdb");
     }
 
-    ~FixtureBaseBase(void)
+    ~FixtureBaseBase()
     {
         FastOS_FileInterface::EmptyAndRemoveDirectory("testdb");
     }
@@ -408,7 +408,7 @@ struct FixtureBase : public FixtureBaseBase
                                                                docType)))
     {
     }
-    ~FixtureBase(void)
+    ~FixtureBase()
     {
     }
 };

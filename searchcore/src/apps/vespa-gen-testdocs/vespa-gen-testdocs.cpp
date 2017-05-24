@@ -20,7 +20,7 @@ using namespace vespalib::alloc;
 using vespalib::string;
 
 void
-usageHeader(void)
+usageHeader()
 {
     using std::cerr;
     cerr <<
@@ -148,13 +148,13 @@ public:
     FieldGenerator(const string &name);
 
     virtual
-    ~FieldGenerator(void);
+    ~FieldGenerator();
 
     virtual void
-    setup(void);
+    setup();
 
     virtual void
-    clear(void);
+    clear();
 
     virtual void
     deleteHistogram(const string &baseDir,
@@ -175,19 +175,19 @@ FieldGenerator::FieldGenerator(const string &name)
 {
 }
 
-FieldGenerator::~FieldGenerator(void)
+FieldGenerator::~FieldGenerator()
 {
 }
 
 
 void
-FieldGenerator::setup(void)
+FieldGenerator::setup()
 {
 }
 
 
 void
-FieldGenerator::clear(void)
+FieldGenerator::clear()
 {
 }
 
@@ -229,13 +229,13 @@ public:
                            uint32_t maxFill);
 
     virtual
-    ~RandTextFieldGenerator(void);
+    ~RandTextFieldGenerator();
 
     virtual void
-    setup(void) override;
+    setup() override;
 
     virtual void
-    clear(void) override;
+    clear() override;
 
     virtual void
     deleteHistogram(const string &baseDir, const string &name) override;
@@ -267,13 +267,13 @@ RandTextFieldGenerator::RandTextFieldGenerator(const string &name,
 
 
 
-RandTextFieldGenerator::~RandTextFieldGenerator(void)
+RandTextFieldGenerator::~RandTextFieldGenerator()
 {
 }
 
 
 void
-RandTextFieldGenerator::setup(void)
+RandTextFieldGenerator::setup()
 {
     LOG(info,
         "generating dictionary for field %s (%u words)",
@@ -284,7 +284,7 @@ RandTextFieldGenerator::setup(void)
 
 
 void
-RandTextFieldGenerator::clear(void)
+RandTextFieldGenerator::clear()
 {
     typedef std::vector<uint32_t>::iterator HI;
     for (HI i(_histogram.begin()), ie(_histogram.end()); i != ie; ++i) {
@@ -363,10 +363,10 @@ public:
                           const std::vector<uint32_t> &mods);
     
     virtual
-    ~ModTextFieldGenerator(void);
+    ~ModTextFieldGenerator();
 
     virtual void
-    clear(void) override;
+    clear() override;
 
     virtual void
     writeHistogram(const string &name);
@@ -386,13 +386,13 @@ ModTextFieldGenerator::ModTextFieldGenerator(const string &name,
 }
     
 
-ModTextFieldGenerator::~ModTextFieldGenerator(void)
+ModTextFieldGenerator::~ModTextFieldGenerator()
 {
 }
 
 
 void
-ModTextFieldGenerator::clear(void)
+ModTextFieldGenerator::clear()
 {
 }
 
@@ -427,10 +427,10 @@ public:
     IdTextFieldGenerator(const string &name);
     
     virtual
-    ~IdTextFieldGenerator(void);
+    ~IdTextFieldGenerator();
 
     virtual void
-    clear(void) override;
+    clear() override;
 
     virtual void
     writeHistogram(const string &name);
@@ -446,13 +446,13 @@ IdTextFieldGenerator::IdTextFieldGenerator(const string &name)
 }
     
 
-IdTextFieldGenerator::~IdTextFieldGenerator(void)
+IdTextFieldGenerator::~IdTextFieldGenerator()
 {
 }
 
 
 void
-IdTextFieldGenerator::clear(void)
+IdTextFieldGenerator::clear()
 {
 }
 
@@ -486,10 +486,10 @@ public:
                           uint32_t count);
     
     virtual
-    ~RandIntFieldGenerator(void);
+    ~RandIntFieldGenerator();
 
     virtual void
-    clear(void) override;
+    clear() override;
 
     virtual void
     writeHistogram(const string &name);
@@ -512,13 +512,13 @@ RandIntFieldGenerator::RandIntFieldGenerator(const string &name,
 }
     
 
-RandIntFieldGenerator::~RandIntFieldGenerator(void)
+RandIntFieldGenerator::~RandIntFieldGenerator()
 {
 }
 
 
 void
-RandIntFieldGenerator::clear(void)
+RandIntFieldGenerator::clear()
 {
 }
 
@@ -549,16 +549,16 @@ class DocumentGenerator
     const FieldVec _fields;
  
     void
-    setup(void);
+    setup();
 public:   
     DocumentGenerator(const string &docType,
                       const string &idPrefix,
                       const FieldVec &fields);
 
-    ~DocumentGenerator(void);
+    ~DocumentGenerator();
 
     void
-    clear(void);
+    clear();
 
     void
     deleteHistogram(const string &baseDir,
@@ -591,12 +591,12 @@ DocumentGenerator::DocumentGenerator(const string &docType,
 }
 
 
-DocumentGenerator::~DocumentGenerator(void)
+DocumentGenerator::~DocumentGenerator()
 {
 }
 
 void
-DocumentGenerator::setup(void)
+DocumentGenerator::setup()
 {
     typedef FieldVec::const_iterator FI;
     for (FI i(_fields.begin()), ie(_fields.end()); i != ie; ++i) {
@@ -606,7 +606,7 @@ DocumentGenerator::setup(void)
 
 
 void
-DocumentGenerator::clear(void)
+DocumentGenerator::clear()
 {
     typedef FieldVec::const_iterator FI;
     for (FI i(_fields.begin()), ie(_fields.end()); i != ie; ++i) {
@@ -694,7 +694,7 @@ public:
     }
 
     virtual
-    ~SubApp(void)
+    ~SubApp()
     {
     }
 
@@ -702,10 +702,10 @@ public:
     usage(bool showHeader) = 0;
 
     virtual bool
-    getOptions(void) = 0;
+    getOptions() = 0;
 
     virtual int
-    run(void) = 0;
+    run() = 0;
 };
 
 class GenTestDocsApp : public SubApp
@@ -748,7 +748,7 @@ public:
     }
 
     virtual
-    ~GenTestDocsApp(void)
+    ~GenTestDocsApp()
     {
     }
 
@@ -756,10 +756,10 @@ public:
     usage(bool showHeader) override;
 
     virtual bool
-    getOptions(void) override;
+    getOptions() override;
 
     virtual int
-    run(void) override;
+    run() override;
 };
 
 
@@ -785,7 +785,7 @@ GenTestDocsApp::usage(bool showHeader)
 }
 
 bool
-GenTestDocsApp::getOptions(void)
+GenTestDocsApp::getOptions()
 {
     int c;
     const char *optArgument = NULL;
@@ -898,7 +898,7 @@ GenTestDocsApp::getOptions(void)
 
 
 int
-GenTestDocsApp::run(void)
+GenTestDocsApp::run()
 {
     printf("Hello world\n");
     string idPrefix("id:test:");
@@ -918,21 +918,21 @@ class App : public FastOS_Application
 {
 public:
     void
-    usage(void);
+    usage();
 
     int
-    Main(void) override;
+    Main() override;
 };
 
 
 void
-App::usage(void)
+App::usage()
 {
     GenTestDocsApp(*this).usage(true);
 }
 
 int
-App::Main(void)
+App::Main()
 {
     if (_argc < 2) {
         usage();
