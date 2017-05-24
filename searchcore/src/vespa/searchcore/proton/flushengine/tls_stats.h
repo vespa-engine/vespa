@@ -1,8 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-namespace proton {
-namespace flushengine {
+#include <cstdint>
+
+namespace proton::flushengine {
 
 /*
  * Class representing statistics for a transaction log server domain used to
@@ -37,5 +38,4 @@ public:
     uint64_t getLastSerial() const  { return _lastSerial; }
 };
 
-} // namespace proton::flushengine
-} // namespace proton
+}
