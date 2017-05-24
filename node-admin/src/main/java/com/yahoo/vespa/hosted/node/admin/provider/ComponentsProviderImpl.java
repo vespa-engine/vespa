@@ -58,22 +58,23 @@ public class ComponentsProviderImpl implements ComponentsProvider {
             throw new IllegalStateException("Environment setting for config servers missing or empty.");
         }
 
+        Clock clock = Clock.systemUTC();
         ConfigServerHttpRequestExecutor requestExecutor = ConfigServerHttpRequestExecutor.create(configServerHosts);
         Orchestrator orchestrator = new OrchestratorImpl(requestExecutor);
         NodeRepository nodeRepository = new NodeRepositoryImpl(requestExecutor, WEB_SERVICE_PORT, baseHostName);
         DockerOperations dockerOperations = new DockerOperationsImpl(docker, environment);
 
         Optional<StorageMaintainer> storageMaintainer = isRunningLocally ?
-                Optional.empty() : Optional.of(new StorageMaintainer(docker, metricReceiver, environment));
+                Optional.empty() : Optional.of(new StorageMaintainer(docker, metricReceiver, environment, clock));
         Optional<AclMaintainer> aclMaintainer = isRunningLocally ?
                 Optional.empty() : Optional.of(new AclMaintainer(dockerOperations, nodeRepository, baseHostName));
 
         Function<String, NodeAgent> nodeAgentFactory =
                 (hostName) -> new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
-                        storageMaintainer, metricReceiver, environment, Clock.systemUTC(), aclMaintainer);
+                        storageMaintainer, metricReceiver, environment, clock, aclMaintainer);
         NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer,
                 NODE_AGENT_SCAN_INTERVAL_MILLIS, metricReceiver, aclMaintainer);
-        nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepository, nodeAdmin, Clock.systemUTC(), orchestrator, baseHostName);
+        nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepository, nodeAdmin, clock, orchestrator, baseHostName);
         nodeAdminStateUpdater.start(NODE_ADMIN_CONVERGE_STATE_INTERVAL_MILLIS);
 
         metricReceiverWrapper = metricReceiver;

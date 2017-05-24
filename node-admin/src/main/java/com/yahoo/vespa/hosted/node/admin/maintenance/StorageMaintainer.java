@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.logging.FilebeatConfigProvider;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.node.admin.util.SecretAgentScheduleMaker;
@@ -26,6 +25,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -53,13 +53,15 @@ public class StorageMaintainer {
     private final CounterWrapper numberOfNodeAdminMaintenanceFails;
     private final Docker docker;
     private final Environment environment;
+    private final Clock clock;
 
-    private Map<ContainerName, MetricsCache> metricsCacheByContainerName = new ConcurrentHashMap<>();
+    private Map<ContainerName, MaintenanceThrottler> maintenanceThrottlerByContainerName = new ConcurrentHashMap<>();
 
 
-    public StorageMaintainer(Docker docker, MetricReceiverWrapper metricReceiver, Environment environment) {
+    public StorageMaintainer(Docker docker, MetricReceiverWrapper metricReceiver, Environment environment, Clock clock) {
         this.docker = docker;
         this.environment = environment;
+        this.clock = clock;
 
         Dimensions dimensions = new Dimensions.Builder()
                 .add("host", HostName.getLocalhost())
@@ -122,27 +124,22 @@ public class StorageMaintainer {
         // Calculating disk usage is IO expensive operation and its value changes relatively slowly, we want to perform
         // that calculation rarely. Additionally, we spread out the calculation for different containers by adding
         // a random deviation.
-        if (! metricsCacheByContainerName.containsKey(containerName) ||
-                    metricsCacheByContainerName.get(containerName).nextUpdateAt.isBefore(Instant.now())) {
-            long distributedSecs = (long) (intervalSec * (0.5 + Math.random()));
-            MetricsCache metricsCache = new MetricsCache(Instant.now().plusSeconds(distributedSecs));
-
+        MaintenanceThrottler maintenanceThrottler = getMaintenanceThrottlerFor(containerName);
+        if (maintenanceThrottler.shouldUpdateDiskUsageNow()) {
             // Throttle to one disk usage calculation at a time.
             synchronized (monitor) {
                 PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
                 Path containerDir = environment.pathInNodeAdminFromPathInNode(containerName, "/home/");
                 try {
                     long used = getDiscUsedInBytes(containerDir);
-                    metricsCache.setDiskUsage(used);
+                    maintenanceThrottler.setDiskUsage(used);
                 } catch (Throwable e) {
                     logger.error("Problems during disk usage calculations: " + e.getMessage());
                 }
             }
-
-            metricsCacheByContainerName.put(containerName, metricsCache);
         }
 
-        return metricsCacheByContainerName.get(containerName).diskUsage;
+        return maintenanceThrottler.diskUsage;
     }
 
     // Public for testing
@@ -175,6 +172,8 @@ public class StorageMaintainer {
      * Deletes old log files for vespa, nginx, logstash, etc.
      */
     public void removeOldFilesFromNode(ContainerName containerName) {
+        if (! getMaintenanceThrottlerFor(containerName).shouldRemoveOldFilesNow()) return;
+
         MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
         String[] pathsToClean = {"/home/y/logs/elasticsearch2", "/home/y/logs/logstash2",
                 "/home/y/logs/daemontools_y", "/home/y/logs/nginx", "/home/y/logs/vespa"};
@@ -209,12 +208,15 @@ public class StorageMaintainer {
                 .withArgument("recursive", false);
 
         maintainerExecutor.execute();
+        getMaintenanceThrottlerFor(containerName).updateNextRemoveOldFilesTime();
     }
 
     /**
      * Checks if container has any new coredumps, reports and archives them if so
      */
     public void handleCoreDumpsForContainer(ContainerName containerName, ContainerNodeSpec nodeSpec, Environment environment) {
+        if (! getMaintenanceThrottlerFor(containerName).shouldHandleCoredumpsNow()) return;
+
         Map<String, Object> attributes = new HashMap<>();
         attributes.put("hostname", nodeSpec.hostname);
         attributes.put("parent_hostname", HostName.getLocalhost());
@@ -240,7 +242,9 @@ public class StorageMaintainer {
                 .withArgument("doneCoredumpsPath", environment.pathInNodeAdminToDoneCoredumps())
                 .withArgument("coredumpsPath", environment.pathInNodeAdminFromPathInNode(containerName, "/home/y/var/crash"))
                 .withArgument("attributes", attributes);
+
         maintainerExecutor.execute();
+        getMaintenanceThrottlerFor(containerName).updateNextHandleCoredumpsTime();
     }
 
     /**
@@ -249,6 +253,8 @@ public class StorageMaintainer {
      *  * JDisc logs
      */
     public void cleanNodeAdmin() {
+        if (! getMaintenanceThrottlerFor(NODE_ADMIN).shouldRemoveOldFilesNow()) return;
+
         MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
         maintainerExecutor.addJob("delete-directories")
                 .withArgument("basePath", environment.getPathResolver().getApplicationStoragePathForNodeAdmin())
@@ -260,7 +266,9 @@ public class StorageMaintainer {
                 .withArgument("basePath", nodeAdminJDiskLogsPath)
                 .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
                 .withArgument("recursive", false);
+
         maintainerExecutor.execute();
+        getMaintenanceThrottlerFor(NODE_ADMIN).updateNextRemoveOldFilesTime();
     }
 
     /**
@@ -276,6 +284,7 @@ public class StorageMaintainer {
                 .withArgument("to", environment.pathInNodeAdminToNodeCleanup(containerName));
 
         maintainerExecutor.execute();
+        getMaintenanceThrottlerFor(containerName).reset();
     }
 
 
@@ -357,16 +366,54 @@ public class StorageMaintainer {
         }
     }
 
-    private static class MetricsCache {
-        private final Instant nextUpdateAt;
+    private MaintenanceThrottler getMaintenanceThrottlerFor(ContainerName containerName) {
+        if (! maintenanceThrottlerByContainerName.containsKey(containerName)) {
+            maintenanceThrottlerByContainerName.put(containerName, new MaintenanceThrottler());
+        }
+
+        return maintenanceThrottlerByContainerName.get(containerName);
+    }
+
+    private class MaintenanceThrottler {
+        private Instant nextDiskUsageUpdateAt;
+        private Instant nextRemoveOldFilesAt;
+        private Instant nextHandleOldCoredumpsAt;
         private Optional<Long> diskUsage = Optional.empty();
 
-        MetricsCache(Instant nextUpdateAt) {
-            this.nextUpdateAt = nextUpdateAt;
+        MaintenanceThrottler() {
+            reset();
+        }
+
+        boolean shouldUpdateDiskUsageNow() {
+            return !nextDiskUsageUpdateAt.isAfter(clock.instant());
         }
 
         void setDiskUsage(long diskUsage) {
             this.diskUsage = Optional.of(diskUsage);
+            long distributedSecs = (long) (intervalSec * (0.5 + Math.random()));
+            nextDiskUsageUpdateAt = clock.instant().plusSeconds(distributedSecs);
+        }
+
+        void updateNextRemoveOldFilesTime() {
+            nextRemoveOldFilesAt = clock.instant().plus(Duration.ofHours(1));
+        }
+
+        boolean shouldRemoveOldFilesNow() {
+            return !nextRemoveOldFilesAt.isAfter(clock.instant());
+        }
+
+        void updateNextHandleCoredumpsTime() {
+            nextHandleOldCoredumpsAt = clock.instant().plus(Duration.ofHours(1));
+        }
+
+        boolean shouldHandleCoredumpsNow() {
+            return !nextHandleOldCoredumpsAt.isAfter(clock.instant());
+        }
+
+        void reset() {
+            nextDiskUsageUpdateAt = clock.instant().minus(Duration.ofDays(1));
+            nextRemoveOldFilesAt = clock.instant().minus(Duration.ofDays(1));
+            nextHandleOldCoredumpsAt = clock.instant().minus(Duration.ofDays(1));
         }
     }
 }
