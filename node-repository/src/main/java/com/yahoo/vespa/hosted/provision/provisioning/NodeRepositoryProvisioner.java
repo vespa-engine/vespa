@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
@@ -17,7 +18,6 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 
@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,24 +40,30 @@ import java.util.logging.Logger;
 public class NodeRepositoryProvisioner implements Provisioner {
 
     private static Logger log = Logger.getLogger(NodeRepositoryProvisioner.class.getName());
+    private static final int SPARE_CAPACITY_PROD = 2;
+    private static final int SPARE_CAPACITY_NONPROD = 0;
 
     private final NodeRepository nodeRepository;
     private final CapacityPolicies capacityPolicies;
     private final Zone zone;
     private final Preparer preparer;
     private final Activator activator;
+    private final BiConsumer<List<Node>, String> debugRecorder;
 
     @Inject
     public NodeRepositoryProvisioner(NodeRepository nodeRepository, NodeFlavors flavors, Zone zone) {
-        this(nodeRepository, flavors, zone, Clock.systemUTC());
+        this(nodeRepository, flavors, zone, Clock.systemUTC(), (x,y) -> {});
     }
 
-    public NodeRepositoryProvisioner(NodeRepository nodeRepository, NodeFlavors flavors, Zone zone, Clock clock) {
+    public NodeRepositoryProvisioner(NodeRepository nodeRepository, NodeFlavors flavors, Zone zone, Clock clock, BiConsumer<List<Node>, String> debugRecorder) {
         this.nodeRepository = nodeRepository;
         this.capacityPolicies = new CapacityPolicies(zone, flavors);
         this.zone = zone;
-        this.preparer = new Preparer(nodeRepository, clock);
+        this.preparer = new Preparer(nodeRepository, clock, zone.environment().equals(Environment.prod)
+                ? SPARE_CAPACITY_PROD
+                : SPARE_CAPACITY_NONPROD);
         this.activator = new Activator(nodeRepository, clock);
+        this.debugRecorder = debugRecorder;
     }
 
     /**
@@ -92,7 +99,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
             effectiveGroups = 1; // type request with multiple groups is not supported
         }
 
-        return asSortedHosts(preparer.prepare(application, cluster, requestedNodes, effectiveGroups));
+        return asSortedHosts(preparer.prepare(application, cluster, requestedNodes, effectiveGroups, debugRecorder));
     }
 
     @Override
@@ -121,5 +128,4 @@ public class NodeRepositoryProvisioner implements Provisioner {
         }
         return hosts;
     }
-
 }

@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 
 /**
  * Performs preparation of node activation changes for an application.
@@ -25,10 +26,12 @@ class Preparer {
     private final NodeRepository nodeRepository;
     private final Clock clock;
     private final GroupPreparer groupPreparer;
+    private final int nofSpares;
 
-    public Preparer(NodeRepository nodeRepository, Clock clock) {
+    public Preparer(NodeRepository nodeRepository, Clock clock, int nofSpares) {
         this.nodeRepository = nodeRepository;
         this.clock = clock;
+        this.nofSpares = nofSpares;
         groupPreparer = new GroupPreparer(nodeRepository, clock);
     }
 
@@ -40,7 +43,7 @@ class Preparer {
      // Note: This operation may make persisted changes to the set of reserved and inactive nodes,
      // but it may not change the set of active nodes, as the active nodes must stay in sync with the
      // active config model which is changed on activate
-    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, int wantedGroups) {
+    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, int wantedGroups, BiConsumer<List<Node>, String> debugRecorder) {
         List<Node> surplusNodes = findNodesInRemovableGroups(application, cluster, wantedGroups);
 
         MutableInteger highestIndex = new MutableInteger(findHighestIndex(application, cluster));
@@ -48,7 +51,7 @@ class Preparer {
         for (int groupIndex = 0; groupIndex < wantedGroups; groupIndex++) {
             ClusterSpec clusterGroup = cluster.changeGroup(Optional.of(ClusterSpec.Group.from(groupIndex)));
             List<Node> accepted = groupPreparer.prepare(application, clusterGroup, 
-                                                        requestedNodes.fraction(wantedGroups), surplusNodes, highestIndex);
+                                                        requestedNodes.fraction(wantedGroups), surplusNodes, highestIndex, nofSpares, debugRecorder);
             replace(acceptedNodes, accepted);
         }
         moveToActiveGroup(surplusNodes, wantedGroups, cluster.group());

@@ -19,6 +19,9 @@ import java.util.Set;
  */
 public class DockerHostCapacity {
 
+    /** Tenant name for headroom nodes - only used internally */
+    public static final String HEADROOM_TENANT = "-__!@#$$%THISisHEADroom";
+
     /**
      * An immutable list of nodes
      */
@@ -104,8 +107,7 @@ public class DockerHostCapacity {
 
         ResourceCapacity hostCapacity = new ResourceCapacity(dockerHost);
         for (Node container : allNodes.childNodes(dockerHost).asList()) {
-            // Until we have migrated we might have docker containers unallocated - TODO check off if headroom tenant is safe
-            if (includeHeadroom || !(container.allocation().isPresent() && container.allocation().get().owner().tenant().value().equals("headroom"))) {
+            if (includeHeadroom || !(container.allocation().isPresent() && container.allocation().get().owner().tenant().value().equals(HEADROOM_TENANT))) {
                 hostCapacity.subtract(container);
             }
         }

@@ -5,16 +5,18 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.test.ManualClock;
 import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
@@ -23,8 +25,6 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
-import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -42,6 +43,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -60,6 +62,7 @@ public class ProvisioningTester implements AutoCloseable {
     private final NodeRepositoryProvisioner provisioner;
     private final CapacityPolicies capacityPolicies;
     private final ProvisionLogger provisionLogger;
+    private final List<AllocationSnapshot> allocationSnapshots = new ArrayList<>();
 
     public ProvisioningTester(Zone zone) {
         this(zone, createConfig());
@@ -75,7 +78,8 @@ public class ProvisioningTester implements AutoCloseable {
             this.clock = new ManualClock();
             this.curator = curator;
             this.nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, nameResolver);
-            this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, clock);
+            this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, clock,
+                    (x,y) -> allocationSnapshots.add(new AllocationSnapshot(new NodeList(x), "Provision tester", y)));
             this.capacityPolicies = new CapacityPolicies(zone, nodeFlavors);
             this.provisionLogger = new NullProvisionLogger();
         }
@@ -109,6 +113,10 @@ public class ProvisioningTester implements AutoCloseable {
     @Override
     public void close() throws IOException {
         //testingServer.close();
+    }
+
+    public List<AllocationSnapshot> getAllocationSnapshots() {
+        return allocationSnapshots;
     }
 
     public void advanceTime(TemporalAmount duration) { clock.advance(duration); }
@@ -213,13 +221,24 @@ public class ProvisioningTester implements AutoCloseable {
     }
 
     public List<Node> makeReadyNodes(int n, String flavor, NodeType type) {
+        return makeReadyNodes(n, flavor, type, 0);
+    }
+
+    public List<Node> makeReadyNodes(int n, String flavor, NodeType type, int additionalIps) {
         List<Node> nodes = new ArrayList<>(n);
-        for (int i = 0; i < n; i++)
+        for (int i = 0; i < n; i++) {
+            Set<String> ips = IntStream.range(additionalIps * i, additionalIps * (i+1))
+                    .mapToObj(j -> String.format("127.0.0.%d", j))
+                    .collect(Collectors.toSet());
+
             nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(),
-                                                UUID.randomUUID().toString(),
-                                                Optional.empty(),
-                                                nodeFlavors.getFlavorOrThrow(flavor),
-                                                type));
+                    UUID.randomUUID().toString(),
+                    Collections.emptySet(),
+                    ips,
+                    Optional.empty(),
+                    nodeFlavors.getFlavorOrThrow(flavor),
+                    type));
+        }
         nodes = nodeRepository.addNodes(nodes);
         nodes = nodeRepository.setDirty(nodes);
         return nodeRepository.setReady(nodes);

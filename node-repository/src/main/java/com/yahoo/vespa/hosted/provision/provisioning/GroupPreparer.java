@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.google.common.collect.ComparisonChain;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.transaction.Mutex;
@@ -13,6 +15,8 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import java.time.Clock;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.BiConsumer;
 
 /**
  * Performs preparation of node activation changes for a single host group in an application.
@@ -41,14 +45,19 @@ class GroupPreparer {
      *        This method will remove from this list if it finds it needs additional nodes
      * @param highestIndex the current highest node index among all active nodes in this cluster.
      *        This method will increase this number when it allocates new nodes to the cluster.
+     * @param nofSpares The number of spare docker hosts we want when dynamically allocate docker containers
+     * @param debugRecorder Debug facility to step through the allocation process after the fact
      * @return the list of nodes this cluster group will have allocated if activated
      */
      // Note: This operation may make persisted changes to the set of reserved and inactive nodes,
      // but it may not change the set of active nodes, as the active nodes must stay in sync with the
      // active config model which is changed on activate
-    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, 
-                              List<Node> surplusActiveNodes, MutableInteger highestIndex) {
+    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
+                              List<Node> surplusActiveNodes, MutableInteger highestIndex, int nofSpares, BiConsumer<List<Node>, String> debugRecorder) {
         try (Mutex lock = nodeRepository.lock(application)) {
+
+            // A snapshot of nodes before we start the process - used to determind if this is a replacement
+            List<Node> nodesBefore = nodeRepository.getNodes(application, Node.State.values());
             NodeAllocation allocation = new NodeAllocation(application, cluster, requestedNodes, highestIndex, clock);
 
             // Use active nodes
@@ -71,9 +80,31 @@ class GroupPreparer {
 
             // Use new, ready nodes. Lock ready pool to ensure that nodes are not grabbed by others.
             try (Mutex readyLock = nodeRepository.lockUnallocated()) {
+
+                // Check if we have ready nodes that we can allocate
                 List<Node> readyNodes = nodeRepository.getNodes(requestedNodes.type(), Node.State.ready);
                 accepted = allocation.offer(prioritizeNodes(readyNodes, requestedNodes), !canChangeGroup);
                 allocation.update(nodeRepository.reserve(accepted));
+
+                if(nodeRepository.dynamicAllocationEnabled()) {
+                    // Check if we have available capacity on docker hosts that we can allocate
+                    if (!allocation.fullfilled()) {
+                        // The new dynamic allocation method
+                        Optional<Flavor> flavor = getFlavor(requestedNodes);
+                        if (flavor.isPresent() && flavor.get().getType().equals(Flavor.Type.DOCKER_CONTAINER)) {
+                            List<Node> allNodes = nodeRepository.getNodes(Node.State.values());
+                            NodeFlavors flavors = nodeRepository.getAvailableFlavors();
+                            accepted = DockerAllocator.allocateNewDockerNodes(allocation, requestedNodes, allNodes,
+                                    nodesBefore, flavors, flavor.get(), nofSpares, debugRecorder);
+
+                            // Add nodes to the node repository
+                            if (allocation.fullfilled()) {
+                                List<Node> nodesAddedToNodeRepo = nodeRepository.addDockerNodes(accepted);
+                                allocation.update(nodesAddedToNodeRepo);
+                            }
+                        }
+                    }
+                }
             }
 
             if (allocation.fullfilled())
@@ -83,7 +114,15 @@ class GroupPreparer {
                                                  outOfCapacityDetails(allocation));
         }
     }
-    
+
+    private Optional<Flavor> getFlavor(NodeSpec nodeSpec) {
+        if (nodeSpec instanceof NodeSpec.CountNodeSpec) {
+            NodeSpec.CountNodeSpec countSpec = (NodeSpec.CountNodeSpec) nodeSpec;
+            return Optional.of(countSpec.getFlavor());
+        }
+        return Optional.empty();
+    }
+
     private String outOfCapacityDetails(NodeAllocation allocation) {
         if (allocation.wouldBeFulfilledWithClashingParentHost()) {
             return ": Not enough nodes available on separate physical hosts.";
