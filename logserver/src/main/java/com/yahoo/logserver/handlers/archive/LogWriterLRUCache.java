@@ -8,23 +8,20 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 @SuppressWarnings("serial")
-public class LogWriterLRUCache extends LinkedHashMap<Integer, LogWriter>
-{
-    private static final Logger log
-        = Logger.getLogger(LogWriterLRUCache.class.getName());
+public class LogWriterLRUCache extends LinkedHashMap<Integer, LogWriter> {
+    private static final Logger log = Logger.getLogger(LogWriterLRUCache.class.getName());
 
     final int maxEntries = 100;
 
-    public LogWriterLRUCache(int initialCapacity,
-                             float loadFactor) {
+    public LogWriterLRUCache(int initialCapacity, float loadFactor) {
         super(initialCapacity, loadFactor, true);
     }
 
     // TODO: implement unit test for this
-    protected boolean removeEldestEntry (Map.Entry<Integer, LogWriter> eldest) {
+    protected boolean removeEldestEntry(Map.Entry<Integer, LogWriter> eldest) {
         if (size() > maxEntries) {
             LogWriter logWriter = eldest.getValue();
             log.fine("Closing oldest LogWriter: " + logWriter);

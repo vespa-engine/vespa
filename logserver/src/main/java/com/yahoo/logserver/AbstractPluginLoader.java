@@ -10,37 +10,37 @@ import java.util.logging.Logger;
 /**
  * TODO: describe class
  *
- * @author  <a href="mailto:stig@yahoo-inc.com">Stig Bakken</a>
+ * @author Stig Bakken
  */
 public abstract class AbstractPluginLoader implements PluginLoader {
-	private static final Logger log	= Logger.getLogger(AbstractPluginLoader.class.getName());
+    private static final Logger log = Logger.getLogger(AbstractPluginLoader.class.getName());
 
-	public abstract void loadPlugins();
+    public abstract void loadPlugins();
 
-	protected void loadFromClass (Class<? extends Plugin> pluginClass) {
-		Plugin plugin;
-		try {
-			plugin = (Plugin)pluginClass.newInstance();
-		} catch (InstantiationException | IllegalAccessException e) {
-			log.log(LogLevel.ERROR, pluginClass.getName() + ": load failed: " + e);
-			throw new RuntimeException(e);
-		}
+    protected void loadFromClass(Class<? extends Plugin> pluginClass) {
+        Plugin plugin;
+        try {
+            plugin = (Plugin) pluginClass.newInstance();
+        } catch (InstantiationException | IllegalAccessException e) {
+            log.log(LogLevel.ERROR, pluginClass.getName() + ": load failed: " + e);
+            throw new RuntimeException(e);
+        }
 
         String pname = plugin.getPluginName();
-		String prefix = Server.APPNAME + "." + pname + ".";
-		SystemPropertyConfig config = new SystemPropertyConfig(prefix);
-		String enable = config.get("enable", "true");
+        String prefix = Server.APPNAME + "." + pname + ".";
+        SystemPropertyConfig config = new SystemPropertyConfig(prefix);
+        String enable = config.get("enable", "true");
 
-		if (!enable.equals("true")) {
-			log.log(LogLevel.INFO, pname + ": plugin disabled by config");
-			return;
-		}
+        if (! enable.equals("true")) {
+            log.log(LogLevel.INFO, pname + ": plugin disabled by config");
+            return;
+        }
 
-		try {
-			plugin.initPlugin(config);
-			log.log(LogLevel.DEBUG, pname + ": plugin loaded");
-		} catch (Exception e) {
+        try {
+            plugin.initPlugin(config);
+            log.log(LogLevel.DEBUG, pname + ": plugin loaded");
+        } catch (Exception e) {
             log.log(LogLevel.ERROR, pname + ": init failed", e);
         }
-	}
+    }
 }

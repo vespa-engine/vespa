@@ -2,13 +2,14 @@
 package com.yahoo.logserver.handlers;
 
 import com.yahoo.log.LogMessage;
+
 import java.util.List;
 
 /**
  * The LogHandler interface defines the interface used for all
  * parts of the logserver which consume log messages.
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public interface LogHandler {
     /**
@@ -19,7 +20,7 @@ public interface LogHandler {
      *
      * @param msg The log message
      */
-    public void handle (LogMessage msg);
+    void handle(LogMessage msg);
 
     /**
      * Instead of taking a single log message, this method can take
@@ -27,25 +28,24 @@ public interface LogHandler {
      * order needs to be preserved.
      *
      * @param messages a List containing zero or more LogMessage
-     *                instances.
+     *                 instances.
      */
-    public void handle (List<LogMessage> messages);
+    void handle(List<LogMessage> messages);
 
     /**
      * Any log messages received so far should be dealt with
      * before this method returns -- within reason ,of course.
      * (<em>Within reason is loosely defined to be 2-5 seconds</em>)
      */
-    public void flush ();
+    void flush();
 
     /**
      * Signals that we want to end logging and should close down the
-     * unerlying logging mechanism -- whatever this maps to
+     * underlying logging mechanism -- whatever this maps to
      * semantically for the underlying implementation.  After this
      * method has been called it is considered an error to submit more
      * log messages to the handle() methods and an implementation
      * may elect to throw runtime exceptions.
-     *
      */
-    public void close ();
+    void close();
 }

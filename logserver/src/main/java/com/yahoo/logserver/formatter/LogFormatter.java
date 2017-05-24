@@ -10,19 +10,18 @@ import com.yahoo.log.LogMessage;
  * shared</b>.  If it does have state it must not prevent
  * concurrent use.
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public interface LogFormatter {
     /**
      * Format log message as a string.
      *
      * @param msg The log message
-     *
      */
-    public String format (LogMessage msg);
+    String format(LogMessage msg);
 
     /**
      * Returns a textual description of the formatter
      */
-    public String description ();
+    String description();
 }

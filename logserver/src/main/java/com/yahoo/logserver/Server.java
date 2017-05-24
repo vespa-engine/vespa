@@ -11,6 +11,7 @@ import com.yahoo.logserver.handlers.LogHandler;
 import com.yahoo.logserver.net.LogConnectionFactory;
 import com.yahoo.logserver.net.control.Levels;
 import com.yahoo.system.CatchSigTerm;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -22,21 +23,18 @@ import java.util.logging.Logger;
  * no runtime configuration;  the server starts up, binds port 19081
  * and loads builtin plugins.
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
- * @author  <a href="mailto:stig@yahoo-inc.com">Stig Bakken</a>
+ * @author Bjorn Borud
+ * @author Stig Bakken
  */
 
 public class Server implements Runnable {
     private final AtomicBoolean signalCaught = new AtomicBoolean(false);
-    public static final String APPNAME = "logserver";
+    static final String APPNAME = "logserver";
     private static final Server instance = new Server();
     private static final Logger log = Logger.getLogger(Server.class.getName());
-    private static final FatalErrorHandler fatalErrorHandler =
-        new FatalErrorHandler();
-    private static final HashMap<String,HandlerThread> handlerThreads =
-    	new HashMap<String,HandlerThread>();
-    private static final HashMap<LogHandler,String> threadNameForHandler =
-    	new HashMap<LogHandler,String>();
+    private static final FatalErrorHandler fatalErrorHandler = new FatalErrorHandler();
+    private static final HashMap<String, HandlerThread> handlerThreads = new HashMap<>();
+    private static final HashMap<LogHandler, String> threadNameForHandler = new HashMap<>();
 
     static {
         LogSetup.initVespaLogging("ADM");
@@ -44,7 +42,7 @@ public class Server implements Runnable {
 
     // the port is a String because we want to use it as the default
     // value of a System.getProperty().
-    private static final String LISTEN_PORT     = "19081";
+    private static final String LISTEN_PORT = "19081";
 
     private int listenPort;
     private Listener listener;
@@ -55,17 +53,17 @@ public class Server implements Runnable {
     /**
      * Server constructor
      */
-    private Server () {
+    private Server() {
         dispatch = new LogDispatcher();
         dispatch.setBatchedMode(true);
         isInitialized = false;
     }
 
-    public static Server getInstance () {
+    public static Server getInstance() {
         return instance;
     }
 
-    private HandlerThread getHandlerThread (String threadName) {
+    private HandlerThread getHandlerThread(String threadName) {
         threadName += " handler thread";
         HandlerThread ht = handlerThreads.get(threadName);
         if (ht == null) {
@@ -77,33 +75,35 @@ public class Server implements Runnable {
         return ht;
     }
 
-    public void registerPluginLoader (PluginLoader loader) {
+    public void registerPluginLoader(PluginLoader loader) {
         loader.loadPlugins();
     }
 
-    public void registerLogHandler (LogHandler lh, String threadName) {
+    public void registerLogHandler(LogHandler lh, String threadName) {
         HandlerThread ht = getHandlerThread(threadName);
         ht.registerHandler(lh);
         threadNameForHandler.put(lh, threadName);
     }
 
-    public void unregisterLogHandler (LogHandler lh) {
+    public void unregisterLogHandler(LogHandler lh) {
         String threadName = threadNameForHandler.get(lh);
         unregisterLogHandler(lh, threadName);
     }
 
-    public void unregisterLogHandler (LogHandler lh, String threadName) {
+    public void unregisterLogHandler(LogHandler lh, String threadName) {
         HandlerThread ht = getHandlerThread(threadName);
         ht.unregisterHandler(lh);
         threadNameForHandler.remove(lh);
     }
 
-    public void registerFlusher (LogHandler lh) {
+    public void registerFlusher(LogHandler lh) {
         Flusher.register(lh);
     }
 
-    /** Included only for consistency */
-    public void unregisterFlusher (LogHandler lh) {
+    /**
+     * Included only for consistency
+     */
+    public void unregisterFlusher(LogHandler lh) {
         /* NOP */
     }
 
@@ -113,7 +113,7 @@ public class Server implements Runnable {
      * @param listenPort The port on which the logserver accepts log
      *                   messages.
      */
-    public void initialize (int listenPort) {
+    public void initialize(int listenPort) {
         if (isInitialized) {
             throw new IllegalStateException(APPNAME + " already initialized");
         }
@@ -148,18 +148,18 @@ public class Server implements Runnable {
         try {
             listener.join();
             log.fine("listener thread exited");
-        }
-        catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             log.log(Level.WARNING, "Server was interrupted", e);
         }
     }
+
     private void setupSigTermHandler() {
         CatchSigTerm.setup(signalCaught); // catch termination signal
     }
 
     private void waitForShutdown() {
         synchronized (signalCaught) {
-            while (!signalCaught.get()) {
+            while (! signalCaught.get()) {
                 try {
                     signalCaught.wait();
                 } catch (InterruptedException e) {
@@ -173,24 +173,20 @@ public class Server implements Runnable {
         System.exit(0);
     }
 
-    public static HashMap<LogHandler, String> threadNameForHandler() {
+    static HashMap<LogHandler, String> threadNameForHandler() {
         return threadNameForHandler;
     }
-    
-    public static void help () {
+
+    static void help() {
         System.out.println();
         System.out.println("System properties:");
         System.out.println(" - " + APPNAME + ".listenport (" + LISTEN_PORT + ")");
-        System.out.println(" - " + APPNAME + ".queue.size ("
-                           + HandlerThread.DEFAULT_QUEUESIZE
-                           + ")");
-        System.out.println(" - logserver.default.loglevels ("
-                           + (new Levels()).toString()
-                           + ")");
+        System.out.println(" - " + APPNAME + ".queue.size (" + HandlerThread.DEFAULT_QUEUESIZE + ")");
+        System.out.println(" - logserver.default.loglevels (" + (new Levels()).toString() + ")");
         System.out.println();
     }
 
-    public static void main (String[] args) {
+    public static void main(String[] args) {
         if (args.length > 0 && "-help".equals(args[0])) {
             help();
             System.exit(0);

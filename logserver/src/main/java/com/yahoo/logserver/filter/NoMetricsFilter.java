@@ -6,10 +6,10 @@ import com.yahoo.log.LogMessage;
 /**
  * This filter is the complement of MetricsFilter
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author  Bjorn Borud
  */
 public class NoMetricsFilter implements LogFilter {
-    final MetricsFilter filter = new MetricsFilter();
+    private final MetricsFilter filter = new MetricsFilter();
 
     public boolean isLoggable (LogMessage msg) {
         return (! filter.isLoggable(msg));

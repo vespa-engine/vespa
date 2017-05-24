@@ -53,21 +53,21 @@ public class ReplicatorTestCase {
 
     @After
     public void tearDown() throws InterruptedException {
-        if (serverThread!=null) {
+        if (serverThread != null) {
             serverThread.interrupt();
             serverThread.join();
         }
-        if (replicator!=null) replicator.close();
+        if (replicator != null) replicator.close();
     }
 
     @Test
     public void testReplicator() throws IOException, InvalidLogFormatException {
         LogMessage msg = LogMessage.
-                parseNativeFormat("1343996283.239582\texample.yahoo.com\t27301/7637\tconfig-sentinel\trunserver\tevent\tfoo");
+                                           parseNativeFormat("1343996283.239582\texample.yahoo.com\t27301/7637\tconfig-sentinel\trunserver\tevent\tfoo");
         assertFalse(conn.isLoggable(msg)); // Default all muted
         conn.onUse("system.all");
         assertTrue(conn.isLoggable(msg));
-        assertTrue(conn.getTotalBytesWritten()>50); // Should be in this ballpark
+        assertTrue(conn.getTotalBytesWritten() > 50); // Should be in this ballpark
         conn.onCommand("use system.mute");
         assertFalse(conn.isLoggable(msg));
         assertEquals("system.mute", conn.getLogFilterName());
@@ -87,7 +87,7 @@ public class ReplicatorTestCase {
         assertEquals(22, conn.getNumHandled()); // 4 formatters
         conn.onCommand("listformatters");
         assertEquals(26, conn.getNumHandled()); // 4 formatters
-        
+
         conn.onStats();
         assertEquals(27, conn.getNumHandled()); // 1 line
         conn.onCommand("stats");
@@ -113,21 +113,21 @@ public class ReplicatorTestCase {
         });
         conn.onUse("test.onlyerror");
         assertFalse(conn.isLoggable(LogMessage.
-                parseNativeFormat("1343996283.239582\texample.yahoo.com\t27301/7637\tconfig-sentinel\trunserver\tdebug\tfoo")));
+                                                      parseNativeFormat("1343996283.239582\texample.yahoo.com\t27301/7637\tconfig-sentinel\trunserver\tdebug\tfoo")));
         assertTrue(conn.isLoggable(LogMessage.
-                parseNativeFormat("1343996283.239582\texample.yahoo.com\t27301/7637\tconfig-sentinel\trunserver\terror\tbar")));
+                                                     parseNativeFormat("1343996283.239582\texample.yahoo.com\t27301/7637\tconfig-sentinel\trunserver\terror\tbar")));
         assertEquals(conn.selectOps(), 1);
         assertEquals(conn.description(), "Only error");
         conn.setFilter(null);
         assertTrue(conn.isLoggable(LogMessage.
-                parseNativeFormat("1343996283.239582\texample.yahoo.com\t27301/7637\tconfig-sentinel\trunserver\terror\tbar")));
+                                                     parseNativeFormat("1343996283.239582\texample.yahoo.com\t27301/7637\tconfig-sentinel\trunserver\terror\tbar")));
         assertEquals(conn.description(), "No filter defined");
         assertEquals(conn.getRemoteHost(), "localhost");
         conn.onFormatter("nonexistant");
         assertEquals(conn.formatter, LogFormatterManager.getLogFormatter("system.nullformatter")); // unchanged
         conn.onUse("nonexistant");
         assertTrue(conn.isLoggable(LogMessage.
-                parseNativeFormat("1343996283.239582\texample.yahoo.com\t27301/7637\tconfig-sentinel\trunserver\terror\tbar")));
+                                                     parseNativeFormat("1343996283.239582\texample.yahoo.com\t27301/7637\tconfig-sentinel\trunserver\terror\tbar")));
         conn.close();
     }
 

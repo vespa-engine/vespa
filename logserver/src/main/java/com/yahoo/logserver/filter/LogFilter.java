@@ -9,15 +9,15 @@ import com.yahoo.log.LogMessage;
  * <b>stateless/immutable if possible so filters can be
  * shared</b>.
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public interface LogFilter {
     /**
      * Determine if this log message is loggable.
      *
      * @param msg The log message
-     *
      */
-    public boolean isLoggable (LogMessage msg);
-    public String description ();
+    public boolean isLoggable(LogMessage msg);
+
+    public String description();
 }

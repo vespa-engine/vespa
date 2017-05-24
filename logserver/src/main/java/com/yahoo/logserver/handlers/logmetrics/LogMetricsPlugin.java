@@ -11,10 +11,8 @@ import com.yahoo.plugin.Config;
 import com.yahoo.plugin.Plugin;
 
 
-public class LogMetricsPlugin implements Plugin
-{
-    private static final Logger log =
-        Logger.getLogger(LogMetricsPlugin.class.getName());
+public class LogMetricsPlugin implements Plugin {
+    private static final Logger log = Logger.getLogger(LogMetricsPlugin.class.getName());
     private LogMetricsHandler logMetricsHandler;
     private final Server server = Server.getInstance();
 
@@ -22,15 +20,15 @@ public class LogMetricsPlugin implements Plugin
         return "logmetrics";
     }
 
-    /** Initialize the logmetrics plugin
+    /**
+     * Initialize the logmetrics plugin
      *
      * @param config Plugin config object, keys used:
-     *   <code>thread</code> - name of handler thread this plugin runs in
-     *
+     *               <code>thread</code> - name of handler thread this plugin runs in
      */
     public void initPlugin(Config config) {
         if (logMetricsHandler != null) {
-        	log.finer("LogMetricsPlugin doubly initialized");
+            log.finer("LogMetricsPlugin doubly initialized");
             throw new IllegalStateException(
                     "plugin already initialized: " + getPluginName());
         }
@@ -44,9 +42,9 @@ public class LogMetricsPlugin implements Plugin
      */
     public void shutdownPlugin() {
         if (logMetricsHandler == null) {
-        	log.finer("LogMetricsPlugin shutdown before initialize");
+            log.finer("LogMetricsPlugin shutdown before initialize");
             throw new IllegalStateException("plugin not initialized: " +
-                                            getPluginName());
+                                                    getPluginName());
         }
         server.unregisterLogHandler(logMetricsHandler);
         logMetricsHandler = null;

@@ -10,48 +10,51 @@ import com.yahoo.log.LogMessage;
 import com.yahoo.logserver.handlers.LogHandler;
 
 import org.junit.*;
+
 import static org.junit.Assert.*;
 
 /**
  * Unit tests for thge LogMessage class.
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public class LogDispatcherTestCase {
     private static LogMessage sample1;
     private static LogMessage sample2;
+
     static {
         try {
             sample1 = LogMessage.parseNativeFormat("1096639280.524133	malfunction	26851	-	logtest	info	Starting up, called as ./log/logtest");
             sample2 = LogMessage.parseNativeFormat("1096639280.524133	malfunction	26851	-	logtest	info	More crap");
-        }
-        catch (InvalidLogFormatException e) {
+        } catch (InvalidLogFormatException e) {
             assertTrue(false);
         }
     }
 
     public static class MockHandler implements LogHandler {
-        public final List<LogMessage> messages= new ArrayList<LogMessage>(5);
+        public final List<LogMessage> messages = new ArrayList<LogMessage>(5);
         public int flushCalled = 0;
         public int closeCalled = 0;
 
-        public void handle (LogMessage msg) {
+        public void handle(LogMessage msg) {
             messages.add(msg);
         }
 
-        public void handle (List<LogMessage> messages) {
-        	for (LogMessage lm : messages) {
-        		handle(lm);
-        	}
+        public void handle(List<LogMessage> messages) {
+            for (LogMessage lm : messages) {
+                handle(lm);
+            }
         }
 
-        public void flush () {
+        public void flush() {
             flushCalled++;
         }
-        public void close () {
+
+        public void close() {
             closeCalled++;
         }
-        public String getName () {
+
+        public String getName() {
             return MockHandler.class.getName();
         }
     }
@@ -73,7 +76,7 @@ public class LogDispatcherTestCase {
     }
 
     @Test
-    public void testTestLogHandlerRegistration () {
+    public void testTestLogHandlerRegistration() {
         MockHandler handler = new MockHandler();
         LogDispatcher dispatcher = new LogDispatcher();
         dispatcher.registerLogHandler(handler);
@@ -86,7 +89,7 @@ public class LogDispatcherTestCase {
     }
 
     @Test
-    public void testMessageCount () {
+    public void testMessageCount() {
         MockHandler handler = new MockHandler();
         LogDispatcher dispatcher = new LogDispatcher();
         dispatcher.registerLogHandler(handler);
@@ -102,7 +105,7 @@ public class LogDispatcherTestCase {
     }
 
     @Test
-    public void testVerifyMessages () {
+    public void testVerifyMessages() {
         MockHandler handler = new MockHandler();
         LogDispatcher dispatcher = new LogDispatcher();
         dispatcher.registerLogHandler(handler);
@@ -116,7 +119,7 @@ public class LogDispatcherTestCase {
 
     // TODO: this test makes very little sense until we refactor a bit
     @Test
-    public void testClose () {
+    public void testClose() {
         MockHandler handler = new MockHandler();
         LogDispatcher dispatcher = new LogDispatcher();
         dispatcher.registerLogHandler(handler);

@@ -4,16 +4,14 @@ package com.yahoo.logserver.filter;
 import com.yahoo.log.LogMessage;
 
 /**
- *
- *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public class NullFilter implements LogFilter {
-    public boolean isLoggable (LogMessage msg) {
+    public boolean isLoggable(LogMessage msg) {
         return true;
     }
 
-    public String description () {
+    public String description() {
         return "Match all log messages";
     }
 }

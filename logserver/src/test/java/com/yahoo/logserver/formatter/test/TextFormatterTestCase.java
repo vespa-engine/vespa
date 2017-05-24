@@ -11,12 +11,13 @@ import com.yahoo.logserver.formatter.TextFormatter;
 import com.yahoo.logserver.test.MockLogEntries;
 
 import org.junit.*;
+
 import static org.junit.Assert.*;
 
 /**
  * Test the TextFormatter
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public class TextFormatterTestCase {
 
@@ -24,7 +25,7 @@ public class TextFormatterTestCase {
      * Just simple test to make sure it doesn't die on us
      */
     @Test
-    public void testTextFormatter () {
+    public void testTextFormatter() {
         TextFormatter tf = new TextFormatter();
         LogMessage[] ms = MockLogEntries.getMessages();
         for (int i = 0; i < ms.length; i++) {
@@ -36,7 +37,7 @@ public class TextFormatterTestCase {
      * Test that a specific log message is formatted correctly
      */
     @Test
-    public void testSpecificMessage () throws InvalidLogFormatException {
+    public void testSpecificMessage() throws InvalidLogFormatException {
         String l = "1115200798.195568\texample.yahoo.com\t65819\ttopleveldispatch\tfdispatch.queryperf\tevent\tvalue/1 name=\"query_eval_time_avg_s\" value=0.0229635972697721825";
         String result = "2005-05-04 09:59:58 example.yahoo.com 65819 topleveldispatch fdispatch.queryperf EVENT value/1 name=\"query_eval_time_avg_s\" value=0.0229635972697721825\n";
         LogMessage m = LogMessage.parseNativeFormat(l);

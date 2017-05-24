@@ -11,7 +11,7 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.logserver.handlers.LogHandler;
 
 /**
- * @author <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public class Flusher extends Thread {
     private static final Logger log = Logger.getLogger(Flusher.class.getName());
@@ -29,7 +29,7 @@ public class Flusher extends Thread {
     }
 
     public static synchronized void register(LogHandler logHandler) {
-        logHandlers.add(new WeakReference<LogHandler>(logHandler));
+        logHandlers.add(new WeakReference<>(logHandler));
     }
 
     public synchronized void run() {

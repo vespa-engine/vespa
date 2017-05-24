@@ -13,6 +13,7 @@ import com.yahoo.logserver.filter.MetricsFilter;
 import com.yahoo.logserver.filter.NoMetricsFilter;
 
 import org.junit.*;
+
 import static org.junit.Assert.*;
 
 /**
@@ -21,7 +22,7 @@ import static org.junit.Assert.*;
 public class NoMetricsFilterTestCase {
 
     @Test
-    public void testValueEvents () throws InvalidLogFormatException, IOException {
+    public void testValueEvents() throws InvalidLogFormatException, IOException {
         NoMetricsFilter filter = new NoMetricsFilter();
         MetricsFilter metricsFilter = new MetricsFilter();
 
@@ -34,8 +35,7 @@ public class NoMetricsFilterTestCase {
             try {
                 Event event = m.getEvent();
                 assertNotNull(event);
-            }
-            catch (MalformedEventException e) {
+            } catch (MalformedEventException e) {
                 fail();
             }
 

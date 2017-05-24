@@ -92,5 +92,5 @@ public class HandlerThreadTestCase {
         thread.interrupt();
         thread.join();
     }
-    
+
 }

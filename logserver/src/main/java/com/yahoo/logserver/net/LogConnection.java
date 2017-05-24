@@ -31,7 +31,7 @@ import java.nio.channels.SelectionKey;
  *       analyzed and errors can be corrected.
  * </UL>
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 
 public class LogConnection implements Connection {

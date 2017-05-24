@@ -18,11 +18,10 @@ import java.util.concurrent.LinkedBlockingQueue;
  * thread.  The purpose of this handler is to isolate execution
  * of handlers from the main server IO threads.
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 
-public class HandlerThread extends Thread implements LogHandler
-{
+public class HandlerThread extends Thread implements LogHandler {
     private static final Logger log = Logger.getLogger(HandlerThread.class.getName());
 
     // default queue size is 200
@@ -49,16 +48,19 @@ public class HandlerThread extends Thread implements LogHandler
     private static class ItemOrList {
         final LogMessage item;
         final List<LogMessage> list;
+
         ItemOrList(LogMessage i) {
             this.item = i;
             this.list = null;
         }
+
         ItemOrList(List<LogMessage> l) {
             this.item = null;
             this.list = l;
         }
+
         public String toString() {
-            return "item="+item+", list="+list;
+            return "item=" + item + ", list=" + list;
         }
     }
 
@@ -66,15 +68,15 @@ public class HandlerThread extends Thread implements LogHandler
     private final List<LogHandler> handlers = new ArrayList<LogHandler>();
     private long count;
     @SuppressWarnings("unused")
-	private long droppedCount = 0;
+    private long droppedCount = 0;
     @SuppressWarnings("unused")
-	private boolean queueWasFull = false;
+    private boolean queueWasFull = false;
     @SuppressWarnings("unused")
-	private long lastDropLogMessage = 0;
+    private long lastDropLogMessage = 0;
     @SuppressWarnings("unused")
-	private long lastAcceptingLogMessage = 0;
+    private long lastAcceptingLogMessage = 0;
 
-    public HandlerThread (String name) {
+    public HandlerThread(String name) {
         super(name);
         queue = new LinkedBlockingQueue<>(queueSize);
         log.log(LogLevel.CONFIG, "logserver.queue.size=" + queueSize);
@@ -85,7 +87,7 @@ public class HandlerThread extends Thread implements LogHandler
      *
      * @param f The FatalErrorHandler instance to be registered
      */
-    public synchronized void setFatalErrorHandler (FatalErrorHandler f) {
+    public synchronized void setFatalErrorHandler(FatalErrorHandler f) {
         fatalErrorHandler = f;
     }
 
@@ -95,7 +97,7 @@ public class HandlerThread extends Thread implements LogHandler
      * @param message The LogMessage we wish to dispatch to this
      *                handler thread.
      */
-    public void handle (LogMessage message) {
+    public void handle(LogMessage message) {
         handleInternal(new ItemOrList(message));
     }
 
@@ -103,24 +105,23 @@ public class HandlerThread extends Thread implements LogHandler
      * Called by the LogDispatch to put a list of LogMessage
      * instances onto the Queue.
      */
-    public void handle (List<LogMessage> messages) {
+    public void handle(List<LogMessage> messages) {
         handleInternal(new ItemOrList(messages));
     }
 
-    private void handleInternal (ItemOrList o) {
+    private void handleInternal(ItemOrList o) {
         boolean done = false;
         while (! done) {
             try {
                 queue.put(o);
                 done = true;
-            }
-            catch (InterruptedException e) {
+            } catch (InterruptedException e) {
                 // NOP
             }
         }
     }
 
-    public void flush () {
+    public void flush() {
         Iterator<LogHandler> it = handlers.iterator();
         while (it.hasNext()) {
             LogHandler handler = it.next();
@@ -128,7 +129,7 @@ public class HandlerThread extends Thread implements LogHandler
         }
     }
 
-    public void close () {
+    public void close() {
         Iterator<LogHandler> it = handlers.iterator();
         while (it.hasNext()) {
             LogHandler handler = it.next();
@@ -136,14 +137,14 @@ public class HandlerThread extends Thread implements LogHandler
         }
     }
 
-    public long getCount () {
+    public long getCount() {
         return count;
     }
 
     /**
      * Register a LogHandler
      */
-    public synchronized void registerHandler (LogHandler handler) {
+    public synchronized void registerHandler(LogHandler handler) {
         log.fine("Registering handler " + handler);
         handlers.add(handler);
     }
@@ -151,15 +152,15 @@ public class HandlerThread extends Thread implements LogHandler
     /**
      * Unregister a Loghandler
      */
-    public synchronized void unregisterHandler (LogHandler handler) {
-	int idx;
-	while ((idx = handlers.indexOf(handler)) != -1) {
-	    try {
-		handlers.remove(idx);
-	    } catch (IndexOutOfBoundsException e) {
-		throw new RuntimeException(e);
-	    }
-	}
+    public synchronized void unregisterHandler(LogHandler handler) {
+        int idx;
+        while ((idx = handlers.indexOf(handler)) != - 1) {
+            try {
+                handlers.remove(idx);
+            } catch (IndexOutOfBoundsException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     /**
@@ -167,7 +168,7 @@ public class HandlerThread extends Thread implements LogHandler
      *
      * @return Returns an array of the handlers registered
      */
-    public LogHandler[] getHandlers () {
+    public LogHandler[] getHandlers() {
         LogHandler[] h = new LogHandler[handlers.size()];
         return handlers.toArray(h);
     }
@@ -177,7 +178,7 @@ public class HandlerThread extends Thread implements LogHandler
      * Return the underlying queue used to send LogMessage instances
      * to this handler thread.
      */
-    public BlockingQueue<ItemOrList> getQueue () {
+    public BlockingQueue<ItemOrList> getQueue() {
         return queue;
     }
 
@@ -185,15 +186,15 @@ public class HandlerThread extends Thread implements LogHandler
      * Consume messages from the incoming queue and hand
      * them off to the handlers.
      */
-    public void run () {
+    public void run() {
         if (queue == null) {
             throw new NullPointerException("channel is not allowed to be null");
         }
 
-    	// TODO: Make the legmessage elements some kind of composite structure to handle both individual messages and lists uniformly.
+        // TODO: Make the legmessage elements some kind of composite structure to handle both individual messages and lists uniformly.
         List<ItemOrList> drainList = new ArrayList<ItemOrList>(queue.size() + 1);
         try {
-            for (;;) {
+            for (; ; ) {
                 drainList.clear();
                 // block in take(), then see if there is more
                 // to be had with drainTo()
@@ -206,15 +207,15 @@ public class HandlerThread extends Thread implements LogHandler
                     // handle them accordingly.
 
                     if (o.item != null) {
-                    	for (LogHandler handler : handlers) {
+                        for (LogHandler handler : handlers) {
                             handler.handle(o.item);
                         }
                     } else if (o.list != null) {
-                    	for (LogHandler handler : handlers) {
+                        for (LogHandler handler : handlers) {
                             handler.handle(o.list);
                         }
                     } else {
-                    	throw new IllegalArgumentException("not LogMessage or List: " + o);
+                        throw new IllegalArgumentException("not LogMessage or List: " + o);
                     }
                     count++;
                 }
@@ -227,8 +228,8 @@ public class HandlerThread extends Thread implements LogHandler
             }
         } finally {
             log.fine("Handler thread "
-                     + getName()
-                     + " exiting, removing handlers");
+                             + getName()
+                             + " exiting, removing handlers");
             for (LogHandler handler : handlers) {
                 log.fine("Removing handler " + handler);
                 handler.close();

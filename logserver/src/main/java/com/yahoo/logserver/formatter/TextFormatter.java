@@ -15,7 +15,7 @@ import com.yahoo.log.LogMessage;
 /**
  * Creates human-readable text representation of log message.
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public class TextFormatter implements LogFormatter {
     static final SimpleDateFormat dateFormat;
@@ -25,7 +25,7 @@ public class TextFormatter implements LogFormatter {
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
-    public String format (LogMessage msg) {
+    public String format(LogMessage msg) {
         StringBuffer sbuf = new StringBuffer(150);
         sbuf.append(dateFormat.format(new Date(msg.getTime())))
             .append(" ")

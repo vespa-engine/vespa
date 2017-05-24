@@ -16,9 +16,9 @@ import org.junit.*;
 import static org.junit.Assert.*;
 
 /**
- * Unit tests for thge LogMessage class.
+ * Unit tests for the LogMessage class.
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public class LogMessageTestCase {
 

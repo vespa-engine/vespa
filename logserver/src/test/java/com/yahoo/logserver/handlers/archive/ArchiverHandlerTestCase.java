@@ -21,15 +21,15 @@ import org.junit.rules.TemporaryFolder;
 import static org.junit.Assert.*;
 
 /**
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public class ArchiverHandlerTestCase {
 
     private static final String[] mStrings = {
-        "1095159244.095\thost\t1/2\tservice\tcomponent\tinfo\tpayload1",
-        "1095206399.000\thost\t1/2\tservice\tcomponent\tinfo\tpayload2",
-        "1095206400.000\thost\t1/2\tservice\tcomponent\tinfo\tpayload3",
-        "1095206401.000\thost\t1/2\tservice\tcomponent\tinfo\tpayload4",
+            "1095159244.095\thost\t1/2\tservice\tcomponent\tinfo\tpayload1",
+            "1095206399.000\thost\t1/2\tservice\tcomponent\tinfo\tpayload2",
+            "1095206400.000\thost\t1/2\tservice\tcomponent\tinfo\tpayload3",
+            "1095206401.000\thost\t1/2\tservice\tcomponent\tinfo\tpayload4",
     };
 
     private static final LogMessage[] msg = new LogMessage[mStrings.length];
@@ -59,20 +59,19 @@ public class ArchiverHandlerTestCase {
      * [00:00:00.000, 23:59:59.999].
      */
     @Test
-    public void testDateHash () throws IOException {
+    public void testDateHash() throws IOException {
         File tmpDir = temporaryFolder.newFolder();
         try {
             ArchiverHandler a = new ArchiverHandler(tmpDir.getAbsolutePath(),
-						    1024);
+                                                    1024);
             long now = 1095159244095L;
             long midnight = 1095206400000L;
             assertEquals(2004091410, a.dateHash(now));
-            assertEquals(2004091423, a.dateHash(midnight-1));
+            assertEquals(2004091423, a.dateHash(midnight - 1));
             assertEquals(2004091500, a.dateHash(midnight));
-            assertEquals(2004091500, a.dateHash(midnight+1));
+            assertEquals(2004091500, a.dateHash(midnight + 1));
             a.close();
-        }
-        finally {
+        } finally {
             IOUtils.recursiveDeleteDir(tmpDir);
         }
     }
@@ -85,7 +84,7 @@ public class ArchiverHandlerTestCase {
         File tmpDir = temporaryFolder.newFolder();
         try {
             ArchiverHandler a = new ArchiverHandler(tmpDir.getAbsolutePath(),
-						    1024);
+                                                    1024);
             LogMessage msg1 = LogMessage.parseNativeFormat("1139322725\thost\tthread\tservice\tcomponent\tinfo\tpayload");
             LogMessage msg2 = LogMessage.parseNativeFormat("1161172200\thost\tthread\tservice\tcomponent\tinfo\tpayload");
             assertEquals(tmpDir.getAbsolutePath() + "/2006/02/07/14", a.getPrefix(msg1));
@@ -94,8 +93,7 @@ public class ArchiverHandlerTestCase {
             a.close();
         } catch (InvalidLogFormatException e) {
             fail(e.toString());
-        }
-        finally {
+        } finally {
             IOUtils.recursiveDeleteDir(tmpDir);
         }
     }
@@ -105,7 +103,7 @@ public class ArchiverHandlerTestCase {
      * written.
      */
     @Test
-    public void testLogging () throws java.io.IOException, InvalidLogFormatException {
+    public void testLogging() throws java.io.IOException, InvalidLogFormatException {
         File tmpDir = temporaryFolder.newFolder();
         try {
             ArchiverHandler a = new ArchiverHandler(tmpDir.getAbsolutePath(),
@@ -141,8 +139,7 @@ public class ArchiverHandlerTestCase {
                 BufferedReader br = new BufferedReader(new FileReader(f));
                 for (String line = br.readLine();
                      line != null;
-                     line = br.readLine())
-                {
+                     line = br.readLine()) {
                     // primitive check if the messages match
                     boolean foundMatch = false;
                     for (int k = 0; k < mStrings.length; k++) {
@@ -156,7 +153,7 @@ public class ArchiverHandlerTestCase {
                     // try to instantiate messages to ensure that they
                     // are parseable
                     @SuppressWarnings("unused")
-					LogMessage m = LogMessage.parseNativeFormat(line);
+                    LogMessage m = LogMessage.parseNativeFormat(line);
                     messageCount++;
                 }
                 br.close();
@@ -165,8 +162,7 @@ public class ArchiverHandlerTestCase {
             // verify that the number of log messages written equals
             // the number of log messages we have in our test
             assertEquals(mStrings.length, messageCount);
-        }
-        finally {
+        } finally {
             IOUtils.recursiveDeleteDir(tmpDir);
         }
     }
@@ -175,7 +171,7 @@ public class ArchiverHandlerTestCase {
      * Make sure that the file is rotated after N bytes
      */
     @Test
-    public void testRotation () throws IOException {
+    public void testRotation() throws IOException {
         File tmpDir = temporaryFolder.newFolder();
         try {
             ArchiverHandler a = new ArchiverHandler(tmpDir.getAbsolutePath(),
@@ -197,8 +193,7 @@ public class ArchiverHandlerTestCase {
                 BufferedReader br = new BufferedReader(new FileReader(f));
                 for (String line = br.readLine();
                      line != null;
-                     line = br.readLine())
-                {
+                     line = br.readLine()) {
                     assertTrue(msg[1].toString().equals((line + "\n")));
                     msgCount++;
                 }
@@ -208,21 +203,20 @@ public class ArchiverHandlerTestCase {
 
             // make sure we have no more than 3 files
             assertTrue(! (new File(prefix + "-3").exists()));
-        }
-        finally {
+        } finally {
             IOUtils.recursiveDeleteDir(tmpDir);
         }
     }
-    
+
     @Test
     public void testCacheEldestEntry() throws IOException {
         LogWriterLRUCache cache = new LogWriterLRUCache(5, (float) 0.75);
-        for (int i = 0 ; i < cache.maxEntries+10 ; i++) {
+        for (int i = 0; i < cache.maxEntries + 10; i++) {
             cache.put(i, new LogWriter("/tmp/", 5));
         }
         assertEquals(cache.size(), cache.maxEntries);
     }
-    
+
     @Test
     public void testArchiverPlugin() {
         ArchiverPlugin ap = new ArchiverPlugin();
@@ -239,5 +233,5 @@ public class ArchiverHandlerTestCase {
         }
         ap.shutdownPlugin();
     }
-    
+
 }

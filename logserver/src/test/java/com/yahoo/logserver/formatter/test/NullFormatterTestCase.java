@@ -10,17 +10,18 @@ import com.yahoo.logserver.formatter.NullFormatter;
 import com.yahoo.logserver.test.MockLogEntries;
 
 import org.junit.*;
+
 import static org.junit.Assert.*;
 
 /**
  * Test the NullFormatter
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public class NullFormatterTestCase {
 
     @Test
-    public void testNullFormatter () {
+    public void testNullFormatter() {
         NullFormatter nf = new NullFormatter();
         LogMessage[] ms = MockLogEntries.getMessages();
         for (LogMessage m : ms) {

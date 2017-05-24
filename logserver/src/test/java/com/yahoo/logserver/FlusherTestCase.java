@@ -19,7 +19,7 @@ public class FlusherTestCase {
         Thread.sleep(5000);
         flusher.interrupt();
         flusher.join();
-        assertTrue(handler.flushCalled>0);
+        assertTrue(handler.flushCalled > 0);
     }
 
 }

@@ -15,24 +15,22 @@ import com.yahoo.logserver.handlers.LogHandler;
  * This is the central point from which LogMessage objects are
  * propagated throughout the logserver architecture.
  *
- *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
-public class LogDispatcher implements LogHandler, SelectLoopHook
-{
+public class LogDispatcher implements LogHandler, SelectLoopHook {
     private static final Logger log = Logger.getLogger(LogDispatcher.class.getName());
 
-    private final List<LogHandler> handlers = new ArrayList<LogHandler>();
-    private int  messageCount = 0;
+    private final List<LogHandler> handlers = new ArrayList<>();
+    private int messageCount = 0;
     private boolean hasBeenShutDown = false;
     private boolean batchedMode = false;
     private final int batchSize = 5000;
     private List<LogMessage> currentBatchList;
     private int roundCount = 0;
     @SuppressWarnings("unused")
-	private int lastRoundCount = 0;
+    private int lastRoundCount = 0;
 
-    public LogDispatcher () {
+    public LogDispatcher() {
     }
 
     /**
@@ -43,7 +41,7 @@ public class LogDispatcher implements LogHandler, SelectLoopHook
      * @param msg The LogMessage instance we wish to dispatch to the
      *            plugins
      */
-    public synchronized void handle (LogMessage msg) {
+    public synchronized void handle(LogMessage msg) {
         if (msg == null) {
             throw new NullPointerException("LogMessage was null");
         }
@@ -51,14 +49,14 @@ public class LogDispatcher implements LogHandler, SelectLoopHook
         if (batchedMode) {
             addToBatch(msg);
         } else {
-        	for (LogHandler h : handlers) {
+            for (LogHandler h : handlers) {
                 h.handle(msg);
             }
         }
         messageCount++;
     }
 
-    private void addToBatch (LogMessage msg) {
+    private void addToBatch(LogMessage msg) {
         if (currentBatchList == null) {
             currentBatchList = new ArrayList<LogMessage>(batchSize);
             currentBatchList.add(msg);
@@ -72,7 +70,7 @@ public class LogDispatcher implements LogHandler, SelectLoopHook
         }
     }
 
-    private void flushBatch () {
+    private void flushBatch() {
         if (currentBatchList == null) {
             return;
         }
@@ -84,7 +82,7 @@ public class LogDispatcher implements LogHandler, SelectLoopHook
     }
 
 
-    public void handle (List<LogMessage> messages) {
+    public void handle(List<LogMessage> messages) {
         throw new IllegalStateException("method not supported");
     }
 
@@ -95,11 +93,11 @@ public class LogDispatcher implements LogHandler, SelectLoopHook
      * dispatcher will not enqueue single LogMessage instances
      * but lists of same.
      */
-    public void setBatchedMode (boolean batchedMode) {
+    public void setBatchedMode(boolean batchedMode) {
         this.batchedMode = batchedMode;
     }
 
-    public synchronized void flush () {
+    public synchronized void flush() {
         if (batchedMode) {
             flushBatch();
         }
@@ -112,7 +110,7 @@ public class LogDispatcher implements LogHandler, SelectLoopHook
         }
     }
 
-    public synchronized void close () {
+    public synchronized void close() {
         if (hasBeenShutDown) {
             throw new IllegalStateException("Shutdown already in progress");
         }
@@ -121,7 +119,7 @@ public class LogDispatcher implements LogHandler, SelectLoopHook
         for (LogHandler ht : handlers) {
             if (ht instanceof Thread) {
                 log.fine("Stopping " + ht);
-                ((Thread)ht).interrupt();
+                ((Thread) ht).interrupt();
             }
         }
         handlers.clear();
@@ -133,15 +131,14 @@ public class LogDispatcher implements LogHandler, SelectLoopHook
      * Register handler thread with the dispatcher.  If the handler
      * thread has already been registered, we log a warning and
      * just do nothing.
-     *
-     * <P>
+     * <p>
+     * <p>
      * If the thread is not alive it will be start()'ed.
-     *
      */
-    public synchronized void registerLogHandler (LogHandler ht) {
+    public synchronized void registerLogHandler(LogHandler ht) {
         if (hasBeenShutDown) {
-            throw new IllegalStateException("Tried to register LogHandler on"+
-                                            " LogDispatcher which was shut down");
+            throw new IllegalStateException("Tried to register LogHandler on" +
+                                                    " LogDispatcher which was shut down");
         }
 
         if (handlers.contains(ht)) {
@@ -150,8 +147,8 @@ public class LogDispatcher implements LogHandler, SelectLoopHook
         }
         handlers.add(ht);
 
-        if ((ht instanceof Thread) && (! ((Thread)ht).isAlive())) {
-            ((Thread)ht).start();
+        if ((ht instanceof Thread) && (! ((Thread) ht).isAlive())) {
+            ((Thread) ht).start();
         }
 
         log.fine("Added (and possibly started) LogHandler " + ht);
@@ -160,7 +157,7 @@ public class LogDispatcher implements LogHandler, SelectLoopHook
     /**
      * Make defensive copy and return array of LogHandlers.
      */
-    public LogHandler[] getLogHandlers () {
+    public LogHandler[] getLogHandlers() {
         LogHandler[] h = new LogHandler[handlers.size()];
         return handlers.toArray(h);
     }
@@ -170,14 +167,14 @@ public class LogDispatcher implements LogHandler, SelectLoopHook
      *
      * @return Returns the number of messages that we have seen.
      */
-    public synchronized int getMessageCount () {
+    public synchronized int getMessageCount() {
         return messageCount;
     }
 
     /**
      * Hook which is called when the select loop has finished.
      */
-    public void selectLoopHook (boolean before) {
+    public void selectLoopHook(boolean before) {
         if (batchedMode) {
             flushBatch();
         }

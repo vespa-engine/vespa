@@ -8,15 +8,14 @@ package com.yahoo.plugin;
  * then return the contents of the "logserver.archiver.foo" system
  * property.
  *
- * @author  <a href="mailto:stig@yahoo-inc.com">Stig Bakken</a>
+ * @author Stig Bakken
  */
-public class SystemPropertyConfig extends Config
-{
+public class SystemPropertyConfig extends Config {
     private final String prefix;
 
     /**
      * @param prefix Prefix string prepended to config keys
-     * as they are looked up as system properties.
+     *               as they are looked up as system properties.
      */
     public SystemPropertyConfig(String prefix) {
         this.prefix = prefix;
@@ -29,7 +28,7 @@ public class SystemPropertyConfig extends Config
         return System.getProperty(prefix + key, defaultValue);
     }
 
-    public String toString () {
+    public String toString() {
         return "Prefix=" + prefix;
     }
 }

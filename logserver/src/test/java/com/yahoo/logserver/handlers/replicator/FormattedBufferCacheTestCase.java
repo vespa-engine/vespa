@@ -7,6 +7,7 @@
 package com.yahoo.logserver.handlers.replicator;
 
 import java.nio.ByteBuffer;
+
 import com.yahoo.logserver.handlers.replicator.FormattedBufferCache;
 import com.yahoo.log.LogMessage;
 import com.yahoo.logserver.formatter.LogFormatter;
@@ -14,17 +15,18 @@ import com.yahoo.logserver.formatter.LogFormatterManager;
 import com.yahoo.logserver.test.MockLogEntries;
 
 import org.junit.*;
+
 import static org.junit.Assert.*;
 
 /**
  * Unit tests for thge LogMessage class.
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public class FormattedBufferCacheTestCase {
 
     @Test
-    public void testCache () {
+    public void testCache() {
         LogMessage msgs[] = MockLogEntries.getMessages();
         FormattedBufferCache cache = new FormattedBufferCache();
         String n[] = LogFormatterManager.getFormatterNames();

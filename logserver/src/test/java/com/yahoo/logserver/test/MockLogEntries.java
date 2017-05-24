@@ -14,7 +14,7 @@ import java.util.List;
  * This class is used to gain access to a bunch of log entries
  * so we can use the same log messages in several different tests
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public class MockLogEntries {
     private static final MockLogEntries instance = new MockLogEntries();
@@ -25,7 +25,7 @@ public class MockLogEntries {
      * Private constructor which reads the log messages and builds
      * an array of LogMessage entries.
      */
-    private MockLogEntries () {
+    private MockLogEntries() {
         List<LogMessage> msgs = new LinkedList<LogMessage>();
         try {
             String name = "src/test/files/logEntries.txt";
@@ -35,7 +35,7 @@ public class MockLogEntries {
                 msgs.add(m);
             }
         } catch (InvalidLogFormatException | IOException e) {
-        	// do nothing
+            // do nothing
         }
 
         LogMessage[] m = new LogMessage[msgs.size()];

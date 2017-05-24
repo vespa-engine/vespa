@@ -15,7 +15,7 @@ import com.yahoo.log.LogMessage;
  * in a log file are correct.  Any incorrectly formatted log
  * message is output to stdout.
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author  Bjorn Borud
  */
 public class VerifyLogfile {
 

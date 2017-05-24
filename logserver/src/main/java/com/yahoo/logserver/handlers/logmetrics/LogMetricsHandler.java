@@ -5,9 +5,7 @@
 package com.yahoo.logserver.handlers.logmetrics;
 
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.ArrayList;
@@ -24,25 +22,22 @@ import com.yahoo.logserver.handlers.AbstractLogHandler;
  * The LogMetricsHandler stores a count of the number of log messages
  * per level per host and sends an event count for this five minutes.
  *
- *
  * @author hmusum
  */
-public class LogMetricsHandler extends AbstractLogHandler
-{
-    public static final long EVENTINTERVAL = 5 * 60; // in seconds
+public class LogMetricsHandler extends AbstractLogHandler {
+    private static final long EVENTINTERVAL = 5 * 60; // in seconds
 
-    private static final Logger log =
-	Logger.getLogger(LogMetricsHandler.class.getName());
+    private static final Logger log = Logger.getLogger(LogMetricsHandler.class.getName());
 
     // A list of log metrics per host and per log level
     private final List<LevelCount> logMetrics = new ArrayList<LevelCount>();
 
     // The log levels that are handled by this plugin
     private static final Level[] levels = {LogLevel.INFO,
-					   LogLevel.WARNING,
-					   LogLevel.SEVERE,
-					   LogLevel.ERROR,
-					   LogLevel.FATAL};
+            LogLevel.WARNING,
+            LogLevel.SEVERE,
+            LogLevel.ERROR,
+            LogLevel.FATAL};
 
 
     /**
@@ -67,7 +62,7 @@ public class LogMetricsHandler extends AbstractLogHandler
         String host = message.getHost();
         Level logLevel = message.getLevel();
 
-        boolean found = false;	
+        boolean found = false;
         if (logMetrics.size() > 0) {
             LevelCount count;
             // Loop through the list logMetrics and check if there
@@ -75,19 +70,19 @@ public class LogMetricsHandler extends AbstractLogHandler
             for (int i = 0; i < logMetrics.size(); i++) {
                 count = logMetrics.get(i);
                 if (count.getHost().equals(host) &&
-                    count.getLevel().getName().equals(logLevel.getName())) {
+                        count.getLevel().getName().equals(logLevel.getName())) {
                     count.addCount(1);
                     found = true;
                     break;
                 }
             }
         }
-	
+
         // There is no element in logMetrics with the same host and
         // level as in the message, so create a new object and add it
         // to the list.
-        if (!found) {
-        	for (Level level : Arrays.asList(levels)) {
+        if (! found) {
+            for (Level level : Arrays.asList(levels)) {
                 LevelCount levelCount;
                 if (level.getName().equals(logLevel.getName())) {
                     levelCount = new LevelCount(host,
@@ -97,29 +92,27 @@ public class LogMetricsHandler extends AbstractLogHandler
                     levelCount = new LevelCount(host,
                                                 level,
                                                 0);
-		
+
                 }
                 logMetrics.add(levelCount);
             }
-        }	
+        }
         return true;
     }
 
     /**
-     *
      * Create event count for each log level and report it. For now we
      * add up the numbers for all host on each level and report that.
-     *
      */
     private void sendEvents() {
-        Map<String,Long> levelCount = getMetricsPerLevel();
-        for (Map.Entry<String,Long> entry : levelCount.entrySet()) {
+        Map<String, Long> levelCount = getMetricsPerLevel();
+        for (Map.Entry<String, Long> entry : levelCount.entrySet()) {
             String key = entry.getKey();
             Long count = entry.getValue();
             Event.count("log_message." + key.toLowerCase(), count.longValue());
         }
     }
-	
+
     public void flush() {}
 
     public void close() {}
@@ -137,7 +130,7 @@ public class LogMetricsHandler extends AbstractLogHandler
     public long getMetricsCount() {
         long count = 0;
         for (LevelCount levelCount : logMetrics) {
-            count = count + levelCount.getCount();	
+            count = count + levelCount.getCount();
         }
         return count;
     }
@@ -148,18 +141,18 @@ public class LogMetricsHandler extends AbstractLogHandler
      *
      * @return A Map of log level counts
      */
-    public Map<String,Long> getMetricsPerLevel() {
+    public Map<String, Long> getMetricsPerLevel() {
         Map<String, Long> levelCounts = new TreeMap<String, Long>();
         // Loop through all levels summing the count for all hosts.
         for (Level level : Arrays.asList(levels)) {
-        	String levelName = level.getName();
-        	long count = 0;
-        	for (LevelCount levelCount : logMetrics) {
-        		if (levelName.equals(levelCount.getLevel().getName())) {
-        			count += levelCount.getCount();
-        		}
-        	}
-        	levelCounts.put(levelName, count);
+            String levelName = level.getName();
+            long count = 0;
+            for (LevelCount levelCount : logMetrics) {
+                if (levelName.equals(levelCount.getLevel().getName())) {
+                    count += levelCount.getCount();
+                }
+            }
+            levelCounts.put(levelName, count);
         }
         return levelCounts;
     }
@@ -167,21 +160,20 @@ public class LogMetricsHandler extends AbstractLogHandler
     /**
      * The LevelCount class represents the number (count) of log
      * messages with the same log level for a host.
-     *
      */
     private class LevelCount {
         private final String host;
         private final Level level;
         private long count;
-	
+
         LevelCount(String host, Level level, long count) {
-        	this.host = host;
-        	this.level = level;
-        	this.count = count;
+            this.host = host;
+            this.level = level;
+            this.count = count;
         }
-	
+
         LevelCount(String host, Level level) {
-        	this(host, level, 0);
+            this(host, level, 0);
         }
 
         Level getLevel() {
@@ -207,7 +199,7 @@ public class LogMetricsHandler extends AbstractLogHandler
         public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append("Host=" + host + ", level = " + level.getName() +
-                      ",count=" + count);
+                              ",count=" + count);
             return sb.toString();
         }
     }
@@ -215,7 +207,6 @@ public class LogMetricsHandler extends AbstractLogHandler
     /**
      * Implements a thread that sends events every EVENTINTERVAL
      * seconds.
-     *
      */
     private class EventGenerator implements Runnable {
         public void run() {
@@ -228,6 +219,6 @@ public class LogMetricsHandler extends AbstractLogHandler
                 }
                 sendEvents();
             }
-        }	
+        }
     }
 }
