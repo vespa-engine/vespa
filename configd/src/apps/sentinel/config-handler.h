@@ -71,7 +71,7 @@ private:
 public:
     ConfigHandler();
     virtual ~ConfigHandler();
-    void subscribe(const std::string & configId);
+    void subscribe(const std::string & configId, uint64_t timeoutMS);
     bool terminate();
     int doWork();
     void updateActiveFdset(fd_set *fds, int *maxNum);
