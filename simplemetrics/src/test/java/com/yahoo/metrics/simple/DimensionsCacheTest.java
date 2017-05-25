@@ -80,6 +80,22 @@ public class DimensionsCacheTest {
     }
 
     @Test
+    public final void requireThatOldDataIsForgotten() {
+        Bucket first = new Bucket(); // "now" as timestamp
+        populateDimensionLessValue("one", first, 2);
+        cache.updateDimensionPersistence(first, new Bucket());
+        Bucket second = new Bucket(17, 42); // really old timestamp
+        populateDimensionLessValue("other", second, 3);
+        Bucket third = new Bucket();
+        populateDimensionLessValue("two", third, 4);
+        cache.updateDimensionPersistence(second, third);
+        Collection<String> names = third.getAllMetricNames();
+        assertEquals(2, names.size());
+        assertTrue(names.contains("one"));
+        assertTrue(names.contains("two"));
+    }
+
+    @Test
     public final void testUpdateWithNullThenDataThenNoDataThenData() {
         Bucket first = new Bucket();
         Bucket second = new Bucket();
