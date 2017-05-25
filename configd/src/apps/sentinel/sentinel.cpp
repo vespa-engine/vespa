@@ -69,7 +69,7 @@ main(int argc, char **argv)
     try {
         handler.subscribe(configId, CONFIG_TIMEOUT_MS);
     } catch (ConfigTimeoutException & ex) {
-        LOG(info, "Timout getting config, please check your setup. Will exit and restart: %s", ex.getMessage().c_str());
+        LOG(warning, "Timout getting config, please check your setup. Will exit and restart: %s", ex.getMessage().c_str());
         EV_STOPPING("config-sentinel", ex.what());
         exit(EXIT_FAILURE);
     } catch (InvalidConfigException& ex) {
