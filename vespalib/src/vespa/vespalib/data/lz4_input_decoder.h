@@ -3,6 +3,7 @@
 #pragma once
 
 #include "input.h"
+#include <vector>
 
 struct LZ4F_dctx_s;
 
