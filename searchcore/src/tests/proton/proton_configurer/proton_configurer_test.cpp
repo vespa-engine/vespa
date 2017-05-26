@@ -16,6 +16,7 @@
 #include <vespa/searchcore/proton/server/proton_configurer.h>
 #include <vespa/searchcore/proton/server/i_proton_configurer_owner.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
+#include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>

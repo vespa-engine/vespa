@@ -13,7 +13,6 @@ using namespace search::index;
 using namespace vespa::config::search;
 using std::shared_ptr;
 using std::make_shared;
-using vespa::config::search::core::RankingConstantsConfig;
 
 typedef shared_ptr<DocumentDBConfig> DDBCSP;
 

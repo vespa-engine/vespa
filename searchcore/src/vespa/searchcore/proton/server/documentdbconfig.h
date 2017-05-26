@@ -6,7 +6,6 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchcommon/common/schema.h>
-#include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/searchcore/proton/matching/ranking_constants.h>
 #include <vespa/config/retriever/configkeyset.h>
 #include <vespa/config/retriever/configsnapshot.h>

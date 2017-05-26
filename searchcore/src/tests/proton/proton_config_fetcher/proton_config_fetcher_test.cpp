@@ -15,6 +15,7 @@
 #include <vespa/searchcore/proton/server/proton_config_snapshot.h>
 #include <vespa/searchcore/proton/server/i_proton_configurer.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
+#include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <mutex>
