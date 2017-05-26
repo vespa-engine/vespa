@@ -3,7 +3,6 @@
  * within test framework
  */
 
-#include <vespa/fastos/fastos.h>
 #include "testenv.h"
 #include <vespa/juniper/propreader.h>
 

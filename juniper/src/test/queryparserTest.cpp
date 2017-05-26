@@ -16,7 +16,6 @@
  *                              ALL RIGHTS RESERVED
  * </pre>
  ***************************************************************************/
-#include <vespa/fastos/fastos.h>
 #include "queryparserTest.h"
 #include "fakerewriter.h"
 
