@@ -28,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.logging.Logger;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.eq;
@@ -39,6 +40,7 @@ import static org.mockito.Mockito.when;
  * @author dybis
  */
 public class RunInContainerTest {
+    private final Logger logger = Logger.getLogger("RunInContainerTest");
     private final Orchestrator orchestrator = ComponentsProviderWithMocks.orchestratorMock;
     private final String parentHostname = "localhost.test.yahoo.com";
     private JDisc container;
@@ -58,19 +60,24 @@ public class RunInContainerTest {
         doThrow(new RuntimeException()).when(orchestrator).resume(parentHostname);
         port = findRandomOpenPort();
         System.out.println("PORT IS " + port);
+        logger.info("PORT IS " + port);
         container = JDisc.fromServicesXml(createServiceXml(port), Networking.enable);
     }
 
     @After
-    public void after() {
-        container.close();
+    public void stopContainer() {
+        if (container != null) {
+            container.close();
+        }
     }
 
     private boolean doPutCall(String command) throws IOException {
+        logger.info("info before '"+command+"' is: " + doGetInfoCall());
         HttpClient httpclient = HttpClientBuilder.create().build();
         HttpHost target = new HttpHost("localhost", port, "http");
         HttpPut getRequest = new HttpPut("/rest/" + command);
         HttpResponse httpResponse = httpclient.execute(target, getRequest);
+        logger.info("info after '"+command+"' is: " + doGetInfoCall());
         return httpResponse.getStatusLine().getStatusCode() == 200;
     }
 
@@ -96,6 +103,7 @@ public class RunInContainerTest {
                 if (httpResponse.getStatusLine().getStatusCode() != 200) {
                     continue;
                 }
+                logger.info("Container started.");
                 System.out.println("Container started.");
                 return;
             } catch (Exception e) {
@@ -103,13 +111,6 @@ public class RunInContainerTest {
             }
         }
         throw new RuntimeException("Could not get answer from container.");
-    }
-
-    @After
-    public void stopContainer() {
-        if (container != null) {
-            container.close();
-        }
     }
 
     @Test
