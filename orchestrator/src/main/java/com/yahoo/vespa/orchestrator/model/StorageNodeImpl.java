@@ -9,7 +9,7 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClient;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
-import com.yahoo.vespa.orchestrator.controller.ClusterControllerState;
+import com.yahoo.vespa.orchestrator.controller.ClusterControllerNodeState;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerStateResponse;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
@@ -44,7 +44,7 @@ public class StorageNodeImpl implements StorageNode {
     }
 
     @Override
-    public void setNodeState(ClusterControllerState wantedNodeState)
+    public void setNodeState(ClusterControllerNodeState wantedNodeState)
             throws HostStateChangeDeniedException {
         // The "cluster name" used by the Cluster Controller IS the cluster ID.
         String clusterId = this.clusterId.s();
@@ -72,7 +72,6 @@ public class StorageNodeImpl implements StorageNode {
             throw new HostStateChangeDeniedException(
                     hostName(),
                     HostedVespaPolicy.CLUSTER_CONTROLLER_AVAILABLE_CONSTRAINT,
-                    VespaModelUtil.CLUSTER_CONTROLLER_SERVICE_TYPE,
                     "Failed to communicate with cluster controllers " + clusterControllers + ": " + e,
                     e);
         }
@@ -81,8 +80,7 @@ public class StorageNodeImpl implements StorageNode {
             throw new HostStateChangeDeniedException(
                     hostName(),
                     HostedVespaPolicy.SET_NODE_STATE_CONSTRAINT,
-                    VespaModelUtil.CLUSTER_CONTROLLER_SERVICE_TYPE,
-                    "Failed to set state to " + wantedNodeState + " in controller: " + response.reason);
+                    "Failed to set state to " + wantedNodeState + " in cluster controller: " + response.reason);
         }
     }
 

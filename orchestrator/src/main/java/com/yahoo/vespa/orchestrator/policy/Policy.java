@@ -30,6 +30,13 @@ public interface Policy {
     void releaseSuspensionGrant(ApplicationApi application) throws HostStateChangeDeniedException;
 
     /**
+     * Give all hosts in a group permission to be removed from the application.
+     *
+     * @param applicationApi
+     */
+    void acquirePermissionToRemove(ApplicationApi applicationApi) throws HostStateChangeDeniedException;
+
+    /**
      * Release an earlier grant for suspension.
      *
      * @throws HostStateChangeDeniedException if the release failed.

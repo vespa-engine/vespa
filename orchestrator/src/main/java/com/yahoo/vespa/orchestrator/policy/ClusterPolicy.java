@@ -7,8 +7,14 @@ public interface ClusterPolicy {
     /**
      * There's an implicit group of nodes known to clusterApi.  This method answers whether
      * it would be fine, just looking at this cluster (and disregarding Cluster Controller/storage
-     * which is handled separately), whether it would be fine to allow all services on all the nodes
-     * in the group to go down.
+     * which is handled separately), to allow all services on all the nodes in the group to go down.
      */
     void verifyGroupGoingDownIsFine(ClusterApi clusterApi) throws HostStateChangeDeniedException;
+
+    /**
+     * There's an implicit group of nodes known to clusterApi.  This method answers whether
+     * it would be fine, just looking at this cluster, to allow all services on all the nodes
+     * in the group to go down PERMANENTLY (removed from application).
+     */
+    void verifyGroupGoingDownPermanentlyIsFine(ClusterApi clusterApi) throws HostStateChangeDeniedException;
 }

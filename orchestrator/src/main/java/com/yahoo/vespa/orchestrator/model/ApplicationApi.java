@@ -2,6 +2,7 @@
 package com.yahoo.vespa.orchestrator.model;
 
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
 import java.util.List;
@@ -12,11 +13,19 @@ import java.util.List;
 public interface ApplicationApi {
     String applicationInfo();
 
+    /**
+     * The policy acts on some subset of nodes in the application.
+     */
+    NodeGroup getNodeGroup();
+
     List<ClusterApi> getClusters();
+
+    ApplicationInstanceStatus getApplicationStatus();
 
     void setHostState(HostName hostName, HostStatus status);
     List<HostName> getNodesInGroupWithStatus(HostStatus status);
 
+    List<StorageNode> getStorageNodesInGroupInClusterOrder();
     List<StorageNode> getUpStorageNodesInGroupInClusterOrder();
     List<StorageNode> getStorageNodesAllowedToBeDownInGroupInReverseClusterOrder();
 }

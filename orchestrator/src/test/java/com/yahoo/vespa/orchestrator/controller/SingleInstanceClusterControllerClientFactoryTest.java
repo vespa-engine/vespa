@@ -64,7 +64,7 @@ public class SingleInstanceClusterControllerClientFactoryTest {
         final List<HostName> clusterControllers = Arrays.asList(HOST_NAME_1);
 
         clientFactory.createClient(clusterControllers, "clusterName")
-                .setNodeState(0, ClusterControllerState.MAINTENANCE);
+                .setNodeState(0, ClusterControllerNodeState.MAINTENANCE);
 
         verify(jaxRsClientFactory).createClient(
                 ClusterControllerJaxRsApi.class,
@@ -90,7 +90,7 @@ public class SingleInstanceClusterControllerClientFactoryTest {
         final List<HostName> clusterControllers = Arrays.asList(HOST_NAME_1, HOST_NAME_2, HOST_NAME_3);
 
         clientFactory.createClient(clusterControllers, "clusterName")
-                .setNodeState(0, ClusterControllerState.MAINTENANCE);
+                .setNodeState(0, ClusterControllerNodeState.MAINTENANCE);
 
         verify(jaxRsClientFactory).createClient(
                 eq(ClusterControllerJaxRsApi.class),

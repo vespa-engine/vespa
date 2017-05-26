@@ -5,7 +5,6 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.orchestrator.InstanceLookupService;
 import com.yahoo.vespa.orchestrator.OrchestratorImpl;
@@ -101,6 +100,10 @@ public class HostResourceTest {
 
         @Override
         public void releaseSuspensionGrant(ApplicationApi application) throws HostStateChangeDeniedException {
+        }
+
+        @Override
+        public void acquirePermissionToRemove(ApplicationApi applicationApi) throws HostStateChangeDeniedException {
         }
 
         @Override
@@ -203,6 +206,11 @@ public class HostResourceTest {
         }
 
         @Override
+        public void acquirePermissionToRemove(ApplicationApi applicationApi) throws HostStateChangeDeniedException {
+            doThrow();
+        }
+
+        @Override
         public void releaseSuspensionGrant(
                 ApplicationInstance<ServiceMonitorStatus> applicationInstance,
                 HostName hostName,
@@ -214,7 +222,6 @@ public class HostResourceTest {
             throw new HostStateChangeDeniedException(
                     new HostName("some-host"),
                     "impossible-policy",
-                    new ServiceType("silly-service"),
                     "This policy rejects all requests");
         }
     }

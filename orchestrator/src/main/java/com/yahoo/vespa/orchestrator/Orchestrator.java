@@ -60,6 +60,12 @@ public interface Orchestrator {
     void suspend(HostName hostName) throws HostStateChangeDeniedException, HostNameNotFoundException;
 
     /**
+     * Acquire permission to remove a node permanently from the application, or otherwise throw
+     * {@link OrchestrationException}.
+     */
+    void acquirePermissionToRemove(HostName hostName) throws OrchestrationException;
+
+    /**
      * Suspend normal operations for a group of nodes in the same application.
      *
      * @param nodeGroup The group of nodes in an application.
