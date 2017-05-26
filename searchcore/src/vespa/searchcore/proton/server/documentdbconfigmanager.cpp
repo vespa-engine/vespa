@@ -11,6 +11,7 @@
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
+#include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/vespalib/time/time_box.h>
 
 LOG_SETUP(".proton.server.documentdbconfigmanager");

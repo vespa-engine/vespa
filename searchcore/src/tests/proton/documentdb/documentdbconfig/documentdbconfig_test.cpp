@@ -18,7 +18,6 @@ using namespace vespa::config::search;
 using proton::matching::RankingConstants;
 using std::make_shared;
 using std::shared_ptr;
-using vespa::config::search::core::RankingConstantsConfig;
 using document::config_builder::DocumenttypesConfigBuilderHelper;
 using document::config_builder::Struct;
 
