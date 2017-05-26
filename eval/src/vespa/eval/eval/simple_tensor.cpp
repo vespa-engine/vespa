@@ -529,7 +529,7 @@ SimpleTensor::SimpleTensor(double value)
 {
 }
 
-SimpleTensor::SimpleTensor(const ValueType &type_in, Cells &&cells_in)
+SimpleTensor::SimpleTensor(const ValueType &type_in, Cells cells_in)
     : Tensor(SimpleTensorEngine::ref()),
       _type(type_in),
       _cells(std::move(cells_in))

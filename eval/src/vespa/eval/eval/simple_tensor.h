@@ -77,7 +77,7 @@ private:
 public:
     SimpleTensor();
     explicit SimpleTensor(double value);
-    SimpleTensor(const ValueType &type_in, Cells &&cells_in);
+    SimpleTensor(const ValueType &type_in, Cells cells_in);
     const ValueType &type() const { return _type; }
     const Cells &cells() const { return _cells; }
     std::unique_ptr<SimpleTensor> map(const std::function<double(double)> &function) const;

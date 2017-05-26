@@ -63,6 +63,13 @@ WrappedSimpleTensor::print(std::ostream &out) const
     out << toString();
 }
 
+Tensor::UP
+WrappedSimpleTensor::clone() const
+{
+    auto tensor = std::make_unique<eval::SimpleTensor>(_tensor.type(), _tensor.cells());
+    return std::make_unique<WrappedSimpleTensor>(std::move(tensor));
+}
+
 //-----------------------------------------------------------------------------
 
 Tensor::UP
@@ -130,13 +137,6 @@ WrappedSimpleTensor::apply(const eval::BinaryOperation &, const Tensor &) const
 
 Tensor::UP
 WrappedSimpleTensor::reduce(const eval::BinaryOperation &, const std::vector<vespalib::string> &) const
-{
-    abort();
-    return Tensor::UP();
-}
-
-Tensor::UP
-WrappedSimpleTensor::clone() const
 {
     abort();
     return Tensor::UP();
