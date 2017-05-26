@@ -1,16 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1999-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
 #pragma once
 
-#include <vespa/document/base/globalid.h>
+#include <vespa/searchsummary/docsummary/getdocsumargs.h>
 #include <vespa/searchlib/common/fslimits.h>
 #include <vespa/searchlib/engine/errorcodes.h>
-#include <vespa/searchsummary/docsummary/getdocsumargs.h>
 #include <vespa/searchlib/engine/searchrequest.h>
 #include <vespa/searchlib/common/packets.h>
-
+#include <vespa/document/base/globalid.h>
+#include <vespa/fastos/cond.h>
 #include <limits>
 
 class FastS_ISearch;

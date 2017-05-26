@@ -1,15 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "lid_reuse_delayer_config.h"
 #include <vespa/searchcore/proton/server/documentdbconfig.h>
 
-namespace proton
-{
-
-namespace documentmetastore
-{
-
+namespace proton::documentmetastore {
 
 LidReuseDelayerConfig::LidReuseDelayerConfig()
     : _visibilityDelay(0),
@@ -29,4 +23,3 @@ LidReuseDelayerConfig::LidReuseDelayerConfig(const DocumentDBConfig &
 
 } // namespace proton::documentmetastore
 
-} // namespace proton

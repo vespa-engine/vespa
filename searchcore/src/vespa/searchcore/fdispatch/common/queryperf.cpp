@@ -1,12 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 2005 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
+#include "queryperf.h"
+
 #include <vespa/log/log.h>
 LOG_SETUP(".queryperf");
-#include <vespa/fnet/fnet.h>
-#include <vespa/searchcore/fdispatch/common/queryperf.h>
-
 
 FastS_QueryPerf::FastS_QueryPerf()
     : queueLen(0),

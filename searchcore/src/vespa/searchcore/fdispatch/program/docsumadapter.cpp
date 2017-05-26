@@ -1,14 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
+#include "docsumadapter.h"
+#include <vespa/searchcore/fdispatch/search/datasetcollection.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".fdispatch.docsumadapter");
-#include "docsumadapter.h"
-#include <vespa/searchcore/util/log.h>
-#include <vespa/searchlib/common/packets.h>
-#include <vespa/searchlib/fef/queryproperties.h>
-#include <vespa/searchlib/parsequery/simplequerystack.h>
-#include <vespa/searchcore/fdispatch/search/datasetcollection.h>
 
 namespace fdispatch {
 
@@ -34,9 +30,9 @@ void
 DocsumAdapter::handleRequest()
 {
     _dsc = _appCtx->GetDataSetCollection();
-    FastS_assert(_dsc != NULL);
+    assert(_dsc != NULL);
     _search = _dsc->CreateSearch(FastS_NoID32(), _appCtx->GetTimeKeeper());
-    FastS_assert(_search != NULL);
+    assert(_search != NULL);
     _docsumsResult = _search->GetDocsumsResult();
     _search->SetGetDocsumArgs(&_args);
     _search->GetDocsums(_hitbuf, _hitcnt);

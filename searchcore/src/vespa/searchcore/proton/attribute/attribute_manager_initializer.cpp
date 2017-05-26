@@ -1,10 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "attribute_manager_initializer.h"
+#include "attributes_initializer_base.h"
 #include "attribute_collection_spec_factory.h"
-#include "sequential_attributes_initializer.h"
-#include <vespa/searchcore/proton/initializer/initializer_task.h>
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <future>
 
@@ -35,7 +33,7 @@ public:
           _result(result)
     {}
 
-    virtual void run() override {
+    void run() override {
         AttributeInitializerResult result = _initializer->init();
         if (result) {
             AttributesInitializerBase::considerPadAttribute(*result.getAttribute(),
@@ -60,8 +58,8 @@ public:
                                     DocumentMetaStore::SP documentMetaStore,
                                     AttributeManager::SP attrMgr,
                                     InitializedAttributesResult &attributesResult);
-    virtual ~AttributeManagerInitializerTask() override;
-    virtual void run() override;
+    ~AttributeManagerInitializerTask() override;
+    void run() override;
 };
 
 
@@ -149,7 +147,6 @@ AttributeManagerInitializer::AttributeManagerInitializer(SerialNum configSerialN
                                                          size_t attributeGrowNumDocs,
                                                          bool fastAccessAttributesOnly,
                                                          searchcorespi::index::IThreadService &master,
-
                                                          std::shared_ptr<AttributeManager::SP> attrMgrResult)
     : _configSerialNum(configSerialNum),
       _documentMetaStore(documentMetaStore),

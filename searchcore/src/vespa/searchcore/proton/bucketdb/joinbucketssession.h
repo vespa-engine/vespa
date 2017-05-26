@@ -2,11 +2,9 @@
 
 #pragma once
 
-namespace proton
-{
+#include "bucketsessionbase.h"
 
-namespace bucketdb
-{
+namespace proton::bucketdb {
 
 class BucketDeltaPair;
 
@@ -80,7 +78,5 @@ public:
         return _target;
     }
 };
-
-}
 
 }

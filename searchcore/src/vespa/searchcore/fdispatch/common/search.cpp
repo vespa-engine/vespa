@@ -1,11 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".search");
-#include <vespa/searchcore/util/log.h>
 #include "search.h"
 
 //---------------------------------------------------------------------
@@ -161,7 +155,6 @@ FastS_SyncSearchAdapter::Adapt(FastS_ISearch *search)
         return search;
 
     FastS_SyncSearchAdapter *ret = new FastS_SyncSearchAdapter(search);
-    FastS_assert(ret != NULL);
     search->SetAsyncArgs(ret, FastS_SearchContext());
     return ret;
 }

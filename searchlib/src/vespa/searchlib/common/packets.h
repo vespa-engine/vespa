@@ -1,24 +1,20 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 2002-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
 #pragma once
 
+#include "transport.h"
+#include "hitrank.h"
 #include <vespa/fnet/context.h>
 #include <vespa/fnet/ipacketstreamer.h>
 #include <vespa/fnet/packet.h>
 #include <vespa/fnet/databuffer.h>
-#include <vespa/vespalib/util/memory.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/document/util/compressionconfig.h>
-#include <vespa/searchlib/common/transport.h>
-#include <vespa/searchlib/common/hitrank.h>
+#include <vespa/vespalib/util/memory.h>
 #include <vespa/fastos/timestamp.h>
 #include <vector>
 
-namespace search {
-
-namespace fs4transport {
+namespace search::fs4transport {
 
 using vespalib::string;
 
@@ -536,5 +532,3 @@ public:
 //==========================================================================
 
 }
-}
-

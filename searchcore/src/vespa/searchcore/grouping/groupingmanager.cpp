@@ -1,18 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
+#include "groupingmanager.h"
+#include <vespa/searchlib/aggregation/fs4hit.h>
+#include <vespa/searchlib/expression/attributenode.h>
+#include <vespa/searchcore/grouping/groupingsession.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".groupingmanager");
-#include "groupingmanager.h"
-#include <vector>
-#include <vespa/searchlib/aggregation/grouping.h>
-#include <vespa/searchlib/aggregation/groupinglevel.h>
-#include <vespa/searchlib/aggregation/fs4hit.h>
-#include <vespa/vespalib/objects/objectpredicate.h>
-#include <vespa/vespalib/objects/objectoperation.h>
-#include <vespa/searchlib/expression/attributenode.h>
-#include <vespa/searchlib/expression/expressiontree.h>
-#include <vespa/searchlib/expression/expressionnode.h>
-#include <vespa/searchcore/grouping/groupingsession.h>
 
 namespace search {
 namespace grouping {

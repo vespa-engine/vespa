@@ -5,9 +5,6 @@ dir=`dirname $0`
 . "$dir/create-base.sh"
 
 cat <<EOF
-#include <vespa/log/log.h>
-LOG_SETUP(".$name");
-#include <vespa/fastos/fastos.h>
 #include "$name.h"
 
 $ns_open

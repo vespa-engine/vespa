@@ -6,11 +6,7 @@
 #include "ibucketdbhandler.h"
 #include "ibucketdbhandlerinitializer.h"
 
-namespace proton
-{
-
-namespace bucketdb
-{
+namespace proton::bucketdb {
 
 /**
  * The BucketDBHandler class handles operations on a bucket db.
@@ -63,7 +59,5 @@ public:
     virtual void
     handleDeleteBucket(const BucketId &bucketId) override;
 };
-
-}
 
 }

@@ -3,7 +3,6 @@
 #pragma once
 
 #include "i_attribute_factory.h"
-#include <set>
 
 namespace proton {
 

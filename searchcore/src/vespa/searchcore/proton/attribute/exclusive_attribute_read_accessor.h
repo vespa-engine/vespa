@@ -2,9 +2,11 @@
 
 #pragma once
 
+#include <memory>
+
 namespace search {
-class AttributeVector;
-class ISequencedTaskExecutor;
+    class AttributeVector;
+    class ISequencedTaskExecutor;
 }
 namespace vespalib { class Gate; }
 

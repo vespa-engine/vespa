@@ -1,16 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.documentmetastore.bucketdb");
 #include "bucketdb.h"
+#include <cassert>
 
 using document::GlobalId;
 using storage::spi::BucketChecksum;
 
-namespace proton
-{
-
+namespace proton {
 
 BucketDB::BucketDB()
     : _map(),
@@ -19,13 +15,11 @@ BucketDB::BucketDB()
 {
 }
 
-
 BucketDB::~BucketDB()
 {
     checkEmpty();
     clear();
 }
-
 
 bucketdb::BucketState *
 BucketDB::getBucketStatePtr(const BucketId &bucket)
@@ -37,7 +31,6 @@ BucketDB::getBucketStatePtr(const BucketId &bucket)
     return nullptr;
 }
 
-
 void
 BucketDB::unloadBucket(const BucketId &bucket, const BucketState &delta)
 {
@@ -45,7 +38,6 @@ BucketDB::unloadBucket(const BucketId &bucket, const BucketState &delta)
     assert(state);
     *state -= delta;
 }
-
 
 const bucketdb::BucketState &
 BucketDB::add(const GlobalId &gid,
@@ -69,7 +61,6 @@ BucketDB::remove(const GlobalId &gid,
     BucketState &state = _map[bucketId];
     state.remove(gid, timestamp, docSize, subDbType);
 }
-
 
 void
 BucketDB::modify(const GlobalId &gid,
@@ -172,7 +163,6 @@ BucketDB::clear()
     _map.clear();
 }
 
-
 void
 BucketDB::checkEmpty() const
 {
@@ -213,7 +203,6 @@ BucketDB::deleteEmptyBucket(const BucketId &bucketId)
     }
 }
 
-
 void
 BucketDB::getActiveBuckets(BucketId::List &buckets) const
 {
@@ -223,7 +212,6 @@ BucketDB::getActiveBuckets(BucketId::List &buckets) const
         }
     }
 }
-
 
 void
 BucketDB::populateActiveBuckets(const BucketId::List &buckets,
@@ -257,6 +245,5 @@ BucketDB::populateActiveBuckets(const BucketId::List &buckets,
         assert(ins.second);
     }
 }
-
 
 }

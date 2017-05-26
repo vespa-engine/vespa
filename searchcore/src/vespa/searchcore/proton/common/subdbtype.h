@@ -2,8 +2,7 @@
 
 #pragma once
 
-namespace proton
-{
+namespace proton {
 
 /**
  * Enumeration of the different kinds of sub databases within a

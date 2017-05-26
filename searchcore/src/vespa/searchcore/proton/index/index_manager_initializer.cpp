@@ -1,13 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.index.indexmanagerinitializer");
 #include "index_manager_initializer.h"
 #include <vespa/vespalib/io/fileutil.h>
 
-namespace proton
-{
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.index.indexmanagerinitializer");
+
+namespace proton {
 
 IndexManagerInitializer::
 IndexManagerInitializer(const vespalib::string &baseDir,

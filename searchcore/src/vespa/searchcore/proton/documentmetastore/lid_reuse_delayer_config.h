@@ -2,13 +2,12 @@
 
 #pragma once
 
-namespace proton
-{
+#include <vespa/fastos/timestamp.h>
+namespace proton {
 
 class DocumentDBConfig;
 
-namespace documentmetastore
-{
+namespace documentmetastore {
 
 /*
  * Class representing configuration for lid reuse delayer.

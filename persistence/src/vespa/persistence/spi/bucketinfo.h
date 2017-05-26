@@ -12,8 +12,7 @@ namespace vespalib {
     class asciistream;
 }
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
 class BucketInfo {
 public:
@@ -105,6 +104,4 @@ private:
 vespalib::asciistream& operator<<(vespalib::asciistream& out, const BucketInfo& info);
 std::ostream& operator<<(std::ostream& out, const BucketInfo& info);
 
-} // spi
-} // storage
-
+}

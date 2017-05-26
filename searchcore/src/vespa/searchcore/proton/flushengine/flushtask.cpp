@@ -1,7 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.flushengine.flushtask");
 
 #include "flushtask.h"
 
@@ -14,7 +11,7 @@ FlushTask::FlushTask(uint32_t taskId,
       _engine(engine),
       _context(ctx)
 {
-    LOG_ASSERT(_context.get() != NULL);
+    assert(_context.get() != NULL);
 }
 
 FlushTask::~FlushTask()

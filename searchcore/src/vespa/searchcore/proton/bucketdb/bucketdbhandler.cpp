@@ -1,20 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include "bucketdb.h"
-#include "bucketsessionbase.h"
+#include "bucketdbhandler.h"
 #include "splitbucketsession.h"
 #include "joinbucketssession.h"
-#include <vespa/searchlib/common/serialnum.h>
-#include "bucketdbhandler.h"
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 
-namespace proton
-{
-
-namespace bucketdb
-{
-
+namespace proton::bucketdb {
 
 BucketDBHandler::BucketDBHandler(BucketDBOwner &bucketDB)
     : _bucketDB(bucketDB),
@@ -22,14 +13,12 @@ BucketDBHandler::BucketDBHandler(BucketDBOwner &bucketDB)
 {
 }
 
-
 void
 BucketDBHandler::addDocumentMetaStore(IDocumentMetaStore *dms,
                                       search::SerialNum flushedSerialNum)
 {
     _dmsv.push_back(MetaStoreDesc(dms, flushedSerialNum));
 }
-
 
 void
 BucketDBHandler::handleSplit(search::SerialNum serialNum,
@@ -87,13 +76,11 @@ BucketDBHandler::handleJoin(search::SerialNum serialNum,
     session.finish();
 }
 
-
 void
 BucketDBHandler::handleCreateBucket(const BucketId &bucketId)
 {
     _bucketDB.takeGuard()->createBucket(bucketId);
 }
-
 
 void
 BucketDBHandler::handleDeleteBucket(const BucketId &bucketId)
@@ -101,7 +88,5 @@ BucketDBHandler::handleDeleteBucket(const BucketId &bucketId)
     _bucketDB.takeGuard()->deleteEmptyBucket(bucketId);
 }
 
-
 }
 
-}

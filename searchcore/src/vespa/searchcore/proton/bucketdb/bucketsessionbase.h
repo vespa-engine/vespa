@@ -4,11 +4,7 @@
 
 #include "bucket_db_owner.h"
 
-namespace proton
-{
-
-namespace bucketdb
-{
+namespace proton::bucketdb {
 
 /**
  * Base class for split/join handling utility classes that bundles temporary
@@ -27,14 +23,9 @@ protected:
 public:
     BucketSessionBase(BucketDBOwner &bucketDB);
 
-    bool
-    extractInfo(const BucketId &bucket, BucketState *&info);
+    bool extractInfo(const BucketId &bucket, BucketState *&info);
 
-    static bool
-    calcFixupNeed(BucketState *state, bool wantActive, bool fixup);
+    static bool calcFixupNeed(BucketState *state, bool wantActive, bool fixup);
 };
-
-
-}
 
 }

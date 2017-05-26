@@ -1,13 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
 #pragma once
 
-#include <vespa/fnet/frt/frt.h>
-#include <vespa/searchcore/fdispatch/common/appcontext.h>
+#include <vespa/fnet/frt/invokable.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/transport.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/slobrok/sbregister.h>
+
+class FastS_AppContext;
 
 class FastS_RPC : public FRT_Invokable
 {
@@ -22,13 +23,13 @@ private:
 
 public:
     FastS_RPC(FastS_AppContext *appCtx);
-    virtual ~FastS_RPC() {}
+    ~FastS_RPC() {}
 
     FastS_AppContext *GetAppCtx() { return _appCtx; }
     FRT_Supervisor *GetSupervisor() { return &_supervisor; }
     bool Init(int port, const vespalib::string& myHeartbeatId);
-    bool Start() { return _transport.Start(_appCtx->GetThreadPool()); }
-    void ShutDown() { _transport.ShutDown(true); }
+    bool Start();
+    void ShutDown();
 
     // Register RPC Methods
 

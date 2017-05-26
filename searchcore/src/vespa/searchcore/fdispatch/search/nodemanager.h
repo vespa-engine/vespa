@@ -1,6 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
 #pragma once
 
@@ -13,6 +11,9 @@
 using vespa::config::search::core::PartitionsConfig;
 
 class FastS_DataSetBase;
+class FastS_AppContext;
+class FastS_DataSetCollection;
+class FastS_TimeKeeper;
 
 class FastS_NodeManager : public config::IFetcherCallback<PartitionsConfig>
 {
@@ -22,9 +23,9 @@ private:
 
     vespalib::SimpleComponentConfigProducer &_componentConfig;
 
-    FastOS_Mutex       _managerLock;
-    FastOS_Mutex       _configLock;
-    FastOS_Mutex       _stampLock;
+    FastOS_Mutex      _managerLock;
+    FastOS_Mutex      _configLock;
+    FastOS_Mutex      _stampLock;
     FastS_AppContext *_appCtx;
     uint32_t          _mldPartit;
     uint32_t          _mldDocStamp;	// Bumped for all cache flushes

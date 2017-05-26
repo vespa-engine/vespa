@@ -2,11 +2,9 @@
 
 #pragma once
 
-namespace proton
-{
+#include "bucketsessionbase.h"
 
-namespace bucketdb
-{
+namespace proton::bucketdb {
 
 class BucketDeltaPair;
 
@@ -32,8 +30,7 @@ private:
     BucketId _target1;
     BucketId _target2;
 
-    void
-    applyDelta(const BucketState &delta, BucketState *src, BucketId &dstBucket);
+    void applyDelta(const BucketState &delta, BucketState *src, BucketId &dstBucket);
 
 public:
     SplitBucketSession(BucketDBOwner &bucketDB,
@@ -44,62 +41,28 @@ public:
     /*
      * Reflect move of documents to target1 and target2 in bucket states
      */
-    void
-    applyDeltas(const BucketDeltaPair &deltas);
-
-    bool
-    getSourceActive() const
-    {
-        return _sourceActive;
-    }
+    void applyDeltas(const BucketDeltaPair &deltas);
+    bool getSourceActive() const { return _sourceActive; }
 
     /*
      * Return true if bitvector for active lids need to be adjusted in
      * document meta store due to old documents in target1 and active
      * state change.
      */
-    bool
-    mustFixupTarget1ActiveLids() const
-    {
-        return _adjustTarget1ActiveLids;
-    }
+    bool mustFixupTarget1ActiveLids() const { return _adjustTarget1ActiveLids; }
 
     /*
      * Return true if bitvector for active lids need to be adjusted in
      * document meta store due to old documents in target2 and active
      * state change.
      */
-    bool
-    mustFixupTarget2ActiveLids() const
-    {
-        return _adjustTarget2ActiveLids;
-    }
+    bool mustFixupTarget2ActiveLids() const { return _adjustTarget2ActiveLids; }
 
-    void
-    setup();
-
-    void
-    finish();
-
-    const BucketId &
-    getSource() const
-    {
-        return _source;
-    }
-
-    const BucketId &
-    getTarget1() const
-    {
-        return _target1;
-    }
-
-    const BucketId &
-    getTarget2() const
-    {
-        return _target2;
-    }
+    void setup();
+    void finish();
+    const BucketId &getSource() const { return _source; }
+    const BucketId &getTarget1() const { return _target1; }
+    const BucketId &getTarget2() const { return _target2; }
 };
-
-}
 
 }

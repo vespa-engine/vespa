@@ -2,10 +2,11 @@
 #pragma once
 
 #include "i_tls_stats_factory.h"
+#include <memory>
 
 namespace search { namespace transactionlog { class TransLogServer; } }
-namespace proton {
-namespace flushengine {
+
+namespace proton::flushengine {
 
 /*
  * Class used to create statistics for a transaction log server over
@@ -21,5 +22,4 @@ public:
     virtual TlsStatsMap create() override;
 };
 
-} // namespace proton::flushengine
-} // namespace proton
+}

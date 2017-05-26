@@ -2,11 +2,9 @@
 
 #pragma once
 
-namespace proton
-{
-
-namespace documentmetastore
-{
+#include <cstdint>
+#include <vector>
+namespace proton::documentmetastore {
 
 /**
  * Interface used to delay reuse of lids until references to the lids have
@@ -37,7 +35,5 @@ public:
     virtual void setHasIndexedOrAttributeFields(bool hasIndexedFields) = 0;
     virtual std::vector<uint32_t> getReuseLids() = 0;
 };
-
-}
 
 }

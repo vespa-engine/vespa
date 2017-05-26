@@ -1,11 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/util/compressionconfig.h>
-#include <vespa/document/util/compressor.h>
-#include <vespa/searchlib/common/mapnames.h>
-#include <vespa/searchlib/common/packets.h>
-#include <vespa/searchlib/common/sortdata.h>
+#include "mapnames.h"
+#include "packets.h"
+#include "sortdata.h"
 #include <vespa/searchlib/util/rawbuf.h>
+#include <vespa/document/util/compressor.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/data/slime/slime.h>
 
@@ -17,8 +16,7 @@ using vespalib::ConstBufferRef;
 using vespalib::make_string;
 using vespalib::stringref;
 
-namespace search {
-namespace fs4transport {
+namespace search::fs4transport {
 
 /**
  * Persistent packet streamer.
@@ -1786,5 +1784,4 @@ FS4PacketFactory::CreateFS4Packet(uint32_t pcode)
     }
 }
 
-}
 }

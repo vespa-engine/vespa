@@ -1,14 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.common.eventlogger");
 
 #include "eventlogger.h"
 #include <vespa/searchlib/util/logutil.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.common.eventlogger");
+
 using search::util::LogUtil;
 using vespalib::JSONStringer;
+using vespalib::make_string;
 
 namespace {
 
@@ -16,10 +17,7 @@ using search::SerialNum;
 using vespalib::string;
 
 void
-doTransactionLogReplayStart(const string &domainName,
-                            SerialNum first,
-                            SerialNum last,
-                            const string &eventName)
+doTransactionLogReplayStart(const string &domainName, SerialNum first, SerialNum last, const string &eventName)
 {
     JSONStringer jstr;
     jstr.beginObject();
@@ -34,9 +32,7 @@ doTransactionLogReplayStart(const string &domainName,
 }
 
 void
-doTransactionLogReplayComplete(const string &domainName,
-                               int64_t elapsedTimeMs,
-                               const string &eventName)
+doTransactionLogReplayComplete(const string &domainName, int64_t elapsedTimeMs, const string &eventName)
 {
     JSONStringer jstr;
     jstr.beginObject();
@@ -51,22 +47,14 @@ doTransactionLogReplayComplete(const string &domainName,
 namespace proton {
 
 void
-EventLogger::transactionLogReplayStart(const string &domainName,
-                                       SerialNum first,
-                                       SerialNum last)
+EventLogger::transactionLogReplayStart(const string &domainName, SerialNum first, SerialNum last)
 {
-    doTransactionLogReplayStart(domainName,
-                                first,
-                                last,
-                                "transactionlog.replay.start");
+    doTransactionLogReplayStart(domainName, first, last, "transactionlog.replay.start");
 }
 
 void
-EventLogger::transactionLogReplayProgress(const string &domainName,
-                                          float progress,
-                                          SerialNum first,
-                                          SerialNum last,
-                                          SerialNum current)
+EventLogger::transactionLogReplayProgress(const string &domainName, float progress,
+                                          SerialNum first, SerialNum last, SerialNum current)
 {
     JSONStringer jstr;
     jstr.beginObject();
@@ -85,9 +73,7 @@ EventLogger::transactionLogReplayProgress(const string &domainName,
 void
 EventLogger::transactionLogReplayComplete(const string &domainName, int64_t elapsedTimeMs)
 {
-    doTransactionLogReplayComplete(domainName,
-                                   elapsedTimeMs,
-                                   "transactionlog.replay.complete");
+    doTransactionLogReplayComplete(domainName, elapsedTimeMs, "transactionlog.replay.complete");
 }
 
 void
@@ -101,12 +87,8 @@ EventLogger::flushInit(const string &name)
 }
 
 void
-EventLogger::flushStart(const string &name,
-                        int64_t beforeMemory,
-                        int64_t afterMemory,
-                        int64_t toFreeMemory,
-                        SerialNum unflushed,
-                        SerialNum current)
+EventLogger::flushStart(const string &name, int64_t beforeMemory, int64_t afterMemory,
+                        int64_t toFreeMemory, SerialNum unflushed, SerialNum current)
 {
     JSONStringer jstr;
     jstr.beginObject();
@@ -127,10 +109,8 @@ EventLogger::flushStart(const string &name,
 }
 
 void
-EventLogger::flushComplete(const string &name,
-                           int64_t elapsedTimeMs,
-                           const string &outputPath,
-                           size_t outputPathElems)
+EventLogger::flushComplete(const string &name, int64_t elapsedTimeMs,
+                           const string &outputPath, size_t outputPathElems)
 {
     JSONStringer jstr;
     jstr.beginObject();
@@ -283,7 +263,7 @@ loadComponentStart(const vespalib::string &subDbName, const vespalib::string &co
     jstr.beginObject();
     jstr.appendKey("documentsubdb").appendString(subDbName);
     jstr.endObject();
-    EV_STATE(vespalib::make_string("load.%s.start", componentName.c_str()).c_str(), jstr.toString().c_str());
+    EV_STATE(make_string("load.%s.start", componentName.c_str()).c_str(), jstr.toString().c_str());
 }
 
 void
@@ -294,7 +274,7 @@ loadComponentComplete(const vespalib::string &subDbName, const vespalib::string 
     jstr.appendKey("documentsubdb").appendString(subDbName);
     jstr.appendKey("time.elapsed.ms").appendInt64(elapsedTimeMs);
     jstr.endObject();
-    EV_STATE(vespalib::make_string("load.%s.complete", componentName.c_str()).c_str(), jstr.toString().c_str());
+    EV_STATE(make_string("load.%s.complete", componentName.c_str()).c_str(), jstr.toString().c_str());
 }
 
 }

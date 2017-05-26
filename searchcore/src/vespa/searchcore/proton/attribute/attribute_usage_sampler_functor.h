@@ -3,6 +3,7 @@
 #pragma once
 
 #include "i_attribute_functor.h"
+#include <memory>
 
 namespace proton {
 

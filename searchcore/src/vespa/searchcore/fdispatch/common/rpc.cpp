@@ -1,16 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".rpc");
 
-#include <vespa/fnet/frt/frt.h>
-
-#include <vespa/searchcore/util/log.h>
 #include "rpc.h"
-#include <vespa/searchsummary/docsummary/resultconfig.h>
+#include "appcontext.h"
 
 extern char FastS_VersionTag[];
 
@@ -20,6 +12,14 @@ FastS_RPC::FastS_RPC(FastS_AppContext *appCtx) :
    _supervisor(&_transport, _appCtx->GetThreadPool()),
    _sbregister(_supervisor, slobrok::ConfiguratorFactory("admin/slobrok.0"))
 {
+}
+
+bool FastS_RPC::Start() {
+    return _transport.Start(_appCtx->GetThreadPool());
+}
+
+void FastS_RPC::ShutDown() {
+    _transport.ShutDown(true);
 }
 
 bool

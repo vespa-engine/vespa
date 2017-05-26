@@ -1,7 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.common.selectpruner");
 
 #include "selectpruner.h"
 #include <vespa/document/base/exceptions.h>
@@ -15,7 +12,6 @@ LOG_SETUP(".proton.common.selectpruner");
 #include <vespa/document/select/invalidconstant.h>
 #include <vespa/document/select/constant.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
-
 
 using document::select::And;
 using document::select::Compare;
@@ -49,8 +45,7 @@ using document::Field;
 using document::FieldNotFoundException;
 using search::AttributeGuard;
 
-namespace proton
-{
+namespace proton {
 
 SelectPrunerBase::SelectPrunerBase(const vespalib::string &docType,
                                    const search::IAttributeManager *amgr,

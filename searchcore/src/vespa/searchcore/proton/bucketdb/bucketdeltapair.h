@@ -2,11 +2,9 @@
 
 #pragma once
 
-namespace proton
-{
+#include "bucketstate.h"
 
-namespace bucketdb
-{
+namespace proton::bucketdb {
 
 /**
  * Class BucketDeltaPair represent the deltas to bucket states caused by
@@ -24,7 +22,5 @@ public:
     {
     }
 };
-
-}
 
 }

@@ -4,8 +4,6 @@
 #include "documentstore.h"
 #include "visitcache.h"
 #include "ibucketizer.h"
-#include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/stllike/cache.hpp>
 
 namespace search {

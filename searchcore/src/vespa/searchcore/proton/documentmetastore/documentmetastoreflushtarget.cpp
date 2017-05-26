@@ -1,25 +1,22 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.documentmetastore.documentmetastoreflushtarget");
 
-#include <vespa/searchcore/proton/attribute/attributedisklayout.h>
 #include "documentmetastoreflushtarget.h"
+#include "documentmetastore.h"
+#include <vespa/searchcore/proton/attribute/attributedisklayout.h>
+#include <vespa/searchcore/proton/server/itlssyncer.h>
+#include <vespa/searchcore/proton/attribute/attribute_directory.h>
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
 #include <vespa/searchlib/attribute/attributesaver.h>
 #include <vespa/searchlib/util/dirtraverse.h>
+#include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/closuretask.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <fstream>
-#include <vespa/searchlib/common/serialnumfileheadercontext.h>
-#include <vespa/searchcore/proton/server/itlssyncer.h>
-#include <vespa/searchcore/proton/attribute/attributedisklayout.h>
-#include <vespa/searchcore/proton/attribute/attribute_directory.h>
-#include "documentmetastore.h"
+
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.documentmetastore.documentmetastoreflushtarget");
 
 using namespace search;
 using namespace vespalib;

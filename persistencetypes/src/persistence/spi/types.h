@@ -54,8 +54,7 @@ namespace document {
       return is; \
   } \
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
 /**
  * \class storage::spi::NodeIndex
@@ -111,6 +110,4 @@ enum MaintenanceLevel {
     HIGH
 };
 
-} // spi
-} // storage
-
+}
