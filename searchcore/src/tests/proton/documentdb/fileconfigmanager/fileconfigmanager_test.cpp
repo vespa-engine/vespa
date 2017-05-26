@@ -8,7 +8,6 @@
 #include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
 #include <vespa/config/helper/configgetter.hpp>
-#include <vespa/searchcore/proton/common/schemautil.h>
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/server/fileconfigmanager.h>
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>

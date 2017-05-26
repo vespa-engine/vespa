@@ -13,7 +13,6 @@
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
-#include <vespa/searchcore/proton/common/schemautil.h>
 #include <vespa/searchcore/proton/common/statusreport.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/initializer/task_runner.h>
@@ -904,25 +903,6 @@ DocumentDB::replayConfig(search::SerialNum serialNum)
     LOG(info,
         "DocumentDB(%s): Replayed config with serialNum=%" PRIu64,
         _docTypeName.toString().c_str(), serialNum);
-}
-
-void
-DocumentDB::listSchema(std::vector<vespalib::string> &fieldNames,
-                       std::vector<vespalib::string> &fieldDataTypes,
-                       std::vector<vespalib::string> &fieldCollectionTypes,
-                       std::vector<vespalib::string> &fieldLocations)
-{
-    DocumentDBConfig::SP activeSnapshot = getActiveConfig();
-    if (activeSnapshot.get() == NULL ||
-        activeSnapshot->getSchemaSP().get() == NULL)
-    {
-        return;
-    }
-    SchemaUtil::listSchema(*activeSnapshot->getSchemaSP(),
-                           fieldNames,
-                           fieldDataTypes,
-                           fieldCollectionTypes,
-                           fieldLocations);
 }
 
 int64_t DocumentDB::getActiveGeneration() const {

@@ -680,45 +680,6 @@ Proton::prepareRestart()
     return true;
 }
 
-void
-Proton::listDocTypes(std::vector<vespalib::string> &documentTypes)
-{
-    DocumentDBMap dbs;
-    {
-        std::shared_lock<std::shared_timed_mutex> guard(_mutex);
-        dbs = _documentDBMap;
-    }
-    for (const auto &kv : dbs) {
-        vespalib::string documentType;
-        const DocTypeName &docTypeName =
-            kv.second->getDocTypeName();
-        documentTypes.push_back(docTypeName.getName());
-    }
-}
-
-
-void
-Proton::listSchema(const vespalib::string &documentType,
-                   std::vector<vespalib::string> &fieldNames,
-                   std::vector<vespalib::string> &fieldDataTypes,
-                   std::vector<vespalib::string> &fieldCollectionTypes,
-                   std::vector<vespalib::string> &fieldLocations)
-{
-    DocumentDB::SP ddb;
-    DocTypeName docTypeName(documentType);
-    {
-        std::shared_lock<std::shared_timed_mutex> guard(_mutex);
-        DocumentDBMap::const_iterator it = _documentDBMap.find(docTypeName);
-        if (it != _documentDBMap.end())
-            ddb = it->second;
-    }
-    if (ddb.get() == NULL)
-        return;
-    ddb->listSchema(fieldNames, fieldDataTypes, fieldCollectionTypes,
-                    fieldLocations);
-}
-
-
 namespace {
 
 int countOpenFiles()

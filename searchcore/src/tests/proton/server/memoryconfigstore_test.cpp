@@ -9,7 +9,6 @@ LOG_SETUP("memoryconfigstore_test");
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/searchcore/proton/common/schemautil.h>
 
 using search::SerialNum;
 using search::index::Schema;

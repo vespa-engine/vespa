@@ -79,9 +79,6 @@ private:
     void checkState(StateArg::UP arg);
     void reportState(Session & session, FRT_RPCRequest * req) __attribute__((noinline));
     void getProtonStatus(FRT_RPCRequest * req);
-    void listDocTypes(FRT_RPCRequest *req);
-    void listSchema(FRT_RPCRequest *req);
-    void getConfigGeneration(FRT_RPCRequest *req);
     void getDocsums(FRT_RPCRequest *req);
 
     static const Session::SP & getSession(FRT_RPCRequest *req);
@@ -115,9 +112,6 @@ public:
     void rpc_die(FRT_RPCRequest *req);
     void rpc_triggerFlush(FRT_RPCRequest *req);
     void rpc_prepareRestart(FRT_RPCRequest *req);
-    void rpc_listDocTypes(FRT_RPCRequest *req);
-    void rpc_listSchema(FRT_RPCRequest *req);
-    void rpc_getConfigGeneration(FRT_RPCRequest *req);
     void rpc_getDocSums(FRT_RPCRequest *req);
 
     void initSession(FRT_RPCRequest *req);
