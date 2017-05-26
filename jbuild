@@ -1,0 +1,165 @@
+#!/bin/bash
+
+set -e
+
+declare -r JBUILD_LOG=~/.jbuild.log
+
+# Command-line options
+declare DRY_RUN=false
+
+function Usage {
+    cat <<EOF
+Usage: jbuild [OPTION...]
+Compile and test Vespa Java code
+
+OPTION can be any mvn options, but these are special:
+  -d, --dry-run
+      Print which commands would have been executed
+
+  -pl, --projects PROJECTS
+      Only compile and test the specified PROJECTS.  With -am/--also-make:
+      install (but do not run tests on) all prerequisite modules.  With
+      -amd/--also-make-dependents, compile and test PROJECTS, and all modules
+      that depends transitively on PROJECTS.
+
+Case I: Compile and test everything, similar to 'mvn install':
+  \$ jbuild
+
+Case II: Compile and test only the modules that are affected by your changes.
+The '-am' is only necessary on the first run to build the prerequisites.
+  \$ jbuild -pl orchestrator -amd -am
+
+Case III: Compile and test only a module you're changing. The '-am' is only
+necessary on the first run to build the prerequisites.
+  \$ jbuild -pl orchestrator -am
+EOF
+
+    exit 0
+}
+
+function Fail {
+    printf "%s\n" "$*"
+    exit 1
+}
+
+function Run {
+    echo "$@"
+    $DRY_RUN || "$@"
+}
+
+function Mvn {
+    Run mvn -nsu "$@"
+}
+
+function InstallOnly {
+    # Why -DskipTests instead of -Dmaven.test.skip? Because config-model-api
+    # has a test-jar artifact which is required by config-application-package
+    # and config-model.
+    Mvn -DskipSources -DskipTests -Dmaven.javadoc.skip install "$@"
+}
+
+function TestAndInstall {
+    Mvn -DskipSources install "$@"
+}
+
+function JBuild {
+    local -a passthrough_args=()
+    local also_make_dependents=
+    local fail_at_end=
+    local projects=
+
+    while (( $# > 0 ))
+    do
+        if test "$1" == clean
+        then
+            Mvn clean
+            return
+        elif test "$1" == -am -o "$1" == --also-make
+        then
+            also_make="$1"
+            shift
+        elif test "$1" == -amd -o "$1" == --also-make-dependents
+        then
+            also_make_dependents="$1"
+            shift
+        elif test "$1" == -d -o "$1" == --dry-run
+        then
+            DRY_RUN=true
+            shift
+        elif test "$1" == -h -o "$1" == --help
+        then
+            Usage
+        elif test "$1" == -pl -o "$1" == --projects
+        then
+            printf -v projects "%s %q" -pl "$2"
+            shift 2
+        elif test "$1" == -fae -o "$1" == --fail-at-end
+        then
+            fail_at_end="$1"
+            shift
+        else
+            # Adding 1 argument is buggy, but it's difficult to do anything
+            # better given mvn's bad interface (not obvious what options takes
+            # argument without making a table from --help, but even that is
+            # prone to future changes).
+            passthrough_args+=("$1")
+            shift
+            # Fail "Unknown jbuild argument '$1'"
+        fi
+    done
+
+    # Say I would like to test orchestrator and all modules that has
+    # orchestrator as a transitive dependency.  How do we build all of those
+    # modules, including the ones all of those depend on?  node-admin depends
+    # on docker-api which orchestrator does not transitively depend on.  The
+    # problem is that '-pl orchestrator -am -amd' will not include docker-api:
+    # mvn builds its Reactor dependency chain only on the -pl argument.  This
+    # is a mvn bug.
+    #
+    # Therefore, all modules has to be compiled and installed at bootstrap.
+
+    if test -z "$also_make" -a -z "$projects"
+    then
+        # jbulid
+        TestAndInstall -am -pl bundle-plugin "${passthrough_args[@]}"
+        TestAndInstall -am -pl vespajlib -rf yolean "${passthrough_args[@]}"
+        TestAndInstall -am -pl config-class-plugin -rf configgen "${passthrough_args[@]}"
+        TestAndInstall -rf config-lib "${passthrough_args[@]}"
+    else
+        if test -n "$also_make"
+        then
+            # jbuild -am ...
+            InstallOnly -am -pl bundle-plugin
+            InstallOnly -am -pl vespajlib -rf yolean
+            InstallOnly -am -pl config-class-plugin -rf configgen
+
+            if test -z "$projects" -o -n "$also_make_dependents"
+            then
+                # jbuild -am -amd -pl PROJECTS ...
+                # jbuild -am
+                # 
+                # With 'jbuild -am -amd -pl PROJECTS...': Unfortunately, mvn
+                # doesn't build dependencies of those modules pulled in with
+                # -amd not already pulled in with -am, so we have to install
+                # all modules.
+                InstallOnly -rf config-lib
+            else
+                # jbuild -am -pl PROJECTS ...
+                InstallOnly -am $projects -rf config-lib
+            fi
+        fi
+
+        if test -n "$projects"
+        then
+            # jbuild -pl PROJECTS ...
+            TestAndInstall $also_make_dependents $projects "${passthrough_args[@]}"
+        fi
+    fi
+}
+
+function Main {
+    time JBuild "$@"
+}
+
+printf "%s\$ jbuild %s\n" "$PWD" "$*" > "$JBUILD_LOG"
+Main "$@" |& tee -a "$JBUILD_LOG"
