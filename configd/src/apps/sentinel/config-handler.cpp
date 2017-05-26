@@ -152,9 +152,9 @@ ConfigHandler::terminate()
 }
 
 void
-ConfigHandler::subscribe(const std::string & configId)
+ConfigHandler::subscribe(const std::string & configId, uint64_t timeoutMS)
 {
-    _sentinelHandle = _subscriber.subscribe<SentinelConfig>(configId);
+    _sentinelHandle = _subscriber.subscribe<SentinelConfig>(configId, timeoutMS);
 }
 
 void

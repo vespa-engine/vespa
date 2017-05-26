@@ -1,4 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include <sys/types.h>
 #include <signal.h>
 #include <cstring>
@@ -8,13 +9,14 @@
 #include <vespa/defaults.h>
 #include <vespa/log/log.h>
 LOG_SETUP("config-sentinel");
-LOG_RCSID("$Id$");
 
 #include <vespa/config-sentinel.h>
 
 #include "config-handler.h"
 
 using namespace config;
+
+constexpr uint64_t CONFIG_TIMEOUT_MS = 3 * 60 * 1000;
 
 static int sigPermanent(int sig, void(*handler)(int));
 
@@ -65,7 +67,11 @@ main(int argc, char **argv)
 
     LOG(debug, "Reading configuration");
     try {
-        handler.subscribe(configId);
+        handler.subscribe(configId, CONFIG_TIMEOUT_MS);
+    } catch (ConfigTimeoutException & ex) {
+        LOG(warning, "Timout getting config, please check your setup. Will exit and restart: %s", ex.getMessage().c_str());
+        EV_STOPPING("config-sentinel", ex.what());
+        exit(EXIT_FAILURE);
     } catch (InvalidConfigException& ex) {
         LOG(error, "Fatal: Invalid configuration, please check your setup: %s", ex.getMessage().c_str());
         EV_STOPPING("config-sentinel", ex.what());
@@ -142,4 +148,3 @@ sigPermanent(int sig, void(*handler)(int))
     sa.sa_handler = handler;
     return sigaction(sig, &sa, nullptr);
 }
-
