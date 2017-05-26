@@ -181,30 +181,6 @@ RPCHooksBase::initRPC()
             "such that TLS replay time + time spent flushing components is as low as possible");
     rb.ReturnDesc("success", "Whether or not prepare for restart was triggered.");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("proton.listDocTypes", "", "S", true,
-                    FRT_METHOD(RPCHooksBase::rpc_listDocTypes), this);
-    rb.MethodDesc("Get the current list of document types");
-    rb.ReturnDesc("documentTypes", "Current list of document types");
-    //-------------------------------------------------------------------------
-    rb.DefineMethod("proton.listSchema", "s", "SSSS", true,
-                    FRT_METHOD(RPCHooksBase::rpc_listSchema), this);
-    rb.MethodDesc("Get the current schema for given document type");
-    rb.ParamDesc("documentType", "Document type name");
-    rb.ReturnDesc("fieldNames", "Schema field names");
-    rb.ReturnDesc("fieldDataTypes", "Schema field data types");
-    rb.ReturnDesc("fieldCollTypes", "Schema field collection types");
-    rb.ReturnDesc("fieldLocation", "Schema field locations");
-    //-------------------------------------------------------------------------
-    rb.DefineMethod("proton.getConfigTime", "", "l", true,
-                    FRT_METHOD(RPCHooksBase::rpc_getConfigGeneration), this);
-    rb.MethodDesc("Get the oldest active config generation");
-    rb.ReturnDesc("configTime", "Oldest active config generation");
-    //-------------------------------------------------------------------------
-    rb.DefineMethod("proton.getConfigGeneration", "", "l", true,
-                    FRT_METHOD(RPCHooksBase::rpc_getConfigGeneration), this);
-    rb.MethodDesc("Get the oldest active config generation");
-    rb.ReturnDesc("configTime", "Oldest active config generation");
-    //-------------------------------------------------------------------------
     rb.DefineMethod("proton.getDocsums", "bix", "bix", true, FRT_METHOD(RPCHooksBase::rpc_getDocSums), this);
     rb.MethodDesc("Get list of document summaries");
     rb.ParamDesc("encoding", "0=raw, 6=lz4");
@@ -443,96 +419,6 @@ RPCHooksBase::rpc_prepareRestart(FRT_RPCRequest *req)
 }
 
 void
-RPCHooksBase::listDocTypes(FRT_RPCRequest *req)
-{
-    std::vector<string> documentTypes;
-
-    _proton.listDocTypes(documentTypes);
-
-    FRT_Values &ret = *req->GetReturn();
-    FRT_StringValue *dt = ret.AddStringArray(documentTypes.size());
-    for (uint32_t i = 0; i < documentTypes.size(); ++i)
-        ret.SetString(&dt[i], documentTypes[i].c_str());
-
-    LOG(info,
-        "RPCHooksBase::listDocTypes finished successfully");
-    req->Return();
-}
-
-
-void
-RPCHooksBase::rpc_listDocTypes(FRT_RPCRequest *req)
-{
-    LOG(info,
-        "RPCHooksBase::rpc_listDocTypes started");
-    req->Detach();
-    letProtonDo(makeClosure(this, &RPCHooksBase::listDocTypes, req));
-}
-
-
-void
-RPCHooksBase::listSchema(FRT_RPCRequest *req)
-{
-    std::vector<string> fieldNames;
-    std::vector<string> fieldDataTypes;
-    std::vector<string> fieldCollectionTypes;
-    std::vector<string> fieldLocations;
-
-    FRT_Values &arg = *req->GetParams();
-    string documentType(arg[0]._string._str, arg[0]._string._len);
-
-    _proton.listSchema(documentType,
-                       fieldNames, fieldDataTypes, fieldCollectionTypes,
-                       fieldLocations);
-
-    FRT_Values &ret = *req->GetReturn();
-    FRT_StringValue *fn = ret.AddStringArray(fieldNames.size());
-    for (uint32_t i = 0; i < fieldNames.size(); ++i)
-        ret.SetString(&fn[i], fieldNames[i].c_str());
-
-    FRT_StringValue *fdt = ret.AddStringArray(fieldDataTypes.size());
-    for (uint32_t i = 0; i < fieldDataTypes.size(); ++i)
-        ret.SetString(&fdt[i], fieldDataTypes[i].c_str());
-
-    FRT_StringValue *fct = ret.AddStringArray(fieldCollectionTypes.size());
-    for (uint32_t i = 0; i < fieldCollectionTypes.size(); ++i)
-        ret.SetString(&fct[i], fieldCollectionTypes[i].c_str());
-
-    FRT_StringValue *fl = ret.AddStringArray(fieldLocations.size());
-    for (uint32_t i = 0; i < fieldLocations.size(); ++i)
-        ret.SetString(&fl[i], fieldLocations[i].c_str());
-
-    LOG(info,
-        "RPCHooksBase::listSchema finished successfully");
-    req->Return();
-}
-
-
-void
-RPCHooksBase::rpc_listSchema(FRT_RPCRequest *req)
-{
-    LOG(info,
-        "RPCHooksBase::rpc_listSchema started");
-    req->Detach();
-    letProtonDo(makeClosure(this, &RPCHooksBase::listSchema, req));
-}
-
-
-void
-RPCHooksBase::getConfigGeneration(FRT_RPCRequest *req)
-{
-    int64_t configGeneration = _proton.getConfigGeneration();
-    FRT_Values &ret = *req->GetReturn();
-    ret.AddInt64(configGeneration);
-
-    LOG(info,
-        "RPCHooksBase::getConfigGeneration finished successfully, "
-        "configGeneration=%" PRId64,
-        configGeneration);
-    req->Return();
-}
-
-void
 RPCHooksBase::rpc_getDocSums(FRT_RPCRequest *req)
 {
     LOG(debug, "proton.getDocsums()");
@@ -546,16 +432,6 @@ RPCHooksBase::getDocsums(FRT_RPCRequest *req)
     _docsumByRPC->getDocsums(*req);
     req->Return();
 }
-
-void
-RPCHooksBase::rpc_getConfigGeneration(FRT_RPCRequest *req)
-{
-    LOG(info,
-        "RPCHooksBase::rpc_getConfigGeneration started");
-    req->Detach();
-    letProtonDo(makeClosure(this, &RPCHooksBase::getConfigGeneration, req));
-}
-
 
 const RPCHooksBase::Session::SP &
 RPCHooksBase::getSession(FRT_RPCRequest *req)

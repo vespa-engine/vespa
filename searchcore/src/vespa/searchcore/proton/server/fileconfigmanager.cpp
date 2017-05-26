@@ -6,7 +6,6 @@
 #include <vespa/config/print/fileconfigsnapshotreader.h>
 #include <vespa/config/print/fileconfigsnapshotwriter.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
-#include <vespa/searchlib/index/schemautil.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/config-summarymap.h>
 #include <vespa/config-rank-profiles.h>

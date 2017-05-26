@@ -397,12 +397,6 @@ public:
 
     const DocTypeName & getDocTypeName() const { return _docTypeName; }
 
-    void
-    listSchema(std::vector<vespalib::string> &fieldNames,
-               std::vector<vespalib::string> &fieldDataTypes,
-               std::vector<vespalib::string> &fieldCollectionTypes,
-               std::vector<vespalib::string> &fieldLocations);
-
     void newConfigSnapshot(DocumentDBConfig::SP snapshot);
 
     // Implements DocumentDBConfigOwner

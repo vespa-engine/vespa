@@ -199,15 +199,6 @@ public:
 
     bool triggerFlush();
     bool prepareRestart();
-    void listDocTypes(std::vector<vespalib::string> &documentTypes);
-
-    void
-    listSchema(const vespalib::string &documentType,
-               std::vector<vespalib::string> &fieldNames,
-               std::vector<vespalib::string> &fieldDataTypes,
-               std::vector<vespalib::string> &fieldCollectionTypes,
-               std::vector<vespalib::string> &fieldLocations);
-
 
     // implements ComponentConfigProducer interface
     virtual void getComponentConfig(Consumer &consumer) override;

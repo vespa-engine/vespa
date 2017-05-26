@@ -39,11 +39,8 @@ public:
     {
         fprintf(stderr, "usage: %s <port|spec|--local|--id=name> <cmd> [args]\n", _argv[0]);
         fprintf(stderr, "die\n");
-        fprintf(stderr, "getConfigTime\n");
         fprintf(stderr, "getProtonStatus\n");
         fprintf(stderr, "getState\n");
-        fprintf(stderr, "listDocTypes\n");
-        fprintf(stderr, "listSchema documentType\n");
         fprintf(stderr, "monitor\n");
         fprintf(stderr, "enableSearching\n");
         fprintf(stderr, "disableSearching\n");
@@ -336,71 +333,6 @@ public:
             invoked = true;
             if (! _req->IsError()) {
                 printf("OK: prepareRestart enabled\n");
-            }
-        } else if (strcmp(_argv[2], "listDocTypes") == 0) {
-            _req->SetMethodName("proton.listDocTypes");
-            invokeRPC(false, 86400.0);
-            invoked = true;
-            if (! _req->IsError()) {
-                FRT_Values &ret = *_req->GetReturn();
-                if (strcmp(ret.GetTypeString(), "S") == 0) {
-                    uint32_t dtLen = ret[0]._string_array._len;
-                    const FRT_StringValue *dt = ret[0]._string_array._pt;
-                    for (uint32_t i = 0; i < dtLen; ++i) {
-                        if (i > 0)
-                            printf(" ");
-                        printf("%s", dt[i]._str);
-                    }
-                    printf("\n");
-                } else {
-                    fprintf(stderr, "Unexpected return value\n");
-                }
-            }
-        } else if (strcmp(_argv[2], "listSchema") == 0 && _argc == 4) {
-            _req->SetMethodName("proton.listSchema");
-            FRT_Values &arg = *_req->GetParams();
-            arg.AddString(_argv[3]);
-            invokeRPC(false, 86400.0);
-            invoked = true;
-            if (! _req->IsError()) {
-                FRT_Values &ret = *_req->GetReturn();
-                if (strcmp(ret.GetTypeString(), "SSSS") == 0) {
-                    uint32_t fnLen = ret[0]._string_array._len;
-                    const FRT_StringValue *fn = ret[0]._string_array._pt;
-                    uint32_t fdtLen = ret[1]._string_array._len;
-                    const FRT_StringValue *fdt = ret[1]._string_array._pt;
-                    uint32_t fctLen = ret[2]._string_array._len;
-                    const FRT_StringValue *fct = ret[2]._string_array._pt;
-                    uint32_t flLen = ret[3]._string_array._len;
-                    const FRT_StringValue *fl = ret[3]._string_array._pt;
-                    for (uint32_t i = 0;
-                         i < fnLen && i < fdtLen && i < fctLen && i < flLen;
-                         ++i) {
-                        if (i > 0)
-                            printf(" ");
-                        printf("%s/%s/%s/%s",
-                               fn[i]._str,
-                               fdt[i]._str,
-                               fct[i]._str,
-                               fl[i]._str);
-                    }
-                    printf("\n");
-                } else {
-                    fprintf(stderr, "Unexpected return value\n");
-                }
-            }
-        } else if (strcmp(_argv[2], "getConfigTime") == 0) {
-            _req->SetMethodName("proton.getConfigTime");
-            invokeRPC(false, 86400.0);
-            invoked = true;
-            if (! _req->IsError()) {
-                FRT_Values &ret = *_req->GetReturn();
-                if (strcmp(ret.GetTypeString(), "l") == 0) {
-                    uint64_t configTime = ret[0]._intval64;
-                    printf("%" PRId64 "\n", configTime);
-                } else {
-                    fprintf(stderr, "Unexpected return value\n");
-                }
             }
         } else if (strcmp(_argv[2], "die") == 0) {
             _req->SetMethodName("pandora.rtc.die");
