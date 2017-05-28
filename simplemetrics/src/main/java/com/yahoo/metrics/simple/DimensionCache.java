@@ -17,7 +17,16 @@ import java.util.Set;
  */
 class DimensionCache {
 
-    private final Map<String, LinkedHashMap<Point, UntypedMetric>> persistentData = new HashMap<>();
+    private static class TimeStampedMetric {
+       public final long millis;
+       public final UntypedMetric metric;
+       public TimeStampedMetric(long millis, UntypedMetric metric) {
+           this.millis = millis;
+           this.metric = metric;
+       }
+    }
+
+    private final Map<String, LinkedHashMap<Point, TimeStampedMetric>> persistentData = new HashMap<>();
     private final int pointsToKeep;
 
     public DimensionCache(int pointsToKeep) {
@@ -49,41 +58,49 @@ class DimensionCache {
         if (toDelete == null) {
             return;
         }
+        long millis = toDelete.gotTimeStamps ? toDelete.toMillis : System.currentTimeMillis();
         for (Map.Entry<String, List<Entry<Point, UntypedMetric>>> metric : toDelete.getValuesByMetricName().entrySet()) {
-            LinkedHashMap<Point, UntypedMetric> cachedPoints = getCachedMetric(metric.getKey());
+            LinkedHashMap<Point, TimeStampedMetric> cachedPoints = getCachedMetric(metric.getKey());
 
             for (Entry<Point, UntypedMetric> newestInterval : metric.getValue()) {
                 // overwriting an existing entry does not update the order
                 // in the map
                 cachedPoints.remove(newestInterval.getKey());
-                cachedPoints.put(newestInterval.getKey(), newestInterval.getValue());
+                TimeStampedMetric toInsert = new TimeStampedMetric(millis, newestInterval.getValue());
+                cachedPoints.put(newestInterval.getKey(), toInsert);
             }
         }
     }
 
+    private static final long MAX_AGE_MILLIS = 4 * 3600 * 1000;
+
     private void padMetric(String metric,
             Bucket toPresent,
             int currentDataPoints) {
-        final LinkedHashMap<Point, UntypedMetric>  cachedPoints = getCachedMetric(metric);
+        final LinkedHashMap<Point, TimeStampedMetric> cachedPoints = getCachedMetric(metric);
         int toAdd = pointsToKeep - currentDataPoints;
         @SuppressWarnings({"unchecked","rawtypes"})
-            Entry<Point, UntypedMetric>[] cachedEntries = cachedPoints.entrySet().toArray(new Entry[0]);
+            Entry<Point, TimeStampedMetric>[] cachedEntries = cachedPoints.entrySet().toArray(new Entry[0]);
+        long nowMillis = System.currentTimeMillis();
         for (int i = cachedEntries.length - 1; i >= 0 && toAdd > 0; --i) {
-            Entry<Point, UntypedMetric> leastOld = cachedEntries[i];
+            Entry<Point, TimeStampedMetric> leastOld = cachedEntries[i];
+            if (leastOld.getValue().millis + MAX_AGE_MILLIS  < nowMillis) {
+                continue;
+            }
             final Identifier id = new Identifier(metric, leastOld.getKey());
             if (!toPresent.hasIdentifier(id)) {
-                toPresent.put(id, leastOld.getValue().pruneData());
+                toPresent.put(id, leastOld.getValue().metric.pruneData());
                 --toAdd;
             }
         }
     }
 
     @SuppressWarnings("serial")
-    private LinkedHashMap<Point, UntypedMetric> getCachedMetric(String metricName) {
-        LinkedHashMap<Point, UntypedMetric> points = persistentData.get(metricName);
+    private LinkedHashMap<Point, TimeStampedMetric> getCachedMetric(String metricName) {
+        LinkedHashMap<Point, TimeStampedMetric> points = persistentData.get(metricName);
         if (points == null) {
-            points = new LinkedHashMap<Point, UntypedMetric>(16, 0.75f, false) {
-                protected boolean removeEldestEntry(Map.Entry<Point, UntypedMetric> eldest) {
+            points = new LinkedHashMap<Point, TimeStampedMetric>(16, 0.75f, false) {
+                protected @Override boolean removeEldestEntry(Map.Entry<Point, TimeStampedMetric> eldest) {
                     return size() > pointsToKeep;
                 }
             };
