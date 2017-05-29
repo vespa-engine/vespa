@@ -627,6 +627,9 @@ struct InitializeNativeTarget {
         llvm::InitializeNativeTargetAsmPrinter();
         llvm::InitializeNativeTargetAsmParser();
     }
+    ~InitializeNativeTarget() {
+        llvm::llvm_shutdown();
+    }
 } initialize_native_target;
 
 std::recursive_mutex LLVMWrapper::_global_llvm_lock;
