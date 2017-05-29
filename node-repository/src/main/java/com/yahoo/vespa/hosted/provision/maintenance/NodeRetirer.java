@@ -70,7 +70,15 @@ public class NodeRetirer extends Maintainer {
                     .filter(entry -> {
                         Set<Node> nodesThatShouldBeRetiredForFlavor = entry.getValue();
                         long numSpareReadyNodesForFlavor = numSpareNodesByFlavor.get(entry.getKey());
-                        return !limitedPark(nodesThatShouldBeRetiredForFlavor, numSpareReadyNodesForFlavor);
+                        boolean parkedAll = limitedPark(nodesThatShouldBeRetiredForFlavor, numSpareReadyNodesForFlavor);
+                        if (!parkedAll) {
+                            String commaSeparatedHostnames = nodesThatShouldBeRetiredForFlavor.stream().map(Node::hostname)
+                                    .collect(Collectors.joining(", "));
+                            log.info(String.format("Failed to retire %s, wanted to retire %d nodes (%s), but only %d spare " +
+                                            "nodes available for flavor cluster.",
+                                    entry.getKey(), nodesThatShouldBeRetiredForFlavor.size(), commaSeparatedHostnames, numSpareReadyNodesForFlavor));
+                        }
+                        return !parkedAll;
                     }).count();
 
             return numFlavorsWithUnsuccessfullyRetiredNodes == 0;
