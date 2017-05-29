@@ -22,14 +22,14 @@ import java.util.Set;
  * @author smorgrav
  */
 public class ClusterControllerClientFactoryMock implements ClusterControllerClientFactory {
-    Map<String, ClusterControllerState> nodes = new HashMap<>();
+    Map<String, ClusterControllerNodeState> nodes = new HashMap<>();
 
     public boolean isInMaintenance(ApplicationInstance<ServiceMonitorStatus> appInstance, HostName hostName) {
         try {
             ClusterId clusterName = VespaModelUtil.getContentClusterName(appInstance, hostName);
             int storageNodeIndex = VespaModelUtil.getStorageNodeIndex(appInstance, hostName);
             String globalMapKey = clusterName.s() + storageNodeIndex;
-            return nodes.getOrDefault(globalMapKey, ClusterControllerState.UP) == ClusterControllerState.MAINTENANCE;
+            return nodes.getOrDefault(globalMapKey, ClusterControllerNodeState.UP) == ClusterControllerNodeState.MAINTENANCE;
         } catch (Exception e) {
             //Catch all - meant to catch cases where the node is not part of a storage cluster
             return false;
@@ -43,7 +43,7 @@ public class ClusterControllerClientFactoryMock implements ClusterControllerClie
                 ClusterId clusterName = VespaModelUtil.getContentClusterName(app, host);
                 int storageNodeIndex = VespaModelUtil.getStorageNodeIndex(app, host);
                 String globalMapKey = clusterName.s() + storageNodeIndex;
-                nodes.put(globalMapKey, ClusterControllerState.UP);
+                nodes.put(globalMapKey, ClusterControllerNodeState.UP);
             }
         }
     }
@@ -53,13 +53,13 @@ public class ClusterControllerClientFactoryMock implements ClusterControllerClie
         return new ClusterControllerClient() {
 
             @Override
-            public ClusterControllerStateResponse setNodeState(int storageNodeIndex, ClusterControllerState wantedState) throws IOException {
+            public ClusterControllerStateResponse setNodeState(int storageNodeIndex, ClusterControllerNodeState wantedState) throws IOException {
                 nodes.put(clusterName + storageNodeIndex, wantedState);
                 return new ClusterControllerStateResponse(true, "Yes");
             }
 
             @Override
-            public ClusterControllerStateResponse setApplicationState(ClusterControllerState wantedState) throws IOException {
+            public ClusterControllerStateResponse setApplicationState(ClusterControllerNodeState wantedState) throws IOException {
                 Set<String> keyCopy = new HashSet<>(nodes.keySet());
                 for (String s : keyCopy) {
                     if (s.startsWith(clusterName)) {

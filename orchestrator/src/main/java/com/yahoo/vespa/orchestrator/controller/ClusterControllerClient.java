@@ -13,13 +13,13 @@ public interface ClusterControllerClient {
      *
      * @throws IOException if there was a problem communicating with the cluster controller
      */
-    ClusterControllerStateResponse setNodeState(int storageNodeIndex, ClusterControllerState wantedState) throws IOException;
+    ClusterControllerStateResponse setNodeState(int storageNodeIndex, ClusterControllerNodeState wantedState) throws IOException;
 
     /**
      * Requests that a cluster controller sets all nodes in the cluster to the requested state.
      *
      * @throws IOException if there was a problem communicating with the cluster controller
      */
-    ClusterControllerStateResponse setApplicationState(ClusterControllerState wantedState) throws IOException;
+    ClusterControllerStateResponse setApplicationState(ClusterControllerNodeState wantedState) throws IOException;
 
 }

@@ -50,7 +50,7 @@ public class ClusterControllerStateRequest {
 
     public static class State {
         @JsonProperty("state")
-        public final ClusterControllerState state;
+        public final ClusterControllerNodeState state;
 
         /**
          * The reason the client is making the request to set the node state.
@@ -59,7 +59,7 @@ public class ClusterControllerStateRequest {
         @JsonProperty("reason")
         public final String reason;
 
-        public State(ClusterControllerState state, String reason) {
+        public State(ClusterControllerNodeState state, String reason) {
             this.state = state;
             this.reason = reason;
         }

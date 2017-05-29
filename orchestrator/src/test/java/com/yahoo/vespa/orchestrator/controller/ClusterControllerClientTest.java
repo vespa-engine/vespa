@@ -22,7 +22,7 @@ public class ClusterControllerClientTest {
                 strategyMock,
                 CLUSTER_NAME);
 
-        final ClusterControllerState wantedState = ClusterControllerState.MAINTENANCE;
+        final ClusterControllerNodeState wantedState = ClusterControllerNodeState.MAINTENANCE;
 
         clusterControllerClient.setNodeState(STORAGE_NODE_INDEX, wantedState);
 

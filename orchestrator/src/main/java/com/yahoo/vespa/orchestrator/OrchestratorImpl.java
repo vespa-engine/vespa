@@ -11,7 +11,7 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClient;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
-import com.yahoo.vespa.orchestrator.controller.ClusterControllerState;
+import com.yahoo.vespa.orchestrator.controller.ClusterControllerNodeState;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerStateResponse;
 import com.yahoo.vespa.orchestrator.model.ApplicationApi;
 import com.yahoo.vespa.orchestrator.model.ApplicationApiImpl;
@@ -122,6 +122,21 @@ public class OrchestratorImpl implements Orchestrator {
         ApplicationInstance<ServiceMonitorStatus> appInstance = getApplicationInstance(hostName);
         NodeGroup nodeGroup = new NodeGroup(appInstance, hostName);
         suspendGroup(nodeGroup);
+    }
+
+    @Override
+    public void acquirePermissionToRemove(HostName hostName) throws OrchestrationException {
+        ApplicationInstance<ServiceMonitorStatus> appInstance = getApplicationInstance(hostName);
+        NodeGroup nodeGroup = new NodeGroup(appInstance, hostName);
+
+        try (MutableStatusRegistry statusRegistry = statusService.lockApplicationInstance_forCurrentThreadOnly(appInstance.reference())) {
+            ApplicationApi applicationApi = new ApplicationApiImpl(
+                    nodeGroup,
+                    statusRegistry,
+                    clusterControllerClientFactory);
+
+            policy.acquirePermissionToRemove(applicationApi);
+        }
     }
 
     // Public for testing purposes
@@ -291,7 +306,7 @@ public class OrchestratorImpl implements Orchestrator {
 
                 // If the clustercontroller throws an error the nodes will be marked as allowed to be down
                 // and be set back up on next resume invocation.
-                setClusterStateInController(application, ClusterControllerState.MAINTENANCE);
+                setClusterStateInController(application, ClusterControllerNodeState.MAINTENANCE);
             }
 
             statusRegistry.setApplicationInstanceStatus(status);
@@ -299,7 +314,7 @@ public class OrchestratorImpl implements Orchestrator {
     }
 
     private void setClusterStateInController(ApplicationInstance<ServiceMonitorStatus> application,
-                                             ClusterControllerState state) 
+                                             ClusterControllerNodeState state)
             throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException {
         // Get all content clusters for this application
         Set<ClusterId> contentClusterIds = application.serviceClusters().stream()

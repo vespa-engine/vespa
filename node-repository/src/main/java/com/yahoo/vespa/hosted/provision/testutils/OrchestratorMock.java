@@ -7,6 +7,7 @@ import com.yahoo.vespa.orchestrator.ApplicationStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.BatchHostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.BatchInternalErrorException;
 import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
+import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
@@ -60,6 +61,9 @@ public class OrchestratorMock implements Orchestrator {
     public void suspend(ApplicationId appId) throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException {
         suspendedApplications.add(appId);
     }
+
+    @Override
+    public void acquirePermissionToRemove(HostName hostName) throws OrchestrationException {}
 
     @Override
     public void suspendAll(HostName parentHostname, List<HostName> hostNames) throws BatchInternalErrorException, BatchHostStateChangeDeniedException, BatchHostNameNotFoundException {

@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
@@ -20,11 +21,12 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
+import com.yahoo.vespa.orchestrator.OrchestrationException;
+import com.yahoo.vespa.orchestrator.Orchestrator;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -35,6 +37,11 @@ import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author bratseth
@@ -58,7 +65,7 @@ public class RetiredExpirerTest {
         ApplicationId applicationId = ApplicationId.from(TenantName.from("foo"), ApplicationName.from("bar"), InstanceName.from("fuz"));
 
         // Allocate content cluster of sizes 7 -> 2 -> 3:
-        // Should end up with 3 nodes in the cluster (one previously retired), and 3 retired
+        // Should end up with 3 nodes in the cluster (one previously retired), and 4 retired
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"));
         int wantedNodes;
         activate(applicationId, cluster, wantedNodes=7, 1, provisioner);
@@ -111,6 +118,64 @@ public class RetiredExpirerTest {
         assertEquals(1, nodeRepository.getNodes(applicationId, Node.State.active).size());
         assertEquals(7, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
         assertEquals(1, deployer.redeployments);
+
+        // inactivated nodes are not retired
+        for (Node node : nodeRepository.getNodes(applicationId, Node.State.inactive))
+            assertFalse(node.allocation().get().membership().retired());
+    }
+
+    @Test
+    public void ensure_early_inactivation() throws OrchestrationException {
+        ManualClock clock = new ManualClock();
+        Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
+        NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
+        NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
+                new MockNameResolver().mockAnyLookup());
+        NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone);
+
+        createReadyNodes(7, nodeRepository, nodeFlavors);
+        createHostNodes(4, nodeRepository, nodeFlavors);
+
+        ApplicationId applicationId = ApplicationId.from(TenantName.from("foo"), ApplicationName.from("bar"), InstanceName.from("fuz"));
+
+        // Allocate content cluster of sizes 7 -> 2 -> 3:
+        // Should end up with 3 nodes in the cluster (one previously retired), and 4 retired
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"));
+        int wantedNodes;
+        activate(applicationId, cluster, wantedNodes=7, 1, provisioner);
+        activate(applicationId, cluster, wantedNodes=2, 1, provisioner);
+        activate(applicationId, cluster, wantedNodes=3, 1, provisioner);
+        assertEquals(7, nodeRepository.getNodes(applicationId, Node.State.active).size());
+        assertEquals(0, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
+
+        // Cause inactivation of retired nodes
+        clock.advance(Duration.ofHours(30)); // Retire period spent
+        MockDeployer deployer =
+                new MockDeployer(provisioner,
+                        Collections.singletonMap(
+                                applicationId,
+                                new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromNodeCount(wantedNodes, Optional.of("default")), 1)));
+
+        Orchestrator orchestrator = mock(Orchestrator.class);
+        // Allow the 1st and 3rd retired nodes permission to inactivate
+        doNothing()
+                .doThrow(new OrchestrationException("Permission not granted 1"))
+                .doNothing()
+                .doThrow(new OrchestrationException("Permission not granted 2"))
+                .when(orchestrator).acquirePermissionToRemove(any());
+
+        new RetiredEarlyExpirer(
+                nodeRepository,
+                zone,
+                Duration.ofDays(30),
+                new JobControl(nodeRepository.database()),
+                deployer,
+                orchestrator).run();
+        assertEquals(5, nodeRepository.getNodes(applicationId, Node.State.active).size());
+        assertEquals(2, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
+        assertEquals(1, deployer.redeployments);
+
+        verify(orchestrator, times(4)).acquirePermissionToRemove(any());
 
         // inactivated nodes are not retired
         for (Node node : nodeRepository.getNodes(applicationId, Node.State.inactive))

@@ -5,7 +5,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMock;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
@@ -228,11 +227,10 @@ public class OrchestratorImplTest {
         Throwable supensionFailure = new HostStateChangeDeniedException(
                 DummyInstanceLookupService.TEST6_HOST_NAME,
                 "some-constraint",
-                new ServiceType("foo"),
                 "error message");
         doThrow(supensionFailure).when(orchestrator).suspendGroup(DummyInstanceLookupService.TEST6_NODE_GROUP);
 
-        doThrow(new HostStateChangeDeniedException(DummyInstanceLookupService.TEST1_HOST_NAME, "foo1-constraint", new ServiceType("foo1-service"), "foo1-message"))
+        doThrow(new HostStateChangeDeniedException(DummyInstanceLookupService.TEST1_HOST_NAME, "foo1-constraint", "foo1-message"))
                 .when(orchestrator).resume(DummyInstanceLookupService.TEST1_HOST_NAME);
         doNothing().when(orchestrator).resume(DummyInstanceLookupService.TEST6_HOST_NAME);
         doNothing().when(orchestrator).resume(DummyInstanceLookupService.TEST3_HOST_NAME);
@@ -251,10 +249,10 @@ public class OrchestratorImplTest {
             assertEquals("Failed to suspend NodeGroup{application=tenant-id-3:application-instance-3:prod:utopia-1:default, " +
                     "hostNames=[test6.prod.us-east-1.vespahosted.ne1.yahoo.com]} with parent host parentHostname: " +
                             "Changing the state of test6.prod.us-east-1.vespahosted.ne1.yahoo.com would violate " +
-                            "some-constraint for service type foo: error message; With suppressed throwable " +
+                            "some-constraint: error message; With suppressed throwable " +
                             "com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException: " +
-                            "Changing the state of test1.prod.utpoia-1.vespahosted.ut1.yahoo.com would violate " +
-                            "foo1-constraint for service type foo1-service: foo1-message",
+                            "Changing the state of test1.prod.utpoia-1.vespahosted.ut1.yahoo.com " +
+                            "would violate foo1-constraint: foo1-message",
                     e.getMessage());
         }
 

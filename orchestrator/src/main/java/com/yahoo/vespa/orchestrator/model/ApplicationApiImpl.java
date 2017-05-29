@@ -6,6 +6,7 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
+import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
 import com.yahoo.vespa.orchestrator.status.ReadOnlyStatusRegistry;
@@ -67,12 +68,23 @@ public class ApplicationApiImpl implements ApplicationApi {
 
     @Override
     public List<StorageNode> getStorageNodesAllowedToBeDownInGroupInReverseClusterOrder() {
+        return getStorageNodesInGroupInClusterOrder().stream()
+                .filter(storageNode -> getHostStatus(storageNode.hostName()) == HostStatus.ALLOWED_TO_BE_DOWN)
+                .sorted(Comparator.reverseOrder())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public NodeGroup getNodeGroup() {
+        return nodeGroup;
+    }
+
+    @Override
+    public List<StorageNode> getStorageNodesInGroupInClusterOrder() {
         return clusterInOrder.stream()
                 .map(ClusterApi::storageNodeInGroup)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .filter(storageNode -> getHostStatus(storageNode.hostName()) == HostStatus.ALLOWED_TO_BE_DOWN)
-                .sorted(Comparator.reverseOrder())
                 .collect(Collectors.toList());
     }
 
@@ -83,6 +95,11 @@ public class ApplicationApiImpl implements ApplicationApi {
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public ApplicationInstanceStatus getApplicationStatus() {
+        return hostStatusService.getApplicationInstanceStatus();
     }
 
     @Override

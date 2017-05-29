@@ -48,7 +48,7 @@ public class OrchestratorImplTest {
                 OrchestratorImpl.WEB_SERVICE_PORT,
                 Optional.empty(),
                 UpdateHostResponse.class
-        )).thenReturn(new UpdateHostResponse(hostName, new HostStateChangeDenialReason("hostname", "service", "fail")));
+        )).thenReturn(new UpdateHostResponse(hostName, new HostStateChangeDenialReason("hostname", "fail")));
 
         orchestrator.suspend(hostName);
     }
@@ -95,7 +95,7 @@ public class OrchestratorImplTest {
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName+ "/suspended",
                 OrchestratorImpl.WEB_SERVICE_PORT,
                 UpdateHostResponse.class
-        )).thenReturn(new UpdateHostResponse(hostName, new HostStateChangeDenialReason("hostname", "service", "fail")));
+        )).thenReturn(new UpdateHostResponse(hostName, new HostStateChangeDenialReason("hostname", "fail")));
 
         orchestrator.resume(hostName);
     }

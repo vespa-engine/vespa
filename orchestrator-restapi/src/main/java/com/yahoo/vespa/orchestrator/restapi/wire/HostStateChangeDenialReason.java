@@ -13,31 +13,22 @@ import java.util.Objects;
 public class HostStateChangeDenialReason {
 
     public static final String FIELD_NAME_CONSTRAINT = "constraint";
-    public static final String FIELD_NAME_SERVICE_TYPE = "service-type";
     public static final String FIELD_NAME_MESSAGE = "message";
 
     private final String constraintName;
-    private final String serviceType;
     private final String message;
 
     @JsonCreator
     public HostStateChangeDenialReason(
             @JsonProperty(FIELD_NAME_CONSTRAINT) final String constraintName,
-            @JsonProperty(FIELD_NAME_SERVICE_TYPE) final String serviceType,
             @JsonProperty(FIELD_NAME_MESSAGE) final String message) {
         this.constraintName = constraintName;
-        this.serviceType = serviceType;
         this.message = message;
     }
 
     @JsonProperty(FIELD_NAME_CONSTRAINT)
     public String constraintName() {
         return constraintName;
-    }
-
-    @JsonProperty(FIELD_NAME_SERVICE_TYPE)
-    public String serviceType() {
-        return serviceType;
     }
 
     @JsonProperty(FIELD_NAME_MESSAGE)
@@ -53,7 +44,6 @@ public class HostStateChangeDenialReason {
 
         final HostStateChangeDenialReason other = (HostStateChangeDenialReason) o;
         if (!Objects.equals(this.constraintName, other.constraintName)) return false;
-        if (!Objects.equals(this.serviceType, other.serviceType)) return false;
         if (!Objects.equals(this.message, other.message)) return false;
 
         return true;
@@ -61,6 +51,6 @@ public class HostStateChangeDenialReason {
 
     @Override
     public int hashCode() {
-        return Objects.hash(constraintName, serviceType, message);
+        return Objects.hash(constraintName, message);
     }
 }

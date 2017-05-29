@@ -2,10 +2,10 @@
 package com.yahoo.vespa.orchestrator.model;
 
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.orchestrator.controller.ClusterControllerState;
+import com.yahoo.vespa.orchestrator.controller.ClusterControllerNodeState;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 
 public interface StorageNode extends Comparable<StorageNode> {
     HostName hostName();
-    void setNodeState(ClusterControllerState wantedState) throws HostStateChangeDeniedException;
+    void setNodeState(ClusterControllerNodeState wantedState) throws HostStateChangeDeniedException;
 }

@@ -40,6 +40,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final ReservationExpirer reservationExpirer;
     private final InactiveExpirer inactiveExpirer;
     private final RetiredExpirer retiredExpirer;
+    private final RetiredEarlyExpirer retiredEarlyExpirer;
     private final FailedExpirer failedExpirer;
     private final DirtyExpirer dirtyExpirer;
     private final NodeRebooter nodeRebooter;
@@ -66,6 +67,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         zooKeeperAccessMaintainer = new ZooKeeperAccessMaintainer(nodeRepository, curator, durationFromEnv("zookeeper_access_maintenance_interval").orElse(defaults.zooKeeperAccessMaintenanceInterval), jobControl);
         reservationExpirer = new ReservationExpirer(nodeRepository, clock, durationFromEnv("reservation_expiry").orElse(defaults.reservationExpiry), jobControl);
         retiredExpirer = new RetiredExpirer(nodeRepository, deployer, clock, durationFromEnv("retired_expiry").orElse(defaults.retiredExpiry), jobControl);
+        retiredEarlyExpirer = new RetiredEarlyExpirer(nodeRepository, zone, durationFromEnv("retired_early_interval").orElse(defaults.retiredEarlyInterval), jobControl, deployer, orchestrator);
         inactiveExpirer = new InactiveExpirer(nodeRepository, clock, durationFromEnv("inactive_expiry").orElse(defaults.inactiveExpiry), jobControl);
         failedExpirer = new FailedExpirer(nodeRepository, zone, clock, durationFromEnv("failed_expiry").orElse(defaults.failedExpiry), jobControl);
         dirtyExpirer = new DirtyExpirer(nodeRepository, clock, durationFromEnv("dirty_expiry").orElse(defaults.dirtyExpiry), jobControl);
@@ -91,6 +93,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         reservationExpirer.deconstruct();
         inactiveExpirer.deconstruct();
         retiredExpirer.deconstruct();
+        retiredEarlyExpirer.deconstruct();
         failedExpirer.deconstruct();
         dirtyExpirer.deconstruct();
         nodeRebooter.deconstruct();
@@ -135,6 +138,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration rebootInterval;
         private final Duration nodeRetirerInterval;
         private final Duration metricsInterval;
+        private final Duration retiredEarlyInterval;
 
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
@@ -149,6 +153,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 reservationExpiry = Duration.ofMinutes(20); // same as deployment timeout
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
                 retiredExpiry = Duration.ofDays(4); // enough time to migrate data
+                retiredEarlyInterval = Duration.ofMinutes(29);
                 failedExpiry = Duration.ofDays(4); // enough time to recover data even if it happens friday night
                 dirtyExpiry = Duration.ofHours(2); // enough time to clean the node
                 rebootInterval = Duration.ofDays(30);
@@ -165,6 +170,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 reservationExpiry = Duration.ofMinutes(10); // Need to be long enough for deployment to be finished for all config model versions
                 inactiveExpiry = Duration.ofSeconds(2); // support interactive wipe start over
                 retiredExpiry = Duration.ofMinutes(1);
+                retiredEarlyInterval = Duration.ofMinutes(5);
                 failedExpiry = Duration.ofMinutes(10);
                 dirtyExpiry = Duration.ofMinutes(30);
                 rebootInterval = Duration.ofDays(30);

@@ -29,7 +29,7 @@ public class ClusterControllerClientImpl implements ClusterControllerClient{
      * @throws IOException if there was a problem communicating with the cluster controller
      */
     @Override
-    public ClusterControllerStateResponse setNodeState(int storageNodeIndex, ClusterControllerState wantedState) throws IOException {
+    public ClusterControllerStateResponse setNodeState(int storageNodeIndex, ClusterControllerNodeState wantedState) throws IOException {
         ClusterControllerStateRequest.State state = new ClusterControllerStateRequest.State(wantedState, REQUEST_REASON);
         ClusterControllerStateRequest stateRequest = new ClusterControllerStateRequest(state, ClusterControllerStateRequest.Condition.SAFE);
 
@@ -52,7 +52,7 @@ public class ClusterControllerClientImpl implements ClusterControllerClient{
      * @throws IOException if there was a problem communicating with the cluster controller
      */
     @Override
-    public ClusterControllerStateResponse setApplicationState(final ClusterControllerState wantedState) throws IOException {
+    public ClusterControllerStateResponse setApplicationState(final ClusterControllerNodeState wantedState) throws IOException {
         final ClusterControllerStateRequest.State state = new ClusterControllerStateRequest.State(wantedState, REQUEST_REASON);
         final ClusterControllerStateRequest stateRequest = new ClusterControllerStateRequest(state, ClusterControllerStateRequest.Condition.FORCE);
 

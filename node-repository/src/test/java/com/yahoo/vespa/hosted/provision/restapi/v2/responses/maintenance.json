@@ -28,6 +28,9 @@
       "name":"OperatorChangeApplicationMaintainer"
     },
     {
+      "name":"RetiredEarlyExpirer"
+    },
+    {
       "name":"MetricsReporter"
     },
     {

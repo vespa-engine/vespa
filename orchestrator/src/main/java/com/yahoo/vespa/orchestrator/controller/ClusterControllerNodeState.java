@@ -11,13 +11,14 @@ import com.fasterxml.jackson.annotation.JsonValue;
  *
  * @author hakonhall
  */
-public enum ClusterControllerState {
+public enum ClusterControllerNodeState {
     MAINTENANCE("maintenance"),
-    UP("up");
+    UP("up"),
+    DOWN("down");
 
     private final String wireName;
 
-    ClusterControllerState(final String wireName) {
+    ClusterControllerNodeState(final String wireName) {
         this.wireName = wireName;
     }
 

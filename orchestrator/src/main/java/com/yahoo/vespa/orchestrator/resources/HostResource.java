@@ -57,7 +57,7 @@ public class HostResource implements HostApi {
             throw new NotFoundException(e);
         } catch (HostStateChangeDeniedException e) {
             log.log(LogLevel.INFO, "Failed to suspend " + hostName + ": " + e.getMessage());
-            throw webExceptionWithDenialReason(hostName, e);
+            throw webExceptionWithDenialReason("suspend", hostName, e);
         }
         return new UpdateHostResponse(hostName.s(), null);
     }
@@ -72,14 +72,19 @@ public class HostResource implements HostApi {
             throw new NotFoundException(e);
         } catch (HostStateChangeDeniedException e) {
             log.log(LogLevel.INFO, "Failed to resume " + hostName + ": " + e.getMessage());
-            throw webExceptionWithDenialReason(hostName, e);
+            throw webExceptionWithDenialReason("resume", hostName, e);
         }
         return new UpdateHostResponse(hostName.s(), null);
     }
 
-    private static WebApplicationException webExceptionWithDenialReason(HostName hostName, HostStateChangeDeniedException e) {
-        HostStateChangeDenialReason hostStateChangeDenialReason = new HostStateChangeDenialReason(
-                e.getConstraintName(), e.getServiceType().s(), e.getMessage());
+    private static WebApplicationException webExceptionWithDenialReason(
+            String operationDescription,
+            HostName hostName,
+            HostStateChangeDeniedException e) {
+        HostStateChangeDenialReason hostStateChangeDenialReason =
+                new HostStateChangeDenialReason(
+                        e.getConstraintName(),
+                        operationDescription + " failed: " + e.getMessage());
         UpdateHostResponse response = new UpdateHostResponse(hostName.s(), hostStateChangeDenialReason);
         return new WebApplicationException(
                 hostStateChangeDenialReason.toString(),
