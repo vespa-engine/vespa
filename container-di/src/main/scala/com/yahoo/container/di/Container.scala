@@ -1,20 +1,25 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di
 
-import com.yahoo.container.di.ConfigRetriever.{ComponentsConfigs, BootstrapConfigs}
-import com.yahoo.container.di.componentgraph.core.{JerseyNode, ComponentGraph, ComponentNode}
+import java.util.{IdentityHashMap, Random}
+import java.util.logging.{Level, Logger}
+
+import com.google.inject.{Guice, Injector}
+import com.yahoo.config._
+import com.yahoo.container.bundle.BundleInstantiationSpecification
+import com.yahoo.container.di.ConfigRetriever.{BootstrapConfigs, ComponentsConfigs}
+import com.yahoo.container.di.Container._
+import com.yahoo.container.di.componentgraph.core.ComponentNode.ComponentConstructorException
+import com.yahoo.container.di.componentgraph.core.{ComponentGraph, ComponentNode, JerseyNode}
 import com.yahoo.container.di.config.{RestApiContext, SubscriberFactory}
-import Container._
+import com.yahoo.container.{BundlesConfig, ComponentsConfig}
+import com.yahoo.protect.Process
+import com.yahoo.vespa.config.ConfigKey
 
 import scala.collection.JavaConversions._
 import scala.math.max
-import com.yahoo.config._
-import com.yahoo.vespa.config.ConfigKey
-import java.util.IdentityHashMap
-import java.util.logging.Logger
-import com.yahoo.container.bundle.BundleInstantiationSpecification
-import com.google.inject.{Injector, Guice}
-import com.yahoo.container.{BundlesConfig, ComponentsConfig}
+import scala.concurrent.duration._
+import scala.language.postfixOps
 
 
 /**
@@ -43,27 +48,68 @@ class Container(
 
     def deconstructObsoleteComponents(oldGraph: ComponentGraph, newGraph: ComponentGraph) {
       val oldComponents = new IdentityHashMap[AnyRef, AnyRef]()
-      oldGraph.allComponentsAndProviders foreach(oldComponents.put(_, null))
-      newGraph.allComponentsAndProviders foreach(oldComponents.remove(_))
-      oldComponents.keySet foreach(componentDeconstructor.deconstruct(_))
+      oldGraph.allComponentsAndProviders foreach (oldComponents.put(_, null))
+      newGraph.allComponentsAndProviders foreach (oldComponents.remove(_))
+      oldComponents.keySet foreach (componentDeconstructor.deconstruct(_))
     }
 
     try {
-      //TODO: wrap user exceptions.
       val newGraph = createNewGraph(oldGraph, fallbackInjector)
       newGraph.reuseNodes(oldGraph)
       constructComponents(newGraph)
       deconstructObsoleteComponents(oldGraph, newGraph)
       newGraph
     } catch {
-      case e : Throwable =>
-        invalidateGeneration()
-        throw e
+      case userException: ComponentConstructorException =>
+        invalidateGeneration(oldGraph.generation, userException)
+        throw userException
+      case t: Throwable =>
+        invalidateGeneration(oldGraph.generation, t)
+        throw t
     }
   }
 
-  private def invalidateGeneration() {
-    leastGeneration = max(configurer.getComponentsGeneration, configurer.getBootstrapGeneration) + 1
+  private def invalidateGeneration(generation: Long, cause: Throwable) {
+    val maxWaitToExit = 60 seconds
+
+    def newGraphErrorMessage(generation: Long, cause: Throwable): String = {
+      val failedFirstMessage = "Failed to set up first component graph"
+      val failedNewMessage = "Failed to set up new component graph"
+      val constructMessage = "due to error when constructing one of the components"
+      val exitMessage = s"Exiting within $maxWaitToExit."
+      val retainMessage = "Retaining previous component generation."
+      generation match {
+        case 0 =>
+          cause match {
+            case _: ComponentConstructorException => s"$failedFirstMessage $constructMessage. $exitMessage"
+            case _ => s"$failedFirstMessage. $exitMessage"
+          }
+        case _ =>
+          cause match {
+            case _: ComponentConstructorException => s"$failedNewMessage $constructMessage. $retainMessage"
+            case _ => s"$failedNewMessage. $retainMessage"
+          }
+      }
+    }
+
+    def logAndDie(message: String, cause: Throwable): Unit = {
+      log.log(Level.SEVERE, message, cause)
+      try {
+        Thread.sleep((new Random(System.nanoTime).nextDouble * maxWaitToExit.toMillis).toLong)
+      } catch {
+        case _: InterruptedException => // Do nothing
+      }
+      Process.logAndDie("Exited for reason (repeated from above):", cause)
+    }
+
+    val message = newGraphErrorMessage(generation, cause)
+    generation match {
+      // Disabled, as it breaks application based tests.
+      // case 0 => logAndDie(message, cause)
+      case _ =>
+        log.log(Level.WARNING, message, cause)
+        leastGeneration = max(configurer.getComponentsGeneration, configurer.getBootstrapGeneration) + 1
+    }
   }
 
   final def createNewGraph(graph: ComponentGraph = new ComponentGraph,
@@ -101,9 +147,8 @@ class Container(
     configurer.getComponentsGeneration
   }
 
-  private def createAndConfigureComponentsGraph[T](
-                                                    componentsConfigs: Map[ConfigKeyT, ConfigInstance],
-                                                    fallbackInjector: Injector): ComponentGraph = {
+  private def createAndConfigureComponentsGraph[T](componentsConfigs: Map[ConfigKeyT, ConfigInstance],
+                                                   fallbackInjector: Injector): ComponentGraph = {
 
     val componentGraph = createComponentsGraph(componentsConfigs, getComponentsGeneration, fallbackInjector)
     componentGraph.setAvailableConfigs(componentsConfigs)

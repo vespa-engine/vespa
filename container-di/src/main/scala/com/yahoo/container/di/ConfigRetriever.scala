@@ -3,11 +3,14 @@ package com.yahoo.container.di
 
 
 import config.Subscriber
-import java.util.logging.Logger
+import java.util.logging.{Level, Logger}
+
 import com.yahoo.log.LogLevel
 import ConfigRetriever._
+
 import annotation.tailrec
 import com.yahoo.config.ConfigInstance
+
 import scala.collection.JavaConversions._
 import com.yahoo.vespa.config.ConfigKey
 
@@ -77,7 +80,14 @@ final class ConfigRetriever(bootstrapKeys: Set[ConfigKeyT],
       componentSubscriber.close()
 
       componentSubscriberKeys = keys
-      componentSubscriber = subscribe(keys)
+      try {
+        componentSubscriber = subscribe(keys)
+      } catch {
+        case e: Throwable =>
+          log.log(Level.WARNING, s"Failed setting up subscriptions for component configs: ${e.getMessage}")
+          log.log(Level.WARNING, s"Config keys: $keys")
+          throw e
+      }
     }
   }
 
