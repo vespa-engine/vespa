@@ -144,16 +144,7 @@ public class Container {
 
         setPathAcquirer(fileAcquirer);
     }
-
-    /** Just a helper method to return a useful host to bind to. */
-    public static String bindHostName(String host) {
-        if ("".equals(host)) {
-            return "0.0.0.0";
-        } else {
-            return host;
-        }
-    }
-
+    
     /**
      * Only for internal use.
      */
