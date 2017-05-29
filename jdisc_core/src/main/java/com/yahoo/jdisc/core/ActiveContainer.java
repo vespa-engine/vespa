@@ -9,7 +9,6 @@ import com.yahoo.jdisc.application.BindingSet;
 import com.yahoo.jdisc.application.BindingSetSelector;
 import com.yahoo.jdisc.application.ContainerBuilder;
 import com.yahoo.jdisc.application.ResourcePool;
-import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.service.BindingSetNotFoundException;
 import com.yahoo.jdisc.service.CurrentContainer;
@@ -18,11 +17,14 @@ import com.yahoo.jdisc.service.ServerProvider;
 
 import java.net.URI;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
 public class ActiveContainer extends AbstractResource implements CurrentContainer {
+
+    private static final Logger log = Logger.getLogger(ActiveContainer.class.getName());
 
     private final ContainerTermination termination;
     private final Injector guiceInjector;
@@ -35,21 +37,15 @@ public class ActiveContainer extends AbstractResource implements CurrentContaine
 
     public ActiveContainer(ContainerBuilder builder) {
         serverProviders = builder.serverProviders().activate();
-        for (SharedResource resource : serverProviders) {
-            resourceReferences.retain(resource);
-        }
+        serverProviders.forEach(resourceReferences::retain);
         serverBindings = builder.activateServerBindings();
-        for (BindingSet<RequestHandler> set : serverBindings.values()) {
-            for (Map.Entry<UriPattern, RequestHandler> entry : set) {
-                resourceReferences.retain(entry.getValue());
-            }
-        }
+        serverBindings.forEach(
+                (ignoredName, bindingSet) -> bindingSet.forEach(
+                        binding -> resourceReferences.retain(binding.getValue())));
         clientBindings = builder.activateClientBindings();
-        for (BindingSet<RequestHandler> set : clientBindings.values()) {
-            for (Map.Entry<UriPattern, RequestHandler> entry : set) {
-                resourceReferences.retain(entry.getValue());
-            }
-        }
+        clientBindings.forEach(
+                (ignoredName, bindingSet) -> bindingSet.forEach(
+                        binding -> resourceReferences.retain(binding.getValue())));
         bindingSetSelector = builder.getInstance(BindingSetSelector.class);
         timeoutMgr = builder.getInstance(TimeoutManagerImpl.class);
         timeoutMgr.start();
@@ -74,7 +70,11 @@ public class ActiveContainer extends AbstractResource implements CurrentContaine
     @Override
     protected void finalize() throws Throwable {
         try {
-            if (retainCount() > 0) {
+            int retainCount = retainCount();
+            if (retainCount > 0) {
+                log.warning(this + ".destroy() invoked from finalize() not through ApplicationLoader. " +
+                        "This is an indication of either a resource leak or invalid use of reference counting. " +
+                        "Retained references as this moment: " + retainCount);
                 destroy();
             }
         } finally {
