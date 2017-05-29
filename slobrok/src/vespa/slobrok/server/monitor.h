@@ -1,9 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/fnet/frt/frt.h>
-
 #include "i_monitored_server.h"
+#include <vespa/fnet/task.h>
+#include <vespa/fnet/ipackethandler.h>
+
+class FRT_Supervisor;
+class FRT_Target;
 
 namespace slobrok {
 

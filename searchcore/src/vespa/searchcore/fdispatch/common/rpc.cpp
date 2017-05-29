@@ -3,6 +3,7 @@
 
 #include "rpc.h"
 #include "appcontext.h"
+#include <vespa/fnet/info.h>
 
 extern char FastS_VersionTag[];
 

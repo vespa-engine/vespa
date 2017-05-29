@@ -2,6 +2,8 @@
 
 #include "slobrok.h"
 #include <vespa/slobrok/server/sbenv.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/transport.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".slobrok");

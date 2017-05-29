@@ -8,6 +8,8 @@
 #include "remote_slobrok.h"
 #include "sbenv.h"
 #include "rpcmirror.h"
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/vespalib/component/vtag.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".rpchooks");

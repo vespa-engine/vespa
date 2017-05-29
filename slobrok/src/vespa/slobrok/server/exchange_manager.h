@@ -4,8 +4,6 @@
 #include <deque>
 #include <string>
 
-#include <vespa/fnet/frt/frt.h>
-
 #include <vespa/vespalib/util/hashmap.h>
 #include "ok_state.h"
 #include "cmd.h"

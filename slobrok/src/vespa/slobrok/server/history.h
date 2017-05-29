@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vespa/vespalib/util/gencnt.h>
-#include <vespa/vespalib/util/hashmap.h>
 #include <vector>
 #include <string>
 #include <set>

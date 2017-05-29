@@ -1,14 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/fnet/frt/frt.h>
-#include <vespa/vespalib/util/hashmap.h>
-#include <vespa/vespalib/util/gencnt.h>
-#include <vector>
-#include <string>
-
 #include "history.h"
 #include "named_service.h"
+#include <vespa/vespalib/util/hashmap.h>
 
 namespace slobrok {
 

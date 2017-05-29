@@ -7,6 +7,8 @@
 #include <vespa/vespalib/net/state_server.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/transport.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".sbenv");
@@ -105,6 +107,10 @@ SBEnv::~SBEnv()
     getTransport()->WaitFinished();
 }
 
+FNET_Scheduler *
+SBEnv::getScheduler() {
+    return _transport->GetScheduler();
+}
 
 void
 SBEnv::shutdown()

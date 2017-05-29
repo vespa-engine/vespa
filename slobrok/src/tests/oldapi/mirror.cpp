@@ -1,13 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include "mirror.h"
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/target.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".slobrok.mirror");
-#include <vespa/fastos/fastos.h>
-#include <vespa/fnet/frt/frt.h>
-#include "mirror.h"
-#include <memory>
 
-namespace slobrok {
-namespace api {
+namespace slobrok::api {
 
 
 MirrorOld::MirrorOld(FRT_Supervisor &orb, const std::vector<std::string> &slobroks)
@@ -171,5 +170,4 @@ MirrorOld::RequestDone(FRT_RPCRequest *req)
     ScheduleNow();
 }
 
-} // namespace api
-} // namespace slobrok
+} // namespace slobrok::api

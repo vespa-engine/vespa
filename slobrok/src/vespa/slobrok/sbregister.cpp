@@ -1,12 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fnet/frt/frt.h>
-#include <vespa/config-slobroks.h>
 #include "sbregister.h"
-#include <memory>
-#include <sstream>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/target.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <sstream>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".slobrok.register");
 

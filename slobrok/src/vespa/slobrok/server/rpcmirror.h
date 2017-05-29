@@ -2,6 +2,10 @@
 #pragma once
 
 #include "visible_map.h"
+#include <vespa/fnet/task.h>
+
+class FRT_RPCRequest;
+class FRT_Supervisor;
 
 namespace slobrok {
 

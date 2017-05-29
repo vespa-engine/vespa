@@ -2,7 +2,11 @@
 
 #include "remote_slobrok.h"
 #include "rpc_server_map.h"
+#include "rpc_server_manager.h"
+#include "exchange_manager.h"
 #include "sbenv.h"
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/target.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".rpcserver");

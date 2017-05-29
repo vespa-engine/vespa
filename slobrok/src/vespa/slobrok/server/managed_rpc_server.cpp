@@ -2,6 +2,9 @@
 
 #include "managed_rpc_server.h"
 #include "i_rpc_server_manager.h"
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/target.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".rpcserver");
 

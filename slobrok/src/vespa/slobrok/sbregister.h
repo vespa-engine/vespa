@@ -1,16 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/fnet/frt/frt.h>
-#include <vespa/vespalib/util/gencnt.h>
 #include "backoff.h"
 #include "sblist.h"
 #include "cfg.h"
-#include <string>
-#include <vector>
+#include <vespa/fnet/frt/invoker.h>
+#include <vespa/fnet/frt/invokable.h>
 
-namespace slobrok {
-namespace api {
+class FRT_Target;
+
+namespace slobrok::api {
 
 /**
  * @brief A RegisterAPI object is used to register and unregister
@@ -100,6 +99,4 @@ private:
     FRT_RPCRequest          *_req;
 };
 
-} // namespace api
-} // namespace slobrok
-
+} // namespace slobrok::api

@@ -4,7 +4,8 @@
 #include "rpchooks.h"
 #include <vespa/vespalib/net/metrics_producer.h>
 #include <vespa/vespalib/net/simple_metrics_producer.h>
-#include <vespa/fnet/frt/frt.h>
+
+class FNET_Transport;
 
 namespace slobrok {
 
