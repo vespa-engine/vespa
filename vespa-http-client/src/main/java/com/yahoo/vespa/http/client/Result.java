@@ -143,12 +143,10 @@ public class Result {
         }
 
         /**
-         * @deprecated use getResultType.
-         * Returns true if the operation was successful.
+         * Check if operation was successful.
          *
          * @return true if the operation was successful.
          */
-        @Deprecated
         public boolean isSuccess() {
             return resultType == ResultType.OPERATION_EXECUTED;
         }
