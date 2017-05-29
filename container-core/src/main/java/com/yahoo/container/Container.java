@@ -3,7 +3,6 @@ package com.yahoo.container;
 
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.config.FileReference;
 import com.yahoo.container.core.config.BundleLoader;
 import com.yahoo.container.osgi.AbstractRpcAdaptor;
 import com.yahoo.container.osgi.ContainerRpcAdaptor;
@@ -14,9 +13,7 @@ import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.jdisc.service.ServerProvider;
 import com.yahoo.osgi.Osgi;
 import com.yahoo.vespa.config.ConfigTransformer;
-import com.yahoo.vespa.config.ConfigTransformer.PathAcquirer;
 
-import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -144,7 +141,7 @@ public class Container {
 
         setPathAcquirer(fileAcquirer);
     }
-    
+
     /**
      * Only for internal use.
      */
@@ -158,16 +155,13 @@ public class Container {
         setPathAcquirer(fileAcquirer);
     }
 
-    private void setPathAcquirer(final FileAcquirer fileAcquirer) {
-        ConfigTransformer.setPathAcquirer(new PathAcquirer() {
-            @Override
-            public Path getPath(FileReference fileReference) {
-                try {
-                    return fileAcquirer.waitFor(fileReference, 15, TimeUnit.MINUTES).toPath();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException(e);
-                }
+    private static void setPathAcquirer(final FileAcquirer fileAcquirer) {
+        ConfigTransformer.setPathAcquirer(fileReference -> {
+            try {
+                return fileAcquirer.waitFor(fileReference, 15, TimeUnit.MINUTES).toPath();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
             }
         });
     }
