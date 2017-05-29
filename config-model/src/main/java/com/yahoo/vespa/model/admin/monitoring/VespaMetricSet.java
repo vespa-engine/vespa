@@ -28,8 +28,15 @@ public class VespaMetricSet extends MetricSet {
         metrics.addAll(getQrserverMetrics());
         metrics.addAll(getContainerMetrics());
         metrics.addAll(getConfigServerMetrics());
+        metrics.addAll(getOtherMetrics());
 
         return Collections.unmodifiableSet(metrics);
+    }
+
+    private static Set<Metric> getOtherMetrics() {
+        Set<Metric> metrics = new LinkedHashSet<>();
+        metrics.add(new Metric("slobrok.heartbeats.failed.count", "slobrok.heartbeats.failed"));
+        return metrics;
     }
 
     private static Set<Metric> getConfigServerMetrics() {
