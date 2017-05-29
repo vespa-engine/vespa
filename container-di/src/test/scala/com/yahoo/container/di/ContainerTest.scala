@@ -1,30 +1,35 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di
 
-import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.{SimpleComponent2, SimpleComponent}
+import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.{SimpleComponent, SimpleComponent2}
 import com.yahoo.container.di.componentgraph.Provider
-import com.yahoo.container.di.componentgraph.core.{Node, ComponentGraph}
-import org.junit.{Test, Before, After}
+import com.yahoo.container.di.componentgraph.core.{ComponentGraph, ComponentNode, Node}
+import org.junit.{After, Before, Ignore, Test}
 import org.junit.Assert._
 import org.hamcrest.CoreMatchers._
 import com.yahoo.config.test.TestConfig
 import com.yahoo.component.AbstractComponent
 import ContainerTest._
+
 import scala.collection.JavaConversions
 import com.yahoo.config.di.IntConfig
-import scala.concurrent.{future, Await}
+
+import scala.concurrent.{Await, Future, future}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Try
 import com.yahoo.container.di.config.RestApiContext
 import com.yahoo.container.bundle.MockBundle
+import com.yahoo.container.di.componentgraph.core.ComponentNode.ComponentConstructorException
+
+import scala.language.postfixOps
 
 /**
  * @author tonytv
  * @author gjoranv
  */
 class ContainerTest {
-  var dirConfigSource: DirConfigSource = null
+  var dirConfigSource: DirConfigSource = _
 
   @Before def setup()  {
     dirConfigSource = new DirConfigSource("ContainerTest-")
@@ -88,8 +93,8 @@ class ContainerTest {
     container.reloadConfig(2)
     val newGraph = container.runOnce(graph)
 
-    assertThat(ComponentGraph.getNode(newGraph, "id1"), notNullValue(classOf[Node]));
-    assertThat(ComponentGraph.getNode(newGraph, "id2"), notNullValue(classOf[Node]));
+    assertThat(ComponentGraph.getNode(newGraph, "id1"), notNullValue(classOf[Node]))
+    assertThat(ComponentGraph.getNode(newGraph, "id2"), notNullValue(classOf[Node]))
 
     container.shutdownConfigurer()
   }
@@ -113,8 +118,22 @@ class ContainerTest {
     assertTrue(componentToDestruct.deconstructed)
   }
 
+  @Ignore  // because logAndDie is impossible(?) to verify programmatically
   @Test
-  def previous_graph_is_retained_when_new_graph_throws_exception() {
+  def manually_verify_what_happens_when_first_graph_contains_component_that_throws_exception_in_ctor() {
+    writeBootstrapConfigs("thrower", classOf[ComponentThrowingExceptionInConstructor])
+    val container = newContainer(dirConfigSource)
+    var currentGraph: ComponentGraph = null
+    try {
+      currentGraph = container.runOnce()
+      fail("Expected to log and die.")
+    } catch {
+      case _: Throwable => fail("Expected to log and die")
+    }
+  }
+
+  @Test
+  def previous_graph_is_retained_when_new_graph_contains_component_that_throws_exception_in_ctor() {
     val simpleComponentEntry = ComponentEntry("simpleComponent", classOf[SimpleComponent])
 
     writeBootstrapConfigs(Array(simpleComponentEntry))
@@ -123,23 +142,73 @@ class ContainerTest {
 
     val simpleComponent = currentGraph.getInstance(classOf[SimpleComponent])
 
-    writeBootstrapConfigs("thrower", classOf[ComponentThrowingException])
+    writeBootstrapConfigs("thrower", classOf[ComponentThrowingExceptionInConstructor])
+    container.reloadConfig(2)
+    try {
+      currentGraph = container.runOnce(currentGraph)
+      fail("Expected exception")
+    } catch {
+      case _: ComponentConstructorException => // Expected, do nothing
+      case _: Throwable => fail("Expected ComponentConstructorException")
+    }
+    assertEquals(1, currentGraph.generation)
+
+    // Also verify that next reconfig is successful
+    val componentTakingConfigEntry = ComponentEntry("componentTakingConfig", classOf[ComponentTakingConfig])
+    dirConfigSource.writeConfig("test", """stringVal "myString" """)
+    writeBootstrapConfigs(Array(simpleComponentEntry, componentTakingConfigEntry))
+    container.reloadConfig(3)
+    currentGraph = container.runOnce(currentGraph)
+
+    assertEquals(3, currentGraph.generation)
+    assertSame(simpleComponent, currentGraph.getInstance(classOf[SimpleComponent]))
+    assertNotNull(currentGraph.getInstance(classOf[ComponentTakingConfig]))
+  }
+
+  @Test
+  def previous_graph_is_retained_when_new_graph_contains_component_that_times_out_in_ctor() {
+    ComponentNode.ComponentConstructTimeout = 1 second
+    val simpleComponentEntry = ComponentEntry("simpleComponent", classOf[SimpleComponent])
+
+    writeBootstrapConfigs(Array(simpleComponentEntry))
+    val container = newContainer(dirConfigSource)
+    var currentGraph = container.runOnce()
+
+    val simpleComponent = currentGraph.getInstance(classOf[SimpleComponent])
+
+    writeBootstrapConfigs("sleeper", classOf[ComponentThatSleepsInConstructor])
+    container.reloadConfig(2)
+    try {
+      currentGraph = container.runOnce(currentGraph)
+      fail("Expected exception")
+    } catch {
+      case e: ComponentConstructorException => assertThat(e.getMessage, containsString("Timed out"))
+      case _: Throwable => fail("Expected ComponentConstructorException")
+    }
+    assertEquals(1, currentGraph.generation)
+  }
+
+  @Test
+  def previous_graph_is_retained_when_new_graph_throws_exception_for_missing_config() {
+    val simpleComponentEntry = ComponentEntry("simpleComponent", classOf[SimpleComponent])
+
+    writeBootstrapConfigs(Array(simpleComponentEntry))
+    val container = newContainer(dirConfigSource)
+    var currentGraph = container.runOnce()
+
+    val simpleComponent = currentGraph.getInstance(classOf[SimpleComponent])
+
+    writeBootstrapConfigs("thrower", classOf[ComponentThrowingExceptionForMissingConfig])
     dirConfigSource.writeConfig("test", """stringVal "myString" """)
     container.reloadConfig(2)
     try {
       currentGraph = container.runOnce(currentGraph)
       fail("Expected exception")
     } catch {
-      case e: Exception => e.printStackTrace()
+      case _: IllegalArgumentException => // Expected, do nothing
+      case _: Throwable => fail("Expected IllegalArgumentException")
     }
-
-    val componentTakingConfigEntry = ComponentEntry("componentTakingConfig", classOf[ComponentTakingConfig])
-    writeBootstrapConfigs(Array(simpleComponentEntry, componentTakingConfigEntry))
-    container.reloadConfig(3)
-    currentGraph = container.runOnce(currentGraph)
-
-    assertSame(simpleComponent, currentGraph.getInstance(classOf[SimpleComponent]))
-    assertNotNull(currentGraph.getInstance(classOf[ComponentTakingConfig]))
+    assertEquals(1, currentGraph.generation)
   }
 
   @Test
@@ -150,7 +219,7 @@ class ContainerTest {
     val container = newContainer(dirConfigSource)
     var currentGraph = container.runOnce()
 
-    writeBootstrapConfigs("thrower", classOf[ComponentThrowingException])
+    writeBootstrapConfigs("thrower", classOf[ComponentThrowingExceptionForMissingConfig])
     container.reloadConfig(2)
 
     try {
@@ -160,7 +229,7 @@ class ContainerTest {
       case e: Exception =>
     }
 
-    val newGraph = future {
+    val newGraph = Future {
       currentGraph = container.runOnce(currentGraph)
       currentGraph
     }
@@ -216,7 +285,7 @@ class ContainerTest {
     val anotherComponentClass = classOf[SimpleComponent2]
     val anotherComponentId = "anotherComponent"
 
-    val componentsConfig =
+    val componentsConfig: String =
       ComponentEntry(injectedComponentId, injectedClass).asConfig(0) + "\n" +
         ComponentEntry(anotherComponentId, anotherComponentClass).asConfig(1) + "\n" +
         ComponentEntry("restApiContext", restApiClass).asConfig(2) + "\n" +
@@ -240,7 +309,7 @@ class ContainerTest {
   }
 
   case class ComponentEntry(componentId: String,  classId: Class[_]) {
-    def asConfig(position: Int) = {
+    def asConfig(position: Int): String = {
       <config>
       |components[{position}].id "{componentId}"
       |components[{position}].classId "{classId.getName}"
@@ -307,7 +376,7 @@ object ContainerTest {
     def get() = instance
 
     def deconstruct() {
-      require(instance.deconstructed == false)
+      require(! instance.deconstructed)
       instance.deconstructed = true
     }
   }
@@ -316,8 +385,17 @@ object ContainerTest {
     require(config != null)
   }
 
-  class ComponentThrowingException(config:IntConfig) extends AbstractComponent {
-    throw new RuntimeException("This component can never be created")
+  class ComponentThrowingExceptionInConstructor() {
+    throw new RuntimeException("This component fails upon construction.")
+  }
+
+  class ComponentThrowingExceptionForMissingConfig(intConfig: IntConfig) extends AbstractComponent {
+    fail("This component should never be created. Only used for tests where 'int' config is missing.")
+  }
+
+  class ComponentThatSleepsInConstructor() {
+    Thread.sleep(3 * ComponentNode.ComponentConstructTimeout.toMillis)
+    fail("The timeout mechanism for constructing components is broken.")
   }
 
   class DestructableComponent extends AbstractComponent {
@@ -346,5 +424,5 @@ object ContainerTest {
     componentGraph.getInstance(classOf[ComponentTakingConfig])
   }
 
-  def convertMap[K, V](map: java.util.Map[K, V]) = JavaConversions.mapAsScalaMap(map).toMap
+  def convertMap[K, V](map: java.util.Map[K, V]): Map[K, V] = JavaConversions.mapAsScalaMap(map).toMap
 }
