@@ -87,17 +87,21 @@ ProtonConfigFetcher::updateDocumentDBConfigs(const BootstrapConfig::SP & bootstr
 void
 ProtonConfigFetcher::reconfigure()
 {
+    auto bootstrapConfig = _bootstrapConfigManager.getConfig();
+    int64_t generation = bootstrapConfig->getGeneration();
     std::map<DocTypeName, DocumentDBConfig::SP> dbConfigs;
     {
         lock_guard guard(_mutex);
         for (auto &kv : _dbManagerMap) {
             auto insres = dbConfigs.insert(std::make_pair(kv.first, kv.second->getConfig()));
             assert(insres.second);
+            assert(insres.first->second->getGeneration() == generation);
         }
     }
-    auto bootstrapConfig = _bootstrapConfigManager.getConfig();
     auto configSnapshot = std::make_shared<ProtonConfigSnapshot>(std::move(bootstrapConfig), std::move(dbConfigs));
+    LOG(debug, "Reconfiguring proton with gen %" PRId64, generation);
     _owner.reconfigure(std::move(configSnapshot));
+    LOG(debug, "Reconfigured proton with gen %" PRId64, generation);
 }
 
 void
