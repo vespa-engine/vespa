@@ -27,6 +27,7 @@ public class RequestBuilderTestCase {
        assertLayout("all(group(a) each(output(sum(b))))", "[[{ Attribute, result = [Sum] }]]");
        assertLayout("all(group(a) each(each(output(summary()))))", "[[{ Attribute, result = [Hits] }]]");
        assertLayout("all(group(a) each(output(xor(b))))", "[[{ Attribute, result = [Xor] }]]");
+       assertLayout("all(group(a) each(output(stddev(b))))", "[[{ Attribute, result = [StandardDeviation] }]]");
     }
 
     @Test
