@@ -6,17 +6,9 @@
 * Utility functions for base-64 encoding/decoding.
 *****************************************************************************/
 
-#include <vespa/fastos/fastos.h>
-#include <stdio.h>
-#include <ctype.h>
 #include "base64.h"
-
-/**
-*****************************************************************************
-* Define lookup table.
-*
-* @author Aleksander Øhrn
-*****************************************************************************/
+#include <cstdio>
+#include <cctype>
 
 static const char _base64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 

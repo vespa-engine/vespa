@@ -12,9 +12,9 @@
 *
 ******************************************************************************/
 
-#include <vespa/fastos/fastos.h>
-#include <string.h>
-#include <vespa/fastlib/net/httpchunkedinputstream.h>
+#include "httpchunkedinputstream.h"
+#include <cstring>
+#include <cstdlib>
 
 Fast_HTTPChunkedInputStream::Fast_HTTPChunkedInputStream(Fast_InputStream &in)
     : Fast_FilterInputStream(in), _chunkSize(0), _inChunk(false),

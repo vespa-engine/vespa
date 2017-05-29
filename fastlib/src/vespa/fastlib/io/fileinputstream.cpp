@@ -11,10 +11,8 @@
 *                  ALL RIGHTS RESERVED
 *
 ******************************************************************************/
-#include <vespa/fastos/fastos.h>
-#include <limits.h>
-#include <vespa/fastlib/io/fileinputstream.h>
 
+#include "fileinputstream.h"
 
 Fast_FileInputStream::Fast_FileInputStream(const char *fileName)
     : _theFile(new FastOS_File(fileName)),
@@ -23,7 +21,7 @@ Fast_FileInputStream::Fast_FileInputStream(const char *fileName)
     _fileOpenedOk = _theFile->OpenReadOnly();
 }
 
-Fast_FileInputStream::~Fast_FileInputStream(void)
+Fast_FileInputStream::~Fast_FileInputStream()
 {
     Close();
     delete _theFile;

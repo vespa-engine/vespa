@@ -12,9 +12,10 @@
 *
 ******************************************************************************/
 
-#include <vespa/fastos/fastos.h>
-#include <string.h>
-#include <vespa/fastlib/net/httpchunkedoutputstream.h>
+#include "httpchunkedoutputstream.h"
+#include <cassert>
+#include <cstdio>
+#include <cstring>
 
 Fast_HTTPChunkedOutputStream::Fast_HTTPChunkedOutputStream(Fast_OutputStream &out,
 							   size_t chunkSize)

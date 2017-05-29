@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <cstddef>
+
 class Fast_BufferedInputStream;
 
 class Fast_HTTPHeaderParser

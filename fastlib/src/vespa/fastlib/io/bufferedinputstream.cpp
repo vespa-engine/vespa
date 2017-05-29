@@ -1,11 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #include "bufferedinputstream.h"
+#include <cstring>
+#include <cstdint>
 
 Fast_BufferedInputStream::Fast_BufferedInputStream(Fast_InputStream &in, size_t bufferSize)
     : Fast_FilterInputStream(in),
       _buffer(new char[bufferSize]),
-      _bufferSize((_buffer != NULL) ? bufferSize : 0),
+      _bufferSize((_buffer != nullptr) ? bufferSize : 0),
       _bufferUsed(0),
       _bufferRead(0),
       _nextWillFail(false)

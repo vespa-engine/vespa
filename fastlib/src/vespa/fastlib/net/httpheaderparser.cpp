@@ -1,7 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
+#include "httpheaderparser.h"
 #include <vespa/fastlib/io/bufferedinputstream.h>
-#include <vespa/fastlib/net/httpheaderparser.h>
+#include <cstdio>
+#include <cstring>
 
 Fast_HTTPHeaderParser::Fast_HTTPHeaderParser(Fast_BufferedInputStream &in)
     : _pushBack(0),

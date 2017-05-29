@@ -12,9 +12,8 @@
 *
 ******************************************************************************/
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/fastlib/io/fileoutputstream.h>
-
+#include "fileoutputstream.h"
+#include <vespa/fastos/file.h>
 
 
 Fast_FileOutputStream::Fast_FileOutputStream(const char *fileName)
@@ -28,4 +27,16 @@ Fast_FileOutputStream::~Fast_FileOutputStream(void)
 {
     _theFile->Close();
     delete _theFile;
+}
+
+ssize_t
+Fast_FileOutputStream::Write(const void *sourceBuffer, size_t bufferSize) {
+    return _theFile->CheckedWrite(sourceBuffer, bufferSize) ?
+           static_cast<ssize_t>(bufferSize) :
+           static_cast<ssize_t>(-1);
+};
+
+bool
+Fast_FileOutputStream::Close() {
+    return _theFile->Close();
 }

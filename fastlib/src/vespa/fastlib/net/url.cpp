@@ -12,12 +12,9 @@
  *
  */
 
-/**
- * Encode and decode a URL
- */
 
-#include <vespa/fastos/fastos.h>
 #include "url.h"
+#include <cstdio>
 
 void
 Fast_URL::decode(const char *encodedURL, char *decodedURL, int bufsize)
