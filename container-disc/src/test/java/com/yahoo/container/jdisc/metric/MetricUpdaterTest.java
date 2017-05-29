@@ -1,13 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.metric;
 
-import static org.junit.Assert.assertTrue;
-
+import com.yahoo.jdisc.Metric;
+import com.yahoo.jdisc.application.MetricConsumer;
+import com.yahoo.jdisc.core.ActiveContainerStatistics;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import com.yahoo.jdisc.Metric;
-import com.yahoo.jdisc.application.MetricConsumer;
+import static org.junit.Assert.assertTrue;
 
 public class MetricUpdaterTest {
     
@@ -17,7 +17,7 @@ public class MetricUpdaterTest {
         MetricProvider provider = MetricProviders.newInstance(consumer);
 
         Metric metric = provider.get();
-        MetricUpdater updater = new MetricUpdater(metric, 10);
+        MetricUpdater updater = new MetricUpdater(metric, new ActiveContainerStatistics(), 10);
         long start = System.currentTimeMillis();
         boolean updated = false;
         while (System.currentTimeMillis() - start < 60000 && !updated) {
