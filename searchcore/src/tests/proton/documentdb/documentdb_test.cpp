@@ -1,47 +1,48 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <tests/proton/common/dummydbowner.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcore/proton/attribute/flushableattribute.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/searchcore/proton/common/statusreport.h>
 #include <vespa/searchcore/proton/docsummary/summaryflushtarget.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoreflushtarget.h>
+#include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
-#include <vespa/searchcore/proton/common/statusreport.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
+#include <vespa/searchcore/proton/metrics/job_tracked_flush_target.h>
+#include <vespa/searchcore/proton/metrics/metricswireservice.h>
+#include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
+#include <vespa/searchcore/proton/reference/i_document_db_reference.h>
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/server/document_db_explorer.h>
 #include <vespa/searchcore/proton/server/documentdb.h>
 #include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
-#include <vespa/searchcore/proton/metrics/job_tracked_flush_target.h>
-#include <vespa/searchcore/proton/metrics/metricswireservice.h>
-#include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
-#include <vespa/searchcore/proton/reference/i_document_db_reference.h>
 #include <vespa/searchcorespi/index/indexflushtarget.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
-#include <tests/proton/common/dummydbowner.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using document::DocumentType;
 using document::DocumentTypeRepo;
-using search::index::Schema;
-using search::transactionlog::TransLogServer;
+using document::DocumenttypesConfig;
+using namespace cloud::config::filedistribution;
 using namespace proton;
 using namespace vespalib::slime;
-using namespace cloud::config::filedistribution;
 using search::TuneFileDocumentDB;
-using document::DocumenttypesConfig;
 using search::index::DummyFileHeaderContext;
+using search::index::Schema;
+using search::transactionlog::TransLogServer;
+using searchcorespi::IFlushTarget;
 using searchcorespi::index::IndexFlushTarget;
 using vespa::config::search::core::ProtonConfig;
 using vespalib::Slime;
-using searchcorespi::IFlushTarget;
 
 namespace {
 
@@ -146,7 +147,7 @@ extractRealFlushTarget(const IFlushTarget *target)
 }
 
 TEST_F("requireThatIndexFlushTargetIsUsed", Fixture) {
-    std::vector<IFlushTarget::SP> targets = f._db->getFlushTargets();
+    auto targets = f._db->getFlushTargets();
     ASSERT_TRUE(!targets.empty());
     const IndexFlushTarget *index = 0;
     for (size_t i = 0; i < targets.size(); ++i) {
@@ -176,7 +177,7 @@ size_t getNumTargets(const std::vector<IFlushTarget::SP> & targets)
 }
 
 TEST_F("requireThatFlushTargetsAreNamedBySubDocumentDB", Fixture) {
-    std::vector<IFlushTarget::SP> targets = f._db->getFlushTargets();
+    auto targets = f._db->getFlushTargets();
     ASSERT_TRUE(!targets.empty());
     for (const IFlushTarget::SP & target : f._db->getFlushTargets()) {
         vespalib::string name = target->getName();
@@ -187,7 +188,7 @@ TEST_F("requireThatFlushTargetsAreNamedBySubDocumentDB", Fixture) {
 }
 
 TEST_F("requireThatAttributeFlushTargetsAreUsed", Fixture) {
-    std::vector<IFlushTarget::SP> targets = f._db->getFlushTargets();
+    auto targets = f._db->getFlushTargets();
     ASSERT_TRUE(!targets.empty());
     size_t numAttrs = getNumTargets<FlushableAttribute>(targets);
     // attr1 defined in attributes.cfg
@@ -195,19 +196,25 @@ TEST_F("requireThatAttributeFlushTargetsAreUsed", Fixture) {
 }
 
 TEST_F("requireThatDocumentMetaStoreFlushTargetIsUsed", Fixture) {
-    std::vector<IFlushTarget::SP> targets = f._db->getFlushTargets();
+    auto targets = f._db->getFlushTargets();
     ASSERT_TRUE(!targets.empty());
-    size_t numMetaStores =
-        getNumTargets<DocumentMetaStoreFlushTarget>(targets);
-    // document meta store
+    size_t numMetaStores = getNumTargets<DocumentMetaStoreFlushTarget>(targets);
     EXPECT_EQUAL(3u, numMetaStores);
 }
 
 TEST_F("requireThatSummaryFlushTargetsIsUsed", Fixture) {
-    std::vector<IFlushTarget::SP> targets = f._db->getFlushTargets();
+    auto targets = f._db->getFlushTargets();
     ASSERT_TRUE(!targets.empty());
     size_t num = getNumTargets<SummaryFlushTarget>(targets);
     EXPECT_EQUAL(3u, num);
+}
+
+TEST_F("require that shrink lid space flush targets are created", Fixture) {
+    auto targets = f._db->getFlushTargets();
+    ASSERT_TRUE(!targets.empty());
+    size_t num = getNumTargets<ShrinkLidSpaceFlushTarget>(targets);
+    // 1x attribute, 3x document meta store, 3x document store
+    EXPECT_EQUAL(1u + 3u + 3u, num);
 }
 
 TEST_F("requireThatCorrectStatusIsReported", Fixture) {
