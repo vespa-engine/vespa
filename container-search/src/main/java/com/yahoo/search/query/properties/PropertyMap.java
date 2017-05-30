@@ -39,7 +39,8 @@ public class PropertyMap extends Properties {
      */
     protected boolean shouldSet(CompoundName name,Object value) { return true; }
 
-    public @Override Object get(CompoundName name, Map<String,String> context,
+    @Override
+    public Object get(CompoundName name, Map<String,String> context,
                                 com.yahoo.processing.request.Properties substitution) {
         if ( ! properties.containsKey(name)) return super.get(name,context,substitution);
         return properties.get(name);
@@ -52,7 +53,8 @@ public class PropertyMap extends Properties {
         return properties;
     }
 
-    public @Override PropertyMap clone() {
+    @Override
+    public PropertyMap clone() {
         PropertyMap clone = (PropertyMap)super.clone();
         clone.properties = new HashMap<>();
         for (Map.Entry<CompoundName, Object> entry : this.properties.entrySet()) {

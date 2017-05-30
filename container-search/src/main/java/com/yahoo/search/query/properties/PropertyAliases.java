@@ -41,17 +41,20 @@ public class PropertyAliases extends Properties {
         return (properName != null) ? properName : nameOrAlias;
     }
 
-    public @Override Map<String, Object> listProperties(CompoundName property,Map<String,String> context,
+    @Override
+    public Map<String, Object> listProperties(CompoundName property,Map<String,String> context,
                                                         com.yahoo.processing.request.Properties substitution) {
         return super.listProperties(unalias(property),context,substitution);
     }
 
-    public @Override Object get(CompoundName name,Map<String,String> context,
+    @Override
+    public Object get(CompoundName name,Map<String,String> context,
                                 com.yahoo.processing.request.Properties substitution) {
         return super.get(unalias(name),context,substitution);
     }
 
-    public @Override void set(CompoundName name,Object value,Map<String,String> context) {
+    @Override
+    public void set(CompoundName name,Object value,Map<String,String> context) {
         super.set(unalias(name),value,context);
     }
 

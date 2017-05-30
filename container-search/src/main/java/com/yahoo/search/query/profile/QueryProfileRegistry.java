@@ -77,7 +77,8 @@ public class QueryProfileRegistry extends ComponentRegistry<QueryProfile> {
     }
 
     /** Freezes this, and all owned query profiles and query profile types */
-    public @Override void freeze() {
+    @Override
+    public void freeze() {
         if (isFrozen()) return;
         queryProfileTypeRegistry.freeze();
         for (QueryProfile queryProfile : allComponents())

@@ -98,12 +98,14 @@ public abstract class Resolver extends AbstractComponent {
             this.resolution=resolution;
         }
 
-        public @Override void visit(Choice choice) {
+        @Override
+        public void visit(Choice choice) {
             if (choice.alternatives().size()<2) return; // No choice...
             resolve(choice,query,result,resolution);
         }
 
-        public @Override void visit(MapChoice choice) {
+        @Override
+        public void visit(MapChoice choice) {
             resolve(choice,query,result,resolution);
         }
 

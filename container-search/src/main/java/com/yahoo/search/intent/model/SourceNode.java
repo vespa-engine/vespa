@@ -34,7 +34,8 @@ public class SourceNode extends Node {
     }
 
     /** Returns source:appropriateness */
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return source + ":" + getScore();
     }
 

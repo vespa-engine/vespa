@@ -93,10 +93,12 @@ public class WordItem extends TermItem {
      * Returns this word as it should be used in executing the query.
      * This is usually (but not always) a normalized and stemmed form
      */
-    public @Override String stringValue() { return word; }
+    @Override
+    public String stringValue() { return word; }
 
     /** Same as #setWord */
-    public @Override void setValue(String value) { setWord(value); }
+    @Override
+    public void setValue(String value) { setWord(value); }
 
     /**
      * Get the word exactly as received in the request.

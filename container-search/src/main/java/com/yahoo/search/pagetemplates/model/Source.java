@@ -75,7 +75,8 @@ public class Source extends FreezableClass implements PageElement {
      */
     public Map<String,String> parameters() { return parameters; }
 
-    public @Override void freeze() {
+    @Override
+    public void freeze() {
         if (isFrozen()) return;
         for (PageElement element : renderers) {
             if (element instanceof Renderer) {
@@ -103,13 +104,15 @@ public class Source extends FreezableClass implements PageElement {
     }
 
     /** Accepts a visitor to this structure */
-    public @Override void accept(PageTemplateVisitor visitor) {
+    @Override
+    public void accept(PageTemplateVisitor visitor) {
         visitor.visit(this);
         for (PageElement renderer : renderers)
             renderer.accept(visitor);
     }
 
-    public @Override int hashCode() {
+    @Override
+    public int hashCode() {
         if (isFrozen()) return hashCode;
         int hashCode=name.hashCode();
         int i=0;
@@ -118,7 +121,8 @@ public class Source extends FreezableClass implements PageElement {
         return hashCode;
     }
 
-    public @Override boolean equals(Object other) {
+    @Override
+    public boolean equals(Object other) {
         if (other==this) return true;
         if (! (other instanceof Source)) return false;
         Source otherSource=(Source)other;
@@ -130,7 +134,8 @@ public class Source extends FreezableClass implements PageElement {
         return true;
     }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return "source '" + name + "'";
     }
 

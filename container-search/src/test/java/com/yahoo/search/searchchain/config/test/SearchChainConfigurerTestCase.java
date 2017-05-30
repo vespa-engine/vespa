@@ -92,7 +92,8 @@ public class SearchChainConfigurerTestCase {
     }
 
    public static abstract class TestSearcher extends Searcher {
-        public @Override Result search(Query query, Execution execution) {
+        @Override
+        public Result search(Query query, Execution execution) {
             return execution.search(query);
         }
     }
@@ -234,7 +235,8 @@ public class SearchChainConfigurerTestCase {
             this.intConfig = intConfig;
             this.stringConfig = stringConfig;
         }
-        public @Override Result search(Query query, Execution execution) {
+        @Override
+        public Result search(Query query, Execution execution) {
             return execution.search(query);
         }
     }
@@ -244,7 +246,8 @@ public class SearchChainConfigurerTestCase {
         public IntSearcher(IntConfig intConfig) {
             this.intConfig = intConfig;
         }
-        public @Override Result search(Query query, Execution execution) {
+        @Override
+        public Result search(Query query, Execution execution) {
             return execution.search(query);
         }
     }
@@ -254,7 +257,8 @@ public class SearchChainConfigurerTestCase {
         public StringSearcher(StringConfig stringConfig) {
             this.stringConfig = stringConfig;
         }
-        public @Override Result search(Query query, Execution execution) {
+        @Override
+        public Result search(Query query, Execution execution) {
             return execution.search(query);
         }
     }

@@ -59,7 +59,8 @@ public class Resolution {
         return resolution;
     }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return "a resolution of " + choiceResolutions.size() + " choices";
     }
 

@@ -49,7 +49,8 @@ public final class PageTemplate extends FreezableComponent implements PageElemen
         return Collections.unmodifiableSet(sourceVisitor.getSources());
     }
 
-    public @Override void freeze() {
+    @Override
+    public void freeze() {
         if (isFrozen()) return;
         resolvePlaceholders();
         section.freeze();
@@ -70,12 +71,14 @@ public final class PageTemplate extends FreezableComponent implements PageElemen
     }
 
     /** Accepts a visitor to this structure */
-    public @Override void accept(PageTemplateVisitor visitor) {
+    @Override
+    public void accept(PageTemplateVisitor visitor) {
         visitor.visit(this);
         section.accept(visitor);
     }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return "page template '" + getId() + "'";
     }
 

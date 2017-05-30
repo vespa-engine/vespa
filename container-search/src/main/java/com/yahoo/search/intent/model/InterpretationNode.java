@@ -28,7 +28,8 @@ public class InterpretationNode extends ParentNode<IntentNode> {
     }
 
     /** Returns the probability of the interpretation of this */
-    public @Override double getScore() {
+    @Override
+    public double getScore() {
         return interpretation.getProbability();
     }
 
@@ -38,7 +39,8 @@ public class InterpretationNode extends ParentNode<IntentNode> {
     }
 
     /** Returns interpretations toString() */
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return interpretation.toString();
     }
 

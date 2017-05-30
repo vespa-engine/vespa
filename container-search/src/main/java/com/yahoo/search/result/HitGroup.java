@@ -620,7 +620,8 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
      * Returns true if all the hits recursively contained in this
      * is cached
      */
-    public @Override boolean isCached() {
+    @Override
+    public boolean isCached() {
         if (notCachedCount<1) return true;
         if (subgroupCount<1) return false; // No need to check below
 

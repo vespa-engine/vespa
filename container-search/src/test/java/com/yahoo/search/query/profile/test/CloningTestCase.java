@@ -194,11 +194,14 @@ public class CloningTestCase extends junit.framework.TestCase {
 
         public void set(String string) { this.string=string; }
 
-        public @Override String toString() { return string; }
+        @Override
+        public String toString() { return string; }
 
-        public @Override int hashCode() { return string.hashCode(); }
+        @Override
+        public int hashCode() { return string.hashCode(); }
 
-        public @Override boolean equals(Object other) {
+        @Override
+        public boolean equals(Object other) {
             if (other==this) return true;
             if ( ! (other instanceof MutableString)) return false;
             return ((MutableString)other).string.equals(string);
@@ -212,7 +215,8 @@ public class CloningTestCase extends junit.framework.TestCase {
             super(string);
         }
 
-        public @Override CloneableMutableString clone() {
+        @Override
+        public CloneableMutableString clone() {
             try {
                 return (CloneableMutableString)super.clone();
             }

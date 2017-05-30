@@ -30,11 +30,13 @@ final class SingleValueQueryProfileVisitor extends QueryProfileVisitor {
         this.allowQueryProfileResult=allowQueryProfileResult;
     }
 
-    public @Override String getLocalKey() {
+    @Override
+    public String getLocalKey() {
         return name.get(nameIndex);
     }
 
-    public @Override boolean enter(String name) {
+    @Override
+    public boolean enter(String name) {
         if (nameIndex+1<this.name.size()) {
             nameIndex++;
             enteringContent=true;
@@ -45,16 +47,19 @@ final class SingleValueQueryProfileVisitor extends QueryProfileVisitor {
         return enteringContent;
     }
 
-    public @Override void leave(String name) {
+    @Override
+    public void leave(String name) {
         nameIndex--;
     }
 
-    public @Override void onValue(String key,Object value, DimensionBinding binding, QueryProfile owner) {
+    @Override
+    public void onValue(String key,Object value, DimensionBinding binding, QueryProfile owner) {
         if (nameIndex==name.size()-1)
             this.value=value;
     }
 
-    public @Override void onQueryProfile(QueryProfile profile,DimensionBinding binding, QueryProfile owner) {
+    @Override
+    public void onQueryProfile(QueryProfile profile,DimensionBinding binding, QueryProfile owner) {
         if (enteringContent) return; // still waiting for content
         if (allowQueryProfileResult)
             this.value = profile;
@@ -62,14 +67,16 @@ final class SingleValueQueryProfileVisitor extends QueryProfileVisitor {
             this.value = profile.getValue();
     }
 
-    public @Override boolean isDone() {
+    @Override
+    public boolean isDone() {
         return value!=null;
     }
 
     /** Returns the value found during visiting, or null if none */
     public Object getResult() { return value; }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return "a single value visitor (hash " + hashCode() + ") with current value " + value;
     }
 

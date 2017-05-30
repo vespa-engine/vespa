@@ -161,17 +161,20 @@ public class ClusteredConnectionTestCase extends junit.framework.TestCase {
             super(componentId,connections,false);
         }
 
-        public @Override Result search(Query query,Execution execution,Connection connection) {
+        @Override
+        public Result search(Query query,Execution execution,Connection connection) {
             Result result=new Result(query);
             result.hits().add(new Hit("from:" + connection.getResponse()));
             return result;
         }
 
-        public @Override void fill(Result result,String summary,Execution execution,Connection connection) {
+        @Override
+        public void fill(Result result,String summary,Execution execution,Connection connection) {
             result.hits().get(0).fields().put("filled",connection.getResponse());
         }
 
-        public @Override Pong ping(Ping ping,Connection connection) {
+        @Override
+        public Pong ping(Ping ping,Connection connection) {
             Pong pong=new Pong();
             if (connection.getResponse()==null)
                 pong.addError(ErrorMessage.createBackendCommunicationError("No ping response from '" + connection + "'"));
@@ -189,7 +192,8 @@ public class ClusteredConnectionTestCase extends junit.framework.TestCase {
             this.hashValue = hashValue;
         }
 
-        public @Override int hashCode() {
+        @Override
+        public int hashCode() {
             return hashValue;
         }
 

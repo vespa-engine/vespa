@@ -27,9 +27,11 @@ public class Layout {
 
     public String getName() { return name; }
 
-    public @Override int hashCode() { return name.hashCode(); }
+    @Override
+    public int hashCode() { return name.hashCode(); }
 
-    public @Override boolean equals(Object o) {
+    @Override
+    public boolean equals(Object o) {
         if (o==this) return true;
         if (! (o instanceof Layout)) return false;
         Layout other=(Layout)o;
@@ -45,6 +47,7 @@ public class Layout {
         return new Layout(layout);
     }
 
-    public @Override String toString() { return "layout '" + name + "'"; }
+    @Override
+    public String toString() { return "layout '" + name + "'"; }
 
 }

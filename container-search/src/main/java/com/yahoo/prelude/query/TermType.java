@@ -87,6 +87,7 @@ public class TermType {
         return name.hashCode();
     }
 
-    public @Override String toString() { return "term type '" + name + "'"; }
+    @Override
+    public String toString() { return "term type '" + name + "'"; }
 
 }

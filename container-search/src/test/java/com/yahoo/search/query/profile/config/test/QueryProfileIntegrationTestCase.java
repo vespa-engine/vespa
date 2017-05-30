@@ -113,7 +113,8 @@ public class QueryProfileIntegrationTestCase extends junit.framework.TestCase {
 
     public static class DefaultSearcher extends Searcher {
 
-        public @Override Result search(Query query,Execution execution) {
+        @Override
+        public Result search(Query query,Execution execution) {
             Result result=execution.search(query);
             result.hits().add(new Hit("from:default"));
             return result;
@@ -123,7 +124,8 @@ public class QueryProfileIntegrationTestCase extends junit.framework.TestCase {
 
     public static class TestSearcher extends Searcher {
 
-        public @Override Result search(Query query,Execution execution) {
+        @Override
+        public Result search(Query query,Execution execution) {
             Result result=execution.search(query);
             result.hits().add(new Hit("from:test"));
             return result;
@@ -135,7 +137,8 @@ public class QueryProfileIntegrationTestCase extends junit.framework.TestCase {
     @Provides("SomeObject")
     public static class SettingSearcher extends Searcher {
 
-        public @Override Result search(Query query,Execution execution) {
+        @Override
+        public Result search(Query query,Execution execution) {
             SomeObject.setTo(query,new SomeObject());
             return execution.search(query);
         }
@@ -146,7 +149,8 @@ public class QueryProfileIntegrationTestCase extends junit.framework.TestCase {
     @After("SomeObject")
     public static class ReceivingSearcher extends Searcher {
 
-        public @Override Result search(Query query,Execution execution) {
+        @Override
+        public Result search(Query query,Execution execution) {
             assertNotNull(SomeObject.getFrom(query));
             assertEquals(SomeObject.class,SomeObject.getFrom(query).getClass());
             return execution.search(query);

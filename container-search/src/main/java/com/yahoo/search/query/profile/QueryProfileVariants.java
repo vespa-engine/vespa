@@ -390,7 +390,8 @@ public class QueryProfileVariants implements Freezable, Cloneable {
             }
         }
 
-        public @Override FieldValues clone() {
+        @Override
+        public FieldValues clone() {
             try {
                 if (frozen) return this;
                 FieldValues clone=(FieldValues)super.clone();
@@ -444,7 +445,8 @@ public class QueryProfileVariants implements Freezable, Cloneable {
          * <b>Note:</b> This ordering is not consistent with equals - it returns 0 when the same dimensions
          * are <i>set</i>, regardless of what they are set <i>to</i>.
          */
-        public @Override int compareTo(FieldValue other) {
+        @Override
+        public int compareTo(FieldValue other) {
             return this.dimensionValues.compareTo(other.dimensionValues);
         }
 

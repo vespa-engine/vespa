@@ -54,7 +54,8 @@ public class MapChoice extends AbstractChoice {
     }
 
     /** Accepts a visitor to this structure */
-    public @Override void accept(PageTemplateVisitor visitor) {
+    @Override
+    public void accept(PageTemplateVisitor visitor) {
         visitor.visit(this);
         for (List<PageElement> valueEntry : values)
             for (PageElement value : valueEntry)

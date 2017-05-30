@@ -25,15 +25,18 @@ public class Intent {
     /** Returns the id of this intent, never null */
     public String getId() { return id; }
 
-    public @Override int hashCode() { return id.hashCode(); }
+    @Override
+    public int hashCode() { return id.hashCode(); }
 
-    public @Override boolean equals(Object other) {
+    @Override
+    public boolean equals(Object other) {
         if (other==this) return true;
         if ( ! (other instanceof Intent)) return false;
         return this.id.equals(((Intent)other).id);
     }
 
     /** Returns the id of this intent */
-    public @Override String toString() { return id; }
+    @Override
+    public String toString() { return id; }
 
 }

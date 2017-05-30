@@ -389,7 +389,8 @@ public class PhraseMatcher {
 
             public int getLength() { return 1; }
 
-            public @Override TermItem getItem(int index) {
+            @Override
+            public TermItem getItem(int index) {
                 if (index!=0) throw new IndexOutOfBoundsException("No word at " + index + " in " + this);
                 return item;
             }
@@ -455,7 +456,8 @@ public class PhraseMatcher {
                 return startIndex==0 && length==owner.getItemCount();
             }
 
-            public @Override TermItem getItem(int index) {
+            @Override
+            public TermItem getItem(int index) {
                 adjustIfBackingChanged();
                 return (TermItem)owner.getItem(startIndex+index);
             }

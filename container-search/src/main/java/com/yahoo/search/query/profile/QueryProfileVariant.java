@@ -88,7 +88,8 @@ public class QueryProfileVariant implements Cloneable, Comparable<QueryProfileVa
      * <b>Note:</b> This ordering is not consistent with equals - it returns 0 when the same dimensions
      * are <i>set</i>, regardless of what they are set <i>to</i>.
      */
-    public @Override int compareTo(QueryProfileVariant other) {
+    @Override
+    public int compareTo(QueryProfileVariant other) {
         return this.dimensionValues.compareTo(other.dimensionValues);
     }
 
@@ -150,7 +151,8 @@ public class QueryProfileVariant implements Cloneable, Comparable<QueryProfileVa
        }
     }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return "query profile variant for " + dimensionValues;
     }
 

@@ -29,7 +29,8 @@ public abstract class ConfiguredHTTPClientSearcher extends HTTPClientSearcher {
     }
 
     /** Forwards to the next in chain fill(result,summaryName) */
-    public @Override void fill(Result result,String summaryName, Execution execution,Connection connection) {
+    @Override
+    public void fill(Result result,String summaryName, Execution execution,Connection connection) {
         execution.fill(result,summaryName);
     }
 

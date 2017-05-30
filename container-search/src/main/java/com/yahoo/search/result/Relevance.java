@@ -45,7 +45,8 @@ public class Relevance implements Comparable<Relevance> {
     /**
      * Returns the score value as a string
      */
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return DoubleFormatter.stringValue(score);
     }
 
@@ -67,7 +68,8 @@ public class Relevance implements Comparable<Relevance> {
     }
 
     /** Compares relevancy values */
-    public @Override boolean equals(Object object) {
+    @Override
+    public boolean equals(Object object) {
         if (object==this) return true;
 
         if (!(object instanceof Relevance)) { return false; }
@@ -77,7 +79,8 @@ public class Relevance implements Comparable<Relevance> {
     }
 
     /** Returns a hash from the relevancy value */
-    public @Override int hashCode() {
+    @Override
+    public int hashCode() {
         double hash=getScore()*335451367; // A largish prime
         if (hash>-1 && hash<1) hash=1/hash;
         return (int) hash;

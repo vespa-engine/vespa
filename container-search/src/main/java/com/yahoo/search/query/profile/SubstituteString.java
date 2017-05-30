@@ -76,7 +76,8 @@ public class SubstituteString {
     }
 
     /** Returns this string in original (unsubstituted) form */
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return stringValue;
     }
 
@@ -94,11 +95,13 @@ public class SubstituteString {
             this.value=value;
         }
 
-        public @Override String getValue(Map<String,String> context,Properties substitution) {
+        @Override
+        public String getValue(Map<String,String> context,Properties substitution) {
             return value;
         }
 
-        public @Override String toString() {
+        @Override
+        public String toString() {
             return value;
         }
 
@@ -112,13 +115,15 @@ public class SubstituteString {
             this.propertyName=propertyName;
         }
 
-        public @Override String getValue(Map<String,String> context,Properties substitution) {
+        @Override
+        public String getValue(Map<String,String> context,Properties substitution) {
             Object value=substitution.get(propertyName,context,substitution);
             if (value==null) return "";
             return String.valueOf(value);
         }
 
-        public @Override String toString() {
+        @Override
+        public String toString() {
             return "%{" + propertyName + "}";
         }
 
