@@ -307,9 +307,8 @@ filedistributor.configid reference default="" restart
 
 ## Interval between pruning of old removed documents.
 ##
-## Default value is 6 hours (21600 seconds).
-## If set to 0, the value is calculated as (pruneremoveddocumentsage / 100) (default 3.36 hours).
-pruneremoveddocumentsinterval double default=21600.0
+## If set to 0 (default) the value is calculated as (pruneremoveddocumentsage / 100) (default 3.36 hours).
+pruneremoveddocumentsinterval double default=0.0
 
 ## Age of removed document before it can be pruned.
 ##
