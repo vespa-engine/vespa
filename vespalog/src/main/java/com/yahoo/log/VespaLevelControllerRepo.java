@@ -155,6 +155,9 @@ public class VespaLevelControllerRepo implements LevelControllerRepo {
                 return ctrl;
             }
             synchronized(this) {
+                if (ctlFile == null) {
+                    return defaultLevelCtrl;
+                }
                 LevelController inherit = null;
 
                 int lastdot = suffix.lastIndexOf('.');
