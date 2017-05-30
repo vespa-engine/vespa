@@ -87,6 +87,8 @@ public class NodePatcher {
                 return node.withAdditionalIpAddresses(asStringSet(value));
             case "wantToRetire" :
                 return node.with(node.status().withWantToRetire(asBoolean(value)));
+            case "wantToUnprovision" :
+                return node.with(node.status().withWantToUnprovision(asBoolean(value)));
             default :
                 throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
         }
