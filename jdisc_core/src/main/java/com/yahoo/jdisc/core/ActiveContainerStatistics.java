@@ -81,22 +81,22 @@ public class ActiveContainerStatistics {
     }
 
     private static class ActiveContainerStats {
-        final Instant timeActivated;
-        Instant timeDeactivated;
+        public final Instant timeActivated;
+        public Instant timeDeactivated;
 
-        ActiveContainerStats(Instant timeActivated) {
+        public ActiveContainerStats(Instant timeActivated) {
             this.timeActivated = timeActivated;
         }
 
-        boolean isDeactivated() {
+        public boolean isDeactivated() {
             return timeDeactivated != null;
         }
     }
 
     private static class DeactivatedContainer {
-        final ActiveContainer activeContainer;
-        final Instant timeActivated;
-        final Instant timeDeactivated;
+        public final ActiveContainer activeContainer;
+        public final Instant timeActivated;
+        public final Instant timeDeactivated;
 
         public DeactivatedContainer(ActiveContainer activeContainer, Instant timeActivated, Instant timeDeactivated) {
             this.activeContainer = activeContainer;
@@ -104,7 +104,7 @@ public class ActiveContainerStatistics {
             this.timeDeactivated = timeDeactivated;
         }
 
-        String toSummaryString() {
+        public String toSummaryString() {
             return String.format("%s: timeActivated=%s, timeDeactivated=%s, retainCount=%d",
                     activeContainer.toString(),
                     timeActivated.toString(),
@@ -114,10 +114,10 @@ public class ActiveContainerStatistics {
     }
 
     private static class DeactivatedContainerMetrics {
-        int deactivatedContainerCount = 0;
-        int deactivatedContainersWithRetainedRefsCount = 0;
+        public int deactivatedContainerCount = 0;
+        public int deactivatedContainersWithRetainedRefsCount = 0;
 
-        void aggregate(DeactivatedContainer deactivatedContainer) {
+        public void aggregate(DeactivatedContainer deactivatedContainer) {
             ++deactivatedContainerCount;
             if (deactivatedContainer.activeContainer.retainCount() > 0) {
                 ++deactivatedContainersWithRetainedRefsCount;
