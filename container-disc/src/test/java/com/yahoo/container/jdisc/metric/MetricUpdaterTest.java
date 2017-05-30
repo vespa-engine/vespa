@@ -17,7 +17,7 @@ public class MetricUpdaterTest {
         MetricProvider provider = MetricProviders.newInstance(consumer);
 
         Metric metric = provider.get();
-        MetricUpdater updater = new MetricUpdater(metric, new ActiveContainerStatistics(), 10);
+        MetricUpdater updater = new MetricUpdater(metric, Mockito.mock(ActiveContainerStatistics.class), 10);
         long start = System.currentTimeMillis();
         boolean updated = false;
         while (System.currentTimeMillis() - start < 60000 && !updated) {
