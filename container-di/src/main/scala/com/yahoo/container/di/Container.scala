@@ -6,6 +6,7 @@ import java.util.logging.{Level, Logger}
 
 import com.google.inject.{Guice, Injector}
 import com.yahoo.config._
+import com.yahoo.config.subscription.ConfigInterruptedException
 import com.yahoo.container.bundle.BundleInstantiationSpecification
 import com.yahoo.container.di.ConfigRetriever.{BootstrapConfigs, ComponentsConfigs}
 import com.yahoo.container.di.Container._
@@ -62,6 +63,7 @@ class Container(
     } catch {
       case userException: ComponentConstructorException =>
         invalidateGeneration(oldGraph.generation, userException)
+        // TODO: Wrap userException in an Error when generation==0 (+ unit test that Error is thrown)
         throw userException
       case t: Throwable =>
         invalidateGeneration(oldGraph.generation, t)
@@ -92,6 +94,7 @@ class Container(
       }
     }
 
+    // TODO: move to ConfiguredApplication
     def logAndDie(message: String, cause: Throwable): Unit = {
       log.log(Level.SEVERE, message, cause)
       try {
@@ -102,13 +105,10 @@ class Container(
       Process.logAndDie("Exited for reason (repeated from above):", cause)
     }
 
-    val message = newGraphErrorMessage(generation, cause)
-    generation match {
-      // Disabled, as it breaks application based tests.
-      // case 0 => logAndDie(message, cause)
-      case _ =>
-        log.log(Level.WARNING, message, cause)
-        leastGeneration = max(configurer.getComponentsGeneration, configurer.getBootstrapGeneration) + 1
+    leastGeneration = max(configurer.getComponentsGeneration, configurer.getBootstrapGeneration) + 1
+    cause match {
+      case _: InterruptedException | _: ConfigInterruptedException => // Normal during shutdown, do not log anything.
+      case _ => log.log(Level.WARNING, newGraphErrorMessage(generation, cause), cause)
     }
   }
 
