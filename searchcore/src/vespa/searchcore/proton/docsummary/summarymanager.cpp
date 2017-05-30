@@ -4,10 +4,11 @@
 #include "summarycompacttarget.h"
 #include "summaryflushtarget.h"
 #include "summarymanager.h"
-#include <vespa/searchlib/docstore/logdocumentstore.h>
-#include <vespa/searchsummary/docsummary/docsumconfig.h>
 #include <vespa/config/print/ostreamconfigwriter.h>
 #include <vespa/juniper/rpinterface.h>
+#include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
+#include <vespa/searchlib/docstore/logdocumentstore.h>
+#include <vespa/searchsummary/docsummary/docsumconfig.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
@@ -22,6 +23,7 @@ using namespace vespa::config::search;
 using vespalib::make_string;
 using vespalib::IllegalArgumentException;
 using search::DocumentStore;
+using search::IDocumentStore;
 using search::LogDocumentStore;
 using search::LogDataStore;
 using search::WriteableFileChunk;
@@ -171,13 +173,29 @@ SummaryManager::removeDocument(uint64_t syncToken, search::DocumentIdT lid)
     _currentSerial = syncToken;
 }
 
+namespace {
+
+IFlushTarget::SP
+createShrinkLidSpaceFlushTarget(IDocumentStore::SP docStore)
+{
+    return std::make_shared<ShrinkLidSpaceFlushTarget>("summary.shrink",
+                                                       IFlushTarget::Type::GC,
+                                                       IFlushTarget::Component::DOCUMENT_STORE,
+                                                       docStore->lastSyncToken(),
+                                                       docStore->getLastFlushTime(),
+                                                       docStore);
+}
+
+}
+
 IFlushTarget::List SummaryManager::getFlushTargets()
 {
     IFlushTarget::List ret;
-    ret.push_back(IFlushTarget::SP(new SummaryFlushTarget(getBackingStore())));
+    ret.push_back(std::make_shared<SummaryFlushTarget>(getBackingStore()));
     if (dynamic_cast<LogDocumentStore *>(_docStore.get()) != NULL) {
-        ret.push_back(IFlushTarget::SP(new SummaryCompactTarget(getBackingStore())));
+        ret.push_back(std::make_shared<SummaryCompactTarget>(getBackingStore()));
     }
+    ret.push_back(createShrinkLidSpaceFlushTarget(_docStore));
     return ret;
 }
 

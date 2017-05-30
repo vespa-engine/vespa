@@ -178,6 +178,12 @@ StoreOnlyDocSubDB::onReplayDone()
 {
     _dms->constructFreeList();
     _dms->shrinkLidSpace();
+    uint32_t docIdLimit = _dms->getCommittedDocIdLimit();
+    auto &docStore = _rSummaryMgr->getBackingStore();
+    if (docIdLimit < docStore.getDocIdLimit()) {
+        docStore.compactLidSpace(docIdLimit);
+        docStore.shrinkLidSpace();
+    }
 }
 
 
