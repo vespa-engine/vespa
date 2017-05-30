@@ -22,7 +22,8 @@ public class SemanticDistanceTestCase extends junit.framework.TestCase {
         super(name);
     }
 
-    public @Override void setUp() {
+    @Override
+    public void setUp() {
         c=new FieldMatchMetricsComputer();
         StringBuilder field=new StringBuilder();
         for (int i=0; i<150; i++)

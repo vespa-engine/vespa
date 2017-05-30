@@ -283,7 +283,8 @@ public class Method {
         }
     }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return "method " + name + "(" + paramTypes + ")" + ( returnTypes.length()>0 ? ": " + returnTypes : "");
     }
 

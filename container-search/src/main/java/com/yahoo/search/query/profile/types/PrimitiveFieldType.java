@@ -20,15 +20,19 @@ public class PrimitiveFieldType extends FieldType {
         this.primitiveClass=primitiveClass;
     }
 
-    public @Override Class getValueClass() { return primitiveClass; }
+    @Override
+    public Class getValueClass() { return primitiveClass; }
 
-    public @Override String stringValue() {
+    @Override
+    public String stringValue() {
         return toLowerCase(primitiveClass.getSimpleName());
     }
 
-    public @Override String toString() { return "field type " + stringValue(); }
+    @Override
+    public String toString() { return "field type " + stringValue(); }
 
-    public @Override String toInstanceDescription() {
+    @Override
+    public String toInstanceDescription() {
         return toLowerCase(primitiveClass.getSimpleName());
     }
 
@@ -37,7 +41,8 @@ public class PrimitiveFieldType extends FieldType {
         return convertFrom(object, (QueryProfileRegistry)null);
     }
 
-    public @Override Object convertFrom(Object object, QueryProfileRegistry registry) {
+    @Override
+    public Object convertFrom(Object object, QueryProfileRegistry registry) {
         if (primitiveClass == object.getClass()) return object;
 
         if (object.getClass() == String.class) return convertFromString((String)object);

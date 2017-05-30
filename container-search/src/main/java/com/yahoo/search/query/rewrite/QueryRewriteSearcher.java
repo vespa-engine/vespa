@@ -258,7 +258,8 @@ public abstract class QueryRewriteSearcher extends Searcher {
      * - Pass to the next rewriter the query to be used
      *   for dictionary retrieval<br>
      */
-    public @Override Result search(Query query, Execution execution) {
+    @Override
+    public Result search(Query query, Execution execution) {
         RewriterUtils.log(logger, query, "Executing " + getRewriterName());
 
         // Check if rewriter is properly initialized

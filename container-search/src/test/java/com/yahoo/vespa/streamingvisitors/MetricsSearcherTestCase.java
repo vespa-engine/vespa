@@ -114,7 +114,8 @@ public class MetricsSearcherTestCase {
             this.implicitlyCreateContext = implicitlyCreateContext;
         }
 
-        public @Override Result search(Query query, Execution execution) {
+        @Override
+        public Result search(Query query, Execution execution) {
             if (implicitlyCreateContext) {
                 String loadType = query.properties().getString("streaming.loadtype");
                 assignContextProperties(query, loadType);

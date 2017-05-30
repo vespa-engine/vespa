@@ -31,7 +31,8 @@ public class ClusterSearcherTestCase extends TestCase {
             this.hit = hit;
         }
 
-        public @Override Result search(Query query,Execution execution) {
+        @Override
+        public Result search(Query query,Execution execution) {
             Result result = execution.search(query);
             result.hits().add(hit);
             return result;
@@ -127,15 +128,18 @@ public class ClusterSearcherTestCase extends TestCase {
             super(id,searchers,hasher,false);
         }
 
-        public @Override Result search(Query query,Execution execution,Searcher searcher) {
+        @Override
+        public Result search(Query query,Execution execution,Searcher searcher) {
             return searcher.search(query,execution);
         }
 
-        public @Override void fill(Result result,String summaryName,Execution execution,Searcher searcher) {
+        @Override
+        public void fill(Result result,String summaryName,Execution execution,Searcher searcher) {
             searcher.fill(result,summaryName,execution);
         }
 
-        public @Override Pong ping(Ping ping,Searcher searcher) {
+        @Override
+        public Pong ping(Ping ping,Searcher searcher) {
             return new Execution(searcher, Execution.Context.createContextStub()).ping(ping);
         }
 

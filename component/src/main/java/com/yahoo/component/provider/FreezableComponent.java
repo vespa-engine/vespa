@@ -38,7 +38,8 @@ public class FreezableComponent extends AbstractComponent implements Freezable {
     }
 
     /** Clones this. The clone will <i>not</i> be frozen */
-    public @Override FreezableComponent clone() {
+    @Override
+    public FreezableComponent clone() {
         FreezableComponent clone=(FreezableComponent)super.clone();
         clone.frozen = false;
         return clone;

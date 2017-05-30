@@ -21,7 +21,8 @@ class PlaceholderMappingVisitor extends PageTemplateVisitor {
 
     private Map<String, MapChoice> placeholderIdToChoice=new LinkedHashMap<>();
 
-    public @Override void visit(MapChoice mapChoice) {
+    @Override
+    public void visit(MapChoice mapChoice) {
         List<String> placeholderIds=mapChoice.placeholderIds();
         for (String placeholderId : placeholderIds) {
             MapChoice existingChoice=placeholderIdToChoice.put(placeholderId,mapChoice);

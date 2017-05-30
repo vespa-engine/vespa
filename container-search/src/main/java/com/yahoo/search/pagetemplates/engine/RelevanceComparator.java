@@ -19,7 +19,8 @@ class RelevanceComparator extends ChainableComparator {
         super(secondaryComparator);
     }
 
-    public @Override int compare(Hit h1,Hit h2) {
+    @Override
+    public int compare(Hit h1,Hit h2) {
         int relevanceComparison=h2.getRelevance().compareTo(h1.getRelevance());
         if (relevanceComparison!=0) return relevanceComparison;
 

@@ -48,7 +48,8 @@ public final class Sorting implements Cloneable, Serializable {
                (strength == other.strength);
     }
 
-    public @Override Sorting clone() {
+    @Override
+    public Sorting clone() {
         try {
             return (Sorting)super.clone();
         }

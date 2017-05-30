@@ -174,7 +174,8 @@ public abstract class Searcher extends Processor {
     protected Logger getLogger() { return logger; }
 
     /** Returns "searcher 'getId()'" */
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return "searcher '" + getIdString() + "'";
 
     }

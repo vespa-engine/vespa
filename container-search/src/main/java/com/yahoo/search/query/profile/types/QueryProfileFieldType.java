@@ -38,17 +38,21 @@ public class QueryProfileFieldType extends FieldType {
     /** Returns the query profile type of this, or null if any type works */
     public QueryProfileType getQueryProfileType() { return type; }
 
-    public @Override Class<?> getValueClass() { return QueryProfile.class; }
+    @Override
+    public Class<?> getValueClass() { return QueryProfile.class; }
 
-    public @Override String stringValue() {
+    @Override
+    public String stringValue() {
         return "query-profile" + (type!=null ? ":" + type.getId().getName() : "");
     }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return "field type " + stringValue();
     }
 
-    public @Override String toInstanceDescription() {
+    @Override
+    public String toInstanceDescription() {
         return "reference to a query profile" + (type!=null ? " of type '" + type.getId().getName() + "'" : "");
     }
 

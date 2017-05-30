@@ -219,7 +219,8 @@ public class ExecutionTestCase extends junit.framework.TestCase {
             super(new ComponentId(id));
         }
 
-        public @Override Result search(Query query,Execution execution) {
+        @Override
+        public Result search(Query query,Execution execution) {
             Result result=execution.search(query);
             result.hits().add(new Hit(getId().stringValue() + "-" + (counter++)));
             return result;
@@ -229,7 +230,8 @@ public class ExecutionTestCase extends junit.framework.TestCase {
 
     public static class ForwardingSearcher extends Searcher {
 
-        public @Override Result search(Query query,Execution execution) {
+        @Override
+        public Result search(Query query,Execution execution) {
             Chain<Searcher> forwardTo=execution.context().searchChainRegistry().getChain("someChainId");
             return new Execution(forwardTo,execution.context()).search(query);
 
@@ -245,7 +247,8 @@ public class ExecutionTestCase extends junit.framework.TestCase {
             super(new ComponentId(id));
         }
 
-        public @Override Result search(Query query,Execution execution) {
+        @Override
+        public Result search(Query query,Execution execution) {
             Result result=execution.search(query);
             Hit hit=new Hit(getId().stringValue() + "-" + counter);
             hit.setFillable();
@@ -253,7 +256,8 @@ public class ExecutionTestCase extends junit.framework.TestCase {
             return result;
         }
 
-        public @Override void fill(Result result,String summaryClass,Execution execution) {
+        @Override
+        public void fill(Result result,String summaryClass,Execution execution) {
             result.hits().add(new Hit(getId().stringValue() + "-" + (counter++) + "-filled")); // Not something one would normally do in fill
         }
 
@@ -270,7 +274,8 @@ public class ExecutionTestCase extends junit.framework.TestCase {
     @After("com.yahoo.search.searchchain.test.ExecutionTestCase$TestSearcher")
     public static class FillingSearcher extends Searcher {
 
-        public @Override Result search(Query query,Execution execution) {
+        @Override
+        public Result search(Query query,Execution execution) {
             Result result=execution.search(query);
             execution.fill(result);
             return result;
@@ -282,7 +287,8 @@ public class ExecutionTestCase extends junit.framework.TestCase {
     @Before("com.yahoo.search.searchchain.test.ExecutionTestCase$TestSearcher")
     public static class WorkflowSearcher extends Searcher {
 
-        public @Override Result search(Query query,Execution execution) {
+        @Override
+        public Result search(Query query,Execution execution) {
             Result result1=execution.search(query);
             Result result2=execution.search(query);
             for (Iterator<Hit> i=result2.hits().iterator(); i.hasNext();)

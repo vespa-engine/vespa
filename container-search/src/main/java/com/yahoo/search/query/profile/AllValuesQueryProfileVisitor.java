@@ -19,11 +19,13 @@ final class AllValuesQueryProfileVisitor extends PrefixQueryProfileVisitor {
         super(prefix);
     }
 
-    public @Override void onValue(String localName, Object value, DimensionBinding binding, QueryProfile owner) {
+    @Override
+    public void onValue(String localName, Object value, DimensionBinding binding, QueryProfile owner) {
         putValue(localName, value, values);
     }
 
-    public @Override void onQueryProfileInsidePrefix(QueryProfile profile, DimensionBinding binding, QueryProfile owner) {
+    @Override
+    public void onQueryProfileInsidePrefix(QueryProfile profile, DimensionBinding binding, QueryProfile owner) {
         putValue("", profile.getValue(), values);
     }
 

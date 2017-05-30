@@ -360,7 +360,8 @@ public class Interpretation {
         return rootSpan.getTermSpans(term);
     }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         StringBuilder sb = new StringBuilder();
         Map<AnnotationClass, List<Annotations>> annotations = getAll();
         Iterator<Map.Entry<AnnotationClass,List<Annotations>>> mapIterator = annotations.entrySet().iterator();

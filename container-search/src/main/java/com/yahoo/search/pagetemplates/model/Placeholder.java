@@ -26,14 +26,17 @@ public class Placeholder implements PageElement {
 
     public void setValueContainer(MapChoice valueContainer) { this.valueContainer=valueContainer; }
 
-    public @Override void freeze() {}
+    @Override
+    public void freeze() {}
 
     /** Accepts a visitor to this structure */
-    public @Override void accept(PageTemplateVisitor visitor) {
+    @Override
+    public void accept(PageTemplateVisitor visitor) {
         visitor.visit(this);
     }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return "source placeholder '" + id + "'";
     }
 

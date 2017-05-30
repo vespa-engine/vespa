@@ -20,7 +20,8 @@ class PlaceholderReferenceCreatingVisitor extends PageTemplateVisitor {
         this.placeholderIdToChoice=placeholderIdToChoice;
     }
 
-    public @Override void visit(Placeholder placeholder) {
+    @Override
+    public void visit(Placeholder placeholder) {
         MapChoice choice=placeholderIdToChoice.get(placeholder.getId());
         if (choice==null)
             throw new IllegalArgumentException(placeholder + " is not referenced by any choice");

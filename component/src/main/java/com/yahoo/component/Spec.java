@@ -51,7 +51,8 @@ final class Spec<VERSION> {
         }
     }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         if (isNonEmpty(version) || (namespace != null)) {
             StringBuilder builder = new StringBuilder(name);
             if (isNonEmpty(version)) {

@@ -149,7 +149,8 @@ public class Section extends FreezableClass implements PageElement {
         this.min=min;
     }
 
-    public @Override void freeze() {
+    @Override
+    public void freeze() {
         if (isFrozen()) return;
 
         for (PageElement element : elements)
@@ -163,13 +164,15 @@ public class Section extends FreezableClass implements PageElement {
     }
 
     /** Accepts a visitor to this structure */
-    public @Override void accept(PageTemplateVisitor visitor) {
+    @Override
+    public void accept(PageTemplateVisitor visitor) {
         visitor.visit(this);
         for (PageElement element : elements)
             element.accept(visitor);
     }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         if (id==null || id.isEmpty()) return "a section";
         return "section '" + id + "'";
     }

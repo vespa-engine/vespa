@@ -14,7 +14,8 @@ import com.yahoo.search.searchchain.Execution;
  */
 public class ExampleSearcher extends Searcher {
 
-    public @Override Result search(Query query,Execution execution) {
+    @Override
+    public Result search(Query query,Execution execution) {
         Result result=execution.search(query);
         result.hits().add(new Hit("example",1.0,"examplesearcher"));
         return result;

@@ -111,7 +111,8 @@ public final class ComponentId implements Comparable<ComponentId> {
      */
     public String stringValue() { return stringValue; }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return spec.toString();
     }
 
@@ -126,7 +127,8 @@ public final class ComponentId implements Comparable<ComponentId> {
         return c.stringValue().equals(stringValue);
     }
 
-    public @Override int hashCode() {
+    @Override
+    public int hashCode() {
         return stringValue.hashCode();
     }
 

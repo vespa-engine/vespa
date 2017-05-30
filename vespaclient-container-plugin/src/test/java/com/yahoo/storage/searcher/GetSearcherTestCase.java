@@ -1022,7 +1022,8 @@ public class GetSearcherTestCase {
             this.hitToReturn = hitToReturn;
         }
 
-        public @Override Result search(Query query, Execution execution) {
+        @Override
+        public Result search(Query query, Execution execution) {
             Result result = new Result(query);
             result.hits().add(hitToReturn);
             return result;

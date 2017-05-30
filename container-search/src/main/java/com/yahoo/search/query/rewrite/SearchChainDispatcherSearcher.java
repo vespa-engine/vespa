@@ -43,7 +43,8 @@ public class SearchChainDispatcherSearcher extends Searcher {
      *   param<br>
      * - Execute specified search chain if exist
      */
-    public @Override Result search(Query query, Execution execution) {
+    @Override
+    public Result search(Query query, Execution execution) {
         RewriterUtils.log(logger, query, "Entering SearchChainDispatcherSearcher");
 
         // Retrieve search chain specified by user through REWRITER_CHAIN

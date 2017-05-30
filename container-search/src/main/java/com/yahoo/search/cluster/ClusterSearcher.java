@@ -313,7 +313,8 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
         getLogger().log(level, sb.toString());
     }
 
-    public @Override void deconstruct() {
+    @Override
+    public void deconstruct() {
         super.deconstruct();
         monitor.shutdown();
     }

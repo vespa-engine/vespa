@@ -59,9 +59,11 @@ public class StringValue extends Value
         return value.toString();
     }
 
-    public @Override Utf8Array asUtf8Array() { return value; }
+    @Override
+    public Utf8Array asUtf8Array() { return value; }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return asString();
     }
 

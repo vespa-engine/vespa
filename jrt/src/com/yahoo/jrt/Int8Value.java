@@ -41,7 +41,8 @@ public class Int8Value extends Value
 
     public byte asInt8() { return value; }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return String.valueOf(value);
     }
 

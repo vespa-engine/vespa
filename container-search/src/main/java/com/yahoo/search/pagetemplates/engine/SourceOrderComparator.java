@@ -34,7 +34,8 @@ class SourceOrderComparator extends ChainableComparator {
         this.sourceOrder=sourceOrder;
     }
 
-    public @Override int compare(Hit h1,Hit h2) {
+    @Override
+    public int compare(Hit h1,Hit h2) {
         int primaryOrder=sourceOrderCompare(h1,h2);
         if (primaryOrder!=0) return primaryOrder;
 

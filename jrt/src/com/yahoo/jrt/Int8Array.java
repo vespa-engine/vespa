@@ -45,7 +45,8 @@ public class Int8Array extends Value
 
     public byte[] asInt8Array() { return value; }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return Arrays.toString(value);
     }
 

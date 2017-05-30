@@ -13,7 +13,8 @@ public class UpdateSearcher extends com.yahoo.search.Searcher {
 
     public String test = "update";
 
-    public @Override Result search(Query query,Execution execution) {
+    @Override
+    public Result search(Query query,Execution execution) {
         Result result=execution.search(query);
         if (result==null)
             result=new Result(query);

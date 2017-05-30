@@ -112,7 +112,8 @@ public class TilingTestCase extends junit.framework.TestCase {
 
     private static class TiledResultProducer extends Searcher {
 
-        public @Override Result search(Query query,Execution execution) {
+        @Override
+        public Result search(Query query,Execution execution) {
             Result result=new Result(query);
             result.setTotalHitCount(2800000000l);
 
@@ -256,7 +257,8 @@ public class TilingTestCase extends junit.framework.TestCase {
 
     private static class TiledResultProducer2 extends Searcher {
 
-        public @Override Result search(Query query,Execution execution) {
+        @Override
+        public Result search(Query query,Execution execution) {
             Result result=new Result(query);
             result.setTotalHitCount(1);
 

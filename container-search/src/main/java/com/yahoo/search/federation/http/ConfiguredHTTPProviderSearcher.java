@@ -62,7 +62,8 @@ public abstract class ConfiguredHTTPProviderSearcher extends HTTPProviderSearche
      * Override this to provider multi-phase result filling towards a backend.
      * This default implementation does nothing.
      */
-    public @Override void fill(Result result,String summaryName, Execution execution,Connection connection) {
+    @Override
+    public void fill(Result result,String summaryName, Execution execution,Connection connection) {
     }
 
 }

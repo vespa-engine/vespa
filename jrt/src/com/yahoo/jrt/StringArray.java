@@ -75,7 +75,8 @@ public class StringArray extends Value
         return ret;
     }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return Arrays.toString(asStringArray());
     }
 

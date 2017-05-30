@@ -71,17 +71,20 @@ public final class Renderer extends FreezableClass implements PageElement {
      */
     public Map<String,String> parameters() { return parameters; }
 
-    public @Override void freeze() {
+    @Override
+    public void freeze() {
         if (isFrozen()) return;
         super.freeze();
         parameters = Collections.unmodifiableMap(parameters);
     }
 
     /** Accepts a visitor to this structure */
-    public @Override void accept(PageTemplateVisitor visitor) {
+    @Override
+    public void accept(PageTemplateVisitor visitor) {
         visitor.visit(this);
     }
-     public @Override String toString() {
+     @Override
+     public String toString() {
         return "renderer '" + name + "'";
     }
 

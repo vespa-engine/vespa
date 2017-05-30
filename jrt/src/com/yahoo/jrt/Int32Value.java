@@ -41,7 +41,8 @@ public class Int32Value extends Value
 
     public int asInt32() { return value; }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return String.valueOf(value);
     }
 

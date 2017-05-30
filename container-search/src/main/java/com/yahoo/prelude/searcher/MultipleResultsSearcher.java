@@ -26,7 +26,8 @@ public class MultipleResultsSearcher extends Searcher {
     private static final CompoundName maxTimesRetrieveHeterogeneousHitsName=new CompoundName(propertyPrefix + "maxTimesRetrieveHeterogeneousHits");
     private static final CompoundName numHits=new CompoundName(propertyPrefix + "numHits");
 
-    public @Override Result search(Query query, Execution e) {
+    @Override
+    public Result search(Query query, Execution e) {
         try {
             Parameters parameters = new Parameters(query);
 

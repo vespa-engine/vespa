@@ -23,15 +23,18 @@ public class Source {
     /** Returns the id of this source, never null */
     public String getId() { return id; }
 
-    public @Override int hashCode() { return id.hashCode(); }
+    @Override
+    public int hashCode() { return id.hashCode(); }
 
-    public @Override boolean equals(Object other) {
+    @Override
+    public boolean equals(Object other) {
         if (other==this) return true;
         if ( ! (other instanceof Source)) return false;
         return this.id.equals(((Source)other).id);
     }
 
     /** Returns the id of this source */
-    public @Override String toString() { return id; }
+    @Override
+    public String toString() { return id; }
 
 }

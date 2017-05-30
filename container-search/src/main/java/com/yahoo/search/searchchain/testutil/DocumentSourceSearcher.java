@@ -94,7 +94,8 @@ public class DocumentSourceSearcher extends Searcher {
         addResult(q, r);
     }
 
-    public @Override Result search(Query query, Execution execution)  {
+    @Override
+    public Result search(Query query, Execution execution)  {
         queryCount++;
         Result r;
         r = unFilledResults.get(getQueryKeyClone(query));
@@ -119,7 +120,8 @@ public class DocumentSourceSearcher extends Searcher {
         return key;
     }
 
-    public @Override void fill(Result result, String summaryClass, Execution execution) {
+    @Override
+    public void fill(Result result, String summaryClass, Execution execution) {
         Result filledResult;
         filledResult = completelyFilledResults.get(getQueryKeyClone(result.getQuery()));
 

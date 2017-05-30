@@ -22,7 +22,8 @@ public class IntentNode extends ParentNode<SourceNode> {
     public void setIntent(Intent intent) { this.intent=intent; }
 
     /** Returns intent:probability */
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return intent + ":" + getScore();
     }
 
