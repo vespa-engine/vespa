@@ -33,6 +33,7 @@ class TeeInputStream extends InputStream {
         }
         int wantToRead = CAPACITY - writePos;
         if (inBuf() > 0) {
+            // if we have data already, do not block, read only what is available
             wantToRead = Math.min(wantToRead, src.available());
         }
         if (wantToRead > 0) {
