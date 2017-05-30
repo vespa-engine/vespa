@@ -209,9 +209,10 @@ struct MySubDb : public test::DummyDocumentSubDb
     DocumentTypeRepo::SP _repo;
     MySubDb(const DocumentTypeRepo::SP &repo, std::shared_ptr<BucketDBOwner> bucketDB);
     ~MySubDb();
-    virtual IFeedView::SP getFeedView() const override {
+    IFeedView::SP getFeedView() const override {
         return IFeedView::SP(new MyFeedView(_repo));
     }
+    void validateDocStore(FeedHandler &, SerialNum) const override {}
 };
 
 

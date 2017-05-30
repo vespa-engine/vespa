@@ -217,6 +217,8 @@ public:
     void setup(const DocumentSubDbInitializerResult &initResult) override;
     void initViews(const DocumentDBConfig &configSnapshot, const std::shared_ptr<matching::SessionManager> &sessionManager) override;
 
+    void validateDocStore(FeedHandler & feedHandler, SerialNum serialNum) const override;
+
     IReprocessingTask::List
     applyConfig(const DocumentDBConfig &newConfigSnapshot,
                 const DocumentDBConfig &oldConfigSnapshot,

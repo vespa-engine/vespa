@@ -322,4 +322,10 @@ DocumentSubDBCollection::tearDownReferences(IDocumentDBReferenceResolver &resolv
     }
 }
 
+void DocumentSubDBCollection::validateDocStore(FeedHandler & feedHandler, SerialNum serialNum) {
+    for (auto subDb : _subDBs) {
+        subDb->validateDocStore(feedHandler, serialNum);
+    }
+}
+
 } // namespace proton
