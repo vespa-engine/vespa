@@ -9,6 +9,8 @@
 namespace search { class BitVector; }
 namespace proton {
 
+class FeedHandler;
+
 class DocStoreValidator : public search::IDocumentStoreReadVisitor
 {
     IDocumentMetaStore                 &_dms;
@@ -17,7 +19,7 @@ class DocStoreValidator : public search::IDocumentStoreReadVisitor
     std::unique_ptr<search::BitVector>  _orphans;
     uint32_t                            _visitCount;
     uint32_t                            _visitEmptyCount;
-    
+
 public:
     DocStoreValidator(IDocumentMetaStore &dms);
 
@@ -31,8 +33,7 @@ public:
     uint32_t getVisitCount() const { return _visitCount; }
     uint32_t getVisitEmptyCount() const { return _visitEmptyCount; }
     LidVectorContext::SP getInvalidLids() const;
+    void performRemoves(FeedHandler & feedHandler, const search::IDocumentStore &store, const document::DocumentTypeRepo & repo) const;
 };
 
-
 } // namespace proton
-
