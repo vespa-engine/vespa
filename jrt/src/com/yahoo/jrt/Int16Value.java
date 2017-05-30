@@ -42,7 +42,8 @@ public class Int16Value extends Value
 
     public short asInt16() { return value; }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return String.valueOf(value);
     }
 

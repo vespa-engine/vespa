@@ -125,7 +125,8 @@ public class Values
         }
     }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         if (values.size()==0) return "";
         if (values.size()==1) return values.get(0).toString();
         StringBuffer buffer=new StringBuffer();

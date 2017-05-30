@@ -57,7 +57,8 @@ public class DataArray extends Value
 
     public byte[][] asDataArray() { return value; }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return Arrays.toString(value);
     }
 

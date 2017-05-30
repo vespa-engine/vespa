@@ -42,7 +42,8 @@ public class FloatValue extends Value
 
     public float asFloat() { return value; }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return String.valueOf(value);
     }
 

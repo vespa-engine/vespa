@@ -47,7 +47,8 @@ public class Int32Array extends Value
 
     public int[] asInt32Array() { return value; }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return Arrays.toString(value);
     }
 

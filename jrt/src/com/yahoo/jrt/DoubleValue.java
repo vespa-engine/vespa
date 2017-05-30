@@ -41,7 +41,8 @@ public class DoubleValue extends Value
 
     public double asDouble() { return value; }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return String.valueOf(value);
     }
 

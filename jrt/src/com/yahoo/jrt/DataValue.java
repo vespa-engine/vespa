@@ -44,7 +44,8 @@ public class DataValue extends Value
 
     public byte[] asData() { return value; }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return String.valueOf(value);
     }
 

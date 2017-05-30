@@ -47,7 +47,8 @@ public class DoubleArray extends Value
 
     public double[] asDoubleArray() { return value; }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return Arrays.toString(value);
     }
 

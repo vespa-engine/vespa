@@ -41,7 +41,8 @@ public class Int64Value extends Value
 
     public long asInt64() { return value; }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return String.valueOf(value);
     }
 
