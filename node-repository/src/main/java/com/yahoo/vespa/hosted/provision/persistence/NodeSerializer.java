@@ -60,6 +60,7 @@ public class NodeSerializer {
     private static final String hardwareFailureKey = "hardwareFailure";
     private static final String nodeTypeKey = "type";
     private static final String wantToRetireKey = "wantToRetire";
+    private static final String wantToUnprovisionKey = "wantToUnprovision";
 
     // Configuration fields
     private static final String flavorKey = "flavor";
@@ -112,6 +113,7 @@ public class NodeSerializer {
         object.setLong(failCountKey, node.status().failCount());
         node.status().hardwareFailure().ifPresent(failure -> object.setString(hardwareFailureKey, toString(failure)));
         object.setBool(wantToRetireKey, node.status().wantToRetire());
+        object.setBool(wantToUnprovisionKey, node.status().wantToUnprovision());
         node.allocation().ifPresent(allocation -> toSlime(allocation, object.setObject(instanceKey)));
         toSlime(node.history(), object.setArray(historyKey));
         object.setString(nodeTypeKey, toString(node.type()));
@@ -170,7 +172,8 @@ public class NodeSerializer {
                           optionalString(object.field(stateVersionKey)),
                           (int)object.field(failCountKey).asLong(),
                           hardwareFailureFromSlime(object.field(hardwareFailureKey)),
-                          object.field(wantToRetireKey).asBool());
+                          object.field(wantToRetireKey).asBool(),
+                          object.field(wantToUnprovisionKey).asBool());
     }
 
     private Flavor flavorFromSlime(Inspector object) {

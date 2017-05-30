@@ -22,6 +22,7 @@ public class Status {
     private final int failCount;
     private final Optional<HardwareFailureType> hardwareFailure;
     private final boolean wantToRetire;
+    private final boolean wantToUnprovision;
     
     public enum HardwareFailureType {
         
@@ -40,7 +41,8 @@ public class Status {
                   Optional<String> stateVersion,
                   int failCount,
                   Optional<HardwareFailureType> hardwareFailure,
-                  boolean wantToRetire) {
+                  boolean wantToRetire,
+                  boolean wantToUnprovision) {
         this.reboot = generation;
         this.vespaVersion = vespaVersion;
         this.hostedVersion = hostedVersion;
@@ -48,28 +50,29 @@ public class Status {
         this.failCount = failCount;
         this.hardwareFailure = hardwareFailure;
         this.wantToRetire = wantToRetire;
+        this.wantToUnprovision = wantToUnprovision;
     }
 
     /** Returns a copy of this with the reboot generation changed */
-    public Status withReboot(Generation reboot) { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, failCount, hardwareFailure, wantToRetire); }
+    public Status withReboot(Generation reboot) { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, failCount, hardwareFailure, wantToRetire, wantToUnprovision); }
 
     /** Returns the reboot generation of this node */
     public Generation reboot() { return reboot; }
 
     /** Returns a copy of this with the vespa version changed */
-    public Status withVespaVersion(Version version) { return new Status(reboot, Optional.of(version), hostedVersion, stateVersion, failCount, hardwareFailure, wantToRetire); }
+    public Status withVespaVersion(Version version) { return new Status(reboot, Optional.of(version), hostedVersion, stateVersion, failCount, hardwareFailure, wantToRetire, wantToUnprovision); }
 
     /** Returns the Vespa version installed on the node, if known */
     public Optional<Version> vespaVersion() { return vespaVersion; }
 
     /** Returns a copy of this with the hosted version changed */
-    public Status withHostedVersion(Version version) { return new Status(reboot, vespaVersion, Optional.of(version), stateVersion, failCount, hardwareFailure, wantToRetire); }
+    public Status withHostedVersion(Version version) { return new Status(reboot, vespaVersion, Optional.of(version), stateVersion, failCount, hardwareFailure, wantToRetire, wantToUnprovision); }
 
     /** Returns the hosted version installed on the node, if known */
     public Optional<Version> hostedVersion() { return hostedVersion; }
 
     /** Returns a copy of this with the state version changed */
-    public Status withStateVersion(String version) { return new Status(reboot, vespaVersion, hostedVersion, Optional.of(version), failCount, hardwareFailure, wantToRetire); }
+    public Status withStateVersion(String version) { return new Status(reboot, vespaVersion, hostedVersion, Optional.of(version), failCount, hardwareFailure, wantToRetire, wantToUnprovision); }
 
     /**
      * Returns the state version the node last successfully converged with.
@@ -85,29 +88,29 @@ public class Status {
                 .filter(image -> !image.isEmpty())
                 .map(DockerImage::new)
                 .map(DockerImage::tagAsVersion);
-        return new Status(reboot, vespaVersion, hostedVersion, stateVersion, failCount, hardwareFailure, wantToRetire);
+        return new Status(reboot, vespaVersion, hostedVersion, stateVersion, failCount, hardwareFailure, wantToRetire, wantToUnprovision);
     }
 
     /** Returns the current docker image the node is running, if known. */
     public Optional<String> dockerImage() { return vespaVersion.map(DockerImage.defaultImage::withTag).map(DockerImage::toString); }
 
-    public Status withIncreasedFailCount() { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, failCount + 1, hardwareFailure, wantToRetire); }
+    public Status withIncreasedFailCount() { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, failCount + 1, hardwareFailure, wantToRetire, wantToUnprovision); }
 
-    public Status withDecreasedFailCount() { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, failCount - 1, hardwareFailure, wantToRetire); }
+    public Status withDecreasedFailCount() { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, failCount - 1, hardwareFailure, wantToRetire, wantToUnprovision); }
 
-    public Status setFailCount(Integer value) { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, value, hardwareFailure, wantToRetire); }
+    public Status setFailCount(Integer value) { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, value, hardwareFailure, wantToRetire, wantToUnprovision); }
 
     /** Returns how many times this node has been moved to the failed state. */
     public int failCount() { return failCount; }
 
-    public Status withHardwareFailure(Optional<HardwareFailureType> hardwareFailure) { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, failCount, hardwareFailure, wantToRetire); }
+    public Status withHardwareFailure(Optional<HardwareFailureType> hardwareFailure) { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, failCount, hardwareFailure, wantToRetire, wantToUnprovision); }
 
     /** Returns the type of the last hardware failure detected on this node, or empty if none */
     public Optional<HardwareFailureType> hardwareFailure() { return hardwareFailure; }
 
     /** Returns a copy of this with the want to retire flag changed */
     public Status withWantToRetire(boolean wantToRetire) {
-        return new Status(reboot, vespaVersion, hostedVersion, stateVersion, failCount, hardwareFailure, wantToRetire);
+        return new Status(reboot, vespaVersion, hostedVersion, stateVersion, failCount, hardwareFailure, wantToRetire, wantToUnprovision);
     }
 
     /**
@@ -118,7 +121,19 @@ public class Status {
         return wantToRetire;
     }
 
+    /** Returns a copy of this with the want to unprovision flag changed */
+    public Status withWantToUnprovision(boolean wantToUnprovision) {
+        return new Status(reboot, vespaVersion, hostedVersion, stateVersion, failCount, hardwareFailure, wantToRetire, wantToUnprovision);
+    }
+
+    /**
+     * Returns whether this node should be unprovisioned when possible.
+     */
+    public boolean wantToUnprovision() {
+        return wantToUnprovision;
+    }
+
     /** Returns the initial status of a newly provisioned node */
-    public static Status initial() { return new Status(Generation.inital(), Optional.empty(), Optional.empty(), Optional.empty(), 0, Optional.empty(), false); }
+    public static Status initial() { return new Status(Generation.inital(), Optional.empty(), Optional.empty(), Optional.empty(), 0, Optional.empty(), false, false); }
 
 }
