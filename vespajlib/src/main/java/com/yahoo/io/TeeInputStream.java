@@ -20,7 +20,7 @@ class TeeInputStream extends InputStream {
 
     private int inBuf() { return writePos - readPos; }
 
-    private void fillBuf(boolean block) throws IOException {
+    private void fillBuf() throws IOException {
         if (readPos == writePos) {
             readPos = 0;
             writePos = 0;
@@ -32,7 +32,7 @@ class TeeInputStream extends InputStream {
             writePos = had;
         }
         int wantToRead = CAPACITY - writePos;
-        if (inBuf() > 0 || !block) {
+        if (inBuf() > 0) {
             wantToRead = Math.min(wantToRead, src.available());
         }
         if (wantToRead > 0) {
@@ -56,17 +56,12 @@ class TeeInputStream extends InputStream {
     }
 
     public @Override void close() throws IOException {
-        fillBuf(false);
         src.close();
         dst.close();
     }
 
-    public @Override void mark(int readlimit) {}
-    public @Override boolean markSupported() { return false; }
-    public @Override void reset() {}
-
     public @Override int read() throws IOException {
-        fillBuf(true);
+        fillBuf();
         if (inBuf() > 0) {
             int r = buf[readPos++];
             return r & 0xff;
@@ -82,7 +77,7 @@ class TeeInputStream extends InputStream {
         if (len <= 0) {
             return 0;
         }
-        fillBuf(true);
+        fillBuf();
         int had = inBuf();
         if (had > 0) {
             len = Math.min(len, had);
