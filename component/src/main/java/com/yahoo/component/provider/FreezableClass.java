@@ -30,7 +30,8 @@ public class FreezableClass implements Freezable {
     }
 
     /** Clones this. The clone is <i>not</i> frozen */
-    public @Override FreezableClass clone() {
+    @Override
+    public FreezableClass clone() {
         try {
             FreezableClass clone=(FreezableClass)super.clone();
             clone.frozen = false;

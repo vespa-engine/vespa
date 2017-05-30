@@ -42,7 +42,8 @@ public class Ranking implements Cloneable, Serializable {
     public void setNormal(boolean n) { this.normal = n; }
 
     /** Returns true if the given rank settings are the same */
-    public @Override boolean equals(Object o) {
+    @Override
+    public boolean equals(Object o) {
         if ( ! (o instanceof Ranking)) return false;
 
         Ranking other=(Ranking)o;
@@ -52,15 +53,18 @@ public class Ranking implements Cloneable, Serializable {
         return true;
     }
 
-    public @Override int hashCode() {
+    @Override
+    public int hashCode() {
         return java.util.Objects.hash(filter, literal, normal);
     }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return "rank settings [filter: " + filter + ", literal: " + literal + ", normal: "+normal+"]";
     }
 
-    public @Override Ranking clone() {
+    @Override
+    public Ranking clone() {
         try {
             return (Ranking)super.clone();
         }

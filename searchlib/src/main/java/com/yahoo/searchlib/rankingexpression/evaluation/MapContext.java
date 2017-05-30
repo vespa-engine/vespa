@@ -44,7 +44,8 @@ public class MapContext extends Context {
     /**
      * Returns the value of a key. 0 is returned if the given key is not bound in this.
      */
-    public @Override Value get(String key) {
+    @Override
+    public Value get(String key) {
         Value value=bindings.get(key);
         if (value==null) return DoubleValue.zero;
         return value;
@@ -56,7 +57,8 @@ public class MapContext extends Context {
      *
      * @since 5.1.5
      */
-    public @Override void put(String key,Value value) {
+    @Override
+    public void put(String key,Value value) {
         bindings.put(key,value.freeze());
     }
 
@@ -70,12 +72,14 @@ public class MapContext extends Context {
     public MapContext thawedCopy() { return new MapContext(new HashMap<>(bindings)); }
 
     /** Returns an unmodifiable map of the names of this */
-    public @Override Set<String> names() {
+    @Override
+    public Set<String> names() {
         if (frozen) return bindings.keySet();
         return Collections.unmodifiableMap(bindings).keySet();
     }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return "a map context [" + bindings.size() + " bindings]";
     }
 

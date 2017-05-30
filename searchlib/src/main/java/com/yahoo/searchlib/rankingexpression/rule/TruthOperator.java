@@ -27,7 +27,8 @@ public enum TruthOperator  implements Serializable {
     /** Perform the truth operation on the input */
     public abstract boolean evaluate(double x, double y);
 
-    public @Override String toString() { return operatorString; }
+    @Override
+    public String toString() { return operatorString; }
 
     public static TruthOperator fromString(String string) {
         for (TruthOperator operator : values())

@@ -91,7 +91,8 @@ public final class ComponentSpecification {
      */
     public String stringValue() { return stringValue; }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return toId().toString();
     }
 
@@ -102,7 +103,8 @@ public final class ComponentSpecification {
         return c.stringValue.equals(this.stringValue());
     }
 
-    public @Override int hashCode() {
+    @Override
+    public int hashCode() {
         return stringValue.hashCode();
     }
 

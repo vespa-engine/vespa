@@ -34,7 +34,8 @@ public class ListenableFreezableClass extends FreezableClass implements Listenab
     }
 
     /** Clones this. The clone is <i>not</i> frozen and has no listeners. */
-    public @Override ListenableFreezableClass clone() {
+    @Override
+    public ListenableFreezableClass clone() {
         ListenableFreezableClass clone=(ListenableFreezableClass)super.clone();
         clone.executionList = new ExecutionList();
         return clone;

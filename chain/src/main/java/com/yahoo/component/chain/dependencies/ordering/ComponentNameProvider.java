@@ -48,7 +48,8 @@ class ComponentNameProvider extends NameProvider {
         return 1;
     }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         StringBuilder b=new StringBuilder("components [");
         for (@SuppressWarnings("rawtypes")
                 Iterator<ComponentNode> i=nodes.iterator(); i.hasNext(); ) {

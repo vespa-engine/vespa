@@ -74,10 +74,12 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
         }
         public String getName() { return name; }
         public String getValue() { return value; }
-        public @Override int hashCode() {
+        @Override
+        public int hashCode() {
             return name.hashCode() + 17*value.hashCode();
         }
-        public @Override boolean equals(Object obj) {
+        @Override
+        public boolean equals(Object obj) {
             if (!(obj instanceof Property)) {
                 return false;
             }

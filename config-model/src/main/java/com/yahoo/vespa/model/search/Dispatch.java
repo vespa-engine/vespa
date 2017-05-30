@@ -85,7 +85,8 @@ public class Dispatch extends AbstractService implements SearchInterface,
 
     public int getFrtPort()  { return getRelativePort(0); }
     public int getDispatchPort()   { return getRelativePort(1); }
-    public @Override int getHealthPort() { return getRelativePort(2); }
+    @Override
+    public int getHealthPort() { return getRelativePort(2); }
 
     /**
      * Twice the default of the number of threads in the container.

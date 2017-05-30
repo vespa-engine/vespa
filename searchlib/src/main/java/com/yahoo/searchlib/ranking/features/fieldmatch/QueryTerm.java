@@ -51,15 +51,18 @@ public final class QueryTerm {
     /** The degree to which this is exactly the term the user specified (1), or a stemmed form (closer to 0) */
     public float getExactness() { return exactness; }
 
-    public @Override int hashCode() { return term.hashCode(); }
+    @Override
+    public int hashCode() { return term.hashCode(); }
 
-    public @Override boolean equals(Object object) {
+    @Override
+    public boolean equals(Object object) {
         if (! (object instanceof QueryTerm)) return false;
 
         return this.term.equals(((QueryTerm)object).term);
     }
 
-    public @Override String toString() {
+    @Override
+    public String toString() {
         if (connectedness==0.1f) return term;
         return connectedness + ":" + term;
     }
