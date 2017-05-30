@@ -46,11 +46,11 @@ public class NodeFlavorTuningTest {
 
     @Test
     public void require_that_documentstore_numthreads_is_based_on_num_cores() {
-        assertDocumentStoreNumThreads(1, 0);
-        assertDocumentStoreNumThreads(1, 1.0);
-        assertDocumentStoreNumThreads(1, 3.0);
-        assertDocumentStoreNumThreads(2, 4.0);
-        assertDocumentStoreNumThreads(4, 8.0);
+        assertDocumentStoreNumThreads(8, 0);
+        assertDocumentStoreNumThreads(8, 1.0);
+        assertDocumentStoreNumThreads(8, 3.0);
+        assertDocumentStoreNumThreads(8, 4.0);
+        assertDocumentStoreNumThreads(8, 8.0);
         assertDocumentStoreNumThreads(12, 24.0);
         assertDocumentStoreNumThreads(16, 32.0);
         assertDocumentStoreNumThreads(24, 48.0);
