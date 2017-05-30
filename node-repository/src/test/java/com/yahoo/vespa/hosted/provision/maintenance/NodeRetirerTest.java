@@ -56,18 +56,18 @@ public class NodeRetirerTest {
             tester = new NodeRetirerTester(nodeFlavors);
             retirer = new NodeRetirer(tester.nodeRepository, NodeRetirerTester.zone, flavorClusters, Duration.ofDays(1), new JobControl(tester.nodeRepository.database()), policy);
 
-            tester.createReadyNodesByFlavor(5, 3, 77, 47);
+            tester.createReadyNodesByFlavor(7, 4, 77, 47);
             tester.deployApp("vespa", "calendar", 0, 3);
             tester.deployApp("vespa", "notes", 2, 12);
             tester.deployApp("sports", "results", 2, 7);
             tester.deployApp("search", "images", 3, 6);
 
             // Not all nodes that we wanted to retire could be retired now (Not enough spare nodes)
-            assertSpareCountsByFlavor(1, 3, 56, 40);
+            assertSpareCountsByFlavor(2, 2, 56, 39);
             assertFalse(retirer.retireUnallocated());
-            assertParkedCountsByFlavor(1, 3, 56, 40);
+            assertParkedCountsByFlavor(2, 2, 56, 39);
 
-            assertSpareCountsByFlavor(0, -1, 0, 0);
+            assertSpareCountsByFlavor(0, 0, 0, 0);
             // Lets change parked nodes IP address and set it back to ready
             tester.nodeRepository.getNodes(Node.State.parked)
                     .forEach(node -> {
@@ -79,19 +79,19 @@ public class NodeRetirerTest {
                     });
 
             // The remaining nodes we wanted to retire has been retired
-            assertSpareCountsByFlavor(1, 3, 56, 40);
+            assertSpareCountsByFlavor(2, 2, 56, 39);
             assertTrue(retirer.retireUnallocated());
-            assertParkedCountsByFlavor(1, -1, 2, 1);
+            assertParkedCountsByFlavor(2, 2, 2, 2);
         }
 
         /* Creates flavors where 'replaces' graph and node counts that looks like this:
          *           Total nodes: 40  1
-         *                            |                     4   Total nodes: 7
-         *          Total nodes: 20   |                     |   search.images nodes: 4
-         *    vespa.notes nodes: 3    0                     |
-         * sports.results nodes: 6   / \                    5   Total nodes: 5
-         *                          /   \                       search.videos nodes: 2
-         *       Total nodes: 25   2     3  Total nodes: 14
+         *                            |                          4   Total nodes: 8
+         *          Total nodes: 20   |                          |   search.images nodes: 4
+         *    vespa.notes nodes: 3    0                          |
+         * sports.results nodes: 6   / \                         5   Total nodes: 6
+         *                          /   \   Total nodes: 14          search.videos nodes: 2
+         *       Total nodes: 25   2     3  vespa.calendar nodes: 7
          */
         @Test
         public void testRetireAllocatedNodes() throws InterruptedException {
@@ -105,7 +105,7 @@ public class NodeRetirerTest {
             FlavorClusters flavorClusters = new FlavorClusters(nodeFlavors.getFlavors());
             tester = new NodeRetirerTester(nodeFlavors);
 
-            tester.createReadyNodesByFlavor(20, 40, 25, 14, 7, 5);
+            tester.createReadyNodesByFlavor(21, 42, 27, 15, 8, 6);
             tester.deployApp("vespa", "calendar", 3, 7);
             tester.deployApp("vespa", "notes", 0, 3);
             tester.deployApp("sports", "results", 0, 6);
@@ -258,7 +258,7 @@ public class NodeRetirerTest {
         public void testGetNumberSpareNodesWithNoActiveNodes() {
             addNodesByFlavor(Node.State.ready, 5, 3, 77);
 
-            Map<Flavor, Long> expected = expectedCountsByFlavor(5, 3, 77);
+            Map<Flavor, Long> expected = expectedCountsByFlavor(3, 1, 75);
             Map<Flavor, Long> actual = retirer.getNumberSpareReadyNodesByFlavor(nodes);
             assertEquals(expected, actual);
         }
@@ -268,7 +268,7 @@ public class NodeRetirerTest {
             addNodesByFlavor(Node.State.ready, 5, 3, 77, 47);
             addNodesByFlavor(Node.State.active, 0, 10, 2, 230, 137);
 
-            Map<Flavor, Long> expected = expectedCountsByFlavor(5, 2, 76, 24);
+            Map<Flavor, Long> expected = expectedCountsByFlavor(3, 1, 75, 45);
             Map<Flavor, Long> actual = retirer.getNumberSpareReadyNodesByFlavor(nodes);
             assertEquals(expected, actual);
         }
@@ -326,13 +326,13 @@ public class NodeRetirerTest {
             when(retirer.getNumSpareNodes(any(Long.class), any(Long.class))).thenCallRealMethod();
 
             assertEquals(retirer.getNumSpareNodes(0, 0), 0L);
-            assertEquals(retirer.getNumSpareNodes(0, 1), 1L);
-            assertEquals(retirer.getNumSpareNodes(0, 100), 100L);
+            assertEquals(retirer.getNumSpareNodes(0, 1), 0L);
+            assertEquals(retirer.getNumSpareNodes(0, 100), 98L);
 
             assertEquals(retirer.getNumSpareNodes(1, 0), 0L);
             assertEquals(retirer.getNumSpareNodes(1, 1), 0L);
-            assertEquals(retirer.getNumSpareNodes(1, 2), 1L);
-            assertEquals(retirer.getNumSpareNodes(43, 23), 18L);
+            assertEquals(retirer.getNumSpareNodes(1, 2), 0L);
+            assertEquals(retirer.getNumSpareNodes(43, 23), 21L);
         }
 
         @Test

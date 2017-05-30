@@ -190,7 +190,7 @@ public class NodeRetirer extends Maintainer {
      * and ready nodes.
      */
     long getNumSpareNodes(long numActiveNodes, long numReadyNodes) {
-        long numNodesToSpare = (long) Math.ceil(0.1 * numActiveNodes);
+        long numNodesToSpare = 2;
         return Math.max(0L, numReadyNodes - numNodesToSpare);
     }
 
