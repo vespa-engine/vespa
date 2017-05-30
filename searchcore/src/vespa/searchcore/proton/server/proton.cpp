@@ -282,7 +282,9 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
 
     vespalib::string fileConfigId;
     _warmupExecutor.reset(new vespalib::ThreadStackExecutor(4, 128*1024));
-    const size_t summaryThreads = protonConfig.summary.log.numthreads;
+    // We need at least 1 guaranteed free worker in order to ensure progress so #documentsdbs + 1 should suffice,
+    // but we will not be cheap and give #documentsdbs * 2
+    const size_t summaryThreads = std::max(protonConfig.summary.log.numthreads, protonConfig.documentdb.size() * 2);
     _summaryExecutor.reset(new vespalib::BlockingThreadStackExecutor(summaryThreads, 128*1024, summaryThreads*16));
     InitializeThreads initializeThreads;
     if (protonConfig.initialize.threads > 0) {
