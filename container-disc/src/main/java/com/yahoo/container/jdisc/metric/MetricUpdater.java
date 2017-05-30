@@ -4,7 +4,6 @@ package com.yahoo.container.jdisc.metric;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.jdisc.core.ActiveContainerStatistics;
 
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -32,19 +31,17 @@ public class MetricUpdater extends AbstractComponent {
     private static final String OPEN_FILE_DESCRIPTORS = "jdisc.open_file_descriptors";
 
     private final Metric metric;
-    private final ActiveContainerStatistics activeContainerStatistics;
     private final Timer timer = new Timer();
     long freeMemory = -1;
     long totalMemory = -1;
 
     @Inject
-    public MetricUpdater(Metric metric, ActiveContainerStatistics activeContainerStatistics) {
-        this(metric, activeContainerStatistics, 10*1000);
+    public MetricUpdater(Metric metric) {
+        this(metric, 10*1000);
     }
     
-    public MetricUpdater(Metric metric, ActiveContainerStatistics activeContainerStatistics, long delayMillis) {
+    public MetricUpdater(Metric metric, long delayMillis) {
         this.metric = metric;
-        this.activeContainerStatistics = activeContainerStatistics;
         timer.schedule(new UpdaterTask(), delayMillis, delayMillis);
     }
     
@@ -72,7 +69,6 @@ public class MetricUpdater extends AbstractComponent {
             metric.set(TOTAL_MEMORY_BYTES, totalMemory, null);
             metric.set(MEMORY_MAPPINGS_COUNT, count_mappings(), null);
             metric.set(OPEN_FILE_DESCRIPTORS, count_open_files(), null);
-            activeContainerStatistics.outputMetrics(metric);
         }
 
         // Note: Linux-specific
