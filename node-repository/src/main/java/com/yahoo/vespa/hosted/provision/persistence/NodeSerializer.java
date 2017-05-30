@@ -166,6 +166,8 @@ public class NodeSerializer {
     }
 
     private Status statusFromSlime(Inspector object) {
+        // TODO: Simplify after June 2017
+        boolean wantToUnprovision = object.field(wantToUnprovisionKey).valid() && object.field(wantToUnprovisionKey).asBool();
         return new Status(generationFromSlime(object, rebootGenerationKey, currentRebootGenerationKey),
                           versionFromSlime(object.field(vespaVersionKey)),
                           versionFromSlime(object.field(hostedVersionKey)),
@@ -173,7 +175,7 @@ public class NodeSerializer {
                           (int)object.field(failCountKey).asLong(),
                           hardwareFailureFromSlime(object.field(hardwareFailureKey)),
                           object.field(wantToRetireKey).asBool(),
-                          object.field(wantToUnprovisionKey).asBool());
+                          wantToUnprovision);
     }
 
     private Flavor flavorFromSlime(Inspector object) {
