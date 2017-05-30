@@ -50,7 +50,7 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
     }
 
     private void tuneDocumentStoreNumThreads(ProtonConfig.Summary.Log.Builder builder) {
-        builder.numthreads(max(1, (int)nodeFlavor.getMinCpuCores()/2));
+        builder.numthreads(max(8, (int)nodeFlavor.getMinCpuCores()/2));
     }
 
     private void tuneFlushStrategyMemoryLimits(ProtonConfig.Flush.Memory.Builder builder) {
