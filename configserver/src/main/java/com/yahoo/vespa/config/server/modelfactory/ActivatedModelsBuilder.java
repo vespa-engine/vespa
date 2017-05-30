@@ -78,7 +78,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         ServerCache cache = zkClient.loadServerCache();
         ModelContext modelContext = new ModelContextImpl(
                 applicationPackage,
-                Optional.<Model>empty(),
+                Optional.empty(),
                 permanentApplicationPackage.get().applicationPackage(),
                 logger,
                 configDefinitionRepo,

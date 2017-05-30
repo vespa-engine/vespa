@@ -1,7 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.deploy;
 
+import com.yahoo.component.Version;
+import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.log.LogLevel;
@@ -45,6 +48,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private final Duration timeout;
     private final Clock clock;
     private final DeployLogger logger = new SilentDeployLogger();
+    
+    /** The Vespa version this application should run on */
+    private final Version version;
 
     private boolean prepared = false;
     
@@ -56,7 +62,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     private Deployment(LocalSession session, LocalSessionRepo localSessionRepo, Path tenantPath,
                        Optional<Provisioner> hostProvisioner, ActivateLock activateLock,
-                       Duration timeout, Clock clock, boolean prepared, boolean validate) {
+                       Duration timeout, Clock clock, boolean prepared, boolean validate, Version version) {
         this.session = session;
         this.localSessionRepo = localSessionRepo;
         this.tenantPath = tenantPath;
@@ -66,20 +72,21 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         this.clock = clock;
         this.prepared = prepared;
         this.validate = validate;
+        this.version = version;
     }
 
     public static Deployment unprepared(LocalSession session, LocalSessionRepo localSessionRepo, Path tenantPath,
                                         Optional<Provisioner> hostProvisioner, ActivateLock activateLock,
-                                        Duration timeout, Clock clock, boolean validate) {
+                                        Duration timeout, Clock clock, boolean validate, Version version) {
         return new Deployment(session, localSessionRepo, tenantPath, hostProvisioner, activateLock,
-                              timeout, clock, false, validate);
+                              timeout, clock, false, validate, version);
     }
 
     public static Deployment prepared(LocalSession session, LocalSessionRepo localSessionRepo,
                                       Optional<Provisioner> hostProvisioner, ActivateLock activateLock,
                                       Duration timeout, Clock clock) {
         return new Deployment(session, localSessionRepo, null, hostProvisioner, activateLock,
-                              timeout, clock, true, true);
+                              timeout, clock, true, true, session.getVespaVersion());
     }
 
     public Deployment setIgnoreLockFailure(boolean ignoreLockFailure) {
@@ -97,12 +104,12 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     public void prepare() {
         if (prepared) return;
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
+
         session.prepare(logger,
-                        /** Assumes that session has already set application id and version, see {@link com.yahoo.vespa.config.server.session.SessionFactoryImpl}. */
                         new PrepareParams.Builder().applicationId(session.getApplicationId())
                                                    .timeoutBudget(timeoutBudget)
                                                    .ignoreValidationErrors( ! validate)
-                                                   .vespaVersion(session.getVespaVersion().toString())
+                                                   .vespaVersion(version.toString())
                                                    .build(),
                         Optional.empty(),
                         tenantPath);
