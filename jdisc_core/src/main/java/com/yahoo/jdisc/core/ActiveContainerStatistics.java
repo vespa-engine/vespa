@@ -27,9 +27,23 @@ public class ActiveContainerStatistics {
     private final WeakHashMap<ActiveContainer, ActiveContainerStats> activeContainers = new WeakHashMap<>();
     private final Object lock = new Object();
 
-    ActiveContainerStatistics() {} // Make class only constructible from this package
+    public void onActivated(ActiveContainer activeContainer) {
+        synchronized (lock) {
+            activeContainers.put(activeContainer, new ActiveContainerStats(Instant.now()));
+        }
+    }
 
-    public void emitMetrics(Metric metric) {
+    public void onDeactivated(ActiveContainer activeContainer) {
+        synchronized (lock) {
+            ActiveContainerStats containerStats = activeContainers.get(activeContainer);
+            if (containerStats == null) {
+                throw new IllegalStateException("onActivated() has not been called for container: " + activeContainer);
+            }
+            containerStats.setTimeDeactived(Instant.now());
+        }
+    }
+
+    public void outputMetrics(Metric metric) {
         synchronized (lock) {
             DeactivatedContainerMetrics metrics = deactivatedContainerStream()
                     .collect(
@@ -42,27 +56,12 @@ public class ActiveContainerStatistics {
         }
     }
 
-    void onActivated(ActiveContainer activeContainer) {
-        synchronized (lock) {
-            activeContainers.put(activeContainer, new ActiveContainerStats(Instant.now()));
-        }
-    }
-
-    void onDeactivated(ActiveContainer activeContainer) {
-        synchronized (lock) {
-            ActiveContainerStats containerStats = activeContainers.get(activeContainer);
-            if (containerStats == null) {
-                throw new IllegalStateException("onActivated() has not been called for container: " + activeContainer);
-            }
-            containerStats.timeDeactivated = Instant.now();
-        }
-    }
-
-    void printSummaryToLog() {
+    public void printSummaryToLog() {
         synchronized (lock) {
             List<DeactivatedContainer> deactivatedContainers = deactivatedContainerStream().collect(toList());
-            if (deactivatedContainers.isEmpty()) return;
-
+            if (deactivatedContainers.isEmpty()) {
+                return;
+            }
             log.warning(
                     "Multiple instances of ActiveContainer leaked! " + deactivatedContainers.size() +
                             " instances are still present.");
@@ -75,21 +74,26 @@ public class ActiveContainerStatistics {
     private Stream<DeactivatedContainer> deactivatedContainerStream() {
         synchronized (lock) {
             return activeContainers.entrySet().stream()
-                    .filter(e -> e.getValue().isDeactivated())
-                    .map(e -> new DeactivatedContainer(e.getKey(), e.getValue().timeActivated, e.getValue().timeDeactivated));
+                    .filter(e -> e.getKey() != null)
+                    .filter(e -> !e.getValue().isDeactivated())
+                    .map(e -> new DeactivatedContainer(e.getKey(), e.getValue().timeActivated, e.getValue().timeDeactived));
         }
     }
 
     private static class ActiveContainerStats {
         public final Instant timeActivated;
-        public Instant timeDeactivated;
+        public Instant timeDeactived;
 
         public ActiveContainerStats(Instant timeActivated) {
             this.timeActivated = timeActivated;
         }
 
+        public void setTimeDeactived(Instant instant) {
+            this.timeDeactived = instant;
+        }
+
         public boolean isDeactivated() {
-            return timeDeactivated != null;
+            return timeDeactived == null;
         }
     }
 
