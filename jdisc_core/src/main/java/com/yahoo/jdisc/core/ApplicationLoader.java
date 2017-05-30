@@ -5,7 +5,14 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.yahoo.jdisc.AbstractResource;
-import com.yahoo.jdisc.application.*;
+import com.yahoo.jdisc.application.Application;
+import com.yahoo.jdisc.application.ApplicationNotReadyException;
+import com.yahoo.jdisc.application.ContainerActivator;
+import com.yahoo.jdisc.application.ContainerBuilder;
+import com.yahoo.jdisc.application.DeactivatedContainer;
+import com.yahoo.jdisc.application.GuiceRepository;
+import com.yahoo.jdisc.application.OsgiFramework;
+import com.yahoo.jdisc.application.OsgiHeader;
 import com.yahoo.jdisc.service.ContainerNotReadyException;
 import com.yahoo.jdisc.service.CurrentContainer;
 import org.osgi.framework.Bundle;
@@ -28,11 +35,13 @@ import java.util.logging.Logger;
 public class ApplicationLoader implements BootstrapLoader, ContainerActivator, CurrentContainer {
 
     private static final Logger log = Logger.getLogger(ApplicationLoader.class.getName());
+
     private final OsgiFramework osgiFramework;
     private final GuiceRepository guiceModules = new GuiceRepository();
     private final AtomicReference<ActiveContainer> containerRef = new AtomicReference<>();
     private final Object appLock = new Object();
     private final List<Bundle> appBundles = new ArrayList<>();
+    private final ActiveContainerStatistics statistics = new ActiveContainerStatistics();
     private Application application;
     private ApplicationInUseTracker applicationInUseTracker;
 
@@ -62,9 +71,11 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
             }
 
             prev = containerRef.getAndSet(next);
+            statistics.onActivated(next);
             if (prev == null) {
                 return null;
             }
+            statistics.onDeactivated(prev);
         }
         prev.release();
         DeactivatedContainer deactivatedContainer = prev.shutdown();
@@ -82,11 +93,9 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
                                 Thread.sleep(TimeUnit.MILLISECONDS.convert(currentWaitTimeSeconds, TimeUnit.SECONDS))
                 );
 
+                statistics.printSummaryToLog();
                 final ActiveContainer prevContainer = prevContainerReference.get();
-                if (prevContainer == null) {
-                    return;
-                }
-                if (prevContainer.retainCount() == 0) {
+                if (prevContainer == null || prevContainer.retainCount() == 0) {
                     return;
                 }
                 log.warning("Previous container not terminated in the last " + totalTimeWaited + " seconds."
@@ -231,6 +240,10 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
         }
     }
 
+    public ActiveContainerStatistics getActiveContainerStatistics() {
+        return statistics;
+    }
+
     public OsgiFramework osgiFramework() {
         return osgiFramework;
     }
@@ -258,4 +271,5 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
             }
         }
     }
+
 }

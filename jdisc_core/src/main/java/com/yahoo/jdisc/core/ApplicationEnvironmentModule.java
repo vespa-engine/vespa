@@ -28,6 +28,7 @@ class ApplicationEnvironmentModule extends AbstractModule {
         bind(CurrentContainer.class).toInstance(loader);
         bind(OsgiFramework.class).toInstance(loader.osgiFramework());
         bind(ThreadFactory.class).to(ContainerThread.Factory.class);
+        bind(ActiveContainerStatistics.class).toInstance(loader.getActiveContainerStatistics());
     }
 
     @Provides
