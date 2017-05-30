@@ -5,9 +5,6 @@ import com.yahoo.collections.ListMap;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -17,7 +14,6 @@ import com.yahoo.vespa.orchestrator.Orchestrator;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -37,13 +33,6 @@ public class RetiredEarlyExpirer extends Maintainer {
         super(nodeRepository, interval, jobControl);
         this.deployer = deployer;
         this.orchestrator = orchestrator;
-
-        List<Zone> applies = Arrays.asList(new Zone(SystemName.cd, Environment.dev, RegionName.from("cd-us-central-1")));
-        if (!applies.contains(zone)) {
-            String targetZones = applies.stream().map(Zone::toString).collect(Collectors.joining(", "));
-            log.info(RetiredEarlyExpirer.class.getName() + " only runs in " + targetZones + ", stopping.");
-            deconstruct();
-        }
     }
 
     @Override
@@ -91,7 +80,7 @@ public class RetiredEarlyExpirer extends Maintainer {
             orchestrator.acquirePermissionToRemove(new HostName(node.hostname()));
             return true;
         } catch (OrchestrationException e) {
-            log.info("Did not get permission to remove retired node " + node + ": " + e.getMessage());
+            log.info("Did not get permission to remove retired " + node + ": " + e.getMessage());
             return false;
         }
     }
