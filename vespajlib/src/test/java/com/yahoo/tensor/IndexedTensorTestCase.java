@@ -34,7 +34,7 @@ public class IndexedTensorTestCase {
 
     @Test
     public void testSingleValue() {
-        Tensor singleValue = Tensor.Builder.of(TensorType.empty).cell(TensorAddress.empty, 3.5).build();
+        Tensor singleValue = Tensor.Builder.of(TensorType.empty).cell(TensorAddress.of(), 3.5).build();
         assertTrue(singleValue instanceof IndexedTensor);
         assertEquals("{3.5}", singleValue.toString());
         Tensor singleValueFromString = Tensor.from(TensorType.empty, "{3.5}");

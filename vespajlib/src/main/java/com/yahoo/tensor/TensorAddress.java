@@ -22,8 +22,6 @@ import java.util.Set;
 @Beta
 public abstract class TensorAddress implements Comparable<TensorAddress> {
 
-    public static final TensorAddress empty = new TensorAddress.Builder(TensorType.empty).build();
-
     public static TensorAddress of(String[] labels) {
         return new StringTensorAddress(labels);
     }
