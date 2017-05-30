@@ -205,7 +205,7 @@ public class StorageMaintainer {
         maintainerExecutor.addJob("delete-files")
                 .withArgument("basePath", fileDistrDir)
                 .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
-                .withArgument("recursive", false);
+                .withArgument("recursive", true);
 
         maintainerExecutor.execute();
         getMaintenanceThrottlerFor(containerName).updateNextRemoveOldFilesTime();
@@ -250,7 +250,8 @@ public class StorageMaintainer {
     /**
      * Deletes old
      *  * archived app data
-     *  * JDisc logs
+     *  * Vespa logs
+     *  * Filedistribution files
      */
     public void cleanNodeAdmin() {
         if (! getMaintenanceThrottlerFor(NODE_ADMIN).shouldRemoveOldFilesNow()) return;
@@ -261,11 +262,17 @@ public class StorageMaintainer {
                 .withArgument("maxAgeSeconds", Duration.ofDays(7).getSeconds())
                 .withArgument("dirNameRegex", "^" + Pattern.quote(Environment.APPLICATION_STORAGE_CLEANUP_PATH_PREFIX));
 
-        Path nodeAdminJDiskLogsPath = environment.pathInNodeAdminFromPathInNode(NODE_ADMIN, "/home/y/logs/jdisc_core/");
+        Path nodeAdminJDiskLogsPath = environment.pathInNodeAdminFromPathInNode(NODE_ADMIN, "/home/y/logs/vespa/");
         maintainerExecutor.addJob("delete-files")
                 .withArgument("basePath", nodeAdminJDiskLogsPath)
                 .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
                 .withArgument("recursive", false);
+
+        Path fileDistrDir = environment.pathInNodeAdminFromPathInNode(NODE_ADMIN, "/home/y/var/db/vespa/filedistribution");
+        maintainerExecutor.addJob("delete-files")
+                .withArgument("basePath", fileDistrDir)
+                .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
+                .withArgument("recursive", true);
 
         maintainerExecutor.execute();
         getMaintenanceThrottlerFor(NODE_ADMIN).updateNextRemoveOldFilesTime();
@@ -323,11 +330,7 @@ public class StorageMaintainer {
             return job;
         }
 
-        ProcessResult execute() {
-            String classPath = String.join(":",
-                    "/home/y/lib/jars/node-maintainer-jar-with-dependencies.jar",
-                    "/home/y/lib/jars/vespajlib.jar");
-
+        void execute() {
             String args;
             try {
                 args = objectMapper.writeValueAsString(jobs);
@@ -335,7 +338,8 @@ public class StorageMaintainer {
                 throw new RuntimeException("Failed transform list of maintenance jobs to JSON");
             }
 
-            String[] command = {"java", "-cp", classPath,
+            String[] command = {"java",
+                    "-cp", "/home/y/lib/jars/node-maintainer-jar-with-dependencies.jar",
                     "-Dvespa.log.target=file:" + getDefaults().underVespaHome("logs/vespa/maintainer.log"),
                     "com.yahoo.vespa.hosted.node.maintainer.Maintainer", args};
             ProcessResult result = docker.executeInContainerAsRoot(executeIn, command);
@@ -344,7 +348,6 @@ public class StorageMaintainer {
                 numberOfNodeAdminMaintenanceFails.add();
                 throw new RuntimeException("Failed to run maintenance jobs: " + args + result);
             }
-            return result;
         }
     }
 
