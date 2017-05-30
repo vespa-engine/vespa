@@ -156,7 +156,7 @@ public class IndexedTensor implements Tensor {
     @Override
     public Map<TensorAddress, Double> cells() {
         if (dimensionSizes.dimensions() == 0)
-            return Collections.singletonMap(TensorAddress.empty, values[0]);
+            return Collections.singletonMap(TensorAddress.of(), values[0]);
         
         ImmutableMap.Builder<TensorAddress, Double> builder = new ImmutableMap.Builder<>();
         Indexes indexes = Indexes.of(dimensionSizes, dimensionSizes, values.length);
