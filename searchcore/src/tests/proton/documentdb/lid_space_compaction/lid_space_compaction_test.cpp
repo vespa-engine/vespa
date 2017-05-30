@@ -1,17 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("lid_space_compaction_test");
 
 #include <vespa/searchcore/proton/server/i_lid_space_compaction_handler.h>
 #include <vespa/searchcore/proton/server/lid_space_compaction_handler.h>
 #include <vespa/searchcore/proton/server/lid_space_compaction_job.h>
 #include <vespa/searchcore/proton/test/test.h>
-#include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/searchcore/proton/server/ifrozenbuckethandler.h>
 #include <vespa/searchcore/proton/server/i_disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/server/imaintenancejobrunner.h>
+#include <vespa/log/log.h>
+LOG_SETUP("lid_space_compaction_test");
 
 using namespace document;
 using namespace proton;
