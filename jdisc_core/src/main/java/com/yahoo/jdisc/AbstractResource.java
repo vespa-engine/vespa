@@ -69,6 +69,7 @@ public abstract class AbstractResource implements SharedResource {
         return new DebugResourceReference(this, referenceStack);
     }
 
+    @Override
     public void release() {
         initialCreationReference.close();
     }
