@@ -96,9 +96,12 @@ public class NodeRetirer extends Maintainer {
                     Flavor flavorWithMinSpareNodes = getMinAmongstKeys(numSpareNodesByFlavor, possibleReplacementFlavors);
                     long spareNodesForMinFlavor = numSpareNodesByFlavor.getOrDefault(flavorWithMinSpareNodes, 0L);
                     if (spareNodesForMinFlavor > 0) {
-                        log.info("Setting node " + retireableNode + " to wantToRetire. Policy: " +
+                        log.info("Setting node " + retireableNode + " to wantToRetire and wantToUnprovision. Policy: " +
                                 retirementPolicy.getClass().getSimpleName());
-                        Node updatedNode = retireableNode.with(retireableNode.status().withWantToRetire(true));
+                        Node updatedNode = retireableNode
+                                .with(retireableNode.status()
+                                        .withWantToRetire(true)
+                                        .withWantToUnprovision(true));
                         nodeRepository().write(updatedNode);
                         numSpareNodesByFlavor.put(flavorWithMinSpareNodes, spareNodesForMinFlavor - 1);
                         numNodesAllowedToRetire--;
@@ -148,6 +151,8 @@ public class NodeRetirer extends Maintainer {
     }
 
     /**
+     * Parks and sets wantToUnprovision for a subset of size 'limit' of nodes
+     *
      * @param nodesToPark Nodes that we want to park
      * @param limit Maximum number of nodes we want to park
      * @return True iff we were able to park all the nodes
@@ -155,7 +160,10 @@ public class NodeRetirer extends Maintainer {
     boolean limitedPark(Set<Node> nodesToPark, long limit) {
         nodesToPark.stream()
                 .limit(limit)
-                .forEach(node -> nodeRepository().park(node.hostname(), Agent.NodeRetirer, "Policy: " + retirementPolicy.getClass().getSimpleName()));
+                .forEach(node -> {
+                    nodeRepository().write(node.with(node.status().withWantToUnprovision(true)));
+                    nodeRepository().park(node.hostname(), Agent.NodeRetirer, "Policy: " + retirementPolicy.getClass().getSimpleName());
+                });
 
         return limit >= nodesToPark.size();
     }
