@@ -28,21 +28,32 @@ public class NamedReader extends Reader {
     public Reader getReader() { return reader; }
 
     /** Returns the name */
-    public @Override String toString() {
+    @Override
+    public String toString() {
         return name;
     }
 
     // The rest is reader method implementations which delegates to the wrapped reader
-    public @Override int read(java.nio.CharBuffer charBuffer) throws java.io.IOException { return reader.read(charBuffer); }
-    public @Override int read() throws java.io.IOException { return reader.read(); }
-    public @Override int read(char[] chars) throws java.io.IOException { return reader.read(chars); }
-    public @Override int read(char[] chars, int i, int i1) throws java.io.IOException { return reader.read(chars,i,i1); }
-    public @Override long skip(long l) throws java.io.IOException { return reader.skip(l); }
-    public @Override boolean ready() throws java.io.IOException { return reader.ready(); }
-    public @Override boolean markSupported() { return reader.markSupported(); }
-    public @Override void mark(int i) throws java.io.IOException { reader.mark(i); }
-    public @Override void reset() throws java.io.IOException { reader.reset(); }
-    public @Override void close() throws java.io.IOException { reader.close(); }
+    @Override
+    public int read(java.nio.CharBuffer charBuffer) throws java.io.IOException { return reader.read(charBuffer); }
+    @Override
+    public int read() throws java.io.IOException { return reader.read(); }
+    @Override
+    public int read(char[] chars) throws java.io.IOException { return reader.read(chars); }
+    @Override
+    public int read(char[] chars, int i, int i1) throws java.io.IOException { return reader.read(chars,i,i1); }
+    @Override
+    public long skip(long l) throws java.io.IOException { return reader.skip(l); }
+    @Override
+    public boolean ready() throws java.io.IOException { return reader.ready(); }
+    @Override
+    public boolean markSupported() { return reader.markSupported(); }
+    @Override
+    public void mark(int i) throws java.io.IOException { reader.mark(i); }
+    @Override
+    public void reset() throws java.io.IOException { reader.reset(); }
+    @Override
+    public void close() throws java.io.IOException { reader.close(); }
 
     /** Convenience method for closing a list of readers. Does nothing if the given reader list is null. */
     public static void closeAll(List<NamedReader> readers) {
