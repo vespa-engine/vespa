@@ -64,7 +64,7 @@ public:
     ~SBEnv();
 
     FNET_Transport *getTransport() { return _transport.get(); }
-    FNET_Scheduler *getScheduler() { return _transport->GetScheduler(); }
+    FNET_Scheduler *getScheduler();
     FRT_Supervisor *getSupervisor() { return _supervisor.get(); }
 
     void shutdown();

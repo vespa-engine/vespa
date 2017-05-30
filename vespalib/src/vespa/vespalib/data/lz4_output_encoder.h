@@ -3,6 +3,7 @@
 #pragma once
 
 #include "output.h"
+#include <vector>
 
 namespace vespalib {
 

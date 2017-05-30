@@ -1,18 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("status-filedistribution");
-
-#include <iostream>
-#include <map>
-#include <thread>
-
-#include <boost/program_options.hpp>
 
 #include <vespa/filedistribution/model/zkfacade.h>
 #include <vespa/filedistribution/model/filedistributionmodel.h>
 #include <vespa/filedistribution/model/filedistributionmodelimpl.h>
 #include <zookeeper/zookeeper.h>
+#include <boost/program_options.hpp>
+
+#include <vespa/log/log.h>
+#include <iostream>
+#include <map>
+#include <thread>
+
+LOG_SETUP("status-filedistribution");
 
 using namespace filedistribution;
 using namespace std::literals;

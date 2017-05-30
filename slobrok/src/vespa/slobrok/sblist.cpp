@@ -1,15 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include "sblist.h"
-#include <vespa/log/log.h>
-LOG_SETUP(".slobrok.list");
 #include <vespa/vespalib/util/random.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".slobrok.list");
 
 using vespalib::LockGuard;
 
-namespace slobrok {
-namespace api {
+namespace slobrok::api {
 
 SlobrokList::SlobrokList()
     : _lock(),
@@ -96,6 +94,4 @@ SlobrokList::setup(const std::vector<std::string> &specList)
     }
 }
 
-
-} // namespace api
-} // namespace slobrok
+} // namespace slobrok::api

@@ -1,12 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/fnet/frt/frt.h>
 #include <vespa/vespalib/util/gencnt.h>
 #include <vespa/slobrok/backoff.h>
+#include <vespa/fnet/frt/invoker.h>
 
-namespace slobrok {
-namespace api {
+class FRT_Target;
+
+namespace slobrok::api {
 
 /**
  * @brief Defines an interface for the name server lookup.
@@ -122,5 +123,4 @@ private:
     FRT_RPCRequest          *_req;
 };
 
-} // namespace api
-} // namespace slobrok
+} // namespace slobrok::api

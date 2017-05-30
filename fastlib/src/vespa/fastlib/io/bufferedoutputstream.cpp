@@ -11,11 +11,9 @@
 *                  ALL RIGHTS RESERVED
 *
 ******************************************************************************/
-#include <vespa/fastos/fastos.h>
+
 #include "bufferedoutputstream.h"
-
-
-
+#include <cstring>
 
 Fast_BufferedOutputStream::Fast_BufferedOutputStream(Fast_OutputStream &out,
                                                      size_t bufferSize)
@@ -33,7 +31,7 @@ Fast_BufferedOutputStream::Fast_BufferedOutputStream(Fast_OutputStream &out,
 Fast_BufferedOutputStream::~Fast_BufferedOutputStream(void)
 {
     delete [] _buffer;
-};
+}
 
 
 

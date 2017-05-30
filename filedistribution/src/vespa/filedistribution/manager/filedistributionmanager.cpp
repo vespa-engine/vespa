@@ -1,16 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/filedistribution/manager/com_yahoo_vespa_filedistribution_FileDistributionManager.h>
 
-#include <memory>
-#include <vespa/filedistribution/model/filedistributionmodel.h>
-#include <vespa/filedistribution/model/zkfiledbmodel.h>
-#include <vespa/filedistribution/model/mockfiledistributionmodel.h>
-#include <vespa/filedistribution/model/zkfacade.h>
 #include "jnistring.h"
 #include "field.h"
 #include "createtorrent.h"
 #include "filedb.h"
+#include <vespa/filedistribution/manager/com_yahoo_vespa_filedistribution_FileDistributionManager.h>
+
+#include <vespa/filedistribution/model/filedistributionmodel.h>
+#include <vespa/filedistribution/model/zkfiledbmodel.h>
+#include <vespa/filedistribution/model/mockfiledistributionmodel.h>
+#include <vespa/filedistribution/model/zkfacade.h>
+#include <memory>
 
 using namespace filedistribution;
 

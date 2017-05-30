@@ -13,8 +13,7 @@
 ******************************************************************************/
 #pragma once
 
-
-
+#include <cstdlib>
 
 class Fast_OutputStream
 {
@@ -22,7 +21,7 @@ public:
 
     virtual ~Fast_OutputStream() { }
 
-    virtual bool    Close(void) = 0;
-    virtual void    Flush(void) = 0;
+    virtual bool    Close() = 0;
+    virtual void    Flush() = 0;
     virtual ssize_t Write(const void *sourceBuffer, size_t bufferSize) = 0;
 };

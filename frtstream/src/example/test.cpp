@@ -1,13 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+#include <vespa/frtstream/frtclientstream.h>
+
 #include <iostream>
 #include <csignal>
 #include <vector>
 #include <string>
 #include <set>
-
-#include <vespa/frtstream/frtclientstream.h>
-
 
 using namespace std;
 using frtstream::FrtClientStream;

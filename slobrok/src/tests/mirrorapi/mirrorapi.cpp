@@ -1,12 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("mirrorapi_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/config-slobroks.h>
 #include <algorithm>
 #include <vespa/slobrok/server/slobrokserver.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/target.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("mirrorapi_test");
 
 using slobrok::api::MirrorAPI;
 using slobrok::SlobrokServer;

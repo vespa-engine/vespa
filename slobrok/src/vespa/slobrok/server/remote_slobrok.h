@@ -1,28 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <deque>
-#include <string>
-
-#include <vespa/fnet/frt/frt.h>
-
-#include <vespa/vespalib/util/hashmap.h>
 #include "ok_state.h"
 #include "cmd.h"
 #include "i_rpc_server_manager.h"
-#include "rpc_server_manager.h"
 #include "managed_rpc_server.h"
+#include <deque>
 
 namespace slobrok {
 
 //-----------------------------------------------------------------------------
 
-class SBEnv;
-class RpcServerMap;
 class RpcServerManager;
 class ExchangeManager;
-
-using vespalib::HashMap;
 
 //-----------------------------------------------------------------------------
 

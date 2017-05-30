@@ -3,7 +3,7 @@
 
 #include <exception>
 #include <string>
-
+#include <vector>
 #include <jni.h>
 
 namespace filedistribution {

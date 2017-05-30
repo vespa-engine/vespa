@@ -8,8 +8,10 @@
 #include <vespa/messagebus/routing/routingnode.h>
 #include <vespa/slobrok/sbregister.h>
 #include <vespa/slobrok/sbmirror.h>
-#include <vespa/log/log.h>
+#include <vespa/vespalib/component/vtag.h>
+#include <vespa/fnet/scheduler.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".rpcnetwork");
 
 namespace {

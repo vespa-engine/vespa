@@ -1,8 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/fastlib/text/unicodeutil.h>
+#include "unicodeutil.h"
 #include <cstdlib>
+#include <cstdint>
+#include <cassert>
 
 #include "unicodeutil-charprops.cpp"
 #include "unicodeutil-lowercase.cpp"
@@ -22,7 +23,7 @@ Initialize _G_Initializer;
 }
 
 void
-Fast_UnicodeUtil::InitTables(void)
+Fast_UnicodeUtil::InitTables()
 {
     /**
      * Hack for Katakana accent marks (torgeir)

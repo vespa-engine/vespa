@@ -4,13 +4,12 @@
 #include "imirrorapi.h"
 #include "backoff.h"
 #include "sblist.h"
-#include "cfg.h"
-#include <vespa/fnet/frt/frt.h>
 #include <vespa/vespalib/util/gencnt.h>
-#include <vespa/vespalib/util/sync.h>
+#include <vespa/fnet/frt/invoker.h>
 
-namespace slobrok {
-namespace api {
+class FRT_Target;
+
+namespace slobrok::api {
 
 /**
  * @brief A MirrorAPI object is used to keep track of the services registered
@@ -108,6 +107,4 @@ private:
     FRT_RPCRequest          *_req;
 };
 
-} // namespace api
-} // namespace slobrok
-
+} // namespace slobrok::api

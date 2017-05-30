@@ -4,6 +4,8 @@
 
 #include "outputstream.h"
 
+class FastOS_FileInterface;
+
 class Fast_FileOutputStream  : public Fast_OutputStream
 {
 private:
@@ -19,12 +21,8 @@ public:
     Fast_FileOutputStream(const char *fileName);
     ~Fast_FileOutputStream();
 
-    ssize_t Write(const void *sourceBuffer, size_t bufferSize) override {
-        return _theFile->CheckedWrite(sourceBuffer, bufferSize) ?
-            static_cast<ssize_t>(bufferSize) :
-            static_cast<ssize_t>(-1);
-    };
+    ssize_t Write(const void *sourceBuffer, size_t bufferSize) override;
 
-    bool Close() override { return _theFile->Close(); }
+    bool Close() override;
     void Flush() override {}
 };

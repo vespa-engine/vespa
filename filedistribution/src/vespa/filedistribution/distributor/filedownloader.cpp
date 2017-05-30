@@ -1,11 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/filedistribution/model/zkfacade.h>
 #include "filedownloader.h"
 #include "hostname.h"
-
-#include <iterator>
-#include <algorithm>
+#include <vespa/filedistribution/model/zkfacade.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
@@ -16,6 +12,9 @@
 #include <libtorrent/alert_types.hpp>
 #include <libtorrent/torrent_handle.hpp>
 #include <libtorrent/bencode.hpp>
+
+#include <iterator>
+#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".filedownloader");

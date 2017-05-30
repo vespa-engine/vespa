@@ -14,7 +14,6 @@
  *                ALL RIGHTS RESERVED
  */
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 
 unsigned int lowercase[65536];

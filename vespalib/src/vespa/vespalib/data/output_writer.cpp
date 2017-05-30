@@ -1,11 +1,10 @@
 // Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "output_writer.h"
 #include "output.h"
-#include <stdarg.h>
-#include <stdio.h>
-#include <assert.h>
+#include <cstdarg>
+#include <cstdio>
+#include <cassert>
 
 namespace vespalib {
 
