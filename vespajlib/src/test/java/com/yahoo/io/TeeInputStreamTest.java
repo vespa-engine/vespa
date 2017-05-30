@@ -18,17 +18,22 @@ public class TeeInputStreamTest {
         byte[] input = "very simple input".getBytes(StandardCharsets.UTF_8);
         ByteArrayInputStream in = new ByteArrayInputStream(input);
         ByteArrayOutputStream gotten = new ByteArrayOutputStream();
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
 
         TeeInputStream tee = new TeeInputStream(in, gotten);
         int b = tee.read();
         assertThat(b, is((int)'v'));
+        output.write(b);
         assertThat(gotten.toString(), is("very simple input"));
         for (int i = 0; i < 16; i++) {
             b = tee.read();
             // System.out.println("got["+i+"]: "+(char)b);
             assertThat(b, is(greaterThan(0)));
+            output.write(b);
         }
         assertThat(tee.read(), is(-1));
+        assertThat(gotten.toString(), is("very simple input"));
+        assertThat(output.toString(), is("very simple input"));
     }
 
     private class Generator implements Runnable {
@@ -54,30 +59,42 @@ public class TeeInputStreamTest {
         PipedOutputStream input = new PipedOutputStream();
         PipedInputStream in = new PipedInputStream(input);
         ByteArrayOutputStream gotten = new ByteArrayOutputStream();
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
         TeeInputStream tee = new TeeInputStream(in, gotten);
         input.write("first input".getBytes(StandardCharsets.UTF_8));
         int b = tee.read();
         assertThat(b, is((int)'f'));
+        output.write(b);
         assertThat(gotten.toString(), is("first input"));
         input.write(" second input".getBytes(StandardCharsets.UTF_8));
         b = tee.read();
         assertThat(b, is((int)'i'));
+        output.write(b);
         assertThat(gotten.toString(), is("first input second input"));
         new Thread(new Generator(input)).start();
         b = tee.read();
         assertThat(b, is((int)'r'));
+        output.write(b);
         byte[] ba = new byte[9];
         for (int i = 0; i < 12345; i++) {
             b = tee.read();
             // System.out.println("got["+i+"]: "+(char)b);
             assertThat(b, is(greaterThan(0)));
-            assertThat(tee.read(ba), is(greaterThan(0)));
+            output.write(b);
+            int l = tee.read(ba);
+            assertThat(l, is(greaterThan(0)));
+            output.write(ba, 0, l);
+            l = tee.read(ba, 3, 3);
+            assertThat(l, is(greaterThan(0)));
+            output.write(ba, 3, l);
         }
         tee.close();
         String got = gotten.toString();
         // System.out.println("got length: "+got.length());
+        // System.out.println("output length: "+output.toString().length());
         // System.out.println("got: "+got);
         assertThat(got.length(), is(greaterThan(34567)));
+        assertTrue(got.startsWith(output.toString()));
     }
 
 }
