@@ -51,16 +51,19 @@ class TeeInputStream extends InputStream {
         this.dst = to;
     }
 
-    public @Override int available() throws IOException {
+    @Override
+    public int available() throws IOException {
         return inBuf() + src.available();
     }
 
-    public @Override void close() throws IOException {
+    @Override
+    public void close() throws IOException {
         src.close();
         dst.close();
     }
 
-    public @Override int read() throws IOException {
+    @Override
+    public int read() throws IOException {
         fillBuf();
         if (inBuf() > 0) {
             int r = buf[readPos++];
@@ -69,11 +72,13 @@ class TeeInputStream extends InputStream {
         return -1;
     }
 
-    public @Override int read(byte[] b) throws IOException {
+    @Override
+    public int read(byte[] b) throws IOException {
         return read(b, 0, b.length);
     }
 
-    public @Override int read(byte[] b, int off, int len) throws IOException {
+    @Override
+    public int read(byte[] b, int off, int len) throws IOException {
         if (len <= 0) {
             return 0;
         }

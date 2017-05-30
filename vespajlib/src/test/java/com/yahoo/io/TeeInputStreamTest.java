@@ -34,7 +34,8 @@ public class TeeInputStreamTest {
     private class Generator implements Runnable {
         private OutputStream dst;
         public Generator(OutputStream dst) { this.dst = dst; }
-        public @Override void run() {
+        @Override
+        public void run() {
             for (int i = 0; i < 123456789; i++) {
                 int b = i & 0x7f;
                 if (b < 32) continue;
