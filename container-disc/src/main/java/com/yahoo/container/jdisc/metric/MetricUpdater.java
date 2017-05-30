@@ -72,7 +72,7 @@ public class MetricUpdater extends AbstractComponent {
             metric.set(TOTAL_MEMORY_BYTES, totalMemory, null);
             metric.set(MEMORY_MAPPINGS_COUNT, count_mappings(), null);
             metric.set(OPEN_FILE_DESCRIPTORS, count_open_files(), null);
-            activeContainerStatistics.outputMetrics(metric);
+            activeContainerStatistics.emitMetrics(metric);
         }
 
         // Note: Linux-specific
