@@ -2,9 +2,7 @@
 package com.yahoo.vespa.config.server.deploy;
 
 import com.yahoo.component.Version;
-import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.log.LogLevel;
