@@ -239,6 +239,8 @@ public class NodeAgentImpl implements NodeAgent {
         dockerOperations.startContainer(containerName, nodeSpec);
         lastCpuMetric = new CpuUsageReporter(clock.instant());
 
+        writeConfigs(nodeSpec);
+
         addDebugMessage("startContainerIfNeeded: containerState " + containerState + " -> " +
                 RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN);
         containerState = RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
@@ -410,10 +412,7 @@ public class NodeAgentImpl implements NodeAgent {
             // TODO: Should be retried if writing fails
             metricReceiver.unsetMetricsForContainer(hostname);
             if (container.isPresent()) {
-                storageMaintainer.ifPresent(maintainer -> {
-                    maintainer.writeMetricsConfig(containerName, nodeSpec);
-                    maintainer.writeFilebeatConfig(containerName, nodeSpec);
-                });
+                writeConfigs(nodeSpec);
             }
         }
 
@@ -604,6 +603,13 @@ public class NodeAgentImpl implements NodeAgent {
         } catch (Throwable e) {
             logger.warning("Failed to update " + yamasName + " metric with value " + metricsMap.get(metricName), e);
         }
+    }
+
+    private void writeConfigs(ContainerNodeSpec nodeSpec) {
+        storageMaintainer.ifPresent(maintainer -> {
+            maintainer.writeMetricsConfig(containerName, nodeSpec);
+            maintainer.writeFilebeatConfig(containerName, nodeSpec);
+        });
     }
 
     private Optional<Container> getContainer() {
