@@ -1,14 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "loadednumericvalue.h"
 
 
-namespace search
-{
-
-namespace attribute
-{
+namespace search {
+namespace attribute {
 
 template <typename T>
 void
@@ -89,8 +85,6 @@ void
 sortLoadedByDocId(SequentialReadModifyWriteVector<LoadedNumericValue<double>> & loaded);
                   
 
-
 } // namespace attribute
-
 } // namespace search
 

@@ -1,23 +1,21 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "flagattribute.h"
-#include <vespa/searchlib/attribute/attributeiterators.h>
+#include "load_utils.hpp"
+#include "attributeiterators.h"
+#include "multinumericattribute.hpp"
+
+#include <vespa/searchlib/queryeval/emptysearch.h>
+#include <vespa/searchlib/common/bitvectoriterator.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.flagattribute");
 
-#include <vespa/searchlib/attribute/multinumericattribute.hpp>
-#include <vespa/searchlib/queryeval/emptysearch.h>
-#include "load_utils.hpp"
-#include <vespa/searchlib/common/bitvectoriterator.h>
-
 namespace search {
 
 using queryeval::SearchIterator;
-namespace
-{
 
+namespace {
 
 template <class FA, typename T>
 class SaveBits

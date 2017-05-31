@@ -2,25 +2,14 @@
 
 #pragma once
 
+#include <memory>
 
-namespace search
-{
+namespace search {
 
-namespace queryeval
-{
+namespace queryeval { class SearchIterator; }
+namespace fef { class TermFieldMatchData; }
 
-class SearchIterator;
-}
-
-namespace fef
-{
-
-class TermFieldMatchData;
-}
-
-
-namespace attribute
-{
+namespace attribute {
 
 
 /**
@@ -43,8 +32,5 @@ public:
     virtual unsigned int approximateHits() const = 0;
 };
 
-
 } // namespace attribute
-
 } // namespace search
-
