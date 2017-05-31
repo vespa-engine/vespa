@@ -1,17 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/distributor/operations/external/getoperation.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/storageapi/message/persistence.h>
-#include <vespa/log/log.h>
+#include "getoperation.h"
 #include <vespa/storage/distributor/distributorcomponent.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
+#include <vespa/storageapi/message/persistence.h>
 #include <vespa/vdslib/state/nodestate.h>
+#include <vespa/document/fieldvalue/document.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.doc.get");
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 GetOperation::GroupId::GroupId(const document::BucketId& id,
                                uint32_t checksum,
@@ -283,6 +281,4 @@ GetOperation::hasConsistentCopies() const
     return _responses.size() == 1;
 }
 
-} // distributor
-} // storage
-
+}

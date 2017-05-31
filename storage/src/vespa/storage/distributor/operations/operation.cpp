@@ -1,21 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-/* $Id$ */
-
-#include <vespa/fastos/fastos.h>
+#include "operation.h"
 #include <vespa/storage/common/distributorcomponent.h>
-#include <vespa/storage/distributor/operations/operation.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
 
 #include <vespa/log/log.h>
-
 LOG_SETUP(".distributor.callback");
 
-namespace storage {
-
-namespace distributor {
+namespace storage::distributor {
 
 Operation::Operation()
     : _startTime(0)
@@ -52,4 +46,3 @@ Operation::copyMessageSettings(const api::StorageCommand& source, api::StorageCo
 
 }
 
-}

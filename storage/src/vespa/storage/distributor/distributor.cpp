@@ -1,18 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-#include <vespa/storage/distributor/distributor.h>
+//
+#include "distributor.h"
+#include "blockingoperationstarter.h"
+#include "throttlingoperationstarter.h"
+#include "idealstatemetricsset.h"
+#include "ownership_transfer_safe_time_point_calculator.h"
+#include "managed_bucket_space_repo.h"
 #include <vespa/storage/bucketdb/mapbucketdatabase.h>
 #include <vespa/storage/distributor/maintenance/simplemaintenancescanner.h>
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
-#include <vespa/storage/distributor/blockingoperationstarter.h>
-#include <vespa/storage/distributor/throttlingoperationstarter.h>
-#include <vespa/storage/distributor/idealstatemetricsset.h>
-#include <vespa/storage/distributor/ownership_transfer_safe_time_point_calculator.h>
-#include <vespa/storage/distributor/managed_bucket_space_repo.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".distributor-main");
 
 namespace storage {

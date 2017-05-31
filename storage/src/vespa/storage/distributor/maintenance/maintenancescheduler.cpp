@@ -1,12 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/distributor/maintenance/maintenancescheduler.h>
-#include <vespa/storage/distributor/maintenance/maintenanceoperationgenerator.h>
+
+#include "maintenancescheduler.h"
+#include "maintenanceoperationgenerator.h"
 #include <vespa/storage/distributor/operationstarter.h>
 #include <vespa/storage/distributor/operations/idealstate/idealstateoperation.h>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 MaintenanceScheduler::MaintenanceScheduler(
         MaintenanceOperationGenerator& operationGenerator,
@@ -101,5 +100,4 @@ MaintenanceScheduler::startOperation(const PrioritizedBucket& bucket)
     return _operationStarter.start(operation, operationPriority);
 }
 
-}
 }

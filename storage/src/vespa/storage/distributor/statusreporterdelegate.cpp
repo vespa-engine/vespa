@@ -1,10 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/distributor/statusreporterdelegate.h>
+#include "statusreporterdelegate.h"
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 StatusReporterDelegate::StatusReporterDelegate(
         framework::ComponentRegister& compReg,
@@ -38,5 +36,5 @@ StatusReporterDelegate::registerStatusPage()
     _component.registerStatusPage(*this);
 }
 
-} // distributor
-} // storage
+}
+

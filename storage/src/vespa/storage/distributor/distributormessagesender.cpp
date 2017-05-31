@@ -1,11 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/distributor/distributormessagesender.h>
+
+#include "distributormessagesender.h"
 #include <vespa/storageapi/messageapi/storagecommand.h>
 
-namespace storage {
-
-namespace distributor {
+namespace storage::distributor {
 
 uint64_t
 DistributorMessageSender::sendToNode(
@@ -27,7 +25,5 @@ DistributorMessageSender::sendToNode(
     return msgId;
 }
 
-
 }
 
-}

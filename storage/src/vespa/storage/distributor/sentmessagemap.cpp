@@ -1,15 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/distributor/sentmessagemap.h>
 
-#include <vespa/log/log.h>
+#include "sentmessagemap.h"
+
 #include <vespa/storage/distributor/operations/operation.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.map");
 
-namespace storage {
-
-namespace distributor {
+namespace storage::distributor {
 
 SentMessageMap::SentMessageMap()
     : _map()
@@ -89,8 +87,6 @@ void
 SentMessageMap::clear()
 {
     _map.clear();
-}
-
 }
 
 }
