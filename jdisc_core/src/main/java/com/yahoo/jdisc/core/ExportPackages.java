@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.core;
 
-import com.yahoo.container.plugin.bundle.AnalyzeBundle;
 import com.yahoo.container.plugin.bundle.TransformExportPackages;
 import com.yahoo.container.plugin.osgi.ExportPackages.Export;
 import org.apache.felix.framework.util.Util;
@@ -38,6 +37,7 @@ public class ExportPackages {
            .append("com.yahoo.jdisc.application,")
            .append("com.yahoo.jdisc.handler,")
            .append("com.yahoo.jdisc.service,")
+           .append("com.yahoo.jdisc.statistics,")
            .append("javax.inject;version=1.0.0,")  // Included in guice, but not exported. Needed by container-jersey.
            .append("org.aopalliance.intercept,")
            .append("org.aopalliance.aop,")

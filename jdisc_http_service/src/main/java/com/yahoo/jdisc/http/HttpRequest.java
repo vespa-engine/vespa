@@ -307,7 +307,6 @@ public class HttpRequest extends Request implements ServletOrJdiscHttpRequest {
         return newServerRequest(container, uri, method, version, null);
     }
 
-    @SuppressWarnings("deprecation")
     public static HttpRequest newServerRequest(CurrentContainer container, URI uri, Method method, Version version,
                                                SocketAddress remoteAddress) {
         return new HttpRequest(container, uri, method, version, remoteAddress, null);
@@ -327,7 +326,6 @@ public class HttpRequest extends Request implements ServletOrJdiscHttpRequest {
         return newClientRequest(parent, uri, method, Version.HTTP_1_1);
     }
 
-    @SuppressWarnings("deprecation")
     public static HttpRequest newClientRequest(Request parent, URI uri, Method method, Version version) {
         return new HttpRequest(parent, uri, method, version);
     }
