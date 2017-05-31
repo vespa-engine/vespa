@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services version="1.0">
+
+    <admin version="2.0">
+        <adminserver hostalias="node1"/>
+    </admin>
+
+    <jdisc version="1.0">
+        <search>
+            <chain id="default" inherits="vespa">
+                <searcher id="com.yahoo.example.ExampleTensorSearcher" bundle="basic-search-java" />
+            </chain>
+        </search>
+        <document-api/>
+        <nodes jvmargs="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8998">
+            <node hostalias="node1"/>
+        </nodes>
+    </jdisc>
+
+    <content id="music" version="1.0">
+        <redundancy>1</redundancy>
+        <documents>
+            <document type="music" mode="index" />
+        </documents>
+        <nodes>
+            <node hostalias="node1" distribution-key="0" />
+        </nodes>
+    </content>
+
+</services>
+
