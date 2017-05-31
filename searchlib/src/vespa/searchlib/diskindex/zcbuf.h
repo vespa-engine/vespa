@@ -7,6 +7,10 @@
 
 namespace search::diskindex {
 
+/*
+ * Class containing Zc-encoded data in a memory buffer, typically
+ * docid deltas and skip information for posting lists.
+ */
 class ZcBuf
 {
 public:
