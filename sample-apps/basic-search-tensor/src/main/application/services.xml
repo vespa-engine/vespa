@@ -13,7 +13,7 @@
             </chain>
         </search>
         <document-api/>
-        <nodes jvmargs="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8998">
+        <nodes>
             <node hostalias="node1"/>
         </nodes>
     </jdisc>
