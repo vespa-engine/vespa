@@ -7,8 +7,8 @@
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/component/vtag.h>
-#include <vespa/log/log.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".status");
 
 namespace storage {
@@ -176,7 +176,7 @@ StatusWebServer::WebServer::onGetRequest(const string & tmpurl, const string &se
             // Route other status requests that can possibly deadlock to a
             // worker thread.
         vespalib::MonitorGuard monitor(_status._workerMonitor);
-        _status._queuedRequests.emplace_back(new HttpRequest(url.c_str(), urlpath.getServerSpec()));
+        _status._queuedRequests.emplace_back(std::make_shared<HttpRequest>(url.c_str(), urlpath.getServerSpec()));
         HttpRequest* req = _status._queuedRequests.back().get();
         framework::SecondTime timeout(urlpath.get("timeout", 30u));
         framework::SecondTime timeoutTime(_status._component->getClock().getTimeInSeconds() + timeout);
@@ -222,7 +222,7 @@ StatusWebServer::WebServer::onGetRequest(const string & tmpurl, const string &se
 namespace {
     class IndexPageReporter : public framework::HtmlStatusReporter {
         std::ostringstream ost;
-        void reportHtmlStatus(std::ostream& out,const framework::HttpUrlPath&) const override{
+        void reportHtmlStatus(std::ostream& out,const framework::HttpUrlPath&) const override {
             out << ost.str();
         }
 
@@ -244,9 +244,9 @@ StatusWebServer::handlePage(const framework::HttpUrlPath& urlpath, std::ostream&
     if (slashPos != std::string::npos) link = link.substr(0, slashPos);
 
     bool pageExisted = false;
-    if (link.size() > 0) {
+    if ( ! link.empty()) {
         const framework::StatusReporter *reporter = _reporterMap.getStatusReporter(link);
-        if (reporter != 0) {
+        if (reporter != nullptr) {
             try {
                 pageExisted = reporter->reportHttpHeader(out, urlpath);
                 if (pageExisted) {
