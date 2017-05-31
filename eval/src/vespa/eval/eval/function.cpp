@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <cctype>
-#include <map>
 #include "function.h"
 #include "basic_nodes.h"
 #include "tensor_nodes.h"
@@ -10,6 +7,8 @@
 #include "call_nodes.h"
 #include "delete_node.h"
 #include "aggr.h"
+#include <cctype>
+#include <map>
 
 namespace vespalib {
 namespace eval {

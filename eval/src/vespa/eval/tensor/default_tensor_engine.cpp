@@ -1,18 +1,19 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "default_tensor_engine.h"
-#include <vespa/eval/eval/value.h>
-#include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/operation_visitor.h>
-#include <vespa/eval/eval/simple_tensor_engine.h>
 #include "tensor.h"
+#include "default_tensor.h"
+#include "wrapped_simple_tensor.h"
 #include "serialization/typed_binary_format.h"
 #include "dense/dense_tensor.h"
 #include "dense/dense_tensor_builder.h"
 #include "dense/dense_tensor_function_compiler.h"
-#include "default_tensor.h"
-#include "wrapped_simple_tensor.h"
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/operation_visitor.h>
+#include <vespa/eval/eval/simple_tensor_engine.h>
+#include <cassert>
+
 
 namespace vespalib {
 namespace tensor {

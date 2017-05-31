@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 
 namespace vespalib {
 namespace eval {
