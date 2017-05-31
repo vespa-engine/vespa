@@ -31,14 +31,13 @@ implements all of the basic methods you need to get started.
 
 To start a local zone, simply run:
 ```
-    DockerImage vespaDockerBase = new DockerImage("docker-registry.ops.yahoo.com:4443/vespa/ci:6.53.134");
+    DockerImage dockerImage = new DockerImage("docker-registry.ops.yahoo.com:4443/vespa/ci:6.53.134");
     Path pathToVespaRoot = Paths.get("/home/valerijf/dev/vespa");
     Path pathToContainerStorage = Paths.get("/home/docker/container-storage");
 
     RunVespaLocal runVespaLocal = new RunVespaLocal(pathToVespaRoot);
-    runVespaLocal.buildVespaLocalImage(vespaDockerBase);
-    runVespaLocal.startLocalZoneWithNodes(5);
-    runVespaLocal.startNodeAdminAsContainer(pathToContainerStorage);
+    runVespaLocal.startLocalZoneWithNodes(dockerImage, 5);
+    runVespaLocal.startNodeAdminAsContainer(dockerImage, pathToContainerStorage);
 ```
 
 ### Deploying a Local Application
@@ -46,7 +45,7 @@ To start a local zone, simply run:
 Package and deploy vespa application by running:
 
 ```
-    Path pathToApp = Paths.get("node-admin/basic-search-for-docker");
+    Path pathToApp = pathToVespaRoot.resolve("sample-apps/blog-search");
     runVespaLocal.deployApplication(pathToApp);
 ```
 If the deployment is successful, the final log entry should be something like 
