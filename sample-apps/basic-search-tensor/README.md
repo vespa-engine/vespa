@@ -1,4 +1,4 @@
-# tensor-testing
+# Sample app: basic search with tensors
 
-Testing our tensors in general
+Basic search with tensors sample app.
 
