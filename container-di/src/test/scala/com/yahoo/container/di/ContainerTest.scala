@@ -166,29 +166,6 @@ class ContainerTest {
   }
 
   @Test
-  def previous_graph_is_retained_when_new_graph_contains_component_that_times_out_in_ctor() {
-    ComponentNode.ComponentConstructTimeout = 1 second
-    val simpleComponentEntry = ComponentEntry("simpleComponent", classOf[SimpleComponent])
-
-    writeBootstrapConfigs(Array(simpleComponentEntry))
-    val container = newContainer(dirConfigSource)
-    var currentGraph = container.runOnce()
-
-    val simpleComponent = currentGraph.getInstance(classOf[SimpleComponent])
-
-    writeBootstrapConfigs("sleeper", classOf[ComponentThatSleepsInConstructor])
-    container.reloadConfig(2)
-    try {
-      currentGraph = container.runOnce(currentGraph)
-      fail("Expected exception")
-    } catch {
-      case e: ComponentConstructorException => assertThat(e.getMessage, containsString("Timed out"))
-      case _: Throwable => fail("Expected ComponentConstructorException")
-    }
-    assertEquals(1, currentGraph.generation)
-  }
-
-  @Test
   def previous_graph_is_retained_when_new_graph_throws_exception_for_missing_config() {
     val simpleComponentEntry = ComponentEntry("simpleComponent", classOf[SimpleComponent])
 
@@ -391,11 +368,6 @@ object ContainerTest {
 
   class ComponentThrowingExceptionForMissingConfig(intConfig: IntConfig) extends AbstractComponent {
     fail("This component should never be created. Only used for tests where 'int' config is missing.")
-  }
-
-  class ComponentThatSleepsInConstructor() {
-    Thread.sleep(3 * ComponentNode.ComponentConstructTimeout.toMillis)
-    fail("The timeout mechanism for constructing components is broken.")
   }
 
   class DestructableComponent extends AbstractComponent {
