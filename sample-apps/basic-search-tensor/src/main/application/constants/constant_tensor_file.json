@@ -1,0 +1,7 @@
+{
+    "cells": [
+        {"value": 0.0, "address": {"x": "0"}},
+        {"value": 0.1, "address": {"x": "1"}},
+        {"value": 0.2, "address": {"x": "2"}}
+    ]
+}
