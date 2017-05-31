@@ -387,10 +387,7 @@ TransportServer::start()
         _failed = true;
         return false;
     }
-    if (!updateListen()) {
-        return false;
-    }
-    return true;
+    return updateListen();
 }
 
 int
