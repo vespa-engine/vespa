@@ -196,7 +196,7 @@ public class RestApiTest {
                                    Utf8.toBytes("{\"wantToRetire\": true}"), Request.Method.PATCH),
                        "{\"message\":\"Updated host4.yahoo.com\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
-                        Utf8.toBytes("{\"wantToUnprovision\": true}"), Request.Method.PATCH),
+                        Utf8.toBytes("{\"wantToDeprovision\": true}"), Request.Method.PATCH),
                 "{\"message\":\"Updated host4.yahoo.com\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                                    Utf8.toBytes("{\"currentDockerImage\": \"ignored-image-name:4443/vespa/ci:6.43.0\"}"), Request.Method.PATCH),

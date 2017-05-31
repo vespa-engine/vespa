@@ -325,7 +325,7 @@ public class SerializationTest {
     }
 
     @Test
-    public void want_to_unprovision_defaults_to_false() {
+    public void want_to_deprovision_defaults_to_false() {
         String nodeData =
                 "{\n" +
                         "   \"type\" : \"tenant\",\n" +
@@ -335,7 +335,7 @@ public class SerializationTest {
                         "   \"ipAddresses\" : [\"127.0.0.1\"]\n" +
                         "}";
         Node node = nodeSerializer.fromJson(State.provisioned, Utf8.toBytes(nodeData));
-        assertFalse(node.status().wantToUnprovision());
+        assertFalse(node.status().wantToDeprovision());
     }
 
     @Test

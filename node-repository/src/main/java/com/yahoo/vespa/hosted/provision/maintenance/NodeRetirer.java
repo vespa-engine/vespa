@@ -96,12 +96,12 @@ public class NodeRetirer extends Maintainer {
                     Flavor flavorWithMinSpareNodes = getMinAmongstKeys(numSpareNodesByFlavor, possibleReplacementFlavors);
                     long spareNodesForMinFlavor = numSpareNodesByFlavor.getOrDefault(flavorWithMinSpareNodes, 0L);
                     if (spareNodesForMinFlavor > 0) {
-                        log.info("Setting node " + retireableNode + " to wantToRetire and wantToUnprovision. Policy: " +
+                        log.info("Setting node " + retireableNode + " to wantToRetire and wantToDeprovision. Policy: " +
                                 retirementPolicy.getClass().getSimpleName());
                         Node updatedNode = retireableNode
                                 .with(retireableNode.status()
                                         .withWantToRetire(true)
-                                        .withWantToUnprovision(true));
+                                        .withWantToDeprovision(true));
                         nodeRepository().write(updatedNode);
                         numSpareNodesByFlavor.put(flavorWithMinSpareNodes, spareNodesForMinFlavor - 1);
                         numNodesAllowedToRetire--;
@@ -151,7 +151,7 @@ public class NodeRetirer extends Maintainer {
     }
 
     /**
-     * Parks and sets wantToUnprovision for a subset of size 'limit' of nodes
+     * Parks and sets wantToDeprovision for a subset of size 'limit' of nodes
      *
      * @param nodesToPark Nodes that we want to park
      * @param limit Maximum number of nodes we want to park
@@ -161,7 +161,7 @@ public class NodeRetirer extends Maintainer {
         nodesToPark.stream()
                 .limit(limit)
                 .forEach(node -> {
-                    nodeRepository().write(node.with(node.status().withWantToUnprovision(true)));
+                    nodeRepository().write(node.with(node.status().withWantToDeprovision(true)));
                     nodeRepository().park(node.hostname(), Agent.NodeRetirer, "Policy: " + retirementPolicy.getClass().getSimpleName());
                 });
 

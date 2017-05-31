@@ -73,7 +73,7 @@ public class NodeRetirerTest {
                     .forEach(node -> {
                         Agent parkingAgent = node.history().event(History.Event.Type.parked).orElseThrow(RuntimeException::new).agent();
                         assertEquals(Agent.NodeRetirer, parkingAgent);
-                        assertTrue("Nodes parked by NodeRetirer should also have wantToUnprovision flag set", node.status().wantToUnprovision());
+                        assertTrue("Nodes parked by NodeRetirer should also have wantToDeprovision flag set", node.status().wantToDeprovision());
                         tester.nodeRepository.write(node.withIpAddresses(Collections.singleton("::2")));
                         tester.nodeRepository.setDirty(node.hostname());
                         tester.nodeRepository.setReady(node.hostname());
@@ -146,8 +146,8 @@ public class NodeRetirerTest {
             retireThenAssertSpareAndParkedCounts(new long[]{2, 40, 25, 0, 0, 1}, new long[]{6, 3, 5, 2, 1});
 
             tester.nodeRepository.getNodes(Node.State.parked)
-                    .forEach(node -> assertTrue("Nodes parked by NodeRetirer should also have wantToUnprovision flag set",
-                            node.status().wantToUnprovision()));
+                    .forEach(node -> assertTrue("Nodes parked by NodeRetirer should also have wantToDeprovision flag set",
+                            node.status().wantToDeprovision()));
         }
 
         @Test
