@@ -1,7 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".searchcorespi.index.indexmaintainercontext");
 
 #include "indexmaintainercontext.h"
 
@@ -9,8 +6,7 @@ using search::common::FileHeaderContext;
 using search::TuneFileAttributes;
 using searchcorespi::IIndexManager;
 
-namespace searchcorespi {
-namespace index {
+namespace searchcorespi::index {
 
 IndexMaintainerContext::IndexMaintainerContext(IThreadingService &threadingService,
                                                IIndexManager::Reconfigurer &reconfigurer,
@@ -23,6 +19,4 @@ IndexMaintainerContext::IndexMaintainerContext(IThreadingService &threadingServi
 {
 }
 
-} // namespace index
-} // namespace searchcorespi
-
+}

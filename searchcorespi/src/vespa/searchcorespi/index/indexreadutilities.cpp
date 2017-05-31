@@ -1,7 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".searchcorespi.index.indexreadutilities");
 
 #include "indexreadutilities.h"
 #include "indexdisklayout.h"
@@ -10,11 +7,13 @@ LOG_SETUP(".searchcorespi.index.indexreadutilities");
 #include <set>
 #include <vector>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchcorespi.index.indexreadutilities");
+
 using search::SerialNum;
 using vespalib::FileHeader;
 
-namespace searchcorespi {
-namespace index {
+namespace searchcorespi::index {
 
 namespace {
 
@@ -86,6 +85,4 @@ IndexReadUtilities::readSerialNum(const vespalib::string &dir)
     return 0;
 }
 
-} // namespace index
-} // namespace searchcorespi
-
+}

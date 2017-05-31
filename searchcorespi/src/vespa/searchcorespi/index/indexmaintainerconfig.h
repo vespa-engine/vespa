@@ -1,14 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchcommon/common/schema.h>
+#include "warmupconfig.h"
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/common/serialnum.h>
+#include <vespa/searchcommon/common/schema.h>
 #include <vespa/vespalib/stllike/string.h>
-#include "warmupconfig.h"
 
-namespace searchcorespi {
-namespace index {
+namespace searchcorespi::index {
 
 /**
  * Class that keeps the config used when constructing an index maintainer.
@@ -29,6 +28,8 @@ public:
                           const search::index::Schema &schema,
                           const search::SerialNum serialNum,
                           const search::TuneFileAttributes &tuneFileAttributes);
+
+    ~IndexMaintainerConfig();
 
     /**
      * Returns the base directory in which the maintainer will store its indexes.
@@ -60,7 +61,4 @@ public:
     }
 };
 
-} // namespace index
-} // namespace searchcorespi
-
-
+}
