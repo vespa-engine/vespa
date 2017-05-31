@@ -7,10 +7,11 @@
  */
 #pragma once
 
-#include <vespa/storageframework/generic/status/statusreporter.h>
+#include <vector>
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
+
+class StatusReporter;
 
 struct StatusReporterMap {
     virtual ~StatusReporterMap() {}
@@ -20,6 +21,4 @@ struct StatusReporterMap {
     virtual std::vector<const StatusReporter*> getStatusReporters() = 0;
 };
 
-} // framework
-} // storage
-
+} // storage::framework

@@ -11,7 +11,7 @@
 #pragma once
 
 #include <vespa/storage/config/config-stor-status.h>
-#include <vespa/storageframework/storageframework.h>
+#include <vespa/storageframework/generic/thread/runnable.h>
 #include <vespa/config/config.h>
 #include <vespa/config/helper/configfetcher.h>
 #include <vespa/fastlib/net/httpserver.h>
@@ -19,6 +19,14 @@
 
 namespace storage {
 
+namespace framework {
+    class StatusReporterMap;
+    class ThreadHandle;
+    class ComponentRegister;
+    class Thread;
+    class HttpUrlPath;
+    class Component;
+}
 class StatusWebServer : private config::IFetcherCallback<vespa::config::content::core::StorStatusConfig>,
                         private framework::Runnable
 {
@@ -29,9 +37,7 @@ class StatusWebServer : private config::IFetcherCallback<vespa::config::content:
     public:
         WebServer(StatusWebServer&, uint16_t port);
 
-        void onGetRequest(const string & url,
-                                  const string & serverSpec,
-                                  Fast_HTTPConnection& conn) override;
+        void onGetRequest(const string & url, const string & serverSpec, Fast_HTTPConnection& conn) override;
         const vespalib::string &getServerSpec() const {
             return _serverSpec;
         }
@@ -50,14 +56,14 @@ class StatusWebServer : private config::IFetcherCallback<vespa::config::content:
         {}
     };
 
-    framework::StatusReporterMap& _reporterMap;
-    vespalib::Monitor _workerMonitor;
-    uint16_t _port;
-    std::unique_ptr<WebServer> _httpServer;
-    config::ConfigFetcher _configFetcher;
-    std::list<HttpRequest::SP> _queuedRequests;
-    framework::Component _component;
-    framework::Thread::UP _thread;
+    framework::StatusReporterMap&          _reporterMap;
+    vespalib::Monitor                      _workerMonitor;
+    uint16_t                               _port;
+    std::unique_ptr<WebServer>             _httpServer;
+    config::ConfigFetcher                  _configFetcher;
+    std::list<HttpRequest::SP>             _queuedRequests;
+    std::unique_ptr<framework::Component>  _component;
+    std::unique_ptr<framework::Thread>     _thread;
 
 public:
     StatusWebServer(const StatusWebServer &) = delete;
@@ -65,7 +71,7 @@ public:
     StatusWebServer(framework::ComponentRegister&,
                     framework::StatusReporterMap&,
                     const config::ConfigUri & configUri);
-    virtual ~StatusWebServer();
+    ~StatusWebServer() override;
 
     void handlePage(const framework::HttpUrlPath&, std::ostream& out);
     static vespalib::string getServerSpec(const vespalib::string &requestSpec,

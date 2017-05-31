@@ -74,8 +74,7 @@
 #include <vespa/vespalib/util/sync.h>
 #include <atomic>
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
 
 class ComponentRegister;
 
@@ -217,6 +216,4 @@ public:
 
 };
 
-} // framework
-} // storage
-
+}

@@ -22,11 +22,7 @@ void
 ConfigPoller::run()
 {
     while (!_subscriber.isClosed()) {
-        try {
-            poll();
-        } catch (const std::exception & e) {
-            LOG(fatal, "Fatal error while configuring: %s", e.what());
-        }
+        poll();
     }
 }
 

@@ -11,8 +11,7 @@
 
 #include <vespa/storageframework/generic/clock/time.h>
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
 
 /**
  * A cycle type can be given when registering ticks. This is useful for
@@ -63,6 +62,4 @@ struct Runnable {
     virtual void run(ThreadHandle&) = 0;
 };
 
-} // framework
-} // storage
-
+} // storage::framework
