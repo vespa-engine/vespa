@@ -3,6 +3,7 @@
 #include "fakezcfilterocc.h"
 #include "fpfactory.h"
 #include <vespa/searchlib/diskindex/zcposocciterators.h>
+#include <vespa/searchlib/diskindex/zcbuf.h>
 
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataArray;
@@ -35,18 +36,16 @@ static FPFactoryInit
 init(std::make_pair("ZcFilterOcc",
                     makeFPFactory<FPFactoryT<FakeZcFilterOcc> >));
 
+
+template <typename EC>
 static void
-zcEncode(std::vector<uint8_t> &bytes,
-         uint32_t num)
+writeZcBuf(EC &e, ZcBuf &buf)
 {
-    for (;;) {
-        if (num < (1 << 7)) {
-            bytes.push_back(num);
-            break;
-        }
-        bytes.push_back((num & ((1 << 7) - 1)) | (1 << 7));
-        num >>= 7;
-    }
+    uint32_t size = buf.size();
+    uint8_t *bytes = buf._mallocStart;
+    uint32_t bytesOffset = reinterpret_cast<unsigned long>(bytes) & 7;
+    e.writeBits(reinterpret_cast<const uint64_t *>(bytes - bytesOffset),
+                bytesOffset * 8, size * 8);
 }
 
 #define ZCDECODE(valI, resop)						\
@@ -138,11 +137,11 @@ void
 FakeZcFilterOcc::setupT(const FakeWord &fw, bool doFeatures,
                         bool dynamicK)
 {
-    std::vector<uint8_t> bytes;
-    std::vector<uint8_t> l1SkipBytes;
-    std::vector<uint8_t> l2SkipBytes;
-    std::vector<uint8_t> l3SkipBytes;
-    std::vector<uint8_t> l4SkipBytes;
+    ZcBuf bytes;
+    ZcBuf l1SkipBytes;
+    ZcBuf l2SkipBytes;
+    ZcBuf l3SkipBytes;
+    ZcBuf l4SkipBytes;
     uint32_t lastDocId = 0u;
     uint32_t lastL1SkipDocId = 0u;
     uint64_t lastL1SkipDocIdPos = 0;
@@ -187,17 +186,23 @@ FakeZcFilterOcc::setupT(const FakeWord &fw, bool doFeatures,
     fctx.allocComprBuf(64, 1);
     f.afterWrite(fctx, 0, 0);
 
+    // Ensure that some space is initially available in encoding buffers
+    bytes.maybeExpand();
+    l1SkipBytes.maybeExpand();
+    l2SkipBytes.maybeExpand();
+    l3SkipBytes.maybeExpand();
+    l4SkipBytes.maybeExpand();
     while (d != de) {
         if (l1SkipCnt >= L1SKIPSTRIDE) {
             uint32_t docIdDelta = lastDocId - lastL1SkipDocId;
             assert(static_cast<int32_t>(docIdDelta) > 0);
-            zcEncode(l1SkipBytes, docIdDelta - 1);
+            l1SkipBytes.encode(docIdDelta - 1);
             uint64_t lastDocIdPos = bytes.size();
             uint32_t docIdPosDelta = lastDocIdPos - lastL1SkipDocIdPos;
-            zcEncode(l1SkipBytes, docIdPosDelta - 1);
+            l1SkipBytes.encode(docIdPosDelta - 1);
             if (doFeatures) {
                 featurePos = f.getWriteOffset();
-                zcEncode(l1SkipBytes, featurePos - lastL1SkipFeaturePos - 1);
+                l1SkipBytes.encode(featurePos - lastL1SkipFeaturePos - 1);
                 lastL1SkipFeaturePos = featurePos;
             }
 #if DEBUG_ZCFILTEROCC_PRINTF
@@ -214,14 +219,13 @@ FakeZcFilterOcc::setupT(const FakeWord &fw, bool doFeatures,
                 docIdPosDelta = lastDocIdPos - lastL2SkipDocIdPos;
                 uint64_t lastL1SkipPos = l1SkipBytes.size();
                 uint32_t l1SkipPosDelta = lastL1SkipPos - lastL2SkipL1SkipPos;
-                zcEncode(l2SkipBytes, docIdDelta - 1);
-                zcEncode(l2SkipBytes, docIdPosDelta - 1);
+                l2SkipBytes.encode(docIdDelta - 1);
+                l2SkipBytes.encode(docIdPosDelta - 1);
                 if (doFeatures) {
-                    zcEncode(l2SkipBytes,
-                             featurePos - lastL2SkipFeaturePos - 1);
+                    l2SkipBytes.encode(featurePos - lastL2SkipFeaturePos - 1);
                     lastL2SkipFeaturePos = featurePos;
                 }
-                zcEncode(l2SkipBytes, l1SkipPosDelta - 1);
+                l2SkipBytes.encode(l1SkipPosDelta - 1);
 #if DEBUG_ZCFILTEROCC_PRINTF
                 printf("L2Encode docId=%d (+%d), docIdPos=%d (+%u),"
                        " l1SkipPos=%d (+%u)\n",
@@ -241,15 +245,14 @@ FakeZcFilterOcc::setupT(const FakeWord &fw, bool doFeatures,
                     uint64_t lastL2SkipPos = l2SkipBytes.size();
                     uint32_t l2SkipPosDelta = lastL2SkipPos -
                                               lastL3SkipL2SkipPos;
-                    zcEncode(l3SkipBytes, docIdDelta - 1);
-                    zcEncode(l3SkipBytes, docIdPosDelta - 1);
+                    l3SkipBytes.encode(docIdDelta - 1);
+                    l3SkipBytes.encode(docIdPosDelta - 1);
                     if (doFeatures) {
-                        zcEncode(l3SkipBytes,
-                                 featurePos - lastL3SkipFeaturePos - 1);
+                        l3SkipBytes.encode(featurePos - lastL3SkipFeaturePos - 1);
                         lastL3SkipFeaturePos = featurePos;
                     }
-                    zcEncode(l3SkipBytes, l1SkipPosDelta - 1);
-                    zcEncode(l3SkipBytes, l2SkipPosDelta - 1);
+                    l3SkipBytes.encode(l1SkipPosDelta - 1);
+                    l3SkipBytes.encode(l2SkipPosDelta - 1);
 #if DEBUG_ZCFILTEROCC_PRINTF
                     printf("L3Encode docId=%d (+%d), docIdPos=%d (+%u),"
                            " l1SkipPos=%d (+%u) l2SkipPos %d (+%u)\n",
@@ -272,16 +275,15 @@ FakeZcFilterOcc::setupT(const FakeWord &fw, bool doFeatures,
                         uint64_t lastL3SkipPos = l3SkipBytes.size();
                         uint32_t l3SkipPosDelta = lastL3SkipPos -
                                                   lastL4SkipL3SkipPos;
-                        zcEncode(l4SkipBytes, docIdDelta - 1);
-                        zcEncode(l4SkipBytes, docIdPosDelta - 1);
+                        l4SkipBytes.encode(docIdDelta - 1);
+                        l4SkipBytes.encode(docIdPosDelta - 1);
                         if (doFeatures) {
-                            zcEncode(l4SkipBytes,
-                                     featurePos - lastL4SkipFeaturePos - 1);
+                            l4SkipBytes.encode(featurePos - lastL4SkipFeaturePos - 1);
                             lastL4SkipFeaturePos = featurePos;
                         }
-                        zcEncode(l4SkipBytes, l1SkipPosDelta - 1);
-                        zcEncode(l4SkipBytes, l2SkipPosDelta - 1);
-                        zcEncode(l4SkipBytes, l3SkipPosDelta - 1);
+                        l4SkipBytes.encode(l1SkipPosDelta - 1);
+                        l4SkipBytes.encode(l2SkipPosDelta - 1);
+                        l4SkipBytes.encode(l3SkipPosDelta - 1);
 #if DEBUG_ZCFILTEROCC_PRINTF
                         printf("L4Encode docId=%d (+%d), docIdPos=%d (+%u),"
                            " l1SkipPos=%d (+%u) l2SkipPos %d (+%u)"
@@ -303,14 +305,14 @@ FakeZcFilterOcc::setupT(const FakeWord &fw, bool doFeatures,
             }
         }
         if (lastDocId == 0u) {
-            zcEncode(bytes, d->_docId - 1);
+            bytes.encode(d->_docId - 1);
 #if DEBUG_ZCFILTEROCC_PRINTF
             printf("Encode docId=%d\n",
                    d->_docId);
 #endif
         } else {
             uint32_t docIdDelta = d->_docId - lastDocId;
-            zcEncode(bytes, docIdDelta - 1);
+            bytes.encode(docIdDelta - 1);
 #if DEBUG_ZCFILTEROCC_PRINTF
             printf("Encode docId=%d (+%d)\n",
                    d->_docId, docIdDelta);
@@ -353,22 +355,22 @@ FakeZcFilterOcc::setupT(const FakeWord &fw, bool doFeatures,
     if (l1SkipBytes.size() > 0) {
         uint32_t docIdDelta = lastDocId - lastL1SkipDocId;
         assert(static_cast<int32_t>(docIdDelta) > 0);
-        zcEncode(l1SkipBytes, docIdDelta - 1);
+        l1SkipBytes.encode(docIdDelta - 1);
     }
     if (l2SkipBytes.size() > 0) {
         uint32_t docIdDelta = lastDocId - lastL2SkipDocId;
         assert(static_cast<int32_t>(docIdDelta) > 0);
-        zcEncode(l2SkipBytes, docIdDelta - 1);
+        l2SkipBytes.encode(docIdDelta - 1);
     }
     if (l3SkipBytes.size() > 0) {
         uint32_t docIdDelta = lastDocId - lastL3SkipDocId;
         assert(static_cast<int32_t>(docIdDelta) > 0);
-        zcEncode(l3SkipBytes, docIdDelta - 1);
+        l3SkipBytes.encode(docIdDelta - 1);
     }
     if (l4SkipBytes.size() > 0) {
         uint32_t docIdDelta = lastDocId - lastL4SkipDocId;
         assert(static_cast<int32_t>(docIdDelta) > 0);
-        zcEncode(l4SkipBytes, docIdDelta - 1);
+        l4SkipBytes.encode(docIdDelta - 1);
     }
     _hitDocs = fw._postings.size();
     _docIdLimit = fw._docIdLimit;
@@ -419,45 +421,16 @@ FakeZcFilterOcc::setupT(const FakeWord &fw, bool doFeatures,
         e.writeBits(0, bytePad);
     size_t docIdSize = bytes.size();
     if (docIdSize > 0) {
-        uint8_t *docIdBytes = &bytes[0];
-        uint32_t docIdBytesOffset =
-            reinterpret_cast<unsigned long>(docIdBytes) & 7;
-        e.writeBits(reinterpret_cast<const uint64_t *>(docIdBytes -
-                            docIdBytesOffset),
-                    docIdBytesOffset * 8,
-                    docIdSize * 8);
+        writeZcBuf(e, bytes);
     }
     if (_l1SkipSize > 0) {
-        uint8_t *l1Bytes = &l1SkipBytes[0];
-        uint32_t l1BytesOffset = reinterpret_cast<unsigned long>(l1Bytes) & 7;
-        e.writeBits(reinterpret_cast<const uint64_t *>(l1Bytes -
-                            l1BytesOffset),
-                    l1BytesOffset * 8,
-                    _l1SkipSize * 8);
+        writeZcBuf(e, l1SkipBytes);
         if (_l2SkipSize > 0) {
-            uint8_t *l2Bytes = &l2SkipBytes[0];
-            uint32_t l2BytesOffset =
-                reinterpret_cast<unsigned long>(l2Bytes) & 7;
-            e.writeBits(reinterpret_cast<const uint64_t *>(l2Bytes -
-                                l2BytesOffset),
-                        l2BytesOffset * 8,
-                        _l2SkipSize * 8);
+            writeZcBuf(e, l2SkipBytes);
             if (_l3SkipSize > 0) {
-                uint8_t *l3Bytes = &l3SkipBytes[0];
-                uint32_t l3BytesOffset =
-                    reinterpret_cast<unsigned long>(l3Bytes) & 7;
-                e.writeBits(reinterpret_cast<const uint64_t *>(l3Bytes -
-                                    l3BytesOffset),
-                            l3BytesOffset * 8,
-                            _l3SkipSize * 8);
+                writeZcBuf(e, l3SkipBytes);
                 if (_l4SkipSize > 0) {
-                    uint8_t *l4Bytes = &l4SkipBytes[0];
-                    uint32_t l4BytesOffset =
-                        reinterpret_cast<unsigned long>(l4Bytes) & 7;
-                    e.writeBits(reinterpret_cast<const uint64_t *>(l4Bytes -
-                                        l4BytesOffset),
-                                l4BytesOffset * 8,
-                                _l4SkipSize * 8);
+                    writeZcBuf(e, l4SkipBytes);
                 }
             }
         }
