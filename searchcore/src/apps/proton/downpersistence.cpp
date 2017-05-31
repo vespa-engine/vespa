@@ -1,16 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+#include "downpersistence.h"
+
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/searchlib/util/statefile.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
-#include "downpersistence.h"
-#include <vespa/log/log.h>
-LOG_SETUP(".downpersistence");
 
-namespace storage {
-
-namespace spi {
+namespace storage::spi {
 
 namespace {
 
@@ -18,17 +14,14 @@ Result errorResult(Result::FATAL_ERROR, "Node is down");
 
 }
 
-
 DownPersistence::DownPersistence(const vespalib::string &downReason)
     : _downReason(downReason)
 {
 }
 
-
 DownPersistence::~DownPersistence()
 {
 }
-
 
 Result
 DownPersistence::initialize()
@@ -63,7 +56,6 @@ DownPersistence:: setActiveState(const Bucket&, BucketInfo::ActiveState)
     return errorResult;
 }
 
-
 BucketInfoResult
 DownPersistence:: getBucketInfo(const Bucket&) const
 {
@@ -77,7 +69,6 @@ DownPersistence::put(const Bucket&, Timestamp, const Document::SP&, Context&)
     return errorResult;
 }
 
-
 RemoveResult
 DownPersistence:: remove(const Bucket&, Timestamp,
                          const DocumentId&, Context&)
@@ -85,7 +76,6 @@ DownPersistence:: remove(const Bucket&, Timestamp,
     return RemoveResult(errorResult.getErrorCode(),
                         errorResult.getErrorMessage());
 }
-
 
 RemoveResult
 DownPersistence::removeIfFound(const Bucket&, Timestamp,
@@ -95,13 +85,11 @@ DownPersistence::removeIfFound(const Bucket&, Timestamp,
                         errorResult.getErrorMessage());
 }
 
-
 Result
 DownPersistence::removeEntry(const Bucket&, Timestamp, Context&)
 {
     return errorResult;
 }
-
 
 UpdateResult DownPersistence::update(const Bucket&, Timestamp,
                                      const DocumentUpdate::SP&, Context&)
@@ -109,7 +97,6 @@ UpdateResult DownPersistence::update(const Bucket&, Timestamp,
     return UpdateResult(errorResult.getErrorCode(),
                         errorResult.getErrorMessage());
 }
-
 
 Result
 DownPersistence::flush(const Bucket&, Context&)
@@ -192,8 +179,6 @@ Result
 DownPersistence::move(const Bucket&, PartitionId, Context&)
 {
     return errorResult;
-}
-
 }
 
 }

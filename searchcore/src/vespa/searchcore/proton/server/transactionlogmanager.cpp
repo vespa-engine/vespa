@@ -1,20 +1,19 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.server.transactionlogmanager");
 #include "configstore.h"
 #include "transactionlogmanager.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/exceptions.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.server.transactionlogmanager");
+
 using vespalib::IllegalStateException;
 using vespalib::make_string;
 using search::transactionlog::TransLogClient;
 
-namespace proton
-{
+namespace proton {
 
 
 void

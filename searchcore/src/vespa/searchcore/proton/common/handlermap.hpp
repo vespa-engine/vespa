@@ -1,13 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchcore/proton/common/doctypename.h>
+#include "doctypename.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/sequence.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <map>
+#include <vector>
 
 namespace proton {
 

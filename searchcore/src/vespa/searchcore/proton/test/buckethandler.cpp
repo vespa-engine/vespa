@@ -1,15 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 
 #include "buckethandler.h"
+#include <cassert>
 
-
-namespace proton
-{
-
-namespace test
-{
-
+namespace proton::test {
 
 BucketHandler::BucketHandler()
     : IBucketStateChangedNotifier(),
@@ -17,12 +11,10 @@ BucketHandler::BucketHandler()
 {
 }
 
-
 BucketHandler::~BucketHandler()
 {
     assert(_handlers.empty());
 }
-
 
 void
 BucketHandler::addBucketStateChangedHandler(IBucketStateChangedHandler *handler)
@@ -30,14 +22,12 @@ BucketHandler::addBucketStateChangedHandler(IBucketStateChangedHandler *handler)
     _handlers.insert(handler);
 }
 
-
 void
 BucketHandler::removeBucketStateChangedHandler(IBucketStateChangedHandler *
                                                handler)
 {
     _handlers.erase(handler);
 }
-
 
 void
 BucketHandler::notifyBucketStateChanged(const document::BucketId &bucketId,
@@ -49,8 +39,4 @@ BucketHandler::notifyBucketStateChanged(const document::BucketId &bucketId,
     }
 }
 
-
-} // namespace test
-
-} // namespace proton
-
+}

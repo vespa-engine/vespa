@@ -1,9 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "persistencehandlerproxy.h"
 #include "documentretriever.h"
-#include <vespa/persistence/spi/result.h>
 #include "documentdb.h"
 #include <vespa/searchcore/proton/feedoperation/createbucketoperation.h>
 #include <vespa/searchcore/proton/feedoperation/deletebucketoperation.h>
@@ -12,8 +10,7 @@
 #include <vespa/searchcore/proton/feedoperation/removeoperation.h>
 #include <vespa/searchcore/proton/feedoperation/splitbucketoperation.h>
 #include <vespa/searchcore/proton/feedoperation/updateoperation.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.server.persistencehandlerproxy");
+#include <vespa/persistence/spi/result.h>
 
 using storage::spi::Bucket;
 using storage::spi::Timestamp;
@@ -29,19 +26,16 @@ PersistenceHandlerProxy::PersistenceHandlerProxy(const DocumentDB::SP &documentD
     _documentDB->retain();
 }
 
-
 PersistenceHandlerProxy::~PersistenceHandlerProxy()
 {
     _documentDB->release();
 }
-
 
 void
 PersistenceHandlerProxy::initialize()
 {
     _documentDB->waitForOnlineState();
 }
-
 
 void
 PersistenceHandlerProxy::handlePut(FeedToken token,
@@ -53,7 +47,6 @@ PersistenceHandlerProxy::handlePut(FeedToken token,
                                           timestamp, doc));
     _feedHandler.handleOperation(token, std::move(op));
 }
-
 
 void
 PersistenceHandlerProxy::handleUpdate(FeedToken token,
@@ -67,7 +60,6 @@ PersistenceHandlerProxy::handleUpdate(FeedToken token,
     _feedHandler.handleOperation(token, std::move(op));
 }
 
-
 void
 PersistenceHandlerProxy::handleRemove(FeedToken token,
                                       const Bucket &bucket,
@@ -80,13 +72,11 @@ PersistenceHandlerProxy::handleRemove(FeedToken token,
     _feedHandler.handleOperation(token, std::move(op));
 }
 
-
 void
 PersistenceHandlerProxy::handleListBuckets(IBucketIdListResultHandler &resultHandler)
 {
     _bucketHandler.handleListBuckets(resultHandler);
 }
-
 
 void
 PersistenceHandlerProxy::handleSetClusterState(const storage::spi::ClusterState &calc,
@@ -94,7 +84,6 @@ PersistenceHandlerProxy::handleSetClusterState(const storage::spi::ClusterState 
 {
     _clusterStateHandler.handleSetClusterState(calc, resultHandler);
 }
-
 
 void
 PersistenceHandlerProxy::handleSetActiveState(
@@ -106,14 +95,12 @@ PersistenceHandlerProxy::handleSetActiveState(
                                          newState, resultHandler);
 }
 
-
 void
 PersistenceHandlerProxy::handleGetBucketInfo(const Bucket &bucket,
                                              IBucketInfoResultHandler &resultHandler)
 {
     _bucketHandler.handleGetBucketInfo(bucket, resultHandler);
 }
-
 
 void
 PersistenceHandlerProxy::handleCreateBucket(FeedToken token,
@@ -124,7 +111,6 @@ PersistenceHandlerProxy::handleCreateBucket(FeedToken token,
     _feedHandler.handleOperation(token, std::move(op));
 }
 
-
 void
 PersistenceHandlerProxy::handleDeleteBucket(FeedToken token,
                                             const Bucket &bucket)
@@ -134,13 +120,11 @@ PersistenceHandlerProxy::handleDeleteBucket(FeedToken token,
     _feedHandler.handleOperation(token, std::move(op));
 }
 
-
 void
 PersistenceHandlerProxy::handleGetModifiedBuckets(IBucketIdListResultHandler &resultHandler)
 {
     _clusterStateHandler.handleGetModifiedBuckets(resultHandler);
 }
-
 
 void
 PersistenceHandlerProxy::handleSplit(FeedToken token,
@@ -157,7 +141,6 @@ PersistenceHandlerProxy::handleSplit(FeedToken token,
     _feedHandler.handleOperation(token, std::move(op));
 }
 
-
 void
 PersistenceHandlerProxy::handleJoin(FeedToken token,
                                     const Bucket &source1,
@@ -173,7 +156,6 @@ PersistenceHandlerProxy::handleJoin(FeedToken token,
     _feedHandler.handleOperation(token, std::move(op));
 }
 
-
 IPersistenceHandler::RetrieversSP
 PersistenceHandlerProxy::getDocumentRetrievers(storage::spi::ReadConsistency consistency)
 {
@@ -186,14 +168,12 @@ PersistenceHandlerProxy::lockBucket(const storage::spi::Bucket &bucket)
     return _documentDB->lockBucket(bucket.getBucketId().stripUnused());
 }
 
-
 void
 PersistenceHandlerProxy::handleListActiveBuckets(
         IBucketIdListResultHandler &resultHandler)
 {
     _bucketHandler.handleListActiveBuckets(resultHandler);
 }
-
 
 void
 PersistenceHandlerProxy::handlePopulateActiveBuckets(
@@ -202,6 +182,5 @@ PersistenceHandlerProxy::handlePopulateActiveBuckets(
 {
     _bucketHandler.handlePopulateActiveBuckets(buckets, resultHandler);
 }
-
 
 } // namespace proton

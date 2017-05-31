@@ -1,13 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.server.pruneremoveddocumentsjob");
 #include "pruneremoveddocumentsjob.h"
-#include <vespa/searchcore/proton/feedoperation/pruneremoveddocumentsoperation.h>
-#include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 #include "ipruneremoveddocumentshandler.h"
 #include "ifrozenbuckethandler.h"
+#include <vespa/searchcore/proton/feedoperation/pruneremoveddocumentsoperation.h>
+#include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.server.pruneremoveddocumentsjob");
 
 using document::BucketId;
 using storage::spi::Timestamp;

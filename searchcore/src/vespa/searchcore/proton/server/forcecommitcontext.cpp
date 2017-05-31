@@ -1,13 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "forcecommitcontext.h"
 #include "forcecommitdonetask.h"
 #include <vespa/searchcore/proton/common/docid_limit.h>
+#include <cassert>
 
-namespace proton
-{
-
+namespace proton {
 
 ForceCommitContext::ForceCommitContext(vespalib::Executor &executor,
                                        IDocumentMetaStore &documentMetaStore)
@@ -17,7 +15,6 @@ ForceCommitContext::ForceCommitContext(vespalib::Executor &executor,
       _docIdLimit(nullptr)
 {
 }
-
 
 ForceCommitContext::~ForceCommitContext()
 {
@@ -30,20 +27,17 @@ ForceCommitContext::~ForceCommitContext()
     }
 }
 
-
 void
 ForceCommitContext::reuseLids(std::vector<uint32_t> &&lids)
 {
     _task->reuseLids(std::move(lids));
 }
 
-
 void
 ForceCommitContext::holdUnblockShrinkLidSpace()
 {
     _task->holdUnblockShrinkLidSpace();
 }
-
 
 void
 ForceCommitContext::registerCommittedDocIdLimit(uint32_t committedDocIdLimit,
@@ -52,6 +46,5 @@ ForceCommitContext::registerCommittedDocIdLimit(uint32_t committedDocIdLimit,
     _committedDocIdLimit = committedDocIdLimit;
     _docIdLimit = docIdLimit;
 }
-
 
 }  // namespace proton

@@ -1,18 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("vespa-proton-cmd");
-#include <vespa/fnet/frt/frt.h>
-#include <algorithm>
-#include <string>
+
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/config-slobroks.h>
-#include <vespa/vespalib/util/host_name.h>
 #include <vespa/config/common/configsystem.h>
+#include <vespa/fnet/frt/frt.h>
+#include <vespa/vespalib/util/host_name.h>
+#include <vespa/fastos/app.h>
+#include <algorithm>
+#include <string>
 
+#include <vespa/log/log.h>
+LOG_SETUP("vespa-proton-cmd");
 
-namespace pandora {
-namespace rtc_cmd {
+namespace pandora::rtc_cmd {
 
 class App : public FastOS_Application
 {
@@ -405,7 +405,6 @@ App::monitorLoop()
 }
 
 } // namespace pandora::rtc_cmd
-} // namespace pandora
 
 
 int main(int argc, char **argv)

@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace document { class GlobalId; }
 
 namespace search {

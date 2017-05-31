@@ -2,6 +2,9 @@
 
 #pragma once
 
+#include <memory>
+#include <vector>
+
 namespace proton {
 
 /**
@@ -23,31 +26,22 @@ public:
         Progress()
             : _progress(0.0),
               _weight(0.0)
-        {
-        }
+        {}
 
         Progress(double progress, double weight)
             : _progress(progress),
               _weight(weight)
-        {
-        }
+        {}
     };
 
-    virtual
-    ~IReprocessingTask()
-    {
-    }
+    virtual ~IReprocessingTask() {}
 
     /**
      * Run reprocessing task.
      */
-    virtual void
-    run() = 0;
+    virtual void run() = 0;
 
-    virtual Progress
-    getProgress() const = 0;
+    virtual Progress getProgress() const = 0;
 };
 
-
 } // namespace proton
-

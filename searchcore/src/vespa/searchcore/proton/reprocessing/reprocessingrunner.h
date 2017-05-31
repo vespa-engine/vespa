@@ -3,9 +3,10 @@
 #pragma once
 
 #include <mutex>
+#include <memory>
+#include <vector>
 
-namespace proton
-{
+namespace proton {
 
 class IReprocessingTask;
 
@@ -29,22 +30,11 @@ private:
 public:
     ReprocessingRunner();
 
-    void
-    addTasks(const ReprocessingTasks &tasks);
-
-    void
-    run();
-
-    void
-    reset();
-
-    bool
-    empty() const;
-
-    double
-    getProgress() const;
+    void addTasks(const ReprocessingTasks &tasks);
+    void run();
+    void reset();
+    bool empty() const;
+    double getProgress() const;
 };
 
-
 } // namespace proton
-
