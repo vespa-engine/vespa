@@ -95,27 +95,15 @@ class ComponentNode(componentId: ComponentId,
       case other => other
     }
 
-    val instanceFuture = Future {
-        try {
-          constructor.newInstance(actualArguments: _*)
-        } catch {
-          case e: InvocationTargetException =>
-            throw removeStackTrace(ErrorOrComponentConstructorException(cutStackTraceAtConstructor(e.getCause), s"Error constructing $idAndType"))
-        }
-    }
+    val instance =
+      try {
+        constructor.newInstance(actualArguments: _*)
+      } catch {
+        case e: InvocationTargetException =>
+          throw removeStackTrace(ErrorOrComponentConstructorException(cutStackTraceAtConstructor(e.getCause), s"Error constructing $idAndType"))
+      }
 
-    try {
-      val instance = Await.result(instanceFuture, ComponentConstructTimeout)
-      initId(instance)
-    } catch {
-      case constructorException: ComponentConstructorException =>
-        throw constructorException
-      case _:TimeoutException =>
-        throw new ComponentConstructorException(s"Timed out after $ComponentConstructTimeout while constructing component $idAndType.")
-      case e: InterruptedException =>
-        Thread.currentThread().interrupt()
-        throw new RuntimeException(s"Interrupted while constructing component $idAndType", e)
-    }
+    initId(instance)
   }
 
   private def ErrorOrComponentConstructorException(cause: Throwable, message: String) : Throwable = {
@@ -185,9 +173,6 @@ class ComponentNode(componentId: ComponentId,
 
 object ComponentNode {
   val log = Logger.getLogger(classOf[ComponentNode].getName)
-
-  // XXX: var for testing only. Do not reset in production code!
-  var ComponentConstructTimeout: FiniteDuration = 60 seconds
 
   private def bestConstructor(clazz: Class[AnyRef]) = {
     val publicConstructors = clazz.getConstructors.asInstanceOf[Array[Constructor[AnyRef]]]
