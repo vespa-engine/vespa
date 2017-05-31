@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "statuswebserver.h"
-
+#include <vespa/storageframework/storageframework.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/fastlib/net/url.h>
 #include <vespa/vespalib/util/host_name.h>
@@ -23,14 +23,14 @@ StatusWebServer::StatusWebServer(
       _httpServer(),
       _configFetcher(configUri.getContext()),
       _queuedRequests(),
-      _component(componentRegister, "Status"),
+      _component(std::make_unique<framework::Component>(componentRegister, "Status")),
       _thread()
 {
     _configFetcher.subscribe<vespa::config::content::core::StorStatusConfig>(configUri.getConfigId(), this);
     _configFetcher.start();
     framework::MilliSecTime maxProcessingTime(60 * 60 * 1000);
     framework::MilliSecTime maxWaitTime(10 * 1000);
-    _thread = _component.startThread(*this, maxProcessingTime, maxWaitTime);
+    _thread = _component->startThread(*this, maxProcessingTime, maxWaitTime);
 
 }
 
@@ -179,7 +179,7 @@ StatusWebServer::WebServer::onGetRequest(const string & tmpurl, const string &se
         _status._queuedRequests.emplace_back(new HttpRequest(url.c_str(), urlpath.getServerSpec()));
         HttpRequest* req = _status._queuedRequests.back().get();
         framework::SecondTime timeout(urlpath.get("timeout", 30u));
-        framework::SecondTime timeoutTime(_status._component.getClock().getTimeInSeconds() + timeout);
+        framework::SecondTime timeoutTime(_status._component->getClock().getTimeInSeconds() + timeout);
         monitor.signal();
         while (true) {
             monitor.wait(100);
@@ -189,8 +189,7 @@ StatusWebServer::WebServer::onGetRequest(const string & tmpurl, const string &se
                 LOG(debug, "Finished status request for '%s'", req->_url.c_str());
                 done = true;
             } else {
-                if (_status._component.getClock().getTimeInSeconds()
-                        > timeoutTime)
+                if (_status._component->getClock().getTimeInSeconds() > timeoutTime)
                 {
                     std::ostringstream ost;
                     {
