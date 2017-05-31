@@ -14,7 +14,7 @@ public:
     RemoveOperation(const document::BucketId &bucketId,
                     const storage::spi::Timestamp &timestamp,
                     const document::DocumentId &docId);
-    virtual ~RemoveOperation() {}
+    ~RemoveOperation() override {}
     const document::DocumentId &getDocumentId() const { return _docId; }
     virtual void serialize(vespalib::nbostream &os) const override;
     virtual void deserialize(vespalib::nbostream &is,

@@ -18,7 +18,7 @@ protected:
     void serializeLidsToRemove(vespalib::nbostream &os) const;
     void deserializeLidsToRemove(vespalib::nbostream &is);
 public:
-     ~RemoveDocumentsOperation() { }
+    ~RemoveDocumentsOperation() override { }
 
     void setLidsToRemove(uint32_t subDbId, const LidVectorContext::SP &lidsToRemove) {
         _lidsToRemoveMap[subDbId] = lidsToRemove;
