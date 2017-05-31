@@ -32,9 +32,6 @@ private:
     IGenerationCallback *_genCallback;
 };
 
-
 } // namespace config
 
 #include "configpoller.hpp"
-
-
