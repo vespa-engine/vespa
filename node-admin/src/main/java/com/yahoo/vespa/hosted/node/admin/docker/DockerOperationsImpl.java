@@ -123,6 +123,10 @@ public class DockerOperationsImpl implements DockerOperations {
                     .withUlimit("core", -1, -1)
                     .withAddCapability("SYS_PTRACE"); // Needed for gcore, pstack etc.
 
+            if (environment.isRunningLocally()) {
+                command.withEntrypoint("/usr/local/bin/start-services.sh", "--run-local");
+            }
+
             command.withVolume("/etc/hosts", "/etc/hosts");
             for (String pathInNode : DIRECTORIES_TO_MOUNT.keySet()) {
                 String pathInHost = environment.pathInHostFromPathInNode(containerName, pathInNode).toString();
