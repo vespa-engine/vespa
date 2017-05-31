@@ -13,10 +13,6 @@
             <isRunningLocally>true</isRunningLocally>
         </config>
 
-        <config name='vespa.hosted.node.admin.node-admin'>
-            <isRunningLocally>true</isRunningLocally>
-        </config>
-
         <nodes jvmargs="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=localhost:5555 -Dvespa.freezedetector.disable=true" type="host"/>
     </jdisc>
 

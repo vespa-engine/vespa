@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
@@ -35,6 +36,7 @@ public class Environment {
     private static final String REGION = "REGION";
     private static final String LOGSTASH_NODES = "LOGSTASH_NODES";
     private static final String ATHENS_DOMAIN = "ATHENS_DOMAIN";
+    private static final String RUNNING_LOCALLY = "RUNNING_LOCALLY";
 
     private final Set<String> configServerHosts;
     private final String environment;
@@ -44,6 +46,7 @@ public class Environment {
     private final PathResolver pathResolver;
     private final List<String> logstashNodes;
     private final String athensDomain;
+    private final boolean isRunningLocally;
 
     static {
         filenameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -57,7 +60,8 @@ public class Environment {
              new InetAddressResolver(),
              new PathResolver(),
              getLogstashNodesFromEnvironment(),
-             getEnvironmentVariable(ATHENS_DOMAIN));
+             getEnvironmentVariable(ATHENS_DOMAIN),
+             Optional.ofNullable(System.getenv(RUNNING_LOCALLY)).map(Boolean::valueOf).orElse(false));
     }
 
     public Environment(Set<String> configServerHosts,
@@ -67,7 +71,8 @@ public class Environment {
                        InetAddressResolver inetAddressResolver,
                        PathResolver pathResolver,
                        List<String> logstashNodes,
-                       String athensDomain) {
+                       String athensDomain,
+                       boolean isRunningLocally) {
         this.configServerHosts = configServerHosts;
         this.environment = environment;
         this.region = region;
@@ -76,6 +81,7 @@ public class Environment {
         this.pathResolver = pathResolver;
         this.logstashNodes = logstashNodes;
         this.athensDomain = athensDomain;
+        this.isRunningLocally = isRunningLocally;
     }
 
     public Set<String> getConfigServerHosts() { return configServerHosts; }
@@ -126,6 +132,10 @@ public class Environment {
 
     public PathResolver getPathResolver() {
         return pathResolver;
+    }
+
+    public boolean isRunningLocally() {
+        return isRunningLocally;
     }
 
     /**
@@ -195,6 +205,7 @@ public class Environment {
         private PathResolver pathResolver;
         private List<String> logstashNodes = Collections.emptyList();
         private String athensDomain;
+        private boolean isRunningLocally = false;
 
         public Builder configServerHosts(String... hosts) {
             configServerHosts = Arrays.stream(hosts).collect(Collectors.toSet());
@@ -236,9 +247,14 @@ public class Environment {
             return this;
         }
 
+        public Builder isRunningLocally(boolean isRunningLocally) {
+            this.isRunningLocally = isRunningLocally;
+            return this;
+        }
+
         public Environment build() {
             return new Environment(configServerHosts, environment, region, parentHostHostname, inetAddressResolver,
-                                   pathResolver, logstashNodes, athensDomain);
+                                   pathResolver, logstashNodes, athensDomain, isRunningLocally);
         }
     }
 }
