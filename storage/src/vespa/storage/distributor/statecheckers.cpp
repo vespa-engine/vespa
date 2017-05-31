@@ -1,9 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/distributor/statecheckers.h>
 
-#include <vespa/log/log.h>
-#include <vespa/storage/distributor/activecopy.h>
+#include "statecheckers.h"
+#include "activecopy.h"
 #include <vespa/storage/distributor/operations/idealstate/splitoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/joinoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/removebucketoperation.h>
@@ -14,6 +12,7 @@
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".distributor.operation.checkers");
 
 namespace storage {
