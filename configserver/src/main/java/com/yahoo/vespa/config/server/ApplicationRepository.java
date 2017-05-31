@@ -2,10 +2,14 @@
 package com.yahoo.vespa.config.server;
 
 import com.google.inject.Inject;
+import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.Version;
+import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
@@ -62,6 +66,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final HttpProxy httpProxy;
     private final Clock clock;
     private final DeployLogger logger = new SilentDeployLogger();
+    private final Environment environment;
 
     @Inject
     public ApplicationRepository(Tenants tenants,
@@ -69,7 +74,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  Curator curator,
                                  LogServerLogGrabber logServerLogGrabber,
                                  ApplicationConvergenceChecker applicationConvergenceChecker,
-                                 HttpProxy httpProxy) {
+                                 HttpProxy httpProxy, 
+                                 ConfigserverConfig configserverConfig) {
         this.tenants = tenants;
         this.hostProvisioner = hostProvisionerProvider.getHostProvisioner();
         this.curator = curator;
@@ -77,6 +83,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.convergeChecker = applicationConvergenceChecker;
         this.httpProxy = httpProxy;
         this.clock = Clock.systemUTC();
+        this.environment = Environment.from(configserverConfig.environment());
     }
 
     /**
@@ -96,6 +103,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
         LocalSession newSession = tenant.getSessionFactory().createSessionFromExisting(activeSession, logger, timeoutBudget);
         tenant.getLocalSessionRepo().addSession(newSession);
+
+        // Keep manually deployed applications on the latest version, don't change version otherwise
+        Version version = environment.isManuallyDeployed() ? Vtag.currentVersion : newSession.getVespaVersion();
+                
         return Optional.of(Deployment.unprepared(newSession,
                                                  tenant.getLocalSessionRepo(),
                                                  tenant.getPath(),
@@ -103,7 +114,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                                  new ActivateLock(curator, tenant.getPath()),
                                                  timeout,
                                                  clock,
-                                                 /* already deployed, validate: */ false));
+                                                 false, // don't validate as this is already deployed
+                                                 version));
     }
 
     public Deployment deployFromPreparedSession(LocalSession session, ActivateLock lock, LocalSessionRepo localSessionRepo, Duration timeout) {
@@ -111,7 +123,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                    localSessionRepo,
                                    hostProvisioner,
                                    lock,
-                                   timeout, clock);
+                                   timeout, 
+                                   clock);
     }
 
     /**

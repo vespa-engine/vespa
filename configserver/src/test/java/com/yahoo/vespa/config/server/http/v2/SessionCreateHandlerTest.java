@@ -252,7 +252,8 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
                                                                   new MockCurator(),
                                                                   new LogServerLogGrabber(),
                                                                   new ApplicationConvergenceChecker(),
-                                                                  new HttpProxy(new SimpleHttpFetcher())));
+                                                                  new HttpProxy(new SimpleHttpFetcher()),
+                                                                  new ConfigserverConfig(new ConfigserverConfig.Builder())));
     }
 
     public HttpRequest post() throws FileNotFoundException {

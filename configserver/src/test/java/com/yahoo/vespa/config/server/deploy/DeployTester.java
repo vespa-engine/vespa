@@ -152,7 +152,8 @@ public class DeployTester {
                                                                                 curator,
                                                                                 new LogServerLogGrabber(),
                                                                                 new ApplicationConvergenceChecker(),
-                                                                                new HttpProxy(new SimpleHttpFetcher()));
+                                                                                new HttpProxy(new SimpleHttpFetcher()),
+                                                                                new ConfigserverConfig(new ConfigserverConfig.Builder()));
 
         return applicationRepository.deployFromLocalActive(id, Duration.ofSeconds(60));
     }

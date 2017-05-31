@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
@@ -183,7 +184,8 @@ public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
                                           curator,
                                           new LogServerLogGrabber(),
                                           new ApplicationConvergenceChecker(),
-                                          new HttpProxy(new SimpleHttpFetcher())));
+                                          new HttpProxy(new SimpleHttpFetcher()),
+                                          new ConfigserverConfig(new ConfigserverConfig.Builder())));
     }
 
     public static class MockProvisioner implements Provisioner {

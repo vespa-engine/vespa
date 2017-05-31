@@ -373,7 +373,8 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
                                                                    new MockCurator(),
                                                                    new LogServerLogGrabber(),
                                                                    new ApplicationConvergenceChecker(),
-                                                                   new HttpProxy(new SimpleHttpFetcher())));
+                                                                   new HttpProxy(new SimpleHttpFetcher()),
+                                                                   new ConfigserverConfig(new ConfigserverConfig.Builder())));
     }
 
     private TestTenantBuilder addTenant(TenantName tenantName,

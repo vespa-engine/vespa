@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class HttpProxy {
+
     private static Logger logger = Logger.getLogger(HttpProxy.class.getName());
 
     private final HttpFetcher fetcher;
@@ -64,4 +65,5 @@ public class HttpProxy {
         HttpFetcher.Params params = new HttpFetcher.Params(2000); // 2_000 ms read timeout
         return fetcher.get(params, url);
     }
+
 }
