@@ -30,8 +30,8 @@ class StatusWebServer : private config::IFetcherCallback<vespa::config::content:
         WebServer(StatusWebServer&, uint16_t port);
 
         void onGetRequest(const string & url,
-                                  const string & serverSpec,
-                                  Fast_HTTPConnection& conn) override;
+                          const string & serverSpec,
+                          Fast_HTTPConnection& conn) override;
         const vespalib::string &getServerSpec() const {
             return _serverSpec;
         }
@@ -65,7 +65,7 @@ public:
     StatusWebServer(framework::ComponentRegister&,
                     framework::StatusReporterMap&,
                     const config::ConfigUri & configUri);
-    virtual ~StatusWebServer();
+    ~StatusWebServer() override;
 
     void handlePage(const framework::HttpUrlPath&, std::ostream& out);
     static vespalib::string getServerSpec(const vespalib::string &requestSpec,
