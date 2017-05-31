@@ -124,7 +124,7 @@ void DocStoreValidator::performRemoves(FeedHandler & feedHandler, const search::
             assert(metaData.valid());
             document::Document::UP document = store.read(lid, repo);
             assert(document);
-            LOG(info, "Removing document with id %s and lid %ud with gid %s in bucket %s", document->getId().toString().c_str(), lid, metaData.gid.toString().c_str(), metaData.bucketId.toString().c_str());
+            LOG(info, "Removing document with id %s and lid %u with gid %s in bucket %s", document->getId().toString().c_str(), lid, metaData.gid.toString().c_str(), metaData.bucketId.toString().c_str());
             std::unique_ptr<RemoveOperation> remove = std::make_unique<RemoveOperation>(metaData.bucketId, metaData.timestamp, document->getId());
             feedHandler.performOperation(FeedToken::UP(), std::move(remove));
         }
