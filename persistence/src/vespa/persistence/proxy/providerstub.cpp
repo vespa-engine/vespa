@@ -902,7 +902,7 @@ void ProviderStub::SetupRpcCalls() {
 ProviderStub::ProviderStub(int port, uint32_t threads,
                            const document::DocumentTypeRepo &repo,
                            PersistenceProviderFactory &factory)
-    : _supervisor(),
+    : _supervisor(std::make_unique<FRT_Supervisor>()),
       _executor(threads, 256*1024),
       _repo(&repo),
       _factory(factory),
