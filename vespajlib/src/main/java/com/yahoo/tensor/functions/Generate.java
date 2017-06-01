@@ -50,7 +50,7 @@ public class Generate extends PrimitiveTensorFunction {
 
     @Override
     public TensorFunction replaceArguments(List<TensorFunction> arguments) {
-        if ( arguments.size() != 1)
+        if ( arguments.size() != 0)
             throw new IllegalArgumentException("Generate must have 0 arguments, got " + arguments.size());
         return this;
     }
