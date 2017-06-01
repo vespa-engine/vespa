@@ -1,15 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".index.postinglistfile");
 #include "postinglistfile.h"
+#include <vespa/fastos/file.h>
 
-namespace search
-{
-
-namespace index
-{
+namespace search::index {
 
 PostingListFileSeqRead::PostingListFileSeqRead()
     : _counts(),
@@ -164,7 +158,4 @@ PostingListFileRandReadPassThrough::close()
     return _lower->close();
 }
 
-
-} // namespace index
-
-} // namespace search
+}

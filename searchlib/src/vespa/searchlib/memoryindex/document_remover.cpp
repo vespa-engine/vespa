@@ -1,12 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include "document_remover.h"
 #include "i_document_remove_listener.h"
 #include "wordstore.h"
 #include <vespa/searchlib/common/sort.h>
-
-LOG_SETUP(".memoryindex.document_remover");
 
 namespace search {
 namespace memoryindex {

@@ -1,15 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-#include <fstream>
 #include "schemautil.h"
 #include <set>
+#include <fstream>
+
+#include <vespa/log/log.h>
 LOG_SETUP(".index.schemautil");
 
-namespace search {
-
-namespace index {
+namespace search::index {
 
 using schema::DataType;
 
@@ -207,6 +205,4 @@ SchemaUtil::getIndexIds(const Schema &schema,
     return true;
 }
 
-
-} // namespace search::index
-} // namespace search
+}

@@ -1,17 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".memoryindex.featurestore");
 #include "featurestore.h"
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/datastore/datastore.hpp>
 
-namespace search
-{
-
-namespace memoryindex
-{
+namespace search::memoryindex {
 
 constexpr size_t MIN_CLUSTERS = 1024u;
 
@@ -155,8 +148,4 @@ FeatureStore::moveFeatures(uint32_t packedIndex,
     return moveFeatures(ref, bitLen);
 }
 
-
-} // namespace memoryindex
-
-
-} // namespace search
+}

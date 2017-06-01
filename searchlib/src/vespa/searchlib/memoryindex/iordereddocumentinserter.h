@@ -2,21 +2,23 @@
 
 #pragma once
 
-namespace search
-{
+#include <vespa/vespalib/stllike/string.h>
+#include <cstdint>
 
-namespace memoryindex
-{
+namespace search {
+
+namespace index { class DocIdAndFeatures; }
+
+namespace memoryindex {
 
 /**
  * Interface class for ordered document inserter.
  *
  * Insert order must be properly sorted, by (word, docId)
  */
-class IOrderedDocumentInserter
-{
+class IOrderedDocumentInserter {
 public:
-    virtual ~IOrderedDocumentInserter() { }
+    virtual ~IOrderedDocumentInserter() {}
 
     /**
      * Set next word to operate on.
@@ -26,8 +28,7 @@ public:
     /**
      * Add (word, docId) tuple with given features.
      */
-    virtual void add(uint32_t docId,
-                     const index::DocIdAndFeatures &features) = 0;
+    virtual void add(uint32_t docId, const index::DocIdAndFeatures &features) = 0;
 
     /**
      * Remove (word, docId) tuple.
@@ -48,5 +49,4 @@ public:
 };
 
 }
-
 }

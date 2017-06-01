@@ -1,13 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/searchlib/index/docidandfeatures.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include "ordereddocumentinserter.h"
 #include "i_document_insert_listener.h"
+
+#include <vespa/searchlib/index/docidandfeatures.h>
+#include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/searchlib/btree/btreenode.hpp>
 #include <vespa/searchlib/btree/btreenodeallocator.hpp>
@@ -17,21 +16,13 @@
 #include <vespa/searchlib/btree/btreeroot.hpp>
 #include <vespa/searchlib/btree/btree.hpp>
 
-LOG_SETUP(".memoryindex.orderedfieldinserter");
+namespace search::memoryindex {
 
-namespace search
-{
-
-namespace memoryindex
-{
-
-namespace
-{
+namespace {
 
 const vespalib::string emptyWord = "";
 
 }
-
 
 OrderedDocumentInserter::OrderedDocumentInserter(MemoryFieldIndex &fieldIndex)
     : _word(),
@@ -150,9 +141,6 @@ datastore::EntryRef
 OrderedDocumentInserter::getWordRef() const
 {
     return _dItr.getKey()._wordRef;
-}
-
-
 }
 
 }
