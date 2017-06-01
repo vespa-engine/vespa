@@ -33,4 +33,12 @@ search tensor {
   
   }
 
+  rank-profile profile3 {
+
+    first-phase {
+      expression: tensor(i[10])(i) * attribute(f4)
+    }
+
+  }
+
 }
