@@ -7,6 +7,9 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
+ * Encapsulates vespa service metrics.
+ * IS-A metric set for convenience only (to avoid one indirection to what would have been this class' HAS-A metric set).
+ *
  * @author gjoranv
  */
 @SuppressWarnings("UnusedDeclaration") // Used by model amenders

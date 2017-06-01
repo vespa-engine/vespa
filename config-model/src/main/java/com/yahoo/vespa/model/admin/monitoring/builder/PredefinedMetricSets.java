@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.admin.monitoring.builder;
 
 import com.yahoo.vespa.model.admin.monitoring.MetricSet;
+import com.yahoo.vespa.model.admin.monitoring.SystemMetrics;
 import com.yahoo.vespa.model.admin.monitoring.VespaMetricSet;
 
 import java.util.Collections;
@@ -16,7 +17,8 @@ import java.util.Map;
 public class PredefinedMetricSets {
 
     public static final Map<String, MetricSet> predefinedMetricSets = toMapById(
-            new VespaMetricSet()
+            new VespaMetricSet(),
+            SystemMetrics.systemMetricSet
     );
 
     private static Map<String, MetricSet> toMapById(MetricSet... metricSets) {
