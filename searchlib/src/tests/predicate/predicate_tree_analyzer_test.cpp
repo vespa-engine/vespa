@@ -3,7 +3,6 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP("PredicateTreeAnalyzer_test");
-#include <vespa/fastos/fastos.h>
 
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/document/predicate/predicate_slime_builder.h>

@@ -1,15 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("iteratespeed");
-#include <string>
+
 #include <vespa/searchlib/btree/btreeroot.h>
 #include <vespa/searchlib/btree/btreebuilder.h>
 #include <vespa/searchlib/btree/btreenodeallocator.h>
 #include <vespa/searchlib/btree/btree.h>
 #include <vespa/searchlib/btree/btreestore.h>
 #include <vespa/searchlib/util/rand48.h>
-
 #include <vespa/searchlib/btree/btreenodeallocator.hpp>
 #include <vespa/searchlib/btree/btreenode.hpp>
 #include <vespa/searchlib/btree/btreenodestore.hpp>
@@ -18,6 +14,12 @@ LOG_SETUP("iteratespeed");
 #include <vespa/searchlib/btree/btreebuilder.hpp>
 #include <vespa/searchlib/btree/btree.hpp>
 #include <vespa/searchlib/btree/btreestore.hpp>
+
+#include <vespa/fastos/app.h>
+#include <vespa/fastos/timestamp.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("iteratespeed");
 
 namespace search {
 namespace btree {

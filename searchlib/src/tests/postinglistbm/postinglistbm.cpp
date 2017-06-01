@@ -2,7 +2,6 @@
 // Copyright (C) 2002-2003 Fast Search & Transfer ASA
 // Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/util/rand48.h>
@@ -12,6 +11,7 @@
 #include <vespa/searchlib/test/fakedata/fakewordset.h>
 #include <vespa/searchlib/test/fakedata/fpfactory.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
+#include <vespa/fastos/app.h>
 
 using search::ResultSet;
 using search::fef::TermFieldMatchData;
@@ -27,8 +27,7 @@ using namespace search::fakedata;
 void FastS_block_usr2() {}
 
 
-namespace postinglistbm
-{
+namespace postinglistbm {
 
 class PostingListBM : public FastOS_Application
 {

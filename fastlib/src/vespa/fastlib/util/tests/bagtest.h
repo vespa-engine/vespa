@@ -2,6 +2,7 @@
 
 #include <vespa/fastlib/util/bag.h>
 #include <vespa/fastlib/testsuite/test.h>
+#include <vespa/fastos/app.h>
 #include <iostream>
 
 /**

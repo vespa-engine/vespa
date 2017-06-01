@@ -2,11 +2,10 @@
 // Copyright (C) 2001-2003 Fast Search & Transfer ASA
 // Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
+#include "extractkeywordstest.h"
 #include <vespa/searchsummary/docsummary/keywordextractor.h>
 #include <vespa/searchlib/parsequery/simplequerystack.h>
-#include <vespa/searchlib/util/rawbuf.h>
-#include "extractkeywordstest.h"
+#include <vespa/fastos/time.h>
 
 #define NUMTESTS 5
 

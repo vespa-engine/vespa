@@ -37,7 +37,6 @@
  *      a multiple of the size of an 8-bit character.
  *
  */
-#include <vespa/fastos/fastos.h>
 #include "rfc_sha1.h"
 /*
  *  Define the SHA1 circular left shift macro

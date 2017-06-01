@@ -1,42 +1,40 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("ioerrorhandler_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchlib/util/statefile.h>
 #include <vespa/searchlib/util/ioerrorhandler.h>
+#include <vespa/searchlib/test/statefile.h>
+#include <vespa/searchlib/test/statestring.h>
+#include <vespa/fastos/file.h>
 #include <atomic>
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <setjmp.h>
 #include <dlfcn.h>
-#include <vespa/searchlib/test/statefile.h>
-#include <vespa/searchlib/test/statestring.h>
 
-extern "C"
-{
+#include <vespa/log/log.h>
+LOG_SETUP("ioerrorhandler_test");
+
+extern "C" {
 
 ssize_t read(int fd, void *buf, size_t count);
 ssize_t write(int fd, const void *buf, size_t count);
 ssize_t pread(int fd, void *buf, size_t count, off_t offset);
 ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
 
-
 }
 
 using ReadFunc = ssize_t (*)(int fd, void *buf, size_t count);
 using WriteFunc = ssize_t (*)(int fd, const void *buf, size_t count);
 using PreadFunc = ssize_t (*)(int fd, void *buf, size_t count, off_t offset);
-using PwriteFunc = ssize_t (*)(int fd, const void *buf, size_t count,
-                               off_t offset);
+using PwriteFunc = ssize_t (*)(int fd, const void *buf, size_t count, off_t offset);
 
 using namespace search::test::statefile;
 using namespace search::test::statestring;
 
-namespace
-{
+namespace {
 
 ReadFunc libc_read;
 WriteFunc libc_write;

@@ -3,7 +3,6 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP("vector_map_test");
-#include <vespa/fastos/fastos.h>
 
 #include <vespa/vespalib/stllike/vector_map.h>
 #include <vespa/vespalib/testkit/testapp.h>

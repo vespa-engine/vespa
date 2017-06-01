@@ -3,7 +3,6 @@
 // Copyright (C) 2003 Overture Services Norway AS
 
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
 LOG_SETUP("docsum-parse");
 #include <vespa/fnet/frt/frt.h>

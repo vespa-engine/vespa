@@ -2,7 +2,6 @@
 
 /* $Id$*/
 
-#include <vespa/fastos/fastos.h>
 #include <iostream>
 #include <set>
 #include <sstream>

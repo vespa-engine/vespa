@@ -1,10 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for IndexManager.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("indexmanager_test");
-
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
@@ -29,7 +25,11 @@ LOG_SETUP("indexmanager_test");
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/searchlib/common/sequencedtaskexecutor.h>
+#include <vespa/fastos/file.h>
 #include <set>
+
+#include <vespa/log/log.h>
+LOG_SETUP("indexmanager_test");
 
 using document::Document;
 using document::FieldValue;

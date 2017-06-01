@@ -3,7 +3,6 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP("predicate_interval_posting_list_test");
-#include <vespa/fastos/fastos.h>
 
 #include <vespa/searchlib/predicate/predicate_tree_annotator.h>
 #include <vespa/searchlib/predicate/predicate_interval_posting_list.h>

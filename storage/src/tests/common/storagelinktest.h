@@ -4,6 +4,7 @@
 
 #include <cppunit/extensions/HelperMacros.h>
 #include <tests/common/dummystoragelink.h>
+#include <vespa/fastos/thread.h>
 
 namespace storage {
 

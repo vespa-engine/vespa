@@ -5,6 +5,7 @@
 #include <vespa/searchlib/util/rand48.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
+#include <cassert>
 
 namespace search {
 class RandomGenerator

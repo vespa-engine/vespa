@@ -264,8 +264,8 @@ public:
      * Fast_Bag
      */
     Fast_BagIterator(void) :
-	_bag(NULL),
-	_array(NULL),
+	_bag(nullptr),
+	_array(nullptr),
 	_index(0),
 	_end(true)
     {
@@ -412,7 +412,7 @@ Fast_Bag<Type>::Fast_Bag() :
 template <class Type>
 Fast_Bag<Type>::Fast_Bag(const Fast_Bag<Type>& source) :
     _capacity(source._capacity),
-    _array(NULL),
+    _array(nullptr),
     _blocksize(source._blocksize),
     _numElements(source._numElements)
 {
@@ -462,7 +462,7 @@ inline Fast_Bag<Type>& Fast_Bag<Type>::operator=(const Fast_Bag<Type>& other)
     // Self assignment
     if(this == &other) return *this;
 
-    if(_array != NULL) {
+    if(_array != nullptr) {
 	delete[] _array;
     }
 

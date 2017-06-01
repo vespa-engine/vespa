@@ -9,7 +9,6 @@
  * ALL RIGHTS RESERVED
  */
 
-#include <vespa/fastos/fastos.h>
 #include <stdlib.h>
 #include "heapdebugger.h"
 

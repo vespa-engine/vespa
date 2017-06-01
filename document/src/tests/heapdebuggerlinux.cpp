@@ -13,7 +13,6 @@
 // These are necessary to make it compile....
 #define _MALLOC_INTERNAL
 #define MALLOC_HOOKS
-#include <vespa/fastos/fastos.h>
 #include <stdio.h>
 #define _LIBC
 #include <malloc.h>

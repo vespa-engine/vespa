@@ -2,7 +2,6 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MAIN
 #define BOOST_TEST_MODULE zkfiledbmodel test
-#include <vespa/fastos/fastos.h>
 #include <boost/test/unit_test.hpp>
 
 #include <iostream>

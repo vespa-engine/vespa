@@ -2,7 +2,6 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MAIN
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/filedistribution/common/buffer.h>
 
 #include <boost/test/unit_test.hpp>

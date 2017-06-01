@@ -2,7 +2,6 @@
 /* -*- mode: C++; coding: utf-8; -*- */
 
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/memoryindex/documentinverter.h>
 #include <vespa/searchlib/memoryindex/fieldinverter.h>

@@ -3,7 +3,6 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP("predicate_test");
-#include <vespa/fastos/fastos.h>
 
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/vespalib/data/slime/slime.h>

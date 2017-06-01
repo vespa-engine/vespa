@@ -3,7 +3,6 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP("predicate_search_test");
-#include <vespa/fastos/fastos.h>
 
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>

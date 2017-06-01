@@ -2,7 +2,6 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MAIN
 
-#include <vespa/fastos/fastos.h>
 #include "mockfileprovider.h"
 #include <vespa/filedistribution/rpc/filedistributorrpc.h>
 #include <vespa/frtstream/frtclientstream.h>

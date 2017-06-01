@@ -2,9 +2,9 @@
 #pragma once
 
 #include <vespa/fastlib/testsuite/test.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fastlib/text/latintokenizer.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/fastos/app.h>
 
 class Mapel_Pucntuation {
 private:
