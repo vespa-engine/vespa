@@ -406,6 +406,30 @@ StoreOnlyDocSubDB::initViews(const DocumentDBConfig &configSnapshot,
 }
 
 void
+StoreOnlyDocSubDB::validateDocStore(FeedHandler & feedHandler, SerialNum serialNum) const
+{
+    LOG(info, "Validating document store for sub db %u doctype %s", _subDbId, _docTypeName.toString().c_str());
+
+    search::IDocumentStore &docStore = _iSummaryMgr->getBackingStore();
+    DocStoreValidator validator(_metaStoreCtx->get());
+    search::DocumentStoreVisitorProgress validatorProgress;
+
+    docStore.accept(validator, validatorProgress, *_iFeedView.get()->getDocumentTypeRepo());
+
+    validator.visitDone();
+
+    LOG(info, "Validated document store for sub db %u, doctype %s, %u orphans, %u invalid, %u visits, %u empty visits",
+        _subDbId, _docTypeName.toString().c_str(), validator.getOrphanCount(),
+        validator.getInvalidCount(), validator.getVisitCount(), validator.getVisitEmptyCount());
+
+    validator.killOrphans(docStore, serialNum);
+    if (validator.getInvalidCount() != 0u) {
+        validator.performRemoves(feedHandler, docStore, *_iFeedView.get()->getDocumentTypeRepo());
+    }
+}
+
+
+void
 StoreOnlyDocSubDB::initFeedView(const DocumentDBConfig &configSnapshot)
 {
     assert(_writeService.master().isCurrentThread());

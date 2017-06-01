@@ -18,22 +18,22 @@ protected:
     void serializeLidsToRemove(vespalib::nbostream &os) const;
     void deserializeLidsToRemove(vespalib::nbostream &is);
 public:
-    virtual ~RemoveDocumentsOperation() { }
+    ~RemoveDocumentsOperation() override { }
 
     void setLidsToRemove(uint32_t subDbId, const LidVectorContext::SP &lidsToRemove) {
         _lidsToRemoveMap[subDbId] = lidsToRemove;
     }
 
+    bool hasLidsToRemove() const {
+        return !_lidsToRemoveMap.empty();
+    }
+
     const LidVectorContext::SP
     getLidsToRemove(uint32_t subDbId) const {
         LidsToRemoveMap::const_iterator found(_lidsToRemoveMap.find(subDbId));
-        if (found != _lidsToRemoveMap.end())
-            return found->second;
-        else
-            return LidVectorContext::SP();
+        return (found != _lidsToRemoveMap.end()) ? found->second : LidVectorContext::SP();
     }
 
 };
 
 } // namespace proton
-

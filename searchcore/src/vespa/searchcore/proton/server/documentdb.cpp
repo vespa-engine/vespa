@@ -668,6 +668,12 @@ DocumentDB::onTransactionLogReplayDone()
         // must signal that all existing buckets must be checked.
         notifyAllBucketsChanged();
     }
+    if (true) {
+        LOG(info, "Validating documentdb %s", getName().c_str());
+        SerialNum serialNum = _feedHandler.getSerialNum();
+        sync(serialNum);
+        _subDBs.validateDocStore(_feedHandler, serialNum);
+    }
 }
 
 

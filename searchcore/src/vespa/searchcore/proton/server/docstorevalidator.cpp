@@ -1,10 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "docstorevalidator.h"
+#include "feedhandler.h"
+#include <vespa/searchcore/proton/feedoperation/removeoperation.h>
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/searchcore/proton/common/feedtoken.h>
 
-namespace proton
-{
+#include <vespa/log/log.h>
+LOG_SETUP(".server.docstorevalidator");
+
+namespace proton {
 
 DocStoreValidator::DocStoreValidator(IDocumentMetaStore &dms)
     : _dms(dms),
@@ -99,12 +104,31 @@ DocStoreValidator::getInvalidLids() const
     assert(_invalid->size() == _docIdLimit);
     for (search::DocumentIdT lid(_invalid->getFirstTrueBit(1));
          lid < _docIdLimit;
-         lid = _invalid->getNextTrueBit(lid + 1)) {
-
+         lid = _invalid->getNextTrueBit(lid + 1))
+    {
         res->addLid(lid);
     }
     return res;
 }
 
+void DocStoreValidator::performRemoves(FeedHandler & feedHandler, const search::IDocumentStore &store, const document::DocumentTypeRepo & repo) const {
+    for (search::DocumentIdT lid(_invalid->getFirstTrueBit(1));
+         lid < _docIdLimit;
+         lid = _invalid->getNextTrueBit(lid + 1))
+    {
+        document::GlobalId gid;
+        bool found = _dms.getGid(lid, gid);
+        assert(found);
+        if (found) {
+            search::DocumentMetaData metaData = _dms.getMetaData(gid);
+            assert(metaData.valid());
+            document::Document::UP document = store.read(lid, repo);
+            assert(document);
+            LOG(info, "Removing document with id %s and lid %u with gid %s in bucket %s", document->getId().toString().c_str(), lid, metaData.gid.toString().c_str(), metaData.bucketId.toString().c_str());
+            std::unique_ptr<RemoveOperation> remove = std::make_unique<RemoveOperation>(metaData.bucketId, metaData.timestamp, document->getId());
+            feedHandler.performOperation(FeedToken::UP(), std::move(remove));
+        }
+    }
+}
 
 } // namespace proton

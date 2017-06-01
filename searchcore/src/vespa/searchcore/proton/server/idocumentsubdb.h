@@ -40,6 +40,7 @@ class ISearchHandler;
 class ISummaryAdapter;
 class ISummaryManager;
 class ReconfigParams;
+class RemoveDocumentsOperation;
 
 /**
  * Interface for a document sub database that handles a subset of the documents that belong to a
@@ -118,6 +119,7 @@ public:
     virtual void close() = 0;
     virtual std::shared_ptr<IDocumentDBReference> getDocumentDBReference() = 0;
     virtual void tearDownReferences(IDocumentDBReferenceResolver &resolver) = 0;
+    virtual void validateDocStore(FeedHandler &op, SerialNum serialNum) const = 0;
 };
 
 } // namespace proton
