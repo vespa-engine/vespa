@@ -2,9 +2,10 @@
 
 #pragma once
 
+#include "zcbuf.h"
 #include <vespa/searchlib/index/postinglistfile.h>
 #include <vespa/searchlib/bitcompression/compression.h>
-#include "zcbuf.h"
+#include <vespa/fastos/file.h>
 
 namespace search {
 

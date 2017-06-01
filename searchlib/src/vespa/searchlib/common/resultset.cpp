@@ -2,9 +2,8 @@
 // Copyright (C) 1998-2003 Fast Search & Transfer ASA
 // Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/common/resultset.h>
-#include <vespa/searchlib/common/bitvector.h>
+#include "resultset.h"
+#include "bitvector.h"
 
 using vespalib::alloc::Alloc;
 

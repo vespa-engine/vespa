@@ -1,10 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "multinumericattributesaver.h"
-#include <vespa/searchlib/util/bufferwriter.h>
 #include "multivalueattributesaverutils.h"
 #include "multivalue.h"
+#include <vespa/searchlib/util/bufferwriter.h>
 
 using vespalib::GenerationHandler;
 using search::multivalueattributesaver::CountWriter;
@@ -12,8 +11,7 @@ using search::multivalueattributesaver::WeightWriter;
 
 namespace search {
 
-namespace
-{
+namespace {
 
 class DatWriter
 {

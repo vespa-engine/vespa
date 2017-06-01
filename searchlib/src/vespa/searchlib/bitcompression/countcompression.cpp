@@ -2,17 +2,14 @@
 // Copyright (C) 1998-2003 Fast Search & Transfer ASA
 // Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
 #include "compression.h"
 #include "countcompression.h"
 #include <vespa/searchlib/index/postinglistcounts.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
-namespace search
-{
+namespace search {
 
-namespace bitcompression
-{
+namespace bitcompression {
 
 using vespalib::nbostream;
 

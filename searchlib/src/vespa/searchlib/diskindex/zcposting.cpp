@@ -1,20 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include "zcposting.h"
 #include <vespa/searchlib/index/postinglistcounts.h>
 #include <vespa/searchlib/index/postinglistcountfile.h>
 #include <vespa/searchlib/index/postinglistfile.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
+#include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/data/fileheader.h>
-#include <vespa/searchlib/common/fileheadercontext.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".diskindex.zcposting");
 
-namespace
-{
+namespace {
 
 vespalib::string myId5("Zc.5");
 vespalib::string myId4("Zc.4");
@@ -22,11 +20,7 @@ vespalib::string emptyId;
 
 }
 
-namespace search
-{
-
-namespace diskindex
-{
+namespace search::diskindex {
 
 using index::PostingListCountFileSeqRead;
 using index::PostingListCountFileSeqWrite;
@@ -1427,10 +1421,7 @@ ZcPostingSeqWrite::flushWordNoSkip()
     resetWord();
 }
 
-
-} // namespace diskindex
-
-} // namespace search
+} // namespace search::diskindex
 
 #include <vespa/vespalib/objects/nbostream.hpp>
 namespace vespalib {

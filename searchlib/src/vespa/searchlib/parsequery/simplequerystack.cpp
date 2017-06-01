@@ -7,13 +7,12 @@
  *   Copyright (C) 2003 Overture Services Norway AS
  *               ALL RIGHTS RESERVED
  */
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
+#include "simplequerystack.h"
 #include <vespa/vespalib/util/vstringfmt.h>
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/vespalib/objects/nbo.h>
-#include <vespa/searchlib/parsequery/simplequerystack.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".search.simplequerystack");
 
 using vespalib::make_vespa_string;
@@ -299,7 +298,7 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
                 vespalib::string key = ReadString(p);
                 vespalib::string value = ReadString(p);
                 uint64_t sub_queries = ReadUint64(p);
-                result.append(make_vespa_string("%s:%s:%" PRIx64, key.c_str(), value.c_str(), sub_queries));
+                result.append(make_vespa_string("%s:%s:%lx", key.c_str(), value.c_str(), sub_queries));
                 if (i < feature_count - 1) {
                     result.append(',');
                 }
@@ -311,7 +310,7 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
                 vespalib::string key = ReadString(p);
                 uint64_t value = ReadUint64(p);
                 uint64_t sub_queries = ReadUint64(p);
-                result.append(make_vespa_string("%s:%" PRIu64 ":%" PRIx64, key.c_str(), value, sub_queries));
+                result.append(make_vespa_string("%s:%zu:%lx", key.c_str(), value, sub_queries));
                 if (i < range_feature_count - 1) {
                     result.append(',');
                 }

@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/expression/interpolatedlookupfunctionnode.h>
-#include <vespa/searchlib/expression/floatresultnode.h>
+#include "interpolatedlookupfunctionnode.h"
+#include "floatresultnode.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/common/converters.h>
 #include <vespa/vespalib/util/stringfmt.h>

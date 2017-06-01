@@ -4,6 +4,8 @@
 #pragma once
 
 #include <set>
+#include <cstdint>
+#include <cassert>
 
 namespace search {
 namespace predicate {

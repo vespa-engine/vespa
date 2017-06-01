@@ -5,18 +5,11 @@
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/countcompression.h>
 #include <vespa/searchlib/bitcompression/pagedict4.h>
+#include <vespa/fastos/file.h>
 
-namespace vespalib
-{
+namespace vespalib { class GenericHeader; }
 
-class GenericHeader;
-
-}
-
-namespace search
-{
-
-namespace diskindex
+namespace search::diskindex
 {
 
 /**
@@ -232,8 +225,4 @@ public:
     getParams(index::PostingListParams &params) override;
 };
 
-
-} // namespace diskindex
-
-} // namespace search
-
+}

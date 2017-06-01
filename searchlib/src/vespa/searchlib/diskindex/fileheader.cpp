@@ -1,19 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include "fileheader.h"
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/data/fileheader.h>
+#include <vespa/fastos/file.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".diskindex.fileheader");
 
-namespace search
-{
-
-namespace diskindex
-{
+namespace search::diskindex {
 
 using bitcompression::FeatureDecodeContextBE;
 
@@ -158,8 +154,4 @@ FileHeader::taste(const vespalib::string &name,
     return taste(name, tuneFileRead);
 }
 
-
-} // namespace diskindex
-
-} // namespace search
-
+}

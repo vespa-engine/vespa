@@ -1,20 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include "fieldwriter.h"
 #include "zcposocc.h"
 #include "extposocc.h"
-#include <vespa/vespalib/util/error.h>
 #include "pagedict4file.h"
+#include <vespa/vespalib/util/error.h>
+#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/log/log.h>
+
 LOG_SETUP(".diskindex.fieldwriter");
 
-namespace search
-{
-
-namespace diskindex
-{
+namespace search::diskindex {
 
 using vespalib::nbostream;
 using vespalib::getLastErrorString;
@@ -253,7 +249,4 @@ FieldWriter::remove(const vespalib::string &prefix)
     }
 }
 
-
-} // namespace diskindex
-
-} // namespace search
+}

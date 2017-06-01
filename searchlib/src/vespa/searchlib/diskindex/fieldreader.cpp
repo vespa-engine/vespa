@@ -1,19 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include "fieldreader.h"
 #include "zcposocc.h"
 #include "extposocc.h"
-#include <vespa/vespalib/util/error.h>
 #include "pagedict4file.h"
+#include <vespa/vespalib/util/error.h>
+#include <vespa/vespalib/objects/nbostream.h>
+
+#include <vespa/log/log.h>
 LOG_SETUP(".diskindex.fieldreader");
 
 #define NO_DOC static_cast<uint32_t>(-1)
 
-namespace
-{
+namespace {
 
 vespalib::string PosOccIdCooked = "PosOcc.3.Cooked";
 
@@ -25,12 +24,7 @@ using search::index::SchemaUtil;
 using search::bitcompression::PosOccFieldParams;
 using search::bitcompression::PosOccFieldsParams;
 
-namespace search
-{
-
-namespace diskindex
-{
-
+namespace search::diskindex {
 
 FieldReader::FieldReader()
     : _wordNum(noWordNumHigh()),
@@ -379,7 +373,4 @@ FieldReaderStripInfo::getFeatureParams(PostingListParams &params)
     params.erase("encoding");
 }
 
-
-} // namespace diskindex
-
-} // namespace search
+}

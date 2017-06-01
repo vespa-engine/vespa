@@ -7,6 +7,8 @@
 #include <vespa/vespalib/util/sync.h>
 #include <deque>
 
+class FastOS_FileInterface;
+
 namespace search {
 namespace transactionlog {
 

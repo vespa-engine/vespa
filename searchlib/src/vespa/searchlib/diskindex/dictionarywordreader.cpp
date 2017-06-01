@@ -1,18 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include "dictionarywordreader.h"
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/index/olddictionaryfile.h>
 #include <vespa/vespalib/util/error.h>
+
+#include <vespa/log/log.h>
 LOG_SETUP(".diskindex.dictionarywordreader");
 
-namespace search
-{
-
-namespace diskindex
-{
+namespace search::diskindex {
 
 using vespalib::getLastErrorString;
 using index::SchemaUtil;
@@ -65,7 +61,4 @@ DictionaryWordReader::close()
     _old2newwordfile->Close();
 }
 
-
-} // namespace diskindex
-
-} // namespace search
+}

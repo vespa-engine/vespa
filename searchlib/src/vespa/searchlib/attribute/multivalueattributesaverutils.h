@@ -3,10 +3,10 @@
 #pragma once
 
 #include "iattributesavetarget.h"
+#include <vespa/searchlib/util/bufferwriter.h>
+#include <vespa/vespalib/util/arrayref.h>
 
-namespace search {
-
-namespace multivalueattributesaver {
+namespace search::multivalueattributesaver {
 
 /*
  * Class to write to count files for multivalue attributes (.idx suffix).
@@ -17,25 +17,10 @@ class CountWriter
     uint64_t _cnt;
 
 public:
-    CountWriter(IAttributeSaveTarget &saveTarget)
-        : _countWriter(saveTarget.idxWriter().allocBufferWriter()),
-          _cnt(0)
-    {
-        uint32_t initialCount = 0;
-        _countWriter->write(&initialCount, sizeof(uint32_t));
-    }
+    CountWriter(IAttributeSaveTarget &saveTarget);
+    ~CountWriter();
 
-    ~CountWriter()
-    {
-        _countWriter->flush();
-    }
-
-    void
-    writeCount(uint32_t count) {
-        _cnt += count;
-        uint32_t cnt32 = static_cast<uint32_t>(_cnt);
-        _countWriter->write(&cnt32, sizeof(uint32_t));
-    }
+    void writeCount(uint32_t count);
 };
 
 /*
@@ -55,11 +40,9 @@ class WeightWriter<true>
 public:
     WeightWriter(IAttributeSaveTarget &saveTarget)
         : _weightWriter(saveTarget.weightWriter().allocBufferWriter())
-    {
-    }
+    {}
 
-    ~WeightWriter()
-    {
+    ~WeightWriter() {
         _weightWriter->flush();
     }
 
@@ -80,20 +63,12 @@ template <>
 class WeightWriter<false>
 {
 public:
-    WeightWriter(IAttributeSaveTarget &)
-    {
-    }
+    WeightWriter(IAttributeSaveTarget &) {}
 
-    ~WeightWriter()
-    {
-    }
+    ~WeightWriter() {}
 
     template <typename MultiValueT>
-    void
-    writeWeights(vespalib::ConstArrayRef<MultiValueT>) {
-    }
+    void writeWeights(vespalib::ConstArrayRef<MultiValueT>) {}
 };
 
 } // namespace search::multivalueattributesaver
-
-} // namespace search

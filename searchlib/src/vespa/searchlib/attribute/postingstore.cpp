@@ -1,17 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "postingstore.h"
 #include <vespa/searchlib/datastore/datastore.hpp>
 #include <vespa/searchlib/btree/btreeiterator.hpp>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/status.h>
 
-namespace search
-{
+namespace search {
 
-namespace attribute
-{
+namespace attribute {
 
 using btree::BTreeNoLeafData;
 

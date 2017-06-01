@@ -6,8 +6,7 @@
  *   Copyright (C) 2003 Overture Services Norway AS
  *               ALL RIGHTS RESERVED
  */
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/parsequery/stackdumpiterator.h>
+#include "stackdumpiterator.h"
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/vespalib/objects/nbo.h>

@@ -1,10 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "array_store_config.h"
+#include <cassert>
 
-namespace search {
-namespace datastore {
+namespace search::datastore {
 
 ArrayStoreConfig::ArrayStoreConfig(size_t maxSmallArraySize, const AllocSpec &defaultSpec)
     : _allocSpecs()
@@ -62,5 +61,4 @@ ArrayStoreConfig::optimizeForHugePage(size_t maxSmallArraySize,
     return ArrayStoreConfig(allocSpecs);
 }
 
-}
 }

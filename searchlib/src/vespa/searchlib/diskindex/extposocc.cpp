@@ -2,18 +2,17 @@
 // Copyright (C) 2002-2003 Fast Search & Transfer ASA
 // Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 
 #include "extposocc.h"
-#include <vespa/vespalib/objects/nbostream.h>
+#include "zcposocc.h"
+#include "fileheader.h"
 #include <vespa/searchlib/index/postinglistcounts.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/postinglistcounts.h>
 #include <vespa/searchlib/index/postinglistcountfile.h>
-#include "zcposocc.h"
-#include "fileheader.h"
+#include <vespa/vespalib/objects/nbostream.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".diskindex.extposocc");
 
 using search::index::PostingListFileSeqRead;

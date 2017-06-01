@@ -1,17 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".diskindex.pagedict4file");
 #include "pagedict4file.h"
+#include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/data/fileheader.h>
-#include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/io/fileutil.h>
 
-namespace
-{
+#include <vespa/log/log.h>
+LOG_SETUP(".diskindex.pagedict4file");
+
+namespace {
 
 vespalib::string myPId("PageDict4P.1");
 vespalib::string mySPId("PageDict4SP.1");
@@ -35,14 +34,9 @@ using search::common::FileHeaderContext;
 using search::index::PostingListParams;
 using vespalib::getLastErrorString;
 
-namespace search
-{
+namespace search::diskindex {
 
-namespace diskindex
-{
-
-namespace
-{
+namespace {
 
 const uint32_t headerAlign = 4096;
 
@@ -747,6 +741,4 @@ PageDict4FileSeqWrite::getParams(PostingListParams &params)
     params.set("numWordIds", _sse._numWordIds);
 }
 
-} // namespace diskindex
-
-} // namespace search
+}
