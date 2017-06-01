@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Specifies the environments and regions to which an application should be deployed.
@@ -50,10 +51,21 @@ public class DeploymentSpec {
 
     private DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy, 
                            List<Step> steps, String xmlForm) {
+        validateTotalDelay(steps);
         this.globalServiceId = globalServiceId;
         this.upgradePolicy = upgradePolicy;
         this.steps = ImmutableList.copyOf(completeSteps(new ArrayList<>(steps)));
         this.xmlForm = xmlForm;
+    }
+    
+    /** Throw an IllegalArgumentException if the total delay exceeds 24 hours */
+    private static void validateTotalDelay(List<Step> steps) {
+        long totalDelaySeconds = steps.stream().filter(step -> step instanceof Delay)
+                                               .mapToLong(delay -> ((Delay)delay).duration().getSeconds())
+                                               .sum();
+        if (totalDelaySeconds > Duration.ofHours(24).getSeconds())
+            throw new IllegalArgumentException("The total delay specified is " + Duration.ofSeconds(totalDelaySeconds) +
+                                               " but max 24 hours is allowed");
     }
     
     /** Adds missing required steps and reorders steps to a permissible order */
@@ -104,7 +116,7 @@ public class DeploymentSpec {
     public UpgradePolicy upgradePolicy() { return upgradePolicy; }
 
     /** Returns the deployment steps of this in the order they will be performed */
-    public List<Step> zones() { return steps; }
+    public List<Step> steps() { return steps; }
     
     /** Returns the XML form of this spec, or null if it was not created by fromXml or is the empty spec */
     public String xmlForm() { return xmlForm; }
@@ -147,9 +159,9 @@ public class DeploymentSpec {
             if (environment == Environment.prod) {
                 for (Element stepTag : XML.getChildren(environmentTag)) {
                     if (stepTag.getTagName().equals("delay"))
-                        steps.add(new Delay(Duration.ofSeconds(intAttribute("hours", stepTag) * 60 * 60 +
-                                                               intAttribute("minutes", stepTag) * 60 +
-                                                               intAttribute("seconds", stepTag))));
+                        steps.add(new Delay(Duration.ofSeconds(longAttribute("hours", stepTag) * 60 * 60 +
+                                                               longAttribute("minutes", stepTag) * 60 +
+                                                               longAttribute("seconds", stepTag))));
                     else // a region: deploy step
                         steps.add(new ZoneDeployment(environment, 
                                                      Optional.of(RegionName.from(XML.getValue(stepTag).trim())), 
@@ -169,7 +181,7 @@ public class DeploymentSpec {
     }
     
     /** Returns the given attribute as an integer, or 0 if it is not present */
-    private static int intAttribute(String attributeName, Element tag) {
+    private static long longAttribute(String attributeName, Element tag) {
         String value = tag.getAttribute(attributeName);
         if (value == null || value.isEmpty()) return 0;
         try {
