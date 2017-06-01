@@ -27,6 +27,12 @@ public:
      * @param taskLimit upper limit on accepted tasks
      **/
     BlockingThreadStackExecutor(uint32_t threads, uint32_t stackSize, uint32_t taskLimit);
+
+    // same as above, but enables you to specify a custom function
+    // used to wrap the main loop of all worker threads
+    BlockingThreadStackExecutor(uint32_t threads, uint32_t stackSize, uint32_t taskLimit,
+                                init_fun_t init_function);
+
     ~BlockingThreadStackExecutor();
 
     /**

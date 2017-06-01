@@ -7,17 +7,28 @@
 #include "eventbarrier.hpp"
 #include "arrayqueue.hpp"
 #include "sync.h"
+#include "runnable.h"
 #include <memory>
 #include <vector>
 #include <vespa/fastos/thread.h>
 
 namespace vespalib {
 
+// Convenience macro used to create a function that can be used as an
+// init function when creating an executor to inject a frame with the
+// given name into the stack of all worker threads.
+
+#define VESPA_THREAD_STACK_TAG(name) \
+    int name(Runnable &worker) {     \
+        worker.run();                \
+        return 1;                    \
+    }
+
 /**
  * An executor service that executes tasks in multiple threads.
  **/
 class ThreadStackExecutorBase : public ThreadExecutor,
-                                public FastOS_Runnable
+                                public Runnable
 {
 public:
     /**
@@ -31,7 +42,17 @@ public:
         Stats() : maxPendingTasks(0), acceptedTasks(0), rejectedTasks(0) {}
     };
 
+    using init_fun_t = std::function<int(Runnable&)>;
+
 private:
+    struct ThreadInit : public FastOS_Runnable {
+        Runnable &worker;
+        init_fun_t init_fun;
+        explicit ThreadInit(Runnable &worker_in, init_fun_t init_fun_in)
+            : worker(worker_in), init_fun(std::move(init_fun_in)) {}
+        void Run(FastOS_ThreadInterface *, void *) override;
+    };
+
     struct TaggedTask {
         Task::UP task;
         uint32_t token;
@@ -91,6 +112,7 @@ private:
     uint32_t                        _taskCount;
     uint32_t                        _taskLimit;
     bool                            _closed;
+    std::unique_ptr<ThreadInit>     _thread_init;
 
     void block_thread(const LockGuard &, BlockedThread &blocked_thread);
     void unblock_threads(const MonitorGuard &);
@@ -114,8 +136,8 @@ private:
      **/
     bool obtainTask(Worker &worker);
 
-    // from FastOS_Runnable (all workers live here)
-    void Run(FastOS_ThreadInterface *, void *) override;
+    // Runnable (all workers live here)
+    void run() override;
 
 protected:
     /**
@@ -155,8 +177,11 @@ protected:
      *
      * @param stackSize stack size per worker thread
      * @param taskLimit upper limit on accepted tasks
+     * @param init_fun custom function used to wrap the main loop of
+     *                 each worker thread.
      **/
-    ThreadStackExecutorBase(uint32_t stackSize, uint32_t taskLimit);
+    ThreadStackExecutorBase(uint32_t stackSize, uint32_t taskLimit,
+                            init_fun_t init_fun);
 
     /**
      * This will start the theads. This is to avoid starting tasks in
