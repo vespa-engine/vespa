@@ -1,13 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for sourceselector.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("sourceselector_test");
-
 #include <vespa/searchlib/attribute/fixedsourceselector.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/fastos/file.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("sourceselector_test");
 
 using std::unique_ptr;
 using std::string;

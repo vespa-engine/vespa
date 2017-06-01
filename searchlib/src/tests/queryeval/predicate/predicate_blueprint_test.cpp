@@ -3,7 +3,6 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP("predicate_blueprint_test");
-#include <vespa/fastos/fastos.h>
 
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>

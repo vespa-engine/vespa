@@ -3,7 +3,6 @@
 // Copyright (C) 2003 Overture Services Norway AS
 
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/sortresults.h>
 

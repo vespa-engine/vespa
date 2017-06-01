@@ -3,7 +3,6 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP("hyperloglog_test");
-#include <vespa/fastos/fastos.h>
 
 #include <vespa/searchlib/grouping/hyperloglog.h>
 #include <vespa/vespalib/objects/nboserializer.h>

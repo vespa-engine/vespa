@@ -3,7 +3,6 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP("rawbuf_test");
-#include <vespa/fastos/fastos.h>
 
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/vespalib/stllike/string.h>

@@ -9,7 +9,6 @@
  *
  */
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
 LOG_SETUP("docbuilder_test");
 #include <boost/algorithm/string/classification.hpp>

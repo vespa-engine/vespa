@@ -3,7 +3,6 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP("feeddebugger_test");
-#include <vespa/fastos/fastos.h>
 
 #include <vespa/document/base/documentid.h>
 #include <vespa/searchcore/proton/common/feeddebugger.h>

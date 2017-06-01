@@ -3,7 +3,6 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP("sketch_test");
-#include <vespa/fastos/fastos.h>
 
 #include <vespa/searchlib/grouping/sketch.h>
 #include <vespa/vespalib/objects/nboserializer.h>

@@ -3,7 +3,6 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP("predicate_range_term_expander_test");
-#include <vespa/fastos/fastos.h>
 
 #include <vespa/searchlib/predicate/predicate_range_term_expander.h>
 #include <vespa/vespalib/testkit/testapp.h>

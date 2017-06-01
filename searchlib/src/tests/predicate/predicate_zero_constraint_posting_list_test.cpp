@@ -3,7 +3,6 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP("predicate_zero_constraint_posting_list_test");
-#include <vespa/fastos/fastos.h>
 
 #include <vespa/searchlib/predicate/predicate_zero_constraint_posting_list.h>
 #include <vespa/vespalib/testkit/testapp.h>

@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for simple_index.
-#include <vespa/fastos/fastos.h>
 #include <vespa/searchlib/predicate/simple_index.hpp>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>

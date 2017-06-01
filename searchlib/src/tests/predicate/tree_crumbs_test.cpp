@@ -3,7 +3,6 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP("TreeCrumbs_test");
-#include <vespa/fastos/fastos.h>
 
 #include <vespa/searchlib/predicate/tree_crumbs.h>
 #include <vespa/vespalib/testkit/testapp.h>

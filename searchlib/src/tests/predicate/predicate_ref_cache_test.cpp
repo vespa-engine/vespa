@@ -3,7 +3,6 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP("predicate_ref_cache_test");
-#include <vespa/fastos/fastos.h>
 
 #include <vespa/searchlib/predicate/predicate_ref_cache.h>
 #include <vespa/vespalib/testkit/testapp.h>

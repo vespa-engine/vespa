@@ -3,7 +3,6 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP("fieldvalue_test");
-#include <vespa/fastos/fastos.h>
 
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/eval/tensor/tensor.h>

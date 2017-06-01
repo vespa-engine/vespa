@@ -1,5 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/searchlib/util/randomgenerator.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
@@ -10,11 +9,13 @@
 #include <vespa/searchlib/attribute/multistringattribute.h>
 #include <vespa/searchlib/attribute/attrvector.h>
 #include <vespa/vespalib/util/sync.h>
+#include <vespa/fastos/app.h>
 #include <iostream>
 #include <fstream>
 #include "../attributesearcher.h"
 #include "../attributeupdater.h"
 #include "../runnable.h"
+
 #include <vespa/log/log.h>
 
 LOG_SETUP("attributebenchmark");

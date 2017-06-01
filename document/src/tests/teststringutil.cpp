@@ -5,7 +5,6 @@
  *  @version  $Id$
  */
 
-#include <vespa/fastos/fastos.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>

@@ -3,7 +3,6 @@
 // Copyright (C) 2003 Overture Services Norway AS
 
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
 LOG_SETUP("stringenum");
 #include <vespa/fastlib/io/bufferedfile.h>

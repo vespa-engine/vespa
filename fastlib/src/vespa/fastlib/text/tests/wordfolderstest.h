@@ -1,6 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastlib/testsuite/test.h>
 #include <vespa/fastlib/text/normwordfolder.h>
+#include <vespa/fastos/app.h>
+#include <memory>
+#include <cstring>
 
 class WordFoldersTest : public Test
 {
@@ -96,9 +99,9 @@ class WordFoldersTest : public Test
 
     bool AccentRemovalTest() {
         auto freefunction = [] (char * ptr) { free(ptr); };
-        auto input = std::unique_ptr<char, decltype(freefunction)>(Fast_UnicodeUtil::strdupLAT1("¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþpþ!"),
+        auto input = std::unique_ptr<char, decltype(freefunction)>(Fast_UnicodeUtil::strdupLAT1("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½pï¿½!"),
                                                                    freefunction);
-        auto yelloutput = std::unique_ptr<char, decltype(freefunction)>(Fast_UnicodeUtil::strdupLAT1("¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿AAAAAEAAAECEEEEIIIIDNOOOOOE×OEUUUUEYTHssaaaaaeaaaeceeeeiiiidnoooooe÷oeuuuueythpth!"),
+        auto yelloutput = std::unique_ptr<char, decltype(freefunction)>(Fast_UnicodeUtil::strdupLAT1("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½AAAAAEAAAECEEEEIIIIDNOOOOOEï¿½OEUUUUEYTHssaaaaaeaaaeceeeeiiiidnoooooeï¿½oeuuuueythpth!"),
                                                                         freefunction);
         Fast_NormalizeWordFolder wordfolder;
         int len = wordfolder.FoldedSizeAsUTF8(input.get());

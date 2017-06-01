@@ -3,7 +3,6 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP("memoryconfigstore_test");
-#include <vespa/fastos/fastos.h>
 
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
