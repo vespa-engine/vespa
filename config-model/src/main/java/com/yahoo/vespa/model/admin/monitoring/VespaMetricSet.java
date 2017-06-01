@@ -8,18 +8,13 @@ import java.util.Set;
 
 /**
  * Encapsulates vespa service metrics.
- * IS-A metric set for convenience only (to avoid one indirection to what would have been this class' HAS-A metric set).
  *
  * @author gjoranv
  */
 @SuppressWarnings("UnusedDeclaration") // Used by model amenders
-public class VespaMetricSet extends MetricSet {
+public class VespaMetricSet {
 
-    private static final Set<Metric> vespaMetrics = getVespaMetrics();
-
-    public VespaMetricSet() {
-        super("vespa", vespaMetrics, Collections.emptySet());
-    }
+    public static final MetricSet vespaMetricSet = new MetricSet("vespa", getVespaMetrics(), Collections.emptySet());
 
     private static Set<Metric> getVespaMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();

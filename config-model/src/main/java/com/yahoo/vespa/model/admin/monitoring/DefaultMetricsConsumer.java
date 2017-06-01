@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.admin.monitoring;
 import com.google.common.collect.ImmutableList;
 
 import static com.yahoo.vespa.model.admin.monitoring.SystemMetrics.systemMetricSet;
+import static com.yahoo.vespa.model.admin.monitoring.VespaMetricSet.vespaMetricSet;
 import static java.util.Collections.emptyList;
 
 /**
@@ -18,8 +19,7 @@ public class DefaultMetricsConsumer {
 
     private static final MetricSet defaultConsumerMetrics = new MetricSet("default-consumer",
                                                                           emptyList(),
-                                                                          ImmutableList.of(new VespaMetricSet(),
-                                                                                           systemMetricSet));
+                                                                          ImmutableList.of(vespaMetricSet,  systemMetricSet));
 
     @SuppressWarnings("UnusedDeclaration")
     public static MetricsConsumer getDefaultMetricsConsumer() {
