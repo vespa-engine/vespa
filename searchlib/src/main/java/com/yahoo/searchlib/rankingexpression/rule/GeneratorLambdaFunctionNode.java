@@ -44,7 +44,7 @@ public class GeneratorLambdaFunctionNode extends CompositeNode {
 
     @Override
     public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
-        return (type + "(" + generator.toString(context, path, this)) + ")";
+        return generator.toString(context, path, this);
     }
 
     /** Evaluate this in a context which must have the arguments bound */
