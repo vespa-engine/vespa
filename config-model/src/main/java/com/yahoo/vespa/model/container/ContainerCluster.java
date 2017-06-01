@@ -421,7 +421,7 @@ public final class ContainerCluster
                 .flatMap(spec -> spec.zones().stream()
                         .filter(dz -> dz.matches(zone.environment(), Optional.of(zone.region())))
                         .findFirst())
-                .map(DeploymentSpec.DeclaredZone::active)
+                .map(DeploymentSpec.ZoneDeployment::active)
                 .orElse(false);
     }
 

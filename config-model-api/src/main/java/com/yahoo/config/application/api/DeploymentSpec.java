@@ -12,7 +12,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.io.UncheckedIOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -22,6 +22,9 @@ import java.util.Optional;
  * Specifies the environments and regions to which an application should be deployed.
  * This may be used both for inspection as part of an application model and to answer
  * queries about deployment from the command line. A main method is included for the latter usage.
+ * 
+ * A deployment consists of a number of steps executed in the order listed in deployment xml, as
+ * well as some additional settings.
  * 
  * This is immutable.
  *
@@ -37,19 +40,56 @@ public class DeploymentSpec {
     
     private final Optional<String> globalServiceId;
     private final UpgradePolicy upgradePolicy;
-    private final List<DeclaredZone> zones;
+    private final List<ZoneDeployment> zones;
     private final String xmlForm;
 
-    public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy, List<DeclaredZone> zones) {
+    public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy, List<ZoneDeployment> zones) {
         this(globalServiceId, upgradePolicy, zones, null);
     }
 
-    private DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy, 
-                           List<DeclaredZone> zones, String xmlForm) {
+    private DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy,
+                           List<ZoneDeployment> zones, String xmlForm) {
         this.globalServiceId = globalServiceId;
         this.upgradePolicy = upgradePolicy;
-        this.zones = ImmutableList.copyOf(zones);
+        this.zones = ImmutableList.copyOf(completeSteps(new ArrayList<>(zones)));
         this.xmlForm = xmlForm;
+    }
+    
+    /** Adds missing required steps and reorders steps to a permissible order */
+    private static List<ZoneDeployment> completeSteps(List<ZoneDeployment> steps) {
+        // Add staging if required and missing
+        if (steps.stream().anyMatch(step -> step.environment() == Environment.prod) &&
+            steps.stream().noneMatch(step -> step.environment() == Environment.staging))
+            steps.add(new ZoneDeployment(Environment.staging));
+        
+        // Add test if required and missing
+        if (steps.stream().anyMatch(step -> step.environment() == Environment.staging) &&
+            steps.stream().noneMatch(step -> step.environment() == Environment.test))
+        steps.add(new ZoneDeployment(Environment.test));
+        
+        // Enforce order test, staging, prod
+        ZoneDeployment testStep = remove(Environment.test, steps);
+        if (testStep != null)
+            steps.add(0, testStep);
+        ZoneDeployment stagingStep = remove(Environment.staging, steps);
+        if (stagingStep != null)
+            steps.add(1, stagingStep);
+        
+        return steps;
+    }
+
+    /** 
+     * Removes the first occurrence of a deployment step to the given environment and returns it.
+     * 
+     * @param environment
+     * @return the removed step, or null if it is not present
+     */
+    private static ZoneDeployment remove(Environment environment, List<ZoneDeployment> steps) {
+        for (int i = 0; i < steps.size(); i++) {
+            if (steps.get(i).environment() == environment)
+                return steps.remove(i);
+        }
+        return null;
     }
 
     /** Returns the ID of the service to expose through global routing, if present */
@@ -61,15 +101,15 @@ public class DeploymentSpec {
     public UpgradePolicy upgradePolicy() { return upgradePolicy; }
 
     /** Returns the zones this declares as a read-only list. */
-    public List<DeclaredZone> zones() { return zones; }
+    public List<ZoneDeployment> zones() { return zones; }
     
     /** Returns the XML form of this spec, or null if it was not created by fromXml or is the empty spec */
     public String xmlForm() { return xmlForm; }
 
     /** Returns whether this deployment spec specifies the given zone, either implicitly or explicitly */
     public boolean includes(Environment environment, Optional<RegionName> region) {
-        for (DeclaredZone declaredZone : zones)
-            if (declaredZone.matches(environment, region)) return true;
+        for (ZoneDeployment zoneDeployment : zones)
+            if (zoneDeployment.matches(environment, region)) return true;
         return false;
     }
 
@@ -93,7 +133,7 @@ public class DeploymentSpec {
      * @throws IllegalArgumentException if the XML is invalid
      */
     public static DeploymentSpec fromXml(String xmlForm) {
-        List<DeclaredZone> zones = new ArrayList<>();
+        List<ZoneDeployment> zones = new ArrayList<>();
         Optional<String> globalServiceId = Optional.empty();
         Element root = XML.getDocument(xmlForm).getDocumentElement();
         for (Element environmentTag : XML.getChildren(root)) {
@@ -101,12 +141,12 @@ public class DeploymentSpec {
             Environment environment = Environment.from(environmentTag.getTagName());
             List<Element> regionTags = XML.getChildren(environmentTag, "region");
             if (regionTags.isEmpty()) {
-                zones.add(new DeclaredZone(environment, Optional.empty(), false));
+                zones.add(new ZoneDeployment(environment, Optional.empty(), false));
             } else {
                 for (Element regionTag : regionTags) {
                     RegionName region = RegionName.from(XML.getValue(regionTag).trim());
                     boolean active = environment == Environment.prod && readActive(regionTag);
-                    zones.add(new DeclaredZone(environment, Optional.of(region), active));
+                    zones.add(new ZoneDeployment(environment, Optional.of(region), active));
                 }
             }
 
@@ -173,7 +213,7 @@ public class DeploymentSpec {
     }
 
     /** This may be invoked by a continuous build */
-    public static void main (String[] args) {
+    public static void main(String[] args) {
         if (args.length != 2 && args.length != 3) {
             System.err.println("Usage: DeploymentSpec [file] [environment] [region]?" +
                                "Returns 0 if the specified zone matches the deployment spec, 1 otherwise");
@@ -195,7 +235,26 @@ public class DeploymentSpec {
         }
     }
 
-    public static class DeclaredZone {
+    /** A delpoyment step */
+    public abstract static class Step {
+        
+    }
+
+    /** A deployment step which is to wait for some time before progressing to the next step */
+    public static class Delay extends Step {
+        
+        private final Duration duration;
+        
+        public Delay(Duration duration) {
+            this.duration = duration;
+        }
+        
+        public Duration duration() { return duration; }
+        
+    }
+
+    /** A deployment step which is to run deployment in a particular zone */
+    public static class ZoneDeployment extends Step {
 
         private final Environment environment;
 
@@ -203,7 +262,13 @@ public class DeploymentSpec {
 
         private final boolean active;
 
-        public DeclaredZone(Environment environment, Optional<RegionName> region, boolean active) {
+        public ZoneDeployment(Environment environment) {
+            this(environment, Optional.empty(), true);
+        }
+
+        public ZoneDeployment(Environment environment, Optional<RegionName> region, boolean active) {
+            if (environment == Environment.prod && ! region.isPresent())
+                throw new IllegalArgumentException("Prod environments must be specified with a region");
             this.environment = environment;
             this.region = region;
             this.active = active;
@@ -218,22 +283,7 @@ public class DeploymentSpec {
         public boolean active() { return active; }
 
         public boolean matches(Environment environment, Optional<RegionName> region) {
-            if (environment.equals(this.environment) && region.equals(this.region)) return true;
-            if ( ! region.isPresent() && prerequisite(environment)) return true;
-            return false;
-        }
-
-        /**
-         * Returns whether deployment in the given environment is a prerequisite of deployment in this environment
-         *
-         * The required progression leading to prerequisites is test, staging, prod.
-         */
-        private boolean prerequisite(Environment environment) {
-            if (this.environment == Environment.prod)
-                return environment == Environment.staging || environment == Environment.test;
-            if (this.environment == Environment.staging)
-                return environment == Environment.test;
-            return false;
+            return environment.equals(this.environment) && region.equals(this.region);
         }
 
     }
