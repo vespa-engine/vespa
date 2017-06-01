@@ -1,16 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".searchcorespi.index.eventlogger");
 
 #include "eventlogger.h"
 #include <vespa/searchlib/util/logutil.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchcorespi.index.eventlogger");
+
 using vespalib::JSONStringer;
 using search::util::LogUtil;
 
-namespace searchcorespi {
-namespace index {
+namespace searchcorespi::index {
 
 void
 EventLogger::diskIndexLoadStart(const vespalib::string &indexDir)
@@ -67,5 +66,4 @@ EventLogger::diskFusionComplete(const vespalib::string &fusionDir,
     EV_STATE("fusion.complete", jstr.toString().c_str());
 }
 
-} // namespace index
-} // namespace searchcorespi
+}

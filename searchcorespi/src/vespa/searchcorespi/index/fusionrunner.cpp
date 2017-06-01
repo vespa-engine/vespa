@@ -1,9 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".searchcorespi.index.fusionrunner");
-
 #include "fusionrunner.h"
 #include "eventlogger.h"
 #include "fusionspec.h"
@@ -12,6 +8,9 @@ LOG_SETUP(".searchcorespi.index.fusionrunner");
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/vespalib/util/jsonwriter.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchcorespi.index.fusionrunner");
 
 using search::FixedSourceSelector;
 using search::TuneFileAttributes;
@@ -26,8 +25,7 @@ using std::vector;
 using vespalib::string;
 using vespalib::JSONStringer;
 
-namespace searchcorespi {
-namespace index {
+namespace searchcorespi::index {
 
 FusionRunner::FusionRunner(const string &base_dir,
                            const Schema &schema,
@@ -130,5 +128,4 @@ FusionRunner::fuse(const FusionSpec &fusion_spec,
     return fusion_id;
 }
 
-}  // namespace index
-}  // namespace searchcorespi
+}

@@ -1,21 +1,20 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".searchcorespi.index.diskindexcleaner");
-
-#include "activediskindexes.h"
 #include "diskindexcleaner.h"
-#include <algorithm>
+#include "activediskindexes.h"
+#include <vespa/fastos/file.h>
 #include <sstream>
 #include <vector>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchcorespi.index.diskindexcleaner");
 
 using std::istringstream;
 using vespalib::string;
 using std::vector;
 
-namespace searchcorespi {
-namespace index {
+namespace searchcorespi::index {
+
 namespace {
 vector<string> readIndexes(const string &base_dir) {
     vector<string> indexes;
@@ -109,5 +108,5 @@ void DiskIndexCleaner::removeOldIndexes(
     vector<string> indexes = readIndexes(base_dir);
     removeOld(base_dir, indexes, active_indexes);
 }
-}  // namespace index
-}  // namespace searchcorespi
+
+}

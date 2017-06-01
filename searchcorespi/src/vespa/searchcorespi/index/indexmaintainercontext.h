@@ -2,13 +2,12 @@
 #pragma once
 
 #include "ithreadingservice.h"
-#include <vespa/searchcorespi/index/iindexmanager.h>
+#include "iindexmanager.h"
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/vespalib/util/threadexecutor.h>
 
-namespace searchcorespi {
-namespace index {
+namespace searchcorespi::index {
 
 /**
  * Class that keeps the long-lived context used by an index maintainer.
@@ -53,7 +52,4 @@ public:
     vespalib::ThreadExecutor & getWarmupExecutor() const {  return _warmupExecutor; }
 };
 
-} // namespace index
-} // namespace searchcorespi
-
-
+}

@@ -19,6 +19,7 @@ public:
     IndexManagerConfig(const vespalib::string &configId,
                        const config::ConfigSnapshot &configSnapshot,
                        size_t numSearcherThreads);
+    ~IndexManagerConfig();
 
     /**
      * Returns the config id used to retrieve the configs from the config snapshot instance.

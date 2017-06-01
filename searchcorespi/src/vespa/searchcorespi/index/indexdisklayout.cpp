@@ -1,13 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".searchcorespi.index.indexdisklayout");
 
 #include "indexdisklayout.h"
 #include <sstream>
 
-namespace searchcorespi {
-namespace index {
+namespace searchcorespi::index {
 
 const vespalib::string
 IndexDiskLayout::FlushDirPrefix = vespalib::string("index.flush.");
@@ -57,6 +53,4 @@ IndexDiskLayout::getSelectorFileName(const vespalib::string &dir)
     return dir + "/selector";
 }
 
-} // namespace index
-} // namespace searchcorespi
-
+}

@@ -2,10 +2,10 @@
 
 #pragma once
 
+#include <cstdint>
 #include <vector>
 
-namespace searchcorespi {
-namespace index {
+namespace searchcorespi::index {
 
 /**
  * Specifies a set of disk index ids for fusion.
@@ -19,6 +19,4 @@ struct FusionSpec {
     FusionSpec() : last_fusion_id(0), flush_ids() {}
 };
 
-}  // namespace index
-}  // namespace searchcorespi
-
+}

@@ -3,6 +3,7 @@
 
 #include "disk_index_stats.h"
 #include "memory_index_stats.h"
+#include <vector>
 
 namespace searchcorespi {
 

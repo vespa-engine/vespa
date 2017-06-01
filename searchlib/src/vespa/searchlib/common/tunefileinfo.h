@@ -5,6 +5,7 @@
 #include <sys/mman.h>
 #include <linux/mman.h>
 #include <fcntl.h>
+#include <memory>
 
 namespace search {
 
@@ -277,13 +278,13 @@ public:
     bool operator==(const TuneFileDocumentDB &rhs) const {
         return _index == rhs._index &&
                 _attr == rhs._attr &&
-             _summary == rhs._summary;
+                _summary == rhs._summary;
     }
 
     bool operator!=(const TuneFileDocumentDB &rhs) const {
         return _index != rhs._index ||
                 _attr != rhs._attr ||
-             _summary != rhs._summary;
+                _summary != rhs._summary;
     }
 };
 
