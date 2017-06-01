@@ -4,6 +4,7 @@
 
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/util/backtrace.h>
 
 using namespace vespalib;
 
@@ -154,6 +155,34 @@ TEST_MT_F("require that threads can wait for a specific task count", 7, WaitStat
         }
     } else {
         f1.wait(thread_id - 1);
+    }
+}
+
+vespalib::string get_worker_stack_trace(ThreadStackExecutor &executor) {
+    struct StackTraceTask : public Executor::Task {
+        vespalib::string &trace;
+        explicit StackTraceTask(vespalib::string &t) : trace(t) {}
+        void run() override { trace = getStackTrace(0); }
+    };
+    vespalib::string trace;
+    executor.execute(std::make_unique<StackTraceTask>(trace));
+    executor.sync();
+    return trace;
+}
+
+VESPA_THREAD_STACK_TAG(my_stack_tag);
+
+TEST_F("require that executor has appropriate default thread stack tag", ThreadStackExecutor(1, 128*1024)) {
+    vespalib::string trace = get_worker_stack_trace(f1);
+    if (!EXPECT_TRUE(trace.find("unnamed_nonblocking_executor") != vespalib::string::npos)) {
+        fprintf(stderr, "%s\n", trace.c_str());
+    }
+}
+
+TEST_F("require that executor thread stack tag can be set", ThreadStackExecutor(1, 128*1024, my_stack_tag)) {
+    vespalib::string trace = get_worker_stack_trace(f1);
+    if (!EXPECT_TRUE(trace.find("my_stack_tag") != vespalib::string::npos)) {
+        fprintf(stderr, "%s\n", trace.c_str());
     }
 }
 

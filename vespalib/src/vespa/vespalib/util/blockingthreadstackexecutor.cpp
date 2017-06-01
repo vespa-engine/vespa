@@ -4,6 +4,8 @@
 
 namespace vespalib {
 
+VESPA_THREAD_STACK_TAG(unnamed_blocking_executor);
+
 bool
 BlockingThreadStackExecutor::acceptNewTask(MonitorGuard & guard)
 {
@@ -19,8 +21,15 @@ BlockingThreadStackExecutor::wakeup(MonitorGuard & monitor)
     monitor.broadcast();
 }
 
-BlockingThreadStackExecutor::BlockingThreadStackExecutor(uint32_t threads, uint32_t stackSize, uint32_t taskLimit) :
-    ThreadStackExecutorBase(stackSize, taskLimit)
+BlockingThreadStackExecutor::BlockingThreadStackExecutor(uint32_t threads, uint32_t stackSize, uint32_t taskLimit)
+    : ThreadStackExecutorBase(stackSize, taskLimit, unnamed_blocking_executor)
+{
+    start(threads);
+}
+
+BlockingThreadStackExecutor::BlockingThreadStackExecutor(uint32_t threads, uint32_t stackSize, uint32_t taskLimit,
+                                                         init_fun_t init_function)
+    : ThreadStackExecutorBase(stackSize, taskLimit, std::move(init_function))
 {
     start(threads);
 }

@@ -4,6 +4,7 @@
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/util/backtrace.h>
 #include <thread>
 
 using namespace vespalib;
@@ -106,6 +107,34 @@ TEST_F("require that task limit can be decreased", Fixture(3, 3))
     f.execute(2);
     f.updateTaskLimit(2);
     f.blockedExecuteAndWaitUntilFinished();
+}
+
+vespalib::string get_worker_stack_trace(BlockingThreadStackExecutor &executor) {
+    struct StackTraceTask : public Executor::Task {
+        vespalib::string &trace;
+        explicit StackTraceTask(vespalib::string &t) : trace(t) {}
+        void run() override { trace = getStackTrace(0); }
+    };
+    vespalib::string trace;
+    executor.execute(std::make_unique<StackTraceTask>(trace));
+    executor.sync();
+    return trace;
+}
+
+VESPA_THREAD_STACK_TAG(my_stack_tag);
+
+TEST_F("require that executor has appropriate default thread stack tag", BlockingThreadStackExecutor(1, 128*1024, 10)) {
+    vespalib::string trace = get_worker_stack_trace(f1);
+    if (!EXPECT_TRUE(trace.find("unnamed_blocking_executor") != vespalib::string::npos)) {
+        fprintf(stderr, "%s\n", trace.c_str());
+    }
+}
+
+TEST_F("require that executor thread stack tag can be set", BlockingThreadStackExecutor(1, 128*1024, 10, my_stack_tag)) {
+    vespalib::string trace = get_worker_stack_trace(f1);
+    if (!EXPECT_TRUE(trace.find("my_stack_tag") != vespalib::string::npos)) {
+        fprintf(stderr, "%s\n", trace.c_str());
+    }
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -1,5 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 2010 Yahoo
 
 #pragma once
 
@@ -28,6 +27,12 @@ public:
      * @param taskLimit upper limit on accepted tasks
      **/
     ThreadStackExecutor(uint32_t threads, uint32_t stackSize,
+                        uint32_t taskLimit = 0xffffffff);
+
+    // same as above, but enables you to specify a custom function
+    // used to wrap the main loop of all worker threads
+    ThreadStackExecutor(uint32_t threads, uint32_t stackSize,
+                        init_fun_t init_function,
                         uint32_t taskLimit = 0xffffffff);
 
     /**

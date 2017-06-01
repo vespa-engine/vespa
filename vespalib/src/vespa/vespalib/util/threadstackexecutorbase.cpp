@@ -5,6 +5,12 @@
 namespace vespalib {
 
 void
+ThreadStackExecutorBase::ThreadInit::Run(FastOS_ThreadInterface *, void *)
+{
+    init_fun(worker);
+}
+
+void
 ThreadStackExecutorBase::BlockedThread::wait() const
 {
     MonitorGuard guard(monitor);
@@ -91,7 +97,7 @@ ThreadStackExecutorBase::obtainTask(Worker &worker)
 }
 
 void
-ThreadStackExecutorBase::Run(FastOS_ThreadInterface *, void *)
+ThreadStackExecutorBase::run()
 {
     Worker worker;
     worker.verify(/* idle: */ true);
@@ -107,7 +113,8 @@ ThreadStackExecutorBase::Run(FastOS_ThreadInterface *, void *)
 //-----------------------------------------------------------------------------
 
 ThreadStackExecutorBase::ThreadStackExecutorBase(uint32_t stackSize,
-                                                 uint32_t taskLimit)
+                                                 uint32_t taskLimit,
+                                                 init_fun_t init_fun)
     : _pool(stackSize),
       _monitor(),
       _stats(),
@@ -117,7 +124,8 @@ ThreadStackExecutorBase::ThreadStackExecutorBase(uint32_t stackSize,
       _barrier(),
       _taskCount(0),
       _taskLimit(taskLimit),
-      _closed(false)
+      _closed(false),
+      _thread_init(std::make_unique<ThreadInit>(*this, std::move(init_fun)))
 {
     assert(taskLimit > 0);
 }
@@ -127,7 +135,7 @@ ThreadStackExecutorBase::start(uint32_t threads)
 {
     assert(threads > 0);
     for (uint32_t i = 0; i < threads; ++i) {
-        FastOS_ThreadInterface *thread = _pool.NewThread(this);
+        FastOS_ThreadInterface *thread = _pool.NewThread(_thread_init.get());
         assert(thread != 0);
         (void)thread;
     }
