@@ -2,11 +2,13 @@
 #pragma once
 
 #include <string>
-#include <vespa/fnet/frt/frt.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/config/common/timingvalues.h>
 #include "connection.h"
+
+class FRT_Supervisor;
+class FRT_Target;
 
 namespace config {
 
@@ -35,10 +37,7 @@ public:
     FRTConnection(const vespalib::string & address, FRT_Supervisor & supervisor, const TimingValues & timingValues);
     ~FRTConnection();
 
-    FRT_RPCRequest * allocRPCRequest() override {
-        return _supervisor.AllocRPCRequest();
-    }
-
+    FRT_RPCRequest * allocRPCRequest() override;
     void invoke(FRT_RPCRequest * req, double timeout, FRT_IRequestWait * waiter) override;
     const vespalib::string & getAddress() const override { return _address; }
     int64_t getSuspendedUntil() { return _suspendedUntil; }

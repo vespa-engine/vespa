@@ -3,7 +3,8 @@
 
 #include <vespa/searchlib/engine/docsumapi.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/fnet/frt/frt.h>
+
+class FRT_RPCRequest;
 
 namespace proton {
 
@@ -31,4 +32,3 @@ private:
 };
 
 }
-

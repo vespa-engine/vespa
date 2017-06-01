@@ -2,7 +2,8 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/fnet/frt/frt.h>
+
+class FRT_Supervisor;
 
 namespace config {
 
@@ -22,7 +23,7 @@ struct FileAcquirer {
 class RpcFileAcquirer : public FileAcquirer
 {
 private:
-    FRT_Supervisor _orb;
+    std::unique_ptr<FRT_Supervisor> _orb;
     vespalib::string _spec;
 public:
     RpcFileAcquirer(const vespalib::string &spec);

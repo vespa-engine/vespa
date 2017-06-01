@@ -2,7 +2,10 @@
 #include "frtconnection.h"
 #include <vespa/vespalib/util/atomic.h>
 #include <vespa/config/common/errorcode.h>
-#include <time.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/target.h>
+#include <vespa/fnet/frt/rpcrequest.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".config.frt.frtconnection");
 
@@ -112,6 +115,11 @@ void FRTConnection::calculateSuspension(ErrorType type)
         LOG(warning, "FRT Connection %s suspended until %s", _address.c_str(), date);
         _suspendWarned = now;
     }
+}
+
+FRT_RPCRequest *
+FRTConnection::allocRPCRequest() {
+    return _supervisor.AllocRPCRequest();
 }
 
 }

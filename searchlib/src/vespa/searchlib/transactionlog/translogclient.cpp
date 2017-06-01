@@ -1,10 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "translogclient.h"
-#include <stdexcept>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/target.h>
+#include <vespa/fnet/frt/rpcrequest.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".translogclient");
+
+using namespace std::chrono_literals;
 
 namespace search {
 namespace transactionlog {
@@ -18,25 +23,29 @@ using vespalib::LockGuard;
 TransLogClient::TransLogClient(const vespalib::string & rpcTarget) :
     _rpcTarget(rpcTarget),
     _sessions(),
-    _supervisor(),
+    _supervisor(std::make_unique<FRT_Supervisor>()),
     _target(NULL)
 {
     reconnect();
-    exportRPC(_supervisor);
-    _supervisor.Start();
+    exportRPC(*_supervisor);
+    _supervisor->Start();
 }
 
 TransLogClient::~TransLogClient()
 {
     disconnect();
-    _supervisor.ShutDown(true);
+    _supervisor->ShutDown(true);
 }
 
 bool TransLogClient::reconnect()
 {
     disconnect();
-    _target = _supervisor.Get2WayTarget(_rpcTarget.c_str());
+    _target = _supervisor->Get2WayTarget(_rpcTarget.c_str());
     return isConnected();
+}
+
+bool TransLogClient::isConnected() const {
+    return (_target != NULL) && _target->IsValid();
 }
 
 void TransLogClient::disconnect()
@@ -48,7 +57,7 @@ void TransLogClient::disconnect()
 
 bool TransLogClient::create(const vespalib::string & domain)
 {
-    FRT_RPCRequest *req = _supervisor.AllocRPCRequest();
+    FRT_RPCRequest *req = _supervisor->AllocRPCRequest();
     req->SetMethodName("createDomain");
     req->GetParams()->AddString(domain.c_str());
     int32_t retval(rpc(req));
@@ -58,7 +67,7 @@ bool TransLogClient::create(const vespalib::string & domain)
 
 bool TransLogClient::remove(const vespalib::string & domain)
 {
-    FRT_RPCRequest *req = _supervisor.AllocRPCRequest();
+    FRT_RPCRequest *req = _supervisor->AllocRPCRequest();
     req->SetMethodName("deleteDomain");
     req->GetParams()->AddString(domain.c_str());
     int32_t retval(rpc(req));
@@ -69,7 +78,7 @@ bool TransLogClient::remove(const vespalib::string & domain)
 TransLogClient::Session::UP TransLogClient::open(const vespalib::string & domain)
 {
     Session::UP session;
-    FRT_RPCRequest *req = _supervisor.AllocRPCRequest();
+    FRT_RPCRequest *req = _supervisor->AllocRPCRequest();
     req->SetMethodName("openDomain");
     req->GetParams()->AddString(domain.c_str());
     int32_t retval(rpc(req));
@@ -92,7 +101,7 @@ TransLogClient::Visitor::UP TransLogClient::createVisitor(const vespalib::string
 
 bool TransLogClient::listDomains(std::vector<vespalib::string> & dir)
 {
-    FRT_RPCRequest *req = _supervisor.AllocRPCRequest();
+    FRT_RPCRequest *req = _supervisor->AllocRPCRequest();
     req->SetMethodName("listDomains");
     int32_t retval(rpc(req));
     if (retval == 0) {
@@ -227,7 +236,7 @@ bool TransLogClient::Session::commit(const vespalib::ConstBufferRef & buf)
 {
     bool retval(true);
     if (buf.size() != 0) {
-        FRT_RPCRequest *req = _tlc._supervisor.AllocRPCRequest();
+        FRT_RPCRequest *req = _tlc._supervisor->AllocRPCRequest();
         req->SetMethodName("domainCommit");
         req->GetParams()->AddString(_domain.c_str());
         req->GetParams()->AddData(buf.c_str(), buf.size());
@@ -251,7 +260,7 @@ bool TransLogClient::Session::commit(const vespalib::ConstBufferRef & buf)
 
 bool TransLogClient::Session::status(SerialNum & b, SerialNum & e, size_t & count)
 {
-    FRT_RPCRequest *req = _tlc._supervisor.AllocRPCRequest();
+    FRT_RPCRequest *req = _tlc._supervisor->AllocRPCRequest();
     req->SetMethodName("domainStatus");
     req->GetParams()->AddString(_domain.c_str());
     int32_t retval(_tlc.rpc(req));
@@ -266,7 +275,7 @@ bool TransLogClient::Session::status(SerialNum & b, SerialNum & e, size_t & coun
 
 bool TransLogClient::Session::erase(const SerialNum & to)
 {
-    FRT_RPCRequest *req = _tlc._supervisor.AllocRPCRequest();
+    FRT_RPCRequest *req = _tlc._supervisor->AllocRPCRequest();
     req->SetMethodName("domainPrune");
     req->GetParams()->AddString(_domain.c_str());
     req->GetParams()->AddInt64(to);
@@ -282,7 +291,7 @@ bool TransLogClient::Session::erase(const SerialNum & to)
 bool
 TransLogClient::Session::sync(const SerialNum &syncTo, SerialNum &syncedTo)
 {
-    FRT_RPCRequest *req = _tlc._supervisor.AllocRPCRequest();
+    FRT_RPCRequest *req = _tlc._supervisor->AllocRPCRequest();
     req->SetMethodName("domainSync");
     FRT_Values & params = *req->GetParams();
     params.AddString(_domain.c_str());
@@ -348,7 +357,7 @@ bool TransLogClient::Session::init(FRT_RPCRequest *req)
 
 bool TransLogClient::Visitor::visit(const SerialNum & from, const SerialNum & to)
 {
-    FRT_RPCRequest *req = _tlc._supervisor.AllocRPCRequest();
+    FRT_RPCRequest *req = _tlc._supervisor->AllocRPCRequest();
     req->SetMethodName("domainVisit");
     req->GetParams()->AddString(_domain.c_str());
     req->GetParams()->AddInt64(from);
@@ -358,7 +367,7 @@ bool TransLogClient::Visitor::visit(const SerialNum & from, const SerialNum & to
 
 bool TransLogClient::Subscriber::subscribe(const SerialNum & from)
 {
-    FRT_RPCRequest *req = _tlc._supervisor.AllocRPCRequest();
+    FRT_RPCRequest *req = _tlc._supervisor->AllocRPCRequest();
     req->SetMethodName("domainSubscribe");
     req->GetParams()->AddString(_domain.c_str());
     req->GetParams()->AddInt64(from);
@@ -367,7 +376,7 @@ bool TransLogClient::Subscriber::subscribe(const SerialNum & from)
 
 bool TransLogClient::Session::run()
 {
-    FRT_RPCRequest *req = _tlc._supervisor.AllocRPCRequest();
+    FRT_RPCRequest *req = _tlc._supervisor->AllocRPCRequest();
     req->SetMethodName("domainSessionRun");
     req->GetParams()->AddString(_domain.c_str());
     req->GetParams()->AddInt32(_sessionId);
@@ -381,12 +390,12 @@ bool TransLogClient::Session::close()
     int retval(0);
     if (_sessionId > 0) {
         do {
-            FRT_RPCRequest *req = _tlc._supervisor.AllocRPCRequest();
+            FRT_RPCRequest *req = _tlc._supervisor->AllocRPCRequest();
             req->SetMethodName("domainSessionClose");
             req->GetParams()->AddString(_domain.c_str());
             req->GetParams()->AddInt32(_sessionId);
             if ( (retval = _tlc.rpc(req)) > 0) {
-                FastOS_Thread::Sleep(10);
+                std::this_thread::sleep_for(10ms);
             }
             req->SubRef();
         } while ( retval == 1 );

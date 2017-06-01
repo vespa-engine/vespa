@@ -1,7 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/fnet/frt/frt.h>
+#include <cstdint>
+
+class FRT_RPCRequest;
 
 namespace storage {
 
@@ -47,7 +49,7 @@ public:
      **/
     void returnError(uint32_t errorCode, const char *errorMessage);
 
-    const char *getMethodName() { return _req->GetMethodName(); }
+    const char *getMethodName() const;
     void addReturnString(const char *str, uint32_t len=0);
     void addReturnInt(uint32_t value);
     void returnRequest();
@@ -67,4 +69,3 @@ private:
 };
 
 } // namespace storage
-

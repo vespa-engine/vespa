@@ -1,12 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "translogserver.h"
-#include <fstream>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <stdexcept>
-#include <vespa/log/log.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <fstream>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".transactionlog.server");
 
 using vespalib::make_string;
@@ -14,14 +14,9 @@ using vespalib::stringref;
 using vespalib::IllegalArgumentException;
 using search::common::FileHeaderContext;
 
-namespace search
-{
+namespace search::transactionlog {
 
-namespace transactionlog
-{
-
-namespace
-{
+namespace {
 
 class SyncHandler : public FNET_Task
 {
@@ -98,7 +93,7 @@ TransLogServer::TransLogServer(const vespalib::string &name,
       _defaultCrcType(defaultCrcType),
       _executor(maxThreads, 128*1024),
       _threadPool(8192, 1),
-      _supervisor(),
+      _supervisor(std::make_unique<FRT_Supervisor>()),
       _domains(),
       _reqQ(),
       _fileHeaderContext(fileHeaderContext)
@@ -125,13 +120,13 @@ TransLogServer::TransLogServer(const vespalib::string &name,
                     }
                 }
             }
-            exportRPC(_supervisor);
+            exportRPC(*_supervisor);
             char listenSpec[32];
             sprintf(listenSpec, "tcp/%d", listenPort);
             bool listenOk(false);
             for (int i(600); !listenOk && i; i--) {
-                if (_supervisor.Listen(listenSpec)) {
-                    _supervisor.Start();
+                if (_supervisor->Listen(listenSpec)) {
+                    _supervisor->Start();
                     listenOk = true;
                 } else {
                     LOG(warning, "Failed listening at port %s trying for %d seconds more.", listenSpec, i);
@@ -154,7 +149,7 @@ TransLogServer::~TransLogServer()
 {
     stop();
     join();
-    _supervisor.ShutDown(true);
+    _supervisor->ShutDown(true);
 }
 
 bool TransLogServer::onStop()
@@ -256,9 +251,9 @@ TransLogServer::findDomain(const stringref &domainName)
 
 void TransLogServer::exportRPC(FRT_Supervisor & supervisor)
 {
-    _supervisor.SetSessionInitHook(FRT_METHOD(TransLogServer::initSession), this);
-    _supervisor.SetSessionFiniHook(FRT_METHOD(TransLogServer::finiSession), this);
-    _supervisor.SetSessionDownHook(FRT_METHOD(TransLogServer::downSession), this);
+    _supervisor->SetSessionInitHook(FRT_METHOD(TransLogServer::initSession), this);
+    _supervisor->SetSessionFiniHook(FRT_METHOD(TransLogServer::finiSession), this);
+    _supervisor->SetSessionDownHook(FRT_METHOD(TransLogServer::downSession), this);
     FRT_ReflectionBuilder rb( & supervisor);
 
     //-- Create Domain -----------------------------------------------------------
@@ -521,7 +516,7 @@ void TransLogServer::domainSubscribe(FRT_RPCRequest *req)
     if (domain) {
         SerialNum from(params[1]._intval64);
         LOG(debug, "domainSubscribe(%s, %" PRIu64 ")", domainName, from);
-        retval = domain->subscribe(domain, from, _supervisor, req->GetConnection());
+        retval = domain->subscribe(domain, from, *_supervisor, req->GetConnection());
     }
     ret.AddInt32(retval);
 }
@@ -538,7 +533,7 @@ void TransLogServer::domainVisit(FRT_RPCRequest *req)
         SerialNum from(params[1]._intval64);
         SerialNum to(params[2]._intval64);
         LOG(debug, "domainVisit(%s, %" PRIu64 ", %" PRIu64 ")", domainName, from, to);
-        retval = domain->visit(domain, from, to, _supervisor, req->GetConnection());
+        retval = domain->visit(domain, from, to, *_supervisor, req->GetConnection());
     }
     ret.AddInt32(retval);
 }
@@ -656,14 +651,9 @@ TransLogServer::domainSync(FRT_RPCRequest *req)
         return;
     }
     
-    SyncHandler *syncHandler = new SyncHandler(&_supervisor,
-                                               req,
-                                               domain,
-                                               session,
-                                               syncTo);
+    SyncHandler *syncHandler = new SyncHandler(_supervisor.get(), req, domain, session, syncTo);
     
     syncHandler->ScheduleNow();
 }
 
-}
 }

@@ -126,8 +126,8 @@ public:
     void SetMethodName(const char *methodName, uint32_t len);
     void SetMethodName(const char *methodName);
 
-    uint32_t GetMethodNameLen() { return _methodNameLen; }
-    const char *GetMethodName() { return _methodName; }
+    uint32_t GetMethodNameLen() const { return _methodNameLen; }
+    const char *GetMethodName() const { return _methodName; }
 
     void Print(uint32_t indent = 0);
 

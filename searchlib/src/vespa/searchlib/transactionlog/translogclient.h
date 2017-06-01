@@ -3,14 +3,16 @@
 
 #include "common.h"
 #include <vespa/document/util/bytebuffer.h>
-#include <vespa/fnet/frt/frt.h>
-#include <map>
-#include <vector>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/buffer.h>
+#include <vespa/fnet/frt/invokable.h>
+#include <map>
+#include <vector>
 
-namespace search {
-namespace transactionlog {
+class FRT_Supervisor;
+class FRT_Target;
+
+namespace search::transactionlog {
 
 class TransLogClient : private FRT_Invokable
 {
@@ -102,7 +104,7 @@ public:
     Subscriber::UP createSubscriber(const vespalib::string & domain, Session::Callback & callBack);
     Visitor::UP createVisitor(const vespalib::string & domain, Session::Callback & callBack);
 
-    bool isConnected()               const { return (_target != NULL) && _target->IsValid(); }
+    bool isConnected() const;
     void disconnect();
     bool reconnect();
     const vespalib::string &getRPCTarget() const { return _rpcTarget; }
@@ -131,10 +133,9 @@ private:
     SessionMap       _sessions;
     //Brute force lock for subscriptions. For multithread safety.
     vespalib::Lock   _lock;
-    FRT_Supervisor   _supervisor;
+    std::unique_ptr<FRT_Supervisor>   _supervisor;
     FRT_Target     * _target;
 };
 
-}
 }
 

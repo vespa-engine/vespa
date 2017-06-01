@@ -1,17 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/fnet/frt/values.h>
 #include <string>
 #include <memory>
 #include <algorithm>
 #include <iosfwd>
 #include <iterator>
 
-#include <vespa/fastos/types.h>
-#include <vespa/fnet/frt/frt.h>
-
-
 namespace frtstream {
+
 class ConnectionException{};
 class InvokationException{
 public:
@@ -83,8 +81,6 @@ public:
     template <template<typename, typename> class CONT, class T, class ALLOC>
     FrtStream& operator>>( CONT<T, ALLOC> & cont );
 };
-
-
 
 
 } //end namespace frtstream

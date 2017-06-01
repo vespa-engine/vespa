@@ -4,10 +4,10 @@
 #include "frtconnection.h"
 #include "connectionfactory.h"
 #include <vespa/config/subscription/sourcespec.h>
-#include <vespa/fnet/frt/frt.h>
 #include <vector>
 #include <string>
 #include <map>
+
 namespace config {
 
 class FRTConnectionPool : public ConnectionFactory {
@@ -32,7 +32,7 @@ private:
         int operator==(const FRTConnectionKey& right) const;
     };
 
-    FRT_Supervisor _supervisor;
+    std::unique_ptr<FRT_Supervisor> _supervisor;
     int _selectIdx;
     vespalib::string _hostname;
     typedef std::map<FRTConnectionKey, FRTConnection::SP> ConnectionMap;
@@ -56,7 +56,7 @@ public:
      */
     void setHostname(const vespalib::string & hostname) { _hostname = hostname; }
 
-    FNET_Scheduler * getScheduler() override { return _supervisor.GetScheduler(); }
+    FNET_Scheduler * getScheduler() override;
 
     /**
      * Gets the hostname.

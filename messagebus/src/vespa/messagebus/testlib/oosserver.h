@@ -3,8 +3,8 @@
 #pragma once
 
 #include <vespa/vespalib/util/sync.h>
-#include <vespa/fnet/frt/frt.h>
 #include <vespa/slobrok/sbregister.h>
+#include <vespa/fnet/frt/supervisor.h>
 #include <string>
 #include <vector>
 #include "oosstate.h"

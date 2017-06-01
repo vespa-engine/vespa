@@ -14,17 +14,17 @@ namespace storage {
 
 FNetListener::FNetListener(CommunicationManager& comManager, const config::ConfigUri & configUri, uint32_t port)
     : _comManager(comManager),
-      _orb(),
+      _orb(std::make_unique<FRT_Supervisor>()),
       _closed(false),
-      _slobrokRegister(_orb, configUri)
+      _slobrokRegister(*_orb, configUri)
 {
     initRPC();
-    if (!_orb.Listen(port)) {
+    if (!_orb->Listen(port)) {
         std::ostringstream ost;
         ost << "Failed to listen to RPC port " << port << ".";
         throw vespalib::IllegalStateException(ost.str(), VESPA_STRLOC);
     }
-    _orb.Start();
+    _orb->Start();
 }
 
 FNetListener::~FNetListener()
@@ -49,13 +49,13 @@ FNetListener::close()
 {
     _closed = true;
     _slobrokRegister.unregisterName(_handle);
-    _orb.ShutDown(true);
+    _orb->ShutDown(true);
 }
 
 void
 FNetListener::initRPC()
 {
-    FRT_ReflectionBuilder rb(&_orb);
+    FRT_ReflectionBuilder rb(_orb.get());
 
     rb.DefineMethod(
             "getnodestate3", "sii", "ss", true,

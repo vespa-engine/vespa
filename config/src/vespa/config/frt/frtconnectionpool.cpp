@@ -2,7 +2,8 @@
 
 #include "frtconnectionpool.h"
 #include <vespa/vespalib/util/host_name.h>
-#include <cstdlib>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/transport.h>
 
 namespace config {
 
@@ -26,27 +27,27 @@ FRTConnectionPool::FRTConnectionKey::operator==(const FRTConnectionKey& right) c
 }
 
 FRTConnectionPool::FRTConnectionPool(const ServerSpec & spec, const TimingValues & timingValues)
-    : _supervisor(),
+    : _supervisor(std::make_unique<FRT_Supervisor>()),
       _selectIdx(0),
       _hostname("")
 {
     for (size_t i(0); i < spec.numHosts(); i++) {
         FRTConnectionKey key(i, spec.getHost(i));
-        _connections[key].reset(new FRTConnection(spec.getHost(i), _supervisor, timingValues));
+        _connections[key].reset(new FRTConnection(spec.getHost(i), *_supervisor, timingValues));
     }
     setHostname();
-    _supervisor.Start();
+    _supervisor->Start();
 }
 
 FRTConnectionPool::~FRTConnectionPool()
 {
-    _supervisor.ShutDown(true);
+    _supervisor->ShutDown(true);
 }
 
 void
 FRTConnectionPool::syncTransport()
 {
-    _supervisor.GetTransport()->sync();
+    _supervisor->GetTransport()->sync();
 }
 
 Connection *
@@ -147,5 +148,9 @@ FRTConnectionPool::setHostname()
     _hostname = vespalib::HostName::get();
 }
 
+FNET_Scheduler *
+FRTConnectionPool::getScheduler() {
+    return _supervisor->GetScheduler();
+}
 
 }

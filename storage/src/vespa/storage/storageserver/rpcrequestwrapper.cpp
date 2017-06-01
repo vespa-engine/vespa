@@ -1,6 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "rpcrequestwrapper.h"
+#include <vespa/fnet/frt/rpcrequest.h>
+#include <cassert>
 
 namespace storage {
 
@@ -12,8 +14,7 @@ RPCRequestWrapper::RPCRequestWrapper(FRT_RPCRequest *req)
 RPCRequestWrapper::~RPCRequestWrapper()
 {
     if (_req != 0) {
-        _req->SetError(ERR_REQUEST_DELETED,
-                       "Request deleted without having been replied to");
+        _req->SetError(ERR_REQUEST_DELETED, "Request deleted without having been replied to");
         _req->Return();
     }
 }
@@ -78,6 +79,11 @@ RPCRequestWrapper::returnRequest()
     _req->Return();
     _req = 0;
 
+}
+
+const char *
+RPCRequestWrapper::getMethodName() const {
+    return _req->GetMethodName();
 }
 
 void

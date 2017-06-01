@@ -3,6 +3,7 @@
 #include <vespa/document/util/compressor.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/searchlib/common/packets.h>
+#include <vespa/fnet/frt/rpcrequest.h>
 
 #include <vespa/log/log.h>
 

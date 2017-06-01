@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/searchlib/transactionlog/session.h>
-#include <vespa/searchlib/transactionlog/domain.h>
+#include "session.h"
+#include "domain.h"
+#include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/log/log.h>
@@ -93,6 +94,10 @@ Session::visitOnly()
     visit();
     sendDone();
     finalize();
+}
+
+bool Session::finished() const {
+    return _finished || (_connection->GetState() != FNET_Connection::FNET_CONNECTED);
 }
 
 void
