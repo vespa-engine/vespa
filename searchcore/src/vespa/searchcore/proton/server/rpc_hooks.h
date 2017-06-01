@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <vespa/fnet/frt/frt.h>
 #include <vespa/slobrok/sbregister.h>
 #include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/executor.h>
@@ -61,13 +60,13 @@ private:
         fastos::TimeStamp _dueTime;
     };
 
-    Proton                      & _proton;
-    std::unique_ptr<DocsumByRPC>  _docsumByRPC;
-    FRT_Supervisor                _orb;
-    slobrok::api::RegisterAPI     _regAPI;
-    vespalib::Monitor             _stateMonitor;
-    vespalib::ThreadStackExecutor _executor;
-    OosCli                        _ooscli;
+    Proton                         & _proton;
+    std::unique_ptr<DocsumByRPC>     _docsumByRPC;
+    std::unique_ptr<FRT_Supervisor>  _orb;
+    slobrok::api::RegisterAPI        _regAPI;
+    vespalib::Monitor                _stateMonitor;
+    vespalib::ThreadStackExecutor    _executor;
+    OosCli                           _ooscli;
 
     void initRPC();
     void letProtonDo(vespalib::Closure::UP closure);

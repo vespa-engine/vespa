@@ -1,23 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/transactionlog/domain.h>
+#include "domain.h"
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/document/util/queue.h>
+#include <vespa/fnet/frt/invokable.h>
 #include <mutex>
 
-namespace search
-{
+namespace search {
 
-namespace common
-{
+namespace common { class FileHeaderContext; }
 
-class FileHeaderContext;
-
-}
-
-namespace transactionlog
-{
+namespace transactionlog {
 
 class TransLogServerExplorer;
 
@@ -96,7 +90,7 @@ private:
     const DomainPart::Crc              _defaultCrcType;
     vespalib::ThreadStackExecutor      _executor;
     FastOS_ThreadPool                  _threadPool;
-    FRT_Supervisor                     _supervisor;
+    std::unique_ptr<FRT_Supervisor>    _supervisor;
     DomainList                         _domains;
     mutable std::mutex                 _lock;          // Protects _domains
     std::mutex                         _fileLock;      // Protects the creating and deleting domains including file system operations.

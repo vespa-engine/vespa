@@ -2,10 +2,8 @@
 
 #include "rpc_hooks.h"
 #include "proton.h"
-#include <vespa/messagebus/emptyreply.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/closuretask.h>
-#include <vespa/searchcore/proton/common/statusreport.h>
+#include <vespa/fnet/frt/supervisor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.rtchooks");
@@ -120,12 +118,12 @@ RPCHooksBase::Session::Session()
 void
 RPCHooksBase::initRPC()
 {
-    _orb.SetSessionInitHook(FRT_METHOD(RPCHooksBase::initSession), this);
-    _orb.SetSessionFiniHook(FRT_METHOD(RPCHooksBase::finiSession), this);
-    _orb.SetSessionDownHook(FRT_METHOD(RPCHooksBase::downSession), this);
-    _orb.SetMethodMismatchHook(FRT_METHOD(RPCHooksBase::mismatch), this);
+    _orb->SetSessionInitHook(FRT_METHOD(RPCHooksBase::initSession), this);
+    _orb->SetSessionFiniHook(FRT_METHOD(RPCHooksBase::finiSession), this);
+    _orb->SetSessionDownHook(FRT_METHOD(RPCHooksBase::downSession), this);
+    _orb->SetMethodMismatchHook(FRT_METHOD(RPCHooksBase::mismatch), this);
 
-    FRT_ReflectionBuilder rb(&_orb);
+    FRT_ReflectionBuilder rb(_orb.get());
     //-------------------------------------------------------------------------
     rb.DefineMethod("proton.enableSearching", "", "", true,
                     FRT_METHOD(RPCHooksBase::rpc_enableSearching), this);
@@ -194,10 +192,10 @@ RPCHooksBase::initRPC()
 RPCHooksBase::RPCHooksBase(Params &params)
     : _proton(params.proton),
       _docsumByRPC(new DocsumByRPC(_proton.getDocsumBySlime())),
-      _orb(),
-      _regAPI(_orb, params.slobrok_config),
+      _orb(std::make_unique<FRT_Supervisor>()),
+      _regAPI(*_orb, params.slobrok_config),
       _executor(48, 128 * 1024),
-      _ooscli(params, _orb)
+      _ooscli(params, *_orb)
 {
 }
 
@@ -206,8 +204,8 @@ RPCHooksBase::open(Params & params)
 {
     initRPC();
     _regAPI.registerName((params.identity + "/realtimecontroller").c_str());
-    _orb.Listen(params.rtcPort);
-    _orb.Start();
+    _orb->Listen(params.rtcPort);
+    _orb->Start();
     LOG(debug, "started monitoring interface");
 }
 
@@ -219,7 +217,7 @@ void
 RPCHooksBase::close()
 {
     LOG(info, "shutting down monitoring interface");
-    _orb.ShutDown(true);
+    _orb->ShutDown(true);
     _executor.shutdown();
     {
         MonitorGuard guard(_stateMonitor);

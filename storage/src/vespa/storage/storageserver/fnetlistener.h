@@ -1,10 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/fnet/frt/frt.h>
-#include <vespa/slobrok/sbmirror.h>
 #include <vespa/slobrok/sbregister.h>
-
 
 namespace storage {
 
@@ -26,17 +23,15 @@ public:
     void registerHandle(const vespalib::stringref & handle);
     void close();
 
-
     // Used by unit tests.
     bool serviceExists(const vespalib::stringref & connectionSpec);
 
 private:
-    CommunicationManager& _comManager;
-    FRT_Supervisor _orb;
-    bool _closed;
+    CommunicationManager&           _comManager;
+    std::unique_ptr<FRT_Supervisor> _orb;
+    bool                            _closed;
     slobrok::api::RegisterAPI       _slobrokRegister;
-    vespalib::string _handle;
+    vespalib::string                _handle;
 };
 
 }
-

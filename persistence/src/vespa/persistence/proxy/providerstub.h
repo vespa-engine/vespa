@@ -2,10 +2,13 @@
 
 #pragma once
 
-#include <vespa/fnet/frt/frt.h>
 #include <vespa/vespalib/util/closure.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/fnet/frt/invokable.h>
+#include <vespa/fnet/task.h>
 #include <memory>
+
+class FRT_Supervisor;
 
 namespace document { class DocumentTypeRepo; }
 
@@ -36,7 +39,7 @@ private:
         }
     };
 
-    FRT_Supervisor _supervisor;
+    std::unique_ptr<FRT_Supervisor> _supervisor;
     vespalib::ThreadStackExecutor _executor;
     const document::DocumentTypeRepo *_repo;
     PersistenceProviderFactory &_factory;
@@ -81,8 +84,8 @@ public:
                  PersistenceProviderFactory &factory);
     ~ProviderStub();
 
-    int getPort() const { return _supervisor.GetListenPort(); }
     bool hasClient() const { return (_provider.get() != 0); }
+    int getPort() const;
     void setRepo(const document::DocumentTypeRepo &repo) {
         _repo = &repo;
     }

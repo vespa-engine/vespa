@@ -1,12 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/messagebus/network/rpcnetwork.h>
-#include <string>
-#include <vespa/config/helper/legacysubscriber.h>
 #include "messagebus.h"
 #include "configagent.h"
 #include "protocolset.h"
+#include <vespa/messagebus/network/rpcnetwork.h>
+#include <vespa/config/helper/legacysubscriber.h>
 
 namespace mbus {
 

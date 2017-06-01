@@ -2,9 +2,9 @@
 #pragma once
 
 #include "common.h"
-#include <vespa/fnet/frt/frt.h>
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/sync.h>
+#include <vespa/fnet/frt/invoker.h>
 #include <deque>
 
 class FastOS_FileInterface;
@@ -32,7 +32,7 @@ public:
     bool inSync()    const;
     bool continous() const { return _subscriber; }
     bool ok()        const { return _ok; }
-    bool finished()  const { return _finished || (_connection->GetState() != FNET_Connection::FNET_CONNECTED);}
+    bool finished()  const;
     static void enQ(const SP & session, SerialNum serial, const Packet & packet);
     static Task::UP createTask(const Session::SP & session);
 private:

@@ -9,10 +9,13 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
-#include <persistence/spi/types.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
+#include <vespa/fnet/frt/values.h>
+#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/rpcrequest.h>
+
 
 using document::BucketId;
 using document::ByteBuffer;
@@ -25,8 +28,7 @@ using vespalib::makeClosure;
 using vespalib::makeTask;
 using vespalib::nbostream;
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 namespace {
 
 LoadType defaultLoadType(0, "default");
@@ -870,16 +872,13 @@ void ProviderStub::RPC_removeEntry(FRT_RPCRequest *req) {
 }
 
 void ProviderStub::SetupRpcCalls() {
-    FRT_ReflectionBuilder rb(&_supervisor);
+    FRT_ReflectionBuilder rb(_supervisor.get());
     addConnect(rb, FRT_METHOD(ProviderStub::RPC_connect), this);
-    addInitialize(
-            rb, FRT_METHOD(ProviderStub::RPC_initialize), this);
-    addGetPartitionStates(
-            rb, FRT_METHOD(ProviderStub::RPC_getPartitionStates), this);
+    addInitialize(rb, FRT_METHOD(ProviderStub::RPC_initialize), this);
+    addGetPartitionStates(rb, FRT_METHOD(ProviderStub::RPC_getPartitionStates), this);
     addListBuckets(rb, FRT_METHOD(ProviderStub::RPC_listBuckets), this);
     addSetClusterState(rb, FRT_METHOD(ProviderStub::RPC_setClusterState), this);
-    addSetActiveState(
-            rb, FRT_METHOD(ProviderStub::RPC_setActiveState), this);
+    addSetActiveState(rb, FRT_METHOD(ProviderStub::RPC_setActiveState), this);
     addGetBucketInfo(rb, FRT_METHOD(ProviderStub::RPC_getBucketInfo), this);
     addPut(rb, FRT_METHOD(ProviderStub::RPC_put), this);
     addRemoveById(rb, FRT_METHOD(ProviderStub::RPC_removeById), this);
@@ -889,12 +888,10 @@ void ProviderStub::SetupRpcCalls() {
     addGet(rb, FRT_METHOD(ProviderStub::RPC_get), this);
     addCreateIterator(rb, FRT_METHOD(ProviderStub::RPC_createIterator), this);
     addIterate(rb, FRT_METHOD(ProviderStub::RPC_iterate), this);
-    addDestroyIterator(
-            rb, FRT_METHOD(ProviderStub::RPC_destroyIterator), this);
+    addDestroyIterator(rb, FRT_METHOD(ProviderStub::RPC_destroyIterator), this);
     addCreateBucket(rb, FRT_METHOD(ProviderStub::RPC_createBucket), this);
     addDeleteBucket(rb, FRT_METHOD(ProviderStub::RPC_deleteBucket), this);
-    addGetModifiedBuckets(
-            rb, FRT_METHOD(ProviderStub::RPC_getModifiedBuckets), this);
+    addGetModifiedBuckets(rb, FRT_METHOD(ProviderStub::RPC_getModifiedBuckets), this);
     addSplit(rb, FRT_METHOD(ProviderStub::RPC_split), this);
     addJoin(rb, FRT_METHOD(ProviderStub::RPC_join), this);
     addMove(rb, FRT_METHOD(ProviderStub::RPC_move), this);
@@ -910,18 +907,22 @@ ProviderStub::ProviderStub(int port, uint32_t threads,
       _repo(&repo),
       _factory(factory),
       _provider(),
-      _providerCleanupTask(_supervisor.GetScheduler(), _executor, _provider)
+      _providerCleanupTask(_supervisor->GetScheduler(), _executor, _provider)
 {
     SetupRpcCalls();
-    _supervisor.SetSessionFiniHook(FRT_METHOD(ProviderStub::HOOK_fini), this);
-    _supervisor.Start();
-    _supervisor.Listen(port);
+    _supervisor->SetSessionFiniHook(FRT_METHOD(ProviderStub::HOOK_fini), this);
+    _supervisor->Start();
+    _supervisor->Listen(port);
 }
 
 ProviderStub::~ProviderStub() {
-    _supervisor.ShutDown(true);
+    _supervisor->ShutDown(true);
     sync();
 }
 
-}  // namespace spi
-}  // namespace storage
+int
+ProviderStub::getPort() const {
+    return _supervisor->GetListenPort();
+}
+
+}

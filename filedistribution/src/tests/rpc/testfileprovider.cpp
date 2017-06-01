@@ -5,7 +5,8 @@
 #include "mockfileprovider.h"
 #include <vespa/filedistribution/rpc/filedistributorrpc.h>
 #include <vespa/frtstream/frtclientstream.h>
-#include <iostream>
+#include <vespa/fnet/frt/rpcrequest.h>
+#include <vespa/fnet/frt/target.h>
 #include <boost/test/unit_test.hpp>
 
 namespace fd = filedistribution;

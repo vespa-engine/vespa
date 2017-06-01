@@ -5,7 +5,6 @@
 //Can be moved when(if ever) the export functionality
 //is implemented in the target compiler.
 
-
 namespace frtstream {
 
 template<class U>

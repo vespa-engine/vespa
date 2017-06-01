@@ -1,15 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-
 #include "connectionfactory.h"
 #include "frtconfigagent.h"
 #include "frtconfigrequestfactory.h"
 #include <vespa/config/common/configkey.h>
 #include <vespa/config/common/configrequest.h>
 #include <vespa/config/common/source.h>
+#include <vespa/fnet/frt/invoker.h>
 
-#include <vespa/fnet/frt/frt.h>
 #include <vespa/vespalib/util/sync.h>
 
 namespace config {

@@ -2,15 +2,10 @@
 
 #pragma once
 
-//Requires gcc 3 or higher
-#if ! defined(__GNUC__) || (__GNUC__ > 2)
-
-
-#include <vespa/frtstream/frtstream.h>
-
+#include "frtstream.h"
+#include <vespa/fnet/frt/supervisor.h>
 
 namespace frtstream {
-
 
 class FrtClientStream : public FrtStream {
     FRT_Supervisor supervisor;
@@ -33,8 +28,4 @@ public:
 };
 
 } //end namespace frtstream
-
-#else
-#error "Requires gcc 3 or higher"
-#endif
 

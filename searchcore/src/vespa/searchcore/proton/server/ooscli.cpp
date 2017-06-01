@@ -4,6 +4,7 @@
 #include "proton.h"
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/messagebus/network/oosmanager.h>
+#include <vespa/fnet/frt/supervisor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.ooscli");
@@ -48,6 +49,5 @@ OosCli::PerformTask()
     }
     Schedule(1.0);
 }
-
 
 } // namespace proton

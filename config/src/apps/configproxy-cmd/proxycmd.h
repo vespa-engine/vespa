@@ -1,7 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/fnet/frt/frt.h>
+#include <vespa/vespalib/stllike/string.h>
+#include <vector>
+
+class FRT_Supervisor;
+class FRT_Target;
+class FRT_RPCRequest;
+class FRT_Values;
 
 struct Flags {
     vespalib::string method;
@@ -30,9 +36,7 @@ private:
     void autoPrint();
 public:
     ProxyCmd(const Flags& flags);
-
     virtual ~ProxyCmd();
-
     int action();
 };
 
