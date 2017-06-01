@@ -4,9 +4,9 @@
 
 #include <string>
 #include <atomic>
+#include <vector>
 
-namespace search
-{
+namespace search {
 
 /*
  * Class used to store application state in a mostly safe manner.
@@ -30,27 +30,23 @@ class StateFile
     /*
      * Zero pad file, to ensure that a later write won't run out of space.
      */
-    void
-    zeroPad();
+    void zeroPad();
 
     /*
      * Read state file to buffer in raw form, including padding.
      */
-    void
-    readRawState(std::vector<char> &buf);
+    void readRawState(std::vector<char> &buf);
 
     /*
      * Trim padding and everything after state (i.e. stop at first newline).
      */
-    static void
-    trimState(std::vector<char> &buf);
+    static void trimState(std::vector<char> &buf);
 
     /*
      * Trim partial state from end of history.
      */
-    static void
-    trimHistory(std::vector<char> &history, const char *historyName, int hfd,
-                std::vector<char> &lastHistoryState);
+    static void trimHistory(std::vector<char> &history, const char *historyName, int hfd,
+                            std::vector<char> &lastHistoryState);
 
     /*
      * Fixup history: trim partial state from end and append current state
@@ -58,49 +54,36 @@ class StateFile
      * If main state file doesn't have a state but history has a state then
      * restore main state from history.
      */
-    void
-    fixupHistory();
+    void fixupHistory();
 
     /*
      * Check that state doesn't contain nul bytes or early newline and
      * that it is terminated by a newline at end.
      */
-    void
-    checkState(const char *buf, size_t bufLen) noexcept;
+    void checkState(const char *buf, size_t bufLen) noexcept;
 
-    void
-    internalAddSignalState(const char *buf, size_t bufLen,
-                           const char *name,
-                           int appendFlag,
-                           const char *openerr,
-                           const char *writeerr,
-                           const char *fsyncerr,
-                           const char *closeerr) noexcept;
+    void internalAddSignalState(const char *buf, size_t bufLen, const char *name, int appendFlag,
+                                const char *openerr, const char *writeerr, const char *fsyncerr,
+                                const char *closeerr) noexcept;
 
-    void
-    addSignalState(const char *buf, size_t bufLen) noexcept;
+    void addSignalState(const char *buf, size_t bufLen) noexcept;
 public:
     StateFile(const std::string &name);
-
     ~StateFile();
 
-    void
-    addState(const char *buf, size_t bufLen, bool signal);
+    void addState(const char *buf, size_t bufLen, bool signal);
 
-    static void
-    erase(const std::string &name);
+    static void erase(const std::string &name);
 
     /*
      * Read state file to buffer and trim it down to a state.
      */
-    void
-    readState(std::vector<char> &buf);
+    void readState(std::vector<char> &buf);
 
     /*
      * Get current state generation (bumped whenever new state is written).
      */
-    int
-    getGen() const;
+    int getGen() const;
 };
 
 }

@@ -1,12 +1,13 @@
 // Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-#include <cmath>
-LOG_SETUP(".features.randomnormalfeature");
-#include <vespa/searchlib/fef/properties.h>
 #include "random_normal_feature.h"
 #include "utils.h"
+#include <vespa/searchlib/fef/properties.h>
+#include <vespa/fastos/time.h>
+#include <cmath>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".features.randomnormalfeature");
 
 namespace search {
 namespace features {
@@ -20,8 +21,7 @@ RandomNormalExecutor::RandomNormalExecutor(uint64_t seed, double mean, double st
     _spare(0.0)
 
 {
-    LOG(debug, "RandomNormalExecutor: seed=%" PRIu64 ", mean=%f, stddev=%f",
-        seed, mean, stddev);
+    LOG(debug, "RandomNormalExecutor: seed=%" PRIu64 ", mean=%f, stddev=%f", seed, mean, stddev);
     _rnd.srand48(seed);
 }
 

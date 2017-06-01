@@ -1,15 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".features.fieldmatch.computer");
 
-#include <iostream>
-#include <cstdlib>
-#include <set>
+#include "computer.h"
 #include <vespa/searchlib/features/utils.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include "computer.h"
+#include <iostream>
+#include <cstdlib>
+#include <set>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".features.fieldmatch.computer");
 
 using namespace search::fef;
 

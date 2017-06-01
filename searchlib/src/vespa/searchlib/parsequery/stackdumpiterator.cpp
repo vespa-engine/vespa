@@ -7,9 +7,9 @@
  *               ALL RIGHTS RESERVED
  */
 #include "stackdumpiterator.h"
-#include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/vespalib/objects/nbo.h>
+#include <cassert>
 
 using search::query::PredicateQueryTerm;
 

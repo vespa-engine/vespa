@@ -1,17 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".features.jarowinklerdistance");
 
+#include "jarowinklerdistancefeature.h"
+#include "utils.h"
+#include <limits>
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/fieldtype.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include "jarowinklerdistancefeature.h"
-#include "utils.h"
-#include <limits>
 
 namespace search {
 namespace features {
@@ -131,12 +128,9 @@ feature_t
 JaroWinklerDistanceExecutor::jaroWinklerProximity(const std::vector<search::fef::FieldPositionsIterator> &termPos, uint32_t fieldLen)
 {
     feature_t ret = std::min(1.0, std::max(0.0, jaroMeasure(termPos, fieldLen)));
-    //LOG(debug, "Jaro measure is %f.", ret);
     if (ret > _config.boostThreshold) {
         ret += 0.1f * prefixMatch(termPos, fieldLen, _config.prefixSize) * (1 - ret); // less boost close to 1
-        //LOG(debug, "Applying Winkler boost.");
     }
-    //LOG(debug, "JaroWinkler measure is %f.", ret);
     return ret;
 }
 

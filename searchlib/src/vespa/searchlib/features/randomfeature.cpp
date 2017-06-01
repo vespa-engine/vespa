@@ -1,11 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".features.randomfeature");
 #include "randomfeature.h"
 #include "utils.h"
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/fastos/time.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".features.randomfeature");
 
 namespace search {
 namespace features {
@@ -16,8 +18,7 @@ RandomExecutor::RandomExecutor(uint64_t seed, uint64_t matchSeed) :
     _matchRnd(),
     _matchSeed(matchSeed)
 {
-    LOG(debug, "RandomExecutor: seed=%" PRIu64 ", matchSeed=%" PRIu64,
-        seed, matchSeed);
+    LOG(debug, "RandomExecutor: seed=%" PRIu64 ", matchSeed=%" PRIu64, seed, matchSeed);
     _rnd.srand48(seed);
 }
 
@@ -27,7 +28,6 @@ RandomExecutor::execute(uint32_t docId)
     feature_t rndScore = _rnd.lrand48() / (feature_t)0x80000000u; // 2^31
     _matchRnd.srand48(_matchSeed + docId);
     feature_t matchRndScore = _matchRnd.lrand48() / (feature_t)0x80000000u; // 2^31
-    //LOG(debug, "execute: %f", rndScore);
     outputs().set_number(0, rndScore);
     outputs().set_number(1, matchRndScore);
 }
@@ -37,14 +37,12 @@ RandomBlueprint::RandomBlueprint() :
     search::fef::Blueprint("random"),
     _seed(0)
 {
-    // empty
 }
 
 void
 RandomBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment &,
                                    search::fef::IDumpFeatureVisitor &) const
 {
-    // empty
 }
 
 search::fef::Blueprint::UP

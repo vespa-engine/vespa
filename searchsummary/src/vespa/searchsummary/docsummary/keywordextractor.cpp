@@ -41,6 +41,28 @@ KeywordExtractor::~KeywordExtractor()
     }
 }
 
+KeywordExtractor::IndexPrefix::IndexPrefix(const char *prefix, IndexPrefix **list)
+    : _prefix(NULL),
+      _prefixLen(0),
+      _next(NULL)
+{
+    _prefix = strdup(prefix);
+    assert(_prefix != NULL);
+    _prefixLen = strlen(prefix);
+    _next = *list;
+    *list = this;
+}
+
+KeywordExtractor::IndexPrefix::~IndexPrefix()
+{
+    free(_prefix);
+}
+
+bool
+KeywordExtractor::IndexPrefix::Match(const char *idxName) const
+{
+    return (strncmp(idxName, _prefix, _prefixLen) == 0);
+}
 
 void
 KeywordExtractor::AddLegalIndexSpec(const char *spec)

@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include "handle.h"
 #include "itermfielddata.h"
 #include <vespa/searchlib/query/weight.h>
+#include <cstddef>
 
 namespace search {
 namespace fef {

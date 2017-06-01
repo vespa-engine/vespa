@@ -5,8 +5,7 @@
 #pragma once
 
 #include <vespa/searchlib/common/hitrank.h>
-#include <stdint.h>
-#include <assert.h>
+#include <cstdint>
 #include <sys/types.h>
 
 class FastOS_FileInterface;
@@ -31,6 +30,8 @@ private:
     char* _bufDrainPos;		// ref. to next byte to take out of buffer
     char* _initialBufStart;
     size_t _initialSize;
+
+    void ensureSizeInternal(size_t size);
 public:
 
     RawBuf(char *start, size_t size);// Initially use provided buffer
@@ -74,8 +75,7 @@ public:
 
     void ensureSize(size_t size) {
         if (static_cast<size_t>(_bufEnd - _bufFillPos) < size) {
-            expandBuf(size);
-            assert(static_cast<size_t>(_bufEnd - _bufFillPos) >= size);
+            ensureSizeInternal(size);
         }
     }
 
@@ -144,4 +144,3 @@ public:
 };
 
 }
-

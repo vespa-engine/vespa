@@ -1,23 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <sstream>
 #include "statestring.h"
+#include <sstream>
 
-namespace search
-{
-
-namespace test
-{
-
-namespace statestring
-{
+namespace search::test::statestring {
 
 bool
 testStartPos(vespalib::string &s, size_t pos)
 {
     return (pos < s.size() && (pos == 0 || s[pos - 1] == ' '));
 }
-
 
 size_t
 findStartPos(vespalib::string &s, const vespalib::string &key)
@@ -33,7 +24,6 @@ findStartPos(vespalib::string &s, const vespalib::string &key)
     return pos;
 }
 
-
 size_t
 scanBreakPos(vespalib::string &s, size_t pos)
 {
@@ -42,7 +32,6 @@ scanBreakPos(vespalib::string &s, size_t pos)
     }
     return pos;
 }
-
 
 void
 normalizeTimestamp(vespalib::string &s)
@@ -54,7 +43,6 @@ normalizeTimestamp(vespalib::string &s)
         return;
     }
 }
-
 
 void
 normalizeAddr(vespalib::string &s, void *addr)
@@ -72,7 +60,6 @@ normalizeAddr(vespalib::string &s, void *addr)
     }
 }
 
-
 void
 normalizeTimestamps(std::vector<vespalib::string> &sv)
 {
@@ -81,18 +68,12 @@ normalizeTimestamps(std::vector<vespalib::string> &sv)
     }
 }
 
-
 void
 normalizeAddrs(std::vector<vespalib::string> &sv, void *addr)
 {
     for (auto &s : sv) {
         normalizeAddr(s, addr);
     }
-}
-
-
-}
-
 }
 
 }

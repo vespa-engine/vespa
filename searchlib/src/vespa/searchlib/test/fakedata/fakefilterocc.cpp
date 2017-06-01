@@ -1,20 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".fakefilterocc");
-#include <vespa/searchlib/queryeval/iterators.h>
 #include "fakefilterocc.h"
 #include "fpfactory.h"
+#include <vespa/searchlib/queryeval/iterators.h>
 
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataPosition;
 
-namespace search
-{
-
-namespace fakedata
-{
+namespace search::fakedata {
 
 static FPFactoryInit
 init(std::make_pair("FilterOcc",
@@ -201,6 +194,4 @@ createIterator(const fef::TermFieldMatchDataArray &matchData) const
             matchData);
 }
 
-} // namespace fakedata
-
-} // namespace search
+}

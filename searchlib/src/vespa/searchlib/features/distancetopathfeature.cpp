@@ -1,18 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".features.distancetopathfeature");
 
+#include "distancetopathfeature.h"
+#include "utils.h"
+#include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/fef/properties.h>
+#include <vespa/document/datatype/positiondatatype.h>
+#include <vespa/vespalib/geo/zcurve.h>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
 #include <cmath>
-#include <vespa/document/datatype/positiondatatype.h>
-#include <vespa/searchlib/fef/matchdata.h>
-#include <vespa/searchlib/fef/properties.h>
 #include <sstream>
-#include <vespa/vespalib/geo/zcurve.h>
-#include "distancetopathfeature.h"
-#include "utils.h"
+
+#include <vespa/log/log.h>
+LOG_SETUP(".features.distancetopathfeature");
 
 namespace search {
 namespace features {

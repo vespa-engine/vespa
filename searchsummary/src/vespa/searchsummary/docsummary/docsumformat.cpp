@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "docsumformat.h"
+#include <cassert>
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 size_t
 DocsumFormat::addByte(search::RawBuf &target, uint8_t value)
@@ -98,5 +98,4 @@ DocsumFormat::addEmpty(ResType type, search::RawBuf &target)
     return 0;
 }
 
-} // namespace docsummary
-} // namespace search
+}

@@ -1,23 +1,20 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".features.queryfeature");
 #include "queryfeature.h"
+#include "utils.h"
+#include "valuefeature.h"
 
 #include <vespa/searchlib/features/constant_tensor_executor.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/searchlib/fef/feature_type.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/eval/tensor/default_tensor.h>
 #include <vespa/eval/tensor/tensor_mapper.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
-#include <memory>
-#include "utils.h"
-#include "valuefeature.h"
 #include <vespa/eval/eval/value_type.h>
-#include <vespa/searchlib/fef/feature_type.h>
+#include <memory>
 
 using namespace search::fef;
 using namespace search::fef::indexproperties;

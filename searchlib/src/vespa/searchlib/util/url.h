@@ -24,8 +24,9 @@
  * roughly 40kB / instance.
  */
 
-namespace search {
-namespace util {
+#include <cstddef>
+
+namespace search::util {
 
 class URL
 {
@@ -252,8 +253,8 @@ public:
     /**
      * Get tokens with corresponding context information from the current url.
      * The first call to this function will return the first token in the url.
-     * This function may be called repetedly untill the value NULL is returned.
-     * @return Pointer to string containing the token, NULL when all tokens have
+     * This function may be called repetedly untill the value nullptr is returned.
+     * @return Pointer to string containing the token, nullptr when all tokens have
      * been returned.
      */
     const unsigned char *GetToken(URL_CONTEXT &ctx);
@@ -272,6 +273,3 @@ public:
 };
 
 }
-}
-
-

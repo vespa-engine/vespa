@@ -2,11 +2,11 @@
 // Copyright (C) 2002-2003 Fast Search & Transfer ASA
 // Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
 #include "dirtraverse.h"
+#include <vespa/fastos/file.h>
+#include <cassert>
 
-namespace search
-{
+namespace search {
 
 extern "C" {
 static int cmpname(const void *av, const void *bv)
@@ -19,10 +19,16 @@ static int cmpname(const void *av, const void *bv)
 }
 }
 
+DirectoryTraverse::Name::Name(const char *name)
+    : _name(nullptr),
+      _next(nullptr)
+{
+    _name = strdup(name);
+}
+DirectoryTraverse::Name::~Name() { free(_name); }
 
 DirectoryTraverse::Name *
-DirectoryTraverse::Name::sort(Name *head,
-				    int count)
+DirectoryTraverse::Name::sort(Name *head, int count)
 {
     Name *nl;
     Name **names;
@@ -30,7 +36,7 @@ DirectoryTraverse::Name::sort(Name *head,
 
     names = new Name *[count];
     i = 0;
-    for(nl = head; nl != NULL; nl = nl->_next)
+    for(nl = head; nl != nullptr; nl = nl->_next)
         names[i++] = nl;
     assert(i == count);
     qsort(names, count, sizeof(Name *), cmpname);
@@ -38,7 +44,7 @@ DirectoryTraverse::Name::sort(Name *head,
         if (i + 1 < count)
             names[i]->_next = names[i + 1];
         else
-            names[i]->_next = NULL;
+            names[i]->_next = nullptr;
     }
     head = names[0];
     delete [] names;
@@ -50,7 +56,7 @@ void
 DirectoryTraverse::QueueDir(const char *name)
 {
     Name *n = new Name(name);
-    if (_dirTail == NULL)
+    if (_dirTail == nullptr)
         _dirHead = n;
     else
         _dirTail->_next = n;
@@ -80,12 +86,12 @@ void
 DirectoryTraverse::PushPushedDirs()
 {
     Name *n;
-    while (_pdirHead != NULL) {
+    while (_pdirHead != nullptr) {
         n = _pdirHead;
         _pdirHead = n->_next;
         n->_next = _dirHead;
         _dirHead = n;
-        if (_dirTail == NULL)
+        if (_dirTail == nullptr)
             _dirTail = n;
     }
 }
@@ -96,13 +102,13 @@ DirectoryTraverse::UnQueueDir()
 {
     Name *n;
     PushPushedDirs();
-    if (_dirHead == NULL)
-        return NULL;
+    if (_dirHead == nullptr)
+        return nullptr;
     n = _dirHead;
     _dirHead = n->_next;
-    n->_next = NULL;
-    if (_dirHead == NULL)
-        _dirTail = NULL;
+    n->_next = nullptr;
+    if (_dirHead == nullptr)
+        _dirTail = nullptr;
     return n;
 }
 
@@ -110,11 +116,11 @@ DirectoryTraverse::Name *
 DirectoryTraverse::UnQueueName()
 {
     Name *n;
-    if (_nameHead == NULL)
-        return NULL;
+    if (_nameHead == nullptr)
+        return nullptr;
     n = _nameHead;
     _nameHead = n->_next;
-    n->_next = NULL;
+    n->_next = nullptr;
     _nameCount--;
     return n;
 }
@@ -123,13 +129,13 @@ DirectoryTraverse::UnQueueName()
 void
 DirectoryTraverse::ScanSingleDir()
 {
-    assert(_nameHead == NULL);
+    assert(_nameHead == nullptr);
     assert(_nameCount == 0);
     delete _curDir;
     free(_fullDirName);
-    _fullDirName = NULL;
+    _fullDirName = nullptr;
     _curDir = UnQueueDir();
-    if (_curDir == NULL)
+    if (_curDir == nullptr)
         return;
     _fullDirName = (char *) malloc(strlen(_baseDir) + 1 +
                                    strlen(_curDir->_name) + 1);
@@ -159,10 +165,10 @@ bool
 DirectoryTraverse::NextName()
 {
     delete _curName;
-    _curName = NULL;
-    while (_nameHead == NULL && (_dirHead != NULL || _pdirHead != NULL))
+    _curName = nullptr;
+    while (_nameHead == nullptr && (_dirHead != nullptr || _pdirHead != nullptr))
         ScanSingleDir();
-    if (_nameHead == NULL)
+    if (_nameHead == nullptr)
         return false;
     _curName = UnQueueName();
     free(_fullName);
@@ -182,8 +188,8 @@ DirectoryTraverse::NextRemoveDir()
     Name *curName;
 
     delete _curName;
-    _curName = NULL;
-    if (_rdirHead == NULL)
+    _curName = nullptr;
+    if (_rdirHead == nullptr)
         return false;
     curName = _rdirHead;
     _rdirHead = curName->_next;
@@ -246,18 +252,18 @@ DirectoryTraverse::GetTreeSize()
 }
 
 DirectoryTraverse::DirectoryTraverse(const char *baseDir)
-    : _baseDir(NULL),
-      _nameHead(NULL),
+    : _baseDir(nullptr),
+      _nameHead(nullptr),
       _nameCount(0),
-      _dirHead(NULL),
-      _dirTail(NULL),
-      _pdirHead(NULL),
-      _rdirHead(NULL),
-      _curDir(NULL),
-      _curName(NULL),
-      _fullDirName(NULL),
-      _fullName(NULL),
-      _relName(NULL)
+      _dirHead(nullptr),
+      _dirTail(nullptr),
+      _pdirHead(nullptr),
+      _rdirHead(nullptr),
+      _curDir(nullptr),
+      _curName(nullptr),
+      _fullDirName(nullptr),
+      _fullName(nullptr),
+      _relName(nullptr)
 {
     _baseDir = strdup(baseDir);
     QueueDir("");
@@ -273,15 +279,15 @@ DirectoryTraverse::~DirectoryTraverse()
     delete _curDir;
     delete _curName;
     PushPushedDirs();
-    while (_dirHead != NULL)
+    while (_dirHead != nullptr)
         delete UnQueueDir();
-    while (_nameHead != NULL)
+    while (_nameHead != nullptr)
         delete UnQueueName();
-    while (_rdirHead != NULL) {
+    while (_rdirHead != nullptr) {
         Name *n;
         n = _rdirHead;
         _rdirHead = n->_next;
-        n->_next = NULL;
+        n->_next = nullptr;
         delete n;
     }
 }

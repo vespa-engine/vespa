@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <setjmp.h>
+#include <csetjmp>
+#include <csignal>
 
-namespace search
-{
+namespace search {
 
 class StateFile;
 
@@ -22,39 +22,20 @@ class SigBusHandler
     bool _fired;
     char _buf[2048];
 
-    void
-    trap();
-
-    void
-    untrap();
-
-    static void
-    forward(int sig, siginfo_t *si, void *ucv);
-
-    void
-    handle(int sig, siginfo_t *si, void *ucv);
-
+    void trap();
+    void untrap();
+    static void forward(int sig, siginfo_t *si, void *ucv);
+    void handle(int sig, siginfo_t *si, void *ucv);
 public:
     SigBusHandler(StateFile *stateFile);
-
     ~SigBusHandler();
 
-    bool
-    fired() const
-    {
-        return _fired;
-    }
+    bool fired() const { return _fired; }
 
     /*
      * Setup siglongjmp based unwinding, used by unit tests.
      */
-    void
-    setUnwind(sigjmp_buf *unwind)
-    {
-        _unwind = unwind;
-    }
+    void setUnwind(sigjmp_buf *unwind) { _unwind = unwind; }
 };
 
-
 }
-

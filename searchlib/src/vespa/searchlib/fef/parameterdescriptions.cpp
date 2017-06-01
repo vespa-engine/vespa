@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "parameterdescriptions.h"
+#include <cassert>
 
 namespace search {
 namespace fef {
@@ -48,6 +48,21 @@ ParameterDescriptions &
 ParameterDescriptions::desc(size_t tag) {
     _descriptions.push_back(Description(tag));
     _nextTag = tag + 1;
+    return *this;
+}
+
+void
+ParameterDescriptions::addParameter(const ParamDescItem &param) {
+    assert(!_descriptions.empty());
+    assert(!getCurrent().hasRepeat());
+    getCurrent().addParameter(param);
+}
+
+ParameterDescriptions &
+ParameterDescriptions::repeat(size_t n) {
+    assert(!_descriptions.empty());
+    assert(getCurrent().getParams().size() >= n);
+    getCurrent().setRepeat(n);
     return *this;
 }
 

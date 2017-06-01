@@ -1,23 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
+#include "sigbushandler.h"
 #include "statefile.h"
 #include "statebuf.h"
-#include "sigbushandler.h"
-#include <setjmp.h>
-#include <system_error>
-#include <mutex>
-#include <atomic>
+#include <unistd.h>
+#include <cstring>
 
-namespace search
-{
-
+namespace search {
 
 SigBusHandler *SigBusHandler::_instance = nullptr;
 
-
-namespace
-{
+namespace {
 
 std::atomic<int> sigBusNesting;
 
@@ -32,18 +25,13 @@ public:
         _gotLock = sigBusNesting.compare_exchange_strong(expzero, 1);
     }
 
-    ~TryLockGuard() noexcept
-    {
+    ~TryLockGuard() noexcept {
         if (_gotLock) {
             sigBusNesting = 0;
         }
     }
 
-    bool
-    gotLock() const noexcept
-    {
-        return _gotLock;
-    }
+    bool gotLock() const noexcept { return _gotLock; }
 };
 
 
@@ -158,11 +146,9 @@ SigBusHandler::SigBusHandler(StateFile *stateFile)
     trap();
 }
 
-
 SigBusHandler::~SigBusHandler()
 {
     untrap();
 }
-
 
 }

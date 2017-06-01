@@ -4,9 +4,9 @@
 
 #include "bufferwriter.h"
 #include <vector>
+#include <cstdint>
 
-namespace search
-{
+namespace search {
 
 /**
  * Class to write to a "drain" buffer, used to measure performance of
@@ -21,11 +21,8 @@ public:
     static constexpr size_t BUFFER_SIZE = 262144;
 
     DrainingBufferWriter();
-
-    virtual ~DrainingBufferWriter();
-
-    virtual void flush() override;
-
+    ~DrainingBufferWriter() override;
+    void flush() override;
     size_t getBytesWritten() const { return _bytesWritten; }
 };
 

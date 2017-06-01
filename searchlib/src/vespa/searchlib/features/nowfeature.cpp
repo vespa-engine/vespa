@@ -1,13 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".features.nowfeature");
 
+#include "nowfeature.h"
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/queryproperties.h>
 #include <vespa/searchlib/fef/properties.h>
-#include "nowfeature.h"
-#include "valuefeature.h"
+#include <vespa/fastos/time.h>
 
 namespace search {
 namespace features {
@@ -16,7 +13,6 @@ NowExecutor::NowExecutor(int64_t timestamp) :
     search::fef::FeatureExecutor(),
     _timestamp(timestamp)
 {
-    // empty
 }
 
 void

@@ -31,29 +31,9 @@ public:
         int          _prefixLen;
         IndexPrefix *_next;
 
-
-        IndexPrefix(const char *prefix,
-                    IndexPrefix **list)
-            : _prefix(NULL),
-              _prefixLen(0),
-              _next(NULL)
-        {
-            _prefix = strdup(prefix);
-            assert(_prefix != NULL);
-            _prefixLen = strlen(prefix);
-            _next = *list;
-            *list = this;
-        }
-
-        ~IndexPrefix()
-        {
-            free(_prefix);
-        }
-
-        bool Match(const char *idxName) const
-        {
-            return (strncmp(idxName, _prefix, _prefixLen) == 0);
-        }
+        IndexPrefix(const char *prefix, IndexPrefix **list);
+        ~IndexPrefix();
+        bool Match(const char *idxName) const;
     };
 
 private:

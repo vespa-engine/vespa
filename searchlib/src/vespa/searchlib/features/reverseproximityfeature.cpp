@@ -1,15 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".features.reverseproximity");
 
+#include "reverseproximityfeature.h"
+#include "utils.h"
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/fieldtype.h>
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include "reverseproximityfeature.h"
-#include "utils.h"
 
 namespace search {
 namespace features {
@@ -59,11 +56,9 @@ ReverseProximityExecutor::execute(uint32_t docId)
             }
         }
     }
-    //LOG(debug, "Initial guess; posA is '%u' and posB is '%u'.", posA, posB);
 
     // _P_A_R_A_N_O_I_A_
     if (!itA.valid() || !itB.valid()) {
-        //LOG(debug, "Initial guess is invalid.");
         outputs().set_number(0, util::FEATURE_MAX); // out
         outputs().set_number(1, util::FEATURE_MIN); // posA
         outputs().set_number(2, util::FEATURE_MAX); // posB

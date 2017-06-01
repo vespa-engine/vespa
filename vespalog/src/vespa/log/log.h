@@ -2,7 +2,7 @@
 #pragma once
 
 #include <memory>
-#include <inttypes.h>
+#include <cstdint>
 #include <sys/types.h> // for pid_t
 #include <new>         // for placement new
 #include <cstdlib>     // for malloc

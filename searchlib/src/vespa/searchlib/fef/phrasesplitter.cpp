@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".fef.phrasesplitter");
 #include "phrasesplitter.h"
 
 namespace search {
@@ -51,7 +48,7 @@ PhraseSplitter::PhraseSplitter(const IQueryEnvironment & queryEnv,
 
     for (uint32_t i = 0; i < queryEnv.getNumTerms(); ++i) {
         const ITermData *td = queryEnv.getTerm(i);
-        LOG_ASSERT(td != NULL);
+        assert(td != NULL);
         considerTerm(i, *td, phraseTerms, fieldId);
         numHandles += td->numFields();
     }
@@ -100,7 +97,7 @@ PhraseSplitter::update()
     for (uint32_t i = 0; i < _copyInfo.size(); ++i) {
         const TermFieldMatchData *src = _matchData->resolveTermField(_copyInfo[i].orig_handle);
         TermFieldMatchData *dst = resolveSplittedTermField(_copyInfo[i].split_handle);
-        LOG_ASSERT(src != NULL && dst != NULL);
+        assert(src != NULL && dst != NULL);
         copyTermFieldMatchData(*dst, *src, _copyInfo[i].offsetInPhrase);
     }
 

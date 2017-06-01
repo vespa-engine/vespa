@@ -3,9 +3,9 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * This class represents a rank table with double values.
@@ -60,6 +60,4 @@ public:
     }
 };
 
-} // namespace fef
-} // namespace search
-
+}

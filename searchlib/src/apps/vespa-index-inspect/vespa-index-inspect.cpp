@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/searchlib/index/dictionaryfile.h>
 #include <vespa/searchlib/index/postinglistfile.h>
 #include <vespa/searchlib/bitcompression/compression.h>
@@ -15,7 +14,9 @@
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
+#include <vespa/fastos/app.h>
 #include <iostream>
+
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-index-inspect");
 
@@ -41,8 +42,7 @@ using search::index::schema::DataType;
 using search::queryeval::SearchIterator;
 using namespace search::index;
 
-namespace
-{
+namespace {
 
 /**
  * Fine granularity, for small scale inversion within a single document.

@@ -1,15 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".features.distancefeature");
-#include <cmath>
-#include <limits>
-#include <vespa/document/datatype/positiondatatype.h>
+#include "distancefeature.h"
 #include <vespa/searchlib/fef/location.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/vespalib/geo/zcurve.h>
-#include "distancefeature.h"
+#include <cmath>
+#include <limits>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".features.distancefeature");
 
 using namespace search::fef;
 

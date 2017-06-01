@@ -1,23 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 
-#include <map>
 #include <vespa/searchlib/features/rankingexpression/feature_name_extractor.h>
-#include <vector>
 #include <vespa/eval/eval/llvm/compiled_function.h>
-#include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/interpreted_function.h>
-#include <vespa/eval/eval/basic_nodes.h>
 #include <vespa/eval/eval/call_nodes.h>
 #include <vespa/eval/eval/operator_nodes.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
-#include <vespa/eval/eval/gbdt.h>
 #include <vespa/eval/eval/vm_forest.h>
 #include <vespa/eval/eval/llvm/deinline_forest.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
 #include <vespa/eval/eval/param_usage.h>
-#include <cmath>
+#include <vespa/fastos/app.h>
 
 //-----------------------------------------------------------------------------
 

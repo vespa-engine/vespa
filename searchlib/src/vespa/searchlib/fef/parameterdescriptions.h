@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vector>
+#include <cstddef>
 
 namespace search {
 namespace fef {
@@ -99,11 +100,7 @@ private:
     size_t _nextTag;
 
     Description & getCurrent() { return _descriptions.back(); }
-    void addParameter(const ParamDescItem &param) {
-        assert(!_descriptions.empty());
-        assert(!getCurrent().hasRepeat());
-        getCurrent().addParameter(param);
-    }
+    void addParameter(const ParamDescItem &param);
     void addParameter(ParameterType::Enum type, ParameterCollection::Enum collection) {
         addParameter(ParamDescItem(type, collection));
     }
@@ -175,16 +172,8 @@ public:
     /**
      * Sets the repeat number on the current description.
      */
-    ParameterDescriptions & repeat(size_t n = 1) {
-        assert(!_descriptions.empty());
-        assert(getCurrent().getParams().size() >= n);
-        getCurrent().setRepeat(n);
-        return *this;
-    }
+    ParameterDescriptions & repeat(size_t n = 1);
 };
-
-
 
 } // namespace fef
 } // namespace search
-

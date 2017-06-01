@@ -1,14 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
+#include "term_field_md_feature.h"
+#include "utils.h"
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/itablemanager.h>
 #include <vespa/searchlib/fef/properties.h>
-#include "term_field_md_feature.h"
-#include "utils.h"
-LOG_SETUP(".features.term_field_md_feature");
 
 using namespace search::fef;
 
@@ -23,10 +20,10 @@ TermFieldMdExecutor::TermFieldMdExecutor(const search::fef::IQueryEnvironment &e
 {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         const search::fef::ITermData *td = env.getTerm(i);
-        LOG_ASSERT(td != 0);
+        assert(td != 0);
         const search::fef::ITermFieldData *tfd = td->lookupField(fieldId);
         if (tfd != 0) {
-            LOG_ASSERT(tfd->getHandle() != search::fef::IllegalHandle);
+            assert(tfd->getHandle() != search::fef::IllegalHandle);
             _terms.push_back(std::make_pair(tfd->getHandle(), td->getWeight()));
         }
     }
@@ -96,7 +93,7 @@ TermFieldMdBlueprint::setup(const IIndexEnvironment & env,
                             const ParameterList & params)
 {
     _field = params[0].asField();
-    LOG_ASSERT(_field != 0);
+    assert(_field != 0);
 
     describeOutput("score", "The term field match score");
     describeOutput("terms", "The number of ranked terms searching this field");

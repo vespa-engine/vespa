@@ -2,8 +2,9 @@
 
 #pragma once
 
-namespace search
-{
+#include <cstddef>
+
+namespace search {
 
 /**
  * Abstract class to write to a buffer with an abstract backing store

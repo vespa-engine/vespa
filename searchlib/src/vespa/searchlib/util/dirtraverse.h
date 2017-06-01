@@ -4,8 +4,9 @@
 
 #pragma once
 
-namespace search
-{
+#include <cstdint>
+
+namespace search {
 
 class DirectoryTraverse
 {
@@ -23,13 +24,8 @@ public:
     public:
         char *_name;
         Name *_next;
-        explicit Name(const char *name)
-            : _name(NULL),
-              _next(NULL)
-        {
-            _name = strdup(name);
-        }
-        ~Name() { free(_name); }
+        explicit Name(const char *name);
+        ~Name();
         static Name *sort(Name *head, int count);
     };
 private:
@@ -64,4 +60,3 @@ public:
 };
 
 } // namespace search
-
