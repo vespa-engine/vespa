@@ -382,12 +382,15 @@ TransportServer::TransportServer(SearchServer &searchServer,
 bool
 TransportServer::start()
 {
+    if (!updateListen()) {
+        return false;
+    }
     if (_threadPool.NewThread(this) == 0) {
         LOG(error, "Could not start internal transport thread");
         _failed = true;
         return false;
     }
-    return updateListen();
+    return true;
 }
 
 int
