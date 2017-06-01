@@ -140,26 +140,45 @@ public class DeploymentSpec {
         Optional<String> globalServiceId = Optional.empty();
         Element root = XML.getDocument(xmlForm).getDocumentElement();
         for (Element environmentTag : XML.getChildren(root)) {
-            if (!isEnvironmentName(environmentTag.getTagName())) continue;
+            if ( ! isEnvironmentName(environmentTag.getTagName())) continue;
+
             Environment environment = Environment.from(environmentTag.getTagName());
-            List<Element> regionTags = XML.getChildren(environmentTag, "region");
-            if (regionTags.isEmpty()) {
-                steps.add(new ZoneDeployment(environment, Optional.empty(), false));
-            } else {
-                for (Element regionTag : regionTags) {
-                    RegionName region = RegionName.from(XML.getValue(regionTag).trim());
-                    boolean active = environment == Environment.prod && readActive(regionTag);
-                    steps.add(new ZoneDeployment(environment, Optional.of(region), active));
+
+            if (environment == Environment.prod) {
+                for (Element stepTag : XML.getChildren(environmentTag)) {
+                    if (stepTag.getTagName().equals("delay"))
+                        steps.add(new Delay(Duration.ofSeconds(intAttribute("hours", stepTag) * 60 * 60 +
+                                                               intAttribute("minutes", stepTag) * 60 +
+                                                               intAttribute("seconds", stepTag))));
+                    else // a region: deploy step
+                        steps.add(new ZoneDeployment(environment, 
+                                                     Optional.of(RegionName.from(XML.getValue(stepTag).trim())), 
+                                                     readActive(stepTag)));
                 }
             }
-
-            if (Environment.prod.equals(environment)) {
-                globalServiceId = readGlobalServiceId(environmentTag);
-            } else if (readGlobalServiceId(environmentTag).isPresent()) {
-                throw new IllegalArgumentException("Attribute 'global-service-id' is only valid on 'prod' tag.");
+            else {
+                steps.add(new ZoneDeployment(environment));
             }
+
+            if (environment == Environment.prod)
+                globalServiceId = readGlobalServiceId(environmentTag);
+            else if (readGlobalServiceId(environmentTag).isPresent())
+                throw new IllegalArgumentException("Attribute 'global-service-id' is only valid on 'prod' tag.");
         }
         return new DeploymentSpec(globalServiceId, readUpgradePolicy(root), steps, xmlForm);
+    }
+    
+    /** Returns the given attribute as an integer, or 0 if it is not present */
+    private static int intAttribute(String attributeName, Element tag) {
+        String value = tag.getAttribute(attributeName);
+        if (value == null || value.isEmpty()) return 0;
+        try {
+            return Integer.parseInt(value);
+        }
+        catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Expected an integer for attribute '" + attributeName + 
+                                               "' but got '" + value + "'");
+        }
     }
 
     private static boolean isEnvironmentName(String tagName) {
@@ -277,7 +296,7 @@ public class DeploymentSpec {
         private final boolean active;
 
         public ZoneDeployment(Environment environment) {
-            this(environment, Optional.empty(), true);
+            this(environment, Optional.empty(), false);
         }
 
         public ZoneDeployment(Environment environment, Optional<RegionName> region, boolean active) {
