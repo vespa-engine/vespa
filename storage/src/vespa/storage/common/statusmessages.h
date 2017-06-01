@@ -7,7 +7,7 @@
 #pragma once
 
 #include <vespa/storageapi/message/internal.h>
-#include <vespa/storageframework/storageframework.h>
+#include <vespa/storageframework/generic/status/httpurlpath.h>
 
 namespace storage {
 

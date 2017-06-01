@@ -4,14 +4,14 @@
 #include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/vdslib/state/nodetype.h>
 #include <vespa/storage/distributor/distributormessagesender.h>
-#include <vespa/storageframework/storageframework.h>
+#include <vespa/storageframework/generic/clock/time.h>
 
-namespace storage
-{
+
+namespace storage {
 
 namespace api {
-class StorageMessage;
-class StorageReply;
+    class StorageMessage;
+    class StorageReply;
 }
 
 class StorageComponent;

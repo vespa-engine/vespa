@@ -2,9 +2,10 @@
 
 #include "runstatistics.h"
 #include "htmltable.h"
+#include <vespa/storageframework/generic/clock/clock.h>
 
-namespace storage {
-namespace bucketmover {
+
+namespace storage::bucketmover {
 
 RunStatistics::DiskMatrix::DiskMatrix()
     : _bucketsMoved(0),
@@ -185,5 +186,4 @@ RunStatistics::getBucketCount(uint16_t disk, bool includeWrongLocation) const
     return total;
 }
 
-} // bucketmover
-} // storage
+}

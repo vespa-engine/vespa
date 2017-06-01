@@ -10,9 +10,7 @@
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/storage/distributor/simpleclusterinformation.h>
 #include <vespa/storage/distributor/distributor.h>
-
-#include <iostream>
-#include <fstream>
+#include <vespa/vespalib/text/stringtokenizer.h>
 
 using namespace storage::api;
 using namespace storage::lib;

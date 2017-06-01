@@ -18,8 +18,7 @@
 
 #include "statusreporter.h"
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
 
 struct HtmlStatusReporter : public StatusReporter {
     HtmlStatusReporter(vespalib::stringref id, vespalib::stringref name);
@@ -62,6 +61,4 @@ struct PartlyHtmlStatusReporter : public HtmlStatusReporter {
     void reportHtmlStatus(std::ostream&, const HttpUrlPath&) const override {}
 };
 
-} // framework
-} // storage
-
+}

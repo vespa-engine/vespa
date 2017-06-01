@@ -8,10 +8,9 @@
 
 #pragma once
 
-#include <vespa/storageframework/generic/clock/clock.h>
+#include "clock.h"
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
 
 class MilliSecTimer {
     const Clock* _clock;
@@ -37,6 +36,4 @@ public:
     }
 };
 
-} // framework
-} // storage
-
+}

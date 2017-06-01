@@ -14,8 +14,7 @@
 
 #include <memory>
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
 
 class MemoryToken {
 protected:
@@ -27,6 +26,4 @@ public:
     virtual bool resize(uint64_t min, uint64_t max) = 0;
 };
 
-} // framework
-} // storage
-
+}

@@ -15,7 +15,8 @@
 #include "appkiller.h"
 #include <vespa/storage/common/distributorcomponent.h>
 #include <vespa/storage/common/servicelayercomponent.h>
-#include <vespa/storageframework/storageframework.h>
+#include <vespa/storageframework/generic/status/htmlstatusreporter.h>
+#include <vespa/storageframework/generic/thread/threadpool.h>
 #include <vespa/vespalib/util/sync.h>
 #include <map>
 #include <atomic>

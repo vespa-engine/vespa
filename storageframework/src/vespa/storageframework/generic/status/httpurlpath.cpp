@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "httpurlpath.h"
+#include <vespa/vespalib/text/stringtokenizer.h>
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
 
 HttpUrlPath::HttpUrlPath(const vespalib::string& urlpath)
     : _urlPath(urlpath),
@@ -69,5 +69,4 @@ HttpUrlPath::print(std::ostream& out, bool, const std::string&) const
     out << _urlPath;
 }
 
-} // framework
-} // storage
+}

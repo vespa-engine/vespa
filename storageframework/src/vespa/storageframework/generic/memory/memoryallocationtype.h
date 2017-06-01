@@ -20,8 +20,7 @@
 #include <string>
 #include <memory>
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
 
 struct MemoryAllocationType {
     using UP = std::unique_ptr<MemoryAllocationType>;
@@ -49,6 +48,4 @@ private:
     std::string _name;
 };
 
-} // framework
-} // storage
-
+}

@@ -12,7 +12,6 @@
 #include <vespa/memfilepersistence/mapper/memfilemapper.h>
 #include <vespa/memfilepersistence/init/filescanner.h>
 #include <vespa/persistence/spi/abstractpersistenceprovider.h>
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/storageframework/generic/status/httpurlpath.h>
 
 #include <vespa/config/config.h>

@@ -22,10 +22,10 @@
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/sequenced_index.hpp>
 #include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
+#include <vespa/storageframework/generic/component/component.h>
 
-namespace storage {
 
-namespace memfile {
+namespace storage::memfile {
 
 class MemFilePersistenceCacheMetrics;
 class Environment; // Avoid cyclic dependency with environment
@@ -298,6 +298,4 @@ public:
     void printCacheEntriesHtml(std::ostream& out) const;
 };
 
-} // storage
-} // memfile
-
+}

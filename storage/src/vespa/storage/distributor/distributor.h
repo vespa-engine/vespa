@@ -19,6 +19,7 @@
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/generic/thread/tickingthread.h>
+#include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/config/config.h>
 #include <vespa/vespalib/util/sync.h>
 #include <unordered_map>

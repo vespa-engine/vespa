@@ -10,17 +10,20 @@
 #pragma once
 
 #include "storagecomponent.h"
+#include <vespa/storageframework/generic/status/statusreporter.h>
+#include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/vespalib/util/sync.h>
-#include <map>
 #include <vespa/metrics/metrics.h>
-#include <vespa/storageframework/storageframework.h>
+#include <map>
 
 namespace vespalib {
     class StringTokenizer;
 }
 
 namespace storage {
+
+namespace framework { class MemoryToken; }
 
 class StatusMetricConsumer : public framework::StatusReporter,
                              private framework::MetricUpdateHook,
@@ -50,7 +53,7 @@ private:
     vespalib::Monitor _waiter;
     framework::SecondTime _startTime;
     framework::SecondTime _processedTime;
-    framework::MemoryToken::UP _metricMemoryToken;
+    std::unique_ptr<framework::MemoryToken> _metricMemoryToken;
 
     void writeXmlTags(std::ostream& out,
                       const vespalib::StringTokenizer& name,

@@ -9,11 +9,9 @@
  */
 #pragma once
 
-#include <vespa/storageframework/storageframework.h>
+#include <vespa/storageframework/generic/clock/clock.h>
 
-namespace storage {
-namespace framework {
-namespace defaultimplementation {
+namespace storage::framework::defaultimplementation {
 
 struct RealClock : public Clock {
     MicroSecTime getTimeInMicros() const override;
@@ -22,7 +20,4 @@ struct RealClock : public Clock {
     MonotonicTimePoint getMonotonicTime() const override;
 };
 
-} // defaultimplementation
-} // framework
-} // storage
-
+}

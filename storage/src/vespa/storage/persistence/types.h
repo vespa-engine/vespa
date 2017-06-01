@@ -9,8 +9,8 @@
 #include <vespa/storageapi/buckets/bucketinfo.h>
 #include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/storageapi/defs.h>
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/storageframework/generic/clock/time.h>
 
 namespace storage {
 

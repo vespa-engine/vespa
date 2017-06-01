@@ -8,7 +8,6 @@
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/storage/persistence/types.h>
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/config/config.h>
 

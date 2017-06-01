@@ -12,9 +12,9 @@
 #pragma once
 
 #include <vespa/memfilepersistence/common/types.h>
+#include <vespa/vespalib/util/printable.h>
 
-namespace storage {
-namespace memfile {
+namespace storage::memfile {
 
 class MemSlot;
 
@@ -53,10 +53,7 @@ private:
             const std::vector<DataLocation>& desiredLocations,
             uint32_t maxGap);
 
-    void scheduleLocation(DataLocation loc,
-                          std::vector<DataLocation>&);
+    void scheduleLocation(DataLocation loc, std::vector<DataLocation>&);
 };
 
-} // memfile
-} // storage
-
+}

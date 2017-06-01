@@ -3,7 +3,8 @@
 
 #include "delegatedstatusrequest.h"
 #include "statusdelegator.h"
-#include <vespa/storageframework/storageframework.h>
+#include <vespa/storageframework/generic/component/component.h>
+
 
 namespace storage {
 namespace distributor {

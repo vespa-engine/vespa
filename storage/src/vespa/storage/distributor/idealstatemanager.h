@@ -8,8 +8,6 @@
 #include <vespa/storage/distributor/statechecker.h>
 #include <vespa/storage/distributor/maintenance/maintenanceprioritygenerator.h>
 #include <vespa/storage/distributor/maintenance/maintenanceoperationgenerator.h>
-#include <vespa/storageframework/storageframework.h>
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vector>
 

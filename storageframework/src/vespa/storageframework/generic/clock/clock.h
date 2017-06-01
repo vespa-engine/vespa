@@ -16,8 +16,7 @@
 #include "time.h"
 #include <memory>
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
 
 struct Clock {
     using UP = std::unique_ptr<Clock>;
@@ -32,6 +31,4 @@ struct Clock {
     virtual MonotonicTimePoint getMonotonicTime() const = 0;
 };
 
-} // framework
-} // storage
-
+}

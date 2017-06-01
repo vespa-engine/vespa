@@ -12,16 +12,13 @@
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/common/storagelink.h>
-#include <vespa/storageframework/storageframework.h>
-
+#include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
 #include <vespa/storageapi/messageapi/messagehandler.h>
 #include <set>
 #include <deque>
 
-namespace storage {
-
-namespace distributor {
+namespace storage::distributor {
 
 class Distributor;
 
@@ -262,7 +259,5 @@ private:
     std::unordered_set<uint16_t> _outdatedNodes;
     framework::MilliSecTimer _transitionTimer;
 };
-
-}
 
 }

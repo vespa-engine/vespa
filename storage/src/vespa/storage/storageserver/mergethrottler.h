@@ -10,8 +10,8 @@
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storage/common/storagecomponent.h>
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/storage/distributor/messageguard.h>
+#include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/util/document_runnable.h>

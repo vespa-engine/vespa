@@ -36,18 +36,15 @@
     } \
 }
 
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/vdslib/state/nodestate.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/util/printable.h>
+#include <vespa/storageframework/generic/clock/time.h>
+
 #include <vector>
 
-namespace storage {
-
-class Clock;
-
-namespace bucketmover {
+namespace storage::bucketmover {
 
 struct RunStatistics : public document::Printable {
     using DiskDistribution = lib::Distribution::DiskDistribution;
@@ -95,5 +92,4 @@ struct RunStatistics : public document::Printable {
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
-} // bucketmover
-} // storage
+}

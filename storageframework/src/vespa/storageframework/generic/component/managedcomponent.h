@@ -19,8 +19,7 @@ namespace metrics {
     class Metric;
 }
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
 
 class StatusReporter;
 class MemoryManagerInterface;
@@ -75,6 +74,4 @@ struct ManagedComponent {
 
 };
 
-} // framework
-} // storage
-
+}

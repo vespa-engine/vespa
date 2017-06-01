@@ -11,6 +11,8 @@
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
+#include <vespa/storageframework/generic/status/xmlstatusreporter.h>
+
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor-main");

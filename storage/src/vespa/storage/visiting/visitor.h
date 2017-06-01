@@ -22,33 +22,30 @@
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/persistence/spi/selection.h>
 #include <vespa/persistence/spi/read_consistency.h>
-#include <vespa/storageframework/storageframework.h>
 #include <list>
 #include <deque>
 
 namespace document {
-class Document;
-class DocumentId;
-namespace select {
-class Node;
+    class Document;
+    class DocumentId;
+    namespace select { class Node; }
 }
-}
-namespace vdslib {
-class Parameters;
-}
+namespace vdslib { class Parameters; }
 
 namespace documentapi {
-class DocumentMessage;
-class VisitorInfoMessage;
+    class DocumentMessage;
+    class VisitorInfoMessage;
 }
 
 namespace storage {
 
 namespace api {
-class ReturnCode;
-class StorageCommand;
-class StorageReply;
+    class ReturnCode;
+    class StorageCommand;
+    class StorageReply;
 }
+
+namespace framework { class MemoryAllocationType; }
 
 class GetIterReply;
 class CreateIteratorReply;
@@ -62,8 +59,7 @@ class VisitorThreadMetrics;
  */
 class VisitorMessageHandler {
 public:
-    virtual void send(const std::shared_ptr<api::StorageCommand>&,
-                      Visitor& visitor) = 0;
+    virtual void send(const std::shared_ptr<api::StorageCommand>&, Visitor& visitor) = 0;
     virtual void send(const std::shared_ptr<api::StorageReply>&) = 0;
     /**
      * Called once when visitor shuts down and won't call this handler again.
@@ -602,4 +598,3 @@ private:
 
 
 } // storage
-

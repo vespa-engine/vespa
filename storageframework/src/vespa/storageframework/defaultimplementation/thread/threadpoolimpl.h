@@ -6,9 +6,7 @@
 #include <vespa/fastos/thread.h>
 #include <vespa/vespalib/util/sync.h>
 
-namespace storage {
-namespace framework {
-namespace defaultimplementation {
+namespace storage::framework::defaultimplementation {
 
 class ThreadImpl;
 
@@ -34,7 +32,4 @@ public:
     Clock& getClock() { return _clock; }
 };
 
-} // defaultimplementation
-} // framework
-} // storage
-
+}

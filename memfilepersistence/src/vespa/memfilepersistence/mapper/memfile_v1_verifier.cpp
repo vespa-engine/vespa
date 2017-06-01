@@ -3,15 +3,14 @@
 #include "memfile_v1_verifier.h"
 #include "memfilemapper.h"
 #include "simplememfileiobuffer.h"
+#include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_set.hpp>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".persistence.memfilev1.verifier");
 
-namespace storage {
-
-namespace memfile {
+namespace storage::memfile {
 
 namespace {
 
@@ -690,8 +689,4 @@ MemFileV1Verifier::verifyUniqueTimestamps(
     okSlots.swap(slots);
 }
 
-
 }
-
-}
-

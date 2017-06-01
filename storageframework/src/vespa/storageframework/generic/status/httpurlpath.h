@@ -8,11 +8,9 @@
 
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/text/stringtokenizer.h>
 #include <map>
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
 
 class HttpUrlPath : public vespalib::Printable {
     vespalib::string _urlPath;
@@ -56,6 +54,4 @@ T HttpUrlPath::get(const vespalib::string& id, const T& defaultValue) const
     return val;
 }
 
-} // framework
-} // storage
-
+}

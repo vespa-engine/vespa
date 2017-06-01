@@ -6,7 +6,6 @@
 #include "statechecker.h"
 #include <vespa/storage/common/distributorcomponent.h>
 #include <vespa/storage/storageutil/utils.h>
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/storageapi/buckets/bucketinfo.h>
 #include <vespa/vdslib/state/clusterstate.h>

@@ -15,12 +15,18 @@
 #pragma once
 
 #include "storagelink.h"
-#include <vespa/storageframework/storageframework.h>
+#include <vespa/storageframework/generic/thread/runnable.h>
 #include <vespa/vespalib/util/document_runnable.h>
 #include <deque>
 #include <limits>
 
 namespace storage {
+
+namespace framework {
+    class ComponentRegister;
+    class Component;
+    class Thread;
+}
 
 class StorageLinkQueued : public StorageLink {
 public:
@@ -72,8 +78,8 @@ private:
         vespalib::Monitor _sync;
         std::deque< std::shared_ptr<Message> > _messages;
         bool _replyDispatcher;
-        framework::Component::UP _component;
-        framework::Thread::UP _thread;
+        std::unique_ptr<framework::Component> _component;
+        std::unique_ptr<framework::Thread> _thread;
         void terminate();
 
     public:
@@ -124,8 +130,8 @@ private:
     };
 
     framework::ComponentRegister& _compReg;
-    framework::Thread::UP _replyThread;
-    framework::Thread::UP _commandThread;
+    std::unique_ptr<framework::Thread> _replyThread;
+    std::unique_ptr<framework::Thread> _commandThread;
     ReplyDispatcher    _replyDispatcher;
     CommandDispatcher  _commandDispatcher;
     uint16_t _closeState;

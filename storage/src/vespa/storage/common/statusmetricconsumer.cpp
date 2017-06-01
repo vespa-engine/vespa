@@ -9,13 +9,11 @@
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/textwriter.h>
 #include <vespa/metrics/xmlwriter.h>
-#include <vespa/storage/storageserver/storagemetricsset.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
-#include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-    // For setlocale to print . separated numbers
-#include <locale.h>
-#include <stdio.h>
+#include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
+#include <vespa/storageframework/generic/status/htmlstatusreporter.h>
+
 
 LOG_SETUP(".status.metricreporter");
 

@@ -8,7 +8,6 @@
 #include <vespa/storage/distributor/distributorcomponent.h>
 #include <vespa/storage/distributor/managed_bucket_space_component.h>
 #include <vespa/storageapi/messageapi/messagehandler.h>
-#include <vespa/storageframework/storageframework.h>
 #include <chrono>
 
 namespace storage {

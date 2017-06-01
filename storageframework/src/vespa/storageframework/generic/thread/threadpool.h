@@ -18,8 +18,7 @@
 #include <vespa/storageframework/generic/clock/time.h>
 #include <vector>
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
 
 /**
  * Each thread may have different properties, as to how long they wait between
@@ -94,6 +93,4 @@ struct ThreadPool {
     virtual void visitThreads(ThreadVisitor&) const = 0;
 };
 
-} // framework
-} // storage
-
+}

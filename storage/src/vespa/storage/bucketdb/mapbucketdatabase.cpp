@@ -2,6 +2,7 @@
 
 #include "mapbucketdatabase.h"
 #include <vespa/storage/common/bucketoperationlogger.h>
+#include <ostream>
 
 namespace storage {
 

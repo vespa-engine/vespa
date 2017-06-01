@@ -16,8 +16,7 @@
 #include "reducememoryusageinterface.h"
 #include <vector>
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
 
 struct MemoryManagerInterface
 {
@@ -61,6 +60,4 @@ struct MemoryManagerInterface
     virtual uint64_t getMemorySizeFreeForPriority(uint8_t priority) const = 0;
 };
 
-} // framework
-} // storage
-
+}

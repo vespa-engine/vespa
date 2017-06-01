@@ -9,7 +9,6 @@
 
 #include <vespa/storageapi/message/internal.h>
 #include <vespa/storage/visiting/config-stor-visitor.h>
-#include <vespa/storageframework/storageframework.h>
 
 namespace storage {
 

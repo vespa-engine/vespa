@@ -18,7 +18,7 @@
 
 #include "devicemanager.h"
 #include "directory.h"
-#include <vespa/storageframework/storageframework.h>
+#include <vespa/storageframework/generic/status/xmlstatusreporter.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/vespalib/util/printable.h>
 

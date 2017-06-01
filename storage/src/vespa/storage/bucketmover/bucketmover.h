@@ -20,9 +20,8 @@
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storage/config/config-stor-bucketmover.h>
 #include <vespa/storage/common/servicelayercomponent.h>
+#include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <vespa/storageapi/message/bucket.h>
-#include <vespa/storageframework/storageframework.h>
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/config/helper/ifetchercallback.h>
 #include <vespa/config/subscription/configuri.h>
@@ -31,7 +30,6 @@
 namespace storage {
 
 class BucketDiskMoveCommand;
-class Clock;
 
 namespace bucketmover {
 

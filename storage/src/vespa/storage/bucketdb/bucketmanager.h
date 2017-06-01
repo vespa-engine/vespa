@@ -18,8 +18,10 @@
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storage/common/storagelinkqueued.h>
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
+#include <vespa/storageframework/generic/status/statusreporter.h>
+#include <vespa/storageframework/generic/metric/metricupdatehook.h>
+
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/config/subscription/configuri.h>
 #include <unordered_set>

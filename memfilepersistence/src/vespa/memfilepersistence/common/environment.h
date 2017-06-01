@@ -18,7 +18,6 @@
 #include "config_lock_guard.h"
 #include "config_aliases.h"
 #include <vespa/memfilepersistence/device/mountpointlist.h>
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/config/helper/configfetcher.h>

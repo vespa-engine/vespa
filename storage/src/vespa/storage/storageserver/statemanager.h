@@ -17,13 +17,14 @@
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storage/common/storagecomponent.h>
+#include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/objects/floatingpointtype.h>
 #include <deque>
 #include <map>
+#include <list>
 #include <atomic>
 
 namespace metrics {

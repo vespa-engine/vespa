@@ -4,6 +4,7 @@
 #include "distributormetricsset.h"
 #include "distributorcomponent.h"
 #include "messagetracker.h"
+#include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/storageapi/messageapi/bucketinfocommand.h>
 #include <vespa/storageapi/messageapi/bucketinforeply.h>
 
