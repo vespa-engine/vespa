@@ -27,7 +27,7 @@ public class DeploymentSpecTest {
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals(specXml, spec.xmlForm());
         assertEquals(1, spec.zones().size());
-        assertEquals(Environment.test, spec.zones().get(0).environment());
+        assertTrue(spec.zones().get(0).deploysTo(Environment.test));
         assertTrue(spec.includes(Environment.test, Optional.empty()));
         assertFalse(spec.includes(Environment.test, Optional.of(RegionName.from("region1"))));
         assertFalse(spec.includes(Environment.staging, Optional.empty()));
@@ -45,8 +45,8 @@ public class DeploymentSpecTest {
 
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals(2, spec.zones().size());
-        assertEquals(Environment.test, spec.zones().get(0).environment());
-        assertEquals(Environment.staging, spec.zones().get(1).environment());
+        assertTrue(spec.zones().get(0).deploysTo(Environment.test));
+        assertTrue(spec.zones().get(1).deploysTo(Environment.staging));
         assertTrue(spec.includes(Environment.test, Optional.empty()));
         assertFalse(spec.includes(Environment.test, Optional.of(RegionName.from("region1"))));
         assertTrue(spec.includes(Environment.staging, Optional.empty()));
@@ -68,17 +68,15 @@ public class DeploymentSpecTest {
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals(4, spec.zones().size());
 
-        assertEquals(Environment.test, spec.zones().get(0).environment());
+        assertTrue(spec.zones().get(0).deploysTo(Environment.test));
 
-        assertEquals(Environment.staging, spec.zones().get(1).environment());
+        assertTrue(spec.zones().get(1).deploysTo(Environment.staging));
 
-        assertEquals(Environment.prod, spec.zones().get(2).environment());
-        assertEquals("us-east1", spec.zones().get(2).region().get().value());
-        assertFalse(spec.zones().get(2).active());
+        assertTrue(spec.zones().get(2).deploysTo(Environment.prod, Optional.of(RegionName.from("us-east1"))));
+        assertFalse(((DeploymentSpec.ZoneDeployment)spec.zones().get(2)).active());
 
-        assertEquals(Environment.prod, spec.zones().get(3).environment());
-        assertEquals("us-west1", spec.zones().get(3).region().get().value());
-        assertTrue(spec.zones().get(3).active());
+        assertTrue(spec.zones().get(3).deploysTo(Environment.prod, Optional.of(RegionName.from("us-west1"))));
+        assertTrue(((DeploymentSpec.ZoneDeployment)spec.zones().get(3)).active());
 
         assertTrue(spec.includes(Environment.test, Optional.empty()));
         assertFalse(spec.includes(Environment.test, Optional.of(RegionName.from("region1"))));
@@ -107,17 +105,15 @@ public class DeploymentSpecTest {
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals(4, spec.zones().size());
 
-        assertEquals(Environment.test, spec.zones().get(0).environment());
+        assertTrue(spec.zones().get(0).deploysTo(Environment.test));
 
-        assertEquals(Environment.staging, spec.zones().get(1).environment());
+        assertTrue(spec.zones().get(1).deploysTo(Environment.staging));
 
-        assertEquals(Environment.prod, spec.zones().get(2).environment());
-        assertEquals("us-east1", spec.zones().get(2).region().get().value());
-        assertFalse(spec.zones().get(2).active());
+        assertTrue(spec.zones().get(2).deploysTo(Environment.prod, Optional.of(RegionName.from("us-east1"))));
+        assertFalse(((DeploymentSpec.ZoneDeployment)spec.zones().get(2)).active());
 
-        assertEquals(Environment.prod, spec.zones().get(3).environment());
-        assertEquals("us-west1", spec.zones().get(3).region().get().value());
-        assertTrue(spec.zones().get(3).active());
+        assertTrue(spec.zones().get(3).deploysTo(Environment.prod, Optional.of(RegionName.from("us-west1"))));
+        assertTrue(((DeploymentSpec.ZoneDeployment)spec.zones().get(3)).active());
 
         assertTrue(spec.includes(Environment.test, Optional.empty()));
         assertFalse(spec.includes(Environment.test, Optional.of(RegionName.from("region1"))));
