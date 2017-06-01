@@ -1,19 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".features.tensor_from_labels_feature");
-
 #include "tensor_from_labels_feature.h"
 #include "array_parser.hpp"
 #include "constant_tensor_executor.h"
 #include "tensor_from_attribute_executor.h"
+#include <vespa/searchlib/fef/properties.h>
+#include <vespa/searchlib/fef/feature_type.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
-#include <vespa/searchlib/fef/properties.h>
 #include <vespa/eval/tensor/default_tensor.h>
 #include <vespa/eval/eval/value_type.h>
-#include <vespa/searchlib/fef/feature_type.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".features.tensor_from_labels_feature");
 
 using namespace search::fef;
 using search::attribute::IAttributeVector;

@@ -1,20 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
+#include "attributefilesavetarget.h"
+#include "attributevector.h"
+#include <vespa/searchlib/common/fileheadercontext.h>
+#include <vespa/vespalib/data/fileheader.h>
+#include <vespa/vespalib/data/databuffer.h>
+#include <vespa/vespalib/util/error.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.attributefilesavetarget");
 
-#include "attributefilesavetarget.h"
-#include "attributevector.h"
-#include <vespa/vespalib/data/fileheader.h>
-#include <vespa/vespalib/data/databuffer.h>
-#include <vespa/searchlib/common/fileheadercontext.h>
-#include <vespa/vespalib/util/error.h>
-
 using vespalib::getLastErrorString;
 
-namespace search
-{
+namespace search {
 
 using common::FileHeaderContext;
 

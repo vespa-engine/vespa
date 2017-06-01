@@ -1,9 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".features.debug_wait");
 #include "debug_attribute_wait.h"
+#include <thread>
 
 using search::attribute::IAttributeVector;
 
@@ -58,7 +56,7 @@ DebugAttributeWaitExecutor::execute(uint32_t docId)
                 ;
         } else {
             int rem = (int)(millis - time.MilliSecsToNow());
-            FastOS_Thread::Sleep(rem);
+            std::this_thread::sleep_for(std::chrono::milliseconds(rem));
         }
     }
     outputs().set_number(0, 1.0e-6 * time.MicroSecsToNow());

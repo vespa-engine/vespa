@@ -2,16 +2,14 @@
 // Copyright (C) 1998-2003 Fast Search & Transfer ASA
 // Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/util/error.h>
-#include <memory>
-#include <string>
+#include <vespa/fastos/file.h>
+
+#include <vespa/log/log.h>
 LOG_SETUP(".filekit");
 
-namespace search
-{
+namespace search {
 
 using vespalib::getLastErrorString;
 

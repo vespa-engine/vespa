@@ -1,16 +1,15 @@
 // Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "reference_attribute.h"
+#include "reference_attribute_saver.h"
 #include "attributesaver.h"
-#include <vespa/vespalib/data/fileheader.h>
 #include "readerbase.h"
 #include <vespa/searchlib/datastore/unique_store_builder.h>
 #include <vespa/searchlib/datastore/datastore.hpp>
 #include <vespa/searchlib/datastore/unique_store.hpp>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
-#include "reference_attribute_saver.h"
+#include <vespa/vespalib/data/fileheader.h>
 
 namespace search {
 namespace attribute {

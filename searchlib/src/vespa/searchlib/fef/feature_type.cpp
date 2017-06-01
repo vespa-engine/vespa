@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "feature_type.h"
+#include <cassert>
 
 namespace search {
 namespace fef {
@@ -20,6 +20,12 @@ FeatureType
 FeatureType::object(const TYPE &type_in)
 {
     return FeatureType(std::make_unique<TYPE>(type_in));
+}
+
+const FeatureType::TYPE &
+FeatureType::type() const {
+    assert(_type);
+    return *_type;
 }
 
 } // namespace fef

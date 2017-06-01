@@ -1,15 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "btreestore.h"
 #include "btreestore.hpp"
 #include "btreeiterator.hpp"
 
-namespace search
-{
-
-namespace btree
-{
+namespace search::btree {
 
 template class BTreeStore<uint32_t, uint32_t,
                           NoAggregated,
@@ -27,6 +22,4 @@ template class BTreeStore<uint32_t, int32_t,
                           BTreeDefaultTraits,
                           MinMaxAggrCalc>;
 
-} // namespace btree
-
-} // namespace search
+}

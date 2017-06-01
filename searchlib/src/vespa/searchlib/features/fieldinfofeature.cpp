@@ -1,9 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".features.fieldinfo");
-
+#include "fieldinfofeature.h"
+#include "valuefeature.h"
+#include "utils.h"
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/fieldtype.h>
@@ -11,9 +10,6 @@ LOG_SETUP(".features.fieldinfo");
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/handle.h>
 #include <sstream>
-#include "fieldinfofeature.h"
-#include "valuefeature.h"
-#include "utils.h"
 
 namespace search {
 namespace features {

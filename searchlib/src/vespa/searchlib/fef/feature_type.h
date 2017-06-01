@@ -28,10 +28,7 @@ public:
     FeatureType(const FeatureType &rhs);
     bool is_object() const { return (_type.get() != nullptr); }
     operator bool() const { return is_object(); }
-    const TYPE &type() const {
-        assert(_type);
-        return *_type;
-    }
+    const TYPE &type() const;
     static const FeatureType &number() { return _number; }
     static FeatureType object(const TYPE &type_in);
 };

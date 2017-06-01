@@ -1,14 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "fieldinverter.h"
+#include "ordereddocumentinserter.h"
 #include <vespa/document/datatype/urldatatype.h>
 #include <vespa/searchlib/util/url.h>
 #include <stdexcept>
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/searchlib/common/sort.h>
-#include "ordereddocumentinserter.h"
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/document/annotation/annotation.h>

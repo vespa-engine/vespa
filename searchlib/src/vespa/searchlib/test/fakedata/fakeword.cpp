@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".fakeword");
 #include "fakeword.h"
 
 #include <vespa/searchlib/index/postinglistfile.h>
@@ -609,7 +606,7 @@ FakeWord::validate(std::shared_ptr<FieldReader> &fieldReader,
                 features._wordPositions.begin();
 
             TermFieldMatchData *tfmd = matchData[0];
-            LOG_ASSERT(tfmd != 0);
+            assert(tfmd != 0);
             tfmd->reset(features._docId);
 
             uint32_t elementResidue = features._elements.size();

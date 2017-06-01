@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/expression/debugwaitfunctionnode.h>
+#include "debugwaitfunctionnode.h"
+#include <vespa/fastos/time.h>
+#include <thread>
 
 namespace search {
 namespace expression {
@@ -40,7 +41,7 @@ DebugWaitFunctionNode::onExecute() const
                 ;
         } else {
             int rem = (int)(millis - time.MilliSecsToNow());
-            FastOS_Thread::Sleep(rem);
+            std::this_thread::sleep_for(std::chrono::milliseconds(rem));
         }
     }
     getArg().execute();

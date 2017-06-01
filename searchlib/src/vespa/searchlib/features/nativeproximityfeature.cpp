@@ -1,15 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".features.nativeproximityfeature");
+#include "nativeproximityfeature.h"
+#include "valuefeature.h"
+#include "utils.h"
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/itablemanager.h>
 #include <vespa/searchlib/fef/properties.h>
-#include "nativeproximityfeature.h"
-#include "valuefeature.h"
-#include "utils.h"
 #include <map>
 
 using namespace search::fef;
@@ -47,10 +44,6 @@ NativeProximityExecutor::calculateScoreForPair(const TermPair & pair, uint32_t f
         (a.significance() * a.termData()->getWeight().percent() +
          b.significance() * b.termData()->getWeight().percent());
     feature_t score = (forwardScore + reverseScore) * termPairWeight / param.maxTableSum;
-    //LOG(debug, "calculateScoreForPair: pair(%u,%u), fieldId(%u), forwardScore(%f), reverseScore(%f), "
-        //"termPairWeight(%f), maxTableSum(%f), score(%f)",
-        //fieldId, a.termData()->getUniqueId(), b.termData()->getUniqueId(), forwardScore, reverseScore,
-        //termPairWeight, _params.maxTableSums[fieldId], score);
     return score;
 }
 

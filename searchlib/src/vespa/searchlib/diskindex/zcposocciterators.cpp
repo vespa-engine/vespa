@@ -1,15 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".diskindex.zcposocciterators");
 #include "zcposocciterators.h"
 
-namespace search
-{
-
-namespace diskindex
-{
+namespace search::diskindex {
 
 using search::fef::TermFieldMatchDataArray;
 using search::bitcompression::PosOccFieldsParams;
@@ -26,7 +19,7 @@ Zc4RareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimi
     : Zc4RareWordPostingIterator<bigEndian>(matchData, start, docIdLimit),
       _decodeContextReal(start.getOccurences(), start.getBitOffset(), bitLength, fieldsParams)
 {
-    LOG_ASSERT(!matchData.valid() || (fieldsParams->getNumFields() == matchData.size()));
+    assert(!matchData.valid() || (fieldsParams->getNumFields() == matchData.size()));
     _decodeContext = &_decodeContextReal;
 }
 
@@ -40,7 +33,7 @@ Zc4PosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit,
     : ZcPostingIterator<bigEndian>(minChunkDocs, false, counts, matchData, start, docIdLimit),
       _decodeContextReal(start.getOccurences(), start.getBitOffset(), bitLength, fieldsParams)
 {
-    LOG_ASSERT(!matchData.valid() || (fieldsParams->getNumFields() == matchData.size()));
+    assert(!matchData.valid() || (fieldsParams->getNumFields() == matchData.size()));
     _decodeContext = &_decodeContextReal;
 }
 
@@ -53,7 +46,7 @@ ZcRareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit
     : ZcRareWordPostingIterator<bigEndian>(matchData, start, docIdLimit),
       _decodeContextReal(start.getOccurences(), start.getBitOffset(), bitLength, fieldsParams)
 {
-    LOG_ASSERT(!matchData.valid() || (fieldsParams->getNumFields() == matchData.size()));
+    assert(!matchData.valid() || (fieldsParams->getNumFields() == matchData.size()));
     _decodeContext = &_decodeContextReal;
 }
 
@@ -67,7 +60,7 @@ ZcPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit,
     : ZcPostingIterator<bigEndian>(minChunkDocs, true, counts, matchData, start, docIdLimit),
       _decodeContextReal(start.getOccurences(), start.getBitOffset(), bitLength, fieldsParams)
 {
-    LOG_ASSERT(!matchData.valid() || (fieldsParams->getNumFields() == matchData.size()));
+    assert(!matchData.valid() || (fieldsParams->getNumFields() == matchData.size()));
     _decodeContext = &_decodeContextReal;
 }
 
@@ -84,6 +77,4 @@ template class ZcRareWordPosOccIterator<false>;
 template class ZcPosOccIterator<true>;
 template class ZcPosOccIterator<false>;
 
-} // namespace diskindex
-
-} // namespace search
+}

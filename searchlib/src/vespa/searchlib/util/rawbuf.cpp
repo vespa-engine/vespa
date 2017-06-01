@@ -2,21 +2,21 @@
 // Copyright (C) 1998-2003 Fast Search & Transfer ASA
 // Copyright (C) 2003 Overture Services Norway AS
 
-
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/util/rawbuf.h>
+#include "rawbuf.h"
 #include <vespa/vespalib/util/compress.h>
+#include <vespa/fastos/file.h>
+#include <cassert>
 
 namespace search {
 
 static inline size_t smin(size_t a, size_t b) { return (a < b) ? a : b; }
 
 RawBuf::RawBuf(size_t size)
-    : _bufStart(NULL),
-      _bufEnd(NULL),
-      _bufFillPos(NULL),
-      _bufDrainPos(NULL),
-      _initialBufStart(NULL),
+    : _bufStart(nullptr),
+      _bufEnd(nullptr),
+      _bufFillPos(nullptr),
+      _bufDrainPos(nullptr),
+      _initialBufStart(nullptr),
       _initialSize(size)
 {
     if (size > 0) {
@@ -28,10 +28,10 @@ RawBuf::RawBuf(size_t size)
 
 
 RawBuf::RawBuf(char *start, size_t size)
-    : _bufStart(NULL),
-      _bufEnd(NULL),
-      _bufFillPos(NULL),
-      _bufDrainPos(NULL),
+    : _bufStart(nullptr),
+      _bufEnd(nullptr),
+      _bufFillPos(nullptr),
+      _bufDrainPos(nullptr),
       _initialBufStart(start),
       _initialSize(size)
 {
@@ -176,13 +176,13 @@ RawBuf::Reuse()
     if (static_cast<size_t>(_bufEnd - _bufStart) > _initialSize * 4) {
         free(_bufStart);
         if (_initialSize > 0) {
-            if (_initialBufStart != NULL)
+            if (_initialBufStart != nullptr)
                 _bufStart = _initialBufStart;
             else
                 _bufStart = static_cast<char *>(malloc(_initialSize));
-            assert(_bufStart != NULL);
+            assert(_bufStart != nullptr);
         } else
-            _bufStart = NULL;
+            _bufStart = nullptr;
         _bufEnd = _bufStart + _initialSize;
     }
     _bufDrainPos = _bufFillPos = _bufStart;
@@ -355,6 +355,12 @@ RawBuf::readFile(FastOS_FileInterface &file, size_t maxlen)
     if (got > 0)
         _bufFillPos += got;
     return got;
+}
+
+void
+RawBuf::ensureSizeInternal(size_t size) {
+    expandBuf(size);
+    assert(static_cast<size_t>(_bufEnd - _bufFillPos) >= size);
 }
 
 }

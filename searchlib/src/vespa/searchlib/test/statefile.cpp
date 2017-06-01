@@ -1,19 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+#include "statefile.h"
 #include <vespa/searchlib/util/statefile.h>
 #include <iostream>
 #include <fstream>
 #include <string>
-#include "statefile.h"
 
-namespace search
-{
-
-namespace test
-{
-
-namespace statefile
-{
+namespace search::test::statefile {
 
 vespalib::string
 readState(StateFile &sf)
@@ -22,7 +14,6 @@ readState(StateFile &sf)
     sf.readState(buf);
     return vespalib::string(buf.begin(), buf.end());
 }
-
 
 std::vector<vespalib::string>
 readHistory(const char *name)
@@ -38,11 +29,6 @@ readHistory(const char *name)
         res.push_back(line + "\n");
     }
     return res;
-}
-
-
-}
-
 }
 
 }

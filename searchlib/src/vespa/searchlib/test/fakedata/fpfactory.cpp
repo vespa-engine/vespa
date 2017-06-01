@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".fpfactory");
 #include "fakeegcompr64filterocc.h"
 #include "fakefilterocc.h"
 #include "fakezcbfilterocc.h"
@@ -11,11 +8,7 @@ LOG_SETUP(".fpfactory");
 #include "fpfactory.h"
 #include "fakewordset.h"
 
-namespace search
-{
-
-namespace fakedata
-{
+namespace search::fakedata {
 
 using index::Schema;
 
@@ -113,8 +106,6 @@ FPFactoryInit::forceLink()
     FakeZcbFilterOcc::forceLink();
     FakeZcFilterOcc::forceLink();
     FakeMemTreeOcc::forceLink();
-};
+}
 
-} // namespace fakedata
-
-} // namespace search
+}

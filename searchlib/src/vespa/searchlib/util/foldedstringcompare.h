@@ -2,7 +2,7 @@
 
 #pragma once
 
-
+#include <cstddef>
 
 namespace search {
 
@@ -54,4 +54,3 @@ public:
 };
 
 } // namespace search
-

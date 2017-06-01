@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "urlfieldinverter.h"
 #include "fieldinverter.h"
 #include <vespa/document/datatype/urldatatype.h>
@@ -9,6 +8,7 @@
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/searchlib/common/sort.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".memoryindex.urlfieldinverter");
 

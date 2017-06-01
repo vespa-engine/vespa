@@ -1,9 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".features.tensor_from_weighted_set_feature");
-
 #include "tensor_from_weighted_set_feature.h"
 
 #include "constant_tensor_executor.h"
@@ -11,15 +7,17 @@ LOG_SETUP(".features.tensor_from_weighted_set_feature");
 #include "tensor_from_attribute_executor.h"
 #include "weighted_set_parser.hpp"
 
+#include <vespa/searchlib/fef/properties.h>
+#include <vespa/searchlib/fef/feature_type.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
-#include <vespa/searchlib/fef/properties.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/default_tensor.h>
-#include <memory>
 #include <vespa/eval/eval/value_type.h>
-#include <vespa/searchlib/fef/feature_type.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".features.tensor_from_weighted_set_feature");
 
 using namespace search::fef;
 using search::attribute::IAttributeVector;

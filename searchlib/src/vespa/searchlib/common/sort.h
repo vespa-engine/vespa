@@ -6,10 +6,9 @@
 #include <functional>
 #include <limits>
 #include <algorithm>
+#include <cstring>
 
-
-namespace search
-{
+namespace search {
 
 bool radix_prepare(unsigned int n, unsigned int last[257], unsigned int ptr[256], unsigned int cnt[256]);
 

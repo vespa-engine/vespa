@@ -1,7 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "documentinverter.h"
+#include "fieldinverter.h"
+#include "urlfieldinverter.h"
+#include "dictionary.h"
+#include "ordereddocumentinserter.h"
 #include <vespa/document/datatype/urldatatype.h>
 #include <vespa/document/annotation/alternatespanlist.h>
 #include <vespa/searchlib/util/url.h>
@@ -10,19 +13,12 @@
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/searchlib/common/sort.h>
 #include <vespa/document/repo/fixedtyperepo.h>
-#include "fieldinverter.h"
-#include "urlfieldinverter.h"
-#include "dictionary.h"
-#include "ordereddocumentinserter.h"
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/log/log.h>
+
 LOG_SETUP(".memoryindex.documentinverter");
 
-namespace search
-{
-
-namespace memoryindex
-{
+namespace search::memoryindex {
 
 using document::Field;
 using document::FieldValue;
@@ -208,8 +204,5 @@ DocumentInverter::pushDocuments(Dictionary &dict,
     }
 }
 
-
-} // namespace memoryindex
-
-} // namespace search
+}
 

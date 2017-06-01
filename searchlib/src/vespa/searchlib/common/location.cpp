@@ -1,11 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Copyright (C) 1999-2003 Fast Search & Transfer ASA
 // Copyright (C) 2003 Overture Services Norway AS
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/common/location.h>
 
-namespace search {
-namespace common {
+#include "location.h"
+
+namespace search::common {
 
 Location::Location() :
       _zBoundingBox(0,0,0,0),
@@ -201,5 +200,4 @@ bool Location::parse(const vespalib::string &locStr)
     return true;
 }
 
-}
 }

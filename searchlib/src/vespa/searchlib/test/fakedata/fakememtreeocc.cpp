@@ -1,27 +1,22 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".fakememtreeocc");
-#include <vespa/searchlib/queryeval/iterators.h>
 #include "fakememtreeocc.h"
+#include "fpfactory.h"
+#include <vespa/searchlib/queryeval/iterators.h>
 #include <vespa/searchlib/btree/btreeroot.hpp>
 #include <vespa/searchlib/btree/btreeiterator.hpp>
 #include <vespa/searchlib/btree/btreenodeallocator.hpp>
 #include <vespa/searchlib/btree/btreenode.hpp>
 #include <vespa/searchlib/btree/btreenodestore.hpp>
 #include <vespa/searchlib/memoryindex/postingiterator.h>
-#include "fpfactory.h"
 #include <vespa/searchlib/util/postingpriorityqueue.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".fakememtreeocc");
 
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataPosition;
 
-namespace search
-{
-
-namespace fakedata
-{
+namespace search::fakedata {
 
 static FPFactoryInit
 init(std::make_pair("MemTreeOcc",
@@ -298,7 +293,6 @@ FakeMemTreeOccMgr::compactTrees()
         itr.begin();
         tree.setRoot(itr.moveFirstLeafNode(tree.getRoot()), _allocator);
         while (itr.valid()) {
-            // LOG(info, "Leaf moved to %d", UNWRAP(itr.getKey()));
             itr.moveNextLeafNode();
         }
     }
@@ -424,7 +418,4 @@ FakeMemTreeOcc2Factory::setup(const std::vector<const FakeWord *> &fws)
     LOG(info, "done compacting trees");
 }
 
-
-} // namespace fakedata
-
-} // namespace search
+}

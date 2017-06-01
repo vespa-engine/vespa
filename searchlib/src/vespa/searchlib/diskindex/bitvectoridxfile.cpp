@@ -2,21 +2,14 @@
 // Copyright (C) 1998-2003 Fast Search & Transfer ASA
 // Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".diskindex.bitvectoridxfile");
-#include <vespa/searchlib/common/bitvector.h>
 #include "bitvectoridxfile.h"
 #include <vespa/searchlib/index/bitvectorkeys.h>
+#include <vespa/searchlib/common/bitvector.h>
+#include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/data/fileheader.h>
-#include <vespa/searchlib/common/fileheadercontext.h>
 
-namespace search
-{
-
-namespace diskindex
-{
+namespace search::diskindex {
 
 using vespalib::nbostream;
 using search::index::BitVectorWordSingleKey;
@@ -227,7 +220,4 @@ BitVectorIdxFileWrite::close()
     }
 }
 
-
-} // namespace diskindex
-
-} // namespace search
+}

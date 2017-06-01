@@ -1,23 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".index.postinglistparams");
 #include "postinglistparams.h"
 #include <sstream>
 
-namespace
-{
+namespace {
 
 vespalib::string empty;
 
 }
 
-namespace search
-{
-
-namespace index
-{
+namespace search::index {
 
 bool
 PostingListParams::isSet(const vespalib::string &key) const
@@ -133,6 +125,4 @@ template void
 PostingListParams::get<uint64_t>(const vespalib::string &key,
                                  uint64_t &val) const;
 
-} // namespace index
-
-} // namespace search
+}

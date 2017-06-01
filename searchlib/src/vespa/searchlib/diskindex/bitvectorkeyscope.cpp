@@ -1,17 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "bitvectorkeyscope.h"
 #include <vespa/vespalib/objects/nbostream.h>
-
+#include <cassert>
 
 using search::diskindex::BitVectorKeyScope;
 
-namespace search
-{
-
-namespace diskindex
-{
+namespace search::diskindex {
 
 const char *getBitVectorKeyScopeSuffix(BitVectorKeyScope scope)
 {
@@ -21,8 +16,6 @@ const char *getBitVectorKeyScopeSuffix(BitVectorKeyScope scope)
     default:
         return ".idx";
     }
-}
-
 }
 
 }
@@ -48,8 +41,7 @@ const BitVectorKeyScope scopes[] = { BitVectorKeyScope::SHARED_WORDS,
 }
 
 
-namespace vespalib
-{
+namespace vespalib {
 
 nbostream &
 operator<<(nbostream &stream, const BitVectorKeyScope &scope)

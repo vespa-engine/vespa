@@ -1,15 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "loadedenumvalue.h"
 #include <vespa/searchlib/common/sort.h>
 
-
-namespace search
-{
-
-namespace attribute
-{
+namespace search {
+namespace attribute {
 
 void
 sortLoadedByEnum(LoadedEnumAttributeVector &loaded)
@@ -23,6 +18,5 @@ sortLoadedByEnum(LoadedEnumAttributeVector &loaded)
 }
 
 } // namespace attribute
-
 } // namespace search
 

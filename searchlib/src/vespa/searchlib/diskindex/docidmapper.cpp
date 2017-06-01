@@ -1,22 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".diskindex.docidmapper");
+#include "docidmapper.h"
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/searchlib/common/documentsummary.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/fastlib/io/bufferedfile.h>
-#include "docidmapper.h"
 
 #define NO_DOC static_cast<uint32_t>(-1)
 
-namespace search
-{
-
-namespace diskindex
-{
-
+namespace search::diskindex {
 
 DocIdMapping::DocIdMapping()
     : _docIdLimit(0u),
@@ -68,6 +60,4 @@ DocIdMapping::readDocIdLimit(const vespalib::string &mergedDir)
 
 
 
-} // namespace diskindex
-
-} // namespace search
+}

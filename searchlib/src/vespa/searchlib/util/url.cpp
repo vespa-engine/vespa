@@ -2,20 +2,13 @@
 // Copyright (C) 2000-2003 Fast Search & Transfer ASA
 // Copyright (C) 2003 Overture Services Norway AS
 
-/*
- *   Note for bugs / fixes:
- *   Please update fastserver4/test/regress/url/testurl.cpp
- *   with test for new url's when bugs are discovered/fixed.
- */
+#include "url.h"
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
-#include <vespa/searchlib/util/url.h>
-
 LOG_SETUP(".searchlib.util.url");
 
-namespace search {
-namespace util {
+namespace search::util {
+
 bool
 URL::IsAlphaChar(unsigned char c) // According to RFC2396
 {
@@ -189,7 +182,7 @@ URL::URL(const unsigned char *url, size_t len) :
     _gotCompleteURL(false)
 {
     Reset();
-    if (url != NULL)
+    if (url != nullptr)
         SetURL(url, len);
 }
 
@@ -303,7 +296,7 @@ URL::SetURL(const unsigned char *url, size_t length)
             // Locate main-tld info.
             ptmp = reinterpret_cast<unsigned char *>
                    (strrchr(reinterpret_cast<char *>(_host), '.'));
-            if (ptmp != NULL) {
+            if (ptmp != nullptr) {
                 _maintld = &ptmp[1];
                 _startMainTld = _startHost + (_maintld - _host);
                 if (*_tld == '\0') {
@@ -315,7 +308,7 @@ URL::SetURL(const unsigned char *url, size_t length)
             if (_siteowner[0] == '\0') {
                 pso = reinterpret_cast<unsigned char *>
                       (strrchr(reinterpret_cast<char *>(_host), '.'));
-                if (pso != NULL && pso > _host) {
+                if (pso != nullptr && pso > _host) {
                     pso--;
                     solen = 0;
                     while (pso > _host && *pso != '.') {
@@ -367,7 +360,7 @@ URL::SetURL(const unsigned char *url, size_t length)
 
         extension = reinterpret_cast<unsigned char *>
                     (strrchr(reinterpret_cast<char *>(_filename), '.'));
-        if (extension != NULL) {
+        if (extension != nullptr) {
             extension++;
             strcpy(reinterpret_cast<char *>(_extension),
                    reinterpret_cast<char *>(extension));
@@ -376,7 +369,7 @@ URL::SetURL(const unsigned char *url, size_t length)
 
         // Parse params part.
         if ((ptmp = reinterpret_cast<unsigned char *>
-             (strchr(reinterpret_cast<char *>(_path), ';'))) != NULL) {
+             (strchr(reinterpret_cast<char *>(_path), ';'))) != nullptr) {
             ptmp++;
             _startParams = _startPath + (ptmp - _path);
             ParseURLPart<IsParamsChar>(ptmp, _params, sizeof(_params));
@@ -457,7 +450,7 @@ URL::GetToken(URL_CONTEXT &ctx)
     if (_token[0] != '\0')
         return _token;
     else
-        return NULL;
+        return nullptr;
 }
 
 const char *
@@ -546,10 +539,9 @@ URL::Dump()
 
     const unsigned char *token;
     URL_CONTEXT ctx;
-    while ((token = GetToken(ctx)) != NULL) {
+    while ((token = GetToken(ctx)) != nullptr) {
         printf("TOKEN: %s '%s'\n", ContextName(ctx), token);
     }
 }
 
-}
 }

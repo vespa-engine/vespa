@@ -1,14 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".fakeegcompr64filterocc");
 #include "fakeegcompr64filterocc.h"
+#include "fpfactory.h"
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/queryeval/iterators.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
-#include "fpfactory.h"
 
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataPosition;
@@ -16,11 +13,7 @@ using search::fef::TermFieldMatchDataPosition;
 #include "bitencode64.h"
 #include "bitdecode64.h"
 
-namespace search
-{
-
-namespace fakedata
-{
+namespace search::fakedata {
 
 #define DEBUG_EGCOMPR64FILTEROCC_PRINTF 0
 #define DEBUG_EGCOMPR64FILTEROCC_ASSERT 1
@@ -1512,7 +1505,4 @@ createIterator(const fef::TermFieldMatchDataArray &matchData) const
             matchData);
 }
 
-
-} // namespace fakedata
-
-} // namespace search
+}

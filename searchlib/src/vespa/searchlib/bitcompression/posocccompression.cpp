@@ -2,7 +2,6 @@
 // Copyright (C) 2002-2003 Fast Search & Transfer ASA
 // Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
 #include "compression.h"
 #include "posocccompression.h"
 #include <vespa/searchlib/index/schemautil.h>
@@ -10,6 +9,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/data/fileheader.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".posocccompression");
 

@@ -2,8 +2,11 @@
 
 #pragma once
 
-namespace search
-{
+#include <cstdint>
+#include <cstddef>
+#include <sys/types.h>
+
+namespace search {
 
 class StateFile;
 
@@ -17,44 +20,22 @@ class IOErrorHandler
     bool _trapped;
     bool _fired;
 
-    using FailedHandler = void (*)(const char *op,
-                                   const char *file,
-                                   int error,
-                                   int64_t offset,
-                                   size_t len,
-                                   ssize_t rlen);
-    void
-    trap();
+    using FailedHandler = void (*)(const char *op, const char *file, int error,
+                                   int64_t offset, size_t len, ssize_t rlen);
+    void trap();
+    void untrap();
 
-    void
-    untrap();
+    static void forward(const char *op, const char *file, int error,
+                        int64_t offset, size_t len, ssize_t rlen);
 
-    static void
-    forward(const char *op,
-            const char *file,
-            int error,
-            int64_t offset,
-            size_t len,
-            ssize_t rlen);
-
-    void
-    handle(const char *op,
-           const char *file,
-           int error,
-           int64_t offset,
-           size_t len,
-           ssize_t rlen);
+    void handle(const char *op, const char *file, int error,
+                int64_t offset, size_t len, ssize_t rlen);
 
 public:
     IOErrorHandler(StateFile *stateFile);
-
     ~IOErrorHandler();
 
-    bool
-    fired() const
-    {
-        return _fired;
-    }
+    bool fired() const { return _fired; }
 };
 
 

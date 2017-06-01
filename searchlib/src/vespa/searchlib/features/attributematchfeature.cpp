@@ -1,16 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".features.attributematchfeature");
-
-#include <vespa/searchcommon/attribute/attributecontent.h>
-#include <vespa/searchlib/fef/featurenamebuilder.h>
-#include <vespa/searchlib/fef/fieldinfo.h>
-#include <vespa/searchlib/fef/properties.h>
 #include "attributematchfeature.h"
 #include "utils.h"
 #include "valuefeature.h"
+#include <vespa/searchlib/fef/featurenamebuilder.h>
+#include <vespa/searchlib/fef/fieldinfo.h>
+#include <vespa/searchlib/fef/properties.h>
+#include <vespa/searchcommon/attribute/attributecontent.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".features.attributematchfeature");
 
 using namespace search::attribute;
 using namespace search::fef;

@@ -1,20 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include "zcposocc.h"
 #include <vespa/searchlib/index/postinglistcounts.h>
 #include <vespa/searchlib/index/postinglistcountfile.h>
 #include <vespa/searchlib/index/postinglistfile.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 
-LOG_SETUP(".diskindex.zcposocc");
 
-namespace search
-{
-
-namespace diskindex
-{
+namespace search::diskindex {
 
 using search::bitcompression::PosOccFieldsParams;
 using search::bitcompression::EG2PosOccDecodeContext;
@@ -131,7 +124,4 @@ ZcPosOccSeqWrite::ZcPosOccSeqWrite(const Schema &schema,
     _fieldsParams.setSchemaParams(schema, indexId);
 }
 
-
-} // namespace diskindex
-
-} // namespace search
+}

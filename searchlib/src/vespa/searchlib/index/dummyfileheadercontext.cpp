@@ -1,18 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".index.dummyfileheadercontext");
 #include "dummyfileheadercontext.h"
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/searchlib/util/fileheadertk.h>
 #include <vespa/vespalib/util/host_name.h>
+#include <unistd.h>
 
-namespace search
-{
-
-namespace index
-{
+namespace search::index {
 
 vespalib::string DummyFileHeaderContext::_creator;
 
@@ -65,7 +59,4 @@ DummyFileHeaderContext::setCreator(const vespalib::string &creator)
     _creator = creator;
 }
 
-
-} // namespace index
-
-} // namespace search
+}

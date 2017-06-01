@@ -1,16 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".features.fieldlength");
 
+#include "fieldlengthfeature.h"
+#include "valuefeature.h"
+#include "utils.h"
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/fieldtype.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include "fieldlengthfeature.h"
-#include "valuefeature.h"
-#include "utils.h"
 
 using namespace search::fef;
 

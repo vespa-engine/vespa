@@ -2,12 +2,10 @@
 // Copyright (C) 1998-2003 Fast Search & Transfer ASA
 // Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
 #include "growablebitvector.h"
 
 /////////////////////////////////
-namespace search
-{
+namespace search {
 
 using vespalib::GenerationHeldBase;
 using vespalib::GenerationHolder;

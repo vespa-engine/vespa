@@ -2,16 +2,12 @@
 // Copyright (C) 2002-2003 Fast Search & Transfer ASA
 // Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-#include <vespa/searchlib/util/comprbuffer.h>
-#include <vespa/searchlib/util/comprfile.h>
+#include "comprfile.h"
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/fastos/file.h>
+#include <cassert>
 
-LOG_SETUP(".comprbuffer");
-
-namespace search
-{
+namespace search {
 
 using vespalib::nbostream;
 

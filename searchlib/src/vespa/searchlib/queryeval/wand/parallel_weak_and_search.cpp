@@ -1,16 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
+#include "parallel_weak_and_search.h"
+#include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
+#include <vespa/searchlib/queryeval/monitoring_dump_iterator.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
+#include <vespa/vespalib/objects/visit.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".queryeval.parallel_weak_and_search");
-#include "parallel_weak_and_search.h"
-#include <vespa/searchlib/queryeval/monitoring_dump_iterator.h>
-#include <vespa/searchlib/queryeval/monitoring_search_iterator.h>
-#include "wand_parts.h"
-#include <vespa/vespalib/objects/visit.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/searchlib/queryeval/emptysearch.h>
-#include <vespa/searchlib/fef/matchdatalayout.h>
-#include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
 
 using vespalib::make_string;
 

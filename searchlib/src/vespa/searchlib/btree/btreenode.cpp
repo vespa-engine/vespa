@@ -1,11 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "btreenode.h"
 #include "btreenode.hpp"
 
-namespace search {
-namespace btree {
+namespace search::btree {
 
 BTreeNoLeafData BTreeNoLeafData::_instance;
 
@@ -34,4 +32,3 @@ template class BTreeLeafNodeTemp<uint32_t, int32_t, MinMaxAggregated,
 template class BTreeLeafNodeTemp<uint32_t, BTreeNoLeafData, NoAggregated, 16>;
 
 } // namespace search::btree
-} // namespace search
