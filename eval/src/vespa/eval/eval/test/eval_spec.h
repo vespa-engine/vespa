@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <initializer_list>
 #include <cassert>
+#include <vector>
 
 namespace vespalib {
 namespace eval {

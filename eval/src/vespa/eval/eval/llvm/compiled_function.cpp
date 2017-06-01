@@ -1,12 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "compiled_function.h"
-#include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/eval/eval/node_traverser.h>
 #include <vespa/eval/eval/check_type.h>
 #include <vespa/eval/eval/tensor_nodes.h>
 #include <vespa/vespalib/util/classname.h>
+#include <vespa/vespalib/util/benchmark_timer.h>
 
 namespace vespalib {
 namespace eval {

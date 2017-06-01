@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <memory>
 namespace vespalib {
 
 class nbostream;

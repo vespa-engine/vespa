@@ -3,8 +3,9 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include <map>
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <vector>
+#include <map>
 
 namespace vespalib {
 namespace tensor {
