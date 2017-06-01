@@ -1,16 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("vespa-gen-testdocs");
-#include <algorithm>
-#include <string>
+
 #include <vespa/searchlib/util/rand48.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/fastlib/io/bufferedfile.h>
+#include <vespa/fastos/app.h>
 #include <iostream>
+#include <algorithm>
+#include <string>
 #include <openssl/sha.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("vespa-gen-testdocs");
 
 typedef vespalib::hash_set<vespalib::string> StringSet;
 typedef vespalib::hash_set<uint32_t> UIntSet;

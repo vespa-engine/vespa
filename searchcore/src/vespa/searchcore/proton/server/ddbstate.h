@@ -4,9 +4,9 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <mutex>
 #include <condition_variable>
+#include <vector>
 
-namespace proton
-{
+namespace proton {
 
 /**
  * Track document db main state and validate that state transitions follow
@@ -18,8 +18,7 @@ namespace proton
 class DDBState
 {
 public:
-    enum class State
-    {
+    enum class State {
         CONSTRUCT,
         LOAD,
         REPLAY_TRANSACTION_LOG,
@@ -31,8 +30,7 @@ public:
         DEAD
     };
 
-    enum class ConfigState
-    {
+    enum class ConfigState {
         OK,
         NEED_RESTART
     };
@@ -52,103 +50,53 @@ private:
 
 public:
     DDBState();
-
     ~DDBState();
 
     /**
      * Try to enter LOAD state.  Fail and return false if document db is
      * being shut down.
      */ 
-    bool
-    enterLoadState();
+    bool enterLoadState();
+    bool enterReplayTransactionLogState();
+    bool enterReplaySpoolerState();
+    bool enterRedoReprocessState();
+    bool enterApplyLiveConfigState();
+    bool enterReprocessState();
+    bool enterOnlineState();
+    void enterShutdownState();
+    void enterDeadState();
+    State getState() const { return _state; }
+    static vespalib::string getStateString(State state);
     
-    bool
-    enterReplayTransactionLogState();
-
-    bool
-    enterReplaySpoolerState();
-
-    bool
-    enterRedoReprocessState();
-
-    bool
-    enterApplyLiveConfigState();
-
-    bool
-    enterReprocessState();
-
-    bool
-    enterOnlineState();
-
-    void
-    enterShutdownState();
-
-    void
-    enterDeadState();
-
-    State
-    getState() const
-    {
-        return _state;
-    }
-
-    static vespalib::string
-    getStateString(State state);
-    
-    bool
-    getClosed() const
-    {
+    bool getClosed() const{
         State state(_state);
         return state >= State::SHUTDOWN;
     }
 
-    bool
-    getAllowReconfig() const
-    {
+    bool getAllowReconfig() const {
         State state(_state);
         return state >= State::APPLY_LIVE_CONFIG && state < State::SHUTDOWN;
     }
 
-    bool
-    getAllowPrune() const
-    {
+    bool getAllowPrune() const {
         State state(_state);
         return state == State::ONLINE;
     }
     
-    static bool
-    getDelayedConfig(ConfigState state)
-    {
+    static bool getDelayedConfig(ConfigState state) {
         return state != ConfigState::OK;
     }
     
-    bool
-    getDelayedConfig() const
-    {
+    bool getDelayedConfig() const {
         ConfigState state(_configState);
         return getDelayedConfig(state);
     }
 
-    void
-    clearDelayedConfig();
-
-    ConfigState
-    getConfigState() const
-    {
-        return _configState;
-    }
-
-    static vespalib::string
-    getConfigStateString(ConfigState configState);
-
-    void
-    setConfigState(ConfigState newConfigState);
-
-    void
-    waitForOnlineState();
+    void clearDelayedConfig();
+    ConfigState getConfigState() const { return _configState; }
+    static vespalib::string getConfigStateString(ConfigState configState);
+    void setConfigState(ConfigState newConfigState);
+    void waitForOnlineState();
 };
 
-
-
 } // namespace proton
-

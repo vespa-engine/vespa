@@ -1,20 +1,19 @@
 // Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "document_db_reference_resolver.h"
 #include "gid_to_lid_change_listener.h"
 #include "gid_to_lid_change_registrator.h"
 #include "i_document_db_reference.h"
 #include "i_document_db_reference_registry.h"
+#include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
+#include <vespa/searchcommon/attribute/iattributevector.h>
+#include <vespa/searchlib/attribute/iattributemanager.h>
+#include <vespa/searchlib/attribute/imported_attribute_vector.h>
+#include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/referencedatatype.h>
 #include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/searchcommon/attribute/iattributevector.h>
-#include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
-#include <vespa/searchlib/attribute/iattributemanager.h>
-#include <vespa/searchlib/attribute/imported_attribute_vector.h>
-#include <vespa/searchlib/attribute/reference_attribute.h>
 
 using document::DataType;
 using document::DocumentType;

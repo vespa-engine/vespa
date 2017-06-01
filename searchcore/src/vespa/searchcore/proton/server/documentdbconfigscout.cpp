@@ -1,13 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "documentdbconfigscout.h"
 #include <vespa/searchcore/proton/attribute/attributesconfigscout.h>
 
 using vespa::config::search::AttributesConfig;
 
-namespace proton
-{
+namespace proton {
 
 
 DocumentDBConfig::SP

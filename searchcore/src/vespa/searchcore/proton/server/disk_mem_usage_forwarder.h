@@ -2,12 +2,12 @@
 
 #pragma once
 
-#include <vespa/searchcorespi/index/i_thread_service.h>
 #include "i_disk_mem_usage_notifier.h"
 #include "i_disk_mem_usage_listener.h"
+#include <vespa/searchcorespi/index/i_thread_service.h>
+#include <vector>
 
-namespace proton
-{
+namespace proton {
 
 /**
  * Forwarder for disk/memory usage state changes. Notification is forwarded
@@ -22,10 +22,10 @@ class DiskMemUsageForwarder : public IDiskMemUsageNotifier,
     void forward(DiskMemUsageState state);
 public:
     DiskMemUsageForwarder(searchcorespi::index::IThreadService &executor);
-    virtual ~DiskMemUsageForwarder();
-    virtual void addDiskMemUsageListener(IDiskMemUsageListener *listener) override;
-    virtual void removeDiskMemUsageListener(IDiskMemUsageListener *listener) override;
-    virtual void notifyDiskMemUsage(DiskMemUsageState state) override;
+    ~DiskMemUsageForwarder() override;
+    void addDiskMemUsageListener(IDiskMemUsageListener *listener) override;
+    void removeDiskMemUsageListener(IDiskMemUsageListener *listener) override;
+    void notifyDiskMemUsage(DiskMemUsageState state) override;
 };
 
 } // namespace proton

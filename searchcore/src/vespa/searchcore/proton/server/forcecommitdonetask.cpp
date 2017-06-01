@@ -1,12 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "forcecommitdonetask.h"
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 
-namespace proton
-{
-
+namespace proton {
 
 ForceCommitDoneTask::ForceCommitDoneTask(IDocumentMetaStore &documentMetaStore)
     : _lidsToReuse(),
@@ -15,11 +12,9 @@ ForceCommitDoneTask::ForceCommitDoneTask(IDocumentMetaStore &documentMetaStore)
 {
 }
 
-
 ForceCommitDoneTask::~ForceCommitDoneTask()
 {
 }
-
 
 void
 ForceCommitDoneTask::reuseLids(std::vector<uint32_t> &&lids)
@@ -27,7 +22,6 @@ ForceCommitDoneTask::reuseLids(std::vector<uint32_t> &&lids)
     assert(_lidsToReuse.empty());
     _lidsToReuse = std::move(lids);
 }
-
 
 void
 ForceCommitDoneTask::run()
@@ -43,6 +37,5 @@ ForceCommitDoneTask::run()
         _documentMetaStore.holdUnblockShrinkLidSpace();
     }
 }
-
 
 }  // namespace proton

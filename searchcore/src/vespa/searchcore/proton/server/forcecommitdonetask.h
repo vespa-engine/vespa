@@ -3,9 +3,9 @@
 #pragma once
 
 #include <vespa/vespalib/util/executor.h>
+#include <vector>
 
-namespace proton
-{
+namespace proton {
 
 class IDocumentMetaStore;
 
@@ -32,7 +32,7 @@ class ForceCommitDoneTask : public vespalib::Executor::Task
 public:
     ForceCommitDoneTask(IDocumentMetaStore &documentMetaStore);
 
-    virtual ~ForceCommitDoneTask();
+    ~ForceCommitDoneTask() override;
 
     void reuseLids(std::vector<uint32_t> &&lids);
 
@@ -40,12 +40,11 @@ public:
         _holdUnblockShrinkLidSpace = true;
     }
 
-    virtual void run() override;
+    void run() override;
 
     bool empty() const {
         return _lidsToReuse.empty() && !_holdUnblockShrinkLidSpace;
     }
 };
-
 
 }  // namespace proton

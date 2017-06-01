@@ -1,12 +1,11 @@
 // Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "document_db_reference.h"
+#include "gid_to_lid_mapper_factory.h"
+#include "gid_to_lid_change_registrator.h"
+#include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
-#include "gid_to_lid_mapper_factory.h"
-#include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
-#include "gid_to_lid_change_registrator.h"
 
 namespace proton {
 

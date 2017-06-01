@@ -1,12 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "metrics_engine.h"
+#include "attribute_metrics_collection.h"
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/metricmanager.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.metricsengine");
-#include "attribute_metrics_collection.h"
 
 namespace proton {
 

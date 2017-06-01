@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "tlssyncer.h"
 #include "igetserialnum.h"
 #include <vespa/vespalib/util/threadexecutor.h>
@@ -11,8 +10,7 @@
 using search::makeLambdaTask;
 using search::SerialNum;
 
-namespace proton
-{
+namespace proton {
 
 TlsSyncer::TlsSyncer(vespalib::ThreadExecutor &executor,
                      const IGetSerialNum &getSerialNum,

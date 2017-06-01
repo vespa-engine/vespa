@@ -1,13 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <mutex>
 #include "reprocessingrunner.h"
 #include "i_reprocessing_task.h"
+#include <mutex>
 
-namespace proton
-{
-
+namespace proton {
 
 ReprocessingRunner::ReprocessingRunner()
     : _lock(),
@@ -84,6 +81,5 @@ ReprocessingRunner::getProgress() const
         return 1.0;
     return weightedProgress / weight;
 }
-
 
 } // namespace proton

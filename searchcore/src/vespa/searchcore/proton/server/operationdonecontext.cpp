@@ -1,12 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "operationdonecontext.h"
 #include <vespa/searchcore/proton/common/feedtoken.h>
 
-namespace proton
-{
-
+namespace proton {
 
 OperationDoneContext::OperationDoneContext(std::unique_ptr<FeedToken> token,
                                            const FeedOperation::Type opType,
@@ -17,12 +14,10 @@ OperationDoneContext::OperationDoneContext(std::unique_ptr<FeedToken> token,
 {
 }
 
-
 OperationDoneContext::~OperationDoneContext()
 {
     ack();
 }
-
 
 void
 OperationDoneContext::ack()
@@ -33,12 +28,10 @@ OperationDoneContext::ack()
     }
 }
 
-
 bool
 OperationDoneContext::shouldTrace(uint32_t traceLevel)
 {
     return _token ? _token->shouldTrace(traceLevel) : false;
 }
-
 
 }  // namespace proton
