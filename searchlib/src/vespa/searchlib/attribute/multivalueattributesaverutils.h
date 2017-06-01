@@ -71,4 +71,4 @@ public:
     void writeWeights(vespalib::ConstArrayRef<MultiValueT>) {}
 };
 
-} // namespace search::multivalueattributesaver
+}

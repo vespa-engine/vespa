@@ -9,8 +9,7 @@
 
 namespace vespalib { class GenericHeader; }
 
-namespace search::diskindex
-{
+namespace search::diskindex {
 
 /**
  * Dictionary file containing words and counts for words.

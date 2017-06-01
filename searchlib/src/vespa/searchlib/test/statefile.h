@@ -7,12 +7,10 @@ namespace search {
 
 class StateFile;
 
-namespace test {
-namespace statefile {
+namespace test::statefile {
 
 vespalib::string readState(StateFile &sf);
 std::vector<vespalib::string> readHistory(const char *name);
 
-}
 }
 }
