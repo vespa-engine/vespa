@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.model.admin.monitoring.DefaultMetricsConsumer.VESPA_CONSUMER_ID;
+import static com.yahoo.vespa.model.admin.monitoring.SystemMetrics.systemMetricSet;
 
 /**
  * @author gjoranv
@@ -51,6 +52,8 @@ public class MetricsBuilder {
         List<MetricSet> metricSets = XML.getChildren(consumerElement, "metric-set").stream()
                 .map(metricSetElement -> availableMetricSets.get(metricSetElement.getAttribute(ID_ATTRIBUTE)))
                 .collect(Collectors.toCollection(LinkedList::new));
+
+        metricSets.add(systemMetricSet);
 
         return new MetricSet(metricSetId(consumerId), metrics, metricSets);
     }

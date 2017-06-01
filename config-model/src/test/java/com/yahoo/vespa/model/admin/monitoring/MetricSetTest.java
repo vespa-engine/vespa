@@ -1,18 +1,43 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.monitoring;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import org.junit.Test;
 
 import java.util.Map;
 
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author gjoranv
  */
 public class MetricSetTest {
+
+    @Test
+    public void metrics_from_children_are_added() {
+        MetricSet child1 = new MetricSet("child1", ImmutableList.of(new Metric("child1_metric")));
+        MetricSet child2 = new MetricSet("child2", ImmutableList.of(new Metric("child2_metric")));
+        MetricSet parent = new MetricSet("parent", emptyList(), ImmutableList.of(child1, child2));
+
+        Map<String, Metric> parentMetrics = parent.getMetrics();
+        assertEquals(2, parentMetrics.size());
+        assertNotNull(parentMetrics.get("child1_metric"));
+        assertNotNull(parentMetrics.get("child2_metric"));
+    }
+
+    @Test
+    public void adding_the_same_child_set_twice_has_no_effect() {
+        MetricSet child = new MetricSet("child", ImmutableList.of(new Metric("child_metric")));
+        MetricSet parent = new MetricSet("parent", emptyList(), ImmutableList.of(child, child));
+
+        Map<String, Metric> parentMetrics = parent.getMetrics();
+        assertEquals(1, parentMetrics.size());
+        assertNotNull(parentMetrics.get("child_metric"));
+    }
 
     @Test
     public void internal_metrics_take_precedence_over_metrics_from_children() {
