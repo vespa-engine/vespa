@@ -3,6 +3,7 @@
 #include <vespa/vespalib/text/utf8.h>
 #include <fstream>
 #include <iostream>
+#include <cassert>
 
 using vespalib::LowerCase;
 using vespalib::Utf8ReaderForZTS;

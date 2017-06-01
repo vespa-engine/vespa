@@ -5,6 +5,9 @@
 #pragma once
 
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
+#include <vespa/fastos/app.h>
+
+namespace search { class SimpleQueryStack; }
 
 class StackDumpIteratorTest : public FastOS_Application
 {
@@ -13,4 +16,3 @@ class StackDumpIteratorTest : public FastOS_Application
     bool ShowResult(int testNo, search::SimpleQueryStackDumpIterator &actual, search::SimpleQueryStack &correct, unsigned int expected);
     bool RunTest(int i, bool verify);
 };
-

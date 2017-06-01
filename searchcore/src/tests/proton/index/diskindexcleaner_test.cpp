@@ -1,14 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for diskindexcleaner.
 
-#include <vespa/log/log.h>
-LOG_SETUP("diskindexcleaner_test");
-
 #include <vespa/searchcorespi/index/activediskindexes.h>
 #include <vespa/searchcorespi/index/diskindexcleaner.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/fastos/file.h>
 #include <string>
 #include <vector>
+
+#include <vespa/log/log.h>
+LOG_SETUP("diskindexcleaner_test");
 
 using std::string;
 using std::vector;

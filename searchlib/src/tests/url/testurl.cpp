@@ -3,7 +3,9 @@
 // Copyright (C) 2003 Overture Services Norway AS
 
 #include <vespa/searchlib/util/url.h>
-
+#include <cstdio>
+#include <cstring>
+#include <cassert>
 
 // needed to resolve external symbol from httpd.h on AIX
 void FastS_block_usr2() {}

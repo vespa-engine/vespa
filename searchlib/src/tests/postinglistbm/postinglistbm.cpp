@@ -11,6 +11,7 @@
 #include <vespa/searchlib/test/fakedata/fakewordset.h>
 #include <vespa/searchlib/test/fakedata/fpfactory.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
+#include <vespa/fastos/app.h>
 
 using search::ResultSet;
 using search::fef::TermFieldMatchData;
@@ -26,8 +27,7 @@ using namespace search::fakedata;
 void FastS_block_usr2() {}
 
 
-namespace postinglistbm
-{
+namespace postinglistbm {
 
 class PostingListBM : public FastOS_Application
 {

@@ -1,9 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("fileheadertk_test");
 
 #include <vespa/searchlib/util/fileheadertk.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/fastos/file.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("fileheadertk_test");
 
 using namespace search;
 

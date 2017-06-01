@@ -4,12 +4,9 @@
 
 #pragma once
 
+#include <vespa/fastos/app.h>
 
-namespace search {
-namespace docummary {
-class KeywordExtractor;
-}
-}
+namespace search::docsummary { class KeywordExtractor; }
 
 class ExtractKeywordsTest : public FastOS_Application
 {
@@ -25,9 +22,8 @@ private:
     bool RunTest(int i, bool verify);
 
 public:
-    ExtractKeywordsTest(void)
-        : _extractor(NULL)
-    {
-    }
+    ExtractKeywordsTest()
+        : _extractor(nullptr)
+    {}
 };
 

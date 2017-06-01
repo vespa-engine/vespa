@@ -2,9 +2,10 @@
 // Copyright (C) 2001-2003 Fast Search & Transfer ASA
 // Copyright (C) 2003 Overture Services Norway AS
 
+#include "stackdumpiteratortest.h"
 #include <vespa/searchlib/parsequery/simplequerystack.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
-#include "stackdumpiteratortest.h"
+#include <vespa/fastos/time.h>
 
 #define NUMTESTS 5
 
