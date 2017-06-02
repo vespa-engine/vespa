@@ -5,7 +5,6 @@
 #include "flushhandlerproxy.h"
 #include "memoryflush.h"
 #include "persistencehandlerproxy.h"
-#include "persistenceproviderproxy.h"
 #include "proton.h"
 #include "resource_usage_explorer.h"
 #include "searchhandlerproxy.h"
@@ -309,14 +308,13 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _executor.sync();
     waitForOnlineState();
     _isReplayDone = true;
-    bool startOk = _fs4Server->start();
+    if ( ! _fs4Server->start() ) {
+        throw vespalib::PortListenException(protonConfig.ptport, "FS4");
+    }
     int port = _fs4Server->getListenPort();
     _matchEngine->setOnline();
     _matchEngine->setInService();
-    LOG(debug,
-        "Started fs4 interface (startOk=%s, port=%d)",
-        startOk ? "true" : "false",
-        port);
+    LOG(debug, "Started fs4 interface on port %d", port);
     _flushEngine->start();
     _isInitializing = false;
     _protonConfigurer.setAllowReconfig(true);
