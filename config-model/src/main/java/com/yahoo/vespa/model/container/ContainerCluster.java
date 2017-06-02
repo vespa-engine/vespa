@@ -418,10 +418,10 @@ public final class ContainerCluster
 
     private boolean zoneHasActiveRotation(Zone zone) {
         return getDeploymentSpec()
-                .flatMap(spec -> spec.steps().stream()
-                        .filter(dz -> dz.deploysTo(zone.environment(), Optional.of(zone.region())))
+                .flatMap(spec -> spec.zones().stream()
+                        .filter(dz -> dz.matches(zone.environment(), Optional.of(zone.region())))
                         .findFirst())
-                .map(step -> ((DeploymentSpec.ZoneDeployment)step).active())
+                .map(DeploymentSpec.DeclaredZone::active)
                 .orElse(false);
     }
 
