@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.admin.monitoring.builder.xml;
 
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.text.XML;
+import com.yahoo.vespa.model.admin.monitoring.DefaultVespaMetrics;
 import com.yahoo.vespa.model.admin.monitoring.Metric;
 import com.yahoo.vespa.model.admin.monitoring.MetricSet;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
@@ -15,6 +16,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.model.admin.monitoring.DefaultMetricsConsumer.VESPA_CONSUMER_ID;
+import static com.yahoo.vespa.model.admin.monitoring.DefaultVespaMetrics.defaultVespaMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.SystemMetrics.systemMetricSet;
 
 /**
@@ -53,6 +55,7 @@ public class MetricsBuilder {
                 .map(metricSetElement -> availableMetricSets.get(metricSetElement.getAttribute(ID_ATTRIBUTE)))
                 .collect(Collectors.toCollection(LinkedList::new));
 
+        metricSets.add(defaultVespaMetricSet);
         metricSets.add(systemMetricSet);
 
         return new MetricSet(metricSetId(consumerId), metrics, metricSets);

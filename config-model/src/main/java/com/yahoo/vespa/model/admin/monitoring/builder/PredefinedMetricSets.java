@@ -2,14 +2,13 @@
 package com.yahoo.vespa.model.admin.monitoring.builder;
 
 import com.yahoo.vespa.model.admin.monitoring.MetricSet;
-import com.yahoo.vespa.model.admin.monitoring.SystemMetrics;
-import com.yahoo.vespa.model.admin.monitoring.VespaMetricSet;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static com.yahoo.vespa.model.admin.monitoring.SystemMetrics.systemMetricSet;
+import static com.yahoo.vespa.model.admin.monitoring.DefaultVespaMetrics.defaultVespaMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.VespaMetricSet.vespaMetricSet;
 
 /**
@@ -20,6 +19,7 @@ import static com.yahoo.vespa.model.admin.monitoring.VespaMetricSet.vespaMetricS
 public class PredefinedMetricSets {
 
     public static final Map<String, MetricSet> predefinedMetricSets = toMapById(
+            defaultVespaMetricSet,
             vespaMetricSet,
             systemMetricSet
     );
