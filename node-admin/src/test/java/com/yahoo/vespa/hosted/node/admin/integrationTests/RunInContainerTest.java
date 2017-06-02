@@ -19,6 +19,7 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -113,6 +114,7 @@ public class RunInContainerTest {
         throw new RuntimeException("Could not get answer from container.");
     }
 
+    @Ignore
     @Test
     public void testGetContainersToRunAPi() throws IOException, InterruptedException {
         doThrow(new OrchestratorException("Cannot suspend because...")).when(orchestrator).suspend(parentHostname);
