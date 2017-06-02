@@ -94,8 +94,10 @@ public class DeploymentSpecTest {
         StringReader r = new StringReader(
         "<deployment version='1.0'>" +
         "   <test/>" +
+        "   <test/>" +
         "   <staging/>" +
         "   <prod>" +
+        "      <region active='false'>us-east1</region>" +
         "      <region active='false'>us-east1</region>" +
         "      <delay hours='3' minutes='30'/>" + 
         "      <region active='true'>us-west1</region>" +

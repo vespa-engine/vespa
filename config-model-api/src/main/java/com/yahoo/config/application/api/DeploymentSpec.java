@@ -4,7 +4,6 @@ package com.yahoo.config.application.api;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.io.IOUtils;
 import com.yahoo.text.XML;
 import org.w3c.dom.Element;
@@ -16,9 +15,10 @@ import java.io.Reader;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Specifies the environments and regions to which an application should be deployed.
@@ -70,6 +70,9 @@ public class DeploymentSpec {
     
     /** Adds missing required steps and reorders steps to a permissible order */
     private static List<Step> completeSteps(List<Step> steps) {
+        // Ensure no duplicate deployments to the same zone
+        steps = new ArrayList<>(new LinkedHashSet<>(steps));
+        
         // Add staging if required and missing
         if (steps.stream().anyMatch(step -> step.deploysTo(Environment.prod)) &&
             steps.stream().noneMatch(step -> step.deploysTo(Environment.staging))) {
@@ -185,7 +188,7 @@ public class DeploymentSpec {
         String value = tag.getAttribute(attributeName);
         if (value == null || value.isEmpty()) return 0;
         try {
-            return Integer.parseInt(value);
+            return Long.parseLong(value);
         }
         catch (NumberFormatException e) {
             throw new IllegalArgumentException("Expected an integer for attribute '" + attributeName + 
@@ -333,6 +336,21 @@ public class DeploymentSpec {
         public boolean deploysTo(Environment environment, Optional<RegionName> region) {
             if (environment != this.environment) return false;
             if (region.isPresent() && ! region.equals(this.region)) return false;
+            return true;
+        }
+        
+        @Override
+        public int hashCode() {
+            return Objects.hash(environment, region);
+        }
+        
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) return true;
+            if ( !  (o instanceof ZoneDeployment)) return false;
+            ZoneDeployment other = (ZoneDeployment)o;
+            if (this.environment != other.environment) return false;
+            if ( ! this.region.equals(other.region())) return false;
             return true;
         }
 
