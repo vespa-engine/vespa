@@ -2,9 +2,11 @@
 package com.yahoo.vespa.model.admin.monitoring;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
+
+import static com.yahoo.vespa.model.admin.monitoring.DefaultVespaMetrics.defaultVespaMetricSet;
+import static java.util.Collections.singleton;
 
 /**
  * Encapsulates vespa service metrics.
@@ -14,7 +16,9 @@ import java.util.Set;
 @SuppressWarnings("UnusedDeclaration") // Used by model amenders
 public class VespaMetricSet {
 
-    public static final MetricSet vespaMetricSet = new MetricSet("vespa", getVespaMetrics(), Collections.emptySet());
+    public static final MetricSet vespaMetricSet = new MetricSet("vespa",
+                                                                 getVespaMetrics(),
+                                                                 singleton(defaultVespaMetricSet));
 
     private static Set<Metric> getVespaMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
@@ -124,9 +128,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("peak_qps.max", "peak_qps"));
         metrics.add(new Metric("search_connections.average", "search_connections"));
         metrics.add(new Metric("active_queries.average", "active_queries"));
-        metrics.add(new Metric("feed.operations.rate"));
         metrics.add(new Metric("feed.latency.average"));
-        metrics.add(new Metric("queries.rate", "queries"));
         metrics.add(new Metric("query_latency.average", "mean_query_latency"));
         metrics.add(new Metric("query_latency.max", "max_query_latency"));
         metrics.add(new Metric("query_latency.95percentile", "95p_query_latency"));
@@ -200,7 +202,6 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.resource_usage.memory.average"));
         metrics.add(new Metric("content.proton.resource_usage.memory_mappings.max"));
         metrics.add(new Metric("content.proton.resource_usage.open_file_descriptors.max"));
-        metrics.add(new Metric("content.proton.resource_usage.feeding_blocked.last"));
         metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.enum_store.average"));
         metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.multi_value.average"));
         metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.feeding_blocked.last"));
