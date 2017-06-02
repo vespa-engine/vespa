@@ -316,6 +316,34 @@ public class NodeAgentImplTest {
                         .withVespaVersion(vespaVersion));
     }
 
+    @Test
+    public void reservedNodeDoesNotUpdateNodeRepoWithVersion() throws Exception {
+        final long restartGeneration = 1;
+        final long rebootGeneration = 0;
+
+        final ContainerNodeSpec nodeSpec = nodeSpecBuilder
+                .wantedDockerImage(dockerImage)
+                .nodeState(Node.State.reserved)
+                .wantedVespaVersion(vespaVersion)
+                .wantedRestartGeneration(restartGeneration)
+                .currentRestartGeneration(restartGeneration)
+                .wantedRebootGeneration(rebootGeneration)
+                .build();
+
+        NodeAgentImpl nodeAgent = makeNodeAgent(null, false);
+
+        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+
+        nodeAgent.converge();
+
+        verify(nodeRepository).updateNodeAttributes(
+                hostName, new NodeAttributes()
+                        .withRestartGeneration(restartGeneration)
+                        .withRebootGeneration(rebootGeneration)
+                        .withDockerImage(new DockerImage(""))
+                        .withVespaVersion(""));
+    }
+
     private void nodeRunningContainerIsTakenDownAndCleanedAndRecycled(Node.State nodeState, Optional<Long> wantedRestartGeneration) {
         wantedRestartGeneration.ifPresent(restartGeneration -> nodeSpecBuilder
                 .wantedRestartGeneration(restartGeneration)
