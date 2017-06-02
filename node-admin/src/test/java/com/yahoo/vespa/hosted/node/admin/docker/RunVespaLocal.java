@@ -1,16 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.docker;
 
-import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.DockerTestUtils;
-import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.provider.ComponentsProviderImpl;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
-import com.yahoo.vespa.hosted.node.admin.util.PathResolver;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.IOException;
@@ -21,7 +17,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -39,12 +34,13 @@ import static org.junit.Assert.assertTrue;
  * @author freva
  */
 public class RunVespaLocal {
-    private static final Environment.Builder environmentBuilder = new Environment.Builder()
+    private static final Environment environment = new Environment.Builder()
             .configServerHosts(LocalZoneUtils.CONFIG_SERVER_HOSTNAME)
             .environment("dev")
             .region("vespa-local")
             .parentHostHostname(HostName.getLocalhost())
-            .inetAddressResolver(new InetAddressResolver());
+            .inetAddressResolver(new InetAddressResolver())
+            .build();
 
     private final Logger logger = Logger.getLogger("RunVespaLocal");
     private final Docker docker;
@@ -55,26 +51,13 @@ public class RunVespaLocal {
         this.pathToVespaRoot = pathToVespaRoot;
     }
 
-    /**
-     * Pulls the base image and builds the vespa-local image
-     * @param vespaBaseImage Vespa docker image to use as base for the image that the config-server and nodes will run
-     */
-    public void buildVespaLocalImage(DockerImage vespaBaseImage) throws ExecutionException, InterruptedException, IOException {
-        if (!docker.imageIsDownloaded(vespaBaseImage)) {
-            logger.info("Pulling " + vespaBaseImage.asString() + " (This may take a while)");
-            docker.pullImageAsync(vespaBaseImage).get();
-        }
-
-        logger.info("Building " + LocalZoneUtils.VESPA_LOCAL_IMAGE.asString());
-        LocalZoneUtils.buildVespaLocalDockerImage(docker, vespaBaseImage);
-    }
 
     /**
      * Starts config server, provisions numNodesToProvision and puts them in ready state
      */
-    public void startLocalZoneWithNodes(int numNodesToProvision) throws IOException {
+    public void startLocalZoneWithNodes(DockerImage dockerImage, int numNodesToProvision) throws IOException {
         logger.info("Starting config-server");
-        LocalZoneUtils.startConfigServerIfNeeded(docker, environmentBuilder.build());
+        LocalZoneUtils.startConfigServerIfNeeded(docker, environment, dockerImage, pathToVespaRoot);
 
         logger.info("Waiting until config-server is ready to serve");
         URL configServerUrl = new URL("http://" + LocalZoneUtils.CONFIG_SERVER_HOSTNAME +
@@ -85,7 +68,7 @@ public class RunVespaLocal {
         Set<String> hostnames = LocalZoneUtils.provisionNodes(LocalZoneUtils.NODE_ADMIN_HOSTNAME, numNodesToProvision);
         hostnames.stream()
                 .map(LocalZoneUtils::getContainerNodeSpec)
-                .flatMap(optional -> optional.isPresent() ? Stream.of(optional.get()) : Stream.empty()) // Remove with JDK 9
+                .flatMap(optional -> optional.map(Stream::of).orElseGet(Stream::empty)) // Remove with JDK 9
                 .forEach(nodeSpec -> {
                     if (nodeSpec.nodeState == Node.State.provisioned) LocalZoneUtils.setState(Node.State.dirty, nodeSpec.hostname);
                     if (nodeSpec.nodeState == Node.State.dirty) LocalZoneUtils.setState(Node.State.ready, nodeSpec.hostname);
@@ -93,30 +76,15 @@ public class RunVespaLocal {
     }
 
     /**
-     * Start node-admin in IDE
-     * @param pathResolver Instance of {@link PathResolver} that specifies the path to where the container data will
-     *                     be stored, the path must exist and must be writeable by user,
-     *                     normally /home/docker/container-storage
-     */
-    public void startNodeAdminInIDE(PathResolver pathResolver) {
-        logger.info("Starting node-admin");
-        environmentBuilder.pathResolver(pathResolver);
-        new ComponentsProviderImpl(
-                docker,
-                new MetricReceiverWrapper(MetricReceiver.nullImplementation),
-                environmentBuilder.build(),
-                true);
-    }
-
-    /**
      * Starts node-admin inside a container
+     * @param dockerImage            Docker image that node-admin should be running
      * @param pathToContainerStorage Path to where the container data will be stored, the path must exist and must
      *                               be writeable by user, normally /home/docker/container-storage
      */
-    public void startNodeAdminAsContainer(Path pathToContainerStorage) throws IOException {
+    public void startNodeAdminAsContainer(DockerImage dockerImage, Path pathToContainerStorage) throws IOException {
         logger.info("Starting node-admin");
         String parentHostHostname = LocalZoneUtils.NODE_ADMIN_HOSTNAME;
-        LocalZoneUtils.startNodeAdminIfNeeded(docker, environmentBuilder.build(), pathToContainerStorage);
+        LocalZoneUtils.startNodeAdminIfNeeded(docker, environment, dockerImage, pathToContainerStorage);
 
         logger.info("Provisioning host at " + parentHostHostname);
         LocalZoneUtils.provisionHost(parentHostHostname);

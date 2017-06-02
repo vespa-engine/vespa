@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
-import com.yahoo.vespa.hosted.node.admin.NodeAdminConfig;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
@@ -50,8 +49,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
     // Converge towards desired node admin state every 30 seconds
     private static final int NODE_ADMIN_CONVERGE_STATE_INTERVAL_MILLIS = 30000;
 
-    public ComponentsProviderImpl(Docker docker, MetricReceiverWrapper metricReceiver, Environment environment,
-                                  boolean isRunningLocally) {
+    public ComponentsProviderImpl(Docker docker, MetricReceiverWrapper metricReceiver, Environment environment) {
         String baseHostName = HostName.getLocalhost();
         Set<String> configServerHosts = environment.getConfigServerHosts();
         if (configServerHosts.isEmpty()) {
@@ -64,9 +62,9 @@ public class ComponentsProviderImpl implements ComponentsProvider {
         NodeRepository nodeRepository = new NodeRepositoryImpl(requestExecutor, WEB_SERVICE_PORT, baseHostName);
         DockerOperations dockerOperations = new DockerOperationsImpl(docker, environment);
 
-        Optional<StorageMaintainer> storageMaintainer = isRunningLocally ?
+        Optional<StorageMaintainer> storageMaintainer = environment.isRunningLocally() ?
                 Optional.empty() : Optional.of(new StorageMaintainer(docker, metricReceiver, environment, clock));
-        Optional<AclMaintainer> aclMaintainer = isRunningLocally ?
+        Optional<AclMaintainer> aclMaintainer = environment.isRunningLocally() ?
                 Optional.empty() : Optional.of(new AclMaintainer(dockerOperations, nodeRepository, baseHostName));
 
         Function<String, NodeAgent> nodeAgentFactory =
@@ -78,16 +76,16 @@ public class ComponentsProviderImpl implements ComponentsProvider {
         nodeAdminStateUpdater.start(NODE_ADMIN_CONVERGE_STATE_INTERVAL_MILLIS);
 
         metricReceiverWrapper = metricReceiver;
-    }
 
-    @Inject
-    public ComponentsProviderImpl(final NodeAdminConfig config, final Docker docker, final MetricReceiverWrapper metricReceiver) {
-        this(docker, metricReceiver, new Environment(), config.isRunningLocally());
-
-        if (!config.isRunningLocally()) {
+        if (! environment.isRunningLocally()) {
             setCorePattern(docker);
             initializeNodeAgentSecretAgent(docker);
         }
+    }
+
+    @Inject
+    public ComponentsProviderImpl(final Docker docker, final MetricReceiverWrapper metricReceiver) {
+        this(docker, metricReceiver, new Environment());
     }
 
     @Override

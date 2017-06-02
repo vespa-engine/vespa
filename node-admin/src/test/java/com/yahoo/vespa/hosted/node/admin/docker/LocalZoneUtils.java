@@ -24,7 +24,6 @@ import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -48,45 +47,47 @@ public class LocalZoneUtils {
     public static final ContainerName CONFIG_SERVER_CONTAINER_NAME = new ContainerName(CONFIG_SERVER_HOSTNAME);
     public static final String NODE_ADMIN_HOSTNAME = getParentHostHostname();
     public static final ContainerName NODE_ADMIN_CONTAINER_NAME = new ContainerName("node-admin");
-    public static final DockerImage VESPA_LOCAL_IMAGE = new DockerImage("vespa-local:latest");
 
     private static final ConfigServerHttpRequestExecutor requestExecutor = ConfigServerHttpRequestExecutor.create(
             Collections.singleton(CONFIG_SERVER_HOSTNAME));
     private static final String APP_HOSTNAME_PREFIX = "cnode-";
     private static final String TENANT_NAME = "localtenant";
     private static final String APPLICATION_NAME = "default";
-    private static final Path PROJECT_ROOT = Paths.get("").toAbsolutePath();
 
-    public static void startConfigServerIfNeeded(Docker docker, Environment environment) throws UnknownHostException {
+    public static void startConfigServerIfNeeded(Docker docker, Environment environment, DockerImage dockerImage, Path pathToProjectRoot) throws UnknownHostException {
         Optional<Container> container = docker.getContainer(CONFIG_SERVER_CONTAINER_NAME);
         if (container.isPresent()) {
             if (container.get().state.isRunning()) return;
             else docker.deleteContainer(CONFIG_SERVER_CONTAINER_NAME);
         }
 
-        docker.createContainerCommand(VESPA_LOCAL_IMAGE, CONFIG_SERVER_CONTAINER_NAME, CONFIG_SERVER_HOSTNAME)
+        Path pathToConfigServerApp = Paths.get(Defaults.getDefaults().underVespaHome("conf/configserver-app"));
+        docker.createContainerCommand(dockerImage, CONFIG_SERVER_CONTAINER_NAME, CONFIG_SERVER_HOSTNAME)
                 .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME)
                 .withIpAddress(environment.getInetAddressForHost(CONFIG_SERVER_HOSTNAME))
                 .withEnvironment("HOSTED_VESPA_ENVIRONMENT", environment.getEnvironment())
                 .withEnvironment("HOSTED_VESPA_REGION", environment.getRegion())
                 .withEnvironment("CONFIG_SERVER_HOSTNAME", CONFIG_SERVER_HOSTNAME)
-                .withEntrypoint(Defaults.getDefaults().underVespaHome("bin/start-config-server.sh"))
                 .withUlimit("nofile", 262_144, 262_144)
                 .withUlimit("nproc", 32_768, 409_600)
                 .withUlimit("core", -1, -1)
+                .withEntrypoint(pathToConfigServerApp.resolve("start-config-server.sh").toString())
                 .create();
+
+        docker.copyArchiveToContainer(pathToProjectRoot.resolve("node-admin/configserver-app").toString(),
+                CONFIG_SERVER_CONTAINER_NAME, Defaults.getDefaults().underVespaHome("conf"));
 
         docker.startContainer(CONFIG_SERVER_CONTAINER_NAME);
     }
 
-    public static void startNodeAdminIfNeeded(Docker docker, Environment environment, Path pathToContainerStorage) {
+    public static void startNodeAdminIfNeeded(Docker docker, Environment environment, DockerImage dockerImage, Path pathToContainerStorage) {
         Optional<Docker.ContainerStats> containerStats = docker.getContainerStats(NODE_ADMIN_CONTAINER_NAME);
         if (containerStats.isPresent())
             return;
         else
             docker.deleteContainer(NODE_ADMIN_CONTAINER_NAME);
 
-        Docker.CreateContainerCommand createCmd = docker.createContainerCommand(VESPA_LOCAL_IMAGE,
+        Docker.CreateContainerCommand createCmd = docker.createContainerCommand(dockerImage,
                 NODE_ADMIN_CONTAINER_NAME, NODE_ADMIN_HOSTNAME)
                 .withNetworkMode("host")
                 .withVolume("/proc", "/host/proc")
@@ -96,9 +97,11 @@ public class LocalZoneUtils {
                 .withEnvironment("REGION", environment.getRegion())
                 .withEnvironment("CONFIG_SERVER_ADDRESS", CONFIG_SERVER_HOSTNAME)
                 .withEnvironment("ATHENS_DOMAIN", "fake.env")
+                .withEnvironment("RUNNING_LOCALLY", "true")
                 .withUlimit("nofile", 262_144, 262_144)
                 .withUlimit("nproc", 32_768, 409_600)
-                .withUlimit("core", -1, -1);
+                .withUlimit("core", -1, -1)
+                .withEntrypoint("/usr/local/bin/start-services.sh", "--run-local");
 
         if (DockerTestUtils.getSystemOS() == DockerTestUtils.OS.Mac_OS_X) {
             createCmd.withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
@@ -139,18 +142,6 @@ public class LocalZoneUtils {
         createCmd.create();
         docker.startContainer(NODE_ADMIN_CONTAINER_NAME);
         docker.executeInContainerAsRoot(NODE_ADMIN_CONTAINER_NAME, "chown", "yahoo", "/host/var/run/docker.sock");
-    }
-
-    public static void buildVespaLocalDockerImage(Docker docker, DockerImage vespaBaseImage) throws IOException {
-        Path dockerfilePath = PROJECT_ROOT.resolve("node-admin/include/Dockerfile");
-
-        Path dockerfileTemplatePath = Paths.get("node-admin/include/Dockerfile.template");
-        String dockerfileTemplate = new String(Files.readAllBytes(dockerfileTemplatePath))
-                .replaceAll("\\$NODE_ADMIN_FROM_IMAGE", vespaBaseImage.asString())
-                .replaceAll("\\$VESPA_HOME", Defaults.getDefaults().vespaHome());
-        Files.write(dockerfilePath, dockerfileTemplate.getBytes());
-
-        docker.buildImage(dockerfilePath.getParent().toFile(), VESPA_LOCAL_IMAGE);
     }
 
     public static Optional<ContainerNodeSpec> getContainerNodeSpec(String hostName) {
