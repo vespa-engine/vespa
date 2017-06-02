@@ -25,7 +25,7 @@ import org.xml.sax.SAXParseException;
  * @author Bjorn Borud
  * @author Vegard Havdal
  * @author bratseth
- * @author Steinar Knutsen
+ * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public class XML {
     /**
