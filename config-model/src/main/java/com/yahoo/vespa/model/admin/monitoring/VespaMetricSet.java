@@ -2,11 +2,11 @@
 package com.yahoo.vespa.model.admin.monitoring;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 import static com.yahoo.vespa.model.admin.monitoring.DefaultVespaMetrics.defaultVespaMetricSet;
+import static java.util.Collections.singleton;
 
 /**
  * Encapsulates vespa service metrics.
@@ -18,7 +18,7 @@ public class VespaMetricSet {
 
     public static final MetricSet vespaMetricSet = new MetricSet("vespa",
                                                                  getVespaMetrics(),
-                                                                 Collections.singleton(defaultVespaMetricSet));
+                                                                 singleton(defaultVespaMetricSet));
 
     private static Set<Metric> getVespaMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();

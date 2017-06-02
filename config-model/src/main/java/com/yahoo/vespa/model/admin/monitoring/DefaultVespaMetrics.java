@@ -5,6 +5,8 @@ import com.google.common.collect.ImmutableSet;
 import java.util.Set;
 
 /**
+ * Encapsulates a minimal set of Vespa metrics to be used as default for all metrics consumers.
+ *
  * @author leandroalves
  */
 public class DefaultVespaMetrics {
