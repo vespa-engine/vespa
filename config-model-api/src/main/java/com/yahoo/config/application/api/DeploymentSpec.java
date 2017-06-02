@@ -19,6 +19,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Specifies the environments and regions to which an application should be deployed.
@@ -76,20 +77,20 @@ public class DeploymentSpec {
         // Add staging if required and missing
         if (steps.stream().anyMatch(step -> step.deploysTo(Environment.prod)) &&
             steps.stream().noneMatch(step -> step.deploysTo(Environment.staging))) {
-            steps.add(new ZoneDeployment(Environment.staging));
+            steps.add(new DeclaredZone(Environment.staging));
         }
         
         // Add test if required and missing
         if (steps.stream().anyMatch(step -> step.deploysTo(Environment.staging)) &&
             steps.stream().noneMatch(step -> step.deploysTo(Environment.test))) {
-            steps.add(new ZoneDeployment(Environment.test));
+            steps.add(new DeclaredZone(Environment.test));
         }
         
         // Enforce order test, staging, prod
-        ZoneDeployment testStep = remove(Environment.test, steps);
+        DeclaredZone testStep = remove(Environment.test, steps);
         if (testStep != null)
             steps.add(0, testStep);
-        ZoneDeployment stagingStep = remove(Environment.staging, steps);
+        DeclaredZone stagingStep = remove(Environment.staging, steps);
         if (stagingStep != null)
             steps.add(1, stagingStep);
         
@@ -102,10 +103,10 @@ public class DeploymentSpec {
      * @param environment
      * @return the removed step, or null if it is not present
      */
-    private static ZoneDeployment remove(Environment environment, List<Step> steps) {
+    private static DeclaredZone remove(Environment environment, List<Step> steps) {
         for (int i = 0; i < steps.size(); i++) {
             if (steps.get(i).deploysTo(environment))
-                return (ZoneDeployment)steps.remove(i);
+                return (DeclaredZone)steps.remove(i);
         }
         return null;
     }
@@ -120,7 +121,13 @@ public class DeploymentSpec {
 
     /** Returns the deployment steps of this in the order they will be performed */
     public List<Step> steps() { return steps; }
-    
+
+    /** Returns only the DeclaredZone deployment steps of this in the order they will be performed */
+    public List<DeclaredZone> zones() { 
+        return steps.stream().filter(step -> step instanceof DeclaredZone).map(DeclaredZone.class::cast)
+                             .collect(Collectors.toList());
+    }
+
     /** Returns the XML form of this spec, or null if it was not created by fromXml or is the empty spec */
     public String xmlForm() { return xmlForm; }
 
@@ -162,17 +169,17 @@ public class DeploymentSpec {
             if (environment == Environment.prod) {
                 for (Element stepTag : XML.getChildren(environmentTag)) {
                     if (stepTag.getTagName().equals("delay"))
-                        steps.add(new Delay(Duration.ofSeconds(longAttribute("hours", stepTag) * 60 * 60 +
+                        steps.add(new Delay(Duration.ofSeconds(longAttribute("hours",   stepTag) * 60 * 60 +
                                                                longAttribute("minutes", stepTag) * 60 +
                                                                longAttribute("seconds", stepTag))));
                     else // a region: deploy step
-                        steps.add(new ZoneDeployment(environment, 
-                                                     Optional.of(RegionName.from(XML.getValue(stepTag).trim())), 
-                                                     readActive(stepTag)));
+                        steps.add(new DeclaredZone(environment,
+                                                   Optional.of(RegionName.from(XML.getValue(stepTag).trim())),
+                                                   readActive(stepTag)));
                 }
             }
             else {
-                steps.add(new ZoneDeployment(environment));
+                steps.add(new DeclaredZone(environment));
             }
 
             if (environment == Environment.prod)
@@ -302,7 +309,7 @@ public class DeploymentSpec {
     }
 
     /** A deployment step which is to run deployment in a particular zone */
-    public static class ZoneDeployment extends Step {
+    public static class DeclaredZone extends Step {
 
         private final Environment environment;
 
@@ -310,11 +317,11 @@ public class DeploymentSpec {
 
         private final boolean active;
 
-        public ZoneDeployment(Environment environment) {
+        public DeclaredZone(Environment environment) {
             this(environment, Optional.empty(), false);
         }
 
-        public ZoneDeployment(Environment environment, Optional<RegionName> region, boolean active) {
+        public DeclaredZone(Environment environment, Optional<RegionName> region, boolean active) {
             if (environment != Environment.prod && region.isPresent())
                 throw new IllegalArgumentException("Non-prod environments cannot specify a region");
             if (environment == Environment.prod && ! region.isPresent())
@@ -347,8 +354,8 @@ public class DeploymentSpec {
         @Override
         public boolean equals(Object o) {
             if (o == this) return true;
-            if ( !  (o instanceof ZoneDeployment)) return false;
-            ZoneDeployment other = (ZoneDeployment)o;
+            if ( !  (o instanceof DeclaredZone)) return false;
+            DeclaredZone other = (DeclaredZone)o;
             if (this.environment != other.environment) return false;
             if ( ! this.region.equals(other.region())) return false;
             return true;
