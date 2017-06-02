@@ -3,8 +3,8 @@
 #pragma once
 
 #include "xmlserializable.h"
-#include <sstream>
 #include <vespa/vespalib/util/exceptions.h>
+#include <sstream>
 
 namespace vespalib {
 namespace xml {

@@ -5,6 +5,7 @@
 #include "zkfiledbmodel.h"
 #include "deployedfilestodownload.h"
 #include <vespa/filedistribution/common/logfwd.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <sys/file.h>
 #include <ostream>
 #include <algorithm>

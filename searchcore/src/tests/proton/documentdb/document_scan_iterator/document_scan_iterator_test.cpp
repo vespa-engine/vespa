@@ -4,6 +4,7 @@
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/base/documentid.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using namespace document;
 using namespace proton;

@@ -4,7 +4,7 @@
 #include "integerresultnode.h"
 #include "stringresultnode.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
-
+#include <vespa/vespalib/util/stringfmt.h>
 
 namespace search {
 namespace expression {

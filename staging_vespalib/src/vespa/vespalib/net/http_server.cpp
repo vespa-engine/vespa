@@ -3,7 +3,7 @@
 #include "http_server.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/host_name.h>
-#include <algorithm>
+#include <vespa/vespalib/util/stringfmt.h>
 
 namespace vespalib {
 

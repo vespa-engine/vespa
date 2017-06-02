@@ -2,6 +2,7 @@
 
 #include "document_runnable.h"
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 namespace document {
 

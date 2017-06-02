@@ -3,6 +3,7 @@
 #include "countvisitor.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/documentapi/messagebus/messages/visitor.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance.countvisitor");

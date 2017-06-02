@@ -2,12 +2,12 @@
 #pragma once
 
 #include <vespa/config/common/exceptions.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <map>
 #include <set>
 #include <vector>
-#include <errno.h>
-#include <stdint.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <cerrno>
+#include <cstdint>
 
 namespace config {
 

@@ -12,7 +12,7 @@
 #include <vespa/messagebus/rpcmessagebus.h>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/config/helper/configgetter.hpp>
-
+#include <vespa/vespalib/util/stringfmt.h>
 
 using config::ConfigGetter;
 using document::DocumenttypesConfig;

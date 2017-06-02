@@ -3,6 +3,7 @@
 #include "primitivedatatype.h"
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <sstream>
 
 namespace document {

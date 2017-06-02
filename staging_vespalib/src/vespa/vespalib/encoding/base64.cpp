@@ -8,7 +8,8 @@
 
 #include <vespa/vespalib/encoding/base64.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <assert.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <cassert>
 
 namespace vespalib {
 
@@ -129,9 +130,8 @@ Base64::decode(const char* inBuffer, int inLen, char* outBuffer, int outLen)
             continue; // Some illegal chars will be skipped.
         } else if (curchar == -1) {
             // Other illegal characters will generate failure
-            throw vespalib::IllegalArgumentException(vespalib::make_string(
-                    "Illegal base64 character %u found.",
-                    (unsigned int) *thischar), VESPA_STRLOC);
+            throw IllegalArgumentException(make_string("Illegal base64 character %u found.",
+                                                       (unsigned int) *thischar), VESPA_STRLOC);
         } else {
 
             // Four bytes from input (eqals three bytes in output)
@@ -162,4 +162,3 @@ Base64::decode(const char* inBuffer, int inLen, char* outBuffer, int outLen)
 }
 
 } // namespace vespalib
-
