@@ -4,6 +4,7 @@
 #include "recoveryvisitor.h"
 
 #include <vespa/documentapi/messagebus/messages/visitor.h>
+#include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>

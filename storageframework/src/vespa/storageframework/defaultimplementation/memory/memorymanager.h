@@ -26,9 +26,7 @@
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/vespalib/util/sync.h>
 
-namespace storage {
-namespace framework {
-namespace defaultimplementation {
+namespace storage::framework::defaultimplementation {
 
 class MemoryManager;
 class AllocationLogic;
@@ -155,7 +153,4 @@ public:
 
 };
 
-} // defaultimplementation
-} // framework
-} // storage
-
+}

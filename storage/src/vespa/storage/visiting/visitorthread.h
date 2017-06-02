@@ -16,9 +16,9 @@
 #include "visitor.h"
 #include "visitormetrics.h"
 #include "visitormessagesessionfactory.h"
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/storage/common/storagecomponent.h>
+#include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storageapi/messageapi/messagehandler.h>
 #include <vespa/metrics/metrictimer.h>
 #include <vespa/vespalib/util/document_runnable.h>
@@ -26,6 +26,8 @@
 #include <deque>
 
 namespace storage {
+
+namespace framework { class HttpUrlPath; }
 
 class VisitorThread : public framework::Runnable,
                       private api::MessageHandler,

@@ -29,6 +29,9 @@ namespace api {
 namespace spi {
     class PartitionStateList;
 }
+namespace framework {
+    class HttpUrlPath;
+}
 
 class FileStorHandlerImpl;
 class FileStorMetrics;

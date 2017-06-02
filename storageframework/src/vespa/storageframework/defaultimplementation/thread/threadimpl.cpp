@@ -2,13 +2,12 @@
 
 #include "threadimpl.h"
 #include "threadpoolimpl.h"
+#include <vespa/storageframework/generic/clock/clock.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".framework.thread.impl");
 
-namespace storage {
-namespace framework {
-namespace defaultimplementation {
+namespace storage::framework::defaultimplementation {
 
 ThreadImpl::ThreadImpl(ThreadPoolImpl& pool,
                        Runnable& runnable,
@@ -143,6 +142,4 @@ ThreadImpl::AtomicThreadTickData::storeRelaxed(
     _maxWaitTimeSeenMs.store(newState._maxWaitTimeSeenMs, relaxed);
 }
 
-} // defaultimplementation
-} // framework
-} // storage
+}

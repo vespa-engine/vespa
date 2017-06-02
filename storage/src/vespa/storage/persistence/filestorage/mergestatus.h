@@ -2,10 +2,10 @@
 #pragma once
 
 #include <vespa/persistence/spi/context.h>
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
 #include <vespa/storageapi/message/bucket.h>
+#include <vespa/storageframework/generic/clock/timer.h>
 
 #include <vector>
 #include <deque>

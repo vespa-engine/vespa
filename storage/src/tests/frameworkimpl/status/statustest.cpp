@@ -3,10 +3,11 @@
 #include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
 #include <vespa/storage/frameworkimpl/status/statuswebserver.h>
 #include <vespa/storageframework/defaultimplementation/thread/threadpoolimpl.h>
+#include <vespa/storageframework/generic/status/htmlstatusreporter.h>
+#include <vespa/storageframework/generic/status/xmlstatusreporter.h>
 #include <tests/common/teststorageapp.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/document/util/stringutil.h>
-#include <sstream>
 
 namespace storage {
 

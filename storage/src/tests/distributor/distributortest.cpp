@@ -12,6 +12,7 @@
 #include <vespa/storage/config/config-stor-distributormanager.h>
 #include <tests/common/dummystoragelink.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/vespalib/text/stringtokenizer.h>
 
 namespace storage {
 

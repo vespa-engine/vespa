@@ -8,7 +8,6 @@
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/util/vstringfmt.h>
-#include <vespa/storageframework/storageframework.h>
 
 /**
  * Enable this to log most slotfile operations (such as all mutations) as

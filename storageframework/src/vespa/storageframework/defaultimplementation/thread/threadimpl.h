@@ -2,14 +2,12 @@
 
 #pragma once
 
+#include <vespa/storageframework/generic/thread/threadpool.h>
 #include <vespa/vespalib/util/document_runnable.h>
-#include <vespa/storageframework/storageframework.h>
 #include <array>
 #include <atomic>
 
-namespace storage {
-namespace framework {
-namespace defaultimplementation {
+namespace storage::framework::defaultimplementation {
 
 class ThreadPoolImpl;
 
@@ -81,6 +79,4 @@ public:
     const ThreadProperties& getProperties() const { return _properties; }
 };
 
-} // defaultimplementation
-} // framework
-} // storage
+}

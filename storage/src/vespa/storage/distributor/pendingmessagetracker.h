@@ -4,7 +4,9 @@
 #include "nodeinfo.h"
 #include "latency_statistics_provider.h"
 #include <vespa/storage/common/storagelink.h>
-#include <vespa/storageframework/storageframework.h>
+#include <vespa/storageframework/generic/status/htmlstatusreporter.h>
+#include <vespa/storageframework/generic/component/componentregister.h>
+#include <vespa/storageframework/generic/component/component.h>
 #include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/vespalib/stllike/hash_set.h>

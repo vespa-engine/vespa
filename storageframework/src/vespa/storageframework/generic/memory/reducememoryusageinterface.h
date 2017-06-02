@@ -14,8 +14,7 @@
 
 #pragma once
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
 
 struct ReduceMemoryUsageInterface
 {
@@ -36,10 +35,7 @@ struct ReduceMemoryUsageInterface
      * @param reduceBy Always in the range 0 < reduceBy <= token.size()
      * @return The amount of memory no longer used.
      */
-    virtual uint64_t reduceMemoryConsumption(const MemoryToken&,
-                                             uint64_t reduceBy) = 0;
+    virtual uint64_t reduceMemoryConsumption(const MemoryToken&, uint64_t reduceBy) = 0;
 };
 
-} // framework
-} // storage
-
+}

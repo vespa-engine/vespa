@@ -9,6 +9,7 @@
 #include <vespa/storage/distributor/bucketdbupdater.h>
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/vespalib/text/stringtokenizer.h>
 
 using std::shared_ptr;
 

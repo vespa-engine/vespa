@@ -7,11 +7,10 @@
  */
 #pragma once
 
-#include <vespa/storageframework/storageframework.h>
 #include <vector>
+#include <vespa/storageframework/generic/clock/time.h>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class NodeInfo {
 public:
@@ -45,6 +44,4 @@ private:
     SingleNodeInfo& getNode(uint16_t idx);
 };
 
-} // distributor
-} // storage
-
+}

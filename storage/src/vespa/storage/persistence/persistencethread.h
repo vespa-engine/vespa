@@ -8,7 +8,6 @@
 #include "diskmoveoperationhandler.h"
 #include "persistenceutil.h"
 #include "providershutdownwrapper.h"
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/common/statusmessages.h>
 

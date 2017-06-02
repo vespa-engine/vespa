@@ -14,10 +14,12 @@
 
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/vespalib/util/document_runnable.h>
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/config-stor-filestor.h>
+#include <vespa/storageframework/generic/thread/runnable.h>
+
 
 namespace storage {
+
 namespace framework {
     class Thread;
 }

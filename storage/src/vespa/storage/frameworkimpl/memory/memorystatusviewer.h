@@ -36,7 +36,7 @@
 
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storageframework/defaultimplementation/memory/memorystate.h>
-#include <vespa/storageframework/storageframework.h>
+#include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/vespalib/util/sync.h>
 #include <deque>
@@ -134,5 +134,4 @@ public:
 
 };
 
-} // storage
-
+}

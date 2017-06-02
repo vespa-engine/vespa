@@ -19,8 +19,7 @@ namespace vespalib {
     class Monitor;
 }
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
 
 class Thread : public ThreadHandle {
     vespalib::string _id;
@@ -61,6 +60,4 @@ public:
     void interruptAndJoin(vespalib::Monitor* m);
 };
 
-} // framework
-} // storage
-
+}

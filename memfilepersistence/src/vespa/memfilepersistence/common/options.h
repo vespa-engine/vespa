@@ -17,15 +17,13 @@
 #pragma once
 
 
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/config-stor-memfilepersistence.h>
 #include <vespa/config-persistence.h>
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/storageframework/generic/clock/time.h>
 
-namespace storage {
-
-namespace memfile {
+namespace storage::memfile {
 
 struct Options : public vespalib::Printable
 {
@@ -128,6 +126,3 @@ struct Options : public vespalib::Printable
 };
 
 }
-
-}
-

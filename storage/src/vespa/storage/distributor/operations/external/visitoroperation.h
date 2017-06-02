@@ -7,7 +7,7 @@
 #include <vespa/storageapi/defs.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageapi/message/visitor.h>
-
+#include <vespa/storageframework/generic/clock/timer.h>
 
 namespace document { class Document; }
 
@@ -183,5 +183,3 @@ private:
 }
 
 }
-
-

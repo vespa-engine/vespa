@@ -2,6 +2,8 @@
 
 #include "visitor.h"
 #include "visitormetrics.h"
+#include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
+#include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/documentapi/messagebus/messages/visitor.h>

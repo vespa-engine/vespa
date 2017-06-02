@@ -4,6 +4,7 @@
 #include <vespa/storage/distributor/operations/operation.h>
 #include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
+#include <vespa/storageframework/generic/clock/clock.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".operationowner");

@@ -35,8 +35,8 @@
 #include <vespa/storageframework/defaultimplementation/memory/memorymanager.h>
 #include <vespa/storageframework/defaultimplementation/thread/threadpoolimpl.h>
 #include <vespa/storage/frameworkimpl/memory/memorystatusviewer.h>
+#include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storage/visiting/visitormessagesessionfactory.h>
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/storage/storageutil/resumeguard.h>
 #include <vespa/config-upgrading.h>
 #include <vespa/config-stor-distribution.h>

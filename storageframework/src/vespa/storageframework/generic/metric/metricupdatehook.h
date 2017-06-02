@@ -11,8 +11,7 @@ namespace vespalib {
     class MonitorGuard;
 }
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
 
 struct MetricUpdateHook {
     using MetricLockGuard = vespalib::MonitorGuard;
@@ -21,6 +20,4 @@ struct MetricUpdateHook {
     virtual void updateMetrics(const MetricLockGuard &) = 0;
 };
 
-} // framework
-} // storage
-
+}

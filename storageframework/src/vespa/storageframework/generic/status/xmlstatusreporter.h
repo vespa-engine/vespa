@@ -20,8 +20,7 @@
 #include "statusreporter.h"
 #include <vespa/vespalib/util/xmlserializable.h>
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
 
 struct XmlStatusReporter : public StatusReporter {
     XmlStatusReporter(vespalib::stringref id, vespalib::stringref name);
@@ -77,6 +76,4 @@ public:
     }
 };
 
-} // framework
-} // storage
-
+}

@@ -7,14 +7,13 @@
 #include <vespa/config/helper/configfetcher.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/guard.h>
+#include <vespa/vespalib/text/stringtokenizer.h>
 #include <fstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.mountpointlist");
 
-namespace storage {
-
-namespace memfile {
+namespace storage::memfile {
 
 using vespalib::getLastErrorString;
 using vespalib::DirPointer;
@@ -642,5 +641,3 @@ MountPointList::reportXmlStatus(vespalib::xml::XmlOutputStream& xos,
 }
 
 }
-
-} // storage

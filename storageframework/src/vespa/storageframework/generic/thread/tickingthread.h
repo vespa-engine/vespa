@@ -23,8 +23,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/sync.h>
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
 
 class ThreadPool;
 typedef uint32_t ThreadIndex;
@@ -102,5 +101,4 @@ struct TickingThreadPool : public ThreadLock {
     virtual vespalib::string getStatus() = 0;
 };
 
-} // framework
-} // storage
+}

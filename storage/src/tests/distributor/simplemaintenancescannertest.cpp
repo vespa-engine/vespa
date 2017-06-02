@@ -5,6 +5,7 @@
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
 #include <vespa/storage/bucketdb/mapbucketdatabase.h>
 #include <tests/distributor/maintenancemocks.h>
+#include <vespa/vespalib/text/stringtokenizer.h>
 
 namespace storage {
 

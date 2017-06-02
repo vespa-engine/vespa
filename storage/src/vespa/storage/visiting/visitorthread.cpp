@@ -2,6 +2,7 @@
 
 #include "visitorthread.h"
 #include "messages.h"
+#include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/select/bodyfielddetector.h>
 #include <vespa/document/select/orderingselector.h>
@@ -16,6 +17,7 @@
 #include <locale>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/log/log.h>
+
 LOG_SETUP(".visitor.thread");
 
 using storage::api::ReturnCode;

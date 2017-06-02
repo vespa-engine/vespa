@@ -2,6 +2,7 @@
 #include "distributortestutil.h"
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/config-stor-distribution.h>
+#include <vespa/vespalib/text/stringtokenizer.h>
 
 namespace storage::distributor {
 

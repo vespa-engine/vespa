@@ -3,10 +3,9 @@
 
 #include "memfilepersistenceprovider.h"
 #include <vespa/memfilepersistence/common/exceptions.h>
-#include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
-#include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/config/helper/configgetter.hpp>
+#include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".memfilepersistenceprovider");
@@ -28,8 +27,7 @@ if ((context).getTrace().shouldTrace(9)) { \
     (context).getTrace().trace(9, messageToTrace); \
 }
 
-namespace storage {
-namespace memfile {
+namespace storage::memfile {
 
 namespace {
 
@@ -888,5 +886,4 @@ MemFilePersistenceProvider::reportStatus(std::ostream& out,
     return true;
 }
 
-} // memfile
-} // storage
+}

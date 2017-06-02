@@ -7,7 +7,6 @@
 #include <vespa/storage/persistence/filestorage/filestormetrics.h>
 #include <vespa/storage/persistence/filestorage/pausehandler.h>
 #include <vespa/storage/persistence/types.h>
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/storage/storageutil/utils.h>
 #include <vespa/config-stor-filestor.h>

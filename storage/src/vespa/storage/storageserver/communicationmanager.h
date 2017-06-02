@@ -16,7 +16,7 @@
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/config/config-stor-communicationmanager.h>
-#include <vespa/storageframework/storageframework.h>
+#include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storageapi/mbusprot/storagecommand.h>
 #include <vespa/storageapi/mbusprot/storagereply.h>
 #include <vespa/messagebus/rpcmessagebus.h>

@@ -2,6 +2,7 @@
 #include "communicationmanager.h"
 #include "fnetlistener.h"
 #include "rpcrequestwrapper.h"
+#include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/documentapi/messagebus/messages/wrongdistributionreply.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/messagebus/emptyreply.h>

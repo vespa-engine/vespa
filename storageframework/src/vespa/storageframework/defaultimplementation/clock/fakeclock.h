@@ -8,7 +8,6 @@
 #pragma once
 
 #include <vespa/storageframework/generic/clock/clock.h>
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/vespalib/util/sync.h>
 
 namespace storage {

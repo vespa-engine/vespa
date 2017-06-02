@@ -3,6 +3,8 @@
 #pragma once
 
 #include "storagelinkqueued.h"
+#include <vespa/storageframework/generic/thread/thread.h>
+#include <vespa/storageframework/generic/component/component.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <sstream>
 

@@ -5,6 +5,7 @@
 #include <vespa/storage/distributor/operations/operation.h>
 #include <vespa/storage/bucketdb/bucketcopy.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
+#include <vespa/storageframework/generic/clock/timer.h>
 
 namespace document { class Document; }
 

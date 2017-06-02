@@ -4,6 +4,7 @@
 #include <vespa/documentapi/messagebus/messages/multioperationmessage.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/vdslib/container/mutabledocumentlist.h>
+#include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance.dumpvisitor");

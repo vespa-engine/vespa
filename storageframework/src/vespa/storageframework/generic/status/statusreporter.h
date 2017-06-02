@@ -18,8 +18,7 @@
 #include <vespa/storageframework/generic/status/httpurlpath.h>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
 
 struct StatusReporter
 {
@@ -64,6 +63,4 @@ private:
 
 };
 
-} // framework
-} // storage
-
+}

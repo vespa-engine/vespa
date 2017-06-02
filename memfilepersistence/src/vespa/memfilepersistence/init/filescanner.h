@@ -13,15 +13,15 @@
 
 #include <vespa/memfilepersistence/device/mountpointlist.h>
 #include <vespa/memfilepersistence/mapper/bucketdirectorymapper.h>
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/metrics/metrics.h>
+#include <vespa/storageframework/generic/component/component.h>
+#include <vespa/storageframework/generic/clock/timer.h>
 
 namespace document {
     class BucketId;
 }
 
-namespace storage {
-namespace memfile {
+namespace storage::memfile {
 
 class FileScanner : private framework::Component {
 public:
@@ -102,6 +102,4 @@ private:
                            std::vector<uint32_t>& path);
 };
 
-} // memfile
-} // storage
-
+}

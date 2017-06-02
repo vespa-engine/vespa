@@ -16,12 +16,11 @@
 #pragma once
 
 
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/persistence/spi/bucketinfo.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/storageframework/generic/clock/time.h>
 
-namespace storage {
-namespace memfile {
+namespace storage::memfile {
 
 /**
  * \class storage::slotfile::DataLocation
@@ -193,6 +192,4 @@ protected:
     ~Types() {} // Noone should refer to objects as Types objects
 };
 
-} // memfile
-} // storage
-
+}

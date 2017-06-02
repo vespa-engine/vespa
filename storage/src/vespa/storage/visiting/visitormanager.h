@@ -24,8 +24,8 @@
 #include "visitormetrics.h"
 #include "visitorthread.h"
 #include <vespa/storage/visiting/config-stor-visitor.h>
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/storage/common/storagelink.h>
+#include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/internal.h>
 #include <vespa/storageapi/message/visitor.h>
@@ -33,9 +33,9 @@
 #include <vespa/vespalib/util/document_runnable.h>
 
 namespace storage {
-namespace api {
-    class BucketTimeInterval;
-}
+
+namespace api { class BucketTimeInterval; }
+
 class RequestStatusPageReply;
 
 class VisitorManager : public framework::Runnable,

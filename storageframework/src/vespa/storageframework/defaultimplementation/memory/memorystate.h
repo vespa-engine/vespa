@@ -9,12 +9,10 @@
 #pragma once
 
 #include "memorymanager.h"
-#include <vespa/storageframework/storageframework.h>
+#include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/vespalib/util/sync.h>
 
-namespace storage {
-namespace framework {
-namespace defaultimplementation {
+namespace storage::framework::defaultimplementation {
 
 class MemoryState : public vespalib::Printable {
 public:
@@ -138,7 +136,4 @@ public:
     }
 };
 
-} // defaultimplementation
-} // framework
-} // storage
-
+}

@@ -6,12 +6,12 @@
 #include <vespa/memfilepersistence/spi/memfilepersistenceprovidermetrics.h>
 #include <vespa/memfilepersistence/common/exceptions.h>
 #include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/storageframework/generic/clock/timer.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.memfile.mapper");
 
-namespace storage {
-namespace memfile {
+namespace storage::memfile {
 
 // Repair defined in macro, such that log entries will be unique for the various
 // instances calling it (different file line numbers)
@@ -335,5 +335,4 @@ MemFileMapper::removeAllSlotsExcept(MemFile& file, std::vector<Timestamp>& keep)
     file.removeSlots(slotsToRemove);
 }
 
-} // storage
-} // memfile
+}

@@ -20,7 +20,7 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/metrics/metrics.h>
 #include <vespa/storage/common/servicelayercomponent.h>
-#include <vespa/storageframework/storageframework.h>
+#include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/identity.hpp>
 #include <boost/multi_index/member.hpp>

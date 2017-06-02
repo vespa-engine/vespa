@@ -44,7 +44,8 @@
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storage/common/storagelink.h>
-#include <vespa/storageframework/storageframework.h>
+#include <vespa/storageframework/generic/status/htmlstatusreporter.h>
+#include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vdslib/state/nodestate.h>

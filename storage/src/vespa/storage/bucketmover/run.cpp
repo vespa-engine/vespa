@@ -3,6 +3,7 @@
 #include "run.h"
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/bucketdb/lockablemap.hpp>
+#include <vespa/storageframework/generic/clock/clock.h>
 #include <iomanip>
 
 #include <vespa/log/log.h>
