@@ -5,9 +5,9 @@
 
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/datatype/documenttype.h>
 
-namespace document {
-namespace select {
+namespace document::select {
 
 namespace {
     bool documentTypeEqualsName(const DocumentType& type,
@@ -88,5 +88,4 @@ DocType::print(std::ostream& out, bool verbose,
     if (_parentheses) out << ')';
 }
 
-} // select
-} // document
+}

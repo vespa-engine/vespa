@@ -3,6 +3,7 @@
 #include <vespa/document/base/testdocrepo.h>
 #include <cppunit/extensions/HelperMacros.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/storage/storageserver/documentapiconverter.h>

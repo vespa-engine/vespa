@@ -2,6 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/fnet/iexecutable.h>
+#include <vespa/fastos/thread.h>
 
 struct DoIt : public FNET_IExecutable {
     vespalib::Gate gate;

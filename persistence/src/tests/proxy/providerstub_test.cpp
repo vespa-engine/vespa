@@ -7,6 +7,7 @@
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/persistence/proxy/buildid.h>
 #include <vespa/persistence/proxy/providerstub.h>
 #include <vespa/persistence/spi/abstractpersistenceprovider.h>

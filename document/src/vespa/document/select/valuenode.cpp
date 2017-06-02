@@ -4,6 +4,7 @@
 #include "parser.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/util/md5.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/text/lowercase.h>

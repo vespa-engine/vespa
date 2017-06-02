@@ -25,6 +25,7 @@
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 using document::BucketId;

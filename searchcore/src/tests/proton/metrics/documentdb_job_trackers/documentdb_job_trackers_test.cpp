@@ -1,11 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("documentdb_job_trackers_test");
 
 #include <vespa/searchcore/proton/metrics/documentdb_job_trackers.h>
 #include <vespa/searchcore/proton/metrics/job_tracked_flush_target.h>
 #include <vespa/searchcore/proton/test/dummy_flush_target.h>
 #include <vespa/vespalib/testkit/testapp.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("documentdb_job_trackers_test");
 
 using namespace proton;
 using namespace searchcorespi;
@@ -61,7 +62,7 @@ TEST_F("require that job metrics are updated", Fixture)
     // Update metrics 2 times to ensure that all jobs are running
     // in the last interval we actually care about.
     f._trackers.updateMetrics(f._metrics);
-    FastOS_Thread::Sleep(100);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     f._trackers.updateMetrics(f._metrics);
 
     EXPECT_APPROX(1.0, f._metrics.attributeFlush.getLast(), EPS);

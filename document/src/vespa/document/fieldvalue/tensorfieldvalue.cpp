@@ -3,6 +3,7 @@
 #include "tensorfieldvalue.h"
 #include <vespa/eval/tensor/tensor.h>
 #include <ostream>
+#include <cassert>
 
 using vespalib::tensor::Tensor;
 
@@ -163,7 +164,6 @@ TensorFieldValue::compare(const FieldValue &other) const
     // Note: sorting can be dangerous due to this.
     return ((_tensor.get()  < rhs._tensor.get()) ? -1 : 1);
 }
-
 
 IMPLEMENT_IDENTIFIABLE(TensorFieldValue, FieldValue);
 

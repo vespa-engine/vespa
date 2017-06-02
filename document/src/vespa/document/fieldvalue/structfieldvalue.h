@@ -12,16 +12,17 @@
 #include "structuredfieldvalue.h"
 #include "serializablearray.h"
 #include <vespa/document/util/compressionconfig.h>
-#include <vespa/document/datatype/structdatatype.h>
 #include <vector>
 
 namespace document {
+
 class Document;
 class DocumentType;
 class DocumentTypeRepo;
 class FieldValueWriter;
 class FixedTypeRepo;
 class FieldSet;
+class StructDataType;
 
 class StructFieldValue : public StructuredFieldValue
 {
@@ -73,7 +74,7 @@ public:
     const DocumentTypeRepo * getRepo() const { return _repo; }
     void setDocumentType(const DocumentType & docType) { _doc_type = & docType; }
 
-    const StructDataType & getStructType() const { return static_cast<const StructDataType &>(getType()); }
+    const StructDataType & getStructType() const;
 
     void lazyDeserialize(const FixedTypeRepo &repo,
                          uint16_t version,
@@ -99,8 +100,7 @@ public:
     const Field& getField(const vespalib::stringref & name) const override;
     void clear() override;
 
-    const CompressionConfig &getCompressionConfig() const
-    { return getStructType().getCompressionConfig(); }
+    const CompressionConfig &getCompressionConfig() const;
 
     // FieldValue implementation.
     FieldValue& assign(const FieldValue&) override;
@@ -146,4 +146,3 @@ private:
 };
 
 } // document
-

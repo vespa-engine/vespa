@@ -8,7 +8,6 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/crc.h>
 #include <vespa/document/datatype/positiondatatype.h>
-#include <vespa/vespalib/util/vstringfmt.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/document/base/exceptions.h>
 
@@ -51,6 +50,16 @@ StructFieldValue::swap(StructFieldValue & rhs)
     std::swap(_repo, rhs._repo);
     std::swap(_doc_type, rhs._doc_type);
     std::swap(_version, _version);
+}
+
+const StructDataType &
+StructFieldValue::getStructType() const {
+    return static_cast<const StructDataType &>(getType());
+}
+
+const CompressionConfig &
+StructFieldValue::getCompressionConfig() const {
+    return getStructType().getCompressionConfig();
 }
 
 void

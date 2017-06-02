@@ -1,10 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <tests/proton/common/dummydbowner.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/testlib/receptor.h>
-#include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcore/proton/attribute/flushableattribute.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
@@ -26,6 +22,9 @@
 #include <vespa/searchcorespi/index/indexflushtarget.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
+#include <vespa/messagebus/emptyreply.h>
+#include <vespa/messagebus/testlib/receptor.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 

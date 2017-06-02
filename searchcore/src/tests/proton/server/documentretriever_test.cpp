@@ -30,11 +30,7 @@
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/searchlib/attribute/stringbase.h>
-#include <vespa/searchlib/docstore/cachestats.h>
-#include <vespa/searchlib/docstore/idocumentstore.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/stringfmt.h>
 
 using document::ArrayFieldValue;
 using document::FieldValue;

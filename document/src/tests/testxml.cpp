@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-/* $Id$*/
 
 #include <vespa/document/base/testdocrepo.h>
 #include <cppunit/extensions/HelperMacros.h>
@@ -8,6 +7,7 @@
 #include <vespa/document/update/addvalueupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/removevalueupdate.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/testkit/test_kit.h>
