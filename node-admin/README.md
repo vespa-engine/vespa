@@ -31,7 +31,7 @@ implements all of the basic methods you need to get started.
 
 To start a local zone, simply run:
 ```
-    DockerImage dockerImage = new DockerImage("docker-registry.ops.yahoo.com:4443/vespa/ci:6.53.134");
+    DockerImage dockerImage = new DockerImage("docker-registry.ops.yahoo.com:4443/vespa/ci:6.111.21");
     Path pathToVespaRoot = Paths.get("/home/valerijf/dev/vespa");
     Path pathToContainerStorage = Paths.get("/home/docker/container-storage");
 
