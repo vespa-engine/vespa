@@ -3,6 +3,7 @@
 #include "getdocidnamespacespecificfunctionnode.h"
 #include "getymumchecksumfunctionnode.h"
 #include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/encoding/base64.h>
 
 #include <vespa/log/log.h>

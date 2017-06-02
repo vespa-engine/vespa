@@ -5,6 +5,7 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/datatype/positiondatatype.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/doublefieldvalue.h>

@@ -4,6 +4,7 @@
 #include "searchenvironment.h"
 #include "searchvisitor.h"
 #include <vespa/document/datatype/positiondatatype.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/searchlib/aggregation/modifiers.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/uca/ucaconverter.h>

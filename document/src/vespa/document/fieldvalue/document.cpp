@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document.h"
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/util/crc.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
@@ -8,6 +9,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/document/base/exceptions.h>
+
 #include <sstream>
 
 using vespalib::nbostream;
@@ -151,6 +153,11 @@ Document::swap(Document & rhs)
     _fields.swap(rhs._fields);
     _id.swap(rhs._id);
     std::swap(_lastModified, rhs._lastModified);
+}
+
+const DocumentType&
+Document::getType() const {
+    return static_cast<const DocumentType &>(StructuredFieldValue::getType());
 }
 
 Document& Document::operator=(const Document& doc)

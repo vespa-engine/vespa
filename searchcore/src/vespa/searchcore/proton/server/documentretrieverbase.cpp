@@ -2,6 +2,7 @@
 
 #include "documentretrieverbase.h"
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/stllike/lrucache_map.hpp>
 
 using document::DocumentId;

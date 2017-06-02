@@ -3,7 +3,6 @@
 #pragma once
 
 #include <memory>
-#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/closure.h>
 
@@ -11,6 +10,7 @@ namespace document {
 
 namespace internal {
     class InternalDocumenttypesType;
+    class DocumentTypeMap;
 }
 
 class AnnotationType;
@@ -19,9 +19,7 @@ class DataTypeRepo;
 class DocumentType;
 
 class DocumentTypeRepo {
-    typedef vespalib::hash_map<int32_t, DataTypeRepo *> DocumentTypeMap;
-
-    DocumentTypeMap _doc_types;
+    std::unique_ptr<internal::DocumentTypeMap> _doc_types;
 
 public:
     using DocumenttypesConfig = const internal::InternalDocumenttypesType;

@@ -2,9 +2,9 @@
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/vsm/common/storagedocument.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-
 
 using namespace document;
 
