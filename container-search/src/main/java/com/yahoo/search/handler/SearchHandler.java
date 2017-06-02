@@ -560,4 +560,9 @@ public class SearchHandler extends LoggingRequestHandler {
         return searchChainRegistry;
     }
 
+    @Override
+    protected void destroy() {
+        super.destroy();
+        rendererRegistry.allComponents().forEach(Renderer::deconstruct);
+    }
 }
