@@ -1,15 +1,26 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "serializablearray.h"
 #include <vespa/document/util/serializableexceptions.h>
+#include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".document.serializable-array");
 
-
 using std::vector;
 
 namespace document {
+
+namespace serializablearray {
+
+using BufferMapT = vespalib::hash_map<int, ByteBuffer::UP>;
+
+class BufferMap : public BufferMapT {
+public:
+    using BufferMapT::BufferMapT;
+};
+
+}
 
 SerializableArray::Statistics SerializableArray::_stats;
 
@@ -17,6 +28,13 @@ SerializableArray::SerializableArray()
     : _serializedCompression(CompressionConfig::NONE),
       _uncompressedLength(0)
 {
+}
+
+serializablearray::BufferMap & ensure(std::unique_ptr<serializablearray::BufferMap> & owned) {
+    if (!owned) {
+        owned = std::make_unique<serializablearray::BufferMap>();
+    }
+    return *owned;
 }
 
 SerializableArray::SerializableArray(const SerializableArray& other)
@@ -34,7 +52,7 @@ SerializableArray::SerializableArray(const SerializableArray& other)
             // Pointing to a buffer in the _owned structure.
             ByteBuffer::UP buf(ByteBuffer::copyBuffer(e.getBuffer(_uncompSerData.get()), e.size()));
             e.setBuffer(buf->getBuffer());
-            _owned[e.id()] = std::move(buf);
+            ensure(_owned)[e.id()] = std::move(buf);
         } else {
             // If not it is relative to the buffer _uncompSerData, and hence it is valid as is.
         }
@@ -79,7 +97,7 @@ SerializableArray::set(int id, ByteBuffer::UP buffer)
 {
     maybeDecompress();
     Entry e(id, buffer->getRemaining(), buffer->getBuffer());
-    _owned[id] = std::move(buffer);
+    ensure(_owned)[id] = std::move(buffer);
     EntryMap::iterator it = find(id);
     if (it == _entries.end()) {
         _entries.push_back(e);
@@ -149,7 +167,7 @@ SerializableArray::clear(int id)
     EntryMap::iterator it = find(id);
     if (it != _entries.end()) {
         _entries.erase(it);
-        _owned.erase(id);
+        _owned->erase(id);
         invalidate();
     }
 }
@@ -213,6 +231,16 @@ void SerializableArray::assign(EntryMap & entries,
         _uncompressedLength = buffer->getRemaining();
         _uncompSerData.reset(buffer.release());
     }
+}
+
+CompressionInfo
+SerializableArray::getCompressionInfo() const {
+    return CompressionInfo(_uncompressedLength, _compSerData->getRemaining());
+}
+
+const char *
+SerializableArray::Entry::getBuffer(const ByteBuffer * readOnlyBuffer) const {
+    return hasBuffer() ? _data._buffer : readOnlyBuffer->getBuffer() + getOffset();
 }
 
 } // document
