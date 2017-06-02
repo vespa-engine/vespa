@@ -21,11 +21,19 @@ Staging = element staging {
     text
 }
 
-Prod = 
-    element prod {
-        attribute global-service-id { text }?,
-        element region { 
-            attribute active { xsd:boolean },
-            text
-        }*
-   }
+Prod = element prod {
+   attribute global-service-id { text }? &
+   Region* &
+   Delay*
+}
+
+Region = element region {
+   attribute active { xsd:boolean },
+   text
+}
+
+Delay = element delay {
+   attribute hours { xsd:long }? &
+   attribute minutes { xsd:long }? &
+   attribute seconds { xsd:long }?
+}
