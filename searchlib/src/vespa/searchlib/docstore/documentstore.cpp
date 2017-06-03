@@ -5,6 +5,8 @@
 #include "visitcache.h"
 #include "ibucketizer.h"
 #include <vespa/vespalib/stllike/cache.hpp>
+#include <vespa/vespalib/data/databuffer.h>
+#include <vespa/document/util/compressor.h>
 
 namespace search {
 

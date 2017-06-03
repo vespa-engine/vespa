@@ -11,6 +11,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/document/util/serializableexceptions.h>
+#include <vespa/document/util/bytebuffer.h>
 
 using vespalib::nbostream;
 

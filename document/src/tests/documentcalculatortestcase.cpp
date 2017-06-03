@@ -9,6 +9,7 @@
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/longfieldvalue.h>
 #include <vespa/document/fieldvalue/floatfieldvalue.h>
+#include <vespa/document/select/variablemap.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 namespace document {
@@ -52,46 +53,42 @@ CPPUNIT_TEST_SUITE_REGISTRATION(DocumentCalculatorTest);
 
 void
 DocumentCalculatorTest::testConstant() {
-    DocumentCalculator::VariableMap variables;
+    auto variables = std::make_unique<select::VariableMap>();
     DocumentCalculator calc(getRepo(), "4.0");
 
-    Document doc(*_testRepo.getDocumentType("testdoctype1"),
-                 DocumentId("doc:test:foo"));
+    Document doc(*_testRepo.getDocumentType("testdoctype1"), DocumentId("doc:test:foo"));
     CPPUNIT_ASSERT_EQUAL(4.0, calc.evaluate(doc, std::move(variables)));
 }
 
 void
 DocumentCalculatorTest::testSimple() {
-    DocumentCalculator::VariableMap variables;
+    auto variables = std::make_unique<select::VariableMap>();
     DocumentCalculator calc(getRepo(), "(3 + 5) / 2");
 
-    Document doc(*_testRepo.getDocumentType("testdoctype1"),
-                 DocumentId("doc:test:foo"));
+    Document doc(*_testRepo.getDocumentType("testdoctype1"), DocumentId("doc:test:foo"));
     CPPUNIT_ASSERT_EQUAL(4.0, calc.evaluate(doc, std::move(variables)));
 }
 
 void
 DocumentCalculatorTest::testVariables() {
-    DocumentCalculator::VariableMap variables;
-    variables["x"] = 3.0;
-    variables["y"] = 5.0;
+    auto variables = std::make_unique<select::VariableMap>();
+    (*variables)["x"] = 3.0;
+    (*variables)["y"] = 5.0;
     DocumentCalculator calc(getRepo(), "($x + $y) / 2");
 
-    Document doc(*_testRepo.getDocumentType("testdoctype1"),
-                 DocumentId("doc:test:foo"));
+    Document doc(*_testRepo.getDocumentType("testdoctype1"), DocumentId("doc:test:foo"));
     CPPUNIT_ASSERT_EQUAL(4.0, calc.evaluate(doc, std::move(variables)));
 }
 
 void
 DocumentCalculatorTest::testFields() {
-    DocumentCalculator::VariableMap variables;
-    variables["x"] = 3.0;
-    variables["y"] = 5.0;
+    auto variables = std::make_unique<select::VariableMap>();
+    (*variables)["x"] = 3.0;
+    (*variables)["y"] = 5.0;
     DocumentCalculator calc(getRepo(), "(testdoctype1.headerval + testdoctype1"
                             ".hfloatval) / testdoctype1.headerlongval");
 
-    Document doc(*_testRepo.getDocumentType("testdoctype1"),
-                 DocumentId("doc:test:foo"));
+    Document doc(*_testRepo.getDocumentType("testdoctype1"), DocumentId("doc:test:foo"));
     doc.setValue(doc.getField("headerval"), IntFieldValue(5));
     doc.setValue(doc.getField("hfloatval"), FloatFieldValue(3.0));
     doc.setValue(doc.getField("headerlongval"), LongFieldValue(2));
@@ -100,14 +97,13 @@ DocumentCalculatorTest::testFields() {
 
 void
 DocumentCalculatorTest::testFieldsDivZero() {
-    DocumentCalculator::VariableMap variables;
-    variables["x"] = 3.0;
-    variables["y"] = 5.0;
+    auto variables = std::make_unique<select::VariableMap>();
+    (*variables)["x"] = 3.0;
+    (*variables)["y"] = 5.0;
     DocumentCalculator calc(getRepo(), "(testdoctype1.headerval + testdoctype1"
                             ".hfloatval) / testdoctype1.headerlongval");
 
-    Document doc(*_testRepo.getDocumentType("testdoctype1"),
-                 DocumentId("doc:test:foo"));
+    Document doc(*_testRepo.getDocumentType("testdoctype1"), DocumentId("doc:test:foo"));
     doc.setValue(doc.getField("headerval"), IntFieldValue(5));
     doc.setValue(doc.getField("hfloatval"), FloatFieldValue(3.0));
     doc.setValue(doc.getField("headerlongval"), LongFieldValue(0));
@@ -121,11 +117,10 @@ DocumentCalculatorTest::testFieldsDivZero() {
 
 void
 DocumentCalculatorTest::testDivideByZero() {
-    DocumentCalculator::VariableMap variables;
+    auto variables = std::make_unique<select::VariableMap>();
     DocumentCalculator calc(getRepo(), "(3 + 5) / 0");
 
-    Document doc(*_testRepo.getDocumentType("testdoctype1"),
-                 DocumentId("doc:test:foo"));
+    Document doc(*_testRepo.getDocumentType("testdoctype1"), DocumentId("doc:test:foo"));
     try {
         calc.evaluate(doc, std::move(variables));
         CPPUNIT_ASSERT(false);
@@ -136,11 +131,10 @@ DocumentCalculatorTest::testDivideByZero() {
 
 void
 DocumentCalculatorTest::testModByZero() {
-    DocumentCalculator::VariableMap variables;
+    auto variables = std::make_unique<select::VariableMap>();
     DocumentCalculator calc(getRepo(), "(3 + 5) % 0");
 
-    Document doc(*_testRepo.getDocumentType("testdoctype1"),
-                 DocumentId("doc:test:foo"));
+    Document doc(*_testRepo.getDocumentType("testdoctype1"), DocumentId("doc:test:foo"));
     try {
         calc.evaluate(doc, std::move(variables));
         CPPUNIT_ASSERT(false);
@@ -151,12 +145,11 @@ DocumentCalculatorTest::testModByZero() {
 
 void
 DocumentCalculatorTest::testFieldNotSet() {
-    DocumentCalculator::VariableMap variables;
+    auto variables = std::make_unique<select::VariableMap>();
     DocumentCalculator calc(getRepo(), "(testdoctype1.headerval + testdoctype1"
                             ".hfloatval) / testdoctype1.headerlongval");
 
-    Document doc(*_testRepo.getDocumentType("testdoctype1"),
-                 DocumentId("doc:test:foo"));
+    Document doc(*_testRepo.getDocumentType("testdoctype1"), DocumentId("doc:test:foo"));
     doc.setValue(doc.getField("hfloatval"), FloatFieldValue(3.0));
     doc.setValue(doc.getField("headerlongval"), LongFieldValue(2));
     try {
@@ -169,13 +162,12 @@ DocumentCalculatorTest::testFieldNotSet() {
 
 void
 DocumentCalculatorTest::testFieldNotFound() {
-    DocumentCalculator::VariableMap variables;
+    auto variables = std::make_unique<select::VariableMap>();
     DocumentCalculator calc(getRepo(),
                             "(testdoctype1.mynotfoundfield + testdoctype1"
                             ".hfloatval) / testdoctype1.headerlongval");
 
-    Document doc(*_testRepo.getDocumentType("testdoctype1"),
-                 DocumentId("doc:test:foo"));
+    Document doc(*_testRepo.getDocumentType("testdoctype1"), DocumentId("doc:test:foo"));
     doc.setValue(doc.getField("hfloatval"), FloatFieldValue(3.0));
     doc.setValue(doc.getField("headerlongval"), LongFieldValue(2));
     try {
@@ -188,11 +180,10 @@ DocumentCalculatorTest::testFieldNotFound() {
 
 void
 DocumentCalculatorTest::testByteSubtractionZeroResult() {
-    DocumentCalculator::VariableMap variables;
+    auto variables = std::make_unique<select::VariableMap>();
     DocumentCalculator calc(getRepo(), "testdoctype1.byteval - 3");
 
-    Document doc(*_testRepo.getDocumentType("testdoctype1"),
-                 DocumentId("doc:test:foo"));
+    Document doc(*_testRepo.getDocumentType("testdoctype1"), DocumentId("doc:test:foo"));
     doc.setValue(doc.getField("byteval"), ByteFieldValue(3));
     CPPUNIT_ASSERT_EQUAL(0.0, calc.evaluate(doc, std::move(variables)));
 }

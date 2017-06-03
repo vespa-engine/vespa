@@ -5,8 +5,8 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/memfilepersistence/common/environment.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/document/util/bytebuffer.h>
 #include <vespa/log/log.h>
-
 LOG_SETUP(".memfile.simpleiobuffer");
 
 namespace storage::memfile {

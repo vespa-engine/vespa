@@ -2,9 +2,9 @@
 
 #include "invalidconstant.h"
 #include "visitor.h"
+#include <ostream>
 
-namespace document {
-namespace select {
+namespace document::select {
 
 InvalidConstant::InvalidConstant(const vespalib::stringref & value)
     : Node(value)
@@ -26,13 +26,11 @@ InvalidConstant::visit(Visitor &v) const
 
 
 void
-InvalidConstant::print(std::ostream& out, bool,
-                       const std::string&) const
+InvalidConstant::print(std::ostream& out, bool, const std::string&) const
 {
     if (_parentheses) out << '(';
     out << _name;
     if (_parentheses) out << ')';
 }
 
-} // select
-} // document
+}

@@ -36,6 +36,13 @@ namespace {
     }
 }
 
+std::unique_ptr<Value>
+ValueNode::defaultTrace(std::unique_ptr<Value> val, std::ostream& out) const
+{
+    out << "Returning value " << *val << ".\n";
+    return std::move(val);
+}
+
 InvalidValueNode::InvalidValueNode(const vespalib::stringref & name)
     : _name(name)
 { }
@@ -147,13 +154,7 @@ CurrentTimeValueNode::print(std::ostream& out, bool verbose,
 
 std::unique_ptr<Value>
 VariableValueNode::getValue(const Context& context) const {
-    VariableMap::const_iterator iter = context._variables.find(_value);
-
-    if (iter != context._variables.end()) {
-        return std::unique_ptr<Value>(new FloatValue(iter->second));
-    } else {
-        return std::unique_ptr<Value>(new FloatValue(0.0));
-    }
+    return context.getValue(_value);
 }
 
 

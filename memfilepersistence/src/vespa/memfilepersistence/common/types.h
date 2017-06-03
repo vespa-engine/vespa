@@ -173,21 +173,9 @@ struct Types {
         }
     }
 
-    static const char* getMemFileFlagName(MemFileFlag flag) {
-        switch (flag) {
-            case FILE_EXIST: return "FILE_EXIST";
-            case HEADER_BLOCK_READ: return "HEADER_BLOCK_READ";
-            case BODY_BLOCK_READ: return "BODY_BLOCK_READ";
-            case BUCKET_INFO_OUTDATED: return "BUCKET_INFO_OUTDATED";
-            case SLOTS_ALTERED: return "SLOTS_ALTERED";
-            case LEGAL_MEMFILE_FLAGS: assert(false); // Not a single flag
-            default: return "INVALID";
-        }
-    }
+    static const char* getMemFileFlagName(MemFileFlag flag);
 
-    static void verifyLegalFlags(uint32_t flags, uint32_t legal,
-                                 const char* operation);
-
+    static void verifyLegalFlags(uint32_t flags, uint32_t legal, const char* operation);
 protected:
     ~Types() {} // Noone should refer to objects as Types objects
 };

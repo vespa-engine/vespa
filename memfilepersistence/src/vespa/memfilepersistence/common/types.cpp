@@ -1,11 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "types.h"
-#include <sstream>
 #include <vespa/vespalib/util/exceptions.h>
+#include <cassert>
+#include <sstream>
 
-namespace storage {
-namespace memfile {
+namespace storage::memfile {
 
 const framework::MicroSecTime Types::MAX_TIMESTAMP(framework::MicroSecTime::max());
 const framework::MicroSecTime Types::UNSET_TIMESTAMP(0);
@@ -34,5 +34,17 @@ operator<<(std::ostream& os, const DataLocation& loc)
     return os;
 }
 
-} // memfile
-} // storage
+const char*
+Types::getMemFileFlagName(MemFileFlag flag) {
+    switch (flag) {
+        case FILE_EXIST: return "FILE_EXIST";
+        case HEADER_BLOCK_READ: return "HEADER_BLOCK_READ";
+        case BODY_BLOCK_READ: return "BODY_BLOCK_READ";
+        case BUCKET_INFO_OUTDATED: return "BUCKET_INFO_OUTDATED";
+        case SLOTS_ALTERED: return "SLOTS_ALTERED";
+        case LEGAL_MEMFILE_FLAGS: assert(false); // Not a single flag
+        default: return "INVALID";
+    }
+}
+
+}

@@ -9,6 +9,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/document/base/exceptions.h>
+#include <vespa/document/util/bytebuffer.h>
 
 #include <sstream>
 
@@ -16,7 +17,6 @@ using vespalib::nbostream;
 using vespalib::make_string;
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
-
 
 namespace document {
 namespace {
