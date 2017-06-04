@@ -58,7 +58,6 @@ vespa_define_module(
 
     APPS
     src/apps/docstore
-    src/apps/expgolomb
     src/apps/fileheaderinspect
     src/apps/loadattribute
     src/apps/tests
