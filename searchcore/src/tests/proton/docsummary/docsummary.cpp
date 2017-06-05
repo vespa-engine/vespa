@@ -952,13 +952,13 @@ Test::requireThatUrisAreUsed()
                        startIndexField("urisingle").
                        startSubField("all").
                        addUrlTokenizedString(
-                               "http://www.yahoo.com:81/fluke?ab=2#4").
+                               "http://www.example.com:81/fluke?ab=2#4").
                        endSubField().
                        startSubField("scheme").
                        addUrlTokenizedString("http").
                        endSubField().
                        startSubField("host").
-                       addUrlTokenizedString("www.yahoo.com").
+                       addUrlTokenizedString("www.example.com").
                        endSubField().
                        startSubField("port").
                        addUrlTokenizedString("81").
@@ -977,13 +977,13 @@ Test::requireThatUrisAreUsed()
                        startElement(1).
                        startSubField("all").
                        addUrlTokenizedString(
-                               "http://www.yahoo.com:82/fluke?ab=2#8").
+                               "http://www.example.com:82/fluke?ab=2#8").
                        endSubField().
                        startSubField("scheme").
                        addUrlTokenizedString("http").
                        endSubField().
                        startSubField("host").
-                       addUrlTokenizedString("www.yahoo.com").
+                       addUrlTokenizedString("www.example.com").
                        endSubField().
                        startSubField("port").
                        addUrlTokenizedString("82").
@@ -1027,13 +1027,13 @@ Test::requireThatUrisAreUsed()
                        startElement(4).
                        startSubField("all").
                        addUrlTokenizedString(
-                               "http://www.yahoo.com:83/fluke?ab=2#12").
+                               "http://www.example.com:83/fluke?ab=2#12").
                        endSubField().
                        startSubField("scheme").
                        addUrlTokenizedString("http").
                        endSubField().
                        startSubField("host").
-                       addUrlTokenizedString("www.yahoo.com").
+                       addUrlTokenizedString("www.example.com").
                        endSubField().
                        startSubField("port").
                        addUrlTokenizedString("83").
@@ -1086,14 +1086,14 @@ Test::requireThatUrisAreUsed()
                              bc.createFieldCacheRepo(getResultConfig())->getFieldCache("class0"),
                              getMarkupFields());
 
-    EXPECT_TRUE(assertString("http://www.yahoo.com:81/fluke?ab=2#4",
+    EXPECT_TRUE(assertString("http://www.example.com:81/fluke?ab=2#4",
                             "urisingle", dsa, 1));
     GeneralResultPtr res = getResult(dsa, 1);
     {
         vespalib::Slime slime;
         decode(res->GetEntry("uriarray"), slime);
         EXPECT_TRUE(slime.get().valid());
-        EXPECT_EQUAL("http://www.yahoo.com:82/fluke?ab=2#8",  asVstring(slime.get()[0]));
+        EXPECT_EQUAL("http://www.example.com:82/fluke?ab=2#8",  asVstring(slime.get()[0]));
         EXPECT_EQUAL("http://www.flickr.com:82/fluke?ab=2#9", asVstring(slime.get()[1]));
     }
     {
@@ -1104,7 +1104,7 @@ Test::requireThatUrisAreUsed()
         EXPECT_EQUAL(7L, slime.get()[1]["weight"].asLong());
         vespalib::string arr0s = asVstring(slime.get()[0]["item"]);
         vespalib::string arr1s = asVstring(slime.get()[1]["item"]);
-        EXPECT_EQUAL("http://www.yahoo.com:83/fluke?ab=2#12", arr0s);
+        EXPECT_EQUAL("http://www.example.com:83/fluke?ab=2#12", arr0s);
         EXPECT_EQUAL("http://www.flickr.com:85/fluke?ab=2#13", arr1s);
     }
 }
