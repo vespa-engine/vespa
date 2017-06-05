@@ -4,7 +4,9 @@
     <staging/>
     <prod global-service-id='qrs'>
         <region active='true'>us-west-1</region>
+        <delay hours='3'/>
         <region active='true'>us-central-1</region>
+        <delay hours='3' minutes='7' seconds='13'/>
         <region active='true'>us-east-3</region>
     </prod>
 </deployment>
