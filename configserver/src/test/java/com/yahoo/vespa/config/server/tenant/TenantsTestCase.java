@@ -37,7 +37,7 @@ import static org.junit.Assert.fail;
 
 public class TenantsTestCase extends TestWithCurator {
     private Tenants tenants;
-    TestComponentRegistry globalComponentRegistry;
+    private TestComponentRegistry globalComponentRegistry;
     private TenantRequestHandlerTest.MockReloadListener listener;
     private MockTenantListener tenantListener;
     private final TenantName tenant1 = TenantName.from("tenant1");
@@ -80,19 +80,19 @@ public class TenantsTestCase extends TestWithCurator {
     @Test
     public void testTenantListenersNotified() throws Exception {
         tenants.writeTenantPath(tenant3);
-        assertThat("tenant3 not the last created tenant. Tenants: " + tenants.getAllTenants() + ", /config/v2/tenants: " + readZKChildren("/config/v2/tenants"), tenantListener.tenantCreatedName, is(tenant3));
+        assertThat("tenant3 not the last created tenant. Tenants: " + tenants.getAllTenantNames() + ", /config/v2/tenants: " + readZKChildren("/config/v2/tenants"), tenantListener.tenantCreatedName, is(tenant3));
         tenants.deleteTenant(tenant2);
-        assertFalse(tenants.getAllTenants().contains(tenant2));
+        assertFalse(tenants.getAllTenantNames().contains(tenant2));
         assertThat(tenantListener.tenantDeletedName, is(tenant2));
     }
 
     @Test
     public void testAddTenant() throws Exception {
-        Set<TenantName> allTenants = tenants.getAllTenants();
+        Set<TenantName> allTenants = tenants.getAllTenantNames();
         assertTrue(allTenants.contains(tenant1));
         assertTrue(allTenants.contains(tenant2));
         tenants.writeTenantPath(tenant3);
-        allTenants = tenants.getAllTenants();
+        allTenants = tenants.getAllTenantNames();
         assertTrue(allTenants.contains(tenant1));
         assertTrue(allTenants.contains(tenant2));
         assertTrue(allTenants.contains(tenant3));
@@ -108,7 +108,7 @@ public class TenantsTestCase extends TestWithCurator {
     public void testRemove() throws Exception {
         assertNotNull(globalComponentRegistry.getCurator().framework().checkExists().forPath(tenants.tenantZkPath(tenant1)));
         tenants.deleteTenant(tenant1);
-        assertFalse(tenants.getAllTenants().contains(tenant1));
+        assertFalse(tenants.getAllTenantNames().contains(tenant1));
     }
     
     @Test
@@ -120,14 +120,14 @@ public class TenantsTestCase extends TestWithCurator {
         newTenants.add(tenant2);
         newTenants.add(defaultTenant);
         tenants.tenantsChanged(newTenants);
-        Set<TenantName> allTenants = tenants.getAllTenants();
+        Set<TenantName> allTenants = tenants.getAllTenantNames();
         assertTrue(allTenants.contains(tenant2));
         assertEquals("default", defaultTenant.value());
         assertTrue(allTenants.contains(defaultTenant));
         assertFalse(allTenants.contains(tenant1));
         newTenants.clear();
         tenants.tenantsChanged(newTenants);
-        allTenants = tenants.getAllTenants();
+        allTenants = tenants.getAllTenantNames();
         assertFalse(allTenants.contains(tenant1));
         assertFalse(allTenants.contains(tenant2));
         assertFalse(allTenants.contains(defaultTenant));
@@ -138,7 +138,7 @@ public class TenantsTestCase extends TestWithCurator {
         newTenants.add(foo);
         newTenants.add(bar);
         tenants.tenantsChanged(newTenants);
-        allTenants = tenants.getAllTenants();
+        allTenants = tenants.getAllTenantNames();
         assertTrue(allTenants.contains(tenant2));
         assertTrue(allTenants.contains(foo));
         assertTrue(allTenants.contains(bar));
@@ -149,13 +149,13 @@ public class TenantsTestCase extends TestWithCurator {
         TestComponentRegistry reg = new TestComponentRegistry.Builder().curator(curator).build();
         Tenants t = new Tenants(reg, Metrics.createTestMetrics());
         try {
-            assertTrue(t.getAllTenants().contains(TenantName.defaultName()));
+            assertTrue(t.getAllTenantNames().contains(TenantName.defaultName()));
             reg.getCurator().framework().create().forPath(tenants.tenantZkPath(TenantName.from("newTenant")));
             // Poll for the watcher to pick up the tenant from zk, and add it
             int tries=0;
             while(true) {
                 if (tries > 500) fail("Didn't react on watch");
-                if (t.getAllTenants().contains(TenantName.from("newTenant"))) {
+                if (t.getAllTenantNames().contains(TenantName.from("newTenant"))) {
                     return;
                 }
                 tries++;
@@ -166,14 +166,5 @@ public class TenantsTestCase extends TestWithCurator {
         }
     }
 
-    @Test
-    public void testTenantRedeployment() throws Exception {
-        MockDeployer deployer = new MockDeployer();
-        Tenant tenant = tenants.getTenant(tenant1);
-        ApplicationId id = ApplicationId.from(tenant1, ApplicationName.defaultName(), InstanceName.defaultName());
-        tenant.getApplicationRepo().createPutApplicationTransaction(id, 3).commit();
-        tenants.redeployApplications(deployer);
-        assertThat(deployer.lastDeployed, is(id));
-    }
 
 }

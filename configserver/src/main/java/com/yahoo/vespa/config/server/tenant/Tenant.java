@@ -163,21 +163,5 @@ public class Tenant implements TenantHandlerProvider {
         curator.delete(path);
     }
 
-    public void redeployApplications(Deployer deployer) {
-        // TODO: Configurable timeout
-        applicationRepo.listApplications().forEach(applicationId -> redeployApplication(applicationId, deployer));
-    }
 
-    private void redeployApplication(ApplicationId applicationId, Deployer deployer) {
-        try {
-            log.log(LogLevel.DEBUG, "Redeploying " + applicationId);
-            deployer.deployFromLocalActive(applicationId, Duration.ofMinutes(30))
-                    .ifPresent(deployment -> {
-                        deployment.prepare();
-                        deployment.activate();
-                    });
-        } catch (Exception e) {
-            log.log(LogLevel.ERROR, "Redeploying " + applicationId + " failed", e);
-        }
-    }
 }

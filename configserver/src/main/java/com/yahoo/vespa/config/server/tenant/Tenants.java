@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
@@ -87,7 +86,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
         // Note: unit tests may want to use the constructor below to avoid setting watch by calling readTenants().
         this.globalComponentRegistry = globalComponentRegistry;
         this.curator = globalComponentRegistry.getCurator();
-        metricUpdater = metrics.getOrCreateMetricUpdater(Collections.<String, String>emptyMap());
+        metricUpdater = metrics.getOrCreateMetricUpdater(Collections.emptyMap());
         this.tenantListeners.add(globalComponentRegistry.getTenantListener());
         curator.framework().getConnectionStateListenable().addListener(this);
 
@@ -95,17 +94,11 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
         createSystemTenants();
         curator.create(vespaPath);
 
-        this.directoryCache = globalComponentRegistry.getCurator().createDirectoryCache(tenantsPath.getAbsolute(), false, false, pathChildrenExecutor);
+        this.directoryCache = curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, pathChildrenExecutor);
         directoryCache.start();
         directoryCache.addListener(this);
         tenantsChanged(readTenants());
         notifyTenantsLoaded();
-    }
-
-    private void notifyTenantsLoaded() {
-        for (TenantListener tenantListener : tenantListeners) {
-            tenantListener.onTenantsLoaded();
-        }
     }
 
     /**
@@ -122,6 +115,12 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
         curator.create(tenantsPath);
         this.directoryCache = curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, pathChildrenExecutor);
         this.tenants.putAll(addTenants(tenants));
+    }
+
+    private void notifyTenantsLoaded() {
+        for (TenantListener tenantListener : tenantListeners) {
+            tenantListener.onTenantsLoaded();
+        }
     }
 
     // Pre-condition: tenants path needs to exist in zk
@@ -326,18 +325,6 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
         pathChildrenExecutor.shutdown();
     }
 
-    // TODO: Deploy applications in parallel (with throttling)
-    public void redeployApplications(Deployer deployer) {
-        Set<Tenant> allTenants = ImmutableSet.copyOf(tenants.values());
-        int totalNumberOfApplications = allTenants.stream()
-                .mapToInt(tenant -> tenant.getApplicationRepo().listApplications().size()).sum();
-        int applicationsRedeployed = 0;
-        for (Tenant tenant : allTenants) {
-            tenant.redeployApplications(deployer);
-            applicationsRedeployed += redeployProgress(tenant, applicationsRedeployed, totalNumberOfApplications);
-        }
-    }
-
     public boolean checkThatTenantExists(TenantName tenant) {
         return tenants.containsKey(tenant);
     }
@@ -346,16 +333,12 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
         return tenants.get(tenantName);
     }
 
-    public Set<TenantName> getAllTenants() {
+    public Set<TenantName> getAllTenantNames() {
         return ImmutableSet.copyOf(tenants.keySet());
     }
 
-    private static int redeployProgress(Tenant tenant, int applicationsRedeployed, int totalNumberOfApplications) {
-        int size = tenant.getApplicationRepo().listApplications().size();
-        if (size > 0) {
-            log.log(LogLevel.INFO, String.format("Redeployed %s of %s applications", applicationsRedeployed + size, totalNumberOfApplications));
-        }
-        return size;
+    public Collection<Tenant> getAllTenants() {
+        return ImmutableSet.copyOf(tenants.values());
     }
 
     /**

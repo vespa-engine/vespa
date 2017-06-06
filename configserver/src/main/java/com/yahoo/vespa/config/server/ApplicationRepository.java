@@ -10,6 +10,7 @@ import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
@@ -43,8 +44,12 @@ import java.io.File;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 /**
@@ -325,6 +330,37 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         LocalSession session = sessionFactory.createSession(applicationDirectory, applicationName, timeoutBudget);
         localSessionRepo.addSession(session);
         return session.getSessionId();
+    }
+
+    void redeployAllApplications(Deployer deployer) {
+        ExecutorService deploymentExecutor = Executors.newCachedThreadPool();
+        Set<ApplicationId> applicationIds = new HashSet<>();
+
+        tenants.getAllTenants().forEach(tenant -> applicationIds.addAll(tenant.getApplicationRepo().listApplications()));
+
+        int applicationsRedeployed = 0;
+        for (ApplicationId applicationId : applicationIds) {
+            redeployApplication(applicationId, deployer, deploymentExecutor);
+            log.log(LogLevel.INFO, String.format("Redeployed %s of %s applications", ++applicationsRedeployed, applicationIds.size()));
+            // Throttle deployments
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void redeployApplication(ApplicationId applicationId, Deployer deployer, ExecutorService deploymentExecutor) {
+        log.log(LogLevel.DEBUG, () -> "Redeploying " + applicationId);
+        deployer.deployFromLocalActive(applicationId, Duration.ofMinutes(30))
+                .ifPresent(deployment -> deploymentExecutor.execute(() -> {
+                    try {
+                        deployment.activate();
+                    } catch (RuntimeException e) {
+                        log.log(LogLevel.ERROR, "Redeploying " + applicationId + " failed", e);
+                    }
+                }));
     }
 
     public ApplicationFile getApplicationFileFromSession(TenantName tenantName, long sessionId, String path, LocalSession.Mode mode) {
