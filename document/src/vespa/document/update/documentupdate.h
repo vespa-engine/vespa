@@ -29,7 +29,6 @@
 #include "fieldpathupdate.h"
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/base/field.h>
-#include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/document/util/bytebuffer.h>
 
@@ -118,19 +117,13 @@ public:
      * Add a field update to this document update.
      * @return A reference to this.
      */
-    DocumentUpdate& addUpdate(const FieldUpdate& update) {
-        _updates.push_back(update);
-        return *this;
-    }
+    DocumentUpdate& addUpdate(const FieldUpdate& update);
 
     /**
      * Add a fieldpath update to this document update.
      * @return A reference to this.
      */
-    DocumentUpdate& addFieldPathUpdate(const FieldPathUpdate::CP& update) {
-        _fieldPathUpdates.push_back(update);
-        return *this;
-    }
+    DocumentUpdate& addFieldPathUpdate(const FieldPathUpdate::CP& update);
 
     /** @return The list of updates. */
     const FieldUpdateV & getUpdates() const { return _updates; }
@@ -141,7 +134,7 @@ public:
     bool affectsDocumentBody() const;
 
     /** @return The type of document this update is for. */
-    const DocumentType& getType() const { return static_cast<const DocumentType &> (*_type); }
+    const DocumentType& getType() const;
 	
     // Printable implementation
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -159,9 +152,7 @@ public:
     void printXml(XmlOutputStream&) const override;
 
     // Cloneable implementation
-    virtual DocumentUpdate* clone() const {
-        return new DocumentUpdate(*this);
-    }
+    virtual DocumentUpdate* clone() const;
 
     /**
      * Sets whether this update should create the document it updates if that document does not exist.
@@ -199,7 +190,6 @@ private:
     DocumentUpdate();
 
     int deserializeFlags(int sizeAndFlags);
-
 };
 
 } // document

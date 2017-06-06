@@ -15,7 +15,6 @@
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/util/xmlserializable.h>
 #include <vespa/vespalib/util/polymorphicarrays.h>
-#include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/objects/cloneable.h>
 #include <map>
 
@@ -24,6 +23,8 @@ namespace vespalib {
 }
 
 namespace document {
+
+class ByteBuffer;
 
 class FieldValue : public vespalib::Identifiable
 {
@@ -168,27 +169,18 @@ public:
     virtual const DataType *getDataType() const = 0;
 
     /** Wrapper for datatypes isA() function. See DataType. */
-    virtual bool isA(const FieldValue& other) const
-        { return (getDataType()->isA(*other.getDataType())); }
+    virtual bool isA(const FieldValue& other) const;
 
     void serialize(vespalib::nbostream &stream) const;
     void serialize(ByteBuffer& buffer) const;
-    ByteBuffer::UP serialize() const;
+    std::unique_ptr<ByteBuffer> serialize() const;
 
     /**
      * Compares this fieldvalue with another fieldvalue.
      * Should return 0 if the two are equal, <0 if this object is "less" than
      * the other, and >0 if this object is more than the other.
      */
-    virtual int compare(const FieldValue& other) const {
-        const DataType & a = *getDataType();
-        const DataType & b = *other.getDataType();
-        return (a < b)
-                   ? -1
-                   : (b < a)
-                       ? 1
-                       : 0;
-    }
+    virtual int compare(const FieldValue& other) const;
 
     /**
      * Returns true if this object have been altered since last

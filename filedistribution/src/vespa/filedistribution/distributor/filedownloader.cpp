@@ -2,6 +2,7 @@
 #include "filedownloader.h"
 #include "hostname.h"
 #include <vespa/filedistribution/model/zkfacade.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>

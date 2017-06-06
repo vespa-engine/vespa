@@ -5,6 +5,7 @@
 #include "rpc_server_map.h"
 #include "remote_slobrok.h"
 #include "sbenv.h"
+#include <vespa/vespalib/util/stringfmt.h>
 #include <sstream>
 
 #include <vespa/log/log.h>

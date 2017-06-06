@@ -3,7 +3,7 @@
 #include "rankmanager.h"
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/functiontablefactory.h>
-#include <vespa/vespalib/util/vstringfmt.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchvisitor.rankmanager");
@@ -106,7 +106,7 @@ RankManager::Snapshot::initRankSetup(const BlueprintFactory & factory)
     LOG(debug, "Number of index environments and rank setups: %u", (uint32_t)_indexEnv.size());
     LOG_ASSERT(_properties.size() == _rankSetup.size());
     for (uint32_t i = 0; i < _properties.size(); ++i) {
-        vespalib::string number = vespalib::make_vespa_string("%u", i);
+        vespalib::string number = vespalib::make_string("%u", i);
         _rpmap[number] = i;
     }
     for (uint32_t i = 0; i < _properties.size(); ++i) {

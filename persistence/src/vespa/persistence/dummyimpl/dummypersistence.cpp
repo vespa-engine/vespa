@@ -9,6 +9,7 @@
 #include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/log/log.h>
 

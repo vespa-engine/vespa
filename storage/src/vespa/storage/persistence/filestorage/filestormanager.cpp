@@ -17,6 +17,7 @@
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storage/bucketdb/lockablemap.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/stringfmt.h>
 
 LOG_SETUP(".persistence.filestor.manager");
 

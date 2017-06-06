@@ -5,6 +5,7 @@
 #include "putoperation.h"
 #include "updateoperation.h"
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/batch.h>

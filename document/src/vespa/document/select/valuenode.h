@@ -29,34 +29,25 @@ namespace select {
 class ValueNode : public Printable
 {
 public:
-    typedef std::unique_ptr<ValueNode> UP;
-    typedef Context::VariableMap VariableMap;
+    using UP = std::unique_ptr<ValueNode>;
 
     ValueNode() : _parentheses(false) {}
     virtual ~ValueNode() {}
 
     void setParentheses() { _parentheses = true; }
-
-    void clearParentheses()
-    {
-        _parentheses = false;
-    }
-
+    void clearParentheses() { _parentheses = false; }
     bool hadParentheses() const { return _parentheses; }
 
     virtual std::unique_ptr<Value>
     getValue(const Context& context) const  = 0;
 
     virtual std::unique_ptr<Value>
-    traceValue(const Context &context,
-               std::ostream &out) const {
+    traceValue(const Context &context, std::ostream &out) const {
         return defaultTrace(getValue(context), out);
     }
 
     virtual void print(std::ostream& out, bool verbose, const std::string& indent) const override = 0;
-
     virtual void visit(Visitor&) const = 0;
-
     virtual ValueNode::UP clone() const = 0;
 private:
     bool _parentheses; // Set to true if parentheses was used around this part
@@ -70,12 +61,7 @@ protected:
         return ret;
     }
 
-    std::unique_ptr<Value> defaultTrace(std::unique_ptr<Value> val,
-                                      std::ostream& out) const
-    {
-        out << "Returning value " << *val << ".\n";
-        return std::move(val);
-    }
+    std::unique_ptr<Value> defaultTrace(std::unique_ptr<Value> val, std::ostream& out) const;
 };
 
 class InvalidValueNode : public ValueNode

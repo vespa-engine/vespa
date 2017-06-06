@@ -2,6 +2,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/feature_resolver.h>
 #include <vespa/searchvisitor/hitcollector.h>

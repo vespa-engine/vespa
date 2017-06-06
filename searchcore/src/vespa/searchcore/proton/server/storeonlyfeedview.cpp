@@ -2,23 +2,21 @@
 
 #include "ireplayconfig.h"
 #include "storeonlyfeedview.h"
-#include <vespa/searchcore/proton/common/bucketfactory.h>
-#include <vespa/searchcore/proton/common/commit_time_tracker.h>
-#include <vespa/searchcore/proton/common/feedtoken.h>
-#include <vespa/searchcore/proton/metrics/feed_metrics.h>
-#include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/text/stringtokenizer.h>
-#include <vespa/vespalib/util/closuretask.h>
-#include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include "forcecommitcontext.h"
 #include "operationdonecontext.h"
 #include "removedonecontext.h"
 #include "updatedonecontext.h"
 #include "putdonecontext.h"
-#include <vespa/searchlib/common/lambdatask.h>
+#include <vespa/searchcore/proton/common/commit_time_tracker.h>
+#include <vespa/searchcore/proton/common/feedtoken.h>
+#include <vespa/searchcore/proton/metrics/feed_metrics.h>
+#include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
 #include <vespa/searchlib/common/scheduletaskcallback.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/vespalib/util/closuretask.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.storeonlyfeedview");
 

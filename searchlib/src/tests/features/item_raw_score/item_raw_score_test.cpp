@@ -9,6 +9,7 @@
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using search::feature_t;
 using namespace search::fef;

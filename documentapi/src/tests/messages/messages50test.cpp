@@ -4,6 +4,7 @@
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/fieldpathupdates.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/vdslib/container/writabledocumentlist.h>
 

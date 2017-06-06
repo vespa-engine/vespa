@@ -2,6 +2,7 @@
 #pragma once
 
 #include "document.h"
+#include <cassert>
 
 namespace proton {
 

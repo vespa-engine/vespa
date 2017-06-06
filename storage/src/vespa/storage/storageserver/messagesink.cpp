@@ -2,6 +2,7 @@
 
 #include "messagesink.h"
 #include <vespa/storageapi/message/persistence.h>
+#include <ostream>
 
 using std::shared_ptr;
 

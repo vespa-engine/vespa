@@ -6,11 +6,12 @@
 #include "cachestats.h"
 #include <vespa/vespalib/stllike/cache.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/document/util/bytebuffer.h>
 
-namespace search {
-namespace docstore {
+namespace search::docstore {
 
 /**
  * Represents a unique set of keys that together acts as a key in a map.
@@ -159,5 +160,4 @@ private:
     std::unique_ptr<Cache>  _cache;
 };
 
-}
 }

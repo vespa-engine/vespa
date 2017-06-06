@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vdstestlib/cppunit/macros.h>
-#include <fstream>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/storage/persistence/splitbitdetector.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>

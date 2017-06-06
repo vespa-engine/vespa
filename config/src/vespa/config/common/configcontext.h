@@ -5,8 +5,6 @@
 #include "timingvalues.h"
 #include "configmanager.h"
 #include <vespa/config/subscription/sourcespec.h>
-#include <vespa/vespalib/util/sync.h>
-#include <vespa/vespalib/stllike/hash_map.h>
 
 namespace config {
 

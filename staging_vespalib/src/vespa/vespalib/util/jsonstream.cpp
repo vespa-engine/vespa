@@ -4,6 +4,7 @@
 #include "jsonexception.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 namespace vespalib {
 
@@ -18,7 +19,7 @@ JsonStream::getStateName(const State& s) {
     throw IllegalStateException("Control should not reach this point", VESPA_STRLOC);
 }
 
-JsonStream::JsonStream(vespalib::asciistream& as, bool createIndents)
+JsonStream::JsonStream(asciistream& as, bool createIndents)
     : _writer(as)
 {
     if (createIndents) _writer.setPretty();
@@ -28,7 +29,7 @@ JsonStream::JsonStream(vespalib::asciistream& as, bool createIndents)
 JsonStream::~JsonStream() {}
 
 JsonStream&
-JsonStream::operator<<(vespalib::stringref value)
+JsonStream::operator<<(stringref value)
 {
     if (_state.empty()) {
         fail("Stream already finalized. Can't add a string value.");
@@ -314,7 +315,7 @@ JsonStream::finalize()
 string
 JsonStream::getStateString() const
 {
-    vespalib::asciistream as;
+    asciistream as;
     for (auto it(_state.begin()), mt(_state.end()); it != mt; it++) {
         switch (it->state) {
             case State::OBJECT_EXPECTING_KEY:
@@ -343,7 +344,7 @@ JsonStream::getStateString() const
     return as.str();
 }
 
-vespalib::string
+string
 JsonStream::getJsonStreamState() const
 {
     asciistream report;
@@ -360,4 +361,4 @@ JsonStream::fail(stringref error) const
     throw JsonStreamException(report.str(), "", VESPA_STRLOC);
 }
 
-} // vespalib
+}

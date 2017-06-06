@@ -4,6 +4,7 @@
 #include "valuemetric.h"
 #include "memoryconsumption.h"
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <sstream>
 
 namespace metrics {

@@ -16,20 +16,22 @@
 
 #pragma once
 
-#include <vespa/document/util/bytebuffer.h>
 #include <vespa/document/util/compressionconfig.h>
-#include <vespa/document/util/compressor.h>
-#include <vespa/document/util/serializable.h>
-#include <vector>
 #include <vespa/vespalib/objects/cloneable.h>
-#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/buffer.h>
-#include <vespa/fastos/dynamiclibrary.h>
+#include <vespa/vespalib/util/memory.h>
+#include <vector>
 
-namespace document
-{
+#define VESPA_DLL_LOCAL  __attribute__ ((visibility("hidden")))
+
+namespace document {
 
 class SerializableArrayIterator;
+class ByteBuffer;
+
+namespace serializablearray {
+    class BufferMap;
+}
 
 class SerializableArray : public vespalib::Cloneable
 {
@@ -71,7 +73,7 @@ public:
         bool operator < (const Entry & e) const { return cmp(e) < 0; }
         int cmp(const Entry & e) const { return _id - e._id; }
         void setBuffer(const char * buffer) { _data._buffer = buffer; _sz |= BUFFER_MASK; }
-        const char * getBuffer(const ByteBuffer * readOnlyBuffer) const { return hasBuffer() ? _data._buffer : readOnlyBuffer->getBuffer() + getOffset(); }
+        VESPA_DLL_LOCAL const char * getBuffer(const ByteBuffer * readOnlyBuffer) const;
     private:
         uint32_t getOffset() const { return _data._offset; }
         enum { BUFFER_MASK=0x80000000 };
@@ -100,12 +102,11 @@ public:
 private:
     static Statistics _stats;
 
-    typedef vespalib::hash_map<int, uint32_t> HashMap;
-
 public:
     static Statistics& getStatistics() { return _stats; }
-    typedef vespalib::CloneablePtr<SerializableArray> CP;
-    typedef std::unique_ptr<SerializableArray> UP;
+    using CP = vespalib::CloneablePtr<SerializableArray>;
+    using UP = std::unique_ptr<SerializableArray>;
+    using ByteBufferUP = std::unique_ptr<ByteBuffer>;
 
     SerializableArray();
     virtual ~SerializableArray();
@@ -122,7 +123,7 @@ public:
     void set(int id, const char* value, int len);
 
     /** Stores a value in the array. */
-    void set(int id, std::unique_ptr<ByteBuffer> buffer);
+    void set(int id, ByteBufferUP buffer);
 
     /**
      * Gets a value from the array. This is the faster version of the above.
@@ -152,19 +153,17 @@ public:
     void clear();
 
     CompressionConfig::Type getCompression() const { return _serializedCompression; }
-    CompressionInfo getCompressionInfo() const {
-        return CompressionInfo(_uncompressedLength, _compSerData->getRemaining());
-    }
+    CompressionInfo getCompressionInfo() const;
 
     /**
      * Sets the serialized data that is the basis for this object's
      * content. This is used by deserialization. Any existing entries
      * are cleared.
      */
-    VESPA_DLL_LOCAL void assign(EntryMap &entries,
-                                ByteBuffer::UP buffer,
-                                CompressionConfig::Type comp_type,
-                                uint32_t uncompressed_length);
+    void assign(EntryMap &entries,
+                ByteBufferUP buffer,
+                CompressionConfig::Type comp_type,
+                uint32_t uncompressed_length);
 
     bool empty() const { return _entries.empty(); }
 
@@ -189,22 +188,22 @@ private:
         return false;
     }
 
-    VESPA_DLL_LOCAL bool deCompressAndCatch() const;
+    bool deCompressAndCatch() const;
     void maybeDecompress() const {
         if ( shouldDecompress() ) {
             const_cast<SerializableArray *>(this)->deCompress();
         }
     }
-    VESPA_DLL_LOCAL void deCompress(); // throw (DeserializeException);
+    void deCompress(); // throw (DeserializeException);
 
     /** Contains the stored attributes, with reference to the real data.. */
     EntryMap _entries;
     /** The buffers we own. */
-    vespalib::hash_map<int, ByteBuffer::UP > _owned;
+    std::unique_ptr<serializablearray::BufferMap> _owned;
 
     /** Data we deserialized from, if applicable. */
-    ByteBuffer::UP           _uncompSerData;
-    ByteBuffer::UP           _compSerData;
+    ByteBufferUP             _uncompSerData;
+    ByteBufferUP             _compSerData;
     CompressionConfig::Type  _serializedCompression;
 
     uint32_t     _uncompressedLength;
@@ -215,4 +214,3 @@ private:
 };
 
 } // document
-

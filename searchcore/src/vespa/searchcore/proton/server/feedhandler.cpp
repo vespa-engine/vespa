@@ -12,15 +12,13 @@
 #include <vespa/documentapi/messagebus/messages/feedreply.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentreply.h>
 #include <vespa/documentapi/messagebus/messages/updatedocumentreply.h>
-#include <vespa/searchcore/proton/common/bucketfactory.h>
-#include <vespa/searchcore/proton/feedoperation/moveoperation.h>
-#include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/persistenceengine/transport_latch.h>
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandler.h>
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.feedhandler");
 

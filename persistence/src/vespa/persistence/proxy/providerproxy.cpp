@@ -8,9 +8,8 @@
 #include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
-#include <vespa/document/util/bytebuffer.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/util/noncopyable.hpp>
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".providerproxy");

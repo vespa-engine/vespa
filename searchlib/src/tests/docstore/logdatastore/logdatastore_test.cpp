@@ -3,6 +3,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/searchlib/docstore/chunkformats.h>
 #include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/searchlib/docstore/storebybucket.h>

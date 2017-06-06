@@ -1,9 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include "assignfieldpathupdate.h"
 #include <vespa/document/fieldvalue/fieldvalues.h>
-#include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/document/select/parser.h>
+#include <vespa/document/select/variablemap.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
-#include <vespa/document/update/assignfieldpathupdate.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <boost/numeric/conversion/cast.hpp>
@@ -108,7 +109,8 @@ FieldValue::IteratorHandler::ModificationStatus
 AssignFieldPathUpdate::AssignExpressionIteratorHandler::doModify(FieldValue& fv) {
     LOG(spam, "fv = %s", fv.toString().c_str());
     if (fv.inherits(NumericFieldValueBase::classId)) {
-        DocumentCalculator::VariableMap vars;
+        std::unique_ptr<select::VariableMap> varHolder = std::make_unique<select::VariableMap>();
+        select::VariableMap & vars = *varHolder;
         for (VariableMap::const_iterator i(getVariables().begin()),
                  e(getVariables().end()); i != e; ++i)
         {
@@ -122,7 +124,7 @@ AssignFieldPathUpdate::AssignExpressionIteratorHandler::doModify(FieldValue& fv)
         vars["value"] = fv.getAsDouble();
 
         try {
-            double res = _calc.evaluate(_doc, std::move(vars));
+            double res = _calc.evaluate(_doc, std::move(varHolder));
             if (_removeIfZero && static_cast<uint64_t>(res) == 0) {
                 return REMOVED;
             } else {

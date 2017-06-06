@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/atomic.h>
+#include <vespa/fastos/thread.h>
 #include <vector>
 #include <algorithm>
 #include <sstream>

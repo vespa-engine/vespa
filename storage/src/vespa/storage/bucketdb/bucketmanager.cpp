@@ -15,6 +15,7 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/stat.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/config/config.h>
 #include <unordered_map>

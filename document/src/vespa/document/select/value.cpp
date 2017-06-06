@@ -2,7 +2,6 @@
 
 #include "value.h"
 #include "operator.h"
-#include <cstdint>
 
 namespace document {
 namespace select {

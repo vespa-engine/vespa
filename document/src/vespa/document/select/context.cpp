@@ -1,11 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "context.h"
+#include "variablemap.h"
+#include <vespa/document/select/value.h>
 
-namespace document {
-namespace select {
+namespace document::select {
 
-Context::Context(void)
+Context::Context()
     : _doc(NULL),
       _docId(NULL),
       _docUpdate(NULL),
@@ -35,5 +36,20 @@ Context::Context(const DocumentUpdate& docUpdate)
 
 Context::~Context() { }
 
-} // select
-} // document
+std::unique_ptr<Value>
+Context::getValue(const vespalib::string & value) const {
+    VariableMap::const_iterator iter = _variables->find(value);
+
+    if (iter != _variables->end()) {
+        return std::make_unique<FloatValue>(iter->second);
+    } else {
+        return std::make_unique<FloatValue>(0.0);
+    }
+}
+
+void
+Context::setVariableMap(std::unique_ptr<VariableMap> map) {
+    _variables = std::move(map);
+}
+
+}

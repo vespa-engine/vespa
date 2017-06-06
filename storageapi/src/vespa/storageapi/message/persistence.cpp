@@ -3,6 +3,7 @@
 #include "persistence.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <ostream>
 
 namespace storage {
 namespace api {

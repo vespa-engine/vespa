@@ -1,20 +1,20 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/document/select/node.h>
-#include <map>
 #include <vespa/messagebus/routing/iroutingpolicy.h>
-#include <vespa/messagebus/routing/route.h>
-#include <vespa/messagebus/routing/routingcontext.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/ptrholder.h>
 #include <vespa/config-messagetyperouteselectorpolicy.h>
 #include <vespa/config/config.h>
 #include <vespa/config/helper/configfetcher.h>
 #include <vespa/documentapi/common.h>
 
+namespace mbus {
+    class RoutingContext;
+    class Route;
+}
 namespace documentapi {
 
+namespace policy {class MessageTypeMap; }
 /**
  * This policy is responsible for selecting among the given recipient routes
  * according to the configured document selection properties. To factilitate
@@ -26,8 +26,7 @@ class MessageTypePolicy : public mbus::IRoutingPolicy,
                           public config::IFetcherCallback<vespa::config::content::MessagetyperouteselectorpolicyConfig>
 {
 private:
-    typedef vespalib::hash_map<int, mbus::Route> MessageTypeMap;
-    typedef vespalib::PtrHolder<MessageTypeMap> MessageTypeHolder;
+    typedef vespalib::PtrHolder<policy::MessageTypeMap> MessageTypeHolder;
     typedef vespalib::PtrHolder<mbus::Route> RouteHolder;
 
     MessageTypeHolder     _map;

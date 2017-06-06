@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/testkit/testapp.h>

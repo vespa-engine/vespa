@@ -3,6 +3,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/searchcore/proton/common/selectpruner.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/cloningvisitor.h>

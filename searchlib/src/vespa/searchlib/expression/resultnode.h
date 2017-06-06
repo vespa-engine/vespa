@@ -3,7 +3,6 @@
 
 #include "expressionnode.h"
 #include "serializer.h"
-#include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/buffer.h>
 
 namespace search {
@@ -49,10 +48,7 @@ public:
 
 private:
     virtual int64_t onGetInteger(size_t index) const = 0;
-    virtual int64_t onGetEnum(size_t index) const {
-        (void) index;
-        throw vespalib::Exception("search::expression::ResultNode onGetEnum is not implemented");
-    }
+    virtual int64_t onGetEnum(size_t index) const;
     virtual double    onGetFloat(size_t index) const = 0;
     virtual ConstBufferRef onGetString(size_t index, BufferRef buf) const = 0;
 
@@ -124,9 +120,8 @@ public:
     virtual ResultDeserializer & onDeserializeResult(ResultDeserializer & is);
     virtual size_t getRawByteSize() const;
     virtual bool isMultiValue() const { return false; }
-    virtual const BucketResultNode& getNullBucket() const { throw std::runtime_error(vespalib::make_string("No null bucket defined for this type")); }
+    virtual const BucketResultNode& getNullBucket() const;
 };
 
 }
 }
-
