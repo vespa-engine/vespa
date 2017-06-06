@@ -16,7 +16,7 @@ If the build fails, start from scratch: ```docker rmi -f vesparun vespabuild``` 
 - ```docker rm -v $(docker ps -a -q -f status=exited)```
 - ```docker rmi $(docker images -f "dangling=true" -q)```
 
-_Directory renamed before its status could be extracted_ can be caused by [1219](https://github.com/docker/for-mac/issues/1219)
+_Directory renamed before its status could be extracted_ can be caused by [1219](https://github.com/docker/for-mac/issues/1219) - workaround (from the issue): "It may be an overlay storage driver issue - you can add ```{"storage-driver":"aufs"}``` in the advanced daemon preferences pane and see if that makes a difference."
 
 ## Running Vespa
 Execute ```./run-vespa.sh <Vespa version number>``` to start Vespa.
