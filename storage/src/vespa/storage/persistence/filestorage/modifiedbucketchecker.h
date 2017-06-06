@@ -51,8 +51,7 @@ private:
     }
     bool requestModifiedBucketsFromProvider();
     void nextRecheckChunk(std::vector<RecheckBucketInfoCommand::SP>&);
-    void dispatchAllToPersistenceQueues(
-            const std::vector<RecheckBucketInfoCommand::SP>&);
+    void dispatchAllToPersistenceQueues(const std::vector<RecheckBucketInfoCommand::SP>&);
 
     spi::PersistenceProvider& _provider;
     ServiceLayerComponent::UP _component;
