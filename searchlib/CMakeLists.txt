@@ -60,9 +60,9 @@ vespa_define_module(
     src/apps/docstore
     src/apps/expgolomb
     src/apps/fileheaderinspect
-    src/apps/loadattribute
     src/apps/tests
     src/apps/uniform
+    src/apps/vespa-attribute-inspect
     src/apps/vespa-index-inspect
     src/apps/vespa-ranking-expression-analyzer
 
