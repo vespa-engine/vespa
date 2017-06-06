@@ -6,6 +6,7 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".memfilepersistenceprovider");

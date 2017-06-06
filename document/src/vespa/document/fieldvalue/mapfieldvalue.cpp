@@ -5,6 +5,7 @@
 #include "iteratorhandler.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/vespalib/util/xmlstream.h>
+#include <ostream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".document.fieldvalue.map");
@@ -208,8 +209,7 @@ MapFieldValue::compare(const FieldValue& other) const
 }
 
 void
-MapFieldValue::print(std::ostream& out, bool verbose,
-                       const std::string& indent) const
+MapFieldValue::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     out << "Map(";
 

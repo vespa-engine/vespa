@@ -6,6 +6,8 @@
 #include <vespa/memfilepersistence/common/environment.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/document/util/bytebuffer.h>
+#include <sstream>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".memfile.simpleiobuffer");
 

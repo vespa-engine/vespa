@@ -9,6 +9,7 @@
 #include <vespa/vespalib/util/guard.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <fstream>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.mountpointlist");

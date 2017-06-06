@@ -4,12 +4,12 @@
 #include "visitorslotmatcher.h"
 #include "cacheevictionguard.h"
 #include <vespa/document/select/bodyfielddetector.h>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.memfile.handler.iterator");
 
-namespace storage {
-namespace memfile {
+namespace storage::memfile {
 
 CachePrefetchRequirements
 CachePrefetchRequirements::createFromSelection(const document::DocumentTypeRepo& repo,
@@ -434,5 +434,4 @@ IteratorHandler::iterate(spi::IteratorId id, uint64_t maxByteSize)
     return spi::IterateResult(std::move(results), false);
 }
 
-}
 }

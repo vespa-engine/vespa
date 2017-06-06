@@ -7,8 +7,9 @@
 #include <vespa/memfilepersistence/common/exceptions.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/storageframework/generic/clock/timer.h>
+#include <sstream>
 
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".persistence.memfile.mapper");
 
 namespace storage::memfile {

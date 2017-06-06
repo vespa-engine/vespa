@@ -4,6 +4,8 @@
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <sstream>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".routablerepository");
 
@@ -11,9 +13,7 @@ namespace documentapi {
 
 RoutableRepository::VersionMap::VersionMap() :
     _factoryVersions()
-{
-    // empty
-}
+{ }
 
 bool
 RoutableRepository::VersionMap::putFactory(const vespalib::VersionSpecification &version,

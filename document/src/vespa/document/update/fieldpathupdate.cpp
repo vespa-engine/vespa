@@ -4,8 +4,9 @@
 #include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/util/serializableexceptions.h>
-#include <vespa/log/log.h>
+#include <ostream>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".document.update.fieldpathupdate");
 
 using vespalib::make_string;

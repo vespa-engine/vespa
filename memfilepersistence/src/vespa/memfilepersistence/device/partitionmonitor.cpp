@@ -4,6 +4,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/xmlstream.h>
+#include <ostream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.device.partition.monitor");

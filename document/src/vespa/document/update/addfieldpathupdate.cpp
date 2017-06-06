@@ -6,11 +6,9 @@
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/log/log.h>
+#include <ostream>
 
 using vespalib::nbostream;
-
-LOG_SETUP(".document.update.fieldpathupdate");
 
 namespace document {
 
@@ -53,7 +51,6 @@ private:
 
 ModificationStatus
 AddIteratorHandler::doModify(FieldValue &fv) {
-    LOG(spam, "Adding values to %s", fv.toString().c_str());
     if (fv.inherits(CollectionFieldValue::classId)) {
         CollectionFieldValue &cf = static_cast<CollectionFieldValue &>(fv);
         for (std::size_t i = 0; i < _values.size(); ++i) {

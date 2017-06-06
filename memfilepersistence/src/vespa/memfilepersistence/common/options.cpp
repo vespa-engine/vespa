@@ -1,15 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "options.h"
-#include <vespa/config-stor-memfilepersistence.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.slotfile.options");
 
-namespace storage {
-
-namespace memfile {
+namespace storage::memfile {
 
 Options::Options(const vespa::config::storage::StorMemfilepersistenceConfig& newConfig,
                  const vespa::config::content::PersistenceConfig& newPersistenceConfig)
@@ -176,8 +174,6 @@ void Options::print(std::ostream& out, bool verbose,
         << s << "Write removes with blank documents of default type: "
              << _defaultRemoveDocType
         << "";
-}
-
 }
 
 }

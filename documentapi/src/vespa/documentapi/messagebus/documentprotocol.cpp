@@ -4,16 +4,15 @@
 #include "routablefactories51.h"
 #include "routablefactories52.h"
 #include "routingpolicyfactories.h"
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/util/stringutil.h>
-#include <vespa/documentapi/documentapi.h>
-#include <vespa/documentapi/messagebus/replymerger.h>
-#include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/routing/routingcontext.h>
-#include <vespa/vespalib/component/versionspecification.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include "routablerepository.h"
 #include "routingpolicyrepository.h"
+#include "replymerger.h"
+#include <vespa/document/util/stringutil.h>
+#include <vespa/documentapi/documentapi.h>
+#include <vespa/messagebus/emptyreply.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <sstream>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".documentprotocol");
 
