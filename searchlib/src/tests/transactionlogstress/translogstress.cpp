@@ -9,6 +9,7 @@
 #include <vespa/fastos/app.h>
 #include <iostream>
 #include <stdexcept>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP("translogstress");

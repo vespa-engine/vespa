@@ -2,17 +2,14 @@
 
 #include "juniperdfw.h"
 #include "docsumwriter.h"
-#include "docsumfieldwriter.h"
 #include "docsumstate.h"
-#include "keywordextractor.h"
-#include "docsumformat.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/searchlib/queryeval/split_float.h>
-
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/objects/hexdump.h>
 #include <vespa/juniper/config.h>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.dynamicteaserdfw");

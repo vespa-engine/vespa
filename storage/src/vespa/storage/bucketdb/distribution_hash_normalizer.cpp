@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "distribution_hash_normalizer.h"
-#include <vespa/log/log.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
@@ -13,6 +12,7 @@
 #include <iterator>
 #include <functional>
 
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".storage.bucketdb.distribution_hash_normalizer");
 
 // TODO

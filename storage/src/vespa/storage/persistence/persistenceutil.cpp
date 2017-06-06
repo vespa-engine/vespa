@@ -4,7 +4,7 @@
 #include <vespa/config/config.h>
 #include <vespa/config/helper/configgetter.hpp>
 
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".persistence.util");
 
 namespace storage {

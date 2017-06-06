@@ -10,6 +10,7 @@
 #include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/searchsummary/docsummary/docsumconfig.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.docsummary.summarymanager");

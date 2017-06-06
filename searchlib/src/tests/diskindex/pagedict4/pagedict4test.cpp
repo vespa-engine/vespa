@@ -12,6 +12,7 @@
 #include <vespa/searchlib/diskindex/pagedict4randread.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/fastos/app.h>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP("pagedict4test");

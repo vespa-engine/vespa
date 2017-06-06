@@ -10,8 +10,8 @@
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/log/log.h>
 
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".communication.manager");
 
 namespace storage {

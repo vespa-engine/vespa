@@ -1,13 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "memorystate.h"
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".memory.state");
 
-namespace storage {
-namespace framework {
-namespace defaultimplementation {
+namespace storage::framework::defaultimplementation {
 
 MemoryState::Entry::Entry()
     : _currentUsedSize(0),
@@ -223,6 +222,4 @@ MemoryState::print(std::ostream& out, bool verbose,
     out << "\n" << indent << "}";
 }
 
-} // defaultimplementation
-} // framework
-} // storage
+}

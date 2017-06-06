@@ -20,6 +20,7 @@
 
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/changevector.hpp>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".attrupdate");

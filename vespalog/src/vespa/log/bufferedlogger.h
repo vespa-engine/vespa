@@ -198,7 +198,6 @@ public:
 
     /** Trim the buffer. Removing old messages if wanted. */
     void trimCache();
-
 };
 
 } // ns_log

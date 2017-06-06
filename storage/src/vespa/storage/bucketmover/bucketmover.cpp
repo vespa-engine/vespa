@@ -8,10 +8,10 @@
 #include <vespa/storage/storageutil/log.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".bucketmover");
 
-namespace storage {
-namespace bucketmover {
+namespace storage::bucketmover {
 
 BucketMover::BucketMover(const config::ConfigUri & configUri,
                          ServiceLayerComponentRegister& reg)
@@ -526,5 +526,4 @@ BucketMover::printRunStatisticsHtml(std::ostream& out,
     rs.print(out, true, "");
 }
 
-} // bucketmover
-} // storage
+}

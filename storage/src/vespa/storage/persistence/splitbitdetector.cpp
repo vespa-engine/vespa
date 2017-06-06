@@ -1,11 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/storage/persistence/splitbitdetector.h>
-#include <vespa/storage/persistence/bucketprocessor.h>
+#include "splitbitdetector.h"
+#include "bucketprocessor.h"
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/base/documentid.h>
+#include <sstream>
 
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".persistence.split.bitdetector");
 
 namespace storage {

@@ -13,7 +13,7 @@
 #include <vespa/config/helper/configgetter.hpp>
 #include <iomanip>
 
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".storage.bucketdb.initializer");
 
 namespace storage {

@@ -1,11 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-
-
 #include <vespa/document/util/stringutil.h>
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/slobrok/sbmirror.h>
-#include <iostream>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/util/programoptions.h>
@@ -14,6 +11,8 @@
 #include <vespa/config-stor-distribution.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/fastos/app.h>
+#include <sstream>
+#include <iostream>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vdsstatetool");

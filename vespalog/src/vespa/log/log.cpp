@@ -10,6 +10,7 @@ LOG_SETUP_INDIRECT(".log", "$Id$");
 #include "log-target.h"
 #include "internal.h"
 #include "control-file.h"
+#include "bufferedlogger.h"
 
 #include <vespa/fastos/thread.h>
 
@@ -222,6 +223,7 @@ Logger::doLog(LogLevel level, const char *file, int line, const char *fmt, ...)
         actualSize = tryLog(sizeofPayload, level, file, line, fmt, args);
         va_end(args);
     } while (sizeofPayload < actualSize);
+    ns_log::BufferedLogger::logger.trimCache();
 }
 
 void Logger::doLogCore(uint64_t timestamp, LogLevel level,

@@ -7,7 +7,7 @@
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/util/backtrace.h>
 
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".persistence.bucketownershipnotifier");
 
 namespace storage {

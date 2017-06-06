@@ -4,10 +4,9 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/common/messagebucketid.h>
-#include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/vespalib/util/exceptions.h>
 
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".bucketownershiphandler");
 
 namespace storage {

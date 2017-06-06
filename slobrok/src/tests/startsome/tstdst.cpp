@@ -6,6 +6,7 @@
 #include <vespa/fnet/frt/invoker.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/fnet/frt/target.h>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP("testrpcserver");

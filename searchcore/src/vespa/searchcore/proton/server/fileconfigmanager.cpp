@@ -10,9 +10,10 @@
 #include <vespa/config-summarymap.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
-#include <fstream>
 #include <vespa/fastos/file.h>
 #include <vespa/config/helper/configgetter.hpp>
+#include <fstream>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.fileconfigmanager");

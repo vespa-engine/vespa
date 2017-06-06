@@ -19,6 +19,7 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
 
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".persistence.filestor.manager");
 
 using std::shared_ptr;

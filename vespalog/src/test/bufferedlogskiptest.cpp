@@ -1,18 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 
 #include <fstream>
 #include <iostream>
-#include <sstream>
-
-#include <sys/types.h>
-#include <stdlib.h>
 #include <unistd.h>
-#include <signal.h>
 
-LOG_SETUP("bufferedlogskiptest",
-          "$Id$");
+LOG_SETUP("bufferedlogskiptest");
 
 std::string readFile(const std::string& file) {
     std::ostringstream ost;

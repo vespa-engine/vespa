@@ -13,11 +13,10 @@
 #include <vespa/config-stor-distribution.h>
 #include <list>
 
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".vdslib.distribution");
 
-namespace storage {
-namespace lib {
+namespace storage::lib {
 
 namespace {
     std::vector<uint32_t> getDistributionBitMasks() {
@@ -711,5 +710,4 @@ Distribution::splitNodesIntoLeafGroups(IndexList nodeList) const
     return result;
 }
 
-} // lib
-} // storage
+}
