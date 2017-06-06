@@ -68,3 +68,11 @@ ln -s $PREFIX/lib/jars/node-repository-jar-with-dependencies.jar $INSTALLPATH/co
 ln -s $PREFIX/lib/jars/zkfacade-jar-with-dependencies.jar $INSTALLPATH/conf/configserver-app/components/zkfacade.jar
 ln -s $PREFIX/conf/configserver-app/components $INSTALLPATH/lib/jars/config-models
 ln -s storaged-bin $INSTALLPATH/sbin/distributord-bin
+
+# Temporary when renaming binaries in searchcore
+ln -s vespa-proton-bin $INSTALLPATH/sbin/proton-bin
+ln -s vespa-fdispatch-bin $INSTALLPATH/sbin/fdispatch-bin
+ln -s vespa-verify-ranksetup-bin $INSTALLPATH/bin/verify_ranksetup-bin
+ln -s vespa-proton $INSTALLPATH/sbin/proton
+ln -s vespa-fdispatch $INSTALLPATH/sbin/fdispatch
+ln -s vespa-verify-ranksetup $INSTALLPATH/bin/verify_ranksetup
