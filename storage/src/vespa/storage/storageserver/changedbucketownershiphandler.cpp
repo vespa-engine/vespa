@@ -4,6 +4,7 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/common/messagebucketid.h>
+#include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/bufferedlogger.h>
@@ -55,8 +56,7 @@ void
 ChangedBucketOwnershipHandler::reloadClusterState()
 {
     vespalib::LockGuard guard(_stateLock);
-    lib::ClusterState::CSP newState(_component.getStateUpdater()
-                                    .getSystemState());
+    lib::ClusterState::CSP newState(_component.getStateUpdater().getSystemState());
     setCurrentOwnershipWithStateNoLock(*newState);
 }
 

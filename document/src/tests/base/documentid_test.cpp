@@ -2,6 +2,7 @@
 // Unit tests for documentid.
 
 #include <vespa/document/base/documentid.h>
+#include <vespa/document/base/idstringexception.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 using namespace document;
