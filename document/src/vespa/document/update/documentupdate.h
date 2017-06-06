@@ -136,7 +136,6 @@ public:
     /** @return The type of document this update is for. */
     const DocumentType& getType() const;
 	
-    // Printable implementation
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     void deserialize42(const DocumentTypeRepo&, ByteBuffer&);
@@ -148,10 +147,8 @@ public:
     void serialize42(vespalib::nbostream &stream) const;
     void serializeHEAD(vespalib::nbostream &stream) const;
 
-    // XmlSerializable implementation
     void printXml(XmlOutputStream&) const override;
 
-    // Cloneable implementation
     virtual DocumentUpdate* clone() const;
 
     /**
