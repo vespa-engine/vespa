@@ -1,38 +1,24 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/document/select/valuenode.h>
-#include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/document/select/valuenodes.h>
 
-namespace proton
-{
-
+namespace search { class AttributeVector; }
+namespace proton {
 
 class AttributeFieldValueNode : public document::select::FieldValueNode
 {
-    search::AttributeVector::SP _attribute;
+    using Context = document::select::Context;
+    std::shared_ptr<search::AttributeVector> _attribute;
 
 public:
     AttributeFieldValueNode(const vespalib::string& doctype,
                             const vespalib::string& field,
-                            const search::AttributeVector::SP &attribute);
+                            const std::shared_ptr<search::AttributeVector> &attribute);
 
-    virtual std::unique_ptr<document::select::Value>
-    getValue(const document::select::Context &context) const override;
-
-    virtual std::unique_ptr<document::select::Value>
-    traceValue(const document::select::Context &context,
-               std::ostream& out) const override;
-
-    document::select::ValueNode::UP
-    clone() const override
-    {
-        return wrapParens(new AttributeFieldValueNode(getDocType(),
-                                                      getFieldName(),
-                                                      _attribute));
-    }
+    std::unique_ptr<document::select::Value> getValue(const Context &context) const override;
+    std::unique_ptr<document::select::Value> traceValue(const Context &context, std::ostream& out) const override;
+    document::select::ValueNode::UP clone() const override;
 };
 
 } // namespace proton
-
-

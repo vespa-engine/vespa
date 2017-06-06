@@ -12,8 +12,8 @@
  */
 #pragma once
 
+#include "bucketid.h"
 #include <vector>
-#include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/util/sync.h>
 
 namespace document {

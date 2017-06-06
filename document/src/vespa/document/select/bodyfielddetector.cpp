@@ -1,15 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bodyfielddetector.h"
+#include "valuenodes.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/datatype/documenttype.h>
-#include <vespa/vespalib/util/closure.h>
-#include "valuenode.h"
 
-namespace document {
-
-namespace select {
+namespace document::select {
 
 void
 BodyFieldDetector::detectFieldType(const FieldValueNode *expr,
@@ -35,10 +32,8 @@ BodyFieldDetector::detectFieldType(const FieldValueNode *expr,
 void
 BodyFieldDetector::visitFieldValueNode(const FieldValueNode& expr)
 {
-    _repo.forEachDocumentType(
-            *makeClosure(this, &BodyFieldDetector::detectFieldType, &expr));
+    _repo.forEachDocumentType(*makeClosure(this, &BodyFieldDetector::detectFieldType, &expr));
 }
 
 
-}  // namespace select
-}  // namespace document
+}

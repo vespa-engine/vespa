@@ -2,17 +2,11 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include "node.h"
-#include "valuenode.h"
+#include "valuenodes.h"
 #include "operator.h"
-#include <vespa/document/bucket/bucketidfactory.h>
 
-namespace document {
-
-namespace select {
-
-namespace simple {
+namespace document::select::simple {
 
 class Parser {
 public:
@@ -89,9 +83,4 @@ private:
     const BucketIdFactory & _bucketIdFactory;
 };
 
-
-
-} // simple
-} // select
-} // parser
-
+}

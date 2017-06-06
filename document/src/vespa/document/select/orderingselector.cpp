@@ -2,18 +2,16 @@
 
 #include "orderingselector.h"
 #include "node.h"
-#include "valuenode.h"
+#include "valuenodes.h"
 #include "visitor.h"
 #include "compare.h"
 #include "branch.h"
 
-#include <algorithm>
 #include <vespa/document/base/documentid.h>
-#include <vespa/document/base/idstring.h>
 
 namespace document {
 
-using namespace document::select;
+using namespace select;
 
 namespace {
     /**

@@ -6,6 +6,7 @@
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/assignvalueupdate.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/visitor.h>
