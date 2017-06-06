@@ -2,11 +2,12 @@
 #pragma once
 
 #include <vespa/searchcore/proton/server/ibucketstatecalculator.h>
-#include <vespa/document/bucket/bucketid.h>
+#include <vespa/document/bucket/bucketidlist.h>
 
 namespace proton::test {
 
-typedef document::BucketId::List BucketIdVector;
+using BucketIdVector = document::bucket::BucketIdList;
+
 typedef std::set<document::BucketId>    BucketIdSet;
 
 class BucketStateCalculator : public IBucketStateCalculator

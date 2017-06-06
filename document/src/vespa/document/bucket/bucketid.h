@@ -22,7 +22,6 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/array.h>
 
 namespace vespalib {
     class nbostream;
@@ -32,6 +31,8 @@ namespace vespalib {
 namespace document {
 
 extern const unsigned char reverseBitTable[256];
+
+namespace bucket { class BucketIdList; }
 
 class BucketId
 {
@@ -47,7 +48,7 @@ public:
      * typedef when needed we can alter this later with less code changes.
      */
     using Type = uint64_t;
-    using List = vespalib::Array<BucketId>;
+    using List = bucket::BucketIdList;
     /** Create an initially unset bucket id. */
     BucketId() : _id(0) {}
     /** Create a bucket id with the given raw unchecked content. */

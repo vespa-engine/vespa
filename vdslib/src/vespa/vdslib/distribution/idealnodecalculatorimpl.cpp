@@ -3,9 +3,9 @@
 #include "idealnodecalculatorimpl.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <ostream>
+#include <cassert>
 
-namespace storage {
-namespace lib {
+namespace storage::lib {
 
 IdealNodeList::IdealNodeList() :
     _idealNodes()
@@ -71,5 +71,4 @@ IdealNodeCalculatorImpl::initUpStateMapping() {
     }
 }
 
-} // lib
-} // storage
+}

@@ -1,13 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <memory>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/storage/persistence/types.h>
+#include <vespa/document/bucket/bucketidlist.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/config/config.h>
 
@@ -60,7 +60,7 @@ private:
     config::ConfigFetcher _configFetcher;
     vespalib::Monitor _monitor;
     vespalib::Lock _stateLock;
-    document::BucketId::List  _rechecksNotStarted;
+    document::bucket::BucketIdList  _rechecksNotStarted;
     size_t _pendingRequests;
     size_t _maxPendingChunkSize;
     bool _singleThreadMode; // For unit testing only
