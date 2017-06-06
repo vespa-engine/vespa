@@ -12,10 +12,11 @@
 #pragma once
 
 #include "fieldvaluevisitor.h"
-#include <vespa/document/datatype/datatype.h>
 #include <vespa/document/util/xmlserializable.h>
 #include <vespa/vespalib/util/polymorphicarrays.h>
 #include <vespa/vespalib/objects/cloneable.h>
+#include <vespa/vespalib/objects/identifiable.h>
+#include <vespa/document/base/fieldpath.h>
 #include <map>
 
 namespace vespalib {
@@ -25,6 +26,7 @@ namespace vespalib {
 namespace document {
 
 class ByteBuffer;
+class DataType;
 
 class FieldValue : public vespalib::Identifiable
 {

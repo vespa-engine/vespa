@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensorfieldvalue.h"
+#include <vespa/document/datatype/datatype.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <ostream>
 #include <cassert>

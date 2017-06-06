@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "predicatefieldvalue.h"
+#include <vespa/document/datatype/datatype.h>
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/document/predicate/predicate_printer.h>
 #include <vespa/vespalib/data/slime/inserter.h>
@@ -65,6 +66,21 @@ void PredicateFieldValue::printXml(XmlOutputStream& out) const {
 
 void PredicateFieldValue::print(std::ostream& out, bool, const std::string&) const {
     out << PredicatePrinter::print(*_slime) << "\n";
+}
+
+const DataType *
+PredicateFieldValue::getDataType() const {
+    return DataType::PREDICATE;
+}
+
+bool
+PredicateFieldValue::hasChanged() const {
+    return _altered;
+}
+
+FieldValue *
+PredicateFieldValue::clone() const {
+    return new PredicateFieldValue(*this);
 }
 
 }  // namespace document

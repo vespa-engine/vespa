@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include <string>
 #include <vespa/document/util/printable.h>
 
 namespace document {
@@ -41,16 +40,9 @@ public:
     const Result& operator!() const;
 
     static const Result& get(bool b) { return (b ? True : False); }
+    static uint32_t enumRange() { return 3u; }
 
-    static uint32_t
-    enumRange(void)
-    {
-        return 3u;
-    }
-
-    uint32_t
-    toEnum(void) const
-    {
+    uint32_t toEnum() const {
         if (this == &Result::Invalid)
             return 0u;
         if (this == &Result::False)
@@ -60,9 +52,7 @@ public:
         abort();
     }
 
-    static const Result &
-    fromEnum(uint32_t val)
-    {
+    static const Result &fromEnum(uint32_t val) {
         if (val == 0u)
             return Result::Invalid;
         if (val == 1u)
@@ -74,10 +64,9 @@ public:
 
 private:
     Result();
-
-        // Singletons are not copyable
-    Result(const Result&);
-    Result& operator=(const Result&);
+    // Singletons are not copyable
+    Result(const Result&) = delete;
+    Result& operator=(const Result&) = delete;
 };
 
 } // select
