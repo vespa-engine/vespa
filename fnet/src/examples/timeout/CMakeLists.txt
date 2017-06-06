@@ -2,7 +2,6 @@
 vespa_add_executable(fnet_timeout_app
     SOURCES
     timeout.cpp
-    INSTALL bin
     DEPENDS
     fnet
 )
