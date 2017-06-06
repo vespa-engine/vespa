@@ -169,7 +169,9 @@ SerializableArray::clear(int id)
     EntryMap::iterator it = find(id);
     if (it != _entries.end()) {
         _entries.erase(it);
-        _owned->erase(id);
+        if (_owned) {
+            _owned->erase(id);
+        }
         invalidate();
     }
 }
