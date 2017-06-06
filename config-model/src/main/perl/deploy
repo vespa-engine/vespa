@@ -72,7 +72,7 @@ readConfFile();
 use strict;
 use warnings;
 use feature qw(switch say);
-use vars qw/ $opt_h $opt_n $opt_v $opt_f $opt_t $opt_1 $opt_a $opt_e $opt_E $opt_r $opt_i $opt_p $opt_H $opt_R /;
+use vars qw/ $opt_h $opt_n $opt_v $opt_f $opt_t $opt_a $opt_e $opt_E $opt_r $opt_i $opt_p $opt_H $opt_R /;
 use Env qw($HOME);
 use JSON;
 use Getopt::Std;
@@ -101,7 +101,7 @@ my $instance = "default";
 my $version = "v2";
 my $port = "19071";
 
-getopts('fhnt:v1e:E:r:a:i:p:HR:');
+getopts('fhnt:ve:E:r:a:i:p:HR:');
 
 if ($opt_h) {
   usage();
@@ -132,13 +132,7 @@ if ($opt_p) {
   $port = $opt_p;
 }
 
-# Use v1 of application API
-if ($opt_1) {
-  $version = "v1";
-  $pathPrefix = "/application/v1/session";
-} else {
-  $pathPrefix = "/application/v2/tenant/$tenant/session";
-}
+$pathPrefix = "/application/v2/tenant/$tenant/session";
 
 create_cloudconfig_dir();
 
