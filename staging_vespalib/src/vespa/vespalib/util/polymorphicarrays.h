@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/memory.h>
+#include <vector>
 
 namespace vespalib {
 
