@@ -10,6 +10,7 @@ vespa_add_library(document_fieldvalues OBJECT
     fieldvalue.cpp
     floatfieldvalue.cpp
     intfieldvalue.cpp
+    iteratorhandler.cpp
     literalfieldvalue.cpp
     longfieldvalue.cpp
     mapfieldvalue.cpp
@@ -22,6 +23,7 @@ vespa_add_library(document_fieldvalues OBJECT
     structfieldvalue.cpp
     structuredfieldvalue.cpp
     tensorfieldvalue.cpp
+    variablemap.cpp
     weightedsetfieldvalue.cpp
     referencefieldvalue.cpp
     DEPENDS

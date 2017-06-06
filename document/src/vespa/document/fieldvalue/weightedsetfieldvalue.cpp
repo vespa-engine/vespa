@@ -2,13 +2,19 @@
 
 #include "weightedsetfieldvalue.h"
 #include <vespa/document/base/exceptions.h>
+#include <vespa/vespalib/util/xmlstream.h>
 #include <ostream>
 
 using vespalib::Identifiable;
+using vespalib::IllegalArgumentException;
+using vespalib::IllegalStateException;
+using namespace vespalib::xml;
 
 /// \todo TODO (was warning):  Find a way to search through internal map without duplicating keys to create shared pointers.
 
 namespace document {
+
+using namespace fieldvalue;
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(WeightedSetFieldValue, CollectionFieldValue);
 
@@ -17,9 +23,8 @@ const DataType &getKeyType(const DataType &type) {
     const WeightedSetDataType *wtype =
         Identifiable::cast<const WeightedSetDataType *>(&type);
     if (!wtype) {
-        throw vespalib::IllegalArgumentException(
-                "Cannot generate a weighted set value with non-weighted set "
-                "type " + type.toString() + ".", VESPA_STRLOC);
+        throw IllegalArgumentException("Cannot generate a weighted set value with non-weighted set "
+                                       "type " + type.toString() + ".", VESPA_STRLOC);
     }
     return wtype->getNestedType();
 }
@@ -39,8 +44,7 @@ WeightedSetFieldValue::~WeightedSetFieldValue() { }
 void WeightedSetFieldValue::verifyKey(const FieldValue & v)
 {
     if (!getNestedType().isValueType(v)) {
-        throw InvalidDataTypeException(*v.getDataType(), getNestedType(),
-                                       VESPA_STRLOC);
+        throw InvalidDataTypeException(*v.getDataType(), getNestedType(), VESPA_STRLOC);
     }
 }
 
@@ -92,9 +96,7 @@ WeightedSetFieldValue::increment(const FieldValue& key, int val)
         }
     } else {
         if (it == _map.end()) {
-           throw vespalib::IllegalStateException("Cannot modify non-existing "
-                    "entry in weightedset without createIfNonExistent set",
-                    VESPA_STRLOC);
+           throw IllegalStateException("Cannot modify non-existing entry in weightedset without createIfNonExistent set", VESPA_STRLOC);
         }
         IntFieldValue& fv = static_cast<IntFieldValue&>(*it->second);
         fv.setValue(fv.getValue() + val);
@@ -203,7 +205,7 @@ WeightedSetFieldValue::find(const FieldValue& key)
     return _map.find(key);
 }
 
-FieldValue::IteratorHandler::ModificationStatus
+ModificationStatus
 WeightedSetFieldValue::onIterateNested(PathRange nested, IteratorHandler & handler) const
 {
     return _map.iterateNestedImpl(nested, handler, *this);

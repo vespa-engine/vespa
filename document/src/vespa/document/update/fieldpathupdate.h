@@ -104,8 +104,7 @@ protected:
     enum SerializedMagic {AssignMagic=0, RemoveMagic=1, AddMagic=2};
 private:
     // TODO: rename to createIteratorHandler?
-    virtual std::unique_ptr<FieldValue::IteratorHandler> getIteratorHandler(
-            Document& doc) const = 0;
+    virtual std::unique_ptr<fieldvalue::IteratorHandler> getIteratorHandler(Document& doc) const = 0;
 
     vespalib::string _originalFieldPath;
     vespalib::string _originalWhereClause;

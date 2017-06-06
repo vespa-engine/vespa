@@ -17,6 +17,7 @@
 #include <vespa/storageapi/messageapi/messagehandler.h>
 #include <set>
 #include <deque>
+#include <list>
 
 namespace storage::distributor {
 

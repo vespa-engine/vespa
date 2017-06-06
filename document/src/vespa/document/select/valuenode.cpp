@@ -4,6 +4,7 @@
 #include "parser.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/util/md5.h>
 #include <vespa/document/util/stringutil.h>
@@ -16,6 +17,7 @@
 LOG_SETUP(".document.select.valuenode");
 
 namespace document {
+
 namespace select {
 
 namespace {
@@ -157,7 +159,6 @@ VariableValueNode::getValue(const Context& context) const {
     return context.getValue(_value);
 }
 
-
 void
 VariableValueNode::visit(Visitor &visitor) const
 {
@@ -216,82 +217,48 @@ FieldValueNode::extractFieldName(const std::string & fieldExpression) {
     throw ParsingFailedException("Fatal: could not extract field name from field expression '" + fieldExpression + "'");
 }
 
-void
-FieldValueNode::initFieldPath(const DocumentType& type) const {
-    if (_fieldPath.size() == 0) {
-        FieldPath::UP path(type.buildFieldPath(_fieldExpression));
-        if (!path.get()) {
-            throw FieldNotFoundException(
-                    vespalib::make_string("Could not create field path for doc type: '%s' field: '%s'",
-                                          type.toString().c_str(), _fieldExpression.c_str()),
-                    VESPA_STRLOC);
-        }
-        _fieldPath = *path;
-    }
-}
+namespace {
 
-std::unique_ptr<Value>
-FieldValueNode::getValue(const Context& context) const
-{
-    if (context._doc == NULL) {
-        return std::unique_ptr<Value>(new InvalidValue());
-    }
+class IteratorHandler : public fieldvalue::IteratorHandler {
+public:
+    IteratorHandler();
+    ~IteratorHandler();
+    bool hasSingleValue() const;
+    std::unique_ptr<Value> getSingleValue();
+    const std::vector<ArrayValue::VariableValue> &getValues();
 
-    const Document& doc = *context._doc;
+private:
+    std::unique_ptr<Value> _firstValue;
+    std::vector<ArrayValue::VariableValue> _values;
 
-    if (!documentTypeEqualsName(doc.getType(), _doctype)) {
-        return std::unique_ptr<Value>(new InvalidValue());
-    }
-    try{
-        initFieldPath(doc.getType());
+    void onPrimitive(uint32_t fid, const Content &fv) override;
+    std::unique_ptr<Value> getInternalValue(const FieldValue &fval) const;
+};
 
-        IteratorHandler handler;
-        doc.iterateNested(_fieldPath.getFullRange(), handler);
-
-        if (handler.hasSingleValue()) {
-            return handler.getSingleValue();
-        } else {
-            const std::vector<ArrayValue::VariableValue>& values = handler.getValues();
-
-            if (values.size() == 0) {
-                return std::unique_ptr<Value>(new NullValue());
-            } else {
-                return std::unique_ptr<Value>(new ArrayValue(handler.getValues()));
-            }
-        }
-    } catch (vespalib::IllegalArgumentException& e) {
-        LOG(warning, "Caught exception while fetching field from document: %s", e.what());
-        return std::unique_ptr<Value>(new InvalidValue());
-    } catch (FieldNotFoundException& e) {
-        LOG(warning, "Tried to compare to field %s, not found in document type", _fieldExpression.c_str());
-        return std::unique_ptr<Value>(new InvalidValue());
-    }
-}
-
-FieldValueNode::IteratorHandler::IteratorHandler() { }
-FieldValueNode::IteratorHandler::~IteratorHandler() { }
+IteratorHandler::IteratorHandler() { }
+IteratorHandler::~IteratorHandler() { }
 
 bool
-FieldValueNode::IteratorHandler::hasSingleValue() const {
+IteratorHandler::hasSingleValue() const {
     return _firstValue.get() && (_values.size() == 0);
 }
 
 std::unique_ptr<Value>
-FieldValueNode::IteratorHandler::getSingleValue() {
+IteratorHandler::getSingleValue() {
     return std::move(_firstValue);
 }
 
 const std::vector<ArrayValue::VariableValue>&
-FieldValueNode::IteratorHandler::getValues() {
+IteratorHandler::getValues() {
     if (_firstValue.get()) {
-        _values.insert(_values.begin(), ArrayValue::VariableValue(FieldValue::IteratorHandler::VariableMap(), Value::SP(_firstValue.release())));
+        _values.insert(_values.begin(), ArrayValue::VariableValue(fieldvalue::VariableMap(), Value::SP(_firstValue.release())));
     }
 
     return _values;
 }
 
 void
-FieldValueNode::IteratorHandler::onPrimitive(uint32_t fid, const Content& fv) {
+IteratorHandler::onPrimitive(uint32_t fid, const Content& fv) {
     (void) fid;
     if (!_firstValue && getVariables().empty()) {
         _firstValue = getInternalValue(fv.getValue());
@@ -301,7 +268,7 @@ FieldValueNode::IteratorHandler::onPrimitive(uint32_t fid, const Content& fv) {
 }
 
 std::unique_ptr<Value>
-FieldValueNode::IteratorHandler::getInternalValue(const FieldValue& fval) const
+IteratorHandler::getInternalValue(const FieldValue& fval) const
 {
     switch(fval.getClass().id()) {
         case document::IntFieldValue::classId:
@@ -372,10 +339,63 @@ FieldValueNode::IteratorHandler::getInternalValue(const FieldValue& fval) const
         }
     }
     LOG(warning, "Tried to use unsupported datatype %s in field comparison",
-                 fval.getDataType()->toString().c_str());
+        fval.getDataType()->toString().c_str());
     return std::make_unique<InvalidValue>();
 }
 
+}
+
+void
+FieldValueNode::initFieldPath(const DocumentType& type) const {
+    if (_fieldPath.size() == 0) {
+        FieldPath::UP path(type.buildFieldPath(_fieldExpression));
+        if (!path.get()) {
+            throw FieldNotFoundException(
+                    vespalib::make_string("Could not create field path for doc type: '%s' field: '%s'",
+                                          type.toString().c_str(), _fieldExpression.c_str()),
+                    VESPA_STRLOC);
+        }
+        _fieldPath = *path;
+    }
+}
+
+std::unique_ptr<Value>
+FieldValueNode::getValue(const Context& context) const
+{
+    if (context._doc == NULL) {
+        return std::unique_ptr<Value>(new InvalidValue());
+    }
+
+    const Document& doc = *context._doc;
+
+    if (!documentTypeEqualsName(doc.getType(), _doctype)) {
+        return std::unique_ptr<Value>(new InvalidValue());
+    }
+    try{
+        initFieldPath(doc.getType());
+
+        IteratorHandler handler;
+        doc.iterateNested(_fieldPath.getFullRange(), handler);
+
+        if (handler.hasSingleValue()) {
+            return handler.getSingleValue();
+        } else {
+            const std::vector<ArrayValue::VariableValue>& values = handler.getValues();
+
+            if (values.size() == 0) {
+                return std::unique_ptr<Value>(new NullValue());
+            } else {
+                return std::unique_ptr<Value>(new ArrayValue(handler.getValues()));
+            }
+        }
+    } catch (vespalib::IllegalArgumentException& e) {
+        LOG(warning, "Caught exception while fetching field from document: %s", e.what());
+        return std::unique_ptr<Value>(new InvalidValue());
+    } catch (FieldNotFoundException& e) {
+        LOG(warning, "Tried to compare to field %s, not found in document type", _fieldExpression.c_str());
+        return std::unique_ptr<Value>(new InvalidValue());
+    }
+}
 
 void
 FieldValueNode::visit(Visitor &visitor) const

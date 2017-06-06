@@ -1,13 +1,19 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/document/fieldvalue/fieldvalues.h>
+#include "fieldpathupdates.h"
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/document/select/parser.h>
-#include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".document.update.fieldpathupdate");
 
+using vespalib::make_string;
+using vespalib::IllegalArgumentException;
+
 namespace document {
+
+using namespace fieldvalue;
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(FieldPathUpdate, Identifiable);
 
@@ -43,9 +49,9 @@ FieldPathUpdate::FieldPathUpdate(const DocumentTypeRepo& repo,
                  : std::unique_ptr<select::Node>())
 {
     if (!_fieldPath.get()) {
-        throw vespalib::IllegalArgumentException(
-                vespalib::make_string("Could not create field path update for: path='%s', where='%s'",
-                                      fieldPath.c_str(), whereClause.c_str()), VESPA_STRLOC);
+        throw IllegalArgumentException(
+                make_string("Could not create field path update for: path='%s', where='%s'",
+                            fieldPath.c_str(), whereClause.c_str()), VESPA_STRLOC);
     }
 }
 
@@ -61,7 +67,7 @@ FieldPathUpdate::operator==(const FieldPathUpdate& other) const
 void
 FieldPathUpdate::applyTo(Document& doc) const
 {
-    std::unique_ptr<FieldValue::IteratorHandler> handler(getIteratorHandler(doc));
+    std::unique_ptr<IteratorHandler> handler(getIteratorHandler(doc));
 
     if (!_whereClause) {
         doc.iterateNested(*_fieldPath, *handler);
@@ -70,7 +76,7 @@ FieldPathUpdate::applyTo(Document& doc) const
         for (select::ResultList::const_iterator i = results.begin();
              i != results.end(); ++i)
         {
-            LOG(spam, "vars = %s", FieldValue::IteratorHandler::toString(handler->getVariables()).c_str());
+            LOG(spam, "vars = %s", handler->getVariables().toString().c_str());
             if (*i->second == select::Result::True) {
                 handler->setVariables(i->first);
                 doc.iterateNested(*_fieldPath, *handler);
@@ -88,8 +94,7 @@ FieldPathUpdate::affectsDocumentBody() const
 }
 
 void
-FieldPathUpdate::print(std::ostream& out, bool,
-                       const std::string& indent) const
+FieldPathUpdate::print(std::ostream& out, bool, const std::string& indent) const
 {
     out << indent << "fieldPath='" << _originalFieldPath << "',\n"
         << indent << "whereClause='" << _originalWhereClause << "'";
@@ -99,10 +104,10 @@ void
 FieldPathUpdate::checkCompatibility(const FieldValue& fv) const
 {
     if ( !getResultingDataType().isValueType(fv)) {
-        throw vespalib::IllegalArgumentException(
-                vespalib::make_string("Cannot update a '%s' field with a '%s' value",
-                                      getResultingDataType().toString().c_str(),
-                                      fv.getDataType()->toString().c_str()),
+        throw IllegalArgumentException(
+                make_string("Cannot update a '%s' field with a '%s' value",
+                            getResultingDataType().toString().c_str(),
+                            fv.getDataType()->toString().c_str()),
                 VESPA_STRLOC);
     }
 }
@@ -111,8 +116,7 @@ const DataType&
 FieldPathUpdate::getResultingDataType() const
 {
     if (_fieldPath->empty()) {
-        throw vespalib::IllegalStateException("Cannot get resulting data "
-                "type from an empty field path", VESPA_STRLOC);
+        throw vespalib::IllegalStateException("Cannot get resulting data type from an empty field path", VESPA_STRLOC);
     }
     return _fieldPath->rbegin()->getDataType();
 }
@@ -138,9 +142,7 @@ FieldPathUpdate::deserialize(const DocumentTypeRepo& repo,
     try {
         _fieldPath = type.buildFieldPath(_originalFieldPath).release();
         if (!_fieldPath.get()) {
-            throw DeserializeException(
-                    vespalib::make_string("Invalid field path: '%s'", _originalFieldPath.c_str()),
-                    VESPA_STRLOC);
+            throw DeserializeException(make_string("Invalid field path: '%s'", _originalFieldPath.c_str()), VESPA_STRLOC);
         }
         _whereClause = !_originalWhereClause.empty()
                        ? parseDocumentSelection(_originalWhereClause, repo)
@@ -159,8 +161,7 @@ FieldPathUpdate::createInstance(const DocumentTypeRepo& repo,
     buffer.getByte(updateType);
 
     std::unique_ptr<FieldPathUpdate> update;
-    switch (updateType)
-    {
+    switch (updateType) {
     case 0:
         update.reset(new AssignFieldPathUpdate());
         break;
@@ -171,9 +172,7 @@ FieldPathUpdate::createInstance(const DocumentTypeRepo& repo,
         update.reset(new AddFieldPathUpdate());
         break;
     default:
-        throw DeserializeException(
-                vespalib::make_string("Unknown fieldpath update type: %d", updateType),
-                VESPA_STRLOC);
+        throw DeserializeException(make_string("Unknown fieldpath update type: %d", updateType), VESPA_STRLOC);
     }
     update->deserialize(repo, type, buffer, serializationVersion);
     return update;

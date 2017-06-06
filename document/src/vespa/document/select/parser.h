@@ -2,10 +2,8 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
-#include <vespa/document/bucket/bucketidfactory.h>
 #include "node.h"
+#include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/sync.h>
 

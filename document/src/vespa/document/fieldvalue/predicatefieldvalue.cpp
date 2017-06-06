@@ -6,9 +6,11 @@
 #include <vespa/document/predicate/predicate_printer.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/util/xmlstream.h>
 
 using vespalib::Slime;
 using vespalib::slime::SlimeInserter;
+using namespace vespalib::xml;
 
 namespace document {
 

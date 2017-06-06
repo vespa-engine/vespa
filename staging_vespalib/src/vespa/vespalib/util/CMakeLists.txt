@@ -18,5 +18,6 @@ vespa_add_library(staging_vespalib_vespalib_util OBJECT
     shutdownguard.cpp
     timer.cpp
     xmlserializable.cpp
+    xmlstream.cpp
     DEPENDS
 )

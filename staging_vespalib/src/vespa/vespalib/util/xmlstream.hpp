@@ -2,12 +2,11 @@
 
 #pragma once
 
-#include "xmlserializable.h"
+#include "xmlstream.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <sstream>
 
-namespace vespalib {
-namespace xml {
+namespace vespalib::xml {
 
 template<typename T>
 XmlAttribute::XmlAttribute(const std::string& name, const T& value, uint32_t flags)
@@ -20,10 +19,9 @@ XmlAttribute::XmlAttribute(const std::string& name, const T& value, uint32_t fla
     ost << value;
     _value = ost.str();
     if (!isLegalName(name)) {
-        throw vespalib::IllegalArgumentException("Name '" + name + "' contains "
+        throw IllegalArgumentException("Name '" + name + "' contains "
                 "illegal XML characters and cannot be used as attribute name");
     }
 }
 
-}
 }

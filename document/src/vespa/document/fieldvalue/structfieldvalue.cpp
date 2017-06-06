@@ -11,6 +11,7 @@
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/util/bytebuffer.h>
+#include <vespa/vespalib/util/xmlstream.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".document.structfieldvalue");
@@ -19,6 +20,7 @@ using std::vector;
 using vespalib::nbostream;
 using vespalib::nbostream_longlivedbuf;
 using vespalib::make_string;
+using namespace vespalib::xml;
 
 namespace document {
 

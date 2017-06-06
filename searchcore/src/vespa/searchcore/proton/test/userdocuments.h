@@ -2,10 +2,9 @@
 #pragma once
 
 #include "bucketdocuments.h"
+#include <map>
 
-namespace proton {
-
-namespace test {
+namespace proton::test {
 
 /**
  * Collection of documents for a set of users,
@@ -48,7 +47,4 @@ public:
     void clear() { _docs.clear(); }
 };
 
-} // namespace test
-
-} // namespace proton
-
+}

@@ -21,8 +21,7 @@
 
 #include <vespa/document/util/printable.h>
 
-namespace document {
-namespace select {
+namespace document::select {
 
 class Result : public Printable {
 public:
@@ -69,6 +68,4 @@ private:
     Result& operator=(const Result&) = delete;
 };
 
-} // select
-} // document
-
+}

@@ -4,6 +4,7 @@
 #include "documentaccessornode.h"
 #include "resultnode.h"
 #include "resultvector.h"
+#include <vespa/document/fieldvalue/iteratorhandler.h>
 
 namespace search {
 namespace expression {
@@ -38,11 +39,9 @@ public:
     DocumentFieldNode & operator = (const DocumentFieldNode & rhs);
     const vespalib::string & getFieldName() const override { return _fieldName; }
 private:
-    class Handler : public document::FieldValue::IteratorHandler {
+    class Handler : public document::fieldvalue::IteratorHandler {
     public:
         virtual void reset() = 0;
-    protected:
-        typedef document::FieldValue::IteratorHandler::Content Content;
     private:
         void onCollectionStart(const Content & c) override;
         void onStructStart(const Content & c) override;

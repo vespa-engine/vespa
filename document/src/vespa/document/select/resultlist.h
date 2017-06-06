@@ -1,16 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vector>
-#include <vespa/document/fieldvalue/fieldvalue.h>
 #include "result.h"
+#include <vector>
+#include <vespa/document/fieldvalue/variablemap.h>
 
-namespace document {
-namespace select {
+namespace document::select {
 
 class ResultList : public Printable {
 public:
-    typedef FieldValue::IteratorHandler::VariableMap VariableMap;
+    using VariableMap = fieldvalue::VariableMap;
     typedef std::pair<VariableMap, const Result*> ResultPair;
     typedef std::vector<ResultPair> Results;
     typedef Results::iterator iterator;
@@ -49,7 +48,7 @@ public:
 
 private:
     Results _results;
-    bool combineVariables(VariableMap& output, const FieldValue::IteratorHandler::VariableMap& input) const;
+    bool combineVariables(VariableMap& output, const VariableMap& input) const;
 };
 
 inline bool operator==(const ResultList& list, const Result& other) {
@@ -60,6 +59,5 @@ inline bool operator!=(const ResultList& list, const Result& other) {
     return (list.combineResults() != other);
 }
 
-}
 }
 

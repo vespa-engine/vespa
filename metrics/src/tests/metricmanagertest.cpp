@@ -9,6 +9,7 @@
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/util/xmlstream.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".test.metricmanager");

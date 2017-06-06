@@ -2,6 +2,7 @@
 
 #include "assignfieldpathupdate.h"
 #include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/variablemap.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
@@ -15,6 +16,8 @@ LOG_SETUP(".document.update.fieldpathupdate");
 using vespalib::nbostream;
 
 namespace document {
+
+using namespace fieldvalue;
 
 IMPLEMENT_IDENTIFIABLE(AssignFieldPathUpdate, FieldPathUpdate);
 
@@ -69,24 +72,56 @@ FieldPathUpdate*
 AssignFieldPathUpdate::clone() const {
     return new AssignFieldPathUpdate(*this);
 }
+namespace {
 
-std::unique_ptr<FieldValue::IteratorHandler>
-AssignFieldPathUpdate::getIteratorHandler(Document& doc) const
+class AssignValueIteratorHandler : public IteratorHandler
 {
-    if (!_expression.empty()) {
-        return std::unique_ptr<FieldValue::IteratorHandler>(
-                new AssignExpressionIteratorHandler(
-                        *_repo, doc, _expression, _removeIfZero, _createMissingPath));
-    } else {
-        return std::unique_ptr<FieldValue::IteratorHandler>(
-                new AssignValueIteratorHandler(
-                        *_newValue, _removeIfZero, _createMissingPath));
-    }
-}
+public:
+    AssignValueIteratorHandler(const FieldValue& newValue,
+                               bool removeIfZero,
+                               bool createMissingPath_)
+            : _newValue(newValue), _removeIfZero(removeIfZero),
+              _createMissingPath(createMissingPath_)
+    {}
 
+    ModificationStatus doModify(FieldValue& fv) override;
+    bool onComplex(const Content&) override { return false; }
+    bool createMissingPath() const override { return _createMissingPath; }
 
-FieldValue::IteratorHandler::ModificationStatus
-AssignFieldPathUpdate::AssignValueIteratorHandler::doModify(FieldValue& fv) {
+private:
+    const FieldValue& _newValue;
+    bool _removeIfZero;
+    bool _createMissingPath;
+};
+
+class AssignExpressionIteratorHandler : public IteratorHandler
+{
+public:
+    AssignExpressionIteratorHandler(
+            const DocumentTypeRepo& repo,
+            Document& doc,
+            const vespalib::string& expression,
+            bool removeIfZero,
+            bool createMissingPath_)
+            : _calc(repo, expression),
+              _doc(doc),
+              _removeIfZero(removeIfZero),
+              _createMissingPath(createMissingPath_)
+    {}
+
+    ModificationStatus doModify(FieldValue& fv) override;
+    bool onComplex(const Content&) override { return false; }
+    bool createMissingPath() const override { return _createMissingPath; }
+
+private:
+    DocumentCalculator _calc;
+    Document& _doc;
+    bool _removeIfZero;
+    bool _createMissingPath;
+};
+
+ModificationStatus
+AssignValueIteratorHandler::doModify(FieldValue& fv) {
     LOG(spam, "fv = %s", fv.toString().c_str());
     if (!(*fv.getDataType() == *_newValue.getDataType())) {
         std::string err = vespalib::make_string(
@@ -105,8 +140,8 @@ AssignFieldPathUpdate::AssignValueIteratorHandler::doModify(FieldValue& fv) {
     return MODIFIED;
 }
 
-FieldValue::IteratorHandler::ModificationStatus
-AssignFieldPathUpdate::AssignExpressionIteratorHandler::doModify(FieldValue& fv) {
+ModificationStatus
+AssignExpressionIteratorHandler::doModify(FieldValue& fv) {
     LOG(spam, "fv = %s", fv.toString().c_str());
     if (fv.inherits(NumericFieldValueBase::classId)) {
         std::unique_ptr<select::VariableMap> varHolder = std::make_unique<select::VariableMap>();
@@ -144,6 +179,18 @@ AssignFieldPathUpdate::AssignExpressionIteratorHandler::doModify(FieldValue& fv)
                 VESPA_STRLOC);
     }
     return MODIFIED;
+}
+
+}
+
+std::unique_ptr<IteratorHandler>
+AssignFieldPathUpdate::getIteratorHandler(Document& doc) const
+{
+    if (!_expression.empty()) {
+        return std::make_unique<AssignExpressionIteratorHandler>(*_repo, doc, _expression, _removeIfZero, _createMissingPath);
+    } else {
+        return std::make_unique<AssignValueIteratorHandler>(*_newValue, _removeIfZero, _createMissingPath);
+    }
 }
 
 bool

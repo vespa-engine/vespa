@@ -9,12 +9,14 @@
 #include <vespa/document/util/bufferexceptions.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/vespalib/util/xmlstream.h>
 
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
 using vespalib::nbostream;
 using vespalib::make_string;
 using vespalib::string;
+using namespace vespalib::xml;
 
 namespace document {
 

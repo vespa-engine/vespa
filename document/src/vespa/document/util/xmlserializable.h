@@ -5,14 +5,6 @@
 #include <vespa/vespalib/util/xmlserializable.h>
 
 namespace document {
-    typedef vespalib::xml::XmlOutputStream XmlOutputStream;
-    typedef vespalib::xml::XmlSerializable XmlSerializable;
-    typedef vespalib::xml::XmlTag XmlTag;
-    typedef vespalib::xml::XmlEndTag XmlEndTag;
-    typedef vespalib::xml::XmlAttribute XmlAttribute;
-    typedef vespalib::xml::XmlContent XmlContent;
-    typedef vespalib::xml::XmlEscapedContent XmlEscapedContent;
-    typedef vespalib::xml::XmlBase64Content XmlBase64Content;
-    typedef vespalib::xml::XmlContentWrapper XmlContentWrapper;
+    using XmlSerializable = vespalib::xml::XmlSerializable;
+    using XmlOutputStream = vespalib::xml::XmlOutputStream;
 }
-

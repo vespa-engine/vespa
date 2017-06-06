@@ -228,23 +228,6 @@ public:
     static vespalib::string extractFieldName(const std::string & fieldExpression);
 
 private:
-    class IteratorHandler : public FieldValue::IteratorHandler
-    {
-    public:
-        IteratorHandler();
-        ~IteratorHandler();
-        bool hasSingleValue() const;
-
-        std::unique_ptr<Value> getSingleValue();
-        const std::vector<ArrayValue::VariableValue>& getValues();
-
-    private:
-        std::unique_ptr<Value> _firstValue;
-        std::vector<ArrayValue::VariableValue> _values;
-
-        void onPrimitive(uint32_t fid, const Content & fv) override;
-        std::unique_ptr<Value> getInternalValue(const FieldValue& fval) const;
-    };
 
     void initFieldPath(const DocumentType&) const;
 };
