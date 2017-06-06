@@ -1,0 +1,13 @@
+[
+{
+    "put": "id:test:news::foo",
+    "fields": {}
+},
+{
+    "update": "id:test:news::foo",
+    "fields": {}
+},
+{
+    "remove": "id:test:news::foo"
+}
+]
