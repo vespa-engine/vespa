@@ -23,7 +23,6 @@ vespa_install_script(src/start-cbinaries.sh filedistributor sbin)
 vespa_install_script(src/start-cbinaries.sh proton sbin)
 vespa_install_script(src/start-cbinaries.sh storaged sbin)
 
-vespa_install_script(src/vespa-allow-downgrade-from-6-to-5.sh vespa-allow-downgrade-from-6-to-5 bin)
 vespa_install_script(src/start-tool.sh vespa-start-tool.sh bin)
 
 vespa_install_script(src/rhel-prestart.sh vespa-prestart.sh bin)
