@@ -11,7 +11,6 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.UriBuilder;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,7 +23,6 @@ public class JerseyJaxRsClientFactory implements JaxRsClientFactory {
 
     private final int connectTimeoutMs;
     private final int readTimeoutMs;
-    private final Consumer<String> logger;
 
     public JerseyJaxRsClientFactory() {
         this(DEFAULT_CONNECT_TIMEOUT_MS, DEFAULT_READ_TIMEOUT_MS);
@@ -33,13 +31,6 @@ public class JerseyJaxRsClientFactory implements JaxRsClientFactory {
     public JerseyJaxRsClientFactory(final int connectTimeoutMs, final int readTimeoutMs) {
         this.connectTimeoutMs = connectTimeoutMs;
         this.readTimeoutMs = readTimeoutMs;
-        logger = s -> {};
-    }
-
-    public JerseyJaxRsClientFactory(final int connectTimeoutMs, final int readTimeoutMs, Consumer<String> logger) {
-        this.connectTimeoutMs = connectTimeoutMs;
-        this.readTimeoutMs = readTimeoutMs;
-        this.logger = logger;
     }
 
     /**
