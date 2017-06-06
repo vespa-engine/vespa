@@ -76,7 +76,7 @@ void DocumentTest::testSizeOf()
     CPPUNIT_ASSERT_EQUAL(120ul, sizeof(Document));
     CPPUNIT_ASSERT_EQUAL(64ul, sizeof(StructFieldValue));
     CPPUNIT_ASSERT_EQUAL(16ul, sizeof(StructuredFieldValue));
-    CPPUNIT_ASSERT_EQUAL(120ul, sizeof(SerializableArray));
+    CPPUNIT_ASSERT_EQUAL(64ul, sizeof(SerializableArray));
 }
 
 void DocumentTest::testFieldPath()
