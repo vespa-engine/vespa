@@ -1,0 +1,159 @@
+.TH VESPAVISIT 1 2008-03-07 "Vespa" "Vespa Documentation"
+.SH NAME
+vespavisit \- Visit documents from a Vespa installation
+.SH SYNPOSIS
+.B vespavisit
+[\fIOPTION\fR]...
+.SH DESCRIPTION
+.PP
+In the regular case, retrieve documents stored in VESPA, and either print
+them to STDOUT or send them to a given MessageBus route.
+.PP
+A Vespa visit operation processes a set of stored documents, in undefined
+order, locally on the storage nodes where they are stored. A visitor library
+available on all storage nodes will receive the documents stored locally, and
+can process these and send messages to the visitor data handler. The regular
+case is to use the DumpVisitor library to merely send the documents themselves
+in blocks back to the data handler, which by default is this client that will
+write the documents to STDOUT.
+.PP
+Mandatory arguments to long options are mandatory for short options too.
+Short options can not currently be concatenated together.
+.TP
+\fB\-s\fR, \fB\-\-selection\fR \fISELECTION\fR
+A document selection string, specifying what documents to visit. Documentation
+on the language itself can be found in the documentation. Note that this argument
+should probably be quoted to prevent your shell from invalidating your
+selection.
+.TP
+\fB\-f\fR, \fB\-\-from\fR \fITIME\fR
+If this option is given, only documents from given timestamp or newer will be
+visited. The time is given in microseconds since 1970.
+.TP
+\fB\-t\fR, \fB\-\-to\fR \fITIME\fR
+If this option is given, only documents up to and including the given timestamp
+will be visited. The time is given in microseconds since 1970.
+.TP
+\fB\-e\fR, \fB\-\-headersonly\fR
+By default, the whole documents stored are processed. If this option is given
+only the header parts of documents will be processed. By defining the big
+document fields as body fields, you can efficiently visit all the header fields
+using this option.
+.TP
+\fB\-i\fR, \fB\-\-printids\fR
+Using this option, only the document identifiers will be printed to STDOUT.
+In addition, if visiting removes, an additional tag will be added so you can
+see whether document has been removed or not. This option implies headers only
+visiting, and can only be used if no datahandler is specified.
+.TP
+\fB\-d\fR, \fB\-\-datahandler\fR \fIVISITTARGET\fR
+The data handler is the destination of messages sent from the visitor library.
+By default, the data handler is the vespavisit process you start, which will
+merely print all returned data to STDOUT. A visit target can be specified
+instead. See the chapter below on visit targets.
+.TP
+\fB\-p\fR, \fB\-\-progress\fR \fIFILE\fR
+By setting a progress file, current visitor progress will be saved to this
+file at regular intervals. If this file exists on startup, the visitor will
+continue from this point.
+.TP
+\fB\-o\fR, \fB\-\-timeout\fR \fITIMEOUT\fR
+Time out the visitor after given number of milliseconds.
+.TP
+\fB\-r\fR, \fB\-\-visitremoves\fR
+By default, only documents existing in Vespa will be processed. By giving
+this option, also entries identifying documents previously existing will
+be returned. This is useful for secondary copies of data that wants to know
+whether documents it has stored has been removed. Note that documents deleted
+a long time ago will no longer be tracked. Vespa keeps remove entries for
+a configurable amount of time.
+.TP
+\fB\-m\fR, \fB\-\-maxpending\fR \fINUM\fR
+Maximum pending docblock messages to data handlers. This may be used to
+increase or reduce visiting speed, but should not be set too high so that data
+handlers run out of memory. To get an estimate of memory consumption on each
+data handler, multiply maxpending with defaultdocblocksize in stor-visitor
+config and divide by number of data handlers. Default value for maxpending is
+16.
+.TP
+\fB\-c\fR, \fB\-\-cluster\fR \fICLUSTER\fR
+Visit the given VDS cluster.
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+More verbose output. Indent XML and add progress and info to STDERR.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Shows a short syntax reminder.
+.PP
+Advanced options:
+.PP
+The below options are used for advanced usage or for testing.
+.TP
+\fB\-\-visitlibrary\fR \fILIBRARY\fR
+By default, the DumpVisitor library, sending documents back to the data handler,
+is used when visiting. Another library can be specified using this option. The
+library filename should be the name given here, with lib prepended and .so
+appended.
+.TP
+\fB\-\-libraryparam\fR \fIKEY\fR \fIVALUE\fR
+The default DumpVisitor library has no options to set, but custom libraries
+may need user specifiable options. Here such options can be specified. Look
+at visitor library documentation for legal parameters.
+.TP
+\fB\-\-polling\fR \fIarg\fR
+The document API implements both a polling and a callback visitor API. The
+callback API is most efficient and used by default. The polling API might be
+simpler for users used to such APIs. Some VESPA system tests use this option
+to test that the polling API works.
+.TP
+\fB\-\-visitinconsistentbuckets\fR
+In some cases Vespa may temporarily be in an inconsistent state, that is,
+different nodes contain different copies of the data. Collections of documents
+are grouped into so-called buckets. The normal behavior of visiting is to wait
+for the inconsistencies to resolve before actually visiting the data. This
+might be a problem for time critical applications. Setting this option will
+result in the bucket copy with most documents to be visited in case of
+inconsistencies, which means that the data returned by the visitor are not
+guaranteed to be correct.
+.SH VISIT TARGET
+Results from visiting can be sent to many different kind of targets.
+.TP
+\fBMessage bus routes\fR
+You can specify a message bus route name directly, and this route will be used
+to send the results. This is typically used when doing reprocessing within
+Vespa. Message bus routes are set up in the application package. In addition
+some routes may have been autogenerated in simple setups, for instance a
+route called \fIdefault\fR is generated if your setup is so simple that Vespa
+can guess where you want to send your data.
+.TP
+\fBSlobrok address\fR
+You can also specify a slobrok address for data to be sent to. A slobrok address
+is a slash separated path where you can use asterisk to mean any element within
+this path. For instance, if you have a docproc cluster called \fImydpcluster\fR
+it will have registered its nodes with slobrok names like
+\fIdocproc/cluster.mydpcluster/docproc/0/feed_processor\fR, where the 0 here
+indicates the first node in the cluster. You can thus specify to send visit data
+to this docproc cluster by stating a slobrok address of
+\fIdocproc/cluster.mydpcluster/docproc/*/feed_processor\fR. Note that this will
+not send all the data to one or all the nodes. The data sent from the visitor
+will be distributed among the matching nodes, but each message will just be sent
+to one node.
+
+Slobrok names may also be used if you use the \fBvespavisittarget\fR tool to
+retrieve the data at some location. If you start vespavisittarget on two nodes,
+listening to slobrok names \fImynode/0/visit-destination\fR and
+\fImynode/1/visit-destination\fR you can send the results to these nodes by
+specifying \fImynode/*/visit-destination\fR as the data handler. See
+\fBman vespavisittarget\fR for naming conventions used for such targets.
+.TP
+\fBTCP socket\fR
+TCP sockets can also be specified directly. This requires that the endpoint
+speaks FNET RPC though. This is typically done, either by using the
+\fBvespavisittarget\fR tool, or by using a visitor destination programmatically
+by using utility class in the document API. A socket address looks like the
+following: tcp/\fIhostname\fR:\fIport\fR/\fIservicename\fR. For instance, an
+address generated by the \fBvespavisittarget\fR tool might look like the
+following: \fItcp/myhost.com:12345/visit-destination\fR.
+
+.SH AUTHOR
+Written by Haakon Humberset.
