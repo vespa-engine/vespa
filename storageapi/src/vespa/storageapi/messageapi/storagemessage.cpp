@@ -2,13 +2,20 @@
 
 #include "storagemessage.h"
 
-#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/messagebus/routing/verbatimdirective.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <sstream>
+#include <cassert>
 
-namespace storage {
-namespace api {
+namespace storage::api {
+
+namespace {
+
+vespalib::Lock _G_msgIdLock;
+
+}
 
 static const vespalib::string STORAGEADDRESS_PREFIX = "storage/cluster.";
 
@@ -177,6 +184,20 @@ MessageType::MessageType::get(Id id)
     }
     return *it->second;
 }
+MessageType::MessageType(const vespalib::stringref & name, Id id,
+            const MessageType* replyOf = 0)
+        : _name(name), _id(id), _reply(NULL), _replyOf(replyOf)
+{
+    _codes[id] = this;
+    if (_replyOf != 0) {
+        assert(_replyOf->_reply == 0);
+        // Ugly cast to let initialization work
+        MessageType& type = const_cast<MessageType&>(*_replyOf);
+        type._reply = this;
+    }
+}
+
+MessageType::~MessageType() {}
 
 void
 MessageType::print(std::ostream& out, bool verbose, const std::string& indent) const
@@ -305,17 +326,14 @@ StorageMessageAddress::print(vespalib::asciistream & out) const
     }
 }
 
-TransportContext::~TransportContext()
-{
-}
+TransportContext::~TransportContext() { }
 
-vespalib::Lock StorageMessage::_msgIdLock;
 StorageMessage::Id StorageMessage::_lastMsgId = 1000;
 
 StorageMessage::Id
 StorageMessage::generateMsgId()
 {
-    vespalib::LockGuard sync(_msgIdLock);
+    vespalib::LockGuard sync(_G_msgIdLock);
     Id msgId = _lastMsgId++;
     _lastMsgId &= ((Id(-1) << 8) >> 8);
     return msgId;
@@ -343,7 +361,7 @@ StorageMessage::~StorageMessage() { }
 
 void StorageMessage::setNewMsgId()
 {
-    vespalib::LockGuard sync(_msgIdLock);
+    vespalib::LockGuard sync(_G_msgIdLock);
     _msgId = _lastMsgId++;
     _lastMsgId &= ((Id(-1) << 8) >> 8);
 }
@@ -353,5 +371,5 @@ StorageMessage::getSummary() const {
     return toString();
 }
 
-} // api
-} // storage
+}
+
