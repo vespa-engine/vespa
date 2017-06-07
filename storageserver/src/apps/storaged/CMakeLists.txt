@@ -3,7 +3,7 @@ vespa_add_executable(storageserver_storaged_app
     SOURCES
     storage.cpp
     forcelink.cpp
-    OUTPUT_NAME storaged-bin
+    OUTPUT_NAME vespa-storaged-bin
     INSTALL sbin
     DEPENDS
     storageserver_storageapp
