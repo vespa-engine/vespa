@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "servicelayerprocess.h"
+#include <vespa/storage/storageserver/servicelayernode.h>
 #include <vespa/searchvisitor/searchvisitor.h>
 
 namespace storage {
@@ -26,6 +27,21 @@ ServiceLayerProcess::createNode()
     setupProvider();
     _node.reset(new ServiceLayerNode(_configUri, _context, *this, getProvider(), _externalVisitors));
     _node->init();
+}
+
+StorageNode&
+ServiceLayerProcess::getNode() {
+    return *_node;
+}
+
+StorageNodeContext&
+ServiceLayerProcess::getContext() {
+    return _context;
+}
+
+std::string
+ServiceLayerProcess::getComponentName() const {
+    return "servicelayer";
 }
 
 } // storage

@@ -8,6 +8,7 @@
 #pragma once
 
 #include "process.h"
+#include <vespa/storage/storageserver/distributornode.h>
 
 namespace storage {
 
