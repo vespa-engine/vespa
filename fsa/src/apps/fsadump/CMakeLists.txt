@@ -2,7 +2,7 @@
 vespa_add_executable(fsa_fsadump_app
     SOURCES
     fsadump.cpp
-    OUTPUT_NAME fsadump
+    OUTPUT_NAME vespa-fsadump
     INSTALL bin
     DEPENDS
     fsa

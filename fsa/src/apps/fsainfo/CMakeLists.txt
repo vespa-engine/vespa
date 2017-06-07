@@ -2,7 +2,7 @@
 vespa_add_executable(fsa_fsainfo_app
     SOURCES
     fsainfo.cpp
-    OUTPUT_NAME fsainfo
+    OUTPUT_NAME vespa-fsainfo
     INSTALL bin
     DEPENDS
     fsa
