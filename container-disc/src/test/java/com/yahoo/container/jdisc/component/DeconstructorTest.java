@@ -8,6 +8,8 @@ import com.yahoo.jdisc.SharedResource;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -31,6 +33,29 @@ public class DeconstructorTest {
             Thread.sleep(10);
         }
         assertTrue(abstractComponent.destructed);
+    }
+
+    @Test
+    public void test_that_throwing_destruct_is_silent() throws InterruptedException {
+        TestThrowingAbstractComponent abstractComponent = new TestThrowingAbstractComponent();
+        // Done by executor, so it takes some time even with a 0 delay.
+        deconstructor.deconstruct(abstractComponent);
+        for (int cnt = 0;(abstractComponent.triedDestructed == 0) && (cnt < 10); cnt++) {
+            Thread.sleep(10);
+        }
+        assertEquals(1l, abstractComponent.triedDestructed);
+        long firstThreadId = abstractComponent.destructorThreadId;
+        String firstThreadName = abstractComponent.destructorThreadName;
+        assertEquals("deconstructor-1-thread-1", firstThreadName);
+
+        deconstructor.deconstruct(abstractComponent);
+
+        for (int cnt = 0;(abstractComponent.triedDestructed == 1) && (cnt < 10); cnt++) {
+            Thread.sleep(10);
+        }
+        assertEquals(2l, abstractComponent.triedDestructed);
+        assertEquals(firstThreadId, abstractComponent.destructorThreadId);
+        assertEquals(firstThreadName, abstractComponent.destructorThreadName);
     }
 
     @Test
@@ -65,4 +90,18 @@ public class DeconstructorTest {
         @Override public ResourceReference refer() { return null; }
         @Override public void release() { released = true; }
     }
+
+    private static class TestThrowingAbstractComponent extends AbstractComponent {
+        int triedDestructed = 0;
+        String destructorThreadName;
+        long destructorThreadId = 0;
+        @Override public void deconstruct() {
+            destructorThreadName = Thread.currentThread().getName();
+            destructorThreadId = Thread.currentThread().getId();
+            if ( triedDestructed++ == 0) {
+                throw new NullPointerException();
+            }
+        }
+    }
+
 }
