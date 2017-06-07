@@ -17,5 +17,5 @@ vespa_define_module(
     src/test/threads
 )
 
-vespa_install_script(src/logfmt/logfmt.pl logfmt bin)
-install(FILES src/logfmt/logfmt.1 DESTINATION man/man1)
+vespa_install_script(src/vespa-logfmt/vespa-logfmt.pl vespa-logfmt bin)
+install(FILES src/vespa-logfmt/vespa-logfmt.1 DESTINATION man/man1)
