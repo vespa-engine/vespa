@@ -17,11 +17,11 @@ vespa_install_script(src/start-cbinaries.sh vesparoute bin)
 vespa_install_script(src/start-cbinaries.sh vespa-transactionlog-inspect bin)
 vespa_install_script(src/start-cbinaries.sh vespavisit bin)
 vespa_install_script(src/start-cbinaries.sh vespavisittarget bin)
-vespa_install_script(src/start-cbinaries.sh distributord sbin)
+vespa_install_script(src/start-cbinaries.sh vespa-distributord sbin)
 vespa_install_script(src/start-cbinaries.sh vespa-fdispatch sbin)
 vespa_install_script(src/start-cbinaries.sh filedistributor sbin)
 vespa_install_script(src/start-cbinaries.sh vespa-proton sbin)
-vespa_install_script(src/start-cbinaries.sh storaged sbin)
+vespa_install_script(src/start-cbinaries.sh vespa-storaged sbin)
 
 vespa_install_script(src/start-tool.sh vespa-start-tool.sh bin)
 

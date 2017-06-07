@@ -76,3 +76,9 @@ ln -s vespa-verify-ranksetup-bin $INSTALLPATH/bin/verify_ranksetup-bin
 ln -s vespa-proton $INSTALLPATH/sbin/proton
 ln -s vespa-fdispatch $INSTALLPATH/sbin/fdispatch
 ln -s vespa-verify-ranksetup $INSTALLPATH/bin/verify_ranksetup
+
+# Temporary when renaming binaries in storageserver
+ln -s vespa-storaged-bin $INSTALLPATH/sbin/storaged-bin
+ln -s vespa-distributord-bin $INSTALLPATH/sbin/distributord-bin
+ln -s vespa-storaged $INSTALLPATH/sbin/storaged
+ln -s vespa-distributord $INSTALLPATH/sbin/distributord
