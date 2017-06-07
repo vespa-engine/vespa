@@ -30,13 +30,13 @@ makeDoc10Single(DocBuilder &b)
     b.startDocument("doc::10");
     b.startIndexField("url").
         startSubField("all").
-        addUrlTokenizedString("http://www.yahoo.com:81/fluke?ab=2#4").
+        addUrlTokenizedString("http://www.example.com:81/fluke?ab=2#4").
         endSubField().
         startSubField("scheme").
         addUrlTokenizedString("http").
         endSubField().
         startSubField("host").
-        addUrlTokenizedString("www.yahoo.com").
+        addUrlTokenizedString("www.example.com").
         endSubField().
         startSubField("port").
         addUrlTokenizedString("81").
@@ -63,13 +63,13 @@ makeDoc10Array(DocBuilder &b)
     b.startIndexField("url").
         startElement(1).
         startSubField("all").
-        addUrlTokenizedString("http://www.yahoo.com:82/fluke?ab=2#8").
+        addUrlTokenizedString("http://www.example.com:82/fluke?ab=2#8").
         endSubField().
         startSubField("scheme").
         addUrlTokenizedString("http").
         endSubField().
         startSubField("host").
-        addUrlTokenizedString("www.yahoo.com").
+        addUrlTokenizedString("www.example.com").
         endSubField().
         startSubField("port").
         addUrlTokenizedString("82").
@@ -119,13 +119,13 @@ makeDoc10WeightedSet(DocBuilder &b)
     b.startIndexField("url").
         startElement(4).
         startSubField("all").
-        addUrlTokenizedString("http://www.yahoo.com:83/fluke?ab=2#12").
+        addUrlTokenizedString("http://www.example.com:83/fluke?ab=2#12").
         endSubField().
         startSubField("scheme").
         addUrlTokenizedString("http").
         endSubField().
         startSubField("host").
-        addUrlTokenizedString("www.yahoo.com").
+        addUrlTokenizedString("www.example.com").
         endSubField().
         startSubField("port").
         addUrlTokenizedString("83").
@@ -258,16 +258,16 @@ TEST_F("requireThatSingleUrlFieldWorks", Fixture(CollectionType::SINGLE))
                  "w=81,a=10,"
                  "w=ab,a=10,"
                  "w=com,a=10,"
+                 "w=example,a=10,"
                  "w=fluke,a=10,"
                  "w=http,a=10,"
                  "w=www,a=10,"
-                 "w=yahoo,a=10,"
                  "f=1,"
                  "w=http,a=10,"
                  "f=2,"
                  "w=com,a=10,"
+                 "w=example,a=10,"
                  "w=www,a=10,"
-                 "w=yahoo,a=10,"
                  "f=3,"
                  "w=81,a=10,"
                  "f=4,"
@@ -281,8 +281,8 @@ TEST_F("requireThatSingleUrlFieldWorks", Fixture(CollectionType::SINGLE))
                  "w=EnDhOsT,a=10,"
                  "w=StArThOsT,a=10,"
                  "w=com,a=10,"
-                 "w=www,a=10,"
-                 "w=yahoo,a=10",
+                 "w=example,a=10,"
+                 "w=www,a=10",
                  f._inserter.toStr());
 }
 
@@ -298,18 +298,18 @@ TEST_F("requireThatArrayUrlFieldWorks", Fixture(CollectionType::ARRAY))
                  "w=9,a=10,"
                  "w=ab,a=10,"
                  "w=com,a=10,"
+                 "w=example,a=10,"
                  "w=flickr,a=10,"
                  "w=fluke,a=10,"
                  "w=http,a=10,"
                  "w=www,a=10,"
-                 "w=yahoo,a=10,"
                  "f=1,"
                  "w=http,a=10,"
                  "f=2,"
                  "w=com,a=10,"
+                 "w=example,a=10,"
                  "w=flickr,a=10,"
                  "w=www,a=10,"
-                 "w=yahoo,a=10,"
                  "f=3,"
                  "w=82,a=10,"
                  "f=4,"
@@ -324,9 +324,9 @@ TEST_F("requireThatArrayUrlFieldWorks", Fixture(CollectionType::ARRAY))
                  "w=EnDhOsT,a=10,"
                  "w=StArThOsT,a=10,"
                  "w=com,a=10,"
+                 "w=example,a=10,"
                  "w=flickr,a=10,"
-                 "w=www,a=10,"
-                 "w=yahoo,a=10",
+                 "w=www,a=10",
                  f._inserter.toStr());
 }
 
@@ -342,18 +342,18 @@ TEST_F("requireThatWeightedSetFieldWorks", Fixture(CollectionType::WEIGHTEDSET))
                  "w=85,a=10,"
                  "w=ab,a=10,"
                  "w=com,a=10,"
+                 "w=example,a=10,"
                  "w=flickr,a=10,"
                  "w=fluke,a=10,"
                  "w=http,a=10,"
                  "w=www,a=10,"
-                 "w=yahoo,a=10,"
                  "f=1,"
                  "w=http,a=10,"
                  "f=2,"
                  "w=com,a=10,"
+                 "w=example,a=10,"
                  "w=flickr,a=10,"
                  "w=www,a=10,"
-                 "w=yahoo,a=10,"
                  "f=3,"
                  "w=83,a=10,"
                  "w=85,a=10,"
@@ -369,9 +369,9 @@ TEST_F("requireThatWeightedSetFieldWorks", Fixture(CollectionType::WEIGHTEDSET))
                  "w=EnDhOsT,a=10,"
                  "w=StArThOsT,a=10,"
                  "w=com,a=10,"
+                 "w=example,a=10,"
                  "w=flickr,a=10,"
-                 "w=www,a=10,"
-                 "w=yahoo,a=10",
+                 "w=www,a=10",
                  f._inserter.toStr());
 }
 
@@ -386,16 +386,16 @@ TEST_F("requireThatAnnotatedSingleUrlFieldWorks", Fixture(CollectionType::SINGLE
                  "w=81,a=10,"
                  "w=ab,a=10,"
                  "w=com,a=10,"
+                 "w=example,a=10,"
                  "w=fluke,a=10,"
                  "w=http,a=10,"
                  "w=www,a=10,"
-                 "w=yahoo,a=10,"
                  "f=1,"
                  "w=http,a=10,"
                  "f=2,"
                  "w=com,a=10,"
+                 "w=example,a=10,"
                  "w=www,a=10,"
-                 "w=yahoo,a=10,"
                  "f=3,"
                  "w=81,a=10,"
                  "f=4,"
@@ -410,8 +410,8 @@ TEST_F("requireThatAnnotatedSingleUrlFieldWorks", Fixture(CollectionType::SINGLE
                  "w=EnDhOsT,a=10,"
                  "w=StArThOsT,a=10,"
                  "w=com,a=10,"
-                 "w=www,a=10,"
-                 "w=yahoo,a=10",
+                 "w=example,a=10,"
+                 "w=www,a=10",
                  f._inserter.toStr());
 }
 
@@ -428,18 +428,18 @@ TEST_F("requireThatAnnotatedArrayUrlFieldWorks", Fixture(CollectionType::ARRAY))
                  "w=9,a=10,"
                  "w=ab,a=10,"
                  "w=com,a=10,"
+                 "w=example,a=10,"
                  "w=flickr,a=10,"
                  "w=fluke,a=10,"
                  "w=http,a=10,"
                  "w=www,a=10,"
-                 "w=yahoo,a=10,"
                  "f=1,"
                  "w=http,a=10,"
                  "f=2,"
                  "w=com,a=10,"
+                 "w=example,a=10,"
                  "w=flickr,a=10,"
                  "w=www,a=10,"
-                 "w=yahoo,a=10,"
                  "f=3,"
                  "w=82,a=10,"
                  "f=4,"
@@ -455,9 +455,9 @@ TEST_F("requireThatAnnotatedArrayUrlFieldWorks", Fixture(CollectionType::ARRAY))
                  "w=EnDhOsT,a=10,"
                  "w=StArThOsT,a=10,"
                  "w=com,a=10,"
+                 "w=example,a=10,"
                  "w=flickr,a=10,"
-                 "w=www,a=10,"
-                 "w=yahoo,a=10",
+                 "w=www,a=10",
                  f._inserter.toStr());
 }
 
@@ -476,18 +476,18 @@ TEST_F("requireThatAnnotatedWeightedSetFieldWorks",
                  "w=85,a=10(e=1,w=7,l=9[4]),"
                  "w=ab,a=10(e=0,w=4,l=9[6],e=1,w=7,l=9[6]),"
                  "w=com,a=10(e=0,w=4,l=9[3],e=1,w=7,l=9[3]),"
+                 "w=example,a=10(e=0,w=4,l=9[2]),"
                  "w=flickr,a=10(e=1,w=7,l=9[2]),"
                  "w=fluke,a=10(e=0,w=4,l=9[5],e=1,w=7,l=9[5]),"
                  "w=http,a=10(e=0,w=4,l=9[0],e=1,w=7,l=9[0]),"
                  "w=www,a=10(e=0,w=4,l=9[1],e=1,w=7,l=9[1]),"
-                 "w=yahoo,a=10(e=0,w=4,l=9[2]),"
                  "f=1,"
                  "w=http,a=10(e=0,w=4,l=1[0],e=1,w=7,l=1[0]),"
                  "f=2,"
                  "w=com,a=10(e=0,w=4,l=3[2],e=1,w=7,l=3[2]),"
+                 "w=example,a=10(e=0,w=4,l=3[1]),"
                  "w=flickr,a=10(e=1,w=7,l=3[1]),"
                  "w=www,a=10(e=0,w=4,l=3[0],e=1,w=7,l=3[0]),"
-                 "w=yahoo,a=10(e=0,w=4,l=3[1]),"
                  "f=3,"
                  "w=83,a=10(e=0,w=4,l=1[0]),"
                  "w=85,a=10(e=1,w=7,l=1[0]),"
@@ -504,9 +504,9 @@ TEST_F("requireThatAnnotatedWeightedSetFieldWorks",
                  "w=EnDhOsT,a=10(e=0,w=4,l=5[4],e=1,w=7,l=5[4]),"
                  "w=StArThOsT,a=10(e=0,w=4,l=5[0],e=1,w=7,l=5[0]),"
                  "w=com,a=10(e=0,w=4,l=5[3],e=1,w=7,l=5[3]),"
+                 "w=example,a=10(e=0,w=4,l=5[2]),"
                  "w=flickr,a=10(e=1,w=7,l=5[2]),"
-                 "w=www,a=10(e=0,w=4,l=5[1],e=1,w=7,l=5[1]),"
-                 "w=yahoo,a=10(e=0,w=4,l=5[2])",
+                 "w=www,a=10(e=0,w=4,l=5[1],e=1,w=7,l=5[1])",
                  f._inserter.toStr());
 }
 

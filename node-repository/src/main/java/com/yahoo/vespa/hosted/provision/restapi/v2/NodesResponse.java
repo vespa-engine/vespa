@@ -171,6 +171,7 @@ class NodesResponse extends HttpResponse {
         object.setBool("hardwareFailure", node.status().hardwareFailure().isPresent());
         node.status().hardwareFailure().ifPresent(failure -> object.setString("hardwareFailureType", toString(failure)));
         object.setBool("wantToRetire", node.status().wantToRetire());
+        object.setBool("wantToDeprovision", node.status().wantToDeprovision());
         toSlime(node.history(), object.setArray("history"));
         ipAddressesToSlime(node.ipAddresses(), object.setArray("ipAddresses"));
         ipAddressesToSlime(node.additionalIpAddresses(), object.setArray("additionalIpAddresses"));

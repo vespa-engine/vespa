@@ -1,0 +1,6 @@
+.depend
+Makefile
+fileheader.dat
+fileheaderinspect_test
+out
+searchlib_vespa-fileheader-inspect_test_app

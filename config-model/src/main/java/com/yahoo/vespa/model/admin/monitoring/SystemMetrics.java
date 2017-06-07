@@ -35,10 +35,9 @@ public class SystemMetrics {
                 // Disk metrics should be based on /home, or else '/' - or simply add filesystem as dimension
                 ImmutableSet.of(new Metric("cpu.busy.pct", CPU_UTIL),
                                 new Metric("mem.used.pct", MEM_UTIL),
-                                new Metric("memory.usage", MEM_USED),
+                                new Metric("mem.active.kb", MEM_USED),
                                 new Metric("mem.total.kb", MEM_LIMIT),
-                                new Metric("fs.used.kb", DISK_USED),
-                                new Metric("fs.capacity.kb", DISK_LIMIT)
+                                new Metric("used.kb", DISK_USED)
                 );
 
         Set<Metric> systemMetrics = ImmutableSet.<Metric>builder()

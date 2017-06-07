@@ -4,11 +4,13 @@
 #include <vespa/log/control-file.h>
 #include <vespa/log/internal.h>
 #include <vespa/log/component.h>
+
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/stat.h>
 
-LOG_SETUP("logctl", "$Id$");
+LOG_SETUP("vespa-logctl");
+
 
 using namespace ns_log;
 

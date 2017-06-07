@@ -325,6 +325,20 @@ public class SerializationTest {
     }
 
     @Test
+    public void want_to_deprovision_defaults_to_false() {
+        String nodeData =
+                "{\n" +
+                        "   \"type\" : \"tenant\",\n" +
+                        "   \"flavor\" : \"large\",\n" +
+                        "   \"openStackId\" : \"myId\",\n" +
+                        "   \"hostname\" : \"myHostname\",\n" +
+                        "   \"ipAddresses\" : [\"127.0.0.1\"]\n" +
+                        "}";
+        Node node = nodeSerializer.fromJson(State.provisioned, Utf8.toBytes(nodeData));
+        assertFalse(node.status().wantToDeprovision());
+    }
+
+    @Test
     public void vespa_version_serialization() throws Exception {
         String nodeWithWantedVespaVersion =
                 "{\n" +
