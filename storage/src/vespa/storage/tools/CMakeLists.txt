@@ -27,7 +27,6 @@ vespa_add_executable(storage_storage-cmd_app
     SOURCES
     storage-cmd.cpp
     OUTPUT_NAME vespa-storage-cmd
-    INSTALL bin
     DEPENDS
     AFTER
     storage_storageconfig
