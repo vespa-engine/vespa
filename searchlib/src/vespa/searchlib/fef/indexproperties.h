@@ -26,8 +26,7 @@ namespace eval {
 // lazy evaluation of expressions. affects rank/summary/dump
 struct LazyExpressions {
     static const vespalib::string NAME;
-    static const vespalib::string DEFAULT_VALUE;
-    static bool check(const Properties &props);
+    static bool check(const Properties &props, bool default_value);
 };
 
 } // namespace eval

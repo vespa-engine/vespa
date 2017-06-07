@@ -77,12 +77,11 @@ checkIfTrue(const Properties &props, const vespalib::string &name,
 namespace eval {
 
 const vespalib::string LazyExpressions::NAME("vespa.eval.lazy_expressions");
-const vespalib::string LazyExpressions::DEFAULT_VALUE("false");
 
 bool
-LazyExpressions::check(const Properties &props)
+LazyExpressions::check(const Properties &props, bool default_value)
 {
-    return checkIfTrue(props, NAME, DEFAULT_VALUE);
+    return lookupBool(props, NAME, default_value);
 }
 
 } // namespace eval

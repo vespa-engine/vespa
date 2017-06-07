@@ -2,6 +2,7 @@
 
 #include "gbdt.h"
 #include "vm_forest.h"
+#include "node_traverser.h"
 #include <vespa/eval/eval/basic_nodes.h>
 #include <vespa/eval/eval/call_nodes.h>
 #include <vespa/eval/eval/operator_nodes.h>
@@ -113,6 +114,25 @@ ForestStats::ForestStats(const std::vector<const nodes::Node *> &trees)
     for (auto const &size: size_map) {
         tree_sizes.push_back(TreeSize{size.first, size.second});
     }
+}
+
+//-----------------------------------------------------------------------------
+
+bool contains_gbdt(const nodes::Node &node, size_t limit) {
+    struct FindGBDT : NodeTraverser {
+        size_t seen;
+        size_t limit;
+        explicit FindGBDT(size_t limit_in) : seen(0), limit(limit_in) {}
+        bool found() const { return (seen >= limit); }
+        bool open(const nodes::Node &) override { return !found(); }
+        void close(const nodes::Node &node) override {
+            if (node.is_tree() || node.is_forest()) {
+                ++seen;
+            }
+        }
+    } findGBDT(limit);
+    node.traverse(findGBDT);
+    return findGBDT.found(); 
 }
 
 //-----------------------------------------------------------------------------

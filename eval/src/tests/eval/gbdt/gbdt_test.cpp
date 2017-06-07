@@ -323,4 +323,34 @@ TEST("require that forests evaluate to approximately the same for all evaluation
 
 //-----------------------------------------------------------------------------
 
+TEST("require that GDBT expressions can be detected") {
+    Function function = Function::parse("if((a<1),1.0,if((b in [1,2,3]),if((c in 1),2.0,3.0),4.0))+"
+                                        "if((d in 1),10.0,if((e<1),20.0,30.0))+"
+                                        "if((d in 1),10.0,if((e<1),20.0,30.0))");
+    EXPECT_TRUE(contains_gbdt(function.root(), 9));
+    EXPECT_TRUE(!contains_gbdt(function.root(), 10));
+}
+
+TEST("require that wrapped GDBT expressions can be detected") {
+    Function function = Function::parse("10*(if((a<1),1.0,if((b in [1,2,3]),if((c in 1),2.0,3.0),4.0))+"
+                                        "if((d in 1),10.0,if((e<1),20.0,30.0))+"
+                                        "if((d in 1),10.0,if((e<1),20.0,30.0)))");
+    EXPECT_TRUE(contains_gbdt(function.root(), 9));
+    EXPECT_TRUE(!contains_gbdt(function.root(), 10));
+}
+
+TEST("require that lazy parameters are not suggested for GBDT models") {
+    Function function = Function::parse(Model().make_forest(10, 8));
+    EXPECT_TRUE(!CompiledFunction::should_use_lazy_params(function));
+}
+
+TEST("require that lazy parameters can be suggested for small GBDT models") {
+    Function function = Function::parse("if((a<1),1.0,if((b in [1,2,3]),if((c in 1),2.0,3.0),4.0))+"
+                                        "if((d in 1),10.0,if((e<1),20.0,30.0))+"
+                                        "if((d in 1),10.0,if((e<1),20.0,30.0))");
+    EXPECT_TRUE(CompiledFunction::should_use_lazy_params(function));
+}
+
+//-----------------------------------------------------------------------------
+
 TEST_MAIN() { TEST_RUN_ALL(); }
