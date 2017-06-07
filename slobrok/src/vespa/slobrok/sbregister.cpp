@@ -11,7 +11,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".slobrok.register");
 
-using vespalib::IllegalStateException;
+using vespalib::NetworkSetupFailureException;
 
 namespace {
 
@@ -72,7 +72,7 @@ RegisterAPI::RegisterAPI(FRT_Supervisor &orb, const ConfiguratorFactory & config
 {
     _configurator->poll();
     if ( ! _slobrokSpecs.ok()) {
-        throw IllegalStateException("Failed configuring the RegisterAPI. No valid slobrok specs from config",
+        throw NetworkSetupFailureException("Failed configuring the RegisterAPI. No valid slobrok specs from config",
                                     VESPA_STRLOC);
     }
     LOG_ASSERT(_slobrokSpecs.ok());
