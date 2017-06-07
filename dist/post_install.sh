@@ -93,3 +93,8 @@ ln -s vespa-log-conv $INSTALLPATH/bin/vlogconv
 ln -s vespa-logctl $INSTALLPATH/bin/logctl
 ln -s vespa-logfmt $INSTALLPATH/bin/logfmt
 ln -s vespa-log-replay $INSTALLPATH/bin/vlogreplay
+
+# Temporary when renaming binaries in memfilepersistence
+ln -s vespa-dump-slotfile $INSTALLPATH/bin/dumpslotfile
+ln -s vespa-vds-disktool-bin $INSTALLPATH/bin/vdsdisktool-bin
+ln -s vespa-vds-disktool $INSTALLPATH/bin/vdsdisktool
