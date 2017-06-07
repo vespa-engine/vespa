@@ -69,6 +69,11 @@ ln -s $PREFIX/lib/jars/zkfacade-jar-with-dependencies.jar $INSTALLPATH/conf/conf
 ln -s $PREFIX/conf/configserver-app/components $INSTALLPATH/lib/jars/config-models
 ln -s storaged-bin $INSTALLPATH/sbin/distributord-bin
 
+# Temporary when renaming binaries in fsa
+ln -s vespa-fsadump $INSTALLPATH/bin/fsadump
+ln -s vespa-fsainfo $INSTALLPATH/bin/fsainfo
+ln -s vespa-makefsa $INSTALLPATH/bin/makefsa
+
 # Temporary when renaming binaries in searchcore
 ln -s vespa-proton-bin $INSTALLPATH/sbin/proton-bin
 ln -s vespa-fdispatch-bin $INSTALLPATH/sbin/fdispatch-bin
