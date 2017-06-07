@@ -15,6 +15,7 @@ RUN yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vesp
                    perl \
                    perl-Env \
                    perl-JSON \
+                   perl-IO-Socket-IP \
                    libatomic \
                    net-tools \
                    less \
