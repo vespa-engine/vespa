@@ -16,7 +16,7 @@ populatenode
 slotfilefeeder
 statfs
 stoccart
-storage-cmd
+vespa-storage-cmd
 throttlingsim
 vdsclient
 vdsdisktool
