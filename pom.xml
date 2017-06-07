@@ -1066,7 +1066,7 @@
         <curator.version>2.9.1</curator.version>
         <jackson2.version>2.8.3</jackson2.version>
         <jersey2.version>2.23.2</jersey2.version>
-        <jetty.version>9.4.5.v20170502</jetty.version>
+        <jetty.version>9.4.6.v20170531</jetty.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <test.hide>true</test.hide>
