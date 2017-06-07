@@ -34,14 +34,14 @@ vespalib::string readFile(const vespalib::string &fileName) {
 }
 
 TEST("testError") {
-    EXPECT_TRUE(system("../../apps/fileheaderinspect/vespa-header-inspect notfound.dat") != 0);
+    EXPECT_TRUE(system("../../apps/vespa-fileheader-inspect/vespa-fileheader-inspect notfound.dat") != 0);
 }
 
 TEST("testEscape") {
     FileHeader header;
     header.putTag(FileHeader::Tag("fanart", "\fa\na\r\t"));
     ASSERT_TRUE(writeHeader(header, "fileheader.dat"));
-    EXPECT_TRUE(system("../../apps/fileheaderinspect/vespa-header-inspect -q fileheader.dat > out") == 0);
+    EXPECT_TRUE(system("../../apps/vespa-fileheader-inspect/vespa-fileheader-inspect -q fileheader.dat > out") == 0);
     EXPECT_EQUAL("fanart;string;\\fa\\na\\r\\t\n", readFile("out"));
 }
 
@@ -49,7 +49,7 @@ TEST("testDelimiter") {
     FileHeader header;
     header.putTag(FileHeader::Tag("string", "string"));
     ASSERT_TRUE(writeHeader(header, "fileheader.dat"));
-    EXPECT_TRUE(system("../../apps/fileheaderinspect/vespa-header-inspect -d i -q fileheader.dat > out") == 0);
+    EXPECT_TRUE(system("../../apps/vespa-fileheader-inspect/vespa-fileheader-inspect -d i -q fileheader.dat > out") == 0);
     EXPECT_EQUAL("str\\ingistr\\ingistr\\ing\n", readFile("out"));
 }
 
@@ -57,7 +57,7 @@ TEST("testQuiet") {
     FileHeader header;
     FileHeaderTk::addVersionTags(header);
     ASSERT_TRUE(writeHeader(header, "fileheader.dat"));
-    EXPECT_TRUE(system("../../apps/fileheaderinspect/vespa-header-inspect -q fileheader.dat > out") == 0);
+    EXPECT_TRUE(system("../../apps/vespa-fileheader-inspect/vespa-fileheader-inspect -q fileheader.dat > out") == 0);
     vespalib::string str = readFile("out");
     EXPECT_TRUE(!str.empty());
     for (uint32_t i = 0, numTags = header.getNumTags(); i < numTags; ++i) {
@@ -75,7 +75,7 @@ TEST("testVerbose") {
     FileHeader header;
     FileHeaderTk::addVersionTags(header);
     ASSERT_TRUE(writeHeader(header, "fileheader.dat"));
-    EXPECT_TRUE(system("../../apps/fileheaderinspect/vespa-header-inspect fileheader.dat > out") == 0);
+    EXPECT_TRUE(system("../../apps/vespa-fileheader-inspect/vespa-fileheader-inspect fileheader.dat > out") == 0);
     vespalib::string str = readFile("out");
     EXPECT_TRUE(!str.empty());
     for (uint32_t i = 0, numTags = header.getNumTags(); i < numTags; ++i) {

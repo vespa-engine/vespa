@@ -58,10 +58,10 @@ vespa_define_module(
 
     APPS
     src/apps/docstore
-    src/apps/fileheaderinspect
     src/apps/tests
     src/apps/uniform
     src/apps/vespa-attribute-inspect
+    src/apps/vespa-fileheader-inspect
     src/apps/vespa-index-inspect
     src/apps/vespa-ranking-expression-analyzer
 
@@ -155,7 +155,6 @@ vespa_define_module(
     src/tests/fef/table
     src/tests/fef/termfieldmodel
     src/tests/fef/termmatchdatamerger
-    src/tests/fileheaderinspect
     src/tests/fileheadertk
     src/tests/forcelink
     src/tests/grouping
@@ -220,4 +219,5 @@ vespa_define_module(
     src/tests/util/slime_output_raw_buf_adapter
     src/tests/util/statebuf
     src/tests/util/statefile
+    src/tests/vespa-fileheader-inspect
 )
