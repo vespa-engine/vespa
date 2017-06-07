@@ -6,6 +6,7 @@
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/features/rankingexpression/feature_name_extractor.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
+#include <vespa/eval/eval/param_usage.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.rankingexpression");
@@ -244,7 +245,8 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
     // avoid costly compilation when only verifying setup
     if (env.getFeatureMotivation() != env.FeatureMotivation::VERIFY_SETUP) {
         if (do_compile) {
-            if (fef::indexproperties::eval::LazyExpressions::check(env.getProperties())) {
+            bool suggest_lazy = CompiledFunction::should_use_lazy_params(rank_function);
+            if (fef::indexproperties::eval::LazyExpressions::check(env.getProperties(), suggest_lazy)) {
                 _compile_token = CompileCache::compile(rank_function, PassParams::LAZY);
             } else {
                 _compile_token = CompileCache::compile(rank_function, PassParams::ARRAY);

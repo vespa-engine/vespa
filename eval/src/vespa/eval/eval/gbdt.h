@@ -60,6 +60,15 @@ struct ForestStats {
 //-----------------------------------------------------------------------------
 
 /**
+ * Check if the given sub-expression contains GBDT. This function
+ * returns true if the number of tree/forest nodes exceeds the given
+ * limit.
+ **/
+bool contains_gbdt(const nodes::Node &node, size_t limit);
+
+//-----------------------------------------------------------------------------
+
+/**
  * A Forest object represents deletable custom prepared state that may
  * be used to evaluate a GBDT forest from within LLVM generated
  * machine code. It is very important that the evaluation function

@@ -63,6 +63,7 @@ public:
     }
     double estimate_cost_us(const std::vector<double> &params, double budget = 5.0) const;
     static Function::Issues detect_issues(const Function &function);
+    static bool should_use_lazy_params(const Function &function);
 };
 
 } // namespace vespalib::eval
