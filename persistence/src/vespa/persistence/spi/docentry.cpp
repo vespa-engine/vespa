@@ -3,6 +3,7 @@
 #include "docentry.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <sstream>
+#include <cassert>
 
 namespace storage {
 namespace spi {

@@ -10,7 +10,7 @@
 #include "doublefieldvalue.h"
 #include "bytefieldvalue.h"
 #include "predicatefieldvalue.h"
-
+#include <vespa/document/util/bytebuffer.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -49,6 +49,21 @@ FieldValue::hash() const
     vespalib::nbostream os;
     serialize(os);
     return vespalib::hashValue(os.c_str(), os.size()) ;
+}
+
+bool
+FieldValue::isA(const FieldValue& other) const {
+    return (getDataType()->isA(*other.getDataType()));
+}
+int
+FieldValue::compare(const FieldValue& other) const {
+    const DataType & a = *getDataType();
+    const DataType & b = *other.getDataType();
+    return (a < b)
+           ? -1
+           : (b < a)
+             ? 1
+             : 0;
 }
 
 FieldValue&

@@ -8,6 +8,7 @@
 #include <vespa/document/select/visitor.h>
 #include <vespa/document/select/branch.h>
 #include <vespa/document/select/compare.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 namespace document {
 

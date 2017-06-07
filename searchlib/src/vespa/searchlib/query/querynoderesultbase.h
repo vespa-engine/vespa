@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/objects/cloneable.h>
+#include <memory>
 
 namespace search {
 

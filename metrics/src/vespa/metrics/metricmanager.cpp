@@ -10,7 +10,7 @@
 #include "xmlwriter.h"
 #include <vespa/config/print/ostreamconfigwriter.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
-
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/log/log.h>

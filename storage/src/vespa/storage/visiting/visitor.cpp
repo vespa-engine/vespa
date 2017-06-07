@@ -10,7 +10,9 @@
 #include <vespa/document/select/node.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <unordered_map>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance");
 

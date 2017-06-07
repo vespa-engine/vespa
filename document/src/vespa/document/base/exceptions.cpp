@@ -3,6 +3,7 @@
 #include "exceptions.h"
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 namespace document {
 

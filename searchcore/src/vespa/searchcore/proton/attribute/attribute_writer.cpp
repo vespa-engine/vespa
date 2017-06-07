@@ -5,6 +5,7 @@
 #include <vespa/searchcore/proton/common/attrupdate.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
+#include <vespa/document/datatype/documenttype.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.attributeadapter");

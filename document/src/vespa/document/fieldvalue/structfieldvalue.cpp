@@ -8,9 +8,9 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/crc.h>
 #include <vespa/document/datatype/positiondatatype.h>
-#include <vespa/vespalib/util/vstringfmt.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/document/base/exceptions.h>
+#include <vespa/document/util/bytebuffer.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".document.structfieldvalue");
@@ -43,6 +43,26 @@ StructFieldValue::~StructFieldValue() { }
 StructFieldValue::Chunks::~Chunks() { }
 
 void
+StructFieldValue::Chunks::push_back(SerializableArray::UP item) {
+    assert(_sz < 2);
+    _chunks[_sz++].reset(item.release());
+}
+
+void
+StructFieldValue::Chunks::clear() {
+    _chunks[0].reset();
+    _chunks[1].reset();
+    _sz = 0;
+}
+
+void
+StructFieldValue::Chunks::swap(Chunks & rhs) {
+    _chunks[0].swap(rhs._chunks[0]);
+    _chunks[1].swap(rhs._chunks[1]);
+    std::swap(_sz, rhs._sz);
+}
+
+void
 StructFieldValue::swap(StructFieldValue & rhs)
 {
     StructuredFieldValue::swap(rhs);
@@ -51,6 +71,16 @@ StructFieldValue::swap(StructFieldValue & rhs)
     std::swap(_repo, rhs._repo);
     std::swap(_doc_type, rhs._doc_type);
     std::swap(_version, _version);
+}
+
+const StructDataType &
+StructFieldValue::getStructType() const {
+    return static_cast<const StructDataType &>(getType());
+}
+
+const CompressionConfig &
+StructFieldValue::getCompressionConfig() const {
+    return getStructType().getCompressionConfig();
 }
 
 void

@@ -79,7 +79,7 @@ TEST_MT_F("requireThatNextUpdateReturnsWhenNotified", 2, SubscriptionFixture(Con
         ASSERT_TRUE(f1.sub.nextUpdate(2, 5000));
         ASSERT_TRUE(timer.MilliSecsToNow() > 200.0);
     } else {
-        FastOS_Thread::Sleep(500);
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
         f1.holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(), 1, 1)));
     }
 }
@@ -94,7 +94,7 @@ TEST_MT_F("requireThatNextUpdateReturnsInterrupted", 2, SubscriptionFixture(Conf
         ASSERT_TRUE(f1.sub.nextUpdate(1, 5000));
         ASSERT_TRUE(timer.MilliSecsToNow() > 300.0);
     } else {
-        FastOS_Thread::Sleep(500);
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
         f1.sub.close();
     }
 }

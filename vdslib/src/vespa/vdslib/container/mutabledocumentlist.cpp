@@ -2,6 +2,7 @@
 
 #include "mutabledocumentlist.h"
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
 using vespalib::nbostream;

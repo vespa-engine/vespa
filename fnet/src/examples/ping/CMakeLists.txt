@@ -3,7 +3,6 @@ vespa_add_executable(fnet_pingserver_app
     SOURCES
     packets.cpp
     pingserver.cpp
-    INSTALL bin
     DEPENDS
     fnet
 )
@@ -11,7 +10,6 @@ vespa_add_executable(fnet_pingclient_app
     SOURCES
     packets.cpp
     pingclient.cpp
-    INSTALL bin
     DEPENDS
     fnet
 )

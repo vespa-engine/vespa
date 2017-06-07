@@ -4,9 +4,9 @@
 #include <vespa/vespalib/util/regexp.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <cassert>
 
-namespace document {
-namespace select {
+namespace document::select {
 
 Operator::OperatorMap Operator::_operators;
 
@@ -228,5 +228,4 @@ GlobOperator::containsVariables(const vespalib::stringref & expression)
 
 const GlobOperator GlobOperator::GLOB("=");
 
-} // select
-} // document
+}

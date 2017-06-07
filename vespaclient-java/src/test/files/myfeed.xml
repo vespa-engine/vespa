@@ -1,0 +1,5 @@
+<vespafeed>
+    <document documentid="doc:test:foo" documenttype="news"/>
+    <update documentid="doc:test:foo" documenttype="news"/>
+    <remove documentid="doc:test:foo"/>
+</vespafeed>

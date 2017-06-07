@@ -34,7 +34,6 @@ public:
 };
 #endif
 
-
 /**
  * @brief A Lock is a synchronization primitive used to ensure mutual
  * exclusion.

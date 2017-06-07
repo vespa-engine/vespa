@@ -2,9 +2,9 @@
 
 #include "mergethrottler.h"
 #include "storagemetricsset.h"
-#include <iostream>
 #include <sstream>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/log/log.h>

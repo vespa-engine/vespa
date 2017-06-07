@@ -4,6 +4,7 @@
 #include "parser.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/util/md5.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/text/lowercase.h>
@@ -33,6 +34,13 @@ namespace {
         }
         return false;
     }
+}
+
+std::unique_ptr<Value>
+ValueNode::defaultTrace(std::unique_ptr<Value> val, std::ostream& out) const
+{
+    out << "Returning value " << *val << ".\n";
+    return std::move(val);
 }
 
 InvalidValueNode::InvalidValueNode(const vespalib::stringref & name)
@@ -146,13 +154,7 @@ CurrentTimeValueNode::print(std::ostream& out, bool verbose,
 
 std::unique_ptr<Value>
 VariableValueNode::getValue(const Context& context) const {
-    VariableMap::const_iterator iter = context._variables.find(_value);
-
-    if (iter != context._variables.end()) {
-        return std::unique_ptr<Value>(new FloatValue(iter->second));
-    } else {
-        return std::unique_ptr<Value>(new FloatValue(0.0));
-    }
+    return context.getValue(_value);
 }
 
 

@@ -4,6 +4,7 @@
 
 #include <vespa/document/annotation/annotation.h>
 #include <vector>
+#include <cassert>
 
 namespace document {
 class SpanNode;

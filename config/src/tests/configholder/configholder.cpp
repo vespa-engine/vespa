@@ -61,7 +61,7 @@ TEST_MT_F("Require that wait is interrupted", 2, ConfigHolder)
         TEST_BARRIER();
     } else {
         TEST_BARRIER();
-        FastOS_Thread::Sleep(500);
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
         f.interrupt();
         TEST_BARRIER();
     }

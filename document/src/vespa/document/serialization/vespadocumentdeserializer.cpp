@@ -27,6 +27,7 @@
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/document/util/bytebuffer.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespadocumentdeserializer");

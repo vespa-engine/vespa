@@ -3,6 +3,7 @@
 #include "fieldupdate.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/datatype/documenttype.h>
 
 namespace document {
 

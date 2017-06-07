@@ -3,10 +3,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/delegatelist.hpp>
 #include <vespa/vespalib/util/guard.h>
-
-#include <memory>
-#include <algorithm>
-#include <vector>
+#include <vespa/fastos/thread.h>
 #include <queue>
 
 #include <vespa/log/log.h>

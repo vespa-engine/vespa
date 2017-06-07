@@ -5,6 +5,7 @@
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback");

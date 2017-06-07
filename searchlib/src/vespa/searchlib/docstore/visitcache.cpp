@@ -4,9 +4,10 @@
 #include "ibucketizer.h"
 #include <vespa/vespalib/stllike/cache.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/data/databuffer.h>
+#include <vespa/document/util/compressor.h>
 
-namespace search {
-namespace docstore {
+namespace search::docstore {
 
 using vespalib::ConstBufferRef;
 using vespalib::LockGuard;
@@ -241,5 +242,3 @@ VisitCache::Cache::onRemove(const K & key) {
 }
 
 }
-}
-

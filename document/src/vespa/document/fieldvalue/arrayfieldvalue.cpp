@@ -4,6 +4,7 @@
 #include "stringfieldvalue.h"
 #include "predicatefieldvalue.h"
 #include <vespa/document/util/serializableexceptions.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".document.fieldvalue.array");

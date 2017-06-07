@@ -3,9 +3,7 @@
 #include <boost/tokenizer.hpp>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/errorcode.h>
-#include <vespa/messagebus/routing/route.h>
-#include <vespa/messagebus/routing/routingcontext.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/fnet/frt/frt.h>
 

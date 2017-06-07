@@ -1,16 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fileutil.h"
-
-#include <errno.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/fastos/file.h>
 #include <ostream>
 #include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/error.h>
-#include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.io.fileutil");

@@ -4,8 +4,8 @@
 #pragma once
 
 #include <memory>
-#include <string.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cstdlib>
 
 /// Macro to give you number of elements in a defined array.
 #define VESPA_NELEMS(a)    (sizeof(a)/sizeof(a[0]))

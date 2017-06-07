@@ -2,6 +2,7 @@
 
 #include "documentretriever.h"
 #include <vespa/document/datatype/positiondatatype.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchcore/proton/attribute/document_field_retriever.h>
 #include <vespa/vespalib/geo/zcurve.h>

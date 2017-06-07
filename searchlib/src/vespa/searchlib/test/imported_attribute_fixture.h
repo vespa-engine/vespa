@@ -15,6 +15,7 @@
 #include <vespa/searchlib/query/queryterm.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <algorithm>
 #include <future>
 #include <map>

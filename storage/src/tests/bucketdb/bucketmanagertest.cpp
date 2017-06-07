@@ -16,6 +16,7 @@
 #include <tests/common/testhelper.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <future>
 

@@ -3,7 +3,6 @@
 #include "documenttyperepo.h"
 
 #include <vespa/document/datatype/annotationreferencedatatype.h>
-#include <vespa/document/datatype/annotationtype.h>
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/mapdatatype.h>
@@ -11,15 +10,10 @@
 #include <vespa/document/datatype/urldatatype.h>
 #include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/datatype/referencedatatype.h>
-#include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/vespalib/util/closure.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <fstream>
-#include <memory>
-#include <utility>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".documenttyperepo");
@@ -38,6 +32,20 @@ using vespalib::string;
 using vespalib::stringref;
 
 namespace document {
+
+namespace internal {
+
+using DocumentTypeMapT = vespalib::hash_map<int32_t, DataTypeRepo *>;
+
+class DocumentTypeMap : public DocumentTypeMapT
+{
+public:
+    using DocumentTypeMapT::DocumentTypeMapT;
+};
+
+}
+
+using DocumentTypeMap = internal::DocumentTypeMap;
 
 namespace {
 template <typename Container>
@@ -359,7 +367,6 @@ void addDataTypes(const vector<Datatype> &types, Repo &repo,
     }
 }
 
-typedef hash_map<int32_t, DataTypeRepo *> DocumentTypeMap;
 void addDocumentTypes(const DocumentTypeMap &type_map, Repo &repo) {
     for (DocumentTypeMap::const_iterator
              it = type_map.begin(); it != type_map.end(); ++it) {
@@ -515,49 +522,55 @@ void configureAllRepos(const DocumenttypesConfig::DocumenttypeVector &t,
 
 }  // namespace
 
-DocumentTypeRepo::DocumentTypeRepo() {
-    addDefaultDocument(_doc_types);
+DocumentTypeRepo::DocumentTypeRepo() :
+    _doc_types(std::make_unique<internal::DocumentTypeMap>())
+{
+    addDefaultDocument(*_doc_types);
 }
 
-DocumentTypeRepo::DocumentTypeRepo(const DocumentType & type) {
-    addDefaultDocument(_doc_types);
+DocumentTypeRepo::DocumentTypeRepo(const DocumentType & type) :
+    _doc_types(std::make_unique<internal::DocumentTypeMap>())
+{
+    addDefaultDocument(*_doc_types);
     try {
-        addDataTypeRepo(makeDataTypeRepo(type, _doc_types), _doc_types);
+        addDataTypeRepo(makeDataTypeRepo(type, *_doc_types), *_doc_types);
     } catch (...) {
-        DeleteMapContent(_doc_types);
+        DeleteMapContent(*_doc_types);
         throw;
     }
 }
 
-DocumentTypeRepo::DocumentTypeRepo(const DocumenttypesConfig &config) {
-    addDefaultDocument(_doc_types);
+DocumentTypeRepo::DocumentTypeRepo(const DocumenttypesConfig &config) :
+    _doc_types(std::make_unique<internal::DocumentTypeMap>())
+{
+    addDefaultDocument(*_doc_types);
     try {
-        createAllDocumentTypes(config.documenttype, _doc_types);
-        addAllDocumentTypesToRepos(_doc_types);
-        configureAllRepos(config.documenttype, _doc_types);
+        createAllDocumentTypes(config.documenttype, *_doc_types);
+        addAllDocumentTypesToRepos(*_doc_types);
+        configureAllRepos(config.documenttype, *_doc_types);
     } catch (...) {
-        DeleteMapContent(_doc_types);
+        DeleteMapContent(*_doc_types);
         throw;
     }
 }
 
 DocumentTypeRepo::~DocumentTypeRepo() {
-    DeleteMapContent(_doc_types);
+    DeleteMapContent(*_doc_types);
 }
 
 const DocumentType *DocumentTypeRepo::getDocumentType(int32_t type_id) const {
-    const DataTypeRepo *repo = FindPtr(_doc_types, type_id);
+    const DataTypeRepo *repo = FindPtr(*_doc_types, type_id);
     return repo ? repo->doc_type : nullptr;
 }
 
 const DocumentType *DocumentTypeRepo::getDocumentType(const stringref &name) const {
     DocumentTypeMap::const_iterator it =
-        _doc_types.find(DocumentType::createId(name));
+        _doc_types->find(DocumentType::createId(name));
 
-    if (it != _doc_types.end() && it->second->doc_type->getName() == name) {
+    if (it != _doc_types->end() && it->second->doc_type->getName() == name) {
         return it->second->doc_type;
     }
-    for (it = _doc_types.begin(); it != _doc_types.end(); ++it) {
+    for (it = _doc_types->begin(); it != _doc_types->end(); ++it) {
         if (it->second->doc_type->getName() == name) {
             return it->second->doc_type;
         }
@@ -567,27 +580,27 @@ const DocumentType *DocumentTypeRepo::getDocumentType(const stringref &name) con
 
 const DataType *
 DocumentTypeRepo::getDataType(const DocumentType &doc_type, int32_t id) const {
-    const DataTypeRepo *dt_repo = FindPtr(_doc_types, doc_type.getId());
+    const DataTypeRepo *dt_repo = FindPtr(*_doc_types, doc_type.getId());
     return dt_repo ? dt_repo->repo.lookup(id) : nullptr;
 }
 
 const DataType *
 DocumentTypeRepo::getDataType(
         const DocumentType &doc_type, const stringref &name) const {
-    const DataTypeRepo *dt_repo = FindPtr(_doc_types, doc_type.getId());
+    const DataTypeRepo *dt_repo = FindPtr(*_doc_types, doc_type.getId());
     return dt_repo ? dt_repo->repo.lookup(name) : nullptr;
 }
 
 const AnnotationType *DocumentTypeRepo::getAnnotationType(
         const DocumentType &doc_type, int32_t id) const {
-    const DataTypeRepo *dt_repo = FindPtr(_doc_types, doc_type.getId());
+    const DataTypeRepo *dt_repo = FindPtr(*_doc_types, doc_type.getId());
     return dt_repo ? dt_repo->annotations.lookup(id) : nullptr;
 }
 
 void DocumentTypeRepo::forEachDocumentType(
         Closure1<const DocumentType &> &c) const {
     for (DocumentTypeMap::const_iterator
-             it = _doc_types.begin(); it != _doc_types.end(); ++it) {
+             it = _doc_types->begin(); it != _doc_types->end(); ++it) {
         c.call(*it->second->doc_type);
     }
 }

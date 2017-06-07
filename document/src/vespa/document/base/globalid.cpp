@@ -3,6 +3,7 @@
 #include <vespa/document/base/globalid.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/hash_set.hpp>
 #include <cassert>
 

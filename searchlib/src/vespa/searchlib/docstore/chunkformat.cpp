@@ -2,6 +2,7 @@
 
 #include "chunkformats.h"
 #include <vespa/document/util/compressor.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 namespace search {
 

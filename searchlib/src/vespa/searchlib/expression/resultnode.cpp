@@ -1,9 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include "resultnode.h"
-#include <stdexcept>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/exception.h>
 
 namespace search {
 namespace expression {
+
+int64_t
+ResultNode::onGetEnum(size_t index) const {
+    (void) index;
+    throw vespalib::Exception("search::expression::ResultNode onGetEnum is not implemented");
+}
 
 uint64_t ResultNode::radixAsc(const void * buf) const
 {
@@ -63,6 +71,11 @@ int ResultNode::cmpMem(const void * a, const void *b) const
 size_t ResultNode::getRawByteSize() const
 {
     throw std::runtime_error("ResultNode::getRawByteSize() const must be overloaded by '" + vespalib::string(getClass().name()) + "'.");
+}
+
+const BucketResultNode&
+ResultNode::getNullBucket() const {
+    throw std::runtime_error(vespalib::make_string("No null bucket defined for this type"));
 }
 
 }

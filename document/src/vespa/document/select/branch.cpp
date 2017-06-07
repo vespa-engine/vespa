@@ -2,6 +2,8 @@
 
 #include "branch.h"
 #include "visitor.h"
+#include <cassert>
+#include <ostream>
 
 namespace document {
 namespace select {

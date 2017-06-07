@@ -5,6 +5,7 @@
 #include <vespa/config/common/configsystem.h>
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/vespalib/util/host_name.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fastos/app.h>
 #include <algorithm>
 #include <string>

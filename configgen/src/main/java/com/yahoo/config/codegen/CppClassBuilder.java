@@ -8,10 +8,12 @@ import java.io.IOException;
 import java.io.FileReader;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.Collections;
+import java.util.Arrays;
 import java.util.StringTokenizer;
+import java.util.stream.Collectors;
 
 
 /**
@@ -189,15 +191,19 @@ public class CppClassBuilder implements ClassBuilder {
     }
 
     void writeNameSpaceBegin(Writer w, String [] namespaceList) throws IOException {
-        for (int i = 0; i < namespaceList.length; i++) {
-            w.write("namespace " + namespaceList[i] + " {\n\n");
-        }
+        w.write("namespace ");
+        w.write(getNestedNameSpace(namespaceList));
+        w.write(" {\n");
+    }
+
+    String getNestedNameSpace(String [] namespaceList) {
+        return Arrays.stream(namespaceList).map(String::toString).collect(Collectors.joining("::"));
     }
 
     void writeNameSpaceEnd(Writer w, String [] namespaceList) throws IOException {
-        for (int i = 0; i < namespaceList.length; i++) {
-            w.write("} // namespace " + namespaceList[i] + "\n\n");
-        }
+        w.write("} // namespace ");
+        w.write(getNestedNameSpace(namespaceList));
+        w.write("\n");
     }
 
     void writeHeaderHeader(Writer w, CNode root) throws IOException {
@@ -229,17 +235,21 @@ public class CppClassBuilder implements ClassBuilder {
                 + "#ifndef CLOUD_CONFIG_" + defineName + "_H\n"
                 + "#define CLOUD_CONFIG_" + defineName + "_H\n"
                 + "\n"
-                + "#include <vespa/config/common/configvalue.h>\n"
-                + "#include <vespa/config/configgen/configpayload.h>\n"
                 + "#include <vespa/config/configgen/configinstance.h>\n"
-                + "#include <vespa/config/print/configdatabuffer.h>\n"
                 + "#include <vespa/vespalib/stllike/string.h>\n"
                 + "#include <vector>\n"
                 + "#include <map>\n"
                 + "\n");
+        w.write("namespace config {\n");
+        w.write("    class ConfigValue;\n");
+        w.write("    class ConfigPayload;\n");
+        w.write("}\n\n");
+        w.write("namespace vespalib::slime {\n");
+        w.write("    class Inspector;\n");
+        w.write("    class Cursor;\n");
+        w.write("}\n\n");
         writeNameSpaceBegin(w, namespaceList);
-        w.write("\n");
-        w.write("namespace internal {\n\n");
+        w.write("\nnamespace internal {\n\n");
         w.write(""
                 + "/**\n"
                 + " * This class contains the config. DO NOT USE THIS CLASS DIRECTLY. Use the typedeffed\n"
@@ -551,17 +561,18 @@ public class CppClassBuilder implements ClassBuilder {
             w.write("#include <" + subdir + "/" + getFileName(root, "h") + ">");
         }
         w.write("\n");
+        w.write("#include <vespa/config/common/configvalue.h>\n");
+        w.write("#include <vespa/config/configgen/configpayload.h>\n");
+        w.write("#include <vespa/config/print/configdatabuffer.h>\n");
         w.write("#include <vespa/config/common/configparser.h>\n");
         w.write("#include <vespa/config/configgen/vector_inserter.h>\n");
         w.write("#include <vespa/config/configgen/map_inserter.h>\n");
         w.write("#include <vespa/vespalib/data/slime/convenience.h>\n");
         w.write("#include <vespa/vespalib/data/slime/slime.h>\n");
         w.write("#include <vespa/vespalib/stllike/asciistream.h>\n");
-        w.write("#include <set>\n");
-        w.write("\n\n");
-        writeNameSpaceBegin(w, generateCppNameSpace(root));
         w.write("\n");
-        w.write("namespace internal {\n\n");
+        writeNameSpaceBegin(w, generateCppNameSpace(root));
+        w.write("\nnamespace internal {\n\n");
         w.write("using ::config::ConfigParser;\n");
         w.write("using ::config::InvalidConfigException;\n");
         w.write("using ::config::ConfigInstance;\n");

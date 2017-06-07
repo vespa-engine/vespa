@@ -11,17 +11,16 @@
 
 #include "structuredfieldvalue.h"
 #include "serializablearray.h"
-#include <vespa/document/util/compressionconfig.h>
-#include <vespa/document/datatype/structdatatype.h>
-#include <vector>
 
 namespace document {
+
 class Document;
 class DocumentType;
 class DocumentTypeRepo;
 class FieldValueWriter;
 class FixedTypeRepo;
 class FieldSet;
+class StructDataType;
 
 class StructFieldValue : public StructuredFieldValue
 {
@@ -32,24 +31,13 @@ public:
         ~Chunks();
         SerializableArray & operator [] (size_t i) { return *_chunks[i]; }
         const SerializableArray & operator [] (size_t i) const { return *_chunks[i]; }
-        void push_back(SerializableArray::UP item) {
-            assert(_sz < 2);
-            _chunks[_sz++].reset(item.release());
-        }
+        VESPA_DLL_LOCAL void push_back(SerializableArray::UP item);
         SerializableArray & back() { return *_chunks[_sz-1]; }
         const SerializableArray & back() const { return *_chunks[_sz-1]; }
         size_t size() const { return _sz; }
         bool empty() const { return _sz == 0; }
-        void clear() {
-            _chunks[0].reset();
-            _chunks[1].reset();
-            _sz = 0;
-        }
-        void swap(Chunks & rhs) {
-            _chunks[0].swap(rhs._chunks[0]);
-            _chunks[1].swap(rhs._chunks[1]);
-            std::swap(_sz, rhs._sz);
-        }
+        VESPA_DLL_LOCAL void clear();
+        VESPA_DLL_LOCAL void swap(Chunks & rhs);
     private:
         SerializableArray::CP _chunks[2];
         size_t _sz;
@@ -73,12 +61,12 @@ public:
     const DocumentTypeRepo * getRepo() const { return _repo; }
     void setDocumentType(const DocumentType & docType) { _doc_type = & docType; }
 
-    const StructDataType & getStructType() const { return static_cast<const StructDataType &>(getType()); }
+    const StructDataType & getStructType() const;
 
     void lazyDeserialize(const FixedTypeRepo &repo,
                          uint16_t version,
                          SerializableArray::EntryMap && fields,
-                         ByteBuffer::UP buffer,
+                         std::unique_ptr<ByteBuffer> buffer,
                          CompressionConfig::Type comp_type,
                          int32_t uncompressed_length);
 
@@ -99,8 +87,7 @@ public:
     const Field& getField(const vespalib::stringref & name) const override;
     void clear() override;
 
-    const CompressionConfig &getCompressionConfig() const
-    { return getStructType().getCompressionConfig(); }
+    const CompressionConfig &getCompressionConfig() const;
 
     // FieldValue implementation.
     FieldValue& assign(const FieldValue&) override;
@@ -146,4 +133,3 @@ private:
 };
 
 } // document
-

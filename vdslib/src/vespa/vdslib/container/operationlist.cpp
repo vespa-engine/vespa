@@ -3,6 +3,7 @@
 #include "operationlist.h"
 #include "documentlist.h"
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
 namespace vdslib {
@@ -22,8 +23,7 @@ int OperationList::getRequiredBufferSize() const {
         switch(_operations[i].opt) {
         case OperationList::Operation::REMOVE:
         {
-            document::Document doc(*document::DataType::DOCUMENT,
-                                   _operations[i].docId);
+            document::Document doc(*document::DataType::DOCUMENT, _operations[i].docId);
             doc.serializeHeader(stream);
             break;
         }

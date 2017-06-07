@@ -23,7 +23,9 @@
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/fieldvalue/longfieldvalue.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("policies_test");

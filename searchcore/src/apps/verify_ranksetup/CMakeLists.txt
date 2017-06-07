@@ -2,7 +2,7 @@
 vespa_add_executable(searchcore_verify_ranksetup_app
     SOURCES
     verify_ranksetup.cpp
-    OUTPUT_NAME verify_ranksetup-bin
+    OUTPUT_NAME vespa-verify-ranksetup-bin
     INSTALL bin
     DEPENDS
     searchcore_fconfig

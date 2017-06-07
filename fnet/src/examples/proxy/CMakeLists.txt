@@ -2,7 +2,6 @@
 vespa_add_executable(fnet_proxy_app
     SOURCES
     proxy.cpp
-    INSTALL bin
     DEPENDS
     fnet
 )

@@ -6,6 +6,7 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/random.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <cppunit/extensions/HelperMacros.h>
 

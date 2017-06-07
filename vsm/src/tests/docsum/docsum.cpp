@@ -1,8 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/testapp.h>
-
-#include <vector>
 #include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/document/datatype/structdatatype.h>
 #include <vespa/vsm/common/docsum.h>
 #include <vespa/vsm/vsm/flattendocsumwriter.h>
 #include <vespa/vsm/vsm/slimefieldwriter.h>

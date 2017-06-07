@@ -3,6 +3,7 @@
 #include "idstring.h"
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/util/md5.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using vespalib::string;
 using vespalib::stringref;

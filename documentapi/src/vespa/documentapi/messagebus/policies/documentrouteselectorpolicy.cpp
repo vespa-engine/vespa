@@ -12,6 +12,7 @@
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/routing/routingtable.h>
 #include <vespa/messagebus/messagebus.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".documentrouteselectorpolicy");

@@ -13,7 +13,7 @@
 #include <string>
 #include <memory>
 
-class FastOS_ThreadPool;
+class FastOS_BoolCond;
 class FastOS_UNIX_RealProcess;
 
 #include <vespa/fastos/ringbuffer.h>
