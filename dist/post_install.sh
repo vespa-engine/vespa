@@ -67,7 +67,7 @@ ln -s $PREFIX/lib/jars/orchestrator-jar-with-dependencies.jar $INSTALLPATH/conf/
 ln -s $PREFIX/lib/jars/node-repository-jar-with-dependencies.jar $INSTALLPATH/conf/configserver-app/components/node-repository.jar
 ln -s $PREFIX/lib/jars/zkfacade-jar-with-dependencies.jar $INSTALLPATH/conf/configserver-app/components/zkfacade.jar
 ln -s $PREFIX/conf/configserver-app/components $INSTALLPATH/lib/jars/config-models
-ln -s storaged-bin $INSTALLPATH/sbin/distributord-bin
+ln -s vespa-storaged-bin $INSTALLPATH/sbin/vespa-distributord-bin
 
 # Temporary when renaming binaries in fsa
 ln -s vespa-fsadump $INSTALLPATH/bin/fsadump
