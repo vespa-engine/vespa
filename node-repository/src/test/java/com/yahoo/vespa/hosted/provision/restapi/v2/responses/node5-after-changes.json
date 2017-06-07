@@ -18,6 +18,7 @@
   "failCount": 1,
   "hardwareFailure": false,
   "wantToRetire": false,
+  "wantToDeprovision" : false,
   "history":[{"event":"readied","at":123,"agent":"system"},{"event":"failed","at":123,"agent":"system"}],
   "ipAddresses":["::1", "127.0.0.1"],
   "additionalIpAddresses":[]
