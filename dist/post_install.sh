@@ -87,3 +87,9 @@ ln -s vespa-storaged-bin $INSTALLPATH/sbin/storaged-bin
 ln -s vespa-distributord-bin $INSTALLPATH/sbin/distributord-bin
 ln -s vespa-storaged $INSTALLPATH/sbin/storaged
 ln -s vespa-distributord $INSTALLPATH/sbin/distributord
+
+# Temporary when renaming binaries in vespalog
+ln -s vespa-log-conv $INSTALLPATH/bin/vlogconv
+ln -s vespa-logctl $INSTALLPATH/bin/logctl
+ln -s vespa-logfmt $INSTALLPATH/bin/logfmt
+ln -s vespa-log-replay $INSTALLPATH/bin/vlogreplay

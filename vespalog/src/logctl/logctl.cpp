@@ -14,7 +14,7 @@
 #include <vespa/log/control-file.h>
 #include <vespa/log/internal.h>
 #include <vespa/log/component.h>
-LOG_SETUP("logctl", "$Id$");
+LOG_SETUP("vespa-logctl", "$Id$");
 
 using namespace ns_log;
 
