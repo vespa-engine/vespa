@@ -54,10 +54,10 @@ public class MultiDockerTest {
                                                              "DeleteContainerStorage with ContainerName { name=host2 }");
 
             callOrderVerifier.assertInOrder(
-                    "updateNodeAttributes with HostName: host1.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image1, vespaVersion=''}",
-                    "updateNodeAttributes with HostName: host2.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image2, vespaVersion=''}",
+                    "updateNodeAttributes with HostName: host1.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image1, vespaVersion='1.2.3'}",
+                    "updateNodeAttributes with HostName: host2.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image2, vespaVersion='1.2.3'}",
                     "markNodeAvailableForNewAllocation with HostName: host2.test.yahoo.com",
-                    "updateNodeAttributes with HostName: host3.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image1, vespaVersion=''}");
+                    "updateNodeAttributes with HostName: host3.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image1, vespaVersion='1.2.3'}");
         }
     }
 
@@ -65,6 +65,7 @@ public class MultiDockerTest {
         ContainerNodeSpec containerNodeSpec = new ContainerNodeSpec.Builder()
                 .hostname(hostName)
                 .wantedDockerImage(dockerImage)
+                .wantedVespaVersion("1.2.3")
                 .nodeState(Node.State.active)
                 .nodeType("tenant")
                 .nodeFlavor("docker")
