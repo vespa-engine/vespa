@@ -1,5 +1,5 @@
 .depend
 Makefile
 vespa-runserver
-vlogconv
-vlogreplay
+vespa-log-conv
+vespa-log-replay

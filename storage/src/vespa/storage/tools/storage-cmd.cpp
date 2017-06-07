@@ -4,7 +4,7 @@
 #include <vespa/fastos/app.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP("storage-cmd");
+LOG_SETUP("vespa-storage-cmd");
 
 class RPCClient : public FastOS_Application
 {
@@ -46,7 +46,7 @@ private:
 public:
     int Main() override {
         if (_argc < 3) {
-            fprintf(stderr, "usage: storage-cmd <connectspec> <method> [args]\n");
+            fprintf(stderr, "usage: vespa-storage-cmd <connectspec> <method> [args]\n");
             fprintf(stderr, "Calls RPC method on a storage/distributor process\n");
             fprintf(stderr, "Call frt.rpc.getMethodList to get available RPC methods\n");
             fprintf(stderr, "    each arg must be on the form <type>:<value>\n");

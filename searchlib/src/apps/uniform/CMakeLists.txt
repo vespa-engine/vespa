@@ -2,8 +2,6 @@
 vespa_add_executable(searchlib_uniform_app
     SOURCES
     uniform.cpp
-    OUTPUT_NAME uniform
-    INSTALL bin
     DEPENDS
     searchlib
 )

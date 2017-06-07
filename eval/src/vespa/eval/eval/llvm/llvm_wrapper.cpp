@@ -629,7 +629,12 @@ struct InitializeNativeTarget {
     }
     ~InitializeNativeTarget() {
         llvm::llvm_shutdown();
+#ifdef HAS_LLVM_DESTROY_STATIC_MUTEX
         llvm::llvm_destroy_static_mutex();
+#endif
+#ifdef HAS_LLVM_DESTROY_OPENED_HANDLES
+        llvm::llvm_destroy_opened_handles();
+#endif
     }
 } initialize_native_target;
 

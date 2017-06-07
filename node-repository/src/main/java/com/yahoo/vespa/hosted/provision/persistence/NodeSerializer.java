@@ -60,6 +60,7 @@ public class NodeSerializer {
     private static final String hardwareFailureKey = "hardwareFailure";
     private static final String nodeTypeKey = "type";
     private static final String wantToRetireKey = "wantToRetire";
+    private static final String wantToDeprovisionKey = "wantToDeprovision";
 
     // Configuration fields
     private static final String flavorKey = "flavor";
@@ -112,6 +113,7 @@ public class NodeSerializer {
         object.setLong(failCountKey, node.status().failCount());
         node.status().hardwareFailure().ifPresent(failure -> object.setString(hardwareFailureKey, toString(failure)));
         object.setBool(wantToRetireKey, node.status().wantToRetire());
+        object.setBool(wantToDeprovisionKey, node.status().wantToDeprovision());
         node.allocation().ifPresent(allocation -> toSlime(allocation, object.setObject(instanceKey)));
         toSlime(node.history(), object.setArray(historyKey));
         object.setString(nodeTypeKey, toString(node.type()));
@@ -164,13 +166,16 @@ public class NodeSerializer {
     }
 
     private Status statusFromSlime(Inspector object) {
+        // TODO: Simplify after June 2017
+        boolean wantToDeprovision = object.field(wantToDeprovisionKey).valid() && object.field(wantToDeprovisionKey).asBool();
         return new Status(generationFromSlime(object, rebootGenerationKey, currentRebootGenerationKey),
                           versionFromSlime(object.field(vespaVersionKey)),
                           versionFromSlime(object.field(hostedVersionKey)),
                           optionalString(object.field(stateVersionKey)),
                           (int)object.field(failCountKey).asLong(),
                           hardwareFailureFromSlime(object.field(hardwareFailureKey)),
-                          object.field(wantToRetireKey).asBool());
+                          object.field(wantToRetireKey).asBool(),
+                          wantToDeprovision);
     }
 
     private Flavor flavorFromSlime(Inspector object) {

@@ -199,25 +199,14 @@ public class NodeAgentImpl implements NodeAgent {
         logger.info("Resume command successfully executed, new containerState is " + containerState);
     }
 
-    private void updateNodeRepoAndMarkNodeAsReady(ContainerNodeSpec nodeSpec) {
-        publishStateToNodeRepoIfChanged(
-                // Clear current Docker image and vespa version, as nothing is running on this node
-                new NodeAttributes()
-                        .withRestartGeneration(nodeSpec.wantedRestartGeneration.orElse(null))
-                        .withRebootGeneration(nodeSpec.wantedRebootGeneration.orElse(0L))
-                        .withDockerImage(new DockerImage(""))
-                        .withVespaVersion(""));
-        nodeRepository.markNodeAvailableForNewAllocation(nodeSpec.hostname);
-    }
-
     private void updateNodeRepoWithCurrentAttributes(final ContainerNodeSpec nodeSpec) {
         final NodeAttributes nodeAttributes = new NodeAttributes()
                 .withRestartGeneration(nodeSpec.wantedRestartGeneration.orElse(null))
                 // update reboot gen with wanted gen if set, we ignore reboot for Docker nodes but
                 // want the two to be equal in node repo
                 .withRebootGeneration(nodeSpec.wantedRebootGeneration.orElse(0L))
-                .withDockerImage(nodeSpec.wantedDockerImage.orElse(new DockerImage("")))
-                .withVespaVersion(nodeSpec.wantedVespaVersion.orElse(""));
+                .withDockerImage(nodeSpec.wantedDockerImage.filter(node -> containerState != ABSENT).orElse(new DockerImage("")))
+                .withVespaVersion(nodeSpec.wantedVespaVersion.filter(node -> containerState != ABSENT).orElse(""));
 
         publishStateToNodeRepoIfChanged(nodeAttributes);
     }
@@ -467,7 +456,8 @@ public class NodeAgentImpl implements NodeAgent {
                 removeContainerIfNeededUpdateContainerState(nodeSpec, container);
                 logger.info("State is " + nodeSpec.nodeState + ", will delete application storage and mark node as ready");
                 storageMaintainer.ifPresent(maintainer -> maintainer.archiveNodeData(containerName));
-                updateNodeRepoAndMarkNodeAsReady(nodeSpec);
+                updateNodeRepoWithCurrentAttributes(nodeSpec);
+                nodeRepository.markNodeAvailableForNewAllocation(hostname);
                 break;
             default:
                 throw new RuntimeException("UNKNOWN STATE " + nodeSpec.nodeState.name());

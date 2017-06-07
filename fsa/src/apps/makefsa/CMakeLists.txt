@@ -2,7 +2,7 @@
 vespa_add_executable(fsa_makefsa_app
     SOURCES
     makefsa.cpp
-    OUTPUT_NAME makefsa
+    OUTPUT_NAME vespa-makefsa
     INSTALL bin
     DEPENDS
     fsa

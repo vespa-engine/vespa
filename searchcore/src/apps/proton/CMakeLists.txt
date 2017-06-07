@@ -3,7 +3,7 @@ vespa_add_executable(searchcore_proton_app
     SOURCES
     downpersistence.cpp
     proton.cpp
-    OUTPUT_NAME proton-bin
+    OUTPUT_NAME vespa-proton-bin
     INSTALL sbin
     DEPENDS
     searchcore_server

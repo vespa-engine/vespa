@@ -3,7 +3,7 @@ vespa_add_executable(vespalog_vlogconv_app
     SOURCES
     logger.cpp
     llreader.cpp
-    OUTPUT_NAME vlogconv
+    OUTPUT_NAME vespa-log-conv
     INSTALL bin
     DEPENDS
     vespalog
@@ -11,7 +11,7 @@ vespa_add_executable(vespalog_vlogconv_app
 vespa_add_executable(vespalog_vlogreplay_app
     SOURCES
     logreplay.c
-    OUTPUT_NAME vlogreplay
+    OUTPUT_NAME vespa-log-replay
     INSTALL bin
     DEPENDS
     m
