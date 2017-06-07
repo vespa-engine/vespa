@@ -185,7 +185,7 @@ MessageType::MessageType::get(Id id)
     return *it->second;
 }
 MessageType::MessageType(const vespalib::stringref & name, Id id,
-            const MessageType* replyOf = 0)
+            const MessageType* replyOf)
         : _name(name), _id(id), _reply(NULL), _replyOf(replyOf)
 {
     _codes[id] = this;
