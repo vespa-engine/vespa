@@ -87,7 +87,7 @@ private:
     virtual void onCollectionEnd(const Content &fv) { (void) fv; }
     virtual void onStructStart(const Content &fv) { (void) fv; }
     virtual void onStructEnd(const Content &fv) { (void) fv; }
-    virtual ModificationStatus doModify(FieldValue &) { return NOT_MODIFIED; };
+    virtual ModificationStatus doModify(FieldValue &) { return ModificationStatus::NOT_MODIFIED; };
 
     // Scratchpad to store pass on weight.
     int getWeight() const { return _weight; }

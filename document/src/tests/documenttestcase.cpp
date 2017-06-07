@@ -277,10 +277,10 @@ public:
         StringFieldValue* sfv = dynamic_cast<StringFieldValue*>(&fv);
         if (sfv != NULL) {
             *sfv = std::string("newvalue");
-            return MODIFIED;
+            return ModificationStatus::MODIFIED;
         }
 
-        return NOT_MODIFIED;
+        return ModificationStatus::NOT_MODIFIED;
     };
 
     bool onComplex(const Content&) override {

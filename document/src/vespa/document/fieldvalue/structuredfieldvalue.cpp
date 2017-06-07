@@ -109,7 +109,6 @@ StructuredFieldValue::onIterateNested(PathRange nested, IteratorHandler & handle
                     const_cast<StructuredFieldValue&>(*this).setFieldValue(fpe.getFieldRef(), fpe.getFieldValueToSet());
                     return ModificationStatus::MODIFIED;
                 } else {
-                    LOG(spam, "field exists, status = %u", status);
                     return status;
                 }
             } else if (handler.createMissingPath()) {
@@ -122,7 +121,7 @@ StructuredFieldValue::onIterateNested(PathRange nested, IteratorHandler & handle
                 }
             }
             LOG(spam, "field did not exist, returning NOT_MODIFIED");
-            return ModificationStatus ::NOT_MODIFIED;
+            return ModificationStatus::NOT_MODIFIED;
         } else {
             throw IllegalArgumentException("Illegal field path for struct value");
         }

@@ -265,9 +265,9 @@ ArrayFieldValue::onIterateNested(PathRange nested, IteratorHandler & handler) co
         }
         return iterateSubset(0, static_cast<int>(_array->size()) - 1, "", nested, handler);
     } else {
-        fieldvalue::ModificationStatus status = handler.modify(const_cast<ArrayFieldValue&>(*this));
+        ModificationStatus status = handler.modify(const_cast<ArrayFieldValue&>(*this));
 
-        if (status == fieldvalue::REMOVED) {
+        if (status == ModificationStatus::REMOVED) {
             return status;
         }
 

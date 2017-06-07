@@ -275,7 +275,7 @@ struct TestFieldPathUpdate : FieldPathUpdate
                 _str += ';';
             }
             _str += ss.str();
-            return NOT_MODIFIED;
+            return ModificationStatus::NOT_MODIFIED;
         }
 
         bool onComplex(const Content&) override { return false; }

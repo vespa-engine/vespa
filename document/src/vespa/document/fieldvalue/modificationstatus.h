@@ -4,7 +4,7 @@
 
 namespace document::fieldvalue {
 
-enum ModificationStatus {
+enum class ModificationStatus {
     MODIFIED,
     REMOVED,
     NOT_MODIFIED

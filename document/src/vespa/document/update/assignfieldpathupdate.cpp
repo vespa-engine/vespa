@@ -134,10 +134,10 @@ AssignValueIteratorHandler::doModify(FieldValue& fv) {
         && _newValue.inherits(NumericFieldValueBase::classId)
         && static_cast<const NumericFieldValueBase&>(_newValue).getAsLong() == 0)
     {
-        return REMOVED;
+        return ModificationStatus::REMOVED;
     }
     fv.assign(_newValue);
-    return MODIFIED;
+    return ModificationStatus::MODIFIED;
 }
 
 ModificationStatus
@@ -161,16 +161,16 @@ AssignExpressionIteratorHandler::doModify(FieldValue& fv) {
         try {
             double res = _calc.evaluate(_doc, std::move(varHolder));
             if (_removeIfZero && static_cast<uint64_t>(res) == 0) {
-                return REMOVED;
+                return ModificationStatus::REMOVED;
             } else {
                 fv.assign(DoubleFieldValue(res));
             }
         } catch (const vespalib::IllegalArgumentException&) {
             // Divide by zero does not modify the document field
-            return NOT_MODIFIED;
+            return ModificationStatus::NOT_MODIFIED;
         } catch (const boost::bad_numeric_cast&) {
             // Underflow/overflow does not modify
-            return NOT_MODIFIED;
+            return ModificationStatus::NOT_MODIFIED;
         }
     } else {
         throw vespalib::IllegalArgumentException(
@@ -178,7 +178,7 @@ AssignExpressionIteratorHandler::doModify(FieldValue& fv) {
                                       fv.toString().c_str(), fv.getDataType()->toString().c_str()),
                 VESPA_STRLOC);
     }
-    return MODIFIED;
+    return ModificationStatus::MODIFIED;
 }
 
 }
