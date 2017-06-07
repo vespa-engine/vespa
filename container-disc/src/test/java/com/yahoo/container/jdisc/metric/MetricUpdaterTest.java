@@ -3,7 +3,7 @@ package com.yahoo.container.jdisc.metric;
 
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.application.MetricConsumer;
-import com.yahoo.jdisc.statistics.ActiveContainerStatistics;
+import com.yahoo.jdisc.statistics.ActiveContainerMetrics;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -17,7 +17,7 @@ public class MetricUpdaterTest {
         MetricProvider provider = MetricProviders.newInstance(consumer);
 
         Metric metric = provider.get();
-        MetricUpdater updater = new MetricUpdater(metric, Mockito.mock(ActiveContainerStatistics.class), 10);
+        MetricUpdater updater = new MetricUpdater(metric, Mockito.mock(ActiveContainerMetrics.class), 10);
         long start = System.currentTimeMillis();
         boolean updated = false;
         while (System.currentTimeMillis() - start < 60000 && !updated) {

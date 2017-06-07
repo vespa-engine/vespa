@@ -8,7 +8,7 @@ import com.yahoo.jdisc.application.ContainerBuilder;
 import com.yahoo.jdisc.application.ContainerThread;
 import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.service.CurrentContainer;
-import com.yahoo.jdisc.statistics.ActiveContainerStatistics;
+import com.yahoo.jdisc.statistics.ActiveContainerMetrics;
 
 import java.util.concurrent.ThreadFactory;
 
@@ -29,7 +29,7 @@ class ApplicationEnvironmentModule extends AbstractModule {
         bind(CurrentContainer.class).toInstance(loader);
         bind(OsgiFramework.class).toInstance(loader.osgiFramework());
         bind(ThreadFactory.class).to(ContainerThread.Factory.class);
-        bind(ActiveContainerStatistics.class).toInstance(loader.getActiveContainerStatistics());
+        bind(ActiveContainerMetrics.class).toInstance(loader.getActiveContainerMetrics());
     }
 
     @Provides
