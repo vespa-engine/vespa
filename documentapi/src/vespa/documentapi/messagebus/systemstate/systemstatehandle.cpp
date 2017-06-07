@@ -11,14 +11,14 @@ SystemStateHandover::SystemStateHandover(SystemState *state, vespalib::LockGuard
 
 SystemStateHandle::SystemStateHandle(SystemState &state) :
     _state(&state),
-    _guard(state._lock)
+    _guard(*state._lock)
 {}
 
 SystemStateHandle::SystemStateHandle(SystemStateHandle &rhs) :
     _state(rhs._state),
     _guard(rhs._guard)
 {
-    rhs._state = NULL;
+    rhs._state = nullptr;
 }
 
 SystemStateHandle::SystemStateHandle(const SystemStateHandover &rhs) :
@@ -31,7 +31,7 @@ SystemStateHandle::~SystemStateHandle() {}
 SystemStateHandle::operator
 SystemStateHandover() {
     SystemStateHandover ret(_state, _guard);
-    _state = NULL;
+    _state = nullptr;
     return ret;
 }
 

@@ -2,15 +2,15 @@
 
 #include <vespa/document/base/testdocrepo.h>
 #include <cppunit/extensions/HelperMacros.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/datatype/documenttype.h>
-#include <vespa/documentapi/documentapi.h>
-#include <vespa/messagebus/emptyreply.h>
 #include <vespa/storage/storageserver/documentapiconverter.h>
 #include <vespa/storageapi/message/batch.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/multioperation.h>
 #include <vespa/storageapi/message/persistence.h>
+#include <vespa/documentapi/documentapi.h>
+#include <vespa/messagebus/emptyreply.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 
 using document::DataType;
