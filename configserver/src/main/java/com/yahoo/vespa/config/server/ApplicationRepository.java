@@ -346,7 +346,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                throw new RuntimeException("Failed to deploy application " + applicationId, e);
             }
         }
     }
