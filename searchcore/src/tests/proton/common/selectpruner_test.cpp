@@ -94,7 +94,7 @@ rsString(const ResultSet &s)
 {
     std::ostringstream os;
     bool first = true;
-    uint32_t erange = Result::enumRange();
+    uint32_t erange = Result::enumRange;
     for (uint32_t e = 0; e < erange; ++e) {
         if (s.hasEnum(e)) {
             if (!first)
