@@ -82,7 +82,6 @@
 #define VESPA_LOG_LOGENTRYMAXAGE 300 // Max seconds an entry can be cached
 #define VESPA_LOG_COUNTAGEFACTOR   5 // How many seconds each count counts for
 
-#include <vespa/fastos/mutex.h>
 #include <vespa/log/log.h>
 #include <sstream>
 #include <string>
@@ -199,7 +198,6 @@ public:
 
     /** Trim the buffer. Removing old messages if wanted. */
     void trimCache();
-
 };
 
 } // ns_log

@@ -1,20 +1,19 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "statusmetricconsumer.h"
-
+#include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
+#include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <boost/assign.hpp>
 #include <boost/lexical_cast.hpp>
-#include <vespa/log/log.h>
 #include <vespa/metrics/printutils.h>
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/textwriter.h>
 #include <vespa/metrics/xmlwriter.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
-#include <vespa/storageframework/generic/status/htmlstatusreporter.h>
+#include <vespa/vespalib/util/xmlstream.h>
 
-
+#include <vespa/log/log.h>
 LOG_SETUP(".status.metricreporter");
 
 namespace storage {

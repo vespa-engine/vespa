@@ -27,6 +27,7 @@
 #include <vespa/storage/visiting/visitor.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/documentapi/messagebus/messages/queryresultmessage.h>
+#include <vespa/document/fieldvalue/iteratorhandler.h>
 
 using namespace search::aggregation;
 
@@ -86,13 +87,12 @@ private:
      * This class gets callbacks when iterating through a field value and
      * inserts the values into a given attribute vector.
      **/
-    class AttributeInserter : public document::FieldValue::IteratorHandler {
+    class AttributeInserter : public document::fieldvalue::IteratorHandler {
     protected:
-        typedef document::FieldValue::IteratorHandler::Content IteratorContent;
         search::AttributeVector &      _attribute;
         search::AttributeVector::DocId _docId;
 
-        void onPrimitive(uint32_t fid, const IteratorContent & c) override;
+        void onPrimitive(uint32_t fid, const Content & c) override;
 
     public:
         AttributeInserter(search::AttributeVector & attribute, search::AttributeVector::DocId docId);
@@ -103,7 +103,7 @@ private:
         PositionInserter(search::AttributeVector & attribute, search::AttributeVector::DocId docId);
         ~PositionInserter();
     private:
-        void onPrimitive(uint32_t fid, const IteratorContent & c) override;
+        void onPrimitive(uint32_t fid, const Content & c) override;
         void onStructStart(const Content & fv) override;
         document::Field _fieldX;
         document::Field _fieldY;
@@ -466,4 +466,3 @@ public:
 };
 
 }
-

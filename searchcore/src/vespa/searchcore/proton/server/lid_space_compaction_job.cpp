@@ -1,13 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "lid_space_compaction_job.h"
-#include "ifrozenbuckethandler.h"
 #include "imaintenancejobrunner.h"
 #include "i_disk_mem_usage_notifier.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.server.lid_space_compaction_job");
+#include <cassert>
 
 using search::DocumentMetaData;
 using search::LidUsageStats;
@@ -76,9 +73,7 @@ LidSpaceCompactionJob::compactLidSpace(const LidUsageStats &stats)
     CompactLidSpaceOperation op(_handler.getSubDbId(), wantedLidLimit);
     _opStorer.storeOperation(op);
     _handler.handleCompactLidSpace(op);
-    if (LOG_WOULD_LOG(event)) {
-        EventLogger::lidSpaceCompactionComplete(_handler.getName(), wantedLidLimit);
-    }
+    EventLogger::lidSpaceCompactionComplete(_handler.getName(), wantedLidLimit);
     _shouldCompactLidSpace = false;
 }
 

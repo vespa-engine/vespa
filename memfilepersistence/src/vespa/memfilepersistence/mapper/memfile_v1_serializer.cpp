@@ -9,6 +9,7 @@
 #include <vespa/memfilepersistence/spi/memfilepersistenceprovidermetrics.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/storageframework/generic/clock/timer.h>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.memfilev1");

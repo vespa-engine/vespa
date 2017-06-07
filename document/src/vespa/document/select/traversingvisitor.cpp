@@ -1,13 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "traversingvisitor.h"
-#include "valuenode.h"
+#include "valuenodes.h"
 #include "branch.h"
 #include "compare.h" 
 
-namespace document {
-
-namespace select {
+namespace document::select {
 
 void
 TraversingVisitor::visitAndBranch(const And &expr)
@@ -124,8 +122,6 @@ TraversingVisitor::visitNullValueNode(const NullValueNode &)
 void
 TraversingVisitor::visitInvalidValueNode(const InvalidValueNode &)
 {
-}
-
 }
 
 }

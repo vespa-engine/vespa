@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/document/select/node.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
@@ -20,6 +21,8 @@ using vespalib::Identifiable;
 using namespace document::config_builder;
 
 namespace document {
+
+using namespace fieldvalue;
 
 struct FieldPathUpdateTestCase : public CppUnit::TestFixture {
     DocumentTypeRepo::SP _repo;
@@ -259,7 +262,7 @@ void testSerialize(const DocumentTypeRepo& repo, const DocumentUpdate& a) {
 
 struct TestFieldPathUpdate : FieldPathUpdate
 {
-    struct TestIteratorHandler : FieldValue::IteratorHandler
+    struct TestIteratorHandler : fieldvalue::IteratorHandler
     {
         TestIteratorHandler(std::string& str)
             : _str(str) {}
@@ -272,7 +275,7 @@ struct TestFieldPathUpdate : FieldPathUpdate
                 _str += ';';
             }
             _str += ss.str();
-            return NOT_MODIFIED;
+            return ModificationStatus::NOT_MODIFIED;
         }
 
         bool onComplex(const Content&) override { return false; }
@@ -288,9 +291,9 @@ struct TestFieldPathUpdate : FieldPathUpdate
 
     TestFieldPathUpdate(const TestFieldPathUpdate& other);
 
-    std::unique_ptr<FieldValue::IteratorHandler> getIteratorHandler(Document&) const override
+    std::unique_ptr<IteratorHandler> getIteratorHandler(Document&) const override
     {
-        return std::unique_ptr<FieldValue::IteratorHandler>(
+        return std::unique_ptr<IteratorHandler>(
                 new TestIteratorHandler(_str));
     }
 

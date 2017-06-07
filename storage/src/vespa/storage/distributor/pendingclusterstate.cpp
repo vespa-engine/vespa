@@ -4,7 +4,7 @@
 #include "bucketdbupdater.h"
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
-#include <vespa/vespalib/util/xmlserializable.hpp>
+#include <vespa/vespalib/util/xmlstream.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".pendingclusterstate");

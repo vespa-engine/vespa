@@ -5,7 +5,7 @@
 #include <vespa/vespalib/util/backtrace.h>
 #include <sstream>
 
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".application.link");
 
 using std::shared_ptr;

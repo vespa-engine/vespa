@@ -1,15 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "simplememorylogic.h"
-
 #include <vespa/vespalib/util/exceptions.h>
 
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".memory.logic.simple");
 
-namespace storage {
-namespace framework {
-namespace defaultimplementation {
+namespace storage::framework::defaultimplementation {
 
 SimpleMemoryLogic::SimpleMemoryLogic(Clock& c, uint64_t maxMemory)
     : _cacheThreshold(0.98),
@@ -232,6 +229,4 @@ SimpleMemoryLogic::print(std::ostream& out, bool verbose,
     _state.print(out, verbose, indent + "  ");
 }
 
-} // defaultimplementation
-} // framework
-} // storage
+}

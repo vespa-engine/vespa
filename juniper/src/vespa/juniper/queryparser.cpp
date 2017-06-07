@@ -5,6 +5,7 @@
 #include "queryparser.h"
 #include "juniperdebug.h"
 #include <vector>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.queryparser");

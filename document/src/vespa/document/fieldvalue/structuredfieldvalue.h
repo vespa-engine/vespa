@@ -92,8 +92,8 @@ protected:
     virtual void setFieldValue(const Field&, FieldValue::UP value) = 0;
     void setFieldValue(const Field & field, const FieldValue & value);
 
-    IteratorHandler::ModificationStatus
-    onIterateNested(PathRange nested, IteratorHandler & handler) const override;
+    fieldvalue::ModificationStatus
+    onIterateNested(PathRange nested, fieldvalue::IteratorHandler & handler) const override;
 
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(StructuredFieldValue);

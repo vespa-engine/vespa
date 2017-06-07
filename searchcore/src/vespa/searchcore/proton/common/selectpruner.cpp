@@ -9,6 +9,7 @@
 #include <vespa/document/select/branch.h>
 #include <vespa/document/select/doctype.h>
 #include <vespa/document/select/invalidconstant.h>
+#include <vespa/document/select/valuenodes.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 
 using document::select::And;

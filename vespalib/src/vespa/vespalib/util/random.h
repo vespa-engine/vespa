@@ -1,14 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <inttypes.h>
-#include <vespa/fastos/types.h>
-#include <vector>
-#include <sys/types.h>
-#include <unistd.h>
-#include <time.h>
+#include <cstdint>
 
 namespace vespalib {
 
@@ -22,9 +15,9 @@ private:
     /**
      * step the random generator once
      **/
-    void iterate(void) {
-        _state = (UINT64_C(0x5DEECE66D) * _state + 0xb) &
-                 UINT64_C(0xFFFFFFFFFFFF);
+    void iterate() {
+        _state = (0x5DEECE66Dul * _state + 0xb) &
+                 0xFFFFFFFFFFFFul;
     }
 
     /**
@@ -73,7 +66,7 @@ public:
      * @brief reset the seed
      **/
     void setSeed(int64_t seed) {
-        _state = (seed ^ UINT64_C(0x5DEECE66D)) & ((1L << 48) -1);
+        _state = (seed ^ 0x5DEECE66Dul) & ((1L << 48) -1);
     };
 
     /**

@@ -19,7 +19,6 @@
 #include <vespa/vdslib/state/nodetype.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/util/printable.h>
-#include <vespa/vespalib/util/sync.h>
 #include <map>
 
 namespace vespalib {
@@ -82,10 +81,6 @@ namespace api {
  * This is used to be able to deserialize messages of various classes.
  */
 class MessageType : public vespalib::Printable {
-private:
-    MessageType(const MessageType &);
-    MessageType& operator=(const MessageType &);
-
 public:
     enum Id {
         GET_ID = 4,
@@ -172,18 +167,7 @@ private:
     MessageType *_reply;
     const MessageType *_replyOf;
 
-    MessageType(const vespalib::stringref & name, Id id,
-                const MessageType* replyOf = 0)
-        : _name(name), _id(id), _reply(NULL), _replyOf(replyOf)
-    {
-        _codes[id] = this;
-        if (_replyOf != 0) {
-            assert(_replyOf->_reply == 0);
-                // Ugly cast to let initialization work
-            MessageType& type = const_cast<MessageType&>(*_replyOf);
-            type._reply = this;
-        }
-    }
+    MessageType(const vespalib::stringref & name, Id id, const MessageType* replyOf = 0);
 public:
     static const MessageType DOCBLOCK;
     static const MessageType DOCBLOCK_REPLY;
@@ -264,16 +248,17 @@ public:
 
     static const MessageType& get(Id id);
 
+    MessageType(const MessageType &) = delete;
+    MessageType& operator=(const MessageType &) = delete;
+    ~MessageType();
     Id getId() const { return _id; }
     static Id getMaxId() { return MESSAGETYPE_MAX_ID; }
     const vespalib::string& getName() const { return _name; }
     bool isReply() const { return (_replyOf != 0); }
-        /** Only valid to call on replies. */
-    const MessageType& getCommandType() const
-        { assert(_replyOf); return *_replyOf; }
-        /** Only valid to call on commands. */
-    const MessageType& getReplyType() const
-        { assert(_reply); return *_reply; }
+    /** Only valid to call on replies. */
+    const MessageType& getCommandType() const { return *_replyOf; }
+    /** Only valid to call on commands. */
+    const MessageType& getReplyType() const { return *_reply; }
     bool operator==(const MessageType& type) const { return (_id == type._id); }
     bool operator!=(const MessageType& type) const { return (_id != type._id); }
 
@@ -294,7 +279,7 @@ private:
     mbus::Route _route;
     bool        _retryEnabled;
     Protocol    _protocol;
-        // Used for internal VDS addresses only
+    // Used for internal VDS addresses only
     vespalib::string     _cluster;
     const lib::NodeType* _type;
     uint16_t             _index;
@@ -346,7 +331,6 @@ public:
     static const char* getPriorityString(Priority);
 
 private:
-    static vespalib::Lock _msgIdLock;
     static Id _lastMsgId;
 
     StorageMessage& operator=(const StorageMessage&);

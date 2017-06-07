@@ -3,8 +3,9 @@
 
 #include "documentmessage.h"
 #include <vespa/document/bucket/bucketid.h>
-#include <vespa/document/bucket/bucketselector.h>
-#include <vespa/document/select/parser.h>
+
+namespace document::select { class Parser; }
+namespace document { class BucketIdFactory; }
 
 namespace documentapi {
 

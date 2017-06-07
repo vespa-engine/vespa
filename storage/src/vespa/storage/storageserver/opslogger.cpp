@@ -2,6 +2,7 @@
 
 #include "opslogger.h"
 #include <vespa/storageapi/message/persistence.h>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".operationslogger");

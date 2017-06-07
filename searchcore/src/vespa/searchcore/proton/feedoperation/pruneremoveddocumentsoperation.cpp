@@ -2,6 +2,7 @@
 
 #include "pruneremoveddocumentsoperation.h"
 #include <vespa/vespalib/util/stringfmt.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.feedoperation.pruneremoveddocumentsoperation");

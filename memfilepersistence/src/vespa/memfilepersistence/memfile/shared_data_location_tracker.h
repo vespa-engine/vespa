@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/memfilepersistence/common/types.h>
+#include <map>
 
 namespace storage {
 namespace memfile {

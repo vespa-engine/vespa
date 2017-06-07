@@ -4,7 +4,7 @@
 #include "bucketidfactory.h"
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/select/node.h>
-#include <vespa/document/select/valuenode.h>
+#include <vespa/document/select/valuenodes.h>
 #include <vespa/document/select/visitor.h>
 #include <vespa/document/select/branch.h>
 #include <vespa/document/select/compare.h>

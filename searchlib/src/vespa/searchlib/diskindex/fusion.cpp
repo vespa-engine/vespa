@@ -3,18 +3,14 @@
 
 #include "fusion.h"
 #include "fieldreader.h"
-#include "fieldwriter.h"
 #include "dictionarywordreader.h"
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/searchlib/common/fslimits.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/searchlib/common/documentsummary.h>
-#include <vespa/searchlib/common/tunefileinfo.h>
-#include <vespa/searchlib/index/postinglistparams.h>
-#include <vespa/searchlib/util/postingpriorityqueue.h>
 #include <vespa/vespalib/util/error.h>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.fusion");

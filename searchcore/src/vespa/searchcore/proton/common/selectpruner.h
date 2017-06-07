@@ -9,8 +9,9 @@
 
 namespace search { class IAttributeManager; }
 
-namespace proton
-{
+namespace document { class DocumentTypeRepo; }
+
+namespace proton {
 
 class SelectPrunerBase
 {
@@ -50,100 +51,36 @@ public:
                  bool hasFields);
 
     SelectPruner(const SelectPruner *rhs);
+    virtual ~SelectPruner();
 
-    virtual
-    ~SelectPruner();
-
-    uint32_t
-    getFieldNodes() const
-    {
-        return _fieldNodes;
-    }
-
-    uint32_t
-    getAttrFieldNodes() const
-    {
-        return _attrFieldNodes;
-    }
-
-    const document::select::ResultSet &
-    getResultSet() const
-    {
-        return _resultSet;
-    }
-
-    bool
-    isFalse() const;
-
-    bool
-    isTrue() const;
-
-    bool
-    isInvalid() const;
-
-    bool
-    isConst() const;
-
-    void
-    trace(std::ostream &t);
-
-    void
-    process(const document::select::Node &node);
+    uint32_t getFieldNodes() const { return _fieldNodes; }
+    uint32_t getAttrFieldNodes() const { return _attrFieldNodes; }
+    const document::select::ResultSet & getResultSet() const { return _resultSet; }
+    bool isFalse() const;
+    bool isTrue() const;
+    bool isInvalid() const;
+    bool isConst() const;
+    void trace(std::ostream &t);
+    void process(const document::select::Node &node);
 private:
-    virtual void
-    visitAndBranch(const document::select::And &expr) override;
-
-    virtual void
-    visitComparison(const document::select::Compare &expr) override;
-
-    virtual void
-    visitDocumentType(const document::select::DocType &expr) override;
-
-    virtual void
-    visitNotBranch(const document::select::Not &expr) override;
-
-    virtual void
-    visitOrBranch(const document::select::Or &expr) override;
-
-    virtual void
-    visitArithmeticValueNode(const document::select::ArithmeticValueNode &expr) override;
-
-    virtual void
-    visitFunctionValueNode(const document::select::FunctionValueNode &expr) override;
-
-    virtual void
-    visitFieldValueNode(const document::select::FieldValueNode &expr) override;
-
-    void
-    invertNode();
-
-    const document::select::Operator &
-    getOperator(const document::select::Operator &op);
-
-    void
-    addNodeCount(const SelectPruner &rhs);
-
-    void
-    setInvalidVal();
-
-    void
-    setInvalidConst();
-
-    void
-    setTernaryConst(bool val);
-
-    void
-    resolveTernaryConst(bool wantInverted);
-
-    bool
-    isInvalidVal() const;
-
-    bool
-    isNullVal() const;
-
-    void
-    swap(SelectPruner &rhs);
+    void visitAndBranch(const document::select::And &expr) override;
+    void visitComparison(const document::select::Compare &expr) override;
+    void visitDocumentType(const document::select::DocType &expr) override;
+    void visitNotBranch(const document::select::Not &expr) override;
+    void visitOrBranch(const document::select::Or &expr) override;
+    void visitArithmeticValueNode(const document::select::ArithmeticValueNode &expr) override;
+    void visitFunctionValueNode(const document::select::FunctionValueNode &expr) override;
+    void visitFieldValueNode(const document::select::FieldValueNode &expr) override;
+    void invertNode();
+    const document::select::Operator &getOperator(const document::select::Operator &op);
+    void addNodeCount(const SelectPruner &rhs);
+    void setInvalidVal();
+    void setInvalidConst();
+    void setTernaryConst(bool val);
+    void resolveTernaryConst(bool wantInverted);
+    bool isInvalidVal() const;
+    bool isNullVal() const;
+    void swap(SelectPruner &rhs);
 };
 
 } // namespace proton
-

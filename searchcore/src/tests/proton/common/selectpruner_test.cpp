@@ -7,6 +7,7 @@
 #include <vespa/searchcore/proton/common/selectpruner.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/cloningvisitor.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
 

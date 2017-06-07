@@ -4,6 +4,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/objects/hexdump.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/xmlstream.h>
 
 using namespace vdslib;
 
@@ -60,7 +61,7 @@ void Parameters::onDeserialize(const document::DocumentTypeRepo &repo, document:
 void
 Parameters::printXml(document::XmlOutputStream& xos) const
 {
-    using namespace document;
+    using namespace vespalib::xml;
     xos << XmlTag("parameters");
     for (const auto & entry : _parameters) {
         xos << XmlTag("item")

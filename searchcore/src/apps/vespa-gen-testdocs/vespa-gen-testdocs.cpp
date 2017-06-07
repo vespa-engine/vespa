@@ -8,7 +8,7 @@
 #include <vespa/fastos/app.h>
 #include <iostream>
 #include <algorithm>
-#include <string>
+#include <sstream>
 #include <openssl/sha.h>
 
 #include <vespa/log/log.h>

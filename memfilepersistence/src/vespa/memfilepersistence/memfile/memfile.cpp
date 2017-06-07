@@ -12,7 +12,7 @@
 #include <ext/algorithm>
 #include <iomanip>
 
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".persistence.memfile.memfile");
 
 namespace {

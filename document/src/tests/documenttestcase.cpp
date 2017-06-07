@@ -5,6 +5,7 @@
 #include <vespa/vdstestlib/cppunit/macros.h>
 
 #include <vespa/document/datatype/annotationreferencedatatype.h>
+#include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
@@ -18,6 +19,8 @@ using vespalib::nbostream;
 using namespace document::config_builder;
 
 namespace document {
+
+using namespace fieldvalue;
 
 struct DocumentTest : public CppUnit::TestFixture {
     void testTraversing();
@@ -105,7 +108,7 @@ void DocumentTest::testFieldPath()
     }
 }
 
-class Handler : public FieldValue::IteratorHandler {
+class Handler : public fieldvalue::IteratorHandler {
 public:
     Handler();
     ~Handler();
@@ -185,7 +188,7 @@ void DocumentTest::testTraversing()
                          std::string("<P<P<PP[PPP][<PP><PP>]>>>"));
 }
 
-class VariableIteratorHandler : public FieldValue::IteratorHandler {
+class VariableIteratorHandler : public IteratorHandler {
 public:
     VariableIteratorHandler();
     ~VariableIteratorHandler();
@@ -268,16 +271,16 @@ DocumentTest::testVariables()
 
 }
 
-class ModifyIteratorHandler : public FieldValue::IteratorHandler {
+class ModifyIteratorHandler : public IteratorHandler {
 public:
     ModificationStatus doModify(FieldValue& fv) override {
         StringFieldValue* sfv = dynamic_cast<StringFieldValue*>(&fv);
         if (sfv != NULL) {
             *sfv = std::string("newvalue");
-            return MODIFIED;
+            return ModificationStatus::MODIFIED;
         }
 
-        return NOT_MODIFIED;
+        return ModificationStatus::NOT_MODIFIED;
     };
 
     bool onComplex(const Content&) override {

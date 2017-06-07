@@ -12,11 +12,12 @@
 #pragma once
 
 #include "fieldvaluevisitor.h"
-#include <vespa/document/datatype/datatype.h>
+#include "modificationstatus.h"
 #include <vespa/document/util/xmlserializable.h>
-#include <vespa/vespalib/util/polymorphicarrays.h>
+#include <vespa/document/base/fieldpath.h>
 #include <vespa/vespalib/objects/cloneable.h>
-#include <map>
+#include <vespa/vespalib/objects/identifiable.h>
+#include <vespa/vespalib/util/polymorphicarraybase.h>
 
 namespace vespalib {
     class nbostream;
@@ -24,125 +25,25 @@ namespace vespalib {
 
 namespace document {
 
+namespace fieldvalue {
+    class IteratorHandler;
+}
+
 class ByteBuffer;
+class DataType;
 
 class FieldValue : public vespalib::Identifiable
 {
 protected:
     FieldValue(const FieldValue&) = default;
     FieldValue& operator=(const FieldValue&) = default;
-    using IArray = vespalib::IArrayT<FieldValue>;
-    static IArray::UP createArray(const DataType & baseType);
+    static std::unique_ptr<vespalib::IArrayBase> createArray(const DataType & baseType);
 
 public:
     using PathRange = FieldPath::Range<FieldPath::const_iterator>;
     using UP = std::unique_ptr<FieldValue>;
     using SP = std::shared_ptr<FieldValue>;
     using CP = vespalib::CloneablePtr<FieldValue>;
-
-    class IteratorHandler {
-    public:
-        class CollectionScope {
-        public:
-            CollectionScope(IteratorHandler& handler, const FieldValue& value)
-                : _handler(handler), _value(value)
-            {
-                _handler.handleCollectionStart(_value);
-            }
-
-            ~CollectionScope() {
-                _handler.handleCollectionEnd(_value);
-            }
-        private:
-            IteratorHandler& _handler;
-            const FieldValue& _value;
-        };
-
-        class StructScope {
-        public:
-            StructScope(IteratorHandler& handler, const FieldValue& value)
-                : _handler(handler), _value(value)
-            {
-                _handler.handleStructStart(_value);
-            }
-
-            ~StructScope() {
-                _handler.handleStructEnd(_value);
-            }
-        private:
-            IteratorHandler& _handler;
-            const FieldValue& _value;
-        };
-
-        class IndexValue {
-        public:
-            IndexValue() : index(-1), key() {}
-            IndexValue(int index_) : index(index_), key() {}
-            IndexValue(const FieldValue& key_);
-            ~IndexValue();
-
-            vespalib::string toString() const;
-
-            bool operator==(const IndexValue& other) const;
-
-            int index; // For array
-            FieldValue::CP key; // For map/wset
-        };
-
-        enum ModificationStatus {
-            MODIFIED,
-            REMOVED,
-            NOT_MODIFIED
-        };
-
-        typedef std::map<vespalib::string, IndexValue> VariableMap;
-    protected:
-        class Content {
-        public:
-            Content(const FieldValue & fv, int weight=1) : _fieldValue(fv), _weight(weight) { }
-            int getWeight()               const { return _weight; }
-            const FieldValue & getValue() const { return _fieldValue; }
-        private:
-            const FieldValue & _fieldValue;
-            int                _weight;
-        };
-        IteratorHandler() : _weight(1) { }
-    public:
-        virtual ~IteratorHandler();
-
-        void handlePrimitive(uint32_t fid, const FieldValue & fv);
-
-        /**
-           Handles a complex type (struct/array/map etc) that is at the end of the
-           field path.
-           @return Return true if you want to recurse into the members.
-        */
-        bool handleComplex(const FieldValue& fv);
-        void handleCollectionStart(const FieldValue & fv);
-        void handleCollectionEnd(const FieldValue & fv);
-        void handleStructStart(const FieldValue & fv);
-        void handleStructEnd(const FieldValue & fv);
-        void setWeight(int weight) { _weight = weight; }
-        ModificationStatus modify(FieldValue& fv) { return doModify(fv); }
-
-        VariableMap& getVariables() { return _variables; }
-        void setVariables(const VariableMap& vars) { _variables = vars; }
-        static std::string toString(const VariableMap& vars);
-        virtual bool createMissingPath() const { return false; }
-    private:
-        virtual bool onComplex(const Content& fv) { (void) fv; return true; }
-        virtual void onPrimitive(uint32_t fid, const Content & fv);
-        virtual void onCollectionStart(const Content & fv) { (void) fv; }
-        virtual void onCollectionEnd(const Content & fv) { (void) fv; }
-        virtual void onStructStart(const Content & fv) { (void) fv; }
-        virtual void onStructEnd(const Content & fv) { (void) fv; }
-        virtual ModificationStatus doModify(FieldValue&) { return NOT_MODIFIED; };
-
-        // Scratchpad to store pass on weight.
-        int getWeight() const  { return _weight; }
-        int _weight;
-        VariableMap _variables;
-    };
 
     DECLARE_IDENTIFIABLE_ABSTRACT(FieldValue);
 
@@ -268,9 +169,9 @@ public:
      * invocations of the before mentioned methods and the additional
      * onPrimitive.
      */
-    IteratorHandler::ModificationStatus iterateNested(PathRange nested, IteratorHandler & handler) const;
+    fieldvalue::ModificationStatus iterateNested(PathRange nested, fieldvalue::IteratorHandler & handler) const;
 
-    IteratorHandler::ModificationStatus iterateNested(const FieldPath& fieldPath, IteratorHandler& handler) const {
+    fieldvalue::ModificationStatus iterateNested(const FieldPath& fieldPath, fieldvalue::IteratorHandler& handler) const {
         return iterateNested(fieldPath.begin(), fieldPath.end(), handler);
     }
 
@@ -284,12 +185,12 @@ public:
     virtual void printXml(XmlOutputStream& out) const = 0;
 
 private:
-    IteratorHandler::ModificationStatus
-    iterateNested(FieldPath::const_iterator start, FieldPath::const_iterator end, IteratorHandler & handler) const {
+    fieldvalue::ModificationStatus
+    iterateNested(FieldPath::const_iterator start, FieldPath::const_iterator end, fieldvalue::IteratorHandler & handler) const {
         return iterateNested(PathRange(start, end), handler);
     }
     virtual FieldValue::UP onGetNestedFieldValue(PathRange nested) const;
-    virtual IteratorHandler::ModificationStatus onIterateNested(PathRange nested, IteratorHandler & handler) const;
+    virtual fieldvalue::ModificationStatus onIterateNested(PathRange nested, fieldvalue::IteratorHandler & handler) const;
 };
 
 std::ostream& operator<<(std::ostream& out, const FieldValue & p);

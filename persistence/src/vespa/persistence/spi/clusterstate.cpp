@@ -5,9 +5,9 @@
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <cassert>
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
 ClusterState::ClusterState(const lib::ClusterState& state,
                            uint16_t nodeIndex,
@@ -99,5 +99,4 @@ void ClusterState::serialize(vespalib::nbostream& o) const {
     o << _distribution->serialize();
 }
 
-} // spi
-} // storage
+}

@@ -1,6 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "systemstate.h"
+#include "nodestate.h"
+#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <boost/spirit/include/classic_core.hpp>
 #include <boost/spirit/include/classic_parse_tree.hpp>
@@ -256,7 +258,9 @@ parseSystemState(SystemStateGrammar &grammar, boost::spirit::classic::tree_node<
     return ret;
 }
 
-vespalib::Lock SystemState::_parseLock;
+namespace {
+    vespalib::Lock _G_parseLock;
+}
 
 SystemState::UP
 SystemState::newInstance(const string &state)
@@ -265,7 +269,7 @@ SystemState::newInstance(const string &state)
         return SystemState::UP(new SystemState(NodeState::UP(new NodeState())));
     }
     try {
-        vespalib::LockGuard guard(_parseLock);
+        vespalib::LockGuard guard(_G_parseLock);
         SystemStateGrammar grammar;
         boost::spirit::classic::tree_parse_info<> info =
             boost::spirit::classic::pt_parse(static_cast<const char *>(&*state.begin()),
@@ -289,15 +293,14 @@ SystemState::newInstance(const string &state)
         }
     }
     catch(std::exception& e) {
-        std::cerr << "SystemState::parse() internal error: "
-                  << e.what() << std::endl;
+        LOG(fatal, "SystemState::parse() internal error: %s", e.what());
     }
     return SystemState::UP();
 }
 
 SystemState::SystemState(NodeState::UP root) :
     _root(std::move(root)),
-    _lock() {
-    // empty
-}
+    _lock(std::make_unique<vespalib::Lock>())
+{}
 
+SystemState::~SystemState() {}

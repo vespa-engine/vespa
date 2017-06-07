@@ -3,9 +3,8 @@
 #include "exceptions.h"
 #include "configholder.h"
 #include <vespa/vespalib/util/atomic.h>
-#include <memory>
 #include <thread>
-#include <chrono>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".config.common.configmanager");

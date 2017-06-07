@@ -1,20 +1,20 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include "removevalueupdate.h"
 #include <vespa/document/base/field.h>
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
-#include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
-#include <vespa/document/update/removevalueupdate.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/util/serializableexceptions.h>
+#include <vespa/vespalib/util/xmlstream.h>
 
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
 using vespalib::nbostream;
+using namespace vespalib::xml;
 
-namespace document
-{
+namespace document {
 
 IMPLEMENT_IDENTIFIABLE(RemoveValueUpdate, ValueUpdate);
 

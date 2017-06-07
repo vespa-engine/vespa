@@ -21,7 +21,7 @@ RandomNormalExecutor::RandomNormalExecutor(uint64_t seed, double mean, double st
     _spare(0.0)
 
 {
-    LOG(debug, "RandomNormalExecutor: seed=%" PRIu64 ", mean=%f, stddev=%f", seed, mean, stddev);
+    LOG(debug, "RandomNormalExecutor: seed=%zu, mean=%f, stddev=%f", seed, mean, stddev);
     _rnd.srand48(seed);
 }
 

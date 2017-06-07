@@ -6,14 +6,10 @@
 #include "juniperdebug.h"
 #include "sumdesc.h"
 #include "Matcher.h"
-#include "foreach_utils.h"
-#include "SummaryConfig.h"
-#include "querynode.h"
-#include "mcand.h"
-#include "matchobject.h"
 #include "result.h"
 #include "juniperparams.h"
 #include "config.h"
+#include <sstream>
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.matcher");
 

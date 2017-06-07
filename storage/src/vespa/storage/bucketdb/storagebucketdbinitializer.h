@@ -50,6 +50,7 @@
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vdslib/state/nodestate.h>
 #include <vespa/config/subscription/configuri.h>
+#include <list>
 
 namespace storage {
 

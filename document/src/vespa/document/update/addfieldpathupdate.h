@@ -10,7 +10,6 @@ class AddFieldPathUpdate : public FieldPathUpdate
 public:
     /** For deserialization */
     AddFieldPathUpdate();
-
     AddFieldPathUpdate(const DocumentTypeRepo& repo, const DataType& type, stringref fieldPath,
                        stringref whereClause, const ArrayFieldValue& values);
     ~AddFieldPathUpdate();
@@ -18,7 +17,6 @@ public:
     FieldPathUpdate* clone() const override;
     bool operator==(const FieldPathUpdate& other) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-
     const ArrayFieldValue & getValues() const { return *_values; }
 
     DECLARE_IDENTIFIABLE(AddFieldPathUpdate);
@@ -29,22 +27,7 @@ private:
     void deserialize(const DocumentTypeRepo& repo, const DataType& type,
                      ByteBuffer& buffer, uint16_t version) override;
 
-    class AddIteratorHandler : public FieldValue::IteratorHandler
-    {
-    public:
-        AddIteratorHandler(const ArrayFieldValue& values) : _values(values) { }
-
-        ModificationStatus doModify(FieldValue& fv) override;
-        bool createMissingPath() const override { return true; }
-        bool onComplex(const Content&) override { return false; }
-    private:
-        const ArrayFieldValue& _values;
-    };
-
-    std::unique_ptr<FieldValue::IteratorHandler> getIteratorHandler(Document&) const override {
-        return std::unique_ptr<FieldValue::IteratorHandler>(
-                new AddIteratorHandler(*_values));
-    }
+    std::unique_ptr<fieldvalue::IteratorHandler> getIteratorHandler(Document&) const override;
 
     vespalib::CloneablePtr<ArrayFieldValue> _values;
 };

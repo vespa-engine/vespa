@@ -5,13 +5,12 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <fstream>
 #include <sstream>
+#include <sys/stat.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.devicemapper");
 
-namespace storage {
-
-namespace memfile {
+namespace storage::memfile {
 
 namespace {
     uint64_t getDevice(const std::string& path) {
@@ -95,5 +94,3 @@ AdvancedDeviceMapper::getPartitionId(const std::string& fileOnFS) const
 }
 
 }
-
-} // storage

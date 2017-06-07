@@ -2,16 +2,15 @@
 
 #include "positionsdfw.h"
 #include "docsumstate.h"
-#include "idocsumenvironment.h"
 #include <vespa/searchlib/common/location.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <cmath>
+#include <climits>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.positionsdfw");
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
@@ -223,5 +222,4 @@ AbsDistanceDFW::UP createAbsDistanceDFW(const char *attribute_name,
     return ret;
 }
 
-}  // namespace docsummary
-}  // namespace search
+}

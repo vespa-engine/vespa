@@ -1,10 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "nodestate.h"
-#include <vespa/vespalib/util/sync.h>
+#include <vespa/documentapi/common.h>
 
+namespace vespalib { class Lock; }
 namespace documentapi {
+
+class NodeState;
 
 /**
  * This class is a factory to create a tree of {@link NodeState} objects from a parseable node state
@@ -13,10 +15,8 @@ namespace documentapi {
  */
 class SystemState {
 private:
-    static vespalib::Lock _parseLock;
-
-    NodeState::UP  _root;
-    vespalib::Lock _lock;
+    std::unique_ptr<NodeState>      _root;
+    std::unique_ptr<vespalib::Lock> _lock;
 
     friend class SystemStateHandle;
 
@@ -26,9 +26,10 @@ private:
      *
      * @param root The root node state.
      */
-    SystemState(NodeState::UP root);
+    SystemState(std::unique_ptr<NodeState> root);
 
 public:
+    ~SystemState();
     SystemState(const SystemState &) = delete;
     SystemState & operator = (const SystemState &) = delete;
     /**
@@ -47,4 +48,3 @@ public:
 };
 
 }
-

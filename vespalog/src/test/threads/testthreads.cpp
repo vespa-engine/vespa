@@ -2,7 +2,7 @@
 #include <vespa/fastos/app.h>
 #include <vespa/fastos/time.h>
 #include <vespa/fastos/thread.h>
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 #include <iostream>
 
 using std::string;

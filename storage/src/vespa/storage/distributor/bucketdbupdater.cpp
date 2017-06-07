@@ -7,8 +7,9 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/multioperation.h>
+#include <vespa/vespalib/util/xmlstream.h>
 
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".distributor.bucketdb.updater");
 
 using storage::lib::Node;

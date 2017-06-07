@@ -5,6 +5,7 @@ vespa_add_library(document_bucket OBJECT
     bucketdistribution.cpp
     bucketid.cpp
     bucketidfactory.cpp
+    bucketidlist.cpp
     bucketselector.cpp
     bucketspace.cpp
     DEPENDS

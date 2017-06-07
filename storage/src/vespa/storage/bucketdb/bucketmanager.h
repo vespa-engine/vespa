@@ -25,6 +25,7 @@
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/config/subscription/configuri.h>
 #include <unordered_set>
+#include <list>
 
 namespace storage {
 

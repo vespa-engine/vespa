@@ -1,12 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "structuredfieldvalue.hpp"
-#include "fieldvalues.h"
+#include "iteratorhandler.h"
+#include "weightedsetfieldvalue.h"
+#include "arrayfieldvalue.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".document.fieldvalue.structured");
 
+using vespalib::IllegalArgumentException;
+
 namespace document {
+
+using namespace fieldvalue;
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(StructuredFieldValue, FieldValue);
 
@@ -59,7 +65,7 @@ void StructuredFieldValue::setFieldValue(const Field & field, const FieldValue &
     if (!field.getDataType().isValueType(value) &&
         !value.getDataType()->isA(field.getDataType()))
     {
-        throw vespalib::IllegalArgumentException(
+        throw IllegalArgumentException(
                 "Cannot assign value of type " + value.getDataType()->toString()
                 + "with value : '" + value.toString()
                 + "' to field " + field.getName().c_str() + " of type "
@@ -81,7 +87,7 @@ StructuredFieldValue::onGetNestedFieldValue(PathRange nested) const
     return fv;
 }
 
-FieldValue::IteratorHandler::ModificationStatus
+ModificationStatus
 StructuredFieldValue::onIterateNested(PathRange nested, IteratorHandler & handler) const
 {
     IteratorHandler::StructScope autoScope(handler, *this);
@@ -93,38 +99,35 @@ StructuredFieldValue::onIterateNested(PathRange nested, IteratorHandler & handle
             LOG(spam, "fieldRef = %s", fpe.getFieldRef().toString().c_str());
             LOG(spam, "fieldValueToSet = %s", fpe.getFieldValueToSet().toString().c_str());
             if (exists) {
-                IteratorHandler::ModificationStatus status = fpe.getFieldValueToSet().iterateNested(nested.next(), handler);
-                if (status == IteratorHandler::REMOVED) {
+                ModificationStatus status = fpe.getFieldValueToSet().iterateNested(nested.next(), handler);
+                if (status == ModificationStatus::REMOVED) {
                     LOG(spam, "field exists, status = REMOVED");
                     const_cast<StructuredFieldValue&>(*this).remove(fpe.getFieldRef());
-                    return IteratorHandler::MODIFIED;
-                } else if (status == IteratorHandler::MODIFIED) {
+                    return ModificationStatus::MODIFIED;
+                } else if (status == ModificationStatus::MODIFIED) {
                     LOG(spam, "field exists, status = MODIFIED");
                     const_cast<StructuredFieldValue&>(*this).setFieldValue(fpe.getFieldRef(), fpe.getFieldValueToSet());
-                    return IteratorHandler::MODIFIED;
+                    return ModificationStatus::MODIFIED;
                 } else {
-                    LOG(spam, "field exists, status = %u", status);
                     return status;
                 }
             } else if (handler.createMissingPath()) {
                 LOG(spam, "createMissingPath is true");
-                IteratorHandler::ModificationStatus status
-                    = fpe.getFieldValueToSet().iterateNested(nested.next(), handler);
-                if (status == IteratorHandler::MODIFIED) {
+                ModificationStatus status = fpe.getFieldValueToSet().iterateNested(nested.next(), handler);
+                if (status == ModificationStatus::MODIFIED) {
                     LOG(spam, "field did not exist, status = MODIFIED");
                     const_cast<StructuredFieldValue&>(*this).setFieldValue(fpe.getFieldRef(), fpe.getFieldValueToSet());
                     return status;
                 }
             }
             LOG(spam, "field did not exist, returning NOT_MODIFIED");
-            return IteratorHandler::NOT_MODIFIED;
+            return ModificationStatus::NOT_MODIFIED;
         } else {
-            throw vespalib::IllegalArgumentException("Illegal field path for struct value");
+            throw IllegalArgumentException("Illegal field path for struct value");
         }
     } else {
-        IteratorHandler::ModificationStatus
-            status = handler.modify(const_cast<StructuredFieldValue&>(*this));
-        if (status == IteratorHandler::REMOVED) {
+        ModificationStatus status = handler.modify(const_cast<StructuredFieldValue&>(*this));
+        if (status == ModificationStatus::REMOVED) {
             LOG(spam, "field REMOVED");
             return status;
         }
@@ -133,11 +136,11 @@ StructuredFieldValue::onIterateNested(PathRange nested, IteratorHandler & handle
             LOG(spam, "handleComplex");
             std::vector<const Field*> fieldsToRemove;
             for (const_iterator it(begin()), mt(end()); it != mt; ++it) {
-                IteratorHandler::ModificationStatus currStatus = getValue(it.field())->iterateNested(nested, handler);
-                if (currStatus == IteratorHandler::REMOVED) {
+                ModificationStatus currStatus = getValue(it.field())->iterateNested(nested, handler);
+                if (currStatus == ModificationStatus::REMOVED) {
                     fieldsToRemove.push_back(&it.field());
-                    status = IteratorHandler::MODIFIED;
-                } else if (currStatus == IteratorHandler::MODIFIED) {
+                    status = ModificationStatus::MODIFIED;
+                } else if (currStatus == ModificationStatus::MODIFIED) {
                     status = currStatus;
                 }
             }

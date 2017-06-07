@@ -7,9 +7,9 @@
  */
 #pragma once
 
-#include <vespa/document/fieldvalue/collectionfieldvalue.h>
-#include <vespa/document/fieldvalue/mapfieldvalue.h>
-#include <vespa/document/fieldvalue/intfieldvalue.h>
+#include "collectionfieldvalue.h"
+#include "mapfieldvalue.h"
+#include "intfieldvalue.h"
 #include <vespa/document/datatype/weightedsetdatatype.h>
 #include <map>
 
@@ -33,7 +33,7 @@ private:
     bool addValue(const FieldValue& fval) override { return add(fval, 1); }
     bool containsValue(const FieldValue& val) const override;
     bool removeValue(const FieldValue& val) override;
-    IteratorHandler::ModificationStatus onIterateNested(PathRange nested, IteratorHandler& handler) const override;
+    fieldvalue::ModificationStatus onIterateNested(PathRange nested, fieldvalue::IteratorHandler& handler) const override;
 public:
     typedef std::unique_ptr<WeightedSetFieldValue> UP;
 

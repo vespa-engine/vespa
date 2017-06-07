@@ -1,9 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
-#include <assert.h>
+
 #include <logd/config-logd.h>
 #include <vespa/vespalib/util/hashmap.h>
 #include <vespa/log/log.h>
+#include <cassert>
 
 namespace logdemon {
 

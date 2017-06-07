@@ -3,6 +3,7 @@
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/traversingvisitor.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributorconfiguration");

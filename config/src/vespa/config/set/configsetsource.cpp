@@ -2,9 +2,8 @@
 
 #include "configsetsource.h"
 #include <vespa/config/print/asciiconfigwriter.h>
-#include <vespa/config/common/misc.h>
 #include <vespa/config/common/exceptions.h>
-#include <vespa/vespalib/stllike/asciistream.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".config.set.configsetsource");
 
@@ -48,7 +47,7 @@ ConfigSetSource::getConfig()
 void
 ConfigSetSource::reload(int64_t generation)
 {
-    LOG(debug, "Running update with generation(%" PRId64 ")", generation);
+    LOG(debug, "Running update with generation(%zd)", generation);
     _generation = generation;
 }
 

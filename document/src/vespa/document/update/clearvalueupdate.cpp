@@ -4,10 +4,12 @@
 #include <vespa/document/base/field.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/xmlstream.h>
 #include <ostream>
 
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
+using namespace vespalib::xml;
 
 namespace document {
 

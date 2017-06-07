@@ -12,6 +12,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <unordered_map>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance");

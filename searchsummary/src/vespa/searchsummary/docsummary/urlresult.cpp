@@ -3,12 +3,12 @@
 #include "urlresult.h"
 #include "resultconfig.h"
 #include <zlib.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.urlresult");
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 urlresult::urlresult(uint32_t partition, uint32_t docid, HitRank metric)
     : _partition(partition),
@@ -810,5 +810,4 @@ GeneralResult::_inplace_unpack(const char *buf, const size_t buflen)
     return false;   // FAIL
 }
 
-}
 }

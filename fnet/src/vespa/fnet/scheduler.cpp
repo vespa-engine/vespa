@@ -2,6 +2,7 @@
 
 #include "scheduler.h"
 #include "task.h"
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".fnet.scheduler");

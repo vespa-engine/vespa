@@ -1,4 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 /**
  * @class document::select::Value
  * @ingroup select
@@ -190,7 +191,7 @@ inline ResultList FloatValue::operator==(const FloatValue& value) const
 class ArrayValue : public Value
 {
 public:
-    typedef std::pair<FieldValue::IteratorHandler::VariableMap, Value::SP> VariableValue;
+    using VariableValue = std::pair<fieldvalue::VariableMap, Value::SP>;
 
     ArrayValue(const std::vector<VariableValue>& values);
 

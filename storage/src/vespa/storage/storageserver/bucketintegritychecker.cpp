@@ -7,10 +7,10 @@
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/config/config.h>
 #include <vespa/storage/bucketdb/lockablemap.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".bucketintegritychecker");
 
 using std::shared_ptr;

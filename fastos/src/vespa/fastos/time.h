@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/fastos/types.h>
-
 /**
  * Interface to OS time functions.
  */
@@ -12,7 +10,7 @@ protected:
     /**
      * Destructor.  No cleanup needed for base class.
      */
-    virtual ~FastOS_TimeInterface(void) { }
+    virtual ~FastOS_TimeInterface() { }
 
 public:
     /**
@@ -49,30 +47,26 @@ public:
      * Note: Only millisecond accuracy is guaranteed.
      * @param  microsecs    Number of microseconds to add.
      */
-    void AddMicroSecs(double microsecs)
-    { SetMicroSecs(MicroSecs() + microsecs); }
+    void AddMicroSecs(double microsecs) { SetMicroSecs(MicroSecs() + microsecs); }
 
     /**
      * Add a specified number of milliseconds to the time.
      * @param  millisecs    Number of milliseconds to add.
      */
-    void AddMilliSecs(double millisecs)
-    { SetMilliSecs(MilliSecs() + millisecs); }
+    void AddMilliSecs(double millisecs) { SetMilliSecs(MilliSecs() + millisecs); }
 
     /**
      * Subtract a specified number of microseconds from the time.
      * Note: Only millisecond accuracy is guaranteed.
      * @param  microsecs    Number of microseconds to subtract.
      */
-    void SubtractMicroSecs(double microsecs)
-    { SetMicroSecs(MicroSecs() - microsecs); }
+    void SubtractMicroSecs(double microsecs) { SetMicroSecs(MicroSecs() - microsecs); }
 
     /**
      * Subtract a specified number of milliseconds from the time.
      * @param  millisecs    Number of milliseconds to subtract.
      */
-    void SubtractMilliSecs(double millisecs)
-    { SetMilliSecs(MilliSecs() - millisecs); }
+    void SubtractMilliSecs(double millisecs) { SetMilliSecs(MilliSecs() - millisecs); }
 
     /**
      * Return the time in microseconds.
@@ -133,7 +127,6 @@ public:
      virtual long int GetMicroSeconds() const = 0;
 };
 
-
 #include <vespa/fastos/unix_time.h>
-typedef FastOS_UNIX_Time FASTOS_PREFIX(Time);
+using FastOS_Time = FastOS_UNIX_Time;
 

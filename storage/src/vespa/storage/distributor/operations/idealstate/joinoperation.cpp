@@ -1,14 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "joinoperation.h"
-#include <vespa/storage/distributor/idealstatemanager.h>
-#include <vespa/storage/distributor/pendingmessagetracker.h>
-#include <vespa/storageapi/messageapi/storagereply.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/vdslib/state/clusterstate.h>
 
-#include <vespa/log/log.h>
-
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".distributor.operation.idealstate.join");
 
 using namespace storage::distributor;

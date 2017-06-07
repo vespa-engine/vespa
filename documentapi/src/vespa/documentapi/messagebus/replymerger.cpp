@@ -6,6 +6,7 @@
 #include <vespa/documentapi/messagebus/messages/updatedocumentreply.h>
 #include <vespa/documentapi/messagebus/messages/getdocumentreply.h>
 #include <vespa/messagebus/emptyreply.h>
+#include <cassert>
 
 namespace documentapi {
 

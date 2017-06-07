@@ -5,6 +5,7 @@
 #include "bucketinfo.h"
 #include "bucket.h"
 #include "docentry.h"
+#include <vespa/document/bucket/bucketidlist.h>
 
 namespace storage::spi {
 
@@ -196,7 +197,7 @@ private:
 
 class BucketIdListResult : public Result {
 public:
-    typedef document::BucketId::List List;
+    using List = document::bucket::BucketIdList;
 
     /**
      * Constructor used when there was an error listing the buckets.

@@ -6,9 +6,9 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <ostream>
+#include <cassert>
 
-namespace storage {
-namespace lib {
+namespace storage::lib {
 
 Group::Group(uint16_t index, vespalib::stringref name)
     : _name(name),
@@ -203,5 +203,4 @@ Group::getDistributionConfigHash() const {
     return ost.str();
 }
 
-}
 }

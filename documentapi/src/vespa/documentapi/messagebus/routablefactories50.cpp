@@ -4,6 +4,8 @@
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/document/bucket/bucketidfactory.h>
+#include <vespa/document/select/parser.h>
 
 using vespalib::nbostream;
 using std::make_unique;

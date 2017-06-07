@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <memory>
 #include "fieldvalue.h"
 
 namespace vespalib {
@@ -25,20 +24,20 @@ public:
     void accept(FieldValueVisitor &visitor) override { visitor.visit(*this); }
     void accept(ConstFieldValueVisitor &visitor) const override { visitor.visit(*this); }
 
-    virtual FieldValue *clone() const override { return new PredicateFieldValue(*this); }
-    virtual int compare(const FieldValue &rhs) const override;
+    FieldValue *clone() const override;
+    int compare(const FieldValue &rhs) const override;
 
-    virtual void printXml(XmlOutputStream &out) const override;
-    virtual void print(std::ostream &out, bool verbose, const std::string &indent) const override;
+    void printXml(XmlOutputStream &out) const override;
+    void print(std::ostream &out, bool verbose, const std::string &indent) const override;
 
-    virtual const DataType *getDataType() const override { return DataType::PREDICATE; }
-    virtual bool hasChanged() const override { return _altered; }
+    const DataType *getDataType() const override;
+    bool hasChanged() const override;
 
     const vespalib::Slime &getSlime() const { return *_slime; }
 
-    virtual FieldValue &assign(const FieldValue &rhs) override;
+    FieldValue &assign(const FieldValue &rhs) override;
 
-DECLARE_IDENTIFIABLE(PredicateFieldValue);
+    DECLARE_IDENTIFIABLE(PredicateFieldValue);
 };
 
 }  // namespace document

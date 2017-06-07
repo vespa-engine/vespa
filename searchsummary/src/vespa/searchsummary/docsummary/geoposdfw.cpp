@@ -6,12 +6,12 @@
 #include <vespa/vespalib/util/jsonwriter.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <climits>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.geoposdfw");
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 using attribute::IAttributeVector;
 using attribute::IAttributeContext;
@@ -110,5 +110,3 @@ GeoPositionDFW::create(const char *attribute_name,
 
 
 }
-}
-

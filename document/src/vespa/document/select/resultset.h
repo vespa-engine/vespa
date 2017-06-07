@@ -1,12 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <string>
-#include <vector>
 #include "result.h"
+#include <vector>
 
-namespace document {
-namespace select {
+namespace document::select {
 
 /*
  * Contains possible values of operations returning a Result.
@@ -29,7 +27,7 @@ public:
     }
 
     static uint32_t illegalMask() {
-        return (1u << Result::enumRange());
+        return (1u << Result::enumRange);
     }
 
     void add(const Result &rhs) {
@@ -54,26 +52,24 @@ public:
 
     // calculcate set of results emitted by document selection and operator.
     ResultSet calcAnd(const ResultSet &rhs) const {
-        return _ands[(_val << Result::enumRange()) | rhs._val];
+        return _ands[(_val << Result::enumRange) | rhs._val];
     }
 
     // calculcate set of results emitted by document selection or operator.
     ResultSet calcOr(const ResultSet &rhs) const {
-        return _ors[(_val << Result::enumRange()) | rhs._val];
+        return _ors[(_val << Result::enumRange) | rhs._val];
     }
 
     // calculcate set of results emitted by document selection not operator.
-    ResultSet calcNot(void) const { return _nots[_val]; }
+    ResultSet calcNot() const { return _nots[_val]; }
 
-    void clear(void) { _val = 0; }
-    void fill(void) { _val = illegalMask() - 1; }
-    static void preCalc(void);
+    void clear() { _val = 0; }
+    void fill() { _val = illegalMask() - 1; }
+    static void preCalc();
 private:
     // precalc helper methods
     void pcnext(void) { ++_val; }
     bool pcvalid(void) const { return _val < illegalMask(); }
 };
 
-} // select
-} // document
-
+}

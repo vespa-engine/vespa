@@ -5,14 +5,13 @@
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/vespalib/objects/objectdumper.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <stdexcept>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/vespalib/util/md5.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/expression/getdocidnamespacespecificfunctionnode.h>
 #include <vespa/searchlib/expression/documentfieldnode.h>
 #include <cmath>
 #include <iostream>
+#include <list>
 
 #define MU std::make_unique
 

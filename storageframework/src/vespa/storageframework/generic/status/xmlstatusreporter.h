@@ -18,7 +18,7 @@
 #pragma once
 
 #include "statusreporter.h"
-#include <vespa/vespalib/util/xmlserializable.h>
+#include <vespa/vespalib/util/xmlstream.h>
 
 namespace storage::framework {
 

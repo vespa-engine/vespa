@@ -2,7 +2,7 @@
 #include "mergeoperation.h"
 #include <vespa/storage/distributor/idealstatemanager.h>
 
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".distributor.operation.idealstate.merge");
 
 namespace storage::distributor {

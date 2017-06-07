@@ -5,6 +5,7 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/host_name.h>
+#include <sstream>
 
 #include <vespa/log/log.h>
 

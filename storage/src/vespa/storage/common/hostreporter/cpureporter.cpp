@@ -1,13 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "cpureporter.h"
 #include "kernelmetrictool.h"
-
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
-#include <array>
 
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".cpureporter");
 
 namespace storage {

@@ -3,6 +3,9 @@
 #include "rawfieldvalue.h"
 #include "literalfieldvalue.hpp"
 #include <vespa/document/util/stringutil.h>
+#include <vespa/vespalib/util/xmlstream.h>
+
+using namespace vespalib::xml;
 
 namespace document {
 
@@ -18,8 +21,7 @@ RawFieldValue::printXml(XmlOutputStream& out) const
 void
 RawFieldValue::print(std::ostream& out, bool, const std::string&) const
 {
-    StringUtil::printAsHex(out, _value.c_str(),
-                                _value.size());
+    StringUtil::printAsHex(out, _value.c_str(), _value.size());
 }
 
 } // document

@@ -3,8 +3,7 @@
 #include "batchdocumentupdatemessage.h"
 #include "batchdocumentupdatereply.h"
 #include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <vespa/document/select/parser.h>
-#include <vespa/document/bucket/bucketselector.h>
+#include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 namespace documentapi {

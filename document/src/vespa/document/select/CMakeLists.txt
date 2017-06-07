@@ -1,26 +1,27 @@
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(document_select OBJECT
     SOURCES
+    bodyfielddetector.cpp
     branch.cpp
+    cloningvisitor.cpp
     compare.cpp
     constant.cpp
+    context.cpp
     doctype.cpp
+    gid_filter.cpp
+    invalidconstant.cpp
     operator.cpp
-    parser.cpp
-    result.cpp
-    value.cpp
-    valuenode.cpp
     orderingselector.cpp
     orderingspecification.cpp
-    resultlist.cpp
-    invalidconstant.cpp
-    bodyfielddetector.cpp
-    simpleparser.cpp
+    parser.cpp
+    result.cpp
     resultset.cpp
+    resultlist.cpp
+    simpleparser.cpp
     traversingvisitor.cpp
-    cloningvisitor.cpp
-    context.cpp
-    gid_filter.cpp
+    value.cpp
+    valuenode.cpp
+    valuenodes.cpp
     AFTER
     document_documentconfig
 )

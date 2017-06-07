@@ -3,6 +3,8 @@
 #include "attributefieldvaluenode.h"
 #include "selectcontext.h"
 #include <vespa/searchcommon/attribute/attributecontent.h>
+#include <vespa/searchlib/attribute/attributevector.h>
+
 
 namespace proton {
 
@@ -20,11 +22,10 @@ using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::IAttributeVector;
 
-
 AttributeFieldValueNode::
 AttributeFieldValueNode(const vespalib::string& doctype,
                         const vespalib::string& field,
-                        const search::AttributeVector::SP &attribute)
+                        const std::shared_ptr<search::AttributeVector> &attribute)
     : FieldValueNode(doctype, field),
       _attribute(attribute)
 {
@@ -93,6 +94,12 @@ AttributeFieldValueNode::traceValue(const Context &context,
     return defaultTrace(getValue(context), out);
 }
 
+
+document::select::ValueNode::UP
+AttributeFieldValueNode::clone() const
+{
+    return wrapParens(new AttributeFieldValueNode(getDocType(), getFieldName(), _attribute));
+}
 
 } // namespace proton
 

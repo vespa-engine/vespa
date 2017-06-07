@@ -3,6 +3,7 @@
 #include "prepare_restart_flush_strategy.h"
 #include "flush_target_candidates.h"
 #include "tls_stats_map.h"
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.flushengine.prepare_restart_flush_strategy");
