@@ -13,6 +13,15 @@ namespace storage::api {
 
 namespace {
 
+/**
+ * TODO
+ * From @vekterli
+ * I have no idea why the _lastMsgId update code masks away the 8 MSB, but if we assume it's probably for no
+ * overwhelmingly good reason we could replace this mutex with just a std::atomic<uint64_t> and do a relaxed
+ * fetch_add (shouldn't be any need for any barriers; ID increments have no other memory dependencies). U64 overflows
+ * here come under the category "never gonna happen in the real world".
+ * @balder agree - @vekterli fix in separate pull request :)
+ */
 vespalib::Lock _G_msgIdLock;
 
 }
