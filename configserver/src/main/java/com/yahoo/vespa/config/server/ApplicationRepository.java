@@ -71,6 +71,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final HttpProxy httpProxy;
     private final Clock clock;
     private final DeployLogger logger = new SilentDeployLogger();
+    private final ConfigserverConfig configserverConfig;
     private final Environment environment;
 
     @Inject
@@ -88,6 +89,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.convergeChecker = applicationConvergenceChecker;
         this.httpProxy = httpProxy;
         this.clock = Clock.systemUTC();
+        this.configserverConfig = configserverConfig;
         this.environment = Environment.from(configserverConfig.environment());
     }
 
@@ -333,22 +335,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     void redeployAllApplications(Deployer deployer) {
-        ExecutorService deploymentExecutor = Executors.newCachedThreadPool();
-        Set<ApplicationId> applicationIds = new HashSet<>();
-
-        tenants.getAllTenants().forEach(tenant -> applicationIds.addAll(tenant.getApplicationRepo().listApplications()));
-
-        int applicationsRedeployed = 0;
-        for (ApplicationId applicationId : applicationIds) {
-            redeployApplication(applicationId, deployer, deploymentExecutor);
-            log.log(LogLevel.INFO, String.format("Redeployed %s of %s applications", ++applicationsRedeployed, applicationIds.size()));
-            // Throttle deployments
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException("Failed to deploy application " + applicationId, e);
-            }
-        }
+        ExecutorService deploymentExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders());
+        tenants.getAllTenants().forEach(tenant -> listApplicationIds(tenant)
+                .forEach(applicationId -> redeployApplication(applicationId, deployer, deploymentExecutor)));
     }
 
     private void redeployApplication(ApplicationId applicationId, Deployer deployer, ExecutorService deploymentExecutor) {
