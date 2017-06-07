@@ -2,7 +2,6 @@
 vespa_add_executable(storage_getidealstate_app
     SOURCES
     getidealstate.cpp
-    INSTALL bin
     DEPENDS
     storage
     AFTER
@@ -11,7 +10,6 @@ vespa_add_executable(storage_getidealstate_app
 vespa_add_executable(storage_generatedistributionbits_app
     SOURCES
     generatedistributionbits.cpp
-    INSTALL bin
     DEPENDS
     storage
     AFTER
@@ -20,7 +18,6 @@ vespa_add_executable(storage_generatedistributionbits_app
 vespa_add_executable(storage_analyzedistribution_app
     SOURCES
     analyzedistribution.cpp
-    INSTALL bin
     DEPENDS
     storage
     AFTER
@@ -29,7 +26,7 @@ vespa_add_executable(storage_analyzedistribution_app
 vespa_add_executable(storage_storage-cmd_app
     SOURCES
     storage-cmd.cpp
-    OUTPUT_NAME storage-cmd
+    OUTPUT_NAME vespa-storage-cmd
     INSTALL bin
     DEPENDS
     AFTER
@@ -38,7 +35,6 @@ vespa_add_executable(storage_storage-cmd_app
 vespa_add_executable(storage_throttlingsim_app
     SOURCES
     throttlingsim.cpp
-    INSTALL bin
     DEPENDS
     AFTER
     storage_storageconfig
@@ -46,7 +42,6 @@ vespa_add_executable(storage_throttlingsim_app
 vespa_add_executable(storage_statfs_app
     SOURCES
     statfs.cpp
-    INSTALL bin
     DEPENDS
     AFTER
     storage_storageconfig
