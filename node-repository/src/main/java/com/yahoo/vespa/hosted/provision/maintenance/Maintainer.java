@@ -18,7 +18,7 @@ import java.util.logging.Logger;
  */
 public abstract class Maintainer extends AbstractComponent implements Runnable {
 
-    protected static final Logger log = Logger.getLogger(Maintainer.class.getName());
+    protected final Logger log = Logger.getLogger(this.getClass().getName());
 
     private final NodeRepository nodeRepository;
     private final Duration interval;
