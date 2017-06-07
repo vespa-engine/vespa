@@ -1,14 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * @class document::select::ValueNode
- * @ingroup select
- *
- * @brief Node representing a value in the tree
- *
- * @author H�kon Humberset
- * @date 2007-04-20
- * @version $Id$
- */
 
 #pragma once
 
