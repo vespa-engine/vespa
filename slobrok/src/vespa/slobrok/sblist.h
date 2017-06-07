@@ -4,8 +4,7 @@
 #include "cfg.h"
 #include <vespa/vespalib/util/sync.h>
 
-namespace slobrok {
-namespace api {
+namespace slobrok::api {
 
 /**
  * @brief List of connection specs for service location brokers
@@ -50,6 +49,4 @@ private:
     size_t _retryCount;
 };
 
-} // namespace api
-} // namespace slobrok
-
+}

@@ -5,10 +5,13 @@
 #include <vespa/fnet/frt/target.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".slobrok.register");
+
+using vespalib::NetworkSetupFailureException;
 
 namespace {
 
@@ -47,8 +50,7 @@ discard(std::vector<vespalib::string> &vec, const vespalib::stringref & val)
 
 } // namespace <unnamed>
 
-namespace slobrok {
-namespace api {
+namespace slobrok::api {
 
 RegisterAPI::RegisterAPI(FRT_Supervisor &orb, const ConfiguratorFactory & config)
     : FNET_Task(orb.GetScheduler()),
@@ -69,7 +71,10 @@ RegisterAPI::RegisterAPI(FRT_Supervisor &orb, const ConfiguratorFactory & config
       _req(0)
 {
     _configurator->poll();
-    LOG_ASSERT(_slobrokSpecs.ok());
+    if ( ! _slobrokSpecs.ok()) {
+        throw NetworkSetupFailureException("Failed configuring the RegisterAPI. No valid slobrok specs from config",
+                                           VESPA_STRLOC);
+    }
     ScheduleNow();
 }
 
@@ -127,8 +132,8 @@ RegisterAPI::handleReqDone()
         _reqDone = false;
         if (_req->IsError()) {
             if (_req->GetErrorCode() != FRTE_RPC_METHOD_FAILED) {
-		LOG(debug, "register failed: %s (code %d)",
-		    _req->GetErrorMessage(), _req->GetErrorCode());
+                LOG(debug, "register failed: %s (code %d)",
+                    _req->GetErrorMessage(), _req->GetErrorCode());
                 // unexpected error; close our connection to this
                 // slobrok server and try again with a fresh slate
                 if (_target != 0) {
@@ -187,7 +192,7 @@ RegisterAPI::handleReconnect()
                 LOG(warning, "cannot connect to location broker at %s "
                     "(retry in %f seconds)", cps.c_str(), delay);
             } else {
-		LOG(debug, "slobrok retry in %f seconds", delay);
+                LOG(debug, "slobrok retry in %f seconds", delay);
 	    }
             return;
         }
@@ -220,7 +225,7 @@ RegisterAPI::handlePending()
         _req = _orb.AllocRPCRequest();
         _req->SetMethodName("slobrok.unregisterRpcServer");
         _req->GetParams()->AddString(name.c_str());
-	LOG(debug, "unregister [%s]", name.c_str());
+        LOG(debug, "unregister [%s]", name.c_str());
         _req->GetParams()->AddString(createSpec(_orb).c_str());
         _target->InvokeAsync(_req, 35.0, this);
     } else if (reg) {
@@ -228,7 +233,7 @@ RegisterAPI::handlePending()
         _req = _orb.AllocRPCRequest();
         _req->SetMethodName("slobrok.registerRpcServer");
         _req->GetParams()->AddString(name.c_str());
-	LOG(debug, "register [%s]", name.c_str());
+        LOG(debug, "register [%s]", name.c_str());
         _req->GetParams()->AddString(createSpec(_orb).c_str());
         _target->InvokeAsync(_req, 35.0, this);
     } else {
@@ -236,7 +241,7 @@ RegisterAPI::handlePending()
         // names after a long delay.
         _lock.Lock();
         _pending = _names;
-	LOG(debug, "done, reschedule in 30s");
+        LOG(debug, "done, reschedule in 30s");
         _busy = false;
         Schedule(30.0);
         _lock.Unlock();
@@ -248,7 +253,7 @@ RegisterAPI::PerformTask()
 {
     handleReqDone();
     if (_req != 0) {
-	LOG(debug, "req in progress");
+        LOG(debug, "req in progress");
         return; // current request still in progress, don't start anything new
     }
     handleReconnect();
@@ -312,5 +317,4 @@ RegisterAPI::RPCHooks::rpc_notifyUnregistered(FRT_RPCRequest *req)
     LOG(warning, "unregistered name %s", args[0]._string._str);
 }
 
-} // namespace api
-} // namespace slobrok
+}

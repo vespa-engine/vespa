@@ -17,15 +17,21 @@
 #pragma once
 
 #include "process.h"
+#include <vespa/storage/storageserver/servicelayernodecontext.h>
+#include <vespa/storage/common/visitorfactory.h>
 #include <vespa/config/config.h>
 #include <vespa/config/helper/configfetcher.h>
 #include <vespa/config-persistence.h>
 
 namespace storage {
 
+namespace spi { class PersistenceProvider; }
+
+class ServiceLayerNode;
+
 class ServiceLayerProcess : public Process {
     VisitorFactory::Map _externalVisitors;
-    ServiceLayerNode::UP _node;
+    std::unique_ptr<ServiceLayerNode> _node;
 
 protected:
     ServiceLayerNodeContext _context;
@@ -40,9 +46,9 @@ public:
     virtual spi::PersistenceProvider& getProvider() = 0;
 
     void createNode() override;
-    StorageNode& getNode() override { return *_node; }
-    StorageNodeContext& getContext() override { return _context; }
-    std::string getComponentName() const override { return "servicelayer"; }
+    StorageNode& getNode() override;
+    StorageNodeContext& getContext() override;
+    std::string getComponentName() const override;
 };
 
 } // storage
