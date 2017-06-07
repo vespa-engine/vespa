@@ -124,13 +124,13 @@ Test::testBuilder()
             endField();
         b.startIndexField("iu").
             startSubField("all").
-            addUrlTokenizedString("http://www.yahoo.com:81/fluke?ab=2#4").
+            addUrlTokenizedString("http://www.example.com:81/fluke?ab=2#4").
             endSubField().
             startSubField("scheme").
             addUrlTokenizedString("http").
             endSubField().
             startSubField("host").
-            addUrlTokenizedString("www.yahoo.com").
+            addUrlTokenizedString("www.example.com").
             endSubField().
             startSubField("port").
             addUrlTokenizedString("81").
@@ -148,13 +148,13 @@ Test::testBuilder()
         b.startIndexField("iau").
             startElement(1).
             startSubField("all").
-            addUrlTokenizedString("http://www.yahoo.com:82/fluke?ab=2#8").
+            addUrlTokenizedString("http://www.example.com:82/fluke?ab=2#8").
             endSubField().
             startSubField("scheme").
             addUrlTokenizedString("http").
             endSubField().
             startSubField("host").
-            addUrlTokenizedString("www.yahoo.com").
+            addUrlTokenizedString("www.example.com").
             endSubField().
             startSubField("port").
             addUrlTokenizedString("82").
@@ -196,13 +196,13 @@ Test::testBuilder()
         b.startIndexField("iwu").
             startElement(4).
             startSubField("all").
-            addUrlTokenizedString("http://www.yahoo.com:83/fluke?ab=2#12").
+            addUrlTokenizedString("http://www.example.com:83/fluke?ab=2#12").
             endSubField().
             startSubField("scheme").
             addUrlTokenizedString("http").
             endSubField().
             startSubField("host").
-            addUrlTokenizedString("www.yahoo.com").
+            addUrlTokenizedString("www.example.com").
             endSubField().
             startSubField("port").
             addUrlTokenizedString("83").
@@ -309,8 +309,8 @@ Test::testBuilder()
         EXPECT_EQUAL("<item weight=\"1\">foo</item>", *itr++);
         EXPECT_EQUAL("</ic>", *itr++);
         EXPECT_EQUAL("<iu>", *itr++);
-        EXPECT_EQUAL("<all>http://www.yahoo.com:81/fluke?ab=2#4</all>", *itr++);
-        EXPECT_EQUAL("<host>www.yahoo.com</host>", *itr++);
+        EXPECT_EQUAL("<all>http://www.example.com:81/fluke?ab=2#4</all>", *itr++);
+        EXPECT_EQUAL("<host>www.example.com</host>", *itr++);
         EXPECT_EQUAL("<scheme>http</scheme>", *itr++);
         EXPECT_EQUAL("<path>/fluke</path>", *itr++);
         EXPECT_EQUAL("<port>81</port>", *itr++);
@@ -319,8 +319,8 @@ Test::testBuilder()
         EXPECT_EQUAL("</iu>", *itr++);
         EXPECT_EQUAL("<iau>", *itr++);
         EXPECT_EQUAL("<item>", *itr++);
-        EXPECT_EQUAL("<all>http://www.yahoo.com:82/fluke?ab=2#8</all>", *itr++);
-        EXPECT_EQUAL("<host>www.yahoo.com</host>", *itr++);
+        EXPECT_EQUAL("<all>http://www.example.com:82/fluke?ab=2#8</all>", *itr++);
+        EXPECT_EQUAL("<host>www.example.com</host>", *itr++);
         EXPECT_EQUAL("<scheme>http</scheme>", *itr++);
         EXPECT_EQUAL("<path>/fluke</path>", *itr++);
         EXPECT_EQUAL("<port>82</port>", *itr++);
@@ -339,8 +339,8 @@ Test::testBuilder()
         EXPECT_EQUAL("</iau>", *itr++);
         EXPECT_EQUAL("<iwu>", *itr++);
         EXPECT_EQUAL("<item weight=\"4\">", *itr++);
-        EXPECT_EQUAL("<all>http://www.yahoo.com:83/fluke?ab=2#12</all>", *itr++);
-        EXPECT_EQUAL("<host>www.yahoo.com</host>", *itr++);
+        EXPECT_EQUAL("<all>http://www.example.com:83/fluke?ab=2#12</all>", *itr++);
+        EXPECT_EQUAL("<host>www.example.com</host>", *itr++);
         EXPECT_EQUAL("<scheme>http</scheme>", *itr++);
         EXPECT_EQUAL("<path>/fluke</path>", *itr++);
         EXPECT_EQUAL("<port>83</port>", *itr++);
