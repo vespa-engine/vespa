@@ -1,8 +1,8 @@
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_add_executable(searchlib_loadattribute_app
+vespa_add_executable(searchlib_vespa-attribute-inspect_app
     SOURCES
-    loadattribute.cpp
-    OUTPUT_NAME loadattribute
+    vespa-attribute-inspect.cpp
+    OUTPUT_NAME vespa-attribute-inspect
     INSTALL bin
     DEPENDS
     searchlib

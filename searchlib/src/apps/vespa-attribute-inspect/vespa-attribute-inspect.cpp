@@ -98,7 +98,7 @@ LoadAttribute::printContent(const AttributePtr & ptr, std::ostream & os)
 void
 LoadAttribute::usage()
 {
-    std::cout << "usage: loadattribute [-p (print content to <attribute>.out)]" << std::endl;
+    std::cout << "usage: vespa-attribute-inspect [-p (print content to <attribute>.out)]" << std::endl;
     std::cout << "                     [-a (apply a single update)]" << std::endl;
     std::cout << "                     [-s (save attribute to <attribute>.save.dat)]" << std::endl;
     std::cout << "                     <attribute>" << std::endl;
