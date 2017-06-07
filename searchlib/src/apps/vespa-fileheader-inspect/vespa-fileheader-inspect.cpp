@@ -7,7 +7,7 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/log/log.h>
-LOG_SETUP("fileheaderinspect");
+LOG_SETUP("vespa-fileheader-inspect");
 
 using namespace vespalib;
 

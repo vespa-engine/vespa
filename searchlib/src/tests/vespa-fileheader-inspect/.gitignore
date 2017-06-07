@@ -3,4 +3,4 @@ Makefile
 fileheader.dat
 fileheaderinspect_test
 out
-searchlib_fileheaderinspect_test_app
+searchlib_vespa-fileheader-inspect_test_app
