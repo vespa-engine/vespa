@@ -67,12 +67,12 @@ public class SecretAgentScheduleMakerTest {
     @Test
     public void generateSecretAgentScheduleWithDifferentUserTest() {
         SecretAgentScheduleMaker scheduleMaker = new SecretAgentScheduleMaker("system-checks", 60,
-                Paths.get("/some/test")).withRunAsUser("yahoo");
+                Paths.get("/some/test")).withRunAsUser("barfoo");
 
         assertEquals(
                 "- id: system-checks\n" +
                 "  interval: 60\n" +
-                "  user: yahoo\n" +
+                "  user: barfoo\n" +
                 "  check: /some/test\n", scheduleMaker.toString());
     }
 }

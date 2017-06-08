@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.yahoo.net.HostName;
-import com.yahoo.vespa.defaults.Defaults;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
@@ -61,7 +61,7 @@ public class LocalZoneUtils {
             else docker.deleteContainer(CONFIG_SERVER_CONTAINER_NAME);
         }
 
-        Path pathToConfigServerApp = Paths.get(Defaults.getDefaults().underVespaHome("conf/configserver-app"));
+        Path pathToConfigServerApp = Paths.get(getDefaults().underVespaHome("conf/configserver-app"));
         docker.createContainerCommand(dockerImage, CONFIG_SERVER_CONTAINER_NAME, CONFIG_SERVER_HOSTNAME)
                 .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME)
                 .withIpAddress(environment.getInetAddressForHost(CONFIG_SERVER_HOSTNAME))
@@ -75,7 +75,7 @@ public class LocalZoneUtils {
                 .create();
 
         docker.copyArchiveToContainer(pathToProjectRoot.resolve("node-admin/configserver-app").toString(),
-                CONFIG_SERVER_CONTAINER_NAME, Defaults.getDefaults().underVespaHome("conf"));
+                CONFIG_SERVER_CONTAINER_NAME, getDefaults().underVespaHome("conf"));
 
         docker.startContainer(CONFIG_SERVER_CONTAINER_NAME);
     }
@@ -141,7 +141,7 @@ public class LocalZoneUtils {
 
         createCmd.create();
         docker.startContainer(NODE_ADMIN_CONTAINER_NAME);
-        docker.executeInContainerAsRoot(NODE_ADMIN_CONTAINER_NAME, "chown", "yahoo", "/host/var/run/docker.sock");
+        docker.executeInContainerAsRoot(NODE_ADMIN_CONTAINER_NAME, "chown", getDefaults().vespaUser(), "/host/var/run/docker.sock");
     }
 
     public static Optional<ContainerNodeSpec> getContainerNodeSpec(String hostName) {
@@ -223,7 +223,7 @@ public class LocalZoneUtils {
             }
         }
         System.out.println("prepare " + applicationName);
-        final String deployPath = Defaults.getDefaults().underVespaHome("bin/deploy");
+        final String deployPath = getDefaults().underVespaHome("bin/deploy");
         ProcessResult copyProcess = docker.executeInContainer(CONFIG_SERVER_CONTAINER_NAME, deployPath, "-e",
                 tenantName, "-a", applicationName, "prepare", pathToAppOnConfigServer.toString());
         if (! copyProcess.isSuccess()) {
