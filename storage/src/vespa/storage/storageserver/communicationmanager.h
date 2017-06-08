@@ -146,19 +146,14 @@ private:
 
     void process(const std::shared_ptr<api::StorageMessage>& msg);
 
-    using CommunicationManagerConfig
-            = vespa::config::content::core::StorCommunicationmanagerConfig;
+    using CommunicationManagerConfig= vespa::config::content::core::StorCommunicationmanagerConfig;
 
     void configureMessageBusLimits(const CommunicationManagerConfig& cfg);
     void configure(std::unique_ptr<CommunicationManagerConfig> config) override;
     void receiveStorageReply(const std::shared_ptr<api::StorageReply>&);
 
-    void serializeNodeState(
-            const api::GetNodeStateReply& gns,
-            std::ostream& os,
-            bool includeDescription,
-            bool includeDiskDescription,
-            bool useOldFormat) const;
+    void serializeNodeState(const api::GetNodeStateReply& gns, std::ostream& os, bool includeDescription,
+                            bool includeDiskDescription, bool useOldFormat) const;
 
     static const uint64_t FORWARDED_MESSAGE = 0;
 
