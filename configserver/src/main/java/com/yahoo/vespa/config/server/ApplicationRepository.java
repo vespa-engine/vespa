@@ -44,12 +44,11 @@ import java.io.File;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
@@ -334,10 +333,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return session.getSessionId();
     }
 
-    void redeployAllApplications(Deployer deployer) {
+    void redeployAllApplications(Deployer deployer) throws InterruptedException {
         ExecutorService deploymentExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders());
         tenants.getAllTenants().forEach(tenant -> listApplicationIds(tenant)
                 .forEach(applicationId -> redeployApplication(applicationId, deployer, deploymentExecutor)));
+        deploymentExecutor.shutdown();
+        deploymentExecutor.awaitTermination(365, TimeUnit.DAYS); // Timeout should never happen
     }
 
     private void redeployApplication(ApplicationId applicationId, Deployer deployer, ExecutorService deploymentExecutor) {
