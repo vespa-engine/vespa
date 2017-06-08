@@ -1,6 +1,8 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Deployer;
+import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
@@ -16,6 +18,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -30,11 +33,12 @@ public class NodeRetirer extends Maintainer {
     private static final long MAX_SIMULTANEOUS_RETIRES_PER_APPLICATION = 1;
     private static final Logger log = Logger.getLogger(NodeRetirer.class.getName());
 
+    private final Deployer deployer;
     private final FlavorSpareChecker flavorSpareChecker;
     private final RetirementPolicy retirementPolicy;
 
     public NodeRetirer(NodeRepository nodeRepository, Zone zone, FlavorSpareChecker flavorSpareChecker, Duration interval,
-                       JobControl jobControl, RetirementPolicy retirementPolicy, Zone... applies) {
+                       Deployer deployer, JobControl jobControl, RetirementPolicy retirementPolicy, Zone... applies) {
         super(nodeRepository, interval, jobControl);
         if (! Arrays.asList(applies).contains(zone)) {
             String targetZones = Arrays.stream(applies).map(Zone::toString).collect(Collectors.joining(", "));
@@ -42,6 +46,7 @@ public class NodeRetirer extends Maintainer {
             deconstruct();
         }
 
+        this.deployer = deployer;
         this.retirementPolicy = retirementPolicy;
         this.flavorSpareChecker = flavorSpareChecker;
     }
@@ -60,8 +65,8 @@ public class NodeRetirer extends Maintainer {
     boolean retireUnallocated() {
         try (Mutex lock = nodeRepository().lockUnallocated()) {
             List<Node> allNodes = nodeRepository().getNodes(NodeType.tenant);
-            Map<Flavor, Map<Node.State, Long>> numNodesByFlavorByState = getNumberOfNodesByFlavorByNodeState(allNodes);
-            flavorSpareChecker.updateReadyAndActiveCountsByFlavor(numNodesByFlavorByState);
+            Map<Flavor, Map<Node.State, Long>> numSpareNodesByFlavorByState = getNumberOfNodesByFlavorByNodeState(allNodes);
+            flavorSpareChecker.updateReadyAndActiveCountsByFlavor(numSpareNodesByFlavorByState);
 
             long numFlavorsWithUnsuccessfullyRetiredNodes = allNodes.stream()
                     .filter(node -> node.state() == Node.State.ready)
@@ -102,15 +107,18 @@ public class NodeRetirer extends Maintainer {
         flavorSpareChecker.updateReadyAndActiveCountsByFlavor(numSpareNodesByFlavorByState);
 
         for (ApplicationId applicationId : activeApplications) {
+            Optional<Deployment> deployment = deployer.deployFromLocalActive(applicationId, Duration.ofMinutes(30));
+            if ( ! deployment.isPresent()) continue; // this will be done at another config server
+
             try (Mutex lock = nodeRepository().lock(applicationId)) {
                 // Get nodes for current application under lock
                 List<Node> applicationNodes = nodeRepository().getNodes(applicationId);
                 Set<Node> retireableNodes = getRetireableNodesForApplication(applicationNodes);
                 long numNodesAllowedToRetire = getNumberNodesAllowToRetireForApplication(applicationNodes, MAX_SIMULTANEOUS_RETIRES_PER_APPLICATION);
+                long numNodesWantedToRetire = 0;
 
-                for (Iterator<Node> iterator = retireableNodes.iterator(); iterator.hasNext() && numNodesAllowedToRetire > 0; ) {
+                for (Iterator<Node> iterator = retireableNodes.iterator(); iterator.hasNext() && numNodesAllowedToRetire > numNodesWantedToRetire; ) {
                     Node retireableNode = iterator.next();
-                    System.out.println(retireableNode);
 
                     if (flavorSpareChecker.canRetireAllocatedNodeWithFlavor(retireableNode.flavor())) {
                         log.info("Setting wantToRetire for host " + retireableNode.hostname() +
@@ -121,8 +129,11 @@ public class NodeRetirer extends Maintainer {
                                 .withWantToRetire(true)
                                 .withWantToDeprovision(true));
                         nodeRepository().write(updatedNode);
+                        numNodesWantedToRetire++;
                     }
                 }
+
+                if (numNodesWantedToRetire > 0) deployment.get().activate();
             }
         }
     }

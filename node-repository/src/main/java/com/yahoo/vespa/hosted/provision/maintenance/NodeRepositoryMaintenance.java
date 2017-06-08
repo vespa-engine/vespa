@@ -78,7 +78,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
 
         FlavorSpareChecker flavorSpareChecker = new FlavorSpareChecker(
                 NodeRetirer.SPARE_NODES_POLICY, FlavorSpareCount.constructFlavorSpareCountGraph(zone.nodeFlavors().get().getFlavors()));
-        nodeRetirer = new NodeRetirer(nodeRepository, zone, flavorSpareChecker, durationFromEnv("retire_interval").orElse(defaults.nodeRetirerInterval), jobControl,
+        nodeRetirer = new NodeRetirer(nodeRepository, zone, flavorSpareChecker, durationFromEnv("retire_interval").orElse(defaults.nodeRetirerInterval), deployer, jobControl,
                 new RetireIPv4OnlyNodes(),
                 new Zone(SystemName.cd, Environment.dev, RegionName.from("cd-us-central-1")),
                 new Zone(SystemName.cd, Environment.prod, RegionName.from("cd-us-central-1")),

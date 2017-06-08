@@ -64,7 +64,7 @@ public class NodeRetirerTest {
                 .forEach(node -> tester.nodeRepository.write(node.withIpAddresses(Collections.singleton("::2"))));
 
         tester.assertCountsForStateByFlavor(Node.State.active, 9, -1, 2, 11, -1);
-        System.out.println("start");
+
         tester.setNumberAllowedAllocatedRetirementsPerFlavor(3, 2, 3, 2);
         retirer.retireAllocated();
         tester.assertParkedCountsByApplication(-1, -1, -1, -1, -1); // Nodes should be in retired, but not yet parked
