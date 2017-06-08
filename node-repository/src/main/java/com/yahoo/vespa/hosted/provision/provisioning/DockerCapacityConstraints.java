@@ -47,17 +47,23 @@ public class DockerCapacityConstraints {
      * largest hosts (in terms of free capacity)
      */
     public static List<Node> addSpareNodes(List<Node> nodes, int spares) {
+        List<Flavor> spareFlavors = getSpareHosts(nodes, spares).stream()
+                .map(dockerHost -> freeCapacityAsFlavor(dockerHost, nodes))
+                .collect(Collectors.toList());
+
+        return addNodes(nodes, spareFlavors, "spare");
+    }
+
+    public static List<Node> getSpareHosts(List<Node> nodes, int spares) {
         DockerHostCapacity capacity = new DockerHostCapacity(nodes);
-        List<Flavor> spareFlavors = nodes.stream()
+        List<Node> spareHosts = nodes.stream()
                 .filter(node -> node.type().equals(NodeType.host))
                 .filter(dockerHost -> dockerHost.state().equals(Node.State.active))
                 .filter(dockerHost -> capacity.freeIPs(dockerHost) > 0)
                 .sorted(capacity::compare)
                 .limit(spares)
-                .map(dockerHost -> freeCapacityAsFlavor(dockerHost, nodes))
                 .collect(Collectors.toList());
-
-        return addNodes(nodes, spareFlavors, "spare");
+        return spareHosts;
     }
 
     public static List<Node> addHeadroomAndSpareNodes(List<Node> nodes, NodeFlavors flavors, int nofSpares) {
