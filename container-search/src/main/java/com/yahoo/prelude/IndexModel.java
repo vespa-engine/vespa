@@ -15,9 +15,10 @@ import com.yahoo.container.QrSearchersConfig;
 /**
  * Parameter class used for construction IndexFacts.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public final class IndexModel {
+
     private static final Logger log = Logger.getLogger(IndexModel.class.getName());
 
     // Copied from MasterClustersInfoUpdater. It's a temporary workaround for IndexFacts.
@@ -72,6 +73,7 @@ public final class IndexModel {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void setDefinitions(IndexInfoConfig c) {
         searchDefinitions = new HashMap<>();
         unionSearchDefinition = new SearchDefinition(IndexFacts.unionName);

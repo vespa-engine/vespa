@@ -13,7 +13,7 @@ public class Matching implements Cloneable, Serializable {
 
     public static final Type defaultType = Type.TEXT;
 
-    public static enum Type {
+    public enum Type {
         TEXT("text"),
         WORD("word"),
         EXACT("exact"),

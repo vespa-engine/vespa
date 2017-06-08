@@ -446,7 +446,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
     }
 
     private boolean isExactMatch(Matching m) {
-        if (m==null) return false;
+        if (m == null) return false;
         if (m.getType().equals(Matching.Type.EXACT)) return true;
         if (m.getType().equals(Matching.Type.WORD)) return true;
         return false;

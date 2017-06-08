@@ -67,22 +67,17 @@ public abstract class AbstractParser implements CustomParser {
          * @param indexName the index name which should decide the submodes, or null to do nothing.
          * @param session the session used to look up information about this index
          */
-        @SuppressWarnings({"deprecation"})
         // To avoid this we need to pass an IndexFacts.session down instead - easily done but not without breaking API's
-        public void setFromIndex(final String indexName, IndexFacts.Session session) {
-            if (indexName == null) {
-                return;
-            }
+        public void setFromIndex(String indexName, IndexFacts.Session session) {
+            if (indexName == null) return;
 
             reset();
+            Index current = session.getIndex(indexName);
 
-            final Index current = session.getIndex(indexName);
-
-            if (current.isUriIndex()) {
+            if (current.isUriIndex())
                 url = true;
-            } else if (current.isHostIndex()) {
+            else if (current.isHostIndex())
                 site = true;
-            }
         }
 
         /** Sets default values for all submodes */

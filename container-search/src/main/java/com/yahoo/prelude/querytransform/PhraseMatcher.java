@@ -12,13 +12,13 @@ import java.util.NoSuchElementException;
 import static com.yahoo.language.LinguisticsCase.toLowerCase;
 
 /**
- * <p>Detects query phrases using an automaton. This class is thread safe.</p>
+ * Detects query phrases using an automaton. This class is thread safe.
  *
- * @author  bratseth
+ * @author bratseth
  */
 public class PhraseMatcher {
 
-    private FSA phraseFSA;
+    private FSA phraseFSA = null;
 
     private boolean matchPhraseItems=false;
 
@@ -31,7 +31,7 @@ public class PhraseMatcher {
     private boolean matchAll =false;
 
     /** For null subclass only */
-    PhraseMatcher() {
+    private PhraseMatcher() {
     }
 
     /**
@@ -69,6 +69,8 @@ public class PhraseMatcher {
         phraseFSA=phraseAutomatonFSA;
     }
 
+    public boolean isEmpty() { return phraseFSA == null; }
+    
     /**
      * Set whether to match words contained in phrase items as well.
      * Default is false - don't match words contained in phrase items
@@ -138,10 +140,10 @@ public class PhraseMatcher {
     }
 
     /** Find matches within a composite */
-    private void recursivelyMatchPhrases(Item item,MatchedPhrases phrases) {
-        if (item==null) return;
+    private void recursivelyMatchPhrases(Item item, MatchedPhrases phrases) {
+        if (item == null) return;
         if ( ! (item instanceof CompositeItem) ) return;
-        if ( !matchPhraseItems && item instanceof PhraseItem ) return;
+        if ( ! matchPhraseItems && item instanceof PhraseItem ) return;
 
         CompositeItem owner=(CompositeItem)item;
         int i=0;
@@ -547,12 +549,16 @@ public class PhraseMatcher {
 
     /** Returns a phrase matcher which (quickly) never matches anything */
     public static PhraseMatcher getNullMatcher() {
+
         return new PhraseMatcher() {
 
-                public List<Phrase> matchPhrases(Item item) {
+            @Override
+            public List<Phrase> matchPhrases(Item item) {
                     return null;
                 }
+
         };
+
     }
 
 }
