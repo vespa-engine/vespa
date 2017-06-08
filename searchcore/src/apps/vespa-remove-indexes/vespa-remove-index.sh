@@ -60,7 +60,7 @@ findroot
 
 # END environment bootstrap section
 
-ROOT=$VESPA_HOME
+ROOT=${VESPA_HOME%/}
 cd $ROOT || { echo "Cannot cd to $ROOT" 1>&2; exit 1; }
 
 usage() {

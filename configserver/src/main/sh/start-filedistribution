@@ -60,7 +60,7 @@ findroot
 
 # END environment bootstrap section
 
-ROOT=$VESPA_HOME
+ROOT=${VESPA_HOME%/}
 
 VESPA_CONFIG_ID="dir:${ROOT}/conf/filedistributor"
 export VESPA_CONFIG_ID
