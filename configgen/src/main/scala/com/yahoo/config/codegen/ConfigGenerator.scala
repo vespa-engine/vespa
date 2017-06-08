@@ -180,8 +180,14 @@ object ConfigGenerator {
       }
     }
 
-    // TODO: The default ctor can be removed if the config library uses builders to set values from payload, but ...
-    //       a default ctor is also needed for all innerArrays, because of InnerNodeVector.createNew()
+    // TODO: The default ctor is possibly still needed for innerArrays, because of InnerNodeVector.createNew()
+    def defaultConstructorIfArray = {
+      inner match {
+        case array: InnerCNode if inner.isArray => defaultConstructor
+        case scalar: InnerCNode => ""
+      }
+    }
+
     def defaultConstructor = {
       // TODO @link gives javadoc warnings, although the syntax seems to be valid
       //def link = "{@link " + {nodeClass(inner)} + "#" + {nodeClass(inner)} + "(Builder)}"
@@ -202,7 +208,7 @@ object ConfigGenerator {
 
     // TODO: merge these two constructors into one when the config library uses builders to set values from payload.
     <code>
-      |{defaultConstructor}
+      |{defaultConstructorIfArray}
       |
       |public {nodeClass(inner)}(Builder builder) {{
       |  this(builder, true);
