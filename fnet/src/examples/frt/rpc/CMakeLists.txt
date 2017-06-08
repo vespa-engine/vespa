@@ -20,15 +20,14 @@ vespa_add_executable(fnet_echo_client_app
 vespa_add_executable(fnet_rpc_info_app
     SOURCES
     rpc_info.cpp
-    OUTPUT_NAME vespa-rpc-info
-    INSTALL bin
+    OUTPUT_NAME rpc_info
     DEPENDS
     fnet
 )
 vespa_add_executable(fnet_rpc_proxy_app
     SOURCES
     rpc_proxy.cpp
-    OUTPUT_NAME vespa-rpc-proxy
+    OUTPUT_NAME rpc_proxy
     INSTALL bin
     DEPENDS
     fnet
@@ -48,7 +47,7 @@ vespa_add_executable(fnet_rpc_callback_client_app
 vespa_add_executable(fnet_rpc_invoke_app
     SOURCES
     rpc_invoke.cpp
-    OUTPUT_NAME vespa-rpc-invoke
+    OUTPUT_NAME rpc_invoke
     INSTALL bin
     DEPENDS
     fnet
