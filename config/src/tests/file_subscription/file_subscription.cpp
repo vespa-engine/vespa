@@ -3,6 +3,7 @@
 #include <vespa/config/config.h>
 #include <vespa/config/common/configholder.h>
 #include <vespa/config/file/filesource.h>
+#include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/sync.h>
 #include <fstream>
 #include <config-my.h>

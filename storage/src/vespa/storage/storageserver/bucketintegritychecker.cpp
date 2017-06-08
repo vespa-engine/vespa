@@ -1,13 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucketintegritychecker.h"
-
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/storageutil/log.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/storage/bucketdb/lockablemap.hpp>
+#include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/bufferedlogger.h>

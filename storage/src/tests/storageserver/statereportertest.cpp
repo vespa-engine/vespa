@@ -9,6 +9,7 @@
 #include <tests/common/teststorageapp.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/dummystoragelink.h>
+#include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/data/slime/slime.h>
 
 #include <vespa/log/log.h>

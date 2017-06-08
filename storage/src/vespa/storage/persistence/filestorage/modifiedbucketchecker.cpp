@@ -2,8 +2,9 @@
 
 #include "modifiedbucketchecker.h"
 #include "filestormanager.h"
-#include <vespa/log/log.h>
+#include <vespa/config/common/exceptions.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".persistence.filestor.modifiedbucketchecker");
 
 namespace storage {
@@ -81,9 +82,7 @@ ModifiedBucketChecker::onClose()
 void
 ModifiedBucketChecker::run(framework::ThreadHandle& thread)
 {
-    LOG(debug,
-        "Started modified bucket checker thread with pid %d",
-        getpid());
+    LOG(debug, "Started modified bucket checker thread with pid %d", getpid());
 
     while (!thread.interrupted()) {
         thread.registerTick();
@@ -202,4 +201,3 @@ ModifiedBucketChecker::tick()
 }
 
 } // ns storage
-

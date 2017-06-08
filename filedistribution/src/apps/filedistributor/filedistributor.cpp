@@ -12,6 +12,7 @@
 #include <vespa/filedistribution/rpc/filedistributorrpc.h>
 #include <vespa/filedistribution/common/componentsdeleter.h>
 #include <vespa/fileacquirer/config-filedistributorrpc.h>
+#include <vespa/config/common/exceptions.h>
 #include <vespa/config-zookeepers.h>
 #include <vespa/fastos/app.h>
 #include <boost/program_options.hpp>

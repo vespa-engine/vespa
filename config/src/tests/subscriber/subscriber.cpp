@@ -4,6 +4,7 @@
 #include <vespa/config/common/misc.h>
 #include <vespa/config/common/configholder.h>
 #include <vespa/config/subscription/configsubscription.h>
+#include <vespa/config/common/exceptions.h>
 #include <fstream>
 #include "config-foo.h"
 #include "config-bar.h"

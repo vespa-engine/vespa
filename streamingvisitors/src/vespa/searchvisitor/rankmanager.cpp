@@ -4,6 +4,7 @@
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/functiontablefactory.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/exception.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchvisitor.rankmanager");

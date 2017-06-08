@@ -9,6 +9,7 @@
 #include <vespa/config/retriever/simpleconfigurer.h>
 #include <vespa/config/common/configholder.h>
 #include <vespa/config/subscription/configsubscription.h>
+#include <vespa/config/common/exceptions.h>
 #include "config-bootstrap.h"
 #include "config-foo.h"
 #include "config-bar.h"

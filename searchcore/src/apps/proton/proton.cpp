@@ -9,6 +9,7 @@
 #include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/config/common/exceptions.h>
 #include <vespa/fastos/app.h>
 
 #include <string>

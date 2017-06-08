@@ -11,7 +11,6 @@ LOG_SETUP(".index.schema");
 
 using namespace config;
 using namespace search::index;
-using config::InvalidConfigException;
 
 namespace {
 

@@ -2,10 +2,12 @@
 
 #include "proton_config_fetcher.h"
 #include "bootstrapconfig.h"
-#include <vespa/vespalib/util/exceptions.h>
-#include <thread>
 #include "proton_config_snapshot.h"
 #include "i_proton_configurer.h"
+#include <vespa/config/common/exceptions.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <thread>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.proton_config_fetcher");
 

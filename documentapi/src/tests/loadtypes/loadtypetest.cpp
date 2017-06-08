@@ -3,6 +3,7 @@
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/config/config.h>
+#include <vespa/config/common/exceptions.h>
 
 namespace documentapi {
 

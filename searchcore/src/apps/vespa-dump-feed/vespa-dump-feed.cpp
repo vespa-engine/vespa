@@ -18,6 +18,7 @@
 #include <vespa/vespalib/util/slaveproc.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/config/common/exceptions.h>
 #include <vespa/config/helper/configgetter.hpp>
 
 #include <iostream>

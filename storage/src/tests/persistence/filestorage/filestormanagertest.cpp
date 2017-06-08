@@ -1,4 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <tests/common/testhelper.h>
+#include <tests/common/storagelinktest.h>
+#include <tests/common/teststorageapp.h>
+#include <tests/persistence/filestorage/forwardingmessagesender.h>
+#include <vespa/storage/storageserver/statemanager.h>
+#include <vespa/storage/bucketdb/bucketmanager.h>
+#include <vespa/storage/persistence/persistencethread.h>
+#include <vespa/storage/persistence/filestorage/filestormanager.h>
+#include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -17,17 +27,9 @@
 #include <vespa/storageapi/message/multioperation.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
-#include <vespa/storage/bucketdb/bucketmanager.h>
-#include <vespa/storage/persistence/persistencethread.h>
-#include <vespa/storage/persistence/filestorage/filestormanager.h>
-#include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
-#include <tests/common/testhelper.h>
-#include <tests/common/storagelinktest.h>
-#include <tests/common/teststorageapp.h>
-#include <tests/persistence/filestorage/forwardingmessagesender.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/storageapi/message/batch.h>
-#include <vespa/storage/storageserver/statemanager.h>
+#include <vespa/config/common/exceptions.h>
 #include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>

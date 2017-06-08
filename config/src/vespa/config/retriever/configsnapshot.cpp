@@ -1,10 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "configsnapshot.h"
-#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/config/subscription/configsubscription.h>
+#include <vespa/config/print/configdatabuffer.h>
+#include <vespa/config/common/exceptions.h>
 #include <vespa/config/common/misc.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/data/memory.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 using vespalib::Slime;
 using vespalib::slime::Cursor;
@@ -16,23 +18,19 @@ namespace config {
 const int64_t ConfigSnapshot::SNAPSHOT_FORMAT_VERSION = 1;
 
 ConfigSnapshot::ConfigSnapshot()
-    : _valueMap(),
-      _generation(0)
-{}
+        : _valueMap(),
+          _generation(0) {}
 
-ConfigSnapshot::~ConfigSnapshot()
-{
+ConfigSnapshot::~ConfigSnapshot() {
 }
 
-ConfigSnapshot::ConfigSnapshot(const ConfigSnapshot & rhs) :
-    _valueMap(rhs._valueMap),
-    _generation(rhs._generation)
-{
+ConfigSnapshot::ConfigSnapshot(const ConfigSnapshot &rhs) :
+        _valueMap(rhs._valueMap),
+        _generation(rhs._generation) {
 }
 
 ConfigSnapshot &
-ConfigSnapshot::operator = (const ConfigSnapshot & rhs)
-{
+ConfigSnapshot::operator=(const ConfigSnapshot &rhs) {
     if (&rhs != this) {
         ConfigSnapshot tmp(rhs);
         tmp.swap(*this);
@@ -41,25 +39,31 @@ ConfigSnapshot::operator = (const ConfigSnapshot & rhs)
 }
 
 void
-ConfigSnapshot::swap(ConfigSnapshot & rhs)
-{
+ConfigSnapshot::swap(ConfigSnapshot &rhs) {
     _valueMap.swap(rhs._valueMap);
     std::swap(_generation, rhs._generation);
 }
 
-ConfigSnapshot::ConfigSnapshot(const SubscriptionList & subscriptionList, int64_t generation)
-    : _valueMap(),
-      _generation(generation)
-{
+ConfigSnapshot::ConfigSnapshot(const SubscriptionList &subscriptionList, int64_t generation)
+        : _valueMap(),
+          _generation(generation) {
     for (SubscriptionList::const_iterator it(subscriptionList.begin()), mt(subscriptionList.end()); it != mt; it++) {
         _valueMap[(*it)->getKey()] = Value((*it)->getLastGenerationChanged(), (*it)->getConfig());
     }
 }
 
-ConfigSnapshot::ConfigSnapshot(const ValueMap & valueMap, int64_t generation)
-    : _valueMap(valueMap),
-      _generation(generation)
-{
+ConfigSnapshot::ConfigSnapshot(const ValueMap &valueMap, int64_t generation)
+        : _valueMap(valueMap),
+          _generation(generation) {
+}
+
+ConfigSnapshot::ValueMap::const_iterator
+ConfigSnapshot::find(const ConfigKey &key) const {
+    ValueMap::const_iterator it(_valueMap.find(key));
+    if (it == _valueMap.end()) {
+        throw IllegalConfigKeyException("Unable to find config for key " + key.toString());
+    }
+    return it;
 }
 
 ConfigSnapshot

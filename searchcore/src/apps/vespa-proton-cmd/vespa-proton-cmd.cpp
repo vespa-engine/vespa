@@ -3,6 +3,7 @@
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/config-slobroks.h>
 #include <vespa/config/common/configsystem.h>
+#include <vespa/config/common/exceptions.h>
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/stringfmt.h>

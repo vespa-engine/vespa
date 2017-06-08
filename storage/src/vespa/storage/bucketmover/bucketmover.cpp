@@ -6,6 +6,7 @@
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/storageutil/log.h>
+#include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <thread>
 
