@@ -64,168 +64,118 @@ bname=`basename $0`
 no_valgrind=true
 use_callgrind=false
 
-case $VESPA_VALGRIND_OPT in
-    *callgrind*) use_callgrind=true;;
-esac
-
-for f in $VESPA_USE_VALGRIND
-do
-    # log_debug_message "Testing '$f'"
-    if [ "$f" = "$bname" ]; then
-        # log_debug_message "I ($bname) shall use valgrind, as set in VESPA_USE_VALGRIND"
-        no_valgrind=false
-        break
-    fi
-done
-
-if [ "$VESPA_USE_VALGRIND" = "all" ]; then
-    # log_debug_message "I shall use valgrind, as VESPA_USE_VALGRIND is 'all'"
-    no_valgrind=false
-fi
-
 export STD_THREAD_PREVENT_TRY_CATCH=true
-
-# special malloc setup; we should make some better mechanism for this
-#
 export GLIBCXX_FORCE_NEW=1
-#
 unset LD_PRELOAD
-p64=/home/y/lib64
-p32=/home/y/lib32
-pre=/home/y/lib
-suf=vespa/malloc/libvespamalloc.so
-#
-# should really check that format is same as binary below
-#
-for f in $VESPA_USE_HUGEPAGES_LIST
-do
-    # log_debug_message "Testing '$f'"
-    if [ "$f" = "$bname" ]; then
-        # log_debug_message "I ($bname) shall use huge pages, as set in VESPA_USE_HUGEPAGES_LIST"
+
+check_bname_in_value () {
+    if [ "$1" = "all" ]; then
+       return 0
+    fi
+    for f in $1; do
+       if [ "$f" = "$bname" ]; then
+           return 0
+       fi
+    done
+    return 1
+}
+
+configure_valgrind () {
+    no_valgrind=true
+    if which valgrind >/dev/null; then
+        if check_bname_in_value $VESPA_USE_VALGRIND; then
+            no_valgrind=false
+            valgrind_log=/home/y/tmp/valgrind.$bname.log.$$
+            case $VESPA_VALGRIND_OPT in
+                *callgrind*) use_callgrind=true;;
+            esac
+        fi
+    fi
+}
+
+configure_huge_pages () {
+    if check_bname_in_value $VESPA_USE_HUGEPAGES_LIST; then
+        log_debug_message "Want huge pages for '$bname' since VESPA_USE_HUGEPAGES_LIST=${VESPA_USE_HUGEPAGES_LIST}"
         export VESPA_USE_HUGEPAGES="yes"
-        break
     fi
-done
+}
 
-if [ "$VESPA_USE_HUGEPAGES_LIST" = "all" ]; then
-    # log_debug_message "I shall use huge pages, as VESPA_USE_HUGEPAGES_LIST is 'all'"
-    export VESPA_USE_HUGEPAGES="yes"
-fi
+configure_use_madvise () {
+	for f in $VESPA_USE_MADVISE_LIST
+	do
+	    # log_debug_message "Testing '$f'"
+	    app=`echo $f | cut -d '=' -f1`
+	    limit=`echo $f | cut -d '=' -f2`
+	    if [ "$app" = "$bname" ]; then
+		log_debug_message "I ($bname) shall use madvise with limit $limit, as set in VESPA_USE_MADVISE_LIST"
+		export VESPA_MALLOC_MADVISE_LIMIT="$limit"
+		break
+	    fi
 
-for f in $VESPA_USE_MADVISE_LIST
-do
-    # log_debug_message "Testing '$f'"
-    app=`echo $f | cut -d '=' -f1`
-    limit=`echo $f | cut -d '=' -f2`
-    if [ "$app" = "$bname" ]; then
-        log_debug_message "I ($bname) shall use madvise with limit $limit, as set in VESPA_USE_MADVISE_LIST"
-        export VESPA_MALLOC_MADVISE_LIMIT="$limit"
-        break
+	    if [ "$app" = "all" ]; then
+		log_debug_message "I shall use madvise with limit $limit, as VESPA_USE_MADVISE_LIST is 'all'"
+		export VESPA_MALLOC_MADVISE_LIMIT="$limit"
+	    fi
+	done
+}
+
+configure_vespa_malloc () {
+    if check_bname_in_value $VESPA_USE_NO_VESPAMALLOC; then
+        # log_debug_message "Not using vespamalloc for '$bname' since VESPA_USE_NO_VESPAMALLOC=${VESPA_USE_NO_VESPAMALLOC}"
+        return
     fi
-
-    if [ "$app" = "all" ]; then
-        log_debug_message "I shall use madvise with limit $limit, as VESPA_USE_MADVISE_LIST is 'all'"
-        export VESPA_MALLOC_MADVISE_LIMIT="$limit"
-    fi
-done
-
-for f in $VESPA_USE_NO_VESPAMALLOC
-do
-    # log_debug_message "Testing '$f'"
-    if [ "$f" = "$bname" ]; then
-        # log_debug_message "I ($bname) shall not use vespamalloc, as set in VESPA_USE_NO_VESPAMALLOC"
-        suf=vespa/malloc/libvespamalloc_notexisting.so
-        break
-    fi
-done
-
-if [ "$VESPA_USE_NO_VESPAMALLOC" = "all" ]; then
-    # log_debug_message "I shall not use, as VESPA_USE_NO_VESPAMALLOC is 'all'"
-    suf=vespa/malloc/libvespamalloc_notexisting.so
-fi
-
-for f in $VESPA_USE_VESPAMALLOC
-do
-    # log_debug_message "Testing '$f'"
-    if [ "$f" = "$bname" ]; then
-        # log_debug_message "I ($bname) shall use libvespamalloc, as set in VESPA_USE_VESPAMALLOC"
-        suf=vespa/malloc/libvespamalloc.so
-        break
-    fi
-done
-
-if [ "$VESPA_USE_VESPAMALLOC" = "all" ]; then
-    # log_debug_message "I shall use libvespamalloc, as VESPA_USE_VESPAMALLOC is 'all'"
     suf=vespa/malloc/libvespamalloc.so
-fi
-
-for f in $VESPA_USE_VESPAMALLOC_D
-do
-    # log_debug_message "Testing '$f'"
-    if [ "$f" = "$bname" ]; then
-        # log_debug_message "I ($bname) shall use libvespamallocd, as set in VESPA_USE_VESPAMALLOC_D"
+    if check_bname_in_value $VESPA_USE_VESPAMALLOC_D; then
         suf=vespa/malloc/libvespamallocd.so
-        break
     fi
-done
-
-if [ "$VESPA_USE_VESPAMALLOC_D" = "all" ]; then
-    # log_debug_message "I shall use libvespamallocd, as VESPA_USE_VESPAMALLOC_D is 'all'"
-    suf=vespa/malloc/libvespamallocd.so
-fi
-
-for f in $VESPA_USE_VESPAMALLOC_DST
-do
-    # log_debug_message "Testing '$f'"
-    if [ "$f" = "$bname" ]; then
-        # log_debug_message "I ($bname) shall use libvespamallocdst16, as set in VESPA_USE_VESPAMALLOC_DST"
+    if check_bname_in_value $VESPA_USE_VESPAMALLOC_DST; then
         suf=vespa/malloc/libvespamallocdst16.so
-        break
     fi
-done
 
-if [ "$VESPA_USE_VESPAMALLOC_DST" = "all" ]; then
-    # log_debug_message "I shall use libvespamallocdst16, as VESPA_USE_VESPAMALLOC_DST is 'all'"
-    suf=vespa/malloc/libvespamallocdst16.so
-fi
-
-if $no_valgrind || $use_callgrind; then
-    for tryfile in $p64/$suf $p32/$suf $pre/$suf ; do
-        if [ -f $tryfile ]; then
-                LD_PRELOAD=$tryfile
-		log_debug_message "Using LD_PRELOAD=$tryfile"
+    if $no_valgrind || $use_callgrind; then
+        # should really check that format is same as binary below
+        for pre in lib64 lib; do
+            tryfile="${VESPA_HOME}${pre}/${suf}"
+            if [ -f "$tryfile" ]; then
+                LD_PRELOAD="$tryfile"
+		log_debug_message "Using LD_PRELOAD='$tryfile'"
                 if [ "$VESPA_USE_HUGEPAGES" ]; then
                     export VESPA_MALLOC_HUGEPAGES="$VESPA_USE_HUGEPAGES"
 		    log_debug_message "enabling hugepages for '$0-bin'."
                 fi
                 break
-        fi
-    done
-fi
+            fi
+        done
+    fi
+}
 
-# log_debug_message "VESPA_USE_VALGRIND='$VESPA_USE_VALGRIND'; bname='$bname'; no_valgrind='$no_valgrind'"
-
-if $no_valgrind || ! which valgrind >/dev/null ; then
-    # log_debug_message $0-bin $@
-    ulimit -c unlimited
+configure_numa_ctl () {
+    numactl=""
     if numactl --interleave all true &> /dev/null; then
         # We are allowed to use numactl
+        numactl="numactl --interleave all"
         if [ "$VESPA_AFFINITY_CPU_SOCKET" ]; then
-            numcpu=`numactl --hardware | grep available | cut -d' ' -f2`
-            node=$(($VESPA_AFFINITY_CPU_SOCKET % $numcpu))
-            log_debug_message "Starting $0 with affinity on cpu $VESPA_AFFINITY_CPU_SOCKET out of $numcpu : " \
-                 numactl --cpunodebind=$node --membind=$node env LD_PRELOAD=$LD_PRELOAD $0-bin "$@"
-            exec numactl --cpunodebind=$node --membind=$node env LD_PRELOAD=$LD_PRELOAD $0-bin "$@"
-        else
-            log_debug_message "Starting $0 with memory interleaving on all nodes : " \
-                 numactl --interleave all env LD_PRELOAD=$LD_PRELOAD $0-bin "$@"
-            exec numactl --interleave all env LD_PRELOAD=$LD_PRELOAD $0-bin "$@"
+            numcpu=`numactl --hardware 2>/dev/null | grep available | cut -d' ' -f2`
+            if [ "$numcpu" ] && [ "$numcpu" -gt 1 ]; then
+                log_debug_message "Starting $0 with affinity $VESPA_AFFINITY_CPU_SOCKET out of $numcpu"
+                node=$(($VESPA_AFFINITY_CPU_SOCKET % $numcpu))
+                numactl="numactl --cpunodebind=$node --membind=$node"
+            fi
         fi
-    else
-        log_debug_message "Starting $0 without numactl (no permission or not available) : " \
-             env LD_PRELOAD=$LD_PRELOAD $0-bin "$@"
-        exec env LD_PRELOAD=$LD_PRELOAD $0-bin "$@"
     fi
+}
+
+configure_valgrind
+configure_huge_pages
+configure_use_madvise
+configure_vespa_malloc
+
+if $no_valgrind ; then
+    configure_numa_ctl
+    ulimit -c unlimited
+    log_debug_message "Starting $0 with : " \
+         $numactl env LD_PRELOAD=$LD_PRELOAD $0-bin "$@"
+    exec $numactl env LD_PRELOAD=$LD_PRELOAD $0-bin "$@"
 else
     if $use_callgrind ; then
         export LD_PRELOAD
@@ -234,7 +184,7 @@ else
     fi
     # ignore signal until shared libraries have loaded, etc:
     trap "" SIGTERM
-    log_debug_message "Starting : " \
-         valgrind $VESPA_VALGRIND_OPT --log-file=/home/y/tmp/valgrind.$bname.log.$$ $0-bin "$@"
-    exec valgrind $VESPA_VALGRIND_OPT --log-file=/home/y/tmp/valgrind.$bname.log.$$ $0-bin "$@"
+    log_debug_message "Starting $0 with : " \
+         valgrind $VESPA_VALGRIND_OPT --log-file="$valgrind_log" $0-bin "$@"
+    exec valgrind $VESPA_VALGRIND_OPT --log-file="$valgrind_log" $0-bin "$@"
 fi
