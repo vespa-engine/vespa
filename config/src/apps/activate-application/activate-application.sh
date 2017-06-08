@@ -60,7 +60,7 @@ findroot
 
 # END environment bootstrap section
 
-ROOT=$VESPA_HOME
+ROOT=${VESPA_HOME%/}
 
 printf "WARNING: activate-application is deprecated, use 'deploy activate' instead\n\n"
 
