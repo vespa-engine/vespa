@@ -9,11 +9,10 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.maintenance.retire.RetirementPolicy;
 import com.yahoo.vespa.hosted.provision.node.Agent;
-import com.yahoo.vespa.hosted.provision.provisioning.FlavorClusters;
+import com.yahoo.vespa.hosted.provision.provisioning.FlavorSpareChecker;
 
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -25,13 +24,16 @@ import java.util.stream.Collectors;
  * @author freva
  */
 public class NodeRetirer extends Maintainer {
+    public static final FlavorSpareChecker.SpareNodesPolicy SPARE_NODES_POLICY = flavorSpareCount ->
+            flavorSpareCount.getSumOfReadyAmongReplacees() > 2;
+
     private static final long MAX_SIMULTANEOUS_RETIRES_PER_APPLICATION = 1;
     private static final Logger log = Logger.getLogger(NodeRetirer.class.getName());
 
-    private final FlavorClusters flavorClusters;
+    private final FlavorSpareChecker flavorSpareChecker;
     private final RetirementPolicy retirementPolicy;
 
-    public NodeRetirer(NodeRepository nodeRepository, Zone zone, FlavorClusters flavorClusters, Duration interval,
+    public NodeRetirer(NodeRepository nodeRepository, Zone zone, FlavorSpareChecker flavorSpareChecker, Duration interval,
                        JobControl jobControl, RetirementPolicy retirementPolicy, Zone... applies) {
         super(nodeRepository, interval, jobControl);
         if (! Arrays.asList(applies).contains(zone)) {
@@ -41,7 +43,7 @@ public class NodeRetirer extends Maintainer {
         }
 
         this.retirementPolicy = retirementPolicy;
-        this.flavorClusters = flavorClusters;
+        this.flavorSpareChecker = flavorSpareChecker;
     }
 
     @Override
@@ -58,7 +60,8 @@ public class NodeRetirer extends Maintainer {
     boolean retireUnallocated() {
         try (Mutex lock = nodeRepository().lockUnallocated()) {
             List<Node> allNodes = nodeRepository().getNodes(NodeType.tenant);
-            Map<Flavor, Long> numSpareNodesByFlavor = getNumberSpareReadyNodesByFlavor(allNodes);
+            Map<Flavor, Map<Node.State, Long>> numNodesByFlavorByState = getNumberOfNodesByFlavorByNodeState(allNodes);
+            flavorSpareChecker.updateReadyAndActiveCountsByFlavor(numNodesByFlavorByState);
 
             long numFlavorsWithUnsuccessfullyRetiredNodes = allNodes.stream()
                     .filter(node -> node.state() == Node.State.ready)
@@ -69,16 +72,23 @@ public class NodeRetirer extends Maintainer {
                     .entrySet().stream()
                     .filter(entry -> {
                         Set<Node> nodesThatShouldBeRetiredForFlavor = entry.getValue();
-                        long numSpareReadyNodesForFlavor = numSpareNodesByFlavor.get(entry.getKey());
-                        boolean parkedAll = limitedPark(nodesThatShouldBeRetiredForFlavor, numSpareReadyNodesForFlavor);
-                        if (!parkedAll) {
+                        for (Iterator<Node> iter = nodesThatShouldBeRetiredForFlavor.iterator(); iter.hasNext(); ) {
+                            Node nodeToRetire = iter.next();
+                            if (! flavorSpareChecker.canRetireUnallocatedNodeWithFlavor(nodeToRetire.flavor())) break;
+
+                            nodeRepository().write(nodeToRetire.with(nodeToRetire.status().withWantToDeprovision(true)));
+                            nodeRepository().park(nodeToRetire.hostname(), Agent.NodeRetirer,
+                                    "Policy: " + retirementPolicy.getClass().getSimpleName());
+                            iter.remove();
+                        }
+
+                        if (! nodesThatShouldBeRetiredForFlavor.isEmpty()) {
                             String commaSeparatedHostnames = nodesThatShouldBeRetiredForFlavor.stream().map(Node::hostname)
                                     .collect(Collectors.joining(", "));
-                            log.info(String.format("Failed to retire %s, wanted to retire %d nodes (%s), but only %d spare " +
-                                            "nodes available for flavor cluster.",
-                                    entry.getKey(), nodesThatShouldBeRetiredForFlavor.size(), commaSeparatedHostnames, numSpareReadyNodesForFlavor));
+                            log.info(String.format("Failed to retire %s, wanted to retire %d nodes (%s), but there are no spare nodes left.",
+                                    entry.getKey(), nodesThatShouldBeRetiredForFlavor.size(), commaSeparatedHostnames));
                         }
-                        return !parkedAll;
+                        return ! nodesThatShouldBeRetiredForFlavor.isEmpty();
                     }).count();
 
             return numFlavorsWithUnsuccessfullyRetiredNodes == 0;
@@ -88,7 +98,8 @@ public class NodeRetirer extends Maintainer {
     void retireAllocated() {
         List<Node> allNodes = nodeRepository().getNodes(NodeType.tenant);
         List<ApplicationId> activeApplications = getActiveApplicationIds(allNodes);
-        Map<Flavor, Long> numSpareNodesByFlavor = getNumberSpareReadyNodesByFlavor(allNodes);
+        Map<Flavor, Map<Node.State, Long>> numSpareNodesByFlavorByState = getNumberOfNodesByFlavorByNodeState(allNodes);
+        flavorSpareChecker.updateReadyAndActiveCountsByFlavor(numSpareNodesByFlavorByState);
 
         for (ApplicationId applicationId : activeApplications) {
             try (Mutex lock = nodeRepository().lock(applicationId)) {
@@ -99,20 +110,17 @@ public class NodeRetirer extends Maintainer {
 
                 for (Iterator<Node> iterator = retireableNodes.iterator(); iterator.hasNext() && numNodesAllowedToRetire > 0; ) {
                     Node retireableNode = iterator.next();
+                    System.out.println(retireableNode);
 
-                    Set<Flavor> possibleReplacementFlavors = flavorClusters.getFlavorClusterFor(retireableNode.flavor());
-                    Flavor flavorWithMinSpareNodes = getMinAmongstKeys(numSpareNodesByFlavor, possibleReplacementFlavors);
-                    long spareNodesForMinFlavor = numSpareNodesByFlavor.getOrDefault(flavorWithMinSpareNodes, 0L);
-                    if (spareNodesForMinFlavor > 0) {
-                        log.info("Setting node " + retireableNode + " to wantToRetire and wantToDeprovision. Policy: " +
+                    if (flavorSpareChecker.canRetireAllocatedNodeWithFlavor(retireableNode.flavor())) {
+                        log.info("Setting wantToRetire for host " + retireableNode.hostname() +
+                                " with flavor " + retireableNode.flavor().name() +
+                                " allocated to " + retireableNode.allocation().get().owner() + ". Policy: " +
                                 retirementPolicy.getClass().getSimpleName());
-                        Node updatedNode = retireableNode
-                                .with(retireableNode.status()
-                                        .withWantToRetire(true)
-                                        .withWantToDeprovision(true));
+                        Node updatedNode = retireableNode.with(retireableNode.status()
+                                .withWantToRetire(true)
+                                .withWantToDeprovision(true));
                         nodeRepository().write(updatedNode);
-                        numSpareNodesByFlavor.put(flavorWithMinSpareNodes, spareNodesForMinFlavor - 1);
-                        numNodesAllowedToRetire--;
                     }
                 }
             }
@@ -158,58 +166,10 @@ public class NodeRetirer extends Maintainer {
         return Math.max(0, maxSimultaneousRetires - numNodesInWantToRetire);
     }
 
-    /**
-     * Parks and sets wantToDeprovision for a subset of size 'limit' of nodes
-     *
-     * @param nodesToPark Nodes that we want to park
-     * @param limit Maximum number of nodes we want to park
-     * @return True iff we were able to park all the nodes
-     */
-    boolean limitedPark(Set<Node> nodesToPark, long limit) {
-        nodesToPark.stream()
-                .limit(limit)
-                .forEach(node -> {
-                    nodeRepository().write(node.with(node.status().withWantToDeprovision(true)));
-                    nodeRepository().park(node.hostname(), Agent.NodeRetirer, "Policy: " + retirementPolicy.getClass().getSimpleName());
-                });
-
-        return limit >= nodesToPark.size();
-    }
-
-    Map<Flavor, Long> getNumberSpareReadyNodesByFlavor(List<Node> allNodes) {
-        Map<Flavor, Long> numActiveNodesByFlavor = allNodes.stream()
-                .filter(node -> node.state() == Node.State.active)
-                .collect(Collectors.groupingBy(Node::flavor, Collectors.counting()));
-
+    private Map<Flavor, Map<Node.State, Long>> getNumberOfNodesByFlavorByNodeState(List<Node> allNodes) {
         return allNodes.stream()
-                .filter(node -> node.state() == Node.State.ready)
-                .collect(Collectors.groupingBy(Node::flavor, Collectors.counting()))
-                .entrySet().stream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        entry -> {
-                            long numActiveNodesByCurrentFlavor = numActiveNodesByFlavor.getOrDefault(entry.getKey(), 0L);
-                            return getNumSpareNodes(numActiveNodesByCurrentFlavor, entry.getValue());
-                }));
-    }
-
-    /**
-     * Returns number of ready nodes to spare (beyond a safety buffer) for a flavor given its number of active
-     * and ready nodes.
-     */
-    long getNumSpareNodes(long numActiveNodes, long numReadyNodes) {
-        long numNodesToSpare = 2;
-        return Math.max(0L, numReadyNodes - numNodesToSpare);
-    }
-
-    /**
-     * Returns the key with the smallest value amongst keys
-     */
-    <K, V extends Comparable<V>> K getMinAmongstKeys(Map<K, V> map, Set<K> keys) {
-        return map.entrySet().stream()
-                .filter(entry -> keys.contains(entry.getKey()))
-                .min(Comparator.comparing(Map.Entry::getValue))
-                .map(Map.Entry::getKey)
-                .orElseThrow(() -> new RuntimeException("No min key found"));
+                .collect(Collectors.groupingBy(
+                        Node::flavor,
+                        Collectors.groupingBy(Node::state, Collectors.counting())));
     }
 }

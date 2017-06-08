@@ -19,12 +19,16 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.maintenance.retire.RetirementPolicy;
+import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
+import com.yahoo.vespa.hosted.provision.provisioning.FlavorSpareChecker;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -35,6 +39,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author freva
@@ -43,29 +51,35 @@ public class NodeRetirerTester {
     public static final Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
 
     // Components with state
-    public final ManualClock clock;
+    public final ManualClock clock = new ManualClock();
     public final NodeRepository nodeRepository;
-    private final NodeRepositoryProvisioner provisioner;
-    private final Curator curator;
+    private final FlavorSpareChecker flavorSpareChecker = mock(FlavorSpareChecker.class);
+    private final Curator curator = new MockCurator();
+    private final MockDeployer deployer;
+    private final JobControl jobControl;
     private final List<Flavor> flavors;
+    private final NodeRepositoryProvisioner provisioner;
 
     // Use LinkedHashMap to keep order in which applications were deployed
     private final Map<ApplicationId, MockDeployer.ApplicationContext> apps = new LinkedHashMap<>();
 
-    private PeriodicApplicationMaintainer applicationMaintainer;
     private RetiredExpirer retiredExpirer;
     private InactiveExpirer inactiveExpirer;
     private int nextNodeId = 0;
 
-    public NodeRetirerTester(NodeFlavors nodeFlavors) {
-        clock = new ManualClock();
-        curator = new MockCurator();
+    NodeRetirerTester(NodeFlavors nodeFlavors) {
         nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, new MockNameResolver().mockAnyLookup());
+        jobControl = new JobControl(nodeRepository.database());
         provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone);
+        deployer = new MockDeployer(provisioner, apps);
         flavors = nodeFlavors.getFlavors().stream().sorted(Comparator.comparing(Flavor::name)).collect(Collectors.toList());
     }
 
-    public void createReadyNodesByFlavor(int... nums) {
+    NodeRetirer makeNodeRetirer(RetirementPolicy policy) {
+         return new NodeRetirer(nodeRepository, zone, flavorSpareChecker, Duration.ofDays(1), deployer, jobControl, policy);
+    }
+
+    void createReadyNodesByFlavor(int... nums) {
         List<Node> nodes = new ArrayList<>();
         for (int i = 0; i < nums.length; i++) {
             Flavor flavor = flavors.get(i);
@@ -81,7 +95,7 @@ public class NodeRetirerTester {
         nodeRepository.setReady(nodes);
     }
 
-    public ApplicationId deployApp(String tenantName, String applicationName, int flavorId, int numNodes) {
+    void deployApp(String tenantName, String applicationName, int flavorId, int numNodes) {
         Flavor flavor = flavors.get(flavorId);
 
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, "default");
@@ -90,21 +104,13 @@ public class NodeRetirerTester {
         apps.put(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, capacity, 1));
 
         activate(applicationId, cluster, capacity);
-        return applicationId;
     }
 
-    public void iterateMaintainers() {
-        if (applicationMaintainer == null) {
-            MockDeployer deployer = new MockDeployer(provisioner, apps);
-            JobControl jobControl = new JobControl(nodeRepository.database());
-            applicationMaintainer = new PeriodicApplicationMaintainerTest.TestablePeriodicApplicationMaintainer(
-                    deployer, nodeRepository, Duration.ofMinutes(10), Optional.empty());
+    void iterateMaintainers() {
+        if (retiredExpirer == null) {
             retiredExpirer = new RetiredExpirer(nodeRepository, deployer, clock, Duration.ofMinutes(10), jobControl);
             inactiveExpirer = new InactiveExpirer(nodeRepository, clock, Duration.ofMinutes(10), jobControl);
-
         }
-
-        applicationMaintainer.maintain();
 
         clock.advance(Duration.ofMinutes(11));
         retiredExpirer.maintain();
@@ -120,7 +126,39 @@ public class NodeRetirerTester {
         transaction.commit();
     }
 
-    public Map<Flavor, Long> expectedCountsByFlavor(long... nums) {
+    void setNumberAllowedUnallocatedRetirementsPerFlavor(int... numAllowed) {
+        for (int i = 0; i < numAllowed.length; i++) {
+            Boolean[] responses = new Boolean[numAllowed[i]];
+            Arrays.fill(responses, true);
+            responses[responses.length - 1 ] = false;
+            when(flavorSpareChecker.canRetireUnallocatedNodeWithFlavor(eq(flavors.get(i)))).thenReturn(true, responses);
+        }
+    }
+
+    void setNumberAllowedAllocatedRetirementsPerFlavor(int... numAllowed) {
+        for (int i = 0; i < numAllowed.length; i++) {
+            Boolean[] responses = new Boolean[numAllowed[i]];
+            Arrays.fill(responses, true);
+            responses[responses.length - 1] = false;
+            when(flavorSpareChecker.canRetireAllocatedNodeWithFlavor(eq(flavors.get(i)))).thenReturn(true, responses);
+        }
+    }
+
+    void assertCountsForStateByFlavor(Node.State state, long... nums) {
+        Map<Flavor, Long> expected = expectedCountsByFlavor(nums);
+        Map<Flavor, Long> actual = nodeRepository.getNodes(state).stream()
+                .collect(Collectors.groupingBy(Node::flavor, Collectors.counting()));
+        assertEquals(expected, actual);
+    }
+
+    void assertParkedCountsByApplication(long... nums) {
+        Map<ApplicationId, Long> expected = expectedCountsByApplication(nums);
+        Map<ApplicationId, Long> actual = nodeRepository.getNodes(Node.State.parked).stream()
+                .collect(Collectors.groupingBy(node -> node.allocation().get().owner(), Collectors.counting()));
+        assertEquals(expected, actual);
+    }
+
+    private Map<Flavor, Long> expectedCountsByFlavor(long... nums) {
         Map<Flavor, Long> countsByFlavor = new HashMap<>();
         for (int i = 0; i < nums.length; i++) {
             if (nums[i] < 0) continue;
@@ -130,14 +168,22 @@ public class NodeRetirerTester {
         return countsByFlavor;
     }
 
-    public Map<ApplicationId, Long> expectedCountsByApplication(long... nums) {
+    private Map<ApplicationId, Long> expectedCountsByApplication(long... nums) {
         Map<ApplicationId, Long> countsByApplicationId = new HashMap<>();
         Iterator<ApplicationId> iterator = apps.keySet().iterator();
         for (int i = 0; iterator.hasNext(); i++) {
-            if (nums[i] < 0) continue;
             ApplicationId applicationId = iterator.next();
+            if (nums[i] < 0) continue;
             countsByApplicationId.put(applicationId, nums[i]);
         }
         return countsByApplicationId;
+    }
+
+    static NodeFlavors makeFlavors(int numFlavors) {
+        FlavorConfigBuilder flavorConfigBuilder = new FlavorConfigBuilder();
+        for (int i = 0; i < numFlavors; i++) {
+            flavorConfigBuilder.addFlavor("flavor-" + i, 1. /* cpu*/, 3. /* mem GB*/, 2. /*disk GB*/, Flavor.Type.BARE_METAL);
+        }
+        return new NodeFlavors(flavorConfigBuilder.build());
     }
 }
