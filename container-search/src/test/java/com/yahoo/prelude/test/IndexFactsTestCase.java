@@ -7,7 +7,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 
 import com.yahoo.config.subscription.ConfigGetter;
@@ -23,20 +22,25 @@ import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.search.Query;
 import com.yahoo.search.searchchain.Execution;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests using synthetic index names for IndexFacts class.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class IndexFactsTestCase extends junit.framework.TestCase {
+public class IndexFactsTestCase {
 
     private static final String INDEXFACTS_TESTING = "file:src/test/java/com/yahoo/prelude/test/indexfactstesting.cfg";
-
-    public IndexFactsTestCase(String name) {
-        super(name);
-    }
 
     private IndexFacts createIndexFacts() {
         ConfigGetter<IndexInfoConfig> getter = new ConfigGetter<>(IndexInfoConfig.class);
@@ -54,6 +58,7 @@ public class IndexFactsTestCase extends junit.framework.TestCase {
         return indexFacts;
     }
 
+    @Test
     public void testBasicCases() {
         // First check default behavior
         IndexFacts indexFacts = createIndexFacts();
@@ -68,6 +73,7 @@ public class IndexFactsTestCase extends junit.framework.TestCase {
         assertEquals("yetanothersynthetic:b",  q.getModel().getQueryTree().getRoot().toString());
     }
 
+    @Test
     public void testDefaultPosition() {
         Index a = new Index("a");
         assertFalse(a.isDefaultPosition());
@@ -96,6 +102,7 @@ public class IndexFactsTestCase extends junit.framework.TestCase {
         assertTrue(indexFacts.getDefaultPosition("sd").equals("c"));
     }
 
+    @Test
     public void testIndicesInAnyConfigurationAreIndicesInDefault() {
         IndexFacts.Session indexFacts = createIndexFacts().newSession(new Query());
         assertTrue(indexFacts.isIndex("a"));
@@ -105,18 +112,21 @@ public class IndexFactsTestCase extends junit.framework.TestCase {
         assertFalse(indexFacts.isIndex("anythingelse"));
     }
 
+    @Test
     public void testDefaultIsUnionHostIndex() {
         IndexFacts.Session session = createIndexFacts().newSession(new Query());
         assertTrue(session.getIndex("c").isHostIndex());
         assertFalse(session.getIndex("a").isHostIndex());
     }
 
+    @Test
     public void testDefaultIsUnionUriIndex() {
         IndexFacts indexFacts = createIndexFacts();
         assertTrue(indexFacts.newSession(new Query()).getIndex("d").isUriIndex());
         assertFalse(indexFacts.newSession(new Query()).getIndex("a").isUriIndex());
     }
 
+    @Test
     public void testDefaultIsUnionStemMode() {
         IndexFacts.Session session = createIndexFacts().newSession(new Query());
         assertEquals(StemMode.NONE, session.getIndex("a").getStemMode());
@@ -135,6 +145,7 @@ public class IndexFactsTestCase extends junit.framework.TestCase {
         assertEquals(indexName + ":foo...", q.getModel().getQueryTree().getRoot().toString());
     }
 
+    @Test
     public void testExactMatching() {
         assertExactIsWorking("test");
         assertExactIsWorking("artist_name_ft_norm1");
@@ -163,6 +174,7 @@ public class IndexFactsTestCase extends junit.framework.TestCase {
         assertNull(wem.getExactTerminator());
     }
 
+    @Test
     public void testComplexExactMatching() {
         IndexFacts indexFacts = createIndexFacts();
         String u_name = "foo_bar";
@@ -181,6 +193,7 @@ public class IndexFactsTestCase extends junit.framework.TestCase {
     }
 
     // This is also backed by a system test on cause of complex config
+    @Test
     public void testRestrictLists1() {
         Query query = new Query();
         query.getModel().getSources().add("nalle");
@@ -193,6 +206,7 @@ public class IndexFactsTestCase extends junit.framework.TestCase {
         assertTrue(indexFacts.isIndex("d"));
     }
 
+    @Test
     public void testRestrictLists2() {
         Query query = new Query();
         query.getModel().getSources().add("clusterTwo");
@@ -212,6 +226,7 @@ public class IndexFactsTestCase extends junit.framework.TestCase {
         assertEquals(StemMode.NONE, session.getIndex("b").getStemMode());
     }
 
+    @Test
     public void testRestrictLists3() {
         Query query = new Query();
         query.getModel().getSources().add("clusterOne");
@@ -224,6 +239,7 @@ public class IndexFactsTestCase extends junit.framework.TestCase {
         assertTrue(session.getIndex("e").isExact());
     }
 
+    @Test
     public void testOverlappingAliases() {
         IndexInfoConfig cfg = new IndexInfoConfig(new IndexInfoConfig.Builder()
                 .indexinfo(
@@ -254,6 +270,7 @@ public class IndexFactsTestCase extends junit.framework.TestCase {
         return query;
     }
 
+    @Test
     public void testPredicateBounds() {
         Index index = new Index("a");
         assertEquals(Long.MIN_VALUE, index.getPredicateLowerBound());
@@ -274,4 +291,39 @@ public class IndexFactsTestCase extends junit.framework.TestCase {
         assertEquals(2L, index.getPredicateLowerBound());
         assertEquals(Long.MAX_VALUE, index.getPredicateUpperBound());
     }
+
+    @Test
+    public void testUriIndexAndRestrict() {
+        IndexInfoConfig.Builder b = new IndexInfoConfig.Builder();
+
+        IndexInfoConfig.Indexinfo.Builder b1 = new IndexInfoConfig.Indexinfo.Builder();
+        b1.name("hasUri");
+        IndexInfoConfig.Indexinfo.Command.Builder bb1 = new IndexInfoConfig.Indexinfo.Command.Builder();
+        bb1.indexname("url");
+        bb1.command("fullurl");
+        b1.command(bb1);
+        b.indexinfo(b1);
+
+        IndexInfoConfig.Indexinfo.Builder b2 = new IndexInfoConfig.Indexinfo.Builder();
+        b2.name("hasNotUri1");
+        b.indexinfo(b2);
+
+        IndexInfoConfig.Indexinfo.Builder b3 = new IndexInfoConfig.Indexinfo.Builder();
+        b3.name("hasNotUri2");
+        b.indexinfo(b3);
+
+        IndexInfoConfig config = new IndexInfoConfig(b);
+        IndexFacts indexFacts = new IndexFacts(new IndexModel(config, Collections.emptyMap()));
+        Query query1 = new Query("?query=url:https://foo.bar");
+        Query query2 = new Query("?query=url:https://foo.bar&restrict=hasUri");
+        assertEquals(0, query1.getModel().getRestrict().size());
+        assertEquals(1, query2.getModel().getRestrict().size());
+        IndexFacts.Session session1 = indexFacts.newSession(query1.getModel().getSources(), query1.getModel().getRestrict());
+        IndexFacts.Session session2 = indexFacts.newSession(query2.getModel().getSources(), query2.getModel().getRestrict());
+        assertTrue(session1.getIndex("url").isUriIndex());
+        assertTrue(session2.getIndex("url").isUriIndex());
+        assertEquals("url:\"https foo bar\"", query1.getModel().getQueryTree().toString());
+        assertEquals("url:\"https foo bar\"", query2.getModel().getQueryTree().toString());
+    }
+    
 }

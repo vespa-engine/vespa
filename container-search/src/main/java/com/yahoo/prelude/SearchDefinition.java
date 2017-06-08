@@ -12,7 +12,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  * An object for storing information about search definitions in the centralized
  * directory services.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 // TODO: Make freezable!
 public class SearchDefinition {

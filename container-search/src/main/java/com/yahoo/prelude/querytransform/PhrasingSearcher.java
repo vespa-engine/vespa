@@ -7,6 +7,8 @@ import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.component.chain.dependencies.Provides;
 import com.yahoo.container.QrSearchersConfig;
+import com.yahoo.search.Query;
+import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.searchchain.Execution;
@@ -16,11 +18,11 @@ import com.yahoo.search.searchchain.PhaseNames;
 import java.util.List;
 
 /**
- * <p>Detects query phrases. When a phrase is detected in the query,
- * the query is mutated to reflect this fact.</p>
+ * Detects query phrases. When a phrase is detected in the query,
+ * the query is mutated to reflect this fact.
  *
- * @author  bratseth
- * @author  <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author bratseth
+ * @author Einar M R Rosenvinge
  */
 @After(PhaseNames.RAW_QUERY)
 @Before(PhaseNames.TRANSFORMED_QUERY)
@@ -54,9 +56,11 @@ public class PhrasingSearcher extends Searcher {
     }
 
     @Override
-    public com.yahoo.search.Result search(com.yahoo.search.Query query, Execution execution) {
+    public Result search(Query query, Execution execution) {
+        if (phraseMatcher.isEmpty()) return execution.search(query);
+        
         List<PhraseMatcher.Phrase> replacePhrases = phraseMatcher.matchPhrases(query.getModel().getQueryTree().getRoot());
-        if (replacePhrases != null && !query.properties().getBoolean(suggestonly, false)) {
+        if (replacePhrases != null && ! query.properties().getBoolean(suggestonly, false)) {
             replace(replacePhrases);
             query.trace("Replacing phrases", true, 2);
         }
@@ -73,4 +77,5 @@ public class PhrasingSearcher extends Searcher {
                 phrase.replace();
         }
     }
+
 }

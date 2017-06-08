@@ -20,7 +20,7 @@ import java.util.List;
 /**
  * Superclass of all derived configurations
  *
- * @author  bratseth
+ * @author bratseth
  */
 public abstract class Derived implements Exportable {
 
@@ -43,7 +43,7 @@ public abstract class Derived implements Exportable {
             derive(index, search);
         }
         for (SDField field : search.allExtraFields() ) {
-            derive(field,search);
+            derive(field, search);
         }
         search.allImportedFields()
                 .forEach(importedField -> derive(importedField, search));

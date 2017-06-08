@@ -1,9 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude;
 
-
 import com.google.common.collect.ImmutableList;
-import com.yahoo.language.process.StemMode;
 import com.yahoo.search.Query;
 
 import java.util.*;
@@ -46,11 +44,16 @@ public class IndexFacts {
     /**
      * The name of the default search definition, which is the union of all
      * known document types.
+     * 
+     * @deprecated do not use
      */
+    // TODO: Make this package private in Vespa 7
+    @Deprecated
     public static final String unionName = "unionOfAllKnown";
 
     /** A search definition which contains the union of all settings. */
-    private SearchDefinition unionSearchDefinition=new SearchDefinition(unionName);
+    @SuppressWarnings("deprecation")
+    private SearchDefinition unionSearchDefinition = new SearchDefinition(unionName);
 
     private boolean frozen;
 
@@ -111,6 +114,11 @@ public class IndexFacts {
         clusterByDocument = invert(clusters);
     }
 
+    /**
+     * @deprecated set indexes at creation time instead
+     */
+    // TODO: Remove on Vespa 7
+    @Deprecated
     public void setSearchDefinitions(Map<String, SearchDefinition> searchDefinitions,
                                      SearchDefinition unionSearchDefinition) {
         ensureNotFrozen();
@@ -123,7 +131,7 @@ public class IndexFacts {
     }
 
     private boolean isIndexFromDocumentTypes(String indexName, List<String> documentTypes) {
-        if (!isInitialized()) return true;
+        if ( ! isInitialized()) return true;
 
         if (documentTypes.isEmpty()) {
             return unionSearchDefinition.getIndex(indexName) != null;
@@ -300,7 +308,10 @@ public class IndexFacts {
      *
      * @param sdName name of search definition containing index, if null, modify default set
      * @param indexName name of index, actual or otherwise
+     * @deprecated set indexes at creation time instead
      */
+    // TODO: Remove on Vespa 7
+    @Deprecated
     public void addIndex(String sdName, String indexName) {
         ensureNotFrozen();
 
@@ -320,7 +331,10 @@ public class IndexFacts {
     /**
      * Adds an index to the specified index, and the default index settings,
      * overriding any current settings for this index
+     * @deprecated set indexes at creation time instead
      */
+    // TODO: Remove on Vespa 7
+    @Deprecated
     public void addIndex(String sdName, Index index) {
         ensureNotFrozen();
 
