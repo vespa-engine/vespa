@@ -116,23 +116,18 @@ MMapRandReadDynamic::read(size_t offset, vespalib::DataBuffer & buffer, size_t s
 {
     FSP file(_holder.get());
     const char * data(static_cast<const char *>(file->MemoryMapPtr(offset)));
-    if ((data == nullptr) || (file->MemoryMapPtr(offset+sz-1) == nullptr)) {
+    while ((data == nullptr) || (file->MemoryMapPtr(offset+sz-1) == nullptr)) {
         // Must check that both start and end of file is mapped in.
-        // Previous reopen could happend during a partial write of this buffer.
-        // This should fix bug 4630695.
         reopen();
         file = _holder.get();
         data = static_cast<const char *>(file->MemoryMapPtr(offset));
-        assert(data != nullptr);
-        assert(file->MemoryMapPtr(offset+sz-1) != nullptr);
     }
     vespalib::DataBuffer(data, sz).swap(buffer);
     return file;
 }
 
 int64_t
-MMapRandReadDynamic::getSize()
-{
+MMapRandReadDynamic::getSize() {
     return _holder.get()->GetSize();
 }
 
