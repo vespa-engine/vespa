@@ -35,6 +35,8 @@ Java modules can be built on any environment having Java and Maven:
     sh bootstrap.sh java
 
 ### Build C++ modules
+`<builddir>` should be replaced with the name of the directory in which you'd like to build Vespa. `<sourcedir>` should be replaced with the directory in which you've cloned/unpacked the source tree.
+
     source /opt/rh/devtoolset-6/enable
     sh bootstrap.sh full
     mkdir <builddir>
@@ -45,7 +47,7 @@ Java modules can be built on any environment having Java and Maven:
           -DEXTRA_INCLUDE_DIRECTORY="/opt/yahoo/vespa-boost/include;/opt/yahoo/vespa-libtorrent/include;/opt/yahoo/vespa-zookeeper-c-client/include;/opt/yahoo/vespa-cppunit/include;/usr/include/llvm3.9" \
           -DCMAKE_INSTALL_RPATH="/opt/yahoo/vespa/lib64;/opt/yahoo/vespa-boost/lib;/opt/yahoo/vespa-libtorrent/lib;/opt/yahoo/vespa-zookeeper-c-client/lib;/opt/yahoo/vespa-cppunit/lib;/usr/lib/jvm/java-1.8.0/jre/lib/amd64/server;/usr/include/llvm3.9" \
           -DCMAKE_BUILD_RPATH=/opt/yahoo/vespa/lib64 \
-          <builddir>
+          <sourcedir>
     make
     make test
 
