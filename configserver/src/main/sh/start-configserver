@@ -63,12 +63,12 @@ findroot
 cd ${VESPA_HOME} || { echo "Cannot cd to ${VESPA_HOME}" 1>&2; exit 1; }
 
 if [ -f ${VESPA_HOME}conf/zookeeper/zookeeper.cfg ]; then
-    chown yahoo ${VESPA_HOME}conf/zookeeper/zookeeper.cfg
+    chown ${VESPA_USER} ${VESPA_HOME}conf/zookeeper/zookeeper.cfg
     chmod 644 ${VESPA_HOME}conf/zookeeper/zookeeper.cfg
 fi
 
 if [ -f ${VESPA_HOME}var/zookeeper/myid ]; then
-    chown yahoo ${VESPA_HOME}var/zookeeper/myid
+    chown ${VESPA_USER} ${VESPA_HOME}var/zookeeper/myid
     chmod 644 ${VESPA_HOME}var/zookeeper/myid
 fi
 
@@ -126,7 +126,7 @@ jvmargs="$baseuserargs $serveruserargs"
 
 printenv > $cfpfile
 mkdir -p $bundlecachedir
-chown -R yahoo $bundlecachedir
+chown -R ${VESPA_USER} $bundlecachedir
 
 run-as-yahoo vespa-runserver -s configserver -r 30 -p $pidfile -- \
 	java \

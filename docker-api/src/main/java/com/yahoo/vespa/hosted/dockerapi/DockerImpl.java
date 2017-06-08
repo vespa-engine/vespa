@@ -49,8 +49,8 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static com.yahoo.vespa.hosted.dockerapi.DockerNetworkCreator.NetworkAddressInterface;
-
 
 public class DockerImpl implements Docker {
     private static final Logger logger = Logger.getLogger(DockerImpl.class.getName());
@@ -225,7 +225,7 @@ public class DockerImpl implements Docker {
 
     @Override
     public ProcessResult executeInContainer(ContainerName containerName, String... args) {
-        return executeInContainerAsUser(containerName, "yahoo", Optional.empty(), args);
+        return executeInContainerAsUser(containerName, getDefaults().vespaUser(), Optional.empty(), args);
     }
 
     @Override

@@ -9,11 +9,13 @@
 #include <vector>
 #include <unistd.h>
 #include <atomic>
+#include <pwd.h>
 
 namespace {
 
 const char *defaultHome = "/opt/yahoo/vespa/";
 char computedHome[PATH_MAX];
+const char *defaultUser = "yahoo";
 int defaultWebServicePort = 8080;
 int defaultPortBase = 19000;
 int defaultPortConfigServerRpc = 19070;
@@ -61,6 +63,14 @@ void findDefaults() {
             closedir(dp);
         } else {
             fprintf(stderr, "warning\tbad VESPA_HOME '%s' (ignored)\n", env);
+        }
+    }
+    env = getenv("VESPA_USER");
+    if (env != NULL) {
+        if (*env != '0' && getpwnam(env) == 0) {
+            fprintf(stderr, "warning\tbad VESPA_USER '%s' (ignored)\n", env);
+        } else {
+            defaultUser = env;
         }
     }
     long p = getNumFromEnv("VESPA_WEB_SERVICE_PORT");
@@ -155,6 +165,13 @@ Defaults::vespaHome()
 {
     findDefaults();
     return defaultHome;
+}
+
+const char *
+Defaults::vespaUser()
+{
+    findDefaults();
+    return defaultUser;
 }
 
 int

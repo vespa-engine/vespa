@@ -17,28 +17,39 @@ public class Defaults {
     private static final Defaults defaults = new Defaults();
 
     private final String vespaHome;
+    private final String vespaUser;
     private final int vespaWebServicePort;
     private final int vespaPortBase;
 
     private Defaults() {
         vespaHome = findVespaHome();
+        vespaUser = findVespaUser();
         vespaWebServicePort = findVespaWebServicePort();
         vespaPortBase = 19000; // TODO
     }
 
-    private String findVespaHome() {
+    static private String findVespaHome() {
         Optional<String> vespaHomeEnv = Optional.ofNullable(System.getenv("VESPA_HOME"));
         if ( ! vespaHomeEnv.isPresent() || vespaHomeEnv.get().trim().isEmpty()) {
             log.info("VESPA_HOME not set, using /opt/yahoo/vespa/");
             return "/opt/yahoo/vespa/";
         }
-        String vespaHome = vespaHomeEnv.get();
+        String vespaHome = vespaHomeEnv.get().trim();
         if ( ! vespaHome.endsWith("/"))
             vespaHome = vespaHome + "/";
         return vespaHome;
     }
 
-    private int findVespaWebServicePort() {
+    static private String findVespaUser() {
+        Optional<String> vespaUserEnv = Optional.ofNullable(System.getenv("VESPA_USER"));
+        if (! vespaUserEnv.isPresent()) {
+            log.fine("VESPA_USER not set, using yahoo");
+            return "yahoo";
+        }
+        return vespaUserEnv.get().trim();
+    }
+
+    static private int findVespaWebServicePort() {
         Optional<String> vespaWebServicePortString = Optional.ofNullable(System.getenv("VESPA_WEB_SERVICE_PORT"));
         if ( ! vespaWebServicePortString.isPresent() || vespaWebServicePortString.get().trim().isEmpty()) {
             log.info("VESPA_WEB_SERVICE_PORT not set, using 8080");
@@ -52,6 +63,12 @@ public class Defaults {
                                                vespaWebServicePortString.get() + "'");
         }
     }
+
+    /**
+     * Get the username to own directories, files and processes
+     * @return the vespa user name
+     **/
+    public String vespaUser() { return vespaUser; }
 
     /**
      * Returns the path to the root under which Vespa should read and write files, ending by "/".

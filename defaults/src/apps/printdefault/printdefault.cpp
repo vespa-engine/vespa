@@ -12,6 +12,8 @@ int main(int argc, char **argv) {
     }
     if (strcmp(argv[1], "home") == 0) {
         printf("%s\n", vespa::Defaults::vespaHome());
+    } else if (strcmp(argv[1], "user") == 0) {
+        printf("%s\n", vespa::Defaults::vespaUser());
     } else if (strcmp(argv[1], "portbase") == 0) {
         printf("%d\n", vespa::Defaults::vespaPortBase());
     } else if (strcmp(argv[1], "configserver_rpc_port") == 0) {

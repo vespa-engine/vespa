@@ -17,4 +17,9 @@ public class DefaultsTestCase {
         assertEquals("./my/explicit/relative/path", Defaults.getDefaults().underVespaHome("./my/explicit/relative/path"));
     }
 
+    @Test
+    public void testFindVespaUser() {
+        assertEquals("yahoo", Defaults.getDefaults().vespaUser());
+    }
+
 }

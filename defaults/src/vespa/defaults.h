@@ -26,6 +26,12 @@ public:
     static const char *vespaHome();
 
     /**
+     * Compute the user name to own directories and run processes.
+     * @return the vespa user name
+     **/
+    static const char *vespaUser();
+
+    /**
      * Compute the port number where the Vespa webservice
      * container should be available.
      *
