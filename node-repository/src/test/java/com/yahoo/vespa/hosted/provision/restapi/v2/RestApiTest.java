@@ -18,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -88,7 +89,7 @@ public class RestApiTest {
                                    ("[" + asNodeJson("host8.yahoo.com", "default", "127.0.0.1") + "," + // test with only 1 ip address
                                           asNodeJson("host9.yahoo.com", "large-variant", "127.0.0.1", "::1") + "," +
                                           asHostJson("parent2.yahoo.com", "large-variant", "127.0.0.1", "::1") + "," +
-                                          asDockerNodeJson("host11.yahoo.com", "parent.host.yahoo.com", "127.0.0.1", "::1") + "]").
+                                          asDockerNodeJson("host11.yahoo.com", "parent.host.yahoo.com", 2, "127.0.0.1", "::1") + "]").
                                    getBytes(StandardCharsets.UTF_8),
                                    Request.Method.POST),
                         "{\"message\":\"Added 4 nodes to the provisioned state\"}");
@@ -454,9 +455,10 @@ public class RestApiTest {
     @After
     public void stopContainer() { container.close(); }
 
-    private String asDockerNodeJson(String hostname, String parentHostname, String... ipAddress) {
+    private String asDockerNodeJson(String hostname, String parentHostname, int additionalIpCount, String... ipAddress) {
         return "{\"hostname\":\"" + hostname + "\", \"parentHostname\":\"" + parentHostname + "\"," +
                 createIpAddresses(ipAddress) +
+                createAdditionalIpAddresses(additionalIpCount) +
                 "\"openStackId\":\"" + hostname + "\",\"flavor\":\"docker\"}";
     }
 
@@ -471,6 +473,14 @@ public class RestApiTest {
                 createIpAddresses(ipAddress) +
                 "\"flavor\":\"" + flavor + "\"" +
                 ", \"type\":\"host\"}";
+    }
+
+    private String createAdditionalIpAddresses(int count) {
+        return "\"additionalIpAddresses\":[" +
+                IntStream.range(10, 10+count)
+                        .mapToObj(i -> "\"::" + i + "\"")
+                        .collect(Collectors.joining(",")) +
+                "],";
     }
 
     private String createIpAddresses(String... ipAddress) {
