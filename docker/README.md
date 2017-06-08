@@ -10,7 +10,7 @@
 ## Building the Vespa RPM
 Execute ```./build-vespa.sh <Vespa version number>``` to build Vespa from this source code.
 
-The produced rpms will be available in this folder after compiliation.
+The produced rpms will be available in this folder after compiliation. The version number will be compiled into binaries, but has no other meaning than that.
 
 
 ## Running Vespa
