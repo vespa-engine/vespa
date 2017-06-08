@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.Status;
-import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 
 import javax.swing.JFrame;
 import java.time.Clock;

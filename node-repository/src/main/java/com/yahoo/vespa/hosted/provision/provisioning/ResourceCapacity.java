@@ -2,7 +2,6 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 
 /**
  * Represent the capacity in terms of physical resources like memory, disk and cpu.

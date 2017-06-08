@@ -16,7 +16,6 @@ import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
-import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import org.junit.Test;
 
 import java.util.List;

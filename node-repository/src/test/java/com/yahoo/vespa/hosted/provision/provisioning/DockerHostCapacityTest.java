@@ -9,7 +9,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
-import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import org.junit.Before;
 import org.junit.Test;
 

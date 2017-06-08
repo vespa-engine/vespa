@@ -7,7 +7,7 @@ import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
-import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
+import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 
 import java.time.Clock;
