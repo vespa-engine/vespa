@@ -4,7 +4,7 @@
 #include <vespa/fastos/app.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP("rpc_info");
+LOG_SETUP("vespa-rpc-info");
 
 class RPCInfo : public FastOS_Application
 {
@@ -74,7 +74,7 @@ int
 RPCInfo::Main()
 {
     if (_argc < 2) {
-        printf("usage : rpc_info <connectspec> [verbose]\n");
+        printf("usage : vespa-rpc-info <connectspec> [verbose]\n");
         return 1;
     }
 

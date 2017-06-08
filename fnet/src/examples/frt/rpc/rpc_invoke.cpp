@@ -4,7 +4,7 @@
 #include <vespa/fastos/app.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP("rpc_invoke");
+LOG_SETUP("vespa-rpc-invoke");
 
 class RPCClient : public FastOS_Application
 {
@@ -52,7 +52,7 @@ int
 RPCClient::Main()
 {
     if (_argc < 3) {
-        fprintf(stderr, "usage: rpc_invoke [-t timeout] <connectspec> <method> [args]\n");
+        fprintf(stderr, "usage: vespa-rpc-invoke [-t timeout] <connectspec> <method> [args]\n");
         fprintf(stderr, "    -t timeout in seconds\n");
         fprintf(stderr, "    Each arg must be on the form <type>:<value>\n");
         fprintf(stderr, "    supported types: {'b','h','i','l','f','d','s'}\n");

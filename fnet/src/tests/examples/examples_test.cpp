@@ -78,11 +78,11 @@ TEST("usage") {
         EXPECT_FALSE(runProc(proc, done));
     }
     {
-        SlaveProc proc("exec ../../examples/frt/rpc/rpc_info");
+        SlaveProc proc("exec ../../examples/frt/rpc/vespa-rpc-info");
         EXPECT_FALSE(runProc(proc, done));
     }
     {
-        SlaveProc proc("exec ../../examples/frt/rpc/rpc_invoke");
+        SlaveProc proc("exec ../../examples/frt/rpc/vespa-rpc-invoke");
         EXPECT_FALSE(runProc(proc, done));
     }
     {
@@ -94,7 +94,7 @@ TEST("usage") {
         EXPECT_FALSE(runProc(proc, done));
     }
     {
-        SlaveProc proc("exec ../../examples/frt/rpc/rpc_proxy");
+        SlaveProc proc("exec ../../examples/frt/rpc/vespa-rpc-proxy");
         EXPECT_FALSE(runProc(proc, done));
     }
 }
@@ -188,9 +188,9 @@ TEST_MT_F("rpc info", 2, std::atomic<bool>()) {
         EXPECT_TRUE(runProc(proc, f1));
     } else {
         TEST_BARRIER();
-        EXPECT_TRUE(runProc(vespalib::make_string("exec ../../examples/frt/rpc/rpc_info tcp/localhost:%d",
+        EXPECT_TRUE(runProc(vespalib::make_string("exec ../../examples/frt/rpc/vespa-rpc-info tcp/localhost:%d",
                                                   PORT0).c_str()));
-        EXPECT_TRUE(runProc(vespalib::make_string("exec ../../examples/frt/rpc/rpc_info tcp/localhost:%d verbose",
+        EXPECT_TRUE(runProc(vespalib::make_string("exec ../../examples/frt/rpc/vespa-rpc-info tcp/localhost:%d verbose",
                                                   PORT0).c_str()));
         f1 = true;
     }
@@ -204,7 +204,7 @@ TEST_MT_F("rpc invoke", 2, std::atomic<bool>()) {
         EXPECT_TRUE(runProc(proc, f1));
     } else {
         TEST_BARRIER();
-        EXPECT_TRUE(runProc(vespalib::make_string("exec ../../examples/frt/rpc/rpc_invoke tcp/localhost:%d frt.rpc.echo "
+        EXPECT_TRUE(runProc(vespalib::make_string("exec ../../examples/frt/rpc/vespa-rpc-invoke tcp/localhost:%d frt.rpc.echo "
                                                   "b:1 h:2 i:4 l:8 f:0.5 d:0.25 s:foo",
                                                   PORT0).c_str()));
         f1 = true;
@@ -232,7 +232,7 @@ TEST_MT_F("rpc callback client server with proxy", 3, std::atomic<bool>()) {
         TEST_BARRIER();
         EXPECT_TRUE(runProc(proc, f1));
     } else if (thread_id == 1) {
-        SlaveProc proc(vespalib::make_string("exec ../../examples/frt/rpc/rpc_proxy tcp/%d tcp/localhost:%d",
+        SlaveProc proc(vespalib::make_string("exec ../../examples/frt/rpc/vespa-rpc-proxy tcp/%d tcp/localhost:%d",
                                              PORT1, PORT0).c_str());
         TEST_BARRIER();
         EXPECT_TRUE(runProc(proc, f1));
