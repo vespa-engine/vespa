@@ -71,6 +71,10 @@ public class DockerCapacityConstraints {
         return addNodes(sparesAndHeadroom, flavors.getFlavors(), "headroom");
     }
 
+    public static Map<NodeAllocation, List<Node>> getIdealHeadroomNodes() {
+        return null;
+    }
+
     private static List<Node> addNodes(List<Node> nodes, List<Flavor> flavors, String id) {
         List<Node> headroom = new ArrayList<>(nodes);
         for (Flavor flavor : flavors) {
