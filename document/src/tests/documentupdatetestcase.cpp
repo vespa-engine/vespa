@@ -24,6 +24,7 @@
 #include <vespa/eval/tensor/tensor_factory.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/exception.h>
 
 using namespace document::config_builder;
 using vespalib::tensor::Tensor;

@@ -10,13 +10,13 @@ TEST("require that long-lived timebox returns falling time left numbers") {
         double timeLeft = box.timeLeft();
         EXPECT_TRUE(timeLeft <= last_timeLeft);
         last_timeLeft = timeLeft;
-        FastOS_Thread::Sleep(10);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
 
 TEST("require that short-lived timebox times out") {
     vespalib::TimeBox box(0.125);
-    FastOS_Thread::Sleep(150);
+    std::this_thread::sleep_for(std::chrono::milliseconds(150));
     EXPECT_FALSE(box.hasTimeLeft());
     EXPECT_EQUAL(box.timeLeft(), 0.0);
 }
@@ -27,7 +27,7 @@ TEST("require that short-lived timebox always returns at least minimum time") {
         double timeLeft = box.timeLeft();
         EXPECT_TRUE(timeLeft <= 0.250);
         EXPECT_TRUE(timeLeft >= 0.125);
-        FastOS_Thread::Sleep(30);
+        std::this_thread::sleep_for(std::chrono::milliseconds(30));
     }
     EXPECT_FALSE(box.hasTimeLeft());
     EXPECT_EQUAL(box.timeLeft(), 0.125);

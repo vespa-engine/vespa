@@ -1,8 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/fieldvalue/literalfieldvalue.h>
+#include "literalfieldvalue.h"
 #include <vespa/document/util/stringutil.h>
+#include <vespa/vespalib/util/xmlstream.h>
 #include <sstream>
+
+using namespace vespalib::xml;
 
 namespace document {
 

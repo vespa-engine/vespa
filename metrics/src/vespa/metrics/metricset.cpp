@@ -4,10 +4,10 @@
 #include "memoryconsumption.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <list>
 
 #include <vespa/log/log.h>
-
 LOG_SETUP(".metrics.metricsset");
 
 namespace metrics {

@@ -5,8 +5,6 @@
  * @brief Superclass for objects implementing clone() deep copy.
  */
 
-#include <memory>
-
 namespace vespalib {
 
 class Cloneable {

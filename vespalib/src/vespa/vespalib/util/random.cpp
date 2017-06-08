@@ -2,6 +2,9 @@
 
 #include "random.h"
 #include <cmath>
+#include <cstring>
+#include <ctime>
+#include <unistd.h>
 
 namespace vespalib {
 

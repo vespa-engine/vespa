@@ -3,8 +3,8 @@
 #include "nativerankfeature.h"
 #include "valuefeature.h"
 #include "utils.h"
-#include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/properties.h>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.nativerankfeature");

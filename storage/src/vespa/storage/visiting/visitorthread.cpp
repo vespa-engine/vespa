@@ -14,10 +14,11 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/document/base/exceptions.h>
-#include <locale>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/log/log.h>
+#include <locale>
+#include <sstream>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".visitor.thread");
 
 using storage::api::ReturnCode;

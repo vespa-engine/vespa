@@ -2,7 +2,7 @@
 vespa_add_executable(searchcore_fdispatch_app
     SOURCES
     fdispatch.cpp
-    OUTPUT_NAME fdispatch-bin
+    OUTPUT_NAME vespa-fdispatch-bin
     INSTALL sbin
     DEPENDS
     searchcore_fdispatch_program

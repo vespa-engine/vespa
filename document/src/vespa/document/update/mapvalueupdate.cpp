@@ -5,13 +5,14 @@
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/util/serializableexceptions.h>
+#include <vespa/vespalib/util/xmlstream.h>
 
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
 using vespalib::nbostream;
+using namespace vespalib::xml;
 
-namespace document
-{
+namespace document {
 
 IMPLEMENT_IDENTIFIABLE(MapValueUpdate, ValueUpdate);
 

@@ -1,20 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "rpinterface.h"
-#include <string>
-#include <vector>
 #include "juniperparams.h"
 #include "foreach_utils.h"
-#include "juniperdebug.h"
-#include "SummaryConfig.h"
 #include "queryvisitor.h"
-#include "querynode.h"
 #include "queryhandle.h"
 #include "propreader.h"
 #include "result.h"
 #include "config.h"
-#include "querymodifier.h"
-#include <vespa/fastlib/text/normwordfolder.h>
+#include <vector>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.rpinterface");

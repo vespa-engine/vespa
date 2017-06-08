@@ -2,7 +2,7 @@
 
 #include "value.h"
 #include "operator.h"
-#include <cstdint>
+#include <vespa/document/fieldvalue/fieldvalue.h>
 
 namespace document {
 namespace select {

@@ -2,9 +2,9 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/stllike/hash_map.h>
+#include <memory>
 
-namespace document{
+namespace document {
 
 class Document;
 class DocumentId;
@@ -12,24 +12,26 @@ class DocumentUpdate;
 
 namespace select {
 
-class Context
-{
-public:
-    typedef vespalib::hash_map<vespalib::string, double> VariableMap;
+class Value;
+class VariableMap;
 
+class Context {
+public:
     Context();
-    Context(const Document& doc);
-    Context(const DocumentId& docId);
-    Context(const DocumentUpdate& docUpdate);
+    Context(const Document & doc);
+    Context(const DocumentId & docId);
+    Context(const DocumentUpdate & docUpdate);
     virtual ~Context();
 
-    const Document       * _doc;
-    const DocumentId     * _docId;
-    const DocumentUpdate * _docUpdate;
-    VariableMap            _variables;
+    void setVariableMap(std::unique_ptr<VariableMap> map);
+    std::unique_ptr<Value> getValue(const vespalib::string & value) const;
+
+    const Document *_doc;
+    const DocumentId *_docId;
+    const DocumentUpdate *_docUpdate;
+private:
+    std::unique_ptr<VariableMap> _variables;
 };
 
-} // select
-} // document
-
-
+}
+}

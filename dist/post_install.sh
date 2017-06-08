@@ -67,4 +67,39 @@ ln -s $PREFIX/lib/jars/orchestrator-jar-with-dependencies.jar $INSTALLPATH/conf/
 ln -s $PREFIX/lib/jars/node-repository-jar-with-dependencies.jar $INSTALLPATH/conf/configserver-app/components/node-repository.jar
 ln -s $PREFIX/lib/jars/zkfacade-jar-with-dependencies.jar $INSTALLPATH/conf/configserver-app/components/zkfacade.jar
 ln -s $PREFIX/conf/configserver-app/components $INSTALLPATH/lib/jars/config-models
-ln -s storaged-bin $INSTALLPATH/sbin/distributord-bin
+ln -s vespa-storaged-bin $INSTALLPATH/sbin/vespa-distributord-bin
+
+# Temporary when renaming binaries in fnet
+ln -s vespa-rpc-info $INSTALLPATH/bin/rpc_info
+ln -s vespa-rpc-invoke $INSTALLPATH/bin/rpc_invoke
+ln -s vespa-rpc-proxy $INSTALLPATH/bin/rpc_proxy
+
+# Temporary when renaming binaries in fsa
+ln -s vespa-fsadump $INSTALLPATH/bin/fsadump
+ln -s vespa-fsainfo $INSTALLPATH/bin/fsainfo
+ln -s vespa-makefsa $INSTALLPATH/bin/makefsa
+
+# Temporary when renaming binaries in searchcore
+ln -s vespa-proton-bin $INSTALLPATH/sbin/proton-bin
+ln -s vespa-fdispatch-bin $INSTALLPATH/sbin/fdispatch-bin
+ln -s vespa-verify-ranksetup-bin $INSTALLPATH/bin/verify_ranksetup-bin
+ln -s vespa-proton $INSTALLPATH/sbin/proton
+ln -s vespa-fdispatch $INSTALLPATH/sbin/fdispatch
+ln -s vespa-verify-ranksetup $INSTALLPATH/bin/verify_ranksetup
+
+# Temporary when renaming binaries in storageserver
+ln -s vespa-storaged-bin $INSTALLPATH/sbin/storaged-bin
+ln -s vespa-distributord-bin $INSTALLPATH/sbin/distributord-bin
+ln -s vespa-storaged $INSTALLPATH/sbin/storaged
+ln -s vespa-distributord $INSTALLPATH/sbin/distributord
+
+# Temporary when renaming binaries in vespalog
+ln -s vespa-log-conv $INSTALLPATH/bin/vlogconv
+ln -s vespa-logctl $INSTALLPATH/bin/logctl
+ln -s vespa-logfmt $INSTALLPATH/bin/logfmt
+ln -s vespa-log-replay $INSTALLPATH/bin/vlogreplay
+
+# Temporary when renaming binaries in memfilepersistence
+ln -s vespa-dump-slotfile $INSTALLPATH/bin/dumpslotfile
+ln -s vespa-vds-disktool-bin $INSTALLPATH/bin/vdsdisktool-bin
+ln -s vespa-vds-disktool $INSTALLPATH/bin/vdsdisktool

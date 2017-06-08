@@ -3,6 +3,7 @@
 #include "loadtypeset.h"
 #include <vespa/config-load-type.h>
 #include <vespa/config/config.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/config/helper/configgetter.hpp>
 

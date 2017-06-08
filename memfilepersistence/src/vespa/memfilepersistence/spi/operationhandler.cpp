@@ -3,12 +3,12 @@
 #include "operationhandler.h"
 #include <vespa/memfilepersistence/common/exceptions.h>
 #include <vespa/document/select/parser.h>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.memfile.handler.operation");
 
-namespace storage {
-namespace memfile {
+namespace storage::memfile {
 
 OperationHandler::OperationHandler(Environment& env)
     : _env(env)
@@ -283,5 +283,4 @@ OperationHandler::parseDocumentSelection(
     return ret;
 }
 
-} // memfile
-} // storage
+}

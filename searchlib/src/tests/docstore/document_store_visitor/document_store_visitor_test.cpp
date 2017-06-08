@@ -7,6 +7,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>

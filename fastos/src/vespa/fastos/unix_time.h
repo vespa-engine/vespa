@@ -89,9 +89,8 @@ public:
     void SetMilliSecs(double millisecs) override;
     void SetSecs(double secs) override;
 
-    void SetNow() override { gettimeofday(&_time, NULL); }
+    void SetNow() override;
 
     long int GetSeconds() const override { return _time.tv_sec; }
     long int GetMicroSeconds() const override { return _time.tv_usec; }
 };
-

@@ -13,8 +13,8 @@
 #include <vespa/fastos/types.h>
 
 class FastOS_ProcessInterface;
+class FastOS_ThreadPool;
 
-#include <vespa/fastos/thread.h>
 #include <vespa/fastos/mutex.h>
 
 /**

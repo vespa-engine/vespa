@@ -8,6 +8,7 @@
 #include <vespa/searchlib/fef/test/ftlib.h>
 #include <initializer_list>
 #include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using namespace search::fef;
 using namespace search::fef::test;

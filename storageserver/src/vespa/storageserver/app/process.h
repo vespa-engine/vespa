@@ -14,23 +14,29 @@
 
 #pragma once
 
-#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/config/config-documenttypes.h>
 #include <vespa/storage/storageserver/applicationgenerationfetcher.h>
-#include <vespa/storage/storageserver/distributornode.h>
-#include <vespa/storage/storageserver/servicelayernode.h>
-#include <vespa/config/config.h>
+#include <vespa/config/subscription/configuri.h>
+#include <vespa/config/subscription/configsubscriber.h>
+
+
+namespace document { class DocumentTypeRepo; }
 
 namespace storage {
 
+class StorageNode;
+class StorageNodeContext;
+
 class Process : public ApplicationGenerationFetcher {
 protected:
+    using DocumentTypeRepoSP = std::shared_ptr<document::DocumentTypeRepo>;
     config::ConfigUri _configUri;
-    document::DocumentTypeRepo::SP getTypeRepo() { return _repos.back(); }
+    DocumentTypeRepoSP getTypeRepo() { return _repos.back(); }
     config::ConfigSubscriber _configSubscriber;
 
 private:
     config::ConfigHandle<document::DocumenttypesConfig>::UP _documentHandler;
-    std::vector<document::DocumentTypeRepo::SP> _repos;
+    std::vector<DocumentTypeRepoSP> _repos;
 
 public:
     typedef std::unique_ptr<Process> UP;

@@ -1,20 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <sys/types.h>
-#include <cstdio>
-#include <cstdlib>
-#include <unistd.h>
-#include <cstring>
-#include <limits.h>
-
-#include <memory>
-#include <vector>
-#include <string>
 
 #include <vespa/defaults.h>
 #include <vespa/log/control-file.h>
 #include <vespa/log/internal.h>
 #include <vespa/log/component.h>
-LOG_SETUP("logctl", "$Id$");
+
+#include <unistd.h>
+#include <dirent.h>
+#include <sys/stat.h>
+
+LOG_SETUP("vespa-logctl");
+
 
 using namespace ns_log;
 

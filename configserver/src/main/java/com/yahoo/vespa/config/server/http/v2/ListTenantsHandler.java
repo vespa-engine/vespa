@@ -27,7 +27,7 @@ public class ListTenantsHandler extends HttpHandler {
 
     @Override
     protected HttpResponse handleGET(HttpRequest request) {
-        return new ListTenantsResponse(tenants.getAllTenants());
+        return new ListTenantsResponse(tenants.getAllTenantNames());
     }
 
 }

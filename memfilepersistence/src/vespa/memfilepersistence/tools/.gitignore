@@ -1,5 +1,4 @@
 /.depend
 /Makefile
-/dumpslotfile
-/vdsdisktool
-vdsdisktool-bin
+vespa-dump-slotfile
+vespa-vds-disktool-bin

@@ -1178,13 +1178,13 @@ TEST_F("requireThatUriIndexingIsWorking", DictionaryFixture<UriFixture>)
     f._b.startDocument("doc::10");
     f._b.startIndexField("iu").
         startSubField("all").
-        addUrlTokenizedString("http://www.yahoo.com:81/fluke?ab=2#4").
+        addUrlTokenizedString("http://www.example.com:81/fluke?ab=2#4").
         endSubField().
         startSubField("scheme").
         addUrlTokenizedString("http").
         endSubField().
         startSubField("host").
-        addUrlTokenizedString("www.yahoo.com").
+        addUrlTokenizedString("www.example.com").
         endSubField().
         startSubField("port").
         addUrlTokenizedString("81").
@@ -1202,13 +1202,13 @@ TEST_F("requireThatUriIndexingIsWorking", DictionaryFixture<UriFixture>)
     f._b.startIndexField("iau").
         startElement(1).
         startSubField("all").
-        addUrlTokenizedString("http://www.yahoo.com:82/fluke?ab=2#8").
+        addUrlTokenizedString("http://www.example.com:82/fluke?ab=2#8").
         endSubField().
         startSubField("scheme").
         addUrlTokenizedString("http").
         endSubField().
         startSubField("host").
-        addUrlTokenizedString("www.yahoo.com").
+        addUrlTokenizedString("www.example.com").
         endSubField().
         startSubField("port").
         addUrlTokenizedString("82").
@@ -1250,13 +1250,13 @@ TEST_F("requireThatUriIndexingIsWorking", DictionaryFixture<UriFixture>)
     f._b.startIndexField("iwu").
         startElement(4).
         startSubField("all").
-        addUrlTokenizedString("http://www.yahoo.com:83/fluke?ab=2#12").
+        addUrlTokenizedString("http://www.example.com:83/fluke?ab=2#12").
         endSubField().
         startSubField("scheme").
         addUrlTokenizedString("http").
         endSubField().
         startSubField("host").
-        addUrlTokenizedString("www.yahoo.com").
+        addUrlTokenizedString("www.example.com").
         endSubField().
         startSubField("port").
         addUrlTokenizedString("83").
@@ -1315,7 +1315,7 @@ TEST_F("requireThatUriIndexingIsWorking", DictionaryFixture<UriFixture>)
     }
     {
         uint32_t fieldId = f.getSchema().getIndexFieldId("iu");
-        PostingIterator itr(f._d.findFrozen("yahoo", fieldId),
+        PostingIterator itr(f._d.findFrozen("example", fieldId),
                             featureStoreRef(f._d, fieldId),
                             fieldId, matchData);
         itr.initFullRange();
@@ -1327,7 +1327,7 @@ TEST_F("requireThatUriIndexingIsWorking", DictionaryFixture<UriFixture>)
     }
     {
         uint32_t fieldId = f.getSchema().getIndexFieldId("iau");
-        PostingIterator itr(f._d.findFrozen("yahoo", fieldId),
+        PostingIterator itr(f._d.findFrozen("example", fieldId),
                             featureStoreRef(f._d, fieldId),
                             fieldId, matchData);
         itr.initFullRange();
@@ -1340,7 +1340,7 @@ TEST_F("requireThatUriIndexingIsWorking", DictionaryFixture<UriFixture>)
     }
     {
         uint32_t fieldId = f.getSchema().getIndexFieldId("iwu");
-        PostingIterator itr(f._d.findFrozen("yahoo", fieldId),
+        PostingIterator itr(f._d.findFrozen("example", fieldId),
                             featureStoreRef(f._d, fieldId),
                             fieldId, matchData);
         itr.initFullRange();

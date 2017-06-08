@@ -3,6 +3,7 @@
 
 #include "valuemetricvalues.h"
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <ostream>
 
 namespace metrics {

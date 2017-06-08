@@ -7,6 +7,7 @@
 #include <vespa/vsm/common/fieldmodifier.h>
 #include <vespa/vsm/searcher/utf8substringsnippetmodifier.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
+#include <vespa/document/fieldvalue/iteratorhandler.h>
 
 namespace vsm {
 
@@ -19,11 +20,9 @@ namespace vsm {
  * responsible for modifying the field value by inserting unit separators before and after matches.
  * A group separator is inserted between primitive field values the same way as done by FlattenDocsumWriter.
  **/
-class SnippetModifier : public FieldModifier, public document::FieldValue::IteratorHandler
+class SnippetModifier : public FieldModifier, public document::fieldvalue::IteratorHandler
 {
 private:
-    typedef document::FieldValue::IteratorHandler::Content Content;
-
     UTF8SubstringSnippetModifier::SP _searcher;
     CharBuffer::SP                   _valueBuf; // buffer to store the final modified field value
     char                             _groupSep;

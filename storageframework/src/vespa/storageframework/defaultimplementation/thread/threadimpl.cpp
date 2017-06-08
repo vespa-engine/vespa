@@ -4,7 +4,7 @@
 #include "threadpoolimpl.h"
 #include <vespa/storageframework/generic/clock/clock.h>
 
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".framework.thread.impl");
 
 namespace storage::framework::defaultimplementation {

@@ -2,17 +2,17 @@
 #include "addvalueupdate.h"
 #include <vespa/document/base/field.h>
 #include <vespa/document/datatype/arraydatatype.h>
-#include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
-#include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
-#include <vespa/document/util/serializable.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/xmlstream.h>
+
 
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
 using vespalib::nbostream;
+using namespace vespalib::xml;
 
 namespace document {
 

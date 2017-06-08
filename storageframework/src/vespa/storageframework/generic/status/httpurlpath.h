@@ -9,6 +9,7 @@
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <map>
+#include <sstream>
 
 namespace storage::framework {
 

@@ -4,6 +4,7 @@
 #include "searchenvironment.h"
 #include "searchvisitor.h"
 #include <vespa/document/datatype/positiondatatype.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/searchlib/aggregation/modifiers.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/uca/ucaconverter.h>
@@ -367,7 +368,7 @@ SearchVisitorFactory::makeVisitor(StorageComponent& component,
 }
 
 void
-SearchVisitor::AttributeInserter::onPrimitive(uint32_t, const IteratorContent & c)
+SearchVisitor::AttributeInserter::onPrimitive(uint32_t, const Content & c)
 {
     const document::FieldValue & value = c.getValue();
     LOG(debug, "AttributeInserter: Adding value '%s'(%d) to attribute '%s' for docid '%d'",
@@ -401,13 +402,13 @@ SearchVisitor::PositionInserter::PositionInserter(search::AttributeVector & attr
 SearchVisitor::PositionInserter::~PositionInserter() {}
 
 void
-SearchVisitor::PositionInserter::onPrimitive(uint32_t, const IteratorContent & c)
+SearchVisitor::PositionInserter::onPrimitive(uint32_t, const Content & c)
 {
     (void) c;
 }
 
 void
-SearchVisitor::PositionInserter::onStructStart(const IteratorContent & c)
+SearchVisitor::PositionInserter::onStructStart(const Content & c)
 {
     const document::StructuredFieldValue & value = static_cast<const document::StructuredFieldValue &>(c.getValue());
     LOG(debug, "PositionInserter: Adding value '%s'(%d) to attribute '%s' for docid '%d'",

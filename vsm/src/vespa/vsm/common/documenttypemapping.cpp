@@ -2,6 +2,7 @@
 
 #include "documenttypemapping.h"
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>

@@ -5,6 +5,7 @@
 #include <vespa/document/select/compare.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/valuenode.h>
+#include <vespa/document/select/variablemap.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 namespace document {
@@ -21,13 +22,13 @@ DocumentCalculator::DocumentCalculator(
 DocumentCalculator::~DocumentCalculator() { }
 
 double
-DocumentCalculator::evaluate(const Document& doc, VariableMap && variables)
+DocumentCalculator::evaluate(const Document& doc, std::unique_ptr<select::VariableMap> variables)
 {
     select::Compare& compare(static_cast<select::Compare&>(*_selectionNode));
     const select::ValueNode& left = compare.getLeft();
 
     select::Context context(doc);
-    context._variables = std::move(variables);
+    context.setVariableMap(std::move(variables));
     std::unique_ptr<select::Value> value = left.getValue(context);
 
     select::NumberValue* num = dynamic_cast<select::NumberValue*>(value.get());

@@ -1,0 +1,40 @@
+.TH VESPAVISITTARGET 1 2008-03-07 "Vespa" "Vespa Documentation"
+.SH NAME
+vespavisittarget \- An endpoint for documents visited from a Vespa installation
+.SH SYNPOSIS
+.B vespavisittarget
+[\fIOPTION\fR]...
+.SH DESCRIPTION
+.PP
+When visiting data from Vespa, you might not want to send the data back to the
+controlling process. By using separate visitor targets you can divide load
+between multiple nodes and have the controlling process run at another location.
+The document API has utility classes to set up end points for visitor data from
+Vespa. This application is a small tool that uses these utilities and merely
+writes the data retrieved to STDOUT in XML format.
+.PP
+Mandatory arguments to long options are mandatory for short options too.
+Short options can not currently be concatenated together.
+.TP
+\fB\-s\fR, \fB\-\-bindtoslobrok\fR \fISLOBROKADDRESS\fR
+Bind to the given slobrok address. Note that the value \fI/visit-destination\fR
+will be appended to the given address.
+.TP
+\fB\-t\fR, \fB\-\-bindtosocket\fR \fIPORT\fR
+Bind to the given TCP socket. This will make sure we listen to the given port.
+No slobrok registration is done using this option, so you need to specify
+TCP socket address in visitors to get data sent to this destination.
+.TP
+\fB\-i\fR, \fB\-\-printids\fR
+Using this option, only the document identifiers will be printed to STDOUT.
+In addition, if visiting removes, an additional tag will be added so you can
+see whether document has been removed or not. This option implies headers only
+visiting, and can only be used if no datahandler is specified.
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+More verbose output. Indent XML.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Shows a short syntax reminder.
+.SH AUTHOR
+Written by Haakon Humberset.

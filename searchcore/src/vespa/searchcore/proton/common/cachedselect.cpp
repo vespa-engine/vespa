@@ -1,12 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "cachedselect.h"
-#include <vespa/document/select/valuenode.h>
-#include <vespa/document/select/cloningvisitor.h>
 #include "attributefieldvaluenode.h"
-#include <vespa/searchlib/attribute/iattributemanager.h>
-#include <vespa/document/select/parser.h>
 #include "selectpruner.h"
+#include <vespa/searchlib/attribute/iattributemanager.h>
+#include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/document/select/parser.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.common.cachedselect");
@@ -85,7 +84,7 @@ AttrVisitor::visitFieldValueNode(const FieldValueNode &expr)
             _valueNode = expr.clone();
             return;
         }
-        AttributeVector::SP av(ag->getSP());
+        std::shared_ptr<search::AttributeVector> av(ag->getSP());
         if (av->getCollectionType() == CollectionType::SINGLE) {
             ++_svAttrs;
             AttrMap::iterator it(_amap.find(name));

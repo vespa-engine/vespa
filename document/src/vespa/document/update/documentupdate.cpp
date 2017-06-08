@@ -1,4 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include "documentupdate.h"
 #include "documentupdateflags.h"
 #include <vespa/document/fieldvalue/fieldvalues.h>
@@ -7,12 +8,15 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/util/bufferexceptions.h>
 #include <vespa/document/base/exceptions.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/vespalib/util/xmlstream.h>
 
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
 using vespalib::nbostream;
 using vespalib::make_string;
 using vespalib::string;
+using namespace vespalib::xml;
 
 namespace document {
 
@@ -103,7 +107,28 @@ DocumentUpdate::affectsDocumentBody() const
     return false;
 }
 
-// Print the content of this document update.
+const DocumentType&
+DocumentUpdate::getType() const {
+    return static_cast<const DocumentType &> (*_type);
+}
+
+DocumentUpdate&
+DocumentUpdate::addUpdate(const FieldUpdate& update) {
+    _updates.push_back(update);
+    return *this;
+}
+
+DocumentUpdate&
+DocumentUpdate::addFieldPathUpdate(const FieldPathUpdate::CP& update) {
+    _fieldPathUpdates.push_back(update);
+    return *this;
+}
+
+DocumentUpdate*
+DocumentUpdate::clone() const {
+    return new DocumentUpdate(*this);
+}
+
 void
 DocumentUpdate::print(std::ostream& out, bool verbose,
                       const std::string& indent) const
@@ -230,8 +255,7 @@ DocumentUpdate::deserialize42(const DocumentTypeRepo& repo, ByteBuffer& buffer)
     try{
         buffer.getShortNetwork(_version);
 
-        std::pair<const DocumentType *, DocumentId> typeAndId(
-                deserializeTypeAndId(repo, buffer));
+        std::pair<const DocumentType *, DocumentId> typeAndId(deserializeTypeAndId(repo, buffer));
         _type = typeAndId.first;
         _documentId = typeAndId.second;
         // Read field updates, if any.

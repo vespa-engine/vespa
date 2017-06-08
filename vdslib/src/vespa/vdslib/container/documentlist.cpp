@@ -5,8 +5,9 @@
 #include <vespa/document/util/stringutil.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/document/update/documentupdate.h>
-#include <vespa/log/log.h>
+#include <vespa/document/datatype/documenttype.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".vdslib.container.documentlist");
 
 using document::ByteBuffer;

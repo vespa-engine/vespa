@@ -24,7 +24,9 @@
 #include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/data/databuffer.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
+#include <vespa/document/util/compressor.h>
 
 using std::make_pair;
 using std::pair;

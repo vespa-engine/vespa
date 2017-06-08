@@ -2,6 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/param_usage.h>
+#include <vespa/eval/eval/llvm/compiled_function.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 
 using vespalib::approx_equal;
@@ -60,6 +61,16 @@ TEST("require that multi-level if statements are combined correctly") {
     Function function = Function::parse(params, "if(z,if(w,y*x,x*x),if(w,y*x,x*x))");
     EXPECT_EQUAL(List(count_param_usage(function)), List({1.5, 0.5, 1.0, 1.0}));
     EXPECT_EQUAL(List(check_param_usage(function)), List({1.0, 0.5, 1.0, 1.0}));
+}
+
+TEST("require that lazy parameters are suggested for functions with parameters that might not be used") {
+    Function function = Function::parse("if(z,x,y)+if(w,y,x)");
+    EXPECT_TRUE(CompiledFunction::should_use_lazy_params(function));
+}
+
+TEST("require that lazy parameters are not suggested for functions where all parameters are always used") {
+    Function function = Function::parse("a*b*c");
+    EXPECT_TRUE(!CompiledFunction::should_use_lazy_params(function));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

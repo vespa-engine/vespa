@@ -12,7 +12,6 @@
 
 #pragma once
 
-#include <string>
 #include "resultlist.h"
 #include "context.h"
 
@@ -33,15 +32,11 @@ public:
     typedef std::shared_ptr<Node> SP;
 
     Node(const vespalib::stringref & name) : _name(name), _parentheses(false) {}
-    virtual ~Node() {}
+    ~Node() override {}
 
     void setParentheses() { _parentheses = true; }
 
-    void
-    clearParentheses()
-    {
-        _parentheses = false;
-    }
+    void clearParentheses() { _parentheses = false; }
 
     bool hadParentheses() const { return _parentheses; }
 

@@ -4,6 +4,7 @@
 #include "message.h"
 #include "reply.h"
 #include "idiscardhandler.h"
+#include <cassert>
 
 namespace mbus {
 

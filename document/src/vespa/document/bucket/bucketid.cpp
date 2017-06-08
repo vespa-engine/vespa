@@ -6,6 +6,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_set.hpp>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using vespalib::nbostream;
 using vespalib::asciistream;

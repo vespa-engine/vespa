@@ -9,7 +9,7 @@
 #include <map>
 #include <initializer_list>
 
-const char *prog = "../../../apps/verify_ranksetup/verify_ranksetup-bin";
+const char *prog = "../../../apps/verify_ranksetup/vespa-verify-ranksetup-bin";
 const std::string gen_dir("generated");
 
 const char *valid_feature = "value(0)";

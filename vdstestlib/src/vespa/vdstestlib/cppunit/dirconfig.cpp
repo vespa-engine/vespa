@@ -4,6 +4,7 @@
 
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <fstream>
 #include <atomic>
 

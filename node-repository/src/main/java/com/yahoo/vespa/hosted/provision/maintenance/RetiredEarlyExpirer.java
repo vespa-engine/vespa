@@ -60,6 +60,10 @@ public class RetiredEarlyExpirer extends Maintainer {
                         nodesToRemove.add(node);
                     }
                 }
+                
+                if (nodesToRemove.isEmpty()) {
+                    continue;
+                }
 
                 nodeRepository().setRemovable(application, nodesToRemove);
 

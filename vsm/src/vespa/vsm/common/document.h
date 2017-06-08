@@ -4,6 +4,7 @@
 #include <vespa/searchlib/query/base.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <map>
 
 namespace vespalib {
     class asciistream;

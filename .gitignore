@@ -41,3 +41,4 @@ Testing
 /vespa-hadoop/dependency-reduced-pom.xml
 .preprocessed/
 .DS_Store
+install_manifest.txt

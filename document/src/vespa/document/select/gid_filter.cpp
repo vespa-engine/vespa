@@ -1,15 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "gid_filter.h"
 #include "node.h"
-#include "parser.h"
 #include "visitor.h"
-#include "valuenode.h"
+#include "valuenodes.h"
 #include "compare.h"
 #include "branch.h"
 #include <vespa/document/base/idstring.h>
 
-namespace document {
-namespace select {
+namespace document::select {
 
 namespace {
 
@@ -156,5 +154,4 @@ GidFilter::GidFilter(const Node& ast_root)
 {
 }
 
-} // select
-} // document
+}

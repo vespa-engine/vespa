@@ -32,7 +32,7 @@ public class RestartTest {
             CallOrderVerifier callOrderVerifier = dockerTester.getCallOrderVerifier();
             // Check that the container is started and NodeRepo has received the PATCH update
             callOrderVerifier.assertInOrder("createContainerCommand with DockerImage { imageId=image:1.2.3 }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
-                                            "updateNodeAttributes with HostName: host1.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image:1.2.3, vespaVersion=''}");
+                                            "updateNodeAttributes with HostName: host1.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image:1.2.3, vespaVersion='1.2.3'}");
 
             wantedRestartGeneration = 2;
             currentRestartGeneration = 1;
@@ -46,8 +46,9 @@ public class RestartTest {
     private ContainerNodeSpec createContainerNodeSpec(long wantedRestartGeneration, long currentRestartGeneration) {
         return new ContainerNodeSpec.Builder()
                 .hostname("host1.test.yahoo.com")
-                .wantedDockerImage(new DockerImage("image:1.2.3"))
                 .nodeState(Node.State.active)
+                .wantedDockerImage(new DockerImage("image:1.2.3"))
+                .wantedVespaVersion("1.2.3")
                 .nodeType("tenant")
                 .nodeFlavor("docker")
                 .wantedRestartGeneration(wantedRestartGeneration)

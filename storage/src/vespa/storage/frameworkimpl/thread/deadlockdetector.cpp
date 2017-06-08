@@ -5,7 +5,7 @@
 #include <vespa/storage/bucketmover/htmltable.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".deadlock.detector");
 
 namespace storage {

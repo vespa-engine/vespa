@@ -15,8 +15,7 @@ ResultList::ResultList(const Result& result) {
 }
 
 void
-ResultList::add(const FieldValue::IteratorHandler::VariableMap& variables,
-                const Result& result)
+ResultList::add(const fieldvalue::VariableMap& variables, const Result& result)
 {
     _results.push_back(ResultPair(variables, &result));
 }
@@ -27,8 +26,7 @@ ResultList::print(std::ostream& out, bool, const std::string&) const
     out << "ResultList(";
     for (uint32_t i = 0; i < _results.size(); i++) {
         if (!_results[i].first.empty()) {
-            out << FieldValue::IteratorHandler::toString(_results[i].first)
-                << " => ";
+            out << _results[i].first.toString() << " => ";
         }
         out << _results[i].second->toString() << " ";
     }
@@ -66,15 +64,12 @@ ResultList::combineResults() const {
 
 bool
 ResultList::combineVariables(
-        FieldValue::IteratorHandler::VariableMap& output,
-        const FieldValue::IteratorHandler::VariableMap& input) const
+        fieldvalue::VariableMap& output,
+        const fieldvalue::VariableMap& input) const
 {
     // First, verify that all variables are overlapping
-    for (FieldValue::IteratorHandler::VariableMap::const_iterator iter
-            = output.begin(); iter != output.end(); iter++)
-    {
-        FieldValue::IteratorHandler::VariableMap::const_iterator found(
-                input.find(iter->first));
+    for (fieldvalue::VariableMap::const_iterator iter = output.begin(); iter != output.end(); iter++) {
+        fieldvalue::VariableMap::const_iterator found(input.find(iter->first));
 
         if (found != input.end()) {
             if (!(found->second == iter->second)) {
@@ -83,11 +78,8 @@ ResultList::combineVariables(
         }
     }
 
-    for (FieldValue::IteratorHandler::VariableMap::const_iterator iter
-            = input.begin(); iter != input.end(); iter++)
-    {
-        FieldValue::IteratorHandler::VariableMap::const_iterator found(
-                output.find(iter->first));
+    for (fieldvalue::VariableMap::const_iterator iter = input.begin(); iter != input.end(); iter++) {
+        fieldvalue::VariableMap::const_iterator found(output.find(iter->first));
         if (found != output.end()) {
             if (!(found->second == iter->second)) {
                 return false;
@@ -95,9 +87,7 @@ ResultList::combineVariables(
         }
     }
     // Ok, variables are overlapping. Add all variables from input to output.
-    for (FieldValue::IteratorHandler::VariableMap::const_iterator iter
-            = input.begin(); iter != input.end(); iter++)
-    {
+    for (fieldvalue::VariableMap::const_iterator iter = input.begin(); iter != input.end(); iter++) {
         output[iter->first] = iter->second;
     }
 
@@ -112,7 +102,7 @@ ResultList::operator&&(const ResultList& other) const
     // TODO: optimize
     for (const auto & it : _results) {
         for (const auto & it2 : other._results) {
-            FieldValue::IteratorHandler::VariableMap vars = it.first;
+            fieldvalue::VariableMap vars = it.first;
 
             if (combineVariables(vars, it2.first)) {
                 result.add(vars, *it.second && *it2.second);
@@ -131,7 +121,7 @@ ResultList::operator||(const ResultList& other) const
     // TODO: optimize
     for (const auto & it : _results) {
         for (const auto & it2 : other._results) {
-            FieldValue::IteratorHandler::VariableMap vars = it.first;
+            fieldvalue::VariableMap vars = it.first;
 
             if (combineVariables(vars, it2.first)) {
                 result.add(vars, *it.second || *it2.second);

@@ -29,19 +29,7 @@ private:
     void deserialize(const DocumentTypeRepo& repo, const DataType& type,
                      ByteBuffer& buffer, uint16_t version) override;
 
-    class RemoveIteratorHandler : public FieldValue::IteratorHandler
-    {
-    public:
-        RemoveIteratorHandler() {}
-
-        ModificationStatus doModify(FieldValue&) override {
-            return REMOVED;
-        }
-    };
-
-    std::unique_ptr<FieldValue::IteratorHandler> getIteratorHandler(Document&) const override {
-        return std::make_unique<RemoveIteratorHandler>();
-    }
+    std::unique_ptr<fieldvalue::IteratorHandler> getIteratorHandler(Document&) const override;
 };
 
 

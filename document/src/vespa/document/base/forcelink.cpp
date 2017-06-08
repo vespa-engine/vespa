@@ -3,6 +3,8 @@
 #include "forcelink.h"
 #include <vespa/document/update/updates.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/document/datatype/documenttype.h>
+
 
 namespace document {
 

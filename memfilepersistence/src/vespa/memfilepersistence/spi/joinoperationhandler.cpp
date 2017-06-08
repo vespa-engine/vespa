@@ -3,6 +3,7 @@
 #include "joinoperationhandler.h"
 #include "cacheevictionguard.h"
 #include <vespa/memfilepersistence/mapper/memfilemapper.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.memfile.handler.join");

@@ -8,6 +8,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/persistence/proxy/providerproxy.h>
 #include <vespa/persistence/proxy/providerstub.h>
 #include <vespa/persistence/spi/abstractpersistenceprovider.h>

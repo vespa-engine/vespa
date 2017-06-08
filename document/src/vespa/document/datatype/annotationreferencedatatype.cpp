@@ -3,6 +3,7 @@
 #include "annotationreferencedatatype.h"
 #include <vespa/document/fieldvalue/annotationreferencefieldvalue.h>
 #include <ostream>
+#include <cassert>
 
 using std::unique_ptr;
 using std::ostream;

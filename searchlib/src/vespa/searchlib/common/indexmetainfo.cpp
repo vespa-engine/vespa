@@ -3,6 +3,7 @@
 #include "indexmetainfo.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/guard.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".indexmetainfo");

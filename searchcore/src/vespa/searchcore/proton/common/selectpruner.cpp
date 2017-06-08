@@ -2,15 +2,14 @@
 
 #include "selectpruner.h"
 #include <vespa/document/base/exceptions.h>
-#include <vespa/document/base/fieldpath.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/select/compare.h>
-#include <vespa/document/select/operator.h>
 #include <vespa/document/select/constant.h>
 #include <vespa/document/select/branch.h>
 #include <vespa/document/select/doctype.h>
 #include <vespa/document/select/invalidconstant.h>
-#include <vespa/document/select/constant.h>
+#include <vespa/document/select/valuenodes.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 
 using document::select::And;

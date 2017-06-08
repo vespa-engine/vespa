@@ -2,9 +2,7 @@
 
 #include "resultset.h"
 
-namespace document {
-
-namespace select {
+namespace document::select {
 
 std::vector<ResultSet> ResultSet::_ands;
 std::vector<ResultSet> ResultSet::_ors;
@@ -15,9 +13,9 @@ std::vector<ResultSet> ResultSet::_nots;
  * inputs.
  */
 void
-ResultSet::preCalc(void)
+ResultSet::preCalc()
 {
-    uint32_t erange = Result::enumRange();
+    uint32_t erange = Result::enumRange;
     uint32_t range = illegalMask();
     _ands.resize(range * range);
     _ors.resize(range * range);
@@ -53,13 +51,12 @@ ResultSet::preCalc(void)
 }
 
 
-namespace
-{
+namespace {
 
 class Precalc
 {
 public:
-    Precalc(void)
+    Precalc()
     {
         ResultSet::preCalc();
     }
@@ -70,5 +67,4 @@ Precalc precalc;
 
 }
 
-} // select
-} // document
+}

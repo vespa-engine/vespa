@@ -23,6 +23,7 @@
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/datatype/documenttype.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("cachedselect_test");

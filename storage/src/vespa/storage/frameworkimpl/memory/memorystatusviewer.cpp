@@ -6,9 +6,9 @@
 #include <vespa/storage/storageutil/piechart.h>
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
+#include <sstream>
 
-#include <vespa/log/log.h>
-
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".memory.status.viewer");
 
 using storage::framework::defaultimplementation::MemoryState;

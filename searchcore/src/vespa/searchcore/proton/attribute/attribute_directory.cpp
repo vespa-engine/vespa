@@ -5,6 +5,7 @@
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.attribute_directory");

@@ -8,10 +8,10 @@
 #include "testvisitor.h"
 #include "recoveryvisitor.h"
 #include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
-#include <vespa/storageapi/message/visitor.h>
 #include <vespa/storage/common/statusmessages.h>
-#include <vespa/storage/storageserver/storagemetricsset.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.manager");

@@ -5,11 +5,10 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <iomanip>
 
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".persistence.memfile.filescanner");
 
-namespace storage {
-namespace memfile {
+namespace storage::memfile {
 
 FileScanner::Metrics::Metrics(framework::Clock& clock)
     : metrics::MetricSet("dbinit.filescan", "",
@@ -238,5 +237,4 @@ FileScanner::handleBadLocation(const document::BucketId& bucket,
     return true;
 }
 
-} // memfile
-} // storage
+}

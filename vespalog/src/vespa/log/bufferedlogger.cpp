@@ -1,20 +1,20 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/bufferedlogger.h>
-
-#include <iomanip>
-#include <iostream>
-#include <sstream>
-#include <vector>
-#include <stdarg.h>
-#include <sys/time.h>
-
+#include "bufferedlogger.h"
+#include <vespa/fastos/mutex.h>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/identity.hpp>
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/mem_fun.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/sequenced_index.hpp>
+
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <vector>
+#include <cstdarg>
+#include <ctime>
 
 namespace ns_log {
 

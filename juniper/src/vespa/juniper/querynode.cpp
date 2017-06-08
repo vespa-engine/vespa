@@ -4,6 +4,7 @@
 #include "queryvisitor.h"
 #include "juniperdebug.h"
 #include <vespa/vespalib/util/stringfmt.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.querynode");
@@ -145,12 +146,10 @@ void QueryNode::ComputeThreshold()
     else if (!(_options & X_AND))
         no_threshold = true;
 
-    for (int i = 0; i < _nchild; i++)
-    {
+    for (int i = 0; i < _nchild; i++) {
         QueryExpr* qe = _children[i];
         qe->ComputeThreshold();
-        if (!no_threshold)
-        {
+        if (!no_threshold) {
             int w = qe->_weight;
             if (_options | X_AND) th += w;
             else
@@ -232,8 +231,7 @@ bool QueryTerm::Complex()
 
 bool QueryNode::Complex()
 {
-    for (int i = 0; i < _nchild; i++)
-    {
+    for (int i = 0; i < _nchild; i++) {
         if (_children[i]->_arity > 1) return true;
     }
     return false;
@@ -243,8 +241,7 @@ bool QueryNode::Complex()
 int QueryNode::MaxArity()
 {
     int max_arity = _arity;
-    for (int i = 0; i < _nchild; i++)
-    {
+    for (int i = 0; i < _nchild; i++) {
         int ma = _children[i]->MaxArity();
         if (ma > max_arity) max_arity = ma;
     }
@@ -273,8 +270,7 @@ void SimplifyStack(QueryExpr*& orig_stack)
 
     int compact = 0;
     int i;
-    if (!node->Complete())
-    {
+    if (!node->Complete()) {
         LOG(warning, "juniper: query stack incomplete, got arity %d, expected %d",
             node->_nchild, node->_arity);
         delete node;
@@ -282,10 +278,8 @@ void SimplifyStack(QueryExpr*& orig_stack)
         return;
     }
 
-    for (i = 0; i < node->_arity; i++)
-    {
-        if (i > 0 && (node->_options & X_ONLY_1))
-        {
+    for (i = 0; i < node->_arity; i++) {
+        if (i > 0 && (node->_options & X_ONLY_1)) {
             // Get rid of children # >2 for RANK/ANDNOT
             delete node->_children[i];
             node->_children[i] = NULL;
@@ -296,15 +290,11 @@ void SimplifyStack(QueryExpr*& orig_stack)
         if (node->_children[i] == NULL)
             compact++;
     }
-    if (compact > 0)
-    {
+    if (compact > 0) {
         node->_nchild = 0;
-        for (i = 0; i < node->_arity; i++)
-        {
-            if (node->_children[i])
-            {
-                if (i > node->_nchild)
-                {
+        for (i = 0; i < node->_arity; i++) {
+            if (node->_children[i]) {
+                if (i > node->_nchild) {
                     // shift remaining nodes down - remember to update _childno for each node..
                     node->_children[node->_nchild] = node->_children[i];
                     node->_children[i]->_childno = node->_nchild;
@@ -316,11 +306,9 @@ void SimplifyStack(QueryExpr*& orig_stack)
         node->_arity = node->_nchild;
     }
 
-    if (node->_arity <= 1)
-    {
+    if (node->_arity <= 1) {
         QueryExpr* ret = NULL;
-        if (node->_arity == 1)
-        {
+        if (node->_arity == 1) {
             ret = node->_children[0];
             node->_children[0] = NULL;
             ret->_parent = node->_parent;

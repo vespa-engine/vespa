@@ -3,10 +3,9 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/exceptions.h>
+#include <climits>
 
-namespace search {
-namespace predicate {
+namespace search::predicate {
 
 /**
  * Helper class for expanding a point in a predicate range query to
@@ -92,7 +91,4 @@ void PredicateRangeTermExpander::expand(const vespalib::string &key, int64_t sig
     }
 }
 
-
-}  // namespace search::predicate
-}  // namespace search
-
+}

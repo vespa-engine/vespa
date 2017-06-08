@@ -4,6 +4,7 @@
 #include "slimefieldwriter.h"
 #include <vespa/searchsummary/docsummary/summaryfieldconverter.h>
 #include <vespa/document/base/exceptions.h>
+#include <vespa/document/fieldvalue/iteratorhandler.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.docsumfilter");
@@ -13,9 +14,8 @@ using namespace search::docsummary;
 
 namespace {
 
-class Handler : public document::FieldValue::IteratorHandler {
+class Handler : public document::fieldvalue::IteratorHandler {
 public:
-    typedef document::FieldValue::IteratorHandler::Content Content;
 };
 
 struct IntResultHandler : public Handler {

@@ -10,16 +10,21 @@
 #include "doublefieldvalue.h"
 #include "bytefieldvalue.h"
 #include "predicatefieldvalue.h"
-
+#include "iteratorhandler.h"
+#include <vespa/document/util/bytebuffer.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/polymorphicarrays.h>
+#include <vespa/vespalib/util/xmlstream.h>
 #include <sstream>
 
 using vespalib::FieldBase;
 using vespalib::nbostream;
-
+using namespace vespalib::xml;
 namespace document {
+
+using namespace fieldvalue;
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(FieldValue, vespalib::Identifiable);
 
@@ -49,6 +54,21 @@ FieldValue::hash() const
     vespalib::nbostream os;
     serialize(os);
     return vespalib::hashValue(os.c_str(), os.size()) ;
+}
+
+bool
+FieldValue::isA(const FieldValue& other) const {
+    return (getDataType()->isA(*other.getDataType()));
+}
+int
+FieldValue::compare(const FieldValue& other) const {
+    const DataType & a = *getDataType();
+    const DataType & b = *other.getDataType();
+    return (a < b)
+           ? -1
+           : (b < a)
+             ? 1
+             : 0;
 }
 
 FieldValue&
@@ -168,13 +188,13 @@ FieldValue::onGetNestedFieldValue(PathRange nested) const
     return FieldValue::UP();
 }
 
-FieldValue::IteratorHandler::ModificationStatus
+ModificationStatus
 FieldValue::iterateNested(PathRange nested, IteratorHandler & handler) const
 {
     return onIterateNested(nested, handler);
 }
 
-FieldValue::IteratorHandler::ModificationStatus
+ModificationStatus
 FieldValue::onIterateNested(PathRange nested, IteratorHandler & handler) const
 {
     if (nested.atEnd()) {
@@ -183,78 +203,6 @@ FieldValue::onIterateNested(PathRange nested, IteratorHandler & handler) const
     } else {
         throw vespalib::IllegalArgumentException("Primitive types can't be iterated through");
     }
-}
-
-FieldValue::IteratorHandler::~IteratorHandler() { }
-
-bool
-FieldValue::IteratorHandler::IndexValue::operator==(const FieldValue::IteratorHandler::IndexValue& other) const {
-    if (key.get() != NULL) {
-        if (other.key.get() != NULL && *key == *other.key) {
-            return true;
-        }
-        return false;
-    }
-
-    return index == other.index;
-}
-
-FieldValue::IteratorHandler::IndexValue::IndexValue(const FieldValue& key_)
-    : index(-1),
-      key(FieldValue::CP(key_.clone()))
-{ }
-
-FieldValue::IteratorHandler::IndexValue::~IndexValue() { }
-
-vespalib::string
-FieldValue::IteratorHandler::IndexValue::toString() const {
-    if (key.get() != NULL) {
-        return key->toString();
-    } else {
-        return vespalib::make_string("%d", index);
-    }
-}
-
-void
-FieldValue::IteratorHandler::handlePrimitive(uint32_t fid, const FieldValue & fv) {
-    onPrimitive(fid, Content(fv, getWeight()));
-}
-bool
-FieldValue::IteratorHandler::handleComplex(const FieldValue & fv) {
-    return onComplex(Content(fv, getWeight()));
-}
-void
-FieldValue::IteratorHandler::handleCollectionStart(const FieldValue & fv) {
-    onCollectionStart(Content(fv, getWeight()));
-}
-void
-FieldValue::IteratorHandler::handleCollectionEnd(const FieldValue & fv) {
-    onCollectionEnd(Content(fv, getWeight()));
-}
-void
-FieldValue::IteratorHandler::handleStructStart(const FieldValue & fv) {
-    onStructStart(Content(fv, getWeight()));
-}
-void
-FieldValue::IteratorHandler::handleStructEnd(const FieldValue & fv) {
-    onStructEnd(Content(fv, getWeight()));
-}
-
-void
-FieldValue::IteratorHandler::onPrimitive(uint32_t fid, const Content & fv) {
-    (void) fid;
-    (void) fv;
-}
-
-std::string
-FieldValue::IteratorHandler::toString(const VariableMap& vars) {
-    std::ostringstream out;
-    out << "[ ";
-    for (const auto & entry : vars) {
-        out << entry.first << "=" << entry.second.toString() << " ";
-    }
-    out << "]";
-    return out.str();
 }
 
 std::string
@@ -280,26 +228,26 @@ private:
 };
 }
 
-FieldValue::IArray::UP
+std::unique_ptr<vespalib::IArrayBase>
 FieldValue::createArray(const DataType & baseType)
 {
     switch(baseType.getId()) {
     case DataType::T_INT:
-        return IArray::UP(new PrimitiveArrayT<IntFieldValue, FieldValue>());
+        return std::make_unique<PrimitiveArrayT<IntFieldValue, FieldValue>>();
     case DataType::T_FLOAT:
-        return IArray::UP(new PrimitiveArrayT<FloatFieldValue, FieldValue>());
+        return std::make_unique<PrimitiveArrayT<FloatFieldValue, FieldValue>>();
     case DataType::T_STRING:
-        return IArray::UP(new PrimitiveArrayT<StringFieldValue, FieldValue>());
+        return std::make_unique<PrimitiveArrayT<StringFieldValue, FieldValue>>();
     case DataType::T_RAW:
-        return IArray::UP(new PrimitiveArrayT<RawFieldValue, FieldValue>());
+        return std::make_unique<PrimitiveArrayT<RawFieldValue, FieldValue>>();
     case DataType::T_LONG:
-        return IArray::UP(new PrimitiveArrayT<LongFieldValue, FieldValue>());
+        return std::make_unique<PrimitiveArrayT<LongFieldValue, FieldValue>>();
     case DataType::T_DOUBLE:
-        return IArray::UP(new PrimitiveArrayT<DoubleFieldValue, FieldValue>());
+        return std::make_unique<PrimitiveArrayT<DoubleFieldValue, FieldValue>>();
     case DataType::T_BYTE:
-        return IArray::UP(new PrimitiveArrayT<ByteFieldValue, FieldValue>());
+        return std::make_unique<PrimitiveArrayT<ByteFieldValue, FieldValue>>();
     default:
-        return IArray::UP(new ComplexArrayT<FieldValue>(FieldValueFactory::UP(new FieldValueFactory(DataType::UP(baseType.clone())))));
+        return std::make_unique<ComplexArrayT<FieldValue>>(std::make_unique<FieldValueFactory>(DataType::UP(baseType.clone())));
     }
 }
 

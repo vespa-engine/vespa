@@ -4,6 +4,7 @@
 #include <vespa/searchlib/query/query.h>
 #include <vespa/vsm/common/document.h>
 #include <vespa/vsm/common/storagedocument.h>
+#include <vespa/document/fieldvalue/iteratorhandler.h>
 
 namespace vsm {
 
@@ -79,9 +80,8 @@ public:
     size_t maxFieldLength() const { return _maxFieldLength; }
 
 private:
-    class IteratorHandler : public document::FieldValue::IteratorHandler {
+    class IteratorHandler : public document::fieldvalue::IteratorHandler {
     private:
-        typedef document::FieldValue::IteratorHandler::Content Content;
         FieldSearcher & _searcher;
 
         void onPrimitive(uint32_t fid, const Content & c) override;

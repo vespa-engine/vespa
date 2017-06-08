@@ -4,8 +4,9 @@
 #include <vespa/vespalib/util/guard.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <sstream>
 
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".persistence.memfile.bufferedfilewriter");
 
 namespace storage {

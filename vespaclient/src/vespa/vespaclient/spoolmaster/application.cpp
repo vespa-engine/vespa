@@ -1,10 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/defaults.h>
-#include <vector>
-#include <string>
+#include <thread>
 #include <iostream>
 #include <algorithm>
-#include <cstdio>
 #include <dirent.h>
 #include <unistd.h>
 
@@ -189,7 +187,7 @@ Application::Main()
             if (scanInbox() && findOutboxes()) {
                 moveLinks();
             } else {
-                FastOS_Thread::Sleep(200);
+                std::this_thread::sleep_for(std::chrono::milliseconds(200));
             }
         }
     }

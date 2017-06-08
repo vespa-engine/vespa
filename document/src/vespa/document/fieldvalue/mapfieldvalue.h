@@ -26,10 +26,10 @@ private:
     virtual bool containsValue(const FieldValue& fv) const { return contains(fv); }
     virtual bool removeValue(const FieldValue& fv) { return erase(fv); }
     bool checkAndRemove(const FieldValue& key,
-                        FieldValue::IteratorHandler::ModificationStatus status,
+                        fieldvalue::ModificationStatus status,
                         bool wasModified,
                         std::vector<const FieldValue*>& keysToRemove) const;
-    IteratorHandler::ModificationStatus onIterateNested(PathRange nested, IteratorHandler & handler) const override;
+    fieldvalue::ModificationStatus onIterateNested(PathRange nested, fieldvalue::IteratorHandler & handler) const override;
     // Utility method to avoid constant explicit casting
     const MapDataType& getMapType() const { return *_type; }
 
@@ -118,8 +118,8 @@ public:
     void reserve(size_t sz) { _keys->reserve(sz); _values->reserve(sz); }
     void resize(size_t sz) { _keys->resize(sz); _values->resize(sz); }
 
-    IteratorHandler::ModificationStatus iterateNestedImpl(PathRange nested, IteratorHandler & handler,
-                                                          const FieldValue& complexFieldValue) const;
+    fieldvalue::ModificationStatus iterateNestedImpl(PathRange nested, fieldvalue::IteratorHandler & handler,
+                                                     const FieldValue& complexFieldValue) const;
 
     // FieldValue implementation
     FieldValue& assign(const FieldValue&) override;

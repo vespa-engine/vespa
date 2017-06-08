@@ -6,8 +6,9 @@
 #include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_set.hpp>
-#include <vespa/log/log.h>
+#include <sstream>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".persistence.memfilev1.verifier");
 
 namespace storage::memfile {

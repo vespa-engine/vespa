@@ -6,8 +6,7 @@
 #include <vespa/messagebus/iconfighandler.h>
 #include <vespa/messagebus/routing/routingspec.h>
 #include <vespa/vdslib/bucketdistribution.h>
-#include <vespa/messagebus/config-messagebus.h>
-#include <vespa/config/helper/configgetter.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/config/helper/configgetter.hpp>
 
 

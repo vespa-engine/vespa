@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/time.h>
+#include "time.h"
+#include "types.h"
 
 double
 FastOS_UNIX_Time::MicroSecs() const
@@ -96,3 +97,8 @@ FastOS_UNIX_Time::SetSecs(double secs)
         _time.tv_usec = - static_cast<int>((- secs - (-_time.tv_sec)) * 1000000);
     }
 }
+
+void FastOS_UNIX_Time::SetNow() {
+    gettimeofday(&_time, NULL);
+}
+

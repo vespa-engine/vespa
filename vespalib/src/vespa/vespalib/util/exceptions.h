@@ -13,6 +13,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/exception.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 namespace vespalib {
 

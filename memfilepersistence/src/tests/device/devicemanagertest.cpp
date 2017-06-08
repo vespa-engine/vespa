@@ -3,6 +3,7 @@
 #include <vespa/memfilepersistence/device/devicemanager.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/util/exception.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 
 namespace storage {

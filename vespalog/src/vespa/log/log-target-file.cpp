@@ -1,16 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <sys/types.h>
 #include <unistd.h>
 #include <cstring>
-#include <sys/stat.h>
 #include <fcntl.h>
-#include <cstdlib>
-#include <errno.h>
-#include <cstdio>
+#include <cerrno>
+#include <cassert>
 
 #include "log.h"
 LOG_SETUP(".log");
-LOG_RCSID("$Id$");
 #include "log-target-file.h"
 #include "internal.h"
 

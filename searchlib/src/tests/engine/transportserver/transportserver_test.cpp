@@ -4,7 +4,7 @@
 #include <vespa/document/base/documentid.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/engine/transportserver.h>
-
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fnet/fnet.h>
 #include <vespa/searchlib/engine/errorcodes.h>
 #include <vespa/log/log.h>

@@ -1,8 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "idstring.h"
+#include "idstringexception.h"
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/util/md5.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using vespalib::string;
 using vespalib::stringref;

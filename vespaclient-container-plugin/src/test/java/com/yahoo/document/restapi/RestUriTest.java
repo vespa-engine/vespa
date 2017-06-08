@@ -94,6 +94,16 @@ public class RestUriTest {
     }
 
     @Test
+    public void testGroupUrlDecode() throws Exception {
+        RestUri restUri = new RestUri(createUri("/document/v1/namespace/doctype/group/group#123/myid", ""));
+        assertThat(restUri.getDocId(), is("myid"));
+        assertThat(restUri.getDocumentType(), is("doctype"));
+        assertThat(restUri.getGroup().get().name, is('g'));
+        assertThat(restUri.getGroup().get().value, is("group#123"));
+        assertThat(restUri.generateFullId(), is("id:namespace:doctype:g=group#123:myid"));
+    }
+
+    @Test
 	public void testGroupN() throws Exception {
         RestUri restUri = new RestUri(createUri("/document/v1/namespace/doctype/number/group/myid", ""));
         assertThat(restUri.getGroup().get().name, is('n'));

@@ -2,6 +2,8 @@
 
 #include "server_socket.h"
 #include "socket_spec.h"
+#include <sys/stat.h>
+#include <dirent.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.net.server_socket");

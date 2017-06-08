@@ -7,7 +7,7 @@
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/vespalib/util/exceptions.h>
 
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".bucketownershiphandler");
 
 namespace storage {
@@ -56,8 +56,7 @@ void
 ChangedBucketOwnershipHandler::reloadClusterState()
 {
     vespalib::LockGuard guard(_stateLock);
-    lib::ClusterState::CSP newState(_component.getStateUpdater()
-                                    .getSystemState());
+    lib::ClusterState::CSP newState(_component.getStateUpdater().getSystemState());
     setCurrentOwnershipWithStateNoLock(*newState);
 }
 

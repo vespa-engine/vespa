@@ -3,13 +3,12 @@
 #include "partition.h"
 #include "devicemanager.h"
 #include <vespa/vespalib/util/exceptions.h>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.device.partition");
 
-namespace storage {
-
-namespace memfile {
+namespace storage::memfile {
 
 Partition::Partition(DeviceManager& manager,
                      uint64_t id,
@@ -59,6 +58,4 @@ Partition::print(std::ostream& out, bool verbose,
     Device::print(out, verbose, indent);
 }
 
-} // memfile
-
-} // storage
+}

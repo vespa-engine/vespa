@@ -369,9 +369,9 @@ Document Test::makeDocument() {
     doc.setValue("position2", LongFieldValue(ZCurve::encode(4, 2)));
 
     StructFieldValue uri(getDataType("url"));
-    uri.setValue("all", annotateTerm("http://www.yahoo.com:42/foobar?q#frag"));
+    uri.setValue("all", annotateTerm("http://www.example.com:42/foobar?q#frag"));
     uri.setValue("scheme", annotateTerm("http"));
-    uri.setValue("host", annotateTerm("www.yahoo.com"));
+    uri.setValue("host", annotateTerm("www.example.com"));
     uri.setValue("port", annotateTerm("42"));
     uri.setValue("path", annotateTerm("foobar"));
     uri.setValue("query", annotateTerm("q"));
@@ -379,10 +379,10 @@ Document Test::makeDocument() {
     doc.setValue("uri", uri);
 
     ArrayFieldValue uri_array(getDataType("Array<url>"));
-    uri.setValue("all", annotateTerm("http://www.yahoo.com:80/foobar?q#frag"));
+    uri.setValue("all", annotateTerm("http://www.example.com:80/foobar?q#frag"));
     uri.setValue("port", annotateTerm("80"));
     uri_array.add(uri);
-    uri.setValue("all", annotateTerm("https://www.yahoo.com:443/foo?q#frag"));
+    uri.setValue("all", annotateTerm("https://www.example.com:443/foo?q#frag"));
     uri.setValue("scheme", annotateTerm("https"));
     uri.setValue("path", annotateTerm("foo"));
     uri.setValue("port", annotateTerm("443"));

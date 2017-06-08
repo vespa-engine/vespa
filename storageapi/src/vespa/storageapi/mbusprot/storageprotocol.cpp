@@ -5,12 +5,12 @@
 #include "storagereply.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/document/util/stringutil.h>
+#include <sstream>
 
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".storage.api.mbusprot.protocol");
 
-namespace storage {
-namespace mbusprot {
+namespace storage::mbusprot {
 
 mbus::string StorageProtocol::NAME = "StorageProtocol";
 
@@ -169,5 +169,4 @@ StorageProtocol::decode(const vespalib::Version & version,
     return mbus::Routable::UP();
 }
 
-} // mbusprot
-} // storage
+}

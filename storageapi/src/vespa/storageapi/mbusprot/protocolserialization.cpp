@@ -13,14 +13,13 @@
 #include <vespa/storageapi/message/batch.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/vespalib/util/exceptions.h>
-
 #include <vespa/vespalib/util/growablebytebuffer.h>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".storage.api.mbusprot.serialization.base");
 
-namespace storage {
-namespace mbusprot {
+namespace storage::mbusprot {
 
 ProtocolSerialization::ProtocolSerialization(
         const document::DocumentTypeRepo::SP& repo)
@@ -299,5 +298,4 @@ ProtocolSerialization::decodeReply(mbus::BlobRef data,
     return StorageReply::UP(new StorageReply(SRep::SP(reply.release())));
 }
 
-} // mbusprot
-} // storage
+}

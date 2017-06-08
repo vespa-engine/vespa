@@ -4,9 +4,10 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/array.hpp>
+#include <ostream>
+#include <iterator>
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 IMPLEMENT_COMMAND(CreateBucketCommand, CreateBucketReply)
 IMPLEMENT_REPLY(CreateBucketReply)
@@ -625,7 +626,6 @@ SetBucketStateReply::print(std::ostream& out,
     }
 }
 
-} // api
-} // storage
+}
 
 template class vespalib::Array<storage::api::RequestBucketInfoReply::Entry>;

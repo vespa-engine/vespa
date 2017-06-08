@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/document/fieldvalue/fieldvalue.h>
+#include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/vsm/common/charbuffer.h>
 
 namespace vsm {
@@ -10,10 +11,8 @@ namespace vsm {
  * This class is used to flatten out and write a complex field value.
  * A separator string is inserted between primitive field values.
  **/
-class FlattenDocsumWriter : public document::FieldValue::IteratorHandler {
+class FlattenDocsumWriter : public document::fieldvalue::IteratorHandler {
 private:
-    typedef document::FieldValue::IteratorHandler::Content Content;
-
     CharBuffer  _output;
     vespalib::string _separator;
     bool        _useSeparator;

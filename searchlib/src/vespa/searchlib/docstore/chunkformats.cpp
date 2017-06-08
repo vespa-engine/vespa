@@ -3,6 +3,7 @@
 #include "chunkformats.h"
 #include <vespa/vespalib/util/crc.h>
 #include <vespa/vespalib/xxhash/xxhash.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 namespace search {
 

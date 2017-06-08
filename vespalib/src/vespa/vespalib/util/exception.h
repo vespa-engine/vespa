@@ -5,7 +5,6 @@
 
 #include <vespa/vespalib/util/macro.h>
 #include <vespa/vespalib/util/error.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <exception>
 
 #define VESPALIB_EXCEPTION_USEBACKTRACES

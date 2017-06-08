@@ -58,53 +58,7 @@ private:
     void deserialize(const DocumentTypeRepo& repo, const DataType& type,
                      ByteBuffer& buffer, uint16_t version) override;
 
-    class AssignValueIteratorHandler : public FieldValue::IteratorHandler
-    {
-    public:
-        AssignValueIteratorHandler(const FieldValue& newValue,
-                              bool removeIfZero,
-                              bool createMissingPath_)
-            : _newValue(newValue), _removeIfZero(removeIfZero),
-            _createMissingPath(createMissingPath_)
-        {}
-
-        ModificationStatus doModify(FieldValue& fv) override;
-        bool onComplex(const Content&) override { return false; }
-        bool createMissingPath() const override { return _createMissingPath; }
-
-    private:
-        const FieldValue& _newValue;
-        bool _removeIfZero;
-        bool _createMissingPath;
-    };
-
-    class AssignExpressionIteratorHandler : public FieldValue::IteratorHandler
-    {
-    public:
-        AssignExpressionIteratorHandler(
-                const DocumentTypeRepo& repo,
-                Document& doc,
-                const vespalib::string& expression,
-                bool removeIfZero,
-                bool createMissingPath_)
-            : _calc(repo, expression),
-            _doc(doc),
-            _removeIfZero(removeIfZero),
-            _createMissingPath(createMissingPath_)
-        {}
-
-        ModificationStatus doModify(FieldValue& fv) override;
-        bool onComplex(const Content&) override { return false; }
-        bool createMissingPath() const override { return _createMissingPath; }
-
-    private:
-        DocumentCalculator _calc;
-        Document& _doc;
-        bool _removeIfZero;
-        bool _createMissingPath;
-    };
-
-    std::unique_ptr<FieldValue::IteratorHandler> getIteratorHandler(Document& doc) const override;
+    std::unique_ptr<fieldvalue::IteratorHandler> getIteratorHandler(Document& doc) const override;
 
     const DocumentTypeRepo *_repo;
     FieldValue::CP _newValue;

@@ -2,9 +2,10 @@
 
 #include "constant.h"
 #include "visitor.h"
+#include <cassert>
+#include <ostream>
 
-namespace document {
-namespace select {
+namespace document::select {
 
 Constant::Constant(const vespalib::stringref & value)
     : Node(value),
@@ -46,13 +47,11 @@ Constant::visit(Visitor &v) const
 
 
 void
-Constant::print(std::ostream& out, bool,
-                const std::string&) const
+Constant::print(std::ostream& out, bool, const std::string&) const
 {
     if (_parentheses) out << '(';
     out << _name;
     if (_parentheses) out << ')';
 }
 
-} // select
-} // document
+}

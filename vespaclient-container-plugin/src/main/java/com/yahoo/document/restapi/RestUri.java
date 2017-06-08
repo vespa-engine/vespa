@@ -105,13 +105,18 @@ public class RestUri {
             if (readPos >= rawParts.size()) {
                 throwUsage(originalPath);
             }
-            return rawParts.get(readPos++);
+            String nextToken = rawParts.get(readPos++);
+            return urlDecodeOrException(nextToken);
         }
 
         String restOfPath() throws RestApiException {
             String rawId = Joiner.on("/").join(rawParts.listIterator(readPos));
+            return urlDecodeOrException(rawId);
+        }
+
+        String urlDecodeOrException(String url) throws RestApiException {
             try {
-                return URLDecoder.decode(rawId, StandardCharsets.UTF_8.name());
+                return URLDecoder.decode(url, StandardCharsets.UTF_8.name());
             } catch (UnsupportedEncodingException e) {
                 throw new RestApiException(Response.createErrorResponse(BAD_REQUEST,"Problems decoding the URI: " + e.getMessage(), apiErrorCodes.ERROR_ID_DECODING_PATH));
             }
@@ -132,7 +137,8 @@ public class RestUri {
             case "number":
                 group = Optional.of(new Group(NUMBER_STREAMING, pathParser.nextTokenOrException()));
                 break;
-            case "docid": group = Optional.empty();
+            case "docid":
+                group = Optional.empty();
                 break;
             case "group":
                 group = Optional.of(new Group(GROUP_STREAMING, pathParser.nextTokenOrException()));

@@ -14,25 +14,27 @@
 
 #include "collectionfieldvalue.h"
 #include <vespa/document/datatype/arraydatatype.h>
+#include <vespa/vespalib/util/polymorphicarray.h>
 
 namespace document {
 
 class ArrayFieldValue : public CollectionFieldValue {
 private:
-    IArray::UP _array;
+    using IArray = vespalib::IArrayT<FieldValue>;
+    std::unique_ptr<IArray> _array;
 
     bool addValue(const FieldValue&) override;
     bool containsValue(const FieldValue& val) const override;
     bool removeValue(const FieldValue& val) override;
-    IteratorHandler::ModificationStatus iterateSubset(
+    fieldvalue::ModificationStatus iterateSubset(
             int startPos, int endPos, const vespalib::stringref & variable,
             PathRange nested,
-            IteratorHandler& handler) const;
-    IteratorHandler::ModificationStatus onIterateNested(PathRange nested, IteratorHandler & handler) const override;
+            fieldvalue::IteratorHandler& handler) const;
+    fieldvalue::ModificationStatus onIterateNested(PathRange nested, fieldvalue::IteratorHandler & handler) const override;
 public:
-    typedef IArray::const_iterator const_iterator;
-    typedef IArray::iterator iterator;
-    typedef std::unique_ptr<ArrayFieldValue> UP;
+    using const_iterator = IArray::const_iterator;
+    using iterator = IArray::iterator;
+    using UP = std::unique_ptr<ArrayFieldValue>;
 
     /**
      * @param arrayType Type of the array. Must be an ArrayDataType, but does

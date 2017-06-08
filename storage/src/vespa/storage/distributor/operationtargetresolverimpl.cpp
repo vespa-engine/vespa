@@ -4,9 +4,9 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/printable.hpp>
 #include <sstream>
+#include <cassert>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 BucketInstance::BucketInstance(
         const document::BucketId& id, const api::BucketInfo& info,
@@ -197,5 +197,4 @@ OperationTargetResolverImpl::getAllInstances(OperationType type,
     return instances;
 }
 
-} // distributor
-} // storage
+}

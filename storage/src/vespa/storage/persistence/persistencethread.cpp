@@ -11,7 +11,8 @@
 #include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/log/log.h>
+
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".persistence.thread");
 
 namespace storage {

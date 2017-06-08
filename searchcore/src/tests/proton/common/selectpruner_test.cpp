@@ -3,9 +3,11 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/searchcore/proton/common/selectpruner.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/cloningvisitor.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
 
@@ -92,7 +94,7 @@ rsString(const ResultSet &s)
 {
     std::ostringstream os;
     bool first = true;
-    uint32_t erange = Result::enumRange();
+    uint32_t erange = Result::enumRange;
     for (uint32_t e = 0; e < erange; ++e) {
         if (s.hasEnum(e)) {
             if (!first)

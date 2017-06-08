@@ -8,6 +8,7 @@
 #include <vespa/searchlib/transactionlog/translogclient.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/vespalib/util/programoptions.h>
+#include <vespa/vespalib/util/xmlstream.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <iostream>
 #include <vespa/config/helper/configgetter.hpp>

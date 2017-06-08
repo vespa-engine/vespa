@@ -3,6 +3,7 @@
 #include "ftlib.h"
 #include "dummy_dependency_handler.h"
 #include <vespa/searchlib/features/utils.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <boost/tokenizer.hpp>
 
 #include <vespa/log/log.h>

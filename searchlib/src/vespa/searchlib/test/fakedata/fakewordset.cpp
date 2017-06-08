@@ -2,14 +2,12 @@
 
 #include "fakewordset.h"
 #include "fakeword.h"
-#include <vespa/searchlib/index/schemautil.h>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".fakewordset");
 
-namespace search {
-
-namespace fakedata {
+namespace search::fakedata {
 
 using index::PostingListParams;
 using index::SchemaUtil;
@@ -146,7 +144,6 @@ FakeWordSet::getNumWords()
     return ret;
 }
 
-
 void
 FakeWordSet::addDocIdBias(uint32_t docIdBias)
 {
@@ -154,7 +151,4 @@ FakeWordSet::addDocIdBias(uint32_t docIdBias)
         applyDocIdBiasToVector(_words[i], docIdBias);
 }
 
-
-} // namespace fakedata
-
-} // namespace search
+}

@@ -3,13 +3,13 @@
 #include "partitionmonitor.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/xmlstream.h>
+#include <ostream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.device.partition.monitor");
 
-namespace storage {
-
-namespace memfile {
+namespace storage::memfile {
 
 namespace {
 
@@ -387,5 +387,3 @@ PartitionMonitor::overrideRealStat(uint32_t blockSize, uint32_t totalBlocks,
 }
 
 }
-
-} // storage

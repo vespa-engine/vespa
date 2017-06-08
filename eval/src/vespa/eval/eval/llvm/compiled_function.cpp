@@ -1,11 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "compiled_function.h"
+#include <vespa/eval/eval/param_usage.h>
+#include <vespa/eval/eval/gbdt.h>
 #include <vespa/eval/eval/node_traverser.h>
 #include <vespa/eval/eval/check_type.h>
 #include <vespa/eval/eval/tensor_nodes.h>
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
+#include <vespa/vespalib/util/approx.h>
 
 namespace vespalib {
 namespace eval {
@@ -134,6 +137,21 @@ CompiledFunction::detect_issues(const Function &function)
     } checker;
     function.root().traverse(checker);
     return Function::Issues(std::move(checker.issues));
+}
+
+bool
+CompiledFunction::should_use_lazy_params(const Function &function)
+{
+    if (gbdt::contains_gbdt(function.root(), 16)) {
+        return false; // contains gbdt
+    }
+    auto usage = vespalib::eval::check_param_usage(function);
+    for (double p_use: usage) {
+        if (!approx_equal(p_use, 1.0)) {
+            return true; // param not always used
+        }
+    }
+    return false; // all params always used
 }
 
 } // namespace vespalib::eval

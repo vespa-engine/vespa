@@ -3,14 +3,23 @@
 #include "intfieldvalue.h"
 #include "stringfieldvalue.h"
 #include "predicatefieldvalue.h"
+#include "iteratorhandler.h"
 #include <vespa/document/util/serializableexceptions.h>
+#include <vespa/vespalib/util/polymorphicarrays.h>
+#include <vespa/vespalib/util/xmlstream.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".document.fieldvalue.array");
 
+using namespace vespalib::xml;
+
 namespace document {
 
 using vespalib::IllegalArgumentException;
+using fieldvalue::IndexValue;
+using fieldvalue::ModificationStatus;
+using fieldvalue::IteratorHandler;
+using fieldvalue::VariableMap;
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(ArrayFieldValue, CollectionFieldValue);
 
@@ -23,7 +32,7 @@ ArrayFieldValue::ArrayFieldValue(const DataType &type)
                 "Cannot generate an array value with non-array type "
                 + type.toString() + ".", VESPA_STRLOC);
     }
-    _array = createArray(getNestedType());
+    _array.reset(static_cast<IArray *>(createArray(getNestedType()).release()));
 }
 
 ArrayFieldValue::ArrayFieldValue(const ArrayFieldValue& other)
@@ -175,14 +184,13 @@ ArrayFieldValue::hasChanged() const
     return false;
 }
 
-FieldValue::IteratorHandler::ModificationStatus
+fieldvalue::ModificationStatus
 ArrayFieldValue::iterateSubset(int startPos, int endPos,
                                const vespalib::stringref & variable,
                                PathRange nested,
-                               IteratorHandler& handler) const
+                               fieldvalue::IteratorHandler& handler) const
 {
-    FieldValue::IteratorHandler::ModificationStatus
-        retVal = FieldValue::IteratorHandler::NOT_MODIFIED;
+    fieldvalue::ModificationStatus retVal = ModificationStatus::NOT_MODIFIED;
 
     LOG(spam, "iterateSubset(start=%d, end=%d, variable='%s')",
         startPos, endPos, variable.c_str());
@@ -191,16 +199,15 @@ ArrayFieldValue::iterateSubset(int startPos, int endPos,
 
     for (int i = startPos; i <= endPos && i < static_cast<int>(_array->size()); ++i) {
         if (!variable.empty()) {
-            handler.getVariables()[variable] = IteratorHandler::IndexValue(i);
+            handler.getVariables()[variable] = IndexValue(i);
         }
 
-        FieldValue::IteratorHandler::ModificationStatus
-            status = array()[i].iterateNested(nested, handler);
+        ModificationStatus status = array()[i].iterateNested(nested, handler);
 
-        if (status == FieldValue::IteratorHandler::REMOVED) {
+        if (status == ModificationStatus::REMOVED) {
             indicesToRemove.push_back(i);
-            retVal = FieldValue::IteratorHandler::MODIFIED;
-        } else if (status == FieldValue::IteratorHandler::MODIFIED) {
+            retVal = ModificationStatus::MODIFIED;
+        } else if (status == ModificationStatus::MODIFIED) {
             retVal = status;
         }
     }
@@ -218,7 +225,7 @@ ArrayFieldValue::iterateSubset(int startPos, int endPos,
     return retVal;
 }
 
-FieldValue::IteratorHandler::ModificationStatus
+fieldvalue::ModificationStatus
 ArrayFieldValue::onIterateNested(PathRange nested, IteratorHandler & handler) const
 {
     IteratorHandler::CollectionScope autoScope(handler, *this);
@@ -234,7 +241,7 @@ ArrayFieldValue::onIterateNested(PathRange nested, IteratorHandler & handler) co
         case FieldPathEntry::VARIABLE:
         {
             LOG(spam, "VARIABLE");
-            IteratorHandler::VariableMap::iterator iter = handler.getVariables().find(fpe.getVariableName());
+            VariableMap::iterator iter = handler.getVariables().find(fpe.getVariableName());
             if (iter != handler.getVariables().end()) {
                 int idx = iter->second.index;
 
@@ -258,17 +265,17 @@ ArrayFieldValue::onIterateNested(PathRange nested, IteratorHandler & handler) co
         }
         return iterateSubset(0, static_cast<int>(_array->size()) - 1, "", nested, handler);
     } else {
-        IteratorHandler::ModificationStatus status = handler.modify(const_cast<ArrayFieldValue&>(*this));
+        ModificationStatus status = handler.modify(const_cast<ArrayFieldValue&>(*this));
 
-        if (status == FieldValue::IteratorHandler::REMOVED) {
+        if (status == ModificationStatus::REMOVED) {
             return status;
         }
 
         if (handler.handleComplex(*this)) {
-            if (iterateSubset(0, static_cast<int>(_array->size()) - 1, "",
-                              nested, handler) != FieldValue::IteratorHandler::NOT_MODIFIED)
+            if (iterateSubset(0, static_cast<int>(_array->size()) - 1, "", nested, handler)
+                != ModificationStatus::NOT_MODIFIED)
             {
-                status = FieldValue::IteratorHandler::MODIFIED;
+                status = ModificationStatus::MODIFIED;
             }
         }
 

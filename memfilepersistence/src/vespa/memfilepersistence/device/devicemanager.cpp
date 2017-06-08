@@ -2,6 +2,7 @@
 
 #include "devicemanager.h"
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/xmlstream.h>
 
 namespace storage::memfile {
 

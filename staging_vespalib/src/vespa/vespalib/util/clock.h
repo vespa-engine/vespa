@@ -33,7 +33,7 @@ public:
     Clock(double timePeriod=0.100);
     ~Clock();
 
-    fastos::TimeStamp getTimeNS(void) const {
+    fastos::TimeStamp getTimeNS() const {
         if (!_running) {
             setTime();
         }
@@ -41,7 +41,7 @@ public:
     }
     fastos::TimeStamp getTimeNSAssumeRunning() const { return _timeNS; }
 
-    void stop(void);
+    void stop();
 };
 
 }
