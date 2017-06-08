@@ -67,12 +67,13 @@ public class ActiveContainer extends AbstractResource implements CurrentContaine
         termination.run();
     }
 
+    // TODO Get rid of finalizer and use PhantomReference or Java 9 Cleaner instead
     @Override
     protected void finalize() throws Throwable {
         try {
             int retainCount = retainCount();
             if (retainCount > 0) {
-                log.warning(this + ".destroy() invoked from finalize() not through ApplicationLoader. " +
+                log.severe("Destructing " + this + " through finalizer since reference count never reached zero. " +
                         "This is an indication of either a resource leak or invalid use of reference counting. " +
                         "Retained references as this moment: " + retainCount);
                 destroy();

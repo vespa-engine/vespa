@@ -4,7 +4,7 @@ package com.yahoo.container.jdisc.metric;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.jdisc.statistics.ActiveContainerStatistics;
+import com.yahoo.jdisc.statistics.ActiveContainerMetrics;
 
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -32,19 +32,19 @@ public class MetricUpdater extends AbstractComponent {
     private static final String OPEN_FILE_DESCRIPTORS = "jdisc.open_file_descriptors";
 
     private final Metric metric;
-    private final ActiveContainerStatistics activeContainerStatistics;
+    private final ActiveContainerMetrics activeContainerMetrics;
     private final Timer timer = new Timer();
     long freeMemory = -1;
     long totalMemory = -1;
 
     @Inject
-    public MetricUpdater(Metric metric, ActiveContainerStatistics activeContainerStatistics) {
-        this(metric, activeContainerStatistics, 10*1000);
+    public MetricUpdater(Metric metric, ActiveContainerMetrics activeContainerMetrics) {
+        this(metric, activeContainerMetrics, 10*1000);
     }
     
-    public MetricUpdater(Metric metric, ActiveContainerStatistics activeContainerStatistics, long delayMillis) {
+    public MetricUpdater(Metric metric, ActiveContainerMetrics activeContainerMetrics, long delayMillis) {
         this.metric = metric;
-        this.activeContainerStatistics = activeContainerStatistics;
+        this.activeContainerMetrics = activeContainerMetrics;
         timer.schedule(new UpdaterTask(), delayMillis, delayMillis);
     }
     
@@ -72,7 +72,7 @@ public class MetricUpdater extends AbstractComponent {
             metric.set(TOTAL_MEMORY_BYTES, totalMemory, null);
             metric.set(MEMORY_MAPPINGS_COUNT, count_mappings(), null);
             metric.set(OPEN_FILE_DESCRIPTORS, count_open_files(), null);
-            activeContainerStatistics.emitMetrics(metric);
+            activeContainerMetrics.emitMetrics(metric);
         }
 
         // Note: Linux-specific

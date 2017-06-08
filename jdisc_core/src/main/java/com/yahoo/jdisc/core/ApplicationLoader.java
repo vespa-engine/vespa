@@ -15,23 +15,22 @@ import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.application.OsgiHeader;
 import com.yahoo.jdisc.service.ContainerNotReadyException;
 import com.yahoo.jdisc.service.CurrentContainer;
-import com.yahoo.jdisc.statistics.ActiveContainerStatistics;
+import com.yahoo.jdisc.statistics.ActiveContainerMetrics;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 
-import java.lang.ref.WeakReference;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author bjorncs
  */
 public class ApplicationLoader implements BootstrapLoader, ContainerActivator, CurrentContainer {
 
@@ -42,7 +41,7 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
     private final AtomicReference<ActiveContainer> containerRef = new AtomicReference<>();
     private final Object appLock = new Object();
     private final List<Bundle> appBundles = new ArrayList<>();
-    private final ActiveContainerStatistics statistics = new ActiveContainerStatistics();
+    private final ActiveContainerDeactivationWatchdog watchdog = new ActiveContainerDeactivationWatchdog();
     private Application application;
     private ApplicationInUseTracker applicationInUseTracker;
 
@@ -71,46 +70,14 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
                 next.retainReference(applicationInUseTracker);
             }
 
+            watchdog.onContainerActivation(next);
             prev = containerRef.getAndSet(next);
-            statistics.onActivated(next);
             if (prev == null) {
                 return null;
             }
-            statistics.onDeactivated(prev);
         }
         prev.release();
-        DeactivatedContainer deactivatedContainer = prev.shutdown();
-
-        final WeakReference<ActiveContainer> prevContainerReference = new WeakReference<>(prev);
-        final Runnable deactivationMonitor = () -> {
-            long waitTimeSeconds = 30L;
-            long totalTimeWaited = 0L;
-
-            while (!Thread.interrupted()) {
-                final long currentWaitTimeSeconds = waitTimeSeconds;
-                totalTimeWaited += currentWaitTimeSeconds;
-
-                Interruption.mapExceptionToThreadState(() ->
-                                Thread.sleep(TimeUnit.MILLISECONDS.convert(currentWaitTimeSeconds, TimeUnit.SECONDS))
-                );
-
-                statistics.printSummaryToLog();
-                final ActiveContainer prevContainer = prevContainerReference.get();
-                if (prevContainer == null || prevContainer.retainCount() == 0) {
-                    return;
-                }
-                log.warning("Previous container not terminated in the last " + totalTimeWaited + " seconds."
-                        + " Reference state={ " + prevContainer.currentState() + " }");
-
-                waitTimeSeconds = (long) (waitTimeSeconds * 1.2);
-            }
-            log.warning("Deactivation monitor thread unexpectedly interrupted");
-        };
-        final Thread deactivationMonitorThread = new Thread(deactivationMonitor, "Container deactivation monitor");
-        deactivationMonitorThread.setDaemon(true);
-        deactivationMonitorThread.start();
-
-        return deactivatedContainer;
+        return prev.shutdown();
     }
 
     @Override
@@ -228,6 +195,7 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
     @Override
     public void destroy() {
         log.finer("Destroying application loader.");
+        watchdog.close();
         try {
             osgiFramework.stop();
         } catch (BundleException e) {
@@ -241,8 +209,8 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
         }
     }
 
-    public ActiveContainerStatistics getActiveContainerStatistics() {
-        return statistics;
+    public ActiveContainerMetrics getActiveContainerMetrics() {
+        return watchdog;
     }
 
     public OsgiFramework osgiFramework() {

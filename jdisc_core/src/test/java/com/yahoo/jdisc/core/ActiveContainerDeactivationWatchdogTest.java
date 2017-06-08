@@ -1,48 +1,60 @@
-package com.yahoo.jdisc.statistics;
+package com.yahoo.jdisc.core;
 
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.ResourceReference;
-import com.yahoo.jdisc.core.ActiveContainer;
+import com.yahoo.jdisc.statistics.ActiveContainerMetrics;
 import com.yahoo.jdisc.test.TestDriver;
+import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
+import java.util.concurrent.Executors;
 
 import static org.junit.Assert.assertEquals;
 
 /**
  * @author bjorncs
  */
-public class ActiveContainerStatisticsTest {
+public class ActiveContainerDeactivationWatchdogTest {
 
     @Test
-    public void counts_deactivated_activecontainers() {
+    public void watchdog_counts_deactivated_containers() {
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
-        ActiveContainerStatistics stats = new ActiveContainerStatistics();
+        ManualClock clock = new ManualClock(Instant.now());
+        ActiveContainerDeactivationWatchdog watchdog =
+                new ActiveContainerDeactivationWatchdog(clock, Executors.newScheduledThreadPool(1));
         MockMetric metric = new MockMetric();
 
         ActiveContainer containerWithoutRetainedResources = new ActiveContainer(driver.newContainerBuilder());
 
-        stats.onActivated(containerWithoutRetainedResources);
-        stats.emitMetrics(metric);
+        watchdog.onContainerActivation(containerWithoutRetainedResources);
+        watchdog.emitMetrics(metric);
         assertEquals(0, metric.totalCount);
         assertEquals(0, metric.withRetainedReferencesCount);
 
-        stats.onDeactivated(containerWithoutRetainedResources);
+        watchdog.onContainerActivation(null);
         containerWithoutRetainedResources.release();
-        stats.emitMetrics(metric);
+        clock.advance(ActiveContainerDeactivationWatchdog.ACTIVE_CONTAINER_GRACE_PERIOD);
+        watchdog.emitMetrics(metric);
+        assertEquals(0, metric.totalCount);
+        assertEquals(0, metric.withRetainedReferencesCount);
+
+        clock.advance(Duration.ofSeconds(1));
+        watchdog.emitMetrics(metric);
         assertEquals(1, metric.totalCount);
         assertEquals(0, metric.withRetainedReferencesCount);
 
         ActiveContainer containerWithRetainedResources = new ActiveContainer(driver.newContainerBuilder());
-
         try (ResourceReference ignoredRef = containerWithRetainedResources.refer()) {
-             stats.onActivated(containerWithRetainedResources);
-             stats.onDeactivated(containerWithRetainedResources);
-             containerWithRetainedResources.release();
-             stats.emitMetrics(metric);
-             assertEquals(2, metric.totalCount);
-             assertEquals(1, metric.withRetainedReferencesCount);
+            watchdog.onContainerActivation(containerWithRetainedResources);
+            containerWithRetainedResources.release();
+            watchdog.onContainerActivation(null);
+            clock.advance(ActiveContainerDeactivationWatchdog.ACTIVE_CONTAINER_GRACE_PERIOD.plusSeconds(1));
+            watchdog.emitMetrics(metric);
+            assertEquals(2, metric.totalCount);
+            assertEquals(1, metric.withRetainedReferencesCount);
         }
 
     }
@@ -54,10 +66,10 @@ public class ActiveContainerStatisticsTest {
         @Override
         public void set(String key, Number val, Context ctx) {
             switch (key) {
-                case ActiveContainerStatistics.Metrics.TOTAL_DEACTIVATED_CONTAINERS:
+                case ActiveContainerMetrics.TOTAL_DEACTIVATED_CONTAINERS:
                     totalCount = val.intValue();
                     break;
-                case ActiveContainerStatistics.Metrics.DEACTIVATED_CONTAINERS_WITH_RETAINED_REFERENCES:
+                case ActiveContainerMetrics.DEACTIVATED_CONTAINERS_WITH_RETAINED_REFERENCES:
                     withRetainedReferencesCount = val.intValue();
                     break;
                 default:
