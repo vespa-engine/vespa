@@ -5,11 +5,11 @@
 #include <vespa/persistence/spi/exceptions.h>
 #include <vespa/vdslib/state/nodestate.h>
 #include <vespa/config/helper/configfetcher.h>
+#include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/guard.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <fstream>
-#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.mountpointlist");
@@ -39,9 +39,7 @@ MountPointList::getPartitionStates() const
     for (uint32_t i=0; i<_mountPoints.size(); ++i) {
         if (!(_mountPoints[i]->isOk())) {
             const IOEvent* event = _mountPoints[i]->getLastEvent();
-
-            list[i] = spi::PartitionState(spi::PartitionState::DOWN,
-                                          event->getDescription());
+            list[i] = spi::PartitionState(spi::PartitionState::DOWN, event->getDescription());
         }
     }
 

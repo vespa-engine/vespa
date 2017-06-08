@@ -5,7 +5,8 @@
 #include "datasetcollection.h"
 #include "plain_dataset.h"
 #include "engine_base.h"
-#include <vespa/searchcore/fdispatch/common/appcontext.h>
+#include <vespa/config/common/exceptions.h>
+#include <set>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".search.nodemanager");
@@ -16,9 +17,10 @@ FastS_NodeManager::configure(std::unique_ptr<PartitionsConfig> cfg)
     LOG(config, "configuring datasetcollection from '%s'",
         _configUri.getConfigId().c_str());
     SetPartMap(*cfg, 2000);
-    _componentConfig.addConfig(vespalib::ComponentConfigProducer::Config("fdispatch.nodemanager",
-                                       _fetcher->getGeneration(),
-                                       "will not update generation unless config has changed"));
+    _componentConfig.addConfig(
+            vespalib::ComponentConfigProducer::Config("fdispatch.nodemanager",
+                                                      _fetcher->getGeneration(),
+                                                      "will not update generation unless config has changed"));
 }
 
 
@@ -26,15 +28,11 @@ class AdminBadEngines
 {
     std::set<vespalib::string> _bad;
 public:
-    void
-    addAdminBad(const vespalib::string &name)
-    {
+    void addAdminBad(const vespalib::string &name) {
         _bad.insert(name);
     }
 
-    bool
-    isAdminBad(const vespalib::string &name) const
-    {
+    bool isAdminBad(const vespalib::string &name) const {
         return _bad.find(name) != _bad.end();
     }
 };

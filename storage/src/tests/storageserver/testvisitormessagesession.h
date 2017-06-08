@@ -6,6 +6,7 @@
 #include <vespa/storage/visiting/visitorthread.h>
 #include <vespa/documentapi/messagebus/messages/documentmessage.h>
 #include <vespa/storage/storageserver/priorityconverter.h>
+#include <vespa/config/subscription/configuri.h>
 #include <deque>
 
 namespace storage {

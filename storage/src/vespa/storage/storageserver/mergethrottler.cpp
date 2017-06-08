@@ -2,11 +2,13 @@
 
 #include "mergethrottler.h"
 #include "storagemetricsset.h"
-#include <sstream>
-#include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/persistence/messages.h>
+#include <vespa/messagebus/message.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <sstream>
+
 #include <vespa/log/log.h>
 
 LOG_SETUP(".mergethrottler");

@@ -2,9 +2,10 @@
 #pragma once
 
 #include <memory>
-#include "reply.h"
 
 namespace mbus {
+
+class Reply;
 
 /**
  * This interface is implemented by application components that want
@@ -25,7 +26,7 @@ public:
      *
      * @param reply the Reply being delivered
      **/
-    virtual void handleReply(Reply::UP reply) = 0;
+    virtual void handleReply(std::unique_ptr<Reply> reply) = 0;
 };
 
 } // namespace mbus

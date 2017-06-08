@@ -2,10 +2,10 @@
 #pragma once
 
 #include "externslobrokpolicy.h"
-#include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/documentapi/messagebus/messages/wrongdistributionreply.h>
-#include <vespa/messagebus/reply.h>
 #include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/document/bucket/bucketidfactory.h>
+#include <vespa/messagebus/routing/hop.h>
 #include <vespa/config/helper/ifetchercallback.h>
 #include <vespa/config/helper/configfetcher.h>
 

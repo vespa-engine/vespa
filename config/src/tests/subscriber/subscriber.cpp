@@ -281,9 +281,9 @@ TEST_MT_FFF("requireThatConfigIsReturnedWhenUpdatedDuringNextConfig", 2, MyManag
         verifyConfig("foo2", f3.h1->getConfig());
         verifyConfig("bar", f3.h2->getConfig());
     } else {
-        FastOS_Thread::Sleep(300);
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
         f1.updateValue(0, createFooValue("foo2"), 2);
-        FastOS_Thread::Sleep(300);
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
         f1.updateGeneration(1, 2);
     }
 }
@@ -331,7 +331,7 @@ TEST_MT_FFF("requireThatNextConfigIsInterruptedOnClose", 2, MyManager, APIFixtur
         ASSERT_TRUE(timer.MilliSecsToNow() >= 500.0);
         ASSERT_TRUE(timer.MilliSecsToNow() < 60000.0);
     } else {
-        FastOS_Thread::Sleep(1000);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         f3.s.close();
     }
 }
@@ -514,7 +514,7 @@ TEST_MT_FF("requireThatConfigSubscriberWaitsUntilNextConfigSucceeds", 2, MyManag
         verifyConfig("foo2", h1->getConfig()); // First update is skipped
     } else {
         TEST_BARRIER();
-        FastOS_Thread::Sleep(1000);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         f1.updateValue(0, createFooValue("foo2"), 3);
     }
 }

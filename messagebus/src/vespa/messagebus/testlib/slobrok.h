@@ -4,6 +4,7 @@
 
 #include <vespa/messagebus/common.h>
 #include <vespa/slobrok/cfg.h>
+#include <vespa/fastos/thread.h>
 
 namespace slobrok {
 class SBEnv;

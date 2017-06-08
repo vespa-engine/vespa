@@ -14,16 +14,14 @@
 #include <vespa/storageframework/defaultimplementation/memory/nomemorymanager.h>
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/config/helper/configgetter.hpp>
-#include <sstream>
-
+#include <vespa/config/subscription/configuri.h>
 
 using config::ConfigGetter;
 using document::DocumenttypesConfig;
 using config::FileSpec;
 using document::DocumentTypeRepo;
 
-namespace storage {
-namespace memfile {
+namespace storage::memfile {
 
 namespace {
     std::ostream* cout;
@@ -347,8 +345,7 @@ int SlotFileDumper::dump(int argc, const char * const * argv,
                         if (doc.get()) {
                             printDoc(*doc, o);
                         } else {
-                            printFailure("Unable to get document in " + 
-                                    it->toString(true));
+                            printFailure("Unable to get document in " + it->toString(true));
                         }
                     }
                 }
@@ -361,5 +358,4 @@ int SlotFileDumper::dump(int argc, const char * const * argv,
     return 0;
 }
 
-} // memfile
-} // storage
+}

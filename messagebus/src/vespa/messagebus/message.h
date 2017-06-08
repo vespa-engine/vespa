@@ -1,10 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "routable.h"
+#include <vespa/messagebus/routing/route.h>
 #include <vespa/fastos/time.h>
 #include <memory>
-#include <vespa/messagebus/routing/route.h>
-#include "routable.h"
 
 namespace mbus {
 

@@ -3,6 +3,7 @@
 #include <vespa/storage/storageserver/communicationmanager.h>
 
 #include <vespa/messagebus/testlib/slobrok.h>
+#include <vespa/messagebus/rpcmessagebus.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
 #include <vespa/storageframework/defaultimplementation/memory/nomemorymanager.h>
@@ -27,12 +28,10 @@ struct CommunicationManagerTest : public CppUnit::TestFixture {
     std::shared_ptr<api::StorageCommand> createDummyCommand(
             api::StorageMessage::Priority priority)
     {
-        auto cmd = std::make_shared<api::GetCommand>(
-                document::BucketId(0),
-                document::DocumentId("doc::mydoc"),
-                "[all]");
-        cmd->setAddress(api::StorageMessageAddress(
-                    "storage", lib::NodeType::STORAGE, 1));
+        auto cmd = std::make_shared<api::GetCommand>(document::BucketId(0),
+                                                     document::DocumentId("doc::mydoc"),
+                                                     "[all]");
+        cmd->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 1));
         cmd->setPriority(priority);
         return cmd;
     }

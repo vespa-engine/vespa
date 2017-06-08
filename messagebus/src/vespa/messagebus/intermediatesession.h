@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <memory>
-#include <string>
 #include "reply.h"
 #include "imessagehandler.h"
 #include "intermediatesessionparams.h"
@@ -11,6 +9,7 @@ namespace mbus {
 
 class MessageBus;
 class ReplyGate;
+class Message;
 
 /**
  * An IntermediateSession is used to process Message and Reply objects
@@ -21,6 +20,7 @@ class IntermediateSession : public IMessageHandler,
 {
 private:
     friend class MessageBus;
+    using MessageUP = std::unique_ptr<Message>;
 
     MessageBus      &_mbus;
     string           _name;
@@ -70,7 +70,7 @@ public:
      *
      * @param msg The message to forward.
      */
-    void forward(Message::UP msg);
+    void forward(MessageUP msg);
 
     /**
      * Convenience method to call {@link #forward(Routable)}.
@@ -87,7 +87,7 @@ public:
      */
     const string getConnectionSpec() const;
 
-    void handleMessage(Message::UP message) override;
+    void handleMessage(MessageUP message) override;
     void handleReply(Reply::UP reply) override;
 };
 

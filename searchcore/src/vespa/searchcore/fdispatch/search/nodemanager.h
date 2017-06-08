@@ -7,6 +7,7 @@
 #include <vespa/config/helper/configfetcher.h>
 #include <vespa/searchcore/fdispatch/common/queryperf.h>
 #include <vespa/vespalib/net/simple_component_config_producer.h>
+#include <vespa/config/subscription/configuri.h>
 
 using vespa::config::search::core::PartitionsConfig;
 

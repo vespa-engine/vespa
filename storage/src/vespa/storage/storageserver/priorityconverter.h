@@ -3,10 +3,13 @@
 #pragma once
 
 #include <vespa/storage/config/config-stor-prioritymapping.h>
-#include <vespa/config/config.h>
+#include <vespa/config/helper/configfetcher.h>
 #include <vespa/documentapi/messagebus/priority.h>
+#include <vespa/vespalib/util/sync.h>
 #include <atomic>
 #include <array>
+
+namespace config {class ConfigUri; }
 
 namespace storage {
 

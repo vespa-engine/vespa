@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <boost/tokenizer.hpp>
+#include "locator.h"
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/messagebus/configagent.h>
 #include <vespa/messagebus/iconfighandler.h>
@@ -8,9 +8,9 @@
 #include <vespa/vdslib/bucketdistribution.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/config/helper/configgetter.hpp>
-
-
-#include "locator.h"
+#include <vespa/config/common/exceptions.h>
+#include <vespa/config/subscription/configuri.h>
+#include <boost/tokenizer.hpp>
 
 typedef std::map<std::string, uint32_t> ClusterMap;
 using namespace config;

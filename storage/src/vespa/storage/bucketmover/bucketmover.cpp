@@ -7,6 +7,7 @@
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/storageutil/log.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <thread>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".bucketmover");
@@ -176,7 +177,7 @@ BucketMover::sendNewMoves()
         // what is happening. (Cannot use wait() here as reply of
         // message sent will signal the monitor)
         if (_config->operationDelay != 0) {
-            FastOS_Thread::Sleep(_config->operationDelay);
+            std::this_thread::sleep_for(std::chrono::milliseconds(_config->operationDelay));
         }
     }
 

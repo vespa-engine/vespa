@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <map>
 #include <set>
@@ -25,6 +24,7 @@ private:
     static std::map<vespalib::string, vsvector> splitMap( const vsvector & config);
 
     static vespalib::string deQuote(const vespalib::stringref & source);
+    static void throwNoDefaultValue(const vespalib::stringref & key);
 
     template<typename T>
     static T convert(const vsvector &);
@@ -81,8 +81,7 @@ ConfigParser::parseInternal(const vespalib::stringref & key, const V & config)
     V lines = getLinesForKey(key, config);
 
     if (lines.size() == 0) {
-        throw InvalidConfigException("Config parameter " + key + " has no "
-                "default value and is not specified in config", VESPA_STRLOC);
+        throwNoDefaultValue(key);
     }
     return convert<T>(lines);
 }

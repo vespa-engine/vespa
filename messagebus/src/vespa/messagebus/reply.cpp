@@ -1,10 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include "reply.h"
 #include "emptyreply.h"
-#include "error.h"
 #include "errorcode.h"
 #include "ireplyhandler.h"
 #include "message.h"
-#include "reply.h"
 #include "tracelevel.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/backtrace.h>
@@ -81,6 +80,16 @@ Reply::hasFatalErrors() const
         }
     }
     return false;
+}
+
+void
+Reply::setMessage(Message::UP msg) {
+    _msg = std::move(msg);
+}
+
+Message::UP
+Reply::getMessage() {
+    return std::move(_msg);
 }
 
 } // namespace mbus

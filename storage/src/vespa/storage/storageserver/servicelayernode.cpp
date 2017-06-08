@@ -3,19 +3,21 @@
 #include "servicelayernode.h"
 #include "bouncer.h"
 #include "bucketintegritychecker.h"
-#include <vespa/storage/bucketmover/bucketmover.h>
 #include "communicationmanager.h"
 #include "changedbucketownershiphandler.h"
 #include "mergethrottler.h"
 #include "opslogger.h"
 #include "statemanager.h"
+#include "priorityconverter.h"
 #include <vespa/storage/visiting/messagebusvisitormessagesession.h>
 #include <vespa/storage/visiting/visitormanager.h>
 #include <vespa/storage/bucketdb/bucketmanager.h>
 #include <vespa/storage/bucketdb/storagebucketdbinitializer.h>
+#include <vespa/storage/bucketmover/bucketmover.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
 #include <vespa/persistence/spi/exceptions.h>
+#include <vespa/messagebus/rpcmessagebus.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".node.servicelayer");
@@ -28,8 +30,7 @@ ServiceLayerNode::ServiceLayerNode(
         ApplicationGenerationFetcher& generationFetcher,
         spi::PersistenceProvider& persistenceProvider,
         const VisitorFactory::Map& externalVisitors)
-    : StorageNode(configUri, context, generationFetcher,
-            std::unique_ptr<HostInfo>(new HostInfo)),
+    : StorageNode(configUri, context, generationFetcher, std::unique_ptr<HostInfo>(new HostInfo)),
       _context(context),
       _persistenceProvider(persistenceProvider),
       _partitions(0),
@@ -46,19 +47,15 @@ void ServiceLayerNode::init()
     _init_has_been_called = true;
     spi::Result initResult(_persistenceProvider.initialize());
     if (initResult.hasError()) {
-        LOG(error, "Failed to initialize persistence provider: %s",
-            initResult.toString().c_str());
-        throw spi::HandledException(
-                "Failed provider init: " + initResult.toString(), VESPA_STRLOC);
+        LOG(error, "Failed to initialize persistence provider: %s", initResult.toString().c_str());
+        throw spi::HandledException("Failed provider init: " + initResult.toString(), VESPA_STRLOC);
     }
 
     spi::PartitionStateListResult result(
             _persistenceProvider.getPartitionStates());
     if (result.hasError()) {
-        LOG(error, "Failed to get partition list from persistence provider: %s",
-            result.toString().c_str());
-        throw spi::HandledException("Failed to get partition list: "
-                                    + result.toString(), VESPA_STRLOC);
+        LOG(error, "Failed to get partition list from persistence provider: %s", result.toString().c_str());
+        throw spi::HandledException("Failed to get partition list: " + result.toString(), VESPA_STRLOC);
     }
     _partitions = result.getList();
     if (_partitions.size() == 0) {
@@ -76,8 +73,7 @@ void ServiceLayerNode::init()
         LOG(warning, "Network failure: '%s'", e.what());
         throw;
     } catch (const vespalib::Exception & e) {
-        LOG(error, "Caught exception %s during startup. Calling destruct "
-                   "functions in hopes of dying gracefully.",
+        LOG(error, "Caught exception %s during startup. Calling destruct functions in hopes of dying gracefully.",
             e.getMessage().c_str());
         requestShutdown("Failed to initialize: " + e.getMessage());
         throw;
@@ -135,8 +131,7 @@ ServiceLayerNode::initializeNodeSpecific()
         if (_partitions[i].getState() == spi::PartitionState::UP) {
             ++usablePartitions;
         } else {
-            lib::DiskState diskState(lib::State::DOWN,
-                                     _partitions[i].getReason());
+            lib::DiskState diskState(lib::State::DOWN, _partitions[i].getReason());
             ns.setDiskState(i, diskState);
         }
     }
@@ -150,8 +145,7 @@ ServiceLayerNode::initializeNodeSpecific()
     ns.setReliability(_serverConfig->nodeReliability);
     for (uint16_t i=0; i<_serverConfig->diskCapacity.size(); ++i) {
         if (i >= ns.getDiskCount()) {
-            LOG(warning, "Capacity configured for partition %" PRIu64 " but only "
-                         "%u partitions found.",
+            LOG(warning, "Capacity configured for partition %" PRIu64 " but only %u partitions found.",
                 _serverConfig->diskCapacity.size(), ns.getDiskCount());
             continue;
         }
@@ -159,8 +153,7 @@ ServiceLayerNode::initializeNodeSpecific()
         ds.setCapacity(_serverConfig->diskCapacity[i]);
         ns.setDiskState(i, ds);
     }
-    LOG(debug, "Adjusting reported node state to include partition count and "
-               "states, capacity and reliability: %s",
+    LOG(debug, "Adjusting reported node state to include partition count and states, capacity and reliability: %s",
         ns.toString().c_str());
     _component->getStateUpdater().setReportedNodeState(ns);
 }
@@ -180,35 +173,28 @@ ServiceLayerNode::handleLiveConfigUpdate()
         DIFFERWARN(diskCount, "Cannot alter partition count of node live");
         {
             updated = false;
-            NodeStateUpdater::Lock::SP lock(
-                    _component->getStateUpdater().grabStateChangeLock());
-            lib::NodeState ns(
-                    *_component->getStateUpdater().getReportedNodeState());
+            NodeStateUpdater::Lock::SP lock(_component->getStateUpdater().grabStateChangeLock());
+            lib::NodeState ns(*_component->getStateUpdater().getReportedNodeState());
             if (DIFFER(nodeCapacity)) {
-                LOG(info, "Live config update: Updating node capacity "
-                          "from %f to %f.",
+                LOG(info, "Live config update: Updating node capacity from %f to %f.",
                     oldC.nodeCapacity, newC.nodeCapacity);
                 ASSIGN(nodeCapacity);
                 ns.setCapacity(newC.nodeCapacity);
             }
             if (DIFFER(diskCapacity)) {
-                for (uint32_t i=0;
-                     i<newC.diskCapacity.size() && i<ns.getDiskCount(); ++i)
-                {
+                for (uint32_t i=0; i<newC.diskCapacity.size() && i<ns.getDiskCount(); ++i) {
                     if (newC.diskCapacity[i] != oldC.diskCapacity[i]) {
                         lib::DiskState ds(ns.getDiskState(i));
                         ds.setCapacity(newC.diskCapacity[i]);
                         ns.setDiskState(i, ds);
-                        LOG(info, "Live config update: Disk capacity of "
-                                  "disk %u changed from %f to %f.",
+                        LOG(info, "Live config update: Disk capacity of disk %u changed from %f to %f.",
                             i, oldC.diskCapacity[i], newC.diskCapacity[i]);
                     }
                 }
                 ASSIGN(diskCapacity);
             }
             if (DIFFER(nodeReliability)) {
-                LOG(info, "Live config update: Node reliability changed "
-                          "from %u to %u.",
+                LOG(info, "Live config update: Node reliability changed from %u to %u.",
                     oldC.nodeReliability, newC.nodeReliability);
                 ASSIGN(nodeReliability);
                 ns.setReliability(newC.nodeReliability);
@@ -246,16 +232,14 @@ ServiceLayerNode::createSession(Visitor& visitor, VisitorThread& thread)
     srcParams.setThrottlePolicy(mbus::IThrottlePolicy::SP());
     srcParams.setReplyHandler(*mbusSession);
     mbusSession->setSourceSession(
-            _communicationManager->getMessageBus().getMessageBus()
-                .createSourceSession(srcParams));
+            _communicationManager->getMessageBus().getMessageBus().createSourceSession(srcParams));
     return VisitorMessageSession::UP(std::move(mbusSession));
 }
 
 documentapi::Priority::Value
 ServiceLayerNode::toDocumentPriority(uint8_t storagePriority) const
 {
-    return _communicationManager->getPriorityConverter().
-        toDocumentPriority(storagePriority);
+    return _communicationManager->getPriorityConverter().toDocumentPriority(storagePriority);
 }
 
 StorageLink::UP
@@ -264,8 +248,7 @@ ServiceLayerNode::createChain()
     ServiceLayerComponentRegister& compReg(_context.getComponentRegister());
     StorageLink::UP chain;
 
-    chain.reset(_communicationManager = new CommunicationManager(
-            compReg, _configUri));
+    chain.reset(_communicationManager = new CommunicationManager(compReg, _configUri));
     chain->push_back(StorageLink::UP(new Bouncer(compReg, _configUri)));
     if (_noUsablePartitionMode) {
         /*
@@ -279,8 +262,7 @@ ServiceLayerNode::createChain()
     chain->push_back(StorageLink::UP(new MergeThrottler(_configUri, compReg)));
     chain->push_back(StorageLink::UP(new ChangedBucketOwnershipHandler(_configUri, compReg)));
     chain->push_back(StorageLink::UP(new BucketIntegrityChecker(_configUri, compReg)));
-    chain->push_back(StorageLink::UP(
-            new bucketmover::BucketMover(_configUri, compReg)));
+    chain->push_back(StorageLink::UP(new bucketmover::BucketMover(_configUri, compReg)));
     chain->push_back(StorageLink::UP(new StorageBucketDBInitializer(
             _configUri, _partitions, getDoneInitializeHandler(), compReg)));
     chain->push_back(StorageLink::UP(new BucketManager(

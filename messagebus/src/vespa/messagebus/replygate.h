@@ -2,11 +2,10 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/referencecounter.h>
 #include "idiscardhandler.h"
 #include "imessagehandler.h"
 #include "ireplyhandler.h"
-#include "message.h"
+#include <vespa/vespalib/util/referencecounter.h>
 
 namespace mbus {
 
@@ -43,7 +42,7 @@ public:
      * the matching Reply has been obtained. In order to obtain the matching
      * Reply, this method will push this object on the CallStack of the Message.
      */
-    void handleMessage(Message::UP msg) override;
+    void handleMessage(std::unique_ptr<Message> msg) override;
 
     /**
      * Forward or discard Reply. If the gate is still open, it will forward the
@@ -51,7 +50,7 @@ public:
      * the Reply will be discarded. This method also decreases the reference
      * counter of this object.
      */
-    void handleReply(Reply::UP reply) override;
+    void handleReply(std::unique_ptr<Reply> reply) override;
 
     // Implements IDiscardHandler.
     void handleDiscard(Context ctx) override;
@@ -64,4 +63,3 @@ public:
 };
 
 } // namespace mbus
-

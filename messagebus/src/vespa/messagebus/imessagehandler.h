@@ -3,9 +3,10 @@
 #pragma once
 
 #include <memory>
-#include "message.h"
 
 namespace mbus {
+
+class Message;
 
 /**
  * This interface is implemented by application components that want
@@ -26,7 +27,7 @@ public:
      *
      * @param message the Message being delivered
      **/
-    virtual void handleMessage(Message::UP message) = 0;
+    virtual void handleMessage(std::unique_ptr<Message> message) = 0;
 };
 
 } // namespace mbus

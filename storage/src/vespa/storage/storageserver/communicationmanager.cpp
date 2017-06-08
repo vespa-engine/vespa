@@ -2,12 +2,13 @@
 #include "communicationmanager.h"
 #include "fnetlistener.h"
 #include "rpcrequestwrapper.h"
+#include <vespa/storage/config/config-stor-server.h>
+#include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/documentapi/messagebus/messages/wrongdistributionreply.h>
 #include <vespa/storageapi/message/state.h>
+#include <vespa/messagebus/rpcmessagebus.h>
 #include <vespa/messagebus/emptyreply.h>
-#include <vespa/storage/config/config-stor-server.h>
-#include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 

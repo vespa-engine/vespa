@@ -11,6 +11,7 @@
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/bucket/bucketidfactory.h>
+#include <vespa/config/subscription/configuri.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 
 using document::DataType;
