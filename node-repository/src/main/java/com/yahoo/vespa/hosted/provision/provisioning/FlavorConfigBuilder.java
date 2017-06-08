@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.provision.testutils;
+package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.config.provision.Flavor;

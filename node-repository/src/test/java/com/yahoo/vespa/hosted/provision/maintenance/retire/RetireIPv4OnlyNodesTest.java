@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.provision.maintenance.retire;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
+import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import org.junit.Test;
 
 import java.util.Arrays;

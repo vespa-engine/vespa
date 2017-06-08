@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.testutils;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 
 /**
  * A mock repository prepopulated with flavors, to avoid having config.
