@@ -346,6 +346,14 @@ public class DockerImpl implements Docker {
     }
 
     @Override
+    public List<ContainerName> listAllContainersManagedBy(String manager) {
+        return listAllContainers().stream()
+                .filter(container -> isManagedBy(container, manager))
+                .map(container -> new ContainerName(decode(container.getNames()[0])))
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<Container> getAllContainersManagedBy(String manager) {
         return listAllContainers().stream()
                 .filter(container -> isManagedBy(container, manager))

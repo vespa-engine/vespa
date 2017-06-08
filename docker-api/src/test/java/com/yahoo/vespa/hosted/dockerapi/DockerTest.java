@@ -112,7 +112,7 @@ public class DockerTest {
         assertEquals(container.get().state, Container.State.EXITED);
 
         docker.deleteContainer(containerName);
-        assertThat(docker.getAllContainersManagedBy(MANAGER_NAME).isEmpty(), is(true));
+        assertThat(docker.listAllContainersManagedBy(MANAGER_NAME).isEmpty(), is(true));
     }
 
     /**
