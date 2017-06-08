@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 
 import java.util.List;
@@ -43,7 +44,7 @@ public interface NodeAdmin {
     /**
      * Returns list of hosts.
      */
-    Set<String> getListOfHosts();
+    Set<ContainerName> getListOfHosts();
 
     /**
      * Returns a map containing all relevant NodeAdmin variables and their current values.

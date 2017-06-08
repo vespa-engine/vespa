@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
@@ -52,6 +53,7 @@ public class NodeAdminImplTest {
 
         final String hostName1 = "host1.test.yahoo.com";
         final String hostName2 = "host2.test.yahoo.com";
+        final ContainerName containerName1 = ContainerName.fromHostname(hostName1);
         final NodeAgent nodeAgent1 = mock(NodeAgentImpl.class);
         final NodeAgent nodeAgent2 = mock(NodeAgentImpl.class);
         when(nodeAgentFactory.apply(eq(hostName1))).thenReturn(nodeAgent1);
@@ -59,24 +61,24 @@ public class NodeAdminImplTest {
 
 
         final InOrder inOrder = inOrder(nodeAgentFactory, nodeAgent1, nodeAgent2);
-        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), Collections.singletonList(hostName1));
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), Collections.singletonList(containerName1));
         verifyNoMoreInteractions(nodeAgentFactory);
 
-        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.singletonList(hostName1), Collections.singletonList(hostName1));
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.singletonList(hostName1), Collections.singletonList(containerName1));
         inOrder.verify(nodeAgentFactory).apply(hostName1);
         inOrder.verify(nodeAgent1).start(100);
         inOrder.verify(nodeAgent1, never()).stop();
 
-        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.singletonList(hostName1), Collections.singletonList(hostName1));
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.singletonList(hostName1), Collections.singletonList(containerName1));
         inOrder.verify(nodeAgentFactory, never()).apply(any(String.class));
         inOrder.verify(nodeAgent1, never()).start(anyInt());
         inOrder.verify(nodeAgent1, never()).stop();
 
-        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), Collections.singletonList(hostName1));
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), Collections.singletonList(containerName1));
         inOrder.verify(nodeAgentFactory, never()).apply(any(String.class));
         verify(nodeAgent1).stop();
 
-        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.singletonList(hostName2), Collections.singletonList(hostName1));
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.singletonList(hostName2), Collections.singletonList(containerName1));
         inOrder.verify(nodeAgentFactory).apply(hostName2);
         inOrder.verify(nodeAgent2).start(100);
         inOrder.verify(nodeAgent2, never()).stop();
@@ -110,7 +112,8 @@ public class NodeAdminImplTest {
             existingContainerHostnames.add(hostName);
         }
 
-        nodeAdmin.synchronizeNodeSpecsToNodeAgents(existingContainerHostnames, existingContainerHostnames);
+        nodeAdmin.synchronizeNodeSpecsToNodeAgents(existingContainerHostnames,
+                existingContainerHostnames.stream().map(ContainerName::fromHostname).collect(Collectors.toList()));
 
         assertTrue(nodeAdmin.isFrozen()); // Initially everything is frozen to force convergence
         mockNodeAgentSetFrozenResponse(nodeAgents, true, true, true);

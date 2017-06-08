@@ -64,6 +64,13 @@ public class DockerMock implements Docker {
     }
 
     @Override
+    public List<ContainerName> listAllContainersManagedBy(String manager) {
+        synchronized (monitor) {
+            return containers.stream().map(container -> container.name).collect(Collectors.toList());
+        }
+    }
+
+    @Override
     public Optional<ContainerStats> getContainerStats(ContainerName containerName) {
         return Optional.empty();
     }

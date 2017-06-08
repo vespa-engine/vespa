@@ -78,14 +78,14 @@ public class AclMaintainer implements Runnable {
     }
 
     private synchronized void configureAcls() {
-        final Map<ContainerName, List<ContainerAclSpec>> aclSpecsGroupedByHostname = nodeRepository
+        final Map<ContainerName, List<ContainerAclSpec>> aclSpecsGroupedByContainerName = nodeRepository
                 .getContainerAclSpecs(nodeAdminHostname).stream()
                 .collect(Collectors.groupingBy(ContainerAclSpec::trustedBy));
 
         dockerOperations
                 .getAllManagedContainers().stream()
                 .filter(container -> container.state.isRunning())
-                .map(container -> new Pair<>(container, aclSpecsGroupedByHostname.get(container.name)))
+                .map(container -> new Pair<>(container, aclSpecsGroupedByContainerName.get(container.name)))
                 .filter(pair -> pair.getSecond() != null)
                 .forEach(pair ->
                         applyAcl(pair.getFirst().name, new Acl(pair.getFirst().pid, pair.getSecond())));
