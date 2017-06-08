@@ -25,18 +25,17 @@ import static org.mockito.Mockito.when;
  * @author freva
  */
 public class FlavorSpareCheckerTest {
-    /* Creates flavors where 'replaces' graph that looks like this (largest flavor at the bottom), in
-     * parenthesis is the number of spare nodes for that flavor:
-     * (1) 5
-     *     |
-     *     |
-     * (2) 3      4 (5)           8 (3)
-     *      \   /  \              |
-     *       \ /    \             |
-     *    (2) 1      6 (0)        7 (0)
-     *       / \
-     *      /   \
-     * (3) 0     2 (1)
+    /* Creates flavors where 'replaces' graph that looks like this (largest flavor at the bottom):
+     *   5
+     *   |
+     *   |
+     *   3      4             8
+     *    \   /  \            |
+     *     \ /    \           |
+     *      1      6          7
+     *     / \
+     *    /   \
+     *   0     2
      */
     private static final List<Flavor> flavors = FlavorSpareCountTest.makeFlavors(
             Collections.singletonList(1),   // 0 -> {1}

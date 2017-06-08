@@ -12,7 +12,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Keeps track of number of ready & active nodes for a flavor and its replaces neighbors
+ * Keeps track of number of ready and active nodes for a flavor and its replaces neighbors
  *
  * @author freva
  */

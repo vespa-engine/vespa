@@ -24,6 +24,9 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
+ * Automatically retires ready and active nodes if they meet a certain criteria given by the {@link RetirementPolicy}
+ * and if there are enough remaining nodes to both replace the retiring node as well as to keep enough in spare.
+ *
  * @author freva
  */
 public class NodeRetirer extends Maintainer {

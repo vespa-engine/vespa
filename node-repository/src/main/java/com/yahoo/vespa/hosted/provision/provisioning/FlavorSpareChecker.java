@@ -57,13 +57,15 @@ public class FlavorSpareChecker {
     /**
      * Returns a set of possible new flavors that can replace this flavor given current node allocation.
      * If the set is empty, there are not enough spare nodes to safely retire this flavor.
-     *
+     * <p>
      * The algorithm is:
-     *  for all possible wanted flavor, check:
-     *      1: Sum of spare nodes of flavor f and all replacee flavors of f is > 0
-     *      2a: Number of ready nodes of flavor f is > 0
-     *      2b: Verify 1 & 2a for all immediate replacee of f, f_i, where sum of ready nodes of f_i and all
-     *          replacee flavors of f_i is > 0
+     * for all possible wanted flavor, check:
+     * <ul>
+     *   <li>1: Sum of spare nodes of flavor f and all replacee flavors of f is &gt; 0</li>
+     *   <li>2a: Number of ready nodes of flavor f is &gt; 0</li>
+     *   <li>2b: Verify 1 &amp; 2a for all immediate replacee of f, f_i, where sum of ready nodes of f_i and all
+     *       replacee flavors of f_i is &gt; 0</li>
+ *     </ul>
      * Only 2a OR 2b need to be satisfied.
      */
     private Set<FlavorSpareCount> findPossibleReplacementFlavorFor(FlavorSpareCount flavorSpareCount) {
@@ -86,7 +88,7 @@ public class FlavorSpareChecker {
         if (flavorSpareCount.hasReady()) {
             possibleNewFlavors.add(flavorSpareCount);
 
-            // Condition 2b
+        // Condition 2b
         } else {
             for (FlavorSpareCount possibleNewFlavor : flavorSpareCount.getImmediateReplacees()) {
                 if (possibleNewFlavor.getSumOfReadyAmongReplacees() == 0) continue;
