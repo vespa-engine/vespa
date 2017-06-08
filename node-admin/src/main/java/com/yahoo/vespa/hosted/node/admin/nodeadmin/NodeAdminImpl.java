@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 import com.yahoo.collections.Pair;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.net.HostName;
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
@@ -46,7 +47,7 @@ public class NodeAdminImpl implements NodeAdmin {
     private final Optional<StorageMaintainer> storageMaintainer;
     private boolean isFrozen = true;
 
-    private final Map<String, NodeAgent> nodeAgents = new ConcurrentHashMap<>();
+    private final Map<ContainerName, NodeAgent> nodeAgents = new ConcurrentHashMap<>();
 
     private final int nodeAgentScanIntervalMillis;
 
@@ -83,15 +84,13 @@ public class NodeAdminImpl implements NodeAdmin {
 
     @Override
     public void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun) {
-        final List<String> existingContainerHostnames = dockerOperations.getAllManagedContainers().stream()
-                .map(container -> container.hostname)
-                .collect(Collectors.toList());
+        final List<ContainerName> existingContainerNames = dockerOperations.listAllManagedContainers();
         final List<String> containersToRunHostnames = containersToRun.stream()
                 .map(container -> container.hostname)
                 .collect(Collectors.toList());
 
         storageMaintainer.ifPresent(StorageMaintainer::cleanNodeAdmin);
-        synchronizeNodeSpecsToNodeAgents(containersToRunHostnames, existingContainerHostnames);
+        synchronizeNodeSpecsToNodeAgents(containersToRunHostnames, existingContainerNames);
         dockerOperations.deleteUnusedDockerImages();
 
         updateNodeAgentMetrics();
@@ -137,7 +136,7 @@ public class NodeAdminImpl implements NodeAdmin {
     }
 
     @Override
-    public Set<String> getListOfHosts() {
+    public Set<ContainerName> getListOfHosts() {
         return nodeAgents.keySet();
     }
 
@@ -196,37 +195,39 @@ public class NodeAdminImpl implements NodeAdmin {
 
     // The method streams the list of containers twice.
     void synchronizeNodeSpecsToNodeAgents(
-            final List<String> containersToRun,
-            final List<String> existingContainers) {
-        final Stream<Pair<Optional<String>, Optional<String>>> nodeSpecContainerPairs = fullOuterJoin(
-                containersToRun.stream(), hostname -> hostname,
-                existingContainers.stream(), hostname -> hostname);
+            final List<String> hostnamesToRun,
+            final List<ContainerName> existingContainers) {
+        final Map<ContainerName, String> hostnameByContainerName = hostnamesToRun.stream()
+                .collect(Collectors.toMap(ContainerName::fromHostname, i -> i));
+        final Stream<Pair<Optional<ContainerName>, Optional<ContainerName>>> nodeSpecContainerPairs = fullOuterJoin(
+                hostnameByContainerName.keySet().stream(), containerName -> containerName,
+                existingContainers.stream(), containerName -> containerName);
 
-        final Set<String> obsoleteAgentHostNames = diff(nodeAgents.keySet(), new HashSet<>(containersToRun));
-        obsoleteAgentHostNames.forEach(hostName -> nodeAgents.remove(hostName).stop());
+        final Set<ContainerName> obsoleteAgentContainerNames = diff(nodeAgents.keySet(), new HashSet<>(hostnameByContainerName.keySet()));
+        obsoleteAgentContainerNames.forEach(containerName -> nodeAgents.remove(containerName).stop());
 
         nodeSpecContainerPairs.forEach(nodeSpecContainerPair -> {
-            final Optional<String> nodeSpec = nodeSpecContainerPair.getFirst();
-            final Optional<String> existingContainer = nodeSpecContainerPair.getSecond();
+            final Optional<ContainerName> nodeSpec = nodeSpecContainerPair.getFirst();
+            final Optional<ContainerName> existingContainer = nodeSpecContainerPair.getSecond();
 
             if (!nodeSpec.isPresent()) {
                 assert existingContainer.isPresent();
-                logger.warning("Container " + existingContainer.get() + " exists, but is not in node repository runlist");
+                logger.warning("Container " + existingContainer.get().asString() + " exists, but is not in node repository runlist");
                 return;
             }
 
-            ensureNodeAgentForNodeIsStarted(nodeSpec.get());
+            ensureNodeAgentForNodeIsStarted(nodeSpec.get(), hostnameByContainerName.get(nodeSpec.get()));
         });
     }
 
-    private void ensureNodeAgentForNodeIsStarted(final String hostname) {
-        if (nodeAgents.containsKey(hostname)) {
+    private void ensureNodeAgentForNodeIsStarted(ContainerName containerName, String hostname) {
+        if (nodeAgents.containsKey(containerName)) {
             return;
         }
 
         final NodeAgent agent = nodeAgentFactory.apply(hostname);
         agent.start(nodeAgentScanIntervalMillis);
-        nodeAgents.put(hostname, agent);
+        nodeAgents.put(containerName, agent);
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {

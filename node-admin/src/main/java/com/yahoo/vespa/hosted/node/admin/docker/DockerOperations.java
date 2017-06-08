@@ -45,5 +45,7 @@ public interface DockerOperations {
      */
     List<Container> getAllManagedContainers();
 
+    List<ContainerName> listAllManagedContainers();
+
     void deleteUnusedDockerImages();
 }
