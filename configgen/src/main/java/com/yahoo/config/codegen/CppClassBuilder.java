@@ -562,6 +562,7 @@ public class CppClassBuilder implements ClassBuilder {
         }
         w.write("\n");
         w.write("#include <vespa/config/common/configvalue.h>\n");
+        w.write("#include <vespa/config/common/exceptions.h>\n");
         w.write("#include <vespa/config/configgen/configpayload.h>\n");
         w.write("#include <vespa/config/print/configdatabuffer.h>\n");
         w.write("#include <vespa/config/common/configparser.h>\n");
