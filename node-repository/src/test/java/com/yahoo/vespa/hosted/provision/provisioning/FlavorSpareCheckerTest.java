@@ -154,8 +154,8 @@ public class FlavorSpareCheckerTest {
                     when(spareNodesPolicy.hasSpare(flavorSpareCount)).thenReturn(true);
                 });
         when(flavorSpareCountByFlavor.get(flavorToRetire).hasReady()).thenReturn(false);
-        when(flavorSpareCountByFlavor.get(flavors.get(0)).getSumOfReadyAmongReplacees()).thenReturn(1L);
-        when(flavorSpareCountByFlavor.get(flavors.get(2)).getSumOfReadyAmongReplacees()).thenReturn(1L);
+        when(flavorSpareCountByFlavor.get(flavors.get(0)).getNumReadyAmongReplacees()).thenReturn(1L);
+        when(flavorSpareCountByFlavor.get(flavors.get(2)).getNumReadyAmongReplacees()).thenReturn(1L);
 
         assertTrue(flavorSpareChecker.canRetireAllocatedNodeWithFlavor(flavorToRetire));
         verifyDecrement(0, 2, 3, 4, 5);
@@ -174,8 +174,8 @@ public class FlavorSpareCheckerTest {
                     when(spareNodesPolicy.hasSpare(flavorSpareCount)).thenReturn(true);
                 });
         when(flavorSpareCountByFlavor.get(flavorToRetire).hasReady()).thenReturn(false);
-        when(flavorSpareCountByFlavor.get(flavors.get(0)).getSumOfReadyAmongReplacees()).thenReturn(1L);
-        when(flavorSpareCountByFlavor.get(flavors.get(2)).getSumOfReadyAmongReplacees()).thenReturn(1L);
+        when(flavorSpareCountByFlavor.get(flavors.get(0)).getNumReadyAmongReplacees()).thenReturn(1L);
+        when(flavorSpareCountByFlavor.get(flavors.get(2)).getNumReadyAmongReplacees()).thenReturn(1L);
 
         assertFalse(flavorSpareChecker.canRetireAllocatedNodeWithFlavor(flavorToRetire));
         verifyDecrement();
@@ -195,8 +195,8 @@ public class FlavorSpareCheckerTest {
                     when(spareNodesPolicy.hasSpare(flavorSpareCount)).thenReturn(true);
                 });
         when(flavorSpareCountByFlavor.get(flavorToRetire).hasReady()).thenReturn(false);
-        when(flavorSpareCountByFlavor.get(flavors.get(0)).getSumOfReadyAmongReplacees()).thenReturn(1L);
-        when(flavorSpareCountByFlavor.get(flavors.get(2)).getSumOfReadyAmongReplacees()).thenReturn(0L);
+        when(flavorSpareCountByFlavor.get(flavors.get(0)).getNumReadyAmongReplacees()).thenReturn(1L);
+        when(flavorSpareCountByFlavor.get(flavors.get(2)).getNumReadyAmongReplacees()).thenReturn(0L);
 
         assertTrue(flavorSpareChecker.canRetireAllocatedNodeWithFlavor(flavorToRetire));
         verifyDecrement(0, 3, 4, 5);
@@ -206,7 +206,7 @@ public class FlavorSpareCheckerTest {
         Set<Flavor> decrementedFlavors = Arrays.stream(decrementFlavorIds).boxed().map(flavors::get).collect(Collectors.toSet());
         for (Flavor flavor : flavors) {
             int times = decrementedFlavors.contains(flavor) ? 1 : 0;
-            verify(flavorSpareCountByFlavor.get(flavor), times(times)).decrementNumberOfSpares();
+            verify(flavorSpareCountByFlavor.get(flavor), times(times)).decrementNumberOfReady();
         }
     }
 
@@ -219,7 +219,7 @@ public class FlavorSpareCheckerTest {
             Set<FlavorSpareCount> immediateReplacees = flavorSpareCountGraph.get(flavor).getImmediateReplacees()
                     .stream().map(FlavorSpareCount::getFlavor).map(flavorSpareCountByFlavor::get).collect(Collectors.toSet());
 
-            doNothing().when(flavorSpareCount).decrementNumberOfSpares();
+            doNothing().when(flavorSpareCount).decrementNumberOfReady();
             when(flavorSpareCount.hasReady()).thenReturn(false);
             when(flavorSpareCount.getPossibleWantedFlavors()).thenReturn(possibleWantedFlavors);
             when(flavorSpareCount.getImmediateReplacees()).thenReturn(immediateReplacees);

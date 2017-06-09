@@ -93,7 +93,7 @@ public class FlavorSpareCountTest {
 
         long[] expectedSumTrees = {3, 10, 2, 16, 16, 23, 4, 3, 7};
         for (int i = 0; i < expectedSumTrees.length; i++) {
-            assertEquals(expectedSumTrees[i], flavorSpareCountByFlavor.get(flavors.get(i)).getSumOfReadyAmongReplacees());
+            assertEquals(expectedSumTrees[i], flavorSpareCountByFlavor.get(flavors.get(i)).getNumReadyAmongReplacees());
         }
     }
 

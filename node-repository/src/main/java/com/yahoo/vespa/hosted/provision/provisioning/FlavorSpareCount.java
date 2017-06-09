@@ -74,10 +74,10 @@ public class FlavorSpareCount {
         return numReady > 0;
     }
 
-    public long getSumOfReadyAmongReplacees() {
+    public long getNumReadyAmongReplacees() {
         long sumReadyNodes = numReady;
         for (FlavorSpareCount replacee : immediateReplacees) {
-            sumReadyNodes += replacee.getSumOfReadyAmongReplacees();
+            sumReadyNodes += replacee.getNumReadyAmongReplacees();
         }
 
         return sumReadyNodes;
@@ -91,7 +91,7 @@ public class FlavorSpareCount {
         return immediateReplacees;
     }
 
-    void decrementNumberOfSpares() {
+    void decrementNumberOfReady() {
         numReady--;
     }
 
