@@ -2,6 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/config.h>
 #include <vespa/config/common/configparser.h>
+#include <vespa/config/common/exceptions.h>
 #include "config-foo.h"
 #include <fstream>
 #include <vespa/vespalib/stllike/asciistream.h>

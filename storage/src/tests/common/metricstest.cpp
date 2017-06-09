@@ -11,9 +11,10 @@
 #include <tests/common/teststorageapp.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/dummystoragelink.h>
-#include <thread>
 #include <vespa/metrics/metricmanager.h>
+#include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".test.metrics");

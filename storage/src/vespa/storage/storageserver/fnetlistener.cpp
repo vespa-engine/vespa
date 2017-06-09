@@ -5,6 +5,7 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/host_name.h>
+#include <vespa/fnet/frt/supervisor.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -35,6 +36,12 @@ FNetListener::~FNetListener()
     }
 }
 
+int
+FNetListener::getListenPort() const
+{
+    return _orb->GetListenPort();
+}
+
 void
 FNetListener::registerHandle(const vespalib::stringref & handle) {
     _slobrokRegister.registerName(handle);
@@ -58,42 +65,28 @@ FNetListener::initRPC()
 {
     FRT_ReflectionBuilder rb(_orb.get());
 
-    rb.DefineMethod(
-            "getnodestate3", "sii", "ss", true,
-            FRT_METHOD(FNetListener::RPC_getNodeState2),
-            this);
+    rb.DefineMethod("getnodestate3", "sii", "ss", true, FRT_METHOD(FNetListener::RPC_getNodeState2), this);
     rb.MethodDesc("Get state of this node");
     rb.ParamDesc("nodestate", "Expected state of given node. If correct, the "
             "request will be queued on target until it changes. To not give "
             "any state use the string 'unknown', enforcing a direct reply.");
-    rb.ParamDesc("timeout", "Timeout of message in milliseconds, set by the "
-            "state requester");
+    rb.ParamDesc("timeout", "Timeout of message in milliseconds, set by the state requester");
     rb.ReturnDesc("nodestate", "State string for this node");
     rb.ReturnDesc("hostinfo", "Information about host this node is running on");
     //-------------------------------------------------------------------------
-    rb.DefineMethod(
-            "getnodestate2", "si", "s", true,
-            FRT_METHOD(FNetListener::RPC_getNodeState2),
-            this);
+    rb.DefineMethod("getnodestate2", "si", "s", true, FRT_METHOD(FNetListener::RPC_getNodeState2), this);
     rb.MethodDesc("Get state of this node");
     rb.ParamDesc("nodestate", "Expected state of given node. If correct, the "
             "request will be queued on target until it changes. To not give "
             "any state use the string 'unknown', enforcing a direct reply.");
-    rb.ParamDesc("timeout", "Timeout of message in milliseconds, set by the "
-            "state requester");
+    rb.ParamDesc("timeout", "Timeout of message in milliseconds, set by the state requester");
     rb.ReturnDesc("nodestate", "State string for this node");
     //-------------------------------------------------------------------------
-    rb.DefineMethod(
-            "setsystemstate2", "s", "", true,
-            FRT_METHOD(FNetListener::RPC_setSystemState2),
-            this);
+    rb.DefineMethod("setsystemstate2", "s", "", true, FRT_METHOD(FNetListener::RPC_setSystemState2), this);
     rb.MethodDesc("Set systemstate on this node");
     rb.ParamDesc("systemstate", "New systemstate to set");
     //-------------------------------------------------------------------------
-    rb.DefineMethod(
-            "getcurrenttime", "", "lis", true,
-            FRT_METHOD(FNetListener::RPC_getCurrentTime),
-            this);
+    rb.DefineMethod("getcurrenttime", "", "lis", true, FRT_METHOD(FNetListener::RPC_getCurrentTime), this);
     rb.MethodDesc("Get current time on this node");
     rb.ReturnDesc("seconds", "Current time in seconds since epoch");
     rb.ReturnDesc("nanoseconds", "additional nanoseconds since epoch");
@@ -133,10 +126,9 @@ FNetListener::RPC_getNodeState2(FRT_RPCRequest *req)
                          req->GetParams()->GetValue(0)._string._len);
 
     std::shared_ptr<api::GetNodeStateCommand> cmd(
-            new api::GetNodeStateCommand(
-                  expected != "unknown" ?
-                    std::unique_ptr<lib::NodeState>(new lib::NodeState(expected)) :
-                    std::unique_ptr<lib::NodeState>()));
+            new api::GetNodeStateCommand(expected != "unknown"
+                                         ? std::make_unique<lib::NodeState>(expected)
+                                         : std::unique_ptr<lib::NodeState>()));
 
     cmd->setPriority(api::StorageMessage::VERYHIGH);
     cmd->setTimeout(req->GetParams()->GetValue(1)._intval32);
@@ -144,9 +136,7 @@ FNetListener::RPC_getNodeState2(FRT_RPCRequest *req)
         cmd->setSourceIndex(req->GetParams()->GetValue(2)._intval32);
     }
         // Create a request object to avoid needing a separate transport type
-    std::unique_ptr<RPCRequestWrapper> request(new RPCRequestWrapper(req));
-    cmd->setTransportContext(std::unique_ptr<api::TransportContext>(
-            new StorageTransportContext(std::move(request))));
+    cmd->setTransportContext(std::make_unique<StorageTransportContext>(std::make_unique<RPCRequestWrapper>(req)));
     req->Detach();
     _comManager.enqueue(cmd);
 }
@@ -160,17 +150,14 @@ FNetListener::RPC_setSystemState2(FRT_RPCRequest *req)
         return;
     }
     vespalib::string systemStateStr(req->GetParams()->GetValue(0)._string._str,
-                               req->GetParams()->GetValue(0)._string._len);
+                                    req->GetParams()->GetValue(0)._string._len);
     lib::ClusterState systemState(systemStateStr);
 
-    std::shared_ptr<api::SetSystemStateCommand> cmd(
-            new api::SetSystemStateCommand(systemState));
+    std::shared_ptr<api::SetSystemStateCommand> cmd(std::make_shared<api::SetSystemStateCommand>(systemState));
     cmd->setPriority(api::StorageMessage::VERYHIGH);
 
-        // Create a request object to avoid needing a separate transport type
-    std::unique_ptr<RPCRequestWrapper> request(new RPCRequestWrapper(req));
-    cmd->setTransportContext(std::unique_ptr<api::TransportContext>(
-            new StorageTransportContext(std::move(request))));
+    // Create a request object to avoid needing a separate transport type
+    cmd->setTransportContext(std::make_unique<StorageTransportContext>(std::make_unique<RPCRequestWrapper>(req)));
     req->Detach();
     _comManager.enqueue(cmd);
 }

@@ -19,6 +19,8 @@
 #include <vespa/storage/config/config-stor-bouncer.h>
 #include <vespa/vespalib/util/sync.h>
 
+namespace config { class ConfigUri; }
+
 namespace storage {
 
 class Bouncer : public StorageLink,
@@ -82,6 +84,3 @@ private:
 };
 
 } // storage
-
-
-

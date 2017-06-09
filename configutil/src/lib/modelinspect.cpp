@@ -3,6 +3,7 @@
 #include "modelinspect.h"
 #include <lib/tags.h>
 #include <vespa/config/helper/configgetter.hpp>
+#include <vespa/config/common/exceptions.h>
 #include <iostream>
 
 using configdefinitions::tagsContain;
@@ -26,7 +27,7 @@ ModelInspect::ModelInspect(Flags flags, const config::ConfigUri uri, std::ostrea
 
     try {
         _cfg = config::ConfigGetter<cloud::config::ModelConfig>::getConfig(uri.getConfigId(), uri.getContext());
-    } catch(config::ConfigRuntimeException &e) {
+    } catch (config::ConfigRuntimeException &e) {
         std::cerr << e.getMessage() << "\n";
     }
     if (_cfg.get() != NULL) {

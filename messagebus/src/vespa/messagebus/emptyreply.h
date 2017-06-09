@@ -2,6 +2,7 @@
 #pragma once
 
 #include "reply.h"
+#include "blob.h"
 
 namespace mbus {
 

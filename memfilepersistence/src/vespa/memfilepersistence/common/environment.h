@@ -22,9 +22,9 @@
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/config/helper/configfetcher.h>
 
+namespace config { class ConfigUri; }
 
-namespace storage {
-namespace memfile {
+namespace storage::memfile {
 
 class MemFileMapper;
 class MemFileCache;
@@ -129,6 +129,4 @@ struct DefaultLazyFileFactory
     vespalib::LazyFile::UP createFile(const std::string& fileName) const override;
 };
 
-} // storage
-} // memfile
-
+}

@@ -6,6 +6,7 @@
 #include <sstream>
 #include <vespa/vespalib/net/state_server.h>
 #include <vespa/vespalib/util/host_name.h>
+#include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/transport.h>

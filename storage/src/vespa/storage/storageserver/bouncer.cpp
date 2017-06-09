@@ -3,6 +3,8 @@
 #include "bouncer.h"
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/message/persistence.h>
+#include <vespa/config/subscription/configuri.h>
+#include <vespa/config/common/exceptions.h>
 #include <sstream>
 
 #include <vespa/log/log.h>

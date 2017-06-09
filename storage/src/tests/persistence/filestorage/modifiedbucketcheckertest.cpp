@@ -6,6 +6,7 @@
 #include <tests/common/teststorageapp.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
+#include <vespa/config/common/exceptions.h>
 
 namespace storage {
 

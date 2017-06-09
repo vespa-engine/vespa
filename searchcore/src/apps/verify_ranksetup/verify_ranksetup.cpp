@@ -6,6 +6,7 @@
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config/config.h>
 #include <vespa/config/helper/legacy.h>
+#include <vespa/config/common/exceptions.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_cache/constant_value.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>

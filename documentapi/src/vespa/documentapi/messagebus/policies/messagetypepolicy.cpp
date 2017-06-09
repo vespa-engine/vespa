@@ -2,8 +2,7 @@
 
 #include "messagetypepolicy.h"
 #include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <vespa/messagebus/routing/route.h>
-#include <vespa/messagebus/routing/routingcontext.h>
+#include <vespa/messagebus/message.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 using vespa::config::content::MessagetyperouteselectorpolicyConfig;

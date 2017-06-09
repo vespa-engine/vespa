@@ -1,8 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <fstream>
 #include "fileconfigsnapshotwriter.h"
 #include "jsonconfigformatter.h"
+#include <vespa/config/common/exceptions.h>
+#include <fstream>
 
 namespace config {
 

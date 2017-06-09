@@ -19,12 +19,20 @@
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storageapi/mbusprot/storagecommand.h>
 #include <vespa/storageapi/mbusprot/storagereply.h>
-#include <vespa/messagebus/rpcmessagebus.h>
+#include <vespa/messagebus/imessagehandler.h>
+#include <vespa/messagebus/ireplyhandler.h>
+#include <vespa/config/helper/configfetcher.h>
 #include <vespa/vespalib/util/document_runnable.h>
+#include <vespa/config/subscription/configuri.h>
 #include <map>
 #include <queue>
 #include <atomic>
 
+namespace mbus {
+    class RPCMessageBus;
+    class SourceSession;
+    class DestinationSession;
+}
 namespace storage {
 
 class VisitorMbusSession;
@@ -108,8 +116,8 @@ public:
     ~StorageTransportContext();
 
     std::unique_ptr<documentapi::DocumentMessage> _docAPIMsg;
-    std::unique_ptr<mbusprot::StorageCommand> _storageProtocolMsg;
-    std::unique_ptr<RPCRequestWrapper> _request;
+    std::unique_ptr<mbusprot::StorageCommand>     _storageProtocolMsg;
+    std::unique_ptr<RPCRequestWrapper>            _request;
 };
 
 class CommunicationManager : public StorageLink,
@@ -138,28 +146,20 @@ private:
 
     void process(const std::shared_ptr<api::StorageMessage>& msg);
 
-    using CommunicationManagerConfig
-            = vespa::config::content::core::StorCommunicationmanagerConfig;
+    using CommunicationManagerConfig= vespa::config::content::core::StorCommunicationmanagerConfig;
 
     void configureMessageBusLimits(const CommunicationManagerConfig& cfg);
-
     void configure(std::unique_ptr<CommunicationManagerConfig> config) override;
-
     void receiveStorageReply(const std::shared_ptr<api::StorageReply>&);
 
-    void serializeNodeState(
-            const api::GetNodeStateReply& gns,
-            std::ostream& os,
-            bool includeDescription,
-            bool includeDiskDescription,
-            bool useOldFormat) const;
+    void serializeNodeState(const api::GetNodeStateReply& gns, std::ostream& os, bool includeDescription,
+                            bool includeDiskDescription, bool useOldFormat) const;
 
     static const uint64_t FORWARDED_MESSAGE = 0;
 
     std::unique_ptr<mbus::RPCMessageBus> _mbus;
-    mbus::DestinationSession::UP _messageBusSession;
-    mbus::SourceSession::UP _sourceSession;
-    mbus::SourceSession::UP _visitorSourceSession;
+    std::unique_ptr<mbus::DestinationSession> _messageBusSession;
+    std::unique_ptr<mbus::SourceSession> _sourceSession;
     uint32_t _count;
 
     vespalib::Lock _messageBusSentLock;

@@ -1,13 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/config/subscription/configsubscription.h>
-#include <vespa/config/print/configdatabuffer.h>
+#include "configkeyset.h"
+#include <vespa/config/common/configvalue.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <map>
-#include "configkeyset.h"
 
 namespace config {
+
+class ConfigSubscription;
+class ConfigDataBuffer;
 
 /**
  * A ConfigSnapshot contains a map of config keys to config instances. You may
@@ -16,7 +18,7 @@ namespace config {
 class ConfigSnapshot
 {
 public:
-    typedef std::vector<ConfigSubscription::SP> SubscriptionList;
+    typedef std::vector<std::shared_ptr<ConfigSubscription>> SubscriptionList;
 
     /**
      * Construct an empty config snapshot.
@@ -112,6 +114,8 @@ private:
     void deserializeV2(vespalib::slime::Inspector & root);
     Value deserializeValueV2(vespalib::slime::Inspector & inspector) const;
 
+    ValueMap::const_iterator find(const ConfigKey & key) const;
+
     ValueMap _valueMap;
     int64_t _generation;
 };
@@ -119,4 +123,3 @@ private:
 } // namespace config
 
 #include "configsnapshot.hpp"
-

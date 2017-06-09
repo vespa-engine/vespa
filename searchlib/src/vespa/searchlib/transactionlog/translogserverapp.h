@@ -6,6 +6,8 @@
 #include <vespa/config/helper/configfetcher.h>
 #include <vespa/vespalib/util/ptrholder.h>
 
+namespace config { class ConfigUri; }
+
 namespace search {
 
 namespace common { class FileHeaderContext; }

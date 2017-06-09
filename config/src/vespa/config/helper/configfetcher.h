@@ -2,10 +2,10 @@
 #pragma once
 
 #include "configpoller.h"
-#include <vespa/config/config.h>
 #include <vespa/config/common/timingvalues.h>
-#include <vespa/vespalib/util/thread.h>
 #include <atomic>
+
+namespace vespalib { class Thread; }
 
 namespace config {
 
@@ -22,16 +22,14 @@ public:
     template <typename ConfigType>
     void subscribe(const std::string & configId, IFetcherCallback<ConfigType> * callback, uint64_t subscribeTimeout = DEFAULT_SUBSCRIBE_TIMEOUT);
 
-    void subscribeGenerationChanges(IGenerationCallback * callback) {
-        _poller.subscribeGenerationChanges(callback);
-    }
+    void subscribeGenerationChanges(IGenerationCallback * callback);
 
     void start();
     void close();
     int64_t getGeneration() const { return _poller.getGeneration(); }
 private:
     ConfigPoller _poller;
-    vespalib::Thread _thread;
+    std::unique_ptr<vespalib::Thread> _thread;
     std::atomic<bool> _closed;
     std::atomic<bool> _started;
 };

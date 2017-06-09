@@ -9,10 +9,9 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/config-stor-distribution.h>
-#include <vespa/config/helper/ifetchercallback.h>
-#include <vespa/config/helper/configfetcher.h>
-#include <vespa/log/log.h>
+#include <vespa/config/subscription/configuri.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".storagepolicy");
 
 using vespalib::make_string;
@@ -120,8 +119,7 @@ StoragePolicy::doSelect(mbus::RoutingContext &context)
         document::BucketId id;
         switch(msg.getType()) {
         case DocumentProtocol::MESSAGE_PUTDOCUMENT:
-            id = _bucketIdFactory.getBucketId(
-                    static_cast<const PutDocumentMessage&>(msg).getDocument()->getId());
+            id = _bucketIdFactory.getBucketId(static_cast<const PutDocumentMessage&>(msg).getDocument()->getId());
             break;
 
         case DocumentProtocol::MESSAGE_GETDOCUMENT:

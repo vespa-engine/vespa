@@ -1,12 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vector>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/storage/persistence/messages.h>
 #include <tests/persistence/common/persistenceproviderwrapper.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/common/filestortestfixture.h>
 #include <vespa/vespalib/util/barrier.h>
+#include <vespa/vespalib/util/thread.h>
 #include <vespa/vespalib/stllike/hash_set_insert.hpp>
 
 #include <vespa/log/log.h>

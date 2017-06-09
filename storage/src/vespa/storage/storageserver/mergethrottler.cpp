@@ -1,12 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mergethrottler.h"
-#include "storagemetricsset.h"
-#include <sstream>
-#include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/persistence/messages.h>
+#include <vespa/messagebus/message.h>
+#include <vespa/config/common/exceptions.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
 #include <vespa/log/log.h>
 
 LOG_SETUP(".mergethrottler");

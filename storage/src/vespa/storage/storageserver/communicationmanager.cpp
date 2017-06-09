@@ -2,17 +2,21 @@
 #include "communicationmanager.h"
 #include "fnetlistener.h"
 #include "rpcrequestwrapper.h"
+#include <vespa/storage/config/config-stor-server.h>
+#include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/documentapi/messagebus/messages/wrongdistributionreply.h>
 #include <vespa/storageapi/message/state.h>
+#include <vespa/messagebus/rpcmessagebus.h>
 #include <vespa/messagebus/emptyreply.h>
-#include <vespa/storage/config/config-stor-server.h>
-#include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".communication.manager");
+
+using vespalib::make_string;
 
 namespace storage {
 
@@ -97,8 +101,7 @@ CommunicationManager::getAllocationType(api::StorageMessage& msg) const
 
 
 void
-CommunicationManager::receiveStorageReply(
-        const std::shared_ptr<api::StorageReply>& reply)
+CommunicationManager::receiveStorageReply(const std::shared_ptr<api::StorageReply>& reply)
 {
     assert(reply.get());
     enqueue(reply);
@@ -107,8 +110,7 @@ CommunicationManager::receiveStorageReply(
 namespace {
     vespalib::string getNodeId(StorageComponent& sc) {
         vespalib::asciistream ost;
-        ost << sc.getClusterName() << "/" << sc.getNodeType()
-            << "/" << sc.getIndex();
+        ost << sc.getClusterName() << "/" << sc.getNodeType() << "/" << sc.getIndex();
         return ost.str();
     }
 
@@ -124,14 +126,10 @@ CommunicationManager::handleMessage(std::unique_ptr<mbus::Message> msg)
     // Relaxed load since we're not doing any dependent reads that aren't
     // already covered by some other form of explicit synchronization.
     if (_closed.load(std::memory_order_relaxed)) {
-        LOG(debug, "Not handling command of type %d as we have closed down",
-            msg->getType());
-        MBUS_TRACE(msg->getTrace(), 6,
-                   "Communication manager: Failing message as we are closed");
+        LOG(debug, "Not handling command of type %d as we have closed down", msg->getType());
+        MBUS_TRACE(msg->getTrace(), 6, "Communication manager: Failing message as we are closed");
         std::unique_ptr<mbus::Reply> reply(new mbus::EmptyReply());
-        reply->addError(mbus::Error(
-                    documentapi::DocumentProtocol::ERROR_ABORTED,
-                    "Node shutting down"));
+        reply->addError(mbus::Error(documentapi::DocumentProtocol::ERROR_ABORTED, "Node shutting down"));
         msg->swapState(*reply);
         _messageBusSession->reply(std::move(reply));
         return;
@@ -139,40 +137,33 @@ CommunicationManager::handleMessage(std::unique_ptr<mbus::Message> msg)
     const vespalib::string & protocolName = msg->getProtocol();
 
     if (protocolName == documentapi::DocumentProtocol::NAME) {
-        std::unique_ptr<documentapi::DocumentMessage> docMsgPtr(
-                static_cast<documentapi::DocumentMessage*>(msg.release()));
+        std::unique_ptr<documentapi::DocumentMessage> docMsgPtr(static_cast<documentapi::DocumentMessage*>(msg.release()));
 
         assert(docMsgPtr.get());
 
         std::unique_ptr<api::StorageCommand> cmd(
-                _docApiConverter.toStorageAPI(
-                        static_cast<documentapi::DocumentMessage&>(*docMsgPtr),
-                        _component.getTypeRepo()));
+                _docApiConverter.toStorageAPI(static_cast<documentapi::DocumentMessage&>(*docMsgPtr), _component.getTypeRepo()));
 
         if (!cmd.get()) {
-            LOGBM(warning, "Unsupported message: StorageApi could not convert "
-                           "message of type %d to a storageapi message",
+            LOGBM(warning, "Unsupported message: StorageApi could not convert message of type %d to a storageapi message",
                   docMsgPtr->getType());
             _metrics.convertToStorageAPIFailures.inc();
             return;
         }
 
         cmd->setTrace(docMsgPtr->getTrace());
-        cmd->setTransportContext(std::unique_ptr<api::TransportContext>(
-                new StorageTransportContext(std::move(docMsgPtr))));
+        cmd->setTransportContext(std::unique_ptr<api::TransportContext>(new StorageTransportContext(std::move(docMsgPtr))));
 
-        enqueue(std::shared_ptr<api::StorageCommand>(cmd.release()));
+        enqueue(std::shared_ptr<api::StorageCommand>(std::move(cmd)));
     } else if (protocolName == mbusprot::StorageProtocol::NAME) {
-        std::unique_ptr<mbusprot::StorageCommand> storMsgPtr(
-                static_cast<mbusprot::StorageCommand*>(msg.release()));
+        std::unique_ptr<mbusprot::StorageCommand> storMsgPtr(static_cast<mbusprot::StorageCommand*>(msg.release()));
 
         assert(storMsgPtr.get());
 
         const std::shared_ptr<api::StorageCommand> & cmd = storMsgPtr->getCommand();
         cmd->setTimeout(storMsgPtr->getTimeRemaining());
         cmd->setTrace(storMsgPtr->getTrace());
-        cmd->setTransportContext(std::unique_ptr<api::TransportContext>(
-                    new StorageTransportContext(std::move(storMsgPtr))));
+        cmd->setTransportContext(std::unique_ptr<api::TransportContext>(new StorageTransportContext(std::move(storMsgPtr))));
 
         enqueue(cmd);
     } else {
@@ -184,41 +175,35 @@ CommunicationManager::handleMessage(std::unique_ptr<mbus::Message> msg)
 void
 CommunicationManager::handleReply(std::unique_ptr<mbus::Reply> reply)
 {
-    MBUS_TRACE(reply->getTrace(), 4, getNodeId(_component)
-               + "Communication manager: Received reply from message bus");
+    MBUS_TRACE(reply->getTrace(), 4, getNodeId(_component) + "Communication manager: Received reply from message bus");
     // Relaxed load since we're not doing any dependent reads that aren't
     // already covered by some other form of explicit synchronization.
     if (_closed.load(std::memory_order_relaxed)) {
-        LOG(debug, "Not handling reply of type %d as we have closed down",
-            reply->getType());
+        LOG(debug, "Not handling reply of type %d as we have closed down", reply->getType());
         return;
     }
     LOG(spam, "Got reply of type %d, trace is %s",
         reply->getType(), reply->getTrace().toString().c_str());
     // EmptyReply must be converted to real replies before processing.
     if (reply->getType() == 0) {
-        std::unique_ptr<mbus::Message> message(reply->getMessage().release());
+        std::unique_ptr<mbus::Message> message(reply->getMessage());
 
         if (message.get()) {
             std::unique_ptr<mbus::Reply> convertedReply;
 
             const vespalib::string& protocolName = message->getProtocol();
             if (protocolName == documentapi::DocumentProtocol::NAME) {
-                convertedReply.reset(static_cast<documentapi::DocumentMessage*>(
-                        message.get())->createReply().release());
+                convertedReply = static_cast<documentapi::DocumentMessage &>(*message).createReply();
             } else if (protocolName == mbusprot::StorageProtocol::NAME) {
                 std::shared_ptr<api::StorageReply> repl(
-                        static_cast<mbusprot::StorageCommand*>(message.get())
-                            ->getCommand()->makeReply().release());
-                mbusprot::StorageReply::UP sreply(
-                        new mbusprot::StorageReply(repl));
+                        static_cast<mbusprot::StorageCommand &>(*message).getCommand()->makeReply());
+                mbusprot::StorageReply::UP sreply(new mbusprot::StorageReply(repl));
 
                 if (reply->hasErrors()) {
                     // Convert only the first error since storageapi only
                     // supports one return code.
                     uint32_t mbuscode = reply->getError(0).getCode();
-                    api::ReturnCode::Result code(
-                            (api::ReturnCode::Result) mbuscode);
+                    api::ReturnCode::Result code((api::ReturnCode::Result) mbuscode);
                     // Encode mbuscode into message not to lose it
                     sreply->getReply()->setResult(storage::api::ReturnCode(
                                 code,
@@ -229,20 +214,18 @@ CommunicationManager::handleReply(std::unique_ptr<mbus::Reply> reply)
                                 + reply->getError(0).getService()
                                 + vespalib::string(")")));
                 }
-                convertedReply.reset(sreply.release());
+                convertedReply = std::move(sreply);
             } else {
-                LOG(warning, "Received reply of unhandled protocol '%s'",
-                    protocolName.c_str());
+                LOG(warning, "Received reply of unhandled protocol '%s'", protocolName.c_str());
                 return;
             }
 
             convertedReply->swapState(*reply);
-            convertedReply->setMessage(mbus::Message::UP(message.release()));
-            reply.reset(convertedReply.release());
+            convertedReply->setMessage(std::move(message));
+            reply = std::move(convertedReply);
         }
         if (reply->getType() == 0) {
-            LOG(warning, "Failed to convert empty reply by reflecting on "
-                         "local message copy.");
+            LOG(warning, "Failed to convert empty reply by reflecting on local message copy.");
             return;
         }
     }
@@ -252,48 +235,38 @@ CommunicationManager::handleReply(std::unique_ptr<mbus::Reply> reply)
 
         if (protocolName == documentapi::DocumentProtocol::NAME) {
             std::shared_ptr<api::StorageCommand> originalCommand;
-
             {
                 vespalib::LockGuard lock(_messageBusSentLock);
-                typedef std::map<api::StorageMessage::Id,
-                                 api::StorageCommand::SP> MessageMap;
-                MessageMap::iterator iter(
-                        _messageBusSent.find(reply->getContext().value.UINT64));
+                typedef std::map<api::StorageMessage::Id, api::StorageCommand::SP> MessageMap;
+                MessageMap::iterator iter(_messageBusSent.find(reply->getContext().value.UINT64));
                 if (iter != _messageBusSent.end()) {
                     originalCommand.swap(iter->second);
                     _messageBusSent.erase(iter);
                 } else {
-                    LOG(warning, "Failed to convert reply - original sent "
-                                 "command doesn't exist");
+                    LOG(warning, "Failed to convert reply - original sent command doesn't exist");
                     return;
                 }
             }
 
             std::shared_ptr<api::StorageReply> sar(
-                    _docApiConverter.toStorageAPI(
-                            static_cast<documentapi::DocumentReply&>(*reply),
-                            *originalCommand).release());
+                    _docApiConverter.toStorageAPI(static_cast<documentapi::DocumentReply&>(*reply), *originalCommand));
 
             if (sar.get()) {
                 sar->setTrace(reply->getTrace());
                 receiveStorageReply(sar);
             }
         } else if (protocolName == mbusprot::StorageProtocol::NAME) {
-            mbusprot::StorageReply* sr(
-                    static_cast<mbusprot::StorageReply*>(reply.get()));
+            mbusprot::StorageReply* sr(static_cast<mbusprot::StorageReply*>(reply.get()));
             sr->getReply()->setTrace(reply->getTrace());
             receiveStorageReply(sr->getReply());
         } else {
-            LOGBM(warning, "Received unsupported reply type %d for protocol "
-                           "'%s'.",
+            LOGBM(warning, "Received unsupported reply type %d for protocol '%s'.",
                   reply->getType(), reply->getProtocol().c_str());
         }
     }
 }
 
-CommunicationManager::CommunicationManager(
-        StorageComponentRegister& compReg,
-        const config::ConfigUri & configUri)
+CommunicationManager::CommunicationManager(StorageComponentRegister& compReg, const config::ConfigUri & configUri)
     : StorageLink("Communication manager"),
       _component(compReg, "communicationmanager"),
       _metrics(_component.getLoadTypes()->getMetricLoadTypes()),
@@ -381,8 +354,7 @@ void CommunicationManager::onClose()
     while (_eventQueue.size() > 0) {
         assert(_eventQueue.getNext(msg, 0));
         if (!msg->getType().isReply()) {
-            std::shared_ptr<api::StorageReply> reply(
-                    static_cast<api::StorageCommand&>(*msg).makeReply().release());
+            std::shared_ptr<api::StorageReply> reply(static_cast<api::StorageCommand&>(*msg).makeReply());
             reply->setResult(code);
             sendReply(reply);
         }
@@ -401,12 +373,23 @@ CommunicationManager::configureMessageBusLimits(
                                   : cfg.mbusContentNodeMaxPendingSize);
 }
 
-void CommunicationManager::configure(
-        std::unique_ptr<CommunicationManagerConfig> config)
+void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig> config)
 {
     // Only allow dynamic (live) reconfiguration of message bus limits.
     if (_mbus.get()) {
         configureMessageBusLimits(*config);
+        if (_mbus->getRPCNetwork().getPort() != config->mbusport) {
+            auto m = make_string("mbus port changed from %d to %d. Will conduct a quick, but controlled restart.",
+                                 _mbus->getRPCNetwork().getPort(), config->mbusport);
+            LOG(warning, "%s", m.c_str());
+            _component.requestShutdown(m);
+        }
+        if (_listener->getListenPort() != config->rpcport) {
+            auto m = make_string("rpc port changed from %d to %d. Will conduct a quick, but controlled restart.",
+                                 _listener->getListenPort(), config->rpcport);
+            LOG(warning, "%s", m.c_str());
+            _component.requestShutdown(m);
+        }
         return;
     };
 
@@ -423,18 +406,12 @@ void CommunicationManager::configure(
 
         // Configure messagebus here as we for legacy reasons have
         // config here.
-        _mbus.reset(new mbus::RPCMessageBus(
-                            mbus::ProtocolSet()
-                            .add(mbus::IProtocol::SP(
-                                         new documentapi::DocumentProtocol(
-                                                 *_component.getLoadTypes(),
-                                                 _component.getTypeRepo())))
-                            .add(mbus::IProtocol::SP(
-                                         new mbusprot::StorageProtocol(
-                                                 _component.getTypeRepo(),
-                                                 *_component.getLoadTypes()))),
-                            params,
-                            _configUri));
+        _mbus = std::make_unique<mbus::RPCMessageBus>(
+                mbus::ProtocolSet()
+                        .add(std::make_shared<documentapi::DocumentProtocol>(*_component.getLoadTypes(), _component.getTypeRepo()))
+                        .add(std::make_shared<mbusprot::StorageProtocol>(_component.getTypeRepo(), *_component.getLoadTypes())),
+                params,
+                _configUri);
 
         configureMessageBusLimits(*config);
     }
@@ -458,8 +435,7 @@ void CommunicationManager::configure(
 void
 CommunicationManager::process(const std::shared_ptr<api::StorageMessage>& msg)
 {
-    MBUS_TRACE(msg->getTrace(), 9,
-               "Communication manager: Sending message down chain.");
+    MBUS_TRACE(msg->getTrace(), 9, "Communication manager: Sending message down chain.");
     framework::MilliSecTimer startTime(_component.getClock());
     try {
         LOG(spam, "Process: %s", msg->toString().c_str());
@@ -469,14 +445,11 @@ CommunicationManager::process(const std::shared_ptr<api::StorageMessage>& msg)
         }
 
         LOG(spam, "Done processing: %s", msg->toString().c_str());
-        _metrics.messageProcessTime[msg->getLoadType()].addValue(
-                startTime.getElapsedTimeAsDouble());
+        _metrics.messageProcessTime[msg->getLoadType()].addValue(startTime.getElapsedTimeAsDouble());
     } catch (std::exception& e) {
-        LOGBP(error, "When running command %s, caught exception %s. "
-                     "Discarding message",
+        LOGBP(error, "When running command %s, caught exception %s. Discarding message",
               msg->toString().c_str(), e.what());
-        _metrics.exceptionMessageProcessTime[msg->getLoadType()].addValue(
-                startTime.getElapsedTimeAsDouble());
+        _metrics.exceptionMessageProcessTime[msg->getLoadType()].addValue(startTime.getElapsedTimeAsDouble());
     } catch (...) {
         LOG(fatal, "Caught fatal exception in communication manager");
         throw;
@@ -486,19 +459,17 @@ CommunicationManager::process(const std::shared_ptr<api::StorageMessage>& msg)
 void
 CommunicationManager::enqueue(const std::shared_ptr<api::StorageMessage> & msg)
 {
+    using MemoryToken = framework::MemoryToken;
     assert(msg.get());
 
     const uint32_t memoryFootprint = msg->getMemoryFootprint();
-    framework::MemoryToken::UP token = _component.getMemoryManager().allocate(
-            getAllocationType(*msg),
-            memoryFootprint * 2, memoryFootprint * 2,
-            msg->getPriority());
+    MemoryToken::UP token = _component.getMemoryManager().allocate(getAllocationType(*msg), memoryFootprint * 2,
+                                                                   memoryFootprint * 2, msg->getPriority());
 
-    if (token.get()) {
-        msg->setMemoryToken(std::unique_ptr<framework::MemoryToken>(token.release()));
+    if (token) {
+        msg->setMemoryToken(std::move(token));
 
-        LOG(spam, "Enq storage message %s, priority %d",
-                    msg->toString().c_str(), msg->getPriority());
+        LOG(spam, "Enq storage message %s, priority %d", msg->toString().c_str(), msg->getPriority());
         _eventQueue.enqueue(msg);
     } else {
         _metrics.failedDueToTooLittleMemory.inc();
@@ -510,10 +481,8 @@ CommunicationManager::enqueue(const std::shared_ptr<api::StorageMessage> & msg)
         api::StorageCommand* cmd(dynamic_cast<api::StorageCommand*>(msg.get()));
 
         if (cmd) {
-            std::shared_ptr<api::StorageReply> reply(
-                    cmd->makeReply().release());
-            reply->setResult(api::ReturnCode(
-                                     api::ReturnCode::BUSY, ost.str()));
+            std::shared_ptr<api::StorageReply> reply(cmd->makeReply());
+            reply->setResult(api::ReturnCode(api::ReturnCode::BUSY, ost.str()));
             sendReply(reply);
         }
     }
@@ -522,28 +491,22 @@ CommunicationManager::enqueue(const std::shared_ptr<api::StorageMessage> & msg)
 bool
 CommunicationManager::onUp(const std::shared_ptr<api::StorageMessage> & msg)
 {
-    MBUS_TRACE(msg->getTrace(), 6,
-               "Communication manager: Sending " + msg->toString());
+    MBUS_TRACE(msg->getTrace(), 6, "Communication manager: Sending " + msg->toString());
     if (msg->getType().isReply()) {
-        if (static_cast<api::StorageReply&>(*msg).getResult().failed()) {
-            LOG(debug, "Request %s failed: %s",
-                    msg->getType().toString().c_str(),
-                    static_cast<api::StorageReply&>(*msg)
-                        .getResult().toString().c_str());
+        const api::StorageReply & m = static_cast<const api::StorageReply&>(*msg);
+        if (m.getResult().failed()) {
+            LOG(debug, "Request %s failed: %s", msg->getType().toString().c_str(), m.getResult().toString().c_str());
         }
-        return sendReply(
-                std::static_pointer_cast<api::StorageReply>(msg));
+        return sendReply(std::static_pointer_cast<api::StorageReply>(msg));
     } else {
-        return sendCommand(
-                std::static_pointer_cast<api::StorageCommand>(msg));
+        return sendCommand(std::static_pointer_cast<api::StorageCommand>(msg));
     }
 }
 
 void
-CommunicationManager::sendMessageBusMessage(
-        const std::shared_ptr<api::StorageCommand>& msg,
-        std::unique_ptr<mbus::Message> mbusMsg,
-        const mbus::Route& route)
+CommunicationManager::sendMessageBusMessage(const std::shared_ptr<api::StorageCommand>& msg,
+                                            std::unique_ptr<mbus::Message> mbusMsg,
+                                            const mbus::Route& route)
 {
     // Relaxed load since we're not doing any dependent reads that aren't
     // already covered by some other form of explicit synchronization.
@@ -553,20 +516,16 @@ CommunicationManager::sendMessageBusMessage(
 
     LOG(spam, "Sending message bus msg of type %d", mbusMsg->getType());
 
-    MBUS_TRACE(mbusMsg->getTrace(), 6,
-               "Communication manager: Passing message to source session");
+    MBUS_TRACE(mbusMsg->getTrace(), 6, "Communication manager: Passing message to source session");
     mbus::Result result = _sourceSession->send(std::move(mbusMsg), route);
 
     if (!result.isAccepted()) {
-        std::shared_ptr<api::StorageReply> reply(msg->makeReply().release());
+        std::shared_ptr<api::StorageReply> reply(msg->makeReply());
         if (reply.get()) {
             if (result.getError().getCode() > mbus::ErrorCode::FATAL_ERROR) {
-                reply->setResult(api::ReturnCode(
-                        api::ReturnCode::ABORTED,
-                        result.getError().getMessage()));
+                reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, result.getError().getMessage()));
             } else {
-                reply->setResult(api::ReturnCode(
-                        api::ReturnCode::BUSY, result.getError().getMessage()));
+                reply->setResult(api::ReturnCode(api::ReturnCode::BUSY, result.getError().getMessage()));
             }
         } else {
             LOG(spam, "Failed to synthesize reply");
@@ -581,18 +540,17 @@ CommunicationManager::sendCommand(
         const std::shared_ptr<api::StorageCommand> & msg)
 {
     if (!msg->getAddress()) {
-        LOGBP(warning, "Got command without address of type %s in "
-                       "CommunicationManager::sendCommand",
-                       msg->getType().getName().c_str());
+        LOGBP(warning, "Got command without address of type %s in CommunicationManager::sendCommand",
+              msg->getType().getName().c_str());
         return false;
     }
     if (!msg->sourceIndexSet()) {
         msg->setSourceIndex(_component.getIndex());
     }
-        // Components can not specify what storage node to send to
-        // without specifying protocol. This is a workaround, such that code
-        // doesn't have to care whether message is in documentapi or storage
-        // protocol.
+    // Components can not specify what storage node to send to
+    // without specifying protocol. This is a workaround, such that code
+    // doesn't have to care whether message is in documentapi or storage
+    // protocol.
     api::StorageMessageAddress address(*msg->getAddress());
     switch (msg->getType().getId()) {
         case api::MessageType::STATBUCKET_ID: {
@@ -608,9 +566,7 @@ CommunicationManager::sendCommand(
     switch (address.getProtocol()) {
     case api::StorageMessageAddress::STORAGE:
     {
-        LOG(spam, "Send to %s: %s",
-                  address.toString().c_str(),
-                  msg->toString().c_str());
+        LOG(spam, "Send to %s: %s", address.toString().c_str(), msg->toString().c_str());
 
         std::unique_ptr<mbus::Message> cmd(new mbusprot::StorageCommand(msg));
 
@@ -623,16 +579,12 @@ CommunicationManager::sendCommand(
     }
     case api::StorageMessageAddress::DOCUMENT:
     {
-        MBUS_TRACE(msg->getTrace(), 7,
-                   "Communication manager: Converting storageapi message to "
-                   "documentapi");
+        MBUS_TRACE(msg->getTrace(), 7, "Communication manager: Converting storageapi message to documentapi");
 
-        std::unique_ptr<mbus::Message> mbusMsg(
-                _docApiConverter.toDocumentAPI(*msg, _component.getTypeRepo()));
+        std::unique_ptr<mbus::Message> mbusMsg(_docApiConverter.toDocumentAPI(*msg, _component.getTypeRepo()));
 
         if (mbusMsg.get()) {
-            MBUS_TRACE(msg->getTrace(), 7,
-                       "Communication manager: Converted OK");
+            MBUS_TRACE(msg->getTrace(), 7, "Communication manager: Converted OK");
             mbusMsg->setTrace(msg->getTrace());
             mbusMsg->setRetryEnabled(address.retryEnabled());
 
@@ -655,22 +607,15 @@ CommunicationManager::sendCommand(
 }
 
 void
-CommunicationManager::serializeNodeState(
-        const api::GetNodeStateReply& gns,
-        std::ostream& os,
-        bool includeDescription,
-        bool includeDiskDescription,
-        bool useOldFormat) const
+CommunicationManager::serializeNodeState(const api::GetNodeStateReply& gns, std::ostream& os,
+                                         bool includeDescription, bool includeDiskDescription, bool useOldFormat) const
 {
     vespalib::asciistream tmp;
     if (gns.hasNodeState()) {
-        gns.getNodeState().serialize(
-                tmp, "", includeDescription,
-                includeDiskDescription, useOldFormat);
+        gns.getNodeState().serialize(tmp, "", includeDescription, includeDiskDescription, useOldFormat);
     } else {
-        _component.getStateUpdater().getReportedNodeState()->serialize(
-                tmp, "", includeDescription,
-                includeDiskDescription, useOldFormat);
+        _component.getStateUpdater().getReportedNodeState()->serialize(tmp, "", includeDescription,
+                                                                       includeDiskDescription, useOldFormat);
     }
     os << tmp.str();
 }
@@ -682,17 +627,14 @@ CommunicationManager::sendDirectRPCReply(
 {
     std::string requestName(request.getMethodName());
     if (requestName == "getnodestate3") {
-        api::GetNodeStateReply& gns(
-                static_cast<api::GetNodeStateReply&>(*reply));
+        api::GetNodeStateReply& gns(static_cast<api::GetNodeStateReply&>(*reply));
         std::ostringstream ns;
         serializeNodeState(gns, ns, true, true, false);
         request.addReturnString(ns.str().c_str());
         request.addReturnString(gns.getNodeInfo().c_str());
-        LOGBP(debug, "Sending getnodestate3 reply with host info '%s'.",
-              gns.getNodeInfo().c_str());
+        LOGBP(debug, "Sending getnodestate3 reply with host info '%s'.", gns.getNodeInfo().c_str());
     } else if (requestName == "getnodestate2") {
-        api::GetNodeStateReply& gns(
-                static_cast<api::GetNodeStateReply&>(*reply));
+        api::GetNodeStateReply& gns(static_cast<api::GetNodeStateReply&>(*reply));
         std::ostringstream ns;
         serializeNodeState(gns, ns, true, true, false);
         request.addReturnString(ns.str().c_str());
@@ -704,13 +646,11 @@ CommunicationManager::sendDirectRPCReply(
         request.addReturnString(reply->getResult().getMessage().c_str());
 
         if (reply->getType() == api::MessageType::GETNODESTATE_REPLY) {
-            api::GetNodeStateReply& gns(
-                    static_cast<api::GetNodeStateReply&>(*reply));
+            api::GetNodeStateReply& gns(static_cast<api::GetNodeStateReply&>(*reply));
             std::ostringstream ns;
             serializeNodeState(gns, ns, false, false, true);
             request.addReturnString(ns.str().c_str());
-            request.addReturnInt(static_cast<int>(
-                        gns.getNodeState().getInitProgress().getValue() * 100));
+            request.addReturnInt(static_cast<int>(gns.getNodeState().getInitProgress().getValue() * 100));
         }
     }
 
@@ -730,35 +670,28 @@ CommunicationManager::sendMessageBusReply(
     // If this was originally documentapi, create a reply now and transfer the
     // state.
     if (context._docAPIMsg.get()) {
-        if (reply->getResult().getResult()
-                == api::ReturnCode::WRONG_DISTRIBUTION)
-        {
-            replyUP.reset(new documentapi::WrongDistributionReply(
-                                  reply->getResult().getMessage()));
+        if (reply->getResult().getResult() == api::ReturnCode::WRONG_DISTRIBUTION) {
+            replyUP.reset(new documentapi::WrongDistributionReply(reply->getResult().getMessage()));
             replyUP->swapState(*context._docAPIMsg);
             replyUP->setTrace(reply->getTrace());
-            replyUP->addError(mbus::Error(
-                      documentapi::DocumentProtocol::ERROR_WRONG_DISTRIBUTION,
-                      reply->getResult().getMessage()));
+            replyUP->addError(mbus::Error(documentapi::DocumentProtocol::ERROR_WRONG_DISTRIBUTION,
+                                          reply->getResult().getMessage()));
         } else {
             replyUP = context._docAPIMsg->createReply();
             replyUP->swapState(*context._docAPIMsg);
             replyUP->setTrace(reply->getTrace());
-            replyUP->setMessage(std::unique_ptr<mbus::Message>(
-                        context._docAPIMsg.release()));
+            replyUP->setMessage(std::move(context._docAPIMsg));
             _docApiConverter.transferReplyState(*reply, *replyUP);
         }
     } else if (context._storageProtocolMsg.get()) {
         replyUP.reset(new mbusprot::StorageReply(reply));
         if (reply->getResult().getResult() != api::ReturnCode::OK) {
-            replyUP->addError(mbus::Error(reply->getResult().getResult(),
-                                          reply->getResult().getMessage()));
+            replyUP->addError(mbus::Error(reply->getResult().getResult(), reply->getResult().getMessage()));
         }
 
         replyUP->swapState(*context._storageProtocolMsg);
         replyUP->setTrace(reply->getTrace());
-        replyUP->setMessage(mbus::Message::UP(
-                    context._storageProtocolMsg.release()));
+        replyUP->setMessage(std::move(context._storageProtocolMsg));
     }
 
     if (replyUP.get() != NULL) {
@@ -783,19 +716,13 @@ CommunicationManager::sendReply(
     // Relaxed load since we're not doing any dependent reads that aren't
     // already covered by some other form of explicit synchronization.
     if (_closed.load(std::memory_order_relaxed)) {
-        reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED,
-                                         "Node is shutting down"));
+        reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, "Node is shutting down"));
     }
 
-    std::unique_ptr<StorageTransportContext> context(
-            static_cast<StorageTransportContext*>(
-                reply->getTransportContext().release()));
+    std::unique_ptr<StorageTransportContext> context(static_cast<StorageTransportContext*>(reply->getTransportContext().release()));
 
     if (!context.get()) {
-        LOG(spam,
-            "No transport context in reply %s",
-            reply->toString().c_str());
-
+        LOG(spam, "No transport context in reply %s", reply->toString().c_str());
         return false;
     }
 
@@ -836,8 +763,7 @@ CommunicationManager::updateMetrics(const MetricLockGuard &)
 }
 
 void
-CommunicationManager::print(std::ostream& out, bool verbose,
-                            const std::string& indent) const
+CommunicationManager::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     (void) verbose; (void) indent;
     out << "CommunicationManager";

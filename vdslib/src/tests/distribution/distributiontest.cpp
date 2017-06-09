@@ -3,9 +3,6 @@
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/distribution/idealnodecalculator.h>
 #include <vespa/config/helper/configfetcher.h>
-#include <chrono>
-#include <thread>
-#include <fstream>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/testkit/test_kit.h>
@@ -15,8 +12,11 @@
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/config-stor-distribution.h>
 #include <vespa/config/helper/configgetter.hpp>
+#include <vespa/config/subscription/configuri.h>
 #include <vespa/fastos/file.h>
-
+#include <chrono>
+#include <thread>
+#include <fstream>
 
 namespace storage {
 namespace lib {

@@ -1,11 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <memory>
-#include <vespa/messagebus/blob.h>
-#include <vespa/messagebus/callstack.h>
-#include <vespa/messagebus/context.h>
-#include <vespa/messagebus/trace.h>
+#include "callstack.h"
+#include "trace.h"
+#include "common.h"
 
 namespace mbus {
 

@@ -6,7 +6,7 @@
 #include <tests/common/dummystoragelink.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/teststorageapp.h>
-#include <vespa/storage/bucketdb/storbucketdb.h>
+#include <vespa/config/common/exceptions.h>
 
 bool debug = false;
 

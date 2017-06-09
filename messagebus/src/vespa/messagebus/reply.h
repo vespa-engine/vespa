@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vector>
 #include "error.h"
-#include "message.h"
+#include "routable.h"
+#include <vector>
 
 namespace mbus {
 
@@ -17,9 +17,10 @@ class Message;
  */
 class Reply : public Routable {
 private:
-    std::vector<Error> _errors;     // A list of errors that have occured during the lifetime of this reply.
-    Message::UP        _msg;        // The message to which this is a reply.
-    double             _retryDelay; // How to perform resending of this.
+    using MessageUP = std::unique_ptr<Message>;
+    std::vector<Error>  _errors;     // A list of errors that have occured during the lifetime of this reply.
+    MessageUP           _msg;        // The message to which this is a reply.
+    double              _retryDelay; // How to perform resending of this.
 
 public:
     /**
@@ -87,7 +88,7 @@ public:
      *
      * @param msg the Message to attach
      */
-    void setMessage(Message::UP msg) { _msg = std::move(msg); }
+    void setMessage(MessageUP msg);
 
     /**
      * Detach the Message attached to this Reply. If a Reply contains errors,
@@ -96,7 +97,7 @@ public:
      *
      * @return the detached Message
      */
-    Message::UP getMessage() { return std::move(_msg); }
+    MessageUP getMessage();
 
     /**
      * Returns the retry request of this reply. This can be set using {@link

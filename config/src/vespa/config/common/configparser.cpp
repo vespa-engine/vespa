@@ -1,10 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "configparser.h"
+#include "exceptions.h"
 #include "misc.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 
 namespace config {
+
+void ConfigParser::throwNoDefaultValue(const vespalib::stringref & key) {
+    throw InvalidConfigException("Config parameter " + key + " has no "
+            "default value and is not specified in config", VESPA_STRLOC);
+}
 
 vespalib::string
 ConfigParser::deQuote(const vespalib::stringref & source)

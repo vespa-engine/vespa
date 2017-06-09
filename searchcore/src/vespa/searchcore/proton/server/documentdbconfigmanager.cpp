@@ -13,6 +13,7 @@
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/vespalib/time/time_box.h>
+#include <thread>
 
 LOG_SETUP(".proton.server.documentdbconfigmanager");
 
@@ -217,7 +218,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
                 while (timeBox.hasTimeLeft() && (filePath == "")) {
                     filePath = fileAcquirer.wait_for(rc.fileref, timeBox.timeLeft());
                     if (filePath == "") {
-                        FastOS_Thread::Sleep(100);
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
                     }
                 }
                 LOG(info, "Got file path from file acquirer: '%s' (name='%s', type='%s', ref='%s')",

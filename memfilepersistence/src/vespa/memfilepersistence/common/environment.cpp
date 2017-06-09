@@ -5,12 +5,12 @@
 #include <vespa/vespalib/util/random.h>
 #include <vespa/vespalib/util/vstringfmt.h>
 #include <vespa/config/helper/configgetter.hpp>
+#include <vespa/config/subscription/configuri.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
 using config::ConfigGetter;
 
-namespace storage {
-namespace memfile {
+namespace storage::memfile {
 
 namespace {
 
@@ -117,5 +117,4 @@ Environment::swapModifiedBuckets(document::BucketId::List & ids)
     _modifiedBuckets.swap(ids);
 }
 
-} // memfile
-} // storage
+}

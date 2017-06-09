@@ -4,6 +4,8 @@
 
 #include <vespa/messagebus/imessagehandler.h>
 #include <vespa/messagebus/ireplyhandler.h>
+#include <vespa/messagebus/message.h>
+#include <vespa/messagebus/reply.h>
 #include <vespa/vespalib/util/sync.h>
 
 namespace mbus {

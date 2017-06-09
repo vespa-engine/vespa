@@ -2,6 +2,7 @@
 
 #include "priorityconverter.h"
 #include <vespa/documentapi/messagebus/documentprotocol.h>
+#include <vespa/config/subscription/configuri.h>
 
 namespace storage {
 

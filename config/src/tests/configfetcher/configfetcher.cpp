@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/helper/configfetcher.h>
+#include <vespa/vespalib/util/exception.h>
 #include <fstream>
 #include "config-my.h"
 #include <atomic>
@@ -151,7 +152,7 @@ TEST_F("verify that config generation can be obtained from config fetcher", Conf
             if (cb._configured) {
                 break;
             }
-            FastOS_Thread::Sleep(10);
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));;
         }
         EXPECT_EQUAL(2, fetcher.getGeneration());
         EXPECT_EQUAL("bar", cb._config.get()->myField);

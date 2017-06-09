@@ -1,16 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <boost/pointer_cast.hpp>
 #include <cppunit/extensions/HelperMacros.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/message/stat.h>
-#include <vespa/vdslib/state/nodestate.h>
 #include <vespa/storage/storageserver/bouncer.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/dummystoragelink.h>
 #include <vespa/storageapi/message/persistence.h>
+#include <vespa/config/common/exceptions.h>
+
 
 namespace storage {
 

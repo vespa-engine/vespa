@@ -9,6 +9,8 @@
 
 namespace mbus {
 
+class Error;
+
 class PayLoadFiller
 {
 public:
@@ -59,27 +61,17 @@ public:
     RPCSendV1();
     ~RPCSendV1();
 
-    // Implements RPCSendAdapter.
     void attach(RPCNetwork &net) override;
 
-    // Implements RPCSendAdapter.
     void send(RoutingNode &recipient, const vespalib::Version &version,
               BlobRef payload, uint64_t timeRemaining) override;
     void sendByHandover(RoutingNode &recipient, const vespalib::Version &version,
               Blob payload, uint64_t timeRemaining) override;
 
-    // Implements IReplyHandler.
-    void handleReply(Reply::UP reply) override;
-
-    // Implements IDiscardHandler.
+    void handleReply(std::unique_ptr<Reply> reply) override;
     void handleDiscard(Context ctx) override;
-
-    // Implements FRT_Invokable.
     void invoke(FRT_RPCRequest *req);
-
-    // Implements FRT_IRequestWait.
     void RequestDone(FRT_RPCRequest *req) override;
 };
 
 } // namespace mbus
-

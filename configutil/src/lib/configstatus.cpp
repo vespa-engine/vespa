@@ -7,6 +7,7 @@
 #include <vbench/http/http_result_handler.h>
 #include <vbench/http/server_spec.h>
 #include <vbench/http/http_client.h>
+#include <vespa/config/common/exceptions.h>
 #include <iostream>
 
 using configdefinitions::tagsContain;

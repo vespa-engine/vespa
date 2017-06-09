@@ -15,6 +15,7 @@
 #include <vespa/documentapi/messagebus/messages/multioperationmessage.h>
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
+#include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <thread>
 

@@ -4,12 +4,12 @@
 #include <vespa/memfilepersistence/common/environment.h>
 #include <vespa/memfilepersistence/mapper/memfilemapper.h>
 #include <vespa/memfilepersistence/spi/memfilepersistenceprovidermetrics.h>
+#include <vespa/vespalib/util/exception.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.memfile.cache");
 
-namespace storage {
-namespace memfile {
+namespace storage::memfile {
 
 void
 MemFileCache::Entry::setInUse(bool inUse) {
@@ -517,7 +517,4 @@ MemFileCache::printCacheEntriesHtml(std::ostream& out) const
     out << "</ol>\n";
 }
 
-} // memfile
-
-} // storage
-
+}

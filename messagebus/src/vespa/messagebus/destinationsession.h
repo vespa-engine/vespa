@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <memory>
-#include <string>
 #include "destinationsessionparams.h"
 #include "imessagehandler.h"
 #include "reply.h"
@@ -10,6 +8,7 @@
 namespace mbus {
 
 class MessageBus;
+class Message;
 
 /**
  * A DestinationSession is used to receive Message objects and reply
@@ -18,6 +17,7 @@ class MessageBus;
 class DestinationSession : public IMessageHandler {
 private:
     friend class MessageBus;
+    using MessageUP = std::unique_ptr<Message>;
 
     MessageBus      &_mbus;
     string           _name;
@@ -62,7 +62,7 @@ public:
      *
      * @param msg the Message you want to acknowledge
      */
-    void acknowledge(Message::UP msg);
+    void acknowledge(MessageUP msg);
 
     /**
      * Send a Reply as a response to a Message. The Reply will be routed back to
@@ -80,7 +80,7 @@ public:
      *
      * @param message the Message
      */
-    void handleMessage(Message::UP message) override;
+    void handleMessage(MessageUP message) override;
 
     /**
      * Returns the message handler of this session.
