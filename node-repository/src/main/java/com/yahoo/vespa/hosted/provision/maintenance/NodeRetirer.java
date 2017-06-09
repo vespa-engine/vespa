@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.FlavorSpareChecker;
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Automatically retires ready and active nodes if they meet a certain criteria given by the {@link RetirementPolicy}
@@ -109,35 +111,60 @@ public class NodeRetirer extends Maintainer {
         Map<Flavor, Map<Node.State, Long>> numSpareNodesByFlavorByState = getNumberOfNodesByFlavorByNodeState(allNodes);
         flavorSpareChecker.updateReadyAndActiveCountsByFlavor(numSpareNodesByFlavorByState);
 
+        // Get all the nodes that we could retire along with their deployments
+        Map<Deployment, Set<Node>> nodesToRetireByDeployment = new HashMap<>();
         for (ApplicationId applicationId : activeApplications) {
+            List<Node> applicationNodes = getNodesBelongingToApplication(allNodes, applicationId);
+            Set<Node> retireableNodes = getRetireableNodesForApplication(applicationNodes);
+            long numNodesAllowedToRetire = getNumberNodesAllowToRetireForApplication(applicationNodes, MAX_SIMULTANEOUS_RETIRES_PER_APPLICATION);
+            if (retireableNodes.isEmpty() || numNodesAllowedToRetire == 0) continue;
+
             Optional<Deployment> deployment = deployer.deployFromLocalActive(applicationId, Duration.ofMinutes(30));
             if ( ! deployment.isPresent()) continue; // this will be done at another config server
 
-            long numNodesWantedToRetire = 0;
-            try (Mutex lock = nodeRepository().lock(applicationId)) {
-                // Get nodes for current application under lock
-                List<Node> applicationNodes = nodeRepository().getNodes(applicationId);
-                Set<Node> retireableNodes = getRetireableNodesForApplication(applicationNodes);
-                long numNodesAllowedToRetire = getNumberNodesAllowToRetireForApplication(applicationNodes, MAX_SIMULTANEOUS_RETIRES_PER_APPLICATION);
-
-                for (Iterator<Node> iterator = retireableNodes.iterator(); iterator.hasNext() && numNodesAllowedToRetire > numNodesWantedToRetire; ) {
-                    Node retireableNode = iterator.next();
-
-                    if (flavorSpareChecker.canRetireAllocatedNodeWithFlavor(retireableNode.flavor())) {
-                        log.info("Setting wantToRetire and wantToDeprovision for host " + retireableNode.hostname() +
-                                " with flavor " + retireableNode.flavor().name() +
-                                " allocated to " + retireableNode.allocation().get().owner() + ". Policy: " +
-                                retirementPolicy.getClass().getSimpleName());
-                        Node updatedNode = retireableNode.with(retireableNode.status()
-                                .withWantToRetire(true)
-                                .withWantToDeprovision(true));
-                        nodeRepository().write(updatedNode);
-                        numNodesWantedToRetire++;
-                    }
-                }
-            }
-            if (numNodesWantedToRetire > 0) deployment.get().activate();
+            Set<Node> replaceableNodes = retireableNodes.stream()
+                    .filter(node -> flavorSpareChecker.canRetireAllocatedNodeWithFlavor(node.flavor()))
+                    .limit(numNodesAllowedToRetire)
+                    .collect(Collectors.toSet());
+            if (! replaceableNodes.isEmpty()) nodesToRetireByDeployment.put(deployment.get(), replaceableNodes);
         }
+
+        // While under application lock, make sure that the state and the owner of the node has not changed
+        // in the mean time, then retire the node and redeploy.
+        nodesToRetireByDeployment.forEach(((deployment, nodes) -> {
+            ApplicationId app = nodes.iterator().next().allocation().get().owner();
+            Set<Node> nodesToRetire;
+
+            try (Mutex lock = nodeRepository().lock(app)) {
+                nodesToRetire = nodes.stream()
+                        .map(node ->
+                                nodeRepository().getNode(node.hostname())
+                                        .filter(upToDateNode -> node.state() == Node.State.active)
+                                        .filter(upToDateNode -> node.allocation().get().owner().equals(upToDateNode.allocation().get().owner())))
+                        .flatMap(node -> node.map(Stream::of).orElseGet(Stream::empty))
+                        .collect(Collectors.toSet());
+
+                nodesToRetire.forEach(node -> {
+                    log.info("Setting wantToRetire and wantToDeprovision for host " + node.hostname() +
+                            " with flavor " + node.flavor().name() +
+                            " allocated to " + node.allocation().get().owner() + ". Policy: " +
+                            retirementPolicy.getClass().getSimpleName());
+                    Node updatedNode = node.with(node.status()
+                            .withWantToRetire(true)
+                            .withWantToDeprovision(true));
+                    nodeRepository().write(updatedNode);
+                });
+            }
+
+            if (! nodesToRetire.isEmpty()) deployment.activate();
+        }));
+    }
+
+    private List<Node> getNodesBelongingToApplication(List<Node> allNodes, ApplicationId applicationId) {
+        return allNodes.stream()
+                .filter(node -> node.allocation().isPresent())
+                .filter(node -> node.allocation().get().owner().equals(applicationId))
+                .collect(Collectors.toList());
     }
 
     /**
