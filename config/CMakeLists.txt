@@ -10,9 +10,9 @@ vespa_define_module(
     lz4
 
     LIBS
-    src/apps/configproxy-cmd
-    src/apps/getvespaconfig
-    src/apps/pingproxy
+    src/apps/vespa-configproxy-cmd
+    src/apps/vespa-get-config
+    src/apps/vespa-ping-configproxy
     src/vespa/config
     src/vespa/config/common
     src/vespa/config/configgen
@@ -55,5 +55,5 @@ vespa_define_module(
     src/tests/configparser
 )
 
-vespa_install_script(src/apps/activate-application/activate-application.sh activate-application bin)
+vespa_install_script(src/apps/vespa-activate-application/vespa-activate-application.sh vespa-activate-application bin)
 vespa_install_script(src/apps/vespa-config/vespa-config.pl libexec/vespa)

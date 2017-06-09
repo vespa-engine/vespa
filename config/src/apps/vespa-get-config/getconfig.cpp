@@ -13,7 +13,7 @@
 #include <fstream>
 
 #include <vespa/log/log.h>
-LOG_SETUP("getconfig");
+LOG_SETUP("vespa-get-config");
 
 using namespace config;
 

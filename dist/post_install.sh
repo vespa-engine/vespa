@@ -109,3 +109,10 @@ ln -s vespa-deploy $INSTALLPATH/bin/deploy
 ln -s vespa-deploy-application $INSTALLPATH/bin/deploy-application
 ln -s vespa-expand-config.pl $INSTALLPATH/bin/expand-config.pl
 ln -s vespa-validate-application $INSTALLPATH/bin/validate-application
+
+# Temporary when renaming programs in config-model
+ln -s vespa-activate-application $INSTALLPATH/bin/activate-application
+ln -s vespa-configproxy-cmd $INSTALLPATH/bin/configproxy-cmd
+ln -s vespa-get-config $INSTALLPATH/bin/getvespaconfig
+ln -s vespa-get-config-bin $INSTALLPATH/bin/getvespaconfig-bin
+ln -s vespa-ping-configproxy $INSTALLPATH/bin/pingproxy

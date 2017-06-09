@@ -1,5 +1,5 @@
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_install_script(src/start-cbinaries.sh getvespaconfig bin)
+vespa_install_script(src/start-cbinaries.sh vespa-get-config bin)
 vespa_install_script(src/start-cbinaries.sh vds-document-statistics bin)
 vespa_install_script(src/start-cbinaries.sh vdsgetclusterstate bin)
 vespa_install_script(src/start-cbinaries.sh vdsgetnodestate bin)
