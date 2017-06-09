@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-# This script is a wrapper exposing the legacy deploy-application script
+# This script is a wrapper exposing the legacy vespa-deploy-application script
 
 use strict;
 use warnings;
@@ -50,16 +50,16 @@ if ($dryrun) {
   $flags .= "-n ";
 }
 
-print "WARNING: deploy-application is deprecated, use 'deploy prepare' instead\n\n";
+print "WARNING: vespa-deploy-application is deprecated, use 'vespa-deploy prepare' instead\n\n";
 
-my $DEPLOY="deploy $flags prepare $app";
+my $DEPLOY="vespa-deploy $flags prepare $app";
 
 system($DEPLOY);
 if ($? == 0) { print "Activate the application by running 'activate-application'\n"; }
 
 sub print_usage {
   print "\n";
-  print "usage: deploy-application <application-directory>\n";
+  print "usage: vespa-deploy-application <application-directory>\n";
   print "Switches:\n";
   print "-h This help text\n";
   print "-d Debug (stack trace on exceptions)\n";

@@ -103,3 +103,9 @@ ln -s vespa-log-replay $INSTALLPATH/bin/vlogreplay
 ln -s vespa-dump-slotfile $INSTALLPATH/bin/dumpslotfile
 ln -s vespa-vds-disktool-bin $INSTALLPATH/bin/vdsdisktool-bin
 ln -s vespa-vds-disktool $INSTALLPATH/bin/vdsdisktool
+
+# Temporary when renaming programs in config-model
+ln -s vespa-deploy $INSTALLPATH/bin/deploy
+ln -s vespa-deploy-application $INSTALLPATH/bin/deploy-application
+ln -s vespa-expand-config.pl $INSTALLPATH/bin/expand-config.pl
+ln -s vespa-validate-application $INSTALLPATH/bin/validate-application
