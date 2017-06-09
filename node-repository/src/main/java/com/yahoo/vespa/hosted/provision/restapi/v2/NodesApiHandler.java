@@ -230,11 +230,14 @@ public class NodesApiHandler extends LoggingRequestHandler {
         Optional<String> parentHostname = optionalString(inspector.field("parentHostname"));
         Set<String> ipAddresses = new HashSet<>();
         inspector.field("ipAddresses").traverse((ArrayTraverser) (i, item) -> ipAddresses.add(item.asString()));
+        Set<String> additionalIpAddresses = new HashSet<>();
+        inspector.field("additionalIpAddresses").traverse((ArrayTraverser) (i, item) -> additionalIpAddresses.add(item.asString()));
 
         return nodeRepository.createNode(
                 inspector.field("openStackId").asString(),
                 inspector.field("hostname").asString(),
                 ipAddresses,
+                additionalIpAddresses,
                 parentHostname,
                 nodeFlavors.getFlavorOrThrow(inspector.field("flavor").asString()),
                 nodeTypeFromSlime(inspector.field(nodeTypeKey)));
