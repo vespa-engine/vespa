@@ -194,7 +194,7 @@ object ConfigGenerator {
         | *    Replaced by {link}
         | */
         |@Deprecated
-        |public {nodeClass(inner)}() {{
+        |private {nodeClass(inner)}() {{
         |  this(new Builder(), false);
         |}}
       </code>.text.stripMargin.trim
