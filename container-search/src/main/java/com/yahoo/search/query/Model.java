@@ -47,7 +47,7 @@ public class Model implements Cloneable {
     public static final String RESTRICT = "restrict";
 
     static {
-        argumentType =new QueryProfileType(MODEL);
+        argumentType = new QueryProfileType(MODEL);
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
         //argumentType.addField(new FieldDescription(PROGRAM, "string", "yql")); // TODO: Custom type
