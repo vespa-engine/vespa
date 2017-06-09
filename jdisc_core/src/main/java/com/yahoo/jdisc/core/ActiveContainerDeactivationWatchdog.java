@@ -28,6 +28,7 @@ import static java.util.stream.Collectors.toList;
 class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, AutoCloseable {
     static final Duration WATCHDOG_FREQUENCY = Duration.ofMinutes(20);
     static final Duration ACTIVE_CONTAINER_GRACE_PERIOD = Duration.ofHours(1);
+    static final Duration GC_TRIGGER_FREQUENCY = ACTIVE_CONTAINER_GRACE_PERIOD.minusMinutes(5);
 
     private static final Logger log = Logger.getLogger(ActiveContainerDeactivationWatchdog.class.getName());
 
@@ -43,7 +44,7 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
     ActiveContainerDeactivationWatchdog() {
         this(
                 Clock.systemUTC(),
-                new ScheduledThreadPoolExecutor(1, runnable -> {
+                new ScheduledThreadPoolExecutor(2, runnable -> {
                     Thread thread = new Thread(runnable, "active-container-deactivation-watchdog");
                     thread.setDaemon(true);
                     return thread;
@@ -53,10 +54,15 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
     ActiveContainerDeactivationWatchdog(Clock clock, ScheduledExecutorService scheduler) {
         this.clock = clock;
         this.scheduler = scheduler;
-        this.scheduler.scheduleWithFixedDelay(
+        this.scheduler.scheduleAtFixedRate(
                 this::warnOnStaleContainers,
                 WATCHDOG_FREQUENCY.getSeconds(),
                 WATCHDOG_FREQUENCY.getSeconds(),
+                TimeUnit.SECONDS);
+        this.scheduler.scheduleAtFixedRate(
+                ActiveContainerDeactivationWatchdog::triggerGc,
+                GC_TRIGGER_FREQUENCY.getSeconds(),
+                GC_TRIGGER_FREQUENCY.getSeconds(),
                 TimeUnit.SECONDS);
     }
 
@@ -99,6 +105,13 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
         } catch (Throwable t) {
             log.log(Level.WARNING, "Watchdog task died!", t);
         }
+    }
+
+    private static void triggerGc() {
+        // ActiveContainer has a finalizer, so gc -> finalizer -> gc is required.
+        System.gc();
+        System.runFinalization();
+        System.gc();
     }
 
     private List<DeactivatedContainer> getDeactivatedContainersSnapshot() {
