@@ -124,6 +124,6 @@ ln -s vespa-ping-configproxy $INSTALLPATH/bin/pingproxy
 
 # Temporary when renaming programs in fbench
 ln -s vespa-fbench $INSTALLPATH/bin/fbench
-ln -s vespa-fbench-filterfile $INSTALLPATH/bin/filterfile
+ln -s vespa-fbench-filter-file $INSTALLPATH/bin/filterfile
 ln -s vespa-geturl $INSTALLPATH/bin/geturl
 ln -s vespa-fbench-split-file $INSTALLPATH/bin/splitfile

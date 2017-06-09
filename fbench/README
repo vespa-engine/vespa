@@ -14,7 +14,7 @@ fbench install directory should contain the following set of files:
 
   README
   bin/vespa-fbench
-  bin/vespa-filterfile
+  bin/vespa-fbench-filter-file
   bin/vespa-geturl
   bin/plot.pl
   bin/pretest.sh
@@ -46,9 +46,9 @@ queries.
 
 This step assumes you have obtained some fastserver access log
 files. The first step is to extract the query urls from the logs. This
-is done with the 'filterfile' program.
+is done with the 'vespa-fbench-filter-file' program.
 
-| usage: filterfile [-a] [-h]
+| usage: vespa-fbench-filter-file [-a] [-h]
 | 
 | Read concatenated fastserver logs from stdin and write
 | extracted query urls to stdout.
@@ -81,7 +81,7 @@ want to extract the query urls from it and save the query urls into
 200 separate files (because you are planning to run 200 clients when
 benchmarking). You may do the following:
 
-$ cat logs | bin/filterfile | bin/splitfile 200
+$ cat logs | bin/vespa-fbench-filter-file | bin/splitfile 200
 
 This will create 200 files with names 'query000.txt', 'query001.txt',
 'query002.txt' etc. You may control the filename pattern of the output

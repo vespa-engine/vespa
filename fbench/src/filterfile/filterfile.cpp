@@ -48,7 +48,7 @@ main(int argc, char** argv)
     }
 
     if (optError || showUsage) {
-        printf("usage: vespa-fbench-filterfile [-a] [-h] [-m maxLineSize]\n\n");
+        printf("usage: vespa-fbench-filter-file [-a] [-h] [-m maxLineSize]\n\n");
         printf("Read concatenated fastserver logs from stdin and write\n");
         printf("extracted query urls to stdout.\n\n");
         printf(" -a : all parameters to the original query urls are preserved.\n");
