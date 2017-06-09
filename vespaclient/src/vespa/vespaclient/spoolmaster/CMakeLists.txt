@@ -3,7 +3,7 @@ vespa_add_executable(vespaclient_spoolmaster_app
     SOURCES
     main.cpp
     application.cpp
-    OUTPUT_NAME spoolmaster
+    OUTPUT_NAME vespa-spoolmaster
     INSTALL bin
     DEPENDS
 )

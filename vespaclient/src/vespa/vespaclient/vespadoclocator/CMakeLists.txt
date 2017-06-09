@@ -4,7 +4,7 @@ vespa_add_executable(vespaclient_vespadoclocator_app
     application.cpp
     locator.cpp
     main.cpp
-    OUTPUT_NAME vespadoclocator-bin
+    OUTPUT_NAME vespa-doclocator-bin
     INSTALL bin
     DEPENDS
 )

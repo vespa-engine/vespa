@@ -1,4 +1,4 @@
 .depend
 Makefile
-vespadoclocator
-vespadoclocator-bin
+vespa-doclocator
+vespa-doclocator-bin

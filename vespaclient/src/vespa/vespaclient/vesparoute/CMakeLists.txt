@@ -5,7 +5,7 @@ vespa_add_executable(vespaclient_vesparoute_app
     main.cpp
     mynetwork.cpp
     params.cpp
-    OUTPUT_NAME vesparoute-bin
+    OUTPUT_NAME vespa-route-bin
     INSTALL bin
     DEPENDS
 )
