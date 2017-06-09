@@ -12,7 +12,7 @@ public class DefaultsTestCase {
 
     @Test
     public void testUnderVespaHome() {
-        assertEquals("/opt/yahoo/vespa/my/relative/path", Defaults.getDefaults().underVespaHome("my/relative/path"));
+        assertEquals("/opt/vespa/my/relative/path", Defaults.getDefaults().underVespaHome("my/relative/path"));
         assertEquals("/my/absolute/path", Defaults.getDefaults().underVespaHome("/my/absolute/path"));
         assertEquals("./my/explicit/relative/path", Defaults.getDefaults().underVespaHome("./my/explicit/relative/path"));
     }

@@ -15,15 +15,15 @@ VESPA_VERSION=$1
 rpm -i "vespa*-${VESPA_VERSION}-*.rpm"
 
 # Workaround until we figure out why rpm does not set the ownership.
-chown -R vespa:vespa /opt/yahoo/vespa
+chown -R vespa:vespa /opt/vespa
 
 export VESPA_CONFIG_SERVERS=$(hostname)
 
-/opt/yahoo/vespa/bin/vespa-start-configserver
-/opt/yahoo/vespa/bin/vespa-start-services
+/opt/vespa/bin/vespa-start-configserver
+/opt/vespa/bin/vespa-start-services
 
 # Print log forever
 while true; do
-  /opt/yahoo/vespa/bin/logfmt -f /opt/yahoo/vespa/logs/vespa/vespa.log
+  /opt/vespa/bin/logfmt -f /opt/vespa/logs/vespa/vespa.log
   sleep 10
 done

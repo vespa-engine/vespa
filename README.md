@@ -41,12 +41,12 @@ Java modules can be built on any environment having Java and Maven:
     sh bootstrap.sh full
     mkdir <builddir>
     cd <builddir>
-    cmake3 -DCMAKE_INSTALL_PREFIX=/opt/yahoo/vespa \
+    cmake3 -DCMAKE_INSTALL_PREFIX=/opt/vespa \
           -DJAVA_HOME=/usr/lib/jvm/java-openjdk \
-          -DEXTRA_LINK_DIRECTORY="/opt/yahoo/vespa-boost/lib;/opt/yahoo/vespa-libtorrent/lib;/opt/yahoo/vespa-zookeeper-c-client/lib;/opt/yahoo/vespa-cppunit/lib;/usr/lib64/llvm3.9/lib" \
-          -DEXTRA_INCLUDE_DIRECTORY="/opt/yahoo/vespa-boost/include;/opt/yahoo/vespa-libtorrent/include;/opt/yahoo/vespa-zookeeper-c-client/include;/opt/yahoo/vespa-cppunit/include;/usr/include/llvm3.9" \
-          -DCMAKE_INSTALL_RPATH="/opt/yahoo/vespa/lib64;/opt/yahoo/vespa-boost/lib;/opt/yahoo/vespa-libtorrent/lib;/opt/yahoo/vespa-zookeeper-c-client/lib;/opt/yahoo/vespa-cppunit/lib;/usr/lib/jvm/java-1.8.0/jre/lib/amd64/server;/usr/include/llvm3.9" \
-          -DCMAKE_BUILD_RPATH=/opt/yahoo/vespa/lib64 \
+          -DEXTRA_LINK_DIRECTORY="/opt/vespa-boost/lib;/opt/vespa-libtorrent/lib;/opt/vespa-zookeeper-c-client/lib;/opt/vespa-cppunit/lib;/usr/lib64/llvm3.9/lib" \
+          -DEXTRA_INCLUDE_DIRECTORY="/opt/vespa-boost/include;/opt/vespa-libtorrent/include;/opt/vespa-zookeeper-c-client/include;/opt/vespa-cppunit/include;/usr/include/llvm3.9" \
+          -DCMAKE_INSTALL_RPATH="/opt/vespa/lib64;/opt/vespa-boost/lib;/opt/vespa-libtorrent/lib;/opt/vespa-zookeeper-c-client/lib;/opt/vespa-cppunit/lib;/usr/lib/jvm/java-1.8.0/jre/lib/amd64/server;/usr/include/llvm3.9" \
+          -DCMAKE_BUILD_RPATH=/opt/vespa/lib64 \
           <sourcedir>
     make
     make test
