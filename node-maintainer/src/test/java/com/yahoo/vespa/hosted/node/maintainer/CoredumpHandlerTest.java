@@ -42,6 +42,7 @@ import static org.mockito.Mockito.when;
  * @author freva
  */
 public class CoredumpHandlerTest {
+
     private final HttpClient httpClient = mock(HttpClient.class);
     private final CoreCollector coreCollector = mock(CoreCollector.class);
     private static final Map<String, Object> attributes = new LinkedHashMap<>();
@@ -53,6 +54,7 @@ public class CoredumpHandlerTest {
             "\"vespa_version\":\"6.48.4\"," +
             "\"kernel_version\":\"2.6.32-573.22.1.el6.YAHOO.20160401.10.x86_64\"," +
             "\"docker_image\":\"vespa/ci:6.48.4\"}}";
+    private static final String feedEndpoint = "http://feed-endpoint.hostname.tld/feed";
 
     static {
         attributes.put("hostname", "host123.yahoo.com");
@@ -76,7 +78,8 @@ public class CoredumpHandlerTest {
         crashPath = folder.newFolder("crash").toPath();
         donePath = folder.newFolder("done").toPath();
 
-        coredumpHandler = new CoredumpHandler(httpClient, coreCollector, crashPath, donePath, attributes, Optional.empty());
+        coredumpHandler = new CoredumpHandler(httpClient, coreCollector, crashPath, donePath, attributes,
+                                              Optional.empty(), feedEndpoint);
     }
 
     @Test
@@ -207,10 +210,11 @@ public class CoredumpHandlerTest {
         ArgumentCaptor<HttpPost> capturedPost = ArgumentCaptor.forClass(HttpPost.class);
         verify(httpClient).execute(capturedPost.capture());
 
-        URI expectedURI = new URI(CoredumpHandler.FEED_ENDPOINT + "/" + documentId);
+        URI expectedURI = new URI(feedEndpoint + "/" + documentId);
         assertEquals(expectedURI, capturedPost.getValue().getURI());
         assertEquals("application/json", capturedPost.getValue().getHeaders(HttpHeaders.CONTENT_TYPE)[0].getValue());
         assertEquals(expectedBody,
                 new BufferedReader(new InputStreamReader(capturedPost.getValue().getEntity().getContent())).readLine());
     }
+
 }

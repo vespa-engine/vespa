@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
  * @author freva
  */
 public class CoredumpHandler {
-    public static final String FEED_ENDPOINT = "http://panic.vespa.us-west-1.prod.vespa.yahooapis.com:4080/document/v1/panic/core_dump/docid";
+
     public static final String PROCESSING_DIRECTORY_NAME = "processing";
     public static final String METADATA_FILE_NAME = "metadata.json";
 
@@ -41,15 +41,17 @@ public class CoredumpHandler {
     private final Path doneCoredumpsPath;
     private final Map<String, Object> nodeAttributes;
     private final Optional<Path> yinstStatePath;
+    private final String feedEndpoint;
 
     public CoredumpHandler(HttpClient httpClient, CoreCollector coreCollector, Path coredumpsPath, Path doneCoredumpsPath,
-                           Map<String, Object> nodeAttributes, Optional<Path> yinstStatePath) {
+                           Map<String, Object> nodeAttributes, Optional<Path> yinstStatePath, String feedEndpoint) {
         this.httpClient = httpClient;
         this.coreCollector = coreCollector;
         this.coredumpsPath = coredumpsPath;
         this.doneCoredumpsPath = doneCoredumpsPath;
         this.nodeAttributes = nodeAttributes;
         this.yinstStatePath = yinstStatePath;
+        this.feedEndpoint = feedEndpoint;
     }
 
     public void processAll() throws IOException {
@@ -140,7 +142,7 @@ public class CoredumpHandler {
         // Use core dump UUID as document ID
         String documentId = coredumpDirectory.getFileName().toString();
 
-        HttpPost post = new HttpPost(FEED_ENDPOINT + "/" + documentId);
+        HttpPost post = new HttpPost(feedEndpoint + "/" + documentId);
         post.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
         post.setEntity(new StringEntity(metadata));
 
@@ -157,4 +159,5 @@ public class CoredumpHandler {
     void finishProcessing(Path coredumpDirectory) throws IOException {
         Files.move(coredumpDirectory, doneCoredumpsPath.resolve(coredumpDirectory.getFileName()));
     }
+
 }

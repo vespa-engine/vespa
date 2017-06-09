@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author freva
  */
 public class Maintainer {
+
     private static final CoreCollector coreCollector = new CoreCollector(new ProcessExecuter());
     private static final HttpClient httpClient = createHttpClient(Duration.ofSeconds(5));
 
@@ -142,10 +143,12 @@ public class Maintainer {
         Path doneCoredumpsPath = Paths.get(getFieldOrFail(arguments, "doneCoredumpsPath").asString());
         Map<String, Object> attributesMap = parseMap(arguments);
         Optional<Path> yinstStatePath = SlimeUtils.optionalString(arguments.field("yinstStatePath")).map(Paths::get);
+        String feedEndpoint = getFieldOrFail(arguments, "feedEndpoint").asString();
 
         try {
-            CoredumpHandler coredumpHandler = new CoredumpHandler(httpClient, coreCollector,
-                    coredumpsPath, doneCoredumpsPath, attributesMap, yinstStatePath);
+            CoredumpHandler coredumpHandler = new CoredumpHandler(httpClient, coreCollector, coredumpsPath,
+                                                                  doneCoredumpsPath, attributesMap, yinstStatePath,
+                                                                  feedEndpoint);
             coredumpHandler.processAll();
         } catch (IOException e) {
             throw new RuntimeException("Failed processing coredumps at " + coredumpsPath.toAbsolutePath() +
@@ -194,4 +197,5 @@ public class Maintainer {
                                                                       .build())
                                 .build();
     }
+
 }
