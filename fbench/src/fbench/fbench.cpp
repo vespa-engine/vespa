@@ -207,7 +207,7 @@ FBench::PrintSummary()
 void
 FBench::Usage()
 {
-    printf("usage: fbench [-H extraHeader] [-a queryStringToAppend ] [-n numClients] [-c cycleTime] [-l limit] [-i ignoreCount]\n");
+    printf("usage: vespa-fbench [-H extraHeader] [-a queryStringToAppend ] [-n numClients] [-c cycleTime] [-l limit] [-i ignoreCount]\n");
     printf("              [-s seconds] [-q queryFilePattern] [-o outputFilePattern]\n");
     printf("              [-r restartLimit] [-m maxLineSize] [-k] <hostname> <port>\n\n");
     printf(" -H <str> : append extra header to each get request.\n");
@@ -454,7 +454,7 @@ FBench::Main(int argc, char *argv[])
             sleepTimer.Start();
 
             if (seconds % 60 == 0) {
-                printf("[dummydate]: PROGRESS: fbench: Seconds left %d\n", seconds);
+                printf("[dummydate]: PROGRESS: vespa-fbench: Seconds left %d\n", seconds);
             }
 
             if (printInterval != 0 && seconds % printInterval == 0) {

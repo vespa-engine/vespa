@@ -11,3 +11,5 @@ vespa_define_module(
     TESTS
     src/test
 )
+
+vespa_install_script(util/resultfilter.pl vespa-resultfilter.pl bin)

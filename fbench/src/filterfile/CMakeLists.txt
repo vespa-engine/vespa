@@ -2,7 +2,7 @@
 vespa_add_executable(fbench_filterfile_app
     SOURCES
     filterfile.cpp
-    OUTPUT_NAME filterfile
+    OUTPUT_NAME vespa-fbench-filterfile
     INSTALL bin
     DEPENDS
     fbench_util

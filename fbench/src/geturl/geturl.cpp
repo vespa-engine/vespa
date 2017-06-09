@@ -6,7 +6,7 @@ int
 main(int argc, char** argv)
 {
     if (argc != 4) {
-        printf("usage: geturl <host> <port> <url>\n");
+        printf("usage: vespa-geturl <host> <port> <url>\n");
         return -1;
     }
 

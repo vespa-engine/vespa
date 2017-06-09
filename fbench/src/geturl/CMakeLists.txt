@@ -2,7 +2,7 @@
 vespa_add_executable(fbench_geturl_app
     SOURCES
     geturl.cpp
-    OUTPUT_NAME geturl
+    OUTPUT_NAME vespa-geturl
     INSTALL bin
     DEPENDS
     fbench_util

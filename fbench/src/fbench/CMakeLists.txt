@@ -3,7 +3,7 @@ vespa_add_executable(fbench_app
     SOURCES
     client.cpp
     fbench.cpp
-    OUTPUT_NAME fbench
+    OUTPUT_NAME vespa-fbench
     INSTALL bin
     DEPENDS
     fbench_util

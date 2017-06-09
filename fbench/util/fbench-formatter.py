@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-"""Usage: read.py [options] [fbench output file]
+"""Usage: read.py [options] [vespa-fbench output file]
 
 Will read from stdin if no file name is given
 
