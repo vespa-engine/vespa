@@ -105,10 +105,10 @@ MMapRandReadDynamic::MMapRandReadDynamic(const vespalib::string &fileName, int m
 }
 
 void
-MMapRandReadDynamic::remap(size_t end)
+MMapRandReadDynamic::remap(size_t sz)
 {
     vespalib::LockGuard guard(_lock);
-    if ((end > 0) && _holder.hasValue() && contains(*_holder.get(), end)) {
+    if ((sz > 0) && _holder.hasValue() && contains(*_holder.get(), sz)) {
         return;
     }
     std::unique_ptr<FastOS_File> file(new FastOS_File(_fileName.c_str()));
@@ -126,7 +126,7 @@ FileRandRead::FSP
 MMapRandReadDynamic::read(size_t offset, vespalib::DataBuffer & buffer, size_t sz)
 {
     FSP file(_holder.get());
-    size_t end = offset + sz - 1;
+    size_t end = offset + sz;
     const char * data(static_cast<const char *>(file->MemoryMapPtr(offset)));
     while ((data == nullptr) || !contains(*file, end)) {
         // Must check that both start and end of file is mapped in.
@@ -139,8 +139,8 @@ MMapRandReadDynamic::read(size_t offset, vespalib::DataBuffer & buffer, size_t s
 }
 
 bool
-MMapRandReadDynamic::contains(FastOS_FileInterface & file, size_t offset) {
-    return (file.MemoryMapPtr(offset-1) != nullptr);
+MMapRandReadDynamic::contains(const FastOS_FileInterface & file, size_t sz) {
+    return (sz == 0) || (file.MemoryMapPtr(sz - 1) != nullptr);
 }
 
 

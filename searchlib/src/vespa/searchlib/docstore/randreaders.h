@@ -41,7 +41,7 @@ public:
     FSP read(size_t offset, vespalib::DataBuffer & buffer, size_t sz) override;
     int64_t getSize() override;
 private:
-    static bool contains(const FastOS_FileInterface & file, size_t end);
+    static bool contains(const FastOS_FileInterface & file, size_t sz);
     void remap(size_t end);
     vespalib::string                          _fileName;
     vespalib::PtrHolder<FastOS_FileInterface> _holder;
