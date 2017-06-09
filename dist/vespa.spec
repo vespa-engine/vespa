@@ -3,7 +3,7 @@
 %define __jar_repack %{nil}
 
 # Force special prefix for Vespa
-%define _prefix /opt/yahoo/vespa
+%define _prefix /opt/vespa
 
 Name:           vespa
 Version:        VESPA_VERSION
@@ -66,9 +66,9 @@ sh bootstrap.sh
 mvn install -DskipTests -Dmaven.javadoc.skip=true
 cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        -DJAVA_HOME=/usr/lib/jvm/java-openjdk \
-       -DEXTRA_LINK_DIRECTORY="/usr/lib64/llvm3.9/lib;/opt/yahoo/vespa-boost/lib;/opt/yahoo/vespa-libtorrent/lib;/opt/yahoo/vespa-zookeeper-c-client/lib;/opt/yahoo/vespa-cppunit/lib" \
-       -DEXTRA_INCLUDE_DIRECTORY="/usr/include/llvm3.9;/opt/yahoo/vespa-boost/include;/opt/yahoo/vespa-libtorrent/include;/opt/yahoo/vespa-zookeeper-c-client/include;/opt/yahoo/vespa-cppunit/include" \
-       -DCMAKE_INSTALL_RPATH="%{_prefix}/lib64;/opt/yahoo/vespa-boost/lib;/opt/yahoo/vespa-libtorrent/lib;/opt/yahoo/vespa-zookeeper-c-client/lib;/opt/yahoo/vespa-cppunit/lib;/usr/lib/jvm/java-1.8.0/jre/lib/amd64/server" \
+       -DEXTRA_LINK_DIRECTORY="/usr/lib64/llvm3.9/lib;/opt/vespa-boost/lib;/opt/vespa-libtorrent/lib;/opt/vespa-zookeeper-c-client/lib;/opt/vespa-cppunit/lib" \
+       -DEXTRA_INCLUDE_DIRECTORY="/usr/include/llvm3.9;/opt/vespa-boost/include;/opt/vespa-libtorrent/include;/opt/vespa-zookeeper-c-client/include;/opt/vespa-cppunit/include" \
+       -DCMAKE_INSTALL_RPATH="%{_prefix}/lib64;/opt/vespa-boost/lib;/opt/vespa-libtorrent/lib;/opt/vespa-zookeeper-c-client/lib;/opt/vespa-cppunit/lib;/usr/lib/jvm/java-1.8.0/jre/lib/amd64/server" \
        -DCMAKE_BUILD_RPATH=%{_prefix}/lib64 \
        .
 

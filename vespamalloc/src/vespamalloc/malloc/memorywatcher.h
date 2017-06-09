@@ -226,7 +226,7 @@ namespace {
 
 const char *vespaHomeConf(char pathName[])
 {
-    const char *home = "/opt/yahoo/vespa";
+    const char *home = "/opt/vespa";
     const char *env = getenv("VESPA_HOME");
     if (env != NULL) {
         home = env;
