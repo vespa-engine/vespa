@@ -107,6 +107,26 @@ public class VespaDocumentSerializerTestCase {
 
         // Should _not_ throw any deserialization exceptions
         fixture.roundtripSerialize(doc);
+        // TODO check target values..!
     }
-    
+
+    @Test
+    public void incompressable_structs_are_serialized_without_buffer_size_overhead_bug() {
+        CompressionFixture fixture = new CompressionFixture();
+
+        Document doc = new Document(fixture.docType, "id:foo:map_of_structs::flarn");
+        Struct nested = new Struct(fixture.nestedType);
+        nested.setFieldValue("str", new StringFieldValue(fixture.compressableString()));
+
+        MapFieldValue<StringFieldValue, Struct> map = new MapFieldValue<StringFieldValue, Struct>(fixture.mapType);
+        // Only 1 struct added. Not enough redundant information that header struct containing map itself
+        // can be compressed.
+        map.put(new StringFieldValue("foo"), nested);
+        doc.setFieldValue("map", map);
+
+        GrowableByteBuffer buf = CompressionFixture.asSerialized(doc);
+        // Explanation of arbitrary value: buffer copy bug meant that incompressable structs were all serialized
+        // rounded up to 4096 bytes.
+        assertTrue(buf.remaining() < 4096);
+    }
 }
