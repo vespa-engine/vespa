@@ -32,7 +32,8 @@ or use the prebuilt docker image
 ### Build Java modules
 Java modules can be built on any environment having Java and Maven:
 
-    sh bootstrap.sh java
+    sh bootstrap.sh
+    mvn install
 
 ### Build C++ modules
     source /opt/rh/devtoolset-6/enable
