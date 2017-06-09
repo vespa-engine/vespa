@@ -142,7 +142,7 @@ public final class ConfiguredApplication implements Application {
         }
     }
 
-    void watchPortChange() {
+    private void watchPortChange() {
         Subscriber subscriber = subscriberFactory.getSubscriber(Collections.singleton(new ConfigKey<>(QrConfig.class, configId)));
         try {
             while (true) {
@@ -154,7 +154,7 @@ public final class ConfiguredApplication implements Application {
                             qrConfig.rpc().port() + " to " + newConfig.rpc().port() +
                             ". This we can not handle without a restart so we will just bail out.");
                 }
-                log.info("Received new QrConfig :" + newConfig);
+                log.fine("Received new QrConfig :" + newConfig);
             }
         } finally {
             subscriber.close();
