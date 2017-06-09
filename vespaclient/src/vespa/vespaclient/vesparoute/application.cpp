@@ -185,7 +185,7 @@ Application::parseArgs()
 void
 Application::printHelp() const
 {
-    printf("Usage: vesparoute [OPTION]...\n"
+    printf("Usage: vespa-route [OPTION]...\n"
            "Options:\n"
            "  --documenttypesconfigid <id>  Sets the config id that supplies document configuration.\n"
            "  --dump                          Prints the complete content of the routing table.\n"

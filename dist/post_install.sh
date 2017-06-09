@@ -93,6 +93,11 @@ ln -s vespa-distributord-bin $INSTALLPATH/sbin/distributord-bin
 ln -s vespa-storaged $INSTALLPATH/sbin/storaged
 ln -s vespa-distributord $INSTALLPATH/sbin/distributord
 
+# Temporary when renaming binaries in vespaclient
+ln -s vespa-doclocator $INSTALLPATH/bin/vespadoclocator
+ln -s vespa-route $INSTALLPATH/bin/vesparoute
+ln -s vespa-spoolmaster $INSTALLPATH/bin/spoolmaster
+
 # Temporary when renaming binaries in vespalog
 ln -s vespa-log-conv $INSTALLPATH/bin/vlogconv
 ln -s vespa-logctl $INSTALLPATH/bin/logctl

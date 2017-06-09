@@ -1,4 +1,4 @@
 .depend
 Makefile
-vesparoute
-vesparoute-bin
+vespa-route
+vespa-route-bin
