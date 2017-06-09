@@ -1,4 +1,4 @@
 /.depend
 /Makefile
 /getvespaconfig
-vespa-getconfig-bin
+vespa-get-config-bin
