@@ -11,10 +11,6 @@ Code licensed under the Apache 2.0 license. See [LICENSE](LICENSE) for terms.
 
 ## Get started developing
 
-### Set up local git config
-    git config --global user.name "John Doe"
-    git config --global user.email johndoe@host.com
-
 ### Set up build environment
 C++ building is supported on CentOS 7.
 
