@@ -101,21 +101,22 @@ MMapRandReadDynamic::MMapRandReadDynamic(const vespalib::string &fileName, int m
       _fadviseOptions(fadviseOptions),
       _lock()
 {
-    remap();
+    remap(0);
 }
 
 void
-MMapRandReadDynamic::remap()
+MMapRandReadDynamic::remap(size_t end)
 {
+    vespalib::LockGuard guard(_lock);
+    if ((end > 0) && _holder.hasValue() && contains(*_holder.get(), end)) {
+        return;
+    }
     std::unique_ptr<FastOS_File> file(new FastOS_File(_fileName.c_str()));
     file->enableMemoryMap(_mmapFlags);
     file->setFAdviseOptions(_fadviseOptions);
     if (file->OpenReadOnly()) {
-        vespalib::LockGuard guard(_lock);
-        if (file->GetSize() > _holder.get()->GetSize()) {
-            _holder.set(file.release());
-            _holder.latch();
-        }
+        _holder.set(file.release());
+        _holder.latch();
     } else {
         throw SummaryException("Failed opening data file", *file, VESPA_STRLOC);
     }
@@ -125,16 +126,23 @@ FileRandRead::FSP
 MMapRandReadDynamic::read(size_t offset, vespalib::DataBuffer & buffer, size_t sz)
 {
     FSP file(_holder.get());
+    size_t end = offset + sz - 1;
     const char * data(static_cast<const char *>(file->MemoryMapPtr(offset)));
-    while ((data == nullptr) || (file->MemoryMapPtr(offset+sz-1) == nullptr)) {
+    while ((data == nullptr) || !contains(*file, end)) {
         // Must check that both start and end of file is mapped in.
-        remap();
+        remap(end);
         file = _holder.get();
         data = static_cast<const char *>(file->MemoryMapPtr(offset));
     }
     vespalib::DataBuffer(data, sz).swap(buffer);
     return file;
 }
+
+bool
+MMapRandReadDynamic::contains(FastOS_FileInterface & file, size_t offset) {
+    return (file.MemoryMapPtr(offset-1) != nullptr);
+}
+
 
 int64_t
 MMapRandReadDynamic::getSize() {
