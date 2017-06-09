@@ -151,7 +151,7 @@ CommunicationManager::handleMessage(std::unique_ptr<mbus::Message> msg)
         cmd->setTrace(docMsgPtr->getTrace());
         cmd->setTransportContext(std::unique_ptr<api::TransportContext>(new StorageTransportContext(std::move(docMsgPtr))));
 
-        enqueue(std::shared_ptr<api::StorageCommand>(cmd.release()));
+        enqueue(std::shared_ptr<api::StorageCommand>(std::move(cmd)));
     } else if (protocolName == mbusprot::StorageProtocol::NAME) {
         std::unique_ptr<mbusprot::StorageCommand> storMsgPtr(static_cast<mbusprot::StorageCommand*>(msg.release()));
 
@@ -183,17 +183,17 @@ CommunicationManager::handleReply(std::unique_ptr<mbus::Reply> reply)
         reply->getType(), reply->getTrace().toString().c_str());
     // EmptyReply must be converted to real replies before processing.
     if (reply->getType() == 0) {
-        std::unique_ptr<mbus::Message> message(reply->getMessage().release());
+        std::unique_ptr<mbus::Message> message(reply->getMessage());
 
         if (message.get()) {
             std::unique_ptr<mbus::Reply> convertedReply;
 
             const vespalib::string& protocolName = message->getProtocol();
             if (protocolName == documentapi::DocumentProtocol::NAME) {
-                convertedReply.reset(static_cast<documentapi::DocumentMessage*>(message.get())->createReply().release());
+                convertedReply = static_cast<documentapi::DocumentMessage &>(*message).createReply();
             } else if (protocolName == mbusprot::StorageProtocol::NAME) {
                 std::shared_ptr<api::StorageReply> repl(
-                        static_cast<mbusprot::StorageCommand*>(message.get())->getCommand()->makeReply().release());
+                        static_cast<mbusprot::StorageCommand &>(*message).getCommand()->makeReply());
                 mbusprot::StorageReply::UP sreply(new mbusprot::StorageReply(repl));
 
                 if (reply->hasErrors()) {
@@ -211,15 +211,15 @@ CommunicationManager::handleReply(std::unique_ptr<mbus::Reply> reply)
                                 + reply->getError(0).getService()
                                 + vespalib::string(")")));
                 }
-                convertedReply.reset(sreply.release());
+                convertedReply = std::move(sreply);
             } else {
                 LOG(warning, "Received reply of unhandled protocol '%s'", protocolName.c_str());
                 return;
             }
 
             convertedReply->swapState(*reply);
-            convertedReply->setMessage(mbus::Message::UP(message.release()));
-            reply.reset(convertedReply.release());
+            convertedReply->setMessage(std::move(message));
+            reply = std::move(convertedReply);
         }
         if (reply->getType() == 0) {
             LOG(warning, "Failed to convert empty reply by reflecting on local message copy.");
@@ -246,9 +246,7 @@ CommunicationManager::handleReply(std::unique_ptr<mbus::Reply> reply)
             }
 
             std::shared_ptr<api::StorageReply> sar(
-                    _docApiConverter.toStorageAPI(
-                            static_cast<documentapi::DocumentReply&>(*reply),
-                            *originalCommand).release());
+                    _docApiConverter.toStorageAPI(static_cast<documentapi::DocumentReply&>(*reply), *originalCommand));
 
             if (sar.get()) {
                 sar->setTrace(reply->getTrace());
@@ -265,9 +263,7 @@ CommunicationManager::handleReply(std::unique_ptr<mbus::Reply> reply)
     }
 }
 
-CommunicationManager::CommunicationManager(
-        StorageComponentRegister& compReg,
-        const config::ConfigUri & configUri)
+CommunicationManager::CommunicationManager(StorageComponentRegister& compReg, const config::ConfigUri & configUri)
     : StorageLink("Communication manager"),
       _component(compReg, "communicationmanager"),
       _metrics(_component.getLoadTypes()->getMetricLoadTypes()),
@@ -355,7 +351,7 @@ void CommunicationManager::onClose()
     while (_eventQueue.size() > 0) {
         assert(_eventQueue.getNext(msg, 0));
         if (!msg->getType().isReply()) {
-            std::shared_ptr<api::StorageReply> reply(static_cast<api::StorageCommand&>(*msg).makeReply().release());
+            std::shared_ptr<api::StorageReply> reply(static_cast<api::StorageCommand&>(*msg).makeReply());
             reply->setResult(code);
             sendReply(reply);
         }
@@ -435,8 +431,7 @@ CommunicationManager::process(const std::shared_ptr<api::StorageMessage>& msg)
         }
 
         LOG(spam, "Done processing: %s", msg->toString().c_str());
-        _metrics.messageProcessTime[msg->getLoadType()].addValue(
-                startTime.getElapsedTimeAsDouble());
+        _metrics.messageProcessTime[msg->getLoadType()].addValue(startTime.getElapsedTimeAsDouble());
     } catch (std::exception& e) {
         LOGBP(error, "When running command %s, caught exception %s. Discarding message",
               msg->toString().c_str(), e.what());
@@ -450,16 +445,15 @@ CommunicationManager::process(const std::shared_ptr<api::StorageMessage>& msg)
 void
 CommunicationManager::enqueue(const std::shared_ptr<api::StorageMessage> & msg)
 {
+    using MemoryToken = framework::MemoryToken;
     assert(msg.get());
 
     const uint32_t memoryFootprint = msg->getMemoryFootprint();
-    framework::MemoryToken::UP token = _component.getMemoryManager().allocate(
-            getAllocationType(*msg),
-            memoryFootprint * 2, memoryFootprint * 2,
-            msg->getPriority());
+    MemoryToken::UP token = _component.getMemoryManager().allocate(getAllocationType(*msg), memoryFootprint * 2,
+                                                                   memoryFootprint * 2, msg->getPriority());
 
-    if (token.get()) {
-        msg->setMemoryToken(std::unique_ptr<framework::MemoryToken>(token.release()));
+    if (token) {
+        msg->setMemoryToken(std::move(token));
 
         LOG(spam, "Enq storage message %s, priority %d", msg->toString().c_str(), msg->getPriority());
         _eventQueue.enqueue(msg);
@@ -473,7 +467,7 @@ CommunicationManager::enqueue(const std::shared_ptr<api::StorageMessage> & msg)
         api::StorageCommand* cmd(dynamic_cast<api::StorageCommand*>(msg.get()));
 
         if (cmd) {
-            std::shared_ptr<api::StorageReply> reply(cmd->makeReply().release());
+            std::shared_ptr<api::StorageReply> reply(cmd->makeReply());
             reply->setResult(api::ReturnCode(api::ReturnCode::BUSY, ost.str()));
             sendReply(reply);
         }
@@ -485,10 +479,9 @@ CommunicationManager::onUp(const std::shared_ptr<api::StorageMessage> & msg)
 {
     MBUS_TRACE(msg->getTrace(), 6, "Communication manager: Sending " + msg->toString());
     if (msg->getType().isReply()) {
-        if (static_cast<api::StorageReply&>(*msg).getResult().failed()) {
-            LOG(debug, "Request %s failed: %s",
-                msg->getType().toString().c_str(),
-                static_cast<api::StorageReply&>(*msg).getResult().toString().c_str());
+        const api::StorageReply & m = static_cast<const api::StorageReply&>(*msg);
+        if (m.getResult().failed()) {
+            LOG(debug, "Request %s failed: %s", msg->getType().toString().c_str(), m.getResult().toString().c_str());
         }
         return sendReply(std::static_pointer_cast<api::StorageReply>(msg));
     } else {
@@ -497,10 +490,9 @@ CommunicationManager::onUp(const std::shared_ptr<api::StorageMessage> & msg)
 }
 
 void
-CommunicationManager::sendMessageBusMessage(
-        const std::shared_ptr<api::StorageCommand>& msg,
-        std::unique_ptr<mbus::Message> mbusMsg,
-        const mbus::Route& route)
+CommunicationManager::sendMessageBusMessage(const std::shared_ptr<api::StorageCommand>& msg,
+                                            std::unique_ptr<mbus::Message> mbusMsg,
+                                            const mbus::Route& route)
 {
     // Relaxed load since we're not doing any dependent reads that aren't
     // already covered by some other form of explicit synchronization.
@@ -510,12 +502,11 @@ CommunicationManager::sendMessageBusMessage(
 
     LOG(spam, "Sending message bus msg of type %d", mbusMsg->getType());
 
-    MBUS_TRACE(mbusMsg->getTrace(), 6,
-               "Communication manager: Passing message to source session");
+    MBUS_TRACE(mbusMsg->getTrace(), 6, "Communication manager: Passing message to source session");
     mbus::Result result = _sourceSession->send(std::move(mbusMsg), route);
 
     if (!result.isAccepted()) {
-        std::shared_ptr<api::StorageReply> reply(msg->makeReply().release());
+        std::shared_ptr<api::StorageReply> reply(msg->makeReply());
         if (reply.get()) {
             if (result.getError().getCode() > mbus::ErrorCode::FATAL_ERROR) {
                 reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, result.getError().getMessage()));
@@ -602,12 +593,8 @@ CommunicationManager::sendCommand(
 }
 
 void
-CommunicationManager::serializeNodeState(
-        const api::GetNodeStateReply& gns,
-        std::ostream& os,
-        bool includeDescription,
-        bool includeDiskDescription,
-        bool useOldFormat) const
+CommunicationManager::serializeNodeState(const api::GetNodeStateReply& gns, std::ostream& os,
+                                         bool includeDescription, bool includeDiskDescription, bool useOldFormat) const
 {
     vespalib::asciistream tmp;
     if (gns.hasNodeState()) {
@@ -679,7 +666,7 @@ CommunicationManager::sendMessageBusReply(
             replyUP = context._docAPIMsg->createReply();
             replyUP->swapState(*context._docAPIMsg);
             replyUP->setTrace(reply->getTrace());
-            replyUP->setMessage(std::unique_ptr<mbus::Message>(context._docAPIMsg.release()));
+            replyUP->setMessage(std::move(context._docAPIMsg));
             _docApiConverter.transferReplyState(*reply, *replyUP);
         }
     } else if (context._storageProtocolMsg.get()) {
@@ -690,7 +677,7 @@ CommunicationManager::sendMessageBusReply(
 
         replyUP->swapState(*context._storageProtocolMsg);
         replyUP->setTrace(reply->getTrace());
-        replyUP->setMessage(mbus::Message::UP(context._storageProtocolMsg.release()));
+        replyUP->setMessage(std::move(context._storageProtocolMsg));
     }
 
     if (replyUP.get() != NULL) {
