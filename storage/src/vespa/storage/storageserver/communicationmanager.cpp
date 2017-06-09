@@ -10,10 +10,13 @@
 #include <vespa/messagebus/rpcmessagebus.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".communication.manager");
+
+using vespalib::make_string;
 
 namespace storage {
 
@@ -370,12 +373,23 @@ CommunicationManager::configureMessageBusLimits(
                                   : cfg.mbusContentNodeMaxPendingSize);
 }
 
-void CommunicationManager::configure(
-        std::unique_ptr<CommunicationManagerConfig> config)
+void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig> config)
 {
     // Only allow dynamic (live) reconfiguration of message bus limits.
     if (_mbus.get()) {
         configureMessageBusLimits(*config);
+        if (_mbus->getRPCNetwork().getPort() != config->mbusport) {
+            auto m = make_string("mbus port changed from %d to %d. Will conduct a quick, but controlled restart.",
+                                 _mbus->getRPCNetwork().getPort(), config->mbusport);
+            LOG(warning, "%s", m.c_str());
+            _component.requestShutdown(m);
+        }
+        if (_listener->getListenPort() != config->rpcport) {
+            auto m = make_string("mbus port changed from %d to %d. Will conduct a quick, but controlled restart.",
+                                 _listener->getListenPort(), config->rpcport);
+            LOG(warning, "%s", m.c_str());
+            _component.requestShutdown(m);
+        }
         return;
     };
 

@@ -36,6 +36,12 @@ FNetListener::~FNetListener()
     }
 }
 
+int
+FNetListener::getListenPort() const
+{
+    return _orb->GetListenPort();
+}
+
 void
 FNetListener::registerHandle(const vespalib::stringref & handle) {
     _slobrokRegister.registerName(handle);

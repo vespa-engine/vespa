@@ -22,6 +22,7 @@ public:
 
     void registerHandle(const vespalib::stringref & handle);
     void close();
+    int getListenPort() const;
 
     // Used by unit tests.
     bool serviceExists(const vespalib::stringref & connectionSpec);
