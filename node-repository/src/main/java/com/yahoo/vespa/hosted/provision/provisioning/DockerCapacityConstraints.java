@@ -16,6 +16,7 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Enforce allocation constraints for docker by manipulating the NodeList we operate on.
@@ -39,6 +40,9 @@ import java.util.stream.Collectors;
  */
 public class DockerCapacityConstraints {
 
+    /** Tenant name for headroom nodes - only used internally */
+    public static final String HEADROOM_TENANT = "-__!@#$$%THISisHEADroom";
+
     /** This is a static utility class */
     private DockerCapacityConstraints() {}
 
@@ -55,24 +59,24 @@ public class DockerCapacityConstraints {
     }
 
     public static List<Node> getSpareHosts(List<Node> nodes, int spares) {
-        DockerHostCapacity capacity = new DockerHostCapacity(nodes);
-        List<Node> spareHosts = nodes.stream()
-                .filter(node -> node.type().equals(NodeType.host))
-                .filter(dockerHost -> dockerHost.state().equals(Node.State.active))
-                .filter(dockerHost -> capacity.freeIPs(dockerHost) > 0)
-                .sorted(capacity::compare)
+        List<Node> spareHosts = getAvailableDockerHostsSortedOnFreeCapacity(nodes)
                 .limit(spares)
                 .collect(Collectors.toList());
         return spareHosts;
     }
 
+    public static Stream<Node> getAvailableDockerHostsSortedOnFreeCapacity(List<Node> nodes) {
+        DockerHostCapacity capacity = new DockerHostCapacity(nodes);
+        return nodes.stream()
+                .filter(node -> node.type().equals(NodeType.host))
+                .filter(dockerHost -> dockerHost.state().equals(Node.State.active))
+                .filter(dockerHost -> capacity.freeIPs(dockerHost) > 0)
+                .sorted(capacity::compare);
+    }
+
     public static List<Node> addHeadroomAndSpareNodes(List<Node> nodes, NodeFlavors flavors, int nofSpares) {
         List<Node> sparesAndHeadroom = addSpareNodes(nodes, nofSpares);
         return addNodes(sparesAndHeadroom, flavors.getFlavors(), "headroom");
-    }
-
-    public static Map<NodeAllocation, List<Node>> getIdealHeadroomNodes() {
-        return null;
     }
 
     private static List<Node> addNodes(List<Node> nodes, List<Flavor> flavors, String id) {
@@ -102,7 +106,7 @@ public class DockerCapacityConstraints {
         ApplicationId appId = new ApplicationId(
                 new ApplicationIdConfig(
                         new ApplicationIdConfig.Builder()
-                                .tenant(id)
+                                .tenant(HEADROOM_TENANT)
                                 .application(id + "-" + flavor.name())
                                 .instance("temporarynode")));
 

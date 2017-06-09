@@ -20,9 +20,6 @@ import java.util.Set;
  */
 public class DockerHostCapacity {
 
-    /** Tenant name for headroom nodes - only used internally */
-    public static final String HEADROOM_TENANT = "-__!@#$$%THISisHEADroom";
-
     /**
      * An immutable list of nodes
      */
@@ -102,13 +99,14 @@ public class DockerHostCapacity {
     /**
      * Calculate the remaining capacity for the dockerHost.
      */
-    private ResourceCapacity freeCapacityOf(Node dockerHost, boolean includeHeadroom) {
+    public ResourceCapacity freeCapacityOf(Node dockerHost, boolean includeHeadroom) {
         // Only hosts have free capacity
         if (!dockerHost.type().equals(NodeType.host)) return new ResourceCapacity();
 
         ResourceCapacity hostCapacity = new ResourceCapacity(dockerHost);
         for (Node container : allNodes.childNodes(dockerHost).asList()) {
-            if (includeHeadroom || !(container.allocation().isPresent() && container.allocation().get().owner().tenant().value().equals(HEADROOM_TENANT))) {
+            if (includeHeadroom || !(container.allocation().isPresent() &&
+                    container.allocation().get().owner().tenant().value().equals(DockerCapacityConstraints.HEADROOM_TENANT))) {
                 hostCapacity.subtract(container);
             }
         }

@@ -16,6 +16,30 @@ public class ResourceCapacity {
     private double cpu;
     private double disk;
 
+    public static ResourceCapacity add(ResourceCapacity a, ResourceCapacity b) {
+        ResourceCapacity result = new ResourceCapacity();
+        result.memory = a.memory + b.memory;
+        result.cpu = a.cpu + b.cpu;
+        result.disk = a.disk + b.disk;
+        return result;
+    }
+
+    public static ResourceCapacity subtract(ResourceCapacity a, ResourceCapacity b) {
+        ResourceCapacity result = new ResourceCapacity();
+        result.memory = a.memory - b.memory;
+        result.cpu = a.cpu - b.cpu;
+        result.disk = a.disk - b.disk;
+        return result;
+    }
+
+    public static ResourceCapacity of(Flavor flavor) {
+        return new ResourceCapacity(flavor);
+    }
+
+    public static ResourceCapacity of(Node node) {
+        return new ResourceCapacity(node);
+    }
+
     ResourceCapacity() {
         memory = 0;
         cpu = 0;
@@ -26,6 +50,12 @@ public class ResourceCapacity {
         memory = node.flavor().getMinMainMemoryAvailableGb();
         cpu = node.flavor().getMinCpuCores();
         disk = node.flavor().getMinDiskAvailableGb();
+    }
+
+    ResourceCapacity(Flavor flavor) {
+        memory = flavor.getMinMainMemoryAvailableGb();
+        cpu = flavor.getMinCpuCores();
+        disk = flavor.getMinDiskAvailableGb();
     }
 
     public double getMemory() {
@@ -40,18 +70,10 @@ public class ResourceCapacity {
         return disk;
     }
 
-    void subtract(Node node) {
+    public void subtract(Node node) {
         memory -= node.flavor().getMinMainMemoryAvailableGb();
         cpu -= node.flavor().getMinCpuCores();
         disk -= node.flavor().getMinDiskAvailableGb();
-    }
-
-    public static ResourceCapacity add(ResourceCapacity a, ResourceCapacity b) {
-        ResourceCapacity result = new ResourceCapacity();
-        result.memory = a.memory + b.memory;
-        result.cpu = a.cpu + b.cpu;
-        result.disk = a.disk + b.disk;
-        return result;
     }
 
     boolean hasCapacityFor(Flavor flavor) {
@@ -76,7 +98,7 @@ public class ResourceCapacity {
     /**
      * Normal compare implementation where -1 if this is less than that.
      */
-    int compare(ResourceCapacity that) {
+    public int compare(ResourceCapacity that) {
         if (memory > that.memory) return 1;
         if (memory < that.memory) return -1;
         if (disk > that.disk) return 1;
