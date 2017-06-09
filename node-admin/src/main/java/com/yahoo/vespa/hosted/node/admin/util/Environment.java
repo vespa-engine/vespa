@@ -37,6 +37,7 @@ public class Environment {
     private static final String LOGSTASH_NODES = "LOGSTASH_NODES";
     private static final String ATHENS_DOMAIN = "ATHENS_DOMAIN";
     private static final String RUNNING_LOCALLY = "RUNNING_LOCALLY";
+    private static final String COREDUMP_FEED_ENDPOINT = "COREDUMP_FEED_ENDPOINT";
 
     private final Set<String> configServerHosts;
     private final String environment;
@@ -46,6 +47,7 @@ public class Environment {
     private final PathResolver pathResolver;
     private final List<String> logstashNodes;
     private final String athensDomain;
+    private final String feedEndpoint;
     private final boolean isRunningLocally;
 
     static {
@@ -61,6 +63,7 @@ public class Environment {
              new PathResolver(),
              getLogstashNodesFromEnvironment(),
              getEnvironmentVariable(ATHENS_DOMAIN),
+             getEnvironmentVariable(COREDUMP_FEED_ENDPOINT),
              Optional.ofNullable(System.getenv(RUNNING_LOCALLY)).map(Boolean::valueOf).orElse(false));
     }
 
@@ -72,6 +75,7 @@ public class Environment {
                        PathResolver pathResolver,
                        List<String> logstashNodes,
                        String athensDomain,
+                       String feedEndpoint,
                        boolean isRunningLocally) {
         this.configServerHosts = configServerHosts;
         this.environment = environment;
@@ -81,6 +85,7 @@ public class Environment {
         this.pathResolver = pathResolver;
         this.logstashNodes = logstashNodes;
         this.athensDomain = athensDomain;
+        this.feedEndpoint = feedEndpoint;
         this.isRunningLocally = isRunningLocally;
     }
 
@@ -132,6 +137,10 @@ public class Environment {
 
     public PathResolver getPathResolver() {
         return pathResolver;
+    }
+
+    public String getCoredumpFeedEndpoint() {
+        return feedEndpoint;
     }
 
     public boolean isRunningLocally() {
@@ -205,6 +214,7 @@ public class Environment {
         private PathResolver pathResolver;
         private List<String> logstashNodes = Collections.emptyList();
         private String athensDomain;
+        private String feedEndpoint;
         private boolean isRunningLocally = false;
 
         public Builder configServerHosts(String... hosts) {
@@ -247,6 +257,11 @@ public class Environment {
             return this;
         }
 
+        public Builder feedEndpoint(String feedEndpoint) {
+            this.feedEndpoint = feedEndpoint;
+            return this;
+        }
+
         public Builder isRunningLocally(boolean isRunningLocally) {
             this.isRunningLocally = isRunningLocally;
             return this;
@@ -254,7 +269,7 @@ public class Environment {
 
         public Environment build() {
             return new Environment(configServerHosts, environment, region, parentHostHostname, inetAddressResolver,
-                                   pathResolver, logstashNodes, athensDomain, isRunningLocally);
+                                   pathResolver, logstashNodes, athensDomain, feedEndpoint, isRunningLocally);
         }
     }
 }
