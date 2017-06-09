@@ -6,7 +6,7 @@
 #include <sstream>
 
 #include <vespa/log/log.h>
-LOG_SETUP("pingproxy");
+LOG_SETUP("vespa-ping-configproxy");
 
 
 class PingProxy : public FastOS_Application

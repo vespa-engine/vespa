@@ -61,7 +61,7 @@ void
 Application::usage(void)
 {
     std::cerr <<
-        "Usage: configproxy-cmd [options]"                                 << std::endl <<
+        "Usage: vespa-configproxy-cmd [options]"                                 << std::endl <<
         "    -m <method>                   method"                         << std::endl <<
         "    -s <hostname>                 hostname (default: localhost)"  << std::endl <<
         "    -p <port>                     port number (default: 19090)"   << std::endl <<

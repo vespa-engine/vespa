@@ -1,8 +1,9 @@
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_add_executable(config_pingproxy_app
+vespa_add_executable(config_getvespaconfig_app
     SOURCES
-    pingproxy.cpp
-    OUTPUT_NAME pingproxy
+    getconfig.cpp
+    OUTPUT_NAME vespa-get-config-bin
     INSTALL bin
     DEPENDS
+    config_cloudconfig
 )

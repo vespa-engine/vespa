@@ -62,7 +62,7 @@ findroot
 
 ROOT=${VESPA_HOME%/}
 
-printf "WARNING: activate-application is deprecated, use 'deploy activate' instead\n\n"
+printf "WARNING: vespa-activate-application is deprecated, use 'vespa-deploy activate' instead\n\n"
 
 if [ "-f" == "$1" ] ; then
     $ROOT/bin/deploy activate
@@ -75,7 +75,7 @@ else
        echo
        echo "Files are currently being distributed."
        echo "If you want to see the status, call 'vespa-status-filedistribution'."
-       echo "Otherwise, call 'activate-application -f' to activate the application now; the file transfers will continue in the background."
+       echo "Otherwise, call 'vespa-activate-application -f' to activate the application now; the file transfers will continue in the background."
        exit 1
     fi
 fi
