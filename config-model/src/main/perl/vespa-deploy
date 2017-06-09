@@ -220,28 +220,28 @@ sub usage {
     when ("activate") { usage_activate(); }
     when ("fetch") { usage_fetch(); }
     default {
-      print "Usage: deploy [-h] [-v] [-f] [-t] [-p] [<command>] [args]\n";
+      print "Usage: vespa-deploy [-h] [-v] [-f] [-t] [-p] [<command>] [args]\n";
       print "Supported commands: 'upload', 'prepare', 'activate', 'fetch' and 'help'\n";
       print "Supported options: '-h' (help), '-v' (verbose), '-f' (force/ignore validation errors), '-t' (timeout in seconds), '-p' (config server http port)\n";
-      print "Try 'deploy help <command>' to get more help\n";
+      print "Try 'vespa-deploy help <command>' to get more help\n";
    }
   }
 }
 
 sub usage_upload {
-  print "Usage: deploy upload <application package>\n";
+  print "Usage: vespa-deploy upload <application package>\n";
 }
 
 sub usage_prepare {
-  print  "Usage: deploy prepare [<session_id> | <application package>]\n";
+  print  "Usage: vespa-deploy prepare [<session_id> | <application package>]\n";
 }
 
 sub usage_activate {
-  print "Usage: deploy activate [<session_id>]\n";
+  print "Usage: vespa-deploy activate [<session_id>]\n";
 }
 
 sub usage_fetch {
-  print "Usage: deploy fetch <output directory>\n";
+  print "Usage: vespa-deploy fetch <output directory>\n";
 }
 
 sub fetch_active_application {
