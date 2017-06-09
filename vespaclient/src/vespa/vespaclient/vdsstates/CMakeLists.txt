@@ -3,7 +3,6 @@ vespa_add_executable(vespaclient_vdsgetnodestate_app
     SOURCES
     statesapp.cpp
     OUTPUT_NAME vdsgetnodestate-bin
-    INSTALL bin
     DEPENDS
     vespaclient_clusterlist
 )
