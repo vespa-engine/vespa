@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription.impl;
 
-import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.foo.SimpletypesConfig;
 import com.yahoo.foo.TestReferenceConfig;
 import com.yahoo.config.subscription.ConfigSubscriber;
@@ -15,6 +14,7 @@ import org.junit.Test;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
@@ -89,7 +89,7 @@ public class FileConfigSubscriptionTest {
         assertThat(sub.config.configId(), is(cfgId));
     }
 
-    @Test(expected = ConfigurationRuntimeException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void require_that_bad_file_throws_exception() throws IOException {
         // A little trick to ensure that we can create the subscriber, but that we get an error when reading.
         writeConfig("intval", "23");
@@ -99,7 +99,7 @@ public class FileConfigSubscriptionTest {
                 subscriber,
                 TEST_TYPES_FILE);
         sub.reload(1);
-        assertTrue(TEST_TYPES_FILE.setReadable(false));
+        Files.delete(TEST_TYPES_FILE.toPath()); // delete file so the below statement throws exception
         sub.nextConfig(0);
     }
 }
