@@ -385,7 +385,7 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
             _component.requestShutdown(m);
         }
         if (_listener->getListenPort() != config->rpcport) {
-            auto m = make_string("mbus port changed from %d to %d. Will conduct a quick, but controlled restart.",
+            auto m = make_string("rpc port changed from %d to %d. Will conduct a quick, but controlled restart.",
                                  _listener->getListenPort(), config->rpcport);
             LOG(warning, "%s", m.c_str());
             _component.requestShutdown(m);
