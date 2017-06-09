@@ -128,11 +128,13 @@ MMapRandReadDynamic::read(size_t offset, vespalib::DataBuffer & buffer, size_t s
     FSP file(_holder.get());
     size_t end = offset + sz;
     const char * data(static_cast<const char *>(file->MemoryMapPtr(offset)));
-    while ((data == nullptr) || !contains(*file, end)) {
+    if ((data == nullptr) || !contains(*file, end)) {
         // Must check that both start and end of file is mapped in.
         remap(end);
         file = _holder.get();
         data = static_cast<const char *>(file->MemoryMapPtr(offset));
+        assert(data != nullptr);
+        assert(contains(*file, end));
     }
     vespalib::DataBuffer(data, sz).swap(buffer);
     return file;
