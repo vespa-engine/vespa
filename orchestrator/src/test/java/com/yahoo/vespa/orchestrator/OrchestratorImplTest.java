@@ -247,11 +247,11 @@ public class OrchestratorImplTest {
             assertEquals(e.getSuppressed().length, 1);
 
             assertEquals("Failed to suspend NodeGroup{application=tenant-id-3:application-instance-3:prod:utopia-1:default, " +
-                    "hostNames=[test6.prod.us-east-1.vespahosted.ne1.yahoo.com]} with parent host parentHostname: " +
-                            "Changing the state of test6.prod.us-east-1.vespahosted.ne1.yahoo.com would violate " +
+                    "hostNames=[test6.hostname.tld]} with parent host parentHostname: " +
+                            "Changing the state of test6.hostname.tld would violate " +
                             "some-constraint: error message; With suppressed throwable " +
                             "com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException: " +
-                            "Changing the state of test1.prod.utpoia-1.vespahosted.ut1.yahoo.com " +
+                            "Changing the state of test1.hostname.tld " +
                             "would violate foo1-constraint: foo1-message",
                     e.getMessage());
         }
