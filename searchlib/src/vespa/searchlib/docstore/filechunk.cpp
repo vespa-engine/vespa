@@ -10,6 +10,7 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".search.filechunk");
