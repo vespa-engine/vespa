@@ -83,6 +83,8 @@ public final class ConfiguredApplication implements Application {
     private HandlersConfigurerDi configurer;
     private ScheduledThreadPoolExecutor shutdownDeadlineExecutor;
     private Thread reconfigurerThread;
+    private Thread portWatcher;
+    private QrConfig qrConfig;
 
     static {
         LogSetup.initVespaLogging("Container");
@@ -116,13 +118,17 @@ public final class ConfiguredApplication implements Application {
 
     @Override
     public void start() {
-        ContainerDiscApplication.hackToInitializeServer(getConfig(QrConfig.class));
+        qrConfig = getConfig(QrConfig.class);
+        ContainerDiscApplication.hackToInitializeServer(qrConfig);
 
         ContainerBuilder builder = createBuilderWithGuiceBindings();
         configureComponents(builder.guiceModules().activate());
 
         intitializeAndActivateContainer(builder);
         startReconfigurerThread();
+        portWatcher = new Thread(this::watchPortChange);
+        portWatcher.setDaemon(true);
+        portWatcher.start();
     }
 
     private <T extends ConfigInstance> T getConfig(Class<T> configClass) {
@@ -131,6 +137,25 @@ public final class ConfiguredApplication implements Application {
         try {
             subscriber.waitNextGeneration();
             return configClass.cast(first(subscriber.config().values()));
+        } finally {
+            subscriber.close();
+        }
+    }
+
+    void watchPortChange() {
+        Subscriber subscriber = subscriberFactory.getSubscriber(Collections.singleton(new ConfigKey<>(QrConfig.class, configId)));
+        try {
+            while (true) {
+                subscriber.waitNextGeneration();
+                QrConfig newConfig = QrConfig.class.cast(first(subscriber.config().values()));
+                if (qrConfig.rpc().port() != newConfig.rpc().port()) {
+                    com.yahoo.protect.Process.logAndDie(
+                            "Rpc port config has changed from " +
+                            qrConfig.rpc().port() + " to " + newConfig.rpc().port() +
+                            ". This we can not handle without a restart so we will just bail out.");
+                }
+                log.info("Received new QrConfig :" + newConfig);
+            }
         } finally {
             subscriber.close();
         }
