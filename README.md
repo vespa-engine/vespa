@@ -32,7 +32,8 @@ or use the prebuilt docker image
 ### Build Java modules
 Java modules can be built on any environment having Java and Maven:
 
-    sh bootstrap.sh java
+    sh bootstrap.sh
+    mvn install
 
 ### Build C++ modules
 `<builddir>` should be replaced with the name of the directory in which you'd like to build Vespa. `<sourcedir>` should be replaced with the directory in which you've cloned/unpacked the source tree.

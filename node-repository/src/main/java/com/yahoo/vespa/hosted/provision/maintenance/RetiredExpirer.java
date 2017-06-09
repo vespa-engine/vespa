@@ -24,7 +24,6 @@ import java.util.logging.Level;
  * reconfigured after inactivation.
  *
  * @author bratseth
- * @version $Id$
  */
 public class RetiredExpirer extends Expirer {
 
