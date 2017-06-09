@@ -44,7 +44,7 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
     ActiveContainerDeactivationWatchdog() {
         this(
                 Clock.systemUTC(),
-                new ScheduledThreadPoolExecutor(1, runnable -> {
+                new ScheduledThreadPoolExecutor(2, runnable -> {
                     Thread thread = new Thread(runnable, "active-container-deactivation-watchdog");
                     thread.setDaemon(true);
                     return thread;
@@ -54,12 +54,12 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
     ActiveContainerDeactivationWatchdog(Clock clock, ScheduledExecutorService scheduler) {
         this.clock = clock;
         this.scheduler = scheduler;
-        this.scheduler.scheduleWithFixedDelay(
+        this.scheduler.scheduleAtFixedRate(
                 this::warnOnStaleContainers,
                 WATCHDOG_FREQUENCY.getSeconds(),
                 WATCHDOG_FREQUENCY.getSeconds(),
                 TimeUnit.SECONDS);
-        this.scheduler.scheduleWithFixedDelay(
+        this.scheduler.scheduleAtFixedRate(
                 ActiveContainerDeactivationWatchdog::triggerGc,
                 GC_TRIGGER_FREQUENCY.getSeconds(),
                 GC_TRIGGER_FREQUENCY.getSeconds(),
