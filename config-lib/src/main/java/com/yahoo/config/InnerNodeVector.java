@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 /**
@@ -40,11 +38,9 @@ public class InnerNodeVector<NODE extends InnerNode> extends NodeVector<NODE> {
     @SuppressWarnings("unchecked")
     protected NODE createNew() {
         try {
-            Constructor<? extends InnerNode> ctor  = defaultNode.getClass().getDeclaredConstructor();
-            ctor.setAccessible(true);
-            return (NODE) ctor.newInstance();
-        } catch (InvocationTargetException | IllegalAccessException | InstantiationException | NoSuchMethodException e) {
-            throw new ConfigurationRuntimeException(e);
+            return (NODE) defaultNode.getClass().newInstance();
+        } catch (IllegalAccessException | InstantiationException ex) {
+            throw new ConfigurationRuntimeException(ex);
         }
     }
 

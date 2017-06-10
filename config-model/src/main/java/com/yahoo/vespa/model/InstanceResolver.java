@@ -1,26 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
-import com.yahoo.config.ConfigBuilder;
-import com.yahoo.config.ConfigInstance;
-import com.yahoo.config.ConfigurationRuntimeException;
+import com.yahoo.config.*;
 import com.yahoo.config.codegen.CNode;
 import com.yahoo.config.codegen.ConfigGenerator;
 import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.config.codegen.LeafCNode;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.config.ConfigDefinitionKey;
-import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.ConfigPayload;
-import com.yahoo.vespa.config.ConfigPayloadBuilder;
-import com.yahoo.vespa.config.ConfigTransformer;
-import com.yahoo.vespa.config.GenericConfig;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.yolean.Exceptions;
+import com.yahoo.vespa.config.*;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
@@ -176,7 +167,7 @@ class InstanceResolver {
      * @param  cKey a ConfigKey
      * @return a {@link ConfigInstance} or null if not available in classpath
      */
-    private static ConfigInstance getInstance(ConfigDefinitionKey cKey, ClassLoader instanceLoader) {
+    static ConfigInstance getInstance(ConfigDefinitionKey cKey, ClassLoader instanceLoader) {
         String className = ConfigGenerator.createClassName(cKey.getName());
         Class<?> clazz;
         String fullClassName = packageName(cKey) + "." + className;
@@ -187,10 +178,8 @@ class InstanceResolver {
         }
         Object i;
         try {
-            Constructor<?> configConstructor = clazz.getDeclaredConstructor();
-            configConstructor.setAccessible(true);
-            i = configConstructor.newInstance();
-        } catch (InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
+            i = clazz.newInstance();
+        } catch (InstantiationException | IllegalAccessException e) {
             throw new ConfigurationRuntimeException(e);
         }
         if (!(i instanceof ConfigInstance)) {
