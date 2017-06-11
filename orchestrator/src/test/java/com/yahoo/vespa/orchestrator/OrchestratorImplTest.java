@@ -218,6 +218,15 @@ public class OrchestratorImplTest {
     }
 
     @Test
+    public void testSetNodeState() throws OrchestrationException {
+        assertEquals(HostStatus.NO_REMARKS, orchestrator.getNodeStatus(app1_host1));
+        orchestrator.setNodeStatus(app1_host1, HostStatus.ALLOWED_TO_BE_DOWN);
+        assertEquals(HostStatus.ALLOWED_TO_BE_DOWN, orchestrator.getNodeStatus(app1_host1));
+        orchestrator.setNodeStatus(app1_host1, HostStatus.NO_REMARKS);
+        assertEquals(HostStatus.NO_REMARKS, orchestrator.getNodeStatus(app1_host1));
+    }
+
+    @Test
     public void rollbackWorks() throws Exception {
         // A spy is preferential because suspendAll() relies on delegating the hard work to suspend() and resume().
         OrchestratorImpl orchestrator = spy(this.orchestrator);

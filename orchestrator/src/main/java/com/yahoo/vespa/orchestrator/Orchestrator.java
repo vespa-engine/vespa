@@ -41,6 +41,8 @@ public interface Orchestrator {
      */
     HostStatus getNodeStatus(HostName hostName) throws HostNameNotFoundException;
 
+    void setNodeStatus(HostName hostName, HostStatus state) throws OrchestrationException;
+
     /**
      * Resume normal operation for this host.
      *
