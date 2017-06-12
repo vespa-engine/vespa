@@ -22,21 +22,20 @@ public class MultiDockerTest {
             ContainerNodeSpec containerNodeSpec2 = addAndWaitForNode(
                     dockerTester, "host2.test.yahoo.com", new DockerImage("image2"));
 
-            dockerTester.updateContainerNodeSpec(
+            dockerTester.addContainerNodeSpec(
                     new ContainerNodeSpec.Builder(containerNodeSpec2)
                             .nodeState(Node.State.dirty)
                             .build());
 
             // Wait until it is marked ready
-            while (dockerTester.getContainerNodeSpec(containerNodeSpec2.hostname)
+            while (dockerTester.nodeRepositoryMock.getContainerNodeSpec(containerNodeSpec2.hostname)
                     .filter(nodeSpec -> nodeSpec.nodeState != Node.State.ready).isPresent()) {
                 Thread.sleep(10);
             }
 
             addAndWaitForNode(dockerTester, "host3.test.yahoo.com", new DockerImage("image1"));
 
-            CallOrderVerifier callOrderVerifier = dockerTester.getCallOrderVerifier();
-            callOrderVerifier.assertInOrder(
+            dockerTester.callOrderVerifier.assertInOrder(
                     "createContainerCommand with DockerImage { imageId=image1 }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
                     "executeInContainerAsRoot with ContainerName { name=host1 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]",
 
@@ -49,11 +48,12 @@ public class MultiDockerTest {
                     "createContainerCommand with DockerImage { imageId=image1 }, HostName: host3.test.yahoo.com, ContainerName { name=host3 }",
                     "executeInContainerAsRoot with ContainerName { name=host3 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
 
-            callOrderVerifier.assertInOrderWithAssertMessage("Maintainer did not receive call to delete application storage",
-                                                             "deleteContainer with ContainerName { name=host2 }",
-                                                             "DeleteContainerStorage with ContainerName { name=host2 }");
+            dockerTester.callOrderVerifier.assertInOrderWithAssertMessage(
+                    "Maintainer did not receive call to delete application storage",
+                    "deleteContainer with ContainerName { name=host2 }",
+                     "DeleteContainerStorage with ContainerName { name=host2 }");
 
-            callOrderVerifier.assertInOrder(
+            dockerTester.callOrderVerifier.assertInOrder(
                     "updateNodeAttributes with HostName: host1.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image1, vespaVersion='1.2.3'}",
                     "updateNodeAttributes with HostName: host2.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image2, vespaVersion='1.2.3'}",
                     "markNodeAvailableForNewAllocation with HostName: host2.test.yahoo.com",
@@ -76,12 +76,12 @@ public class MultiDockerTest {
         tester.addContainerNodeSpec(containerNodeSpec);
 
         // Wait for node admin to be notified with node repo state and the docker container has been started
-        while (tester.getNodeAdmin().getListOfHosts().size() != tester.getNumberOfContainerSpecs()) {
+        while (tester.getNodeAdmin().getListOfHosts().size() != tester.nodeRepositoryMock.getNumberOfContainerSpecs()) {
             Thread.sleep(10);
         }
 
         ContainerName containerName = ContainerName.fromHostname(hostName);
-        tester.getCallOrderVerifier().assertInOrder(
+        tester.callOrderVerifier.assertInOrder(
                 "createContainerCommand with " + dockerImage + ", HostName: " + hostName + ", " + containerName,
                 "executeInContainerAsRoot with " + containerName + ", args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
 

@@ -5,8 +5,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.ContainerAclSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
-import com.yahoo.vespa.hosted.node.admin.integrationTests.CallOrderVerifier;
-import com.yahoo.vespa.hosted.node.admin.integrationTests.NodeRepoMock;
+import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.verification.VerificationMode;
@@ -32,13 +31,13 @@ public class AclMaintainerTest {
 
     private AclMaintainer aclMaintainer;
     private DockerOperations dockerOperations;
-    private NodeRepoMock nodeRepository;
+    private NodeRepository nodeRepository;
     private List<Container> containers;
 
     @Before
     public void before() {
         this.dockerOperations = mock(DockerOperations.class);
-        this.nodeRepository = new NodeRepoMock(new CallOrderVerifier());
+        this.nodeRepository = mock(NodeRepository.class);
         this.aclMaintainer = new AclMaintainer(dockerOperations, nodeRepository, NODE_ADMIN_HOSTNAME);
         this.containers = new ArrayList<>();
         when(dockerOperations.getAllManagedContainers()).thenReturn(containers);
@@ -48,7 +47,7 @@ public class AclMaintainerTest {
     public void configures_container_acl() {
         Container container = makeContainer("container-1");
         List<ContainerAclSpec> aclSpecs = makeAclSpecs(3, container.name);
-        nodeRepository.addContainerAclSpecs(NODE_ADMIN_HOSTNAME, aclSpecs);
+        when(nodeRepository.getContainerAclSpecs(NODE_ADMIN_HOSTNAME)).thenReturn(aclSpecs);
         aclMaintainer.run();
         assertAclsApplied(container.name, aclSpecs);
     }
@@ -57,7 +56,7 @@ public class AclMaintainerTest {
     public void does_not_configure_acl_if_unchanged() {
         Container container = makeContainer("container-1");
         List<ContainerAclSpec> aclSpecs = makeAclSpecs(3, container.name);
-        nodeRepository.addContainerAclSpecs(NODE_ADMIN_HOSTNAME, aclSpecs);
+        when(nodeRepository.getContainerAclSpecs(NODE_ADMIN_HOSTNAME)).thenReturn(aclSpecs);
         // Run twice
         aclMaintainer.run();
         aclMaintainer.run();
@@ -68,7 +67,7 @@ public class AclMaintainerTest {
     public void reconfigures_acl_when_container_pid_changes() {
         Container container = makeContainer("container-1");
         List<ContainerAclSpec> aclSpecs = makeAclSpecs(3, container.name);
-        nodeRepository.addContainerAclSpecs(NODE_ADMIN_HOSTNAME, aclSpecs);
+        when(nodeRepository.getContainerAclSpecs(NODE_ADMIN_HOSTNAME)).thenReturn(aclSpecs);
 
         aclMaintainer.run();
         assertAclsApplied(container.name, aclSpecs);
@@ -84,7 +83,7 @@ public class AclMaintainerTest {
     public void does_not_configure_acl_for_stopped_container() {
         Container stoppedContainer = makeContainer("container-1", Container.State.EXITED, 0);
         List<ContainerAclSpec> aclSpecs = makeAclSpecs(1, stoppedContainer.name);
-        nodeRepository.addContainerAclSpecs(NODE_ADMIN_HOSTNAME, aclSpecs);
+        when(nodeRepository.getContainerAclSpecs(NODE_ADMIN_HOSTNAME)).thenReturn(aclSpecs);
         aclMaintainer.run();
         assertAclsApplied(stoppedContainer.name, aclSpecs, never());
     }
@@ -92,7 +91,7 @@ public class AclMaintainerTest {
     @Test
     public void rollback_is_attempted_when_applying_acl_fail() {
         Container container = makeContainer("container-1");
-        nodeRepository.addContainerAclSpecs(NODE_ADMIN_HOSTNAME, makeAclSpecs(1, container.name));
+        when(nodeRepository.getContainerAclSpecs(NODE_ADMIN_HOSTNAME)).thenReturn(makeAclSpecs(1, container.name));
 
         doThrow(new RuntimeException("iptables command failed"))
                 .doNothing()

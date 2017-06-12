@@ -11,7 +11,9 @@ import java.io.File;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -22,7 +24,7 @@ import java.util.stream.Collectors;
  * @author freva
  */
 public class DockerMock implements Docker {
-    private List<Container> containers = new ArrayList<>();
+    private final Map<ContainerName, Container> containersByContainerName = new HashMap<>();
     public final CallOrderVerifier callOrderVerifier;
     private static final Object monitor = new Object();
 
@@ -38,7 +40,8 @@ public class DockerMock implements Docker {
         synchronized (monitor) {
             callOrderVerifier.add("createContainerCommand with " + dockerImage +
                     ", HostName: " + hostName + ", " + containerName);
-            containers.add(new Container(hostName, dockerImage, containerName, Container.State.RUNNING, 2));
+            containersByContainerName.put(
+                    containerName, new Container(hostName, dockerImage, containerName, Container.State.RUNNING, 2));
         }
 
         return new StartContainerCommandMock();
@@ -59,14 +62,14 @@ public class DockerMock implements Docker {
     @Override
     public List<Container> getAllContainersManagedBy(String manager) {
         synchronized (monitor) {
-            return new ArrayList<>(containers);
+            return new ArrayList<>(containersByContainerName.values());
         }
     }
 
     @Override
     public List<ContainerName> listAllContainersManagedBy(String manager) {
         synchronized (monitor) {
-            return containers.stream().map(container -> container.name).collect(Collectors.toList());
+            return getAllContainersManagedBy(manager).stream().map(container -> container.name).collect(Collectors.toList());
         }
     }
 
@@ -86,10 +89,9 @@ public class DockerMock implements Docker {
     public void stopContainer(ContainerName containerName) {
         synchronized (monitor) {
             callOrderVerifier.add("stopContainer with " + containerName);
-            containers = containers.stream()
-                    .map(container -> container.name.equals(containerName) ?
-                            new Container(container.hostname, container.image, container.name, Container.State.EXITED, 0) : container)
-                    .collect(Collectors.toList());
+            Container container = containersByContainerName.get(containerName);
+            containersByContainerName.put(containerName,
+                            new Container(container.hostname, container.image, container.name, Container.State.EXITED, 0));
         }
     }
 
@@ -97,16 +99,14 @@ public class DockerMock implements Docker {
     public void deleteContainer(ContainerName containerName) {
         synchronized (monitor) {
             callOrderVerifier.add("deleteContainer with " + containerName);
-            containers = containers.stream()
-                    .filter(container -> !container.name.equals(containerName))
-                    .collect(Collectors.toList());
+            containersByContainerName.remove(containerName);
         }
     }
 
     @Override
     public Optional<Container> getContainer(ContainerName containerName) {
         synchronized (monitor) {
-            return containers.stream().filter(container -> container.name.equals(containerName)).findFirst();
+            return Optional.ofNullable(containersByContainerName.get(containerName));
         }
     }
 

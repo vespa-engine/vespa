@@ -1,7 +1,6 @@
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.metrics.simple.MetricReceiver;
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
@@ -32,13 +31,12 @@ import static org.mockito.Mockito.when;
  */
 // Need to deconstruct updater
 public class DockerTester implements AutoCloseable {
-
-    private final NodeRepoMock nodeRepositoryMock;
-    private CallOrderVerifier callOrderVerifier;
-    private Docker dockerMock;
+    final CallOrderVerifier callOrderVerifier = new CallOrderVerifier();
+    final Docker dockerMock = new DockerMock(callOrderVerifier);
+    final NodeRepoMock nodeRepositoryMock = new NodeRepoMock(callOrderVerifier);
+    final OrchestratorMock orchestratorMock = new OrchestratorMock(callOrderVerifier);
     private final NodeAdminStateUpdater updater;
     private final NodeAdmin nodeAdmin;
-    private final OrchestratorMock orchestratorMock;
 
 
     public DockerTester() {
@@ -52,11 +50,6 @@ public class DockerTester implements AutoCloseable {
         Environment environment = new Environment.Builder()
                 .inetAddressResolver(inetAddressResolver)
                 .pathResolver(new PathResolver(Paths.get("/tmp"), Paths.get("/tmp"))).build();
-
-        callOrderVerifier = new CallOrderVerifier();
-        orchestratorMock = new OrchestratorMock(callOrderVerifier);
-        nodeRepositoryMock = new NodeRepoMock(callOrderVerifier);
-        dockerMock = new DockerMock(callOrderVerifier);
         Clock clock = Clock.systemUTC();
         StorageMaintainerMock storageMaintainer = new StorageMaintainerMock(dockerMock, environment, callOrderVerifier, clock);
 
@@ -71,43 +64,15 @@ public class DockerTester implements AutoCloseable {
     }
 
     public void addContainerNodeSpec(ContainerNodeSpec containerNodeSpec) {
-        nodeRepositoryMock.addContainerNodeSpec(containerNodeSpec);
-    }
-
-    public Optional<ContainerNodeSpec> getContainerNodeSpec(String hostname) {
-        return nodeRepositoryMock.getContainerNodeSpec(hostname);
-    }
-
-    public int getNumberOfContainerSpecs() {
-        return nodeRepositoryMock.getNumberOfContainerSpecs();
-    }
-
-    public void updateContainerNodeSpec(ContainerNodeSpec containerNodeSpec) {
         nodeRepositoryMock.updateContainerNodeSpec(containerNodeSpec);
-    }
-
-    public void clearContainerNodeSpecs() {
-        nodeRepositoryMock.clearContainerNodeSpecs();
     }
 
     public NodeAdmin getNodeAdmin() {
         return nodeAdmin;
     }
 
-    public OrchestratorMock getOrchestratorMock() {
-        return orchestratorMock;
-    }
-
     public NodeAdminStateUpdater getNodeAdminStateUpdater() {
         return updater;
-    }
-
-    public CallOrderVerifier getCallOrderVerifier() {
-        return callOrderVerifier;
-    }
-
-    public void deleteContainer(ContainerName containerName) {
-        dockerMock.deleteContainer(containerName);
     }
 
     @Override

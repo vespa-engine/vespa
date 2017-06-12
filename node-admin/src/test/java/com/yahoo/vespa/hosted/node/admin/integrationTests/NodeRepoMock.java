@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Mock with some simple logic
@@ -22,10 +21,9 @@ import java.util.stream.Collectors;
  * @author dybis
  */
 public class NodeRepoMock implements NodeRepository {
-
     private static final Object monitor = new Object();
 
-    private List<ContainerNodeSpec> containerNodeSpecs = new ArrayList<>();
+    private final Map<String, ContainerNodeSpec> containerNodeSpecsByHostname = new HashMap<>();
     private final Map<String, List<ContainerAclSpec>> acls = new HashMap<>();
     private final CallOrderVerifier callOrderVerifier;
 
@@ -36,16 +34,14 @@ public class NodeRepoMock implements NodeRepository {
     @Override
     public List<ContainerNodeSpec> getContainersToRun() throws IOException {
         synchronized (monitor) {
-            return containerNodeSpecs;
+            return new ArrayList<>(containerNodeSpecsByHostname.values());
         }
     }
 
     @Override
     public Optional<ContainerNodeSpec> getContainerNodeSpec(String hostName) {
         synchronized (monitor) {
-            return containerNodeSpecs.stream()
-                    .filter(containerNodeSpec -> containerNodeSpec.hostname.equals(hostName))
-                    .findFirst();
+            return Optional.ofNullable(containerNodeSpecsByHostname.get(hostName));
         }
     }
 
@@ -95,43 +91,12 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     public void updateContainerNodeSpec(ContainerNodeSpec containerNodeSpec) {
-        addContainerNodeSpec(containerNodeSpec);
-    }
-
-    public void addContainerNodeSpec(ContainerNodeSpec containerNodeSpec) {
-        removeContainerNodeSpec(containerNodeSpec.hostname);
-        synchronized (monitor) {
-            containerNodeSpecs.add(containerNodeSpec);
-        }
-    }
-
-    public void clearContainerNodeSpecs() {
-        synchronized (monitor) {
-            containerNodeSpecs.clear();
-        }
-    }
-
-    public void removeContainerNodeSpec(String hostName) {
-        synchronized (monitor) {
-            containerNodeSpecs = containerNodeSpecs.stream()
-                    .filter(c -> !c.hostname.equals(hostName))
-                    .collect(Collectors.toList());
-        }
+        containerNodeSpecsByHostname.put(containerNodeSpec.hostname, containerNodeSpec);
     }
 
     public int getNumberOfContainerSpecs() {
         synchronized (monitor) {
-            return containerNodeSpecs.size();
-        }
-    }
-
-    public void addContainerAclSpecs(String hostname, List<ContainerAclSpec> containerAclSpecs) {
-        synchronized (monitor) {
-            if (this.acls.containsKey(hostname)) {
-                this.acls.get(hostname).addAll(containerAclSpecs);
-            } else {
-                this.acls.put(hostname, containerAclSpecs);
-            }
+            return containerNodeSpecsByHostname.size();
         }
     }
 }
