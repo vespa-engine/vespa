@@ -8,7 +8,6 @@ import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
 import java.lang.ref.WeakReference;
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
@@ -71,7 +70,7 @@ public class ActiveContainerDeactivationWatchdogTest {
     public void deactivated_container_destructed_if_its_reference_counter_is_nonzero() {
         ExecutorMock executor = new ExecutorMock();
         ActiveContainerDeactivationWatchdog watchdog =
-                new ActiveContainerDeactivationWatchdog(Clock.systemUTC(), executor);
+                new ActiveContainerDeactivationWatchdog(new ManualClock(), executor);
         ActiveContainer container =
                 new ActiveContainer(TestDriver.newSimpleApplicationInstanceWithoutOsgi().newContainerBuilder());
         AtomicBoolean destructed = new AtomicBoolean(false);
