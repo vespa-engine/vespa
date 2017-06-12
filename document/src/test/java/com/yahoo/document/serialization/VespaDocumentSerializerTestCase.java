@@ -2,6 +2,7 @@
 package com.yahoo.document.serialization;
 
 import com.yahoo.compress.CompressionType;
+import com.yahoo.compress.Compressor;
 import com.yahoo.document.CompressionConfig;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
@@ -57,6 +58,9 @@ public class VespaDocumentSerializerTestCase {
     }
 
     static class CompressionFixture {
+
+        static final String COMPRESSABLE_STRING = "zippy zip mc zippington the 3rd zippy zip";
+
         final DocumentTypeManager manager;
         final DocumentType docType;
         final StructDataType nestedType;
@@ -86,10 +90,6 @@ public class VespaDocumentSerializerTestCase {
         Document roundtripSerialize(Document inputDoc) {
             return manager.createDocument(asSerialized(inputDoc));
         }
-
-        String compressableString() {
-            return "zippy zip mc zippington the 3rd zippy zip";
-        }
     }
 
     @Test
@@ -98,7 +98,7 @@ public class VespaDocumentSerializerTestCase {
 
         Document doc = new Document(fixture.docType, "id:foo:map_of_structs::flarn");
         Struct nested = new Struct(fixture.nestedType);
-        nested.setFieldValue("str", new StringFieldValue(fixture.compressableString()));
+        nested.setFieldValue("str", new StringFieldValue(CompressionFixture.COMPRESSABLE_STRING));
 
         MapFieldValue<StringFieldValue, Struct> map = new MapFieldValue<StringFieldValue, Struct>(fixture.mapType);
         map.put(new StringFieldValue("foo"), nested);
@@ -116,7 +116,7 @@ public class VespaDocumentSerializerTestCase {
 
         Document doc = new Document(fixture.docType, "id:foo:map_of_structs::flarn");
         Struct nested = new Struct(fixture.nestedType);
-        nested.setFieldValue("str", new StringFieldValue(fixture.compressableString()));
+        nested.setFieldValue("str", new StringFieldValue(CompressionFixture.COMPRESSABLE_STRING));
 
         MapFieldValue<StringFieldValue, Struct> map = new MapFieldValue<StringFieldValue, Struct>(fixture.mapType);
         // Only 1 struct added. Not enough redundant information that header struct containing map itself
