@@ -27,6 +27,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+@Ignore
 public class MasterElectionTest extends FleetControllerTest {
 
     private static Logger log = Logger.getLogger(MasterElectionTest.class.getName());
