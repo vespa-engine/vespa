@@ -36,10 +36,10 @@ public class RebootTest {
                 Thread.sleep(10);
             }
 
-            CallOrderVerifier callOrderVerifier = dockerTester.getCallOrderVerifier();
             // Check that the container is started and NodeRepo has received the PATCH update
-            callOrderVerifier.assertInOrder("createContainerCommand with DockerImage { imageId=dockerImage }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
-                                            "updateNodeAttributes with HostName: host1.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=null,  dockerImage=dockerImage, vespaVersion='null'}");
+            dockerTester.callOrderVerifier.assertInOrder(
+                    "createContainerCommand with DockerImage { imageId=dockerImage }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
+                    "updateNodeAttributes with HostName: host1.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=null,  dockerImage=dockerImage, vespaVersion='null'}");
 
             NodeAdminStateUpdater updater = dockerTester.getNodeAdminStateUpdater();
             assertThat(updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED),
@@ -56,7 +56,8 @@ public class RebootTest {
 
             assertTrue(nodeAdmin.setFrozen(false));
 
-            callOrderVerifier.assertInOrder("executeInContainer with ContainerName { name=host1 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", stop]");
+            dockerTester.callOrderVerifier.assertInOrder(
+                    "executeInContainer with ContainerName { name=host1 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", stop]");
         }
     }
 

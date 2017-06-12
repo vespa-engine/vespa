@@ -29,17 +29,18 @@ public class RestartTest {
                 Thread.sleep(10);
             }
 
-            CallOrderVerifier callOrderVerifier = dockerTester.getCallOrderVerifier();
             // Check that the container is started and NodeRepo has received the PATCH update
-            callOrderVerifier.assertInOrder("createContainerCommand with DockerImage { imageId=image:1.2.3 }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
-                                            "updateNodeAttributes with HostName: host1.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image:1.2.3, vespaVersion='1.2.3'}");
+            dockerTester.callOrderVerifier.assertInOrder(
+                    "createContainerCommand with DockerImage { imageId=image:1.2.3 }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
+                    "updateNodeAttributes with HostName: host1.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image:1.2.3, vespaVersion='1.2.3'}");
 
             wantedRestartGeneration = 2;
             currentRestartGeneration = 1;
-            dockerTester.updateContainerNodeSpec(createContainerNodeSpec(wantedRestartGeneration, currentRestartGeneration));
+            dockerTester.addContainerNodeSpec(createContainerNodeSpec(wantedRestartGeneration, currentRestartGeneration));
 
-            callOrderVerifier.assertInOrder("Suspend for host1.test.yahoo.com",
-                                            "executeInContainerAsRoot with ContainerName { name=host1 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", restart-vespa]");
+            dockerTester.callOrderVerifier.assertInOrder(
+                    "Suspend for host1.test.yahoo.com",
+                    "executeInContainerAsRoot with ContainerName { name=host1 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", restart-vespa]");
         }
     }
 
