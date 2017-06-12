@@ -117,6 +117,7 @@ deriveCompression(const T & config) {
     document::CompressionConfig compression;
     if (config.type == T::LZ4) {
         compression.type = document::CompressionConfig::LZ4;
+    } else if (config.type == T::ZSTD) {
     }
     compression.compressionLevel = config.level;
     return compression;

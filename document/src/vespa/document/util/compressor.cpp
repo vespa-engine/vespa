@@ -1,10 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "lz4compressor.h"
+#include "zstdcompressor.h"
 #include <vespa/vespalib/util/memory.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/databuffer.h>
-#include <stdexcept>
 
 using vespalib::alloc::Alloc;
 using vespalib::ConstBufferRef;
@@ -37,6 +37,12 @@ docompress(const CompressionConfig & compression, const ConstBufferRef & org, Da
         {
             LZ4Compressor lz4;
             type = compress(lz4, compression, org, dest);
+        }
+        break;
+    case CompressionConfig::ZSTD:
+        {
+            ZStdCompressor zstd;
+            type = compress(zstd, compression, org, dest);
         }
         break;
     case CompressionConfig::NONE:
@@ -97,6 +103,12 @@ decompress(const CompressionConfig::Type & type, size_t uncompressedLen, const C
         {
             LZ4Compressor lz4;
             decompress(lz4, uncompressedLen, org, dest, allowSwap);
+        }
+        break;
+        case CompressionConfig::ZSTD:
+        {
+            ZStdCompressor zstd;
+            decompress(zstd, uncompressedLen, org, dest, allowSwap);
         }
         break;
     case CompressionConfig::NONE:

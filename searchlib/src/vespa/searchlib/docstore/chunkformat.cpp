@@ -2,6 +2,7 @@
 
 #include "chunkformats.h"
 #include <vespa/document/util/lz4compressor.h>
+#include <vespa/document/util/zstdcompressor.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 namespace search {
@@ -53,6 +54,9 @@ ChunkFormat::getMaxPackSize(const document::CompressionConfig & compression) con
     if (compression.type == document::CompressionConfig::LZ4) {
         document::LZ4Compressor lz4;
         rawSize += lz4.adjustProcessLen(0, payloadSize);
+    } else if (compression.type == document::CompressionConfig::ZSTD) {
+        document::ZStdCompressor zstd;
+        rawSize += zstd.adjustProcessLen(0, payloadSize);
     } else {
         rawSize += payloadSize;
     }
@@ -63,6 +67,7 @@ void
 ChunkFormat::verifyCompression(uint8_t type)
 {
     if ((type != document::CompressionConfig::LZ4) &&
+        (type != document::CompressionConfig::ZSTD) &&
         (type != document::CompressionConfig::NONE)) {
         throw ChunkException(make_string("Unknown compressiontype %d", type), VESPA_STRLOC);
     }

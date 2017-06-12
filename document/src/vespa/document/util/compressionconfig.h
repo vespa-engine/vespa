@@ -7,16 +7,16 @@
 
 namespace document {
 
-
 struct CompressionConfig {
     enum Type {
-               NONE = 0,
-               HISTORIC_1 = 1,
-               HISTORIC_2 = 2,
-               HISTORIC_3 = 3,
-               HISTORIC_4 = 4,
-               UNCOMPRESSABLE = 5,
-               LZ4 = 6
+        NONE = 0,
+        HISTORIC_1 = 1,
+        HISTORIC_2 = 2,
+        HISTORIC_3 = 3,
+        HISTORIC_4 = 4,
+        UNCOMPRESSABLE = 5,
+        LZ4 = 6,
+        ZSTD = 7
     };
 
     CompressionConfig()
@@ -47,6 +47,7 @@ struct CompressionConfig {
         case 4: return HISTORIC_4;
         case 5: return UNCOMPRESSABLE;
         case 6: return LZ4;
+        case 7: return ZSTD;
         default: return NONE;
         }
     }
