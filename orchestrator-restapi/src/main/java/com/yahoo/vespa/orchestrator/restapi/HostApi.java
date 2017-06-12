@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.restapi;
 
+import com.yahoo.vespa.jaxrs.annotation.PATCH;
 import com.yahoo.vespa.orchestrator.restapi.wire.GetHostResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostRequest;
 import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostResponse;
@@ -42,7 +43,7 @@ public interface HostApi {
     /**
      * Tweak internal Orchestrator state for host.
      */
-    @PUT
+    @PATCH
     @Path("/{hostname}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
