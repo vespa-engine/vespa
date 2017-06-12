@@ -2,8 +2,8 @@
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 set -e
 
-SBCMD=../../apps/sbcmd/sbcmd
-SLOBROK=../../apps/slobrok/slobrok
+SBCMD=../../apps/sbcmd/vespa-slobrok-cmd
+SLOBROK=../../apps/slobrok/vespa-slobrok
 
 
 listall () {

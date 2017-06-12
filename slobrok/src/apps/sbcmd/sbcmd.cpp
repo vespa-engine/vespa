@@ -7,7 +7,7 @@
 #include <sstream>
 
 #include <vespa/log/log.h>
-LOG_SETUP("sb-cmd");
+LOG_SETUP("vespa-slobrok-cmd");
 
 class Slobrok_CMD : public FastOS_Application
 {
@@ -135,7 +135,7 @@ Slobrok_CMD::Main()
     _target->InvokeSync(req, 5.0);
 
     if (req->IsError()) {
-        fprintf(stderr, "sb-cmd error %d: %s\n",
+        fprintf(stderr, "vespa-slobrok-cmd error %d: %s\n",
                 req->GetErrorCode(), req->GetErrorMessage());
     } else {
         FRT_Values &answer = *(req->GetReturn());
@@ -163,7 +163,7 @@ Slobrok_CMD::Main()
                        answer[1]._string_array._pt[j]._str);
             }
         } else {
-            fprintf(stderr, "sb-cmd OK, returntypes '%s'\n", atypes);
+            fprintf(stderr, "vespa-slobrok-cmd OK, returntypes '%s'\n", atypes);
             uint32_t idx = 0;
             while (atypes != NULL && *atypes != '\0') {
                 switch (*atypes) {
