@@ -2,7 +2,7 @@
 vespa_add_executable(fbench_splitfile_app
     SOURCES
     splitfile.cpp
-    OUTPUT_NAME splitfile
+    OUTPUT_NAME vespa-fbench-split-file
     INSTALL bin
     DEPENDS
     fbench_util

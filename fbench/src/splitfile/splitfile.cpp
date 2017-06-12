@@ -44,7 +44,7 @@ main(int argc, char** argv)
     }
 
     if (argc < (idx + 1) || argc > (idx + 2) || optError) {
-        printf("usage: splitfile [-p pattern] [-m maxLineSize] <numparts> [<file>]\n\n");
+        printf("usage: vespa-fbench-split-file [-p pattern] [-m maxLineSize] <numparts> [<file>]\n\n");
         printf(" -p pattern : output name pattern ['query%%03d.txt']\n");
         printf(" -m <num>   : max line size for input/output lines.\n");
         printf("              Can not be less than the default [10240]\n");

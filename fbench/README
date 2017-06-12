@@ -1,11 +1,11 @@
-fbench - fastserver benchmarking program
-----------------------------------------
+vespa-fbench - fastserver benchmarking program
+----------------------------------------------
 
 
-1 Installing fbench
--------------------
+1 Installing vespa-fbench
+-------------------------
 
-The preferred way of running fbench is to create your own test
+The preferred way of running vespa-fbench is to create your own test
 directory where you place all fbench executables and prepare test
 files. If you have access to the fbench source, you may consult the
 'INSTALL' file for information on how to install fbench. If you have a
@@ -13,21 +13,21 @@ pre-compiled distribution of fbench, simply extract the archive. The
 fbench install directory should contain the following set of files:
 
   README
-  bin/fbench
-  bin/filterfile
-  bin/geturl
+  bin/vespa-fbench
+  bin/vespa-fbench-filter-file
+  bin/vespa-geturl
   bin/plot.pl
   bin/pretest.sh
-  bin/resultfilter.pl
+  bin/vespa-resultfilter.pl
   bin/runtests.sh
   bin/separate.pl
-  bin/splitfile
+  bin/vespa-fbench-split-file
 
 
 2 Benchmark overview
 --------------------
 
-fbench measures the performance of the server by running a number of
+vespa-fbench measures the performance of the server by running a number of
 clients that send requests to the server in parallel. Each client has
 its own input file containing urls that should be requested from the
 server. When benchmarking fastserver, the urls contained in these
@@ -46,9 +46,9 @@ queries.
 
 This step assumes you have obtained some fastserver access log
 files. The first step is to extract the query urls from the logs. This
-is done with the 'filterfile' program.
+is done with the 'vespa-fbench-filter-file' program.
 
-| usage: filterfile [-a] [-h]
+| usage: vespa-fbench-filter-file [-a] [-h]
 | 
 | Read concatenated fastserver logs from stdin and write
 | extracted query urls to stdout.
@@ -81,7 +81,7 @@ want to extract the query urls from it and save the query urls into
 200 separate files (because you are planning to run 200 clients when
 benchmarking). You may do the following:
 
-$ cat logs | bin/filterfile | bin/splitfile 200
+$ cat logs | bin/vespa-fbench-filter-file | bin/splitfile 200
 
 This will create 200 files with names 'query000.txt', 'query001.txt',
 'query002.txt' etc. You may control the filename pattern of the output
@@ -92,10 +92,10 @@ files by using the -p switch with the 'splitfile' program.
 -----------------------
 
 You are now ready to begin benchmarking. The actual benchmarking is
-done with the fbench program. fbench usage information ([] are used to
+done with the vespa-fbench program. vespa-fbench usage information ([] are used to
 mark optional parameters and default values):
 
-| usage: fbench [-n numClients] [-c cycleTime] [-l limit] [-i ignoreCount]
+| usage: vespa-fbench [-n numClients] [-c cycleTime] [-l limit] [-i ignoreCount]
 | 		[-s seconds] [-q queryFilePattern] [-o outputFilePattern]
 | 		[-r restartLimit] [-k] <hostname> <port>
 | 
@@ -140,16 +140,16 @@ can (they issue new queries immediately after the results from the
 previous query are obtained). Assuming you have at least 200 query
 files with default filename pattern you may do the following:
 
-$ bin/fbench -n 200 -c 0 <host> <port>
+$ bin/vespa-fbench -n 200 -c 0 <host> <port>
 
 This will run the test over a period of 60 seconds. Use the -s option
 to change the duration of the test.
 
 Example: You want to manually observe fastserver with a certain amount
-of load. You may use fbench to produce 'background noise' by using the
+of load. You may use vespa-fbench to produce 'background noise' by using the
 -s option with argument 0, like this:
 
-$ bin/fbench -n 50 -c 1000 -s 0 <host> <port>
+$ bin/vespa-fbench -n 50 -c 1000 -s 0 <host> <port>
 
 This will start 50 clients that ask at most 1 query per second each,
 giving a maximum load of 50 queries per second if the server allows
@@ -159,7 +159,7 @@ it. This test run will run forever due to the '-s 0' option given.
 5 Understanding Benchmarking Results
 ------------------------------------
 
-After a test run has completed, fbench outputs various test
+After a test run has completed, vespa-fbench outputs various test
 results. This section will explain what each of these numbers mean.
 
 'connection reuse count' This value indicates how many times HTTP
@@ -175,7 +175,7 @@ results. This section will explain what each of these numbers mean.
 'lower response limit'   Echo of the -l parameter.
 
 'skipped requests'       Number of requests that was skipped by
-                         fbench. fbench will typically skip a request
+                         vespa-fbench. vespa-fbench will typically skip a request
                          if the line containing the query url exceeds
                          a pre-defined limit. Skipped requests will
                          have minimal impact on the statistical
@@ -263,32 +263,32 @@ results. This section will explain what each of these numbers mean.
 
 For more complete benchmarking you will want to combine the results
 from several test runs and present them together in a graph or maybe a
-spreadsheet. The perl script resultfilter.pl may be used to convert
-the output from fbench into a single line of numbers. Lines of numbers
+spreadsheet. The perl script vespa-resultfilter.pl may be used to convert
+the output from vespa-fbench into a single line of numbers. Lines of numbers
 produced from several test runs may then be concatenated into the same
 text file and used to plot a graph with gnuplot or imported into an
 application accepting structured text files (like Excel).
 
 The task described above is performed by the runtests.sh script. It
-runs fbench several times with varying client count and cycle
+runs vespa-fbench several times with varying client count and cycle
 time. Between each test run, the script pretest.sh (located in the bin
 directory) is run. The pretest.sh script should make sure that the
 server you want to benchmark is in the same state before each of the
 test runs. This typically means that the caches should be cleared. The
 supplied pretest.sh file does nothing, and should therefore be
 modified to fit your needs before you start benchmarking with the
-runtests.sh script. NOTE: 'runtests.sh' must be run from the fbench
+runtests.sh script. NOTE: 'runtests.sh' must be run from the vespa-fbench
 install directory in order to find the scripts and programs it depends
-on.  (fbench is run as 'bin/fbench' etc.).
+on.  (vespa-fbench is run as 'bin/vespa-fbench' etc.).
 
 | usage: runtests.sh [-o] [-l] <minClients> <maxClients> <deltaClients>
-| 	   <minCycle> <maxCycle> <deltaCycle> [fbench options] <hostname> <port>
+| 	   <minCycle> <maxCycle> <deltaCycle> [vespa-fbench options] <hostname> <port>
 | 
 | The number of clients varies from <minClients> to <maxClients> with
 | <deltaClients> increments. For each client count, the cycle time will
 | vary in the same way according to <minCycle>, <maxCycle> and <deltaCycle>.
-| fbench is run with each combination of client count and cycle time, and
-| the result output is filtered with the 'resultfilter.pl' script.
+| vespa-fbench is run with each combination of client count and cycle time, and
+| the result output is filtered with the 'vespa-resultfilter.pl' script.
 | If you want to save the results you should redirect stdout to a file.
 | 
 |  -o : change the order in which the tests are performed so that client
@@ -298,12 +298,12 @@ on.  (fbench is run as 'bin/fbench' etc.).
 | 	If -o was specified this will output blank lines between test series
 | 	using different cycle time.
 | 
-| [fbench options] <hostname> <port>: These arguments are passed to fbench.
+| [vespa-fbench options] <hostname> <port>: These arguments are passed to vespa-fbench.
 |   There are 2 things to remember: first; do not specify either of the -n
 |   or -c options since they will override the values for client count and
 |   cycle time generated by this script. secondly; make sure you specify
-|   the correct host and port number. See the fbench usage (run fbench
-|   without parameters) for more info on how to invoke fbench.
+|   the correct host and port number. See the vespa-fbench usage (run vespa-fbench
+|   without parameters) for more info on how to invoke vespa-fbench.
 
 Example: You want to see how well fastserver performs with varying
 client count and cycle time. Assume that you have already prepared 200
@@ -322,7 +322,7 @@ then do the following:
 
 $ bin/runtests.sh 10 200 10 0 5000 500 -s 300 <host> <port> > result.txt
 
-The '-s 300' option will be given to fbench causing each test run to
+The '-s 300' option will be given to vespa-fbench causing each test run to
 have a duration of 300 seconds = 5 minutes. The standard output is
 simply redirected to a file to collect the results for future use.
 

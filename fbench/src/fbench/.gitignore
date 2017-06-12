@@ -1,5 +1,5 @@
 .depend
 Makefile
-fbench
+vespa-fbench
 fbench.ilk
 fbench.pdb
