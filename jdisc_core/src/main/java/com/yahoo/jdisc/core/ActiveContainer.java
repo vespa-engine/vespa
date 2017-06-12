@@ -64,7 +64,8 @@ public class ActiveContainer extends AbstractResource implements CurrentContaine
     protected void destroy() {
         boolean alreadyDestructed = destructor.destruct();
         if (alreadyDestructed) {
-            throw new IllegalStateException("Already destructed!");
+            throw new IllegalStateException(
+                    "Already destructed! This should not occur unless destroy have been called directly!");
         }
     }
 
