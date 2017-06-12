@@ -2,7 +2,6 @@
 vespa_add_executable(vbench_dumpurl_app
     SOURCES
     dumpurl.cpp
-    INSTALL bin
     DEPENDS
     vbench
 )
