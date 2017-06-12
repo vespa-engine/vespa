@@ -1,13 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.restapi;
 
-import com.yahoo.vespa.jaxrs.annotation.PATCH;
 import com.yahoo.vespa.orchestrator.restapi.wire.GetHostResponse;
-import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostRequest;
-import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.UpdateHostResponse;
 
-import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
@@ -39,15 +35,6 @@ public interface HostApi {
     @Path("/{hostname}")
     @Produces(MediaType.APPLICATION_JSON)
     GetHostResponse getHost(@PathParam("hostname") String hostNameString);
-
-    /**
-     * Tweak internal Orchestrator state for host.
-     */
-    @PATCH
-    @Path("/{hostname}")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    PatchHostResponse patch(@PathParam("hostname") String hostNameString, PatchHostRequest request);
 
     /**
      * Ask for permission to temporarily suspend all services on a host.

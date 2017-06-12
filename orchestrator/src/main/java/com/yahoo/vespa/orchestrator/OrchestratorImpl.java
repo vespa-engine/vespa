@@ -83,15 +83,7 @@ public class OrchestratorImpl implements Orchestrator {
 
     @Override
     public HostStatus getNodeStatus(HostName hostName) throws HostNameNotFoundException {
-        return getNodeStatus(getApplicationInstance(hostName).reference(), hostName);
-    }
-
-    @Override
-    public void setNodeStatus(HostName hostName, HostStatus status) throws OrchestrationException {
-        ApplicationInstanceReference reference = getApplicationInstance(hostName).reference();
-        try (MutableStatusRegistry statusRegistry = statusService.lockApplicationInstance_forCurrentThreadOnly(reference)) {
-            statusRegistry.setHostState(hostName, status);
-        }
+        return getNodeStatus(getApplicationInstance(hostName).reference(),hostName);
     }
 
     @Override

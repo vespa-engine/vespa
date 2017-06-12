@@ -33,9 +33,6 @@ public class OrchestratorMock implements Orchestrator {
     }
 
     @Override
-    public void setNodeStatus(HostName hostName, HostStatus state) throws OrchestrationException {}
-
-    @Override
     public void resume(HostName hostName) throws HostStateChangeDeniedException, HostNameNotFoundException {}
 
     @Override

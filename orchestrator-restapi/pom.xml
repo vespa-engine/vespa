@@ -22,12 +22,6 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>jaxrs_utils</artifactId>
-      <version>${project.version}</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
       <version>${jackson2.version}</version>
