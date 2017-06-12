@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.monitoring;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
@@ -44,7 +45,8 @@ public class MetricsReporterTest {
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
         Curator curator = new MockCurator();
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, Clock.systemUTC(), Zone.defaultZone(),
-                                                           new MockNameResolver().mockAnyLookup());
+                                                           new MockNameResolver().mockAnyLookup(),
+                                                           new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
         Node node = nodeRepository.createNode("openStackId", "hostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
         nodeRepository.addNodes(Collections.singletonList(node));
         Node hostNode = nodeRepository.createNode("openStackId2", "parent", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.proxy);
@@ -78,7 +80,8 @@ public class MetricsReporterTest {
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("host", "docker", "docker2");
         Curator curator = new MockCurator();
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, Clock.systemUTC(), Zone.defaultZone(),
-                new MockNameResolver().mockAnyLookup());
+                                                           new MockNameResolver().mockAnyLookup(),
+                                                           new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
 
         // Allow 4 containers
         Set<String> additionalIps = new HashSet<>();

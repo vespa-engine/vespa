@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
@@ -68,7 +69,8 @@ public class NodeRetirerTester {
     private int nextNodeId = 0;
 
     NodeRetirerTester(NodeFlavors nodeFlavors) {
-        nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, new MockNameResolver().mockAnyLookup());
+        nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, new MockNameResolver().mockAnyLookup(),
+                                            new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
         jobControl = new JobControl(nodeRepository.database());
         provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone);
         deployer = new MockDeployer(provisioner, apps);

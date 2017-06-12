@@ -24,7 +24,7 @@
   },
   "restartGeneration": 0,
   "currentRestartGeneration": 0,
-  "wantedDockerImage":"docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.0",
+  "wantedDockerImage":"docker-registry.domain.tld:8080/dist/vespa:6.42.0",
   "wantedVespaVersion":"6.42.0",
   "rebootGeneration": 1,
   "currentRebootGeneration": 0,

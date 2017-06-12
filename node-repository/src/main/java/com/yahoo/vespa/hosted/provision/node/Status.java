@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.node;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.DockerImage;
 
 import javax.annotation.concurrent.Immutable;
 import java.util.Optional;
@@ -58,18 +57,6 @@ public class Status {
 
     /** Returns the Vespa version installed on the node, if known */
     public Optional<Version> vespaVersion() { return vespaVersion; }
-
-    /** Returns a copy of this with the docker image changed */
-    public Status withDockerImage(String dockerImage) {
-        Optional<Version> vespaVersion = Optional.of(dockerImage)
-                .filter(image -> !image.isEmpty())
-                .map(DockerImage::new)
-                .map(DockerImage::tagAsVersion);
-        return new Status(reboot, vespaVersion, failCount, hardwareFailure, wantToRetire, wantToDeprovision);
-    }
-
-    /** Returns the current docker image the node is running, if known. */
-    public Optional<String> dockerImage() { return vespaVersion.map(DockerImage.defaultImage::withTag).map(DockerImage::toString); }
 
     public Status withIncreasedFailCount() { return new Status(reboot, vespaVersion, failCount + 1, hardwareFailure, wantToRetire, wantToDeprovision); }
 

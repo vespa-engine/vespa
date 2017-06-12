@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.restapi.v2;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.io.IOUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Type;
@@ -68,7 +69,12 @@ public class NodePatcher {
             case "currentRestartGeneration" :
                 return patchCurrentRestartGeneration(asLong(value));
             case "currentDockerImage" :
-                return node.with(node.status().withDockerImage(asString(value)));
+                Version versionFromImage = Optional.of(asString(value))
+                        .filter(s -> !s.isEmpty())
+                        .map(DockerImage::new)
+                        .map(DockerImage::tagAsVersion)
+                        .orElse(Version.emptyVersion);
+                return node.with(node.status().withVespaVersion(versionFromImage));
             case "currentVespaVersion" :
                 return node.with(node.status().withVespaVersion(Version.fromString(asString(value))));
             case "currentHostedVersion" :

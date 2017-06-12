@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeFlavors;
@@ -44,7 +45,7 @@ public class MockNodeRepository extends NodeRepository {
      */
     public MockNodeRepository(MockCurator curator, NodeFlavors flavors) throws Exception {
         super(flavors, curator, Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z")), Zone.defaultZone(),
-                new MockNameResolver().mockAnyLookup());
+              new MockNameResolver().mockAnyLookup(), new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
         this.flavors = flavors;
         curator.setConnectionSpec("cfg1:1234,cfg2:1234,cfg3:1234");
         populate();
@@ -65,11 +66,11 @@ public class MockNodeRepository extends NodeRepository {
 
         // TODO: Use docker flavor
         Node node4 = createNode("node4", "host4.yahoo.com", ipAddresses, Optional.of("dockerhost4"), flavors.getFlavorOrThrow("default"), NodeType.tenant);
-        node4 = node4.with(node4.status().withDockerImage("image-12:6.41.0"));
+        node4 = node4.with(node4.status().withVespaVersion(new Version("6.41.0")));
         nodes.add(node4);
 
         Node node5 = createNode("node5", "host5.yahoo.com", ipAddresses, Optional.of("parent1.yahoo.com"), flavors.getFlavorOrThrow("default"), NodeType.tenant);
-        nodes.add(node5.with(node5.status().withDockerImage("image-123:1.2.3").withVespaVersion(new Version("1.2.3"))));
+        nodes.add(node5.with(node5.status().withVespaVersion(new Version("1.2.3"))));
 
         nodes.add(createNode("node6", "host6.yahoo.com", ipAddresses, Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));
         nodes.add(createNode("node7", "host7.yahoo.com", ipAddresses, Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));

@@ -155,7 +155,7 @@ class NodesResponse extends HttpResponse {
             toSlime(node.allocation().get().membership(), object.setObject("membership"));
             object.setLong("restartGeneration", node.allocation().get().restartGeneration().wanted());
             object.setLong("currentRestartGeneration", node.allocation().get().restartGeneration().current());
-            object.setString("wantedDockerImage", node.allocation().get().membership().cluster().dockerImage());
+            object.setString("wantedDockerImage", nodeRepository.dockerImage().withTag(node.allocation().get().membership().cluster().vespaVersion()).asString());
             object.setString("wantedVespaVersion", node.allocation().get().membership().cluster().vespaVersion().toFullString());
         }
         object.setLong("rebootGeneration", node.status().reboot().wanted());
@@ -164,11 +164,11 @@ class NodesResponse extends HttpResponse {
                 .filter(version -> !version.isEmpty())
                 .ifPresent(version -> {
                     object.setString("vespaVersion", version.toFullString());
+                    object.setString("currentDockerImage", nodeRepository.dockerImage().withTag(version).asString());
                     // TODO: Remove these when they are no longer read
                     object.setString("hostedVersion", version.toFullString());
                     object.setString("convergedStateVersion", version.toFullString());
                 });
-        node.status().dockerImage().ifPresent(image -> object.setString("currentDockerImage", image));
         object.setLong("failCount", node.status().failCount());
         object.setBool("hardwareFailure", node.status().hardwareFailure().isPresent());
         node.status().hardwareFailure().ifPresent(failure -> object.setString("hardwareFailureType", toString(failure)));

@@ -6,10 +6,12 @@ import com.google.inject.Inject;
 import com.yahoo.collections.ListMap;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provisioning.NodeRepositoryConfig;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
@@ -73,26 +75,29 @@ public class NodeRepository extends AbstractComponent {
     private final Clock clock;
     private final NodeFlavors flavors;
     private final NameResolver nameResolver;
+    private final DockerImage dockerImage;
 
     /**
      * Creates a node repository form a zookeeper provider.
      * This will use the system time to make time-sensitive decisions
      */
     @Inject
-    public NodeRepository(NodeFlavors flavors, Curator curator, Zone zone) {
-        this(flavors, curator, Clock.systemUTC(), zone, new DnsNameResolver());
+    public NodeRepository(NodeRepositoryConfig config, NodeFlavors flavors, Curator curator, Zone zone) {
+        this(flavors, curator, Clock.systemUTC(), zone, new DnsNameResolver(), new DockerImage(config.dockerImage()));
     }
 
     /**
      * Creates a node repository form a zookeeper provider and a clock instance
      * which will be used for time-sensitive decisions.
      */
-    public NodeRepository(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, NameResolver nameResolver) {
+    public NodeRepository(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, NameResolver nameResolver,
+                          DockerImage dockerImage) {
         this.db = new CuratorDatabaseClient(flavors, curator, clock, zone);
         this.curator = curator;
         this.clock = clock;
         this.flavors = flavors;
         this.nameResolver = nameResolver;
+        this.dockerImage = dockerImage;
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
         for (Node.State state : Node.State.values())
@@ -101,6 +106,9 @@ public class NodeRepository extends AbstractComponent {
 
     /** Returns the curator database client used by this */
     public CuratorDatabaseClient database() { return db; }
+
+    /** Returns the Docker image to use for nodes in this */
+    public DockerImage dockerImage() { return dockerImage; }
     
     // ---------------- Query API ----------------------------------------------------------------
 

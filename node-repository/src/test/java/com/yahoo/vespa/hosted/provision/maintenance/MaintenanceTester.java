@@ -1,5 +1,6 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
@@ -31,7 +32,8 @@ public class MaintenanceTester {
     private final Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
     private final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
     public final NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
-                                                                     new MockNameResolver().mockAnyLookup());
+                                                                    new MockNameResolver().mockAnyLookup(),
+                                                                    new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
 
     public NodeRepository nodeRepository() { return nodeRepository; }
     
