@@ -17,6 +17,7 @@ import com.yahoo.jdisc.service.ServerProvider;
 
 import java.net.URI;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
@@ -31,6 +32,7 @@ public class ActiveContainer extends AbstractResource implements CurrentContaine
     private final Map<String, BindingSet<RequestHandler>> clientBindings;
     private final BindingSetSelector bindingSetSelector;
     private final TimeoutManagerImpl timeoutMgr;
+    final Destructor destructor;
 
     public ActiveContainer(ContainerBuilder builder) {
         serverProviders = builder.serverProviders().activate();
@@ -55,13 +57,15 @@ public class ActiveContainer extends AbstractResource implements CurrentContaine
         });
         guiceInjector = builder.guiceModules().activate();
         termination = new ContainerTermination(builder.appContext());
+        destructor = new Destructor(resourceReferences, timeoutMgr, termination);
     }
 
     @Override
     protected void destroy() {
-        resourceReferences.release();
-        timeoutMgr.shutdown();
-        termination.run();
+        boolean alreadyDestructed = destructor.destruct();
+        if (alreadyDestructed) {
+            throw new IllegalStateException("Already destructed!");
+        }
     }
 
     /**
@@ -115,5 +119,31 @@ public class ActiveContainer extends AbstractResource implements CurrentContaine
             throw new BindingSetNotFoundException(name);
         }
         return new ContainerSnapshot(this, serverBindings, clientBindings);
+    }
+
+    // NOTE: An instance of this class must never contain a reference to the outer class (ActiveContainer).
+    static class Destructor {
+        private final ResourcePool resourceReferences;
+        private final TimeoutManagerImpl timeoutMgr;
+        private final ContainerTermination termination;
+        private final AtomicBoolean done = new AtomicBoolean();
+
+        private Destructor(ResourcePool resourceReferences,
+                           TimeoutManagerImpl timeoutMgr,
+                           ContainerTermination termination) {
+            this.resourceReferences = resourceReferences;
+            this.timeoutMgr = timeoutMgr;
+            this.termination = termination;
+        }
+
+        boolean destruct() {
+            boolean alreadyDestructed = this.done.getAndSet(true);
+            if (!alreadyDestructed) {
+                resourceReferences.release();
+                timeoutMgr.shutdown();
+                termination.run();
+            }
+            return alreadyDestructed;
+        }
     }
 }

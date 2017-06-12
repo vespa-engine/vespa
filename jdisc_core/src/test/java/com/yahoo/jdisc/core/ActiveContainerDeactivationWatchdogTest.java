@@ -11,8 +11,13 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bjorncs
@@ -59,6 +64,30 @@ public class ActiveContainerDeactivationWatchdogTest {
 
     }
 
+    @Test
+    public void deactivated_container_destructed_if_its_reference_counter_is_nonzero() {
+        TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
+        ManualClock clock = new ManualClock(Instant.now());
+        ExecutorMock executor = new ExecutorMock();
+        ActiveContainerDeactivationWatchdog watchdog =
+                new ActiveContainerDeactivationWatchdog(clock, executor);
+        ActiveContainer containerWithRetainedResources = new ActiveContainer(driver.newContainerBuilder());
+        containerWithRetainedResources.refer(); // increase reference counter
+        watchdog.onContainerActivation(containerWithRetainedResources);
+        containerWithRetainedResources.release();
+        AtomicBoolean destructed = new AtomicBoolean(false);
+        containerWithRetainedResources.shutdown().notifyTermination(() -> destructed.set(true));
+        watchdog.onContainerActivation(null);
+        containerWithRetainedResources = null; // make container instance collectable by GC
+        System.gc();
+
+        MockMetric metric = new MockMetric();
+        watchdog.emitMetrics(metric);
+        assertEquals(0, metric.totalCount); // verify container is collected by gc
+        executor.destructionRunnable.run();
+        assertTrue(destructed.get()); // verify destructor is invocated
+    }
+
     private static class MockMetric implements Metric {
         public int totalCount;
         public int withRetainedReferencesCount;
@@ -85,6 +114,27 @@ public class ActiveContainerDeactivationWatchdogTest {
         @Override
         public Context createContext(Map<String, ?> properties) {
             throw new UnsupportedOperationException();
+        }
+    }
+
+    private static class ExecutorMock extends ScheduledThreadPoolExecutor {
+
+        public Runnable destructionRunnable;
+        private int registrationCounter = 0;
+
+        public ExecutorMock() {
+            super(1);
+        }
+
+        @Override
+        public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
+            if (registrationCounter == 2) {
+                destructionRunnable = command;
+            } else if (registrationCounter > 2){
+                throw new IllegalStateException("Unexpected registration");
+            }
+            ++registrationCounter;
+            return null;
         }
     }
 
