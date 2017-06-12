@@ -60,7 +60,7 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
                 WATCHDOG_FREQUENCY.getSeconds(),
                 TimeUnit.SECONDS);
         this.scheduler.scheduleAtFixedRate(
-                ActiveContainerDeactivationWatchdog::triggerGc,
+                System::gc,
                 GC_TRIGGER_FREQUENCY.getSeconds(),
                 GC_TRIGGER_FREQUENCY.getSeconds(),
                 TimeUnit.SECONDS);
@@ -105,13 +105,6 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
         } catch (Throwable t) {
             log.log(Level.WARNING, "Watchdog task died!", t);
         }
-    }
-
-    private static void triggerGc() {
-        // ActiveContainer has a finalizer, so gc -> finalizer -> gc is required.
-        System.gc();
-        System.runFinalization();
-        System.gc();
     }
 
     private List<DeactivatedContainer> getDeactivatedContainersSnapshot() {

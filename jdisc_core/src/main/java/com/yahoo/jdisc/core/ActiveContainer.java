@@ -17,14 +17,11 @@ import com.yahoo.jdisc.service.ServerProvider;
 
 import java.net.URI;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
 public class ActiveContainer extends AbstractResource implements CurrentContainer {
-
-    private static final Logger log = Logger.getLogger(ActiveContainer.class.getName());
 
     private final ContainerTermination termination;
     private final Injector guiceInjector;
@@ -65,22 +62,6 @@ public class ActiveContainer extends AbstractResource implements CurrentContaine
         resourceReferences.release();
         timeoutMgr.shutdown();
         termination.run();
-    }
-
-    // TODO Get rid of finalizer and use PhantomReference or Java 9 Cleaner instead
-    @Override
-    protected void finalize() throws Throwable {
-        try {
-            int retainCount = retainCount();
-            if (retainCount > 0) {
-                log.severe("Destructing " + this + " through finalizer since reference count never reached zero. " +
-                        "This is an indication of either a resource leak or invalid use of reference counting. " +
-                        "Retained references as this moment: " + retainCount);
-                destroy();
-            }
-        } finally {
-            super.finalize();
-        }
     }
 
     /**
