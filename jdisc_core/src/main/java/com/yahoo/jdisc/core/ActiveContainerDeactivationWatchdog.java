@@ -5,10 +5,14 @@ import com.google.inject.Inject;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.statistics.ActiveContainerMetrics;
 
+import java.lang.ref.PhantomReference;
+import java.lang.ref.ReferenceQueue;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -29,11 +33,16 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
     static final Duration WATCHDOG_FREQUENCY = Duration.ofMinutes(20);
     static final Duration ACTIVE_CONTAINER_GRACE_PERIOD = Duration.ofHours(1);
     static final Duration GC_TRIGGER_FREQUENCY = ACTIVE_CONTAINER_GRACE_PERIOD.minusMinutes(5);
+    static final Duration ENFORCE_DESTRUCTION_GCED_CONTAINERS_FREQUENCY = Duration.ofMinutes(5);
 
     private static final Logger log = Logger.getLogger(ActiveContainerDeactivationWatchdog.class.getName());
 
     private final Object monitor = new Object();
     private final WeakHashMap<ActiveContainer, LifecycleStats> deactivatedContainers = new WeakHashMap<>();
+    private final ReferenceQueue<ActiveContainer> garbageCollectedContainers = new ReferenceQueue<>();
+    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
+    // Instances of the phantom references must be kept alive until they are polled from the reference queue
+    private final Set<ActiveContainerPhantomReference> destructorReferences = new HashSet<>();
     private final ScheduledExecutorService scheduler;
     private final Clock clock;
 
@@ -44,7 +53,7 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
     ActiveContainerDeactivationWatchdog() {
         this(
                 Clock.systemUTC(),
-                new ScheduledThreadPoolExecutor(2, runnable -> {
+                new ScheduledThreadPoolExecutor(3, runnable -> {
                     Thread thread = new Thread(runnable, "active-container-deactivation-watchdog");
                     thread.setDaemon(true);
                     return thread;
@@ -54,26 +63,30 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
     ActiveContainerDeactivationWatchdog(Clock clock, ScheduledExecutorService scheduler) {
         this.clock = clock;
         this.scheduler = scheduler;
-        this.scheduler.scheduleAtFixedRate(
-                this::warnOnStaleContainers,
-                WATCHDOG_FREQUENCY.getSeconds(),
-                WATCHDOG_FREQUENCY.getSeconds(),
-                TimeUnit.SECONDS);
-        this.scheduler.scheduleAtFixedRate(
-                System::gc,
-                GC_TRIGGER_FREQUENCY.getSeconds(),
-                GC_TRIGGER_FREQUENCY.getSeconds(),
-                TimeUnit.SECONDS);
+        this.scheduler.scheduleAtFixedRate(this::warnOnStaleContainers,
+                                           WATCHDOG_FREQUENCY.getSeconds(),
+                                           WATCHDOG_FREQUENCY.getSeconds(),
+                                           TimeUnit.SECONDS);
+        this.scheduler.scheduleAtFixedRate(System::gc,
+                                           GC_TRIGGER_FREQUENCY.getSeconds(),
+                                           GC_TRIGGER_FREQUENCY.getSeconds(),
+                                           TimeUnit.SECONDS);
+        this.scheduler.scheduleAtFixedRate(this::enforceDestructionOfGarbageCollectedContainers,
+                                           ENFORCE_DESTRUCTION_GCED_CONTAINERS_FREQUENCY.getSeconds(),
+                                           ENFORCE_DESTRUCTION_GCED_CONTAINERS_FREQUENCY.getSeconds(),
+                                           TimeUnit.SECONDS);
     }
 
     void onContainerActivation(ActiveContainer nextContainer) {
         synchronized (monitor) {
             Instant now = clock.instant();
-            if (currentContainer != null) {
-                deactivatedContainers.put(currentContainer, new LifecycleStats(currentContainerActivationTime, now));
-            }
+            ActiveContainer previousContainer = currentContainer;
             currentContainer = nextContainer;
             currentContainerActivationTime = now;
+            if (previousContainer != null) {
+                deactivatedContainers.put(previousContainer, new LifecycleStats(currentContainerActivationTime, now));
+                destructorReferences.add(new ActiveContainerPhantomReference(previousContainer, garbageCollectedContainers));
+            }
         }
     }
 
@@ -92,6 +105,7 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
         synchronized (monitor) {
             scheduler.shutdown();
             deactivatedContainers.clear();
+            destructorReferences.clear();
             currentContainer = null;
             currentContainerActivationTime = null;
         }
@@ -104,6 +118,20 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
             logWarning(snapshot);
         } catch (Throwable t) {
             log.log(Level.WARNING, "Watchdog task died!", t);
+        }
+    }
+
+    private void enforceDestructionOfGarbageCollectedContainers() {
+        ActiveContainerPhantomReference reference;
+        while ((reference = (ActiveContainerPhantomReference) garbageCollectedContainers.poll()) != null) {
+            try {
+                reference.enforceDestruction();
+            } catch (Throwable t) {
+                log.log(Level.SEVERE, "Failed to do post-GC destruction of " + reference.containerName, t);
+            } finally {
+                destructorReferences.remove(reference);
+                reference.clear();
+            }
         }
     }
 
@@ -157,4 +185,23 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
         }
     }
 
+    private static class ActiveContainerPhantomReference extends PhantomReference<ActiveContainer> {
+        public final String containerName;
+        private final ActiveContainer.Destructor destructor;
+
+        public ActiveContainerPhantomReference(ActiveContainer activeContainer,
+                                               ReferenceQueue<? super ActiveContainer> q) {
+            super(activeContainer, q);
+            this.containerName = activeContainer.toString();
+            this.destructor = activeContainer.destructor;
+        }
+
+        public void enforceDestruction() {
+            boolean alreadyCompleted = destructor.destruct();
+            if (!alreadyCompleted) {
+                log.severe(containerName + " was not correctly cleaned up " +
+                        "because of a resource leak or invalid use of reference counting.");
+            }
+        }
+    }
 }
