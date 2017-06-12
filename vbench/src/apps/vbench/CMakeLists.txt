@@ -2,7 +2,6 @@
 vespa_add_executable(vbench_app
     SOURCES
     vbench.cpp
-    INSTALL bin
     DEPENDS
     vbench
 )
