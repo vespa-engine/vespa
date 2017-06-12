@@ -7,6 +7,8 @@ import com.yahoo.jdisc.test.TestDriver;
 import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
+import java.lang.ref.WeakReference;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
@@ -17,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -66,26 +69,27 @@ public class ActiveContainerDeactivationWatchdogTest {
 
     @Test
     public void deactivated_container_destructed_if_its_reference_counter_is_nonzero() {
-        TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
-        ManualClock clock = new ManualClock(Instant.now());
         ExecutorMock executor = new ExecutorMock();
         ActiveContainerDeactivationWatchdog watchdog =
-                new ActiveContainerDeactivationWatchdog(clock, executor);
-        ActiveContainer containerWithRetainedResources = new ActiveContainer(driver.newContainerBuilder());
-        containerWithRetainedResources.refer(); // increase reference counter
-        watchdog.onContainerActivation(containerWithRetainedResources);
-        containerWithRetainedResources.release();
+                new ActiveContainerDeactivationWatchdog(Clock.systemUTC(), executor);
+        ActiveContainer container =
+                new ActiveContainer(TestDriver.newSimpleApplicationInstanceWithoutOsgi().newContainerBuilder());
         AtomicBoolean destructed = new AtomicBoolean(false);
-        containerWithRetainedResources.shutdown().notifyTermination(() -> destructed.set(true));
-        watchdog.onContainerActivation(null);
-        containerWithRetainedResources = null; // make container instance collectable by GC
+        container.shutdown().notifyTermination(() -> destructed.set(true));
+
+        container.refer(); // increase reference counter to simluate a leaking resource
+        watchdog.onContainerActivation(container);
+        container.release(); // release resource
+        watchdog.onContainerActivation(null); // deactive container
+
+        WeakReference<ActiveContainer> containerWeakReference = new WeakReference<>(container);
+        container = null; // make container instance collectable by GC
         System.gc();
 
-        MockMetric metric = new MockMetric();
-        watchdog.emitMetrics(metric);
-        assertEquals(0, metric.totalCount); // verify container is collected by gc
-        executor.destructionRunnable.run();
-        assertTrue(destructed.get()); // verify destructor is invocated
+        assertNull("Container is not GCed - probably because the watchdog has a concrete reference to it",
+                   containerWeakReference.get());
+        executor.containerDestructorCommand.run();
+        assertTrue("Destructor is not called on deactivated container", destructed.get());
     }
 
     private static class MockMetric implements Metric {
@@ -119,7 +123,7 @@ public class ActiveContainerDeactivationWatchdogTest {
 
     private static class ExecutorMock extends ScheduledThreadPoolExecutor {
 
-        public Runnable destructionRunnable;
+        public Runnable containerDestructorCommand;
         private int registrationCounter = 0;
 
         public ExecutorMock() {
@@ -129,7 +133,7 @@ public class ActiveContainerDeactivationWatchdogTest {
         @Override
         public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
             if (registrationCounter == 2) {
-                destructionRunnable = command;
+                containerDestructorCommand = command;
             } else if (registrationCounter > 2){
                 throw new IllegalStateException("Unexpected registration");
             }
