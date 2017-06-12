@@ -5,6 +5,7 @@ import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.jdisc.statistics.ActiveContainerMetrics;
 import com.yahoo.jdisc.test.TestDriver;
 import com.yahoo.test.ManualClock;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.lang.ref.WeakReference;
@@ -67,6 +68,7 @@ public class ActiveContainerDeactivationWatchdogTest {
     }
 
     @Test
+    @Ignore("JVM does not give any guarantee when phantom references will be enqueued to reference queues")
     public void deactivated_container_destructed_if_its_reference_counter_is_nonzero() {
         ExecutorMock executor = new ExecutorMock();
         ActiveContainerDeactivationWatchdog watchdog =
