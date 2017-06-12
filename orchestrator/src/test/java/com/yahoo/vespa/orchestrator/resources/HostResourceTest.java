@@ -7,6 +7,8 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.orchestrator.InstanceLookupService;
+import com.yahoo.vespa.orchestrator.OrchestrationException;
+import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.OrchestratorImpl;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMock;
 import com.yahoo.vespa.orchestrator.model.ApplicationApi;
@@ -14,6 +16,8 @@ import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.Policy;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchHostSuspendRequest;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
+import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostRequest;
+import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.UpdateHostResponse;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
@@ -22,6 +26,8 @@ import com.yahoo.vespa.orchestrator.status.StatusService;
 import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 import org.junit.Test;
 
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.WebApplicationException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,9 +37,13 @@ import java.util.Set;
 import static com.yahoo.vespa.orchestrator.TestUtil.makeServiceClusterSet;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.fest.assertions.Fail.fail;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class HostResourceTest {
@@ -261,5 +271,44 @@ public class HostResourceTest {
         } catch (WebApplicationException w) {
             assertThat(w.getResponse().getStatus()).isEqualTo(409);
         }
+    }
+
+    @Test(expected = BadRequestException.class)
+    public void patch_state_may_throw_bad_request() {
+        Orchestrator orchestrator = mock(Orchestrator.class);
+        HostResource hostResource = new HostResource(orchestrator);
+
+        String hostNameString = "hostname";
+        PatchHostRequest request = new PatchHostRequest();
+        request.state = "bad state";
+
+        hostResource.patch(hostNameString, request);
+    }
+
+    @Test
+    public void patch_works() throws OrchestrationException {
+        Orchestrator orchestrator = mock(Orchestrator.class);
+        HostResource hostResource = new HostResource(orchestrator);
+
+        String hostNameString = "hostname";
+        PatchHostRequest request = new PatchHostRequest();
+        request.state = "NO_REMARKS";
+
+        PatchHostResponse response = hostResource.patch(hostNameString, request);
+        assertEquals(response.description, "ok");
+        verify(orchestrator, times(1)).setNodeStatus(new HostName(hostNameString), HostStatus.NO_REMARKS);
+    }
+
+    @Test(expected = InternalServerErrorException.class)
+    public void patch_handles_exception_in_orchestrator() throws OrchestrationException {
+        Orchestrator orchestrator = mock(Orchestrator.class);
+        HostResource hostResource = new HostResource(orchestrator);
+
+        String hostNameString = "hostname";
+        PatchHostRequest request = new PatchHostRequest();
+        request.state = "NO_REMARKS";
+
+        doThrow(new OrchestrationException("error")).when(orchestrator).setNodeStatus(new HostName(hostNameString), HostStatus.NO_REMARKS);
+        hostResource.patch(hostNameString, request);
     }
 }
