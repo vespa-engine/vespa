@@ -97,6 +97,7 @@ public class LocalZoneUtils {
                 .withEnvironment("REGION", environment.getRegion())
                 .withEnvironment("CONFIG_SERVER_ADDRESS", CONFIG_SERVER_HOSTNAME)
                 .withEnvironment("ATHENS_DOMAIN", "fake.env")
+                .withEnvironment("COREDUMP_FEED_ENDPOINT", "http://feed-endpoint.hostname.tld/feed")
                 .withEnvironment("RUNNING_LOCALLY", "true")
                 .withUlimit("nofile", 262_144, 262_144)
                 .withUlimit("nproc", 32_768, 409_600)

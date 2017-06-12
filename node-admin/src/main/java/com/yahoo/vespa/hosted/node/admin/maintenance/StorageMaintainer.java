@@ -241,6 +241,7 @@ public class StorageMaintainer {
         maintainerExecutor.addJob("handle-core-dumps")
                 .withArgument("doneCoredumpsPath", environment.pathInNodeAdminToDoneCoredumps())
                 .withArgument("coredumpsPath", environment.pathInNodeAdminFromPathInNode(containerName, "/home/y/var/crash"))
+                .withArgument("feedEndpoint", environment.getCoredumpFeedEndpoint())
                 .withArgument("attributes", attributes);
 
         maintainerExecutor.execute();

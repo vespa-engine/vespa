@@ -29,9 +29,9 @@ import java.util.stream.Collectors;
  */
 public class DummyInstanceLookupService implements InstanceLookupService {
 
-    public static final HostName TEST1_HOST_NAME = new HostName("test1.prod.utpoia-1.vespahosted.ut1.yahoo.com");
-    public static final HostName TEST3_HOST_NAME = new HostName("test3.prod.utpoia-1.vespahosted.ut1.yahoo.com");
-    public static final HostName TEST6_HOST_NAME = new HostName("test6.prod.us-east-1.vespahosted.ne1.yahoo.com");
+    public static final HostName TEST1_HOST_NAME = new HostName("test1.hostname.tld");
+    public static final HostName TEST3_HOST_NAME = new HostName("test3.hostname.tld");
+    public static final HostName TEST6_HOST_NAME = new HostName("test6.hostname.tld");
 
     private static final Set<ApplicationInstance<ServiceMonitorStatus>> apps = new HashSet<>();
 
@@ -50,7 +50,7 @@ public class DummyInstanceLookupService implements InstanceLookupService {
                                                 ServiceMonitorStatus.UP),
                                         new ServiceInstance<>(
                                                 new ConfigId("storage/storage/2"),
-                                                new HostName("test2.prod.utopoia-1.vespahosted.ut1.yahoo.com"),
+                                                new HostName("test2.hostname.tld"),
                                                 ServiceMonitorStatus.UP))),
                         new ServiceCluster<>(
                                 new ClusterId("clustercontroller"),
@@ -58,7 +58,7 @@ public class DummyInstanceLookupService implements InstanceLookupService {
                                 TestUtil.makeServiceInstanceSet(
                                         new ServiceInstance<>(
                                                 new ConfigId("clustercontroller-1"),
-                                                new HostName("myclustercontroller.prod.utopia-1.vespahosted.ut1.yahoo.com"),
+                                                new HostName("myclustercontroller.hostname.tld"),
                                                 ServiceMonitorStatus.UP)))
 
                 )
@@ -78,7 +78,7 @@ public class DummyInstanceLookupService implements InstanceLookupService {
                                                 ServiceMonitorStatus.UP),
                                         new ServiceInstance<>(
                                                 new ConfigId("storage/storage/4"),
-                                                new HostName("test4.prod.utpoia-1.vespahosted.ut1.yahoo.com"),
+                                                new HostName("test4.hostname.tld"),
                                                 ServiceMonitorStatus.UP))),
                         new ServiceCluster<>(
                                 new ClusterId("clustercontroller"),
@@ -86,7 +86,7 @@ public class DummyInstanceLookupService implements InstanceLookupService {
                                 TestUtil.makeServiceInstanceSet(
                                         new ServiceInstance<>(
                                                 new ConfigId("clustercontroller-1"),
-                                                new HostName("myclustercontroller2.prod.utopia-1.vespahosted.ut1.yahoo.com"),
+                                                new HostName("myclustercontroller2.hostname.tld"),
                                                 ServiceMonitorStatus.UP)))
                                         )
                                 )
@@ -106,7 +106,7 @@ public class DummyInstanceLookupService implements InstanceLookupService {
                                                 ServiceMonitorStatus.UP),
                                         new ServiceInstance<>(
                                                 new ConfigId("storage/storage/4"),
-                                                new HostName("test4.prod.utpoia-1.vespahosted.ut1.yahoo.com"),
+                                                new HostName("test4.hostname.tld"),
                                                 ServiceMonitorStatus.UP))),
                         new ServiceCluster<>(
                                 new ClusterId("clustercontroller"),
@@ -114,7 +114,7 @@ public class DummyInstanceLookupService implements InstanceLookupService {
                                 TestUtil.makeServiceInstanceSet(
                                         new ServiceInstance<>(
                                                 new ConfigId("clustercontroller-1"),
-                                                new HostName("myclustercontroller3.prod.utopia-1.vespahosted.ut1.yahoo.com"),
+                                                new HostName("myclustercontroller3.hostname.tld"),
                                                 ServiceMonitorStatus.UP)))
                 )
         ));
