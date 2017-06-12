@@ -4,9 +4,9 @@
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/fnet/frt/rpcrequest.h>
+#include <vespa/vespalib/data/databuffer.h>
 
 #include <vespa/log/log.h>
-
 LOG_SETUP(".proton.summaryengine.docsum_by_slime");
 
 namespace proton {

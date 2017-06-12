@@ -7,6 +7,7 @@
 #include <vespa/document/util/compressor.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/data/databuffer.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.common.fs4packets");

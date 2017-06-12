@@ -5,6 +5,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/document/util/compressor.h>
+#include <vespa/vespalib/data/databuffer.h>
 
 LOG_SETUP("compression_test");
 
