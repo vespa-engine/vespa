@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
@@ -575,12 +576,18 @@ public class NodeAgentImpl implements NodeAgent {
 
         // Push metrics to the metrics proxy in each container - give it maximum 1 seconds to complete
         try {
-            //TODO The command here is almost a dummy command until we have the proper RPC method in place
-            // Remember proper argument encoding
-            dockerOperations.executeCommandInContainerAsRoot(containerName, 1L, "sh", "-c", "'echo " + metricReceiver.toString() + "'");
-        } catch (DockerExecTimeoutException e) {
+            dockerOperations.executeCommandInContainerAsRoot(containerName, 1L, "rpc_invoke",  "-t 1",  "tcp/localhost:19091",  "setExtraMetrics", buildRPCArgumentFromMetrics());
+        } catch (DockerExecTimeoutException|JsonProcessingException e) {
             logger.warning("Unable to push metrics to container: " + containerName, e);
         }
+    }
+
+    protected String buildRPCArgumentFromMetrics() throws JsonProcessingException {
+        StringBuilder params = new StringBuilder();
+        for (MetricReceiverWrapper.DimensionMetrics dimensionMetrics : metricReceiver.getAllMetrics()) {
+            params.append(dimensionMetrics.toSecretAgentReport());
+        }
+        return "s:'" + params.toString() + "'";
     }
 
     @SuppressWarnings("unchecked")
