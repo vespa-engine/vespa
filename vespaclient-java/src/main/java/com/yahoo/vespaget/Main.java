@@ -6,7 +6,7 @@ import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.vespaclient.ClusterList;
 
 /**
- * The vespaget tool retrieves documents from a Vespa Document Storage cluster, and prints them to stdout as XML.
+ * The vespa-get tool retrieves documents from a Vespa Document Storage cluster, and prints them to stdout as XML.
  *
  * @author bjorncs
  */

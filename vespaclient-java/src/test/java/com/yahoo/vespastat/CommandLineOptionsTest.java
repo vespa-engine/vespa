@@ -63,7 +63,7 @@ public class CommandLineOptionsTest {
             CommandLineOptions options = new CommandLineOptions();
             options.printHelp();
             String output = outContent.toString();
-            assertTrue(output.contains("vdsstat [options]"));
+            assertTrue(output.contains("vespa-stat [options]"));
         } finally {
             System.setOut(oldOut);
             outContent.reset();

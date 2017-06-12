@@ -98,6 +98,15 @@ ln -s vespa-doclocator $INSTALLPATH/bin/vespadoclocator
 ln -s vespa-route $INSTALLPATH/bin/vesparoute
 ln -s vespa-spoolmaster $INSTALLPATH/bin/spoolmaster
 
+# Temporary when renaming binaries in vespaclient-java
+ln -s vespa-document-statistics $INSTALLPATH/bin/vds-document-statistics
+ln -s vespa-stat $INSTALLPATH/bin/vdsstat
+ln -s vespa-destination $INSTALLPATH/bin/vespadestination
+ln -s vespa-feeder $INSTALLPATH/bin/vespafeeder
+ln -s vespa-get $INSTALLPATH/bin/vespaget
+ln -s vespa-visit $INSTALLPATH/bin/vespavisit
+ln -s vespa-visit-target $INSTALLPATH/bin/vespavisittarget
+
 # Temporary when renaming binaries in vespalog
 ln -s vespa-log-conv $INSTALLPATH/bin/vlogconv
 ln -s vespa-logctl $INSTALLPATH/bin/logctl

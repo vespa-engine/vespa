@@ -169,7 +169,7 @@ int usage() {
     fprintf(stderr, "  Takes an XML vespa feed as input and dumps its contents as serialized documents.\n");
     fprintf(stderr, "  In addition to the actual documents, an index file containing document sizes\n");
     fprintf(stderr, "  and the appropriate config file(s) needed for deserialization are also stored.\n");
-    fprintf(stderr, "  This utility can be run anywhere vespafeeder can be run with default config id.\n");
+    fprintf(stderr, "  This utility can be run anywhere vespa-feeder can be run with default config id.\n");
     return 1;
 }
 
@@ -205,7 +205,7 @@ App::Main()
         FeedHandler feedHooks(repo, idxFile, datFile);
         std::string route = feedHooks.getRoute();
         fprintf(stderr, "route to self: %s\n", route.c_str());
-        std::string feedCmd(vespalib::make_string("vespafeeder --route \"%s\" %s",
+        std::string feedCmd(vespalib::make_string("vespa-feeder --route \"%s\" %s",
                                                   route.c_str(), feedFile.c_str()));
         fprintf(stderr, "running feed command: %s\n", feedCmd.c_str());
         std::string feederOutput;

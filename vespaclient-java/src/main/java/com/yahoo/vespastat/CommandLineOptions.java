@@ -96,7 +96,7 @@ public class CommandLineOptions {
 
     public void printHelp() {
         HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp("vdsstat [options]",
+        formatter.printHelp("vespa-stat [options]",
                 "Fetch statistics about a specific user, group, bucket, gid or document.", options, "", false);
     }
 
