@@ -62,7 +62,7 @@ public class NodePatcher {
     private Node applyField(String name, Inspector value) {
         switch (name) {
             case "convergedStateVersion" :
-                return node.with(node.status().withStateVersion(asString(value)));
+                return node; // TODO: Ignored, can be removed when callers no longer include this field
             case "currentRebootGeneration" :
                 return node.withCurrentRebootGeneration(asLong(value), clock.instant());
             case "currentRestartGeneration" :
@@ -72,7 +72,7 @@ public class NodePatcher {
             case "currentVespaVersion" :
                 return node.with(node.status().withVespaVersion(Version.fromString(asString(value))));
             case "currentHostedVersion" :
-                return node.with(node.status().withHostedVersion(Version.fromString(asString(value))));
+                return node; // TODO: Ignored, can be removed when callers no longer include this field
             case "failCount" :
                 return node.with(node.status().setFailCount(asLong(value).intValue()));
             case "flavor" :

@@ -8,15 +8,14 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
@@ -78,9 +77,7 @@ public class MockNodeRepository extends NodeRepository {
         Node node10 = createNode("node10", "host10.yahoo.com", ipAddresses, Optional.of("parent1.yahoo.com"), flavors.getFlavorOrThrow("default"), NodeType.tenant);
         Status node10newStatus = node10.status();
         node10newStatus = node10newStatus
-                .withVespaVersion(Version.fromString("5.104.142"))
-                .withHostedVersion(Version.fromString("2.1.2408"))
-                .withStateVersion("5.104.142-2.1.2408");
+                .withVespaVersion(Version.fromString("5.104.142"));
         node10 = node10.with(node10newStatus);
         nodes.add(node10);
 

@@ -32,6 +32,8 @@
   "rebootGeneration": 1,
   "currentRebootGeneration": 0,
   "vespaVersion": "6.41.0",
+  "hostedVersion": "6.41.0",
+  "convergedStateVersion": "6.41.0",
   "currentDockerImage": "docker-registry.ops.yahoo.com:4443/vespa/ci:6.41.0",
   "failCount": 0,
   "hardwareFailure" : false,
