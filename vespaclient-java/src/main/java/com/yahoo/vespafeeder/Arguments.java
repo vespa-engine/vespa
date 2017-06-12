@@ -71,7 +71,7 @@ public class Arguments {
                 "                                are allowed to be pending at any given time. \n" +
                 "  --maxfeedrate arg             Limits the feed rate to the given number (operations/second). You may still want to increase\n" +
                 "                                the max pending size if your feed rate doesn't reach the desired number.\n" +
-                "  --mode arg (=standard)        The mode to run vespafeeder in (standard | benchmark).\n" +
+                "  --mode arg (=standard)        The mode to run vespa-feeder in (standard | benchmark).\n" +
                 "  --noretry                     Turns off retries of recoverable failures.\n" +
                 "  --retrydelay arg (=1)         The time (in seconds) to wait between retries of \n" +
                 "                                a failed operation.\n" +

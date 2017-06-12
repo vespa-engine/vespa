@@ -72,7 +72,7 @@ public class VdsVisitTarget {
     }
 
     public static void main(String args[]) {
-        LogSetup.initVespaLogging("vespavisittarget");
+        LogSetup.initVespaLogging("vespa-visit-target");
         VdsVisitTarget visitTarget = new VdsVisitTarget();
 
 
@@ -144,11 +144,11 @@ public class VdsVisitTarget {
 
     private void printSyntax(Options options) {
         HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp("vespavisittarget <options>", "Retrieve results from a visitor", options ,
+        formatter.printHelp("vespa-visit-target <options>", "Retrieve results from a visitor", options ,
                             "One, and only one, of the binding options must be present.\n" +
                             "\n" +
                             "For more detailed information, such as defaults and format of\n" +
-                            "arguments, refer to 'man vespavisittarget'.\n");
+                            "arguments, refer to 'man vespa-visit-target'.\n");
     }
 
     class HelpShownException extends Exception {}

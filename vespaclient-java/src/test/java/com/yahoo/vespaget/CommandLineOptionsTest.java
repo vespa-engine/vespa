@@ -184,7 +184,7 @@ public class CommandLineOptionsTest {
             options.printHelp();
 
             String output = outContent.toString();
-            assertTrue(output.contains("vespaget <options> [documentid...]"));
+            assertTrue(output.contains("vespa-get <options> [documentid...]"));
             assertTrue(output.contains("Fetch a document from a Vespa Content cluster."));
         } finally {
             System.setOut(oldOut);

@@ -103,7 +103,7 @@ public class VdsVisit {
     }
 
     public static void main(String args[]) {
-        LogSetup.initVespaLogging("vespavisit");
+        LogSetup.initVespaLogging("vespa-visit");
         VdsVisit vdsVisit = new VdsVisit();
 
         Options options = createOptions();
@@ -140,7 +140,7 @@ public class VdsVisit {
 
     private void printSyntax(Options options) {
         HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp("vespavisit <options>", "Visit documents from VDS", options , "");
+        formatter.printHelp("vespa-visit <options>", "Visit documents from VDS", options , "");
     }
 
     @SuppressWarnings("AccessStaticViaInstance")
@@ -204,7 +204,7 @@ public class VdsVisit {
                 .longOpt("maxpendingsuperbuckets")
                 .hasArg(true)
                 .argName("num")
-                .desc("Maximum pending visitor messages from the vespavisit client. If set, dynamic throttling of visitors will be disabled!")
+                .desc("Maximum pending visitor messages from the vespa-visit client. If set, dynamic throttling of visitors will be disabled!")
                 .type(Number.class)
                 .build());
 

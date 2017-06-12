@@ -143,7 +143,7 @@ public class CommandLineOptions {
         HelpFormatter formatter = new HelpFormatter();
 
         formatter.printHelp(
-                "vespaget <options> [documentid...]", "Fetch a document from a Vespa Content cluster.", options,
+                "vespa-get <options> [documentid...]", "Fetch a document from a Vespa Content cluster.", options,
                 "If one or more document identifier are specified, these documents will be " +
                         "retrieved. Otherwise, document identifiers (separated with line break) will be read from standard in.\n",
                 false);
