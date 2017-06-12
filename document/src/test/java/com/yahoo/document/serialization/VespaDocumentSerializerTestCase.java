@@ -106,8 +106,8 @@ public class VespaDocumentSerializerTestCase {
         doc.setFieldValue("map", map);
 
         // Should _not_ throw any deserialization exceptions
-        fixture.roundtripSerialize(doc);
-        // TODO check target values..!
+        Document result = fixture.roundtripSerialize(doc);
+        assertEquals(doc, result);
     }
 
     @Test
