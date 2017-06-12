@@ -2,6 +2,5 @@
 vespa_add_executable(jrt_test_simpleserver_app
     SOURCES
     simpleserver.cpp
-    INSTALL bin
     DEPENDS
 )

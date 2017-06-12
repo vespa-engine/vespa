@@ -2,7 +2,6 @@
 vespa_add_executable(searchcore_vespa-dump-feed_app
     SOURCES
     vespa-dump-feed.cpp
-    INSTALL bin
     DEPENDS
 )
 vespa_add_target_system_dependency(searchcore_vespa-dump-feed_app boost boost_system-mt-d)

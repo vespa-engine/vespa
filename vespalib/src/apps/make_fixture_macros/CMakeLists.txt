@@ -2,6 +2,5 @@
 vespa_add_executable(vespalib_make_fixture_macros_app
     SOURCES
     make_fixture_macros.cpp
-    INSTALL bin
     DEPENDS
 )
