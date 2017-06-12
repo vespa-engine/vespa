@@ -127,3 +127,7 @@ ln -s vespa-fbench $INSTALLPATH/bin/fbench
 ln -s vespa-fbench-filter-file $INSTALLPATH/bin/filterfile
 ln -s vespa-geturl $INSTALLPATH/bin/geturl
 ln -s vespa-fbench-split-file $INSTALLPATH/bin/splitfile
+
+# Temporary when renaming programs in slobrok
+ln -s vespa-slobrok $INSTALLPATH/bin/slobrok
+ln -s vespa-slobrok-cmd $INSTALLPATH/bin/sbcmd

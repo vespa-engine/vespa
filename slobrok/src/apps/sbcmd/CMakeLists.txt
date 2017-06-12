@@ -2,7 +2,7 @@
 vespa_add_executable(slobrok_sbcmd_app
     SOURCES
     sbcmd.cpp
-    OUTPUT_NAME sbcmd
+    OUTPUT_NAME vespa-slobrok-cmd
     INSTALL bin
     DEPENDS
 )

@@ -2,6 +2,5 @@
 vespa_add_executable(slobrok_check_slobrok_app
     SOURCES
     check_slobrok.cpp
-    INSTALL bin
     DEPENDS
 )

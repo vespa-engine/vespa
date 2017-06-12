@@ -2,7 +2,7 @@
 vespa_add_executable(slobrok_app
     SOURCES
     slobrok.cpp
-    OUTPUT_NAME slobrok
+    OUTPUT_NAME vespa-slobrok
     INSTALL bin
     DEPENDS
     slobrok_slobrokserver

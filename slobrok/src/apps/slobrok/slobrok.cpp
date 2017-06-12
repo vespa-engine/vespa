@@ -6,7 +6,7 @@
 #include <vespa/fastos/app.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP("slobrok");
+LOG_SETUP("vespa-slobrok");
 
 /**
  * @brief namespace for the actual slobrok application.
