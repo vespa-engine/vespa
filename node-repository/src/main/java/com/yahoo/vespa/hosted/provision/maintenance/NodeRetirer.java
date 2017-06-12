@@ -129,12 +129,13 @@ public class NodeRetirer extends Maintainer {
             if (! replaceableNodes.isEmpty()) nodesToRetireByDeployment.put(deployment.get(), replaceableNodes);
         }
 
-        // While under application lock, make sure that the state and the owner of the node has not changed
-        // in the mean time, then retire the node and redeploy.
         nodesToRetireByDeployment.forEach(((deployment, nodes) -> {
             ApplicationId app = nodes.iterator().next().allocation().get().owner();
             Set<Node> nodesToRetire;
 
+            // While under application lock, get up-to-date node, and make sure that the state and the owner of the
+            // node has not changed in the meantime, mutate the up-to-date node (so to not overwrite other fields
+            // that may have changed) with wantToRetire and wantToDeprovision.
             try (Mutex lock = nodeRepository().lock(app)) {
                 nodesToRetire = nodes.stream()
                         .map(node ->
@@ -156,6 +157,7 @@ public class NodeRetirer extends Maintainer {
                 });
             }
 
+            // This takes a while, so do it outside of the application lock
             if (! nodesToRetire.isEmpty()) deployment.activate();
         }));
     }
