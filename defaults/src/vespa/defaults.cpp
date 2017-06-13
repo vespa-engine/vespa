@@ -13,8 +13,7 @@
 
 namespace {
 
-const char *defaultHome = "/opt/vespa/";
-char computedHome[PATH_MAX];
+const char *defaultHome = "/opt/vespa";
 const char *defaultUser = "yahoo";
 int defaultWebServicePort = 8080;
 int defaultPortBase = 19000;
@@ -45,20 +44,11 @@ void findDefaults() {
     const char *env = getenv("VESPA_HOME");
     if (env != NULL && *env != '\0') {
         DIR *dp = NULL;
-        if (*env == '/') {
+        if (*env == '/' || *env == '.') {
             dp = opendir(env);
         }
         if (dp != NULL) {
-            size_t len = strlen(env);
-            if (env[len-1] == '/') {
-                // already ends with slash
-                defaultHome = env;
-            } else {
-                // append slash
-                strncpy(computedHome, env, PATH_MAX);
-                strncat(computedHome, "/", PATH_MAX);
-                defaultHome = computedHome;
-            }
+            defaultHome = env;
             // fprintf(stderr, "debug\tVESPA_HOME is '%s'\n", defaultHome);
             closedir(dp);
         } else {

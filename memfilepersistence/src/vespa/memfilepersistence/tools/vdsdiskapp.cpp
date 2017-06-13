@@ -10,7 +10,7 @@ namespace {
         int Main() override {
             try {
                 std::string dir = vespa::Defaults::vespaHome();
-                dir.append("var/db/vespa/vds");
+                dir.append("/var/db/vespa/vds");
                 return storage::memfile::VdsDiskTool::run(
                         _argc, _argv, dir.c_str(),
                         std::cout, std::cerr);

@@ -124,7 +124,7 @@ consider_fallback VESPA_VALGRIND_OPT "--num-callers=32 \
 --freelist-vol=1000000000 \
 --leak-check=full \
 --show-reachable=yes \
---suppressions=${VESPA_HOME}etc/vespa/suppressions.txt"
+--suppressions=${VESPA_HOME}/etc/vespa/suppressions.txt"
 
 consider_fallback VESPA_USE_HUGEPAGES_LIST  $(get_var "hugepages_list")
 consider_fallback VESPA_USE_HUGEPAGES_LIST  "all"

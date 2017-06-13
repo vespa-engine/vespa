@@ -31,12 +31,14 @@ public class Defaults {
     static private String findVespaHome() {
         Optional<String> vespaHomeEnv = Optional.ofNullable(System.getenv("VESPA_HOME"));
         if ( ! vespaHomeEnv.isPresent() || vespaHomeEnv.get().trim().isEmpty()) {
-            log.info("VESPA_HOME not set, using /opt/vespa/");
-            return "/opt/vespa/";
+            log.info("VESPA_HOME not set, using /opt/vespa");
+            return "/opt/vespa";
         }
         String vespaHome = vespaHomeEnv.get().trim();
-        if ( ! vespaHome.endsWith("/"))
-            vespaHome = vespaHome + "/";
+        if (vespaHome.endsWith("/")) {
+            int sz = vespaHome.length() - 1;
+            vespaHome = vespaHome.substring(0, sz);
+        }
         return vespaHome;
     }
 
@@ -71,9 +73,9 @@ public class Defaults {
     public String vespaUser() { return vespaUser; }
 
     /**
-     * Returns the path to the root under which Vespa should read and write files, ending by "/".
-     *
-     * @return the vespa home directory, ending by "/"
+     * Returns the path to the root under which Vespa should read and write files.
+     * Will not end with a "/".
+     * @return the vespa home directory
      */
     public String vespaHome() { return vespaHome; }
 
@@ -90,7 +92,7 @@ public class Defaults {
     public String underVespaHome(String path) {
         if (path.startsWith("/")) return path;
         if (path.startsWith("./")) return path;
-        return vespaHome() + path;
+        return vespaHome() + "/" + path;
     }
 
     /**

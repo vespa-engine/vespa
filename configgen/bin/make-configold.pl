@@ -63,7 +63,6 @@ sub findhome {
 
 BEGIN {
     my $tmp = findhome();
-    if ( $tmp !~ m{[/]$} ) { $tmp .= "/"; }
     $ENV{'VESPA_HOME'} = $tmp;
 }
 my $VESPA_HOME = $ENV{'VESPA_HOME'};

@@ -12,7 +12,7 @@ namespace {
 
 vespalib::string getConfigProxyFileName() {
     vespalib::string root(vespa::Defaults::vespaHome());
-    return root + "var/run/configproxy.pid";
+    return root + "/var/run/configproxy.pid";
 }
 
 }

@@ -23,8 +23,6 @@ COMMON_ENV=libexec/vespa/common-env.sh
 
 source_common_env () {
     if [ "$VESPA_HOME" ] && [ -d "$VESPA_HOME" ]; then
-        # ensure it ends with "/" :
-        VESPA_HOME=${VESPA_HOME%/}/
         export VESPA_HOME
         common_env=$VESPA_HOME/$COMMON_ENV
         if [ -f "$common_env" ]; then
@@ -60,8 +58,8 @@ findroot
 
 # END environment bootstrap section
 
-${VESPA_HOME}bin/vespa-prestart.sh || exit 1
-willrun=${VESPA_HOME}libexec/vespa/start-vespa-base.sh
+${VESPA_HOME}/bin/vespa-prestart.sh || exit 1
+willrun=${VESPA_HOME}/libexec/vespa/start-vespa-base.sh
 if [ -x $willrun ]; then
     echo "Starting $willrun as a background process." >&2
     exec </dev/null

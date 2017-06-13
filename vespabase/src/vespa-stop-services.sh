@@ -23,8 +23,6 @@ COMMON_ENV=libexec/vespa/common-env.sh
 
 source_common_env () {
     if [ "$VESPA_HOME" ] && [ -d "$VESPA_HOME" ]; then
-        # ensure it ends with "/" :
-        VESPA_HOME=${VESPA_HOME%/}/
         export VESPA_HOME
         common_env=$VESPA_HOME/$COMMON_ENV
         if [ -f "$common_env" ]; then
@@ -60,7 +58,7 @@ findroot
 
 # END environment bootstrap section
 
-willrun=${VESPA_HOME}libexec/vespa/stop-vespa-base.sh
+willrun=${VESPA_HOME}/libexec/vespa/stop-vespa-base.sh
 if [ -x $willrun ]; then
     echo "Executing $willrun" >&2
     exec $willrun
