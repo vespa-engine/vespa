@@ -1,4 +1,4 @@
-Usage: jdisc_logfmt [options] [inputfile ...]
+Usage: vespa-jdisc-logfmt [options] [inputfile ...]
 Options:
   -l LEVELLIST	--level=LEVELLIST	select levels to include
   -L LEVELLIST	--add-level=LEVELLIST	define extra levels

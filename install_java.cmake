@@ -50,7 +50,7 @@ install_fat_java_artifact(vespaclient-java)
 install_fat_java_artifact(zkfacade)
 
 vespa_install_script(application-preprocessor/src/main/sh/vespa-preprocess-application bin)
-vespa_install_script(jdisc_core/src/main/perl/jdisc_logfmt bin)
+vespa_install_script(jdisc_core/src/main/perl/vespa-jdisc-logfmt bin)
 vespa_install_script(config-proxy/src/main/sh/vespa-config-ctl bin)
 vespa_install_script(config-proxy/src/main/sh/vespa-config-loadtester bin)
 vespa_install_script(config-proxy/src/main/sh/vespa-config-verification bin)
@@ -75,7 +75,7 @@ vespa_install_script(logserver/bin/logserver-start.sh logserver-start bin)
 install(DIRECTORY config-model/src/main/resources/schema DESTINATION share/vespa PATTERN ".gitignore" EXCLUDE)
 install(DIRECTORY config-model/src/main/resources/schema DESTINATION share/vespa/schema/version/6.x PATTERN ".gitignore" EXCLUDE)
 
-install(FILES jdisc_core/src/main/perl/jdisc_logfmt.1 DESTINATION man/man1)
+install(FILES jdisc_core/src/main/perl/vespa-jdisc-logfmt.1 DESTINATION man/man1)
 
 install(FILES
     config-model-fat/src/main/resources/config-models.xml

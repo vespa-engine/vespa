@@ -5,9 +5,9 @@ DIFF=/usr/bin/diff
 LOGFMT=${1}
 
 if which perl &> /dev/null; then
-    echo "Running jdisc_logfmt test suite."
+    echo "Running vespa-jdisc-logfmt test suite."
 else
-    echo "Ignoring jdisc_logfmt test suite as there is no perl executable."
+    echo "Ignoring vespa-jdisc-logfmt test suite as there is no perl executable."
     exit 0
 fi
 
