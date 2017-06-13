@@ -14,8 +14,9 @@ THREADS=$(nproc --all)
 
 mkdir "${SOURCE_DIR}"
 mkdir "${BUILD_DIR}"
-git --work-tree="${SOURCE_DIR}" --git-dir=/vespa/.git checkout ${GIT_COMMIT} -- .
+git clone --no-checkout --local --no-hardlinks file:///vespa "${SOURCE_DIR}"
 cd "${SOURCE_DIR}"
+git checkout ${GIT_COMMIT}
 source /opt/rh/devtoolset-6/enable || true
 sh ./bootstrap.sh full
 cmake3 -DCMAKE_INSTALL_PREFIX=/opt/vespa \
