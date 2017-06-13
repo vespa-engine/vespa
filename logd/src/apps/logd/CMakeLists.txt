@@ -2,7 +2,7 @@
 vespa_add_executable(logd_app
     SOURCES
     main.cpp
-    OUTPUT_NAME logd
+    OUTPUT_NAME vespa-logd
     INSTALL sbin
     DEPENDS
     logd
