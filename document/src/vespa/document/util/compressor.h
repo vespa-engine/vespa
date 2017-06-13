@@ -1,12 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/document/util/compressionconfig.h>
-#include <vespa/vespalib/data/databuffer.h>
+#include "compressionconfig.h"
 #include <vespa/vespalib/util/buffer.h>
 
-namespace document
-{
+namespace vespalib { class DataBuffer; }
+
+namespace document {
 
 class ICompressor
 {
@@ -15,17 +15,9 @@ public:
     virtual bool process(const CompressionConfig& config, const void * input, size_t inputLen, void * output, size_t & outputLen) = 0;
     virtual bool unprocess(const void * input, size_t inputLen, void * output, size_t & outputLen) = 0;
     virtual size_t adjustProcessLen(uint16_t options, size_t len)   const = 0;
-    virtual size_t adjustUnProcessLen(uint16_t options, size_t len) const = 0;
 };
 
-class LZ4Compressor : public ICompressor
-{
-public:
-    bool process(const CompressionConfig& config, const void * input, size_t inputLen, void * output, size_t & outputLen) override;
-    bool unprocess(const void * input, size_t inputLen, void * output, size_t & outputLen) override;
-    size_t adjustProcessLen(uint16_t options, size_t len)   const override;
-    size_t adjustUnProcessLen(uint16_t options, size_t len) const override;
-};
+namespace compression {
 
 /**
  * Will try to compress a buffer according to the config. If the criteria can not
@@ -51,5 +43,9 @@ CompressionConfig::Type compress(const CompressionConfig & compression, const ve
  */
 void decompress(const CompressionConfig::Type & compression, size_t uncompressedLen, const vespalib::ConstBufferRef & org, vespalib::DataBuffer & dest, bool allowSwap);
 
+
+size_t computeMaxCompressedsize(CompressionConfig::Type type, size_t uncompressedSize);
+
 }
 
+}

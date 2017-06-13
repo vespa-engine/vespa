@@ -361,6 +361,6 @@ TuningIoOptionsLight = string "normal" | string "directio"
 TuningIoOptionsFull = string "normal" | string "directio" | string "mmap" | string "mlock"
 
 TuningCompression = element compression {
-   element type { string "none" | string "lz4" }? &
+   element type { string "none" | string "lz4" | string "zstd" }? &
    element level { xsd:nonNegativeInteger }?
 }

@@ -10,6 +10,7 @@ vespa_define_module(
 
     EXTERNAL_DEPENDS
     lz4
+    zstd
 
     LIBS
     src/vespa/document

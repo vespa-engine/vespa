@@ -68,4 +68,34 @@ TEST("require that Chunk formats does not change between releases")
     testChunkFormat(v2, 34, "34 015BA32DE7000000220000000010ABCDEF987654321000000000000000074D000694");
 }
 
+constexpr const char * MY_LONG_STRING = "This is medium long string that hopefully will compress to something where lz4, zstandard and none"
+" will make a difference. The intentions is to verify that we trigger all compresssions possible and are able to decompress them too."
+" I guess that we need a considerable length in order to get the rather inefficient lz4 compression triger. ZStandard compression"
+" should trigger a lot earlier";
+
+void verifyChunkCompression(CompressionConfig::Type cfgType, const void * buf, size_t sz, size_t expectedLen) {
+    uint64_t MAGIC_CONTENT(0xabcdef9876543210);
+    ChunkFormatV2 chunk(10);
+    chunk.getBuffer() << MAGIC_CONTENT;
+    chunk.getBuffer().write(buf, sz);
+    vespalib::DataBuffer buffer;
+    CompressionConfig cfg(cfgType);
+    chunk.pack(7, buffer, cfg);
+    EXPECT_EQUAL(expectedLen, buffer.getDataLen());
+    vespalib::nbostream is(buffer.getData(), buffer.getDataLen());
+    ChunkFormat::UP deserialized = ChunkFormat::deserialize(buffer.getData(), buffer.getDataLen(), false);
+    uint64_t magic(0);
+    deserialized->getBuffer() >> magic;
+    EXPECT_EQUAL(MAGIC_CONTENT, magic);
+    std::vector<char> v(sz);
+    deserialized->getBuffer().read(&v[0], sz);
+    EXPECT_EQUAL(0, memcmp(buf, &v[0], sz));
+}
+
+TEST("require that V2 can create and handle lz4, zstd, and none") {
+    verifyChunkCompression(CompressionConfig::NONE, MY_LONG_STRING, strlen(MY_LONG_STRING), 421);
+    verifyChunkCompression(CompressionConfig::LZ4, MY_LONG_STRING, strlen(MY_LONG_STRING), 360);
+    verifyChunkCompression(CompressionConfig::ZSTD, MY_LONG_STRING, strlen(MY_LONG_STRING), 282);
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
