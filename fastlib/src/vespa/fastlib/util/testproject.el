@@ -1,8 +1,9 @@
+;; Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 ;; testproject.el
 
 ;;  Local configurations for the cpptest Emacs unit-test framework
 
-;; Author: Nils Sandøy <nils.sandoy@fast.no>
+;; Author: Nils Sandï¿½y <nils.sandoy@fast.no>
 
 (message "Setting local test configuration")
 
