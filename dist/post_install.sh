@@ -151,3 +151,6 @@ ln -s vespa-slobrok-cmd $INSTALLPATH/bin/sbcmd
 # Temporary when renaming programs in configd
 ln -s vespa-run-as-vespa-user $INSTALLPATH/bin/run-as-yahoo
 ln -s vespa-config-sentinel   $INSTALLPATH/sbin/config-sentinel
+
+# Temporary when renaming programs in logserver
+ln -s vespa-logserver-start $INSTALLPATH/bin/logserver-start
