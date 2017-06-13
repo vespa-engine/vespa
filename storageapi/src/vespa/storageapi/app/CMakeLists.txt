@@ -2,7 +2,6 @@
 vespa_add_executable(storageapi_getbucketid_app
     SOURCES
     getbucketid.cpp
-    INSTALL bin
     DEPENDS
     storageapi
 )
