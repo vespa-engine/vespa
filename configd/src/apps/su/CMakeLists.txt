@@ -1,8 +1,8 @@
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_add_executable(configd_run-as-yahoo_app
+vespa_add_executable(configd_vespa-run-as-vespa-user_app
     SOURCES
     main.cpp
-    OUTPUT_NAME run-as-yahoo
+    OUTPUT_NAME vespa-run-as-vespa-user
     INSTALL bin
     DEPENDS
 )
