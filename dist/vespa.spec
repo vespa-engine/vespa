@@ -22,6 +22,7 @@ BuildRequires: devtoolset-6-binutils
 BuildRequires: Judy-devel
 BuildRequires: cmake3
 BuildRequires: lz4-devel
+BuildRequires: libzstd-devel
 BuildRequires: zlib-devel
 BuildRequires: maven
 BuildRequires: libicu-devel
@@ -38,6 +39,7 @@ BuildRequires: systemd
 Requires: epel-release 
 Requires: Judy
 Requires: lz4
+Requires: libzstd
 Requires: zlib
 Requires: libicu
 Requires: llvm3.9
