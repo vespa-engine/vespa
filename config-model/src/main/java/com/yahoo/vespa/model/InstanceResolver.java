@@ -59,8 +59,9 @@ class InstanceResolver {
         ConfigDefinitionKey defKey = new ConfigDefinitionKey(key);
         try {
             if (targetDef != null) applyDef(builder, targetDef);
-            Class<? extends ConfigInstance> clazz = getConfigClass(defKey, builder.getClass().getClassLoader());
-            return clazz.getConstructor(builder.getClass()).newInstance(builder);
+            ConfigInstance instance = getInstance(defKey, builder.getClass().getClassLoader());
+            Class<? extends ConfigInstance> clazz = instance.getClass();
+            return clazz.getConstructor(new Class<?>[]{builder.getClass()}).newInstance(builder);
         } catch (Exception e) {
             throw new ConfigurationRuntimeException(e);
         }
@@ -157,20 +158,27 @@ class InstanceResolver {
      * @param  cKey a ConfigKey
      * @return a {@link ConfigInstance} or null if not available in classpath
      */
-    @SuppressWarnings("unchecked")
-    private static Class<? extends ConfigInstance> getConfigClass(ConfigDefinitionKey cKey, ClassLoader instanceLoader) {
+    private static ConfigInstance getInstance(ConfigDefinitionKey cKey, ClassLoader instanceLoader) {
         String className = ConfigGenerator.createClassName(cKey.getName());
-        String fullClassName = packageName(cKey) + "." + className;
         Class<?> clazz;
+        String fullClassName = packageName(cKey) + "." + className;
         try {
             clazz = instanceLoader != null ? instanceLoader.loadClass(fullClassName) : Class.forName(fullClassName);
         } catch (ClassNotFoundException e) {
-            throw new ConfigurationRuntimeException("Could not find config class for key " + cKey, e);
+            return null;
         }
-        if (! ConfigInstance.class.isAssignableFrom(clazz)) {
-            throw new ConfigurationRuntimeException(fullClassName + " is not a ConfigInstance subclass, can not produce config for " + cKey);
+        Object i;
+        try {
+            Constructor<?> configConstructor = clazz.getDeclaredConstructor();
+            configConstructor.setAccessible(true);
+            i = configConstructor.newInstance();
+        } catch (InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
+            throw new ConfigurationRuntimeException(e);
         }
-        return (Class<? extends ConfigInstance>) clazz;
+        if (!(i instanceof ConfigInstance)) {
+            throw new ConfigurationRuntimeException(fullClassName + " is not a ConfigInstance, can not produce config for the name '" + cKey.getName() + "'.");
+        }
+        return (ConfigInstance) i;
     }
 
     static String packageName(ConfigDefinitionKey cKey) {
