@@ -1,5 +1,4 @@
 #!/bin/sh
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 unset VESPA_LOG_TARGET
 unset LD_PRELOAD
 CLASSPATH=@PROJECT_SOURCE_DIR@/messagebus/target/messagebus-jar-with-dependencies.jar
