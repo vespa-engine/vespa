@@ -153,24 +153,6 @@ class InstanceResolver {
     }
 
     /**
-     * Create a ConfigBuilder given a definition key and a payload
-     * @param key The key to use to create the correct builder.
-     * @param payload The payload to populate the builder with.
-     * @return A ConfigBuilder initialized with payload.
-     */
-    static ConfigBuilder createBuilderFromPayload(ConfigDefinitionKey key, VespaModel model, ConfigPayload payload, ConfigDefinition targetDef) {
-        ConfigBuilder builderInstance = model.createBuilder(key, targetDef);
-        if (builderInstance == null || builderInstance instanceof GenericConfig.GenericConfigBuilder) {
-            if (log.isLoggable(LogLevel.SPAM)) {
-                log.log(LogLevel.SPAM, "Creating generic builder for key=" + key);
-            }
-            return new GenericConfig.GenericConfigBuilder(key, new ConfigPayloadBuilder(payload));
-        }
-        ConfigTransformer transformer = new ConfigTransformer(builderInstance.getClass().getDeclaringClass());
-        return transformer.toConfigBuilder(payload);
-    }
-
-    /**
      * Returns a {@link ConfigInstance} of right type for given key using reflection
      *
      * @param  cKey a ConfigKey
