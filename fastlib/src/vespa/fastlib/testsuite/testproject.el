@@ -1,3 +1,4 @@
+;; Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 ;; testproject.el
 
 ;; Local configurations for the cpptest Emacs unit-test
@@ -6,7 +7,7 @@
 ;; the class(es) you want to test.
 
 ;; $Revision: 1.6 $ $Date: 2003-09-11 09:14:01 $
-;; Author: Nils Sandøy <nils.sandoy@fast.no>
+;; Author: Nils Sandï¿½y <nils.sandoy@fast.no>
 
 ;; Just a message to show that this file is beeing read. Look for this
 ;; in the *Messages* buffer.

@@ -1,5 +1,3 @@
-Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 This is the source for a basic docker image that runs a python HTTP server listening at IPv6 port 80.
 The server serves two basic paths:
     /ip     - returns IP address of the requester

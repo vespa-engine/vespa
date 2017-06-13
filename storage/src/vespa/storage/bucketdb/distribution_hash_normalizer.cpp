@@ -1,4 +1,4 @@
-// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "distribution_hash_normalizer.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <boost/spirit/include/qi.hpp>
