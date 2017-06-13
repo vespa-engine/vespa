@@ -70,7 +70,7 @@ vespa_install_script(vespaclient-java/src/main/sh/vespa-get.sh vespa-get bin)
 vespa_install_script(vespaclient-java/src/main/sh/vespa-visit.sh vespa-visit bin)
 vespa_install_script(vespaclient-java/src/main/sh/vespa-visit-target.sh vespa-visit-target bin)
 
-vespa_install_script(logserver/bin/logserver-start.sh logserver-start bin)
+vespa_install_script(logserver/bin/logserver-start.sh vespa-logserver-start bin)
 
 install(DIRECTORY config-model/src/main/resources/schema DESTINATION share/vespa PATTERN ".gitignore" EXCLUDE)
 install(DIRECTORY config-model/src/main/resources/schema DESTINATION share/vespa/schema/version/6.x PATTERN ".gitignore" EXCLUDE)
