@@ -28,7 +28,6 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -357,7 +356,6 @@ public class ProvisioningTest {
         tester.activate(application, state.allHosts);
     }
 
-    @Ignore // TODO: Re-activate when the check is reactivate in CapacityPolicies
     @Test(expected = IllegalArgumentException.class)
     public void prod_deployment_requires_redundancy() {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
@@ -516,25 +514,27 @@ public class ProvisioningTest {
 
         ApplicationId application1 = tester.makeApplicationId();
 
-        tester.makeReadyNodes(10, "default");
+        tester.makeReadyNodes(14, "default");
 
         // deploy
-        SystemState state1 = prepare(application1, 2, 2, 3, 3, "default", tester);
+        SystemState state1 = prepare(application1, 3, 3, 4, 4, "default", tester);
         tester.activate(application1, state1.allHosts);
 
         // decrease cluster sizes
-        SystemState state2 = prepare(application1, 1, 1, 1, 1, "default", tester);
+        SystemState state2 = prepare(application1, 2, 2, 2, 2, "default", tester);
         tester.activate(application1, state2.allHosts);
 
         // content0
         assertFalse(state2.hostByMembership("content0", 0, 0).membership().get().retired());
-        assertTrue( state2.hostByMembership("content0", 0, 1).membership().get().retired());
+        assertFalse( state2.hostByMembership("content0", 0, 1).membership().get().retired());
         assertTrue( state2.hostByMembership("content0", 0, 2).membership().get().retired());
+        assertTrue( state2.hostByMembership("content0", 0, 3).membership().get().retired());
 
         // content1
         assertFalse(state2.hostByMembership("content1", 0, 0).membership().get().retired());
-        assertTrue( state2.hostByMembership("content1", 0, 1).membership().get().retired());
+        assertFalse(state2.hostByMembership("content1", 0, 1).membership().get().retired());
         assertTrue( state2.hostByMembership("content1", 0, 2).membership().get().retired());
+        assertTrue( state2.hostByMembership("content1", 0, 3).membership().get().retired());
     }
 
     @Test
