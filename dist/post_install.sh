@@ -69,6 +69,10 @@ ln -s $PREFIX/lib/jars/zkfacade-jar-with-dependencies.jar $INSTALLPATH/conf/conf
 ln -s $PREFIX/conf/configserver-app/components $INSTALLPATH/lib/jars/config-models
 ln -s vespa-storaged-bin $INSTALLPATH/sbin/vespa-distributord-bin
 
+# Temporary when renaming programs in filedistribution
+ln -s vespa-filedistributor $INSTALLPATH/sbin/filedistributor
+ln -s vespa-filedistributor-bin $INSTALLPATH/sbin/filedistributor-bin
+
 # Temporary when renaming binaries in fnet
 ln -s vespa-rpc-info $INSTALLPATH/bin/rpc_info
 ln -s vespa-rpc-invoke $INSTALLPATH/bin/rpc_invoke
