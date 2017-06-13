@@ -11,7 +11,7 @@ using vespalib::ConstBufferRef;
 using vespalib::DataBuffer;
 using vespalib::make_string;
 
-namespace document {
+namespace document::compression {
 
 CompressionConfig::Type
 compress(ICompressor & compressor, const CompressionConfig & compression, const ConstBufferRef & org, DataBuffer & dest)
@@ -125,6 +125,17 @@ decompress(const CompressionConfig::Type & type, size_t uncompressedLen, const C
         throw std::runtime_error(make_string("Unable to handle decompression of type '%d'", type));
         break;
     }
+}
+
+size_t computeMaxCompressedsize(CompressionConfig::Type type, size_t payloadSize) {
+    if (type == CompressionConfig::LZ4) {
+        document::LZ4Compressor lz4;
+        return lz4.adjustProcessLen(0, payloadSize);
+    } else if (type == CompressionConfig::ZSTD) {
+        document::ZStdCompressor zstd;
+        return zstd.adjustProcessLen(0, payloadSize);
+    }
+    return payloadSize;
 }
 
 }

@@ -15,8 +15,9 @@ public:
     virtual bool process(const CompressionConfig& config, const void * input, size_t inputLen, void * output, size_t & outputLen) = 0;
     virtual bool unprocess(const void * input, size_t inputLen, void * output, size_t & outputLen) = 0;
     virtual size_t adjustProcessLen(uint16_t options, size_t len)   const = 0;
-    virtual size_t adjustUnProcessLen(uint16_t options, size_t len) const = 0;
 };
+
+namespace compression {
 
 /**
  * Will try to compress a buffer according to the config. If the criteria can not
@@ -41,5 +42,10 @@ CompressionConfig::Type compress(const CompressionConfig & compression, const ve
  * @param allowSwap will tell it the data must be appended or if it can be swapped in if compression type is NONE.
  */
 void decompress(const CompressionConfig::Type & compression, size_t uncompressedLen, const vespalib::ConstBufferRef & org, vespalib::DataBuffer & dest, bool allowSwap);
+
+
+size_t computeMaxCompressedsize(CompressionConfig::Type type, size_t uncompressedSize);
+
+}
 
 }

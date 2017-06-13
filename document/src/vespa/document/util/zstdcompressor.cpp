@@ -10,7 +10,6 @@ using vespalib::alloc::Alloc;
 namespace document {
 
 size_t ZStdCompressor::adjustProcessLen(uint16_t, size_t len)   const { return ZSTD_compressBound(len); }
-size_t ZStdCompressor::adjustUnProcessLen(uint16_t, size_t len) const { return len; }
 
 bool
 ZStdCompressor::process(const CompressionConfig& config, const void * inputV, size_t inputLen, void * outputV, size_t & outputLenV)
