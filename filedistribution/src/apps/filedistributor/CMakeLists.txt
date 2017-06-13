@@ -2,7 +2,7 @@
 vespa_add_executable(filedistribution_filedistributor_app
     SOURCES
     filedistributor.cpp
-    OUTPUT_NAME vespa-filedistributor-bin
+    OUTPUT_NAME filedistributor-bin
     INSTALL sbin
     DEPENDS
     filedistribution_distributor
