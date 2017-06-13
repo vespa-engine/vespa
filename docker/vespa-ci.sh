@@ -15,4 +15,4 @@ CI_DOCKER_IMAGE="vespaci"
 
 docker build -t "$BUILD_DOCKER_IMAGE" -f Dockerfile.build .
 docker build -t "$CI_DOCKER_IMAGE" -f Dockerfile.ci .
-docker run -v $(pwd)/..:/vespa --entrypoint /vespa-ci-internal.sh "$CI_DOCKER_IMAGE" "$GIT_COMMIT"
+docker run --rm -v $(pwd)/..:/vespa --entrypoint /vespa-ci-internal.sh "$CI_DOCKER_IMAGE" "$GIT_COMMIT"
