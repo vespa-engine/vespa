@@ -4,9 +4,9 @@
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/fnet/frt/rpcrequest.h>
+#include <vespa/vespalib/data/databuffer.h>
 
 #include <vespa/log/log.h>
-
 LOG_SETUP(".proton.summaryengine.docsum_by_slime");
 
 namespace proton {
@@ -90,12 +90,14 @@ DocsumByRPC::DocsumByRPC(DocsumBySlime & slimeDocsumServer) :
 void
 DocsumByRPC::getDocsums(FRT_RPCRequest & req)
 {
+    using document::compression::decompress;
+    using document::compression::compress;
     FRT_Values &arg = *req.GetParams();
     uint8_t encoding = arg[0]._intval8;
     uint32_t uncompressedSize = arg[1]._intval32;
     DataBuffer uncompressed(arg[2]._data._buf, arg[2]._data._len);
     ConstBufferRef blob(arg[2]._data._buf, arg[2]._data._len);
-    document::decompress(CompressionConfig::toType(encoding), uncompressedSize, blob, uncompressed, true);
+    decompress(CompressionConfig::toType(encoding), uncompressedSize, blob, uncompressed, true);
     assert(uncompressedSize == uncompressed.getDataLen());
     vespalib::Slime summariesToGet;
     BinaryFormat::decode(Memory(uncompressed.getData(), uncompressed.getDataLen()), summariesToGet);
@@ -108,7 +110,7 @@ DocsumByRPC::getDocsums(FRT_RPCRequest & req)
     BinaryFormat::encode(*summaries, output);
     ConstBufferRef buf(rbuf.GetDrainPos(), rbuf.GetUsedLen());
     DataBuffer compressed(rbuf.GetWritableDrainPos(0), rbuf.GetUsedLen());
-    CompressionConfig::Type type = document::compress(getCompressionConfig(), buf, compressed, true);
+    CompressionConfig::Type type = compress(getCompressionConfig(), buf, compressed, true);
 
     FRT_Values &ret = *req.GetReturn();
     ret.AddInt8(type);

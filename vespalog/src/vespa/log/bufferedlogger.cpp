@@ -10,11 +10,9 @@
 #include <boost/multi_index/sequenced_index.hpp>
 
 #include <iomanip>
-#include <iostream>
 #include <sstream>
 #include <vector>
 #include <cstdarg>
-#include <ctime>
 
 namespace ns_log {
 
@@ -380,6 +378,5 @@ BufferedLogger::setTimer(std::unique_ptr<Timer> timer)
 {
     _backing->_timer = std::move(timer);
 }
-
 
 } // ns_log

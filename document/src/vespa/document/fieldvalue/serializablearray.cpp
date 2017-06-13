@@ -2,14 +2,15 @@
 #include "serializablearray.h"
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/document/util/bytebuffer.h>
+#include <vespa/document/util/compressor.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/data/databuffer.h>
-#include <vespa/document/util/compressor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".document.serializable-array");
 
 using std::vector;
+using vespalib::make_string;
 
 namespace document {
 
@@ -179,6 +180,7 @@ SerializableArray::clear(int id)
 void
 SerializableArray::deCompress() // throw (DeserializeException)
 {
+    using document::compression::decompress;
     // will only do this once
 
     LOG_ASSERT(_compSerData);
@@ -201,15 +203,14 @@ SerializableArray::deCompress() // throw (DeserializeException)
                        false);
         } catch (const std::runtime_error & e) {
             throw DeserializeException(
-                vespalib::make_string( "Document was compressed with code unknown code %d", _serializedCompression),
+                make_string( "Document was compressed with code unknown code %d", _serializedCompression),
                 VESPA_STRLOC);
         }
 
         if (unCompressed.getDataLen() != (size_t)_uncompressedLength) {
             throw DeserializeException(
-                    vespalib::make_string(
-                            "Did not decompress to the expected length: had %" PRIu64 ", wanted %d, got %" PRIu64,
-                            _compSerData->getRemaining(), _uncompressedLength, unCompressed.getDataLen()),
+                    make_string("Did not decompress to the expected length: had %zu, wanted %d, got %zu",
+                                _compSerData->getRemaining(), _uncompressedLength, unCompressed.getDataLen()),
                     VESPA_STRLOC);
         }
         assert(newSerialization->getBuffer() == unCompressed.getData());

@@ -8,6 +8,10 @@ namespace search {
 
 using vespalib::make_string;
 using vespalib::Exception;
+using document::compression::compress;
+using document::compression::decompress;
+using document::compression::computeMaxCompressedsize;
+using document::CompressionConfig;
 
 ChunkException::ChunkException(const vespalib::stringref & msg, const vespalib::stringref & location) :
     Exception(make_string("Illegal chunk: %s", msg.c_str()), location)
@@ -15,7 +19,7 @@ ChunkException::ChunkException(const vespalib::stringref & msg, const vespalib::
 }
 
 void
-ChunkFormat::pack(uint64_t lastSerial, vespalib::DataBuffer & compressed, const document::CompressionConfig & compression)
+ChunkFormat::pack(uint64_t lastSerial, vespalib::DataBuffer & compressed, const CompressionConfig & compression)
 {
     vespalib::nbostream & os = _dataBuf;
     os << lastSerial;
@@ -29,7 +33,7 @@ ChunkFormat::pack(uint64_t lastSerial, vespalib::DataBuffer & compressed, const 
     const size_t oldPos(compressed.getDataLen());
     compressed.writeInt8(compression.type);
     compressed.writeInt32(os.size());
-    document::CompressionConfig::Type type(document::compress(compression, vespalib::ConstBufferRef(os.c_str(), os.size()), compressed, false));
+    CompressionConfig::Type type(compress(compression, vespalib::ConstBufferRef(os.c_str(), os.size()), compressed, false));
     if (compression.type != type) {
         compressed.getData()[oldPos] = type;
     }
@@ -42,28 +46,22 @@ ChunkFormat::pack(uint64_t lastSerial, vespalib::DataBuffer & compressed, const 
 }
 
 size_t
-ChunkFormat::getMaxPackSize(const document::CompressionConfig & compression) const
+ChunkFormat::getMaxPackSize(const CompressionConfig & compression) const
 {
     const size_t OVERHEAD(0);
     const size_t MINSIZE(1 + 1 + 4 + 4 + includeSerializedSize() ? 4 : 0);  // version + type + real length + crc + lastserial
     const size_t formatSpecificSize(getHeaderSize());
     size_t rawSize(MINSIZE + formatSpecificSize + OVERHEAD);
     const size_t payloadSize(_dataBuf.size() + 8);
-    // This is a little dirty -> need interface.
-    if (compression.type == document::CompressionConfig::LZ4) {
-        document::LZ4Compressor lz4;
-        rawSize += lz4.adjustProcessLen(0, payloadSize);
-    } else {
-        rawSize += payloadSize;
-    }
-    return rawSize;
+    return rawSize + computeMaxCompressedsize(compression.type, payloadSize);
 }
 
 void
 ChunkFormat::verifyCompression(uint8_t type)
 {
-    if ((type != document::CompressionConfig::LZ4) &&
-        (type != document::CompressionConfig::NONE)) {
+    if ((type != CompressionConfig::LZ4) &&
+        (type != CompressionConfig::ZSTD) &&
+        (type != CompressionConfig::NONE)) {
         throw ChunkException(make_string("Unknown compressiontype %d", type), VESPA_STRLOC);
     }
 }
@@ -145,7 +143,7 @@ ChunkFormat::deserializeBody(vespalib::nbostream & is)
     // This is a dirty trick to fool some odd sanity checking in DataBuffer::swap
     vespalib::DataBuffer uncompressed(const_cast<char *>(is.peek()), (size_t)0);
     vespalib::ConstBufferRef data(is.peek(), is.size() - sizeof(uint32_t));
-    document::decompress(document::CompressionConfig::Type(type), uncompressedLen, data, uncompressed, true);
+    decompress(CompressionConfig::Type(type), uncompressedLen, data, uncompressed, true);
     assert(uncompressed.getData() == uncompressed.getDead());
     if (uncompressed.getData() != data.c_str()) {
         const size_t sz(uncompressed.getDataLen());

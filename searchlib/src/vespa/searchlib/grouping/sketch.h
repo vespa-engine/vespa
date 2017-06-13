@@ -209,7 +209,7 @@ compress_buckets_into(char *buffer, uint32_t size) const {
     vespalib::ConstBufferRef org(&bucket[0], BUCKET_COUNT);
     vespalib::DataBuffer compress_buffer(buffer, size);
     document::CompressionConfig::Type r =
-        document::compress(config, org, compress_buffer, false);
+        document::compression::compress(config, org, compress_buffer, false);
     assert(compress_buffer.getDead() == buffer);
     if (r == document::CompressionConfig::LZ4) {
         assert(compress_buffer.getDataLen() < BUCKET_COUNT);
@@ -228,7 +228,7 @@ decompress_buckets_from(char *buffer, uint32_t size) {
     } else {
         vespalib::ConstBufferRef compressed(buffer, size);
         vespalib::DataBuffer uncompressed(reinterpret_cast<char *>(&bucket[0]), BUCKET_COUNT);
-        document::decompress(document::CompressionConfig::LZ4, BUCKET_COUNT, compressed, uncompressed, false);
+        document::compression::decompress(document::CompressionConfig::LZ4, BUCKET_COUNT, compressed, uncompressed, false);
     }
 }
 template <int BucketBits, typename HashT>

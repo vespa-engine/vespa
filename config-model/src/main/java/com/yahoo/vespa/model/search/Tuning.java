@@ -210,6 +210,7 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
                 public static class Compression {
                     public enum Type {
                         NONE("NONE"),
+                        ZSTD("ZSTD"),
                         LZ4("LZ4");
 
                         public final String name;

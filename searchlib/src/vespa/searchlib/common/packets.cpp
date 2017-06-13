@@ -7,6 +7,7 @@
 #include <vespa/document/util/compressor.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/data/databuffer.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.common.fs4packets");
@@ -150,7 +151,7 @@ FS4PersistentPacketStreamer::Decode(FNET_DataBuffer *src, uint32_t plen, uint32_
             uint32_t uncompressed_size = src->ReadInt32();
             ConstBufferRef org(src->GetData(), plen - sizeof(uint32_t));
             vespalib::DataBuffer uncompressed(uncompressed_size);
-            document::decompress(compressionType, uncompressed_size, org, uncompressed, false);
+            document::compression::decompress(compressionType, uncompressed_size, org, uncompressed, false);
             FNET_DataBuffer buf(uncompressed.getData(), uncompressed.getDataLen());
             decodePacket(packet, buf, uncompressed_size, pcode);
             src->DataToDead(plen - sizeof(uint32_t));
@@ -191,7 +192,7 @@ FS4PersistentPacketStreamer::Encode(FNET_Packet *packet, uint32_t chid, FNET_Dat
         CompressionConfig config(_compressionType, _compressionLevel, 90);
         ConstBufferRef org(dst->GetData() + packet_start + header_len, body_len);
         vespalib::DataBuffer compressed(org.size());
-        CompressionConfig::Type r = document::compress(config, org, compressed, false);
+        CompressionConfig::Type r = document::compression::compress(config, org, compressed, false);
         if (r != CompressionConfig::NONE) {
             dst->DataToFree(body_len + header_len);
             // sizeof(data + header + uncompressed_size) - sizeof(uint32_t)
@@ -454,7 +455,7 @@ FS4Packet_PreSerialized::FS4Packet_PreSerialized(FNET_Packet & packet)
                                  90);
         ConstBufferRef org(tmp.GetData(), tmp.GetDataLen());
         vespalib::DataBuffer compressed(org.size());
-        _compressionType = document::compress(config, org, compressed, false);
+        _compressionType = document::compression::compress(config, org, compressed, false);
         if (_compressionType != CompressionConfig::NONE) {
             _data.WriteInt32Fast(body_len);
             _data.WriteBytes(compressed.getData(), compressed.getDataLen());

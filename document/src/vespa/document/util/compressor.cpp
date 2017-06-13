@@ -1,56 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include "compressor.h"
+
+#include "lz4compressor.h"
+#include "zstdcompressor.h"
 #include <vespa/vespalib/util/memory.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <stdexcept>
-#include <lz4.h>
-#include <lz4hc.h>
+#include <vespa/vespalib/data/databuffer.h>
 
 using vespalib::alloc::Alloc;
 using vespalib::ConstBufferRef;
 using vespalib::DataBuffer;
 using vespalib::make_string;
 
-namespace document
-{
-
-size_t LZ4Compressor::adjustProcessLen(uint16_t, size_t len)   const { return LZ4_compressBound(len); }
-size_t LZ4Compressor::adjustUnProcessLen(uint16_t, size_t len) const { return len; }
-
-bool
-LZ4Compressor::process(const CompressionConfig& config, const void * inputV, size_t inputLen, void * outputV, size_t & outputLenV)
-{
-    const char * input(static_cast<const char *>(inputV));
-    char * output(static_cast<char *>(outputV));
-    int sz(-1);
-    int maxOutputLen = LZ4_compressBound(inputLen);
-    if (config.compressionLevel > 6) {
-        Alloc state = Alloc::alloc(LZ4_sizeofStateHC());
-        sz = LZ4_compress_HC_extStateHC(state.get(), input, output, inputLen, maxOutputLen, config.compressionLevel);
-    } else {
-        Alloc state = Alloc::alloc(LZ4_sizeofState());
-        sz = LZ4_compress_fast_extState(state.get(), input, output, inputLen, maxOutputLen, 1);
-    }
-    if (sz != 0) {
-        outputLenV = sz;
-    }
-    assert(sz != 0);
-    return (sz != 0);
-    
-}
-
-bool
-LZ4Compressor::unprocess(const void * inputV, size_t inputLen, void * outputV, size_t & outputLenV)
-{
-    const char * input(static_cast<const char *>(inputV));
-    char * output(static_cast<char *>(outputV));
-    int sz = LZ4_decompress_safe(input, output, inputLen, outputLenV);
-    if (sz > 0) {
-        outputLenV = sz;
-    }
-    assert(sz > 0);
-    return (sz > 0);
-}
+namespace document::compression {
 
 CompressionConfig::Type
 compress(ICompressor & compressor, const CompressionConfig & compression, const ConstBufferRef & org, DataBuffer & dest)
@@ -76,6 +37,12 @@ docompress(const CompressionConfig & compression, const ConstBufferRef & org, Da
         {
             LZ4Compressor lz4;
             type = compress(lz4, compression, org, dest);
+        }
+        break;
+    case CompressionConfig::ZSTD:
+        {
+            ZStdCompressor zstd;
+            type = compress(zstd, compression, org, dest);
         }
         break;
     case CompressionConfig::NONE:
@@ -138,6 +105,12 @@ decompress(const CompressionConfig::Type & type, size_t uncompressedLen, const C
             decompress(lz4, uncompressedLen, org, dest, allowSwap);
         }
         break;
+        case CompressionConfig::ZSTD:
+        {
+            ZStdCompressor zstd;
+            decompress(zstd, uncompressedLen, org, dest, allowSwap);
+        }
+        break;
     case CompressionConfig::NONE:
     case CompressionConfig::UNCOMPRESSABLE:
         if (allowSwap) {
@@ -152,6 +125,17 @@ decompress(const CompressionConfig::Type & type, size_t uncompressedLen, const C
         throw std::runtime_error(make_string("Unable to handle decompression of type '%d'", type));
         break;
     }
+}
+
+size_t computeMaxCompressedsize(CompressionConfig::Type type, size_t payloadSize) {
+    if (type == CompressionConfig::LZ4) {
+        document::LZ4Compressor lz4;
+        return lz4.adjustProcessLen(0, payloadSize);
+    } else if (type == CompressionConfig::ZSTD) {
+        document::ZStdCompressor zstd;
+        return zstd.adjustProcessLen(0, payloadSize);
+    }
+    return payloadSize;
 }
 
 }
