@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
@@ -21,8 +22,8 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
+import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
@@ -56,7 +57,8 @@ public class RetiredExpirerTest {
         Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
-                new MockNameResolver().mockAnyLookup());
+                                                           new MockNameResolver().mockAnyLookup(),
+                                                           new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone);
 
         createReadyNodes(7, nodeRepository, nodeFlavors);
@@ -95,7 +97,8 @@ public class RetiredExpirerTest {
         Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
-                new MockNameResolver().mockAnyLookup());
+                                                           new MockNameResolver().mockAnyLookup(),
+                                                           new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone);
 
         createReadyNodes(8, nodeRepository, nodeFlavors);
@@ -130,7 +133,8 @@ public class RetiredExpirerTest {
         Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
-                new MockNameResolver().mockAnyLookup());
+                                                           new MockNameResolver().mockAnyLookup(),
+                                                           new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone);
 
         createReadyNodes(7, nodeRepository, nodeFlavors);

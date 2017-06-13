@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.node;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.DockerImage;
 
 import javax.annotation.concurrent.Immutable;
 import java.util.Optional;
@@ -17,8 +16,6 @@ public class Status {
 
     private final Generation reboot;
     private final Optional<Version> vespaVersion;
-    private final Optional<Version> hostedVersion; // TODO: Remove when all nodes have started using vespaVersion
-    private final Optional<String> stateVersion; // TODO: Remove when all nodes have started using vespaVersion
     private final int failCount;
     private final Optional<HardwareFailureType> hardwareFailure;
     private final boolean wantToRetire;
@@ -37,16 +34,12 @@ public class Status {
 
     public Status(Generation generation,
                   Optional<Version> vespaVersion,
-                  Optional<Version> hostedVersion,
-                  Optional<String> stateVersion,
                   int failCount,
                   Optional<HardwareFailureType> hardwareFailure,
                   boolean wantToRetire,
                   boolean wantToDeprovision) {
         this.reboot = generation;
         this.vespaVersion = vespaVersion;
-        this.hostedVersion = hostedVersion;
-        this.stateVersion = stateVersion;
         this.failCount = failCount;
         this.hardwareFailure = hardwareFailure;
         this.wantToRetire = wantToRetire;
@@ -54,63 +47,34 @@ public class Status {
     }
 
     /** Returns a copy of this with the reboot generation changed */
-    public Status withReboot(Generation reboot) { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, failCount, hardwareFailure, wantToRetire, wantToDeprovision); }
+    public Status withReboot(Generation reboot) { return new Status(reboot, vespaVersion, failCount, hardwareFailure, wantToRetire, wantToDeprovision); }
 
     /** Returns the reboot generation of this node */
     public Generation reboot() { return reboot; }
 
     /** Returns a copy of this with the vespa version changed */
-    public Status withVespaVersion(Version version) { return new Status(reboot, Optional.of(version), hostedVersion, stateVersion, failCount, hardwareFailure, wantToRetire, wantToDeprovision); }
+    public Status withVespaVersion(Version version) { return new Status(reboot, Optional.of(version), failCount, hardwareFailure, wantToRetire, wantToDeprovision); }
 
     /** Returns the Vespa version installed on the node, if known */
     public Optional<Version> vespaVersion() { return vespaVersion; }
 
-    /** Returns a copy of this with the hosted version changed */
-    public Status withHostedVersion(Version version) { return new Status(reboot, vespaVersion, Optional.of(version), stateVersion, failCount, hardwareFailure, wantToRetire, wantToDeprovision); }
+    public Status withIncreasedFailCount() { return new Status(reboot, vespaVersion, failCount + 1, hardwareFailure, wantToRetire, wantToDeprovision); }
 
-    /** Returns the hosted version installed on the node, if known */
-    public Optional<Version> hostedVersion() { return hostedVersion; }
+    public Status withDecreasedFailCount() { return new Status(reboot, vespaVersion, failCount - 1, hardwareFailure, wantToRetire, wantToDeprovision); }
 
-    /** Returns a copy of this with the state version changed */
-    public Status withStateVersion(String version) { return new Status(reboot, vespaVersion, hostedVersion, Optional.of(version), failCount, hardwareFailure, wantToRetire, wantToDeprovision); }
-
-    /**
-     * Returns the state version the node last successfully converged with.
-     * The state version contains the version-specific parts in identifying state
-     * files on dist, and is of the form HOSTEDVERSION.
-     * It's also used to uniquely identify a hosted Vespa release.
-     */
-    public Optional<String> stateVersion() { return stateVersion; }
-
-    /** Returns a copy of this with the docker image changed */
-    public Status withDockerImage(String dockerImage) {
-        Optional<Version> vespaVersion = Optional.of(dockerImage)
-                .filter(image -> !image.isEmpty())
-                .map(DockerImage::new)
-                .map(DockerImage::tagAsVersion);
-        return new Status(reboot, vespaVersion, hostedVersion, stateVersion, failCount, hardwareFailure, wantToRetire, wantToDeprovision);
-    }
-
-    /** Returns the current docker image the node is running, if known. */
-    public Optional<String> dockerImage() { return vespaVersion.map(DockerImage.defaultImage::withTag).map(DockerImage::toString); }
-
-    public Status withIncreasedFailCount() { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, failCount + 1, hardwareFailure, wantToRetire, wantToDeprovision); }
-
-    public Status withDecreasedFailCount() { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, failCount - 1, hardwareFailure, wantToRetire, wantToDeprovision); }
-
-    public Status setFailCount(Integer value) { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, value, hardwareFailure, wantToRetire, wantToDeprovision); }
+    public Status setFailCount(Integer value) { return new Status(reboot, vespaVersion, value, hardwareFailure, wantToRetire, wantToDeprovision); }
 
     /** Returns how many times this node has been moved to the failed state. */
     public int failCount() { return failCount; }
 
-    public Status withHardwareFailure(Optional<HardwareFailureType> hardwareFailure) { return new Status(reboot, vespaVersion, hostedVersion, stateVersion, failCount, hardwareFailure, wantToRetire, wantToDeprovision); }
+    public Status withHardwareFailure(Optional<HardwareFailureType> hardwareFailure) { return new Status(reboot, vespaVersion, failCount, hardwareFailure, wantToRetire, wantToDeprovision); }
 
     /** Returns the type of the last hardware failure detected on this node, or empty if none */
     public Optional<HardwareFailureType> hardwareFailure() { return hardwareFailure; }
 
     /** Returns a copy of this with the want to retire flag changed */
     public Status withWantToRetire(boolean wantToRetire) {
-        return new Status(reboot, vespaVersion, hostedVersion, stateVersion, failCount, hardwareFailure, wantToRetire, wantToDeprovision);
+        return new Status(reboot, vespaVersion, failCount, hardwareFailure, wantToRetire, wantToDeprovision);
     }
 
     /**
@@ -121,19 +85,19 @@ public class Status {
         return wantToRetire;
     }
 
-    /** Returns a copy of this with the want to deprovision flag changed */
+    /** Returns a copy of this with the want to de-provision flag changed */
     public Status withWantToDeprovision(boolean wantToDeprovision) {
-        return new Status(reboot, vespaVersion, hostedVersion, stateVersion, failCount, hardwareFailure, wantToRetire, wantToDeprovision);
+        return new Status(reboot, vespaVersion, failCount, hardwareFailure, wantToRetire, wantToDeprovision);
     }
 
     /**
-     * Returns whether this node should be deprovisioned when possible.
+     * Returns whether this node should be de-provisioned when possible.
      */
     public boolean wantToDeprovision() {
         return wantToDeprovision;
     }
 
     /** Returns the initial status of a newly provisioned node */
-    public static Status initial() { return new Status(Generation.inital(), Optional.empty(), Optional.empty(), Optional.empty(), 0, Optional.empty(), false, false); }
+    public static Status initial() { return new Status(Generation.inital(), Optional.empty(), 0, Optional.empty(), false, false); }
 
 }

@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
@@ -76,7 +77,8 @@ public class ProvisioningTester implements AutoCloseable {
             this.nodeFlavors = new NodeFlavors(config);
             this.clock = new ManualClock();
             this.curator = curator;
-            this.nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, nameResolver);
+            this.nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, nameResolver,
+                                                     new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
             this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, clock,
                     (x,y) -> allocationSnapshots.add(new AllocationSnapshot(new NodeList(x), "Provision tester", y)));
             this.capacityPolicies = new CapacityPolicies(zone, nodeFlavors);

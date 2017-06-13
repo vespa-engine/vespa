@@ -1,12 +1,13 @@
 package com.yahoo.vespa.hosted.provision;
 
-import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.Zone;
-import com.yahoo.test.ManualClock;
-import com.yahoo.config.provisioning.FlavorsConfig;
-import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provisioning.FlavorsConfig;
+import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 
@@ -32,7 +33,8 @@ public class NodeRepositoryTester {
         curator = new MockCurator();
         curator.setConnectionSpec("server1:1234,server2:5678");
         nodeRepository = new NodeRepository(nodeFlavors, curator, clock, Zone.defaultZone(),
-                new MockNameResolver().mockAnyLookup());
+                                            new MockNameResolver().mockAnyLookup(),
+                                            new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
     }
     
     public NodeRepository nodeRepository() { return nodeRepository; }

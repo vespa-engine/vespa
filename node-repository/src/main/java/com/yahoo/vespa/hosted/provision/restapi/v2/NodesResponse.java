@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi.v2;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.NodeType;
@@ -156,17 +155,20 @@ class NodesResponse extends HttpResponse {
             toSlime(node.allocation().get().membership(), object.setObject("membership"));
             object.setLong("restartGeneration", node.allocation().get().restartGeneration().wanted());
             object.setLong("currentRestartGeneration", node.allocation().get().restartGeneration().current());
-            object.setString("wantedDockerImage", node.allocation().get().membership().cluster().dockerImage());
+            object.setString("wantedDockerImage", nodeRepository.dockerImage().withTag(node.allocation().get().membership().cluster().vespaVersion()).asString());
             object.setString("wantedVespaVersion", node.allocation().get().membership().cluster().vespaVersion().toFullString());
         }
         object.setLong("rebootGeneration", node.status().reboot().wanted());
         object.setLong("currentRebootGeneration", node.status().reboot().current());
-        node.status().vespaVersion().ifPresent(version -> {
-            if (! version.equals(Version.emptyVersion)) object.setString("vespaVersion", version.toFullString());
-        });
-        node.status().hostedVersion().ifPresent(version -> object.setString("hostedVersion", version.toFullString()));
-        node.status().dockerImage().ifPresent(image -> object.setString("currentDockerImage", image));
-        node.status().stateVersion().ifPresent(version -> object.setString("convergedStateVersion", version));
+        node.status().vespaVersion()
+                .filter(version -> !version.isEmpty())
+                .ifPresent(version -> {
+                    object.setString("vespaVersion", version.toFullString());
+                    object.setString("currentDockerImage", nodeRepository.dockerImage().withTag(version).asString());
+                    // TODO: Remove these when they are no longer read
+                    object.setString("hostedVersion", version.toFullString());
+                    object.setString("convergedStateVersion", version.toFullString());
+                });
         object.setLong("failCount", node.status().failCount());
         object.setBool("hardwareFailure", node.status().hardwareFailure().isPresent());
         node.status().hardwareFailure().ifPresent(failure -> object.setString("hardwareFailureType", toString(failure)));

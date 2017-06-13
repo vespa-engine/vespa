@@ -83,14 +83,14 @@ public class NodeRepositoryImplTest {
     }
 
     @Test
-    public void testGetContainersToRunAPi() throws IOException, InterruptedException {
+    public void testGetContainersToRunApi() throws IOException, InterruptedException {
         waitForJdiscContainerToServe();
         NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor, port, "dockerhost4");
         final List<ContainerNodeSpec> containersToRun = nodeRepositoryApi.getContainersToRun();
         assertThat(containersToRun.size(), is(1));
         final ContainerNodeSpec nodeSpec = containersToRun.get(0);
         assertThat(nodeSpec.hostname, is("host4.yahoo.com"));
-        assertThat(nodeSpec.wantedDockerImage.get(), is(new DockerImage("docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.0")));
+        assertThat(nodeSpec.wantedDockerImage.get(), is(new DockerImage("docker-registry.domain.tld:8080/dist/vespa:6.42.0")));
         assertThat(nodeSpec.nodeState, is(Node.State.reserved));
         assertThat(nodeSpec.wantedRestartGeneration.get(), is(0L));
         assertThat(nodeSpec.currentRestartGeneration.get(), is(0L));

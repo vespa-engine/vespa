@@ -8,6 +8,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
@@ -25,8 +26,8 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
-import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
+import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Before;
@@ -56,7 +57,8 @@ public class PeriodicApplicationMaintainerTest {
         Curator curator = new MockCurator();
         Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
         this.nodeRepository = new NodeRepository(nodeFlavors, curator, new ManualClock(), zone,
-                                                 new MockNameResolver().mockAnyLookup());
+                                                 new MockNameResolver().mockAnyLookup(),
+                                                 new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
         this.fixture = new Fixture(zone, nodeRepository, nodeFlavors, curator);
     }
 
