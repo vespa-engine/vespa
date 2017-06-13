@@ -21,7 +21,6 @@ import javax.ws.rs.BadRequestException;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -54,7 +53,7 @@ public class HostResource implements HostApi {
     }
 
     @Override
-    public PatchHostResponse patch(@PathParam("hostname") String hostNameString, PatchHostRequest request) {
+    public PatchHostResponse patch(String hostNameString, PatchHostRequest request) {
         HostName hostName = new HostName(hostNameString);
 
         if (request.state != null) {
