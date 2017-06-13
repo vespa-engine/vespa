@@ -295,9 +295,9 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>${project.basedir}/src/test/perl/jdisc_logfmt_test.sh</executable>
+                                    <executable>${project.basedir}/src/test/perl/vespa-jdisc-logfmt-test.sh</executable>
                                     <arguments>
-                                        <argument>${project.basedir}/src/main/perl/jdisc_logfmt</argument>
+                                        <argument>${project.basedir}/src/main/perl/vespa-jdisc-logfmt</argument>
                                     </arguments>
                                 </configuration>
                             </execution>

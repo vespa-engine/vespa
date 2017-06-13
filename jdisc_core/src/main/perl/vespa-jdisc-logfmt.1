@@ -1,11 +1,11 @@
 .\" $Id: logfmt.1,v 1.12 2007-06-19 09:37:25 daljord Exp $
 .\"
 .Dd October 29, 2004
-.Dt LOGFMT \&1 "JDisc documentation"
+.Dt VESPA-JDISC-LOGFMT \&1 "JDisc documentation"
 .Os "Yahoo! JDisc" "2.3"
 .Os
 .Sh NAME
-.Nm logfmt
+.Nm vespa-jdisc-logfmt
 .Nd select and format messages from JDisc log files
 .Sh SYNOPSIS
 .Nm
@@ -73,7 +73,7 @@ is shown.
 Print the time in human-readable [YYYY-MM-DD HH:mm:ss] format.
 Note that the time is printed in the local timezone; to get GMT
 output use
-.Nm "\*[q]env TZ=GMT logfmt\*[q]"
+.Nm "\*[q]env TZ=GMT vespa-jdisc-logfmt\*[q]"
 as your command.
 .It msecs
 Add milliseconds after the seconds in
@@ -151,7 +151,7 @@ truncating if necessary.
 The command:
 .Pp
 .Bd -literal -offset indent
-logfmt -l event -s service,message,fmttime,message
+vespa-jdisc-logfmt -l event -s service,message,fmttime,message
 .Ed
 .Pp
 will display only messages with log level "event",
@@ -175,7 +175,7 @@ order is.
 The command:
 .Pp
 .Bd -literal -offset indent
-logfmt -l all-info,-debug -s level \e
+vespa-jdisc-logfmt -l all-info,-debug -s level \e
        -s time,usecs,component,message -t -l -event
 .Ed
 .Pp
