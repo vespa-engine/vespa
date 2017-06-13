@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 @ExportPackage(version = @Version(major = 2, minor = 9, micro = 1))
 package org.apache.curator.framework.state;
 import com.yahoo.osgi.annotation.ExportPackage;
