@@ -381,7 +381,7 @@ verifyReply(size_t count, document::CompressionConfig::Type encoding, size_t org
 
     DataBuffer uncompressed;
     ConstBufferRef blob(ret[2]._data._buf, ret[2]._data._len);
-    document::decompress(CompressionConfig::toType(ret[0]._intval8), ret[1]._intval32, blob, uncompressed, false);
+    compression::decompress(CompressionConfig::toType(ret[0]._intval8), ret[1]._intval32, blob, uncompressed, false);
     EXPECT_EQUAL(orgSize, uncompressed.getDataLen());
 
     vespalib::Slime summaries;
@@ -402,7 +402,7 @@ verifyRPC(size_t count,
 
     CompressionConfig config(requestCompression, 9, 100);
     DataBuffer compressed(const_cast<char *>(buf.get().data), buf.get().size);
-    CompressionConfig::Type type = document::compress(config, ConstBufferRef(buf.get().data, buf.get().size), compressed, true);
+    CompressionConfig::Type type = compression::compress(config, ConstBufferRef(buf.get().data, buf.get().size), compressed, true);
     EXPECT_EQUAL(type, requestCompression);
 
     FRT_RPCRequest * request = new FRT_RPCRequest();
