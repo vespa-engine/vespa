@@ -9,9 +9,11 @@ fi
 
 GIT_COMMIT=$1
 SOURCE_DIR=/home/vespabuilder/vespa
+BUILD_DIR=/home/vespabuilder/build
 THREADS=$(nproc --all)
 
 mkdir "${SOURCE_DIR}"
+mkdir "${BUILD_DIR}"
 git --work-tree="${SOURCE_DIR}" --git-dir=/vespa/.git checkout ${GIT_COMMIT} -- .
 cd "${SOURCE_DIR}"
 source /opt/rh/devtoolset-6/enable || true
@@ -22,7 +24,7 @@ cmake3 -DCMAKE_INSTALL_PREFIX=/opt/vespa \
       -DEXTRA_INCLUDE_DIRECTORY="/opt/vespa-boost/include;/opt/vespa-libtorrent/include;/opt/vespa-zookeeper-c-client/include;/opt/vespa-cppunit/include;/usr/include/llvm3.9" \
       -DCMAKE_INSTALL_RPATH="/opt/vespa/lib64;/opt/vespa-boost/lib;/opt/vespa-libtorrent/lib;/opt/vespa-zookeeper-c-client/lib;/opt/vespa-cppunit/lib;/usr/lib/jvm/java-1.8.0/jre/lib/amd64/server;/usr/include/llvm3.9" \
       -DCMAKE_BUILD_RPATH=/opt/vespa/lib64 \
-      .
+      "${BUILD_DIR}"
 mvn clean install
 make -j ${THREADS}
 make -j ${THREADS} test
