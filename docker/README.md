@@ -13,6 +13,10 @@ Execute ```./build-vespa.sh <Vespa version number>``` to build Vespa from this s
 The produced rpms will be available in this folder after compiliation. The version number will be compiled into binaries, but has no other meaning than that.
 
 
+## Building and testing Vespa
+Execute ```./vespa-ci.sh <git commit>``` to build and test a specific branch/tag/commit.
+
+
 ## Running Vespa
 Execute ```./run-vespa.sh <Vespa version number>``` to start Vespa.
 
