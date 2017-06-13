@@ -42,7 +42,6 @@ public interface HostApi {
 
     /**
      * Tweak internal Orchestrator state for host.
-     * Note: This should really be a patch method, but I was unable to get that working with PATCH from jaxrs_utils!?
      */
     @PATCH
     @Path("/{hostname}")
