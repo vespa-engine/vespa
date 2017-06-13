@@ -9,7 +9,7 @@ vespa_add_executable(configd_config-sentinel_app
     output-connection.cpp
     metrics.cpp
     state-api.cpp
-    OUTPUT_NAME config-sentinel
+    OUTPUT_NAME vespa-config-sentinel
     INSTALL sbin
     DEPENDS
     configdefinitions

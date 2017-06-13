@@ -144,3 +144,7 @@ ln -s vespa-fbench-split-file $INSTALLPATH/bin/splitfile
 # Temporary when renaming programs in slobrok
 ln -s vespa-slobrok $INSTALLPATH/bin/slobrok
 ln -s vespa-slobrok-cmd $INSTALLPATH/bin/sbcmd
+
+# Temporary when renaming programs in configd
+ln -s vespa-run-as-vespa-user $INSTALLPATH/bin/run-as-yahoo
+ln -s vespa-config-sentinel   $INSTALLPATH/sbin/config-sentinel

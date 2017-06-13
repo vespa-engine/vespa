@@ -80,15 +80,15 @@ export VESPA_LOG_TARGET
 
 multitenant=$cloudconfig_server__multitenant
 if [ "$multitenant" = "true" ]; then
-    run-as-yahoo vespa-runserver -s filedistributor -p $PIDFILE_FILEDISTRIBUTOR -S
-    run-as-yahoo vespa-runserver -s logd -p $PIDFILE_LOGD -S
+    vespa-run-as-vespa-user vespa-runserver -s filedistributor -p $PIDFILE_FILEDISTRIBUTOR -S
+    vespa-run-as-vespa-user vespa-runserver -s logd -p $PIDFILE_LOGD -S
 fi
 
 # Try shutting down this way in case of upgrade. Can be removed in later versions.
-run-as-yahoo vespa-runserver -s configserver -p $PIDFILE_CONFIGSERVER -S
+vespa-run-as-vespa-user vespa-runserver -s configserver -p $PIDFILE_CONFIGSERVER -S
 
 if [ -e "$PIDFILE_CONFIGSERVER" ]; then
     export UNPRIVILEGED=1
     export PID_FILE=$PIDFILE_CONFIGSERVER
-    exec run-as-yahoo ${ROOT}/bin/jdisc_container_stop
+    exec vespa-run-as-vespa-user ${ROOT}/bin/jdisc_container_stop
 fi
