@@ -477,7 +477,12 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
     @Override
     public void merge(RoutingContext context) {
         RoutingNodeIterator it = context.getChildIterator();
-        Reply reply = it.removeReply();
+        Reply reply = (it.hasReply()) ? it.removeReply() : context.getReply();
+        if (reply == null) {
+            reply = new EmptyReply();
+            reply.addError(new Error(ErrorCode.NO_ADDRESS_FOR_SERVICE,
+                    "No reply in any children, nor in the routing context: " + context));
+        }
 
         if (reply instanceof WrongDistributionReply) {
             distributorSelectionLogic.handleWrongDistribution((WrongDistributionReply) reply, context);

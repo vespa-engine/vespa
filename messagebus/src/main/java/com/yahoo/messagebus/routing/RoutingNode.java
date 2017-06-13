@@ -492,7 +492,7 @@ public class RoutingNode implements ReplyHandler {
         return false;
     }
 
-    private String exceptionMessageWithTrace(Exception e) {
+    private static String exceptionMessageWithTrace(Exception e) {
         StringWriter sw = new StringWriter();
         try (PrintWriter pw = new PrintWriter(sw)) {
             e.printStackTrace(pw);
