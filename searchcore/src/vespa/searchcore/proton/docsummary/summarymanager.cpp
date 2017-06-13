@@ -118,6 +118,7 @@ deriveCompression(const T & config) {
     if (config.type == T::LZ4) {
         compression.type = document::CompressionConfig::LZ4;
     } else if (config.type == T::ZSTD) {
+        compression.type = document::CompressionConfig::ZSTD;
     }
     compression.compressionLevel = config.level;
     return compression;
@@ -160,6 +161,8 @@ SummaryManager::SummaryManager(vespalib::ThreadExecutor & executor,
                                          growStrategy, tuneFileSummary, fileHeaderContext, tlSyncer,
                                          summary.compact2buckets ? bucketizer : search::IBucketizer::SP()));
 }
+
+SummaryManager::~SummaryManager() {}
 
 void
 SummaryManager::putDocument(uint64_t syncToken, const Document & doc, search::DocumentIdT lid)

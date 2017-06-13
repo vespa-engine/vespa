@@ -82,6 +82,7 @@ public:
                    const search::common::FileHeaderContext &fileHeaderContext,
                    search::transactionlog::SyncProxy &tlSyncer,
                    const std::shared_ptr<search::IBucketizer> & bucketizer);
+    ~SummaryManager();
 
     void putDocument(uint64_t syncToken, const document::Document & doc,
                      search::DocumentIdT lid);

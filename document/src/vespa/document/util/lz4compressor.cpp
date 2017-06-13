@@ -26,10 +26,8 @@ LZ4Compressor::process(const CompressionConfig& config, const void * inputV, siz
         Alloc state = Alloc::alloc(LZ4_sizeofState());
         sz = LZ4_compress_fast_extState(state.get(), input, output, inputLen, maxOutputLen, 1);
     }
-    if (sz != 0) {
-        outputLenV = sz;
-    }
     assert(sz != 0);
+    outputLenV = sz;
     return (sz != 0);
     
 }
@@ -40,10 +38,8 @@ LZ4Compressor::unprocess(const void * inputV, size_t inputLen, void * outputV, s
     const char * input(static_cast<const char *>(inputV));
     char * output(static_cast<char *>(outputV));
     int sz = LZ4_decompress_safe(input, output, inputLen, outputLenV);
-    if (sz > 0) {
-        outputLenV = sz;
-    }
     assert(sz > 0);
+    outputLenV = sz;
     return (sz > 0);
 }
 
