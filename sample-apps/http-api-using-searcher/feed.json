@@ -1,0 +1,14 @@
+[
+    {
+        "put": "id:test:basic::http://demo/0/",
+        "fields": {
+            "description": "red hat smurf demo"
+        }
+    },
+    {
+        "put": "id:test:basic::http://demo/1/",
+        "fields": {
+            "description": "red smurf hat demo something"
+        }
+    }
+]

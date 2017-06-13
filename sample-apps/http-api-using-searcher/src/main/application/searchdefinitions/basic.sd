@@ -1,0 +1,16 @@
+search basic {
+
+  document basic {
+
+    field description type string {
+      indexing: summary | index
+    }
+
+  }
+
+  fieldset default {
+    fields: description
+  }
+
+}
+
