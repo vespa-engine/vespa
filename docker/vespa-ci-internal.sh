@@ -19,7 +19,7 @@ cd "${SOURCE_DIR}"
 git checkout ${GIT_COMMIT}
 source /opt/rh/devtoolset-6/enable || true
 sh ./bootstrap.sh full
-mvn install
+mvn -T ${THREADS} install
 cd "${BUILD_DIR}"
 cmake3 -DCMAKE_INSTALL_PREFIX=/opt/vespa \
       -DJAVA_HOME=/usr/lib/jvm/java-openjdk \
