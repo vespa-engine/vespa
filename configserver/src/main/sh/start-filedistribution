@@ -78,5 +78,5 @@ if [ "$multitenant" = "true" ]; then
     export VESPA_LOG_CONTROL_DIR
     export VESPA_LOG_CONTROL_FILE
     cd ${ROOT}
-    vespa-runserver -r 30 -s filedistributor -p $PIDFILE_FILEDISTRIBUTOR -- ${ROOT}/sbin/vespa-filedistributor --configid $VESPA_CONFIG_ID
+    vespa-runserver -r 30 -s filedistributor -p $PIDFILE_FILEDISTRIBUTOR -- ${ROOT}/sbin/filedistributor --configid $VESPA_CONFIG_ID
 fi
