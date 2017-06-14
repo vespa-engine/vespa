@@ -1,10 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.filedistribution;
 
+import com.yahoo.system.execution.ProcessExecutor;
+import com.yahoo.system.execution.ProcessResult;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 
 /**
@@ -109,10 +113,19 @@ public class FileDistributionManager {
     }
 
     public void reloadDeployFileDistributor() {
+        String binaryName = "filedistributor";
+        String command = "pkill -SIGUSR1 -x " + binaryName;
+        int timeoutSeconds = 10;
         try (LockGuard guard = new LockGuard(lock)) {
-            Runtime.getRuntime().exec("pkill -SIGUSR1 -x filedistributor");
+            Optional<ProcessResult> result = new ProcessExecutor.Builder(timeoutSeconds).build().execute(command);
+            if (! result.isPresent()) {
+                throw new RuntimeException(String.format("Executing '%s' timed out", command));
+            } else if (result.get().exitCode != 0) {
+                throw new RuntimeException(String.format("Error when executing '%s', exit code %d: %s\n%s",
+                                                         command, result.get().exitCode, result.get().stdOut, result.get().stdErr));
+            }
         } catch (IOException e) {
-            throw new RuntimeException("Failed to reinitialize the filedistributor", e);
+            throw new RuntimeException("Failed to reinitialize " + binaryName, e);
         }
     }
 
