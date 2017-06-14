@@ -46,7 +46,7 @@ Java modules can be built on any environment having Java and Maven:
           -DCMAKE_BUILD_RPATH=/opt/vespa/lib64 \
           <sourcedir>
     make
-    ctest
+    ctest3
 
 ### Create RPM packages
     sh dist.sh VERSION && rpmbuild -ba ~/rpmbuild/SPECS/vespa-VERSION.spec
