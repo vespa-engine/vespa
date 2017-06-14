@@ -3,7 +3,7 @@
 /providerstub_test
 /providerproxy_test
 /providerproxy_conformancetest
-/external_providerproxy_conformancetest
+/vespa-external-providerproxy-conformancetest
 persistence_providerproxy_conformance_test_app
 persistence_providerproxy_test_app
 persistence_providerstub_test_app

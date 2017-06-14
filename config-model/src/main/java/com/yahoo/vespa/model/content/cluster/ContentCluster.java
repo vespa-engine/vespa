@@ -102,7 +102,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
 
             ModelElement documentsElement = contentElement.getChild("documents");
             Map<String, NewDocumentType> documentDefinitions =
-                    new SearchDefinitionBuilder().build(context.getParentProducer().getRoot().getDeployState().getDocumentModel().getDocumentManager(), documentsElement);
+                    new SearchDefinitionBuilder().build(context.getDeployState().getDocumentModel().getDocumentManager(), documentsElement);
 
             String routingSelection = new DocumentSelectionBuilder().build(documentsElement);
             Redundancy redundancy = new RedundancyBuilder().build(contentElement);
@@ -110,7 +110,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
 
             ContentCluster c = new ContentCluster(context.getParentProducer(), getClusterName(contentElement), documentDefinitions, 
                                                   globallyDistributedDocuments, routingSelection, redundancy,
-                                                  context.getParentProducer().getRoot().getDeployState().getProperties().zone());
+                                                  context.getDeployState().getProperties().zone());
             c.clusterControllerConfig = new ClusterControllerConfig.Builder(getClusterName(contentElement), contentElement).build(c, contentElement.getXml());
             c.search = new ContentSearchCluster.Builder(documentDefinitions, globallyDistributedDocuments).build(c, contentElement.getXml());
             c.persistenceFactory = new EngineFactoryBuilder().build(contentElement, c);

@@ -18,7 +18,7 @@ sleep 5
 $SOURCE_DIRECTORY/create_configfile.sh
 
 export VESPA_CONFIG_ID=file:logd.cfg
-../../apps/logd/logd &
+../../apps/logd/vespa-logd &
 echo $! > logd.pid
 
 ./logd_dummylogger_app

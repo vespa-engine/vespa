@@ -3,7 +3,7 @@ vespa_add_executable(filedistribution_status-filedistribution_app
     SOURCES
     status-filedistribution.cpp
     INSTALL bin
-    OUTPUT_NAME vespa-status-filedistribution-bin
+    OUTPUT_NAME status-filedistribution
     DEPENDS
     filedistribution_filedistributionmodel
     filedistribution_common

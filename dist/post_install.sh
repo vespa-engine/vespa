@@ -69,10 +69,6 @@ ln -s $PREFIX/lib/jars/zkfacade-jar-with-dependencies.jar $INSTALLPATH/conf/conf
 ln -s $PREFIX/conf/configserver-app/components $INSTALLPATH/lib/jars/config-models
 ln -s vespa-storaged-bin $INSTALLPATH/sbin/vespa-distributord-bin
 
-# Temporary when renaming programs in filedistribution
-ln -s vespa-filedistributor $INSTALLPATH/sbin/filedistributor
-ln -s vespa-filedistributor-bin $INSTALLPATH/sbin/filedistributor-bin
-
 # Temporary when renaming binaries in fnet
 ln -s vespa-rpc-info $INSTALLPATH/bin/rpc_info
 ln -s vespa-rpc-invoke $INSTALLPATH/bin/rpc_invoke
@@ -117,6 +113,9 @@ ln -s vespa-logctl $INSTALLPATH/bin/logctl
 ln -s vespa-logfmt $INSTALLPATH/bin/logfmt
 ln -s vespa-log-replay $INSTALLPATH/bin/vlogreplay
 
+# Temporary when renaming binaries in logd
+ln -s vespa-logd $INSTALLPATH/sbin/logd
+
 # Temporary when renaming binaries in memfilepersistence
 ln -s vespa-dump-slotfile $INSTALLPATH/bin/dumpslotfile
 ln -s vespa-vds-disktool-bin $INSTALLPATH/bin/vdsdisktool-bin
@@ -148,3 +147,6 @@ ln -s vespa-slobrok-cmd $INSTALLPATH/bin/sbcmd
 # Temporary when renaming programs in configd
 ln -s vespa-run-as-vespa-user $INSTALLPATH/bin/run-as-yahoo
 ln -s vespa-config-sentinel   $INSTALLPATH/sbin/config-sentinel
+
+# Temporary when renaming programs in logserver
+ln -s vespa-logserver-start $INSTALLPATH/bin/logserver-start
