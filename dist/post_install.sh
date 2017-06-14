@@ -85,10 +85,10 @@ ln -s vespa-makefsa $INSTALLPATH/bin/makefsa
 
 # Temporary when renaming binaries in searchcore
 ln -s vespa-proton-bin $INSTALLPATH/sbin/proton-bin
-ln -s vespa-fdispatch-bin $INSTALLPATH/sbin/fdispatch-bin
+ln -s vespa-dispatch-bin $INSTALLPATH/sbin/fdispatch-bin
 ln -s vespa-verify-ranksetup-bin $INSTALLPATH/bin/verify_ranksetup-bin
 ln -s vespa-proton $INSTALLPATH/sbin/proton
-ln -s vespa-fdispatch $INSTALLPATH/sbin/fdispatch
+ln -s vespa-dispatch $INSTALLPATH/sbin/fdispatch
 ln -s vespa-verify-ranksetup $INSTALLPATH/bin/verify_ranksetup
 
 # Temporary when renaming binaries in storageserver
