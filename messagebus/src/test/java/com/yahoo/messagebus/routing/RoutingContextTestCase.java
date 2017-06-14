@@ -121,6 +121,10 @@ public class RoutingContextTestCase extends junit.framework.TestCase {
         }
     }
 
+    public void testToString() {
+        assertEquals("node : null, directive: 1, errors: [], selectOnRetry: true context: null", new RoutingContext(null, 1).toString());
+    }
+
     public void testConstRoute() {
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("DocumentRouteSelector",

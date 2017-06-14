@@ -34,6 +34,11 @@ public class RoutingContext {
         this.directive = directive;
     }
 
+    public String toString() {
+        return "node : " + node + ", directive: " + directive + ", errors: " + consumableErrors +
+                ", selectOnRetry: " + selectOnRetry + " context: " + context;
+    }
+
     /**
      * <p>Returns whether or not this hop has any configured recipients.</p>
      *
