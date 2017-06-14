@@ -10,8 +10,8 @@ fi
 GIT_COMMIT=$1
 SOURCE_DIR=/home/vespabuilder/vespa
 BUILD_DIR=/home/vespabuilder/build
-N_CORES=$(nproc --all)
-N_THREADS=$((${N_CORES} + ${N_CORES}/2))
+NUM_CORES=$(nproc --all)
+NUM_THREADS=$((${NUM_CORES} + ${NUM_CORES}/2))
 
 mkdir "${SOURCE_DIR}"
 mkdir "${BUILD_DIR}"
@@ -20,7 +20,7 @@ cd "${SOURCE_DIR}"
 git checkout ${GIT_COMMIT}
 source /opt/rh/devtoolset-6/enable || true
 sh ./bootstrap.sh full
-mvn -T ${N_THREADS} install
+mvn install
 cd "${BUILD_DIR}"
 cmake3 -DCMAKE_INSTALL_PREFIX=/opt/vespa \
       -DJAVA_HOME=/usr/lib/jvm/java-openjdk \
@@ -29,5 +29,5 @@ cmake3 -DCMAKE_INSTALL_PREFIX=/opt/vespa \
       -DCMAKE_INSTALL_RPATH="/opt/vespa/lib64;/opt/vespa-boost/lib;/opt/vespa-libtorrent/lib;/opt/vespa-zookeeper-c-client/lib;/opt/vespa-cppunit/lib;/usr/lib/jvm/java-1.8.0/jre/lib/amd64/server;/usr/include/llvm3.9" \
       -DCMAKE_BUILD_RPATH=/opt/vespa/lib64 \
       "${SOURCE_DIR}"
-make -j ${N_THREADS}
-make -j ${N_THREADS} test
+make -j ${NUM_THREADS}
+make -j ${NUM_THREADS} test
