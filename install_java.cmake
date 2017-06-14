@@ -1,4 +1,3 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 function(install_java_artifact NAME)
     install(FILES "${NAME}/target/${NAME}.jar" DESTINATION lib/jars/)
 endfunction()

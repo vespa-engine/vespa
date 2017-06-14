@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <project basedir="." default="all" name="jrt-test">
     <!-- Written to assume that classpath is rooted in the current directory. -->
     <!-- So this should be OK if you make this script in the root of a filesystem. -->
