@@ -70,6 +70,7 @@ RoutableFactories51::CreateVisitorMessageFactory::doDecode(document::ByteBuffer 
     msg.setMaximumPendingReplyCount(decodeInt(buf));
 
     int32_t len = decodeInt(buf);
+    msg.getBuckets().reserve(len);
     for (int32_t i = 0; i < len; i++) {
         int64_t val;
         buf.getLong(val); // NOT using getLongNetwork
