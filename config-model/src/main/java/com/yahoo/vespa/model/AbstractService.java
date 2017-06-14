@@ -102,7 +102,7 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
         Map<HostResource, List<SERVICE>> affinityMap = new HashMap<>();
         for (SERVICE service : services) {
             if (!affinityMap.containsKey(service.getHostResource())) {
-                affinityMap.put(service.getHostResource(), new ArrayList<SERVICE>());
+                affinityMap.put(service.getHostResource(), new ArrayList<>());
             }
             int cpuSocket = affinityMap.get(service.getHostResource()).size();
             affinityMap.get(service.getHostResource()).add(service);
@@ -547,5 +547,10 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
 
     public void setAffinity(Affinity affinity) {
         this.affinity = Optional.ofNullable(affinity);
+    }
+
+    @Override
+    public String toString() {
+        return getServiceName() + " on " + getHost().toString();
     }
 }

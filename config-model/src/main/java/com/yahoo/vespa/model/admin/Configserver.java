@@ -42,16 +42,16 @@ public class Configserver extends AbstractService {
      * Returns the desired base port for this service.
      */
     public int getWantedPort() {
-    	try {
-    		// TODO: Provide configserver port as argument when creating this service instead
-                Process process = new ProcessBuilder(getDefaults().underVespaHome("bin/vespa-print-default"), "configserver_rpc_port").start();
-    		InputStream in = process.getInputStream();
-    		BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-    		return Integer.parseInt(reader.readLine().trim());
-    	} catch (Exception exception) {
-    		log.log(LogLevel.DEBUG, "Error reading port from script, using " + defaultPort);
-    		return defaultPort;
-    	}
+        try {
+            // TODO: Provide configserver port as argument when creating this service instead
+            Process process = new ProcessBuilder(getDefaults().underVespaHome("bin/vespa-print-default"), "configserver_rpc_port").start();
+            InputStream in = process.getInputStream();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+            return Integer.parseInt(reader.readLine().trim());
+        } catch (Exception exception) {
+            log.log(LogLevel.DEBUG, "Error reading port from script, using " + defaultPort);
+            return defaultPort;
+        }
     }
 
     /**

@@ -13,8 +13,8 @@ public class Slobrok extends AbstractService {
     private static final long serialVersionUID = 1L;
 
     /**
-     * @param parent   The parent ConfigProducer.
-     * @param index    unique index for all slobroks
+     * @param parent The parent ConfigProducer.
+     * @param index  unique index for all slobroks
      */
     public Slobrok(AbstractConfigProducer parent, int index) {
         super(parent, "slobrok." + index);
@@ -42,8 +42,8 @@ public class Slobrok extends AbstractService {
 
     public String getStartupCommand() {
         return "exec $ROOT/bin/slobrok -p " + getPort() +
-            " -s " + getStatePort() +
-            " -c " + getConfigId();
+                " -s " + getStatePort() +
+                " -c " + getConfigId();
     }
 
     /**

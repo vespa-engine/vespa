@@ -20,7 +20,7 @@ public class PortsMeta implements Serializable {
     private Integer rpcAdminOffset   = null;
     /** Remember the rpc status port offset. */
     private Integer rpcStatusOffset  = null;
-    /** Remember the https admin port offset. */
+    /** Remember the http admin port offset. */
     private Integer httpAdminOffset  = null;
     /** Remember the http status port offset. */
     private Integer httpStatusOffset = null;
@@ -64,7 +64,7 @@ public class PortsMeta implements Serializable {
     private PortsMeta register(int offset, String meta) {
         // Allocate new LinkedLists on each element up-to-and-including offset
         for (int i = ports.size(); i <= offset; i++) {
-            ports.add(i, new LinkedList<String>());
+            ports.add(i, new LinkedList<>());
         }
         ports.get(offset).addFirst(meta);
 
@@ -88,6 +88,7 @@ public class PortsMeta implements Serializable {
     public int getNumPorts() {
         return ports.size();
     }
+
     /**
      * Get an iterator of the Strings registered at the specific point.
      * @param offset The relative offset to inquire about tags.
