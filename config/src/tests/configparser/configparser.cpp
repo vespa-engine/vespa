@@ -108,14 +108,6 @@ TEST("require that escaped values are properly unescaped") {
     ASSERT_EQUAL("a\nb\rc\\d\"eBg", value);
 }
 
-IGNORE_TEST("verify that locale affects double parsing") { // Failing on some CentOS based environments
-    std::vector<vespalib::string> payload;
-    setlocale(LC_NUMERIC, "nb_NO.UTF-8");
-    payload.push_back("foo 3.14");
-    ASSERT_EXCEPTION(ConfigParser::parse<double>("foo", payload), InvalidConfigException, "Value 3.14 is not a legal double");
-    setlocale(LC_NUMERIC, "C");
-}
-
 TEST("require that maps can be parsed")
 {
     writeFile("foo.cfg", "\nfooValue \"a\"\nfooMap{\"foo\"} 1336\nfooMap{\"bar\"} 1337\n");
