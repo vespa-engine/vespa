@@ -19,7 +19,7 @@ import scala.collection.convert.wrapAsScala._
 /**
  * @author  tonytv
  */
-@Mojo(name = "assemble-container-plugin", requiresDependencyResolution = ResolutionScope.COMPILE)
+@Mojo(name = "assemble-container-plugin", requiresDependencyResolution = ResolutionScope.COMPILE, threadSafe = true)
 class AssembleContainerPluginMojo extends AbstractMojo {
   object withDependencies
   object withoutDependencies

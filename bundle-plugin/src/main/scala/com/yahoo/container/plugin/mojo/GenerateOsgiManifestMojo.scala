@@ -28,7 +28,7 @@ import scala.collection.immutable.Map
 /**
  * @author  tonytv
  */
-@Mojo(name = "generate-osgi-manifest", requiresDependencyResolution = ResolutionScope.TEST)
+@Mojo(name = "generate-osgi-manifest", requiresDependencyResolution = ResolutionScope.TEST, threadSafe = true)
 class GenerateOsgiManifestMojo extends AbstractMojo {
 
   @Parameter(defaultValue = "${project}")
