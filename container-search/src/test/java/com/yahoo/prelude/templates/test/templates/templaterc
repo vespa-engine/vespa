@@ -1,5 +1,0 @@
-#
-# $Id: templaterc,v 1.1 2004-02-12 12:44:54 bratseth Exp $
-#
-/xsearch		xsearch		text/xml	utf-8
-/cgi-bin/asearch	asearch		text/html	utf-8
