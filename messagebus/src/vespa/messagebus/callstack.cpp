@@ -20,24 +20,7 @@ CallStack::discard()
     }
 }
 
-CallStack::CallStack() : _stack() { }
 CallStack::~CallStack() { }
-void
-CallStack::swap(CallStack &dst)
-{
-    _stack.swap(dst._stack);
-}
-
-void
-CallStack::push(IReplyHandler &replyHandler, Context ctx,
-                IDiscardHandler *discardHandler)
-{
-    Frame frame;
-    frame.replyHandler = &replyHandler;
-    frame.discardHandler = discardHandler;
-    frame.ctx = ctx;
-    _stack.push_back(frame);
-}
 
 IReplyHandler &
 CallStack::pop(Reply &reply)
