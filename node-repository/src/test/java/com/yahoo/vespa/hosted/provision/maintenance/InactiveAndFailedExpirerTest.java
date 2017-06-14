@@ -77,18 +77,18 @@ public class InactiveAndFailedExpirerTest {
     @Test
     public void reboot_generation_is_increased_when_node_moves_to_dirty() {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
-        List<Node> nodes = tester.makeReadyNodes(2, "default");
+        List<Node> nodes = tester.makeReadyNodes(1, "default");
 
         // Allocate and deallocate a single node
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content,
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, 
                                                   ClusterSpec.Id.from("test"), 
                                                   Version.fromString("6.42"));
-        tester.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1);
+        tester.prepare(applicationId, cluster, Capacity.fromNodeCount(1), 1);
         tester.activate(applicationId, ProvisioningTester.toHostSpecs(nodes));
-        assertEquals(2, tester.getNodes(applicationId, Node.State.active).size());
+        assertEquals(1, tester.getNodes(applicationId, Node.State.active).size());
         tester.deactivate(applicationId);
         List<Node> inactiveNodes = tester.getNodes(applicationId, Node.State.inactive).asList();
-        assertEquals(2, inactiveNodes.size());
+        assertEquals(1, inactiveNodes.size());
 
         // Check reboot generation before node is moved. New nodes transition from provisioned to dirty, so their
         // wanted reboot generation will always be 1.
@@ -99,7 +99,7 @@ public class InactiveAndFailedExpirerTest {
         tester.advanceTime(Duration.ofMinutes(14));
         new InactiveExpirer(tester.nodeRepository(), tester.clock(), Duration.ofMinutes(10), new JobControl(tester.nodeRepository().database())).run();
         List<Node> dirty = tester.nodeRepository().getNodes(Node.State.dirty);
-        assertEquals(2, dirty.size());
+        assertEquals(1, dirty.size());
 
         // Reboot generation is increased
         assertEquals(wantedRebootGeneration + 1, dirty.get(0).status().reboot().wanted());
