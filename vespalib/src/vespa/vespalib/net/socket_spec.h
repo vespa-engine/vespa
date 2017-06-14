@@ -26,6 +26,7 @@ private:
 public:
     explicit SocketSpec(const vespalib::string &spec);
     vespalib::string spec() const;
+    SocketSpec replace_host(const vespalib::string &new_host) const;
     static SocketSpec from_path(const vespalib::string &path) {
         return SocketSpec(Type::PATH, path, -1);
     }
