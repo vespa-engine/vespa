@@ -594,13 +594,20 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
      */
     public int distributionBits() {
         // TODO: Enable for all hosted zones (i.e when zone isn't default)
-        List<RegionName> prodRegionsWith16DistributionBits =
-                Stream.of("us-west-1", "us-central-1", "eu-west-1", "ap-northeast-1", "ap-northeast-2", "us-east-3")
-                      .map(RegionName::from).collect(Collectors.toList());
-        if (zone.environment().equals(Environment.prod) && prodRegionsWith16DistributionBits.contains(zone.region()))
+        List<Zone> zonesWith16DistributionBits = Arrays.asList(createZone(Environment.prod, "us-west-1"),
+                                                               createZone(Environment.prod, "us-central-1"),
+                                                               createZone(Environment.prod, "eu-west-1"),
+                                                               createZone(Environment.prod, "ap-northeast-1"),
+                                                               createZone(Environment.prod, "ap-northeast-2"),
+                                                               createZone(Environment.prod, "us-east-3"));
+        if (zonesWith16DistributionBits.contains(zone))
             return 16;
         else
             return DistributionBitCalculator.getDistributionBits(getNodeCountPerGroup(), getDistributionMode());
+    }
+
+    private Zone createZone(Environment environment, String region) {
+        return new Zone(environment, RegionName.from(region));
     }
 
     @Override
