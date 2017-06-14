@@ -68,5 +68,5 @@ if [ "$multitenant" = "true" ]; then
     PIDFILE_LOGD=var/run/logd.pid
     VESPA_SERVICE_NAME=logd
     export VESPA_SERVICE_NAME
-    vespa-runserver -r 30 -s logd -p $PIDFILE_LOGD -- ${ROOT}/sbin/logd
+    vespa-runserver -r 30 -s logd -p $PIDFILE_LOGD -- ${ROOT}/sbin/vespa-logd
 fi

@@ -1,8 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.model.deploy.DeployProperties;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.config.model.test.TestRoot;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.vespa.config.content.StorFilestorConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
@@ -14,15 +20,20 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.engines.ProtonEngine;
+import com.yahoo.vespa.model.content.utils.ContentClusterBuilder;
+import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
+import com.yahoo.vespa.model.content.utils.SearchDefinitionBuilder;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Test;
 
 import java.util.List;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
+// TODO Rename to ContentClusterTest
 public class ClusterTest extends ContentBaseTest {
 
     private final static String HOSTS = "<admin version='2.0'><adminserver hostalias='mockhost' /></admin>";
@@ -412,20 +423,8 @@ public class ClusterTest extends ContentBaseTest {
             "</content>"
         );
 
-        {
-            FleetcontrollerConfig.Builder builder = new FleetcontrollerConfig.Builder();
-            cluster.getConfig(builder);
-            cluster.getClusterControllerConfig().getConfig(builder);
-            FleetcontrollerConfig config = new FleetcontrollerConfig(builder);
-            assertEquals(8, config.ideal_distribution_bits());
-        }
+        assertDistributionBitsInConfig(cluster, 8);
 
-        {
-            StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
-            cluster.getConfig(builder);
-            StorDistributormanagerConfig config = new StorDistributormanagerConfig(builder);
-            assertEquals(8, config.minsplitcount());
-        }
         cluster = parse(
             "<content version=\"1.0\" id=\"storage\">\n" +
             "  <documents/>" +
@@ -438,20 +437,7 @@ public class ClusterTest extends ContentBaseTest {
             "</content>"
         );
 
-        {
-            FleetcontrollerConfig.Builder builder = new FleetcontrollerConfig.Builder();
-            cluster.getConfig(builder);
-            cluster.getClusterControllerConfig().getConfig(builder);
-            FleetcontrollerConfig config = new FleetcontrollerConfig(builder);
-            assertEquals(8, config.ideal_distribution_bits());
-        }
-
-        {
-            StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
-            cluster.getConfig(builder);
-            StorDistributormanagerConfig config = new StorDistributormanagerConfig(builder);
-            assertEquals(8, config.minsplitcount());
-        }
+        assertDistributionBitsInConfig(cluster, 8);
     }
 
     @Test
@@ -469,20 +455,8 @@ public class ClusterTest extends ContentBaseTest {
             "</content>"
         );
 
-        {
-            FleetcontrollerConfig.Builder builder = new FleetcontrollerConfig.Builder();
-            cluster.getConfig(builder);
-            cluster.getClusterControllerConfig().getConfig(builder);
-            FleetcontrollerConfig config = new FleetcontrollerConfig(builder);
-            assertEquals(8, config.ideal_distribution_bits());
-        }
+        assertDistributionBitsInConfig(cluster, 8);
 
-        {
-            StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
-            cluster.getConfig(builder);
-            StorDistributormanagerConfig config = new StorDistributormanagerConfig(builder);
-            assertEquals(8, config.minsplitcount());
-        }
         cluster = parse(
             "<content version=\"1.0\" id=\"storage\">\n" +
             "  <documents/>" +
@@ -498,22 +472,19 @@ public class ClusterTest extends ContentBaseTest {
             "</content>"
         );
 
-        {
-            FleetcontrollerConfig.Builder builder = new FleetcontrollerConfig.Builder();
-            cluster.getConfig(builder);
-            cluster.getClusterControllerConfig().getConfig(builder);
-            FleetcontrollerConfig config = new FleetcontrollerConfig(builder);
-            assertEquals(8, config.ideal_distribution_bits());
-        }
-
-        {
-            StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
-            cluster.getConfig(builder);
-            StorDistributormanagerConfig config = new StorDistributormanagerConfig(builder);
-            assertEquals(8, config.minsplitcount());
-        }
+        assertDistributionBitsInConfig(cluster, 8);
     }
 
+    @Test
+    public void testZoneDependentDistributionBits() throws Exception {
+        String xml = new ContentClusterBuilder().docTypes("test").getXml();
+
+        ContentCluster prodWith16Bits = createWithZone(xml, new Zone(Environment.prod, RegionName.from("us-east-3")));
+        assertDistributionBitsInConfig(prodWith16Bits, 16);
+
+        ContentCluster stagingNot16Bits = createWithZone(xml, new Zone(Environment.staging, RegionName.from("us-east-3")));
+        assertDistributionBitsInConfig(stagingNot16Bits, 8);
+    }
     @Test
     public void testGenerateSearchNodes()
     {
@@ -818,4 +789,31 @@ public class ClusterTest extends ContentBaseTest {
         assertThat(cluster.getSearch().getSearchNodes().size(), is(1));
         assertTrue(cluster.getSearch().getSearchNodes().get(0).getPreShutdownCommand().isPresent());
     }
+
+    private ContentCluster createWithZone(String clusterXml, Zone zone) throws Exception {
+        DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(new DeployProperties.Builder()
+                                                                                              .hostedVespa(true)
+                                                                                              .zone(zone)
+                                                                                              .build());
+        List<String> searchDefinitions = SearchDefinitionBuilder.createSearchDefinitions("test");
+        MockRoot root = ContentClusterUtils.createMockRoot(searchDefinitions, deployStateBuilder);
+        ContentCluster cluster = ContentClusterUtils.createCluster(clusterXml, root);
+        root.freezeModelTopology();
+        cluster.validate();
+        return cluster;
+    }
+
+    private void assertDistributionBitsInConfig(ContentCluster cluster, int distributionBits) {
+        FleetcontrollerConfig.Builder builder = new FleetcontrollerConfig.Builder();
+        cluster.getConfig(builder);
+        cluster.getClusterControllerConfig().getConfig(builder);
+        FleetcontrollerConfig config = new FleetcontrollerConfig(builder);
+        assertEquals(distributionBits, config.ideal_distribution_bits());
+
+        StorDistributormanagerConfig.Builder sdBuilder = new StorDistributormanagerConfig.Builder();
+        cluster.getConfig(sdBuilder);
+        StorDistributormanagerConfig storDistributormanagerConfig = new StorDistributormanagerConfig(sdBuilder);
+        assertEquals(distributionBits, storDistributormanagerConfig.minsplitcount());
+    }
+
 }

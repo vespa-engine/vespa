@@ -30,7 +30,7 @@ import static org.junit.Assert.assertEquals;
  *
  *
  * Example usage:
-     DockerImage vespaDockerBase = new DockerImage("docker-registry.ops.yahoo.com:4443/vespa/ci:6.52.35");
+     DockerImage vespaDockerBase = new DockerImage("docker-registry.domain.tld:8080/vespa/ci:6.52.35");
      Path pathToSystemtestsInHost = Paths.get("/home/valerijf/dev/systemtests");
      RunSystemTests runSystemTests = new RunSystemTests(vespaDockerBase, pathToSystemtestsInHost);
 

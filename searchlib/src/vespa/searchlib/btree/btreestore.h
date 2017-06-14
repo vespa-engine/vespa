@@ -10,11 +10,7 @@
 #include <vespa/searchlib/datastore/datastore.h>
 #include <vespa/searchlib/datastore/handle.h>
 
-namespace search
-{
-
-namespace btree
-{
+namespace search::btree {
 
 template <typename KeyT,
           typename DataT,
@@ -508,8 +504,6 @@ extern template class BTreeStore<uint32_t, int32_t,
                                  BTreeDefaultTraits,
                                  MinMaxAggrCalc>;
 
-} // namespace btree
-
-} // namespace search
+}
 
 

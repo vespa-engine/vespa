@@ -13,7 +13,7 @@
 int main(int argc, char** argv)
 {
     if (argc < 2) {
-        fprintf(stderr, "missing arguments, usage: run-as-yahoo <cmd> [args ...]\n");
+        fprintf(stderr, "missing arguments, usage: vespa-run-as-vespa-user <cmd> [args ...]\n");
         exit(1);
     }
     const char *username = getenv("VESPA_USER");

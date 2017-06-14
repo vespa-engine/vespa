@@ -64,4 +64,4 @@ cd ${VESPA_HOME} || { echo "Cannot cd to ${VESPA_HOME}" 1>&2; exit 1; }
 
 fixlimits
 
-exec run-as-yahoo ${VESPA_HOME}/bin/config-ctl stop
+exec vespa-run-as-vespa-user ${VESPA_HOME}/bin/vespa-config-ctl stop

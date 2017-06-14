@@ -80,7 +80,7 @@ public class Compressor {
                 int dataSize = uncompressedSize.isPresent() ? uncompressedSize.get() : data.length;
                 if (dataSize < compressMinSizeBytes) return new Compression(CompressionType.INCOMPRESSIBLE, dataSize, data);
                 LZ4Compressor compressor = level < 7 ? factory.fastCompressor() : factory.highCompressor();
-                byte[] compressedData = compressor.compress(data);
+                byte[] compressedData = compressor.compress(data, 0, dataSize);
                 if (compressedData.length + 8 >= dataSize * compressionThresholdFactor)
                     return new Compression(CompressionType.INCOMPRESSIBLE, dataSize, data);
                 return new Compression(CompressionType.LZ4, dataSize, compressedData);

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services version="1.0">
+    <container id="default" version="1.0">
+        <processing>
+            <chain id="default">
+                <processor id="com.yahoo.demo.AnnotatingProcessor" bundle="demo">
+                    <config name="demo.demo">
+                        <demo>
+                            <item>
+                                <term>smurf</term>
+                            </item>
+                        </demo>
+                    </config>
+                </processor>
+                <processor id="com.yahoo.demo.DataProcessor" bundle="demo" />
+            </chain>
+            <renderer id="demo" class="com.yahoo.demo.DemoRenderer" bundle="demo" />
+        </processing>
+        <handler id="com.yahoo.demo.DemoHandler" bundle="demo">
+            <binding>http://*/demo</binding>
+        </handler>
+        <component id="com.yahoo.demo.DemoComponent" bundle="demo"/>
+    </container>
+</services>

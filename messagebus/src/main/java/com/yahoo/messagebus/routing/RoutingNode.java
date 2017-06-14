@@ -234,7 +234,7 @@ public class RoutingNode implements ReplyHandler {
             policy.merge(routingContext);
         } catch (RuntimeException e) {
             setError(ErrorCode.POLICY_ERROR,
-                     "Policy '" + dir.getName() + "' threw an exception; " + e.toString());
+                     "Policy '" + dir.getName() + "' threw an exception; " + exceptionMessageWithTrace(e));
         }
         if (reply == null) {
             setError(ErrorCode.APP_FATAL_ERROR,

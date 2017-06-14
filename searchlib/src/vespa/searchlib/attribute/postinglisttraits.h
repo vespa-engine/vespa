@@ -4,11 +4,9 @@
 
 #include <vespa/searchlib/btree/btreestore.h>
 
-namespace search
-{
+namespace search {
 
-namespace attribute
-{
+namespace attribute {
 
 template <typename DataT> class PostingListTraits;
 template <typename DataT> class PostingStore;

@@ -77,7 +77,7 @@ public class ServiceMonitorStub implements ServiceMonitor {
                                                            getHostStatus(node.hostname())));
             }
             Set<ServiceCluster<ServiceMonitorStatus>> serviceClusters = new HashSet<>();
-            serviceClusters.add(new ServiceCluster<>(new ClusterId(app.getValue().cluster().id().value()),
+            serviceClusters.add(new ServiceCluster<>(new ClusterId(app.getValue().clusterContexts().get(0).cluster().id().value()),
                                                      new ServiceType("serviceType"),
                                                      serviceInstances));
             TenantId tenantId = new TenantId(app.getKey().tenant().value());

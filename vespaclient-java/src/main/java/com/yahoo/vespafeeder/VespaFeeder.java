@@ -22,7 +22,7 @@ public class VespaFeeder {
 
     Arguments args;
     DocumentTypeManager manager;
-    Executor threadPool = Executors.newCachedThreadPool(ThreadFactoryFactory.getThreadFactory("vespafeeder"));
+    Executor threadPool = Executors.newCachedThreadPool(ThreadFactoryFactory.getThreadFactory("vespa-feeder"));
 
     public VespaFeeder(Arguments args, DocumentTypeManager manager) {
         this.args = args;
@@ -141,7 +141,7 @@ public class VespaFeeder {
     }
 
     public static void main(String[] args) {
-        LogSetup.initVespaLogging("vespafeeder");
+        LogSetup.initVespaLogging("vespa-feeder");
 
         try {
             Arguments arguments = new Arguments(args, null);

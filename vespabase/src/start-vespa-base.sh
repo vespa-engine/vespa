@@ -73,4 +73,4 @@ if [ -f /tmp/.ylock-arena.shm ]; then
   chown yahoo:wheel /tmp/.ylock-arena.shm
 fi
 
-exec run-as-yahoo ${VESPA_HOME}/bin/config-ctl start
+exec vespa-run-as-vespa-user ${VESPA_HOME}/bin/vespa-config-ctl start

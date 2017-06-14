@@ -101,8 +101,8 @@ export LD_LIBRARY_PATH=${VESPA_HOME}lib64
 #Does not need fast allocation
 export MALLOC_ARENA_MAX=1
 
-run-as-yahoo ${VESPA_HOME}libexec/vespa/start-filedistribution
-run-as-yahoo ${VESPA_HOME}libexec/vespa/start-logd
+vespa-run-as-vespa-user ${VESPA_HOME}libexec/vespa/start-filedistribution
+vespa-run-as-vespa-user ${VESPA_HOME}libexec/vespa/start-logd
 
 # stuff for the configserver process:
 
@@ -128,7 +128,7 @@ printenv > $cfpfile
 mkdir -p $bundlecachedir
 chown -R ${VESPA_USER} $bundlecachedir
 
-run-as-yahoo vespa-runserver -s configserver -r 30 -p $pidfile -- \
+vespa-run-as-vespa-user vespa-runserver -s configserver -r 30 -p $pidfile -- \
 	java \
 	-Xms128m -Xmx2048m \
 	-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${VESPA_HOME}var/crash \

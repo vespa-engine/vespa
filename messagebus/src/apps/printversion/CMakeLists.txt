@@ -2,7 +2,6 @@
 vespa_add_executable(messagebus_printversion_app
     SOURCES
     printversion.cpp
-    INSTALL bin
     DEPENDS
     messagebus
 )

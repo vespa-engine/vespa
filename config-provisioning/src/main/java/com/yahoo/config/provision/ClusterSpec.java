@@ -37,10 +37,6 @@ public final class ClusterSpec {
 
     public Version vespaVersion() { return vespaVersion; }
 
-    public String dockerImage() {
-        return DockerImage.defaultImage.withTag(vespaVersion).toString();
-    }
-
     /** Returns the group within the cluster this specifies, or empty to specify the whole cluster */
     public Optional<Group> group() { return groupId; }
 

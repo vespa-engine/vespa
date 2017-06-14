@@ -59,9 +59,8 @@ class InstanceResolver {
         ConfigDefinitionKey defKey = new ConfigDefinitionKey(key);
         try {
             if (targetDef != null) applyDef(builder, targetDef);
-            ConfigInstance instance = getInstance(defKey, builder.getClass().getClassLoader());
-            Class<? extends ConfigInstance> clazz = instance.getClass();
-            return clazz.getConstructor(new Class<?>[]{builder.getClass()}).newInstance(builder);
+            Class<? extends ConfigInstance> clazz = getConfigClass(defKey, builder.getClass().getClassLoader());
+            return clazz.getConstructor(builder.getClass()).newInstance(builder);
         } catch (Exception e) {
             throw new ConfigurationRuntimeException(e);
         }
@@ -153,50 +152,25 @@ class InstanceResolver {
     }
 
     /**
-     * Create a ConfigBuilder given a definition key and a payload
-     * @param key The key to use to create the correct builder.
-     * @param payload The payload to populate the builder with.
-     * @return A ConfigBuilder initialized with payload.
-     */
-    static ConfigBuilder createBuilderFromPayload(ConfigDefinitionKey key, VespaModel model, ConfigPayload payload, ConfigDefinition targetDef) {
-        ConfigBuilder builderInstance = model.createBuilder(key, targetDef);
-        if (builderInstance == null || builderInstance instanceof GenericConfig.GenericConfigBuilder) {
-            if (log.isLoggable(LogLevel.SPAM)) {
-                log.log(LogLevel.SPAM, "Creating generic builder for key=" + key);
-            }
-            return new GenericConfig.GenericConfigBuilder(key, new ConfigPayloadBuilder(payload));
-        }
-        ConfigTransformer transformer = new ConfigTransformer(builderInstance.getClass().getDeclaringClass());
-        return transformer.toConfigBuilder(payload);
-    }
-
-    /**
      * Returns a {@link ConfigInstance} of right type for given key using reflection
      *
      * @param  cKey a ConfigKey
      * @return a {@link ConfigInstance} or null if not available in classpath
      */
-    private static ConfigInstance getInstance(ConfigDefinitionKey cKey, ClassLoader instanceLoader) {
+    @SuppressWarnings("unchecked")
+    private static Class<? extends ConfigInstance> getConfigClass(ConfigDefinitionKey cKey, ClassLoader instanceLoader) {
         String className = ConfigGenerator.createClassName(cKey.getName());
-        Class<?> clazz;
         String fullClassName = packageName(cKey) + "." + className;
+        Class<?> clazz;
         try {
             clazz = instanceLoader != null ? instanceLoader.loadClass(fullClassName) : Class.forName(fullClassName);
         } catch (ClassNotFoundException e) {
-            return null;
+            throw new ConfigurationRuntimeException("Could not find config class for key " + cKey, e);
         }
-        Object i;
-        try {
-            Constructor<?> configConstructor = clazz.getDeclaredConstructor();
-            configConstructor.setAccessible(true);
-            i = configConstructor.newInstance();
-        } catch (InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
-            throw new ConfigurationRuntimeException(e);
+        if (! ConfigInstance.class.isAssignableFrom(clazz)) {
+            throw new ConfigurationRuntimeException(fullClassName + " is not a ConfigInstance subclass, can not produce config for " + cKey);
         }
-        if (!(i instanceof ConfigInstance)) {
-            throw new ConfigurationRuntimeException(fullClassName + " is not a ConfigInstance, can not produce config for the name '" + cKey.getName() + "'.");
-        }
-        return (ConfigInstance) i;
+        return (Class<? extends ConfigInstance>) clazz;
     }
 
     static String packageName(ConfigDefinitionKey cKey) {

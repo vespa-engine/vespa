@@ -48,18 +48,7 @@ public class Container extends AbstractService implements
         ComponentsConfig.Producer,
         JdiscBindingsConfig.Producer,
         ContainerHttpConfig.Producer,
-        ContainerMbusConfig.Producer
-{
-    public static final class PortOverride {
-        public final ComponentSpecification serverId;
-        public final int port;
-
-        public PortOverride(ComponentSpecification serverId, int port) {
-            this.serverId = serverId;
-            this.port = port;
-        }
-    }
-
+        ContainerMbusConfig.Producer {
     public static final int BASEPORT = Defaults.getDefaults().vespaWebServicePort();
     public static final String SINGLENODE_CONTAINER_SERVICESPEC = "default_singlenode_container";
 
@@ -80,15 +69,15 @@ public class Container extends AbstractService implements
     private final int index;
 
     private final ComponentGroup<Handler<?>> handlers = new ComponentGroup<>(this, "handler");
-    private final ComponentGroup<Component<?, ?>> components = new ComponentGroup(this, "components");
+    private final ComponentGroup<Component<?, ?>> components = new ComponentGroup<>(this, "components");
 
     private final JettyHttpServer defaultHttpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"));
 
     private final List<PortOverride> portOverrides;
 
     private final int numHttpServerPorts;
-    private final int numRpcServerPorts = 2;
-    private static String defaultHostedJVMArgs = "-XX:+UseOSErrorReporting -XX:+SuppressFatalErrorMessage";
+    private static final int numRpcServerPorts = 2;
+    private static final String defaultHostedJVMArgs = "-XX:+UseOSErrorReporting -XX:+SuppressFatalErrorMessage";
 
     public Container(AbstractConfigProducer parent, String name, int index) {
         this(parent, name, Collections.<PortOverride>emptyList(), index);
@@ -218,7 +207,7 @@ public class Container extends AbstractService implements
         return (parent instanceof ContainerCluster) && (((ContainerCluster)parent).getDocproc() != null);
     }
 
-    // TODO: hack to retain old service names, e.g. in ymon config, vespa.log etc.
+    // TODO: hack to retain old service names, e.g. in monitoring config, vespa.log etc.
     @Override
     public String getServiceType() {
         if (parent instanceof ContainerCluster) {
@@ -402,6 +391,16 @@ public class Container extends AbstractService implements
 
     public void setHttpServerEnabled(boolean httpServerEnabled) {
         this.httpServerEnabled = httpServerEnabled;
+    }
+
+    public static final class PortOverride {
+        public final ComponentSpecification serverId;
+        public final int port;
+
+        public PortOverride(ComponentSpecification serverId, int port) {
+            this.serverId = serverId;
+            this.port = port;
+        }
     }
 
 }

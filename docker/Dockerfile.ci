@@ -1,0 +1,11 @@
+FROM vespabuild
+
+COPY vespa-ci-internal.sh /vespa-ci-internal.sh
+
+# Build using non-root user 'vespabuilder'
+RUN useradd --create-home -s /bin/bash vespabuilder
+WORKDIR /home/vespabuilder
+USER vespabuilder
+
+# Java requires proper locale for unicode
+ENV LANG en_US.UTF-8

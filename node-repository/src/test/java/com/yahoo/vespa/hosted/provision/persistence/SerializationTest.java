@@ -7,7 +7,6 @@ import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterMembership;
-import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
@@ -17,7 +16,6 @@ import com.yahoo.text.Utf8;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.node.Agent;
-import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.Status;
@@ -218,25 +216,6 @@ public class SerializationTest {
     }
 
     @Test
-    public void serialize_docker_image() {
-        Node node = createNode();
-
-        Version version = new DockerImage("docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.0").tagAsVersion();
-        ClusterMembership clusterMembership = ClusterMembership.from("content/myId/0", version);
-
-        Node nodeWithAllocation = node.with(
-                new Allocation(ApplicationId.from(TenantName.from("myTenant"),
-                                                  ApplicationName.from("myApplication"),
-                                                  InstanceName.from("myInstance")),
-                               clusterMembership,
-                               new Generation(0, 0),
-                               false));
-
-        Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(nodeWithAllocation));
-        assertEquals("docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.0", deserializedNode.allocation().get().membership().cluster().dockerImage());
-    }
-
-    @Test
     public void serialize_parentHostname() {
         final String parentHostname = "parent.yahoo.com";
         Node node = Node.create("myId", singleton("127.0.0.1"), Collections.emptySet(), "myHostname", Optional.of(parentHostname), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
@@ -296,7 +275,7 @@ public class SerializationTest {
                 "  },\n" +
                 "  \"restartGeneration\": 0,\n" +
                 "  \"currentRestartGeneration\": 0,\n" +
-                "  \"wantedDockerImage\":\"docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.0\",\n" +
+                "  \"wantedDockerImage\":\"foo:6.42.0\",\n" +
                 "  \"wantedVespaVersion\":\"6.42.0\",\n" +
                 "  \"rebootGeneration\": 1,\n" +
                 "  \"currentRebootGeneration\": 0,\n" +
@@ -354,22 +333,6 @@ public class SerializationTest {
                         "}";
         Node node = nodeSerializer.fromJson(State.active, Utf8.toBytes(nodeWithWantedVespaVersion));
         assertEquals("6.42.2", node.allocation().get().membership().cluster().vespaVersion().toString());
-        assertEquals("docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.2", node.allocation().get().membership().cluster().dockerImage());
-    }
-
-    @Test
-    public void docker_image_is_derived_from_vespa_version() throws Exception {
-        String nodeData =
-                "{\n" +
-                        "   \"type\" : \"tenant\",\n" +
-                        "   \"flavor\" : \"large\",\n" +
-                        "   \"openStackId\" : \"myId\",\n" +
-                        "   \"hostname\" : \"myHostname\",\n" +
-                        "   \"ipAddresses\" : [\"127.0.0.1\"],\n" +
-                        "   \"vespaVersion\": \"6.42.1\"\n" +
-                        "}";
-        Node node = nodeSerializer.fromJson(State.active, Utf8.toBytes(nodeData));
-        assertEquals("docker-registry.ops.yahoo.com:4443/vespa/ci:6.42.1", node.status().dockerImage().get());
     }
 
     private byte[] createNodeJson(String hostname, String... ipAddress) {

@@ -6,13 +6,11 @@
 #include "postinglisttraits.h"
 #include "postingstore.h"
 #include "ipostinglistsearchcontext.h"
-#include "attributevector.h"
+#include <vespa/searchcommon/attribute/search_context_params.h>
+#include <vespa/searchcommon/common/range.h>
 #include <vespa/vespalib/util/regexp.h>
-#include <cstdlib>
 
-namespace search {
-
-namespace attribute {
+namespace search::attribute {
 
 /**
  * Search context helper for posting list attributes, used to instantiate
@@ -22,11 +20,11 @@ namespace attribute {
 class PostingListSearchContext : public IPostingListSearchContext
 {
 protected:
-    typedef EnumPostingTree Dictionary;
-    typedef Dictionary::ConstIterator DictionaryConstIterator;
-    typedef Dictionary::FrozenView FrozenDictionary;
-    typedef EnumStoreBase::Index EnumIndex;
-    
+    using Dictionary = EnumPostingTree;
+    using DictionaryConstIterator = Dictionary::ConstIterator;
+    using FrozenDictionary = Dictionary::FrozenView;
+    using EnumIndex = EnumStoreBase::Index;
+
     const FrozenDictionary _frozenDictionary;
     DictionaryConstIterator _lowerDictItr;
     DictionaryConstIterator _upperDictItr;
@@ -36,22 +34,17 @@ protected:
     uint64_t                _numValues; // attr.getStatus().getNumValues();
     bool                    _hasWeight;
     bool                    _useBitVector;
-    search::datastore::EntryRef _pidx;
-    search::datastore::EntryRef _frozenRoot; // Posting list in tree form
+    datastore::EntryRef     _pidx;
+    datastore::EntryRef     _frozenRoot; // Posting list in tree form
     float _FSTC;  // Filtering Search Time Constant
     float _PLSTC; // Posting List Search Time Constant
     const EnumStoreBase    &_esb;
     uint32_t                _minBvDocFreq;
     const GrowableBitVector *_gbv; // bitvector if _useBitVector has been set
-        
 
-    PostingListSearchContext(const Dictionary &dictionary,
-                             uint32_t docIdLimit,
-                             uint64_t numValues,
-                             bool hasWeight,
-                             const EnumStoreBase &esb,
-                             uint32_t minBvDocFreq,
-                             bool useBitVector);
+
+    PostingListSearchContext(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues, bool hasWeight,
+                             const EnumStoreBase &esb, uint32_t minBvDocFreq, bool useBitVector);
 
     ~PostingListSearchContext();
 
@@ -96,13 +89,13 @@ template <class DataT>
 class PostingListSearchContextT : public PostingListSearchContext
 {
 protected:
-    typedef DataT DataType;
-    typedef PostingListTraits<DataType> Traits;
-    typedef typename Traits::PostingList PostingList;
-    typedef typename Traits::Posting Posting;
-    typedef std::vector<Posting> PostingVector;
-    typedef datastore::EntryRef EntryRef;
-    typedef typename PostingList::ConstIterator PostingConstIterator;
+    using DataType = DataT;
+    using Traits = PostingListTraits<DataType>;
+    using PostingList = typename Traits::PostingList;
+    using Posting = typename Traits::Posting;
+    using PostingVector = std::vector<Posting>;
+    using EntryRef = datastore::EntryRef;
+    using FrozenView = typename PostingList::BTreeType::FrozenView;
 
     const PostingList    &_postingList;
     /*
@@ -112,19 +105,14 @@ protected:
     std::unique_ptr<BitVector>  _bitVector;
     bool           _fetchPostingsDone;
     bool           _arrayValid;
-    
+
     static const long MIN_UNIQUE_VALUES_BEFORE_APPROXIMATION = 100;
     static const long MIN_UNIQUE_VALUES_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION = 20;
     static const long MIN_APPROXHITS_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION = 10;
 
-    PostingListSearchContextT(const Dictionary &dictionary,
-                              uint32_t docIdLimit,
-                              uint64_t numValues,
-                              bool hasWeight,
-                              const PostingList &postingList,
-                              const EnumStoreBase &esb,
-                              uint32_t minBvCocFreq,
-                              bool useBitVector);
+    PostingListSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues,
+                              bool hasWeight, const PostingList &postingList, const EnumStoreBase &esb,
+                              uint32_t minBvCocFreq, bool useBitVector);
     ~PostingListSearchContextT();
 
     void lookupSingle();
@@ -133,16 +121,14 @@ protected:
     void fillBitVector();
 
     PostingVector &
-    merge(PostingVector &v, PostingVector &temp,
-          const std::vector<size_t> & startPos) __attribute__((noinline));
+    merge(PostingVector &v, PostingVector &temp, const std::vector<size_t> & startPos) __attribute__((noinline));
 
     void fetchPostings(bool strict) override;
     // this will be called instead of the fetchPostings function in some cases
-    void diversify(bool forward, size_t wanted_hits, 
-                   const IAttributeVector &diversity_attr, size_t max_per_group,
-                   size_t cutoff_groups, bool cutoff_strict);
+    void diversify(bool forward, size_t wanted_hits, const IAttributeVector &diversity_attr,
+                   size_t max_per_group, size_t cutoff_groups, bool cutoff_strict);
 
-    queryeval::SearchIterator::UP
+    std::unique_ptr<queryeval::SearchIterator>
     createPostingIterator(fef::TermFieldMatchData *matchData, bool strict) override;
 
     unsigned int singleHits() const;
@@ -155,9 +141,9 @@ template <class DataT>
 class PostingListFoldedSearchContextT : public PostingListSearchContextT<DataT>
 {
 protected:
-    typedef PostingListSearchContextT<DataT> Parent;
-    typedef typename Parent::Dictionary Dictionary;
-    typedef typename Parent::PostingList PostingList;
+    using Parent = PostingListSearchContextT<DataT>;
+    using Dictionary = typename Parent::Dictionary;
+    using PostingList = typename Parent::PostingList;
     using Parent::_lowerDictItr;
     using Parent::_uniqueValues;
     using Parent::_postingList;
@@ -165,14 +151,9 @@ protected:
     using Parent::countHits;
     using Parent::singleHits;
 
-    PostingListFoldedSearchContextT(const Dictionary &dictionary,
-                                    uint32_t docIdLimit,
-                                    uint64_t numValues,
-                                    bool hasWeight,
-                                    const PostingList &postingList,
-                                    const EnumStoreBase &esb,
-                                    uint32_t minBvCocFreq,
-                                    bool useBitVector);
+    PostingListFoldedSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues,
+                                    bool hasWeight, const PostingList &postingList, const EnumStoreBase &esb,
+                                    uint32_t minBvCocFreq, bool useBitVector);
 
     unsigned int approximateHits() const override;
 };
@@ -183,12 +164,12 @@ class PostingSearchContext: public BaseSC,
                             public BaseSC2
 {
 public:
-    typedef typename AttrT::EnumStore EnumStore;
+    using EnumStore = typename AttrT::EnumStore;
     using QueryTermSimpleUP = std::unique_ptr<QueryTermSimple>;
 protected:
     const AttrT           &_toBeSearched;
     const EnumStore       &_enumStore;
-    
+
     PostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const AttrT &toBeSearched);
     ~PostingSearchContext();
 };
@@ -198,14 +179,11 @@ class StringPostingSearchContext
     : public PostingSearchContext<BaseSC, PostingListFoldedSearchContextT<DataT>, AttrT>
 {
 private:
-    typedef PostingListTraits<DataT> AggregationTraits;
-    typedef typename AggregationTraits::PostingList PostingList;
-    typedef typename PostingList::Iterator PostingIterator;
-    typedef typename PostingList::ConstIterator PostingConstIterator;
-    typedef PostingSearchContext<BaseSC, PostingListFoldedSearchContextT<DataT>, AttrT> Parent;
-    typedef typename Parent::EnumStore EnumStore;
-    typedef typename EnumStore::FoldedComparatorType FoldedComparatorType;
-    typedef vespalib::Regexp Regexp;
+    using AggregationTraits = PostingListTraits<DataT>;
+    using PostingList = typename AggregationTraits::PostingList;
+    using Parent = PostingSearchContext<BaseSC, PostingListFoldedSearchContextT<DataT>, AttrT>;
+    using FoldedComparatorType = typename Parent::EnumStore::FoldedComparatorType;
+    using Regexp = vespalib::Regexp;
     using QueryTermSimpleUP = typename Parent::QueryTermSimpleUP;
     using Parent::_toBeSearched;
     using Parent::_enumStore;
@@ -225,10 +203,7 @@ private:
     typedef PostingSearchContext<BaseSC, PostingListSearchContextT<DataT>, AttrT> Parent;
     typedef PostingListTraits<DataT> AggregationTraits;
     typedef typename AggregationTraits::PostingList PostingList;
-    typedef typename PostingList::Iterator PostingIterator;
-    typedef typename PostingList::ConstIterator PostingConstIterator;
-    typedef typename Parent::EnumStore EnumStore;
-    typedef typename EnumStore::ComparatorType ComparatorType;
+    typedef typename Parent::EnumStore::ComparatorType ComparatorType;
     typedef typename AttrT::T BaseType;
     using Params = attribute::SearchContextParams;
     using QueryTermSimpleUP = typename Parent::QueryTermSimpleUP;
@@ -237,7 +212,7 @@ private:
     using Parent::_toBeSearched;
     using Parent::_enumStore;
     Params _params;
-    
+
     void getIterators(bool shouldApplyRangeLimit);
     bool valid() const override { return this->isValid(); }
 
@@ -269,8 +244,8 @@ public:
     NumericPostingSearchContext(QueryTermSimpleUP qTerm, const Params & params, const AttrT &toBeSearched);
     const Params &params() const { return _params; }
 };
-    
-    
+
+
 template <typename BaseSC, typename BaseSC2, typename AttrT>
 PostingSearchContext<BaseSC, BaseSC2, AttrT>::
 PostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const AttrT &toBeSearched)
@@ -305,7 +280,7 @@ StringPostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const Att
     // after benchmarking prefix search performance on single, array, and weighted set fast-search string attributes
     // with 1M values the following constant has been derived:
     this->_PLSTC = 0.000000;
-    
+
     if (this->valid()) {
         if (this->isPrefix()) {
             FoldedComparatorType comp(_enumStore, this->queryTerm().getTerm(), true);
@@ -386,7 +361,4 @@ extern template class PostingListSearchContextT<int32_t>;
 extern template class PostingListFoldedSearchContextT<btree::BTreeNoLeafData>;
 extern template class PostingListFoldedSearchContextT<int32_t>;
 
-} // namespace attribute
-
-} // namespace search
-
+}

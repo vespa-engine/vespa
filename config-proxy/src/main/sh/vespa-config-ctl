@@ -140,7 +140,7 @@ case $1 in
         export VESPA_SERVICE_NAME
 
         vespa-runserver -s config-sentinel -r 10 -p $P_SENTINEL -- \
-            sbin/config-sentinel -c "$CONFIG_ID"
+            sbin/vespa-config-sentinel -c "$CONFIG_ID"
         ;;
 
     stop)

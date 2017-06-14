@@ -90,7 +90,7 @@ CompressedBlobSet::CompressedBlobSet(const document::CompressionConfig &compress
     if ( ! _positions.empty() ) {
         DataBuffer compressed;
         ConstBufferRef org = uncompressed.getBuffer();
-        _compression = document::compress(compression, org, compressed, false);
+        _compression = document::compression::compress(compression, org, compressed, false);
         _buffer.resize(compressed.getDataLen());
         memcpy(_buffer, compressed.getData(), compressed.getDataLen());
     }
@@ -99,10 +99,12 @@ CompressedBlobSet::CompressedBlobSet(const document::CompressionConfig &compress
 BlobSet
 CompressedBlobSet::getBlobSet() const
 {
+    using document::compression::decompress;
     // These are frequent lage allocations that are to expensive to mmap.
     DataBuffer uncompressed(0, 1, Alloc::alloc(0, 16 * MemoryAllocator::HUGEPAGE_SIZE));
     if ( ! _positions.empty() ) {
-        document::decompress(_compression, getBufferSize(_positions), ConstBufferRef(_buffer.c_str(), _buffer.size()), uncompressed, false);
+        decompress(_compression, getBufferSize(_positions),
+                   ConstBufferRef(_buffer.c_str(), _buffer.size()), uncompressed, false);
     }
     return BlobSet(_positions, uncompressed.stealBuffer());
 }

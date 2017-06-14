@@ -13,5 +13,7 @@
         <module>basic-search-java</module>
         <module>blog-recommendation</module>
         <module>boolean-search</module>
+        <module>http-api-using-request-handlers-and-processors</module>
+        <module>http-api-using-searcher</module>
     </modules>
 </project>

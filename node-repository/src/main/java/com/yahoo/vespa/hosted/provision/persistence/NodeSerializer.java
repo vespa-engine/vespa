@@ -30,8 +30,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.yahoo.vespa.config.SlimeUtils.optionalString;
-
 /**
  * Serializes a node to/from JSON.
  * Instances of this are multithread safe and can be reused
@@ -54,8 +52,6 @@ public class NodeSerializer {
     private static final String rebootGenerationKey = "rebootGeneration";
     private static final String currentRebootGenerationKey = "currentRebootGeneration";
     private static final String vespaVersionKey = "vespaVersion";
-    private static final String hostedVersionKey = "hostedVersion";
-    private static final String stateVersionKey = "stateVersion";
     private static final String failCountKey = "failCount";
     private static final String hardwareFailureKey = "hardwareFailure";
     private static final String nodeTypeKey = "type";
@@ -108,8 +104,6 @@ public class NodeSerializer {
         object.setLong(rebootGenerationKey, node.status().reboot().wanted());
         object.setLong(currentRebootGenerationKey, node.status().reboot().current());
         node.status().vespaVersion().ifPresent(version -> object.setString(vespaVersionKey, version.toString()));
-        node.status().hostedVersion().ifPresent(version -> object.setString(hostedVersionKey, version.toString()));
-        node.status().stateVersion().ifPresent(version -> object.setString(stateVersionKey, version));
         object.setLong(failCountKey, node.status().failCount());
         node.status().hardwareFailure().ifPresent(failure -> object.setString(hardwareFailureKey, toString(failure)));
         object.setBool(wantToRetireKey, node.status().wantToRetire());
@@ -170,8 +164,6 @@ public class NodeSerializer {
         boolean wantToDeprovision = object.field(wantToDeprovisionKey).valid() && object.field(wantToDeprovisionKey).asBool();
         return new Status(generationFromSlime(object, rebootGenerationKey, currentRebootGenerationKey),
                           versionFromSlime(object.field(vespaVersionKey)),
-                          versionFromSlime(object.field(hostedVersionKey)),
-                          optionalString(object.field(stateVersionKey)),
                           (int)object.field(failCountKey).asLong(),
                           hardwareFailureFromSlime(object.field(hardwareFailureKey)),
                           object.field(wantToRetireKey).asBool(),

@@ -207,7 +207,7 @@ public class ContainerClusterTest {
             addContainer(cluster, "c2", "host-c2");
             assertTrue(false);
         } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().startsWith("Cluster container1 does not accept container com.yahoo.vespa.model.container.Container"));
+            assertEquals("Cluster container1 does not accept container qrserver on host 'host-c2'", e.getMessage());
         }
     }
 

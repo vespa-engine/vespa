@@ -10,8 +10,6 @@ import com.yahoo.component.Version;
  */
 public class DockerImage {
 
-    public static final DockerImage defaultImage = new DockerImage("docker-registry.ops.yahoo.com:4443/vespa/ci");
-
     private final String name;
 
     public DockerImage(String name) {
@@ -20,9 +18,9 @@ public class DockerImage {
 
     /** Get Docker image tag as version */
     public Version tagAsVersion() {
-        String[] parts = toString().split(":");
+        String[] parts = asString().split(":");
         if (parts.length < 2) {
-            throw new IllegalArgumentException("Could not parse tag from Docker image '" + toString() + "'");
+            throw new IllegalArgumentException("Could not parse tag from Docker image '" + asString() + "'");
         }
         return Version.fromString(parts[parts.length - 1]);
     }
@@ -32,8 +30,8 @@ public class DockerImage {
         return new DockerImage(name + ":" + version.toFullString());
     }
 
-    @Override
-    public String toString() {
+    public String asString() {
         return name;
     }
+
 }

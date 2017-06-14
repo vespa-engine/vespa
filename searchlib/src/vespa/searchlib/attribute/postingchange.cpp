@@ -4,6 +4,7 @@
 #include "multivalue.h"
 #include "multi_value_mapping.h"
 #include "postinglistattribute.h"
+#include <vespa/searchlib/common/growablebitvector.h>
 #include <vespa/vespalib/util/array.hpp>
 
 namespace search {

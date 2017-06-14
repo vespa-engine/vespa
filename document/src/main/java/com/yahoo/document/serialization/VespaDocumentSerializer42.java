@@ -344,7 +344,7 @@ public class VespaDocumentSerializer42 extends BufferSerializer implements Docum
         }
 
         int pos = buf.position();
-        if (compression.data() != null) {
+        if (compression.data() != null && compression.type().isCompressed()) {
             put(null, compression.data());
         } else {
             put(null, buffer.getByteBuffer());

@@ -14,3 +14,4 @@
 </handler>
 
 <preprocess:include file="node-flavors.xml" required="false" />
+<preprocess:include file="node-repository-config.xml" required="false" />

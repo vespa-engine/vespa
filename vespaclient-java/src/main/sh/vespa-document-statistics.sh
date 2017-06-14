@@ -61,10 +61,10 @@ findroot
 # END environment bootstrap section
 
 function help {
-    echo "Usage: vds-document-statistics [ category, ... ]"
+    echo "Usage: vespa-document-statistics [ category, ... ]"
     echo "  Where category is one or more of: user, group, scheme, namespace"
     echo ""
-    echo "vds-document-statistics generates documents counts based on one or more categories."
+    echo "vespa-document-statistics generates documents counts based on one or more categories."
     exit 0
 }
 if [ "$1" == "-h" ]; then

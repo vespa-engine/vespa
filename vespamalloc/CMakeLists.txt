@@ -24,5 +24,5 @@ vespa_define_module(
     src/vespamalloc/util
 )
 
-vespa_install_script(bin/parsememorydump.pl vespamalloc-parsememorydump.pl bin)
+vespa_install_script(bin/parsememorydump.pl vespa-malloc-parse-memorydump.pl bin)
 install(FILES etc/vespamalloc.conf PERMISSIONS OWNER_READ GROUP_READ WORLD_READ DESTINATION etc)
