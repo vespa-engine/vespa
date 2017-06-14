@@ -31,10 +31,10 @@ BuildRequires: java-1.8.0-openjdk-devel
 BuildRequires: openssl-devel
 BuildRequires: rpm-build
 BuildRequires: make
-BuildRequires: vespa-boost-devel >= 1.59
-BuildRequires: vespa-cppunit-devel >= 1.12.1
-BuildRequires: vespa-libtorrent-devel >= 1.0.9
-BuildRequires: vespa-zookeeper-c-client-devel >= 3.4.8
+BuildRequires: vespa-boost-devel >= 1.59.0-6
+BuildRequires: vespa-cppunit-devel >= 1.12.1-6
+BuildRequires: vespa-libtorrent-devel >= 1.0.11-6
+BuildRequires: vespa-zookeeper-c-client-devel >= 3.4.9-6
 BuildRequires: systemd
 Requires: epel-release 
 Requires: Judy
@@ -45,10 +45,10 @@ Requires: libicu
 Requires: llvm3.9
 Requires: java-1.8.0-openjdk
 Requires: openssl
-Requires: vespa-boost >= 1.59
-Requires: vespa-cppunit >= 1.12.1
-Requires: vespa-libtorrent >= 1.0.9
-Requires: vespa-zookeeper-c-client >= 3.4.8
+Requires: vespa-boost >= 1.59.0-6
+Requires: vespa-cppunit >= 1.12.1-6
+Requires: vespa-libtorrent >= 1.0.11-6
+Requires: vespa-zookeeper-c-client >= 3.4.9-6
 Requires(pre): shadow-utils
 
 # Ugly workaround because vespamalloc/src/vespamalloc/malloc/mmap.cpp uses the private
