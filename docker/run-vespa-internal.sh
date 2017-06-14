@@ -12,7 +12,7 @@ cd $DIR
 
 VESPA_VERSION=$1
 
-rpm -i "vespa*-${VESPA_VERSION}-*.rpm"
+yum localinstall -y $(ls vespa*-${VESPA_VERSION}-*.rpm | xargs)
 
 # Workaround until we figure out why rpm does not set the ownership.
 chown -R vespa:vespa /opt/vespa
