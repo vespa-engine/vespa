@@ -34,7 +34,7 @@ public abstract class NodeVector<NODE> implements java.util.List<NODE> {
      *
      * @param n the new size of this NodeVector
      */
-    // TODO: remove when the library uses reflection via builders, and resizing won't be necessary
+    // TODO: remove, only used by unit tests
     public void setSize(int n) {
         while (size() > n) vector.remove(n);
         while (size() < n) vector.add(createNew());
