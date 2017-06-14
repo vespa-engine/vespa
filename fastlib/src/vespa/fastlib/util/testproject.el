@@ -2,7 +2,7 @@
 
 ;;  Local configurations for the cpptest Emacs unit-test framework
 
-;; Author: Nils SandÃ¸y <nils.sandoy@fast.no>
+;; Author: Nils Sandøy <nils.sandoy@fast.no>
 
 (message "Setting local test configuration")
 

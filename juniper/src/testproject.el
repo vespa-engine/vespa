@@ -6,7 +6,7 @@
 ;; the class(es) you want to test.
 
 ;; $Revision: 1.2 $ $Date: 2003-02-27 12:32:24 $
-;; Author: Nils SandÃ¸y <nils.sandoy@fast.no>
+;; Author: Nils Sandøy <nils.sandoy@fast.no>
 
 ;; Just a message to show that this file is beeing read. Look for this
 ;; in the *Messages* buffer.
