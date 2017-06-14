@@ -32,20 +32,27 @@ public class ContentClusterUtils {
     }
 
     private static MockRoot createMockRoot(HostProvisioner provisioner, List<String> searchDefinitions) {
-        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withSearchDefinitions(searchDefinitions).build();
-        DeployState deployState = new DeployState.Builder()
-                .applicationPackage(applicationPackage)
-                .modelHostProvisioner(provisioner)
-                .build();
-        return new MockRoot("", deployState);
-
+        return createMockRoot(provisioner, searchDefinitions, new DeployState.Builder());
     }
+
+    private static MockRoot createMockRoot(HostProvisioner provisioner, List<String> searchDefinitions, DeployState.Builder deployStateBuilder) {
+        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withSearchDefinitions(searchDefinitions).build();
+        deployStateBuilder.applicationPackage(applicationPackage)
+                          .modelHostProvisioner(provisioner)
+                          .build();
+        return new MockRoot("", deployStateBuilder.build());
+    }
+
     public static MockRoot createMockRoot(String[] hosts, List<String> searchDefinitions) throws Exception {
         return createMockRoot(new InMemoryProvisioner(true, hosts), searchDefinitions);
     }
 
     public static MockRoot createMockRoot(List<String> searchDefinitions) {
         return createMockRoot(new SingleNodeProvisioner(), searchDefinitions);
+    }
+
+    public static MockRoot createMockRoot(List<String> searchDefinitions, DeployState.Builder deployStateBuilder) {
+        return createMockRoot(new SingleNodeProvisioner(), searchDefinitions, deployStateBuilder);
     }
 
     public static ContentCluster createCluster(String clusterXml, MockRoot root) throws Exception {
