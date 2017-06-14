@@ -10,7 +10,8 @@ fi
 GIT_COMMIT=$1
 SOURCE_DIR=/home/vespabuilder/vespa
 BUILD_DIR=/home/vespabuilder/build
-THREADS=$(nproc --all)
+NUM_CORES=$(nproc --all)
+NUM_THREADS=$((${NUM_CORES} + ${NUM_CORES}/2))
 
 mkdir "${SOURCE_DIR}"
 mkdir "${BUILD_DIR}"
@@ -28,5 +29,5 @@ cmake3 -DCMAKE_INSTALL_PREFIX=/opt/vespa \
       -DCMAKE_INSTALL_RPATH="/opt/vespa/lib64;/opt/vespa-boost/lib;/opt/vespa-libtorrent/lib;/opt/vespa-zookeeper-c-client/lib;/opt/vespa-cppunit/lib;/usr/lib/jvm/java-1.8.0/jre/lib/amd64/server;/usr/include/llvm3.9" \
       -DCMAKE_BUILD_RPATH=/opt/vespa/lib64 \
       "${SOURCE_DIR}"
-make -j ${THREADS}
-make -j ${THREADS} test
+make -j ${NUM_THREADS}
+make -j ${NUM_THREADS} test
