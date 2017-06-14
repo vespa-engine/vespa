@@ -65,4 +65,4 @@ ROOT=${VESPA_HOME%/}
 ZKSTRING=$($ROOT/libexec/vespa/vespa-config.pl -zkstring)
 test -z "$VESPA_LOG_LEVEL" && VESPA_LOG_LEVEL=warning
 export VESPA_LOG_LEVEL
-exec $ROOT/bin/status-filedistribution --zkstring "$ZKSTRING" $@
+exec $ROOT/bin/vespa-status-filedistribution-bin --zkstring "$ZKSTRING" $@
