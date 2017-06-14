@@ -1,7 +1,0 @@
-* Improve performance of traversing fsa (iterator) by limiting the number of
-  possible transitions which need to be checked.
-
-* Extend makefsa -v (verbose) option to include statistics (memory usage etc.)
-
-* Make memory consumption and allocation strategy in Automaton more efficient.
-
