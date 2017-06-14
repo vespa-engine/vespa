@@ -110,7 +110,12 @@ public class FileDistributionManager {
 
     public void reloadDeployFileDistributor() {
         try (LockGuard guard = new LockGuard(lock)) {
-            Runtime.getRuntime().exec("pkill -SIGUSR1 -x filedistributor");
+            /*
+             * Try sending signal to vespa-filedistributor and
+             * filedistributor processes. Note 15 char limit for process
+             * name on Linux, see pkill manual page for details.
+	     */
+            Runtime.getRuntime().exec("pkill -SIGUSR1 ^(vespa-filedistr|filedistributor)$");
         } catch (IOException e) {
             throw new RuntimeException("Failed to reinitialize the filedistributor", e);
         }
