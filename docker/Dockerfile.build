@@ -14,6 +14,7 @@ RUN yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vesp
                    ccache \
                    Judy-devel \
                    lz4-devel \
+                   libzstd-devel \
                    zlib-devel \
                    maven \
                    libicu-devel \
