@@ -4,39 +4,10 @@ FROM centos:7
 RUN yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo && \
     yum -y install epel-release && \
     yum -y install centos-release-scl && \
-    yum -y --enablerepo=epel-testing install \
-                   devtoolset-6-gcc-c++ \
-                   devtoolset-6-libatomic-devel \
-                   devtoolset-6-binutils \
-                   git \
-                   make \
-                   cmake3 \
+    yum -y install git \
                    ccache \
-                   Judy-devel \
-                   lz4-devel \
-                   libzstd-devel \
-                   zlib-devel \
-                   maven \
-                   libicu-devel \
-                   llvm3.9-devel \
-                   llvm3.9-static \
-                   java-1.8.0-openjdk-devel \
-                   openssl \
-                   openssl-devel \
                    rpm-build \
-                   perl \
-                   perl-Env \
-                   perl-JSON \
-                   perl-IO-Socket-IP \
-                   perl-Data-Dumper \
-                   perl-libwww-perl \
-                   perl-Net-INET6Glue \
-                   perl-URI \
-                   sudo \
-                   vespa-boost-devel \
-                   vespa-libtorrent-devel \
-                   vespa-zookeeper-c-client-devel \
-                   vespa-cppunit-devel && \
+                   sudo && \
     echo "source /opt/rh/devtoolset-6/enable" > /etc/profile.d/devtoolset-6.sh && \
     echo "*          soft    nproc     32768" > /etc/security/limits.d/90-nproc.conf 
 
