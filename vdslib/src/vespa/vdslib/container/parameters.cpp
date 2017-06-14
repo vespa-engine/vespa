@@ -46,6 +46,7 @@ void Parameters::onDeserialize(const document::DocumentTypeRepo &repo, document:
     _parameters.clear();
     int32_t mysize;
     buffer.getIntNetwork(mysize);
+    _parameters.resize(mysize);
     for (int i=0; i<mysize; i++) {
         int32_t keylen = 0;
         buffer.getIntNetwork(keylen);
