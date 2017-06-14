@@ -6,6 +6,7 @@ import com.google.common.collect.Sets;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.content.MessagetyperouteselectorpolicyConfig;
@@ -46,6 +47,7 @@ import org.w3c.dom.Element;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A content cluster.
@@ -585,19 +587,27 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
 
     /**
      * Returns the distribution bits this cluster should use.
-     * OnHosted Vespa this is hardcoded not computed from the nodes because reducing the number of nodes is a common
-     * operation while reducing the number of distribution bits can lead to consistency problems.
+     * On Hosted Vespa this is hardcoded and not computed from the nodes because reducing the number of nodes is a common
+     * operation, while reducing the number of distribution bits can lead to consistency problems.
      * This hardcoded value should work fine from 1-200 nodes. Those who have more will need to set this value
      * in config and not remove it again if they reduce the node count.
      */
     public int distributionBits() {
-        if (zone.region().equals(RegionName.from("us-west-1"))) return 16; // TODO: Enable for all hosted zones (i.e when zone isn't default)
-        if (zone.region().equals(RegionName.from("us-central-1"))) return 16; // TODO: Enable for all hosted zones (i.e when zone isn't default)
-        if (zone.region().equals(RegionName.from("eu-west-1"))) return 16; // TODO: Enable for all hosted zones (i.e when zone isn't default)
-        if (zone.region().equals(RegionName.from("ap-northeast-1"))) return 16; // TODO: Enable for all hosted zones (i.e when zone isn't default)
-        if (zone.region().equals(RegionName.from("ap-northeast-2"))) return 16; // TODO: Enable for all hosted zones (i.e when zone isn't default)
-        if (zone.region().equals(RegionName.from("us-east-3"))) return 16; // TODO: Enable for all hosted zones (i.e when zone isn't default)
-        return DistributionBitCalculator.getDistributionBits(getNodeCountPerGroup(), getDistributionMode());
+        // TODO: Enable for all hosted zones (i.e when zone isn't default)
+        List<Zone> zonesWith16DistributionBits = Arrays.asList(createZone(Environment.prod, "us-west-1"),
+                                                               createZone(Environment.prod, "us-central-1"),
+                                                               createZone(Environment.prod, "eu-west-1"),
+                                                               createZone(Environment.prod, "ap-northeast-1"),
+                                                               createZone(Environment.prod, "ap-northeast-2"),
+                                                               createZone(Environment.prod, "us-east-3"));
+        if (zonesWith16DistributionBits.contains(zone))
+            return 16;
+        else
+            return DistributionBitCalculator.getDistributionBits(getNodeCountPerGroup(), getDistributionMode());
+    }
+
+    private Zone createZone(Environment environment, String region) {
+        return new Zone(environment, RegionName.from(region));
     }
 
     @Override
