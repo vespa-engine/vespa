@@ -37,7 +37,7 @@ public class InnerNodeVector<NODE extends InnerNode> extends NodeVector<NODE> {
     /**
      * Creates a new Node by creating a new instance with the 0-argument constructor
      */
-    // TODO: remove when the library uses reflection via builders
+    // TODO: remove, only used for NodeVector.setSize which only seems to be used by unit tests.
     @SuppressWarnings("unchecked")
     protected NODE createNew() {
         try {
