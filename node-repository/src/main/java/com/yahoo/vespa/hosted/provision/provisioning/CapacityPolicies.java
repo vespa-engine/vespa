@@ -61,9 +61,9 @@ public class CapacityPolicies {
      * @throws IllegalArgumentException if only one node is requested
      */
     private int ensureRedundancy(int nodeCount) {
-        if (nodeCount == 1) {
-            throw new IllegalArgumentException("Deployments to prod require at least 2 nodes per cluster for redundancy");
-        }
+        // TODO: Reactivate this check when we have sufficient capacity in ap-northeast
+        // if (nodeCount == 1)
+        //    throw new IllegalArgumentException("Deployments to prod require at least 2 nodes per cluster for redundancy");
         return nodeCount;
     }
 
