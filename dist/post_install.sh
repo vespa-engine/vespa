@@ -122,7 +122,7 @@ ln -s vespa-log-replay $INSTALLPATH/bin/vlogreplay
 ln -s vespa-logd $INSTALLPATH/sbin/logd
 
 # Temporary when renaming binaries in memfilepersistence
-ln -s vespa-dump-slotfile $INSTALLPATH/bin/dumpslotfile
+ln -s vespa-vds-dump-slotfile $INSTALLPATH/bin/dumpslotfile
 ln -s vespa-vds-disktool-bin $INSTALLPATH/bin/vdsdisktool-bin
 ln -s vespa-vds-disktool $INSTALLPATH/bin/vdsdisktool
 

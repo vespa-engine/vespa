@@ -8,7 +8,7 @@ vespa_add_library(memfilepersistence_tools OBJECT
 vespa_add_executable(memfilepersistence_dumpslotfile_app
     SOURCES
     dumpslotfileapp.cpp
-    OUTPUT_NAME vespa-dump-slotfile
+    OUTPUT_NAME vespa-vds-dump-slotfile
     INSTALL bin
     DEPENDS
     memfilepersistence
