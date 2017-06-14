@@ -3,13 +3,11 @@ package com.yahoo.vespa.model;
 
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.provision.ClusterMembership;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -30,7 +28,7 @@ import java.util.stream.Collectors;
 public class HostResource implements Comparable<HostResource> {
 
     public final static int BASE_PORT = 19100;
-    public final static int MAX_PORTS = 799;
+    final static int MAX_PORTS = 799;
     private final Host host;
 
     // Map from "sentinel name" to service
@@ -79,18 +77,6 @@ public class HostResource implements Comparable<HostResource> {
         return range == numPorts ?
                 port - range :
                 0;
-    }
-
-    boolean isPortRangeAvailable(int start, int numPorts) {
-        int range = 0;
-        int port = start;
-        for (; port < BASE_PORT + MAX_PORTS && (range < numPorts); port++) {
-            if (portDB.containsKey(port)) {
-                return false;
-            }
-            range++;
-        }
-        return range == numPorts;
     }
 
     /**
@@ -179,7 +165,8 @@ public class HostResource implements Comparable<HostResource> {
         return port >= BASE_PORT &&
                 port < BASE_PORT + MAX_PORTS;
     }
-        private void portAlreadyReserved(AbstractService service, int port) {
+
+    private void portAlreadyReserved(AbstractService service, int port) {
         AbstractService otherService = (AbstractService)portDB.get(port);
         int nextAvailablePort = nextAvailableBaseport(service.getPortCount());
         if (nextAvailablePort == 0) {
@@ -190,9 +177,8 @@ public class HostResource implements Comparable<HostResource> {
                 : "";
         throw new RuntimeException(service.getServiceName() + " cannot reserve port " + port +
                     " on " + this + ": Already reserved for " + otherService.getServiceName() +
-                    ". " + msg + "Next available port is: " + nextAvailablePort);
+                    ". " + msg + "Next available port is: " + nextAvailablePort + " ports used: " + portDB);
     }
-
 
     private void noMoreAvailablePorts() {
         throw new RuntimeException
@@ -200,7 +186,6 @@ public class HostResource implements Comparable<HostResource> {
                     BASE_PORT  + ".." + (BASE_PORT+MAX_PORTS) + ") on " + this +
                     ". Move one or more services to another host, or outside this port range.");
     }
-
 
     /**
      * Returns the service with the given "sentinel name" on this Host,

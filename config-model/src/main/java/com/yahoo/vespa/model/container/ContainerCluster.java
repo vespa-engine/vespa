@@ -154,7 +154,7 @@ public final class ContainerCluster
 
     public static final String ROOT_HANDLER_BINDING = "*://*/";
 
-    private String name;
+    private final String name;
 
     private List<Container> containers = new ArrayList<>();
 
@@ -243,9 +243,9 @@ public final class ContainerCluster
         Handler<AbstractConfigProducer<?>> stateHandler = new Handler<>(
                 new ComponentModel(STATE_HANDLER_CLASS, null, null, null));
         stateHandler.addServerBindings("http://*" + StateHandler.STATE_API_ROOT,
-                "https://*" + StateHandler.STATE_API_ROOT,
-                "http://*" + StateHandler.STATE_API_ROOT + "/*",
-                "https://*" + StateHandler.STATE_API_ROOT + "/*");
+                                       "https://*" + StateHandler.STATE_API_ROOT,
+                                       "http://*" + StateHandler.STATE_API_ROOT + "/*",
+                                       "https://*" + StateHandler.STATE_API_ROOT + "/*");
         addComponent(stateHandler);
     }
 
@@ -305,12 +305,6 @@ public final class ContainerCluster
     public final void addComponent(Component<?, ?> component) {
         if (clusterVerifier.acceptComponent(component)) {
             componentGroup.addComponent(component);
-        }
-    }
-
-    public final void addComponents(Collection<Component<?, ?>> components) {
-        for (Component<?, ?> component : components) {
-            addComponent(component);
         }
     }
 
@@ -847,14 +841,14 @@ public final class ContainerCluster
     }
 
     public static class MbusParams {
-        //the amount of the maxpendingbytes to process concurrently, typically 0.2 (20%)
-        public final Double maxConcurrentFactor;
+        // the amount of the maxpendingbytes to process concurrently, typically 0.2 (20%)
+        final Double maxConcurrentFactor;
 
-        //the amount that documents expand temporarily when processing them
-        public final Double documentExpansionFactor;
+        // the amount that documents expand temporarily when processing them
+        final Double documentExpansionFactor;
 
-        //the space to reserve for container, docproc stuff (memory that cannot be used for processing documents), in MB
-        public  final Integer containerCoreMemory;
+        // the space to reserve for container, docproc stuff (memory that cannot be used for processing documents), in MB
+        final Integer containerCoreMemory;
 
         public MbusParams(Double maxConcurrentFactor, Double documentExpansionFactor, Integer containerCoreMemory) {
             this.maxConcurrentFactor = maxConcurrentFactor;
