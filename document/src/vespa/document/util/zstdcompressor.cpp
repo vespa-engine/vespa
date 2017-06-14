@@ -30,15 +30,8 @@ private:
     ZSTD_DCtx * _ctx;
 };
 
-__thread CompressContext * _tlCompressState = nullptr;
-__thread DecompressContext * _tlDecompressState = nullptr;
-
-
-using CompressStateUP = std::unique_ptr<CompressContext>;
-using DecompressStateUP = std::unique_ptr<DecompressContext>;
-vespalib::Lock _G_Mutex;
-std::vector<CompressStateUP> _G_compressRegistry;
-std::vector<DecompressStateUP> _G_decompressRegistry;
+thread_local std::unique_ptr<CompressContext>  _tlCompressState;
+thread_local std::unique_ptr<DecompressContext> _tlDecompressState;
 
 }
 
@@ -48,27 +41,20 @@ bool
 ZStdCompressor::process(const CompressionConfig& config, const void * inputV, size_t inputLen, void * outputV, size_t & outputLenV)
 {
     size_t maxOutputLen = ZSTD_compressBound(inputLen);
-    if (_tlCompressState == nullptr) {
-        vespalib::LockGuard guard(_G_Mutex);
-        CompressStateUP context = std::make_unique<CompressContext>();
-        _tlCompressState = context.get();
-        _G_compressRegistry.push_back(std::move(context));
+    if ( ! _tlCompressState) {
+        _tlCompressState = std::make_unique<CompressContext>();
     }
     size_t sz = ZSTD_compressCCtx(_tlCompressState->get(), outputV, maxOutputLen, inputV, inputLen, config.compressionLevel);
     assert( ! ZSTD_isError(sz) );
     outputLenV = sz;
     return ! ZSTD_isError(sz);
-    
 }
 
 bool
 ZStdCompressor::unprocess(const void * inputV, size_t inputLen, void * outputV, size_t & outputLenV)
 {
-    if (_tlDecompressState == nullptr) {
-        vespalib::LockGuard guard(_G_Mutex);
-        DecompressStateUP context = std::make_unique<DecompressContext>();
-        _tlDecompressState = context.get();
-        _G_decompressRegistry.push_back(std::move(context));
+    if ( ! _tlDecompressState) {
+        _tlDecompressState = std::make_unique<DecompressContext>();
     }
     size_t sz = ZSTD_decompressDCtx(_tlDecompressState->get(), outputV, outputLenV, inputV, inputLen);
     assert( ! ZSTD_isError(sz) );
