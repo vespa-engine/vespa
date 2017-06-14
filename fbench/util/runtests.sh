@@ -23,7 +23,7 @@ if [ $# -lt 8 ] || [ "$opt_error" = "true" ]; then
     echo "<deltaClients> increments. For each client count, the cycle time will"
     echo "vary in the same way according to <minCycle>, <maxCycle> and <deltaCycle>."
     echo "vespa-fbench is run with each combination of client count and cycle time, and"
-    echo "the result output is filtered with the 'vespa-resultfilter.pl' script."
+    echo "the result output is filtered with the 'vespa-fbench-result-filter.pl' script."
     echo "If you want to save the results you should redirect stdout to a file."
     echo ""
     echo " -o : change the order in which the tests are performed so that client"
@@ -71,7 +71,7 @@ if [ "$opt_o" = "true" ]; then
 	clients=$minClients
 	while [ ! $clients -gt $maxClients ]; do
 	    test -f pretest.sh && ./pretest.sh > /dev/null 2>&1
-	    vespa-fbench -n $clients -c $cycle $@ | vespa-resultfilter.pl
+	    vespa-fbench -n $clients -c $cycle $@ | vespa-fbench-result-filter.pl
 	    clients=$(($clients + $deltaClients))
 	done
 	[ "$opt_l" = "true" ] && echo ""
@@ -83,7 +83,7 @@ else
 	cycle=$minCycle
 	while [ ! $cycle -gt $maxCycle ]; do
 	    test -f pretest.sh && ./pretest.sh > /dev/null 2>&1
-	    vespa-fbench -n $clients -c $cycle $@ | vespa-resultfilter.pl
+	    vespa-fbench -n $clients -c $cycle $@ | vespa-fbench-result-filter.pl
 	    cycle=$(($cycle + $deltaCycle))
 	done
 	[ "$opt_l" = "true" ] && echo ""

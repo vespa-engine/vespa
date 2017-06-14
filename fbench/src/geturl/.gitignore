@@ -1,5 +1,5 @@
 .depend
 Makefile
-vespa-geturl
+vespa-fbench-geturl
 geturl.ilk
 geturl.pdb
