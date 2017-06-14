@@ -1,17 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <services version="1.0">
-    <admin version="2.0">
-        <adminserver hostalias="node1"/>
-    </admin>
 
     <container id="default" version="1.0">
-
         <document-api />  <!-- Enable feed endpoint -->
-
         <search>
             <chain inherits="vespa" id="default">
-                <searcher id="com.yahoo.demo.DemoSearcher" bundle="demo">
+                <searcher id="com.yahoo.demo.DemoSearcher" bundle="sample-app-http-api-searcher">
                     <config name="demo.demo">
                         <demo>
                             <item>
@@ -21,15 +16,12 @@
                     </config>
                 </searcher>
             </chain>
-            <renderer id="demo" class="com.yahoo.demo.DemoRenderer" bundle="demo" />
+            <renderer id="demo" class="com.yahoo.demo.DemoRenderer" bundle="sample-app-http-api-searcher"/>
         </search>
-
-        <handler id="com.yahoo.demo.DemoHandler" bundle="demo">
+        <handler id="com.yahoo.demo.DemoHandler" bundle="sample-app-http-api-searcher">
             <binding>http://*:8080/demo</binding>
         </handler>
-
-        <component id="com.yahoo.demo.DemoComponent" bundle="demo"/>
-
+        <component id="com.yahoo.demo.DemoComponent" bundle="sample-app-http-api-searcher"/>
         <nodes>
             <node hostalias="node1"/>
         </nodes>
@@ -40,16 +32,9 @@
         <documents>
             <document mode="index" type="basic"/>
         </documents>
-
-        <group name="mygroup" distribution-key="0">
+        <nodes>
             <node distribution-key="0" hostalias="node1"/>
-        </group>
-
-        <engine>
-            <proton>
-                <searchable-copies>1</searchable-copies>
-            </proton>
-        </engine>
+        </nodes>
     </content>
 
 </services>
