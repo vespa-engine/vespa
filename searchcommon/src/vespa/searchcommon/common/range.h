@@ -5,10 +5,9 @@
 #pragma once
 
 #include <limits>
-#include <stdint.h>
+#include <cstdint>
 
-namespace search
-{
+namespace search {
 
 template <typename T>
 class Range {
@@ -30,4 +29,3 @@ private:
 using Int64Range = Range<int64_t>;
 
 } // namespace search
-

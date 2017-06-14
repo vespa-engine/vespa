@@ -5,28 +5,23 @@
 #include "dociditerator.h"
 #include "attributeiterators.h"
 #include "diversity.h"
+#include "postingstore.hpp"
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
+#include <vespa/searchlib/common/growablebitvector.h>
 
-namespace search {
 
-using queryeval::EmptySearch;
-using queryeval::SearchIterator;
+using search::queryeval::EmptySearch;
+using search::queryeval::SearchIterator;
 
-namespace attribute {
+namespace search::attribute {
 
 template <typename DataT>
 PostingListSearchContextT<DataT>::
-PostingListSearchContextT(const Dictionary &dictionary,
-                          uint32_t docIdLimit,
-                          uint64_t numValues,
-                          bool hasWeight,
-                          const PostingList &postingList,
-                          const EnumStoreBase &esb,
-                          uint32_t minBvDocFreq,
-                          bool useBitVector)
-    : PostingListSearchContext(dictionary, docIdLimit, numValues, hasWeight,
-                               esb, minBvDocFreq, useBitVector),
+PostingListSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues, bool hasWeight,
+                          const PostingList &postingList, const EnumStoreBase &esb,
+                          uint32_t minBvDocFreq, bool useBitVector)
+    : PostingListSearchContext(dictionary, docIdLimit, numValues, hasWeight, esb, minBvDocFreq, useBitVector),
       _postingList(postingList),
       _array(),
       _bitVector(),
@@ -56,9 +51,7 @@ PostingListSearchContextT<DataT>::lookupSingle()
             } else {
                 _pidx = bve->_tree;
                 if (_pidx.valid()) { 
-                    typename PostingList::BTreeType::FrozenView
-                        frozenView(_postingList.getTreeEntry(_pidx)->
-                                   getFrozenView(_postingList.getAllocator()));
+                    auto frozenView = _postingList.getTreeEntry(_pidx)->getFrozenView(_postingList.getAllocator());
                     _frozenRoot = frozenView.getRoot();
                     if (!_frozenRoot.valid()) {
                         _pidx = datastore::EntryRef();
@@ -68,9 +61,7 @@ PostingListSearchContextT<DataT>::lookupSingle()
                 }
             }
         } else {
-            typename PostingList::BTreeType::FrozenView
-                frozenView(_postingList.getTreeEntry(_pidx)->
-                           getFrozenView(_postingList.getAllocator()));
+            auto frozenView = _postingList.getTreeEntry(_pidx)->getFrozenView(_postingList.getAllocator());
             _frozenRoot = frozenView.getRoot();
             if (!_frozenRoot.valid()) {
                 _pidx = datastore::EntryRef();
@@ -106,8 +97,8 @@ PostingListSearchContextT<DataT>::fillArray(size_t numDocs)
     for (auto it(_lowerDictItr); it != _upperDictItr; ++it) {
         if (useThis(it)) {
             _postingList.foreach_frozen(it.getData(),
-                                        [&](uint32_t key, const DataT &data)
-                                        { _array.push_back(Posting(key, data));
+                                        [&](uint32_t key, const DataT &data) {
+                                            _array.push_back(Posting(key, data));
                                         });
             startPos.push_back(_array.size());
         }
@@ -130,8 +121,8 @@ PostingListSearchContextT<DataT>::fillBitVector()
     for (auto it(_lowerDictItr); it != _upperDictItr; ++it) {
         if (useThis(it)) {
             _postingList.foreach_frozen_key(it.getData(),
-                                            [&](uint32_t key)
-                                            { if (key < limit) {
+                                            [&](uint32_t key) {
+                                                if (key < limit) {
                                                     bv.setBit(key);
                                                 }
                                             });
@@ -193,9 +184,8 @@ PostingListSearchContextT<DataT>::fetchPostings(bool strict)
 
 template <typename DataT>
 void
-PostingListSearchContextT<DataT>::diversify(bool forward, size_t wanted_hits, 
-                                            const IAttributeVector &diversity_attr, size_t max_per_group,
-                                            size_t cutoff_groups, bool cutoff_strict)
+PostingListSearchContextT<DataT>::diversify(bool forward, size_t wanted_hits, const IAttributeVector &diversity_attr,
+                                            size_t max_per_group, size_t cutoff_groups, bool cutoff_strict)
 {
     assert(!_fetchPostingsDone);
     _fetchPostingsDone = true;
@@ -203,9 +193,8 @@ PostingListSearchContextT<DataT>::diversify(bool forward, size_t wanted_hits,
     _array.reserve(wanted_hits);
     std::vector<size_t> fragments;
     fragments.push_back(0);
-    diversity::diversify(forward, _lowerDictItr, _upperDictItr, _postingList, wanted_hits,
-                         diversity_attr, max_per_group, cutoff_groups, cutoff_strict,
-                         _array, fragments);
+    diversity::diversify(forward, _lowerDictItr, _upperDictItr, _postingList, wanted_hits, diversity_attr,
+                         max_per_group, cutoff_groups, cutoff_strict, _array, fragments);
     if (fragments.size() > 2) {
         PostingVector temp(_array.size());
         _array.swap(merge(_array, temp, fragments));
@@ -226,12 +215,14 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
     if (_arrayValid || (_bitVector.get() != nullptr)) { // synthetic results are available
         if (!_array.empty()) {
             assert(_arrayValid);
-            typedef DocIdIterator<Posting> DocIt;
+            using DocIt = DocIdIterator<Posting>;
             DocIt postings;
             postings.set(&_array[0], &_array[_array.size()]);
-            return (_postingList._isFilter)
-                ? SearchIterator::UP(new FilterAttributePostingListIteratorT<DocIt>(matchData, postings))
-                : SearchIterator::UP(new AttributePostingListIteratorT<DocIt>(_hasWeight, matchData, postings));
+            if (_postingList._isFilter) {
+                return std::make_unique<FilterAttributePostingListIteratorT<DocIt>>(matchData, postings);
+            } else {
+                return std::make_unique<AttributePostingListIteratorT<DocIt>>(_hasWeight, matchData, postings);
+            }
         }
         if (_arrayValid) {
             return SearchIterator::UP(new EmptySearch());
@@ -251,19 +242,24 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
         if (!_frozenRoot.valid()) {
             uint32_t clusterSize = _postingList.getClusterSize(_pidx);
             assert(clusterSize != 0);
-            typedef DocIdMinMaxIterator<Posting> DocIt;
+            using DocIt = DocIdMinMaxIterator<Posting>;
             DocIt postings;
             const Posting *array = postingList.getKeyDataEntry(_pidx, clusterSize);
             postings.set(array, array + clusterSize);
-            return (postingList._isFilter)
-                ? SearchIterator::UP(new FilterAttributePostingListIteratorT<DocIt>(matchData, postings))
-                : SearchIterator::UP(new AttributePostingListIteratorT<DocIt>(_hasWeight, matchData, postings));
+            if (postingList._isFilter) {
+                return std::make_unique<FilterAttributePostingListIteratorT<DocIt>>(matchData, postings);
+            } else {
+                return std::make_unique<AttributePostingListIteratorT<DocIt>>(_hasWeight, matchData, postings);
+            }
         }
         typename PostingList::BTreeType::FrozenView frozen(_frozenRoot, postingList.getAllocator());
 
-        return (_postingList._isFilter)
-            ? SearchIterator::UP(new FilterAttributePostingListIteratorT<PostingConstIterator> (matchData, frozen.getRoot(), frozen.getAllocator()))
-            : SearchIterator::UP(new AttributePostingListIteratorT<PostingConstIterator> (_hasWeight, matchData, frozen.getRoot(), frozen.getAllocator()));
+        using DocIt = typename PostingList::ConstIterator;
+        if (_postingList._isFilter) {
+            return std::make_unique<FilterAttributePostingListIteratorT<DocIt>>(matchData, frozen.getRoot(), frozen.getAllocator());
+        } else {
+            return std::make_unique<AttributePostingListIteratorT<DocIt>> (_hasWeight, matchData, frozen.getRoot(), frozen.getAllocator());
+        }
     }
     // returning nullptr will trigger fallback to filter iterator
     return SearchIterator::UP();
@@ -346,16 +342,10 @@ PostingListSearchContextT<DataT>::applyRangeLimit(int rangeLimit)
 
 template <typename DataT>
 PostingListFoldedSearchContextT<DataT>::
-PostingListFoldedSearchContextT(const Dictionary &dictionary,
-                                uint32_t docIdLimit,
-                                uint64_t numValues,
-                                bool hasWeight,
-                                const PostingList &postingList,
-                                const EnumStoreBase &esb,
-                                uint32_t minBvDocFreq,
-                                bool useBitVector)
-    : Parent(dictionary, docIdLimit, numValues, hasWeight, postingList,
-             esb, minBvDocFreq, useBitVector)
+PostingListFoldedSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues,
+                                bool hasWeight, const PostingList &postingList, const EnumStoreBase &esb,
+                                uint32_t minBvDocFreq, bool useBitVector)
+    : Parent(dictionary, docIdLimit, numValues, hasWeight, postingList, esb, minBvDocFreq, useBitVector)
 {
 }
 
@@ -379,7 +369,4 @@ PostingListFoldedSearchContextT<DataT>::approximateHits() const
     return numHits;
 }
 
-} // namespace attribute
-
-} // namespace search
-
+}

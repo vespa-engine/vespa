@@ -2,10 +2,9 @@
 
 #pragma once
 
-#include <stddef.h>
+#include <cstddef>
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 class IAttributeVector;
 
@@ -44,5 +43,4 @@ public:
     }
 };
 
-}
 }
