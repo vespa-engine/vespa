@@ -2,7 +2,7 @@
 
 ;; $Revision: 1.179 $ $Date: 2004-02-17 17:01:15 $
 
-;; Author: Nils Sandøy <nils.sandoy@fast.no>
+;; Author: Nils SandÃ¸y <nils.sandoy@fast.no>
 
 ;; Keywords: C++, tools
 ;;
