@@ -1,3 +1,4 @@
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 val test_file_path = "data/cv/test_set_exploded"
 val blog_recom_file_path = "data/recommendations"
 val size_recommendation_list = 100
