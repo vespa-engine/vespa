@@ -19,10 +19,9 @@ ProtocolRepository::clearPolicyCache()
 IProtocol::SP
 ProtocolRepository::putProtocol(const IProtocol::SP & protocol)
 {
-    vespalib::LockGuard guard(_lock);
     const string &name = protocol->getName();
     if (_protocols.find(name) != _protocols.end()) {
-        _routingPolicyCache.clear();
+        clearPolicyCache();
     }
     IProtocol::SP prev = _protocols[name];
     _protocols[name] = protocol;
@@ -32,14 +31,12 @@ ProtocolRepository::putProtocol(const IProtocol::SP & protocol)
 bool
 ProtocolRepository::hasProtocol(const string &name) const
 {
-    vespalib::LockGuard guard(_lock);
     return _protocols.find(name) != _protocols.end();
 }
 
 IProtocol::SP
 ProtocolRepository::getProtocol(const string &name)
 {
-    vespalib::LockGuard guard(_lock);
     ProtocolMap::iterator it = _protocols.find(name);
     if (it != _protocols.end()) {
         return it->second;
@@ -52,8 +49,9 @@ ProtocolRepository::getRoutingPolicy(const string &protocolName,
                                      const string &policyName,
                                      const string &policyParam)
 {
+    string cacheKey = protocolName;
+    cacheKey.append('.').append(policyName).append(".").append(policyParam);
     vespalib::LockGuard guard(_lock);
-    string cacheKey = protocolName + "." + policyName + "." + policyParam;
     RoutingPolicyCache::iterator cit = _routingPolicyCache.find(cacheKey);
     if (cit != _routingPolicyCache.end()) {
         return cit->second;
@@ -67,12 +65,10 @@ ProtocolRepository::getRoutingPolicy(const string &protocolName,
     try {
         policy = pit->second->createPolicy(policyName, policyParam);
     } catch (const std::exception &e) {
-        LOG(error, "Protocol '%s' threw an exception; %s",
-            protocolName.c_str(), e.what());
+        LOG(error, "Protocol '%s' threw an exception; %s", protocolName.c_str(), e.what());
     }
     if (policy.get() == NULL) {
-        LOG(error, "Protocol '%s' failed to create routing policy '%s' "
-            "with parameter '%s'.",
+        LOG(error, "Protocol '%s' failed to create routing policy '%s' with parameter '%s'.",
             protocolName.c_str(), policyName.c_str(), policyParam.c_str());
         return IRoutingPolicy::SP();
     }
