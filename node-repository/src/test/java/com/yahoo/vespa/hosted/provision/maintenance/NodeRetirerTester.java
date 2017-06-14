@@ -8,16 +8,13 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
-import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.maintenance.retire.RetirementPolicy;
@@ -55,11 +52,9 @@ public class NodeRetirerTester {
     public final ManualClock clock = new ManualClock();
     public final NodeRepository nodeRepository;
     private final FlavorSpareChecker flavorSpareChecker = mock(FlavorSpareChecker.class);
-    private final Curator curator = new MockCurator();
     private final MockDeployer deployer;
     private final JobControl jobControl;
     private final List<Flavor> flavors;
-    private final NodeRepositoryProvisioner provisioner;
 
     // Use LinkedHashMap to keep order in which applications were deployed
     private final Map<ApplicationId, MockDeployer.ApplicationContext> apps = new LinkedHashMap<>();
@@ -69,10 +64,11 @@ public class NodeRetirerTester {
     private int nextNodeId = 0;
 
     NodeRetirerTester(NodeFlavors nodeFlavors) {
+        Curator curator = new MockCurator();
         nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, new MockNameResolver().mockAnyLookup(),
                                             new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
         jobControl = new JobControl(nodeRepository.database());
-        provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone);
+        NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone);
         deployer = new MockDeployer(provisioner, apps);
         flavors = nodeFlavors.getFlavors().stream().sorted(Comparator.comparing(Flavor::name)).collect(Collectors.toList());
     }
@@ -97,15 +93,19 @@ public class NodeRetirerTester {
         nodeRepository.setReady(nodes);
     }
 
-    void deployApp(String tenantName, String applicationName, int flavorId, int numNodes) {
-        Flavor flavor = flavors.get(flavorId);
+    void deployApp(String tenantName, String applicationName, int[] flavorIds, int[] numNodes) {
+        final ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, "default");
+        final List<MockDeployer.ClusterContext> clusterContexts = new ArrayList<>();
 
-        ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, "default");
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("6.99"));
-        Capacity capacity = Capacity.fromNodeCount(numNodes, flavor.name());
-        apps.put(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, capacity, 1));
+        for (int i = 0; i < flavorIds.length; i++) {
+            Flavor flavor = flavors.get(flavorIds[i]);
+            ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("cluster-" + i), Version.fromString("6.99"));
+            Capacity capacity = Capacity.fromNodeCount(numNodes[i], flavor.name());
+            clusterContexts.add(new MockDeployer.ClusterContext(applicationId, cluster, capacity, 1));
+        }
 
-        activate(applicationId, cluster, capacity);
+        apps.put(applicationId, new MockDeployer.ApplicationContext(applicationId, clusterContexts));
+        deployer.deployFromLocalActive(applicationId, Duration.ZERO).get().activate();
     }
 
     void iterateMaintainers() {
@@ -119,13 +119,6 @@ public class NodeRetirerTester {
 
         clock.advance(Duration.ofMinutes(11));
         inactiveExpirer.maintain();
-    }
-
-    private void activate(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity) {
-        List<HostSpec> hosts = provisioner.prepare(applicationId, cluster, capacity, 1, null);
-        NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
-        provisioner.activate(transaction, applicationId, hosts);
-        transaction.commit();
     }
 
     void setNumberAllowedUnallocatedRetirementsPerFlavor(int... numAllowed) {

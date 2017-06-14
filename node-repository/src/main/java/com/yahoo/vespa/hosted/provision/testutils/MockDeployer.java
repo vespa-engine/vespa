@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * @author bratseth
@@ -87,11 +88,39 @@ public class MockDeployer implements Deployer {
     public static class ApplicationContext {
 
         private final ApplicationId id;
+        private final List<ClusterContext> clusterContexts;
+
+        public ApplicationContext(ApplicationId id, List<ClusterContext> clusterContexts) {
+            this.id = id;
+            this.clusterContexts = clusterContexts;
+        }
+
+        public ApplicationContext(ApplicationId id, ClusterSpec cluster, Capacity capacity, int groups) {
+            this(id, Collections.singletonList(new ClusterContext(id, cluster, capacity, groups)));
+        }
+
+        public ApplicationId id() { return id; }
+
+        /** Returns list of cluster specs of this application. */
+        public List<ClusterContext> clusterContexts() { return clusterContexts; }
+
+        private List<HostSpec> prepare(NodeRepositoryProvisioner provisioner) {
+            return clusterContexts.stream()
+                    .map(clusterContext -> clusterContext.prepare(provisioner))
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList());
+        }
+
+    }
+
+    public static class ClusterContext {
+
+        private final ApplicationId id;
         private final ClusterSpec cluster;
         private final Capacity capacity;
         private final int groups;
 
-        public ApplicationContext(ApplicationId id, ClusterSpec cluster, Capacity capacity, int groups) {
+        public ClusterContext(ApplicationId id, ClusterSpec cluster, Capacity capacity, int groups) {
             this.id = id;
             this.cluster = cluster;
             this.capacity = capacity;
@@ -100,7 +129,6 @@ public class MockDeployer implements Deployer {
 
         public ApplicationId id() { return id; }
 
-        /** Returns the spec of the cluster of this application. Only a single cluster per application is supported */
         public ClusterSpec cluster() { return cluster; }
 
         private List<HostSpec> prepare(NodeRepositoryProvisioner provisioner) {

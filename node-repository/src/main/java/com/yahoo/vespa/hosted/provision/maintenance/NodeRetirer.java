@@ -1,6 +1,7 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.Flavor;
@@ -15,6 +16,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.FlavorSpareChecker;
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -35,7 +37,7 @@ public class NodeRetirer extends Maintainer {
     public static final FlavorSpareChecker.SpareNodesPolicy SPARE_NODES_POLICY = flavorSpareCount ->
             flavorSpareCount.getNumReadyAmongReplacees() > 2;
 
-    private static final long MAX_SIMULTANEOUS_RETIRES_PER_APPLICATION = 1;
+    private static final long MAX_SIMULTANEOUS_RETIRES_PER_CLUSTER = 1;
     private static final Logger log = Logger.getLogger(NodeRetirer.class.getName());
 
     private final Deployer deployer;
@@ -115,16 +117,19 @@ public class NodeRetirer extends Maintainer {
         Map<Deployment, Set<Node>> nodesToRetireByDeployment = new HashMap<>();
         for (ApplicationId applicationId : activeApplications) {
             List<Node> applicationNodes = getNodesBelongingToApplication(allNodes, applicationId);
-            Set<Node> retireableNodes = getRetireableNodesForApplication(applicationNodes);
-            long numNodesAllowedToRetire = getNumberNodesAllowToRetireForApplication(applicationNodes, MAX_SIMULTANEOUS_RETIRES_PER_APPLICATION);
-            if (retireableNodes.isEmpty() || numNodesAllowedToRetire == 0) continue;
+            Map<ClusterSpec, Set<Node>> retireableNodesByCluster = getRetireableNodesForApplication(applicationNodes).stream()
+                    .collect(Collectors.groupingBy(
+                            node -> node.allocation().get().membership().cluster(),
+                            Collectors.toSet()));
+            if (retireableNodesByCluster.isEmpty()) continue;
 
             Optional<Deployment> deployment = deployer.deployFromLocalActive(applicationId, Duration.ofMinutes(30));
             if ( ! deployment.isPresent()) continue; // this will be done at another config server
 
-            Set<Node> replaceableNodes = retireableNodes.stream()
-                    .filter(node -> flavorSpareChecker.canRetireAllocatedNodeWithFlavor(node.flavor()))
-                    .limit(numNodesAllowedToRetire)
+            Set<Node> replaceableNodes = retireableNodesByCluster.values().stream()
+                    .flatMap(nodes -> nodes.stream()
+                            .filter(node -> flavorSpareChecker.canRetireAllocatedNodeWithFlavor(node.flavor()))
+                            .limit(getNumberNodesAllowToRetireForCluster(nodes, MAX_SIMULTANEOUS_RETIRES_PER_CLUSTER)))
                     .collect(Collectors.toSet());
             if (! replaceableNodes.isEmpty()) nodesToRetireByDeployment.put(deployment.get(), replaceableNodes);
         }
@@ -162,7 +167,7 @@ public class NodeRetirer extends Maintainer {
         }));
     }
 
-    private List<Node> getNodesBelongingToApplication(List<Node> allNodes, ApplicationId applicationId) {
+    private List<Node> getNodesBelongingToApplication(Collection<Node> allNodes, ApplicationId applicationId) {
         return allNodes.stream()
                 .filter(node -> node.allocation().isPresent())
                 .filter(node -> node.allocation().get().owner().equals(applicationId))
@@ -172,7 +177,7 @@ public class NodeRetirer extends Maintainer {
     /**
      * Returns a list of ApplicationIds sorted by number of active nodes the application has allocated to it
      */
-    List<ApplicationId> getActiveApplicationIds(List<Node> nodes) {
+    List<ApplicationId> getActiveApplicationIds(Collection<Node> nodes) {
         return nodes.stream()
                 .filter(node -> node.state() == Node.State.active)
                 .collect(Collectors.groupingBy(
@@ -188,7 +193,7 @@ public class NodeRetirer extends Maintainer {
      * @param applicationNodes All the nodes allocated to an application
      * @return Set of nodes that all should eventually be retired
      */
-    Set<Node> getRetireableNodesForApplication(List<Node> applicationNodes) {
+    Set<Node> getRetireableNodesForApplication(Collection<Node> applicationNodes) {
         return applicationNodes.stream()
                 .filter(node -> node.state() == Node.State.active)
                 .filter(node -> !node.status().wantToRetire())
@@ -197,18 +202,18 @@ public class NodeRetirer extends Maintainer {
     }
 
     /**
-     * @param applicationNodes All the nodes allocated to an application
+     * @param clusterNodes All the nodes allocated to an application belonging to a single cluster
      * @return number of nodes we can safely start retiring
      */
-    long getNumberNodesAllowToRetireForApplication(List<Node> applicationNodes, long maxSimultaneousRetires) {
-        long numNodesInWantToRetire = applicationNodes.stream()
+    long getNumberNodesAllowToRetireForCluster(Collection<Node> clusterNodes, long maxSimultaneousRetires) {
+        long numNodesInWantToRetire = clusterNodes.stream()
                 .filter(node -> node.status().wantToRetire())
                 .filter(node -> node.state() != Node.State.parked)
                 .count();
         return Math.max(0, maxSimultaneousRetires - numNodesInWantToRetire);
     }
 
-    private Map<Flavor, Map<Node.State, Long>> getNumberOfNodesByFlavorByNodeState(List<Node> allNodes) {
+    private Map<Flavor, Map<Node.State, Long>> getNumberOfNodesByFlavorByNodeState(Collection<Node> allNodes) {
         return allNodes.stream()
                 .collect(Collectors.groupingBy(
                         Node::flavor,
