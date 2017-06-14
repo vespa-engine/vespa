@@ -34,14 +34,14 @@ ProtocolRepository::hasProtocol(const string &name) const
     return _protocols.find(name) != _protocols.end();
 }
 
-IProtocol::SP
+IProtocol *
 ProtocolRepository::getProtocol(const string &name)
 {
     ProtocolMap::iterator it = _protocols.find(name);
     if (it != _protocols.end()) {
-        return it->second;
+        return it->second.get();
     }
-    return IProtocol::SP();
+    return nullptr;
 }
 
 IRoutingPolicy::SP

@@ -9,10 +9,13 @@
 #include <vespa/slobrok/sbregister.h>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/vespalib/component/vtag.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fnet/scheduler.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".rpcnetwork");
+
+using vespalib::make_string;
 
 namespace {
 
@@ -190,7 +193,7 @@ RPCNetwork::invoke(FRT_RPCRequest *req)
 const string
 RPCNetwork::getConnectionSpec() const
 {
-    return vespalib::make_vespa_string("tcp/%s:%d", _ident.getHostname().c_str(), _orb.GetListenPort());
+    return make_string("tcp/%s:%d", _ident.getHostname().c_str(), _orb.GetListenPort());
 }
 
 RPCSendAdapter *
@@ -292,13 +295,13 @@ RPCNetwork::resolveServiceAddress(RoutingNode &recipient, const string &serviceN
 {
     if (_oosManager.isOOS(serviceName)) {
         return Error(ErrorCode::SERVICE_OOS,
-                     vespalib::make_vespa_string("The service '%s' has been marked as out of service.",
+                     make_string("The service '%s' has been marked as out of service.",
                                            serviceName.c_str()));
     }
     RPCServiceAddress::UP ret = _servicePool.resolve(serviceName);
     if (ret.get() == NULL) {
         return Error(ErrorCode::NO_ADDRESS_FOR_SERVICE,
-                     vespalib::make_vespa_string("The address of service '%s' could not be resolved. It is not currently "
+                     make_string("The address of service '%s' could not be resolved. It is not currently "
                                            "registered with the Vespa name server. "
                                            "The service must be having problems, or the routing configuration is wrong.",
                                            serviceName.c_str()));
@@ -306,7 +309,7 @@ RPCNetwork::resolveServiceAddress(RoutingNode &recipient, const string &serviceN
     RPCTarget::SP target = _targetPool.getTarget(_orb, *ret);
     if (target.get() == NULL) {
         return Error(ErrorCode::CONNECTION_ERROR,
-                     vespalib::make_vespa_string("Failed to connect to service '%s'.",
+                     make_string("Failed to connect to service '%s'.",
                                            serviceName.c_str()));
     }
     ret->setTarget(target); // free by freeServiceAddress()
@@ -348,17 +351,13 @@ RPCNetwork::send(RPCNetwork::SendContext &ctx)
         RPCSendAdapter *adapter = getSendAdapter(ctx._version);
         if (adapter == NULL) {
             replyError(ctx, ErrorCode::INCOMPATIBLE_VERSION,
-                       vespalib::make_vespa_string(
-                               "Can not send to version '%s' recipient.",
-                               ctx._version.toString().c_str()));
+                       make_string("Can not send to version '%s' recipient.", ctx._version.toString().c_str()));
         } else if (timeRemaining == 0) {
             replyError(ctx, ErrorCode::TIMEOUT,
                        "Aborting transmission because zero time remains.");
         } else if (payload.size() == 0) {
             replyError(ctx, ErrorCode::ENCODE_ERROR,
-                       vespalib::make_vespa_string(
-                               "Protocol '%s' failed to encode message.",
-                               ctx._msg.getProtocol().c_str()));
+                       make_string("Protocol '%s' failed to encode message.", ctx._msg.getProtocol().c_str()));
         } else if (ctx._recipients.size() == 1) {
             adapter->sendByHandover(*ctx._recipients.front(), ctx._version, std::move(payload), timeRemaining);
         } else {

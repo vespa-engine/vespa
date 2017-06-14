@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/vstringfmt.h>
 
 namespace mbus {
 

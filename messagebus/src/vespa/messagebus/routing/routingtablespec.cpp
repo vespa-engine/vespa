@@ -2,6 +2,8 @@
 #include "routingspec.h"
 #include <vespa/vespalib/util/stringfmt.h>
 
+using vespalib::make_string;
+
 namespace mbus {
 
 RoutingTableSpec::RoutingTableSpec(const string &protocol) :
@@ -34,16 +36,16 @@ RoutingTableSpec::toConfig(string &cfg, const string &prefix) const
     cfg.append(prefix).append("protocol ").append(RoutingSpec::toConfigString(_protocol)).append("\n");
     uint32_t numHops = _hops.size();
     if (numHops > 0) {
-        cfg.append(prefix).append("hop[").append(vespalib::make_vespa_string("%d", numHops)).append("]\n");
+        cfg.append(prefix).append("hop[").append(make_string("%d", numHops)).append("]\n");
         for (uint32_t i = 0; i < numHops; ++i) {
-            _hops[i].toConfig(cfg, vespalib::make_vespa_string("%shop[%d].", prefix.c_str(), i));
+            _hops[i].toConfig(cfg, make_string("%shop[%d].", prefix.c_str(), i));
         }
     }
     uint32_t numRoutes = _routes.size();
     if (numRoutes > 0) {
-        cfg.append(prefix).append("route[").append(vespalib::make_vespa_string("%d", numRoutes)).append("]\n");
+        cfg.append(prefix).append("route[").append(make_string("%d", numRoutes)).append("]\n");
         for (uint32_t i = 0; i < numRoutes; ++i) {
-            _routes[i].toConfig(cfg, vespalib::make_vespa_string("%sroute[%d].", prefix.c_str(), i));
+            _routes[i].toConfig(cfg, make_string("%sroute[%d].", prefix.c_str(), i));
         }
     }
 }

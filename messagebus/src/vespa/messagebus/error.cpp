@@ -24,9 +24,9 @@ Error::toString() const
 {
     string name(ErrorCode::getName(_code));
     if (name.empty()) {
-        name = vespalib::make_vespa_string("%u", _code);
+        name = vespalib::make_string("%u", _code);
     }
-    return vespalib::make_vespa_string("[%s @ %s]: %s", name.c_str(),
+    return vespalib::make_string("[%s @ %s]: %s", name.c_str(),
                                  _service.empty() ? "localhost" : _service.c_str(),
                                  _msg.c_str());
 }

@@ -296,7 +296,7 @@ public:
     bool setupRouting(const RoutingSpec &spec) override;
 
     // Implements INetworkOwner.
-    IProtocol::SP getProtocol(const string &name) override;
+    IProtocol * getProtocol(const string &name) override;
 
     // Implements INetworkOwner.
     void deliverMessage(Message::UP msg, const string &session) override;

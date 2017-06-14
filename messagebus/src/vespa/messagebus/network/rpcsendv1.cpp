@@ -8,6 +8,8 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fnet/channel.h>
 
+using vespalib::make_string;
+
 namespace {
 
 /**
@@ -75,13 +77,12 @@ RPCSendV1::attach(RPCNetwork &net)
     _net = &net;
     const string &prefix = _net->getIdentity().getServicePrefix();
     if (!prefix.empty()) {
-        _clientIdent = vespalib::make_vespa_string("'%s'", prefix.c_str());
+        _clientIdent = make_string("'%s'", prefix.c_str());
         _serverIdent = _clientIdent;
     }
 
     FRT_ReflectionBuilder builder(&_net->getSupervisor());
-    builder.DefineMethod(METHOD_NAME, METHOD_PARAMS, METHOD_RETURN, true,
-                         FRT_METHOD(RPCSendV1::invoke), this);
+    builder.DefineMethod(METHOD_NAME, METHOD_PARAMS, METHOD_RETURN, true, FRT_METHOD(RPCSendV1::invoke), this);
     builder.MethodDesc("Send a message bus request and get a reply back.");
     builder.ParamDesc("version", "The version of the message.");
     builder.ParamDesc("route", "Names of additional hops to visit.");
@@ -167,18 +168,16 @@ RPCSendV1::send(RoutingNode &recipient, const vespalib::Version &version,
 
     if (ctx->getTrace().shouldTrace(TraceLevel::SEND_RECEIVE)) {
         ctx->getTrace().trace(TraceLevel::SEND_RECEIVE,
-                              vespalib::make_vespa_string(
-                                  "Sending message (version %s) from %s to '%s' with %.2f seconds timeout.",
-                                  version.toString().c_str(), _clientIdent.c_str(),
-                                  address.getServiceName().c_str(), ctx->getTimeout()));
+                              make_string("Sending message (version %s) from %s to '%s' with %.2f seconds timeout.",
+                                          version.toString().c_str(), _clientIdent.c_str(),
+                                          address.getServiceName().c_str(), ctx->getTimeout()));
     }
 
     if (hop.getIgnoreResult()) {
         address.getTarget().getFRTTarget().InvokeVoid(req);
         if (ctx->getTrace().shouldTrace(TraceLevel::SEND_RECEIVE)) {
             ctx->getTrace().trace(TraceLevel::SEND_RECEIVE,
-                                  vespalib::make_vespa_string("Not waiting for a reply from '%s'.",
-                                                        address.getServiceName().c_str()));
+                                  make_string("Not waiting for a reply from '%s'.", address.getServiceName().c_str()));
         }
         Reply::UP reply(new EmptyReply());
         reply->getTrace().swap(ctx->getTrace());
@@ -203,18 +202,18 @@ RPCSendV1::RequestDone(FRT_RPCRequest *req)
         switch (req->GetErrorCode()) {
         case FRTE_RPC_TIMEOUT:
             error = Error(ErrorCode::TIMEOUT,
-                          vespalib::make_vespa_string("A timeout occured while waiting for '%s' (%g seconds expired); %s",
-                                                serviceName.c_str(), ctx->getTimeout(), req->GetErrorMessage()));
+                          make_string("A timeout occured while waiting for '%s' (%g seconds expired); %s",
+                                      serviceName.c_str(), ctx->getTimeout(), req->GetErrorMessage()));
             break;
         case FRTE_RPC_CONNECTION:
             error = Error(ErrorCode::CONNECTION_ERROR,
-                          vespalib::make_vespa_string("A connection error occured for '%s'; %s",
-                                                serviceName.c_str(), req->GetErrorMessage()));
+                          make_string("A connection error occured for '%s'; %s",
+                                      serviceName.c_str(), req->GetErrorMessage()));
             break;
         default:
             error = Error(ErrorCode::NETWORK_ERROR,
-                          vespalib::make_vespa_string("A network error occured for '%s'; %s",
-                                                serviceName.c_str(), req->GetErrorMessage()));
+                          make_string("A network error occured for '%s'; %s",
+                                      serviceName.c_str(), req->GetErrorMessage()));
         }
     } else {
         FRT_Values &ret = *req->GetReturn();
@@ -233,11 +232,10 @@ RPCSendV1::RequestDone(FRT_RPCRequest *req)
         const char       *trace            = ret[7]._string._str;
 
         if (payloadLen > 0) {
-            IProtocol::SP protocol = _net->getOwner().getProtocol(protocolName);
-            if (protocol.get() != NULL) {
-                Routable::UP routable = protocol->decode(version,
-                                                         BlobRef(payload, payloadLen));
-                if (routable.get() != NULL) {
+            IProtocol * protocol = _net->getOwner().getProtocol(protocolName);
+            if (protocol != nullptr) {
+                Routable::UP routable = protocol->decode(version, BlobRef(payload, payloadLen));
+                if (routable) {
                     if (routable->isReply()) {
                         reply.reset(static_cast<Reply*>(routable.release()));
                     } else {
@@ -246,17 +244,15 @@ RPCSendV1::RequestDone(FRT_RPCRequest *req)
                     }
                 } else {
                     error = Error(ErrorCode::DECODE_ERROR,
-                                  vespalib::make_vespa_string("Protocol '%s' failed to decode routable.",
-                                                        protocolName));
+                                  make_string("Protocol '%s' failed to decode routable.", protocolName));
                 }
 
             } else {
                 error = Error(ErrorCode::UNKNOWN_PROTOCOL,
-                              vespalib::make_vespa_string("Protocol '%s' is not known by %s.",
-                                                    protocolName, _serverIdent.c_str()));
+                              make_string("Protocol '%s' is not known by %s.", protocolName, _serverIdent.c_str()));
             }
         }
-        if (reply.get() == NULL) {
+        if ( ! reply ) {
             reply.reset(new EmptyReply());
         }
         reply->setRetryDelay(retryDelay);
@@ -269,8 +265,7 @@ RPCSendV1::RequestDone(FRT_RPCRequest *req)
     }
     if (ctx->getTrace().shouldTrace(TraceLevel::SEND_RECEIVE)) {
         ctx->getTrace().trace(TraceLevel::SEND_RECEIVE,
-                          vespalib::make_vespa_string("Reply (type %d) received at %s.",
-                                                reply->getType(), _clientIdent.c_str()));
+                              make_string("Reply (type %d) received at %s.", reply->getType(), _clientIdent.c_str()));
     }
     reply->getTrace().swap(ctx->getTrace());
     if (error.getCode() != ErrorCode::NONE) {
@@ -297,21 +292,19 @@ RPCSendV1::invoke(FRT_RPCRequest *req)
     uint32_t           payloadLen    = args[7]._data._len;
     uint32_t           traceLevel    = args[8]._intval32;
 
-    IProtocol::SP protocol = _net->getOwner().getProtocol(protocolName);
-    if (protocol.get() == NULL) {
+    IProtocol * protocol = _net->getOwner().getProtocol(protocolName);
+    if (protocol == nullptr) {
         replyError(req, version, traceLevel,
                    Error(ErrorCode::UNKNOWN_PROTOCOL,
-                         vespalib::make_vespa_string("Protocol '%s' is not known by %s.",
-                                               protocolName, _serverIdent.c_str())));
+                         make_string("Protocol '%s' is not known by %s.", protocolName, _serverIdent.c_str())));
         return;
     }
     Routable::UP routable = protocol->decode(version, BlobRef(payload, payloadLen));
     req->DiscardBlobs();
-    if (routable.get() == NULL) {
+    if ( ! routable ) {
         replyError(req, version, traceLevel,
                    Error(ErrorCode::DECODE_ERROR,
-                         vespalib::make_vespa_string("Protocol '%s' failed to decode routable.",
-                                               protocolName)));
+                         make_string("Protocol '%s' failed to decode routable.", protocolName)));
         return;
     }
     if (routable->isReply()) {
@@ -333,8 +326,8 @@ RPCSendV1::invoke(FRT_RPCRequest *req)
     msg->getTrace().setLevel(traceLevel);
     if (msg->getTrace().shouldTrace(TraceLevel::SEND_RECEIVE)) {
         msg->getTrace().trace(TraceLevel::SEND_RECEIVE,
-                              vespalib::make_vespa_string("Message (type %d) received at %s for session '%s'.",
-                                                    msg->getType(), _serverIdent.c_str(), session));
+                              make_string("Message (type %d) received at %s for session '%s'.",
+                                          msg->getType(), _serverIdent.c_str(), session));
     }
     _net->getOwner().deliverMessage(std::move(msg), session);
 }
@@ -346,16 +339,14 @@ RPCSendV1::handleReply(Reply::UP reply)
     FRT_RPCRequest &req = ctx->getRequest();
     string version = ctx->getVersion().toString();
     if (reply->getTrace().shouldTrace(TraceLevel::SEND_RECEIVE)) {
-        reply->getTrace().trace(TraceLevel::SEND_RECEIVE,
-                                vespalib::make_vespa_string("Sending reply (version %s) from %s.",
-                                                      version.c_str(), _serverIdent.c_str()));
+        reply->getTrace().trace(TraceLevel::SEND_RECEIVE, make_string("Sending reply (version %s) from %s.",
+                                                                      version.c_str(), _serverIdent.c_str()));
     }
     Blob payload(0);
     if (reply->getType() != 0) {
         payload = _net->getOwner().getProtocol(reply->getProtocol())->encode(ctx->getVersion(), *reply);
         if (payload.size() == 0) {
-            reply->addError(Error(ErrorCode::ENCODE_ERROR,
-                                  "An error occured while encoding the reply, see log."));
+            reply->addError(Error(ErrorCode::ENCODE_ERROR, "An error occured while encoding the reply, see log."));
         }
     }
     FRT_Values &ret = *req.GetReturn();
