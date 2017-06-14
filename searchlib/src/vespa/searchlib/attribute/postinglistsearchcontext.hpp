@@ -296,12 +296,10 @@ PostingListSearchContextT<DataT>::approximateHits() const
         if (this->fallbackToFiltering()) {
             numHits = _docIdLimit;
         } else if (_uniqueValues > MIN_UNIQUE_VALUES_BEFORE_APPROXIMATION) {
-            if ((_uniqueValues *
-                 MIN_UNIQUE_VALUES_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION >
-                 static_cast<int>(_docIdLimit)) ||
-                (this->calculateApproxNumHits() *
-                 MIN_APPROXHITS_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION >
-                 _docIdLimit)) {
+            if ((_uniqueValues * MIN_UNIQUE_VALUES_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION > static_cast<int>(_docIdLimit)) ||
+                (this->calculateApproxNumHits() * MIN_APPROXHITS_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION > _docIdLimit) ||
+                (_uniqueValues > MIN_UNIQUE_VALUES_BEFORE_APPROXIMATION*10))
+            {
                 numHits = this->calculateApproxNumHits();
             } else {
                 // XXX: Unsafe
