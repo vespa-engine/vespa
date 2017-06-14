@@ -4,7 +4,6 @@
 #include "reply.h"
 #include "ireplyhandler.h"
 #include "emptyreply.h"
-#include "error.h"
 #include "errorcode.h"
 #include <vespa/vespalib/util/backtrace.h>
 
@@ -19,7 +18,10 @@ Message::Message() :
     _timeRemaining(0),
     _retryEnabled(true),
     _retry(0)
-{ }
+{
+    // By observation there are normally 2 handlers pushed.
+    getCallStack().reserve(2);
+}
 
 Message::~Message()
 {

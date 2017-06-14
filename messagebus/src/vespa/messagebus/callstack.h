@@ -24,6 +24,7 @@ class CallStack
 {
 private:
     struct Frame {
+        Frame(IReplyHandler *r, IDiscardHandler * d, Context c) : replyHandler(r), discardHandler(d), ctx(c) {}
         IReplyHandler   *replyHandler;
         IDiscardHandler *discardHandler;
         Context          ctx;
@@ -39,7 +40,7 @@ public:
     /**
      * Create a new empty CallStack.
      **/
-    CallStack();
+    CallStack() { }
     ~CallStack();
 
     /**
@@ -47,7 +48,7 @@ public:
      *
      * @param dst The stack to swap content with.
      **/
-    void swap(CallStack &dst);
+    void swap(CallStack &dst) { _stack.swap(dst._stack); }
 
     /**
      * Discard this CallStack. This method should only be used when you are
@@ -71,8 +72,9 @@ public:
      * @param ctx            The context to store.
      * @param discardHandler The handler for discarded messages.
      **/
-    void push(IReplyHandler &replyHandler, Context ctx,
-              IDiscardHandler *discardHandler = NULL);
+    void push(IReplyHandler &replyHandler, Context ctx, IDiscardHandler *discardHandler = NULL) {
+        _stack.emplace_back(&replyHandler, discardHandler, ctx);
+    }
 
     /**
      * Pop a frame from this stack. The handler part of the frame will
@@ -84,6 +86,9 @@ public:
      * @param reply Reply that will receive the next context
      **/
     IReplyHandler &pop(Reply &reply);
+
+    /** Reserve space to avoid reallocation. */
+    void reserve(size_t sz) { _stack.reserve(sz); }
 };
 
 } // namespace mbus
