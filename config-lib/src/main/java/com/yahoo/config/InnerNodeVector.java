@@ -3,6 +3,7 @@ package com.yahoo.config;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -40,9 +41,20 @@ public class InnerNodeVector<NODE extends InnerNode> extends NodeVector<NODE> {
     @SuppressWarnings("unchecked")
     protected NODE createNew() {
         try {
-            Constructor<? extends InnerNode> ctor  = defaultNode.getClass().getDeclaredConstructor();
-            ctor.setAccessible(true);
-            return (NODE) ctor.newInstance();
+            Class<? extends InnerNode> nodeClass = defaultNode.getClass();
+            Class<?> builderClass = Arrays.stream(nodeClass.getClasses())
+                    .filter(klass -> klass.getSimpleName().equals("Builder"))
+                    .findFirst()
+                    .orElseThrow(() -> new ConfigurationRuntimeException("Could not find builder class for " + nodeClass.getName()));
+
+            Constructor<?> builderCtor = builderClass.getConstructor();
+            Object builderInstance = builderCtor.newInstance();
+            if (! (builderInstance instanceof ConfigBuilder))
+                throw new ConfigurationRuntimeException("Builder is not a ConfigBuilder, has class: " + builderInstance.getClass().getName());
+
+            Constructor<? extends InnerNode> nodeCtor = nodeClass.getDeclaredConstructor(builderClass, boolean.class);
+            nodeCtor.setAccessible(true);
+            return (NODE) nodeCtor.newInstance(builderInstance, false);
         } catch (InvocationTargetException | IllegalAccessException | InstantiationException | NoSuchMethodException e) {
             throw new ConfigurationRuntimeException(e);
         }
