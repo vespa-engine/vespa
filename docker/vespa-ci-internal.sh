@@ -31,4 +31,4 @@ cmake3 -DCMAKE_INSTALL_PREFIX=/opt/vespa \
       -DCMAKE_BUILD_RPATH=/opt/vespa/lib64 \
       "${SOURCE_DIR}"
 make -j ${NUM_THREADS}
-make -j ${NUM_THREADS} test
+ctest3 -j ${NUM_THREADS}
