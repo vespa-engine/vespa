@@ -7,8 +7,8 @@
 #include <vespa/searchlib/datastore/datastore.h>
 #include <vespa/searchlib/util/memoryusage.h>
 #include <vespa/vespalib/util/array.h>
-#include <set>
 #include <vespa/searchlib/btree/btree.h>
+#include <set>
 #include <atomic>
 
 namespace vespalib { class asciistream; }

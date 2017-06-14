@@ -579,10 +579,10 @@ AttributeVector::SearchContext::
 createIterator(fef::TermFieldMatchData *matchData, bool strict)
 {
     if (_plsc != NULL) {
-        SearchIterator::UP res = 
-            _plsc->createPostingIterator(matchData, strict);
-        if (res.get() != NULL)
+        SearchIterator::UP res = _plsc->createPostingIterator(matchData, strict);
+        if (res) {
             return res;
+        }
     }
     return createFilterIterator(matchData, strict);
 }

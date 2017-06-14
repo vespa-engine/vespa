@@ -3,12 +3,11 @@
 #include "postingstore.h"
 #include <vespa/searchlib/datastore/datastore.hpp>
 #include <vespa/searchlib/btree/btreeiterator.hpp>
+#include <vespa/searchlib/common/growablebitvector.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/status.h>
 
-namespace search {
-
-namespace attribute {
+namespace search::attribute {
 
 using btree::BTreeNoLeafData;
 
@@ -635,6 +634,4 @@ template class PostingStore<BTreeNoLeafData>;
 
 template class PostingStore<int32_t>;
 
-} // namespace btree
-
-} // namespace search
+}
