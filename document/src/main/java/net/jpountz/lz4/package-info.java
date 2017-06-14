@@ -1,4 +1,4 @@
-// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 @ExportPackage(version = @Version(major = 1, minor = 3, micro = 0))
 package net.jpountz.lz4;
 import com.yahoo.osgi.annotation.ExportPackage;
