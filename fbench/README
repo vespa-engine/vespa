@@ -15,10 +15,10 @@ fbench install directory should contain the following set of files:
   README
   bin/vespa-fbench
   bin/vespa-fbench-filter-file
-  bin/vespa-geturl
+  bin/vespa-fbench-geturl
   bin/plot.pl
   bin/pretest.sh
-  bin/vespa-resultfilter.pl
+  bin/vespa-fbench-result-filter.pl
   bin/runtests.sh
   bin/separate.pl
   bin/vespa-fbench-split-file
@@ -263,7 +263,7 @@ results. This section will explain what each of these numbers mean.
 
 For more complete benchmarking you will want to combine the results
 from several test runs and present them together in a graph or maybe a
-spreadsheet. The perl script vespa-resultfilter.pl may be used to convert
+spreadsheet. The perl script vespa-fbench-result-filter.pl may be used to convert
 the output from vespa-fbench into a single line of numbers. Lines of numbers
 produced from several test runs may then be concatenated into the same
 text file and used to plot a graph with gnuplot or imported into an
@@ -288,7 +288,7 @@ on.  (vespa-fbench is run as 'bin/vespa-fbench' etc.).
 | <deltaClients> increments. For each client count, the cycle time will
 | vary in the same way according to <minCycle>, <maxCycle> and <deltaCycle>.
 | vespa-fbench is run with each combination of client count and cycle time, and
-| the result output is filtered with the 'vespa-resultfilter.pl' script.
+| the result output is filtered with the 'vespa-fbench-result-filter.pl' script.
 | If you want to save the results you should redirect stdout to a file.
 | 
 |  -o : change the order in which the tests are performed so that client
