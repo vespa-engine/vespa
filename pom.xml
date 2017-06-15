@@ -91,7 +91,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.1</version>
+                    <version>3.6.1</version>
                     <configuration>
                         <source>1.8</source>
                         <target>1.8</target>
@@ -1094,7 +1094,7 @@
     	<doclint>all</doclint>
         <scala.major-version>2.11</scala.major-version>
         <scala.version>${scala.major-version}.4</scala.version>
-        <surefire.version>2.19.1</surefire.version>
+        <surefire.version>2.20</surefire.version>
     </properties>
 
     <modules>

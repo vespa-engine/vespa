@@ -20,7 +20,7 @@ import java.util.ArrayList;
 /**
  * Goal which generates config classes from def-files.
  */
-@org.apache.maven.plugins.annotations.Mojo(name = "config-gen", defaultPhase = LifecyclePhase.GENERATE_SOURCES)
+@org.apache.maven.plugins.annotations.Mojo(name = "config-gen", defaultPhase = LifecyclePhase.GENERATE_SOURCES, threadSafe = true)
 public class ConfigGenMojo extends AbstractMojo {
     @Component
     private MavenProject project;

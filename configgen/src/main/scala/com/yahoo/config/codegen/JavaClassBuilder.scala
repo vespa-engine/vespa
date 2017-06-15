@@ -166,7 +166,9 @@ object JavaClassBuilder {
     val subDirs: Array[String] = (PackagePrefix + namespace).split("""\.""")
     for (subDir <- subDirs) {
       dir = new File(dir, subDir)
-      if (!dir.isDirectory && !dir.mkdir) throw new CodegenRuntimeException("Could not create " + dir.getPath)
+      this.synchronized {
+        if (!dir.isDirectory && !dir.mkdir) throw new CodegenRuntimeException("Could not create " + dir.getPath)
+      }
     }
     dir
   }

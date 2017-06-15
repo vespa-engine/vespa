@@ -22,7 +22,7 @@ import org.apache.maven.project.MavenProject
  * The mapping in stored in a json file.
  * @author tonytv
  */
-@Mojo(name = "generate-bundle-classpath-mappings", requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME)
+@Mojo(name = "generate-bundle-classpath-mappings", requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME, threadSafe = true)
 class GenerateBundleClassPathMappingsMojo extends AbstractMojo {
   @Parameter(defaultValue = "${project}")
   private var project: MavenProject = null

@@ -29,7 +29,7 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
  *
  * @author tonytv
  */
-@Mojo(name = "generateSources", requiresDependencyResolution = ResolutionScope.COMPILE)
+@Mojo(name = "generateSources", requiresDependencyResolution = ResolutionScope.COMPILE, threadSafe = true)
 public class GenerateSourcesMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}")
