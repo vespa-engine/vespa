@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.application.validation.ValidationId;
 import com.yahoo.vespa.model.application.validation.ValidationOverrides;
 import com.yahoo.vespa.model.application.validation.change.ChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.VespaRefeedAction;
@@ -41,7 +42,7 @@ public class IndexingModeChangeValidator implements ChangeValidator {
 
         if (currentClusterIsIndexed == nextClusterIsIndexed) return Optional.empty();
 
-        return Optional.of(VespaRefeedAction.of("indexing-mode-change",
+        return Optional.of(VespaRefeedAction.of(ValidationId.indexModeChange.value(),
                                                 overrides,
                                                 "Cluster '" + currentCluster.getName() + "' changed indexing mode from '" +
                                                 indexingMode(currentClusterIsIndexed) + "' to '" + indexingMode(nextClusterIsIndexed) + "'"));

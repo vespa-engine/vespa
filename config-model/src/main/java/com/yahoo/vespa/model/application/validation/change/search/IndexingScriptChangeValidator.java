@@ -7,6 +7,7 @@ import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
+import com.yahoo.vespa.model.application.validation.ValidationId;
 import com.yahoo.vespa.model.application.validation.ValidationOverrides;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRefeedAction;
@@ -47,11 +48,11 @@ public class IndexingScriptChangeValidator {
                                                               ValidationOverrides overrides) {
         ScriptExpression currentScript = currentField.getIndexingScript();
         ScriptExpression nextScript = nextField.getIndexingScript();
-        if (!equalScripts(currentScript, nextScript)) {
+        if ( ! equalScripts(currentScript, nextScript)) {
             ChangeMessageBuilder messageBuilder = new ChangeMessageBuilder(nextField.getName());
             new IndexingScriptChangeMessageBuilder(currentSearch, currentField, nextSearch, nextField).populate(messageBuilder);
             messageBuilder.addChange("indexing script", currentScript.toString(), nextScript.toString());
-            return Optional.of(VespaRefeedAction.of("indexing-change", overrides, messageBuilder.build()));
+            return Optional.of(VespaRefeedAction.of(ValidationId.indexingChange.value(), overrides, messageBuilder.build()));
         }
         return Optional.empty();
     }
