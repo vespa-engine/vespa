@@ -16,6 +16,11 @@ BUILD_DOCKER_IMAGE="vespabuild"
 CI_DOCKER_IMAGE="vespaci"
 
 docker build -t "$BUILD_DOCKER_IMAGE" -f Dockerfile.build .
+
+# Create a temporarily copy of the rpm spec file inside docker directory so it can be referenced by the Dockerfile
+rm -rf tmp; mkdir tmp
+cp -p ../dist/vespa.spec tmp/vespa.spec
+
 docker build -t "$CI_DOCKER_IMAGE" -f Dockerfile.ci .
 docker run --rm -v $(pwd)/..:/vespa --entrypoint /vespa-ci-internal.sh "$CI_DOCKER_IMAGE" "$GIT_COMMIT" \
    2>&1 | tee vespa-ci-${GIT_COMMIT}-$(date +%Y-%m-%dT%H:%M:%S%z).log
