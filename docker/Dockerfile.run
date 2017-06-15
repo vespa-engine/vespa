@@ -5,3 +5,6 @@ RUN yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vesp
     yum -y install epel-release && \
     yum -y install centos-release-scl
 
+ENV VESPA_HOME=/opt/vespa
+ENV PATH="${PATH}:${VESPA_HOME}/bin"
+
