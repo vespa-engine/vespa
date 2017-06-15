@@ -1,2 +1,3 @@
 *.rpm
 vespa-ci-*.log
+tmp/

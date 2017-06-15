@@ -1,6 +1,9 @@
 FROM vespabuild
 
 COPY vespa-ci-internal.sh /vespa-ci-internal.sh
+COPY tmp/vespa.spec /vespa.spec
+
+RUN yum-builddep -y /vespa.spec
 
 # Build using non-root user 'vespabuilder'
 RUN useradd --create-home -s /bin/bash vespabuilder
