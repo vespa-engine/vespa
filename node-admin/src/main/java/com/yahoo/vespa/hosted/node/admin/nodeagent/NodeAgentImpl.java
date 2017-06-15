@@ -614,7 +614,8 @@ public class NodeAgentImpl implements NodeAgent {
 
         // Push metrics to the metrics proxy in each container - give it maximum 1 seconds to complete
         try {
-            dockerOperations.executeCommandInContainerAsRoot(containerName, 1L, "rpc_invoke",  "-t 1",  "tcp/localhost:19091",  "setExtraMetrics", buildRPCArgumentFromMetrics());
+            String[] cmd = {"rpc_invoke",  "-t", "1",  "tcp/localhost:19091",  "setExtraMetrics", buildRPCArgumentFromMetrics()};
+            dockerOperations.executeCommandInContainerAsRoot(containerName, 5L, cmd);
         } catch (DockerExecTimeoutException|JsonProcessingException e) {
             logger.warning("Unable to push metrics to container: " + containerName, e);
         }
