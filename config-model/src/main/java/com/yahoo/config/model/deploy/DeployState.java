@@ -98,7 +98,7 @@ public class DeployState implements ConfigDefinitionStore {
         this.zone = zone;
         this.queryProfiles = queryProfiles; // TODO: Remove this by seeing how pagetemplates are propagated
         this.semanticRules = semanticRules; // TODO: Remove this by seeing how pagetemplates are propagated
-        this.validationOverrides = ValidationOverrides.read(applicationPackage.getValidationOverrides(), now);
+        this.validationOverrides = ValidationOverrides.fromXml(applicationPackage.getValidationOverrides(), now);
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
     }
 
