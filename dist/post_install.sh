@@ -99,8 +99,6 @@ ln -s vespa-storaged $INSTALLPATH/sbin/storaged
 ln -s vespa-distributord $INSTALLPATH/sbin/distributord
 
 # Temporary when renaming binaries in vespaclient
-ln -s vespa-doclocator $INSTALLPATH/bin/vespadoclocator
-ln -s vespa-route $INSTALLPATH/bin/vesparoute
 ln -s vespa-spoolmaster $INSTALLPATH/bin/spoolmaster
 
 # Temporary when renaming binaries in vespaclient-java
