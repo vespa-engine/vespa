@@ -223,9 +223,9 @@
                     <version>1.0-alpha-2</version>
                 </plugin>
                 <plugin>
-                    <groupId>org.scala-tools</groupId>
-                    <artifactId>maven-scala-plugin</artifactId>
-                    <version>2.15.2</version>
+                    <groupId>net.alchim31.maven</groupId>
+                    <artifactId>scala-maven-plugin</artifactId>
+                    <version>3.2.2</version>
                 </plugin>
                 <plugin>
                     <groupId>com.yahoo.vespa</groupId>
@@ -248,9 +248,9 @@
                             <pluginExecutions>
                                 <pluginExecution>
                                     <pluginExecutionFilter>
-                                        <groupId>org.scala-tools</groupId>
-                                        <artifactId>maven-scala-plugin</artifactId>
-                                        <versionRange>[2.15.2,)</versionRange>
+                                        <groupId>net.alchim31.maven</groupId>
+                                        <artifactId>scala-maven-plugin</artifactId>
+                                        <versionRange>[3.2.2,)</versionRange>
                                         <goals>
                                             <goal>add-source</goal>
                                             <goal>testCompile</goal>

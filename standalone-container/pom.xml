@@ -97,9 +97,8 @@
       </plugin>
 
       <plugin>
-        <groupId>org.scala-tools</groupId>
-        <artifactId>maven-scala-plugin</artifactId>
-        <version>2.14.1</version>
+        <groupId>net.alchim31.maven</groupId>
+        <artifactId>scala-maven-plugin</artifactId>
         <configuration>
           <args>
             <arg>-unchecked</arg>
