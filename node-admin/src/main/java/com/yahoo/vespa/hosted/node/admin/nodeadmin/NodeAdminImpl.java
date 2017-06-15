@@ -11,11 +11,14 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
-import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
+import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -45,7 +48,11 @@ public class NodeAdminImpl implements NodeAdmin {
     private final DockerOperations dockerOperations;
     private final Function<String, NodeAgent> nodeAgentFactory;
     private final Optional<StorageMaintainer> storageMaintainer;
-    private boolean isFrozen = true;
+
+    private final Clock clock;
+    private boolean previousWantFrozen;
+    private boolean isFrozen;
+    private Instant startOfFreezeConvergence;
 
     private final Map<ContainerName, NodeAgent> nodeAgents = new ConcurrentHashMap<>();
 
@@ -54,13 +61,22 @@ public class NodeAdminImpl implements NodeAdmin {
     private final GaugeWrapper numberOfContainersInLoadImageState;
     private final CounterWrapper numberOfUnhandledExceptionsInNodeAgent;
 
-    public NodeAdminImpl(final DockerOperations dockerOperations, final Function<String, NodeAgent> nodeAgentFactory,
-                         final Optional<StorageMaintainer> storageMaintainer, final int nodeAgentScanIntervalMillis,
-                         final MetricReceiverWrapper metricReceiver, final Optional<AclMaintainer> aclMaintainer) {
+    public NodeAdminImpl(final DockerOperations dockerOperations,
+                         final Function<String, NodeAgent> nodeAgentFactory,
+                         final Optional<StorageMaintainer> storageMaintainer,
+                         final int nodeAgentScanIntervalMillis,
+                         final MetricReceiverWrapper metricReceiver,
+                         final Optional<AclMaintainer> aclMaintainer,
+                         final Clock clock) {
         this.dockerOperations = dockerOperations;
         this.nodeAgentFactory = nodeAgentFactory;
         this.storageMaintainer = storageMaintainer;
         this.nodeAgentScanIntervalMillis = nodeAgentScanIntervalMillis;
+
+        this.clock = clock;
+        this.previousWantFrozen = true;
+        this.isFrozen = true;
+        this.startOfFreezeConvergence = clock.instant();
 
         Dimensions dimensions = new Dimensions.Builder()
                 .add("host", HostName.getLocalhost())
@@ -111,6 +127,16 @@ public class NodeAdminImpl implements NodeAdmin {
 
     @Override
     public boolean setFrozen(boolean wantFrozen) {
+        if (wantFrozen != previousWantFrozen) {
+            if (wantFrozen) {
+                this.startOfFreezeConvergence = clock.instant();
+            } else {
+                this.startOfFreezeConvergence = null;
+            }
+
+            previousWantFrozen = wantFrozen;
+        }
+
         // Use filter with count instead of allMatch() because allMatch() will short circuit on first non-match
         boolean allNodeAgentsConverged = nodeAgents.values().stream()
                 .filter(nodeAgent -> !nodeAgent.setFrozen(wantFrozen))
@@ -126,6 +152,15 @@ public class NodeAdminImpl implements NodeAdmin {
     @Override
     public boolean isFrozen() {
         return isFrozen;
+    }
+
+    @Override
+    public Duration subsystemFreezeDuration() {
+        if (startOfFreezeConvergence == null) {
+            return Duration.ofSeconds(0);
+        } else {
+            return Duration.between(startOfFreezeConvergence, clock.instant());
+        }
     }
 
     @Override
