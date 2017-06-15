@@ -29,8 +29,8 @@ VisitorLibraries::getLibrary(StorageServerInterface& storageServer, const std::s
     std::string file = libraryPath + "lib" + libName + ".so";
     if (!lib->Open(file.c_str())) {
         std::string error = lib->GetLastErrorString();
-        std::string absfile = vespa::Defaults::vespaHome();
-        absfile.append("/libexec/vespa/storage/lib" + libName + ".so");
+        std::string absfile = vespa::Defaults::underVespaHome("libexec/vespa/storage/");
+        absfile.append("lib" + libName + ".so");
         if (!lib->Open(absfile.c_str())) {
             LOG(error, "Could not load library %s: %s",
                        file.c_str(), error.c_str());

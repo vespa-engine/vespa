@@ -505,9 +505,8 @@ namespace {
         if (advanceCount) ++fileCounter;
         uint32_t fileIndex = fileCounter % 8;
         std::ostringstream fileName;
-        fileName << vespa::Defaults::vespaHome()
-                 << "/tmp/hostinfo." << pid << "." << fileIndex
-                 << ".report";
+        fileName << vespa::Defaults::underVespaHome("tmp/hostinfo")
+                 << "." << pid << "." << fileIndex << ".report";
         return fileName.str();
     }
 }

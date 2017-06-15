@@ -25,6 +25,8 @@ public:
      **/
     static const char *vespaHome();
 
+    static std::string underVespaHome(const char *path);
+
     /**
      * Compute the user name to own directories and run processes.
      * @return the vespa user name

@@ -157,6 +157,22 @@ Defaults::vespaHome()
     return defaultHome;
 }
 
+std::string
+Defaults::underVespaHome(const char *path)
+{
+    if (path[0] == '/') {
+        return path;
+    }
+    if (path[0] == '.' && path[1] == '/') {
+        return path;
+    }
+    findDefaults();
+    std::string ret = defaultHome;
+    ret += '/';
+    ret += path;
+    return ret;
+}
+
 const char *
 Defaults::vespaUser()
 {

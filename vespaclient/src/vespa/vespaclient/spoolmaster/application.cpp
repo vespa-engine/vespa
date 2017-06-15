@@ -11,15 +11,11 @@
 namespace {
 
 std::string masterInbox() {
-    std::string dir = vespa::Defaults::vespaHome();
-    dir.append("/var/spool/master/inbox");
-    return dir;
+    return vespa::Defaults::underVespaHome("var/spool/master/inbox");
 }
 
 std::string outboxParent() {
-    std::string dir = vespa::Defaults::vespaHome();
-    dir.append("/var/spool/vespa");
-    return dir;
+    return vespa::Defaults::underVespaHome("var/spool/vespa");
 }
 
 }
