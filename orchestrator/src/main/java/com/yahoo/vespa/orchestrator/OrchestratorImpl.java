@@ -29,8 +29,6 @@ import com.yahoo.vespa.orchestrator.status.StatusService;
 import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,8 +42,6 @@ import java.util.stream.Collectors;
  * @author smorgrav
  */
 public class OrchestratorImpl implements Orchestrator {
-
-
     private static final Logger log = Logger.getLogger(OrchestratorImpl.class.getName());
 
     private final Policy policy;
@@ -198,38 +194,16 @@ public class OrchestratorImpl implements Orchestrator {
             throw new BatchHostNameNotFoundException(parentHostname, hostNames, e);
         }
 
-        try {
-            for (NodeGroup nodeGroup : nodeGroupsOrderedByApplication) {
-                try {
-                    suspendGroup(nodeGroup);
-                } catch (HostStateChangeDeniedException e) {
-                    throw new BatchHostStateChangeDeniedException(parentHostname, nodeGroup, e);
-                } catch (HostNameNotFoundException e) {
-                    // Should never get here since since we would have received HostNameNotFoundException earlier.
-                    throw new BatchHostNameNotFoundException(parentHostname, hostNames, e);
-                } catch (RuntimeException e) {
-                    throw new BatchInternalErrorException(parentHostname, nodeGroup, e);
-                }
-            }
-        } catch (Exception e) {
-            // Rollback causes extra noise in a content clusters due to cluster version changes and calm-periods,
-            // so consider not doing a full rollback.
-            rollbackSuspendAll(nodeGroupsOrderedByApplication, e);
-            throw e;
-        }
-    }
-
-    private void rollbackSuspendAll(List<NodeGroup> orderedGroups, Exception exception) {
-        List<NodeGroup> reverseOrderedHostNames = new ArrayList<>(orderedGroups);
-        Collections.reverse(reverseOrderedHostNames);
-        for (NodeGroup nodeGroup : reverseOrderedHostNames) {
-            for (HostName hostName : nodeGroup.getHostNames()) {
-                try {
-                    resume(hostName);
-                } catch (HostStateChangeDeniedException | HostNameNotFoundException | RuntimeException e) {
-                    // We're forced to ignore these since we're already rolling back a suspension.
-                    exception.addSuppressed(e);
-                }
+        for (NodeGroup nodeGroup : nodeGroupsOrderedByApplication) {
+            try {
+                suspendGroup(nodeGroup);
+            } catch (HostStateChangeDeniedException e) {
+                throw new BatchHostStateChangeDeniedException(parentHostname, nodeGroup, e);
+            } catch (HostNameNotFoundException e) {
+                // Should never get here since since we would have received HostNameNotFoundException earlier.
+                throw new BatchHostNameNotFoundException(parentHostname, hostNames, e);
+            } catch (RuntimeException e) {
+                throw new BatchInternalErrorException(parentHostname, nodeGroup, e);
             }
         }
     }
