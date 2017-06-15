@@ -149,13 +149,13 @@ struct WriteFixture : public FixtureBase {
 };
 
 TEST_F("require that idx file without docIdLimit in header can be read by FileChunk",
-       ReadFixture("without_doc_id_limit", false))
+       ReadFixture(TEST_PATH("without_doc_id_limit"), false))
 {
     EXPECT_EQUAL(std::numeric_limits<uint32_t>::max(), f.chunk.getDocIdLimit());
 }
 
 TEST_F("require that idx file without docIdLimit in header can be read by WriteableFileChunk",
-       WriteFixture("without_doc_id_limit", 1000, false))
+       WriteFixture(TEST_PATH("without_doc_id_limit"), 1000, false))
 {
     EXPECT_EQUAL(std::numeric_limits<uint32_t>::max(), f.chunk.getDocIdLimit());
 }
