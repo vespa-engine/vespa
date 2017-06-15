@@ -3,7 +3,7 @@ package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeRefeedAction;
 import com.yahoo.config.model.api.ServiceInfo;
-import com.yahoo.vespa.model.application.validation.ValidationOverrides;
+import com.yahoo.config.application.api.ValidationOverrides;
 
 import java.util.Collections;
 import java.util.List;

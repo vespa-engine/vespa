@@ -7,8 +7,8 @@ import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
-import com.yahoo.vespa.model.application.validation.ValidationId;
-import com.yahoo.vespa.model.application.validation.ValidationOverrides;
+import com.yahoo.config.application.api.ValidationId;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRefeedAction;
 

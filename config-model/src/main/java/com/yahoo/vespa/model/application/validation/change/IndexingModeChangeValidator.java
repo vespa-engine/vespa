@@ -3,10 +3,8 @@ package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.application.validation.ValidationId;
-import com.yahoo.vespa.model.application.validation.ValidationOverrides;
-import com.yahoo.vespa.model.application.validation.change.ChangeValidator;
-import com.yahoo.vespa.model.application.validation.change.VespaRefeedAction;
+import com.yahoo.config.application.api.ValidationId;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
 import java.util.ArrayList;

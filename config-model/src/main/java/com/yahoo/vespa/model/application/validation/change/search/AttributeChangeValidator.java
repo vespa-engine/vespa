@@ -5,7 +5,7 @@ import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.IndexSchema;
 import com.yahoo.searchdefinition.document.Attribute;
-import com.yahoo.vespa.model.application.validation.ValidationOverrides;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRefeedAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;

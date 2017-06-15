@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.application.validation.change.search;
 
 import com.yahoo.documentmodel.NewDocumentType;
-import com.yahoo.vespa.model.application.validation.ValidationOverrides;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.search.DocumentDatabase;
 

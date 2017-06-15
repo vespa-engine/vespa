@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.deploy.DeployState;

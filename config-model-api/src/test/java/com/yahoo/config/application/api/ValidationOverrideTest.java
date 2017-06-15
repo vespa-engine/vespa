@@ -1,17 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.model.application.validation;
+package com.yahoo.config.application.api;
 
+import com.yahoo.config.application.api.ValidationId;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.model.application.validation.xml.ValidationOverridesXMLReader;
+import org.junit.Assert;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
 import static org.junit.Assert.fail;
@@ -32,24 +30,24 @@ public class ValidationOverrideTest {
 
         {
 
-            ValidationOverrides overrides = new ValidationOverridesXMLReader().read(Optional.of(new StringReader(validationOverrides)),
-                                                                                    ManualClock.at("2000-01-01T23:59:00"));
+            ValidationOverrides overrides = ValidationOverrides.read(Optional.of(new StringReader(validationOverrides)),
+                                                                                 ManualClock.at("2000-01-01T23:59:00"));
             assertOverridden("indexing-change", overrides);
             assertOverridden("indexing-mode-change", overrides);
             assertNotOverridden("field-type-change", overrides);
         }
 
         {
-            ValidationOverrides overrides = new ValidationOverridesXMLReader().read(Optional.of(new StringReader(validationOverrides)),
-                                                                                    ManualClock.at("2000-01-02T00:00:00"));
+            ValidationOverrides overrides = ValidationOverrides.read(Optional.of(new StringReader(validationOverrides)),
+                                                                                 ManualClock.at("2000-01-02T00:00:00"));
             assertNotOverridden("indexing-change", overrides);
             assertOverridden("indexing-mode-change", overrides);
             assertNotOverridden("field-type-change", overrides);
         }
 
         {
-            ValidationOverrides overrides = new ValidationOverridesXMLReader().read(Optional.of(new StringReader(validationOverrides)),
-                                                                                    ManualClock.at("2000-01-04T00:00:00"));
+            ValidationOverrides overrides = ValidationOverrides.read(Optional.of(new StringReader(validationOverrides)),
+                                                                                 ManualClock.at("2000-01-04T00:00:00"));
             assertNotOverridden("indexing-change", overrides);
             assertNotOverridden("indexing-mode-change", overrides);
             assertNotOverridden("field-type-change", overrides);
@@ -65,14 +63,14 @@ public class ValidationOverrideTest {
                 "</validation-overrides>";
 
         try {
-            new ValidationOverridesXMLReader().read(Optional.of(new StringReader(validationOverrides)),
-                                                    ManualClock.at("2000-01-01T23:59:00"));
-            fail("Expected validation interval override validation validation failure");
+            ValidationOverrides.read(Optional.of(new StringReader(validationOverrides)),
+                                                 ManualClock.at("2000-01-01T23:59:00"));
+            Assert.fail("Expected validation interval override validation validation failure");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("validation-overrides is invalid", e.getMessage());
-            assertEquals("allow 'indexing-change' until 2000-02-03T00:00:00Z is too far in the future: Max 30 days is allowed",
-                         e.getCause().getMessage());
+            Assert.assertEquals("validation-overrides is invalid", e.getMessage());
+            Assert.assertEquals("allow 'indexing-change' until 2000-02-03T00:00:00Z is too far in the future: Max 30 days is allowed",
+                                e.getCause().getMessage());
         }
     }
 
@@ -83,7 +81,7 @@ public class ValidationOverrideTest {
     private void assertNotOverridden(String validationId, ValidationOverrides overrides) {
         try {
             overrides.invalid(ValidationId.from(validationId).get(), "message");
-            fail("Expected '" + validationId + "' to not be overridden");
+            Assert.fail("Expected '" + validationId + "' to not be overridden");
         }
         catch (ValidationOverrides.ValidationException expected) {
         }

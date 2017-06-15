@@ -14,7 +14,7 @@ import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
-import com.yahoo.vespa.model.application.validation.ValidationOverrides;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Before;

@@ -9,9 +9,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
-import com.yahoo.vespa.model.application.validation.ValidationOverrides;
-import com.yahoo.vespa.model.application.validation.change.ChangeValidator;
-import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.utils.internal.ReflectionUtil;
 import org.apache.commons.lang3.ClassUtils;
 

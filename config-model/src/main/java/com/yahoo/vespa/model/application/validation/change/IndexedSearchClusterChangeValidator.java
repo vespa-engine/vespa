@@ -5,7 +5,7 @@ import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.application.validation.ValidationOverrides;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.application.validation.change.search.DocumentDatabaseChangeValidator;
 import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;

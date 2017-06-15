@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.application.validation.change;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.container.QrConfig;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.application.validation.ValidationOverrides;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.container.Container;
 
 import java.util.List;

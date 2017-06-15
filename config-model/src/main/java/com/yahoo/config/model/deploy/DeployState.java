@@ -7,7 +7,6 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
-import com.yahoo.config.codegen.CNode;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
@@ -19,7 +18,6 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.io.reader.NamedReader;
-import com.yahoo.log.LogLevel;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -27,8 +25,7 @@ import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.documentmodel.DocumentModel;
-import com.yahoo.vespa.model.application.validation.ValidationOverrides;
-import com.yahoo.vespa.model.application.validation.xml.ValidationOverridesXMLReader;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.vespa.model.container.search.QueryProfilesBuilder;
 import com.yahoo.vespa.model.container.search.SemanticRuleBuilder;
@@ -46,7 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Logger;
 
 /**
  * Contains various state during deploy that should be available in all builders of a {@link com.yahoo.config.model.ConfigModel}
@@ -102,7 +98,7 @@ public class DeployState implements ConfigDefinitionStore {
         this.zone = zone;
         this.queryProfiles = queryProfiles; // TODO: Remove this by seeing how pagetemplates are propagated
         this.semanticRules = semanticRules; // TODO: Remove this by seeing how pagetemplates are propagated
-        this.validationOverrides = new ValidationOverridesXMLReader().read(applicationPackage.getValidationOverrides(), now);
+        this.validationOverrides = ValidationOverrides.read(applicationPackage.getValidationOverrides(), now);
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
     }
 
