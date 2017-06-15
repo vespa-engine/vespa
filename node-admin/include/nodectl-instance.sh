@@ -22,10 +22,6 @@
 # BEGIN environment bootstrap section
 # Do not edit between here and END as this section should stay identical in all scripts
 
-function debug {
-    echo "$(date -Is) $*"
-}
-
 findpath () {
     myname=${0}
     mypath=${myname%/*}
@@ -79,6 +75,10 @@ findroot () {
 findroot
 
 # END environment bootstrap section
+
+function debug {
+    echo "$(date -Is) $*"
+}
 
 has_servicename() {
     local name="$1"
