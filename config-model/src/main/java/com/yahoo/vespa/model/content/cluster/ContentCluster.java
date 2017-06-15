@@ -8,6 +8,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.content.MessagetyperouteselectorpolicyConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
@@ -600,7 +601,8 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
                                                                createZone(Environment.prod, "ap-northeast-1"),
                                                                createZone(Environment.prod, "ap-northeast-2"),
                                                                createZone(Environment.prod, "us-east-3"));
-        if (zonesWith16DistributionBits.contains(zone))
+        if ((zone.system() == SystemName.cd && zone.environment() == Environment.prod) || // should reflect how we want it to be in 'main'
+                zonesWith16DistributionBits.contains(zone))
             return 16;
         else
             return DistributionBitCalculator.getDistributionBits(getNodeCountPerGroup(), getDistributionMode());
