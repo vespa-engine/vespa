@@ -10,8 +10,8 @@ if [ $# -ne 1 ]; then
 fi
 
 GIT_COMMIT=$1
-SOURCE_DIR=/home/vespabuilder/vespa
-BUILD_DIR=/home/vespabuilder/build
+SOURCE_DIR=~/vespa
+BUILD_DIR=~/build
 NUM_CORES=$(nproc --all)
 NUM_THREADS=$((${NUM_CORES} + ${NUM_CORES}/2))
 
