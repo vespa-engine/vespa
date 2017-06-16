@@ -7,6 +7,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.logging.AccessLog;
+import com.yahoo.vespa.hosted.dockerapi.metrics.DimensionMetrics;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.provider.ComponentsProvider;
@@ -68,7 +69,7 @@ public class RestApiHandler extends LoggingRequestHandler{
                 @Override
                 public void render(OutputStream outputStream) throws IOException {
                     try (PrintStream printStream = new PrintStream(outputStream)) {
-                        for (MetricReceiverWrapper.DimensionMetrics dimensionMetrics : metricReceiverWrapper.getAllMetrics()) {
+                        for (DimensionMetrics dimensionMetrics : metricReceiverWrapper.getAllMetrics()) {
                             String secretAgentJsonReport = dimensionMetrics.toSecretAgentReport() + "\n";
                             printStream.write(secretAgentJsonReport.getBytes(StandardCharsets.UTF_8.name()));
                         }

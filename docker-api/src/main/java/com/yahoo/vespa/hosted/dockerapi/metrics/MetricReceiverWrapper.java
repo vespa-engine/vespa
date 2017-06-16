@@ -1,14 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.dockerapi.metrics;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.metrics.simple.Point;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -28,7 +25,6 @@ public class MetricReceiverWrapper {
     public static final String APPLICATION_DOCKER = "docker";
     public static final String APPLICATION_NODE = "vespa.node";
 
-    private final static ObjectMapper objectMapper = new ObjectMapper();
     private final Object monitor = new Object();
     private final Map<String, ApplicationMetrics> applicationMetrics = new HashMap<>(); // key is application name
     private final MetricReceiver metricReceiver;
@@ -71,22 +67,13 @@ public class MetricReceiverWrapper {
         }
     }
 
-    public void unsetMetricsForContainer(String hostname) {
-        synchronized (monitor) {
-            applicationMetrics.values()
-                              .forEach(m -> m.metricsByDimensions.keySet()
-                                                                 .removeIf(d -> d.dimensionsMap.containsKey("host") &&
-                                                                         d.dimensionsMap.get("host").equals(hostname)));
-        }
-    }
-
     public List<DimensionMetrics> getAllMetrics() {
         synchronized (monitor) {
             List<DimensionMetrics> dimensionMetrics = new ArrayList<>();
-            applicationMetrics.entrySet()
-                    .forEach(e -> e.getValue().metricsByDimensions().entrySet().stream()
-                            .map(entry -> new DimensionMetrics(e.getKey(), entry.getKey(), entry.getValue()))
-                            .forEach(dimensionMetrics::add));
+            applicationMetrics.forEach((application, applicationMetrics) -> applicationMetrics.metricsByDimensions().entrySet().stream()
+                    .map(entry -> new DimensionMetrics(application, entry.getKey(),
+                            entry.getValue().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, value -> value.getValue().getValue()))))
+                    .forEach(dimensionMetrics::add));
             return dimensionMetrics;
         }
     }
@@ -95,11 +82,11 @@ public class MetricReceiverWrapper {
     public Set<Map<String, Object>> getAllMetricsRaw() {
         synchronized (monitor) {
             Set<Map<String, Object>> dimensionMetrics = new HashSet<>();
-            applicationMetrics.entrySet()
-                    .forEach(e -> e.getValue().metricsByDimensions().entrySet().stream()
-                            .map(entry -> new DimensionMetrics(e.getKey(), entry.getKey(), entry.getValue()))
-                            .map(DimensionMetrics::getMetrics)
-                            .forEach(dimensionMetrics::add));
+            applicationMetrics.forEach((application, applicationMetrics) -> applicationMetrics.metricsByDimensions().entrySet().stream()
+                    .map(entry -> new DimensionMetrics(application, entry.getKey(),
+                            entry.getValue().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, value -> value.getValue().getValue()))))
+                    .map(DimensionMetrics::getMetrics)
+                    .forEach(dimensionMetrics::add));
             return dimensionMetrics;
         }
     }
@@ -110,40 +97,6 @@ public class MetricReceiverWrapper {
             Map<Dimensions, Map<String, MetricValue>> metricsByDimensions = getOrCreateApplicationMetrics(application);
             return metricsByDimensions.get(dimensions).entrySet().stream().collect(
                     Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getValue()));
-        }
-    }
-
-    public class DimensionMetrics {
-        private final String application;
-        private final Dimensions dimensions;
-        private final Map<String, Object> metrics;
-
-        DimensionMetrics(String application, Dimensions dimensions, Map<String, MetricValue> metricValues) {
-            this.application = application;
-            this.dimensions = dimensions;
-            this.metrics = metricValues.entrySet().stream().collect(
-                    Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getValue()));
-        }
-
-        private Map<String, Object> getMetrics() {
-            final Map<String, Object> routing = new HashMap<>();
-            final Map<String, Object> routingYamas = new HashMap<>();
-            routing.put("yamas", routingYamas);
-            routingYamas.put("namespaces", Arrays.asList("Vespa"));
-
-            Map<String, Object> report = new HashMap<>();
-            report.put("application", application);
-            report.put("dimensions", dimensions.dimensionsMap);
-            report.put("metrics", metrics);
-            report.put("routing", routing);
-            return report;
-        }
-
-        public String toSecretAgentReport() throws JsonProcessingException {
-            Map<String, Object> report = getMetrics();
-            report.put("timestamp", System.currentTimeMillis() / 1000);
-
-            return objectMapper.writeValueAsString(report);
         }
     }
 
