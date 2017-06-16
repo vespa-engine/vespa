@@ -2,27 +2,27 @@
 package com.yahoo.vespa;
 
 import com.yahoo.config.codegen.MakeConfig;
+import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
-import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.ArrayList;
 
 
 /**
  * Goal which generates config classes from def-files.
  */
-@org.apache.maven.plugins.annotations.Mojo(name = "config-gen", defaultPhase = LifecyclePhase.GENERATE_SOURCES, threadSafe = true)
+@Mojo(name = "config-gen", defaultPhase = LifecyclePhase.GENERATE_SOURCES, threadSafe = true)
 public class ConfigGenMojo extends AbstractMojo {
-    @Component
+    @Parameter( defaultValue = "${project}", readonly = true )
     private MavenProject project;
 
     /**
