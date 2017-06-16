@@ -107,4 +107,20 @@ TEST("require that port-only spec resolves to non-wildcard client address") {
     EXPECT_TRUE(!SocketSpec("tcp/123").client_address().is_wildcard());
 }
 
+TEST("require that replace_host makes new spec with replaced host") {
+    SocketSpec old_spec("tcp/host:123");
+    const SocketSpec &const_spec = old_spec;
+    SocketSpec new_spec = const_spec.replace_host("foo");
+    TEST_DO(verify_host_port(old_spec, "host", 123));
+    TEST_DO(verify_host_port(new_spec, "foo", 123));
+}
+
+TEST("require that replace_host gives invalid spec when used with less than 2 host names") {
+    TEST_DO(verify_invalid(SocketSpec("bogus").replace_host("foo")));
+    TEST_DO(verify_invalid(SocketSpec("tcp/123").replace_host("foo")));
+    TEST_DO(verify_invalid(SocketSpec("tcp/host:123").replace_host("")));
+    TEST_DO(verify_invalid(SocketSpec("ipc/file:my_socket").replace_host("foo")));
+    TEST_DO(verify_invalid(SocketSpec("ipc/name:my_socket").replace_host("foo")));
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
