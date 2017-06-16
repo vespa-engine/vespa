@@ -30,7 +30,7 @@ import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.
  * @author dybis, stiankri
  */
 public class NodeAdminStateUpdater extends AbstractComponent {
-    public static final long FREEZE_CONVERGENCE_TIMEOUT_MINUTES = 5;
+    public static final Duration FREEZE_CONVERGENCE_TIMEOUT = Duration.ofMinutes(5);
 
     private final AtomicBoolean terminated = new AtomicBoolean(false);
     private State currentState = SUSPENDED_NODE_ADMIN;
@@ -135,7 +135,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
 
             if (wantedState != RESUMED && !converged) {
                 Duration subsystemFreezeDuration = nodeAdmin.subsystemFreezeDuration();
-                if (subsystemFreezeDuration.compareTo(Duration.ofMinutes(FREEZE_CONVERGENCE_TIMEOUT_MINUTES)) > 0) {
+                if (subsystemFreezeDuration.compareTo(FREEZE_CONVERGENCE_TIMEOUT) > 0) {
                     // We have spent too long time trying to freeze and node admin is still not frozen.
                     // To avoid node agents stalling for too long, we'll force unfrozen ticks now.
                     logger.info("Timed out trying to freeze, will force unfreezed ticks");

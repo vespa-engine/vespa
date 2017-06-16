@@ -107,7 +107,7 @@ public class NodeAdminStateUpdaterTest {
         // The second orchestration failure happens after the freeze convergence timeout,
         // and so SHOULD call setFrozen(false)
         when(nodeAdmin.setFrozen(eq(true))).thenReturn(true);
-        when(nodeAdmin.subsystemFreezeDuration()).thenReturn(Duration.ofMinutes(NodeAdminStateUpdater.FREEZE_CONVERGENCE_TIMEOUT_MINUTES + 1));
+        when(nodeAdmin.subsystemFreezeDuration()).thenReturn(NodeAdminStateUpdater.FREEZE_CONVERGENCE_TIMEOUT.plusMinutes(1));
         doThrow(new RuntimeException("Cannot allow to suspend because some reason")).doNothing()
                 .when(orchestrator).suspend(eq(parentHostname), eq(suspendHostnames));
         tickAfter(35);
