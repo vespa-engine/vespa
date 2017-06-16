@@ -97,16 +97,16 @@ public class StorageMaintainer {
                 .withTag("state", nodeSpec.nodeState.toString())
                 .withTag("zone", environment.getZone())
                 .withTag("parentHostname", environment.getParentHostHostname());
-        nodeSpec.owner.ifPresent(owner -> vespaSchedule
+        nodeSpec.owner.ifPresent(owner -> hostLifeSchedule
                 .withTag("tenantName", owner.tenant)
                 .withTag("app", owner.application + "." + owner.instance)
                 .withTag("applicationName", owner.application)
                 .withTag("instanceName", owner.instance)
                 .withTag("applicationId", owner.tenant + "." + owner.application + "." + owner.instance));
-        nodeSpec.membership.ifPresent(membership -> vespaSchedule
+        nodeSpec.membership.ifPresent(membership -> hostLifeSchedule
                 .withTag("clustertype", membership.clusterType)
                 .withTag("clusterid", membership.clusterId));
-        nodeSpec.vespaVersion.ifPresent(version -> vespaSchedule.withTag("vespaVersion", version));
+        nodeSpec.vespaVersion.ifPresent(version -> hostLifeSchedule.withTag("vespaVersion", version));
 
         try {
             vespaSchedule.writeTo(yamasAgentFolder);

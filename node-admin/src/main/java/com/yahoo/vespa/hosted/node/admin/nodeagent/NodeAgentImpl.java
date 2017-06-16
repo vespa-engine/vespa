@@ -591,7 +591,7 @@ public class NodeAgentImpl implements NodeAgent {
             for (DimensionMetrics dimensionMetrics : metrics) {
                 params.append(dimensionMetrics.toSecretAgentReport());
             }
-            String wrappedMetrics = "s:'" + params.toString() + "'";
+            String wrappedMetrics = "s:" + params.toString();
 
             // Push metrics to the metrics proxy in each container - give it maximum 1 seconds to complete
             String[] command = {"rpc_invoke",  "-t", "1",  "tcp/localhost:19091",  "setExtraMetrics", wrappedMetrics};
