@@ -26,8 +26,13 @@ class JavaClassBuilder(
   override def createConfigClasses() {
     try {
       val outFile = new File(getDestPath(destDir, root.getNamespace), className + ".java")
-      val out = new PrintStream(new FileOutputStream(outFile))
-      out.print(getConfigClass(className))
+      var out: PrintStream = null
+      try {
+        out = new PrintStream(new FileOutputStream(outFile))
+        out.print(getConfigClass(className))
+      } finally {
+        if (out != null) out.close()
+      }
       System.err.println(outFile.getPath + " successfully written.")
     }
     catch {
