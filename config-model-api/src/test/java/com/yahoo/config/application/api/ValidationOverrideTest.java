@@ -27,7 +27,7 @@ public class ValidationOverrideTest {
                 "</validation-overrides>";
         {
 
-            ValidationOverrides overrides = ValidationOverrides.fromXml(Optional.of(new StringReader(validationOverrides)));
+            ValidationOverrides overrides = ValidationOverrides.fromXml(new StringReader(validationOverrides));
             Instant now = ManualClock.at("2000-01-01T23:59:00");
             assertOverridden("indexing-change", overrides, now);
             assertOverridden("indexing-mode-change", overrides, now);
@@ -37,7 +37,7 @@ public class ValidationOverrideTest {
         }
 
         {
-            ValidationOverrides overrides = ValidationOverrides.fromXml(Optional.of(new StringReader(validationOverrides)));
+            ValidationOverrides overrides = ValidationOverrides.fromXml(new StringReader(validationOverrides));
             Instant now = ManualClock.at("2000-01-02T00:00:00");
             assertNotOverridden("indexing-change", overrides, now);
             assertOverridden("indexing-mode-change", overrides, now);
@@ -45,7 +45,7 @@ public class ValidationOverrideTest {
         }
 
         {
-            ValidationOverrides overrides = ValidationOverrides.fromXml(Optional.of(new StringReader(validationOverrides)));
+            ValidationOverrides overrides = ValidationOverrides.fromXml(new StringReader(validationOverrides));
             Instant now = ManualClock.at("2000-01-04T00:00:00");
             assertNotOverridden("indexing-change", overrides, now);
             assertNotOverridden("indexing-mode-change", overrides, now);
@@ -62,7 +62,7 @@ public class ValidationOverrideTest {
                 "</validation-overrides>";
 
         try {
-            ValidationOverrides overrides = ValidationOverrides.fromXml(Optional.of(new StringReader(validationOverrides)));
+            ValidationOverrides overrides = ValidationOverrides.fromXml(new StringReader(validationOverrides));
             Instant now = ManualClock.at("2000-01-01T23:59:00");
             overrides.allows("indexing-change", now);
             Assert.fail("Expected validation interval override validation validation failure");

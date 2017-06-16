@@ -71,16 +71,14 @@ public class ValidationOverrides {
 
     /**
      * Returns a ValidationOverrides instance with the content of the given Reader.
-     * An empty ValidationOverrides is returned if the argument is empty.
      *
-     * @param reader the reader which optionally contains a validation-overrides XML structure
+     * @param reader the reader containing a validation-overrides XML structure
      * @return a ValidationOverrides from the argument
      * @throws IllegalArgumentException if the validation-allows.xml file exists but is invalid
      */
-    public static ValidationOverrides fromXml(Optional<Reader> reader) {
+    public static ValidationOverrides fromXml(Reader reader) {
         try {
-            if ( ! reader.isPresent()) return ValidationOverrides.empty;
-            return fromXml(IOUtils.readAll(reader.get()));
+            return fromXml(IOUtils.readAll(reader));
         } catch (IOException e) {
             throw new IllegalArgumentException("Could not read deployment spec", e);
         }
