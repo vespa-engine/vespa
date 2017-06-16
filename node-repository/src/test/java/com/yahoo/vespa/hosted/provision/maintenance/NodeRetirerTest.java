@@ -70,6 +70,12 @@ public class NodeRetirerTest {
         tester.setNumberAllowedAllocatedRetirementsPerFlavor(3, 2, 4, 2);
         retirer.retireAllocated();
         tester.assertParkedCountsByApplication(-1, -1, -1, -1, -1, -1); // Nodes should be in retired, but not yet parked
+        tester.assertRetiringCountsByApplication(1, 1, 1, 1, 1, 2);
+
+        // Until the nodes we set to retire are fully retired and moved to parked, we should not attempt to retire any other nodes
+        retirer.retireAllocated();
+        retirer.retireAllocated();
+        tester.assertRetiringCountsByApplication(1, 1, 1, 1, 1, 2);
 
         tester.iterateMaintainers();
         tester.assertParkedCountsByApplication(1, 1, 1, 1, 1, 2);
@@ -106,7 +112,7 @@ public class NodeRetirerTest {
         ApplicationId app = new ApplicationId.Builder().tenant("vespa").applicationName("calendar").build();
 
         List<Node> nodes = tester.nodeRepository.getNodes(app);
-        Set<String> actual = retirer.getRetireableNodesForApplication(nodes).stream().map(Node::hostname).collect(Collectors.toSet());
+        Set<String> actual = retirer.filterRetireableNodes(nodes).stream().map(Node::hostname).collect(Collectors.toSet());
         Set<String> expected = nodes.stream().map(Node::hostname).collect(Collectors.toSet());
         assertEquals(expected, actual);
 
@@ -119,7 +125,7 @@ public class NodeRetirerTest {
 
         nodes = tester.nodeRepository.getNodes(app);
         Set<String> excluded = Stream.of(nodeWantToRetire, nodeToFail, nodeToUpdate).map(Node::hostname).collect(Collectors.toSet());
-        Set<String> actualAfterUpdates = retirer.getRetireableNodesForApplication(nodes).stream().map(Node::hostname).collect(Collectors.toSet());
+        Set<String> actualAfterUpdates = retirer.filterRetireableNodes(nodes).stream().map(Node::hostname).collect(Collectors.toSet());
         Set<String> expectedAfterUpdates = nodes.stream().map(Node::hostname).filter(node -> !excluded.contains(node)).collect(Collectors.toSet());
         assertEquals(expectedAfterUpdates, actualAfterUpdates);
     }

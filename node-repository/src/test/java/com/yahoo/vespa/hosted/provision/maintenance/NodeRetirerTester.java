@@ -153,6 +153,18 @@ public class NodeRetirerTester {
         assertEquals(expected, actual);
     }
 
+    // Nodes that are being retired or about to be retired (wantToRetire flag set), but are not yet fully retired (not parked)
+    void assertRetiringCountsByApplication(long... nums) {
+        Map<ApplicationId, Long> expected = expectedCountsByApplication(nums);
+        Map<ApplicationId, Long> actual = nodeRepository.getNodes().stream()
+                .filter(node -> node.status().wantToRetire())
+                .filter(node -> node.allocation().isPresent())
+                .filter(node -> node.allocation().get().membership().retired())
+                .filter(node -> node.state() != Node.State.parked)
+                .collect(Collectors.groupingBy(node -> node.allocation().get().owner(), Collectors.counting()));
+        assertEquals(expected, actual);
+    }
+
     private Map<Flavor, Long> expectedCountsByFlavor(long... nums) {
         Map<Flavor, Long> countsByFlavor = new HashMap<>();
         for (int i = 0; i < nums.length; i++) {
