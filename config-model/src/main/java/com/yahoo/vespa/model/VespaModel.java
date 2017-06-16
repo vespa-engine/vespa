@@ -29,8 +29,8 @@ import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.vespa.config.GenericConfig;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.vespa.model.admin.Admin;
-import com.yahoo.vespa.model.application.validation.ValidationId;
-import com.yahoo.vespa.model.application.validation.ValidationOverrides;
+import com.yahoo.config.application.api.ValidationId;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.builder.VespaModelBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.clients.Clients;
@@ -51,6 +51,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -212,14 +213,14 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     public ApplicationConfigProducerRoot getVespa() { return root; }
 
     @Override
-    public boolean allowModelVersionMismatch() {
-        return validationOverrides.allows(ValidationId.configModelVersionMismatch) ||
-               validationOverrides.allows(ValidationId.skipOldConfigModels); // implies this
+    public boolean allowModelVersionMismatch(Instant now) {
+        return validationOverrides.allows(ValidationId.configModelVersionMismatch, now) ||
+               validationOverrides.allows(ValidationId.skipOldConfigModels, now); // implies this
     }
 
     @Override
-    public boolean skipOldConfigModels() {
-        return validationOverrides.allows(ValidationId.skipOldConfigModels);
+    public boolean skipOldConfigModels(Instant now) {
+        return validationOverrides.allows(ValidationId.skipOldConfigModels, now);
     }
 
     /**

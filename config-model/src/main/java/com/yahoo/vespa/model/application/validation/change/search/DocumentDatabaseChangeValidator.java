@@ -2,10 +2,11 @@
 package com.yahoo.vespa.model.application.validation.change.search;
 
 import com.yahoo.documentmodel.NewDocumentType;
-import com.yahoo.vespa.model.application.validation.ValidationOverrides;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.search.DocumentDatabase;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,29 +33,29 @@ public class DocumentDatabaseChangeValidator {
         this.nextDocType = nextDocType;
     }
 
-    public List<VespaConfigChangeAction> validate(final ValidationOverrides overrides) {
+    public List<VespaConfigChangeAction> validate(ValidationOverrides overrides, Instant now) {
         List<VespaConfigChangeAction> result = new ArrayList<>();
-        result.addAll(validateAttributeChanges(overrides));
-        result.addAll(validateIndexingScriptChanges(overrides));
-        result.addAll(validateDocumentTypeChanges(overrides));
+        result.addAll(validateAttributeChanges(overrides, now));
+        result.addAll(validateIndexingScriptChanges(overrides, now));
+        result.addAll(validateDocumentTypeChanges(overrides, now));
         return result;
     }
 
-    private List<VespaConfigChangeAction> validateAttributeChanges(final ValidationOverrides overrides) {
+    private List<VespaConfigChangeAction> validateAttributeChanges(ValidationOverrides overrides, Instant now) {
         return new AttributeChangeValidator(
                 currentDatabase.getDerivedConfiguration().getAttributeFields(),
                 currentDatabase.getDerivedConfiguration().getIndexSchema(), currentDocType,
                 nextDatabase.getDerivedConfiguration().getAttributeFields(),
-                nextDatabase.getDerivedConfiguration().getIndexSchema(), nextDocType).validate(overrides);
+                nextDatabase.getDerivedConfiguration().getIndexSchema(), nextDocType).validate(overrides, now);
     }
 
-    private List<VespaConfigChangeAction> validateIndexingScriptChanges(ValidationOverrides overrides) {
+    private List<VespaConfigChangeAction> validateIndexingScriptChanges(ValidationOverrides overrides, Instant now) {
         return new IndexingScriptChangeValidator(currentDatabase.getDerivedConfiguration().getSearch(),
-                nextDatabase.getDerivedConfiguration().getSearch()).validate(overrides);
+                nextDatabase.getDerivedConfiguration().getSearch()).validate(overrides, now);
     }
 
-    private List<VespaConfigChangeAction> validateDocumentTypeChanges(ValidationOverrides overrides) {
-        return new DocumentTypeChangeValidator(currentDocType, nextDocType).validate(overrides);
+    private List<VespaConfigChangeAction> validateDocumentTypeChanges(ValidationOverrides overrides, Instant now) {
+        return new DocumentTypeChangeValidator(currentDocType, nextDocType).validate(overrides, now);
     }
 
 }

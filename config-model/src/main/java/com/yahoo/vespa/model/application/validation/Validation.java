@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.deploy.DeployState;
@@ -15,6 +16,7 @@ import com.yahoo.vespa.model.application.validation.change.IndexedSearchClusterC
 import com.yahoo.vespa.model.application.validation.change.IndexingModeChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -56,13 +58,14 @@ public class Validation {
         Optional<Model> currentActiveModel = deployState.getPreviousModel();
         if (currentActiveModel.isPresent() && (currentActiveModel.get() instanceof VespaModel))
             return validateChanges((VespaModel)currentActiveModel.get(), model,
-                                   deployState.validationOverrides(), deployState.getDeployLogger());
+                                   deployState.validationOverrides(), deployState.getDeployLogger(), deployState.now());
         else
             return new ArrayList<>();
     }
 
     private static List<ConfigChangeAction> validateChanges(VespaModel currentModel, VespaModel nextModel,
-                                                            ValidationOverrides overrides, DeployLogger logger) {
+                                                            ValidationOverrides overrides, DeployLogger logger,
+                                                            Instant now) {
         ChangeValidator[] validators = new ChangeValidator[] {
                 new IndexingModeChangeValidator(),
                 new IndexedSearchClusterChangeValidator(),
@@ -73,7 +76,7 @@ public class Validation {
                 new ContainerRestartValidator(),
         };
         return Arrays.stream(validators)
-                .flatMap(v -> v.validate(currentModel, nextModel, overrides).stream())
+                .flatMap(v -> v.validate(currentModel, nextModel, overrides, now).stream())
                 .collect(toList());
     }
 

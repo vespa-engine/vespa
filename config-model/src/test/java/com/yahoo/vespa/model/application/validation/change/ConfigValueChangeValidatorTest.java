@@ -14,12 +14,13 @@ import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
-import com.yahoo.vespa.model.application.validation.ValidationOverrides;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -143,7 +144,7 @@ public class ConfigValueChangeValidatorTest {
 
     private List<ConfigChangeAction> getConfigChanges(VespaModel currentModel, VespaModel nextModel) {
         ConfigValueChangeValidator validator = new ConfigValueChangeValidator(logger);
-        return validator.validate(currentModel, nextModel, ValidationOverrides.empty());
+        return validator.validate(currentModel, nextModel, ValidationOverrides.empty, Instant.now());
     }
 
     private List<ConfigChangeAction> getConfigChanges(AbstractConfigProducerRoot currentModel,

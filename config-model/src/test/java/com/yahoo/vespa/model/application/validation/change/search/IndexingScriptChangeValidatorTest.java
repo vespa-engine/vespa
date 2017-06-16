@@ -2,11 +2,12 @@
 package com.yahoo.vespa.model.application.validation.change.search;
 
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
-import com.yahoo.vespa.model.application.validation.ValidationOverrides;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRefeedAction;
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
@@ -25,7 +26,7 @@ public class IndexingScriptChangeValidatorTest {
 
         @Override
         public List<VespaConfigChangeAction> validate() {
-            return validator.validate(ValidationOverrides.empty());
+            return validator.validate(ValidationOverrides.empty, Instant.now());
         }
     }
 
@@ -52,10 +53,11 @@ public class IndexingScriptChangeValidatorTest {
 
     private static VespaConfigChangeAction expectedAction(String field, String changedMsg, String fromScript, String toScript) {
         return VespaRefeedAction.of("indexing-change",
-                                    ValidationOverrides.empty(),
+                                    ValidationOverrides.empty,
                                     "Field '" + field + "' changed: " +
                                     (changedMsg.isEmpty() ? "" : changedMsg + ", ") +
-                                    "indexing script: '" + fromScript + "' -> '" + toScript + "'");
+                                    "indexing script: '" + fromScript + "' -> '" + toScript + "'", 
+                                    Instant.now());
     }
 
     @Test

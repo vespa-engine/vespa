@@ -1,10 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change.search;
 
-import com.yahoo.vespa.model.application.validation.ValidationOverrides;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.List;
 
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRefeedAction;
@@ -28,7 +29,7 @@ public class AttributeChangeValidatorTest {
 
         @Override
         public List<VespaConfigChangeAction> validate() {
-            return validator.validate(ValidationOverrides.empty());
+            return validator.validate(ValidationOverrides.empty, Instant.now());
         }
 
     }
@@ -115,8 +116,8 @@ public class AttributeChangeValidatorTest {
                 "field f1 type tensor(y[]) { indexing: attribute \n attribute: tensor(y[]) }")
                 .assertValidation(newRefeedAction(
                         "tensor-type-change",
-                        ValidationOverrides.empty(),
-                        "Field 'f1' changed: tensor type: 'tensor(x[100])' -> 'tensor(y[])'"));
+                        ValidationOverrides.empty,
+                        "Field 'f1' changed: tensor type: 'tensor(x[100])' -> 'tensor(y[])'", Instant.now()));
     }
 
     @Test

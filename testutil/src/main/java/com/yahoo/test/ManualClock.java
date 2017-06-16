@@ -10,7 +10,11 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAmount;
 
-/** A clock which initially has the time of its creation but can only be advanced by calling advance */
+/** 
+ * A clock which initially has the time of its creation but can only be advanced by calling advance
+ * 
+ * @author bratseth
+ */
 public class ManualClock extends Clock {
 
     private Instant currentTime = Instant.now();

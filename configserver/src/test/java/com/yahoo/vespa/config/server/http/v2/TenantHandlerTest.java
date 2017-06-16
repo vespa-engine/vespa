@@ -5,6 +5,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.time.Clock;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -84,13 +85,13 @@ public class TenantHandlerTest extends TenantTest {
     @Test
     public void testDeleteTenantWithActiveApplications() throws Exception {
         putSync(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/" + a, Method.PUT));
-        final Tenant tenant = tenants.getTenant(a);
+        Tenant tenant = tenants.getTenant(a);
         assertEquals(a, tenant.getName());
 
-        final int sessionId = 1;
+        int sessionId = 1;
         ApplicationId app = ApplicationId.from(a,
                                                ApplicationName.from("foo"), InstanceName.defaultName());
-        ApplicationHandlerTest.addMockApplication(tenant, app, sessionId);
+        ApplicationHandlerTest.addMockApplication(tenant, app, sessionId, Clock.systemUTC());
 
         try {
             handler.handleDELETE(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/" + a, Method.DELETE));

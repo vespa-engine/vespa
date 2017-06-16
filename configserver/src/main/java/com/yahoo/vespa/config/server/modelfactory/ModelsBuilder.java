@@ -14,6 +14,7 @@ import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -42,7 +43,9 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
     }
 
     public List<MODELRESULT> buildModels(ApplicationId applicationId, 
-                                         com.yahoo.component.Version wantedNodeVespaVersion, ApplicationPackage applicationPackage) {
+                                         com.yahoo.component.Version wantedNodeVespaVersion, 
+                                         ApplicationPackage applicationPackage,
+                                         Instant now) {
         Set<Version> versions = modelFactoryRegistry.allVersions();
 
         // If the application specifies a major, load models only for that
@@ -63,10 +66,10 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         for (int i = 0; i < majorVersions.size(); i++) {
             try {
                 allApplicationModels.addAll(buildModelVersion(filterByMajorVersion(majorVersions.get(i), versions),
-                                                              applicationId, wantedNodeVespaVersion, applicationPackage));
+                                                              applicationId, wantedNodeVespaVersion, applicationPackage, now));
 
                 // skip old config models if requested after we have found a major version which works
-                if (allApplicationModels.size() > 0 && allApplicationModels.get(0).getModel().skipOldConfigModels())
+                if (allApplicationModels.size() > 0 && allApplicationModels.get(0).getModel().skipOldConfigModels(now))
                     break;
             }
             catch (OutOfCapacityException e) {
@@ -88,11 +91,16 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
 
     private List<MODELRESULT> buildModelVersion(Set<Version> versions, ApplicationId applicationId,
                                                 com.yahoo.component.Version wantedNodeVespaVersion, 
-                                                ApplicationPackage applicationPackage) {
+                                                ApplicationPackage applicationPackage,
+                                                Instant now) {
         Version latest = findLatest(versions);
         // load latest application version
-        MODELRESULT latestApplicationVersion = buildModelVersion(modelFactoryRegistry.getFactory(latest), applicationPackage, applicationId, wantedNodeVespaVersion);
-        if (latestApplicationVersion.getModel().skipOldConfigModels()) {
+        MODELRESULT latestApplicationVersion = buildModelVersion(modelFactoryRegistry.getFactory(latest), 
+                                                                 applicationPackage, 
+                                                                 applicationId, 
+                                                                 wantedNodeVespaVersion, 
+                                                                 now);
+        if (latestApplicationVersion.getModel().skipOldConfigModels(now)) {
             return Collections.singletonList(latestApplicationVersion);
         }
         else { // load old model versions
@@ -100,7 +108,11 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
             allApplicationVersions.add(latestApplicationVersion);
             for (Version version : versions) {
                 if (version.equals(latest)) continue; // already loaded
-                allApplicationVersions.add(buildModelVersion(modelFactoryRegistry.getFactory(version), applicationPackage, applicationId, wantedNodeVespaVersion));
+                allApplicationVersions.add(buildModelVersion(modelFactoryRegistry.getFactory(version), 
+                                                             applicationPackage, 
+                                                             applicationId, 
+                                                             wantedNodeVespaVersion, 
+                                                             now));
             }
             return allApplicationVersions;
         }
@@ -121,7 +133,8 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
 
     protected abstract MODELRESULT buildModelVersion(ModelFactory modelFactory, ApplicationPackage applicationPackage,
                                                      ApplicationId applicationId, 
-                                                     com.yahoo.component.Version wantedNodeVespaVersion);
+                                                     com.yahoo.component.Version wantedNodeVespaVersion,
+                                                     Instant now);
 
     protected ModelContext.Properties createModelContextProperties(ApplicationId applicationId,
                                                                    ConfigserverConfig configserverConfig,

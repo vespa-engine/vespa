@@ -11,6 +11,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -29,7 +30,7 @@ public class RedeployTest {
     @Test
     public void testRedeploy() throws InterruptedException, IOException {
         DeployTester tester = new DeployTester("src/test/apps/app");
-        tester.deployApp("myapp");
+        tester.deployApp("myapp", Instant.now());
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive();
 
         assertTrue(deployment.isPresent());

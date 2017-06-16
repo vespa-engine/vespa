@@ -3,8 +3,9 @@ package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.application.validation.ValidationOverrides;
+import com.yahoo.config.application.api.ValidationOverrides;
 
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -22,9 +23,10 @@ public interface ChangeValidator {
      * @param current the current active model
      * @param next the next model we would like to activate
      * @param overrides validation overrides
+     * @param now the instant to use as now
      * @return a list of actions specifying what needs to be done in order to activate the new model.
      *         Return an empty list if nothing needs to be done
      */
-    List<ConfigChangeAction> validate(VespaModel current, VespaModel next, ValidationOverrides overrides);
+    List<ConfigChangeAction> validate(VespaModel current, VespaModel next, ValidationOverrides overrides, Instant now);
 
 }

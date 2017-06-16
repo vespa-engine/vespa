@@ -2,11 +2,9 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ServiceInfo;
-import com.yahoo.vespa.model.application.validation.ValidationOverrides;
-import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
-import com.yahoo.vespa.model.application.validation.change.VespaRefeedAction;
-import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
+import com.yahoo.config.application.api.ValidationOverrides;
 
+import java.time.Instant;
 import java.util.List;
 
 public class ConfigChangeTestUtils {
@@ -19,12 +17,12 @@ public class ConfigChangeTestUtils {
         return new VespaRestartAction(message, services);
     }
 
-    public static VespaConfigChangeAction newRefeedAction(String name, ValidationOverrides overrides, String message) {
-        return VespaRefeedAction.of(name, overrides, message);
+    public static VespaConfigChangeAction newRefeedAction(String name, ValidationOverrides overrides, String message, Instant now) {
+        return VespaRefeedAction.of(name, overrides, message, now);
     }
 
     public static VespaConfigChangeAction newRefeedAction(String name, ValidationOverrides overrides, String message,
-                                                          List<ServiceInfo> services, String documentType) {
-        return VespaRefeedAction.of(name, overrides, message, services, documentType);
+                                                          List<ServiceInfo> services, String documentType, Instant now) {
+        return VespaRefeedAction.of(name, overrides, message, services, documentType, now);
     }
 }

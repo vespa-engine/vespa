@@ -22,6 +22,7 @@ import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
 import com.yahoo.vespa.config.server.rpc.ConfigResponseFactoryFactory;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -74,7 +75,7 @@ public class SuperModelRequestHandler implements RequestHandler {
             newModels.put(tenant, new LinkedHashMap<>());
         }
         // TODO: Should supermodel care about multiple versions?
-        newModels.get(tenant).put(applicationSet.getId(), applicationSet.getForVersionOrLatest(Optional.empty()));
+        newModels.get(tenant).put(applicationSet.getId(), applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()));
         handler = createNewHandler(newModels);
     }
 

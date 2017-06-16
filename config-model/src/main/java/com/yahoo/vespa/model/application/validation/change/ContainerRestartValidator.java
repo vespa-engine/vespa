@@ -4,9 +4,10 @@ package com.yahoo.vespa.model.application.validation.change;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.container.QrConfig;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.application.validation.ValidationOverrides;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.container.Container;
 
+import java.time.Instant;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
@@ -19,7 +20,8 @@ import static java.util.stream.Collectors.toList;
 public class ContainerRestartValidator implements ChangeValidator {
 
     @Override
-    public List<ConfigChangeAction> validate(VespaModel currentModel, VespaModel nextModel, ValidationOverrides ignored) {
+    public List<ConfigChangeAction> validate(VespaModel currentModel, VespaModel nextModel, ValidationOverrides ignored, 
+                                             Instant now) {
         return nextModel.getContainerClusters().values().stream()
                 .flatMap(cluster -> cluster.getContainers().stream())
                 .filter(container -> isExistingContainer(container, currentModel))

@@ -207,7 +207,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private Application getApplication(Tenant tenant, ApplicationId applicationId) {
         long sessionId = getSessionIdForApplication(tenant, applicationId);
         RemoteSession session = tenant.getRemoteSessionRepo().getSession(sessionId, 0);
-        return session.ensureApplicationLoaded().getForVersionOrLatest(Optional.empty());
+        return session.ensureApplicationLoaded().getForVersionOrLatest(Optional.empty(), clock.instant());
     }
 
     public long getSessionIdForApplication(Tenant tenant, ApplicationId applicationId) {
@@ -307,7 +307,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         LocalSession session = getLocalSession(tenant, sessionId);
         ApplicationId appId = params.getApplicationId();
         Optional<ApplicationSet> currentActiveApplicationSet = getCurrentActiveApplicationSet(tenant, appId);
-        return session.prepare(logger, params, currentActiveApplicationSet, tenant.getPath());
+        return session.prepare(logger, params, currentActiveApplicationSet, tenant.getPath(), clock.instant());
     }
 
     private List<ApplicationId> listApplicationIds(Tenant tenant) {

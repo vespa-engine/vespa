@@ -4,6 +4,7 @@ import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Version;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -32,18 +33,18 @@ public final class ApplicationSet {
         latestVersion = applications.keySet().stream().max((a, b) -> a.compareTo(b)).get();
     }
 
-    public Application getForVersionOrLatest(Optional<Version> optionalVersion) {
-        return resolveForVersion(optionalVersion.orElse(latestVersion));
+    public Application getForVersionOrLatest(Optional<Version> optionalVersion, Instant now) {
+        return resolveForVersion(optionalVersion.orElse(latestVersion), now);
     }
 
-    private Application resolveForVersion(Version vespaVersion) {
+    private Application resolveForVersion(Version vespaVersion, Instant now) {
         Application application = applications.get(vespaVersion);
         if (application != null)
             return application;
 
         // Does the latest version specify we can use it regardless?
         Application latest = applications.get(latestVersion);
-        if (latest.getModel().allowModelVersionMismatch())
+        if (latest.getModel().allowModelVersionMismatch(now))
             return latest;
 
         throw new VersionDoesNotExistException(String.format("No application with vespa version %s exists", vespaVersion.toString()));

@@ -5,11 +5,12 @@ import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.IndexSchema;
 import com.yahoo.searchdefinition.document.Attribute;
-import com.yahoo.vespa.model.application.validation.ValidationOverrides;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRefeedAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -46,12 +47,12 @@ public class AttributeChangeValidator {
         this.nextDocType = nextDocType;
     }
 
-    public List<VespaConfigChangeAction> validate(final ValidationOverrides overrides) {
+    public List<VespaConfigChangeAction> validate(ValidationOverrides overrides, Instant now) {
         List<VespaConfigChangeAction> result = new ArrayList<>();
         result.addAll(validateAddAttributeAspect());
         result.addAll(validateRemoveAttributeAspect());
         result.addAll(validateAttributeSettings());
-        result.addAll(validateTensorTypes(overrides));
+        result.addAll(validateTensorTypes(overrides, now));
         return result;
     }
 
@@ -94,7 +95,7 @@ public class AttributeChangeValidator {
         return result;
     }
 
-    private List<VespaConfigChangeAction> validateTensorTypes(final ValidationOverrides overrides) {
+    private List<VespaConfigChangeAction> validateTensorTypes(final ValidationOverrides overrides, Instant now) {
         final List<VespaConfigChangeAction> result = new ArrayList<>();
 
         for (final Attribute nextAttr : nextFields.attributes()) {
@@ -109,7 +110,7 @@ public class AttributeChangeValidator {
 
                 // Tensor attribute has changed type
                 if (!nextAttr.tensorType().get().equals(currentAttr.tensorType().get())) {
-                    result.add(createTensorTypeChangedRefeedAction(currentAttr, nextAttr, overrides));
+                    result.add(createTensorTypeChangedRefeedAction(currentAttr, nextAttr, overrides, now));
                 }
             }
         }
@@ -117,7 +118,7 @@ public class AttributeChangeValidator {
         return result;
     }
 
-    private static VespaRefeedAction createTensorTypeChangedRefeedAction(Attribute currentAttr, Attribute nextAttr, ValidationOverrides overrides) {
+    private static VespaRefeedAction createTensorTypeChangedRefeedAction(Attribute currentAttr, Attribute nextAttr, ValidationOverrides overrides, Instant now) {
         return VespaRefeedAction.of(
                 "tensor-type-change",
                 overrides,
@@ -125,7 +126,7 @@ public class AttributeChangeValidator {
                         .addChange(
                                 "tensor type",
                                 currentAttr.tensorType().get().toString(),
-                                nextAttr.tensorType().get().toString()).build());
+                                nextAttr.tensorType().get().toString()).build(), now);
     }
 
     private static void validateAttributeSetting(Attribute currentAttr, Attribute nextAttr,

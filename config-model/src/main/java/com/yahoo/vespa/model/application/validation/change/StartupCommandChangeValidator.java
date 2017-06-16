@@ -5,10 +5,9 @@ import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.application.validation.ValidationOverrides;
-import com.yahoo.vespa.model.application.validation.change.ChangeValidator;
-import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
+import com.yahoo.config.application.api.ValidationOverrides;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -25,7 +24,7 @@ public class StartupCommandChangeValidator implements ChangeValidator {
 
     @Override
     public List<ConfigChangeAction> validate(VespaModel currentModel, VespaModel nextModel,
-                                             ValidationOverrides overrides) {
+                                             ValidationOverrides overrides, Instant now) {
         return findServicesWithChangedStartupCommmand(currentModel, nextModel).collect(Collectors.toList());
     }
 

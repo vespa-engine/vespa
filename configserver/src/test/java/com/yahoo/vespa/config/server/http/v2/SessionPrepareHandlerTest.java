@@ -42,6 +42,8 @@ import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -146,7 +148,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     /**
      * A mock remote session repo based on contents of local repo
      */
-    private RemoteSessionRepo fromLocalSessionRepo(LocalSessionRepo localRepo) {
+    private RemoteSessionRepo fromLocalSessionRepo(LocalSessionRepo localRepo, Clock clock) {
         RemoteSessionRepo remoteRepo = new RemoteSessionRepo();
         PathProvider pathProvider = new PathProvider(Path.createRoot());
         for (LocalSession ls : localRepo.listSessions()) {
@@ -155,7 +157,8 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
             if (ls.getStatus()!=null) zooKeeperClient.writeStatus(ls.getStatus());
             RemoteSession remSess = new RemoteSession(TenantName.from("default"), ls.getSessionId(),
                                                       new TestComponentRegistry.Builder().curator(curator).build(),
-                                                      zooKeeperClient);
+                                                      zooKeeperClient, 
+                                                      clock);
             remoteRepo.addSession(remSess);
         }
         return remoteRepo;
@@ -165,7 +168,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     public void require_get_response_activate_url_on_ok() throws Exception {
         MockSession session = new MockSession(1, null);
         localRepo.addSession(session);
-        SessionHandler sessHandler = createHandler(fromLocalSessionRepo(localRepo));
+        SessionHandler sessHandler = createHandler(fromLocalSessionRepo(localRepo, Clock.systemUTC()));
         sessHandler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L));
         session.setStatus(Session.Status.PREPARE);
         zooKeeperClient.writeStatus(Session.Status.PREPARE);
@@ -177,7 +180,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     public void require_get_response_error_on_not_prepared() throws Exception {
         MockSession session = new MockSession(1, null);
         localRepo.addSession(session);
-        SessionHandler sessHandler = createHandler(fromLocalSessionRepo(localRepo));
+        SessionHandler sessHandler = createHandler(fromLocalSessionRepo(localRepo, Clock.systemUTC()));
         session.setStatus(Session.Status.NEW);
         zooKeeperClient.writeStatus(Session.Status.NEW);
         HttpResponse getResponse = sessHandler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.GET, Cmd.PREPARED, 1L));
@@ -197,7 +200,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         MockSession session = new MockSession(1, null);
         localRepo.addSession(session);
         session.setStatus(Session.Status.ACTIVATE);
-        SessionHandler sessionHandler = createHandler(fromLocalSessionRepo(localRepo));
+        SessionHandler sessionHandler = createHandler(fromLocalSessionRepo(localRepo, Clock.systemUTC()));
         HttpResponse putResponse = sessionHandler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L));
         HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(putResponse, BAD_REQUEST,
                                                             HttpErrorResponse.errorCodes.BAD_REQUEST,
@@ -208,7 +211,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     public void require_get_response_error_when_session_id_does_not_exist() throws Exception {
         MockSession session = new MockSession(1, null);
         localRepo.addSession(session);
-        SessionHandler sessHandler = createHandler(fromLocalSessionRepo(localRepo));
+        SessionHandler sessHandler = createHandler(fromLocalSessionRepo(localRepo, Clock.systemUTC()));
         HttpResponse getResponse = sessHandler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.GET, Cmd.PREPARED, 9999L));
         HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(getResponse, NOT_FOUND,
                                                             HttpErrorResponse.errorCodes.NOT_FOUND,
@@ -397,7 +400,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         }
 
         @Override
-        public ConfigChangeActions prepare(DeployLogger logger, PrepareParams params, Optional<ApplicationSet> application, Path tenantPath) {
+        public ConfigChangeActions prepare(DeployLogger logger, PrepareParams params, Optional<ApplicationSet> application, Path tenantPath, Instant now) {
             throw exception;
         }
 

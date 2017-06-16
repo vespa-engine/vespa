@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -59,28 +60,29 @@ public class RemoteSessionTest {
 
     @Test
     public void require_that_session_is_initialized() {
-        Session session = createSession(2);
+        Clock clock = Clock.systemUTC();
+        Session session = createSession(2, clock);
         assertThat(session.getSessionId(), is(2l));
-        session = createSession(Long.MAX_VALUE);
+        session = createSession(Long.MAX_VALUE, clock);
         assertThat(session.getSessionId(), is(Long.MAX_VALUE));
     }
 
     @Test
     public void require_that_applications_are_loaded() throws IOException, SAXException {
-        RemoteSession session = createSession(3, Arrays.asList(new MockModelFactory(), new VespaModelFactory(new NullConfigModelRegistry())));
+        RemoteSession session = createSession(3, Arrays.asList(new MockModelFactory(), new VespaModelFactory(new NullConfigModelRegistry())), Clock.systemUTC());
         session.loadPrepared();
         ApplicationSet applicationSet = session.ensureApplicationLoaded();
         assertNotNull(applicationSet);
         assertThat(applicationSet.getApplicationGeneration(), is(3l));
-        assertThat(applicationSet.getForVersionOrLatest(Optional.empty()).getId().application().value(), is("foo"));
-        assertNotNull(applicationSet.getForVersionOrLatest(Optional.empty()).getModel());
+        assertThat(applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()).getId().application().value(), is("foo"));
+        assertNotNull(applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()).getModel());
         session.deactivate();
 
         applicationSet = session.ensureApplicationLoaded();
         assertNotNull(applicationSet);
         assertThat(applicationSet.getApplicationGeneration(), is(3l));
-        assertThat(applicationSet.getForVersionOrLatest(Optional.empty()).getId().application().value(), is("foo"));
-        assertNotNull(applicationSet.getForVersionOrLatest(Optional.empty()).getModel());
+        assertThat(applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()).getId().application().value(), is("foo"));
+        assertNotNull(applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()).getModel());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -93,7 +95,7 @@ public class RemoteSessionTest {
         okFactory.vespaVersion = Version.fromIntValues(1, 1, 0);
         okFactory.throwOnLoad = false;
 
-        RemoteSession session = createSession(3, Arrays.asList(okFactory, failingFactory));
+        RemoteSession session = createSession(3, Arrays.asList(okFactory, failingFactory), failingFactory.clock());
         session.loadPrepared();
     }
 
@@ -111,7 +113,7 @@ public class RemoteSessionTest {
         failingFactory.vespaVersion = Version.fromIntValues(2, 0, 0);
         failingFactory.throwOnLoad = true;
 
-        RemoteSession session = createSession(3, Arrays.asList(okFactory1, failingFactory, okFactory2));
+        RemoteSession session = createSession(3, Arrays.asList(okFactory1, failingFactory, okFactory2), failingFactory.clock());
         session.loadPrepared();
     }
 
@@ -126,7 +128,7 @@ public class RemoteSessionTest {
         okFactory.vespaVersion = Version.fromIntValues(1, 2, 0);
         okFactory.throwOnLoad = false;
 
-        RemoteSession session = createSession(3, Arrays.asList(okFactory, failingFactory));
+        RemoteSession session = createSession(3, Arrays.asList(okFactory, failingFactory), failingFactory.clock());
         session.loadPrepared();
     }
 
@@ -141,7 +143,7 @@ public class RemoteSessionTest {
         okFactory.vespaVersion = Version.fromIntValues(2, 0, 0);
         okFactory.throwOnLoad = false;
 
-        RemoteSession session = createSession(3, Arrays.asList(okFactory, failingFactory));
+        RemoteSession session = createSession(3, Arrays.asList(okFactory, failingFactory), failingFactory.clock());
         session.loadPrepared();
     }
 
@@ -161,7 +163,7 @@ public class RemoteSessionTest {
         tooNewFactory.vespaVersion = Version.fromIntValues(2, 0, 0);
         tooNewFactory.throwOnLoad = true;
 
-        RemoteSession session = createSession(3, Arrays.asList(tooNewFactory, okFactory, failingFactory));
+        RemoteSession session = createSession(3, Arrays.asList(tooNewFactory, okFactory, failingFactory), failingFactory.clock());
         session.loadPrepared();
     }
 
@@ -179,7 +181,7 @@ public class RemoteSessionTest {
         okFactory.throwOnLoad = false;
 
         SessionZooKeeperClient zkc = new MockSessionZKClient(curator, pathProvider.getSessionDir(3), application);
-        RemoteSession session = createSession(3, zkc, Arrays.asList(okFactory, failingFactory));
+        RemoteSession session = createSession(3, zkc, Arrays.asList(okFactory, failingFactory), failingFactory.clock());
         session.loadPrepared();
 
         // Does not cause an exception because model version 3 is skipped
@@ -188,7 +190,7 @@ public class RemoteSessionTest {
     @Test
     public void require_that_session_status_is_updated() throws IOException, SAXException {
         SessionZooKeeperClient zkc = new MockSessionZKClient(curator, pathProvider.getSessionDir(3));
-        RemoteSession session = createSession(3, zkc);
+        RemoteSession session = createSession(3, zkc, Clock.systemUTC());
         assertThat(session.getStatus(), is(Session.Status.NEW));
         zkc.writeStatus(Session.Status.PREPARE);
         assertThat(session.getStatus(), is(Session.Status.PREPARE));
@@ -202,7 +204,7 @@ public class RemoteSessionTest {
         try {
             int sessionId = 3;
             SessionZooKeeperClient zkc = new MockSessionZKClient(curator, pathProvider.getSessionDir(sessionId));
-            createSession(sessionId, zkc, Collections.singletonList(mockModelFactory), permanentApp).ensureApplicationLoaded();
+            createSession(sessionId, zkc, Collections.singletonList(mockModelFactory), permanentApp, mockModelFactory.clock()).ensureApplicationLoaded();
         } catch (Exception e) {
             e.printStackTrace();
             // ignore, we're not interested in deploy errors as long as the below state is OK.
@@ -211,22 +213,23 @@ public class RemoteSessionTest {
         assertTrue(mockModelFactory.modelContext.permanentApplicationPackage().isPresent());
     }
 
-    private RemoteSession createSession(long sessionId) {
-        return createSession(sessionId, Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())));
+    private RemoteSession createSession(long sessionId, Clock clock) {
+        return createSession(sessionId, Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())), clock);
     }
-    private RemoteSession createSession(long sessionId, SessionZooKeeperClient zkc) {
-        return createSession(sessionId, zkc, Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())));
+    private RemoteSession createSession(long sessionId, SessionZooKeeperClient zkc, Clock clock) {
+        return createSession(sessionId, zkc, Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())), clock);
     }
-    private RemoteSession createSession(long sessionId, List<ModelFactory> modelFactories) {
+    private RemoteSession createSession(long sessionId, List<ModelFactory> modelFactories, Clock clock) {
         SessionZooKeeperClient zkc = new MockSessionZKClient(curator, pathProvider.getSessionDir(sessionId));
-        return createSession(sessionId, zkc, modelFactories);
+        return createSession(sessionId, zkc, modelFactories, clock);
     }
 
-    private RemoteSession createSession(long sessionId, SessionZooKeeperClient zkc, List<ModelFactory> modelFactories) {
-        return createSession(sessionId, zkc, modelFactories, Optional.empty());
+    private RemoteSession createSession(long sessionId, SessionZooKeeperClient zkc, List<ModelFactory> modelFactories, Clock clock) {
+        return createSession(sessionId, zkc, modelFactories, Optional.empty(), clock);
     }
 
-    private RemoteSession createSession(long sessionId, SessionZooKeeperClient zkc, List<ModelFactory> modelFactories, Optional<PermanentApplicationPackage> permanentApplicationPackage) {
+    private RemoteSession createSession(long sessionId, SessionZooKeeperClient zkc, List<ModelFactory> modelFactories, 
+                                        Optional<PermanentApplicationPackage> permanentApplicationPackage, Clock clock) {
         zkc.writeStatus(Session.Status.NEW);
         zkc.writeApplicationId(new ApplicationId.Builder().applicationName("foo").instanceName("bim").build());
         TestComponentRegistry.Builder registryBuilder = new TestComponentRegistry.Builder()
@@ -237,7 +240,8 @@ public class RemoteSessionTest {
 
         return new RemoteSession(TenantName.from("default"), sessionId,
                                  registryBuilder.build(),
-                                 zkc);
+                                 zkc,
+                                 clock);
     }
 
     private class MockModelFactory implements ModelFactory {
@@ -248,6 +252,8 @@ public class RemoteSessionTest {
 
         /** The validation overrides of this, or null if none */
         private final String validationOverrides;
+        
+        private Clock clock = Clock.fixed(LocalDate.parse("2000-01-01", DateTimeFormatter.ISO_DATE).atStartOfDay().atZone(ZoneOffset.UTC).toInstant(), ZoneOffset.UTC);
 
         public MockModelFactory() { this(null); }
 
@@ -259,6 +265,9 @@ public class RemoteSessionTest {
         public Version getVersion() {
             return vespaVersion;
         }
+        
+        /** Returns the clock used by this, which is fixed at the instant 2000-01-01T00:00:00 */
+        public Clock clock() { return clock; }
 
         @Override
         public Model createModel(ModelContext modelContext) {
@@ -271,9 +280,8 @@ public class RemoteSessionTest {
 
         public Model loadModel() {
             try {
-                Instant now = LocalDate.parse("2000-01-01", DateTimeFormatter.ISO_DATE).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
                 ApplicationPackage application = new MockApplicationPackage.Builder().withEmptyHosts().withEmptyServices().withValidationOverrides(validationOverrides).build();
-                DeployState deployState = new DeployState.Builder().applicationPackage(application).now(now).build();
+                DeployState deployState = new DeployState.Builder().applicationPackage(application).now(clock.instant()).build();
                 return new VespaModel(deployState);
             } catch (Exception e) {
                 throw new RuntimeException(e);

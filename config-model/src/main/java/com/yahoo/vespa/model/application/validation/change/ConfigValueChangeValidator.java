@@ -9,12 +9,11 @@ import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
-import com.yahoo.vespa.model.application.validation.ValidationOverrides;
-import com.yahoo.vespa.model.application.validation.change.ChangeValidator;
-import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.utils.internal.ReflectionUtil;
 import org.apache.commons.lang3.ClassUtils;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -42,7 +41,7 @@ public class ConfigValueChangeValidator implements ChangeValidator {
     /** Inspects the configuration in the new and old Vespa model to determine which services that require restart */
     @Override
     public List<ConfigChangeAction> validate(VespaModel currentModel, VespaModel nextModel,
-                                             ValidationOverrides overrides) {
+                                             ValidationOverrides overrides, Instant now) {
         return findConfigChangesFromModels(currentModel, nextModel).collect(Collectors.toList());
     }
 

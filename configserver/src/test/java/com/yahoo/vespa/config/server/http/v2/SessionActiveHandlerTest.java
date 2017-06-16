@@ -46,6 +46,7 @@ import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.Clock;
 import java.util.Collection;
 import java.util.List;
 
@@ -76,13 +77,14 @@ public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
 
     @Test
     public void testActivation() throws Exception {
-        activateAndAssertOK(1, 0);
+        activateAndAssertOK(1, 0, Clock.systemUTC());
     }
 
     @Test
     public void testActivationWithActivationInBetween() throws Exception {
-        activateAndAssertOK(90l, 0l);
-        activateAndAssertError(92l, 89l,
+        Clock clock = Clock.systemUTC();
+        activateAndAssertOK(90l, 0l, clock);
+        activateAndAssertError(92l, 89l, clock,
                 HttpErrorResponse.errorCodes.BAD_REQUEST,
                 "tenant:"+tenant+" app:default:default Cannot activate session 92 because the currently active session (90) has changed since session 92 was created (was 89 at creation time)");
     }
@@ -90,10 +92,11 @@ public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
 
     @Test
     public void testActivationOfUnpreparedSession() throws Exception {
+        Clock clock = Clock.systemUTC();
         // Needed so we can test that previous active session is still active after a failed activation
-        RemoteSession firstSession = activateAndAssertOK(90l, 0l);
+        RemoteSession firstSession = activateAndAssertOK(90l, 0l, clock);
         long sessionId = 91L;
-        ActivateRequest activateRequest = new ActivateRequest(sessionId, 0l, Session.Status.NEW, "").invoke();
+        ActivateRequest activateRequest = new ActivateRequest(sessionId, 0l, Session.Status.NEW, "", clock).invoke();
         HttpResponse actResponse = activateRequest.getActResponse();
         RemoteSession session = activateRequest.getSession();
         assertThat(actResponse.getStatus(), is(Response.Status.BAD_REQUEST));
@@ -115,19 +118,19 @@ public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
     public void require_that_handler_gives_error_when_provisioner_activated_fails() throws Exception {
         hostProvisioner = new FailingMockProvisioner();
         hostProvisioner.activated = false;
-        activateAndAssertError(1, 0, HttpErrorResponse.errorCodes.BAD_REQUEST, "Cannot activate application");
+        activateAndAssertError(1, 0, Clock.systemUTC(), HttpErrorResponse.errorCodes.BAD_REQUEST, "Cannot activate application");
         assertFalse(hostProvisioner.activated);
     }
 
     @Override
-    protected RemoteSession activateAndAssertOK(long sessionId, long previousSessionId) throws Exception {
-        ActivateRequest activateRequest = activateAndAssertOKPut(sessionId, previousSessionId, "");
+    protected RemoteSession activateAndAssertOK(long sessionId, long previousSessionId, Clock clock) throws Exception {
+        ActivateRequest activateRequest = activateAndAssertOKPut(sessionId, previousSessionId, "", clock);
         return activateRequest.getSession();
     }
 
     @Override
-    protected Session activateAndAssertOK(long sessionId, long previousSessionId, String subPath) throws Exception {
-        ActivateRequest activateRequest = activateAndAssertOKPut(sessionId, previousSessionId, subPath);
+    protected Session activateAndAssertOK(long sessionId, long previousSessionId, String subPath, Clock clock) throws Exception {
+        ActivateRequest activateRequest = activateAndAssertOKPut(sessionId, previousSessionId, subPath, clock);
         return activateRequest.getSession();
     }
     
@@ -146,9 +149,9 @@ public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
     }
 
     @Override
-    protected void activateAndAssertError(long sessionId, long previousSessionId, HttpErrorResponse.errorCodes errorCode, String expectedError) throws Exception {
+    protected void activateAndAssertError(long sessionId, long previousSessionId, Clock clock, HttpErrorResponse.errorCodes errorCode, String expectedError) throws Exception {
         hostProvisioner.activated = false;
-        activateAndAssertErrorPut(sessionId, previousSessionId, errorCode, expectedError);
+        activateAndAssertErrorPut(sessionId, previousSessionId, clock, errorCode, expectedError);
         assertFalse(hostProvisioner.activated);
     }
 

@@ -4,15 +4,13 @@ package com.yahoo.vespa.model.application.validation.change;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.application.validation.ValidationOverrides;
-import com.yahoo.vespa.model.application.validation.change.IndexedSearchClusterChangeValidator;
-import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
-import com.yahoo.vespa.model.application.validation.change.VespaRefeedAction;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.content.utils.ApplicationPackageBuilder;
 import com.yahoo.vespa.model.content.utils.ContentClusterBuilder;
 import com.yahoo.vespa.model.content.utils.SearchDefinitionBuilder;
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -78,7 +76,7 @@ public class IndexedSearchClusterChangeValidatorTest {
 
         public void assertValidation() {
             List<ConfigChangeAction> act = normalizeServicesInActions(validator.validate(currentModel, nextModel,
-                                                                                         ValidationOverrides.empty()));
+                                                                                         ValidationOverrides.empty, Instant.now()));
             assertThat(act.size(), is(0));
         }
 
@@ -105,7 +103,7 @@ public class IndexedSearchClusterChangeValidatorTest {
 
         public void assertValidation(List<ConfigChangeAction> exp) {
             List<ConfigChangeAction> act = normalizeServicesInActions(validator.validate(currentModel, nextModel,
-                                                                                         ValidationOverrides.empty()));
+                                                                                         ValidationOverrides.empty, Instant.now()));
             exp.sort((lhs, rhs) -> lhs.getMessage().compareTo(rhs.getMessage()));
             act.sort((lhs, rhs) -> lhs.getMessage().compareTo(rhs.getMessage()));
             assertThat(act, equalTo(exp));
@@ -168,8 +166,8 @@ public class IndexedSearchClusterChangeValidatorTest {
     public void requireThatChangingFieldTypeIsDiscovered() {
         Fixture f = Fixture.newOneDocFixture(STRING_FIELD, INT_FIELD);
         f.assertValidation(Arrays.asList(newRefeedAction("field-type-change",
-                                                        ValidationOverrides.empty(),
-                                                         "Document type 'd1': " + FIELD_TYPE_CHANGE_MSG, FOO_SERVICE, "d1")));
+                                                        ValidationOverrides.empty,
+                                                         "Document type 'd1': " + FIELD_TYPE_CHANGE_MSG, FOO_SERVICE, "d1", Instant.now())));
     }
 
 }

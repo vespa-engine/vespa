@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -36,21 +37,21 @@ public class ApplicationSetTest {
     @Test
     public void testGetForVersionOrLatestReturnsCorrectVersion() {
         applicationSet = ApplicationSet.fromList(applications);
-        assertEquals(applicationSet.getForVersionOrLatest(Optional.of(vespaVersions.get(0))), applications.get(0));
-        assertEquals(applicationSet.getForVersionOrLatest(Optional.of(vespaVersions.get(1))), applications.get(1));
-        assertEquals(applicationSet.getForVersionOrLatest(Optional.of(vespaVersions.get(2))), applications.get(2));
+        assertEquals(applicationSet.getForVersionOrLatest(Optional.of(vespaVersions.get(0)), Instant.now()), applications.get(0));
+        assertEquals(applicationSet.getForVersionOrLatest(Optional.of(vespaVersions.get(1)), Instant.now()), applications.get(1));
+        assertEquals(applicationSet.getForVersionOrLatest(Optional.of(vespaVersions.get(2)), Instant.now()), applications.get(2));
     }
 
     @Test
     public void testGetForVersionOrLatestReturnsLatestVersion() {
         applicationSet = ApplicationSet.fromList(applications);
-        assertEquals(applicationSet.getForVersionOrLatest(Optional.empty()), applications.get(2));
+        assertEquals(applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()), applications.get(2));
     }
 
     @Test (expected = VersionDoesNotExistException.class)
     public void testGetForVersionOrLatestThrows() {
         applicationSet = ApplicationSet.fromList(Arrays.asList(applications.get(0), applications.get(2)));
-        applicationSet.getForVersionOrLatest(Optional.of(vespaVersions.get(1)));
+        applicationSet.getForVersionOrLatest(Optional.of(vespaVersions.get(1)), Instant.now());
     }
 
 }

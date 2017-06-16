@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.tenant;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.*;
 
 import com.yahoo.config.provision.Version;
@@ -43,6 +45,7 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
     private final HostRegistry<ApplicationId> hostRegistry;
     private final ApplicationMapper applicationMapper = new ApplicationMapper();
     private final MetricUpdater tenantMetricUpdater;
+    private final Clock clock = Clock.systemUTC();
 
     public TenantRequestHandler(Metrics metrics,
                                 TenantName tenant,
@@ -93,7 +96,7 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
 
     @Override
     public void removeApplication(ApplicationId applicationId) {
-        if (applicationMapper.hasApplication(applicationId)) {
+        if (applicationMapper.hasApplication(applicationId, clock.instant())) {
             applicationMapper.remove(applicationId);
             hostRegistry.removeHostsForKey(applicationId);
             reloadListenersOnRemove(applicationId);
@@ -182,7 +185,7 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
 
     private Application getApplication(ApplicationId appId, Optional<Version> vespaVersion) {
         try {
-            return applicationMapper.getForVersion(appId, vespaVersion);
+            return applicationMapper.getForVersion(appId, vespaVersion, clock.instant());
         } catch (VersionDoesNotExistException ex) {
             throw new NotFoundException(String.format("%sNo such application (id %s): %s", Tenants.logPre(tenant), appId, ex.getMessage()));
         }
@@ -200,7 +203,7 @@ public class TenantRequestHandler implements RequestHandler, ReloadHandler, Host
     }
 
     private boolean hasHandler(ApplicationId appId, Optional<Version> vespaVersion) {
-        return applicationMapper.hasApplicationForVersion(appId, vespaVersion);
+        return applicationMapper.hasApplicationForVersion(appId, vespaVersion, clock.instant());
     }
 
     @Override

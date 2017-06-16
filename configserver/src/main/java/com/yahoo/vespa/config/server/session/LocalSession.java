@@ -22,6 +22,7 @@ import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.curator.Curator;
 
 import java.io.File;
+import java.time.Instant;
 import java.util.Optional;
 
 /**
@@ -62,10 +63,11 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
     public ConfigChangeActions prepare(DeployLogger logger, 
                                        PrepareParams params, 
                                        Optional<ApplicationSet> currentActiveApplicationSet, 
-                                       Path tenantPath) {
+                                       Path tenantPath,
+                                       Instant now) {
         Curator.CompletionWaiter waiter = zooKeeperClient.createPrepareWaiter();
-        ConfigChangeActions actions = sessionPreparer.prepare(sessionContext, logger, params, 
-                                                              currentActiveApplicationSet, tenantPath);
+        ConfigChangeActions actions = sessionPreparer.prepare(sessionContext, logger, params,
+                                                              currentActiveApplicationSet, tenantPath, now);
         setPrepared();
         waiter.awaitCompletion(params.getTimeoutBudget().timeLeft());
         return actions;

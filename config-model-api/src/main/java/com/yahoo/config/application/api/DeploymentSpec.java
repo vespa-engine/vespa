@@ -128,7 +128,7 @@ public class DeploymentSpec {
                              .collect(Collectors.toList());
     }
 
-    /** Returns the XML form of this spec, or null if it was not created by fromXml or is the empty spec */
+    /** Returns the XML form of this spec, or null if it was not created by fromXml, nor is empty */
     public String xmlForm() { return xmlForm; }
 
     /** Returns whether this deployment spec specifies the given zone, either implicitly or explicitly */
