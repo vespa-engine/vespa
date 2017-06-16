@@ -5,6 +5,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
+import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
 
@@ -29,6 +30,8 @@ import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.
  * @author dybis, stiankri
  */
 public class NodeAdminStateUpdater extends AbstractComponent {
+    public static final Duration FREEZE_CONVERGENCE_TIMEOUT = Duration.ofMinutes(5);
+
     private final AtomicBoolean terminated = new AtomicBoolean(false);
     private State currentState = SUSPENDED_NODE_ADMIN;
     private State wantedState = RESUMED;
@@ -117,10 +120,27 @@ public class NodeAdminStateUpdater extends AbstractComponent {
         }
 
         if (wantedState != null) { // There is a state we want to be in, but aren't right now
+            boolean converged = false;
             try {
                 convergeState(wantedState);
+                converged = true;
+            } catch (OrchestratorException e) {
+                logger.info("Orchestrator does not give permission to converge to " + wantedState
+                        + ", will retry shortly: " + e.getMessage());
+            } catch (ConvergenceException e) {
+                logger.info(e.getMessage());
             } catch (Exception e) {
-                logger.error("Failed to converge NodeAdminStateUpdater", e);
+                logger.error("Error while trying to converge to " + wantedState, e);
+            }
+
+            if (wantedState != RESUMED && !converged) {
+                Duration subsystemFreezeDuration = nodeAdmin.subsystemFreezeDuration();
+                if (subsystemFreezeDuration.compareTo(FREEZE_CONVERGENCE_TIMEOUT) > 0) {
+                    // We have spent too long time trying to freeze and node admin is still not frozen.
+                    // To avoid node agents stalling for too long, we'll force unfrozen ticks now.
+                    logger.info("Timed out trying to freeze, will force unfreezed ticks");
+                    nodeAdmin.setFrozen(false);
+                }
             }
         }
 
@@ -133,7 +153,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     private void convergeState(State wantedState) {
         boolean wantFrozen = wantedState != RESUMED;
         if (!nodeAdmin.setFrozen(wantFrozen)) {
-            throw new RuntimeException("NodeAdmin has not yet converged to " + (wantFrozen ? "frozen" : "unfrozen"));
+            throw new ConvergenceException("NodeAdmin has not yet converged to " + (wantFrozen ? "frozen" : "unfrozen"));
         }
 
         if (wantedState == RESUMED) {
@@ -151,21 +171,13 @@ public class NodeAdminStateUpdater extends AbstractComponent {
         try {
             nodesInActiveState = getNodesInActiveState();
         } catch (IOException e) {
-            throw new RuntimeException("Failed to get nodes from node repo: " + e.getMessage());
+            throw new RuntimeException("Failed to get nodes from node repo", e);
         }
 
         if (currentState == RESUMED) {
             List<String> nodesToSuspend = new ArrayList<>(nodesInActiveState);
             nodesToSuspend.add(dockerHostHostName);
-
-            try {
-                orchestrator.suspend(dockerHostHostName, nodesToSuspend);
-            } catch (RuntimeException e) {
-                // Because upgrades may take a while, we should unfreeze everything in the mean time
-                // and try again next tick, since wantedState is still to suspend
-                nodeAdmin.setFrozen(false);
-                throw e;
-            }
+            orchestrator.suspend(dockerHostHostName, nodesToSuspend);
 
             if (wantedState == updateAndGetCurrentState(SUSPENDED_NODE_ADMIN)) return;
         }

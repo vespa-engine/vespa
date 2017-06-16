@@ -71,7 +71,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
                 (hostName) -> new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
                         storageMaintainer, metricReceiver, environment, clock, aclMaintainer);
         NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer,
-                NODE_AGENT_SCAN_INTERVAL_MILLIS, metricReceiver, aclMaintainer);
+                NODE_AGENT_SCAN_INTERVAL_MILLIS, metricReceiver, aclMaintainer, clock);
         nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepository, nodeAdmin, clock, orchestrator, baseHostName);
         nodeAdminStateUpdater.start(NODE_ADMIN_CONVERGE_STATE_INTERVAL_MILLIS);
 

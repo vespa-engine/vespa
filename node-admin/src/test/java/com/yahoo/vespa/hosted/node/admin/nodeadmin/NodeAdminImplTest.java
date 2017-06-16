@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
@@ -11,6 +12,8 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import org.junit.Test;
 import org.mockito.InOrder;
 
+import java.time.Clock;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -49,7 +52,7 @@ public class NodeAdminImplTest {
         final Function<String, NodeAgent> nodeAgentFactory = mock(NodeAgentFactory.class);
 
         final NodeAdminImpl nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, Optional.empty(), 100,
-                new MetricReceiverWrapper(MetricReceiver.nullImplementation), Optional.empty());
+                new MetricReceiverWrapper(MetricReceiver.nullImplementation), Optional.empty(), Clock.systemUTC());
 
         final String hostName1 = "host1.test.yahoo.com";
         final String hostName2 = "host2.test.yahoo.com";
@@ -99,7 +102,7 @@ public class NodeAdminImplTest {
         final Function<String, NodeAgent> nodeAgentFactory = mock(NodeAgentFactory.class);
 
         final NodeAdminImpl nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, Optional.empty(), 100,
-                new MetricReceiverWrapper(MetricReceiver.nullImplementation), Optional.empty());
+                new MetricReceiverWrapper(MetricReceiver.nullImplementation), Optional.empty(), Clock.systemUTC());
 
         List<NodeAgent> nodeAgents = new ArrayList<>();
         List<String> existingContainerHostnames = new ArrayList<>();
@@ -148,6 +151,38 @@ public class NodeAdminImplTest {
         assertFalse(nodeAdmin.isFrozen());
     }
 
+    @Test
+    public void testSubsystemFreezeDuration() {
+        final DockerOperations dockerOperations = mock(DockerOperations.class);
+        final Function<String, NodeAgent> nodeAgentFactory = mock(NodeAgentFactory.class);
+        final ManualClock clock = new ManualClock();
+        final NodeAdminImpl nodeAdmin = new NodeAdminImpl(
+                dockerOperations,
+                nodeAgentFactory,
+                Optional.empty(),
+                100,
+                new MetricReceiverWrapper(MetricReceiver.nullImplementation),
+                Optional.empty(),
+                clock);
+
+        // Initially everything is frozen to force convergence
+        assertTrue(nodeAdmin.isFrozen());
+        assertTrue(nodeAdmin.subsystemFreezeDuration().isZero());
+        clock.advance(Duration.ofSeconds(1));
+        assertTrue(nodeAdmin.subsystemFreezeDuration().equals(Duration.ofSeconds(1)));
+
+        // Unfreezing floors freeze duration
+        assertTrue(nodeAdmin.setFrozen(false)); // Unfreeze everything
+        assertTrue(nodeAdmin.subsystemFreezeDuration().isZero());
+        clock.advance(Duration.ofSeconds(1));
+        assertTrue(nodeAdmin.subsystemFreezeDuration().isZero());
+
+        // Advancing time now will make freeze duration proceed according to clock
+        assertTrue(nodeAdmin.setFrozen(true));
+        assertTrue(nodeAdmin.subsystemFreezeDuration().isZero());
+        clock.advance(Duration.ofSeconds(1));
+        assertTrue(nodeAdmin.subsystemFreezeDuration().equals(Duration.ofSeconds(1)));
+    }
 
     @Test
     public void fullOuterJoinTest() {

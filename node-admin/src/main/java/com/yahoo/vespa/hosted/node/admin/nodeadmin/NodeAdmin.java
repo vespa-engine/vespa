@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,6 +35,12 @@ public interface NodeAdmin {
      * from NodeRepository.
      */
     boolean isFrozen();
+
+    /**
+     * Returns an upper bound on the time some or all parts of the node admin (including agents)
+     * have been frozen.  Returns 0 if not frozen, nor trying to freeze.
+     */
+    Duration subsystemFreezeDuration();
 
     /**
      * Stop services on these nodes
