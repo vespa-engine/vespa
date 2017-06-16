@@ -125,7 +125,7 @@ public class NodeRetirer extends Maintainer {
                     .collect(Collectors.toMap(
                             Map.Entry::getKey,
                             entry -> filterRetireableNodes(entry.getValue())));
-            if (retireableNodesByCluster.values().stream().mapToInt(Set::size).count() == 0) continue;
+            if (retireableNodesByCluster.values().stream().mapToInt(Set::size).sum() == 0) continue;
 
             Optional<Deployment> deployment = deployer.deployFromLocalActive(applicationId, Duration.ofMinutes(30));
             if ( ! deployment.isPresent()) continue; // this will be done at another config server
