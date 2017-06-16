@@ -117,20 +117,23 @@ public class NodeRetirer extends Maintainer {
         // Get all the nodes that we could retire along with their deployments
         Map<Deployment, Set<Node>> nodesToRetireByDeployment = new HashMap<>();
         for (ApplicationId applicationId : activeApplications) {
-            List<Node> applicationNodes = getNodesBelongingToApplication(allNodes, applicationId);
-            Map<ClusterSpec, Set<Node>> retireableNodesByCluster = getRetireableNodesForApplication(applicationNodes).stream()
+            Map<ClusterSpec, Set<Node>> nodesByCluster = getNodesBelongingToApplication(allNodes, applicationId).stream()
                     .collect(Collectors.groupingBy(
                             node -> node.allocation().get().membership().cluster(),
                             Collectors.toSet()));
-            if (retireableNodesByCluster.isEmpty()) continue;
+            Map<ClusterSpec, Set<Node>> retireableNodesByCluster = nodesByCluster.entrySet().stream()
+                    .collect(Collectors.toMap(
+                            Map.Entry::getKey,
+                            entry -> filterRetireableNodes(entry.getValue())));
+            if (retireableNodesByCluster.values().stream().mapToInt(Set::size).count() == 0) continue;
 
             Optional<Deployment> deployment = deployer.deployFromLocalActive(applicationId, Duration.ofMinutes(30));
             if ( ! deployment.isPresent()) continue; // this will be done at another config server
 
-            Set<Node> replaceableNodes = retireableNodesByCluster.values().stream()
-                    .flatMap(nodes -> nodes.stream()
+            Set<Node> replaceableNodes = retireableNodesByCluster.entrySet().stream()
+                    .flatMap(entry -> entry.getValue().stream()
                             .filter(node -> flavorSpareChecker.canRetireAllocatedNodeWithFlavor(node.flavor()))
-                            .limit(getNumberNodesAllowToRetireForCluster(nodes, MAX_SIMULTANEOUS_RETIRES_PER_CLUSTER)))
+                            .limit(getNumberNodesAllowToRetireForCluster(nodesByCluster.get(entry.getKey()), MAX_SIMULTANEOUS_RETIRES_PER_CLUSTER)))
                     .collect(Collectors.toSet());
             if (! replaceableNodes.isEmpty()) nodesToRetireByDeployment.put(deployment.get(), replaceableNodes);
         }
@@ -191,11 +194,11 @@ public class NodeRetirer extends Maintainer {
     }
 
     /**
-     * @param applicationNodes All the nodes allocated to an application
+     * @param nodes Collection of nodes that are considered for retirement
      * @return Set of nodes that all should eventually be retired
      */
-    Set<Node> getRetireableNodesForApplication(Collection<Node> applicationNodes) {
-        return applicationNodes.stream()
+    Set<Node> filterRetireableNodes(Collection<Node> nodes) {
+        return nodes.stream()
                 .filter(node -> node.state() == Node.State.active)
                 .filter(node -> !node.status().wantToRetire())
                 .filter(retirementPolicy::shouldRetire)
