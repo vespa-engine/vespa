@@ -12,6 +12,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -31,7 +32,7 @@ public class HostedDeployTest {
     @Test
     public void testRedeployWithVersion() throws InterruptedException, IOException {
         DeployTester tester = new DeployTester("src/test/apps/hosted/", createConfigserverConfig());
-        tester.deployApp("myApp", Optional.of("4.5.6"));
+        tester.deployApp("myApp", Optional.of("4.5.6"), Instant.now());
 
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive();
         assertTrue(deployment.isPresent());
@@ -43,7 +44,7 @@ public class HostedDeployTest {
     @Test
     public void testRedeploy() throws InterruptedException, IOException {
         DeployTester tester = new DeployTester("src/test/apps/hosted/", createConfigserverConfig());
-        tester.deployApp("myApp");
+        tester.deployApp("myApp", Instant.now());
 
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive();
         assertTrue(deployment.isPresent());
@@ -59,7 +60,7 @@ public class HostedDeployTest {
         modelFactories.add(DeployTester.createDefaultModelFactory(clock));
         modelFactories.add(DeployTester.createFailingModelFactory(Version.fromIntValues(1, 0, 0))); // older than default
         DeployTester tester = new DeployTester("src/test/apps/validationOverride/", modelFactories, createConfigserverConfig());
-        tester.deployApp("myApp");
+        tester.deployApp("myApp", clock.instant());
 
         // Redeployment from local active works
         {
@@ -82,7 +83,7 @@ public class HostedDeployTest {
         // However, redeployment from the outside fails after this date
         {
             try {
-                tester.deployApp("myApp");
+                tester.deployApp("myApp", Instant.now());
                 fail("Expected redeployment to fail");
             }
             catch (Exception expected) {
@@ -96,7 +97,7 @@ public class HostedDeployTest {
     public void testDeployWithDockerImage() throws InterruptedException, IOException {
         final String vespaVersion = "6.51.1";
         DeployTester tester = new DeployTester("src/test/apps/hosted/", createConfigserverConfig());
-        ApplicationId applicationId = tester.deployApp("myApp", Optional.of(vespaVersion));
+        ApplicationId applicationId = tester.deployApp("myApp", Optional.of(vespaVersion), Instant.now());
         assertProvisionInfo(vespaVersion, tester, applicationId);
 
         System.out.println("Redeploy");

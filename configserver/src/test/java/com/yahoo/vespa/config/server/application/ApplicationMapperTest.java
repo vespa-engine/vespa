@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Optional;
@@ -16,6 +17,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 public class ApplicationMapperTest {
+
     ApplicationId appId;
     ApplicationMapper applicationMapper;
     ArrayList<Version> vespaVersions = new ArrayList<>();
@@ -37,22 +39,22 @@ public class ApplicationMapperTest {
     @Test
     public void testGetForVersionReturnsCorrectVersion() {
         applicationMapper.register(appId, ApplicationSet.fromList(applications));
-        assertEquals(applicationMapper.getForVersion(appId, Optional.of(vespaVersions.get(0))), applications.get(0));
-        assertEquals(applicationMapper.getForVersion(appId, Optional.of(vespaVersions.get(1))), applications.get(1));
-        assertEquals(applicationMapper.getForVersion(appId, Optional.of(vespaVersions.get(2))), applications.get(2));
+        assertEquals(applicationMapper.getForVersion(appId, Optional.of(vespaVersions.get(0)), Instant.now()), applications.get(0));
+        assertEquals(applicationMapper.getForVersion(appId, Optional.of(vespaVersions.get(1)), Instant.now()), applications.get(1));
+        assertEquals(applicationMapper.getForVersion(appId, Optional.of(vespaVersions.get(2)), Instant.now()), applications.get(2));
     }
 
     @Test
     public void testGetForVersionReturnsLatestVersion() {
         applicationMapper.register(appId, ApplicationSet.fromList(applications));
-        assertEquals(applicationMapper.getForVersion(appId, Optional.empty()), applications.get(2));
+        assertEquals(applicationMapper.getForVersion(appId, Optional.empty(), Instant.now()), applications.get(2));
     }
 
     @Test (expected = VersionDoesNotExistException.class)
     public void testGetForVersionThrows() {
         applicationMapper.register(appId, ApplicationSet.fromList(Arrays.asList(applications.get(0), applications.get(2))));
 
-        applicationMapper.getForVersion(appId, Optional.of(vespaVersions.get(1)));
+        applicationMapper.getForVersion(appId, Optional.of(vespaVersions.get(1)), Instant.now());
     }
 
     @Test (expected = NotFoundException.class)
@@ -61,6 +63,7 @@ public class ApplicationMapperTest {
 
         applicationMapper.getForVersion(new ApplicationId.Builder()
                                         .tenant("different").applicationName("different").instanceName("different").build(),
-                                        Optional.of(vespaVersions.get(1)));
+                                        Optional.of(vespaVersions.get(1)),
+                                        Instant.now());
     }
 }

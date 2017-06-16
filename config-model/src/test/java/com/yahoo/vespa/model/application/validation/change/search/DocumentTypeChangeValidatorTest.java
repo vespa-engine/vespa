@@ -12,6 +12,7 @@ import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeActi
 import com.yahoo.vespa.model.application.validation.change.VespaRefeedAction;
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -29,6 +30,7 @@ import static org.junit.Assert.assertTrue;
 public class DocumentTypeChangeValidatorTest {
 
     private static class Fixture extends ContentClusterFixture {
+
         DocumentTypeChangeValidator validator;
 
         public Fixture(String currentSd, String nextSd) throws Exception {
@@ -38,7 +40,7 @@ public class DocumentTypeChangeValidatorTest {
 
         @Override
         public List<VespaConfigChangeAction> validate() {
-            return validator.validate(ValidationOverrides.empty());
+            return validator.validate(ValidationOverrides.empty, Instant.now());
         }
 
     }
@@ -62,8 +64,9 @@ public class DocumentTypeChangeValidatorTest {
         Fixture f = new Fixture("field f1 type string { indexing: summary }",
                                 "field f1 type int { indexing: summary }");
         f.assertValidation(newRefeedAction("field-type-change",
-                                           ValidationOverrides.empty(),
-                                           "Field 'f1' changed: data type: 'string' -> 'int'"));
+                                           ValidationOverrides.empty,
+                                           "Field 'f1' changed: data type: 'string' -> 'int'",
+                                           Instant.now()));
     }
 
     @Test
@@ -71,8 +74,8 @@ public class DocumentTypeChangeValidatorTest {
         Fixture f = new Fixture("field f1 type string { indexing: summary }",
                                 "field f1 type array<string> { indexing: summary }");
         f.assertValidation(newRefeedAction("field-type-change",
-                                           ValidationOverrides.empty(),
-                                           "Field 'f1' changed: data type: 'string' -> 'Array<string>'"));
+                                           ValidationOverrides.empty,
+                                           "Field 'f1' changed: data type: 'string' -> 'Array<string>'", Instant.now()));
     }
 
 
@@ -88,8 +91,8 @@ public class DocumentTypeChangeValidatorTest {
         Fixture f = new Fixture("field f1 type array<string> { indexing: summary }",
                                 "field f1 type array<int> { indexing: summary }");
         f.assertValidation(newRefeedAction("field-type-change",
-                                           ValidationOverrides.empty(),
-                                           "Field 'f1' changed: data type: 'Array<string>' -> 'Array<int>'"));
+                                           ValidationOverrides.empty,
+                                           "Field 'f1' changed: data type: 'Array<string>' -> 'Array<int>'", Instant.now()));
     }
 
     @Test
@@ -97,8 +100,8 @@ public class DocumentTypeChangeValidatorTest {
         Fixture f = new Fixture("field f1 type array<string> { indexing: summary }",
                                 "field f1 type weightedset<string> { indexing: summary }");
         f.assertValidation(newRefeedAction("field-type-change",
-                                           ValidationOverrides.empty(),
-                                           "Field 'f1' changed: data type: 'Array<string>' -> 'WeightedSet<string>'"));
+                                           ValidationOverrides.empty,
+                                           "Field 'f1' changed: data type: 'Array<string>' -> 'WeightedSet<string>'", Instant.now()));
     }
 
     @Test
@@ -106,11 +109,11 @@ public class DocumentTypeChangeValidatorTest {
         Fixture f = new Fixture("field f1 type string { indexing: summary } field f2 type int { indexing: summary }" ,
                                 "field f2 type string { indexing: summary } field f1 type int { indexing: summary }");
         f.assertValidation(Arrays.asList(newRefeedAction("field-type-change",
-                                                         ValidationOverrides.empty(),
-                                                         "Field 'f1' changed: data type: 'string' -> 'int'"),
+                                                         ValidationOverrides.empty,
+                                                         "Field 'f1' changed: data type: 'string' -> 'int'", Instant.now()),
                                          newRefeedAction("field-type-change",
-                                                         ValidationOverrides.empty(),
-                                                         "Field 'f2' changed: data type: 'int' -> 'string'")));
+                                                         ValidationOverrides.empty,
+                                                         "Field 'f2' changed: data type: 'int' -> 'string'", Instant.now())));
     }
 
     @Test
@@ -146,8 +149,8 @@ public class DocumentTypeChangeValidatorTest {
         Fixture f = new Fixture("struct s1 { field f1 type string {} } field f2 type s1 { indexing: summary }",
                                 "struct s1 { field f1 type int {} } field f2 type s1 { indexing: summary }");
         f.assertValidation(newRefeedAction("field-type-change",
-                                           ValidationOverrides.empty(),
-                                           "Field 'f2' changed: data type: 's1:{f1:string}' -> 's1:{f1:int}'"));
+                                           ValidationOverrides.empty,
+                                           "Field 'f2' changed: data type: 's1:{f1:string}' -> 's1:{f1:int}'", Instant.now()));
     }
 
     @Test
@@ -155,8 +158,8 @@ public class DocumentTypeChangeValidatorTest {
         Fixture f = new Fixture("struct s1 { field f1 type array<string> {} } field f2 type s1 { indexing: summary }",
                                 "struct s1 { field f1 type array<int> {} } field f2 type s1 { indexing: summary }");
         f.assertValidation(newRefeedAction("field-type-change",
-                                           ValidationOverrides.empty(),
-                                           "Field 'f2' changed: data type: 's1:{f1:Array<string>}' -> 's1:{f1:Array<int>}'"));
+                                           ValidationOverrides.empty,
+                                           "Field 'f2' changed: data type: 's1:{f1:Array<string>}' -> 's1:{f1:Array<int>}'", Instant.now()));
     }
 
     @Test
@@ -164,8 +167,8 @@ public class DocumentTypeChangeValidatorTest {
         Fixture f = new Fixture("struct s1 { field f1 type string {} } struct s2 { field f2 type s1 {} } field f3 type s2 { indexing: summary }",
                                 "struct s1 { field f1 type int {} }    struct s2 { field f2 type s1 {} } field f3 type s2 { indexing: summary }");
         f.assertValidation(newRefeedAction("field-type-change",
-                                           ValidationOverrides.empty(),
-                                           "Field 'f3' changed: data type: 's2:{s1:{f1:string}}' -> 's2:{s1:{f1:int}}'"));
+                                           ValidationOverrides.empty,
+                                           "Field 'f3' changed: data type: 's2:{s1:{f1:string}}' -> 's2:{s1:{f1:int}}'", Instant.now()));
     }
 
     @Test
@@ -173,8 +176,8 @@ public class DocumentTypeChangeValidatorTest {
         Fixture f = new Fixture("struct s1 { field f1 type string {} field f2 type int {} } field f3 type s1 { indexing: summary }",
                                 "struct s1 { field f1 type int {} field f2 type string {} } field f3 type s1 { indexing: summary }");
         f.assertValidation(newRefeedAction("field-type-change",
-                                           ValidationOverrides.empty(),
-                                           "Field 'f3' changed: data type: 's1:{f1:string,f2:int}' -> 's1:{f1:int,f2:string}'"));
+                                           ValidationOverrides.empty,
+                                           "Field 'f3' changed: data type: 's1:{f1:string,f2:int}' -> 's1:{f1:int,f2:string}'", Instant.now()));
     }
 
     @Test
@@ -182,7 +185,7 @@ public class DocumentTypeChangeValidatorTest {
         DocumentTypeChangeValidator validator = new DocumentTypeChangeValidator(
                 createDocumentTypeWithReferenceField("oldDoc"),
                 createDocumentTypeWithReferenceField("newDoc"));
-        List<VespaConfigChangeAction> result = validator.validate(ValidationOverrides.empty());
+        List<VespaConfigChangeAction> result = validator.validate(ValidationOverrides.empty, Instant.now());
         assertEquals(1, result.size());
         VespaConfigChangeAction action = result.get(0);
         assertTrue(action instanceof VespaRefeedAction);

@@ -53,6 +53,7 @@ import javax.ws.rs.client.Client;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.time.Clock;
 import java.util.Collections;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -135,6 +136,7 @@ public class ApplicationHandlerTest {
 
     @Test
     public void testDelete() throws Exception {
+        Clock clock = Clock.systemUTC();
         ApplicationId defaultId = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(mytenantName).build();
         assertApplicationExists(mytenantName, null, Zone.defaultZone());
 
@@ -162,7 +164,7 @@ public class ApplicationHandlerTest {
         
         sessionId++;
         {
-            addMockApplication(tenants.getTenant(mytenantName), defaultId, sessionId);
+            addMockApplication(tenants.getTenant(mytenantName), defaultId, sessionId, clock);
             deleteAndAssertOKResponseMocked(defaultId, true);
 
             ApplicationId fooId = new ApplicationId.Builder()
@@ -171,8 +173,8 @@ public class ApplicationHandlerTest {
 
             sessionId++;
 
-            addMockApplication(tenants.getTenant(mytenantName), fooId, sessionId);
-            addMockApplication(tenants.getTenant(foobar), fooId, sessionId);
+            addMockApplication(tenants.getTenant(mytenantName), fooId, sessionId, clock);
+            addMockApplication(tenants.getTenant(foobar), fooId, sessionId, clock);
             assertApplicationExists(mytenantName, fooId, Zone.defaultZone());
             assertApplicationExists(foobar, fooId, Zone.defaultZone());
             deleteAndAssertOKResponseMocked(fooId, true);
@@ -187,7 +189,7 @@ public class ApplicationHandlerTest {
             ApplicationId baliId = new ApplicationId.Builder()
                     .tenant(mytenantName)
                     .applicationName("bali").instanceName("quux").build();
-            addMockApplication(tenants.getTenant(mytenantName), baliId, sessionId);
+            addMockApplication(tenants.getTenant(mytenantName), baliId, sessionId, clock);
             deleteAndAssertOKResponseMocked(baliId, true);
             assertApplicationExists(mytenantName, null, Zone.defaultZone());
         }
@@ -197,7 +199,7 @@ public class ApplicationHandlerTest {
     public void testGet() throws Exception {
         long sessionId = 1;
         ApplicationId defaultId = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(mytenantName).build();
-        addMockApplication(tenants.getTenant(mytenantName), defaultId, sessionId);
+        addMockApplication(tenants.getTenant(mytenantName), defaultId, sessionId, Clock.systemUTC());
         assertApplicationGeneration(defaultId, Zone.defaultZone(), 1, true);
         assertApplicationGeneration(defaultId, Zone.defaultZone(), 1, false);
     }
@@ -206,7 +208,7 @@ public class ApplicationHandlerTest {
     public void testRestart() throws Exception {
         long sessionId = 1;
         ApplicationId application = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(mytenantName).build();
-        addMockApplication(tenants.getTenant(mytenantName), application, sessionId);
+        addMockApplication(tenants.getTenant(mytenantName), application, sessionId, Clock.systemUTC());
         assertFalse(provisioner.restarted);
         restart(application, Zone.defaultZone());
         assertTrue(provisioner.restarted);
@@ -217,7 +219,7 @@ public class ApplicationHandlerTest {
     public void testConverge() throws Exception {
         long sessionId = 1;
         ApplicationId application = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(mytenantName).build();
-        addMockApplication(tenants.getTenant(mytenantName), application, sessionId);
+        addMockApplication(tenants.getTenant(mytenantName), application, sessionId, Clock.systemUTC());
         converge(application, Zone.defaultZone());
     }
 
@@ -225,7 +227,7 @@ public class ApplicationHandlerTest {
     public void testGrabLog() throws Exception {
         long sessionId = 1;
         ApplicationId application = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(mytenantName).build();
-        addMockApplication(tenants.getTenant(mytenantName), application, sessionId);
+        addMockApplication(tenants.getTenant(mytenantName), application, sessionId, Clock.systemUTC());
         assertEquals("log line", grabLog(application, Zone.defaultZone()));
     }
 
@@ -233,7 +235,7 @@ public class ApplicationHandlerTest {
     public void testClusterControllerStatus() throws Exception {
         long sessionId = 1;
         ApplicationId application = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(mytenantName).build();
-        addMockApplication(tenants.getTenant(mytenantName), application, sessionId);
+        addMockApplication(tenants.getTenant(mytenantName), application, sessionId, Clock.systemUTC());
         String host = "foo.yahoo.com";
         String url = toUrlPath(application, Zone.defaultZone(), true) + "/clustercontroller/" + host + "/status/v1/clusterName1";
 
@@ -259,7 +261,7 @@ public class ApplicationHandlerTest {
                 new HttpProxy(new SimpleHttpFetcher()),
                 new LogServerLogGrabber());
         final ApplicationId applicationId = ApplicationId.defaultId();
-        addMockApplication(tenants.getTenant(mytenantName), applicationId, 1);
+        addMockApplication(tenants.getTenant(mytenantName), applicationId, 1, Clock.systemUTC());
         assertApplicationExists(mytenantName, applicationId, Zone.defaultZone());
         provisioner.activated = true;
 
@@ -269,14 +271,14 @@ public class ApplicationHandlerTest {
         Assert.assertTrue(provisioner.activated);
     }
 
-    static void addMockApplication(Tenant tenant, ApplicationId applicationId, long sessionId) {
+    static void addMockApplication(Tenant tenant, ApplicationId applicationId, long sessionId, Clock clock) {
         tenant.getApplicationRepo().createPutApplicationTransaction(applicationId, sessionId).commit();
         ApplicationPackage app = FilesApplicationPackage.fromFile(testApp);
         tenant.getLocalSessionRepo().addSession(new SessionHandlerTest.MockSession(sessionId, app, applicationId));
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .modelFactoryRegistry(new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry()))))
                 .build();
-        tenant.getRemoteSessionRepo().addSession(new RemoteSession(tenant.getName(), sessionId, componentRegistry, new MockSessionZKClient(app)));
+        tenant.getRemoteSessionRepo().addSession(new RemoteSession(tenant.getName(), sessionId, componentRegistry, new MockSessionZKClient(app), clock));
     }
 
     static Tenants addApplication(ApplicationId applicationId, long sessionId) throws Exception {
@@ -322,7 +324,8 @@ public class ApplicationHandlerTest {
                                           .modelFactoryRegistry(new ModelFactoryRegistry(
                                                   Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry()))))
                                           .build(),
-                                  sessionClient));
+                                  sessionClient,
+                                  Clock.systemUTC()));
         return tenants;
     }
 

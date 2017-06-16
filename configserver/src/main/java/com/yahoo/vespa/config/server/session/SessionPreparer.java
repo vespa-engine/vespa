@@ -28,6 +28,7 @@ import com.yahoo.vespa.curator.Curator;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -86,11 +87,12 @@ public class SessionPreparer {
      * @return the config change actions that must be done to handle the activation of the models prepared.
      */
     public ConfigChangeActions prepare(SessionContext context, DeployLogger logger, PrepareParams params,
-                                       Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath) {
+                                       Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath, 
+                                       Instant now) {
         Preparation preparation = new Preparation(context, logger, params, currentActiveApplicationSet, tenantPath);
         preparation.preprocess();
         try {
-            preparation.buildModels();
+            preparation.buildModels(now);
             preparation.makeResult();
             if ( ! params.isDryRun()) {
                 preparation.writeStateZK();
@@ -175,8 +177,8 @@ public class SessionPreparer {
             checkTimeout("preprocess");
         }
 
-        void buildModels() {
-            this.modelResultList = preparedModelsBuilder.buildModels(applicationId, vespaVersion, applicationPackage);
+        void buildModels(Instant now) {
+            this.modelResultList = preparedModelsBuilder.buildModels(applicationId, vespaVersion, applicationPackage, now);
             checkTimeout("build models");
         }
 

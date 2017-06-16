@@ -12,6 +12,7 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRefeedAction;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -32,27 +33,27 @@ public class IndexingScriptChangeValidator {
         this.nextSearch = nextSearch;
     }
 
-    public List<VespaConfigChangeAction> validate(ValidationOverrides overrides) {
+    public List<VespaConfigChangeAction> validate(ValidationOverrides overrides, Instant now) {
         List<VespaConfigChangeAction> result = new ArrayList<>();
         for (SDField nextField : nextSearch.allConcreteFields()) {
             String fieldName = nextField.getName();
             SDField currentField = currentSearch.getConcreteField(fieldName);
             if (currentField != null) {
-                validateScripts(currentField, nextField, overrides).ifPresent(r -> result.add(r));
+                validateScripts(currentField, nextField, overrides, now).ifPresent(r -> result.add(r));
             }
         }
         return result;
     }
 
     private Optional<VespaConfigChangeAction> validateScripts(SDField currentField, SDField nextField,
-                                                              ValidationOverrides overrides) {
+                                                              ValidationOverrides overrides, Instant now) {
         ScriptExpression currentScript = currentField.getIndexingScript();
         ScriptExpression nextScript = nextField.getIndexingScript();
         if ( ! equalScripts(currentScript, nextScript)) {
             ChangeMessageBuilder messageBuilder = new ChangeMessageBuilder(nextField.getName());
             new IndexingScriptChangeMessageBuilder(currentSearch, currentField, nextSearch, nextField).populate(messageBuilder);
             messageBuilder.addChange("indexing script", currentScript.toString(), nextScript.toString());
-            return Optional.of(VespaRefeedAction.of(ValidationId.indexingChange.value(), overrides, messageBuilder.build()));
+            return Optional.of(VespaRefeedAction.of(ValidationId.indexingChange.value(), overrides, messageBuilder.build(), now));
         }
         return Optional.empty();
     }

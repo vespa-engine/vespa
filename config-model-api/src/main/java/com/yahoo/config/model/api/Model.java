@@ -6,6 +6,8 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Collection;
@@ -67,7 +69,12 @@ public interface Model {
      * This is a validation override which is useful when we skip loading old config models
      * due to some problem, or when we need to try a newer version of the platform on some node.
      */
-    default boolean allowModelVersionMismatch() { return false; }
+    default boolean allowModelVersionMismatch(Instant now) { return false; }
+
+    /** @deprecated pass now. */
+    // TODO: Remove this when no version older than 6.115 is deployed anywhere
+    @Deprecated
+    default boolean allowModelVersionMismatch() { return allowModelVersionMismatch(Clock.systemUTC().instant()); }
 
     /**
      * Returns whether old config models should be loaded (default) or not.
@@ -79,6 +86,11 @@ public interface Model {
      * If a model returns true to this it should also return true to {@link #allowModelVersionMismatch}
      * or clients requesting config for those old models will not get config at all.
      */
-    default boolean skipOldConfigModels() { return false; }
+    default boolean skipOldConfigModels(Instant now) { return false; }
+    
+    /** @deprecated pass now. */
+    // TODO: Remove this when no version older than 6.115 is deployed anywhere
+    @Deprecated 
+    default boolean skipOldConfigModels() { return skipOldConfigModels(Clock.systemUTC().instant()); }
 
 }

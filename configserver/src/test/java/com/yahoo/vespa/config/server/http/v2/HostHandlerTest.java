@@ -16,6 +16,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.time.Clock;
 import java.util.Collections;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -62,14 +63,14 @@ public class HostHandlerTest {
         assertThat(hostRegistries, is(hostHandler.hostRegistries));
         long sessionId = 1;
         ApplicationId id = ApplicationId.from(mytenant, ApplicationName.defaultName(), InstanceName.defaultName());
-        ApplicationHandlerTest.addMockApplication(tenants.getTenant(mytenant), id, sessionId);
+        ApplicationHandlerTest.addMockApplication(tenants.getTenant(mytenant), id, sessionId, Clock.systemUTC());
         assertApplicationForHost(hostname, mytenant, id, Zone.defaultZone());
     }
 
     @Test
     public void require_that_handler_gives_error_for_unknown_hostname() throws Exception {
         long sessionId = 1;
-        ApplicationHandlerTest.addMockApplication(tenants.getTenant(mytenant), ApplicationId.defaultId(), sessionId);
+        ApplicationHandlerTest.addMockApplication(tenants.getTenant(mytenant), ApplicationId.defaultId(), sessionId, Clock.systemUTC());
         final String hostname = "unknown";
         assertErrorForHost(hostname,
                 Response.Status.NOT_FOUND,

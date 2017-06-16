@@ -67,6 +67,7 @@ public class DeployState implements ConfigDefinitionStore {
     private final SemanticRules semanticRules;
     private final ValidationOverrides validationOverrides;
     private final Version wantedNodeVespaVersion;
+    private final Instant now;
 
     private final HostProvisioner provisioner;
 
@@ -98,8 +99,9 @@ public class DeployState implements ConfigDefinitionStore {
         this.zone = zone;
         this.queryProfiles = queryProfiles; // TODO: Remove this by seeing how pagetemplates are propagated
         this.semanticRules = semanticRules; // TODO: Remove this by seeing how pagetemplates are propagated
-        this.validationOverrides = ValidationOverrides.fromXml(applicationPackage.getValidationOverrides(), now);
+        this.validationOverrides = ValidationOverrides.fromXml(applicationPackage.getValidationOverrides());
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
+        this.now = now;
     }
 
     public static HostProvisioner getDefaultModelHostProvisioner(ApplicationPackage applicationPackage) {
@@ -209,6 +211,8 @@ public class DeployState implements ConfigDefinitionStore {
     public SemanticRules getSemanticRules() { return semanticRules; }
     
     public Version getWantedNodeVespaVersion() { return wantedNodeVespaVersion; }
+    
+    public Instant now() { return now; }
 
     public static class Builder {
 

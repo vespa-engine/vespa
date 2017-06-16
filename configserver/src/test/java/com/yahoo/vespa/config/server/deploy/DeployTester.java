@@ -108,14 +108,14 @@ public class DeployTester {
     /**
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
-    public ApplicationId deployApp(String appName) {
-        return deployApp(appName, Optional.empty());
+    public ApplicationId deployApp(String appName, Instant now) {
+        return deployApp(appName, Optional.empty(), now);
     }
 
     /**
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
-    public ApplicationId deployApp(String appName, Optional<String> vespaVersion)  {
+    public ApplicationId deployApp(String appName, Optional<String> vespaVersion, Instant now)  {
         Tenant tenant = tenant();
         LocalSession session = tenant.getSessionFactory().createSession(testApp, appName, new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(60)));
         ApplicationId id = ApplicationId.from(tenant.getName(), ApplicationName.from(appName), InstanceName.defaultName());
@@ -126,7 +126,8 @@ public class DeployTester {
         session.prepare(new SilentDeployLogger(),
                         paramsBuilder.build(),
                         Optional.empty(),
-                        tenant.getPath());
+                        tenant.getPath(),
+                        now);
         session.createActivateTransaction().commit();
         tenant.getLocalSessionRepo().addSession(session);
         this.id = id;

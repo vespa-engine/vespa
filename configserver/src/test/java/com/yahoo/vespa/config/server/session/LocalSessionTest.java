@@ -21,6 +21,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.time.Instant;
 import java.util.*;
 
 import static org.hamcrest.core.Is.is;
@@ -59,7 +60,7 @@ public class LocalSessionTest {
     public void require_that_session_status_is_updated() throws Exception {
         LocalSession session = createSession(TenantName.defaultName(), 3);
         assertThat(session.getStatus(), is(Session.Status.NEW));
-        doPrepare(session);
+        doPrepare(session, Instant.now());
         assertThat(session.getStatus(), is(Session.Status.PREPARE));
         session.createActivateTransaction().commit();
         assertThat(session.getStatus(), is(Session.Status.ACTIVATE));
@@ -68,7 +69,7 @@ public class LocalSessionTest {
     @Test
     public void require_that_marking_session_modified_changes_status_to_new() throws Exception {
         LocalSession session = createSession(TenantName.defaultName(), 3);
-        doPrepare(session);
+        doPrepare(session, Instant.now());
         assertThat(session.getStatus(), is(Session.Status.PREPARE));
         session.getApplicationFile(Path.createRoot(), LocalSession.Mode.READ);
         assertThat(session.getStatus(), is(Session.Status.PREPARE));
@@ -81,7 +82,7 @@ public class LocalSessionTest {
         SessionTest.MockSessionPreparer preparer = new SessionTest.MockSessionPreparer();
         LocalSession session = createSession(TenantName.defaultName(), 3, preparer);
         assertFalse(preparer.isPrepared);
-        doPrepare(session);
+        doPrepare(session, Instant.now());
         assertTrue(preparer.isPrepared);
         assertThat(session.getStatus(), is(Session.Status.PREPARE));
     }
@@ -130,7 +131,7 @@ public class LocalSessionTest {
         ApplicationId origId = new ApplicationId.Builder()
                                .tenant("tenant")
                                .applicationName("foo").instanceName("quux").build();
-        doPrepare(session, new PrepareParams.Builder().applicationId(origId).build());
+        doPrepare(session, new PrepareParams.Builder().applicationId(origId).build(), Instant.now());
         ProvisionInfo info = session.getProvisionInfo();
         assertNotNull(info);
         assertThat(info.getHosts().size(), is(1));
@@ -140,7 +141,7 @@ public class LocalSessionTest {
     @Test
     public void require_that_application_metadata_is_correct() throws Exception {
         LocalSession session = createSession(TenantName.defaultName(), 3);
-        doPrepare(session, new PrepareParams.Builder().build());
+        doPrepare(session, new PrepareParams.Builder().build(), Instant.now());
         assertThat(session.getMetaData().toString(), is("n/a, n/a, 0, 0, , 0"));
     }
 
@@ -167,12 +168,12 @@ public class LocalSessionTest {
         return new LocalSession(tenant, sessionId, preparer, new SessionContext(FilesApplicationPackage.fromFile(testApp), zkc, sessionDir, new MemoryTenantApplications(), new HostRegistry<>(), superModelGenerationCounter));
     }
 
-    private void doPrepare(LocalSession session) {
-        doPrepare(session, new PrepareParams.Builder().build());
+    private void doPrepare(LocalSession session, Instant now) {
+        doPrepare(session, new PrepareParams.Builder().build(), now);
     }
 
-    private void doPrepare(LocalSession session, PrepareParams params) {
-        session.prepare(getLogger(false), params, Optional.empty(), tenantPath);
+    private void doPrepare(LocalSession session, PrepareParams params, Instant now) {
+        session.prepare(getLogger(false), params, Optional.empty(), tenantPath, now);
     }
 
     DeployHandlerLogger getLogger(boolean verbose) {

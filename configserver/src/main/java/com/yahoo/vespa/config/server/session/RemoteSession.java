@@ -10,6 +10,8 @@ import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.zookeeper.KeeperException;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -25,6 +27,7 @@ public class RemoteSession extends Session {
     private static final Logger log = Logger.getLogger(RemoteSession.class.getName());
     private volatile ApplicationSet applicationSet = null;
     private final ActivatedModelsBuilder applicationLoader;
+    private final Clock clock;
 
     /**
      * Creates a session. This involves loading the application, validating it and distributing it.
@@ -37,9 +40,11 @@ public class RemoteSession extends Session {
     public RemoteSession(TenantName tenant,
                          long sessionId,
                          GlobalComponentRegistry globalComponentRegistry,
-                         SessionZooKeeperClient zooKeeperClient) {
+                         SessionZooKeeperClient zooKeeperClient,
+                         Clock clock) {
         super(tenant, sessionId, zooKeeperClient);
         this.applicationLoader = new ActivatedModelsBuilder(tenant, sessionId, zooKeeperClient, globalComponentRegistry);
+        this.clock = clock;
     }
 
     public void loadPrepared() {
@@ -51,7 +56,8 @@ public class RemoteSession extends Session {
     private ApplicationSet loadApplication() {
         return ApplicationSet.fromList(applicationLoader.buildModels(zooKeeperClient.readApplicationId(),
                                                                      zooKeeperClient.readVespaVersion(),
-                                                                     zooKeeperClient.loadApplicationPackage()));
+                                                                     zooKeeperClient.loadApplicationPackage(),
+                                                                     clock.instant()));
     }
 
     public ApplicationSet ensureApplicationLoaded() {
@@ -83,7 +89,7 @@ public class RemoteSession extends Session {
     @Override
     public String logPre() {
         if (applicationSet != null) {
-            return Tenants.logPre(applicationSet.getForVersionOrLatest(Optional.empty()).getId());
+            return Tenants.logPre(applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()).getId());
         }
 
         return Tenants.logPre(getTenant());

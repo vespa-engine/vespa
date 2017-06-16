@@ -30,6 +30,7 @@ import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.curator.Curator;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -71,8 +72,11 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     }
 
     @Override
-    protected Application buildModelVersion(ModelFactory modelFactory, ApplicationPackage applicationPackage,
-                                            ApplicationId applicationId, com.yahoo.component.Version wantedNodeVespaVersion) {
+    protected Application buildModelVersion(ModelFactory modelFactory, 
+                                            ApplicationPackage applicationPackage,
+                                            ApplicationId applicationId, 
+                                            com.yahoo.component.Version wantedNodeVespaVersion,
+                                            Instant now) {
         log.log(LogLevel.DEBUG, String.format("Loading model version %s for session %s application %s",
                                               modelFactory.getVersion(), appGeneration, applicationId));
         ServerCache cache = zkClient.loadServerCache();

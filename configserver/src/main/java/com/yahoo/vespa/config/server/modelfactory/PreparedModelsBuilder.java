@@ -28,6 +28,7 @@ import com.yahoo.vespa.config.server.session.SessionContext;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -79,7 +80,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     protected PreparedModelResult buildModelVersion(ModelFactory modelFactory, 
                                                     ApplicationPackage applicationPackage,
                                                     ApplicationId applicationId, 
-                                                    com.yahoo.component.Version wantedNodeVespaVersion) {
+                                                    com.yahoo.component.Version wantedNodeVespaVersion, Instant now) {
         Version modelVersion = modelFactory.getVersion();
         log.log(LogLevel.DEBUG, "Start building model for Vespa version " + modelVersion);
         FileDistributionProvider fileDistributionProvider = fileDistributionFactory.createProvider(
@@ -88,7 +89,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
 
         Optional<HostProvisioner> hostProvisioner = createHostProvisionerAdapter(properties);
         Optional<Model> previousModel = currentActiveApplicationSet
-                .map(set -> set.getForVersionOrLatest(Optional.of(modelVersion)).getModel());
+                .map(set -> set.getForVersionOrLatest(Optional.of(modelVersion), now).getModel());
         ModelContext modelContext = new ModelContextImpl(
                 applicationPackage,
                 previousModel,

@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
@@ -23,7 +24,7 @@ public class DocumentDatabaseChangeValidatorTest {
 
         @Override
         public List<VespaConfigChangeAction> validate() {
-            return validator.validate(ValidationOverrides.empty());
+            return validator.validate(ValidationOverrides.empty, Instant.now());
         }
 
     }
@@ -39,12 +40,12 @@ public class DocumentDatabaseChangeValidatorTest {
         f.assertValidation(Arrays.asList(
                 newRestartAction("Field 'f1' changed: add attribute aspect"),
                 newRefeedAction("indexing-change",
-                                ValidationOverrides.empty(),
+                                ValidationOverrides.empty,
                                 "Field 'f2' changed: add index aspect, indexing script: '{ input f2 | summary f2; }' -> " +
-                                "'{ input f2 | tokenize normalize stem:\"SHORTEST\" | index f2 | summary f2; }'"),
+                                "'{ input f2 | tokenize normalize stem:\"SHORTEST\" | index f2 | summary f2; }'", Instant.now()),
                 newRefeedAction("field-type-change",
-                                ValidationOverrides.empty(),
-                                "Field 'f3' changed: data type: 'int' -> 'string'")));
+                                ValidationOverrides.empty,
+                                "Field 'f3' changed: data type: 'int' -> 'string'", Instant.now())));
     }
 
     @Test

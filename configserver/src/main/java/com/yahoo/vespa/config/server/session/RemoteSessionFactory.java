@@ -9,6 +9,8 @@ import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 
+import java.time.Clock;
+
 /**
  * @author lulf
  * @since 5.1.24
@@ -22,10 +24,12 @@ public class RemoteSessionFactory {
     private final ConfigDefinitionRepo defRepo;
     private final TenantName tenant;
     private final ConfigserverConfig configserverConfig;
+    private final Clock clock;
 
     public RemoteSessionFactory(GlobalComponentRegistry componentRegistry,
                                 Path sessionsPath,
-                                TenantName tenant) {
+                                TenantName tenant,
+                                Clock clock) {
         this.componentRegistry = componentRegistry;
         this.curator = componentRegistry.getCurator();
         this.configCurator = componentRegistry.getConfigCurator();
@@ -33,6 +37,7 @@ public class RemoteSessionFactory {
         this.tenant = tenant;
         this.defRepo = componentRegistry.getConfigDefinitionRepo();
         this.configserverConfig = componentRegistry.getConfigserverConfig();
+        this.clock = clock;
     }
 
     public RemoteSession createSession(long sessionId) {
@@ -43,7 +48,7 @@ public class RemoteSessionFactory {
                                                                             defRepo,
                                                                             configserverConfig.serverId(),
                                                                             componentRegistry.getZone().nodeFlavors());
-        return new RemoteSession(tenant, sessionId, componentRegistry, sessionZKClient);
+        return new RemoteSession(tenant, sessionId, componentRegistry, sessionZKClient, clock);
     }
 
 }

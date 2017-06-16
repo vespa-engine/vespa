@@ -8,6 +8,7 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 
@@ -45,7 +46,7 @@ public class ContainerRestartValidatorTest {
 
     private static List<ConfigChangeAction> validateModel(VespaModel current, VespaModel next) {
         return new ContainerRestartValidator()
-                .validate(current, next, new ValidationOverrides(Collections.emptyList()));
+                .validate(current, next, new ValidationOverrides(Collections.emptyList()), Instant.now());
     }
 
     private static VespaModel createModel(boolean restartOnDeploy) {

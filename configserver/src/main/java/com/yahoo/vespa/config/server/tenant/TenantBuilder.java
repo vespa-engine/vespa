@@ -31,6 +31,7 @@ import java.util.concurrent.Executors;
  * @since 5.1
  */
 public class TenantBuilder {
+
     private final Path tenantPath;
     private final GlobalComponentRegistry componentRegistry;
     private final TenantName tenant;
@@ -46,6 +47,7 @@ public class TenantBuilder {
     private RemoteSessionFactory remoteSessionFactory;
     private TenantFileSystemDirs tenantFileSystemDirs;
     private HostValidator<ApplicationId> hostValidator;
+    private Clock clock = Clock.systemUTC();
 
     private TenantBuilder(GlobalComponentRegistry componentRegistry, TenantName tenant, Path zkPath) {
         this.componentRegistry = componentRegistry;
@@ -88,6 +90,11 @@ public class TenantBuilder {
         return this;
     }
 
+    public TenantBuilder withClock(Clock clock) {
+        this.clock = clock;
+        return this;
+    }
+
     /**
      * Create a real tenant from the properties given by this builder.
      *
@@ -97,7 +104,7 @@ public class TenantBuilder {
     public Tenant build() throws Exception {
         createTenantRequestHandler();
         createApplicationRepo();
-        createRemoteSessionFactory();
+        createRemoteSessionFactory(clock);
         createRemoteSessionRepo();
         createSessionCounter();
         createServerDbDirs();
@@ -164,12 +171,9 @@ public class TenantBuilder {
         }
     }
 
-    private void createRemoteSessionFactory() {
+    private void createRemoteSessionFactory(Clock clock) {
         if (remoteSessionFactory == null) {
-            remoteSessionFactory = new RemoteSessionFactory(
-                    componentRegistry,
-                    sessionsPath,
-                    tenant);
+            remoteSessionFactory = new RemoteSessionFactory(componentRegistry, sessionsPath, tenant, clock);
         }
     }
 

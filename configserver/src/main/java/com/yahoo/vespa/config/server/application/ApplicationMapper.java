@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.application;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Version;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,19 +49,19 @@ public final class ApplicationMapper {
      *
      * @return the matching application, or null if none matches
      */
-    public Application getForVersion(ApplicationId applicationId, Optional<Version> vespaVersion) throws VersionDoesNotExistException {
-        return getApplicationSet(applicationId).getForVersionOrLatest(vespaVersion);
+    public Application getForVersion(ApplicationId applicationId, Optional<Version> vespaVersion, Instant now) throws VersionDoesNotExistException {
+        return getApplicationSet(applicationId).getForVersionOrLatest(vespaVersion, now);
     }
 
     /** Returns whether this registry has an application for the given application id */
-    public boolean hasApplication(ApplicationId applicationId) {
-        return hasApplicationForVersion(applicationId, Optional.<Version>empty());
+    public boolean hasApplication(ApplicationId applicationId, Instant now) {
+        return hasApplicationForVersion(applicationId, Optional.<Version>empty(), now);
     }
 
     /** Returns whether this registry has an application for the given application id and vespa version */
-    public boolean hasApplicationForVersion(ApplicationId applicationId, Optional<Version> vespaVersion) {
+    public boolean hasApplicationForVersion(ApplicationId applicationId, Optional<Version> vespaVersion, Instant now) {
         try {
-            return getForVersion(applicationId, vespaVersion) != null;
+            return getForVersion(applicationId, vespaVersion, now) != null;
         }
         catch (VersionDoesNotExistException | NotFoundException ex) {
             return false;

@@ -20,6 +20,7 @@ import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -143,7 +144,7 @@ public class ConfigValueChangeValidatorTest {
 
     private List<ConfigChangeAction> getConfigChanges(VespaModel currentModel, VespaModel nextModel) {
         ConfigValueChangeValidator validator = new ConfigValueChangeValidator(logger);
-        return validator.validate(currentModel, nextModel, ValidationOverrides.empty());
+        return validator.validate(currentModel, nextModel, ValidationOverrides.empty, Instant.now());
     }
 
     private List<ConfigChangeAction> getConfigChanges(AbstractConfigProducerRoot currentModel,

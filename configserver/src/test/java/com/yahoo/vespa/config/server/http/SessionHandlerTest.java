@@ -23,6 +23,7 @@ import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.session.*;
 
 import java.io.*;
+import java.time.Instant;
 import java.util.Optional;
 
 /**
@@ -95,7 +96,7 @@ public class SessionHandlerTest {
         }
 
         @Override
-        public ConfigChangeActions prepare(DeployLogger logger, PrepareParams params, Optional<ApplicationSet> application, Path tenantPath) {
+        public ConfigChangeActions prepare(DeployLogger logger, PrepareParams params, Optional<ApplicationSet> application, Path tenantPath, Instant now) {
             status = Session.Status.PREPARE;
             if (doVerboseLogging) {
                 logger.log(LogLevel.DEBUG, "debuglog");

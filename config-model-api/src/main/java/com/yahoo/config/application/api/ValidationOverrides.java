@@ -27,71 +27,60 @@ import java.util.Optional;
  */
 public class ValidationOverrides {
 
+    public static final ValidationOverrides empty = new ValidationOverrides(ImmutableList.of(), "<deployment version='1.0'/>");
+
     private final List<Allow> overrides;
 
-    /** Instant to use as "now". This is a field to allow unit testing. */
-    private final Instant now;
-    
     private final String xmlForm;
 
-    /** Creates validation overrides for the current instant */
+    /** Creates a validation overrides which does not have an xml form */
     public ValidationOverrides(List<Allow> overrides) {
-        this(overrides, Instant.now());
+        this(overrides, null);
     }
 
-    public ValidationOverrides(List<Allow> overrides, Instant now) {
-        this(overrides, now, null);
-    }
-
-    private ValidationOverrides(List<Allow> overrides, Instant now, String xmlForm) {
+    private ValidationOverrides(List<Allow> overrides, String xmlForm) {
         this.overrides = ImmutableList.copyOf(overrides);
-        this.now = now;
         this.xmlForm = xmlForm;
-        for (Allow override : overrides)
-            if (now.plus(Duration.ofDays(30)).isBefore(override.until))
-                throw new IllegalArgumentException(override + " is too far in the future: Max 30 days is allowed");
     }
 
     /** Throws a ValidationException unless this validation is overridden at this time */
-    public void invalid(ValidationId validationId, String message) {
-        if ( ! allows(validationId))
+    public void invalid(ValidationId validationId, String message, Instant now) {
+        if ( ! allows(validationId, now))
             throw new ValidationException(validationId, message);
     }
 
-    public boolean allows(String validationIdString) {
+    public boolean allows(String validationIdString, Instant now) {
         Optional<ValidationId> validationId = ValidationId.from(validationIdString);
         if ( ! validationId.isPresent()) return false; // unknown id -> not allowed
-        return allows(validationId.get());
+        return allows(validationId.get(), now);
     }
 
     /** Returns whether the given (assumed invalid) change is allowed by this at the moment */
-    public boolean allows(ValidationId validationId) {
-        for (Allow override : overrides)
+    public boolean allows(ValidationId validationId, Instant now) {
+        for (Allow override : overrides) {
+            if (now.plus(Duration.ofDays(30)).isBefore(override.until))
+                throw new IllegalArgumentException(override + " is too far in the future: Max 30 days is allowed");
             if (override.allows(validationId, now))
                 return true;
+        }
         return false;
     }
 
     /** Returns the XML form of this, or null if it was not created by fromXml, nor is empty */
     public String xmlForm() { return xmlForm; }
 
-    public static ValidationOverrides empty() { 
-        return new ValidationOverrides(ImmutableList.of(), Instant.now(), "<deployment version='1.0'/>"); 
-    }
-
     /**
      * Returns a ValidationOverrides instance with the content of the given Reader.
      * An empty ValidationOverrides is returned if the argument is empty.
      *
      * @param reader the reader which optionally contains a validation-overrides XML structure
-     * @param now the instant to use as "now", settable for unit testing
      * @return a ValidationOverrides from the argument
      * @throws IllegalArgumentException if the validation-allows.xml file exists but is invalid
      */
-    public static ValidationOverrides fromXml(Optional<Reader> reader, Instant now) {
+    public static ValidationOverrides fromXml(Optional<Reader> reader) {
         try {
-            if ( ! reader.isPresent()) return ValidationOverrides.empty();
-            return fromXml(IOUtils.readAll(reader.get()), now);
+            if ( ! reader.isPresent()) return ValidationOverrides.empty;
+            return fromXml(IOUtils.readAll(reader.get()));
         } catch (IOException e) {
             throw new IllegalArgumentException("Could not read deployment spec", e);
         }
@@ -102,12 +91,11 @@ public class ValidationOverrides {
      * An empty ValidationOverrides is returned if the argument is empty.
      *
      * @param xmlForm the string which optionally contains a validation-overrides XML structure
-     * @param now the instant to use as "now", settable for unit testing
      * @return a ValidationOverrides from the argument
      * @throws IllegalArgumentException if the validation-allows.xml file exists but is invalid
      */
-    public static ValidationOverrides fromXml(String xmlForm, Instant now) {
-        if ( xmlForm.isEmpty()) return ValidationOverrides.empty();
+    public static ValidationOverrides fromXml(String xmlForm) {
+        if ( xmlForm.isEmpty()) return ValidationOverrides.empty;
 
         try {
             // Assume valid structure is ensured by schema validation
@@ -121,7 +109,7 @@ public class ValidationOverrides {
                 if (validationId.isPresent()) // skip unknown ids as they may be valid for other model versions
                     overrides.add(new ValidationOverrides.Allow(validationId.get(), until));
             }
-            return new ValidationOverrides(overrides, now, xmlForm);
+            return new ValidationOverrides(overrides, xmlForm);
         }
         catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("validation-overrides is invalid", e);
