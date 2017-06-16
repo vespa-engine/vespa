@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerExecTimeoutException;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
+import com.yahoo.vespa.hosted.dockerapi.metrics.DimensionMetrics;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
@@ -26,9 +27,11 @@ import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executors;
@@ -345,7 +348,6 @@ public class NodeAgentImpl implements NodeAgent {
             }
             if (currentFilebeatRestarter != null) currentFilebeatRestarter.cancel(true);
             dockerOperations.removeContainer(existingContainer);
-            metricReceiver.unsetMetricsForContainer(hostname);
             containerState = ABSENT;
             logger.info("Container successfully removed, new containerState is " + containerState);
             return Optional.empty();
@@ -436,7 +438,6 @@ public class NodeAgentImpl implements NodeAgent {
             // Every time the node spec changes, we should clear the metrics for this container as the dimensions
             // will change and we will be reporting duplicate metrics.
             // TODO: Should be retried if writing fails
-            metricReceiver.unsetMetricsForContainer(hostname);
             if (container.isPresent()) {
                 storageMaintainer.ifPresent(maintainer -> {
                     maintainer.writeMetricsConfig(containerName, nodeSpec);
@@ -506,7 +507,10 @@ public class NodeAgentImpl implements NodeAgent {
     @SuppressWarnings("unchecked")
     public void updateContainerNodeMetrics(int numAllocatedContainersOnHost) {
         final ContainerNodeSpec nodeSpec = lastNodeSpec;
-        if (nodeSpec == null) return;
+        if (nodeSpec == null || containerState == ABSENT) return;
+
+        Optional<Docker.ContainerStats> containerStats = dockerOperations.getContainerStats(containerName);
+        if (!containerStats.isPresent()) return;
 
         Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
                 .add("host", hostname)
@@ -530,14 +534,6 @@ public class NodeAgentImpl implements NodeAgent {
                         .add("clustertype", membership.clusterType)
                         .add("clusterid", membership.clusterId));
         Dimensions dimensions = dimensionsBuilder.build();
-        metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_NODE, dimensions, "alive").sample(1);
-        // TODO: REMOVE
-        metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "node.alive").sample(1);
-
-        // The remaining metrics require container to exists and be running
-        if (containerState == ABSENT) return;
-        Optional<Docker.ContainerStats> containerStats = dockerOperations.getContainerStats(containerName);
-        if (!containerStats.isPresent()) return;
 
         Docker.ContainerStats stats = containerStats.get();
         final String APP = MetricReceiverWrapper.APPLICATION_NODE;
@@ -560,24 +556,30 @@ public class NodeAgentImpl implements NodeAgent {
         double memoryPercentUsed = 100.0 * memoryTotalBytesUsed / memoryTotalBytes;
         Optional<Double> diskPercentUsed = diskTotalBytes.flatMap(total -> diskTotalBytesUsed.map(used -> 100.0 * used / total));
 
-        metricReceiver.declareGauge(APP, dimensions, "cpu.util").sample(cpuPercentageOfAllocated);
-        metricReceiver.declareGauge(APP, dimensions, "mem.limit").sample(memoryTotalBytes);
-        metricReceiver.declareGauge(APP, dimensions, "mem.used").sample(memoryTotalBytesUsed);
-        metricReceiver.declareGauge(APP, dimensions, "mem.util").sample(memoryPercentUsed);
-        diskTotalBytes.ifPresent(diskLimit -> metricReceiver.declareGauge(APP, dimensions, "disk.limit").sample(diskLimit));
-        diskTotalBytesUsed.ifPresent(diskUsed -> metricReceiver.declareGauge(APP, dimensions, "disk.used").sample(diskUsed));
-        diskPercentUsed.ifPresent(diskUtil -> metricReceiver.declareGauge(APP, dimensions, "disk.util").sample(diskUtil));
+        List<DimensionMetrics> metrics = new ArrayList<>();
+        DimensionMetrics.Builder systemMetricsBuilder = new DimensionMetrics.Builder(APP, dimensions)
+                .withMetric("cpu.util", cpuPercentageOfAllocated)
+                .withMetric("mem.limit", memoryTotalBytes)
+                .withMetric("mem.used", memoryTotalBytesUsed)
+                .withMetric("mem.util", memoryPercentUsed);
+
+        diskTotalBytes.ifPresent(diskLimit -> systemMetricsBuilder.withMetric("disk.limit", diskLimit));
+        diskTotalBytesUsed.ifPresent(diskUsed -> systemMetricsBuilder.withMetric("disk.used", diskUsed));
+        diskPercentUsed.ifPresent(diskUtil -> systemMetricsBuilder.withMetric("disk.util", diskUtil));
+        metrics.add(systemMetricsBuilder.build());
 
         stats.getNetworks().forEach((interfaceName, interfaceStats) -> {
             Dimensions netDims = dimensionsBuilder.add("interface", interfaceName).build();
             Map<String, Number> infStats = (Map<String, Number>) interfaceStats;
-
-            metricReceiver.declareGauge(APP, netDims, "net.in.bytes").sample(infStats.get("rx_bytes").longValue());
-            metricReceiver.declareGauge(APP, netDims, "net.in.errors").sample(infStats.get("rx_errors").longValue());
-            metricReceiver.declareGauge(APP, netDims, "net.in.dropped").sample(infStats.get("rx_dropped").longValue());
-            metricReceiver.declareGauge(APP, netDims, "net.out.bytes").sample(infStats.get("tx_bytes").longValue());
-            metricReceiver.declareGauge(APP, netDims, "net.out.errors").sample(infStats.get("tx_errors").longValue());
-            metricReceiver.declareGauge(APP, netDims, "net.out.dropped").sample(infStats.get("tx_dropped").longValue());
+            DimensionMetrics networkMetrics = new DimensionMetrics.Builder(APP, netDims)
+                    .withMetric("net.in.bytes", infStats.get("rx_bytes").longValue())
+                    .withMetric("net.in.errors", infStats.get("rx_errors").longValue())
+                    .withMetric("net.in.dropped", infStats.get("rx_dropped").longValue())
+                    .withMetric("net.out.bytes", infStats.get("tx_bytes").longValue())
+                    .withMetric("net.out.errors", infStats.get("tx_errors").longValue())
+                    .withMetric("net.out.dropped", infStats.get("tx_dropped").longValue())
+                    .build();
+            metrics.add(networkMetrics);
         });
 
 
@@ -609,20 +611,22 @@ public class NodeAgentImpl implements NodeAgent {
                 metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "node.disk.used").sample(diskUsed));
         // TODO END REMOVE
 
-        // Push metrics to the metrics proxy in each container - give it maximum 1 seconds to complete
-        try {
-            dockerOperations.executeCommandInContainerAsRoot(containerName, 1L, "rpc_invoke",  "-t 1",  "tcp/localhost:19091",  "setExtraMetrics", buildRPCArgumentFromMetrics());
-        } catch (DockerExecTimeoutException|JsonProcessingException e) {
-            logger.warning("Unable to push metrics to container: " + containerName, e);
-        }
+        pushMetricsToContainer(metrics);
     }
 
-    protected String buildRPCArgumentFromMetrics() throws JsonProcessingException {
+    private void pushMetricsToContainer(List<DimensionMetrics> metrics) {
         StringBuilder params = new StringBuilder();
-        for (MetricReceiverWrapper.DimensionMetrics dimensionMetrics : metricReceiver.getAllMetrics()) {
-            params.append(dimensionMetrics.toSecretAgentReport());
+        try {
+            for (DimensionMetrics dimensionMetrics : metrics) {
+                params.append(dimensionMetrics.toSecretAgentReport());
+            }
+            String wrappedMetrics = "s:'" + params.toString() + "'";
+
+            // Push metrics to the metrics proxy in each container - give it maximum 1 seconds to complete
+            dockerOperations.executeCommandInContainerAsRoot(containerName, 5L, "rpc_invoke",  "-t", "1",  "tcp/localhost:19091",  "setExtraMetrics", wrappedMetrics);
+        } catch (DockerExecTimeoutException | JsonProcessingException  e) {
+            logger.warning("Unable to push metrics to container: " + containerName, e);
         }
-        return "s:'" + params.toString() + "'";
     }
 
     @SuppressWarnings("unchecked")
