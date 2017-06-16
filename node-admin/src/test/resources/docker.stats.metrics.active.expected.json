@@ -1,35 +1,5 @@
 [
     {
-        "application": "host_life",
-        "dimensions": {
-            "flavor": "docker",
-            "instanceName": "testinstance",
-            "applicationId": "tester.testapp.testinstance",
-            "applicationName": "testapp",
-            "app": "testapp.testinstance",
-            "clustertype": "clustType",
-            "role": "tenants",
-            "tenantName": "tester",
-            "zone": "dev.us-east-1",
-            "host": "host1.test.yahoo.com",
-            "vespaVersion": "1.2.3",
-            "state": "active",
-            "clusterid": "clustId",
-            "parentHostname": "parent.host.name.yahoo.com"
-        },
-        "metrics": {
-            "alive": 1.0,
-            "uptime": 1234.0
-        },
-        "routing": {
-            "yamas": {
-                "namespaces": [
-                    "Vespa"
-                ]
-            }
-        }
-    },
-    {
         "application": "vespa.node",
         "dimensions": {
             "flavor": "docker",

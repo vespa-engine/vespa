@@ -609,9 +609,6 @@ public class NodeAgentImpl implements NodeAgent {
                 metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "node.disk.used").sample(diskUsed));
         // TODO END REMOVE
 
-        metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_HOST_LIFE, dimensions, "uptime").sample(lastCpuMetric.getUptime());
-        metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_HOST_LIFE, dimensions, "alive").sample(1);
-
         // Push metrics to the metrics proxy in each container - give it maximum 1 seconds to complete
         try {
             dockerOperations.executeCommandInContainerAsRoot(containerName, 1L, "rpc_invoke",  "-t 1",  "tcp/localhost:19091",  "setExtraMetrics", buildRPCArgumentFromMetrics());
