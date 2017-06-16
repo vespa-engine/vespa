@@ -204,6 +204,21 @@ ZcRareWordPostingIterator<bigEndian>::readWordStart(uint32_t docIdLimit)
     clearUnpacked();
 }
 
+ZcPostingIteratorBase::ZcPostingIteratorBase(const TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit)
+    : ZcIteratorBase(matchData, start, docIdLimit),
+      _valI(NULL),
+      _valIBase(NULL),
+      _featureSeekPos(0),
+      _l1(),
+      _l2(),
+      _l3(),
+      _l4(),
+      _chunk(),
+      _featuresSize(0),
+      _hasMore(false),
+      _chunkNo(0)
+{
+}
 
 template <bool bigEndian>
 ZcPostingIterator<bigEndian>::
@@ -212,44 +227,12 @@ ZcPostingIterator(uint32_t minChunkDocs,
                   const PostingListCounts &counts,
                   const search::fef::TermFieldMatchDataArray &matchData,
                   Position start, uint32_t docIdLimit)
-    : ZcIteratorBase(matchData, start, docIdLimit),
-      _valI(NULL),
-      _lastDocId(0),
-      _l1SkipDocId(0),
-      _l2SkipDocId(0),
-      _l3SkipDocId(0),
-      _l4SkipDocId(0),
-      _l1SkipDocIdPos(NULL),
-      _l1SkipValI(NULL),
-      _l1SkipFeaturePos(0),
-      _valIBase(NULL),
-      _l1SkipValIBase(NULL),
-      _l2SkipDocIdPos(NULL),
-      _l2SkipValI(NULL),
-      _l2SkipFeaturePos(0),
-      _l2SkipL1SkipPos(NULL),
-      _l2SkipValIBase(NULL),
-      _l3SkipDocIdPos(NULL),
-      _l3SkipValI(NULL),
-      _l3SkipFeaturePos(0),
-      _l3SkipL1SkipPos(NULL),
-      _l3SkipL2SkipPos(NULL),
-      _l3SkipValIBase(NULL),
-      _l4SkipDocIdPos(NULL),
-      _l4SkipValI(NULL),
-      _l4SkipFeaturePos(0),
-      _l4SkipL1SkipPos(NULL),
-      _l4SkipL2SkipPos(NULL),
-      _l4SkipL3SkipPos(NULL),
+    : ZcPostingIteratorBase(matchData, start, docIdLimit),
       _decodeContext(NULL),
       _minChunkDocs(minChunkDocs),
       _docIdK(0),
-      _hasMore(false),
       _dynamicK(dynamicK),
-      _chunkNo(0),
       _numDocs(0),
-      _featuresSize(0),
-      _featureSeekPos(0),
       _featuresValI(NULL),
       _featuresBitOffset(0),
       _counts(counts)
@@ -266,7 +249,7 @@ ZcPostingIterator<bigEndian>::readWordStart(uint32_t docIdLimit)
     uint32_t length;
     uint64_t val64;
 
-    uint32_t prevDocId = _hasMore ? _lastDocId : 0u;
+    uint32_t prevDocId = _hasMore ? _chunk._lastDocId : 0u;
     UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_NUMDOCS, EC);
 
     _numDocs = static_cast<uint32_t>(val64) + 1;
@@ -311,10 +294,10 @@ ZcPostingIterator<bigEndian>::readWordStart(uint32_t docIdLimit)
     } else {
         UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_LASTDOCID, EC);
     }
-    _lastDocId = docIdLimit - 1 - val64;
+    _chunk._lastDocId = docIdLimit - 1 - val64;
     if (_hasMore || hasMore) {
         if (!_counts._segments.empty()) {
-            assert(_lastDocId == _counts._segments[_chunkNo]._lastDoc);
+            assert(_chunk._lastDocId == _counts._segments[_chunkNo]._lastDoc);
         }
     }
 
@@ -328,316 +311,243 @@ ZcPostingIterator<bigEndian>::readWordStart(uint32_t docIdLimit)
     assert((d.getBitOffset() & 7) == 0);
     const uint8_t *bcompr = d.getByteCompr();
     _valIBase = _valI = bcompr;
-    _l1SkipDocIdPos = _l2SkipDocIdPos = bcompr;
-    _l3SkipDocIdPos = _l4SkipDocIdPos = bcompr;
     bcompr += docIdsSize;
-    if (l1SkipSize != 0) {
-        _l1SkipValIBase = _l1SkipValI = bcompr;
-        _l2SkipL1SkipPos = _l3SkipL1SkipPos = _l4SkipL1SkipPos = bcompr;
-        bcompr += l1SkipSize;
-    } else {
-        _l1SkipValIBase = _l1SkipValI = NULL;
-        _l2SkipL1SkipPos = _l3SkipL1SkipPos = _l4SkipL1SkipPos = NULL;
-    }
-    if (l2SkipSize != 0) {
-        _l2SkipValIBase = _l2SkipValI = bcompr;
-        _l3SkipL2SkipPos = _l4SkipL2SkipPos = bcompr;
-        bcompr += l2SkipSize;
-    } else {
-        _l2SkipValIBase = _l2SkipValI = NULL;
-        _l3SkipL2SkipPos = _l4SkipL2SkipPos = NULL;
-    }
-    if (l3SkipSize != 0) {
-        _l3SkipValIBase = _l3SkipValI = bcompr;
-        _l4SkipL3SkipPos = bcompr;
-        bcompr += l3SkipSize;
-    } else {
-        _l3SkipValIBase = _l3SkipValI = NULL;
-        _l4SkipL3SkipPos = NULL;
-    }
-    if (l4SkipSize != 0) {
-        _l4SkipValI = bcompr;
-        bcompr += l4SkipSize;
-    } else {
-        _l4SkipValI = NULL;
-    }
+    _l1.setup(prevDocId, _chunk._lastDocId, bcompr, l1SkipSize);
+    _l2.setup(prevDocId, _chunk._lastDocId, bcompr, l2SkipSize);
+    _l3.setup(prevDocId, _chunk._lastDocId, bcompr, l3SkipSize);
+    _l4.setup(prevDocId, _chunk._lastDocId, bcompr, l4SkipSize);
+    _l1.postSetup(*this);
+    _l2.postSetup(_l1);
+    _l3.postSetup(_l2);
+    _l4.postSetup(_l3);
     d.setByteCompr(bcompr);
     _hasMore = hasMore;
     // Save information about start of next chunk
     _featuresValI = d.getCompr();
     _featuresBitOffset = d.getBitOffset();
-    _l1SkipFeaturePos = _l2SkipFeaturePos = 0;
-    _l3SkipFeaturePos = _l4SkipFeaturePos = 0;
     _featureSeekPos = 0;
     clearUnpacked();
     // Unpack first docid delta in chunk
-    uint32_t oDocId = prevDocId;
-    ZCDECODE(_valI, oDocId += 1 +);
+    nextDocId(prevDocId);
 #if DEBUG_ZCPOSTING_PRINTF
-    printf("Decode docId=%d\n",
-           oDocId);
+    printf("Decode docId=%d\n", getDocId());
 #endif
-    setDocId(oDocId);
-    // Unpack first L1 Skip info docid delta
-    if (_l1SkipValI != NULL) {
-        _l1SkipDocId = prevDocId;
-        ZCDECODE(_l1SkipValI, _l1SkipDocId += 1 +);
-    } else
-        _l1SkipDocId = _lastDocId;
-    // Unpack first L2 skip info docid delta
-    if (_l2SkipValI != NULL) {
-        _l2SkipDocId = prevDocId;
-        ZCDECODE(_l2SkipValI, _l2SkipDocId += 1 +);
-    } else
-        _l2SkipDocId = _lastDocId;
-    // Unpack first L3 skip info docid delta
-    if (_l3SkipValI != NULL) {
-        _l3SkipDocId = prevDocId;
-        ZCDECODE(_l3SkipValI, _l3SkipDocId += 1 +);
-    } else
-        _l3SkipDocId = _lastDocId;
-    // Unpack first L4 skip info docid delta
-    if (_l4SkipValI != NULL) {
-        _l4SkipDocId = prevDocId;
-        ZCDECODE(_l4SkipValI, _l4SkipDocId += 1 +);
-    } else
-        _l4SkipDocId = _lastDocId;
 }
 
 
-template <bool bigEndian>
 void
-ZcPostingIterator<bigEndian>::doChunkSkipSeek(uint32_t docId)
+ZcPostingIteratorBase::doChunkSkipSeek(uint32_t docId)
 {
-    while (docId > _lastDocId && _hasMore) {
+    while (docId > _chunk._lastDocId && _hasMore) {
         // Skip to start of next chunk
         _featureSeekPos = 0;
         featureSeek(_featuresSize);
         _chunkNo++;
         readWordStart(getDocIdLimit());	// Read word start for next chunk
     }
-    if (docId > _lastDocId) {
-        _l4SkipDocId = _l3SkipDocId = _l2SkipDocId = _l1SkipDocId = search::endDocId;
+    if (docId > _chunk._lastDocId) {
+        _l4._skipDocId = _l3._skipDocId = _l2._skipDocId = _l1._skipDocId = search::endDocId;
         setAtEnd();
     }
 }
 
 
-template <bool bigEndian>
 void
-ZcPostingIterator<bigEndian>::doL4SkipSeek(uint32_t docId)
+ZcPostingIteratorBase::doL4SkipSeek(uint32_t docId)
 {
     uint32_t lastL4SkipDocId;
 
-    if (__builtin_expect(docId > _lastDocId, false)) {
+    if (__builtin_expect(docId > _chunk._lastDocId, false)) {
         doChunkSkipSeek(docId);
-        if (docId <= _l4SkipDocId)
+        if (docId <= _l4._skipDocId)
             return;
     }
     do {
-        lastL4SkipDocId = _l4SkipDocId;
-        ZCDECODE(_l4SkipValI, _l4SkipDocIdPos += 1 +);
-        ZCDECODE(_l4SkipValI, _l4SkipFeaturePos += 1 +);
-        ZCDECODE(_l4SkipValI, _l4SkipL1SkipPos += 1 + );
-        ZCDECODE(_l4SkipValI, _l4SkipL2SkipPos += 1 + );
-        ZCDECODE(_l4SkipValI, _l4SkipL3SkipPos += 1 + );
-        ZCDECODE(_l4SkipValI, _l4SkipDocId += 1 + );
+        lastL4SkipDocId = _l4._skipDocId;
+        _l4.decodeSkipEntry();
+        _l4.nextDocId();
 #if DEBUG_ZCPOSTING_PRINTF
         printf("L4Decode docId %d, docIdPos %d,"
                "l1SkipPos %d, l2SkipPos %d, l3SkipPos %d, nextDocId %d\n",
                lastL4SkipDocId,
-               (int) (_l4SkipDocIdPos - _valIBase),
-               (int) (_l4SkipL1SkipPos - _l1SkipValIBase),
-               (int) (_l4SkipL2SkipPos - _l2SkipValIBase),
-               (int) (_l4SkipL3SkipPos - _l3SkipValIBase),
-               _l4SkipDocId);
+               (int) (_l4._docIdPos - _valIBase),
+               (int) (_l4._l1Pos - _l1._valIBase),
+               (int) (_l4._l2Pos - _l2._valIBase),
+               (int) (_l4._l3Pos - _l3._valIBase),
+               _l4._skipDocId);
 #endif
-    } while (docId > _l4SkipDocId);
-    _valI = _l1SkipDocIdPos = _l2SkipDocIdPos = _l3SkipDocIdPos =
-            _l4SkipDocIdPos;
-    _l1SkipFeaturePos = _l2SkipFeaturePos = _l3SkipFeaturePos =
-                        _l4SkipFeaturePos;
-    _l1SkipDocId = _l2SkipDocId = _l3SkipDocId = lastL4SkipDocId;
-    _l1SkipValI = _l2SkipL1SkipPos = _l3SkipL1SkipPos = _l4SkipL1SkipPos;
-    _l2SkipValI = _l3SkipL2SkipPos = _l4SkipL2SkipPos;
-    _l3SkipValI = _l4SkipL3SkipPos;
-    ZCDECODE(_valI, lastL4SkipDocId += 1 +);
-    ZCDECODE(_l1SkipValI, _l1SkipDocId += 1 +);
-    ZCDECODE(_l2SkipValI, _l2SkipDocId += 1 +);
-    ZCDECODE(_l3SkipValI, _l3SkipDocId += 1 +);
+    } while (docId > _l4._skipDocId);
+    _valI = _l1._docIdPos = _l2._docIdPos = _l3._docIdPos =
+            _l4._docIdPos;
+    _l1._skipFeaturePos = _l2._skipFeaturePos = _l3._skipFeaturePos =
+                        _l4._skipFeaturePos;
+    _l1._skipDocId = _l2._skipDocId = _l3._skipDocId = lastL4SkipDocId;
+    _l1._valI = _l2._l1Pos = _l3._l1Pos = _l4._l1Pos;
+    _l2._valI = _l3._l2Pos = _l4._l2Pos;
+    _l3._valI = _l4._l3Pos;
+    nextDocId(lastL4SkipDocId);
+    _l1.nextDocId();
+    _l2.nextDocId();
+    _l3.nextDocId();
 #if DEBUG_ZCPOSTING_PRINTF
     printf("L4Seek, docId %d docIdPos %d"
            " L1SkipPos %d L2SkipPos %d L3SkipPos %d, nextDocId %d\n",
            lastL4SkipDocId,
-           (int) (_l4SkipDocIdPos - _valIBase),
-           (int) (_l4SkipL1SkipPos - _l1SkipValIBase),
-           (int) (_l4SkipL2SkipPos - _l2SkipValIBase),
-           (int) (_l4SkipL3SkipPos - _l3SkipValIBase),
-           _l4SkipDocId);
+           (int) (_l4._docIdPos - _valIBase),
+           (int) (_l4._l1Pos - _l1._valIBase),
+           (int) (_l4._l2Pos - _l2._valIBase),
+           (int) (_l4._l3Pos - _l3._valIBase),
+           _l4._skipDocId);
 #endif
-    setDocId(lastL4SkipDocId);
-    _featureSeekPos = _l4SkipFeaturePos;
+    _featureSeekPos = _l4._skipFeaturePos;
     clearUnpacked();
 }
 
 
-template <bool bigEndian>
 void
-ZcPostingIterator<bigEndian>::doL3SkipSeek(uint32_t docId)
+ZcPostingIteratorBase::doL3SkipSeek(uint32_t docId)
 {
     uint32_t lastL3SkipDocId;
 
-    if (__builtin_expect(docId > _l4SkipDocId, false)) {
+    if (__builtin_expect(docId > _l4._skipDocId, false)) {
         doL4SkipSeek(docId);
-        if (docId <= _l3SkipDocId)
+        if (docId <= _l3._skipDocId)
             return;
     }
     do {
-        lastL3SkipDocId = _l3SkipDocId;
-        ZCDECODE(_l3SkipValI, _l3SkipDocIdPos += 1 +);
-        ZCDECODE(_l3SkipValI, _l3SkipFeaturePos += 1 +);
-        ZCDECODE(_l3SkipValI, _l3SkipL1SkipPos += 1 + );
-        ZCDECODE(_l3SkipValI, _l3SkipL2SkipPos += 1 + );
-        ZCDECODE(_l3SkipValI, _l3SkipDocId += 1 + );
+        lastL3SkipDocId = _l3._skipDocId;
+        _l3.decodeSkipEntry();
+        _l3.nextDocId();
 #if DEBUG_ZCPOSTING_PRINTF
         printf("L3Decode docId %d, docIdPos %d,"
                "l1SkipPos %d, l2SkipPos %d, nextDocId %d\n",
                lastL3SkipDocId,
-               (int) (_l3SkipDocIdPos - _valIBase),
-               (int) (_l3SkipL1SkipPos - _l1SkipValIBase),
-               (int) (_l3SkipL2SkipPos - _l2SkipValIBase),
-               _l3SkipDocId);
+               (int) (_l3._docIdPos - _valIBase),
+               (int) (_l3._l1Pos - _l1._valIBase),
+               (int) (_l3._l2Pos - _l2._valIBase),
+               _l3._skipDocId);
 #endif
-    } while (docId > _l3SkipDocId);
-    _valI = _l1SkipDocIdPos = _l2SkipDocIdPos = _l3SkipDocIdPos;
-    _l1SkipFeaturePos = _l2SkipFeaturePos = _l3SkipFeaturePos;
-    _l1SkipDocId = _l2SkipDocId = lastL3SkipDocId;
-    _l1SkipValI = _l2SkipL1SkipPos = _l3SkipL1SkipPos;
-    _l2SkipValI = _l3SkipL2SkipPos;
-    ZCDECODE(_valI, lastL3SkipDocId += 1 +);
-    ZCDECODE(_l1SkipValI, _l1SkipDocId += 1 +);
-    ZCDECODE(_l2SkipValI, _l2SkipDocId += 1 +);
+    } while (docId > _l3._skipDocId);
+    _valI = _l1._docIdPos = _l2._docIdPos = _l3._docIdPos;
+    _l1._skipFeaturePos = _l2._skipFeaturePos = _l3._skipFeaturePos;
+    _l1._skipDocId = _l2._skipDocId = lastL3SkipDocId;
+    _l1._valI = _l2._l1Pos = _l3._l1Pos;
+    _l2._valI = _l3._l2Pos;
+    nextDocId(lastL3SkipDocId);
+    _l1.nextDocId();
+    _l2.nextDocId();
 #if DEBUG_ZCPOSTING_PRINTF
     printf("L3Seek, docId %d docIdPos %d"
            " L1SkipPos %d L2SkipPos %d, nextDocId %d\n",
            lastL3SkipDocId,
-           (int) (_l3SkipDocIdPos - _valIBase),
-           (int) (_l3SkipL1SkipPos - _l1SkipValIBase),
-           (int) (_l3SkipL2SkipPos - _l2SkipValIBase),
-           _l3SkipDocId);
+           (int) (_l3._docIdPos - _valIBase),
+           (int) (_l3._l1Pos - _l1._valIBase),
+           (int) (_l3._l2Pos - _l2._valIBase),
+           _l3._skipDocId);
 #endif
-    setDocId(lastL3SkipDocId);
-    _featureSeekPos = _l3SkipFeaturePos;
+    _featureSeekPos = _l3._skipFeaturePos;
     clearUnpacked();
 }
 
 
-template <bool bigEndian>
 void
-ZcPostingIterator<bigEndian>::doL2SkipSeek(uint32_t docId)
+ZcPostingIteratorBase::doL2SkipSeek(uint32_t docId)
 {
     uint32_t lastL2SkipDocId;
 
-    if (__builtin_expect(docId > _l3SkipDocId, false)) {
+    if (__builtin_expect(docId > _l3._skipDocId, false)) {
         doL3SkipSeek(docId);
-        if (docId <= _l2SkipDocId)
+        if (docId <= _l2._skipDocId)
             return;
     }
     do {
-        lastL2SkipDocId = _l2SkipDocId;
-        ZCDECODE(_l2SkipValI, _l2SkipDocIdPos += 1 +);
-        ZCDECODE(_l2SkipValI, _l2SkipFeaturePos += 1 +);
-        ZCDECODE(_l2SkipValI, _l2SkipL1SkipPos += 1 + );
-        ZCDECODE(_l2SkipValI, _l2SkipDocId += 1 + );
+        lastL2SkipDocId = _l2._skipDocId;
+        _l2.decodeSkipEntry();
+        _l2.nextDocId();
 #if DEBUG_ZCPOSTING_PRINTF
         printf("L2Decode docId %d, docIdPos %d, l1SkipPos %d, nextDocId %d\n",
                lastL2SkipDocId,
-               (int) (_l2SkipDocIdPos - _valIBase),
-               (int) (_l2SkipL1SkipPos - _l1SkipValIBase),
-               _l2SkipDocId);
+               (int) (_l2._docIdPos - _valIBase),
+               (int) (_l2._l1Pos - _l1._valIBase),
+               _l2._skipDocId);
 #endif
-    } while (docId > _l2SkipDocId);
-    _valI = _l1SkipDocIdPos = _l2SkipDocIdPos;
-    _l1SkipFeaturePos = _l2SkipFeaturePos;
-    _l1SkipDocId = lastL2SkipDocId;
-    _l1SkipValI = _l2SkipL1SkipPos;
-    ZCDECODE(_valI, lastL2SkipDocId += 1 +);
-    ZCDECODE(_l1SkipValI, _l1SkipDocId += 1 +);
+    } while (docId > _l2._skipDocId);
+    _valI = _l1._docIdPos = _l2._docIdPos;
+    _l1._skipFeaturePos = _l2._skipFeaturePos;
+    _l1._skipDocId = lastL2SkipDocId;
+    _l1._valI = _l2._l1Pos;
+    nextDocId(lastL2SkipDocId);
+    _l1.nextDocId();
 #if DEBUG_ZCPOSTING_PRINTF
     printf("L2Seek, docId %d docIdPos %d L1SkipPos %d, nextDocId %d\n",
            lastL2SkipDocId,
-           (int) (_l2SkipDocIdPos - _valIBase),
-           (int) (_l2SkipL1SkipPos - _l1SkipValIBase),
-           _l2SkipDocId);
+           (int) (_l2._docIdPos - _valIBase),
+           (int) (_l2._l1Pos - _l1._valIBase),
+           _l2._skipDocId);
 #endif
-    setDocId(lastL2SkipDocId);
-    _featureSeekPos = _l2SkipFeaturePos;
+    _featureSeekPos = _l2._skipFeaturePos;
     clearUnpacked();
 }
 
 
-template <bool bigEndian>
 void
-ZcPostingIterator<bigEndian>::doL1SkipSeek(uint32_t docId)
+ZcPostingIteratorBase::doL1SkipSeek(uint32_t docId)
 {
     uint32_t lastL1SkipDocId;
-    if (__builtin_expect(docId > _l2SkipDocId, false)) {
+    if (__builtin_expect(docId > _l2._skipDocId, false)) {
         doL2SkipSeek(docId);
-        if (docId <= _l1SkipDocId)
+        if (docId <= _l1._skipDocId)
             return;
     }
     do {
-        lastL1SkipDocId = _l1SkipDocId;
-        ZCDECODE(_l1SkipValI, _l1SkipDocIdPos += 1 +);
-        ZCDECODE(_l1SkipValI, _l1SkipFeaturePos += 1 +);
-        ZCDECODE(_l1SkipValI, _l1SkipDocId += 1 +);
+        lastL1SkipDocId = _l1._skipDocId;
+        _l1.decodeSkipEntry();
+        _l1.nextDocId();
 #if DEBUG_ZCPOSTING_PRINTF
         printf("L1Decode docId %d, docIdPos %d, L1SkipPos %d, nextDocId %d\n",
                lastL1SkipDocId,
-               (int) (_l1SkipDocIdPos - _valIBase),
-               (int) (_l1SkipValI - _l1SkipValIBase),
-                _l1SkipDocId);
+               (int) (_l1._docIdPos - _valIBase),
+               (int) (_l1._valI - _l1._valIBase),
+                _l1._skipDocId);
 #endif
-    } while (docId > _l1SkipDocId);
-    _valI = _l1SkipDocIdPos;
-    ZCDECODE(_valI, lastL1SkipDocId += 1 +);
-    setDocId(lastL1SkipDocId);
+    } while (docId > _l1._skipDocId);
+    _valI = _l1._docIdPos;
+    nextDocId(lastL1SkipDocId);
 #if DEBUG_ZCPOSTING_PRINTF
     printf("L1SkipSeek, docId %d docIdPos %d, nextDocId %d\n",
            lastL1SkipDocId,
-           (int) (_l1SkipDocIdPos - _valIBase),
-           _l1SkipDocId);
+           (int) (_l1._docIdPos - _valIBase),
+           _l1._skipDocId);
 #endif
-    _featureSeekPos = _l1SkipFeaturePos;
+    _featureSeekPos = _l1._skipFeaturePos;
     clearUnpacked();
 }
 
 
-template <bool bigEndian>
 void
-ZcPostingIterator<bigEndian>::doSeek(uint32_t docId)
+ZcPostingIteratorBase::doSeek(uint32_t docId)
 {
-    if (docId > _l1SkipDocId) {
+    if (docId > _l1._skipDocId) {
         doL1SkipSeek(docId);
     }
     uint32_t oDocId = getDocId();
 #if DEBUG_ZCPOSTING_ASSERT
-    assert(oDocId <= _l1SkipDocId);
-    assert(docId <= _l1SkipDocId);
-    assert(oDocId <= _l2SkipDocId);
-    assert(docId <= _l2SkipDocId);
-    assert(oDocId <= _l3SkipDocId);
-    assert(docId <= _l3SkipDocId);
-    assert(oDocId <= _l4SkipDocId);
-    assert(docId <= _l4SkipDocId);
+    assert(oDocId <= _l1._skipDocId);
+    assert(docId <= _l1._skipDocId);
+    assert(oDocId <= _l2._skipDocId);
+    assert(docId <= _l2._skipDocId);
+    assert(oDocId <= _l3._skipDocId);
+    assert(docId <= _l3._skipDocId);
+    assert(oDocId <= _l4._skipDocId);
+    assert(docId <= _l4._skipDocId);
 #endif
     const uint8_t *oCompr = _valI;
     while (__builtin_expect(oDocId < docId, true)) {
 #if DEBUG_ZCPOSTING_ASSERT
-        assert(oDocId <= _l1SkipDocId);
-        assert(oDocId <= _l2SkipDocId);
-        assert(oDocId <= _l3SkipDocId);
-        assert(oDocId <= _l4SkipDocId);
+        assert(oDocId <= _l1._skipDocId);
+        assert(oDocId <= _l2._skipDocId);
+        assert(oDocId <= _l3._skipDocId);
+        assert(oDocId <= _l4._skipDocId);
 #endif
         ZCDECODE(oCompr, oDocId += 1 +);
 #if DEBUG_ZCPOSTING_PRINTF
@@ -676,7 +586,7 @@ void ZcPostingIterator<bigEndian>::rewind(Position start)
 {
     _decodeContext->setPosition(start);
     _hasMore = false;
-    _lastDocId = 0;
+    _chunk._lastDocId = 0;
     _chunkNo = 0;
 }
 

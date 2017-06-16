@@ -103,43 +103,170 @@ public:
 };
 
 
+class ZcPostingIteratorBase : public ZcIteratorBase
+{
+protected:
+    const uint8_t *_valI;     // docid deltas
+    const uint8_t *_valIBase; // start of docid deltas
+    uint64_t _featureSeekPos;
+
+    // Helper class for L1 skip info
+    class L1Skip
+    {
+    public:
+        uint32_t _skipDocId;
+        const uint8_t *_valI;
+        const uint8_t *_docIdPos;
+        uint64_t _skipFeaturePos;
+        const uint8_t *_valIBase;
+
+        L1Skip()
+            : _skipDocId(0),
+              _valI(nullptr),
+              _docIdPos(nullptr),
+              _skipFeaturePos(0),
+              _valIBase(nullptr)
+        {
+        }
+
+        void setup(uint32_t prevDocId, uint32_t lastDocId, const uint8_t *&bcompr, uint32_t skipSize) {
+            if (skipSize != 0) {
+                _valI = _valIBase = bcompr;
+                bcompr += skipSize;
+                _skipDocId = prevDocId + 1;
+                ZCDECODE(_valI, _skipDocId +=);
+            } else {
+                _valI = _valIBase = nullptr;
+                _skipDocId = lastDocId;
+            }
+            _skipFeaturePos = 0;
+        }
+        void postSetup(const ZcPostingIteratorBase &l0) {
+            _docIdPos = l0._valIBase;
+        }
+        void decodeSkipEntry() {
+            ZCDECODE(_valI, _docIdPos += 1 +);
+            ZCDECODE(_valI, _skipFeaturePos += 1 +);
+        }
+        void nextDocId() {
+            ZCDECODE(_valI, _skipDocId += 1 +);
+        }
+    };
+
+    // Helper class for L2 skip info
+    class L2Skip : public L1Skip
+    {
+    public:
+        const uint8_t *_l1Pos;
+
+        L2Skip()
+            : L1Skip(),
+              _l1Pos(nullptr)
+        {
+        }
+
+        void postSetup(const L1Skip &l1) {
+            _docIdPos = l1._docIdPos;
+            _l1Pos = l1._valIBase;
+        }
+        void decodeSkipEntry() {
+            L1Skip::decodeSkipEntry();
+            ZCDECODE(_valI, _l1Pos += 1 + );
+        }
+    };
+
+    // Helper class for L3 skip info
+    class L3Skip : public L2Skip
+    {
+    public:
+        const uint8_t *_l2Pos;
+
+        L3Skip()
+            : L2Skip(),
+              _l2Pos(nullptr)
+        {
+        }
+
+        void postSetup(const L2Skip &l2) {
+            _docIdPos = l2._docIdPos;
+            _l1Pos = l2._l1Pos;
+            _l2Pos = l2._valIBase;
+        }
+        void decodeSkipEntry() {
+            L2Skip::decodeSkipEntry();
+            ZCDECODE(_valI, _l2Pos += 1 + );
+        }
+    };
+
+    // Helper class for L4 skip info
+    class L4Skip : public L3Skip
+    {
+    public:
+        const uint8_t *_l3Pos;
+
+        L4Skip()
+            : L3Skip(),
+              _l3Pos(nullptr)
+        {
+        }
+
+        void postSetup(const L3Skip &l3) {
+            _docIdPos = l3._docIdPos;
+            _l1Pos = l3._l1Pos;
+            _l2Pos = l3._l2Pos;
+            _l3Pos = l3._valIBase;
+        }
+
+        void decodeSkipEntry() {
+            L3Skip::decodeSkipEntry();
+            ZCDECODE(_valI, _l3Pos += 1 + );
+        }
+    };
+
+    // Helper class for chunk skip info
+    class ChunkSkip {
+    public:
+        uint32_t _lastDocId;
+
+        ChunkSkip()
+            : _lastDocId(0)
+        {
+        }
+    };
+
+    L1Skip _l1;
+    L2Skip _l2;
+    L3Skip _l3;
+    L4Skip _l4;
+    ChunkSkip _chunk;
+    uint64_t _featuresSize;
+    bool     _hasMore;
+    uint32_t _chunkNo;
+
+    void nextDocId(uint32_t prevDocId) {
+        uint32_t docId = prevDocId + 1;
+        ZCDECODE(_valI, docId +=);
+        setDocId(docId);
+    }
+    virtual void featureSeek(uint64_t offset) = 0;
+    VESPA_DLL_LOCAL void doChunkSkipSeek(uint32_t docId);
+    VESPA_DLL_LOCAL void doL4SkipSeek(uint32_t docId);
+    VESPA_DLL_LOCAL void doL3SkipSeek(uint32_t docId);
+    VESPA_DLL_LOCAL void doL2SkipSeek(uint32_t docId);
+    VESPA_DLL_LOCAL void doL1SkipSeek(uint32_t docId);
+    void doSeek(uint32_t docId) override;
+public:
+    ZcPostingIteratorBase(const fef::TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit);
+};
+
 template <bool bigEndian>
-class ZcPostingIterator : public ZcIteratorBase
+class ZcPostingIterator : public ZcPostingIteratorBase
 {
 private:
-    typedef ZcIteratorBase ParentClass;
+    typedef ZcPostingIteratorBase ParentClass;
     using ParentClass::getDocId;
 
 public:
-    // Pointer to compressed data
-    const uint8_t *_valI;
-    uint32_t _lastDocId;
-    uint32_t _l1SkipDocId;
-    uint32_t _l2SkipDocId;
-    uint32_t _l3SkipDocId;
-    uint32_t _l4SkipDocId;
-    const uint8_t *_l1SkipDocIdPos;
-    const uint8_t *_l1SkipValI;
-    uint64_t _l1SkipFeaturePos;
-    const uint8_t *_valIBase;
-    const uint8_t *_l1SkipValIBase;
-    const uint8_t *_l2SkipDocIdPos;
-    const uint8_t *_l2SkipValI;
-    uint64_t _l2SkipFeaturePos;
-    const uint8_t *_l2SkipL1SkipPos;
-    const uint8_t *_l2SkipValIBase;
-    const uint8_t *_l3SkipDocIdPos;
-    const uint8_t *_l3SkipValI;
-    uint64_t _l3SkipFeaturePos;
-    const uint8_t *_l3SkipL1SkipPos;
-    const uint8_t *_l3SkipL2SkipPos;
-    const uint8_t *_l3SkipValIBase;
-    const uint8_t *_l4SkipDocIdPos;
-    const uint8_t *_l4SkipValI;
-    uint64_t _l4SkipFeaturePos;
-    const uint8_t *_l4SkipL1SkipPos;
-    const uint8_t *_l4SkipL2SkipPos;
-    const uint8_t *_l4SkipL3SkipPos;
 
     typedef bitcompression::FeatureDecodeContext<bigEndian> DecodeContextBase;
     typedef index::DocIdAndFeatures DocIdAndFeatures;
@@ -147,12 +274,8 @@ public:
     DecodeContextBase *_decodeContext;
     uint32_t _minChunkDocs;
     uint32_t _docIdK;
-    bool     _hasMore;
     bool     _dynamicK;
-    uint32_t _chunkNo;
     uint32_t _numDocs;
-    uint64_t _featuresSize;
-    uint64_t _featureSeekPos;
     // Start of current features block, needed for seeks
     const uint64_t *_featuresValI;
     int _featuresBitOffset;
@@ -167,16 +290,10 @@ public:
 
 
     void doUnpack(uint32_t docId) override;
-    void doSeek(uint32_t docId) override;
     void readWordStart(uint32_t docIdLimit) override;
     void rewind(Position start) override;
-    VESPA_DLL_LOCAL void doChunkSkipSeek(uint32_t docId);
-    VESPA_DLL_LOCAL void doL4SkipSeek(uint32_t docId);
-    VESPA_DLL_LOCAL void doL3SkipSeek(uint32_t docId);
-    VESPA_DLL_LOCAL void doL2SkipSeek(uint32_t docId);
-    VESPA_DLL_LOCAL void doL1SkipSeek(uint32_t docId);
 
-    void featureSeek(uint64_t offset) {
+    virtual void featureSeek(uint64_t offset) override {
         _decodeContext->_valI = _featuresValI + (_featuresBitOffset + offset) / 64;
         _decodeContext->setupBits((_featuresBitOffset + offset) & 63);
     }
