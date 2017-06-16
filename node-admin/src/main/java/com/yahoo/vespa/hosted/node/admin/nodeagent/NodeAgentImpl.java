@@ -582,35 +582,6 @@ public class NodeAgentImpl implements NodeAgent {
             metrics.add(networkMetrics);
         });
 
-
-        // TODO: Remove when all alerts and dashboards have been updated to use new metric names
-        metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "node.cpu.busy.pct").sample(cpuPercentageOfAllocated);
-
-        addIfNotNull(dimensions, "node.cpu.throttled_time", stats.getCpuStats().get("throttling_data"), "throttled_time");
-        addIfNotNull(dimensions, "node.memory.limit", stats.getMemoryStats(), "limit");
-
-        long memoryUsageTotal = ((Number) stats.getMemoryStats().get("usage")).longValue();
-        long memoryUsageCache = ((Number) ((Map) stats.getMemoryStats().get("stats")).get("cache")).longValue();
-        long memoryUsage = memoryUsageTotal - memoryUsageCache;
-        metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "node.memory.usage").sample(memoryUsage);
-
-        stats.getNetworks().forEach((interfaceName, interfaceStats) -> {
-            Dimensions netDims = dimensionsBuilder.add("interface", interfaceName).build();
-
-            addIfNotNull(netDims, "node.net.in.bytes", interfaceStats, "rx_bytes");
-            addIfNotNull(netDims, "node.net.in.errors", interfaceStats, "rx_errors");
-            addIfNotNull(netDims, "node.net.in.dropped", interfaceStats, "rx_dropped");
-            addIfNotNull(netDims, "node.net.out.bytes", interfaceStats, "tx_bytes");
-            addIfNotNull(netDims, "node.net.out.errors", interfaceStats, "tx_errors");
-            addIfNotNull(netDims, "node.net.out.dropped", interfaceStats, "tx_dropped");
-        });
-
-        diskTotalBytes.ifPresent(diskLimit ->
-                metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "node.disk.limit").sample(diskLimit));
-        diskTotalBytesUsed.ifPresent(diskUsed ->
-                metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "node.disk.used").sample(diskUsed));
-        // TODO END REMOVE
-
         pushMetricsToContainer(metrics);
     }
 
@@ -623,21 +594,10 @@ public class NodeAgentImpl implements NodeAgent {
             String wrappedMetrics = "s:'" + params.toString() + "'";
 
             // Push metrics to the metrics proxy in each container - give it maximum 1 seconds to complete
-            dockerOperations.executeCommandInContainerAsRoot(containerName, 5L, "rpc_invoke",  "-t", "1",  "tcp/localhost:19091",  "setExtraMetrics", wrappedMetrics);
+            String[] command = {"rpc_invoke",  "-t", "1",  "tcp/localhost:19091",  "setExtraMetrics", wrappedMetrics};
+            dockerOperations.executeCommandInContainerAsRoot(containerName, 5L, command);
         } catch (DockerExecTimeoutException | JsonProcessingException  e) {
             logger.warning("Unable to push metrics to container: " + containerName, e);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void addIfNotNull(Dimensions dimensions, String yamasName, Object metrics, String metricName) {
-        Map<String, Object> metricsMap = (Map<String, Object>) metrics;
-        if (metricsMap == null || !metricsMap.containsKey(metricName)) return;
-        try {
-            metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, yamasName)
-                    .sample(((Number) metricsMap.get(metricName)).doubleValue());
-        } catch (Throwable e) {
-            logger.warning("Failed to update " + yamasName + " metric with value " + metricsMap.get(metricName), e);
         }
     }
 
