@@ -83,8 +83,9 @@ public class ConfigServerHttpRequestExecutor {
                 try {
                     response = client.execute(requestFactory.createRequest(configServer));
                 } catch (Exception e) {
+                    // Failure to communicate with a config server is not abnormal, as they are
+                    // upgraded at the same time as Docker hosts.  But it is abnormal if all of them are.
                     lastException = e;
-                    NODE_ADMIN_LOGGER.info("Exception while talking to " + configServer + " (will try all config servers):" + e.getMessage());
                     continue;
                 }
 
@@ -107,7 +108,9 @@ public class ConfigServerHttpRequestExecutor {
                 }
             }
         }
-        throw new RuntimeException("Failed executing request, last exception: ", lastException);
+
+        throw new RuntimeException("All requests against the config servers ("
+                + configServerHosts + ") failed, last as follows:", lastException);
     }
 
     public <T> T put(String path, int port, Optional<Object> bodyJsonPojo, Class<T> wantedReturnType) {

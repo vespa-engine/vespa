@@ -2,11 +2,11 @@
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
-import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.IOException;
@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.RESUMED;
@@ -39,7 +40,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
 
     private final Object monitor = new Object();
 
-    private final PrefixLogger logger = PrefixLogger.getNodeAdminLogger(NodeAdminStateUpdater.class);
+    private final Logger log = Logger.getLogger(NodeAdminStateUpdater.class.getName());
     private Thread loopThread;
 
     private final NodeRepository nodeRepository;
@@ -81,6 +82,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     public boolean setResumeStateAndCheckIfResumed(State wantedState) {
         synchronized (monitor) {
             if (this.wantedState != wantedState) {
+                log.info("Wanted state change: " + this.wantedState + " -> " + wantedState);
                 this.wantedState = wantedState;
                 signalWorkToBeDone();
             }
@@ -107,7 +109,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
                     try {
                         monitor.wait(remainder);
                     } catch (InterruptedException e) {
-                        logger.error("Interrupted, but ignoring this: NodeAdminStateUpdater");
+                        log.info("Interrupted, but ignoring this: NodeAdminStateUpdater");
                     }
                 } else break;
             }
@@ -124,13 +126,10 @@ public class NodeAdminStateUpdater extends AbstractComponent {
             try {
                 convergeState(wantedState);
                 converged = true;
-            } catch (OrchestratorException e) {
-                logger.info("Orchestrator does not give permission to converge to " + wantedState
-                        + ", will retry shortly: " + e.getMessage());
-            } catch (ConvergenceException e) {
-                logger.info(e.getMessage());
+            } catch (OrchestratorException | ConvergenceException e) {
+                log.info("Unable to converge to " + wantedState + ": " + e.getMessage());
             } catch (Exception e) {
-                logger.error("Error while trying to converge to " + wantedState, e);
+                log.log(LogLevel.ERROR, "Error while trying to converge to " + wantedState, e);
             }
 
             if (wantedState != RESUMED && !converged) {
@@ -138,7 +137,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
                 if (subsystemFreezeDuration.compareTo(FREEZE_CONVERGENCE_TIMEOUT) > 0) {
                     // We have spent too long time trying to freeze and node admin is still not frozen.
                     // To avoid node agents stalling for too long, we'll force unfrozen ticks now.
-                    logger.info("Timed out trying to freeze, will force unfreezed ticks");
+                    log.info("Timed out trying to freeze, will force unfreezed ticks");
                     nodeAdmin.setFrozen(false);
                 }
             }
@@ -153,7 +152,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     private void convergeState(State wantedState) {
         boolean wantFrozen = wantedState != RESUMED;
         if (!nodeAdmin.setFrozen(wantFrozen)) {
-            throw new ConvergenceException("NodeAdmin has not yet converged to " + (wantFrozen ? "frozen" : "unfrozen"));
+            throw new ConvergenceException("NodeAdmin is not yet " + (wantFrozen ? "frozen" : "unfrozen"));
         }
 
         if (wantedState == RESUMED) {
@@ -188,6 +187,8 @@ public class NodeAdminStateUpdater extends AbstractComponent {
 
     private State updateAndGetCurrentState(State currentState) {
         synchronized (monitor) {
+            log.info("State change: " + this.currentState + " -> " + currentState
+                    + (currentState == wantedState ? " [converged]" : ""));
             this.currentState = currentState;
             return currentState;
         }
@@ -198,24 +199,24 @@ public class NodeAdminStateUpdater extends AbstractComponent {
             // Refresh containers to run even if we would like to suspend but have failed to do so yet,
             // because it may take a long time to get permission to suspend.
             if (currentState != RESUMED) {
-                logger.info("Frozen, skipping fetching info from node repository");
+                log.info("Frozen, skipping fetching info from node repository");
                 return;
             }
             final List<ContainerNodeSpec> containersToRun;
             try {
                 containersToRun = nodeRepository.getContainersToRun();
-            } catch (Throwable t) {
-                logger.warning("Failed fetching container info from node repository", t);
+            } catch (Exception e) {
+                log.log(LogLevel.WARNING, "Failed fetching container info from node repository", e);
                 return;
             }
             if (containersToRun == null) {
-                logger.warning("Got null from node repository");
+                log.warning("Got null from node repository");
                 return;
             }
             try {
                 nodeAdmin.refreshContainersToRun(containersToRun);
-            } catch (Throwable t) {
-                logger.warning("Failed updating node admin: ", t);
+            } catch (Exception e) {
+                log.log(LogLevel.WARNING, "Failed updating node admin: ", e);
             }
         }
     }
@@ -250,10 +251,10 @@ public class NodeAdminStateUpdater extends AbstractComponent {
         try {
             loopThread.join(10000);
             if (loopThread.isAlive()) {
-                logger.error("Could not stop NodeAdminStateUpdater tick thread");
+                log.log(LogLevel.ERROR, "Could not stop tick thread");
             }
         } catch (InterruptedException e1) {
-            logger.error("Interrupted; Could not stop NodeAdminStateUpdater thread");
+            log.log(LogLevel.ERROR, "Interrupted; Could not stop thread");
         }
         nodeAdmin.shutdown();
     }
