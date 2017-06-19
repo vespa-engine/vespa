@@ -19,7 +19,7 @@ mkdir "${SOURCE_DIR}"
 mkdir "${BUILD_DIR}"
 git clone --no-checkout --local --no-hardlinks file:///vespa "${SOURCE_DIR}"
 cd "${SOURCE_DIR}"
-git -c advice.detachedHead=false checkout --detach ${GIT_COMMIT}
+git -c advice.detachedHead=false checkout ${GIT_COMMIT}
 source /opt/rh/devtoolset-6/enable || true
 sh ./bootstrap.sh full
 MAVEN_OPTS="-Xms128m -Xmx512m" mvn -T ${NUM_THREADS} install
