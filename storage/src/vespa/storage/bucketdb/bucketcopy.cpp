@@ -14,6 +14,7 @@ BucketCopy::print(std::ostream& out, bool /*verbose*/, const std::string&) const
         << ",bytes=" << getTotalDocumentSize() << "/" << getUsedFileSize()
         << ",trusted=" << (trusted() ? "true" : "false")
         << ",active=" << (active() ? "true" : "false")
+        << ",ready=" << (ready() ? "true" : "false")
         << ")";
 }
 

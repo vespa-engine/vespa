@@ -310,54 +310,54 @@ Distributor_Test::testUpdateBucketDatabase()
 
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x4000000000000001) : "
-                    "node(idx=0,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false), "
-                    "node(idx=1,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false)"
+                    "node(idx=0,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false,ready=false), "
+                    "node(idx=1,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false,ready=false)"
                     ),
             updateBucketDB("0:456,1:456,2:789", "2:r"));
 
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x4000000000000001) : "
-                    "node(idx=0,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false), "
-                    "node(idx=2,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false), "
-                    "node(idx=1,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false)"
+                    "node(idx=0,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false,ready=false), "
+                    "node(idx=2,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false,ready=false), "
+                    "node(idx=1,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false,ready=false)"
                     ),
             updateBucketDB("0:456,1:456", "2:456"));
 
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x4000000000000001) : "
-                    "node(idx=0,crc=0x315,docs=394/394,bytes=197/197,trusted=false,active=false), "
-                    "node(idx=2,crc=0x14d,docs=166/166,bytes=83/83,trusted=false,active=false), "
-                    "node(idx=1,crc=0x34a,docs=421/421,bytes=210/210,trusted=false,active=false)"
+                    "node(idx=0,crc=0x315,docs=394/394,bytes=197/197,trusted=false,active=false,ready=false), "
+                    "node(idx=2,crc=0x14d,docs=166/166,bytes=83/83,trusted=false,active=false,ready=false), "
+                    "node(idx=1,crc=0x34a,docs=421/421,bytes=210/210,trusted=false,active=false,ready=false)"
                     ),
             updateBucketDB("0:456:t,1:456:t,2:123", "0:789,1:842,2:333"));
 
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x4000000000000001) : "
-                    "node(idx=0,crc=0x315,docs=394/394,bytes=197/197,trusted=true,active=false), "
-                    "node(idx=2,crc=0x14d,docs=166/166,bytes=83/83,trusted=false,active=false), "
-                    "node(idx=1,crc=0x315,docs=394/394,bytes=197/197,trusted=true,active=false)"
+                    "node(idx=0,crc=0x315,docs=394/394,bytes=197/197,trusted=true,active=false,ready=false), "
+                    "node(idx=2,crc=0x14d,docs=166/166,bytes=83/83,trusted=false,active=false,ready=false), "
+                    "node(idx=1,crc=0x315,docs=394/394,bytes=197/197,trusted=true,active=false,ready=false)"
                     ),
             updateBucketDB("0:456:t,1:456:t,2:123", "0:789,1:789,2:333"));
 
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x4000000000000001) : "
-                        "node(idx=2,crc=0x14d,docs=166/166,bytes=83/83,trusted=true,active=false)"),
+                        "node(idx=2,crc=0x14d,docs=166/166,bytes=83/83,trusted=true,active=false,ready=false)"),
             updateBucketDB("0:456:t,1:456:t", "0:r,1:r,2:333"));
 
     // Copies are in sync so should still be trusted even if explicitly reset.
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x4000000000000001) : "
-                    "node(idx=0,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false), "
-                    "node(idx=2,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false), "
-                    "node(idx=1,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false)"
+                    "node(idx=0,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false,ready=false), "
+                    "node(idx=2,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false,ready=false), "
+                    "node(idx=1,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false,ready=false)"
                     ),
             updateBucketDB("0:456,1:456", "2:456", ResetTrusted(true)));
 
     // When resetting, first inserted copy should not end up as implicitly trusted.
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x4000000000000001) : "
-                    "node(idx=0,crc=0x1c8,docs=228/228,bytes=114/114,trusted=false,active=false), "
-                    "node(idx=2,crc=0x14d,docs=166/166,bytes=83/83,trusted=false,active=false)"
+                    "node(idx=0,crc=0x1c8,docs=228/228,bytes=114/114,trusted=false,active=false,ready=false), "
+                    "node(idx=2,crc=0x14d,docs=166/166,bytes=83/83,trusted=false,active=false,ready=false)"
                     ),
             updateBucketDB("0:456",
                            "2:333",

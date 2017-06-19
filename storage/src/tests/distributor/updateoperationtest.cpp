@@ -180,8 +180,8 @@ UpdateOperation_Test::testMultiNode()
     CPPUNIT_ASSERT_EQUAL(
             std::string(
                     _bId.toString() + " : "
-                    "node(idx=1,crc=0x2,docs=4/4,bytes=6/6,trusted=true,active=false), "
-                    "node(idx=0,crc=0x2,docs=4/4,bytes=6/6,trusted=true,active=false)"),
+                    "node(idx=1,crc=0x2,docs=4/4,bytes=6/6,trusted=true,active=false,ready=false), "
+                    "node(idx=0,crc=0x2,docs=4/4,bytes=6/6,trusted=true,active=false,ready=false)"),
             dumpBucket(_bId));
 }
 

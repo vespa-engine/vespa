@@ -212,7 +212,7 @@ PutOperationTest::testBucketDatabaseGetsSpecialEntryWhenCreateBucketSent()
     // Database updated before CreateBucket is sent
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x4000000000008b13) : "
-                        "node(idx=0,crc=0x1,docs=0/0,bytes=0/0,trusted=true,active=true)"),
+                        "node(idx=0,crc=0x1,docs=0/0,bytes=0/0,trusted=true,active=true,ready=false)"),
             dumpBucket(getExternalOperationHandler().getBucketId(doc->getId())));
 
     CPPUNIT_ASSERT_EQUAL(std::string("Create bucket => 0,Put => 0"),
@@ -322,9 +322,9 @@ PutOperationTest::testMultipleCopies()
 
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x4000000000008b13) : "
-                        "node(idx=3,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false), "
-                        "node(idx=1,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false), "
-                        "node(idx=0,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false)"),
+                        "node(idx=3,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false), "
+                        "node(idx=1,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false), "
+                        "node(idx=0,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false)"),
             dumpBucket(getExternalOperationHandler().getBucketId(doc->getId())));
 }
 
@@ -558,7 +558,7 @@ PutOperationTest::testUpdateCorrectBucketOnRemappedPut()
 
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x440000000000000d) : "
-                        "node(idx=0,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false)"),
+                        "node(idx=0,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false)"),
             dumpBucket(document::BucketId(17, 13)));
 }
 
@@ -649,7 +649,7 @@ PutOperationTest::testDoNotResurrectDownedNodesInBucketDB()
 
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x4000000000002a52) : "
-                        "node(idx=0,crc=0x5,docs=6/6,bytes=7/7,trusted=true,active=false)"),
+                        "node(idx=0,crc=0x5,docs=6/6,bytes=7/7,trusted=true,active=false,ready=false)"),
             dumpBucket(getExternalOperationHandler().getBucketId(doc->getId())));
 }
 
