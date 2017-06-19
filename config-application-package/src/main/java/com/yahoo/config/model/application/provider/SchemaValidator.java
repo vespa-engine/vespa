@@ -11,7 +11,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.defaults.Defaults;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.yolean.Exceptions;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkUtil;
@@ -160,9 +160,9 @@ public class SchemaValidator {
                 if (bundle == null) {
                     File schemaPath;
                     if (vespaVersion.getMajor() == 5) {
-                        schemaPath = new File(Defaults.getDefaults().vespaHome() + "share/vespa/schema/version/5.x/schema/");
+                        schemaPath = new File(getDefaults().underVespaHome("share/vespa/schema/version/5.x/schema/"));
                     } else {
-                        schemaPath = new File(Defaults.getDefaults().vespaHome() + "share/vespa/schema/");
+                        schemaPath = new File(getDefaults().underVespaHome("share/vespa/schema/"));
                     }
                     log.log(LogLevel.DEBUG, "Using schemas found in " + schemaPath);
                     copySchemas(schemaPath, tmpDir);

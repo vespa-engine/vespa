@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.docker;
 
-import com.yahoo.vespa.defaults.Defaults;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
@@ -35,7 +35,7 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
  * @author dybis
  */
 public class DockerOperationsImpl implements DockerOperations {
-    public static final String NODE_PROGRAM = Defaults.getDefaults().underVespaHome("bin/vespa-nodectl");
+    public static final String NODE_PROGRAM = getDefaults().underVespaHome("bin/vespa-nodectl");
 
     private static final String[] RESUME_NODE_COMMAND = new String[]{NODE_PROGRAM, "resume"};
     private static final String[] SUSPEND_NODE_COMMAND = new String[]{NODE_PROGRAM, "suspend"};

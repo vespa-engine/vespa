@@ -45,7 +45,7 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
 
     /** The optional PRELOAD libraries for this Service. */
     // Please keep non-null, as passed to command line in service startup
-    private String preload = Defaults.getDefaults().vespaHome() + "lib64/vespa/malloc/libvespamalloc.so";
+    private String preload = Defaults.getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so");
 
     // If larger or equal to 0 it mean that explicit mmaps shall not be included in coredump.
     private long mmapNoCoreLimit = -1l;

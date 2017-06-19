@@ -69,7 +69,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     /**
      * Default path to vip status file for container in Hosted Vespa.
      */
-    static final String HOSTED_VESPA_STATUS_FILE = Defaults.getDefaults().vespaHome() + "var/mediasearch/oor/status.html";
+    static final String HOSTED_VESPA_STATUS_FILE = Defaults.getDefaults().underVespaHome("var/mediasearch/oor/status.html");
     /**
      * Path to vip status file for container in Hosted Vespa. Only used if set, else use HOSTED_VESPA_STATUS_FILE
      */

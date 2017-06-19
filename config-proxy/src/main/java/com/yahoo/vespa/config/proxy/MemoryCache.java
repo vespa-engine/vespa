@@ -26,7 +26,7 @@ public class MemoryCache {
 
     // Separator in file names between different fields of config key
     private final static String separator = ":";
-    private static final String DEFAULT_DUMP_DIR = Defaults.getDefaults().vespaHome() + "var/vespa/cache/config";
+    private static final String DEFAULT_DUMP_DIR = Defaults.getDefaults().underVespaHome("var/vespa/cache/config");
 
     private final ConcurrentHashMap<ConfigCacheKey, RawConfig> cache = new ConcurrentHashMap<>(500, 0.75f);
 

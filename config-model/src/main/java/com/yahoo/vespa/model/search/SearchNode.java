@@ -13,7 +13,7 @@ import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.vespa.config.content.core.StorStatusConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.config.storage.StorDevicesConfig;
-import com.yahoo.vespa.defaults.Defaults;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.admin.monitoring.MonitoringSystem;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
@@ -126,7 +126,7 @@ public class SearchNode extends AbstractService implements
     }
 
     private String getBaseDir() {
-        return Defaults.getDefaults().vespaHome() + "var/db/vespa/search/cluster." + getClusterName() + "/n" + distributionKey;
+        return getDefaults().underVespaHome("var/db/vespa/search/cluster." + getClusterName()) + "/n" + distributionKey;
     }
 
     public void updatePartition(int partitionId) {
@@ -307,7 +307,7 @@ public class SearchNode extends AbstractService implements
 
     @Override
     public Optional<String> getPreShutdownCommand() {
-        return Optional.ofNullable(flushOnShutdown ? Defaults.getDefaults().vespaHome() + "bin/vespa-proton-cmd " + getRpcPort() + " prepareRestart" : null);
+        return Optional.ofNullable(flushOnShutdown ? getDefaults().underVespaHome("bin/vespa-proton-cmd ") + getRpcPort() + " prepareRestart" : null);
     }
 
 }

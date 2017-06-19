@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.restapi.resources;
 
-import com.yahoo.vespa.defaults.Defaults;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 import java.util.Collection;
 import java.util.List;
@@ -48,16 +48,16 @@ public class StatusInformation {
         public ConfigserverConfig(com.yahoo.cloud.config.ConfigserverConfig configserverConfig) {
             this.rpcport = configserverConfig.rpcport();
             this.numthreads = configserverConfig.numthreads();
-            this.zookeepercfg = Defaults.getDefaults().underVespaHome(configserverConfig.zookeepercfg());
+            this.zookeepercfg = getDefaults().underVespaHome(configserverConfig.zookeepercfg());
             this.zookeeeperserver = configserverConfig.zookeeperserver().stream()
                     .map(zks -> new ZooKeeperServer(zks.hostname(), zks.port()))
                     .collect(Collectors.toList());
             this.zookeeperBarrierTimeout = configserverConfig.zookeeper().barrierTimeout();
             this.configModelPluginDir = configserverConfig.configModelPluginDir();
-            this.configServerDBDir = Defaults.getDefaults().underVespaHome(configserverConfig.configServerDBDir());
+            this.configServerDBDir = getDefaults().underVespaHome(configserverConfig.configServerDBDir());
             this.maxgetconfigclients = configserverConfig.maxgetconfigclients();
             this.sessionLifetime = configserverConfig.sessionLifetime();
-            this.applicationDirectory = Defaults.getDefaults().underVespaHome(configserverConfig.applicationDirectory());
+            this.applicationDirectory = getDefaults().underVespaHome(configserverConfig.applicationDirectory());
             this.masterGeneration = configserverConfig.masterGeneration();
             this.multitenant = configserverConfig.multitenant();
             this.numDelayedResponseThreads = configserverConfig.numDelayedResponseThreads();

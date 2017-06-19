@@ -5,7 +5,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.log.LogLevel;
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.vespa.defaults.Defaults;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 import java.io.File;
 import java.util.Optional;
@@ -23,11 +23,11 @@ public class PermanentApplicationPackage {
     private final Optional<ApplicationPackage> applicationPackage;
 
     public PermanentApplicationPackage(ConfigserverConfig config) {
-        File app = new File(Defaults.getDefaults().underVespaHome(config.applicationDirectory()));
+        File app = new File(getDefaults().underVespaHome(config.applicationDirectory()));
         applicationPackage = Optional.<ApplicationPackage>ofNullable(app.exists() ? FilesApplicationPackage.fromFile(app) : null);
         if (applicationPackage.isPresent()) {
             log.log(LogLevel.DEBUG, "Detected permanent application package in '" +
-                                    Defaults.getDefaults().underVespaHome(config.applicationDirectory()) +
+                                    getDefaults().underVespaHome(config.applicationDirectory()) +
                                     "'. This might add extra services to config models");
         }
     }

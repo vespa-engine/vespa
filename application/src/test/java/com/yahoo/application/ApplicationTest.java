@@ -22,7 +22,7 @@ import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.handler.SearchHandler;
-import com.yahoo.vespa.defaults.Defaults;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -164,7 +164,7 @@ public class ApplicationTest {
             RequestHandler handler = app.getRequestHandlerById(MockHttpHandler.class.getName());
             assertNotNull(handler);
 
-            Request request = new Request("http://localhost:" + Defaults.getDefaults().vespaWebServicePort() + "/");
+            Request request = new Request("http://localhost:" + getDefaults().vespaWebServicePort() + "/");
             Response response = app.handleRequest(request);
             assertNotNull(response);
             assertEquals(response.getStatus(), 200);
@@ -191,7 +191,7 @@ public class ApplicationTest {
                         .renderer("mock", MockRenderer.class))))
         ) {
 
-            Request request = new Request("http://localhost:" + Defaults.getDefaults().vespaWebServicePort() + "/search/?format=mock");
+            Request request = new Request("http://localhost:" + getDefaults().vespaWebServicePort() + "/search/?format=mock");
             Response response = app.handleRequest(request);
             assertNotNull(response);
             assertEquals(response.getStatus(), 200);

@@ -25,7 +25,7 @@ import java.util.Arrays;
                  StorMemfilepersistenceConfig.class, StorBucketmoverConfig.class})
 public class StorageNode extends ContentNode implements StorServerConfig.Producer, StorDevicesConfig.Producer {
 
-    static final String rootFolder = Defaults.getDefaults().vespaHome() + "var/db/vespa/vds/";
+    static final String rootFolder = Defaults.getDefaults().underVespaHome("var/db/vespa/vds/");
 
     private final Double capacity;
     private final boolean retired;
