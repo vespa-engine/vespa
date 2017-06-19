@@ -76,7 +76,7 @@ my $default_configproxy_port = "19090";
 my $default_configserver_port = "19070";
 my $zk_client_port;
 
-my $base_cfg_dir = $VESPA_HOME . "conf/vespa";
+my $base_cfg_dir = $VESPA_HOME . "/conf/vespa";
 
 # Set this to 1 to look up values (see getValue) in config files instead
 # of in environment variables
@@ -239,7 +239,7 @@ sub printConfigHttpSources {
 }
 
 sub makeFiledistributorZKConfig {
-    my $cfgFile = $VESPA_HOME . "conf/filedistributor/zookeepers.cfg";
+    my $cfgFile = $VESPA_HOME . "/conf/filedistributor/zookeepers.cfg";
     open(CFG, "> ${cfgFile}.new") or die "Cannot write to '${cfgFile}.new'";
     my $zkservers = getZKString();
     print CFG "zookeeperserverlist \"$zkservers\"\n";
@@ -250,13 +250,13 @@ sub makeFiledistributorZKConfig {
 }
 
 sub makeFiledistributorDistributorConfig {
-    my $cfgFile = $VESPA_HOME . "conf/filedistributor/filedistributor.cfg";
+    my $cfgFile = $VESPA_HOME . "/conf/filedistributor/filedistributor.cfg";
     open(CFG, "> ${cfgFile}.new") or die "Cannot write to '${cfgFile}.new'";
     print CFG "torrentport 19093\n";
     my $hostname = `hostname`;
     chomp $hostname;
     print CFG "hostname \"$hostname\"\n";
-    print CFG "filedbpath \"$VESPA_HOME" . "var/db/vespa/filedistribution\"\n";
+    print CFG "filedbpath \"$VESPA_HOME" . "/var/db/vespa/filedistribution\"\n";
     print CFG "maxdownloadspeed 0\n";
     print CFG "maxuploadspeed 0\n";
     close(CFG);
@@ -266,7 +266,7 @@ sub makeFiledistributorDistributorConfig {
 }
 
 sub makeFiledistributorRpcConfig {
-    my $cfgFile = $VESPA_HOME . "conf/filedistributor/filedistributorrpc.cfg";
+    my $cfgFile = $VESPA_HOME . "/conf/filedistributor/filedistributorrpc.cfg";
     open(CFG, "> ${cfgFile}.new") or die "Cannot write to '${cfgFile}.new'";
     my $hostname = `hostname`;
     chomp $hostname;
@@ -278,7 +278,7 @@ sub makeFiledistributorRpcConfig {
 }
 
 sub makeFiledistributorReferencesConfig {
-    my $cfgFile = $VESPA_HOME . "conf/filedistributor/filereferences.cfg";
+    my $cfgFile = $VESPA_HOME . "/conf/filedistributor/filereferences.cfg";
     open(CFG, "> ${cfgFile}.new") or die "Cannot write to '${cfgFile}.new'";
     close(CFG);
     rename("${cfgFile}.new", ${cfgFile})
