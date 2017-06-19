@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.server.restapi.impl;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.restapi.resources.StatusInformation;
-import com.yahoo.vespa.defaults.Defaults;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -28,11 +28,11 @@ public class StatusResourceTest {
     public void require_that_generated_config_is_converted() {
         ConfigserverConfig orig = new ConfigserverConfig(new ConfigserverConfig.Builder());
         StatusInformation.ConfigserverConfig conv = new StatusInformation.ConfigserverConfig(orig);
-        assertThat(conv.applicationDirectory, is(Defaults.getDefaults().underVespaHome(orig.applicationDirectory())));
+        assertThat(conv.applicationDirectory, is(getDefaults().underVespaHome(orig.applicationDirectory())));
         assertThat(conv.configModelPluginDir.size(), is(orig.configModelPluginDir().size()));
         assertThat(conv.zookeeeperserver.size(), is(orig.zookeeperserver().size()));
         assertThat(conv.zookeeperBarrierTimeout, is(orig.zookeeper().barrierTimeout()));
-        assertThat(conv.configServerDBDir, is(Defaults.getDefaults().underVespaHome(orig.configServerDBDir())));
+        assertThat(conv.configServerDBDir, is(getDefaults().underVespaHome(orig.configServerDBDir())));
         assertThat(conv.masterGeneration, is(orig.masterGeneration()));
         assertThat(conv.maxgetconfigclients, is(orig.maxgetconfigclients()));
         assertThat(conv.multitenant, is(orig.multitenant()));
@@ -41,6 +41,6 @@ public class StatusResourceTest {
         assertThat(conv.payloadCompressionType, is(orig.payloadCompressionType()));
         assertThat(conv.rpcport, is(orig.rpcport()));
         assertThat(conv.sessionLifetime, is(orig.sessionLifetime()));
-        assertThat(conv.zookeepercfg, is(Defaults.getDefaults().underVespaHome(orig.zookeepercfg())));
+        assertThat(conv.zookeepercfg, is(getDefaults().underVespaHome(orig.zookeepercfg())));
     }
 }

@@ -10,7 +10,7 @@ import com.yahoo.vespa.config.storage.StorDevicesConfig;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.text.XML;
-import com.yahoo.vespa.defaults.Defaults;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
@@ -250,7 +250,7 @@ public class StorageClusterTest {
             StorDevicesConfig.Builder builder = new StorDevicesConfig.Builder();
             node.getConfig(builder);
             StorDevicesConfig config = new StorDevicesConfig(builder);
-            assertEquals(Defaults.getDefaults().underVespaHome("var/db/vespa/vds/storage/storage/0"), config.root_folder());
+            assertEquals(getDefaults().underVespaHome("var/db/vespa/vds/storage/storage/0"), config.root_folder());
         }
 
         {
@@ -258,7 +258,7 @@ public class StorageClusterTest {
             cluster.getStorageNodes().getConfig(builder);
             node.getConfig(builder);
             StorServerConfig config = new StorServerConfig(builder);
-            assertEquals(Defaults.getDefaults().underVespaHome("var/db/vespa/vds/storage/storage/0"), config.root_folder());
+            assertEquals(getDefaults().underVespaHome("var/db/vespa/vds/storage/storage/0"), config.root_folder());
         }
 
         {
@@ -266,7 +266,7 @@ public class StorageClusterTest {
             cluster.getDistributorNodes().getConfig(builder);
             cluster.getDistributorNodes().getChildren().get("0").getConfig(builder);
             StorServerConfig config = new StorServerConfig(builder);
-            assertEquals(Defaults.getDefaults().underVespaHome("var/db/vespa/vds/storage/distributor/0"), config.root_folder());
+            assertEquals(getDefaults().underVespaHome("var/db/vespa/vds/storage/distributor/0"), config.root_folder());
         }
     }
 

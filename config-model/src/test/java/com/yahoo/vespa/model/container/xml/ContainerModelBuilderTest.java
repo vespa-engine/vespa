@@ -26,7 +26,7 @@ import com.yahoo.container.servlet.ServletConfigConfig;
 import com.yahoo.container.usability.BindingsOverviewHandler;
 import com.yahoo.jdisc.http.ServletPathsConfig;
 import com.yahoo.prelude.cluster.QrMonitorConfig;
-import com.yahoo.vespa.defaults.Defaults;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.Container;
@@ -73,7 +73,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "</jdisc>" );
         createModel(root, clusterElem);
         AbstractService container = (AbstractService)root.getProducer("jdisc/container.0");
-        assertThat(container.getRelativePort(0), is(Defaults.getDefaults().vespaWebServicePort()));
+        assertThat(container.getRelativePort(0), is(getDefaults().vespaWebServicePort()));
     }
 
     @Test
@@ -435,7 +435,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc id='default' version='1.0'>",
                 "  <http>",
-                "    <server port='" + Defaults.getDefaults().vespaWebServicePort() + "' id='main' />",
+                "    <server port='" + getDefaults().vespaWebServicePort() + "' id='main' />",
                 "  </http>",
                 "  <nodes cpu-socket-affinity='true'>",
                 "    <node hostalias='node1' />",

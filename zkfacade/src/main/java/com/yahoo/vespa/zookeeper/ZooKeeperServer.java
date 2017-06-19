@@ -6,7 +6,7 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.defaults.Defaults;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -64,7 +64,7 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
     
     private void writeConfigToDisk(ZookeeperServerConfig config) {
        String cfg = transformConfigToString(config);
-       try (FileWriter writer = new FileWriter(Defaults.getDefaults().underVespaHome(config.zooKeeperConfigFile()))) {
+       try (FileWriter writer = new FileWriter(getDefaults().underVespaHome(config.zooKeeperConfigFile()))) {
            writer.write(cfg);
            writeMyIdFile(config);
        } catch (IOException e) {
@@ -79,7 +79,7 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
         sb.append("syncLimit=").append(config.syncLimit()).append("\n");
         sb.append("maxClientCnxns=").append(config.maxClientConnections()).append("\n");
         sb.append("snapCount=").append(config.snapshotCount()).append("\n");
-        sb.append("dataDir=").append(Defaults.getDefaults().underVespaHome(config.dataDir())).append("\n");
+        sb.append("dataDir=").append(getDefaults().underVespaHome(config.dataDir())).append("\n");
         sb.append("clientPort=").append(config.clientPort()).append("\n");
         sb.append("autopurge.purgeInterval=").append(config.autopurge().purgeInterval()).append("\n");
         sb.append("autopurge.snapRetainCount=").append(config.autopurge().snapRetainCount()).append("\n");
@@ -94,7 +94,7 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
 
     private void writeMyIdFile(ZookeeperServerConfig config) throws IOException {
         if (config.server().size() > 1) {
-            try (FileWriter writer = new FileWriter(Defaults.getDefaults().underVespaHome(config.myidFile()))) {
+            try (FileWriter writer = new FileWriter(getDefaults().underVespaHome(config.myidFile()))) {
                 writer.write(config.myid() + "\n");
             }
         }
@@ -129,7 +129,7 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
     @Override
     public void run() {
         System.setProperty(ZOOKEEPER_JMX_LOG4J_DISABLE, "true");
-        String[] args = new String[]{Defaults.getDefaults().underVespaHome(config.zooKeeperConfigFile())};
+        String[] args = new String[]{getDefaults().underVespaHome(config.zooKeeperConfigFile())};
         log.log(LogLevel.DEBUG, "Starting ZooKeeper server with config: " + args[0]);
         org.apache.zookeeper.server.quorum.QuorumPeerMain.main(args);
     }

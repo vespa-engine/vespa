@@ -20,7 +20,7 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
-import com.yahoo.vespa.defaults.Defaults;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.admin.Admin;
@@ -110,9 +110,9 @@ public class ModelProvisioningTest {
         assertThat(model.getContainerClusters().get("mydisc").getContainers().get(0).getJvmArgs(), is(""));
         assertThat(model.getContainerClusters().get("mydisc").getContainers().get(1).getJvmArgs(), is(""));
         assertThat(model.getContainerClusters().get("mydisc").getContainers().get(2).getJvmArgs(), is(""));
-        assertThat(model.getContainerClusters().get("mydisc").getContainers().get(0).getPreLoad(), is(Defaults.getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so")));
-        assertThat(model.getContainerClusters().get("mydisc").getContainers().get(1).getPreLoad(), is(Defaults.getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so")));
-        assertThat(model.getContainerClusters().get("mydisc").getContainers().get(2).getPreLoad(), is(Defaults.getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so")));
+        assertThat(model.getContainerClusters().get("mydisc").getContainers().get(0).getPreLoad(), is(getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so")));
+        assertThat(model.getContainerClusters().get("mydisc").getContainers().get(1).getPreLoad(), is(getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so")));
+        assertThat(model.getContainerClusters().get("mydisc").getContainers().get(2).getPreLoad(), is(getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so")));
         assertThat(model.getContainerClusters().get("mydisc").getMemoryPercentage(), is(Optional.empty()));
 
         assertThat(model.getContainerClusters().get("mydisc2").getContainers().get(0).getJvmArgs(), is("-verbosegc"));
@@ -1117,7 +1117,7 @@ public class ModelProvisioningTest {
                 "<?xml version='1.0' encoding='utf-8' ?>" +
                 "<jdisc id='foo' version='1.0'>" +
                 "  <http>" +
-                "    <server id='server1' port='" + Defaults.getDefaults().vespaWebServicePort() + "' />" +
+                "    <server id='server1' port='" + getDefaults().vespaWebServicePort() + "' />" +
                 "  </http>" +
                 "</jdisc>";
         VespaModelTester tester = new VespaModelTester();
