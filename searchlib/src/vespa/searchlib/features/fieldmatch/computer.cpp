@@ -4,8 +4,8 @@
 #include <vespa/searchlib/features/utils.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/locale/c.h>
 #include <iostream>
-#include <cstdlib>
 #include <set>
 
 #include <vespa/log/log.h>
@@ -56,7 +56,7 @@ Computer::Computer(const vespalib::string &propertyNamespace, const PhraseSplitt
 
     _totalTermWeight = atoi(splitter.getProperties().lookup(propertyNamespace, "totalTermWeight").
                             get(vespalib::make_string("%d", _totalTermWeight)).c_str());
-    _totalTermSignificance = atof(splitter.getProperties().lookup(propertyNamespace, "totalTermSignificance").
+    _totalTermSignificance = vespalib::locale::c::atof(splitter.getProperties().lookup(propertyNamespace, "totalTermSignificance").
                                   get(vespalib::make_string("%f", _totalTermSignificance)).c_str());
     if (splitter.getProperties().lookup(propertyNamespace, "totalTermWeight").found()) {
         _simpleMetrics.setTotalWeightInQuery(_totalTermWeight);

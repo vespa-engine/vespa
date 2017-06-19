@@ -2,16 +2,12 @@
 
 #include "jarowinklerdistancefeature.h"
 #include "utils.h"
-#include <limits>
 #include <vespa/searchlib/fef/featurenamebuilder.h>
-#include <vespa/searchlib/fef/fieldinfo.h>
-#include <vespa/searchlib/fef/fieldtype.h>
 #include <vespa/searchlib/fef/properties.h>
-#include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/locale/c.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 //-----------------------------------------------------------------------------
 // JaroWinklerDistanceConfig
@@ -158,7 +154,7 @@ JaroWinklerDistanceBlueprint::setup(const search::fef::IIndexEnvironment &env,
     _config.fieldId = params[0].asField()->id();
 
     vespalib::string boostThreshold = env.getProperties().lookup(getName(), "boostThreshold").getAt(0);
-    _config.boostThreshold = boostThreshold.empty() ? 0.7f : atof(boostThreshold.c_str());
+    _config.boostThreshold = boostThreshold.empty() ? 0.7f : vespalib::locale::c::atof(boostThreshold.c_str());
 
     vespalib::string prefixSize = env.getProperties().lookup(getName(), "prefixSize").getAt(0);
     _config.prefixSize = prefixSize.empty() ? 4 : atoi(prefixSize.c_str());
@@ -181,4 +177,4 @@ JaroWinklerDistanceBlueprint::createExecutor(const search::fef::IQueryEnvironmen
     return stash.create<JaroWinklerDistanceExecutor>(env, _config);
 }
 
-}}
+}

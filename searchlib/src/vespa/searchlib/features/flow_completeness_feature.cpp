@@ -2,6 +2,7 @@
 
 #include "flow_completeness_feature.h"
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/vespalib/locale/c.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".features.flowcompleteness");
 
@@ -292,7 +293,7 @@ FlowCompletenessBlueprint::setup(const search::fef::IIndexEnvironment &env,
     const search::fef::Properties &lst = env.getProperties();
     search::fef::Property obj = lst.lookup(getName(), "fieldCompletenessImportance");
     if (obj.found()) {
-        _params.fieldCompletenessImportance = atof(obj.get().c_str());
+        _params.fieldCompletenessImportance = vespalib::locale::c::atof(obj.get().c_str());
     }
     _params.fieldWeight = search::fef::indexproperties::FieldWeight::lookup(lst, field->name());
 

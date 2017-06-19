@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "element_completeness_feature.h"
+#include <vespa/vespalib/locale/c.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 //-----------------------------------------------------------------------------
 
@@ -125,7 +125,7 @@ ElementCompletenessBlueprint::setup(const search::fef::IIndexEnvironment &env,
     const search::fef::Properties &lst = env.getProperties();
     search::fef::Property obj = lst.lookup(getName(), "fieldCompletenessImportance");
     if (obj.found()) {
-        _params.fieldCompletenessImportance = atof(obj.get().c_str());
+        _params.fieldCompletenessImportance = vespalib::locale::c::atof(obj.get().c_str());
     }
     describeOutput(_output[0], "combined completeness for best scored element");
     describeOutput(_output[1], "best scored element completeness");
@@ -143,5 +143,5 @@ ElementCompletenessBlueprint::createExecutor(const search::fef::IQueryEnvironmen
 
 //-----------------------------------------------------------------------------
 
-} // namespace features
-} // namespace search
+}
+

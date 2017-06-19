@@ -6,12 +6,12 @@
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/locale/c.h>
 
 using namespace search::fef;
 using CollectionType = FieldInfo::CollectionType;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 FieldMatchExecutor::FieldMatchExecutor(const IQueryEnvironment & queryEnv,
                                        const FieldInfo & field,
@@ -184,33 +184,33 @@ FieldMatchBlueprint::setup(const IIndexEnvironment & env,
     }
     obj = lst.lookup(getName(), "proximityCompletenessImportance");
     if (obj.found()) {
-        _params.setProximityCompletenessImportance(atof(obj.get().c_str()));
+        _params.setProximityCompletenessImportance(vespalib::locale::c::atof(obj.get().c_str()));
     }
     obj = lst.lookup(getName(), "relatednessImportance");
     if (obj.found()) {
-        _params.setRelatednessImportance(atof(obj.get().c_str()));
+        _params.setRelatednessImportance(vespalib::locale::c::atof(obj.get().c_str()));
     }
     obj = lst.lookup(getName(), "earlinessImportance");
     if (obj.found()) {
-        _params.setEarlinessImportance(atof(obj.get().c_str()));
+        _params.setEarlinessImportance(vespalib::locale::c::atof(obj.get().c_str()));
     }
     obj = lst.lookup(getName(), "segmentProximityImportance");
     if (obj.found()) {
-        _params.setSegmentProximityImportance(atof(obj.get().c_str()));
+        _params.setSegmentProximityImportance(vespalib::locale::c::atof(obj.get().c_str()));
     }
     obj = lst.lookup(getName(), "occurrenceImportance");
     if (obj.found()) {
-        _params.setOccurrenceImportance(atof(obj.get().c_str()));
+        _params.setOccurrenceImportance(vespalib::locale::c::atof(obj.get().c_str()));
     }
     obj = lst.lookup(getName(), "fieldCompletenessImportance");
     if (obj.found()) {
-        _params.setFieldCompletenessImportance(atof(obj.get().c_str()));
+        _params.setFieldCompletenessImportance(vespalib::locale::c::atof(obj.get().c_str()));
     }
     obj = lst.lookup(getName(), "proximityTable");
     if (obj.found()) {
         std::vector<feature_t> table;
         for (uint32_t i = 0; i < obj.size(); ++i) {
-            table.push_back(atof(obj.getAt(i).c_str()));
+            table.push_back(vespalib::locale::c::atof(obj.getAt(i).c_str()));
         }
         _params.setProximityTable(table);
     }
@@ -308,5 +308,4 @@ FieldMatchBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::Sta
 }
 
 
-} // namespace features
-} // namespace search
+}

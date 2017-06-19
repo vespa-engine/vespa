@@ -4,10 +4,8 @@
 
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/vespalib/util/priority_queue.h>
-#include <vespa/vespalib/stllike/hash_map.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 //-----------------------------------------------------------------------------
 
@@ -95,6 +93,4 @@ public:
 
 //-----------------------------------------------------------------------------
 
-} // namespace features
-} // namespace search
-
+}

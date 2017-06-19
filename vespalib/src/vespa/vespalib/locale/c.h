@@ -7,5 +7,7 @@ namespace vespalib::locale::c {
 double strtod(const char *nptr, char **endptr);
 float  strtof(const char *nptr, char **endptr);
 
+inline double atof(const char *nptr) { return strtod(nptr, nullptr); }
+
 }
 
