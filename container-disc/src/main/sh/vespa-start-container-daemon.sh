@@ -20,21 +20,21 @@ cd ${VESPA_HOME} || { echo "Cannot cd to ${VESPA_HOME}" 1>&2; exit 1; }
 . libexec/vespa/common-env.sh
 
 DISCRIMINATOR=`echo ${VESPA_CONFIG_ID} | md5sum | cut -d' ' -f1`
-CONTAINER_HOME="${VESPA_HOME}var/jdisc_container/${DISCRIMINATOR}/"
+CONTAINER_HOME="${VESPA_HOME}/var/jdisc_container/${DISCRIMINATOR}/"
 
-ZOOKEEPER_LOG_FILE="${VESPA_HOME}logs/vespa/zookeeper.${VESPA_SERVICE_NAME}.log"
+ZOOKEEPER_LOG_FILE="${VESPA_HOME}/logs/vespa/zookeeper.${VESPA_SERVICE_NAME}.log"
 rm -f $ZOOKEEPER_LOG_FILE*lck
 
 # common setup
-export VESPA_LOG_TARGET=file:${VESPA_HOME}logs/vespa/vespa.log
-export VESPA_LOG_CONTROL_DIR=${VESPA_HOME}var/db/vespa/logcontrol
-export LD_LIBRARY_PATH=${VESPA_HOME}lib64
+export VESPA_LOG_TARGET=file:${VESPA_HOME}/logs/vespa/vespa.log
+export VESPA_LOG_CONTROL_DIR=${VESPA_HOME}/var/db/vespa/logcontrol
+export LD_LIBRARY_PATH=${VESPA_HOME}/lib64
 
 cfpfile=${CONTAINER_HOME}/jdisc.properties
 bundlecachedir=${CONTAINER_HOME}/bundlecache
 
 # class path
-CP="${VESPA_HOME}lib/jars/jdisc_core-jar-with-dependencies.jar"
+CP="${VESPA_HOME}/lib/jars/jdisc_core-jar-with-dependencies.jar"
 
 mkdir -p $bundlecachedir || exit 1
 printenv > $cfpfile || exit 1
@@ -176,7 +176,7 @@ exec_jsvc () {
         CP="${jsvc_classpath_pre}:${CP}"
     fi
     for jf in $jsvc_extra_classpath_libjars ; do
-        CP="${CP}:${VESPA_HOME}lib/jars/$jf.jar"
+        CP="${CP}:${VESPA_HOME}/lib/jars/$jf.jar"
     done
     for jf in $jsvc_extra_classpath_files ; do
         CP="${CP}:jf"
@@ -191,9 +191,9 @@ exec_jsvc () {
         ${jvm_gcopts} \
         -XX:MaxJavaStackTraceDepth=-1 \
         -XX:+HeapDumpOnOutOfMemoryError \
-        -XX:HeapDumpPath="${VESPA_HOME}var/crash" \
+        -XX:HeapDumpPath="${VESPA_HOME}/var/crash" \
         -XX:OnOutOfMemoryError='kill -9 %p' \
-        -Djava.library.path="${VESPA_HOME}lib64" \
+        -Djava.library.path="${VESPA_HOME}/lib64" \
         -Djava.awt.headless=true \
         -Djavax.net.ssl.keyStoreType=JKS \
         -Dsun.rmi.dgc.client.gcInterval=3600000 \
@@ -202,7 +202,7 @@ exec_jsvc () {
         -Djdisc.export.packages=${jdisc_export_packages} \
         -Djdisc.cache.path="$bundlecachedir" \
         -Djdisc.debug.resources=false \
-        -Djdisc.bundle.path="${VESPA_HOME}lib/jars" \
+        -Djdisc.bundle.path="${VESPA_HOME}/lib/jars" \
         -Djdisc.logger.enabled=true \
         -Djdisc.logger.level=ALL \
         -Djdisc.logger.tag="${VESPA_CONFIG_ID}" \
@@ -212,7 +212,7 @@ exec_jsvc () {
         -Dfile.encoding=UTF-8 \
         -cp "$CP" \
         "$@" \
-        com.yahoo.jdisc.core.BootstrapDaemon file:${VESPA_HOME}lib/jars/container-disc-jar-with-dependencies.jar
+        com.yahoo.jdisc.core.BootstrapDaemon file:${VESPA_HOME}/lib/jars/container-disc-jar-with-dependencies.jar
 }
 
 maybe_use_jsvc () {
@@ -233,7 +233,7 @@ maybe_use_jsvc () {
         import_cfg_var jsvc_normal_opts
         import_cfg_var jsvc_java_home_opt
         if [ "$jsvc_use_pidfile" = "true" ]; then
-            import_cfg_var jsvc_pidfile_opt "-pidfile ${VESPA_HOME}var/run/jsvc.${VESPA_SERVICE_NAME}.pid"
+            import_cfg_var jsvc_pidfile_opt "-pidfile ${VESPA_HOME}/var/run/jsvc.${VESPA_SERVICE_NAME}.pid"
         else
             import_cfg_var jsvc_pidfile_opt ""
         fi
@@ -262,9 +262,9 @@ exec $numactlcmd $envcmd java \
         ${jvm_gcopts} \
         -XX:MaxJavaStackTraceDepth=-1 \
         -XX:+HeapDumpOnOutOfMemoryError \
-        -XX:HeapDumpPath="${VESPA_HOME}var/crash" \
+        -XX:HeapDumpPath="${VESPA_HOME}/var/crash" \
         -XX:OnOutOfMemoryError='kill -9 %p' \
-        -Djava.library.path="${VESPA_HOME}lib64" \
+        -Djava.library.path="${VESPA_HOME}/lib64" \
         -Djava.awt.headless=true \
         -Djavax.net.ssl.keyStoreType=JKS \
         -Dsun.rmi.dgc.client.gcInterval=3600000 \
@@ -273,7 +273,7 @@ exec $numactlcmd $envcmd java \
         -Djdisc.export.packages=${jdisc_export_packages} \
         -Djdisc.cache.path="$bundlecachedir" \
         -Djdisc.debug.resources=false \
-        -Djdisc.bundle.path="${VESPA_HOME}lib/jars" \
+        -Djdisc.bundle.path="${VESPA_HOME}/lib/jars" \
         -Djdisc.logger.enabled=false \
         -Djdisc.logger.level=ALL \
         -Djdisc.logger.tag="${VESPA_CONFIG_ID}" \
@@ -283,4 +283,4 @@ exec $numactlcmd $envcmd java \
         -Dfile.encoding=UTF-8 \
         -cp "$CP" \
         "$@" \
-        com.yahoo.jdisc.core.StandaloneMain file:${VESPA_HOME}lib/jars/container-disc-jar-with-dependencies.jar
+        com.yahoo.jdisc.core.StandaloneMain file:${VESPA_HOME}/lib/jars/container-disc-jar-with-dependencies.jar

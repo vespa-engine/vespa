@@ -4,7 +4,6 @@
 # BEGIN perl environment bootstrap section
 # Do not edit between here and END as this section should stay identical in all scripts
 
-use warnings;
 use File::Basename;
 use File::Path;
 
@@ -55,7 +54,6 @@ sub findhome {
 
 BEGIN {
     my $tmp = findhome();
-    if ( $tmp !~ m{[/]$} ) { $tmp .= "/"; }
     $ENV{'VESPA_HOME'} = $tmp;
 }
 my $VESPA_HOME = $ENV{'VESPA_HOME'};

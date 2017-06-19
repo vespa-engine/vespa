@@ -585,8 +585,7 @@ ZKFacade::disableRetries() {
 ZKLogging::ZKLogging() :
     _file(nullptr)
 {
-    std::string filename(vespa::Defaults::vespaHome());
-    filename.append("/tmp/zookeeper.log");
+    std::string filename = vespa::Defaults::underVespaHome("tmp/zookeeper.log");
     _file = std::fopen(filename.c_str(), "w");
     if (_file == nullptr) {
          LOGFWD(error, "Could not open file '%s'", filename.c_str());

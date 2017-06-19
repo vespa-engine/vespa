@@ -12,7 +12,7 @@ import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
-import com.yahoo.vespa.defaults.Defaults;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 /**
  * Tests the zookeeper server.
@@ -106,7 +106,7 @@ public class ZooKeeperServerTest {
             "syncLimit=15\n" +
             "maxClientCnxns=0\n" +
             "snapCount=50000\n" +
-            "dataDir=" + Defaults.getDefaults().vespaHome() + "var/zookeeper\n" +
+            "dataDir=" + getDefaults().underVespaHome("var/zookeeper") + "\n" +
             "clientPort=2181\n" +
             "autopurge.purgeInterval=1\n" +
             "autopurge.snapRetainCount=15\n";
@@ -120,7 +120,7 @@ public class ZooKeeperServerTest {
                         "syncLimit=15\n" +
                         "maxClientCnxns=0\n" +
                         "snapCount=50000\n" +
-                        "dataDir=" + Defaults.getDefaults().vespaHome() + "var/zookeeper\n" +
+                        "dataDir=" + getDefaults().underVespaHome("var/zookeeper") + "\n" +
                         "clientPort=2181\n" +
                         "autopurge.purgeInterval=1\n" +
                         "autopurge.snapRetainCount=15\n" +

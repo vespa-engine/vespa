@@ -9,8 +9,7 @@ namespace {
     struct DiskApp : public FastOS_Application {
         int Main() override {
             try {
-                std::string dir = vespa::Defaults::vespaHome();
-                dir.append("var/db/vespa/vds");
+                std::string dir = vespa::Defaults::underVespaHome("var/db/vespa/vds");
                 return storage::memfile::VdsDiskTool::run(
                         _argc, _argv, dir.c_str(),
                         std::cout, std::cerr);

@@ -23,8 +23,6 @@ COMMON_ENV=libexec/vespa/common-env.sh
 
 source_common_env () {
     if [ "$VESPA_HOME" ] && [ -d "$VESPA_HOME" ]; then
-        # ensure it ends with "/" :
-        VESPA_HOME=${VESPA_HOME%/}/
         export VESPA_HOME
         common_env=$VESPA_HOME/$COMMON_ENV
         if [ -f "$common_env" ]; then
@@ -135,7 +133,7 @@ configure_vespa_malloc () {
     if $no_valgrind || $use_callgrind; then
         # should really check that format is same as binary below
         for pre in lib64 lib; do
-            tryfile="${VESPA_HOME}${pre}/${suf}"
+            tryfile="${VESPA_HOME}/${pre}/${suf}"
             if [ -f "$tryfile" ]; then
                 LD_PRELOAD="$tryfile"
 		log_debug_message "Using LD_PRELOAD='$tryfile'"
