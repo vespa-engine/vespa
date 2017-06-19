@@ -55,7 +55,7 @@ class JavaClassBuilderTest {
 
     val parser = new DefParser("test", new StringReader(testDefinition))
     val root = parser.getTree
-    val builder = new JavaClassBuilder(root, parser.getNormalizedDefinition, null)
+    val builder = new JavaClassBuilder(root, parser.getNormalizedDefinition, null, null)
     val configClass = builder.getConfigClass("TestConfig")
     print(configClass)
   }

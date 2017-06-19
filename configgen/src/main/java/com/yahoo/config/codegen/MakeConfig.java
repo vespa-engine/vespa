@@ -1,27 +1,49 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.codegen;
 
-import java.io.*;
-import java.util.logging.Logger;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintStream;
 
 /**
  * This class generates code for a config class from a given def-file.
  */
 public class MakeConfig {
 
-    private final static Logger log = Logger.getLogger(MakeConfig.class.getName());
-
     private final ClassBuilder classBuilder;
 
-    public MakeConfig(InnerCNode root, NormalizedDefinition nd, String path, MakeConfigProperties properties) {
-        classBuilder = createClassBuilder(root, nd, path, properties);
+    public MakeConfig(InnerCNode root, NormalizedDefinition nd, MakeConfigProperties properties) {
+        classBuilder = createClassBuilder(root, nd, properties);
     }
 
-    public static ClassBuilder createClassBuilder(InnerCNode root, NormalizedDefinition nd, String path, MakeConfigProperties prop) {
+    public static ClassBuilder createClassBuilder(InnerCNode root, NormalizedDefinition nd, MakeConfigProperties prop) {
         if (prop.language.equals("cppng") || prop.language.equals("cpp"))
             return new CppClassBuilder(root, nd, prop.destDir, prop.dirInRoot);
         else
-            return new JavaClassBuilder(root, nd, prop.destDir);
+            return new JavaClassBuilder(root, nd, prop.destDir, prop.javaPackagePrefix);
+    }
+
+    public static boolean makeConfig(MakeConfigProperties properties) throws FileNotFoundException {
+        for (File specFile : properties.specFiles) {
+            String name = specFile.getName();
+            if (name.endsWith(".def")) name = name.substring(0, name.length() - 4);
+            DefParser parser = new DefParser(name, new FileReader(specFile));
+            InnerCNode configRoot = parser.getTree();
+            checkNamespace(name, configRoot);
+            if (configRoot != null) {
+                MakeConfig mc = new MakeConfig(configRoot, parser.getNormalizedDefinition(), properties);
+                mc.buildClasses();
+                if (properties.dumpTree) {
+                    System.out.println("\nTree dump:");
+                    DefParser.dumpTree(configRoot, "");
+                }
+            } else {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -39,24 +61,8 @@ public class MakeConfig {
     public static void main(String[] args) throws IOException, InterruptedException {
         try {
             MakeConfigProperties props = new MakeConfigProperties();
-            for (File specFile : props.specFiles) {
-                String path = specFile.toURI().toString();
-                String name = specFile.getName();
-                if (name.endsWith(".def")) name = name.substring(0, name.length() - 4);
-                DefParser parser = new DefParser(name, new FileReader(specFile));
-                InnerCNode configRoot = parser.getTree();
-                checkNamespace(name, configRoot);
-                if (configRoot != null) {
-                    MakeConfig mc = new MakeConfig(configRoot, parser.getNormalizedDefinition(), path, props);
-                    mc.buildClasses();
-                    if (props.dumpTree) {
-                        System.out.println("\nTree dump:");
-                        DefParser.dumpTree(configRoot, "");
-                    }
-                } else {
-                    System.exit(1);
-                }
-            }
+            boolean success = makeConfig(props);
+            if (!success) System.exit(1);
         } catch (PropertyException e) {
             System.out.println(Exceptions.toMessageString(e));
             printUsage(System.err);

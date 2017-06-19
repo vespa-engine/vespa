@@ -15,12 +15,14 @@ import scala.collection.JavaConversions._
 class JavaClassBuilder(
                         root: InnerCNode,
                         nd: NormalizedDefinition,
-                        destDir: File)
+                        destDir: File,
+                        rawPackagePrefix: String)
   extends ClassBuilder
 {
   import JavaClassBuilder._
 
-  val javaPackage = PackagePrefix + root.getNamespace
+  val packagePrefix = if (rawPackagePrefix != null) rawPackagePrefix else "com.yahoo."
+  val javaPackage = packagePrefix + root.getNamespace
   val className = createClassName(root.getName)
 
   override def createConfigClasses() {
@@ -72,7 +74,7 @@ class JavaClassBuilder(
 
   private def getImportFrameworkClasses(namespace: String): String = {
     if (namespace != CNode.DEFAULT_NAMESPACE)
-      "import " + PackagePrefix + CNode.DEFAULT_NAMESPACE + ".*;\n"
+      "import " + packagePrefix + CNode.DEFAULT_NAMESPACE + ".*;\n"
     else
       ""
   }
@@ -120,11 +122,28 @@ class JavaClassBuilder(
       |}
     """.stripMargin.trim
   }
+
+  /**
+    * @param rootDir  The root directory for the destination path.
+    * @param namespace  The namespace from the def file
+    * @return the destination path for the generated config file, including the given rootDir.
+    */
+  private def getDestPath(rootDir: File, namespace: String): File = {
+    var dir: File = rootDir
+    val subDirs: Array[String] = (packagePrefix + namespace).split("""\.""")
+    for (subDir <- subDirs) {
+      dir = new File(dir, subDir)
+      this.synchronized {
+        if (!dir.isDirectory && !dir.mkdir) throw new CodegenRuntimeException("Could not create " + dir.getPath)
+      }
+    }
+    dir
+  }
+
 }
 
 
 object JavaClassBuilder {
-  private val PackagePrefix: String = System.getProperty("config.packagePrefix", "com.yahoo.")
 
   val Indentation = "  "
 
@@ -161,20 +180,4 @@ object JavaClassBuilder {
     candidate
   }
 
-  /**
-   * @param rootDir  The root directory for the destination path.
-   * @param namespace  The namespace from the def file
-   * @return the destination path for the generated config file, including the given rootDir.
-   */
-  private def getDestPath(rootDir: File, namespace: String): File = {
-    var dir: File = rootDir
-    val subDirs: Array[String] = (PackagePrefix + namespace).split("""\.""")
-    for (subDir <- subDirs) {
-      dir = new File(dir, subDir)
-      this.synchronized {
-        if (!dir.isDirectory && !dir.mkdir) throw new CodegenRuntimeException("Could not create " + dir.getPath)
-      }
-    }
-    dir
-  }
 }

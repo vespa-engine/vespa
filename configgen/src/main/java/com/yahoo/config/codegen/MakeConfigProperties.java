@@ -13,28 +13,43 @@ import java.util.StringTokenizer;
  */
 public class MakeConfigProperties {
 
-    private final List<String> legalLanguages = Arrays.asList("java", "cpp", "cppng" );
+    private static final List<String> legalLanguages = Arrays.asList("java", "cpp", "cppng" );
 
     final File destDir;
     final File[] specFiles;
     final String language;
     final String dirInRoot; // Where within fileroot to store generated class files
+    final String javaPackagePrefix;
     final boolean dumpTree;
     final boolean generateFrameworkCode;
 
     MakeConfigProperties() throws PropertyException {
-        destDir = checkDestinationDir();
-        specFiles = checkSpecificationFiles();
-        language = checkLanguage();
-        dirInRoot = checkDirInRoot();
-        dumpTree = System.getProperty("config.dumpTree") != null &&
-                   System.getProperty("config.dumpTree").equalsIgnoreCase("true");
-        generateFrameworkCode = System.getProperty("config.useFramework") == null ||
-                                System.getProperty("config.useFramework").equalsIgnoreCase("true");
+        this(System.getProperty("config.dest"),
+             System.getProperty("config.spec"),
+             System.getProperty("config.lang"),
+             System.getProperty("config.subdir"),
+             System.getProperty("config.dumpTree"),
+             System.getProperty("config.useFramework"),
+             System.getProperty("config.packagePrefix"));
     }
 
-    private File checkDestinationDir() throws PropertyException {
-        String destination = System.getProperty("config.dest");
+    public MakeConfigProperties(String destDir,
+                         String specFiles,
+                         String language,
+                         String dirInRoot,
+                         String dumpTree,
+                         String generateFrameworkCode,
+                         String javaPackagePrefix) throws PropertyException {
+        this.destDir = checkDestinationDir(destDir);
+        this.specFiles = checkSpecificationFiles(specFiles);
+        this.language = checkLanguage(language);
+        this.dirInRoot = checkDirInRoot(this.destDir, dirInRoot);
+        this.dumpTree = Boolean.parseBoolean(dumpTree);
+        this.generateFrameworkCode = Boolean.parseBoolean(generateFrameworkCode);
+        this.javaPackagePrefix = javaPackagePrefix;
+    }
+
+    private static File checkDestinationDir(String destination) throws PropertyException {
         if (destination == null)
             throw new PropertyException("Missing property: config.dest.");
 
@@ -45,8 +60,7 @@ public class MakeConfigProperties {
         return dir;
     }
 
-    private String checkDirInRoot() throws PropertyException {
-        String dirInRoot = System.getProperty("config.subdir");
+    private static String checkDirInRoot(File destDir,  String dirInRoot) throws PropertyException {
             // Optional parameter
         if (dirInRoot == null) { return null; }
         File f = new File(destDir, dirInRoot);
@@ -56,12 +70,8 @@ public class MakeConfigProperties {
         return dirInRoot;
     }
 
-    /**
-     * @return Desired programming language of generated code, default is "java".
-     * @throws PropertyException if supplied language is not a legal language.
-     */
-    private String checkLanguage() throws PropertyException {
-        String inputLang = System.getProperty("config.lang", "java").toLowerCase();
+    private static String checkLanguage(String lang) throws PropertyException {
+        String inputLang = lang != null ? lang.toLowerCase() : "java";
         if (! legalLanguages.contains(inputLang)) {
             throw new PropertyException
                     ("Unsupported code language: '" + inputLang + "'. Supported languages are: " + legalLanguages);
@@ -69,12 +79,11 @@ public class MakeConfigProperties {
         return inputLang;
     }
 
-    private static File[] checkSpecificationFiles() throws PropertyException {
-        String string = System.getProperty("config.spec");
-        if (string == null)
+    private static File[] checkSpecificationFiles(String spec) throws PropertyException {
+        if (spec == null)
             throw new PropertyException("Missing property: config.spec.");
 
-        StringTokenizer st = new StringTokenizer(string, ",");
+        StringTokenizer st = new StringTokenizer(spec, ",");
         if (st.countTokens() == 0)
             throw new PropertyException("Missing property: config.spec.");
 
