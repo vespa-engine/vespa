@@ -91,6 +91,9 @@ public class VespaMetricSet {
         metrics.add(new Metric("jdisc.memory_mappings.max"));
         metrics.add(new Metric("jdisc.open_file_descriptors.max"));
 
+        metrics.add(new Metric("jdisc.deactivated_containers.total"));
+        metrics.add(new Metric("jdisc.deactivated_containers.with_retained_refs"));
+
         return metrics;
     }
 
