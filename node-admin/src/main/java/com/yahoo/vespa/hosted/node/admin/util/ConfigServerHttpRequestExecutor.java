@@ -83,8 +83,14 @@ public class ConfigServerHttpRequestExecutor {
                 try {
                     response = client.execute(requestFactory.createRequest(configServer));
                 } catch (Exception e) {
+                    // Failure to communicate with a config server is not abnormal, as they are
+                    // upgraded at the same time as Docker hosts.
+                    if (e.getMessage().indexOf("(Connection refused)") > 0) {
+                        NODE_ADMIN_LOGGER.info("Connection refused to " + configServer + " (upgrading?), will try next");
+                    } else {
+                        NODE_ADMIN_LOGGER.warning("Failed to communicate with " + configServer + ", will try next: " + e.getMessage());
+                    }
                     lastException = e;
-                    NODE_ADMIN_LOGGER.info("Exception while talking to " + configServer + " (will try all config servers):" + e.getMessage());
                     continue;
                 }
 
@@ -107,7 +113,9 @@ public class ConfigServerHttpRequestExecutor {
                 }
             }
         }
-        throw new RuntimeException("Failed executing request, last exception: ", lastException);
+
+        throw new RuntimeException("All requests against the config servers ("
+                + configServerHosts + ") failed, last as follows:", lastException);
     }
 
     public <T> T put(String path, int port, Optional<Object> bodyJsonPojo, Class<T> wantedReturnType) {
