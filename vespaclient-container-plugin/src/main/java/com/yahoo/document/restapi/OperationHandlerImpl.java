@@ -346,7 +346,7 @@ public class OperationHandlerImpl implements OperationHandler {
         params.setMaxBucketsPerVisitor(1);
         params.setMaxPending(32);
         params.setMaxFirstPassHits(1);
-        params.setMaxTotalHits(10);
+        params.setMaxTotalHits(1);
         params.setThrottlePolicy(new StaticThrottlePolicy().setMaxPendingCount(1));
         params.setToTimestamp(0L);
         params.setFromTimestamp(0L);
