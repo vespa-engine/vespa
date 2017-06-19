@@ -8,10 +8,10 @@ import java.util.zip.ZipEntry
 
 import com.yahoo.container.plugin.util.{Files, JarFiles}
 import org.apache.maven.archiver.{MavenArchiveConfiguration, MavenArchiver}
+import org.apache.maven.execution.MavenSession
 import org.apache.maven.plugin.AbstractMojo
-import org.apache.maven.plugins.annotations.{Component, Mojo, Parameter, ResolutionScope}
+import org.apache.maven.plugins.annotations.{Mojo, Parameter, ResolutionScope}
 import org.apache.maven.project.MavenProject
-import org.codehaus.plexus.archiver.Archiver
 import org.codehaus.plexus.archiver.jar.JarArchiver
 
 import scala.collection.convert.wrapAsScala._
@@ -27,8 +27,8 @@ class AssembleContainerPluginMojo extends AbstractMojo {
   @Parameter(defaultValue = "${project}")
   var project: MavenProject = null
 
-  @Component(role = classOf[Archiver], hint = "jar")
-  var jarArchiver: JarArchiver = null
+  @Parameter(defaultValue = "${session}", readonly = true, required = true)
+  var session: MavenSession = null
 
   @Parameter
   var archiveConfiguration: MavenArchiveConfiguration = new MavenArchiveConfiguration
@@ -48,55 +48,58 @@ class AssembleContainerPluginMojo extends AbstractMojo {
     archiveConfiguration.setForced(true)
     archiveConfiguration.setManifestFile(new File(new File(project.getBuild.getOutputDirectory), JarFile.MANIFEST_NAME))
 
-    addClassesDirectory()
-    createArchive(jarFiles(withoutDependencies))
+    val jarWithoutDependencies = new JarArchiver()
+    addClassesDirectory(jarWithoutDependencies)
+    createArchive(jarFiles(withoutDependencies), jarWithoutDependencies)
     project.getArtifact.setFile(jarFiles(withoutDependencies))
 
-    addDependencies()
-    createArchive(jarFiles(withDependencies))
+    val jarWithDependencies = new JarArchiver()
+    addClassesDirectory(jarWithDependencies)
+    addDependencies(jarWithDependencies)
+    createArchive(jarFiles(withDependencies), jarWithDependencies)
   }
 
   private def jarFileInBuildDirectory(name: String)(jarSuffix: String) = {
     new File(build.getDirectory, name + jarSuffix)
   }
 
-  private def addClassesDirectory() {
+  private def addClassesDirectory(jarArchiver: JarArchiver) {
     val classesDirectory = new File(build.getOutputDirectory)
     if (classesDirectory.isDirectory) {
       jarArchiver.addDirectory(classesDirectory)
     }
   }
 
-  private def createArchive(jarFile: File) {
+  private def createArchive(jarFile: File, jarArchiver: JarArchiver) {
     val mavenArchiver = new MavenArchiver
     mavenArchiver.setArchiver(jarArchiver)
     mavenArchiver.setOutputFile(jarFile)
-    mavenArchiver.createArchive(project, archiveConfiguration)
+    mavenArchiver.createArchive(session, project, archiveConfiguration)
   }
 
-  private def addDependencies() {
+  private def addDependencies(jarArchiver: JarArchiver) {
     Artifacts.getArtifactsToInclude(project).foreach { artifact =>
         if (artifact.getType == "jar") {
           jarArchiver.addFile(artifact.getFile, "dependencies/" + artifact.getFile.getName)
-          copyConfigDefinitions(artifact.getFile)
+          copyConfigDefinitions(artifact.getFile, jarArchiver)
         }
         else
           getLog.warn("Unkown artifact type " + artifact.getType)
     }
   }
 
-  private def copyConfigDefinitions(file: File) {
+  private def copyConfigDefinitions(file: File, jarArchiver: JarArchiver) {
     JarFiles.withJarFile(file) { jarFile =>
       for {
         entry <- jarFile.entries()
         name = entry.getName
         if name.startsWith("configdefinitions/") && name.endsWith(".def")
 
-      } copyConfigDefinition(jarFile, entry)
+      } copyConfigDefinition(jarFile, entry, jarArchiver)
     }
   }
 
-  private def copyConfigDefinition(jarFile: JarFile, entry: ZipEntry) {
+  private def copyConfigDefinition(jarFile: JarFile, entry: ZipEntry, jarArchiver: JarArchiver) {
     JarFiles.withInputStream(jarFile, entry) { input =>
       val defPath = entry.getName.replace("/", File.separator)
       val destinationFile = new File(project.getBuild.getOutputDirectory, defPath)
