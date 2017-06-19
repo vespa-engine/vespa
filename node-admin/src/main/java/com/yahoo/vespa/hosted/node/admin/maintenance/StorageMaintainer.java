@@ -204,8 +204,13 @@ public class StorageMaintainer {
         if (! getMaintenanceThrottlerFor(containerName).shouldRemoveOldFilesNow()) return;
 
         MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
-        String[] pathsToClean = {"/home/y/logs/elasticsearch2", "/home/y/logs/logstash2",
-                "/home/y/logs/daemontools_y", "/home/y/logs/nginx", "/home/y/logs/vespa"};
+        String[] pathsToClean = {
+            getDefaults().underVespaHome("logs/elasticsearch2"),
+            getDefaults().underVespaHome("logs/logstash2"),
+            getDefaults().underVespaHome("logs/daemontools_y"),
+            getDefaults().underVespaHome("logs/nginx"),
+            getDefaults().underVespaHome("logs/vespa")
+        };
 
         for (String pathToClean : pathsToClean) {
             Path path = environment.pathInNodeAdminFromPathInNode(containerName, pathToClean);
@@ -224,13 +229,15 @@ public class StorageMaintainer {
             }
         }
 
-        Path logArchiveDir = environment.pathInNodeAdminFromPathInNode(containerName, "/home/y/logs/vespa/logarchive");
+        Path logArchiveDir = environment.pathInNodeAdminFromPathInNode(containerName,
+                                                                       getDefaults().underVespaHome("logs/vespa/logarchive"));
         maintainerExecutor.addJob("delete-files")
                 .withArgument("basePath", logArchiveDir)
                 .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
                 .withArgument("recursive", false);
 
-        Path fileDistrDir = environment.pathInNodeAdminFromPathInNode(containerName, "/home/y/var/db/vespa/filedistribution");
+        Path fileDistrDir = environment.pathInNodeAdminFromPathInNode(containerName,
+                                                                      getDefaults().underVespaHome("var/db/vespa/filedistribution"));
         maintainerExecutor.addJob("delete-files")
                 .withArgument("basePath", fileDistrDir)
                 .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
@@ -269,7 +276,9 @@ public class StorageMaintainer {
         MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
         maintainerExecutor.addJob("handle-core-dumps")
                 .withArgument("doneCoredumpsPath", environment.pathInNodeAdminToDoneCoredumps())
-                .withArgument("coredumpsPath", environment.pathInNodeAdminFromPathInNode(containerName, "/home/y/var/crash"))
+                .withArgument("coredumpsPath",
+                              environment.pathInNodeAdminFromPathInNode(containerName,
+                                      getDefaults().underVespaHome("var/crash")))
                 .withArgument("feedEndpoint", environment.getCoredumpFeedEndpoint())
                 .withArgument("attributes", attributes);
 
@@ -292,13 +301,13 @@ public class StorageMaintainer {
                 .withArgument("maxAgeSeconds", Duration.ofDays(7).getSeconds())
                 .withArgument("dirNameRegex", "^" + Pattern.quote(Environment.APPLICATION_STORAGE_CLEANUP_PATH_PREFIX));
 
-        Path nodeAdminJDiskLogsPath = environment.pathInNodeAdminFromPathInNode(NODE_ADMIN, "/home/y/logs/vespa/");
+        Path nodeAdminJDiskLogsPath = environment.pathInNodeAdminFromPathInNode(NODE_ADMIN, getDefaults().underVespaHome("logs/vespa/"));
         maintainerExecutor.addJob("delete-files")
                 .withArgument("basePath", nodeAdminJDiskLogsPath)
                 .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
                 .withArgument("recursive", false);
 
-        Path fileDistrDir = environment.pathInNodeAdminFromPathInNode(NODE_ADMIN, "/home/y/var/db/vespa/filedistribution");
+        Path fileDistrDir = environment.pathInNodeAdminFromPathInNode(NODE_ADMIN, getDefaults().underVespaHome("var/db/vespa/filedistribution"));
         maintainerExecutor.addJob("delete-files")
                 .withArgument("basePath", fileDistrDir)
                 .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
@@ -314,7 +323,7 @@ public class StorageMaintainer {
     public void archiveNodeData(ContainerName containerName) {
         MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
         maintainerExecutor.addJob("recursive-delete")
-                .withArgument("path", environment.pathInNodeAdminFromPathInNode(containerName, "/home/y/var"));
+            .withArgument("path", environment.pathInNodeAdminFromPathInNode(containerName, getDefaults().underVespaHome("var")));
 
         maintainerExecutor.addJob("move-files")
                 .withArgument("from", environment.pathInNodeAdminFromPathInNode(containerName, "/"))
@@ -369,7 +378,7 @@ public class StorageMaintainer {
             }
 
             String[] command = {"java",
-                    "-cp", "/home/y/lib/jars/node-maintainer-jar-with-dependencies.jar",
+                                "-cp", getDefaults().underVespaHome("lib/jars/node-maintainer-jar-with-dependencies.jar"),
                     "-Dvespa.log.target=file:" + getDefaults().underVespaHome("logs/vespa/maintainer.log"),
                     "com.yahoo.vespa.hosted.node.maintainer.Maintainer", args};
             ProcessResult result = docker.executeInContainerAsRoot(executeIn, command);

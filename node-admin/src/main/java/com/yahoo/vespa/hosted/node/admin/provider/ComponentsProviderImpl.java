@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.provider;
 
 import com.google.inject.Inject;
 import com.yahoo.net.HostName;
-import com.yahoo.vespa.defaults.Defaults;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
@@ -44,7 +44,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
     private final MetricReceiverWrapper metricReceiverWrapper;
 
     private static final int NODE_AGENT_SCAN_INTERVAL_MILLIS = 30000;
-    private static final int WEB_SERVICE_PORT = Defaults.getDefaults().vespaWebServicePort();
+    private static final int WEB_SERVICE_PORT = getDefaults().vespaWebServicePort();
 
     // Converge towards desired node admin state every 30 seconds
     private static final int NODE_ADMIN_CONVERGE_STATE_INTERVAL_MILLIS = 30000;
@@ -100,7 +100,8 @@ public class ComponentsProviderImpl implements ComponentsProvider {
 
 
     private void setCorePattern(Docker docker) {
-        final String[] sysctlCorePattern = {"sysctl", "-w", "kernel.core_pattern=/home/y/var/crash/%e.core.%p"};
+        final String[] sysctlCorePattern = {"sysctl", "-w", "kernel.core_pattern=" +
+                                            getDefaults().underVespaHome("var/crash/%e.core.%p")};
         docker.executeInContainerAsRoot(NODE_ADMIN_CONTAINER_NAME, sysctlCorePattern);
     }
 
