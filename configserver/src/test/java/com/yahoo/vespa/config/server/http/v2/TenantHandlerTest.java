@@ -97,7 +97,7 @@ public class TenantHandlerTest extends TenantTest {
             handler.handleDELETE(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/" + a, Method.DELETE));
             fail();
         } catch (BadRequestException e) {
-            assertThat(e.getMessage(), is("Cannot delete tenant 'a', as it has active applications: [tenant 'a', application 'foo', instance 'default']"));
+            assertThat(e.getMessage(), is("Cannot delete tenant 'a', as it has active applications: [a.foo]"));
         }
     }
 
