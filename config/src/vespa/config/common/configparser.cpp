@@ -4,7 +4,7 @@
 #include "exceptions.h"
 #include "misc.h"
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <cassert>
+#include <vespa/vespalib/locale/c.h>
 
 namespace config {
 
@@ -339,25 +339,6 @@ ConfigParser::convert<int64_t>(const vsvector & config)
     return ret;
 }
 
-namespace {
-
-class Locale {
-public:
-    Locale() : Locale(LC_ALL_MASK, "C") { }
-    Locale(int category, const char *locale) : _locale(newlocale(category, locale, nullptr))
-    {
-        perror("newlocale failed");
-        assert(_locale != nullptr);
-    }
-    ~Locale() { freelocale(_locale); }
-    locale_t get() const { return _locale; }
-private:
-    locale_t _locale;
-};
-
-Locale _G_C_Locale;
-}
-
 template<>
 double
 ConfigParser::convert<double>(const vsvector & config)
@@ -371,7 +352,7 @@ ConfigParser::convert<double>(const vsvector & config)
     const char *startp = value.c_str();
     char *endp;
     errno = 0;
-    double ret = strtod_l(startp, &endp, _G_C_Locale.get());
+    double ret = vespalib::locale::c::strtod(startp, &endp);
     int err = errno;
     if (err == ERANGE || (*endp != '\0')) {
         throw InvalidConfigException("Value " + value + " is not a legal double", VESPA_STRLOC);

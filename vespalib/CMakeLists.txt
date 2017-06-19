@@ -109,6 +109,7 @@ vespa_define_module(
     src/vespa/vespalib/geo
     src/vespa/vespalib/hwaccelrated
     src/vespa/vespalib/io
+    src/vespa/vespalib/locale
     src/vespa/vespalib/net
     src/vespa/vespalib/objects
     src/vespa/vespalib/stllike
