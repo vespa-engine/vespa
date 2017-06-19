@@ -6,8 +6,7 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vector>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 class Properties;
 
@@ -319,6 +318,4 @@ swap(Properties & a, Properties & b)
 }
 
 
-} // namespace fef
-} // namespace search
-
+}

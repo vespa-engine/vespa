@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <algorithm>
-#include <vector>
 #include "featureexecutor.h"
 #include "iindexenvironment.h"
 #include "iqueryenvironment.h"
@@ -14,8 +12,7 @@
 
 namespace vespalib { class Stash; }
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * A blueprint is a description of a named feature executor with a
@@ -251,6 +248,4 @@ public:
     virtual ~Blueprint();
 };
 
-} // namespace fef
-} // namespace search
-
+}

@@ -5,8 +5,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * An object of this class may be used to build feature names in a
@@ -70,6 +69,4 @@ public:
     vespalib::string buildName() const;
 };
 
-} // namespace fef
-} // namespace search
-
+}
