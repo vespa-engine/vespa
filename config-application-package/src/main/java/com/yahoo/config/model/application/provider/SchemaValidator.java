@@ -160,9 +160,9 @@ public class SchemaValidator {
                 if (bundle == null) {
                     File schemaPath;
                     if (vespaVersion.getMajor() == 5) {
-                        schemaPath = new File(Defaults.getDefaults().vespaHome() + "share/vespa/schema/version/5.x/schema/");
+                        schemaPath = new File(Defaults.getDefaults().underVespaHome("share/vespa/schema/version/5.x/schema/"));
                     } else {
-                        schemaPath = new File(Defaults.getDefaults().vespaHome() + "share/vespa/schema/");
+                        schemaPath = new File(Defaults.getDefaults().underVespaHome("share/vespa/schema/"));
                     }
                     log.log(LogLevel.DEBUG, "Using schemas found in " + schemaPath);
                     copySchemas(schemaPath, tmpDir);

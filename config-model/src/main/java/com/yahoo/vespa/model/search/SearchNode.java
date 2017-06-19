@@ -126,7 +126,7 @@ public class SearchNode extends AbstractService implements
     }
 
     private String getBaseDir() {
-        return Defaults.getDefaults().vespaHome() + "var/db/vespa/search/cluster." + getClusterName() + "/n" + distributionKey;
+        return Defaults.getDefaults().underVespaHome("var/db/vespa/search/cluster." + getClusterName()) + "/n" + distributionKey;
     }
 
     public void updatePartition(int partitionId) {
@@ -307,7 +307,7 @@ public class SearchNode extends AbstractService implements
 
     @Override
     public Optional<String> getPreShutdownCommand() {
-        return Optional.ofNullable(flushOnShutdown ? Defaults.getDefaults().vespaHome() + "bin/vespa-proton-cmd " + getRpcPort() + " prepareRestart" : null);
+        return Optional.ofNullable(flushOnShutdown ? Defaults.getDefaults().underVespaHome("bin/vespa-proton-cmd ") + getRpcPort() + " prepareRestart" : null);
     }
 
 }

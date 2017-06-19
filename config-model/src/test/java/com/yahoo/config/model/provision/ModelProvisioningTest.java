@@ -110,9 +110,9 @@ public class ModelProvisioningTest {
         assertThat(model.getContainerClusters().get("mydisc").getContainers().get(0).getJvmArgs(), is(""));
         assertThat(model.getContainerClusters().get("mydisc").getContainers().get(1).getJvmArgs(), is(""));
         assertThat(model.getContainerClusters().get("mydisc").getContainers().get(2).getJvmArgs(), is(""));
-        assertThat(model.getContainerClusters().get("mydisc").getContainers().get(0).getPreLoad(), is(Defaults.getDefaults().vespaHome() + "lib64/vespa/malloc/libvespamalloc.so"));
-        assertThat(model.getContainerClusters().get("mydisc").getContainers().get(1).getPreLoad(), is(Defaults.getDefaults().vespaHome() + "lib64/vespa/malloc/libvespamalloc.so"));
-        assertThat(model.getContainerClusters().get("mydisc").getContainers().get(2).getPreLoad(), is(Defaults.getDefaults().vespaHome() + "lib64/vespa/malloc/libvespamalloc.so"));
+        assertThat(model.getContainerClusters().get("mydisc").getContainers().get(0).getPreLoad(), is(Defaults.getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so")));
+        assertThat(model.getContainerClusters().get("mydisc").getContainers().get(1).getPreLoad(), is(Defaults.getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so")));
+        assertThat(model.getContainerClusters().get("mydisc").getContainers().get(2).getPreLoad(), is(Defaults.getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so")));
         assertThat(model.getContainerClusters().get("mydisc").getMemoryPercentage(), is(Optional.empty()));
 
         assertThat(model.getContainerClusters().get("mydisc2").getContainers().get(0).getJvmArgs(), is("-verbosegc"));

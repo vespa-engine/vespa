@@ -51,5 +51,5 @@ public class RewriterConstants {
     public static final String DICT_KEY = "DictKey";
 
     /** Default dictionaries dir */
-    public static final String DEFAULT_DICT_DIR = Defaults.getDefaults().vespaHome() + "share/qrw_data/";
+    public static final String DEFAULT_DICT_DIR = Defaults.getDefaults().underVespaHome("share/qrw_data/");
 }

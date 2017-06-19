@@ -62,7 +62,7 @@ public class StorageNodeTest {
     public void verifyDiskPathConfigIsSetForVds() throws Exception {
         StorDevicesConfig config = getConfig(true);
         assertEquals(1, config.disk_path().size());
-        assertEquals(Defaults.getDefaults().vespaHome() + "var/db/vespa/vds/zoo/storage/0/disks/d0", config.disk_path(0));
+        assertEquals(Defaults.getDefaults().underVespaHome("var/db/vespa/vds/zoo/storage/0/disks/d0"), config.disk_path(0));
     }
 
     @Test

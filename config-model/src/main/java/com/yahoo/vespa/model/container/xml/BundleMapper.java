@@ -16,7 +16,7 @@ import java.util.Optional;
  */
 public class BundleMapper {
 
-    public static final Path LIBRARY_PATH = Paths.get(Defaults.getDefaults().vespaHome() + "lib/jars");
+    public static final Path LIBRARY_PATH = Paths.get(Defaults.getDefaults().underVespaHome("lib/jars"));
     public static final String searchAndDocprocBundle = "container-search-and-docproc";
 
     private static final Map<String, String> bundleFromClass;

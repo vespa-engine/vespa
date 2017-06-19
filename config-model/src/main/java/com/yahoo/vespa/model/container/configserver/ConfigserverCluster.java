@@ -147,7 +147,7 @@ public class ConfigserverCluster extends AbstractConfigProducer
         if (options.configModelPluginDirs().length > 0) {
             return options.configModelPluginDirs();
         } else {
-            return new String[]{Defaults.getDefaults().vespaHome() + "lib/jars/config-models"};
+            return new String[]{Defaults.getDefaults().underVespaHome("lib/jars/config-models")};
         }
     }
 

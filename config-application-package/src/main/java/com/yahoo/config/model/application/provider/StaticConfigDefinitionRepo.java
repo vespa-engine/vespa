@@ -29,7 +29,7 @@ public class StaticConfigDefinitionRepo implements ConfigDefinitionRepo {
 
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(StaticConfigDefinitionRepo.class.getName());
     private final Map<ConfigDefinitionKey, ConfigDefinition> configDefinitions = new LinkedHashMap<>();
-    private static final String DEFAULT_SERVER_DEF_DIR = Defaults.getDefaults().vespaHome() + "var/db/vespa/config_server/serverdb/classes";
+    private static final String DEFAULT_SERVER_DEF_DIR = Defaults.getDefaults().underVespaHome("var/db/vespa/config_server/serverdb/classes");
 
     public StaticConfigDefinitionRepo() {
         this(new File(DEFAULT_SERVER_DEF_DIR));

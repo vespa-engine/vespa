@@ -68,7 +68,7 @@ public class ConfigserverClusterTest {
     public void testConfigserverConfig() {
         ConfigserverConfig config = root.getConfig(ConfigserverConfig.class, "configserver/standalone");
         assertThat(config.configModelPluginDir().size(), is(1));
-        assertThat(config.configModelPluginDir().get(0), is(Defaults.getDefaults().vespaHome() + "lib/jars/config-models"));
+        assertThat(config.configModelPluginDir().get(0), is(Defaults.getDefaults().underVespaHome("lib/jars/config-models")));
         assertThat(config.rpcport(), is(12345));
         assertThat(config.httpport(), is(1337));
         assertThat(config.serverId(), is(HostName.getLocalhost()));

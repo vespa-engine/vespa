@@ -57,7 +57,7 @@ public class SearchNodeTest {
         MockRoot root = new MockRoot("");
         SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false);
         prepare(root, node);
-        assertBaseDir(Defaults.getDefaults().vespaHome() + "var/db/vespa/search/cluster.mycluster/n3", node);
+        assertBaseDir(Defaults.getDefaults().underVespaHome("var/db/vespa/search/cluster.mycluster/n3"), node);
     }
 
     @Test

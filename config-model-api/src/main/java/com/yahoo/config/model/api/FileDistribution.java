@@ -22,7 +22,7 @@ public interface FileDistribution {
     void removeDeploymentsThatHaveDifferentApplicationId(Collection<String> targetHostnames);
 
     static File getDefaultFileDBPath() {
-        return new File(Defaults.getDefaults().vespaHome() + "var/db/vespa/filedistribution");
+        return new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution"));
     }
 
 }

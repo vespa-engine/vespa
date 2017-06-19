@@ -63,7 +63,7 @@ public class IndexedSearchNodeNamingTest {
     }
 
     private void assertSearchNode(String expName, String expId, SearchNode node) {
-        assertBaseDir(Defaults.getDefaults().vespaHome() + "var/db/vespa/search/cluster.mycluster/" + expName, node);
+        assertBaseDir(Defaults.getDefaults().underVespaHome("var/db/vespa/search/cluster.mycluster/" + expName), node);
         assertConfigId("mycluster/search/cluster.mycluster/" + expId, node);
     }
 
