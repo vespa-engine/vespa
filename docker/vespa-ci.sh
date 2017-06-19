@@ -17,7 +17,7 @@ CI_DOCKER_IMAGE="vespaci"
 
 docker build -t "$BUILD_DOCKER_IMAGE" -f Dockerfile.build .
 
-# Create a temporarily copy of the rpm spec file inside docker directory so it can be referenced by the Dockerfile
+# Create a temporary copy of the rpm spec file inside docker directory so it can be referenced by the Dockerfile
 rm -rf tmp; mkdir tmp
 cp -p ../dist/vespa.spec tmp/vespa.spec
 
