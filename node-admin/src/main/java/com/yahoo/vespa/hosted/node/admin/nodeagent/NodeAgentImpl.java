@@ -96,7 +96,7 @@ public class NodeAgentImpl implements NodeAgent {
     // The attributes of the last successful node repo attribute update for this node. Used to avoid redundant calls.
     private NodeAttributes lastAttributesSet = null;
     private ContainerNodeSpec lastNodeSpec = null;
-    private CpuUsageReporter lastCpuMetric;
+    private CpuUsageReporter lastCpuMetric = new CpuUsageReporter();
 
     public NodeAgentImpl(
             final String hostName,
@@ -134,12 +134,8 @@ public class NodeAgentImpl implements NodeAgent {
         };
 
         // If the container is already running, initialize vespaVersion and lastCpuMetric
-        lastCpuMetric = new CpuUsageReporter(clock.instant());
         dockerOperations.getContainer(containerName)
                 .ifPresent(container -> {
-                    if (container.state.isRunning()) {
-                        lastCpuMetric = new CpuUsageReporter(container.created);
-                    }
                     containerState = RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
                     logger.info("Container is already running, setting containerState to " + containerState);
                 });
@@ -260,7 +256,7 @@ public class NodeAgentImpl implements NodeAgent {
     private void startContainer(ContainerNodeSpec nodeSpec) {
         aclMaintainer.ifPresent(AclMaintainer::run);
         dockerOperations.startContainer(containerName, nodeSpec);
-        lastCpuMetric = new CpuUsageReporter(clock.instant());
+        lastCpuMetric = new CpuUsageReporter();
 
         currentFilebeatRestarter = filebeatRestarter.scheduleWithFixedDelay(() -> serviceRestarter.accept("filebeat"), 1, 1, TimeUnit.DAYS);
         storageMaintainer.ifPresent(maintainer -> {
@@ -626,11 +622,6 @@ public class NodeAgentImpl implements NodeAgent {
     class CpuUsageReporter {
         private long totalContainerUsage = 0;
         private long totalSystemUsage = 0;
-        private final Instant created;
-
-        CpuUsageReporter(Instant created) {
-            this.created = created;
-        }
 
         double getCpuUsagePercentage(long currentContainerUsage, long currentSystemUsage) {
             long deltaSystemUsage = currentSystemUsage - totalSystemUsage;
@@ -640,10 +631,6 @@ public class NodeAgentImpl implements NodeAgent {
             totalContainerUsage = currentContainerUsage;
             totalSystemUsage = currentSystemUsage;
             return cpuUsagePct;
-        }
-
-        long getUptime() {
-            return Duration.between(created, clock.instant()).getSeconds();
         }
     }
 

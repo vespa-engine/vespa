@@ -573,8 +573,7 @@ public class NodeAgentImplTest {
                         dockerImage,
                         containerName,
                         isRunning ? Container.State.RUNNING : Container.State.EXITED,
-                        isRunning ? 1 : 0,
-                        clock.instant().toString())) :
+                        isRunning ? 1 : 0)) :
                 Optional.empty();
 
         when(dockerOperations.getContainerStats(any())).thenReturn(Optional.of(emptyContainerStats));
