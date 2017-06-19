@@ -79,7 +79,7 @@ public final class ApplicationId implements Comparable<ApplicationId> {
     }
 
     @Override
-    public String toString() { return stringValue; }
+    public String toString() { return toShortString(); }
 
     public TenantName tenant() { return tenant; }
     public ApplicationName application() { return application; }
