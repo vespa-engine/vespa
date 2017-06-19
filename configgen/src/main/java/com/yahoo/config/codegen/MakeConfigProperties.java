@@ -19,6 +19,7 @@ public class MakeConfigProperties {
     final File[] specFiles;
     final String language;
     final String dirInRoot; // Where within fileroot to store generated class files
+    final String javaPackagePrefix;
     final boolean dumpTree;
     final boolean generateFrameworkCode;
 
@@ -28,7 +29,8 @@ public class MakeConfigProperties {
              System.getProperty("config.lang"),
              System.getProperty("config.subdir"),
              System.getProperty("config.dumpTree"),
-             System.getProperty("config.useFramework"));
+             System.getProperty("config.useFramework"),
+             System.getProperty("config.packagePrefix"));
     }
 
     public MakeConfigProperties(String destDir,
@@ -36,13 +38,15 @@ public class MakeConfigProperties {
                          String language,
                          String dirInRoot,
                          String dumpTree,
-                         String generateFrameworkCode) throws PropertyException {
+                         String generateFrameworkCode,
+                         String javaPackagePrefix) throws PropertyException {
         this.destDir = checkDestinationDir(destDir);
         this.specFiles = checkSpecificationFiles(specFiles);
         this.language = checkLanguage(language);
         this.dirInRoot = checkDirInRoot(this.destDir, dirInRoot);
         this.dumpTree = Boolean.parseBoolean(dumpTree);
         this.generateFrameworkCode = Boolean.parseBoolean(generateFrameworkCode);
+        this.javaPackagePrefix = javaPackagePrefix;
     }
 
     private static File checkDestinationDir(String destination) throws PropertyException {

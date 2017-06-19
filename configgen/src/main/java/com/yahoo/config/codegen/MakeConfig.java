@@ -14,27 +14,26 @@ public class MakeConfig {
 
     private final ClassBuilder classBuilder;
 
-    public MakeConfig(InnerCNode root, NormalizedDefinition nd, String path, MakeConfigProperties properties) {
-        classBuilder = createClassBuilder(root, nd, path, properties);
+    public MakeConfig(InnerCNode root, NormalizedDefinition nd, MakeConfigProperties properties) {
+        classBuilder = createClassBuilder(root, nd, properties);
     }
 
-    public static ClassBuilder createClassBuilder(InnerCNode root, NormalizedDefinition nd, String path, MakeConfigProperties prop) {
+    public static ClassBuilder createClassBuilder(InnerCNode root, NormalizedDefinition nd, MakeConfigProperties prop) {
         if (prop.language.equals("cppng") || prop.language.equals("cpp"))
             return new CppClassBuilder(root, nd, prop.destDir, prop.dirInRoot);
         else
-            return new JavaClassBuilder(root, nd, prop.destDir);
+            return new JavaClassBuilder(root, nd, prop.destDir, prop.javaPackagePrefix);
     }
 
     public static boolean makeConfig(MakeConfigProperties properties) throws FileNotFoundException {
         for (File specFile : properties.specFiles) {
-            String path = specFile.toURI().toString();
             String name = specFile.getName();
             if (name.endsWith(".def")) name = name.substring(0, name.length() - 4);
             DefParser parser = new DefParser(name, new FileReader(specFile));
             InnerCNode configRoot = parser.getTree();
             checkNamespace(name, configRoot);
             if (configRoot != null) {
-                MakeConfig mc = new MakeConfig(configRoot, parser.getNormalizedDefinition(), path, properties);
+                MakeConfig mc = new MakeConfig(configRoot, parser.getNormalizedDefinition(), properties);
                 mc.buildClasses();
                 if (properties.dumpTree) {
                     System.out.println("\nTree dump:");
