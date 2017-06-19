@@ -1,8 +1,6 @@
 FROM vespabuild
 
-COPY vespa-ci-internal.sh /vespa-ci-internal.sh
 COPY tmp/vespa.spec /vespa.spec
-
 RUN yum-builddep -y /vespa.spec
 
 # Build using non-root user 'vespabuilder'
@@ -12,3 +10,5 @@ USER vespabuilder
 
 # Java requires proper locale for unicode
 ENV LANG en_US.UTF-8
+
+COPY vespa-ci-internal.sh /vespa-ci-internal.sh

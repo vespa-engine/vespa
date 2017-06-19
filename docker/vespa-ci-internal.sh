@@ -13,16 +13,16 @@ GIT_COMMIT=$1
 SOURCE_DIR=~/vespa
 BUILD_DIR=~/build
 NUM_CORES=$(nproc --all)
-NUM_THREADS=$((${NUM_CORES} + ${NUM_CORES}/2))
+NUM_THREADS=$((${NUM_CORES} * 2))
 
 mkdir "${SOURCE_DIR}"
 mkdir "${BUILD_DIR}"
 git clone --no-checkout --local --no-hardlinks file:///vespa "${SOURCE_DIR}"
 cd "${SOURCE_DIR}"
-git -c advice.detachedHead=false checkout --detach ${GIT_COMMIT}
+git -c advice.detachedHead=false checkout ${GIT_COMMIT}
 source /opt/rh/devtoolset-6/enable || true
 sh ./bootstrap.sh full
-MAVEN_OPTS="-Xms128m -Xmx512m" mvn install
+MAVEN_OPTS="-Xms128m -Xmx512m" mvn -T ${NUM_THREADS} install
 cd "${BUILD_DIR}"
 cmake3 -DCMAKE_INSTALL_PREFIX=/opt/vespa \
       -DJAVA_HOME=/usr/lib/jvm/java-openjdk \
