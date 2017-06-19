@@ -3,11 +3,10 @@
 #include "query.h"
 #include <vespa/searchlib/features/valuefeature.h>
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/vespalib/locale/c.h>
 #include <sstream>
 
-namespace search {
-namespace fef {
-namespace test {
+namespace search::fef::test {
 
 QueryBlueprint::QueryBlueprint() :
     Blueprint("test_query"),
@@ -33,10 +32,8 @@ QueryBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stas
 {
     std::vector<feature_t> values;
     std::string val = queryEnv.getProperties().lookup(_key).get("0.0");
-    values.push_back(strtod(val.data(), NULL));
+    values.push_back(vespalib::locale::c::strtod(val.data(), NULL));
     return stash.create<search::features::ValueExecutor>(values);
 }
 
-} // namespace test
-} // namespace fef
-} // namespace search
+}

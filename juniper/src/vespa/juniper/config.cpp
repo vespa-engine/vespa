@@ -1,5 +1,4 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/* $Id$ */
 
 #include "config.h"
 #include "IJuniperProperties.h"
@@ -7,6 +6,7 @@
 #include "juniperdebug.h"
 #define _NEED_SUMMARY_CONFIG_IMPL
 #include "SummaryConfig.h"
+#include <vespa/vespalib/locale/c.h>
 
 namespace juniper
 {
@@ -38,9 +38,8 @@ Config::Config(const char* config_name, Juniper & juniper) :
     size_t max_match_candidates = atoi(GetProp("matcher.max_match_candidates", "1000"));
     const char* seps = GetProp("dynsum.separators", separators.c_str());
     const unsigned char* cons =
-        reinterpret_cast<const unsigned char*>(GetProp("dynsum.connectors",
-                                                       separators.c_str()));
-    double proximity_factor = strtod(GetProp("proximity.factor", "0.25"), NULL);
+        reinterpret_cast<const unsigned char*>(GetProp("dynsum.connectors", separators.c_str()));
+    double proximity_factor = vespalib::locale::c::strtod(GetProp("proximity.factor", "0.25"), NULL);
     // Silently convert to something sensible
     if (proximity_factor > 1E8 || proximity_factor < 0) proximity_factor = 0.25;
 

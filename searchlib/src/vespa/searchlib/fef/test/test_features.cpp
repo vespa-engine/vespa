@@ -2,13 +2,12 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include "test_features.h"
+#include <vespa/vespalib/locale/c.h>
 
 using vespalib::eval::DoubleValue;
 using vespalib::eval::ValueType;
 
-namespace search {
-namespace fef {
-namespace test {
+namespace search::fef::test {
 
 //-----------------------------------------------------------------------------
 
@@ -22,7 +21,7 @@ bool
 ImpureValueBlueprint::setup(const IIndexEnvironment &, const std::vector<vespalib::string> &params)
 {
     ASSERT_EQUAL(1u, params.size());
-    value = strtod(params[0].c_str(), nullptr);
+    value = vespalib::locale::c::strtod(params[0].c_str(), nullptr);
     describeOutput("out", "the impure value");
     return true;
 }
@@ -108,6 +107,4 @@ TrackingBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &st
 
 //-----------------------------------------------------------------------------
 
-} // namespace test
-} // namespace fef
-} // namespace search
+}

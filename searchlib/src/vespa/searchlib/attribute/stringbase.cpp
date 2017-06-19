@@ -6,6 +6,7 @@
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/searchlib/util/fileutil.hpp>
 #include <vespa/searchlib/query/queryterm.h>
+#include <vespa/vespalib/locale/c.h>
 #include <vespa/vespalib/util/array.hpp>
 
 #include <vespa/log/log.h>
@@ -148,10 +149,15 @@ uint32_t StringAttribute::get(DocId doc, WeightedFloat * v, uint32_t sz) const
     WeightedConstChar * s = new WeightedConstChar[sz];
     uint32_t n = static_cast<const AttributeVector *>(this)->get(doc, s, sz);
     for(uint32_t i(0),m(std::min(n,sz)); i<m; i++) {
-        v[i] = WeightedFloat(strtod(s[i].getValue(), NULL), s[i].getWeight());
+        v[i] = WeightedFloat(vespalib::locale::c::strtod(s[i].getValue(), NULL), s[i].getWeight());
     }
     delete [] s;
     return n;
+}
+
+double
+StringAttribute::getFloat(DocId doc) const {
+    return vespalib::locale::c::strtod(get(doc), NULL);
 }
 
 uint32_t StringAttribute::get(DocId doc, double * v, uint32_t sz) const
@@ -159,7 +165,7 @@ uint32_t StringAttribute::get(DocId doc, double * v, uint32_t sz) const
     const char ** s = new const char *[sz];
     uint32_t n = static_cast<const AttributeVector *>(this)->get(doc, s, sz);
     for(uint32_t i(0),m(std::min(n,sz)); i<m; i++) {
-        v[i] = strtod(s[i], NULL);
+        v[i] = vespalib::locale::c::strtod(s[i], NULL);
     }
     delete [] s;
     return n;

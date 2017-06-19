@@ -3,6 +3,7 @@
 #include "forward.h"
 #include "errhandle.h"
 #include <vespa/vespalib/component/vtag.h>
+#include <vespa/vespalib/locale/c.h>
 #include <unistd.h>
 
 #include <vespa/log/log.h>
@@ -80,7 +81,7 @@ Forwarder::parseline(const char *linestart, const char *lineend)
         return false;
     }
     char *eod;
-    double logtime = strtod(fieldstart, &eod);
+    double logtime = vespalib::locale::c::strtod(fieldstart, &eod);
     if (eod != tab) {
         int fflen = tab - linestart;
         LOG(spam, "bad logline first field not strtod parsable: %.*s",

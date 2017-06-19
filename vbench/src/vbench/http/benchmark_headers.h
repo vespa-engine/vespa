@@ -4,6 +4,7 @@
 #pragma once
 
 #include <vbench/core/string.h>
+#include <vespa/vespalib/locale/c.h>
 
 namespace vbench {
 
@@ -21,7 +22,7 @@ struct BenchmarkHeaders
         void set(const string &string_value) {
             char *end;
             errno = 0;
-            double val = strtod(string_value.c_str(), &end);
+            double val = vespalib::locale::c::strtod(string_value.c_str(), &end);
             if (errno == 0 && *end == '\0') {
                 value = val;
                 is_set = true;

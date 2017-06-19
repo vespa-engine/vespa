@@ -14,7 +14,7 @@
 #include <vespa/eval/tensor/tensor_mapper.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/eval/eval/value_type.h>
-#include <memory>
+#include <vespa/vespalib/locale/c.h>
 
 using namespace search::fef;
 using namespace search::fef::indexproperties;
@@ -41,7 +41,7 @@ namespace {
 feature_t asFeature(const vespalib::string &str) {
     char *end;
     errno = 0;
-    double val = strtod(str.c_str(), &end);
+    double val = vespalib::locale::c::strtod(str.c_str(), &end);
     if (errno != 0 || *end != '\0') { // not happy
         if (str.size() > 0 && str[0] == '\'') {
             val = vespalib::hash_code(str.substr(1));

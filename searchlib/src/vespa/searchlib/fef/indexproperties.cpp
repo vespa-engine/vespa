@@ -2,10 +2,9 @@
 
 #include "indexproperties.h"
 #include "properties.h"
+#include <vespa/vespalib/locale/c.h>
 
-namespace search {
-namespace fef {
-namespace indexproperties {
+namespace search::fef::indexproperties {
 
 namespace {
 
@@ -40,7 +39,7 @@ lookupDouble(const Properties &props, const vespalib::string &name, double defau
 {
     Property p = props.lookup(name);
     if (p.found()) {
-        return strtod(p.get().c_str(), NULL);
+        return vespalib::locale::c::strtod(p.get().c_str(), NULL);
     }
     return defaultValue;
 }
@@ -444,6 +443,4 @@ QueryFeature::set(Properties &props, const vespalib::string &queryFeatureName, c
 
 } // namespace type
 
-} // namespace indexproperties
-} // namespace fef
-} // namespace search
+}

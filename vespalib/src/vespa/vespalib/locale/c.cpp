@@ -2,7 +2,7 @@
 
 #include "c.h"
 #include "locale.h"
-#include <stdlib.h>
+#include <cstdlib>
 
 namespace vespalib::locale::c {
 
@@ -14,6 +14,10 @@ Locale _G_C_Locale;
 
 double strtod(const char *startp, char **endp) {
     return strtod_l(startp, endp, _G_C_Locale.get());
+}
+
+float strtof(const char *startp, char **endp) {
+    return strtof_l(startp, endp, _G_C_Locale.get());
 }
 
 }
