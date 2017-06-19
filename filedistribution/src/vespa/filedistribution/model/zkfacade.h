@@ -1,14 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <string>
-#include <vector>
-#include <map>
-#include <mutex>
-
 #include <vespa/filedistribution/common/buffer.h>
 #include <vespa/filedistribution/common/exception.h>
 #include <vespa/vespalib/util/exception.h>
+#include <mutex>
+#include <map>
 
 struct _zhandle;
 typedef _zhandle zhandle_t;
