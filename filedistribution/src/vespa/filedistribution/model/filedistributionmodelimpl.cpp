@@ -226,11 +226,13 @@ FileDistributionModelImpl::configure(std::unique_ptr<FilereferencesConfig> confi
         try {
             _filesToDownloadChanged();
         } catch (const ZKConnectionLossException & e) {
-            LOG(info, "Connection loss in reconfigure of file references, resuming. %s", e.what());
+            LOG(warning, "Connection loss in reconfigure of file references. "
+                         "Will do quick exit to start a clean sheet. %s", e.what());
+            std::quick_exit(41);
         } catch (const ZKOperationTimeoutException & e) {
             LOG(warning, "Operation timed out in reconfigure of file references. "
                          "Will do quick exit to start a clean sheet. %s", e.what());
-            std::quick_exit(41);
+            std::quick_exit(42);
         }
     }
 }
