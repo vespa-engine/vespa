@@ -127,6 +127,7 @@ public class NodeRepositoryImpl implements NodeRepository {
                 nodeState,
                 node.nodeType,
                 node.nodeFlavor,
+                node.nodeCanonicalFlavor,
                 Optional.ofNullable(node.wantedVespaVersion),
                 Optional.ofNullable(node.vespaVersion),
                 Optional.ofNullable(owner),

@@ -31,6 +31,7 @@ public class GetNodesResponse {
         public final String nodeState;
         public final String nodeType;
         public final String nodeFlavor;
+        public final String nodeCanonicalFlavor;
         public final String wantedVespaVersion;
         public final String vespaVersion;
         public final Owner owner;
@@ -50,6 +51,7 @@ public class GetNodesResponse {
                     @JsonProperty("state") String nodeState,
                     @JsonProperty("type") String nodeType,
                     @JsonProperty("flavor") String nodeFlavor,
+                    @JsonProperty("canonicalFlavor") String nodeCanonicalFlavor,
                     @JsonProperty("wantedVespaVersion") String wantedVespaVersion,
                     @JsonProperty("vespaVersion") String vespaVersion,
                     @JsonProperty("owner") Owner owner,
@@ -67,6 +69,7 @@ public class GetNodesResponse {
             this.nodeState = nodeState;
             this.nodeType = nodeType;
             this.nodeFlavor = nodeFlavor;
+            this.nodeCanonicalFlavor = nodeCanonicalFlavor;
             this.wantedVespaVersion = wantedVespaVersion;
             this.vespaVersion = vespaVersion;
             this.owner = owner;
