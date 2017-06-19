@@ -398,6 +398,9 @@ private:
         return *this;
     }
 
+    template <typename NodeAllocatorType>
+    uint32_t countValidLeaves(uint32_t start, uint32_t end, NodeAllocatorType &allocator);
+
 public:
     BTreeNode::Ref getChild(uint32_t idx) const { return getData(idx); }
     void setChild(uint32_t idx, BTreeNode::Ref child) { setData(idx, child); }
