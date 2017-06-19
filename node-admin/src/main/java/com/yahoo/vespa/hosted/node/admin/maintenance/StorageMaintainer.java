@@ -63,10 +63,7 @@ public class StorageMaintainer {
         this.environment = environment;
         this.clock = clock;
 
-        Dimensions dimensions = new Dimensions.Builder()
-                .add("host", HostName.getLocalhost())
-                .add("role", "docker").build();
-
+        Dimensions dimensions = new Dimensions.Builder().add("role", "docker").build();
         numberOfNodeAdminMaintenanceFails = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.maintenance.fails");
     }
 

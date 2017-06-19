@@ -23,7 +23,6 @@ import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
 import com.google.inject.Inject;
 import com.yahoo.log.LogLevel;
-import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
@@ -524,10 +523,7 @@ public class DockerImpl implements Docker {
     }
 
     private void setMetrics(MetricReceiverWrapper metricReceiver) {
-        Dimensions dimensions = new Dimensions.Builder()
-                .add("host", HostName.getLocalhost())
-                .add("role", "docker").build();
-
+        Dimensions dimensions = new Dimensions.Builder().add("role", "docker").build();
         numberOfDockerDaemonFails = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "daemon.api_fails");
     }
 }

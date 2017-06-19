@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.concurrent.ThreadFactoryFactory;
-import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
@@ -78,10 +77,7 @@ public class NodeAdminImpl implements NodeAdmin {
         this.isFrozen = true;
         this.startOfFreezeConvergence = clock.instant();
 
-        Dimensions dimensions = new Dimensions.Builder()
-                .add("host", HostName.getLocalhost())
-                .add("role", "docker").build();
-
+        Dimensions dimensions = new Dimensions.Builder().add("role", "docker").build();
         this.numberOfContainersInLoadImageState = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.image.loading");
         this.numberOfUnhandledExceptionsInNodeAgent = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.unhandled_exceptions");
 
