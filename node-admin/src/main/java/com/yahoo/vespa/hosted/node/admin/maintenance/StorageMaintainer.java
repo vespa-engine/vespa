@@ -75,19 +75,7 @@ public class StorageMaintainer {
 
         Path vespaCheckPath = Paths.get(getDefaults().underVespaHome("libexec/yms/yms_check_vespa"));
         SecretAgentScheduleMaker vespaSchedule = new SecretAgentScheduleMaker("vespa", 60, vespaCheckPath, "all")
-                .withTag("namespace", "Vespa")
-                .withTag("role", "tenants")
-                .withTag("flavor", nodeSpec.nodeFlavor)
-                .withTag("state", nodeSpec.nodeState.toString())
-                .withTag("zone", environment.getZone())
                 .withTag("parentHostname", environment.getParentHostHostname());
-        nodeSpec.owner.ifPresent(owner -> vespaSchedule
-                .withTag("tenantName", owner.tenant)
-                .withTag("app", owner.application + "." + owner.instance));
-        nodeSpec.membership.ifPresent(membership -> vespaSchedule
-                .withTag("clustertype", membership.clusterType)
-                .withTag("clusterid", membership.clusterId));
-        nodeSpec.vespaVersion.ifPresent(version -> vespaSchedule.withTag("vespaVersion", version));
 
         Path hostLifeCheckPath = Paths.get("/home/y/libexec/yms/yms_check_host_life");
         SecretAgentScheduleMaker hostLifeSchedule = new SecretAgentScheduleMaker("host-life", 60, hostLifeCheckPath)

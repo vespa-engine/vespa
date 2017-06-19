@@ -511,24 +511,8 @@ public class NodeAgentImpl implements NodeAgent {
         Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
                 .add("host", hostname)
                 .add("role", "tenants")
-                .add("flavor", nodeSpec.nodeFlavor)
                 .add("state", nodeSpec.nodeState.toString())
-                .add("zone", environment.getZone())
                 .add("parentHostname", environment.getParentHostHostname());
-        nodeSpec.vespaVersion.ifPresent(version -> dimensionsBuilder.add("vespaVersion", version));
-
-        nodeSpec.owner.ifPresent(owner ->
-                dimensionsBuilder
-                        .add("tenantName", owner.tenant)
-                        .add("applicationName", owner.application)
-                        .add("instanceName", owner.instance)
-                        .add("applicationId", owner.tenant + "." + owner.application + "." + owner.instance)
-                        .add("app", owner.application + "." + owner.instance));
-
-        nodeSpec.membership.ifPresent(membership ->
-                dimensionsBuilder
-                        .add("clustertype", membership.clusterType)
-                        .add("clusterid", membership.clusterId));
         Dimensions dimensions = dimensionsBuilder.build();
 
         Docker.ContainerStats stats = containerStats.get();
