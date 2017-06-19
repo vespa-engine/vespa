@@ -108,7 +108,7 @@ TEST("require that escaped values are properly unescaped") {
     ASSERT_EQUAL("a\nb\rc\\d\"eBg", value);
 }
 
-IGNORE_TEST("verify that locale does not affect double parsing") { // Failing on some CentOS based environments
+TEST("verify that locale does not affect double parsing") {
     std::vector<vespalib::string> payload;
     setlocale(LC_NUMERIC, "nb_NO.UTF-8");
     payload.push_back("foo 3,14");
