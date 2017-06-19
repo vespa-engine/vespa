@@ -13,7 +13,7 @@ GIT_COMMIT=$1
 SOURCE_DIR=~/vespa
 BUILD_DIR=~/build
 NUM_CORES=$(nproc --all)
-NUM_THREADS=$((${NUM_CORES} + ${NUM_CORES}/2))
+NUM_THREADS=$((${NUM_CORES} * 2))
 
 mkdir "${SOURCE_DIR}"
 mkdir "${BUILD_DIR}"
