@@ -588,11 +588,11 @@ Test::requireThatNodeStealWorks()
                                "[60:160,70:170,80:180[min=160,max=180]]"
                                "[min=110,max=180]]", t));
         t.remove(60);
-        EXPECT_TRUE(assertTree("[40:"
-                               "[10:110,20:120,30:130,40:140"
-                               "[min=110,max=140]]"
+        EXPECT_TRUE(assertTree("[30:"
+                               "[10:110,20:120,30:130"
+                               "[min=110,max=130]]"
                                ",80:"
-                               "[50:150,70:170,80:180[min=150,max=180]]"
+                               "[40:140,50:150,70:170,80:180[min=140,max=180]]"
                                "[min=110,max=180]]", t));
     }
     { // steal some from right
@@ -615,12 +615,12 @@ Test::requireThatNodeStealWorks()
                                "[min=150,max=190]]"
                                "[min=110,max=190]]", t));
         t.remove(20);
-        EXPECT_TRUE(assertTree("[50:"
-                               "[10:110,30:130,50:150"
-                               "[min=110,max=150]]"
+        EXPECT_TRUE(assertTree("[60:"
+                               "[10:110,30:130,50:150,60:160"
+                               "[min=110,max=160]]"
                                ",90:"
-                               "[60:160,70:170,80:180,90:190"
-                               "[min=160,max=190]]"
+                               "[70:170,80:180,90:190"
+                               "[min=170,max=190]]"
                                "[min=110,max=190]]", t));
     }
 }

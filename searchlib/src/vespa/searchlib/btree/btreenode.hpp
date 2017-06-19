@@ -170,7 +170,7 @@ stealSomeFromLeftNode(NodeType *victim)
     assert(validSlots() + victim->validSlots() >= NodeType::minSlots());
     assert(!getFrozen());
     assert(!victim->getFrozen());
-    uint32_t median = (validSlots() + victim->validSlots()) / 2;
+    uint32_t median = (validSlots() + victim->validSlots() + 1) / 2;
     uint32_t steal = median - validSlots();
     _validSlots += steal;
     for (int32_t i = validSlots() - 1; i >= static_cast<int32_t>(steal); --i) {
@@ -193,7 +193,7 @@ stealSomeFromRightNode(NodeType *victim)
     assert(validSlots() + victim->validSlots() >= NodeType::minSlots());
     assert(!getFrozen());
     assert(!victim->getFrozen());
-    uint32_t median = (validSlots() + victim->validSlots()) / 2;
+    uint32_t median = (validSlots() + victim->validSlots() + 1) / 2;
     uint32_t steal = median - validSlots();
     for (uint32_t i = 0; i < steal; ++i) {
         _keys[validSlots() + i] = victim->_keys[i];
