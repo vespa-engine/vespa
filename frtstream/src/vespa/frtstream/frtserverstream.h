@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/frtstream/frtstream.h>
+#include <vespa/fnet/frt/rpcrequest.h>
 
 namespace frtstream {
 
