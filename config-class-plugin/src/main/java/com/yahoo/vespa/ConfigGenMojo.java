@@ -2,6 +2,8 @@
 package com.yahoo.vespa;
 
 import com.yahoo.config.codegen.MakeConfig;
+import com.yahoo.config.codegen.MakeConfigProperties;
+import com.yahoo.config.codegen.PropertyException;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -12,6 +14,7 @@ import org.apache.maven.project.MavenProject;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -130,15 +133,19 @@ public class ConfigGenMojo extends AbstractMojo {
 
         if (generateSources) {
             getLog().debug("Will generate config class files");
-            System.setProperty("config.useFramework", useFramework.toString());
-            System.setProperty("config.dest", outputDirectory.toString());
-            System.setProperty("config.spec", configSpec.toString());
-            System.setProperty("config.packagePrefix", packagePrefix);
-            System.setProperty("config.requireNamespace", requireNamespace.toString());
             try {
-                MakeConfig.main(null);
-            } catch (java.io.IOException | InterruptedException e) {
-                System.out.println("Caught exception: " + e);
+                MakeConfigProperties config = new MakeConfigProperties(outputDirectory.toString(),
+                                                                       configSpec.toString(),
+                                                                       null,
+                                                                       null,
+                                                                       null,
+                                                                       useFramework.toString(),
+                                                                       packagePrefix);
+                if (!MakeConfig.makeConfig(config)) {
+                    throw new MojoExecutionException("Failed to generate config for: " + configSpec);
+                }
+            } catch (IOException | PropertyException e) {
+                throw new MojoExecutionException("Failed to generate config for: " + configSpec, e);
             }
         } else {
             getLog().debug("No changes, will not generate config class files");
