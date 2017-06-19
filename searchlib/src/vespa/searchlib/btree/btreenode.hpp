@@ -170,7 +170,7 @@ stealSomeFromLeftNode(NodeType *victim)
     assert(validSlots() + victim->validSlots() >= NodeType::minSlots());
     assert(!getFrozen());
     assert(!victim->getFrozen());
-    uint32_t median = (validSlots() + victim->validSlots()) / 2;
+    uint32_t median = (validSlots() + victim->validSlots() + 1) / 2;
     uint32_t steal = median - validSlots();
     _validSlots += steal;
     for (int32_t i = validSlots() - 1; i >= static_cast<int32_t>(steal); --i) {
@@ -193,7 +193,7 @@ stealSomeFromRightNode(NodeType *victim)
     assert(validSlots() + victim->validSlots() >= NodeType::minSlots());
     assert(!getFrozen());
     assert(!victim->getFrozen());
-    uint32_t median = (validSlots() + victim->validSlots()) / 2;
+    uint32_t median = (validSlots() + victim->validSlots() + 1) / 2;
     uint32_t steal = median - validSlots();
     for (uint32_t i = 0; i < steal; ++i) {
         _keys[validSlots() + i] = victim->_keys[i];
@@ -307,6 +307,19 @@ stealAllFromRightNode(const BTreeInternalNode *victim)
     _validLeaves += victim->_validLeaves;
 }
 
+template <typename KeyT, typename AggrT, uint32_t NumSlots>
+template <typename NodeAllocatorType>
+uint32_t
+BTreeInternalNode<KeyT, AggrT, NumSlots>::countValidLeaves(uint32_t start, uint32_t end, NodeAllocatorType &allocator)
+{
+    assert(start <= end);
+    assert(end <= validSlots());
+    uint32_t leaves = 0;
+    for (uint32_t i = start; i < end; ++i) {
+        leaves += allocator.validLeaves(getData(i));
+    }
+    return leaves;
+}
 
 template <typename KeyT, typename AggrT, uint32_t NumSlots>
 template <typename NodeAllocatorType>
@@ -314,26 +327,11 @@ void
 BTreeInternalNode<KeyT, AggrT, NumSlots>::
 stealSomeFromLeftNode(BTreeInternalNode *victim, NodeAllocatorType &allocator)
 {
-    assert(validSlots() + victim->validSlots() >= BTreeInternalNode::minSlots());
-    assert(!getFrozen());
-    assert(!victim->getFrozen());
-    uint32_t median = (validSlots() + victim->validSlots()) / 2;
-    uint32_t steal = median - validSlots();
-    _validSlots += steal;
-    for (int32_t i = validSlots() - 1; i >= static_cast<int32_t>(steal); --i) {
-        _keys[i] = _keys[i - steal];
-        setData(i, getData(i - steal));
-    }
-    uint32_t stolenLeaves = 0;
-    for (uint32_t i = 0; i < steal; ++i) {
-        _keys[i] = victim->_keys[victim->validSlots() - steal + i];
-        setData(i, victim->getData(victim->validSlots() - steal + i));
-        stolenLeaves += allocator.validLeaves(getData(i));
-    }
-    _validLeaves += stolenLeaves;
-    victim->_validLeaves -= stolenLeaves;
-    victim->cleanRange(victim->validSlots() - steal, victim->validSlots());
-    victim->_validSlots -= steal;
+    uint16_t oldValidSlots = validSlots();
+    ParentType::stealSomeFromLeftNode(victim);
+    uint32_t stolenLeaves = countValidLeaves(0, validSlots() - oldValidSlots, allocator);
+    incValidLeaves(stolenLeaves);
+    victim->decValidLeaves(stolenLeaves);
 }
 
 
@@ -343,26 +341,11 @@ void
 BTreeInternalNode<KeyT, AggrT, NumSlots>::
 stealSomeFromRightNode(BTreeInternalNode *victim, NodeAllocatorType &allocator)
 {
-    assert(validSlots() + victim->validSlots() >= BTreeInternalNode::minSlots());
-    assert(!getFrozen());
-    assert(!victim->getFrozen());
-    uint32_t median = (validSlots() + victim->validSlots()) / 2;
-    uint32_t steal = median - validSlots();
-    uint32_t stolenLeaves = 0;
-    for (uint32_t i = 0; i < steal; ++i) {
-        _keys[validSlots() + i] = victim->_keys[i];
-        setData(validSlots() + i, victim->getData(i));
-        stolenLeaves += allocator.validLeaves(victim->getData(i));
-    }
-    _validSlots += steal;
-    _validLeaves += stolenLeaves;
-    victim->_validLeaves -= stolenLeaves;
-    for (uint32_t i = steal; i < victim->validSlots(); ++i) {
-        victim->_keys[i - steal] = victim->_keys[i];
-        victim->setData(i - steal, victim->getData(i));
-    }
-    victim->cleanRange(victim->validSlots() - steal, victim->validSlots());
-    victim->_validSlots -= steal;
+    uint16_t oldValidSlots = validSlots();
+    ParentType::stealSomeFromRightNode(victim);
+    uint32_t stolenLeaves = countValidLeaves(oldValidSlots, validSlots(), allocator);
+    incValidLeaves(stolenLeaves);
+    victim->decValidLeaves(stolenLeaves);
 }
 
 
