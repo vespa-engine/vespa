@@ -2,6 +2,7 @@
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/fastos/app.h>
+#include <vespa/vespalib/locale/c.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-storage-cmd");
@@ -29,10 +30,10 @@ private:
             req->GetParams()->AddInt64(strtoll(value, NULL, 0));
             break;
         case 'f':
-            req->GetParams()->AddFloat(strtod(value, NULL));
+            req->GetParams()->AddFloat(vespalib::locale::c::strtod(value, NULL));
             break;
         case 'd':
-            req->GetParams()->AddDouble(strtod(value, NULL));
+            req->GetParams()->AddDouble(vespalib::locale::c::strtod(value, NULL));
             break;
         case 's':
             req->GetParams()->AddString(value);

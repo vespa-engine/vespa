@@ -4,13 +4,12 @@
 #include "json_format.h"
 #include "inserter.h"
 #include "slime.h"
-#include <errno.h>
+#include <vespa/vespalib/data/memory_input.h>
+#include <vespa/vespalib/locale/c.h>
 #include <cmath>
 #include <sstream>
-#include <vespa/vespalib/data/memory_input.h>
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 namespace {
 
@@ -455,7 +454,7 @@ insertNumber(Inserter &inserter, bool isLong, const vespalib::string & value, ch
         errorCode = errno;
         inserter.insertLong(val);
     } else {
-        double val = strtod(value.c_str(), endp);
+        double val = locale::c::strtod(value.c_str(), endp);
         errorCode = errno;
         inserter.insertDouble(val);
     }
@@ -505,4 +504,3 @@ JsonFormat::decode(const Memory &memory, Slime &slime)
 }
 
 } // namespace vespalib::slime
-} // namespace vespalib

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/util/random.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/locale/c.h>
 #include <cmath>
 #include <vector>
 
@@ -12,10 +13,10 @@ int main(int argc, char **argv)
     double lstddev = std::log(2.0);
 
     if (argc > 2) {
-        lstddev = std::log(strtod(argv[--argc], NULL));
-        logmean = std::log(strtod(argv[--argc], NULL));
+        lstddev = std::log(vespalib::locale::c::strtod(argv[--argc], NULL));
+        logmean = std::log(vespalib::locale::c::strtod(argv[--argc], NULL));
     } else if (argc > 1) {
-        logmean = std::log(strtod(argv[--argc], NULL));
+        logmean = std::log(vespalib::locale::c::strtod(argv[--argc], NULL));
     }
 
     fprintf(stderr, "100 typical friendlist sizes: ");

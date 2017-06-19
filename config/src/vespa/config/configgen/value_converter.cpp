@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/config/common/exceptions.h>
 #include "value_converter.h"
+#include <vespa/config/common/exceptions.h>
+#include <vespa/vespalib/locale/c.h>
 
 using namespace vespalib;
 using namespace vespalib::slime;
@@ -34,7 +35,7 @@ double convertValue(const ::vespalib::slime::Inspector & __inspector) {
     switch (__inspector.type().getId()) {
         case LONG::ID:   return static_cast<double>(__inspector.asLong());
         case DOUBLE::ID: return static_cast<double>(__inspector.asDouble());
-        case STRING::ID: return static_cast<double>(strtod(__inspector.asString().make_string().c_str(), 0));
+        case STRING::ID: return static_cast<double>(vespalib::locale::c::strtod(__inspector.asString().make_string().c_str(), 0));
     }
     throw InvalidConfigException("Expected double, but got incompatible config type " + __inspector.type().getId());
 }

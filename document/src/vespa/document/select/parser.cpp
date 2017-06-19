@@ -13,6 +13,7 @@
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/locale/c.h>
 #include <boost/spirit/include/classic_chset.hpp>
 #include <boost/spirit/include/classic_core.hpp>
 #include <boost/spirit/include/classic_escape_char.hpp>
@@ -706,7 +707,7 @@ parseNumberValue(DocSelectionGrammar& grammar, tree_node<T>& node) {
     }
     if (sval.find('.') != vespalib::string::npos) {
         char* endptr;
-        double val = strtod(sval.c_str(), &endptr);
+        double val = vespalib::locale::c::strtod(sval.c_str(), &endptr);
         if (*endptr == '\0') {
             return std::unique_ptr<ValueNode>(new FloatValueNode(val));
         }

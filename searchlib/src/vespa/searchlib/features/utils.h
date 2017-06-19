@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <limits>
-#include <string>
 #include <vespa/searchlib/fef/iqueryenvironment.h>
 #include <vespa/searchlib/fef/table.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
@@ -12,9 +10,7 @@
 #include <vespa/searchlib/common/feature.h>
 #include <vespa/vespalib/util/string_hash.h>
 
-namespace search {
-namespace features {
-namespace util {
+namespace search::features::util {
 
 /**
  * Maximum feature value
@@ -217,7 +213,4 @@ getTermFieldHandle(const search::fef::IQueryEnvironment &env, uint32_t termId, u
 const search::fef::ITermData *
 getTermByLabel(const search::fef::IQueryEnvironment &env, const vespalib::string &label);
 
-} // namespace util
-} // namespace features
-} // namespace search
-
+}

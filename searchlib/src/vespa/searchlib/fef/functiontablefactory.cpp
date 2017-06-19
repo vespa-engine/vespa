@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "functiontablefactory.h"
+#include <vespa/vespalib/locale/c.h>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
 #include <cmath>
@@ -17,8 +18,7 @@ void logArgumentWarning(const vespalib::string & name, size_t exp, size_t act)
 
 }
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 bool
 FunctionTableFactory::checkArgs(const std::vector<vespalib::string> & args, size_t exp, size_t & tableSize) const
@@ -84,17 +84,17 @@ FunctionTableFactory::createTable(const vespalib::string & name) const
             size_t tableSize = _defaultTableSize;
             if (isExpDecay(p.type)) {
                 if (checkArgs(p.args, 2, tableSize)) {
-                    return createExpDecay(atof(p.args[0].c_str()), atof(p.args[1].c_str()), tableSize);
+                    return createExpDecay(vespalib::locale::c::atof(p.args[0].c_str()), vespalib::locale::c::atof(p.args[1].c_str()), tableSize);
                 }
                 logArgumentWarning(name, 2, p.args.size());
             } else if (isLogGrowth(p.type)) {
                 if (checkArgs(p.args, 3, tableSize)) {
-                    return createLogGrowth(atof(p.args[0].c_str()), atof(p.args[1].c_str()), atof(p.args[2].c_str()), tableSize);
+                    return createLogGrowth(vespalib::locale::c::atof(p.args[0].c_str()), vespalib::locale::c::atof(p.args[1].c_str()), vespalib::locale::c::atof(p.args[2].c_str()), tableSize);
                 }
                 logArgumentWarning(name, 3, p.args.size());
             } else if (isLinear(p.type)) {
                 if (checkArgs(p.args, 2, tableSize)) {
-                    return createLinear(atof(p.args[0].c_str()), atof(p.args[1].c_str()), tableSize);
+                    return createLinear(vespalib::locale::c::atof(p.args[0].c_str()), vespalib::locale::c::atof(p.args[1].c_str()), tableSize);
                 }
                 logArgumentWarning(name, 2, p.args.size());
             }
@@ -129,5 +129,4 @@ FunctionTableFactory::parseFunctionName(const vespalib::string & name, ParsedNam
     return true;
 }
 
-} // namespace fef
-} // namespace search
+}

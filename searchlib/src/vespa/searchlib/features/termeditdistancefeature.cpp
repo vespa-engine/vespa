@@ -3,17 +3,14 @@
 #include "termeditdistancefeature.h"
 #include "utils.h"
 #include <vespa/searchlib/fef/featurenamebuilder.h>
-#include <vespa/searchlib/fef/fieldinfo.h>
-#include <vespa/searchlib/fef/fieldtype.h>
 #include <vespa/searchlib/fef/properties.h>
-#include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/locale/c.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.termeditdistance");
 
-namespace search {
-namespace features {
+namespace search::features {
 
 //---------------------------------------------------------------------------------------------------------------------
 // TedCell
@@ -23,18 +20,14 @@ TedCell::TedCell() :
     numDel(0),
     numIns(0),
     numSub(0)
-{
-    // empty
-}
+{}
 
 TedCell::TedCell(feature_t argCost, uint32_t argNumDel, uint32_t argNumIns, uint32_t argNumSub) :
     cost(argCost),
     numDel(argNumDel),
     numIns(argNumIns),
     numSub(argNumSub)
-{
-    // empty
-}
+{}
 
 //---------------------------------------------------------------------------------------------------------------------
 // TermEditDistanceConfig
@@ -46,9 +39,7 @@ TermEditDistanceConfig::TermEditDistanceConfig() :
     costDel(1),
     costIns(1),
     costSub(1)
-{
-    // empty
-}
+{}
 
 //---------------------------------------------------------------------------------------------------------------------
 // TermEditDistanceExecutor
@@ -210,11 +201,11 @@ TermEditDistanceBlueprint::setup(const search::fef::IIndexEnvironment &env,
     _config.fieldId = params[0].asField()->id();
 
     vespalib::string costDel = env.getProperties().lookup(getName(), "costDel").getAt(0);
-    _config.costDel = costDel.empty() ? 1.0f : atof(costDel.c_str());
+    _config.costDel = costDel.empty() ? 1.0f : vespalib::locale::c::atof(costDel.c_str());
     vespalib::string costIns = env.getProperties().lookup(getName(), "costIns").getAt(0);
-    _config.costIns = costIns.empty() ? 1.0f : atof(costIns.c_str());
+    _config.costIns = costIns.empty() ? 1.0f : vespalib::locale::c::atof(costIns.c_str());
     vespalib::string costSub = env.getProperties().lookup(getName(), "costSub").getAt(0);
-    _config.costSub = costSub.empty() ? 1.0f : atof(costSub.c_str());
+    _config.costSub = costSub.empty() ? 1.0f : vespalib::locale::c::atof(costSub.c_str());
 
     defineInput(vespalib::make_string("fieldLength(%s)", params[0].getValue().c_str()));
     describeOutput("out", "Term-wise edit distance.");
@@ -237,4 +228,4 @@ TermEditDistanceBlueprint::createExecutor(const search::fef::IQueryEnvironment &
     return stash.create<TermEditDistanceExecutor>(env, _config);
 }
 
-}}
+}

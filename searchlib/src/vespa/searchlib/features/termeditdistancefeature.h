@@ -5,8 +5,7 @@
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/common/feature.h>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * Implements a cell class for the cost table constructed when running the term edit distance calculator. This is
@@ -138,4 +137,4 @@ private:
     TermEditDistanceConfig _config; // The config for this blueprint.
 };
 
-}}
+}

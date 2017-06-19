@@ -1,11 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/searchlib/expression/integerresultnode.h>
-#include <vespa/searchlib/expression/floatresultnode.h>
-#include <vespa/searchlib/expression/stringresultnode.h>
-#include <vespa/searchlib/expression/rawresultnode.h>
-#include <vespa/searchlib/expression/enumresultnode.h>
-#include <vespa/searchlib/expression/nullresultnode.h>
-#include <vespa/searchlib/expression/positiveinfinityresultnode.h>
+#include "integerresultnode.h"
+#include "floatresultnode.h"
+#include "stringresultnode.h"
+#include "rawresultnode.h"
+#include "enumresultnode.h"
+#include "nullresultnode.h"
+#include "positiveinfinityresultnode.h"
+#include <vespa/vespalib/locale/c.h>
 #include <cmath>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/objects/serializer.hpp>
@@ -148,7 +149,7 @@ int PositiveInfinityResultNode::onCmp(const Identifiable & b) const
 }
 
 int64_t StringResultNode::onGetInteger(size_t index) const { (void) index; return strtoll(_value.c_str(), NULL, 0); }
-double  StringResultNode::onGetFloat(size_t index)   const { (void) index; return strtod(_value.c_str(), NULL); }
+double  StringResultNode::onGetFloat(size_t index)   const { (void) index; return vespalib::locale::c::strtod(_value.c_str(), NULL); }
 Serializer & StringResultNode::onSerialize(Serializer & os) const
 {
     os << _value;

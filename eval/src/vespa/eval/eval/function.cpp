@@ -7,11 +7,11 @@
 #include "call_nodes.h"
 #include "delete_node.h"
 #include "aggr.h"
+#include <vespa/vespalib/locale/c.h>
 #include <cctype>
 #include <map>
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 using nodes::Node_UP;
 using nodes::Operator_UP;
@@ -417,7 +417,7 @@ void parse_number(ParseContext &ctx) {
         }
     }
     char *end = nullptr;
-    double value = strtod(str.c_str(), &end);
+    double value = vespalib::locale::c::strtod(str.c_str(), &end);
     if (!str.empty() && end == str.data() + str.size()) {
         ctx.push_expression(Node_UP(new nodes::Number(value)));
     } else {
@@ -906,5 +906,4 @@ Function::unwrap(vespalib::stringref input,
 
 //-----------------------------------------------------------------------------
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}

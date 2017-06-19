@@ -4,6 +4,7 @@
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/locale/c.h>
 #include <cmath>
 
 using namespace vespalib;
@@ -96,7 +97,7 @@ Test::Main()
         TEST_DONE();
     }
     uint32_t threads     = atoi(_argv[1]);
-    double   ms_per_task = strtod(_argv[2], 0);
+    double   ms_per_task = locale::c::strtod(_argv[2], 0);
     uint32_t tasks       = atoi(_argv[3]);
     fprintf(stderr, "threads    : %u\n", threads);
     fprintf(stderr, "ms per task: %g\n", ms_per_task);

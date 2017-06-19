@@ -4,6 +4,7 @@
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/util/classname.h>
+#include <vespa/vespalib/locale/c.h>
 #include <cmath>
 
 namespace {
@@ -311,7 +312,7 @@ struct IntDecoder {
 };
 
 struct DoubleDecoder {
-    static double fromstr(const char * v, char ** end) { return strtod(v, end); }
+    static double fromstr(const char * v, char ** end) { return vespalib::locale::c::strtod(v, end); }
     static double nearestDownwd(double n, double min) { return std::nextafterf(n, min); }
     static double nearestUpward(double n, double max) { return std::nextafterf(n, max); }
 };

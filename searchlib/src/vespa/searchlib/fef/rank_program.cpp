@@ -2,11 +2,11 @@
 
 #include "rank_program.h"
 #include "featureoverrider.h"
+#include <vespa/vespalib/locale/c.h>
 
 using vespalib::Stash;
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 using MappedValues = std::map<const NumberOrObject *, LazyValue>;
 using ValueSet = std::set<const NumberOrObject *>;
@@ -40,7 +40,7 @@ struct OverrideVisitor : public IPropertiesVisitor
     {
         auto pos = feature_map.find(key);
         if (pos != feature_map.end()) {
-            overrides.push_back(Override(pos->second, strtod(values.get().c_str(), nullptr)));
+            overrides.push_back(Override(pos->second, vespalib::locale::c::strtod(values.get().c_str(), nullptr)));
         }
     }
 };
@@ -230,5 +230,4 @@ RankProgram::get_all_features(bool unbox_seeds) const
     return resolve(_resolver->getFeatureMap(), unbox_seeds);
 }
 
-} // namespace fef
-} // namespace search
+}

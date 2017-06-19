@@ -84,7 +84,7 @@ private:
     virtual void fixupEnumRefCounts(const EnumVector &enumHist);
 
     largeint_t getInt(DocId doc)  const override { return strtoll(get(doc), NULL, 0); }
-    double getFloat(DocId doc)    const override { return strtod(get(doc), NULL); }
+    double getFloat(DocId doc)    const override;
     const char * getString(DocId doc, char * v, size_t sz) const override { (void) v; (void) sz; return get(doc); }
 
     long onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;

@@ -5,6 +5,7 @@
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/encoding/base64.h>
+#include <vespa/vespalib/locale/c.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.documentfieldnode");
@@ -257,7 +258,7 @@ class String2ResultNode : public ResultNode
 public:
     String2ResultNode(const vespalib::string & s) : _s(s) { }
     int64_t onGetInteger(size_t index) const override { (void) index; return strtoul(_s.c_str(), NULL, 0); }
-    double  onGetFloat(size_t index)   const override { (void) index; return strtod(_s.c_str(), NULL); }
+    double  onGetFloat(size_t index)   const override { (void) index; return vespalib::locale::c::strtod(_s.c_str(), NULL); }
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override { (void) index; (void) buf; return ConstBufferRef(_s.c_str(), _s.size()); }
 private:
     String2ResultNode * clone() const override { return new String2ResultNode(_s); }

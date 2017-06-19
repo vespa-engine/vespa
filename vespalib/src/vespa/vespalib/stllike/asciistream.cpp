@@ -1,13 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/stllike/asciistream.h>
+#include "asciistream.h"
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/memory.h>
+#include <vespa/vespalib/locale/c.h>
+#include <vespa/fastos/file.h>
 #include <algorithm>
 #include <limits>
 #include <stdexcept>
-#include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/memory.h>
-#include <vespa/fastos/file.h>
 
 namespace vespalib {
 
@@ -141,7 +142,7 @@ int getValue(double & val, const char *buf)
 {
     char *ebuf;
     errno = 0;
-    val = strtod(buf, &ebuf);
+    val = locale::c::strtod(buf, &ebuf);
     if ((errno != 0) || (buf == ebuf)) {
         throwInputError(errno, "double", buf);
     }
@@ -152,7 +153,7 @@ int getValue(float & val, const char *buf)
 {
     char *ebuf;
     errno = 0;
-    val = strtof(buf, &ebuf);
+    val = locale::c::strtof(buf, &ebuf);
     if ((errno != 0) || (buf == ebuf)) {
         throwInputError(errno, "float", buf);
     }

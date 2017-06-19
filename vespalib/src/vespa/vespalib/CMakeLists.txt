@@ -7,6 +7,7 @@ vespa_add_library(vespalib
     $<TARGET_OBJECTS:vespalib_vespalib_geo>
     $<TARGET_OBJECTS:vespalib_vespalib_hwaccelrated>
     $<TARGET_OBJECTS:vespalib_vespalib_io>
+    $<TARGET_OBJECTS:vespalib_vespalib_locale>
     $<TARGET_OBJECTS:vespalib_vespalib_net>
     $<TARGET_OBJECTS:vespalib_vespalib_objects>
     $<TARGET_OBJECTS:vespalib_vespalib_stllike>

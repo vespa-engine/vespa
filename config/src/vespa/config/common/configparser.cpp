@@ -4,6 +4,7 @@
 #include "exceptions.h"
 #include "misc.h"
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/locale/c.h>
 
 namespace config {
 
@@ -351,11 +352,11 @@ ConfigParser::convert<double>(const vsvector & config)
     const char *startp = value.c_str();
     char *endp;
     errno = 0;
-    double ret = strtod(startp, &endp);
+    double ret = vespalib::locale::c::strtod(startp, &endp);
     int err = errno;
-    if (err == ERANGE || (*endp != '\0'))
-        throw InvalidConfigException("Value " + value + " is not a legal double",
-                VESPA_STRLOC);
+    if (err == ERANGE || (*endp != '\0')) {
+        throw InvalidConfigException("Value " + value + " is not a legal double", VESPA_STRLOC);
+    }
     return ret;
 }
 
