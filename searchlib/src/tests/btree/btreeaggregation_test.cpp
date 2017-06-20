@@ -22,6 +22,8 @@ LOG_SETUP("btreeaggregation_test");
 #include <vespa/searchlib/btree/btreestore.hpp>
 #include <vespa/searchlib/btree/btreeaggregator.hpp>
 
+#include <vespa/searchlib/test/btree/btree_printer.h>
+
 using vespalib::GenerationHandler;
 using search::datastore::EntryRef;
 
@@ -53,73 +55,6 @@ toNotVal(uint32_t key)
 {
     return key + 2000;
 }
-
-template <typename AggrT>
-void
-aggrToStr(std::stringstream &ss, const AggrT &aggr)
-{
-    (void) aggr;
-    ss << "[noaggr]";
-}
-
-template <>
-void
-aggrToStr<MinMaxAggregated>(std::stringstream &ss,
-                            const MinMaxAggregated &aggr)
-{
-    ss << "[min=" << aggr.getMin() << ",max=" << aggr.getMax() << "]";
-}
-
-
-template <typename LeafNode>
-void
-leafNodeToStr(std::stringstream &ss, const LeafNode &n)
-{
-    ss << "[";
-    for (uint32_t i = 0; i < n.validSlots(); ++i) {
-        if (i > 0) ss << ",";
-        ss << n.getKey(i) << ":" << n.getData(i);
-    }
-    aggrToStr(ss, n.getAggregated());
-    ss << "]";
-}
-
-template <typename InternalNode, typename LeafNode, typename NodeAllocator>
-void
-nodeToStr(std::stringstream &ss, const BTreeNode::Ref &node,
-          const NodeAllocator &allocator)
-{
-    if (!node.valid()) {
-        ss << "[]";
-        return;
-    }
-    if (allocator.isLeafRef(node)) {
-        leafNodeToStr(ss, *allocator.mapLeafRef(node));
-        return;
-    }
-    const InternalNode &n(*allocator.mapInternalRef(node)); 
-    ss << "[";
-    for (uint32_t i = 0; i < n.validSlots(); ++i) {
-        if (i > 0) ss << ",";
-        ss << n.getKey(i) << ":";
-        nodeToStr<InternalNode,
-            LeafNode,
-            NodeAllocator>(ss, n.getChild(i), allocator);
-    }
-    aggrToStr(ss, n.getAggregated());
-    ss << "]";
-}
-
-
-template <typename Tree>
-void
-treeToStr(std::stringstream &ss, const Tree &t)
-{
-    nodeToStr<typename Tree::InternalNodeType,
-        typename Tree::LeafNodeType,
-        typename Tree::NodeAllocatorType>(ss, t.getRoot(), t.getAllocator());
-}
-
 
 }
 
@@ -400,7 +335,8 @@ bool
 Test::assertTree(const std::string &exp, const Tree &t)
 {
     std::stringstream ss;
-    treeToStr(ss, t);
+    test::BTreePrinter<std::stringstream, typename Tree::NodeAllocatorType> printer(ss, t.getAllocator());
+    printer.print(t.getRoot());
     if (!EXPECT_EQUAL(exp, ss.str())) return false;
     return true;
 }
@@ -464,13 +400,12 @@ Test::requireThatNodeInsertWorks()
 {
     MyTree t;
     t.insert(20, 102);
-    EXPECT_TRUE(assertTree("[20:102[min=102,max=102]]", t));
+    EXPECT_TRUE(assertTree("{{20:102[min=102,max=102]}}", t));
     t.insert(10, 101);
-    EXPECT_TRUE(assertTree("[10:101,20:102[min=101,max=102]]", t));
+    EXPECT_TRUE(assertTree("{{10:101,20:102[min=101,max=102]}}", t));
     t.insert(30, 103);
     t.insert(40, 104);
-    EXPECT_TRUE(assertTree("[10:101,20:102,30:103,40:104"
-                           "[min=101,max=104]]", t));
+    EXPECT_TRUE(assertTree("{{10:101,20:102,30:103,40:104[min=101,max=104]}}", t));
 }
 
 void
@@ -490,31 +425,25 @@ Test::requireThatNodeSplitInsertWorks()
         MyTree t;
         getLeafNode(t);
         t.insert(4, 104);
-        EXPECT_TRUE(assertTree("[4:"
-                               "[1:101,3:103,4:104[min=101,max=104]]"
-                               ",7:"
-                               "[5:105,7:107[min=105,max=107]]"
-                               "[min=101,max=107]]", t));
+        EXPECT_TRUE(assertTree("{{4,7[min=101,max=107]}} -> "
+                               "{{1:101,3:103,4:104[min=101,max=104]},"
+                               "{5:105,7:107[min=105,max=107]}}", t));
     }
     { // new entry in split node
         MyTree t;
         getLeafNode(t);
         t.insert(6, 106);
-        EXPECT_TRUE(assertTree("[5:"
-                               "[1:101,3:103,5:105[min=101,max=105]]"
-                               ",7:"
-                               "[6:106,7:107[min=106,max=107]]"
-                               "[min=101,max=107]]", t));
+        EXPECT_TRUE(assertTree("{{5,7[min=101,max=107]}} -> "
+                               "{{1:101,3:103,5:105[min=101,max=105]},"
+                               "{6:106,7:107[min=106,max=107]}}", t));
     }
     { // new entry at end
         MyTree t;
         getLeafNode(t);
         t.insert(8, 108);
-        EXPECT_TRUE(assertTree("[5:"
-                               "[1:101,3:103,5:105[min=101,max=105]]"
-                               ",8:"
-                               "[7:107,8:108[min=107,max=108]]"
-                               "[min=101,max=108]]", t));
+        EXPECT_TRUE(assertTree("{{5,8[min=101,max=108]}} -> "
+                               "{{1:101,3:103,5:105[min=101,max=105]},"
+                               "{7:107,8:108[min=107,max=108]}}", t));
     }
 }
 
@@ -543,14 +472,11 @@ Test::requireThatNodeStealWorks()
         t.insert(60, 160);
         t.insert(35, 135);
         t.remove(35);
-        EXPECT_TRUE(assertTree("[30:"
-                               "[10:110,20:120,30:130[min=110,max=130]]"
-                               ",60:"
-                               "[40:140,50:150,60:160[min=140,max=160]]"
-                               "[min=110,max=160]]", t));
+        EXPECT_TRUE(assertTree("{{30,60[min=110,max=160]}} -> "
+                               "{{10:110,20:120,30:130[min=110,max=130]},"
+                               "{40:140,50:150,60:160[min=140,max=160]}}", t));
         t.remove(50);
-        EXPECT_TRUE(assertTree("[10:110,20:120,30:130,40:140,60:160"
-                               "[min=110,max=160]]", t));
+        EXPECT_TRUE(assertTree("{{10:110,20:120,30:130,40:140,60:160[min=110,max=160]}}", t));
     }
     { // steal all from right
         MyStealTree t;
@@ -562,14 +488,11 @@ Test::requireThatNodeStealWorks()
         t.insert(60, 160);
         t.insert(35, 135);
         t.remove(35);
-        EXPECT_TRUE(assertTree("[30:"
-                               "[10:110,20:120,30:130[min=110,max=130]]"
-                               ",60:"
-                               "[40:140,50:150,60:160[min=140,max=160]]"
-                               "[min=110,max=160]]", t));
+        EXPECT_TRUE(assertTree("{{30,60[min=110,max=160]}} -> "
+                               "{{10:110,20:120,30:130[min=110,max=130]},"
+                               "{40:140,50:150,60:160[min=140,max=160]}}", t));
         t.remove(20);
-        EXPECT_TRUE(assertTree("[10:110,30:130,40:140,50:150,60:160"
-                               "[min=110,max=160]]", t));
+        EXPECT_TRUE(assertTree("{{10:110,30:130,40:140,50:150,60:160[min=110,max=160]}}", t));
     }
     { // steal some from left
         MyStealTree t;
@@ -581,19 +504,13 @@ Test::requireThatNodeStealWorks()
         t.insert(80, 180);
         t.insert(50, 150);
         t.insert(40, 140);
-        EXPECT_TRUE(assertTree("[50:"
-                               "[10:110,20:120,30:130,40:140,50:150"
-                               "[min=110,max=150]]"
-                               ",80:"
-                               "[60:160,70:170,80:180[min=160,max=180]]"
-                               "[min=110,max=180]]", t));
+        EXPECT_TRUE(assertTree("{{50,80[min=110,max=180]}} -> "
+                               "{{10:110,20:120,30:130,40:140,50:150[min=110,max=150]},"
+                               "{60:160,70:170,80:180[min=160,max=180]}}", t));
         t.remove(60);
-        EXPECT_TRUE(assertTree("[30:"
-                               "[10:110,20:120,30:130"
-                               "[min=110,max=130]]"
-                               ",80:"
-                               "[40:140,50:150,70:170,80:180[min=140,max=180]]"
-                               "[min=110,max=180]]", t));
+        EXPECT_TRUE(assertTree("{{30,80[min=110,max=180]}} -> "
+                               "{{10:110,20:120,30:130[min=110,max=130]},"
+                               "{40:140,50:150,70:170,80:180[min=140,max=180]}}", t));
     }
     { // steal some from right
         MyStealTree t;
@@ -607,21 +524,13 @@ Test::requireThatNodeStealWorks()
         t.insert(80, 180);
         t.insert(90, 190);
         t.remove(40);
-        EXPECT_TRUE(assertTree("[30:"
-                               "[10:110,20:120,30:130"
-                               "[min=110,max=130]]"
-                               ",90:"
-                               "[50:150,60:160,70:170,80:180,90:190"
-                               "[min=150,max=190]]"
-                               "[min=110,max=190]]", t));
+        EXPECT_TRUE(assertTree("{{30,90[min=110,max=190]}} -> "
+                               "{{10:110,20:120,30:130[min=110,max=130]},"
+                               "{50:150,60:160,70:170,80:180,90:190[min=150,max=190]}}", t));
         t.remove(20);
-        EXPECT_TRUE(assertTree("[60:"
-                               "[10:110,30:130,50:150,60:160"
-                               "[min=110,max=160]]"
-                               ",90:"
-                               "[70:170,80:180,90:190"
-                               "[min=170,max=190]]"
-                               "[min=110,max=190]]", t));
+        EXPECT_TRUE(assertTree("{{60,90[min=110,max=190]}} -> "
+                               "{{10:110,30:130,50:150,60:160[min=110,max=160]},"
+                               "{70:170,80:180,90:190[min=170,max=190]}}", t));
     }
 }
 
@@ -631,11 +540,11 @@ Test::requireThatNodeRemoveWorks()
     MyTree t;
     getLeafNode(t);
     t.remove(3);
-    EXPECT_TRUE(assertTree("[1:101,5:105,7:107[min=101,max=107]]", t));
+    EXPECT_TRUE(assertTree("{{1:101,5:105,7:107[min=101,max=107]}}", t));
     t.remove(1);
-    EXPECT_TRUE(assertTree("[5:105,7:107[min=105,max=107]]", t));
+    EXPECT_TRUE(assertTree("{{5:105,7:107[min=105,max=107]}}", t));
     t.remove(7);
-    EXPECT_TRUE(assertTree("[5:105[min=105,max=105]]", t));
+    EXPECT_TRUE(assertTree("{{5:105[min=105,max=105]}}", t));
 }
 
 void
