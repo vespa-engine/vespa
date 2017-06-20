@@ -63,10 +63,10 @@ DeployedFilesToDownload::groupChildrenByAppId(const Path & parentPath, const Str
 void
 DeployedFilesToDownload::deleteExpiredDeployNodes(Path parentPath, StringVector children)
 {
-    if (children.size() > numberOfDeploysToKeepFiles) {
+    if (children.size() > numberOfDeploymentsToKeepFilesFrom) {
         std::sort(children.begin(), children.end());
 
-        size_t numberOfNodesToDelete = children.size() - numberOfDeploysToKeepFiles;
+        size_t numberOfNodesToDelete = children.size() - numberOfDeploymentsToKeepFilesFrom;
         std::for_each(children.begin(), children.begin() + numberOfNodesToDelete,
                      [&](const std::string & s) {_zk.remove(parentPath / s); });
     }

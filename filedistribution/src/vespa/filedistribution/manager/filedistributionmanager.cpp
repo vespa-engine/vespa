@@ -139,7 +139,7 @@ Java_com_yahoo_vespa_filedistribution_FileDistributionManager_addFileImpl(
         }
         if (freshlyAdded == hasRegisteredFile) {
             std::cerr << "freshlyAdded(" << freshlyAdded << ") == hasRegisteredFile(" << hasRegisteredFile
-                      << "), which is very odd. File is '" << fileReference << std::endl;
+                      << "), which is very odd. File is '" << fileReference << "'" << std::endl;
         }
 
         //contains string with the characters 0-9 a-f
