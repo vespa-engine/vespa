@@ -518,18 +518,20 @@ public class NodeAgentImplTest {
                 .vespaVersion(vespaVersion)
                 .owner(owner)
                 .membership(membership)
+                .minMainMemoryAvailableGb(2)
                 .build();
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
 
         when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(nodeSpec));
         when(storageMaintainer.updateIfNeededAndGetDiskMetricsFor(eq(containerName))).thenReturn(Optional.of(42547019776L));
+        when(storageMaintainer.getHostTotalMemoryGb()).thenReturn(10d);
         when(dockerOperations.getContainerStats(eq(containerName)))
                 .thenReturn(Optional.of(stats1))
                 .thenReturn(Optional.of(stats2));
 
         nodeAgent.converge(); // Run the converge loop once to initialize lastNodeSpec
-        nodeAgent.updateContainerNodeMetrics(5); // Update metrics once to init and lastCpuMetric
+        nodeAgent.updateContainerNodeMetrics(); // Update metrics once to init and lastCpuMetric
 
         clock.advance(Duration.ofSeconds(1234));
 
@@ -552,7 +554,7 @@ public class NodeAgentImplTest {
             return null;
         }).when(dockerOperations).executeCommandInContainerAsRoot(any(), any(), anyVararg());
 
-        nodeAgent.updateContainerNodeMetrics(5);
+        nodeAgent.updateContainerNodeMetrics();
     }
 
     @Test
@@ -568,7 +570,7 @@ public class NodeAgentImplTest {
 
         nodeAgent.converge(); // Run the converge loop once to initialize lastNodeSpec
 
-        nodeAgent.updateContainerNodeMetrics(5);
+        nodeAgent.updateContainerNodeMetrics();
 
         Set<Map<String, Object>> actualMetrics = metricReceiver.getAllMetricsRaw();
         assertEquals(Collections.emptySet(), actualMetrics);
