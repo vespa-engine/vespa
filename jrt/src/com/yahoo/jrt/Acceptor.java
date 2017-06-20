@@ -2,7 +2,9 @@
 package com.yahoo.jrt;
 
 
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ServerSocketChannel;
+import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,13 +28,14 @@ public class Acceptor {
         }
     }
 
-    private static Logger log = Logger.getLogger(Acceptor.class.getName());
+    private final static Logger log = Logger.getLogger(Acceptor.class.getName());
 
-    private Thread     thread = new Thread(new Run(), "<acceptor>");
-    private Transport  parent;
-    private Supervisor owner;
+    private final Thread         thread = new Thread(new Run(), "<acceptor>");
+    private final CountDownLatch shutdownGate = new CountDownLatch(1);
+    private final Transport      parent;
+    private final Supervisor     owner;
 
-    private ServerSocketChannel serverChannel;
+    private final ServerSocketChannel serverChannel;
 
     Acceptor(Transport parent, Supervisor owner, Spec spec) throws ListenFailedException {
         this.parent = parent;
@@ -41,6 +44,14 @@ public class Acceptor {
         if (spec.malformed())
             throw new ListenFailedException("Malformed spec '" + spec + "'");
 
+        serverChannel = createServerSocketChannel(spec);
+
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    private static ServerSocketChannel createServerSocketChannel(Spec spec) throws ListenFailedException {
+        ServerSocketChannel serverChannel = null;
         try {
             serverChannel = ServerSocketChannel.open();
             serverChannel.configureBlocking(true);
@@ -50,13 +61,11 @@ public class Acceptor {
             serverChannel.socket().bind(spec.address(), 500);
         } catch (Exception e) {
             if (serverChannel != null) {
-                try { serverChannel.socket().close(); } catch (Exception x) {}
+                try { serverChannel.socket().close(); } catch (Exception ignore) {}
             }
             throw new ListenFailedException("Failed to listen to " + spec, e);
         }
-
-        thread.setDaemon(true);
-        thread.start();
+        return serverChannel;
     }
 
     /**
@@ -93,10 +102,16 @@ public class Acceptor {
             try {
                 parent.addConnection(new Connection(parent, owner, serverChannel.accept()));
                 parent.sync();
-            } catch (java.nio.channels.ClosedChannelException x) {
+            } catch (ClosedChannelException ignore) {
             } catch (Exception e) {
                 log.log(Level.WARNING, "Error accepting connection", e);
             }
+        }
+        while (true) {
+            try {
+                shutdownGate.await();
+                return;
+            } catch (InterruptedException ignore) {}
         }
     }
 
@@ -123,6 +138,8 @@ public class Acceptor {
                     throw new Error("Error closing server socket 3 times", e3);
                 }
             }
+        } finally {
+            shutdownGate.countDown();
         }
         return this;
     }
@@ -135,7 +152,7 @@ public class Acceptor {
             try {
                 thread.join();
                 return;
-            } catch (InterruptedException e) {}
+            } catch (InterruptedException ignore) {}
         }
     }
 }
