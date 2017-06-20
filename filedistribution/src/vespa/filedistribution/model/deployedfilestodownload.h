@@ -9,8 +9,8 @@ namespace filedistribution {
 const std::string readApplicationId(ZKFacade & zk, const Path & deployNode);
 
 class DeployedFilesToDownload {
-    //includes the current deploy run;
-    static const size_t numberOfDeploysToKeepFiles = 2;
+    //includes the current deployment. Want at least 3 ('original' + 2, since there might be concurrent deployments, e.g both external and internal)
+    static const size_t numberOfDeploymentsToKeepFilesFrom = 3;
 
     ZKFacade& _zk;
 
