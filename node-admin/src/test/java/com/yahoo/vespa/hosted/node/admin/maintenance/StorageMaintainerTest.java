@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
+import java.util.Optional;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
@@ -117,6 +118,18 @@ public class StorageMaintainerTest {
         // Maintenance job failed, we should be able to immediately re-run it
         storageMaintainer.removeOldFilesFromNode(containerName);
         verify(docker, times(2)).executeInContainerAsRoot(any(), anyVararg());
+    }
+
+    @Test
+    public void testGetTotalMemory() {
+        StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
+        when(storageMaintainer.getHostTotalMemoryGb()).thenCallRealMethod();
+
+        when(storageMaintainer.readMeminfo()).thenReturn(Optional.empty());
+        assertEquals(0d, storageMaintainer.getHostTotalMemoryGb(), 0);
+
+        when(storageMaintainer.readMeminfo()).thenReturn(Optional.of("MemTotal:   1572864 kB\nMemUsed:   1000000 kB\n"));
+        assertEquals(1.5d, storageMaintainer.getHostTotalMemoryGb(), 0);
     }
 
     private static void writeNBytesToFile(File file, int nBytes) throws IOException {

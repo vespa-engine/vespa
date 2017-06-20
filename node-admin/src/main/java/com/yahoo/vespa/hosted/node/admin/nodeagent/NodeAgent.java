@@ -41,7 +41,7 @@ public interface NodeAgent {
     /**
      * Updates metric receiver with the latest node-agent stats
      */
-    void updateContainerNodeMetrics(int numAllocatedContainersOnHost);
+    void updateContainerNodeMetrics();
 
     String getHostname();
 

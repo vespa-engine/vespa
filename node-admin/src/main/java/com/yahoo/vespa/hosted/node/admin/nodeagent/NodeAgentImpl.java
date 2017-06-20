@@ -501,7 +501,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     @SuppressWarnings("unchecked")
-    public void updateContainerNodeMetrics(int numAllocatedContainersOnHost) {
+    public void updateContainerNodeMetrics() {
         final ContainerNodeSpec nodeSpec = lastNodeSpec;
         if (nodeSpec == null || containerState == ABSENT) return;
 
@@ -527,11 +527,14 @@ public class NodeAgentImpl implements NodeAgent {
         final Optional<Long> diskTotalBytesUsed = storageMaintainer.flatMap(maintainer -> maintainer
                         .updateIfNeededAndGetDiskMetricsFor(containerName));
 
-        // CPU usage by a container is given by dividing used CPU time by the container with CPU time used by the entire
-        // system. Because each container is allocated same amount of CPU shares, no container should use more than 1/n
-        // of the total CPU time, where n is the number of running containers.
+        // CPU usage by a container as percentage of total host CPU, cpuPercentageOfHost, is given by dividing used
+        // CPU time by the container with CPU time used by the entire system.
+        // CPU usage by a container as percentage of total CPU allocated to it is given by dividing the
+        // cpuPercentageOfHost with the ratio of container resources over total host resources. This calculation
+        // assumes that the ratio between container and host resources for disk, memory, and cpu is roughly equal
+        // and therefore only calculates the ratio of container memory against host memory.
         double cpuPercentageOfHost = lastCpuMetric.getCpuUsagePercentage(cpuContainerTotalTime, cpuSystemTotalTime);
-        double cpuPercentageOfAllocated = numAllocatedContainersOnHost * cpuPercentageOfHost;
+        double cpuPercentageOfAllocated = getInverseContainerShareOfHost(nodeSpec) * cpuPercentageOfHost;
         long memoryTotalBytesUsed = memoryTotalBytesUsage - memoryTotalBytesCache;
         double memoryPercentUsed = 100.0 * memoryTotalBytesUsed / memoryTotalBytes;
         Optional<Double> diskPercentUsed = diskTotalBytes.flatMap(total -> diskTotalBytesUsed.map(used -> 100.0 * used / total));
@@ -601,6 +604,14 @@ public class NodeAgentImpl implements NodeAgent {
         int temp = numberOfUnhandledException;
         numberOfUnhandledException = 0;
         return temp;
+    }
+
+    private double getInverseContainerShareOfHost(ContainerNodeSpec nodeSpec) {
+        return nodeSpec.minMainMemoryAvailableGb
+                .map(memory -> {
+                        double hostMemory = storageMaintainer.map(StorageMaintainer::getHostTotalMemoryGb).orElse(0d);
+                        return hostMemory / memory;
+                }).orElse(0d);
     }
 
     class CpuUsageReporter {
