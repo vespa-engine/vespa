@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.collections.Pair;
 import com.yahoo.io.IOUtils;
+import com.yahoo.log.LogLevel;
 import com.yahoo.net.HostName;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
@@ -35,6 +36,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
@@ -43,17 +46,20 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
  * @author freva
  */
 public class StorageMaintainer {
+    private static final Pattern TOTAL_MEMORY_PATTERN = Pattern.compile("^MemTotal:\\s*(?<totalMem>\\d+) kB$", Pattern.MULTILINE);
     private static final ContainerName NODE_ADMIN = new ContainerName("node-admin");
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static Optional<String> kernelVersion = Optional.empty();
 
     private static final long intervalSec = 1000;
 
+    private final Logger logger = Logger.getLogger(StorageMaintainer.class.getName());
     private final Object monitor = new Object();
     private final CounterWrapper numberOfNodeAdminMaintenanceFails;
     private final Docker docker;
     private final Environment environment;
     private final Clock clock;
+    private double hostTotalMemoryGb = 0;
 
     private Map<ContainerName, MaintenanceThrottler> maintenanceThrottlerByContainerName = new ConcurrentHashMap<>();
 
@@ -167,6 +173,29 @@ public class StorageMaintainer {
         return diskUsageKB * 1024;
     }
 
+    Optional<String> readMeminfo() {
+        try {
+            return Optional.of(new String(Files.readAllBytes(Paths.get("/proc/meminfo"))));
+        } catch (IOException e) {
+            logger.log(LogLevel.WARNING, "Failed to read meminfo", e);
+            return Optional.empty();
+        }
+    }
+
+    public double getHostTotalMemoryGb() {
+        if (hostTotalMemoryGb == 0) {
+            readMeminfo().ifPresent(memInfo -> {
+                Matcher matcher = TOTAL_MEMORY_PATTERN.matcher(memInfo);
+                if (matcher.find()) {
+                    hostTotalMemoryGb = Integer.valueOf(matcher.group("totalMem")) / 1024d / 1024;
+                } else {
+                    logger.log(LogLevel.WARNING, "Failed to parse total memory from meminfo: " + memInfo);
+                }
+            });
+        }
+
+        return hostTotalMemoryGb;
+    }
 
     /**
      * Deletes old log files for vespa, nginx, logstash, etc.
