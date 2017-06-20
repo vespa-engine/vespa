@@ -2,18 +2,14 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 set -e
 
-if [ $# -ne 1 ]; then
-  echo "Usage: $0 <vespa version>"
+if [ $# -ne 0 ]; then
+  echo "Usage: $0"
   echo "This script should not be called manually."
   exit 1
 fi
 
 DIR=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
 cd $DIR
-
-VESPA_VERSION=$1
-
-yum localinstall -y $(ls vespa*-${VESPA_VERSION}-*.rpm | xargs)
 
 # Workaround until we figure out why rpm does not set the ownership.
 chown -R vespa:vespa /opt/vespa
