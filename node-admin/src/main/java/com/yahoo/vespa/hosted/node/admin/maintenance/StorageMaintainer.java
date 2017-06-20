@@ -63,10 +63,7 @@ public class StorageMaintainer {
         this.environment = environment;
         this.clock = clock;
 
-        Dimensions dimensions = new Dimensions.Builder()
-                .add("host", HostName.getLocalhost())
-                .add("role", "docker").build();
-
+        Dimensions dimensions = new Dimensions.Builder().add("role", "docker").build();
         numberOfNodeAdminMaintenanceFails = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.maintenance.fails");
     }
 
@@ -74,28 +71,31 @@ public class StorageMaintainer {
         final Path yamasAgentFolder = environment.pathInNodeAdminFromPathInNode(containerName, "/etc/yamas-agent/");
 
         Path vespaCheckPath = Paths.get(getDefaults().underVespaHome("libexec/yms/yms_check_vespa"));
-        SecretAgentScheduleMaker scheduleMaker = new SecretAgentScheduleMaker("vespa", 60, vespaCheckPath, "all")
+        SecretAgentScheduleMaker vespaSchedule = new SecretAgentScheduleMaker("vespa", 60, vespaCheckPath, "all")
+                .withTag("parentHostname", environment.getParentHostHostname());
+
+        Path hostLifeCheckPath = Paths.get("/home/y/libexec/yms/yms_check_host_life");
+        SecretAgentScheduleMaker hostLifeSchedule = new SecretAgentScheduleMaker("host-life", 60, hostLifeCheckPath)
                 .withTag("namespace", "Vespa")
                 .withTag("role", "tenants")
                 .withTag("flavor", nodeSpec.nodeFlavor)
                 .withTag("state", nodeSpec.nodeState.toString())
                 .withTag("zone", environment.getZone())
                 .withTag("parentHostname", environment.getParentHostHostname());
-
-        nodeSpec.owner.ifPresent(owner ->
-                scheduleMaker
-                        .withTag("tenantName", owner.tenant)
-                        .withTag("app", owner.application + "." + owner.instance));
-
-        nodeSpec.membership.ifPresent(membership ->
-                scheduleMaker
-                        .withTag("clustertype", membership.clusterType)
-                        .withTag("clusterid", membership.clusterId));
-
-        nodeSpec.vespaVersion.ifPresent(version -> scheduleMaker.withTag("vespaVersion", version));
+        nodeSpec.owner.ifPresent(owner -> hostLifeSchedule
+                .withTag("tenantName", owner.tenant)
+                .withTag("app", owner.application + "." + owner.instance)
+                .withTag("applicationName", owner.application)
+                .withTag("instanceName", owner.instance)
+                .withTag("applicationId", owner.tenant + "." + owner.application + "." + owner.instance));
+        nodeSpec.membership.ifPresent(membership -> hostLifeSchedule
+                .withTag("clustertype", membership.clusterType)
+                .withTag("clusterid", membership.clusterId));
+        nodeSpec.vespaVersion.ifPresent(version -> hostLifeSchedule.withTag("vespaVersion", version));
 
         try {
-            scheduleMaker.writeTo(yamasAgentFolder);
+            vespaSchedule.writeTo(yamasAgentFolder);
+            hostLifeSchedule.writeTo(yamasAgentFolder);
             final String[] restartYamasAgent = new String[]{"service", "yamas-agent", "restart"};
             docker.executeInContainerAsRoot(containerName, restartYamasAgent);
         } catch (IOException e) {

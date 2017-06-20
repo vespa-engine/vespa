@@ -32,12 +32,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
@@ -529,25 +531,23 @@ public class NodeAgentImplTest {
         clock.advance(Duration.ofSeconds(1234));
         nodeAgent.updateContainerNodeMetrics(5);
 
+        String[] expectedCommand = {"rpc_invoke",  "-t", "1",  "tcp/localhost:19091",  "setExtraMetrics",
+                "s:{\"routing\":{\"yamas\":{\"namespaces\":[\"Vespa\"]}},\"application\":\"vespa.node\",\"metrics\":{\"mem.limit\":4294967296,\"mem.used\":1073741824,\"disk.used\":42547019776,\"disk.util\":15.85,\"cpu.util\":0.0,\"mem.util\":25.0,\"disk.limit\":268435456000},\"dimensions\":{\"app\":\"testapp.testinstance\",\"role\":\"tenants\",\"instanceName\":\"testinstance\",\"vespaVersion\":\"1.2.3\",\"clusterid\":\"clustId\",\"parentHostname\":\"parent.host.name.yahoo.com\",\"flavor\":\"docker\",\"clustertype\":\"clustType\",\"tenantName\":\"tester\",\"zone\":\"dev.us-east-1\",\"host\":\"host1.test.yahoo.com\",\"state\":\"active\",\"applicationId\":\"tester.testapp.testinstance\",\"applicationName\":\"testapp\"},\"timestamp\":0}{\"routing\":{\"yamas\":{\"namespaces\":[\"Vespa\"]}},\"application\":\"vespa.node\",\"metrics\":{\"net.out.bytes\":20303455,\"net.in.dropped\":4,\"net.out.dropped\":13,\"net.in.bytes\":19499270,\"net.out.errors\":3,\"net.in.errors\":55},\"dimensions\":{\"app\":\"testapp.testinstance\",\"role\":\"tenants\",\"instanceName\":\"testinstance\",\"vespaVersion\":\"1.2.3\",\"clusterid\":\"clustId\",\"interface\":\"eth0\",\"parentHostname\":\"parent.host.name.yahoo.com\",\"flavor\":\"docker\",\"clustertype\":\"clustType\",\"tenantName\":\"tester\",\"zone\":\"dev.us-east-1\",\"host\":\"host1.test.yahoo.com\",\"state\":\"active\",\"applicationId\":\"tester.testapp.testinstance\",\"applicationName\":\"testapp\"},\"timestamp\":0}{\"routing\":{\"yamas\":{\"namespaces\":[\"Vespa\"]}},\"application\":\"vespa.node\",\"metrics\":{\"net.out.bytes\":54246745,\"net.in.dropped\":0,\"net.out.dropped\":0,\"net.in.bytes\":3245766,\"net.out.errors\":0,\"net.in.errors\":0},\"dimensions\":{\"app\":\"testapp.testinstance\",\"role\":\"tenants\",\"instanceName\":\"testinstance\",\"vespaVersion\":\"1.2.3\",\"clusterid\":\"clustId\",\"interface\":\"eth1\",\"parentHostname\":\"parent.host.name.yahoo.com\",\"flavor\":\"docker\",\"clustertype\":\"clustType\",\"tenantName\":\"tester\",\"zone\":\"dev.us-east-1\",\"host\":\"host1.test.yahoo.com\",\"state\":\"active\",\"applicationId\":\"tester.testapp.testinstance\",\"applicationName\":\"testapp\"},\"timestamp\":0}"};
+        doAnswer(invocation -> {
+            ContainerName calledContainerName = (ContainerName) invocation.getArguments()[0];
+            long calledTimeout = (long) invocation.getArguments()[1];
+            String[] calledCommand = (String[]) invocation.getArguments()[2];
+            calledCommand[calledCommand.length - 1] = calledCommand[calledCommand.length - 1].replaceAll("\"timestamp\":\\d+", "\"timestamp\":0");
 
-        File expectedMetricsFile = new File(classLoader.getResource("docker.stats.metrics.active.expected.json").getFile());
-        Set<Map<String, Object>> expectedMetrics = objectMapper.readValue(expectedMetricsFile, Set.class);
-        Set<Map<String, Object>> actualMetrics = metricReceiver.getAllMetricsRaw();
-
-        String arg = nodeAgent.buildRPCArgumentFromMetrics();
-        arg = arg.replaceAll("\"timestamp\":\\d+", "\"timestamp\":0");
-
-        assertEquals("s:'{\"routing\":{\"yamas\":{\"namespaces\":[\"Vespa\"]}},\"application\":\"vespa.node\",\"metrics\":{\"mem.limit\":4.294967296E9,\"mem.used\":1.073741824E9,\"alive\":1.0,\"disk.used\":4.2547019776E10,\"disk.util\":15.85,\"cpu.util\":6.75,\"disk.limit\":2.68435456E11,\"mem.util\":25.0},\"dimensions\":{\"app\":\"testapp.testinstance\",\"role\":\"tenants\",\"instanceName\":\"testinstance\",\"vespaVersion\":\"1.2.3\",\"clusterid\":\"clustId\",\"parentHostname\":\"parent.host.name.yahoo.com\",\"flavor\":\"docker\",\"clustertype\":\"clustType\",\"tenantName\":\"tester\",\"zone\":\"dev.us-east-1\",\"host\":\"host1.test.yahoo.com\",\"state\":\"active\",\"applicationId\":\"tester.testapp.testinstance\",\"applicationName\":\"testapp\"},\"timestamp\":0}{\"routing\":{\"yamas\":{\"namespaces\":[\"Vespa\"]}},\"application\":\"vespa.node\",\"metrics\":{\"net.out.bytes\":2.0303455E7,\"net.out.dropped\":13.0,\"net.in.dropped\":4.0,\"net.in.bytes\":1.949927E7,\"net.out.errors\":3.0,\"net.in.errors\":55.0},\"dimensions\":{\"app\":\"testapp.testinstance\",\"role\":\"tenants\",\"instanceName\":\"testinstance\",\"vespaVersion\":\"1.2.3\",\"clusterid\":\"clustId\",\"interface\":\"eth0\",\"parentHostname\":\"parent.host.name.yahoo.com\",\"flavor\":\"docker\",\"clustertype\":\"clustType\",\"tenantName\":\"tester\",\"zone\":\"dev.us-east-1\",\"host\":\"host1.test.yahoo.com\",\"state\":\"active\",\"applicationId\":\"tester.testapp.testinstance\",\"applicationName\":\"testapp\"},\"timestamp\":0}{\"routing\":{\"yamas\":{\"namespaces\":[\"Vespa\"]}},\"application\":\"vespa.node\",\"metrics\":{\"net.out.bytes\":5.4246745E7,\"net.out.dropped\":0.0,\"net.in.dropped\":0.0,\"net.in.bytes\":3245766.0,\"net.out.errors\":0.0,\"net.in.errors\":0.0},\"dimensions\":{\"app\":\"testapp.testinstance\",\"role\":\"tenants\",\"instanceName\":\"testinstance\",\"vespaVersion\":\"1.2.3\",\"clusterid\":\"clustId\",\"interface\":\"eth1\",\"parentHostname\":\"parent.host.name.yahoo.com\",\"flavor\":\"docker\",\"clustertype\":\"clustType\",\"tenantName\":\"tester\",\"zone\":\"dev.us-east-1\",\"host\":\"host1.test.yahoo.com\",\"state\":\"active\",\"applicationId\":\"tester.testapp.testinstance\",\"applicationName\":\"testapp\"},\"timestamp\":0}{\"routing\":{\"yamas\":{\"namespaces\":[\"Vespa\"]}},\"application\":\"host_life\",\"metrics\":{\"alive\":1.0,\"uptime\":1234.0},\"dimensions\":{\"app\":\"testapp.testinstance\",\"role\":\"tenants\",\"instanceName\":\"testinstance\",\"vespaVersion\":\"1.2.3\",\"clusterid\":\"clustId\",\"parentHostname\":\"parent.host.name.yahoo.com\",\"flavor\":\"docker\",\"clustertype\":\"clustType\",\"tenantName\":\"tester\",\"zone\":\"dev.us-east-1\",\"host\":\"host1.test.yahoo.com\",\"state\":\"active\",\"applicationId\":\"tester.testapp.testinstance\",\"applicationName\":\"testapp\"},\"timestamp\":0}{\"routing\":{\"yamas\":{\"namespaces\":[\"Vespa\"]}},\"application\":\"docker\",\"metrics\":{\"node.disk.limit\":2.68435456E11,\"node.disk.used\":4.2547019776E10,\"node.memory.usage\":1.073741824E9,\"node.cpu.busy.pct\":6.75,\"node.cpu.throttled_time\":4523.0,\"node.memory.limit\":4.294967296E9,\"node.alive\":1.0},\"dimensions\":{\"app\":\"testapp.testinstance\",\"role\":\"tenants\",\"instanceName\":\"testinstance\",\"vespaVersion\":\"1.2.3\",\"clusterid\":\"clustId\",\"parentHostname\":\"parent.host.name.yahoo.com\",\"flavor\":\"docker\",\"clustertype\":\"clustType\",\"tenantName\":\"tester\",\"zone\":\"dev.us-east-1\",\"host\":\"host1.test.yahoo.com\",\"state\":\"active\",\"applicationId\":\"tester.testapp.testinstance\",\"applicationName\":\"testapp\"},\"timestamp\":0}{\"routing\":{\"yamas\":{\"namespaces\":[\"Vespa\"]}},\"application\":\"docker\",\"metrics\":{\"node.net.in.dropped\":4.0,\"node.net.out.errors\":3.0,\"node.net.out.bytes\":2.0303455E7,\"node.net.in.bytes\":1.949927E7,\"node.net.out.dropped\":13.0,\"node.net.in.errors\":55.0},\"dimensions\":{\"app\":\"testapp.testinstance\",\"role\":\"tenants\",\"instanceName\":\"testinstance\",\"vespaVersion\":\"1.2.3\",\"clusterid\":\"clustId\",\"interface\":\"eth0\",\"parentHostname\":\"parent.host.name.yahoo.com\",\"flavor\":\"docker\",\"clustertype\":\"clustType\",\"tenantName\":\"tester\",\"zone\":\"dev.us-east-1\",\"host\":\"host1.test.yahoo.com\",\"state\":\"active\",\"applicationId\":\"tester.testapp.testinstance\",\"applicationName\":\"testapp\"},\"timestamp\":0}{\"routing\":{\"yamas\":{\"namespaces\":[\"Vespa\"]}},\"application\":\"docker\",\"metrics\":{\"node.net.in.dropped\":0.0,\"node.net.out.errors\":0.0,\"node.net.out.bytes\":5.4246745E7,\"node.net.in.bytes\":3245766.0,\"node.net.out.dropped\":0.0,\"node.net.in.errors\":0.0},\"dimensions\":{\"app\":\"testapp.testinstance\",\"role\":\"tenants\",\"instanceName\":\"testinstance\",\"vespaVersion\":\"1.2.3\",\"clusterid\":\"clustId\",\"interface\":\"eth1\",\"parentHostname\":\"parent.host.name.yahoo.com\",\"flavor\":\"docker\",\"clustertype\":\"clustType\",\"tenantName\":\"tester\",\"zone\":\"dev.us-east-1\",\"host\":\"host1.test.yahoo.com\",\"state\":\"active\",\"applicationId\":\"tester.testapp.testinstance\",\"applicationName\":\"testapp\"},\"timestamp\":0}'", arg);
-
-        assertEquals(expectedMetrics, actualMetrics);
+            assertEquals(containerName, calledContainerName);
+            assertEquals(5L, calledTimeout);
+            assertArrayEquals(expectedCommand, calledCommand);
+            return null;
+        }).when(dockerOperations).executeCommandInContainerAsRoot(any(), any(), any());
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void testGetRelevantMetricsForReadyNode() throws Exception {
-        final ObjectMapper objectMapper = new ObjectMapper();
-        ClassLoader classLoader = getClass().getClassLoader();
-
         final ContainerNodeSpec nodeSpec = nodeSpecBuilder
                 .nodeState(Node.State.ready)
                 .build();
@@ -561,11 +561,8 @@ public class NodeAgentImplTest {
 
         nodeAgent.updateContainerNodeMetrics(5);
 
-        File expectedMetricsFile = new File(classLoader.getResource("docker.stats.metrics.ready.expected.json").getFile());
-        Set<Map<String, Object>> expectedMetrics = objectMapper.readValue(expectedMetricsFile, Set.class);
         Set<Map<String, Object>> actualMetrics = metricReceiver.getAllMetricsRaw();
-
-        assertEquals(expectedMetrics, actualMetrics);
+        assertEquals(Collections.emptySet(), actualMetrics);
     }
 
 
@@ -576,8 +573,7 @@ public class NodeAgentImplTest {
                         dockerImage,
                         containerName,
                         isRunning ? Container.State.RUNNING : Container.State.EXITED,
-                        isRunning ? 1 : 0,
-                        clock.instant().toString())) :
+                        isRunning ? 1 : 0)) :
                 Optional.empty();
 
         when(dockerOperations.getContainerStats(any())).thenReturn(Optional.of(emptyContainerStats));

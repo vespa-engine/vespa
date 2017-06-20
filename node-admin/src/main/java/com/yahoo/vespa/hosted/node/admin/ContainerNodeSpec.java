@@ -18,6 +18,7 @@ public class ContainerNodeSpec {
     public final Node.State nodeState;
     public final String nodeType;
     public final String nodeFlavor;
+    public final String nodeCanonicalFlavor;
     public final Optional<String> wantedVespaVersion;
     public final Optional<String> vespaVersion;
     public final Optional<Owner> owner;
@@ -37,6 +38,7 @@ public class ContainerNodeSpec {
             final Node.State nodeState,
             final String nodeType,
             final String nodeFlavor,
+            final String nodeCanonicalFlavor,
             final Optional<String> wantedVespaVersion,
             final Optional<String> vespaVersion,
             final Optional<Owner> owner,
@@ -59,6 +61,7 @@ public class ContainerNodeSpec {
         this.nodeState = nodeState;
         this.nodeType = nodeType;
         this.nodeFlavor = nodeFlavor;
+        this.nodeCanonicalFlavor = nodeCanonicalFlavor;
         this.wantedVespaVersion = wantedVespaVersion;
         this.vespaVersion = vespaVersion;
         this.owner = owner;
@@ -85,6 +88,7 @@ public class ContainerNodeSpec {
                 Objects.equals(nodeState, that.nodeState) &&
                 Objects.equals(nodeType, that.nodeType) &&
                 Objects.equals(nodeFlavor, that.nodeFlavor) &&
+                Objects.equals(nodeCanonicalFlavor, that.nodeCanonicalFlavor) &&
                 Objects.equals(wantedVespaVersion, that.wantedVespaVersion) &&
                 Objects.equals(vespaVersion, that.vespaVersion) &&
                 Objects.equals(owner, that.owner) &&
@@ -107,6 +111,7 @@ public class ContainerNodeSpec {
                 nodeState,
                 nodeType,
                 nodeFlavor,
+                nodeCanonicalFlavor,
                 wantedVespaVersion,
                 vespaVersion,
                 owner,
@@ -129,6 +134,7 @@ public class ContainerNodeSpec {
                 + " nodeState=" + nodeState
                 + " nodeType = " + nodeType
                 + " nodeFlavor = " + nodeFlavor
+                + " nodeCanonicalFlavor = " + nodeCanonicalFlavor
                 + " wantedVespaVersion = " + wantedVespaVersion
                 + " vespaVersion = " + vespaVersion
                 + " owner = " + owner
@@ -243,6 +249,7 @@ public class ContainerNodeSpec {
         private Node.State nodeState;
         private String nodeType;
         private String nodeFlavor;
+        private String nodeCanonicalFlavor;
         private Optional<String> wantedVespaVersion = Optional.empty();
         private Optional<String> vespaVersion = Optional.empty();
         private Optional<Owner> owner = Optional.empty();
@@ -262,6 +269,7 @@ public class ContainerNodeSpec {
             nodeState(nodeSpec.nodeState);
             nodeType(nodeSpec.nodeType);
             nodeFlavor(nodeSpec.nodeFlavor);
+            nodeCanonicalFlavor(nodeSpec.nodeCanonicalFlavor);
 
             nodeSpec.wantedDockerImage.ifPresent(this::wantedDockerImage);
             nodeSpec.currentDockerImage.ifPresent(this::currentDockerImage);
@@ -304,6 +312,11 @@ public class ContainerNodeSpec {
 
         public Builder nodeFlavor(String nodeFlavor) {
             this.nodeFlavor = nodeFlavor;
+            return this;
+        }
+
+        public Builder nodeCanonicalFlavor(String nodeCanonicalFlavor) {
+            this.nodeCanonicalFlavor = nodeCanonicalFlavor;
             return this;
         }
 
@@ -363,7 +376,8 @@ public class ContainerNodeSpec {
         }
 
         public ContainerNodeSpec build() {
-            return new ContainerNodeSpec(hostname, wantedDockerImage, currentDockerImage, nodeState, nodeType, nodeFlavor,
+            return new ContainerNodeSpec(hostname, wantedDockerImage, currentDockerImage, nodeState, nodeType,
+                                         nodeFlavor, nodeCanonicalFlavor,
                                          wantedVespaVersion, vespaVersion, owner, membership,
                                          wantedRestartGeneration, currentRestartGeneration,
                                          wantedRebootGeneration, currentRebootGeneration,
