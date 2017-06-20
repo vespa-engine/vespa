@@ -20,6 +20,7 @@ using filedistribution::ZKGenericException;
 using filedistribution::ZKException;
 using filedistribution::ZKLogging;
 using filedistribution::Path;
+using vespalib::make_string;
 
 namespace {
 
@@ -336,7 +337,9 @@ ZKFacade::ZKFacade(const std::string& zkservers)
                              0)) //flags
 {
     if (!_zhandle) {
-        throw ZKFailedConnecting("No zhandle", VESPA_STRLOC);
+        throw ZKFailedConnecting(make_string("No zhandle connecting too \n%s \nfrom config \n%s",
+                                             _lastKnownServerAddresses.c_str(), _serverHostNames.c_str()),
+                                 VESPA_STRLOC);
     }
 }
 

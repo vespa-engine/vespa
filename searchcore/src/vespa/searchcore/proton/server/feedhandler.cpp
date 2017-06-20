@@ -723,8 +723,7 @@ void
 FeedHandler::handleOperation(FeedToken token, FeedOperation::UP op)
 {
     _writeService.master().execute(
-            makeTask(makeClosure(this,
-                                 &FeedHandler::doHandleOperation, token, std::move(op))));
+            makeTask(makeClosure(this, &FeedHandler::doHandleOperation, token, std::move(op))));
 }
 
 void
