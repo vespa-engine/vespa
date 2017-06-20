@@ -8,7 +8,6 @@ import java.util.zip.ZipEntry
 
 import com.yahoo.container.plugin.util.{Files, JarFiles}
 import org.apache.maven.archiver.{MavenArchiveConfiguration, MavenArchiver}
-import org.apache.maven.execution.MavenSession
 import org.apache.maven.plugin.AbstractMojo
 import org.apache.maven.plugins.annotations.{Component, Mojo, Parameter, ResolutionScope}
 import org.apache.maven.project.MavenProject
@@ -27,9 +26,6 @@ class AssembleContainerPluginMojo extends AbstractMojo {
 
   @Parameter(defaultValue = "${project}")
   var project: MavenProject = null
-
-  @Parameter(defaultValue = "${session}", readonly = true, required = true)
-  var session: MavenSession = null
 
   @Component(role = classOf[Archiver], hint = "jar")
   var jarArchiver: JarArchiver = null
@@ -75,7 +71,7 @@ class AssembleContainerPluginMojo extends AbstractMojo {
     val mavenArchiver = new MavenArchiver
     mavenArchiver.setArchiver(jarArchiver)
     mavenArchiver.setOutputFile(jarFile)
-    mavenArchiver.createArchive(session, project, archiveConfiguration)
+    mavenArchiver.createArchive(project, archiveConfiguration)
   }
 
   private def addDependencies() {
