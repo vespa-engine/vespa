@@ -61,7 +61,7 @@ FastS_FNET_Engine::Connect()
         _conn->GetState() >= FNET_Connection::FNET_CLOSING)
     {
         FNET_Connection *newConn =
-            _transport->Connect(_spec.c_str(),
+            _transport->Connect(_lazy_address->resolve().c_str(),
                                 &FS4PersistentPacketStreamer::Instance,
                                 this);
         LockDataSet();
@@ -95,6 +95,7 @@ FastS_FNET_Engine::FastS_FNET_Engine(FastS_EngineDesc *desc,
     : FastS_EngineBase(desc, dataset),
       _lock(),
       _spec(),
+      _lazy_address(),
       _transport(dataset->GetTransport()),
       _conn(NULL),
       _warnTask(dataset->GetAppContext()->GetFNETScheduler(), this),
@@ -107,6 +108,7 @@ FastS_FNET_Engine::FastS_FNET_Engine(FastS_EngineDesc *desc,
         _spec = "tcp/";
         _spec += _config._name;
     }
+    _lazy_address = dataset->GetAppContext()->get_lazy_resolver().make_address(_spec);
 }
 
 
