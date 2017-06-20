@@ -323,9 +323,8 @@ FileDistributorApplication::Main() {
 
 int
 executeApplication(int argc, char** argv) {
-    const char
-        *configId("configid"),
-        *help("help");
+    const char *configId("configid");
+    const char *help("help");
 
     namespace po = boost::program_options;
     po::options_description description;
