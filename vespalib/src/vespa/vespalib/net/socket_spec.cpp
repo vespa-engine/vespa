@@ -99,4 +99,13 @@ SocketSpec::spec() const
     return "invalid";
 }
 
+SocketSpec
+SocketSpec::replace_host(const vespalib::string &new_host) const
+{
+    if ((_type == Type::HOST_PORT) && !new_host.empty()) {
+        return from_host_port(new_host, _port);
+    }
+    return SocketSpec();
+}
+
 } // namespace vespalib
