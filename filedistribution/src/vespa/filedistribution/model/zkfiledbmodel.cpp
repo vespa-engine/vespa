@@ -89,7 +89,6 @@ ZKFileDBModel::cleanDeployedFilesToDownload(
     for (auto & host : allHosts) {
         Path hostPath = _hostsPath / host;
         try {
-            removeLegacyDeployFileNodes(hostPath);
             // If this host is NOT part of hosts to deploy to
             if (toPreserve.find(host) == toPreserve.end()) {
                 removeDeployFileNodes(hostPath, appId);
@@ -136,22 +135,6 @@ ZKFileDBModel::removeNonApplicationFiles(const Path & hostPath, const std::strin
                 _zk->remove(deployNodePath);
             }
         }
-}
-
-
-void
-ZKFileDBModel::removeLegacyDeployFileNodes(const Path & hostPath)
-{
-    std::vector<std::string> deployNodes = _zk->getChildren(hostPath);
-    for (auto & deployNode : deployNodes) {
-        Path deployNodePath = hostPath / deployNode;
-        std::string applicationId(readApplicationId(*_zk, deployNodePath));
-        size_t numParts = std::count(applicationId.begin(), applicationId.end(), ':');
-        // If we have an id with 3 colons, it is a legacy id and can be deleted.
-        if (numParts == 3) {
-            _zk->remove(deployNodePath);
-        }
-    }
 }
 
 void

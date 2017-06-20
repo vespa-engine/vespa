@@ -11,7 +11,6 @@ private:
     const std::shared_ptr<ZKFacade> _zk;
     char getProgress(const Path& path);
     void removeDeployFileNodes(const Path& hostPath, const std::string& appId);
-    void removeLegacyDeployFileNodes(const Path& hostPath);
     bool canRemoveHost(const Path& hostPath, const std::string& appId);
 public:
     const static Path _root;
