@@ -315,7 +315,7 @@ ZKFacade::resolveZKServers(const std::string &input) {
         vespalib::string port = addrTokenizer[1];
         vespalib::SocketAddress ipSpec = vespalib::SocketAddress::select_remote(atoi(port.c_str()), address.c_str());
         if (ipSpec.valid()) {
-            validServers += ipSpec.spec();
+            validServers += make_string("%s:%d", ipSpec.ip_address().c_str(), ipSpec.port());
         } else {
             validServers += spec;
         }

@@ -2,7 +2,6 @@
 
 #include "socket_address.h"
 #include <vespa/vespalib/util/stringfmt.h>
-#include <sys/types.h>
 #include <sys/un.h>
 #include <arpa/inet.h>
 #include <netdb.h>
