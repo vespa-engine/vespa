@@ -26,6 +26,8 @@ import org.mockito.InOrder;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
@@ -38,6 +40,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyVararg;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
@@ -529,21 +532,27 @@ public class NodeAgentImplTest {
         nodeAgent.updateContainerNodeMetrics(5); // Update metrics once to init and lastCpuMetric
 
         clock.advance(Duration.ofSeconds(1234));
-        nodeAgent.updateContainerNodeMetrics(5);
 
-        String[] expectedCommand = {"rpc_invoke",  "-t", "1",  "tcp/localhost:19091",  "setExtraMetrics",
-                "s:{\"routing\":{\"yamas\":{\"namespaces\":[\"Vespa\"]}},\"application\":\"vespa.node\",\"metrics\":{\"mem.limit\":4294967296,\"mem.used\":1073741824,\"disk.used\":42547019776,\"disk.util\":15.85,\"cpu.util\":0.0,\"mem.util\":25.0,\"disk.limit\":268435456000},\"dimensions\":{\"app\":\"testapp.testinstance\",\"role\":\"tenants\",\"instanceName\":\"testinstance\",\"vespaVersion\":\"1.2.3\",\"clusterid\":\"clustId\",\"parentHostname\":\"parent.host.name.yahoo.com\",\"flavor\":\"docker\",\"clustertype\":\"clustType\",\"tenantName\":\"tester\",\"zone\":\"dev.us-east-1\",\"host\":\"host1.test.yahoo.com\",\"state\":\"active\",\"applicationId\":\"tester.testapp.testinstance\",\"applicationName\":\"testapp\"},\"timestamp\":0}{\"routing\":{\"yamas\":{\"namespaces\":[\"Vespa\"]}},\"application\":\"vespa.node\",\"metrics\":{\"net.out.bytes\":20303455,\"net.in.dropped\":4,\"net.out.dropped\":13,\"net.in.bytes\":19499270,\"net.out.errors\":3,\"net.in.errors\":55},\"dimensions\":{\"app\":\"testapp.testinstance\",\"role\":\"tenants\",\"instanceName\":\"testinstance\",\"vespaVersion\":\"1.2.3\",\"clusterid\":\"clustId\",\"interface\":\"eth0\",\"parentHostname\":\"parent.host.name.yahoo.com\",\"flavor\":\"docker\",\"clustertype\":\"clustType\",\"tenantName\":\"tester\",\"zone\":\"dev.us-east-1\",\"host\":\"host1.test.yahoo.com\",\"state\":\"active\",\"applicationId\":\"tester.testapp.testinstance\",\"applicationName\":\"testapp\"},\"timestamp\":0}{\"routing\":{\"yamas\":{\"namespaces\":[\"Vespa\"]}},\"application\":\"vespa.node\",\"metrics\":{\"net.out.bytes\":54246745,\"net.in.dropped\":0,\"net.out.dropped\":0,\"net.in.bytes\":3245766,\"net.out.errors\":0,\"net.in.errors\":0},\"dimensions\":{\"app\":\"testapp.testinstance\",\"role\":\"tenants\",\"instanceName\":\"testinstance\",\"vespaVersion\":\"1.2.3\",\"clusterid\":\"clustId\",\"interface\":\"eth1\",\"parentHostname\":\"parent.host.name.yahoo.com\",\"flavor\":\"docker\",\"clustertype\":\"clustType\",\"tenantName\":\"tester\",\"zone\":\"dev.us-east-1\",\"host\":\"host1.test.yahoo.com\",\"state\":\"active\",\"applicationId\":\"tester.testapp.testinstance\",\"applicationName\":\"testapp\"},\"timestamp\":0}"};
+        Path pathToExpectedMetrics = Paths.get(classLoader.getResource("expected.container.system.metrics.txt").getPath());
+        String expectedMetrics = new String(Files.readAllBytes(pathToExpectedMetrics))
+                .replaceAll("\\s", "")
+                .replaceAll("\\n", "");
+
+        String[] expectedCommand = {"rpc_invoke",  "-t", "1",  "tcp/localhost:19091",  "setExtraMetrics", expectedMetrics};
         doAnswer(invocation -> {
             ContainerName calledContainerName = (ContainerName) invocation.getArguments()[0];
             long calledTimeout = (long) invocation.getArguments()[1];
-            String[] calledCommand = (String[]) invocation.getArguments()[2];
+            String[] calledCommand = new String[invocation.getArguments().length - 2];
+            System.arraycopy(invocation.getArguments(), 2, calledCommand, 0, calledCommand.length);
             calledCommand[calledCommand.length - 1] = calledCommand[calledCommand.length - 1].replaceAll("\"timestamp\":\\d+", "\"timestamp\":0");
 
             assertEquals(containerName, calledContainerName);
             assertEquals(5L, calledTimeout);
             assertArrayEquals(expectedCommand, calledCommand);
             return null;
-        }).when(dockerOperations).executeCommandInContainerAsRoot(any(), any(), any());
+        }).when(dockerOperations).executeCommandInContainerAsRoot(any(), any(), anyVararg());
+
+        nodeAgent.updateContainerNodeMetrics(5);
     }
 
     @Test

@@ -1,0 +1,76 @@
+s:
+{
+    "routing": {
+            "yamas": {
+                "namespaces":
+                    ["Vespa"]
+                }
+            },
+    "application": "vespa.node",
+    "metrics": {
+        "mem.limit": 4294967296,
+        "mem.used": 1073741824,
+        "disk.used": 42547019776,
+        "disk.util": 15.85,
+        "cpu.util": 6.75,
+        "mem.util": 25.0,
+        "disk.limit": 268435456000
+    },
+    "dimensions": {
+        "host": "host1.test.yahoo.com",
+        "role": "tenants",
+        "state": "active",
+        "parentHostname": "parent.host.name.yahoo.com"
+    },
+    "timestamp": 0
+}
+{
+    "routing": {
+        "yamas": {
+            "namespaces":
+                ["Vespa"]
+            }
+        },
+    "application": "vespa.node",
+    "metrics": {
+        "net.out.bytes": 20303455,
+        "net.in.dropped": 4,
+        "net.out.dropped": 13,
+        "net.in.bytes": 19499270,
+        "net.out.errors": 3,
+        "net.in.errors": 55
+    },
+    "dimensions": {
+        "host": "host1.test.yahoo.com",
+        "role": "tenants",
+        "state": "active",
+        "interface": "eth0",
+        "parentHostname": "parent.host.name.yahoo.com"
+    },
+    "timestamp": 0
+}
+{
+    "routing": {
+        "yamas": {
+            "namespaces":
+                ["Vespa"]
+            }
+        },
+    "application": "vespa.node",
+    "metrics": {
+        "net.out.bytes": 54246745,
+        "net.in.dropped": 0,
+        "net.out.dropped": 0,
+        "net.in.bytes": 3245766,
+        "net.out.errors": 0,
+        "net.in.errors": 0
+    },
+    "dimensions": {
+        "host": "host1.test.yahoo.com",
+        "role": "tenants",
+        "state": "active",
+        "interface": "eth1",
+        "parentHostname": "parent.host.name.yahoo.com"
+    },
+    "timestamp": 0
+}
