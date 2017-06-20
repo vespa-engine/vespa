@@ -6,13 +6,15 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.log.LogLevel;
+import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
+import org.apache.zookeeper.server.quorum.QuorumPeerMain;
+
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Writes zookeeper config and starts zookeeper server.
@@ -20,7 +22,7 @@ import java.util.Optional;
  * @author lulf
  * @since 5.3
  */
-public class ZooKeeperServer extends AbstractComponent implements Runnable {
+public class ZooKeeperServer extends AbstractComponent{
 
     /** 
      * The set of hosts which can access the ZooKeeper server in this VM, or empty
@@ -33,7 +35,8 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(ZooKeeperServer.class.getName());
     private static final String ZOOKEEPER_JMX_LOG4J_DISABLE = "zookeeper.jmx.log4j.disable";
     static final String ZOOKEEPER_JUTE_MAX_BUFFER = "jute.maxbuffer";
-    private final Thread zkServerThread;
+
+    private final ZooKeeperMain zooKeeperMain;
     private final ZookeeperServerConfig config;
 
     ZooKeeperServer(ZookeeperServerConfig config, boolean startServer) {
@@ -43,7 +46,9 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
         System.setProperty("zookeeper.serverCnxnFactory", "com.yahoo.vespa.zookeeper.RestrictedServerCnxnFactory");
 
         writeConfigToDisk(config);
-        zkServerThread = new Thread(this, "zookeeper server");
+        this.zooKeeperMain = new ZooKeeperMain(config);
+        Thread zkServerThread = new Thread(zooKeeperMain, "zookeeper server");
+        zkServerThread.setDaemon(true);
         if (startServer) {
             zkServerThread.start();
         }
@@ -118,20 +123,7 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
     }
 
     private void shutdown() {
-        zkServerThread.interrupt();
-        try {
-            zkServerThread.join();
-        } catch (InterruptedException e) {
-            log.log(LogLevel.WARNING, "Error joining server thread on shutdown", e);
-        }
-    }
-
-    @Override
-    public void run() {
-        System.setProperty(ZOOKEEPER_JMX_LOG4J_DISABLE, "true");
-        String[] args = new String[]{getDefaults().underVespaHome(config.zooKeeperConfigFile())};
-        log.log(LogLevel.DEBUG, "Starting ZooKeeper server with config: " + args[0]);
-        org.apache.zookeeper.server.quorum.QuorumPeerMain.main(args);
+        zooKeeperMain.shutdown();
     }
 
     @Override
@@ -141,5 +133,33 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
     }
 
     public ZookeeperServerConfig getConfig() { return config; }
+
+    /** Takes care of starting and stopping the zookeeper server properly */
+    private static class ZooKeeperMain extends QuorumPeerMain implements Runnable {
+        private final ZookeeperServerConfig config;
+
+        public ZooKeeperMain(ZookeeperServerConfig config) {
+            super();
+            this.config = config;
+        }
+
+        @Override
+        public void run() {
+            System.setProperty(ZOOKEEPER_JMX_LOG4J_DISABLE, "true");
+            String[] args = new String[]{getDefaults().underVespaHome(config.zooKeeperConfigFile())};
+            log.log(LogLevel.DEBUG, "Starting ZooKeeper server with config: " + args[0]);
+            try {
+                initializeAndRun(args);
+            } catch (QuorumPeerConfig.ConfigException e) {
+                throw new RuntimeException("Bad config: ", e);
+            } catch (IOException e) {
+                throw new RuntimeException("IO exception: ", e);
+            }
+        }
+
+        public void shutdown() {
+            quorumPeer.shutdown();
+        }
+    }
 
 }
