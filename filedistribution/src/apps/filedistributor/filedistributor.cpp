@@ -86,7 +86,7 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
                    const ZookeepersConfig& zooKeepersConfig,
                    const FiledistributorConfig& fileDistributorConfig,
                    const FiledistributorrpcConfig& rpcConfig)
-            :_zk(track(new ZKFacade(zooKeepersConfig.zookeeperserverlist, false))),
+            :_zk(track(new ZKFacade(zooKeepersConfig.zookeeperserverlist))),
              _model(track(new FileDistributionModelImpl(fileDistributorConfig.hostname, fileDistributorConfig.torrentport, _zk))),
              _tracker(track(new FileDistributorTrackerImpl(_model))),
              _downloader(track(new FileDownloader(_tracker, fileDistributorConfig.hostname, fileDistributorConfig.torrentport, Path(fileDistributorConfig.filedbpath)))),
@@ -130,6 +130,17 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
     std::unique_ptr<FiledistributorrpcConfig> _rpcConfig;
 
     std::unique_ptr<Components> _components;
+
+    mutable size_t _numZKServerAddressInconsistenciesInARow;
+
+    bool hasZKServersChangedAddress() const {
+        if ( _components->_zk->hasServersChanged()) {
+            _numZKServerAddressInconsistenciesInARow++;
+        } else {
+            _numZKServerAddressInconsistenciesInARow = 0;
+        }
+        return _numZKServerAddressInconsistenciesInARow > 10;
+    }
 public:
     FileDistributor(const FileDistributor &) = delete;
     FileDistributor & operator = (const FileDistributor &) = delete;
@@ -184,14 +195,11 @@ public:
     }
     void createComponents(const config::ConfigUri & configUri) {
         LockGuard guard(_configMutex);
-        _components.reset(
-                new Components(configUri,
-                        *_zooKeepersConfig,
-                        *_fileDistributorConfig,
-                        *_rpcConfig));
+        _components = std::make_unique<Components>(configUri, *_zooKeepersConfig, *_fileDistributorConfig, *_rpcConfig);
 
         configureSpeedLimits(*_fileDistributorConfig);
         _completeReconfigurationNeeded = false;
+        _numZKServerAddressInconsistenciesInARow = 0;
     }
 
     bool completeReconfigurationNeeded() {
@@ -216,8 +224,9 @@ public:
         int postPoneAskedToReinitializedSecs = 50;
 
         while (!askedToShutDown() &&
-	       (postPoneAskedToReinitializedSecs > 0 || !askedToReinitialize()) &&
-	       !completeReconfigurationNeeded())
+                (postPoneAskedToReinitializedSecs > 0 || !askedToReinitialize()) &&
+                !completeReconfigurationNeeded() &&
+                !hasZKServersChangedAddress())
         {
             postPoneAskedToReinitializedSecs--;
             std::this_thread::sleep_for(1s);
@@ -232,8 +241,10 @@ FileDistributor::FileDistributor()
       _zooKeepersConfig(),
       _fileDistributorConfig(),
       _rpcConfig(),
-      _components()
+      _components(),
+      _numZKServerAddressInconsistenciesInARow(0)
 { }
+
 FileDistributor::~FileDistributor() { }
 
 class FileDistributorApplication : public FastOS_Application {
