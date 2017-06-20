@@ -17,6 +17,7 @@ chown -R vespa:vespa /opt/vespa
 export VESPA_CONFIG_SERVERS=$(hostname)
 
 /opt/vespa/bin/vespa-start-configserver
+/opt/vespa/bin/vespa-start-services
 
 # Print log forever
 while true; do
