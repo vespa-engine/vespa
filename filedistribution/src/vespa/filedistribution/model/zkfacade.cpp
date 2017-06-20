@@ -302,31 +302,33 @@ ZKFacade::invokeWatcher(void* watcherContext) {
 /********** End live watchers ***************************************/
 
 std::string
-ZKFacade::getValidZKServers(const std::string &input, bool ignoreDNSFailure) {
-    if (ignoreDNSFailure) {
-        vespalib::StringTokenizer tokenizer(input, ",");
-        vespalib::string validServers;
-        for (vespalib::string spec : tokenizer) {
-            vespalib::StringTokenizer addrTokenizer(spec, ":");
-            vespalib::string address = addrTokenizer[0];
-            vespalib::string port = addrTokenizer[1];
-            if ( !vespalib::SocketAddress::resolve(atoi(port.c_str()), address.c_str()).empty()) {
-                if ( !validServers.empty() ) {
-                    validServers += ',';
-                }
-                validServers += spec;
-            }
+ZKFacade::resolveZKServers(const std::string &input) {
+    vespalib::StringTokenizer tokenizer(input, ",");
+    vespalib::string validServers;
+    for (vespalib::string spec : tokenizer) {
+        if ( !validServers.empty() ) {
+            validServers += ',';
         }
-        return validServers;
+        vespalib::StringTokenizer addrTokenizer(spec, ":");
+        vespalib::string address = addrTokenizer[0];
+        vespalib::string port = addrTokenizer[1];
+        vespalib::SocketAddress ipSpec = vespalib::SocketAddress::select_remote(atoi(port.c_str()), address.c_str());
+        if (ipSpec.valid()) {
+            validServers += ipSpec.spec();
+        } else {
+            validServers += spec;
+        }
     }
-    return input;
+    return validServers;
 }
 
 
-ZKFacade::ZKFacade(const std::string& zkservers, bool allowDNSFailure)
+ZKFacade::ZKFacade(const std::string& zkservers)
     :_retriesEnabled(true),
      _watchersEnabled(true),
-     _zhandle(zookeeper_init(getValidZKServers(zkservers, allowDNSFailure).c_str(),
+     _serverHostNames(zkservers),
+     _lastKnownServerAddresses(resolveZKServers(_serverHostNames)),
+     _zhandle(zookeeper_init(_lastKnownServerAddresses.c_str(),
                              &ZKFacade::stateWatchingFun,
                              _zkSessionTimeOut,
                              0, //clientid,
@@ -336,6 +338,11 @@ ZKFacade::ZKFacade(const std::string& zkservers, bool allowDNSFailure)
     if (!_zhandle) {
         throw ZKFailedConnecting("No zhandle", VESPA_STRLOC);
     }
+}
+
+bool
+ZKFacade::hasServersChanged() const {
+    return (resolveZKServers(_serverHostNames) != _lastKnownServerAddresses);
 }
 
 ZKFacade::~ZKFacade() {
