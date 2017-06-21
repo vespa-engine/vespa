@@ -143,7 +143,8 @@ public class FastHit extends Hit {
         if (useRowInIndexUri)
             rowString = String.valueOf(getRow());
 
-        return new URI("index:" + getSourceNumber() + "/" + getColumn() + "/" + rowString + "/" + asHexString(getGlobalId()));
+        indexUri = new URI("index:" + getSourceNumber() + "/" + getColumn() + "/" + rowString + "/" + asHexString(getGlobalId()));
+        return indexUri;
     }
 
     /** Returns the global id of this document in the backend node which produced it */
