@@ -1,6 +1,0 @@
-.depend
-Makefile
-btree_test
-frozenbtree_test
-searchlib_btree_test_app
-searchlib_frozenbtree_test_app
