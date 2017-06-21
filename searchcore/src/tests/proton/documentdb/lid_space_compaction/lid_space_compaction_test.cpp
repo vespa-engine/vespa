@@ -5,6 +5,7 @@ LOG_SETUP("lid_space_compaction_test");
 #include <vespa/searchcore/proton/server/i_lid_space_compaction_handler.h>
 #include <vespa/searchcore/proton/server/lid_space_compaction_handler.h>
 #include <vespa/searchcore/proton/server/lid_space_compaction_job.h>
+#include <vespa/searchcore/proton/test/clusterstatehandler.h>
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchlib/index/docbuilder.h>
@@ -210,17 +211,20 @@ struct JobFixture
     MyStorer _storer;
     MyFrozenBucketHandler _frozenHandler;
     test::DiskMemUsageNotifier _diskMemUsageNotifier;
+    test::ClusterStateHandler _clusterStateHandler;
     LidSpaceCompactionJob _job;
     MyJobRunner           _jobRunner;
     JobFixture(uint32_t allowedLidBloat = ALLOWED_LID_BLOAT,
                double allowedLidBloatFactor = ALLOWED_LID_BLOAT_FACTOR,
                uint32_t maxDocsToScan = MAX_DOCS_TO_SCAN,
                double resourceLimitFactor = RESOURCE_LIMIT_FACTOR,
-               double interval = JOB_DELAY)
+               double interval = JOB_DELAY,
+               bool nodeRetired = false)
         : _handler(),
           _job(DocumentDBLidSpaceCompactionConfig(interval,
                   allowedLidBloat, allowedLidBloatFactor, false, maxDocsToScan),
-               _handler, _storer, _frozenHandler, _diskMemUsageNotifier, resourceLimitFactor),
+               _handler, _storer, _frozenHandler, _diskMemUsageNotifier, resourceLimitFactor,
+               _clusterStateHandler, nodeRetired),
           _jobRunner(_job)
     {
     }
@@ -267,6 +271,11 @@ struct JobFixture
     JobFixture &compact() {
         EXPECT_TRUE(run());
         return *this;
+    }
+    void notifyNodeRetired(bool nodeRetired) {
+        test::BucketStateCalculator::SP calc = std::make_shared<test::BucketStateCalculator>();
+        calc->setNodeRetired(nodeRetired);
+        _clusterStateHandler.notifyClusterStateChanged(calc);
     }
 };
 
@@ -521,6 +530,38 @@ TEST_F("require that delay is set based on interval and can be less than 300 sec
 {
     EXPECT_EQUAL(299, f._job.getDelay());
     EXPECT_EQUAL(299, f._job.getInterval());
+}
+
+struct JobFixtureWithNodeRetired : public JobFixture {
+    JobFixtureWithNodeRetired(bool nodeRetired)
+        : JobFixture(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, MAX_DOCS_TO_SCAN, RESOURCE_LIMIT_FACTOR, JOB_DELAY, nodeRetired)
+    {}
+};
+
+TEST_F("require that job is disabled when node is retired", JobFixtureWithNodeRetired(true))
+{
+    f.setupWithOneDocumentToMove();
+    EXPECT_TRUE(f.run()); // not runnable, no work to do
+    TEST_DO(assertJobContext(0, 0, 0, 0, 0, f));
+}
+
+TEST_F("require that job is disabled when node becomes retired", JobFixtureWithNodeRetired(false))
+{
+    f.setupWithOneDocumentToMove();
+    f.notifyNodeRetired(true);
+    EXPECT_TRUE(f.run()); // not runnable, no work to do
+    TEST_DO(assertJobContext(0, 0, 0, 0, 0, f));
+}
+
+TEST_F("require that job is re-enabled when node is no longer retired", JobFixtureWithNodeRetired(true))
+{
+    f.setupWithOneDocumentToMove();
+    EXPECT_TRUE(f.run()); // not runnable, no work to do
+    TEST_DO(assertJobContext(0, 0, 0, 0, 0, f));
+    f.notifyNodeRetired(false); // triggers running of job
+    TEST_DO(assertJobContext(2, 9, 1, 0, 0, f));
+    TEST_DO(f.endScan().compact());
+    TEST_DO(assertJobContext(2, 9, 1, 7, 1, f));
 }
 
 TEST_MAIN()

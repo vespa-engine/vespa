@@ -1,10 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "lid_space_compaction_job.h"
-#include "imaintenancejobrunner.h"
 #include "i_disk_mem_usage_notifier.h"
+#include "iclusterstatechangednotifier.h"
+#include "imaintenancejobrunner.h"
+#include "lid_space_compaction_job.h"
+#include <vespa/log/log.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <cassert>
+LOG_SETUP(".proton.server.lid_space_compaction_job");
 
 using search::DocumentMetaData;
 using search::LidUsageStats;
@@ -82,7 +85,9 @@ LidSpaceCompactionJob::LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionC
                                              IOperationStorer &opStorer,
                                              IFrozenBucketHandler &frozenHandler,
                                              IDiskMemUsageNotifier &diskMemUsageNotifier,
-                                             double resourceLimitFactor)
+                                             double resourceLimitFactor,
+                                             IClusterStateChangedNotifier &clusterStateChangedNotifier,
+                                             bool nodeRetired)
     : IMaintenanceJob("lid_space_compaction." + handler.getName(),
             config.getDelay(), config.getInterval()),
       _cfg(config),
@@ -93,16 +98,21 @@ LidSpaceCompactionJob::LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionC
       _retryFrozenDocument(false),
       _shouldCompactLidSpace(false),
       _resourcesOK(true),
+      _nodeRetired(nodeRetired),
       _runnable(true),
       _runner(nullptr),
       _diskMemUsageNotifier(diskMemUsageNotifier),
-      _resourceLimitFactor(resourceLimitFactor)
+      _resourceLimitFactor(resourceLimitFactor),
+      _clusterStateChangedNotifier(clusterStateChangedNotifier)
 {
     _diskMemUsageNotifier.addDiskMemUsageListener(this);
+    _clusterStateChangedNotifier.addClusterStateChangedHandler(this);
+    refreshRunnable();
 }
 
 LidSpaceCompactionJob::~LidSpaceCompactionJob()
 {
+    _clusterStateChangedNotifier.removeClusterStateChangedHandler(this);
     _diskMemUsageNotifier.removeDiskMemUsageListener(this);
 }
 
@@ -128,7 +138,17 @@ LidSpaceCompactionJob::run()
 void
 LidSpaceCompactionJob::refreshRunnable()
 {
-    _runnable = _resourcesOK;
+    _runnable = (_resourcesOK && !_nodeRetired);
+}
+
+void
+LidSpaceCompactionJob::refreshAndConsiderRunnable()
+{
+    bool oldRunnable = _runnable;
+    refreshRunnable();
+    if (_runner && _runnable && !oldRunnable) {
+        _runner->run();
+    }
 }
 
 void
@@ -137,11 +157,22 @@ LidSpaceCompactionJob::notifyDiskMemUsage(DiskMemUsageState state)
     // Called by master write thread
     bool resourcesOK = !state.aboveDiskLimit(_resourceLimitFactor) && !state.aboveMemoryLimit(_resourceLimitFactor);
     _resourcesOK = resourcesOK;
-    bool oldRunnable = _runnable;
-    refreshRunnable();
-    if (_runner && _runnable && !oldRunnable) {
-        _runner->run();
+    refreshAndConsiderRunnable();
+}
+
+void
+LidSpaceCompactionJob::notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc)
+{
+    // Called by master write thread
+    bool nodeRetired = newCalc->nodeRetired();
+    if (nodeRetired && !_nodeRetired) {
+        LOG(info, "notifyClusterStateChanged(): Node is retired -> lid space compaction job disabled");
     }
+    if (!nodeRetired && _nodeRetired) {
+        LOG(info, "notifyClusterStateChanged(): Node is no longer retired -> lid space compaction job re-enabled");
+    }
+    _nodeRetired = nodeRetired;
+    refreshAndConsiderRunnable();
 }
 
 void

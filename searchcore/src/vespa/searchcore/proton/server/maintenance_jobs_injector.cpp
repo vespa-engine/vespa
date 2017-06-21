@@ -31,14 +31,18 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
                              IOperationStorer &opStorer,
                              IFrozenBucketHandler &fbHandler,
                              const IJobTracker::SP &tracker,
-                             IDiskMemUsageNotifier &diskMemUsageNotifier)
+                             IDiskMemUsageNotifier &diskMemUsageNotifier,
+                             IClusterStateChangedNotifier &clusterStateChangedNotifier,
+                             const std::shared_ptr<IBucketStateCalculator> &calc)
 {
     for (auto &lidHandler : lscHandlers) {
         IMaintenanceJob::UP job = IMaintenanceJob::UP
                 (new LidSpaceCompactionJob(config.getLidSpaceCompactionConfig(),
                                            *lidHandler, opStorer, fbHandler,
                                            diskMemUsageNotifier,
-                                           config.getResourceLimitFactor()));
+                                           config.getResourceLimitFactor(),
+                                           clusterStateChangedNotifier,
+                                           (calc ? calc->nodeRetired() : false)));
         controller.registerJobInMasterThread(std::move(trackJob(tracker,
                                                                 std::move(job))));
     }
@@ -110,7 +114,7 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
     if (!config.getLidSpaceCompactionConfig().isDisabled()) {
         injectLidSpaceCompactionJobs(controller, config, lscHandlers, opStorer,
                                      fbHandler, jobTrackers.getLidSpaceCompact(),
-                                     diskMemUsageNotifier);
+                                     diskMemUsageNotifier, clusterStateChangedNotifier, calc);
     }
     injectBucketMoveJob(controller, fbHandler, docTypeName, moveHandler, bucketModifiedHandler,
                         clusterStateChangedNotifier, bucketStateChangedNotifier, calc, jobTrackers, diskMemUsageNotifier, config.getResourceLimitFactor());

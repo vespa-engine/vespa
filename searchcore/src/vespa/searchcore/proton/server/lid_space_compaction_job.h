@@ -2,15 +2,19 @@
 #pragma once
 
 #include "document_db_maintenance_config.h"
+#include "i_disk_mem_usage_listener.h"
 #include "i_lid_space_compaction_handler.h"
 #include "i_maintenance_job.h"
 #include "i_operation_storer.h"
-#include "i_disk_mem_usage_listener.h"
+#include "ibucketstatecalculator.h"
+#include "iclusterstatechangedhandler.h"
+#include "iclusterstatechangednotifier.h"
 
 namespace proton {
 
 class IFrozenBucketHandler;
 class IDiskMemUsageNotifier;
+class IClusterStateChangedNotifier;
 
 /**
  * Job that regularly checks whether lid space compaction should be performed
@@ -20,21 +24,24 @@ class IDiskMemUsageNotifier;
  * A handler is typically working over a single document sub db.
  */
 class LidSpaceCompactionJob : public IMaintenanceJob,
-                              public IDiskMemUsageListener
+                              public IDiskMemUsageListener,
+                              public IClusterStateChangedHandler
 {
 private:
     const DocumentDBLidSpaceCompactionConfig _cfg;
-    ILidSpaceCompactionHandler &_handler;
-    IOperationStorer           &_opStorer;
-    IFrozenBucketHandler       &_frozenHandler;
-    IDocumentScanIterator::UP   _scanItr;
-    bool                        _retryFrozenDocument;
-    bool                        _shouldCompactLidSpace;
-    bool                        _resourcesOK;
-    bool                        _runnable;  // can try to perform work
-    IMaintenanceJobRunner      *_runner;
-    IDiskMemUsageNotifier      &_diskMemUsageNotifier;
-    double                      _resourceLimitFactor;
+    ILidSpaceCompactionHandler   &_handler;
+    IOperationStorer             &_opStorer;
+    IFrozenBucketHandler         &_frozenHandler;
+    IDocumentScanIterator::UP     _scanItr;
+    bool                          _retryFrozenDocument;
+    bool                          _shouldCompactLidSpace;
+    bool                          _resourcesOK;
+    bool                          _nodeRetired;
+    bool                          _runnable;  // can try to perform work
+    IMaintenanceJobRunner        *_runner;
+    IDiskMemUsageNotifier        &_diskMemUsageNotifier;
+    double                        _resourceLimitFactor;
+    IClusterStateChangedNotifier &_clusterStateChangedNotifier;
 
     bool hasTooMuchLidBloat(const search::LidUsageStats &stats) const;
     bool shouldRestartScanDocuments(const search::LidUsageStats &stats) const;
@@ -42,6 +49,7 @@ private:
     bool scanDocuments(const search::LidUsageStats &stats);
     void compactLidSpace(const search::LidUsageStats &stats);
     void refreshRunnable();
+    void refreshAndConsiderRunnable();
 
 public:
     LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
@@ -49,11 +57,16 @@ public:
                           IOperationStorer &opStorer,
                           IFrozenBucketHandler &frozenHandler,
                           IDiskMemUsageNotifier &diskMemUsageNotifier,
-                          double resourceLimitFactor);
+                          double resourceLimitFactor,
+                          IClusterStateChangedNotifier &clusterStateChangedNotifier,
+                          bool nodeRetired);
     ~LidSpaceCompactionJob();
 
     // Implements IDiskMemUsageListener
     virtual void notifyDiskMemUsage(DiskMemUsageState state) override;
+
+    // Implements IClusterStateChangedNofifier
+    virtual void notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) override;
 
     // Implements IMaintenanceJob
     virtual bool run() override;
