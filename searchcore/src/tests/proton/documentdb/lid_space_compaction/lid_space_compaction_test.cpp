@@ -251,6 +251,12 @@ struct JobFixture
                 (docIdLimit, numDocs, lowestFreeLid, highestUsedLid));
         return *this;
     }
+    JobFixture &setupWithOneDocumentToMove() {
+        addStats(10, {1,3,4,5,6,9},
+                 {{9,2},   // 30% bloat: move 9 -> 2
+                  {6,7}}); // no documents to move
+        return *this;
+    }
     bool run() {
         return _job.run();
     }
@@ -338,10 +344,7 @@ TEST_F("require that no move operation is created and compaction is initiated", 
 
 TEST_F("require that 1 move operation is created and compaction is initiated", JobFixture)
 {
-    f.addStats(10, {1,3,4,5,6,9},
-            {{9,2},   // 30% bloat: move 9 -> 2
-             {6,7}}); // no documents to move
-
+    f.setupWithOneDocumentToMove();
     EXPECT_FALSE(f.run()); // scan
     EXPECT_TRUE(assertJobContext(2, 9, 1, 0, 0, f));
     f.endScan().compact();
@@ -389,10 +392,7 @@ TEST_F("require that job is blocked if trying to move document for frozen bucket
 TEST_F("require that job handles invalid document meta data when max docs are scanned",
         JobFixture(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, 3))
 {
-    f.addStats(10, {1,3,4,5,6,9},
-            {{9,2},   // 30% bloat: move 9 -> 2
-             {6,7}}); // no documents to move
-
+    f.setupWithOneDocumentToMove();
     EXPECT_FALSE(f.run()); // does not find 9 in first scan
     EXPECT_TRUE(assertJobContext(0, 0, 0, 0, 0, f));
     EXPECT_FALSE(f.run()); // move 9 -> 2
@@ -477,9 +477,7 @@ TEST_F("require that held lids are not considered free, one move", JobFixture)
 
 TEST_F("require that resource starvation blocks lid space compaction", JobFixture)
 {
-    f.addStats(10, {1,3,4,5,6,9},
-            {{9,2},   // 30% bloat: move 9 -> 2
-             {6,7}}); // no documents to move
+    f.setupWithOneDocumentToMove();
     TEST_DO(f._diskMemUsageNotifier.notify({{100, 0}, {100, 101}}));
     EXPECT_TRUE(f.run()); // scan
     TEST_DO(assertJobContext(0, 0, 0, 0, 0, f));
@@ -487,9 +485,7 @@ TEST_F("require that resource starvation blocks lid space compaction", JobFixtur
 
 TEST_F("require that ending resource starvation resumes lid space compaction", JobFixture)
 {
-    f.addStats(10, {1,3,4,5,6,9},
-            {{9,2},   // 30% bloat: move 9 -> 2
-             {6,7}}); // no documents to move
+    f.setupWithOneDocumentToMove();
     TEST_DO(f._diskMemUsageNotifier.notify({{100, 0}, {100, 101}}));
     EXPECT_TRUE(f.run()); // scan
     TEST_DO(assertJobContext(0, 0, 0, 0, 0, f));
@@ -501,9 +497,7 @@ TEST_F("require that ending resource starvation resumes lid space compaction", J
 
 TEST_F("require that resource limit factor adjusts limit", JobFixture(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, MAX_DOCS_TO_SCAN, 1.05))
 {
-    f.addStats(10, {1,3,4,5,6,9},
-            {{9,2},   // 30% bloat: move 9 -> 2
-             {6,7}}); // no documents to move
+    f.setupWithOneDocumentToMove();
     TEST_DO(f._diskMemUsageNotifier.notify({{100, 0}, {100, 101}}));
     EXPECT_FALSE(f.run()); // scan
     TEST_DO(assertJobContext(2, 9, 1, 0, 0, f));
