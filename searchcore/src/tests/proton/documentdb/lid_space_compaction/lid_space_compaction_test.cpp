@@ -5,6 +5,8 @@ LOG_SETUP("lid_space_compaction_test");
 #include <vespa/searchcore/proton/server/i_lid_space_compaction_handler.h>
 #include <vespa/searchcore/proton/server/lid_space_compaction_handler.h>
 #include <vespa/searchcore/proton/server/lid_space_compaction_job.h>
+#include <vespa/searchcore/proton/test/clusterstatehandler.h>
+#include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -146,36 +148,6 @@ struct MyFrozenBucketHandler : public IFrozenBucketHandler
     virtual void removeListener(IBucketFreezeListener *) override { }
 };
 
-struct MyDiskMemUsageNotifier : public IDiskMemUsageNotifier
-{
-    DiskMemUsageState _state;
-    IDiskMemUsageListener *_listener;
-    MyDiskMemUsageNotifier()
-        : _state(),
-          _listener(nullptr)
-    {
-    }
-    ~MyDiskMemUsageNotifier()
-    {
-        assert(_listener == nullptr);
-    }
-    virtual void addDiskMemUsageListener(IDiskMemUsageListener *listener) override
-    {
-        assert(_listener == nullptr);
-        _listener = listener;
-        listener->notifyDiskMemUsage(_state);
-    }
-    virtual void removeDiskMemUsageListener(IDiskMemUsageListener *listener) override
-    {
-        assert(listener == _listener);
-        _listener = nullptr;
-    }
-    void update(DiskMemUsageState state) {
-        _state = state;
-        _listener->notifyDiskMemUsage(_state);
-    }
-};
-
 struct MyFeedView : public test::DummyFeedView
 {
     MyFeedView(const DocumentTypeRepo::SP &repo)
@@ -238,18 +210,21 @@ struct JobFixture
     MyHandler _handler;
     MyStorer _storer;
     MyFrozenBucketHandler _frozenHandler;
-    MyDiskMemUsageNotifier _diskMemUsageNotifier;
+    test::DiskMemUsageNotifier _diskMemUsageNotifier;
+    test::ClusterStateHandler _clusterStateHandler;
     LidSpaceCompactionJob _job;
     MyJobRunner           _jobRunner;
     JobFixture(uint32_t allowedLidBloat = ALLOWED_LID_BLOAT,
                double allowedLidBloatFactor = ALLOWED_LID_BLOAT_FACTOR,
                uint32_t maxDocsToScan = MAX_DOCS_TO_SCAN,
                double resourceLimitFactor = RESOURCE_LIMIT_FACTOR,
-               double interval = JOB_DELAY)
+               double interval = JOB_DELAY,
+               bool nodeRetired = false)
         : _handler(),
           _job(DocumentDBLidSpaceCompactionConfig(interval,
                   allowedLidBloat, allowedLidBloatFactor, false, maxDocsToScan),
-               _handler, _storer, _frozenHandler, _diskMemUsageNotifier, resourceLimitFactor),
+               _handler, _storer, _frozenHandler, _diskMemUsageNotifier, resourceLimitFactor,
+               _clusterStateHandler, nodeRetired),
           _jobRunner(_job)
     {
     }
@@ -291,6 +266,38 @@ struct JobFixture
         EXPECT_TRUE(run());
         return *this;
     }
+    void notifyNodeRetired(bool nodeRetired) {
+        test::BucketStateCalculator::SP calc = std::make_shared<test::BucketStateCalculator>();
+        calc->setNodeRetired(nodeRetired);
+        _clusterStateHandler.notifyClusterStateChanged(calc);
+    }
+    void assertJobContext(uint32_t moveToLid,
+                          uint32_t moveFromLid,
+                          uint32_t handleMoveCnt,
+                          uint32_t wantedLidLimit,
+                          uint32_t compactStoreCnt)
+    {
+        EXPECT_EQUAL(moveToLid, _handler._moveToLid);
+        EXPECT_EQUAL(moveFromLid, _handler._moveFromLid);
+        EXPECT_EQUAL(handleMoveCnt, _handler._handleMoveCnt);
+        EXPECT_EQUAL(handleMoveCnt, _storer._moveCnt);
+        EXPECT_EQUAL(wantedLidLimit, _handler._wantedLidLimit);
+        EXPECT_EQUAL(compactStoreCnt, _storer._compactCnt);
+    }
+    void assertNoWorkDone() {
+        assertJobContext(0, 0, 0, 0, 0);
+    }
+    JobFixture &setupOneDocumentToCompact() {
+        addStats(10, {1,3,4,5,6,9},
+                 {{9,2},   // 30% bloat: move 9 -> 2
+                  {6,7}}); // no documents to move
+        return *this;
+    }
+    void assertOneDocumentCompacted() {
+        TEST_DO(assertJobContext(2, 9, 1, 0, 0));
+        TEST_DO(endScan().compact());
+        TEST_DO(assertJobContext(2, 9, 1, 7, 1));
+    }
 };
 
 JobFixture::~JobFixture() {
@@ -316,23 +323,6 @@ struct HandlerFixture
     }
 };
 
-bool
-assertJobContext(uint32_t moveToLid,
-                 uint32_t moveFromLid,
-                 uint32_t handleMoveCnt,
-                 uint32_t wantedLidLimit,
-                 uint32_t compactStoreCnt,
-                 const JobFixture &f)
-{
-    if (!EXPECT_EQUAL(moveToLid, f._handler._moveToLid)) return false;
-    if (!EXPECT_EQUAL(moveFromLid, f._handler._moveFromLid)) return false;
-    if (!EXPECT_EQUAL(handleMoveCnt, f._handler._handleMoveCnt)) return false;
-    if (!EXPECT_EQUAL(handleMoveCnt, f._storer._moveCnt)) return false;
-    if (!EXPECT_EQUAL(wantedLidLimit, f._handler._wantedLidLimit)) return false;
-    if (!EXPECT_EQUAL(compactStoreCnt, f._storer._compactCnt)) return false;
-    return true;
-}
-
 TEST_F("require that handler name is used as part of job name", JobFixture)
 {
     EXPECT_EQUAL("lid_space_compaction.myhandler", f._job.getName());
@@ -343,7 +333,7 @@ TEST_F("require that no move operation is created if lid bloat factor is below l
     // 20% bloat < 30% allowed bloat
     f.addStats(10, {1,3,4,5,6,7,9}, {{9,2}});
     EXPECT_TRUE(f.run());
-    EXPECT_TRUE(assertJobContext(0, 0, 0, 0, 0, f));
+    TEST_DO(f.assertNoWorkDone());
 }
 
 TEST("require that no move operation is created if lid bloat is below limit")
@@ -352,7 +342,7 @@ TEST("require that no move operation is created if lid bloat is below limit")
     // 20% bloat >= 10% allowed bloat BUT lid bloat (2) < allowed lid bloat (3)
     f.addStats(10, {1,3,4,5,6,7,9}, {{9,2}});
     EXPECT_TRUE(f.run());
-    EXPECT_TRUE(assertJobContext(0, 0, 0, 0, 0, f));
+    TEST_DO(f.assertNoWorkDone());
 }
 
 TEST_F("require that no move operation is created and compaction is initiated", JobFixture)
@@ -362,19 +352,14 @@ TEST_F("require that no move operation is created and compaction is initiated", 
 
     // must scan to find that no documents should be moved
     f.endScan().compact();
-    EXPECT_TRUE(assertJobContext(0, 0, 0, 7, 1, f));
+    TEST_DO(f.assertJobContext(0, 0, 0, 7, 1));
 }
 
 TEST_F("require that 1 move operation is created and compaction is initiated", JobFixture)
 {
-    f.addStats(10, {1,3,4,5,6,9},
-            {{9,2},   // 30% bloat: move 9 -> 2
-             {6,7}}); // no documents to move
-
+    f.setupOneDocumentToCompact();
     EXPECT_FALSE(f.run()); // scan
-    EXPECT_TRUE(assertJobContext(2, 9, 1, 0, 0, f));
-    f.endScan().compact();
-    EXPECT_TRUE(assertJobContext(2, 9, 1, 7, 1, f));
+    TEST_DO(f.assertOneDocumentCompacted());
 }
 
 TEST_F("require that job returns false when multiple move operations or compaction are needed",
@@ -387,13 +372,13 @@ TEST_F("require that job returns false when multiple move operations or compacti
              {6,7}}); // no documents to move
 
     EXPECT_FALSE(f.run());
-    EXPECT_TRUE(assertJobContext(2, 9, 1, 0, 0, f));
+    TEST_DO(f.assertJobContext(2, 9, 1, 0, 0));
     EXPECT_FALSE(f.run());
-    EXPECT_TRUE(assertJobContext(3, 8, 2, 0, 0, f));
+    TEST_DO(f.assertJobContext(3, 8, 2, 0, 0));
     EXPECT_FALSE(f.run());
-    EXPECT_TRUE(assertJobContext(4, 7, 3, 0, 0, f));
+    TEST_DO(f.assertJobContext(4, 7, 3, 0, 0));
     f.endScan().compact();
-    EXPECT_TRUE(assertJobContext(4, 7, 3, 7, 1, f));
+    TEST_DO(f.assertJobContext(4, 7, 3, 7, 1));
 }
 
 TEST_F("require that job is blocked if trying to move document for frozen bucket", JobFixture)
@@ -404,30 +389,25 @@ TEST_F("require that job is blocked if trying to move document for frozen bucket
     f.addStats(0, 0, 0, 0);
 
     EXPECT_TRUE(f.run()); // bucket frozen
-    EXPECT_TRUE(assertJobContext(0, 0, 0, 0, 0, f));
+    TEST_DO(f.assertNoWorkDone());
     EXPECT_TRUE(f._job.isBlocked());
 
     f._frozenHandler._bucket = BUCKET_ID_2;
     f._job.unBlock();
 
     EXPECT_FALSE(f.run()); // unblocked
-    EXPECT_TRUE(assertJobContext(2, 9, 1, 0, 0, f));
+    TEST_DO(f.assertJobContext(2, 9, 1, 0, 0));
     EXPECT_FALSE(f._job.isBlocked());
 }
 
 TEST_F("require that job handles invalid document meta data when max docs are scanned",
         JobFixture(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, 3))
 {
-    f.addStats(10, {1,3,4,5,6,9},
-            {{9,2},   // 30% bloat: move 9 -> 2
-             {6,7}}); // no documents to move
-
+    f.setupOneDocumentToCompact();
     EXPECT_FALSE(f.run()); // does not find 9 in first scan
-    EXPECT_TRUE(assertJobContext(0, 0, 0, 0, 0, f));
+    TEST_DO(f.assertNoWorkDone());
     EXPECT_FALSE(f.run()); // move 9 -> 2
-    EXPECT_TRUE(assertJobContext(2, 9, 1, 0, 0, f));
-    f.endScan().compact();
-    EXPECT_TRUE(assertJobContext(2, 9, 1, 7, 1, f));
+    TEST_DO(f.assertOneDocumentCompacted());
 }
 
 TEST_F("require that job can restart documents scan if lid bloat is still to large",
@@ -443,13 +423,13 @@ TEST_F("require that job can restart documents scan if lid bloat is still to lar
     // We simulate that the set of used docs have changed between these 2 runs
     EXPECT_FALSE(f.run()); // move 9 -> 2
     f.endScan();
-    EXPECT_TRUE(assertJobContext(2, 9, 1, 0, 0, f));
+    TEST_DO(f.assertJobContext(2, 9, 1, 0, 0));
     EXPECT_EQUAL(2u, f._handler._iteratorCnt);
     EXPECT_FALSE(f.run()); // does not find 8 in first scan
     EXPECT_FALSE(f.run()); // move 8 -> 3
-    EXPECT_TRUE(assertJobContext(3, 8, 2, 0, 0, f));
+    TEST_DO(f.assertJobContext(3, 8, 2, 0, 0));
     f.endScan().compact();
-    EXPECT_TRUE(assertJobContext(3, 8, 2, 7, 1, f));
+    TEST_DO(f.assertJobContext(3, 8, 2, 7, 1));
 }
 
 TEST_F("require that handler uses doctype and subdb name", HandlerFixture)
@@ -481,7 +461,7 @@ TEST_F("require that held lid is not considered free, blocks job", JobFixture)
     // Lid 1 on hold or pendingHold, i.e. neither free nor used.
     f.addMultiStats(3, {{2}}, {{2, 3}});
     EXPECT_TRUE(f.run());
-    EXPECT_TRUE(assertJobContext(0, 0, 0, 0, 0, f));
+    TEST_DO(f.assertNoWorkDone());
 }
 
 TEST_F("require that held lid is not considered free, only compact", JobFixture)
@@ -489,9 +469,9 @@ TEST_F("require that held lid is not considered free, only compact", JobFixture)
     // Lid 1 on hold or pendingHold, i.e. neither free nor used.
     f.addMultiStats(10, {{2}}, {{2, 3}});
     EXPECT_FALSE(f.run());
-    EXPECT_TRUE(assertJobContext(0, 0, 0, 0, 0, f));
+    TEST_DO(f.assertNoWorkDone());
     f.compact();
-    EXPECT_TRUE(assertJobContext(0, 0, 0, 3, 1, f));
+    TEST_DO(f.assertJobContext(0, 0, 0, 3, 1));
 }
 
 TEST_F("require that held lids are not considered free, one move", JobFixture)
@@ -499,45 +479,35 @@ TEST_F("require that held lids are not considered free, one move", JobFixture)
     // Lids 1,2,3 on hold or pendingHold, i.e. neither free nor used.
     f.addMultiStats(10, {{5}}, {{5, 4}, {4, 5}});
     EXPECT_FALSE(f.run());
-    EXPECT_TRUE(assertJobContext(4, 5, 1, 0, 0, f));
+    TEST_DO(f.assertJobContext(4, 5, 1, 0, 0));
     f.endScan().compact();
-    EXPECT_TRUE(assertJobContext(4, 5, 1, 5, 1, f));
+    TEST_DO(f.assertJobContext(4, 5, 1, 5, 1));
 }
 
 TEST_F("require that resource starvation blocks lid space compaction", JobFixture)
 {
-    f.addStats(10, {1,3,4,5,6,9},
-            {{9,2},   // 30% bloat: move 9 -> 2
-             {6,7}}); // no documents to move
-    TEST_DO(f._diskMemUsageNotifier.update({{100, 0}, {100, 101}}));
+    f.setupOneDocumentToCompact();
+    TEST_DO(f._diskMemUsageNotifier.notify({{100, 0}, {100, 101}}));
     EXPECT_TRUE(f.run()); // scan
-    TEST_DO(assertJobContext(0, 0, 0, 0, 0, f));
+    TEST_DO(f.assertNoWorkDone());
 }
 
 TEST_F("require that ending resource starvation resumes lid space compaction", JobFixture)
 {
-    f.addStats(10, {1,3,4,5,6,9},
-            {{9,2},   // 30% bloat: move 9 -> 2
-             {6,7}}); // no documents to move
-    TEST_DO(f._diskMemUsageNotifier.update({{100, 0}, {100, 101}}));
+    f.setupOneDocumentToCompact();
+    TEST_DO(f._diskMemUsageNotifier.notify({{100, 0}, {100, 101}}));
     EXPECT_TRUE(f.run()); // scan
-    TEST_DO(assertJobContext(0, 0, 0, 0, 0, f));
-    TEST_DO(f._diskMemUsageNotifier.update({{100, 0}, {100, 0}}));
-    TEST_DO(assertJobContext(2, 9, 1, 0, 0, f));
-    TEST_DO(f.endScan().compact());
-    TEST_DO(assertJobContext(2, 9, 1, 7, 1, f));
+    TEST_DO(f.assertNoWorkDone());
+    TEST_DO(f._diskMemUsageNotifier.notify({{100, 0}, {100, 0}}));
+    TEST_DO(f.assertOneDocumentCompacted());
 }
 
 TEST_F("require that resource limit factor adjusts limit", JobFixture(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, MAX_DOCS_TO_SCAN, 1.05))
 {
-    f.addStats(10, {1,3,4,5,6,9},
-            {{9,2},   // 30% bloat: move 9 -> 2
-             {6,7}}); // no documents to move
-    TEST_DO(f._diskMemUsageNotifier.update({{100, 0}, {100, 101}}));
+    f.setupOneDocumentToCompact();
+    TEST_DO(f._diskMemUsageNotifier.notify({{100, 0}, {100, 101}}));
     EXPECT_FALSE(f.run()); // scan
-    TEST_DO(assertJobContext(2, 9, 1, 0, 0, f));
-    TEST_DO(f.endScan().compact());
-    TEST_DO(assertJobContext(2, 9, 1, 7, 1, f));
+    TEST_DO(f.assertOneDocumentCompacted());
 }
 
 struct JobFixtureWithInterval : public JobFixture {
@@ -556,6 +526,36 @@ TEST_F("require that delay is set based on interval and can be less than 300 sec
 {
     EXPECT_EQUAL(299, f._job.getDelay());
     EXPECT_EQUAL(299, f._job.getInterval());
+}
+
+struct JobFixtureWithNodeRetired : public JobFixture {
+    JobFixtureWithNodeRetired(bool nodeRetired)
+        : JobFixture(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, MAX_DOCS_TO_SCAN, RESOURCE_LIMIT_FACTOR, JOB_DELAY, nodeRetired)
+    {}
+};
+
+TEST_F("require that job is disabled when node is retired", JobFixtureWithNodeRetired(true))
+{
+    f.setupOneDocumentToCompact();
+    EXPECT_TRUE(f.run()); // not runnable, no work to do
+    TEST_DO(f.assertNoWorkDone());
+}
+
+TEST_F("require that job is disabled when node becomes retired", JobFixtureWithNodeRetired(false))
+{
+    f.setupOneDocumentToCompact();
+    f.notifyNodeRetired(true);
+    EXPECT_TRUE(f.run()); // not runnable, no work to do
+    TEST_DO(f.assertNoWorkDone());
+}
+
+TEST_F("require that job is re-enabled when node is no longer retired", JobFixtureWithNodeRetired(true))
+{
+    f.setupOneDocumentToCompact();
+    EXPECT_TRUE(f.run()); // not runnable, no work to do
+    TEST_DO(f.assertNoWorkDone());
+    f.notifyNodeRetired(false); // triggers running of job
+    TEST_DO(f.assertOneDocumentCompacted());
 }
 
 TEST_MAIN()

@@ -3,6 +3,7 @@ vespa_add_executable(searchcore_lid_space_compaction_test_app TEST
     SOURCES
     lid_space_compaction_test.cpp
     DEPENDS
+    searchcore_test
     searchcore_server
     searchcore_initializer
     searchcore_feedoperation
