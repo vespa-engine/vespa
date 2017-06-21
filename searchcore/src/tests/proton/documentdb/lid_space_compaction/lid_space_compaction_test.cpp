@@ -5,6 +5,7 @@ LOG_SETUP("lid_space_compaction_test");
 #include <vespa/searchcore/proton/server/i_lid_space_compaction_handler.h>
 #include <vespa/searchcore/proton/server/lid_space_compaction_handler.h>
 #include <vespa/searchcore/proton/server/lid_space_compaction_job.h>
+#include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -146,36 +147,6 @@ struct MyFrozenBucketHandler : public IFrozenBucketHandler
     virtual void removeListener(IBucketFreezeListener *) override { }
 };
 
-struct MyDiskMemUsageNotifier : public IDiskMemUsageNotifier
-{
-    DiskMemUsageState _state;
-    IDiskMemUsageListener *_listener;
-    MyDiskMemUsageNotifier()
-        : _state(),
-          _listener(nullptr)
-    {
-    }
-    ~MyDiskMemUsageNotifier()
-    {
-        assert(_listener == nullptr);
-    }
-    virtual void addDiskMemUsageListener(IDiskMemUsageListener *listener) override
-    {
-        assert(_listener == nullptr);
-        _listener = listener;
-        listener->notifyDiskMemUsage(_state);
-    }
-    virtual void removeDiskMemUsageListener(IDiskMemUsageListener *listener) override
-    {
-        assert(listener == _listener);
-        _listener = nullptr;
-    }
-    void update(DiskMemUsageState state) {
-        _state = state;
-        _listener->notifyDiskMemUsage(_state);
-    }
-};
-
 struct MyFeedView : public test::DummyFeedView
 {
     MyFeedView(const DocumentTypeRepo::SP &repo)
@@ -238,7 +209,7 @@ struct JobFixture
     MyHandler _handler;
     MyStorer _storer;
     MyFrozenBucketHandler _frozenHandler;
-    MyDiskMemUsageNotifier _diskMemUsageNotifier;
+    test::DiskMemUsageNotifier _diskMemUsageNotifier;
     LidSpaceCompactionJob _job;
     MyJobRunner           _jobRunner;
     JobFixture(uint32_t allowedLidBloat = ALLOWED_LID_BLOAT,
@@ -509,7 +480,7 @@ TEST_F("require that resource starvation blocks lid space compaction", JobFixtur
     f.addStats(10, {1,3,4,5,6,9},
             {{9,2},   // 30% bloat: move 9 -> 2
              {6,7}}); // no documents to move
-    TEST_DO(f._diskMemUsageNotifier.update({{100, 0}, {100, 101}}));
+    TEST_DO(f._diskMemUsageNotifier.notify({{100, 0}, {100, 101}}));
     EXPECT_TRUE(f.run()); // scan
     TEST_DO(assertJobContext(0, 0, 0, 0, 0, f));
 }
@@ -519,10 +490,10 @@ TEST_F("require that ending resource starvation resumes lid space compaction", J
     f.addStats(10, {1,3,4,5,6,9},
             {{9,2},   // 30% bloat: move 9 -> 2
              {6,7}}); // no documents to move
-    TEST_DO(f._diskMemUsageNotifier.update({{100, 0}, {100, 101}}));
+    TEST_DO(f._diskMemUsageNotifier.notify({{100, 0}, {100, 101}}));
     EXPECT_TRUE(f.run()); // scan
     TEST_DO(assertJobContext(0, 0, 0, 0, 0, f));
-    TEST_DO(f._diskMemUsageNotifier.update({{100, 0}, {100, 0}}));
+    TEST_DO(f._diskMemUsageNotifier.notify({{100, 0}, {100, 0}}));
     TEST_DO(assertJobContext(2, 9, 1, 0, 0, f));
     TEST_DO(f.endScan().compact());
     TEST_DO(assertJobContext(2, 9, 1, 7, 1, f));
@@ -533,7 +504,7 @@ TEST_F("require that resource limit factor adjusts limit", JobFixture(ALLOWED_LI
     f.addStats(10, {1,3,4,5,6,9},
             {{9,2},   // 30% bloat: move 9 -> 2
              {6,7}}); // no documents to move
-    TEST_DO(f._diskMemUsageNotifier.update({{100, 0}, {100, 101}}));
+    TEST_DO(f._diskMemUsageNotifier.notify({{100, 0}, {100, 101}}));
     EXPECT_FALSE(f.run()); // scan
     TEST_DO(assertJobContext(2, 9, 1, 0, 0, f));
     TEST_DO(f.endScan().compact());
