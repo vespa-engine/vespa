@@ -18,6 +18,7 @@ LOG_SETUP("btree_test");
 #include <vespa/searchlib/btree/btreebuilder.hpp>
 #include <vespa/searchlib/btree/btree.hpp>
 #include <vespa/searchlib/btree/btreestore.hpp>
+#include <vespa/searchlib/test/btree/btree_printer.h>
 
 using vespalib::GenerationHandler;
 using search::datastore::EntryRef;
@@ -133,6 +134,28 @@ cleanup(GenerationHandler & g,
     cleanup(g, m);
 }
 
+template<typename Tree>
+bool
+assertTree(const std::string &exp, const Tree &t)
+{
+    std::stringstream ss;
+    test::BTreePrinter<std::stringstream, typename Tree::NodeAllocatorType> printer(ss, t.getAllocator());
+    printer.print(t.getRoot());
+    if (!EXPECT_EQUAL(exp, ss.str())) return false;
+    return true;
+}
+
+template <typename Tree>
+void
+getLeafNode(Tree &t)
+{
+    t.insert(1, 101);
+    t.insert(3, 103);
+    t.insert(5, 105);
+    t.insert(7, 107);
+}
+
+
 class Test : public vespalib::TestApp {
 private:
     template <typename LeafNodeType>
@@ -146,8 +169,10 @@ private:
                  size_t numEntries);
 
     void requireThatNodeInsertWorks();
+    void requireThatTreeInsertWorks();
     void requireThatNodeSplitInsertWorks();
     void requireThatNodeStealWorks();
+    void requireThatTreeRemoveStealWorks();
     void requireThatNodeRemoveWorks();
     void requireThatNodeLowerBoundWorks();
     void requireThatWeCanInsertAndRemoveFromTree();
@@ -253,6 +278,67 @@ Test::requireThatNodeInsertWorks()
     cleanup(g, m, nPair.ref, n);
 }
 
+void
+Test::requireThatTreeInsertWorks()
+{
+    using Tree = BTree<MyKey, int32_t, btree::NoAggregated, MyComp, MyTraits>;
+    {
+        Tree t;
+        EXPECT_TRUE(assertTree("{}", t));
+        t.insert(20, 102);
+        EXPECT_TRUE(assertTree("{{20:102}}", t));
+        t.insert(10, 101);
+        EXPECT_TRUE(assertTree("{{10:101,20:102}}", t));
+        t.insert(30, 103);
+        t.insert(40, 104);
+        EXPECT_TRUE(assertTree("{{10:101,20:102,30:103,40:104}}", t));
+    }
+    { // new entry in current node
+        Tree t;
+        getLeafNode(t);
+        t.insert(4, 104);
+        EXPECT_TRUE(assertTree("{{4,7}} -> "
+                               "{{1:101,3:103,4:104},"
+                               "{5:105,7:107}}", t));
+    }
+    { // new entry in split node
+        Tree t;
+        getLeafNode(t);
+        t.insert(6, 106);
+        EXPECT_TRUE(assertTree("{{5,7}} -> "
+                               "{{1:101,3:103,5:105},"
+                               "{6:106,7:107}}", t));
+    }
+    { // new entry at end
+        Tree t;
+        getLeafNode(t);
+        t.insert(8, 108);
+        EXPECT_TRUE(assertTree("{{5,8}} -> "
+                               "{{1:101,3:103,5:105},"
+                               "{7:107,8:108}}", t));
+    }
+    { // multi level node split
+        Tree t;
+        for (uint32_t i = 1; i < 27; i += 2) {
+            t.insert(i, i + 100);
+        }
+        EXPECT_TRUE(assertTree("{{5,11,17,25}} -> "
+                               "{{1:101,3:103,5:105},"
+                               "{7:107,9:109,11:111},"
+                               "{13:113,15:115,17:117},"
+                               "{19:119,21:121,23:123,25:125}}", t));
+        t.insert(27, 127);
+        EXPECT_TRUE(assertTree("{{17,27}} -> "
+                               "{{5,11,17},{23,27}} -> "
+                               "{{1:101,3:103,5:105},"
+                               "{7:107,9:109,11:111},"
+                               "{13:113,15:115,17:117},"
+                               "{19:119,21:121,23:123},"
+                               "{25:125,27:127}}", t));
+    }
+
+}
+
 MyLeafNode::RefPair
 getLeafNode(MyNodeAllocator &allocator)
 {
@@ -310,6 +396,8 @@ struct BTreeStealTraits
 {
     static const size_t LEAF_SLOTS = 6;
     static const size_t INTERNAL_SLOTS = 6;
+    static const size_t PATH_SIZE = 20;
+    static const bool BINARY_SEEK = true;
 };
 
 void
@@ -398,6 +486,83 @@ Test::requireThatNodeStealWorks()
         EXPECT_TRUE(assertLeafNode("[1:a,2:b,3:c]", *n));
         EXPECT_TRUE(assertLeafNode("[4:d,5:e,6:f]", *v));
         cleanup(g, m, nPair.ref, n, vPair.ref, v);
+    }
+}
+
+void
+Test::requireThatTreeRemoveStealWorks()
+{
+    using MyStealTree = BTree<MyKey, int32_t,btree::NoAggregated, MyComp, BTreeStealTraits, NoAggrCalc>;
+    { // steal all from left
+        MyStealTree t;
+        t.insert(10, 110);
+        t.insert(20, 120);
+        t.insert(30, 130);
+        t.insert(40, 140);
+        t.insert(50, 150);
+        t.insert(60, 160);
+        t.insert(35, 135);
+        t.remove(35);
+        EXPECT_TRUE(assertTree("{{30,60}} -> "
+                               "{{10:110,20:120,30:130},"
+                               "{40:140,50:150,60:160}}", t));
+        t.remove(50);
+        EXPECT_TRUE(assertTree("{{10:110,20:120,30:130,40:140,60:160}}", t));
+
+    }
+    { // steal all from right
+        MyStealTree t;
+        t.insert(10, 110);
+        t.insert(20, 120);
+        t.insert(30, 130);
+        t.insert(40, 140);
+        t.insert(50, 150);
+        t.insert(60, 160);
+        t.insert(35, 135);
+        t.remove(35);
+        EXPECT_TRUE(assertTree("{{30,60}} -> "
+                               "{{10:110,20:120,30:130},"
+                               "{40:140,50:150,60:160}}", t));
+        t.remove(20);
+        EXPECT_TRUE(assertTree("{{10:110,30:130,40:140,50:150,60:160}}", t));
+    }
+    { // steal some from left
+        MyStealTree t;
+        t.insert(10, 110);
+        t.insert(20, 120);
+        t.insert(30, 130);
+        t.insert(60, 160);
+        t.insert(70, 170);
+        t.insert(80, 180);
+        t.insert(50, 150);
+        t.insert(40, 140);
+        EXPECT_TRUE(assertTree("{{50,80}} -> "
+                               "{{10:110,20:120,30:130,40:140,50:150},"
+                               "{60:160,70:170,80:180}}", t));
+        t.remove(60);
+        EXPECT_TRUE(assertTree("{{30,80}} -> "
+                               "{{10:110,20:120,30:130},"
+                               "{40:140,50:150,70:170,80:180}}", t));
+    }
+    { // steal some from right
+        MyStealTree t;
+        t.insert(10, 110);
+        t.insert(20, 120);
+        t.insert(30, 130);
+        t.insert(40, 140);
+        t.insert(50, 150);
+        t.insert(60, 160);
+        t.insert(70, 170);
+        t.insert(80, 180);
+        t.insert(90, 190);
+        t.remove(40);
+        EXPECT_TRUE(assertTree("{{30,90}} -> "
+                               "{{10:110,20:120,30:130},"
+                               "{50:150,60:160,70:170,80:180,90:190}}", t));
+        t.remove(20);
+        EXPECT_TRUE(assertTree("{{60,90}} -> "
+                               "{{10:110,30:130,50:150,60:160},"
+                               "{70:170,80:180,90:190}}", t));
     }
 }
 
@@ -1251,8 +1416,10 @@ Test::Main()
     TEST_INIT("btree_test");
 
     requireThatNodeInsertWorks();
+    requireThatTreeInsertWorks();
     requireThatNodeSplitInsertWorks();
     requireThatNodeStealWorks();
+    requireThatTreeRemoveStealWorks();
     requireThatNodeRemoveWorks();
     requireThatNodeLowerBoundWorks();
     requireThatWeCanInsertAndRemoveFromTree();
