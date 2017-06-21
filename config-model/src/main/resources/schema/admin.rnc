@@ -19,12 +19,14 @@ AdminV2 =
 AdminV3 =
   element admin {
     attribute version { "3.0"  } &
+    element minSlobroksPerCluster { xsd:positiveInteger }? &
     Nodes
   }
 
 AdminV4 =
   element admin {
     attribute version { "4.0"  } &
+    element minSlobroksPerCluster { xsd:positiveInteger }? &
     AdminV4Slobroks? &
     AdminV4LogServers? &
     AdminYamas? &
