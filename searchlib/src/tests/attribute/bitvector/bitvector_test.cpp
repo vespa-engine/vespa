@@ -412,7 +412,7 @@ BitVectorTest::checkSearch(AttributePtr v,
                            bool checkStride)
 {
     (void) checkStride;
-    sb->initRange(1, v->getCommittedDocIdLimit());
+    sb->initFullRange();
     sb->seek(1u);
     uint32_t docId = sb->getDocId();
     uint32_t lastDocId = 0;
@@ -497,7 +497,7 @@ BitVectorTest::test(BasicType bt,
         if (!enableOnlyBitVector) {
             checkSearch(v, std::move(dwsi), md, 2, 1022, 205, !filter, true);
         } else {
-            dwsi->initRange(1, v->getCommittedDocIdLimit());
+            dwsi->initFullRange();
             EXPECT_TRUE(dwsi->isAtEnd());
         }
     }

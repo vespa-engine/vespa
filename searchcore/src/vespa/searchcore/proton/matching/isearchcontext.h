@@ -6,7 +6,8 @@
 
 #include <memory>
 
-namespace proton::matching {
+namespace proton {
+namespace matching {
 
 /**
  * Interface used to expose searchable data to the matching
@@ -63,4 +64,5 @@ public:
     virtual ~ISearchContext() {}
 };
 
-}
+} // namespace matching
+} // namespace proton
