@@ -29,16 +29,6 @@ public class GetBucketListMessage extends DocumentMessage {
     }
 
     @Override
-    public boolean hasSequenceId() {
-        return true;
-    }
-
-    @Override
-    public long getSequenceId() {
-        return bucketId.getRawId();
-    }
-
-    @Override
     public int getApproxSize() {
         return super.getApproxSize() + 8;
     }

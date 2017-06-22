@@ -77,16 +77,6 @@ public class GetDocumentMessage extends DocumentMessage {
     }
 
     @Override
-    public boolean hasSequenceId() {
-        return true;
-    }
-
-    @Override
-    public long getSequenceId() {
-        return Arrays.hashCode(documentId.getGlobalId());
-    }
-
-    @Override
     public int getType() {
         return DocumentProtocol.MESSAGE_GETDOCUMENT;
     }
