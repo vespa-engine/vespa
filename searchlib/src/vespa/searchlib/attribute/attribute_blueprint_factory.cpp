@@ -624,7 +624,9 @@ AttributeBlueprintFactory::createBlueprint(const IRequestContext & requestContex
     }
     CreateBlueprintVisitor visitor(*this, requestContext, field, *attr);
     const_cast<Node &>(term).accept(visitor);
-    return visitor.getResult();
+    Blueprint::UP bp = visitor.getResult();
+    bp->setDocIdLimit(attr->getNumDocs());
+    return bp;
 }
 
 }  // namespace search
