@@ -34,12 +34,24 @@ SimpleResult::search(SearchIterator &sb)
 }
 
 void
+SimpleResult::searchStrict(SearchIterator &sb, uint32_t docIdLimit)
+{
+    clear();
+    // assume strict toplevel search object located at start
+    sb.initRange(1, docIdLimit);
+    for (sb.seek(1); !sb.isAtEnd(); sb.seek(sb.getDocId() + 1)) {
+        sb.unpack(sb.getDocId());
+        _hits.push_back(sb.getDocId());
+    }
+}
+
+void
 SimpleResult::search(SearchIterator &sb, uint32_t docIdLimit)
 {
     clear();
     // assume non-strict toplevel search object
-    sb.initFullRange();
-    for (uint32_t docId = 1; docId < docIdLimit; ++docId) {
+    sb.initRange(1, docIdLimit);
+    for (uint32_t docId = 1; !sb.isAtEnd(docId); ++docId) {
         if (sb.seek(docId)) {
             assert(docId == sb.getDocId());
             sb.unpack(docId);
