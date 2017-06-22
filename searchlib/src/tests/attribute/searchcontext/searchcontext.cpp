@@ -762,7 +762,7 @@ SearchContextTest::testNonStrictSearchIterator(SearchContext & threeHits,
     { // search for value with three hits
         threeHits.fetchPostings(false);
         SearchBasePtr sb = threeHits.createIterator(&dummy, false);
-        sb->initFullRange();
+        sb->initRange(1, threeHits.attribute().getCommittedDocIdLimit());
         EXPECT_TRUE(typeTester.matches(*sb));
         EXPECT_TRUE(sb->seek(1));
         EXPECT_EQUAL(sb->getDocId(), 1u);
@@ -780,7 +780,7 @@ SearchContextTest::testNonStrictSearchIterator(SearchContext & threeHits,
     { // search for value with no hits
         noHits.fetchPostings(false);
         SearchBasePtr sb = noHits.createIterator(&dummy, false);
-        sb->initFullRange();
+        sb->initRange(1, threeHits.attribute().getCommittedDocIdLimit());
 
         EXPECT_TRUE(typeTester.matches(*sb));
         EXPECT_TRUE(sb->getDocId() == sb->beginId() ||
