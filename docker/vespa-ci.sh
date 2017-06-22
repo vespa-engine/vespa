@@ -8,7 +8,8 @@ if [ $# -ne 1 ]; then
   exit 1
 fi
 
-DIR=$(dirname $(readlink -f $0))
+RELATIVE_DIR=$(dirname "${BASH_SOURCE[0]}")
+DIR=$(cd "${RELATIVE_DIR}" && pwd)
 cd $DIR
 
 GIT_COMMIT=$1
