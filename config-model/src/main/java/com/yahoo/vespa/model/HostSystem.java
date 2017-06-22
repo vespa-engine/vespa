@@ -4,14 +4,12 @@ package com.yahoo.vespa.model;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ProvisionLogger;
 
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -36,7 +34,6 @@ public class HostSystem extends AbstractConfigProducer<Host> {
 
     private static Logger log = Logger.getLogger(HostSystem.class.getName());
 
-    private Map<String,String> ipAddresses = new LinkedHashMap<>();
     private Map<String,String> hostnames = new LinkedHashMap<>();
 
     private final Map<String, HostResource> hostname2host = new LinkedHashMap<>();
@@ -89,31 +86,6 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     // public - This is used by amenders outside this repo
     public static String lookupCanonicalHostname(String hostname) throws UnknownHostException {
         return java.net.InetAddress.getByName(hostname).getCanonicalHostName();
-    }
-
-    /**
-     * Returns the if address of a host.
-     *
-     * @param hostname the hostname to retrieve the ip address for.
-     * @return The string representation of the ip-address.
-     */
-    public String getIp(String hostname) {
-        if (ipAddresses.containsKey(hostname)) return ipAddresses.get(hostname);
-
-        String ipAddress;
-        if (hostname.startsWith(MockRoot.MOCKHOST)) { // TODO: Remove
-            ipAddress = "0.0.0.0";
-        } else {
-            try {
-                InetAddress address = InetAddress.getByName(hostname);
-                ipAddress = address.getHostAddress();
-            } catch (java.net.UnknownHostException e) {
-                log.warning("Unable to find valid IP address of host: " + hostname);
-                ipAddress = "0.0.0.0";
-            }
-        }
-        ipAddresses.put(hostname, ipAddress);
-        return ipAddress;
     }
 
     @Override

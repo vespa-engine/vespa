@@ -40,7 +40,6 @@ import java.util.Set;
 public class MockRoot extends AbstractConfigProducerRoot {
 
     private static final long serialVersionUID = 1L;
-    public static final String MOCKHOST = "mockhost";
 
     private HostSystem hostSystem;
 
