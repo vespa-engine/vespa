@@ -36,25 +36,22 @@ public final class Host extends AbstractConfigProducer<AbstractConfigProducer<?>
         Objects.requireNonNull(hostname, "The host name of a host cannot be null");
         this.runsConfigServer = runsConfigServer;
         this.hostname = hostname;
-        if (parent instanceof HostSystem) {            
+        if (parent instanceof HostSystem)
             checkName((HostSystem) parent, hostname);            
-        }
     }
 
     private void checkName(HostSystem parent, String hostname) {
         // Give a warning if the host does not exist
-        if (! parent.getIp(hostname).equals("0.0.0.0")) {
-            // Host exists - warn if given hostname is not a fully qualified one.
-            String canonical=hostname;
-            try {
-                canonical = parent.getCanonicalHostname(hostname);
-            } catch (UnknownHostException e) {
-                deployLogger().log(Level.WARNING, "Unable to find canonical hostname of host: " + hostname);
-            }
-            if ((null != canonical) && (! hostname.equals(canonical))) {
-                deployLogger().log(Level.WARNING, "Host named '" + hostname + "' will not receive any config " +
-                     "since it does not match its canonical hostname: " + canonical);
-            }
+        // Host exists - warn if given hostname is not a fully qualified one.
+        String canonical = hostname;
+        try {
+            canonical = parent.getCanonicalHostname(hostname);
+        } catch (UnknownHostException e) {
+            deployLogger().log(Level.WARNING, "Unable to find canonical hostname of host: " + hostname);
+        }
+        if ((null != canonical) && (! hostname.equals(canonical))) {
+            deployLogger().log(Level.WARNING, "Host named '" + hostname + "' will not receive any config " +
+                                              "since it does not match its canonical hostname: " + canonical);
         }
     }
 
