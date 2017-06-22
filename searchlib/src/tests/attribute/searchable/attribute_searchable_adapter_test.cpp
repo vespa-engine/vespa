@@ -203,7 +203,7 @@ Result do_search(IAttributeManager &attribute_manager, const Node &node, bool st
     bp->fetchPostings(strict);
     SearchIterator::UP iterator = bp->createSearch(*match_data, strict);
     ASSERT_TRUE(iterator.get() != nullptr);
-    iterator->initFullRange();
+    iterator->initRange(1, num_docs);
     extract_posting_info(result, iterator->getPostingInfo());
     extract_wand_params(result, dynamic_cast<ParallelWeakAndSearch*>(iterator.get()));
     result.iterator_dump = iterator->asString();
