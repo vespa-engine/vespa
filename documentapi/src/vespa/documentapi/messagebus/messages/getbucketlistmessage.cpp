@@ -26,18 +26,6 @@ GetBucketListMessage::doCreateReply() const
     return DocumentReply::UP(new GetBucketListReply());
 }
 
-bool
-GetBucketListMessage::hasSequenceId() const
-{
-    return true;
-}
-
-uint64_t
-GetBucketListMessage::getSequenceId() const
-{
-    return _bucketId.getRawId();
-}
-
 uint32_t
 GetBucketListMessage::getType() const
 {

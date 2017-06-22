@@ -36,18 +36,6 @@ GetDocumentMessage::doCreateReply() const
     return DocumentReply::UP(new GetDocumentReply());
 }
 
-bool
-GetDocumentMessage::hasSequenceId() const
-{
-    return true;
-}
-
-uint64_t
-GetDocumentMessage::getSequenceId() const
-{
-    return *reinterpret_cast<const uint64_t*>(_documentId.getGlobalId().get());
-}
-
 uint32_t
 GetDocumentMessage::getType() const
 {

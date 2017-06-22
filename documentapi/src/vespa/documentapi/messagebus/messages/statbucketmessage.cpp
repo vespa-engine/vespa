@@ -26,18 +26,6 @@ StatBucketMessage::doCreateReply() const
     return DocumentReply::UP(new StatBucketReply());
 }
 
-bool
-StatBucketMessage::hasSequenceId() const
-{
-    return true;
-}
-
-uint64_t
-StatBucketMessage::getSequenceId() const
-{
-    return _bucket.getRawId();
-}
-
 uint32_t
 StatBucketMessage::getType() const
 {

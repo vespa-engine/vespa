@@ -40,8 +40,6 @@ public:
      * @param id The bucket id to set.
      */
     void setBucketId(const document::BucketId& id) { _bucketId = id; }
-    bool hasSequenceId() const override;
-    uint64_t getSequenceId() const override;
     uint32_t getType() const override;
     string toString() const override { return "getbucketlistmessage"; }
 };
