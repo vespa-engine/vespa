@@ -92,9 +92,9 @@ public class Dispatcher extends AbstractComponent {
     }
 
     /** Return a map of hits by their search node (partition) id */
-    private ListMap<Integer, FastHit> hitsByNode(Result result) {
+    private static ListMap<Integer, FastHit> hitsByNode(Result result) {
         ListMap<Integer, FastHit> hitsByPartition = new ListMap<>();
-        for (Iterator<Hit> i = result.hits().deepIterator() ; i.hasNext(); ) {
+        for (Iterator<Hit> i = result.hits().unorderedDeepIterator() ; i.hasNext(); ) {
             Hit h = i.next();
             if ( ! (h instanceof FastHit)) continue;
             FastHit hit = (FastHit)h;
