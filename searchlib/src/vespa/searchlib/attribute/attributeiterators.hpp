@@ -62,7 +62,6 @@ void AttributePostingListIteratorT<PL>::initRange(uint32_t begin, uint32_t end) 
     }
 }
 
-
 template <typename PL>
 template<typename... Args>
 FilterAttributePostingListIteratorT<PL>::
@@ -208,15 +207,15 @@ FilterAttributeIteratorT<SC>::visitMembers(vespalib::ObjectVisitor &visitor) con
 
 template <typename SC>
 AttributeIteratorT<SC>::AttributeIteratorT(const SC &searchContext, fef::TermFieldMatchData *matchData)
-        : AttributeIterator(matchData, searchContext.attribute().getCommittedDocIdLimit()),
-          _searchContext(searchContext)
+    : AttributeIterator(matchData),
+      _searchContext(searchContext)
 { }
 
 
 template <typename SC>
 FilterAttributeIteratorT<SC>::FilterAttributeIteratorT(const SC &searchContext, fef::TermFieldMatchData *matchData)
-        : FilterAttributeIterator(matchData, searchContext._attr.getCommittedDocIdLimit()),
-          _searchContext(searchContext)
+    : FilterAttributeIterator(matchData),
+      _searchContext(searchContext)
 { }
 
 
@@ -225,11 +224,10 @@ void
 FlagAttributeIteratorStrict<SC>::doSeek(uint32_t docId)
 {
     const SC & sc(_sc);
-    const typename SC::Attribute &attr =
-            static_cast<const typename SC::Attribute &>(sc.attribute());
+    const Attribute &attr = static_cast<const Attribute &>(sc.attribute());
     for (int i = sc._low; (i <= sc._high); ++i) {
         const BitVector * bv = attr.getBitVector(i);
-        if ((bv != NULL) && docId < _docIdLimit && bv->testBit(docId)) {
+        if ((bv != NULL) && !isAtEnd(docId) && bv->testBit(docId)) {
             setDocId(docId);
             return;
         }
@@ -238,12 +236,12 @@ FlagAttributeIteratorStrict<SC>::doSeek(uint32_t docId)
     uint32_t minNextBit(search::endDocId);
     for (int i = sc._low; (i <= sc._high); ++i) {
         const BitVector * bv = attr.getBitVector(i);
-        if (bv != NULL && docId < _docIdLimit) {
+        if (bv != NULL && !isAtEnd(docId)) {
             uint32_t nextBit = bv->getNextTrueBit(docId);
             minNextBit = std::min(nextBit, minNextBit);
         }
     }
-    if (minNextBit < _docIdLimit) {
+    if (!isAtEnd(minNextBit)) {
         setDocId(minNextBit);
     } else {
         setAtEnd();
@@ -255,11 +253,10 @@ void
 FlagAttributeIteratorT<SC>::doSeek(uint32_t docId)
 {
     const SC & sc(_sc);
-    const typename SC::Attribute &attr =
-            static_cast<const typename SC::Attribute &>(sc.attribute());
+    const Attribute &attr = static_cast<const Attribute &>(sc.attribute());
     for (int i = sc._low; (i <= sc._high); ++i) {
         const BitVector * bv = attr.getBitVector(i);
-        if ((bv != NULL) && docId < _docIdLimit && bv->testBit(docId)) {
+        if ((bv != NULL) && !isAtEnd(docId) && bv->testBit(docId)) {
             setDocId(docId);
             return;
         }
@@ -271,7 +268,7 @@ void
 FlagAttributeIteratorT<SC>::or_hits_into(BitVector &result, uint32_t begin_id) {
     (void) begin_id;
     const SC & sc(_sc);
-    const typename SC::Attribute &attr = static_cast<const typename SC::Attribute &>(sc.attribute());
+    const Attribute &attr = static_cast<const Attribute &>(sc.attribute());
     for (int i = sc._low; (i <= sc._high); ++i) {
         const BitVector * bv = attr.getBitVector(i);
         if (bv != NULL) {
@@ -284,7 +281,7 @@ template <typename SC>
 void
 FlagAttributeIteratorT<SC>::and_hits_into(BitVector &result, uint32_t begin_id) {
     const SC & sc(_sc);
-    const typename SC::Attribute &attr = static_cast<const typename SC::Attribute &>(sc.attribute());
+    const Attribute &attr = static_cast<const Attribute &>(sc.attribute());
     if (sc._low == sc._high) {
         const BitVector * bv = attr.getBitVector(sc._low);
         if (bv != NULL) {
@@ -303,7 +300,7 @@ template <typename SC>
 std::unique_ptr<BitVector>
 FlagAttributeIteratorT<SC>::get_hits(uint32_t begin_id) {
     const SC & sc(_sc);
-    const typename SC::Attribute &attr = static_cast<const typename SC::Attribute &>(sc.attribute());
+    const Attribute &attr = static_cast<const Attribute &>(sc.attribute());
     int i = sc._low;
     BitVector::UP result;
     for (;!result && i < sc._high; ++i) {
@@ -332,7 +329,7 @@ template <typename SC>
 void
 AttributeIteratorT<SC>::doSeek(uint32_t docId)
 {
-    if (__builtin_expect(docId >= _docIdLimit, false)) {
+    if (isAtEnd(docId)) {
         setAtEnd();
     } else if (_searchContext.cmp(docId, _weight)) {
         setDocId(docId);
@@ -343,7 +340,7 @@ template <typename SC>
 void
 FilterAttributeIteratorT<SC>::doSeek(uint32_t docId)
 {
-    if (__builtin_expect(docId >= _docIdLimit, false)) {
+    if (isAtEnd(docId)) {
         setAtEnd();
     } else if (_searchContext.cmp(docId)) {
         setDocId(docId);
@@ -354,7 +351,7 @@ template <typename SC>
 void
 AttributeIteratorStrict<SC>::doSeek(uint32_t docId)
 {
-    for (uint32_t nextId = docId; nextId < _docIdLimit; ++nextId) {
+    for (uint32_t nextId = docId; !isAtEnd(nextId); ++nextId) {
         if (_searchContext.cmp(nextId, _weight)) {
             setDocId(nextId);
             return;
@@ -367,7 +364,7 @@ template <typename SC>
 void
 FilterAttributeIteratorStrict<SC>::doSeek(uint32_t docId)
 {
-    for (uint32_t nextId = docId; nextId < _docIdLimit; ++nextId) {
+    for (uint32_t nextId = docId; !isAtEnd(nextId); ++nextId) {
         if (_searchContext.cmp(nextId)) {
             setDocId(nextId);
             return;
@@ -382,7 +379,6 @@ AttributeIteratorT<SC>::or_hits_into(BitVector & result, uint32_t begin_id) {
     AttributeIteratorBase::or_hits_into(_searchContext, result, begin_id);
 }
 
-
 template <typename SC>
 void
 FilterAttributeIteratorT<SC>::or_hits_into(BitVector & result, uint32_t begin_id) {
@@ -394,7 +390,6 @@ BitVector::UP
 AttributeIteratorT<SC>::get_hits(uint32_t begin_id) {
     return AttributeIteratorBase::get_hits(_searchContext, begin_id);
 }
-
 
 template <typename SC>
 BitVector::UP
@@ -413,6 +408,5 @@ void
 FilterAttributeIteratorT<SC>::and_hits_into(BitVector & result, uint32_t begin_id) {
     AttributeIteratorBase::and_hits_into(_searchContext, result, begin_id);
 }
-
 
 } // namespace search
