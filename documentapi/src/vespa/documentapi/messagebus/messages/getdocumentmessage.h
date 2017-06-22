@@ -86,8 +86,6 @@ public:
      */
     const string& getFieldSet() const { return _fieldSet; }
 
-    bool hasSequenceId() const override;
-    uint64_t getSequenceId() const override;
     uint32_t getType() const override;
     string toString() const override { return "getdocumentmessage"; }
 };

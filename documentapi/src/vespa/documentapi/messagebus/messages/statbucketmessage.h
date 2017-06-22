@@ -57,9 +57,6 @@ public:
      * @param value The selection string to set.
      */
     void setDocumentSelection(const string &value) { _documentSelection = value; };
-
-    bool hasSequenceId() const override;
-    uint64_t getSequenceId() const override;
     uint32_t getType() const override;
     string toString() const override { return "statbucketmessage"; }
 };

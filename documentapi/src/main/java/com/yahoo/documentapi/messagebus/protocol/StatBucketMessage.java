@@ -44,16 +44,6 @@ public class StatBucketMessage extends DocumentMessage {
     }
 
     @Override
-    public boolean hasSequenceId() {
-        return true;
-    }
-
-    @Override
-    public long getSequenceId() {
-        return bucketId.getRawId();
-    }
-
-    @Override
     public int getType() {
         return DocumentProtocol.MESSAGE_STATBUCKET;
     }

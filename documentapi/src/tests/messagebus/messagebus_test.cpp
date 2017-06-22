@@ -25,6 +25,9 @@ public:
 private:
     void testMessage();
     void testProtocol();
+    void get_document_message_is_not_sequenced();
+    void stat_bucket_message_is_not_sequenced();
+    void get_bucket_list_message_is_not_sequenced();
 };
 
 TEST_APPHOOK(Test);
@@ -38,6 +41,9 @@ Test::Main()
 
     testMessage();  TEST_FLUSH();
     testProtocol(); TEST_FLUSH();
+    get_document_message_is_not_sequenced();    TEST_FLUSH();
+    stat_bucket_message_is_not_sequenced();     TEST_FLUSH();
+    get_bucket_list_message_is_not_sequenced(); TEST_FLUSH();
 
     TEST_DONE();
 }
@@ -102,4 +108,17 @@ void Test::testProtocol() {
     EXPECT_TRUE(policy.get() == NULL);
 }
 
+void Test::get_document_message_is_not_sequenced() {
+    GetDocumentMessage message(document::DocumentId("id:foo:bar::baz"));
+    EXPECT_FALSE(message.hasSequenceId());
+}
 
+void Test::stat_bucket_message_is_not_sequenced() {
+    StatBucketMessage message(document::BucketId(16, 1), "");
+    EXPECT_FALSE(message.hasSequenceId());
+}
+
+void Test::get_bucket_list_message_is_not_sequenced() {
+    GetBucketListMessage message(document::BucketId(16, 1));
+    EXPECT_FALSE(message.hasSequenceId());
+}

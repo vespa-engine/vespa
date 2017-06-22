@@ -3,15 +3,16 @@ package com.yahoo.documentapi.test;
 
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
-import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentType;
 import com.yahoo.documentapi.*;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -70,40 +71,45 @@ public abstract class AbstractDocumentApiTestCase {
         assertTrue(result.isSuccess());
         results.put(result.getRequestId(), new Response(result.getRequestId()));
 
+        List<Response> responses = new ArrayList<>();
+        waitForAcks(session, 2, responses);
+
         result = session.get(new DocumentId("doc:music:1"));
         assertTrue(result.isSuccess());
         results.put(result.getRequestId(), new DocumentResponse(result.getRequestId(), doc1));
         result = session.get(new DocumentId("doc:music:2"));
         assertTrue(result.isSuccess());
         results.put(result.getRequestId(), new DocumentResponse(result.getRequestId(), doc2));
+        // These Gets shall observe the ACKed Puts sent for the same document IDs.
+        waitForAcks(session, 2, responses);
 
         result = session.remove(new DocumentId("doc:music:1"));
         assertTrue(result.isSuccess());
         results.put(result.getRequestId(), new Response(result.getRequestId()));
+        waitForAcks(session, 1, responses);
+
         result = session.get(new DocumentId("doc:music:1"));
         assertTrue(result.isSuccess());
         results.put(result.getRequestId(), new DocumentResponse(result.getRequestId()));
         result = session.get(new DocumentId("doc:music:2"));
         assertTrue(result.isSuccess());
         results.put(result.getRequestId(), new DocumentResponse(result.getRequestId(), doc2));
+        waitForAcks(session, 2, responses);
 
         result = session.remove(new DocumentId("doc:music:2"));
         assertTrue(result.isSuccess());
         results.put(result.getRequestId(), new Response(result.getRequestId()));
+        waitForAcks(session, 1, responses);
+
         result = session.get(new DocumentId("doc:music:1"));
         assertTrue(result.isSuccess());
         results.put(result.getRequestId(), new DocumentResponse(result.getRequestId()));
         result = session.get(new DocumentId("doc:music:2"));
         assertTrue(result.isSuccess());
         results.put(result.getRequestId(), new DocumentResponse(result.getRequestId()));
+        waitForAcks(session, 2, responses);
 
-        for (int i = 0; i < 4; i++) {
-            Response response;
-            if (i % 2 == 0) {
-                response = pollNext(session);
-            } else {
-                response = session.getNext(10000);
-            }
+        for (Response response : responses) {
             assertTrue(response.isSuccess());
             assertEquals(results.get(response.getRequestId()), response);
         }
@@ -121,6 +127,18 @@ public abstract class AbstractDocumentApiTestCase {
         assertTrue(handler.latch.await(60, TimeUnit.SECONDS));
         assertNotNull(handler.response);
         session.destroy();
+    }
+
+    private static void waitForAcks(AsyncSession session, int n, List<Response> responsesOut) throws InterruptedException {
+        for (int i = 0; i < n; ++i) {
+            Response response;
+            if (i % 2 == 0) {
+                response = pollNext(session);
+            } else {
+                response = session.getNext(60000);
+            }
+            responsesOut.add(response);
+        }
     }
 
     private static Response pollNext(AsyncSession session) throws InterruptedException {
