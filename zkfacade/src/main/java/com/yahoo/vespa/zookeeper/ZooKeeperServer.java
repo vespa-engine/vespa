@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.log.LogLevel;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 import org.apache.zookeeper.server.quorum.QuorumPeerMain;
@@ -15,6 +16,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Writes zookeeper config and starts zookeeper server.
@@ -46,11 +49,10 @@ public class ZooKeeperServer extends AbstractComponent{
         System.setProperty("zookeeper.serverCnxnFactory", "com.yahoo.vespa.zookeeper.RestrictedServerCnxnFactory");
 
         writeConfigToDisk(config);
-        this.zooKeeperMain = new ZooKeeperMain(config);
-        Thread zkServerThread = new Thread(zooKeeperMain, "zookeeper server");
-        zkServerThread.setDaemon(true);
+        ExecutorService zkServer = Executors.newFixedThreadPool(1, new DaemonThreadFactory("zookeeper server"));
+        zooKeeperMain = new ZooKeeperMain(config, zkServer);
         if (startServer) {
-            zkServerThread.start();
+            zkServer.submit(zooKeeperMain);
         }
     }
 
@@ -137,10 +139,12 @@ public class ZooKeeperServer extends AbstractComponent{
     /** Takes care of starting and stopping the zookeeper server properly */
     private static class ZooKeeperMain extends QuorumPeerMain implements Runnable {
         private final ZookeeperServerConfig config;
+        private final ExecutorService executorService;
 
-        public ZooKeeperMain(ZookeeperServerConfig config) {
+        public ZooKeeperMain(ZookeeperServerConfig config, ExecutorService executorService) {
             super();
             this.config = config;
+            this.executorService = executorService;
         }
 
         @Override
@@ -158,7 +162,10 @@ public class ZooKeeperServer extends AbstractComponent{
         }
 
         public void shutdown() {
-            quorumPeer.shutdown();
+            if (quorumPeer != null) {
+                quorumPeer.shutdown();
+            }
+            executorService.shutdownNow();
         }
     }
 
