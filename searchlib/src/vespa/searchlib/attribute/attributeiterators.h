@@ -49,22 +49,26 @@ public:
 class AttributeIterator : public AttributeIteratorBase
 {
 public:
-    AttributeIterator(fef::TermFieldMatchData * matchData)
+    AttributeIterator(fef::TermFieldMatchData * matchData, uint32_t docIdLimit)
         : AttributeIteratorBase(matchData),
+          _docIdLimit(docIdLimit),
           _weight(1)
     { }
 protected:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void doUnpack(uint32_t docId) override;
+    uint32_t   _docIdLimit;
     int32_t    _weight;
 };
 
 class FilterAttributeIterator : public AttributeIteratorBase
 {
 public:
-    FilterAttributeIterator(fef::TermFieldMatchData * matchData);
+    FilterAttributeIterator(fef::TermFieldMatchData * matchData, uint32_t docIdLimit);
 protected:
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void doUnpack(uint32_t docId) override;
+    uint32_t   _docIdLimit;
 };
 
 template <typename SC>
@@ -84,6 +88,7 @@ public:
     AttributeIteratorT(const SC &searchContext, fef::TermFieldMatchData *matchData);
     bool seekFast(uint32_t docId) const { return _searchContext.cmp(docId); }
 };
+
 
 template <typename SC>
 class FilterAttributeIteratorT : public FilterAttributeIterator
@@ -116,10 +121,10 @@ template <typename SC>
 class AttributeIteratorStrict : public AttributeIteratorT<SC>
 {
 private:
+    using AttributeIteratorT<SC>::_docIdLimit;
     using AttributeIteratorT<SC>::_searchContext;
     using AttributeIteratorT<SC>::setDocId;
     using AttributeIteratorT<SC>::setAtEnd;
-    using AttributeIteratorT<SC>::isAtEnd;
     using AttributeIteratorT<SC>::_weight;
     using Trinary=vespalib::Trinary;
     void doSeek(uint32_t docId) override;
@@ -135,10 +140,10 @@ template <typename SC>
 class FilterAttributeIteratorStrict : public FilterAttributeIteratorT<SC>
 {
 private:
+    using FilterAttributeIteratorT<SC>::_docIdLimit;
     using FilterAttributeIteratorT<SC>::_searchContext;
     using FilterAttributeIteratorT<SC>::setDocId;
     using FilterAttributeIteratorT<SC>::setAtEnd;
-    using FilterAttributeIteratorT<SC>::isAtEnd;
     using Trinary=vespalib::Trinary;
     void doSeek(uint32_t docId) override;
     Trinary is_strict() const override { return Trinary::True; }
@@ -325,11 +330,11 @@ template <typename SC>
 class FlagAttributeIteratorT : public FlagAttributeIterator
 {
 private:
-    using Attribute = typename SC::Attribute;
     void doSeek(uint32_t docId) override;
 
 protected:
     const SC & _sc;
+    uint32_t   _docIdLimit;
 
     void or_hits_into(BitVector &result, uint32_t begin_id) override;
     void and_hits_into(BitVector &result, uint32_t begin_id) override;
@@ -338,7 +343,9 @@ protected:
 public:
     FlagAttributeIteratorT(const SC &sc, fef::TermFieldMatchData * matchData)
         : FlagAttributeIterator(matchData),
-          _sc(sc)
+          _sc(sc),
+          _docIdLimit(static_cast<const typename SC::Attribute &>
+                      (sc.attribute()).getCommittedDocIdLimit())
     { }
 
     void initRange(uint32_t begin, uint32_t end) override {
@@ -354,11 +361,10 @@ template <typename SC>
 class FlagAttributeIteratorStrict : public FlagAttributeIteratorT<SC>
 {
 private:
+    using FlagAttributeIteratorT<SC>::_docIdLimit;
     using FlagAttributeIteratorT<SC>::_sc;
     using FlagAttributeIteratorT<SC>::setDocId;
     using FlagAttributeIteratorT<SC>::setAtEnd;
-    using FlagAttributeIteratorT<SC>::isAtEnd;
-    using Attribute = typename SC::Attribute;
     using Trinary=vespalib::Trinary;
     void doSeek(uint32_t docId) override;
     Trinary is_strict() const override { return Trinary::True; }
@@ -370,3 +376,4 @@ public:
 };
 
 } // namespace search
+

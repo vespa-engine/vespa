@@ -5,7 +5,8 @@
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchcommon/attribute/search_context_params.h>
 
-namespace search::attribute {
+namespace search {
+namespace attribute {
 
 using fef::TermFieldMatchData;
 using vespalib::Trinary;
@@ -21,7 +22,7 @@ struct Fixture : ImportedAttributeFixture {
             bool strict) {
         auto iter = ctx.createIterator(&match, strict);
         assert(iter.get() != nullptr);
-        iter->initRange(DocId(1), reference_attr->getNumDocs());
+        iter->initRange(DocId(1), reference_attr->getNumDocs() + 1);
         return iter;
     }
 
@@ -332,6 +333,7 @@ TEST_F("queryTerm() returns term context was created with", WsetValueFixture) {
     EXPECT_EQUAL(std::string("helloworld"), std::string(ctx->queryTerm().getTerm()));
 }
 
-}
+} // attribute
+} // search
 
 TEST_MAIN() { TEST_RUN_ALL(); }

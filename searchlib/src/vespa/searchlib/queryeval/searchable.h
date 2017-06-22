@@ -2,10 +2,10 @@
 
 #pragma once
 
+#include <vector>
 #include "field_spec.h"
 #include "blueprint.h"
 #include <vespa/searchlib/queryeval/irequestcontext.h>
-#include <vector>
 
 namespace search {
 
