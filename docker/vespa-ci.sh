@@ -16,7 +16,7 @@ GIT_COMMIT=$1
 BUILD_DOCKER_IMAGE="vespabuild"
 CI_DOCKER_IMAGE="vespaci"
 
-docker build -t "$BUILD_DOCKER_IMAGE" -f Dockerfile.build .
+docker build -t "$BUILD_DOCKER_IMAGE" -f build/Dockerfile .
 
 # Create a temporary copy of the rpm spec file inside docker directory so it can be referenced by the Dockerfile
 rm -rf tmp; mkdir tmp
