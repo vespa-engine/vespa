@@ -21,25 +21,16 @@ AttributeIteratorBase::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "tfmd.docId", _matchData->getDocId());
 }
 
-FilterAttributeIterator::FilterAttributeIterator(fef::TermFieldMatchData * matchData, uint32_t docIdLimit)
-    : AttributeIteratorBase(matchData),
-      _docIdLimit(docIdLimit)
+FilterAttributeIterator::FilterAttributeIterator(fef::TermFieldMatchData * matchData)
+    : AttributeIteratorBase(matchData)
 {
     _matchPosition->setElementWeight(1);
-}
-
-void
-FilterAttributeIterator::visitMembers(vespalib::ObjectVisitor &visitor) const
-{
-    AttributeIteratorBase::visitMembers(visitor);
-    visit(visitor, "docIdLimit", _docIdLimit);
 }
 
 void
 AttributeIterator::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     AttributeIteratorBase::visitMembers(visitor);
-    visit(visitor, "docIdLimit", _docIdLimit);
     visit(visitor, "weight", _weight);
 }
 
@@ -53,7 +44,6 @@ FlagAttributeIterator::doUnpack(uint32_t docId)
 AttributePostingListIterator:: AttributePostingListIterator(bool hasWeight, TermFieldMatchData *matchData)
     : AttributeIteratorBase(matchData),
       _hasWeight(hasWeight)
-      // _hasWeight(_searchContext.attribute().hasWeightedSetType())
 {
 }
 

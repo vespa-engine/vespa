@@ -3,7 +3,6 @@
 
 #include <vespa/searchlib/attribute/attribute_blueprint_factory.h>
 #include <vespa/searchlib/attribute/attribute_weighted_set_blueprint.h>
-#include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
@@ -11,18 +10,12 @@
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
-#include <vespa/searchlib/queryeval/field_spec.h>
-#include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/fake_result.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
-#include <memory>
-#include <string>
-#include <map>
+
 
 #include <vespa/searchlib/attribute/enumstore.hpp>
-#include <vespa/searchlib/attribute/singlestringattribute.h>
 
 using namespace search;
 using namespace search::query;
@@ -169,7 +162,7 @@ struct WS {
         bp->fetchPostings(strict);
         SearchIterator::UP sb = bp->createSearch(*md, strict);
         FakeResult result;
-        sb->initFullRange();
+        sb->initRange(1, 10);
         for (uint32_t docId = 1; docId < 10; ++docId) {
             if (sb->seek(docId)) {
                 sb->unpack(docId);
