@@ -232,6 +232,7 @@ TEST_F("createSearchContext() returns an imported search context", SingleStringA
     // Iterator specifics are tested in imported_search_context_test, so just make sure
     // we get the expected iterator functionality. In this case, a non-strict iterator.
     auto iter = ctx->createIterator(&match, false);
+    iter->initRange(1, f.imported_attr->getNumDocs());
     EXPECT_FALSE(iter->seek(DocId(1)));
     EXPECT_FALSE(iter->seek(DocId(2)));
     EXPECT_FALSE(iter->seek(DocId(3)));

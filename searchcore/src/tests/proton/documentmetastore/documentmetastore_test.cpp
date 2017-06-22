@@ -204,7 +204,7 @@ assertBlackList(const SimpleResult &exp, Blueprint::UP blackListBlueprint, bool 
     blackListBlueprint->fetchPostings(strict);
     SearchIterator::UP sb = blackListBlueprint->createSearch(*md, strict);
     SimpleResult act;
-    act.search(*sb);
+    act.searchStrict(*sb, blackListBlueprint->get_docid_limit());
     return EXPECT_EQUAL(exp, act);
 }
 

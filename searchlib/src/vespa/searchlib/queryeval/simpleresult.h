@@ -60,6 +60,7 @@ public:
      * @param sb search object
      **/
     void search(SearchIterator &sb);
+    void searchStrict(SearchIterator &sb, uint32_t docIdLimit);
 
     /**
      * Fill this result with all the hits returned by the given search

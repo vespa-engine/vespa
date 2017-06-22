@@ -1,28 +1,21 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("attributeblueprint_test");
 
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/attribute/attribute_blueprint_factory.h>
-#include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
 #include <vespa/searchlib/attribute/singlenumericpostattribute.hpp>
-#include <vespa/searchlib/attribute/iattributemanager.h>
-#include <vespa/searchlib/fef/matchdata.h>
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/query/tree/location.h>
 #include <vespa/searchlib/query/tree/point.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
-#include <vespa/searchlib/query/weight.h>
-#include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <memory>
-#include <string>
+
+#include <vespa/log/log.h>
+LOG_SETUP("attributeblueprint_test");
 
 using search::AttributeEnumGuard;
 using search::AttributeGuard;
@@ -131,7 +124,7 @@ bool Test::search(const Node &node, IAttributeManager &attribute_manager) {
     result->fetchPostings(true);
     SearchIterator::UP iterator = result->createSearch(*md, true);
     ASSERT_TRUE((bool)iterator);
-    iterator->initFullRange();
+    iterator->initRange(1, result->get_docid_limit());
     EXPECT_TRUE(!iterator->seek(1));
     return iterator->seek(2);
 }

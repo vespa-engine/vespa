@@ -432,7 +432,7 @@ ResultSetPtr
 SearchContextTest::performSearch(SearchIterator & sb, uint32_t numDocs)
 {
     HitCollector hc(numDocs, numDocs, 0);
-    sb.initFullRange();
+    sb.initRange(1, numDocs);
     // assume strict toplevel search object located at start
     for (sb.seek(1u); ! sb.isAtEnd(); sb.seek(sb.getDocId() + 1)) {
         hc.addHit(sb.getDocId(), 0.0);
@@ -723,7 +723,7 @@ SearchContextTest::testStrictSearchIterator(SearchContext & threeHits,
     { // search for value with 3 hits
         threeHits.fetchPostings(true);
         SearchBasePtr sb = threeHits.createIterator(&dummy, true);
-        sb->initFullRange();
+        sb->initRange(1, threeHits.attribute().getCommittedDocIdLimit());
         EXPECT_TRUE(typeTester.matches(*sb));
         EXPECT_TRUE(sb->getDocId() == sb->beginId() ||
                     sb->getDocId() == 1u);
@@ -744,7 +744,7 @@ SearchContextTest::testStrictSearchIterator(SearchContext & threeHits,
     { // search for value with no hits
         noHits.fetchPostings(true);
         SearchBasePtr sb = noHits.createIterator(&dummy, true);
-        sb->initFullRange();
+        sb->initRange(1, noHits.attribute().getCommittedDocIdLimit());
         ASSERT_TRUE(typeTester.matches(*sb));
         EXPECT_TRUE(sb->getDocId() == sb->beginId() ||
                    sb->isAtEnd());
@@ -762,7 +762,7 @@ SearchContextTest::testNonStrictSearchIterator(SearchContext & threeHits,
     { // search for value with three hits
         threeHits.fetchPostings(false);
         SearchBasePtr sb = threeHits.createIterator(&dummy, false);
-        sb->initFullRange();
+        sb->initRange(1, threeHits.attribute().getCommittedDocIdLimit());
         EXPECT_TRUE(typeTester.matches(*sb));
         EXPECT_TRUE(sb->seek(1));
         EXPECT_EQUAL(sb->getDocId(), 1u);
@@ -780,7 +780,7 @@ SearchContextTest::testNonStrictSearchIterator(SearchContext & threeHits,
     { // search for value with no hits
         noHits.fetchPostings(false);
         SearchBasePtr sb = noHits.createIterator(&dummy, false);
-        sb->initFullRange();
+        sb->initRange(1, threeHits.attribute().getCommittedDocIdLimit());
 
         EXPECT_TRUE(typeTester.matches(*sb));
         EXPECT_TRUE(sb->getDocId() == sb->beginId() ||

@@ -254,6 +254,7 @@ public:
           _searchCtx(std::move(searchCtx)),
           _matchDataVector()
     {
+        setDocIdLimit(_searchCtx->attribute().getCommittedDocIdLimit());
         setEstimate(HitEstimate(0, false));
     }
 
