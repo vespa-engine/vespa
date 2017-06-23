@@ -147,7 +147,7 @@ assertTree(const std::string &exp, const Tree &t)
 
 template <typename Tree>
 void
-getLeafNode(Tree &t)
+populateLeafNode(Tree &t)
 {
     t.insert(1, 101);
     t.insert(3, 103);
@@ -295,7 +295,7 @@ Test::requireThatTreeInsertWorks()
     }
     { // new entry in current node
         Tree t;
-        getLeafNode(t);
+        populateLeafNode(t);
         t.insert(4, 104);
         EXPECT_TRUE(assertTree("{{4,7}} -> "
                                "{{1:101,3:103,4:104},"
@@ -303,7 +303,7 @@ Test::requireThatTreeInsertWorks()
     }
     { // new entry in split node
         Tree t;
-        getLeafNode(t);
+        populateLeafNode(t);
         t.insert(6, 106);
         EXPECT_TRUE(assertTree("{{5,7}} -> "
                                "{{1:101,3:103,5:105},"
@@ -311,7 +311,7 @@ Test::requireThatTreeInsertWorks()
     }
     { // new entry at end
         Tree t;
-        getLeafNode(t);
+        populateLeafNode(t);
         t.insert(8, 108);
         EXPECT_TRUE(assertTree("{{5,8}} -> "
                                "{{1:101,3:103,5:105},"
@@ -508,7 +508,6 @@ Test::requireThatTreeRemoveStealWorks()
                                "{40:140,50:150,60:160}}", t));
         t.remove(50);
         EXPECT_TRUE(assertTree("{{10:110,20:120,30:130,40:140,60:160}}", t));
-
     }
     { // steal all from right
         MyStealTree t;
