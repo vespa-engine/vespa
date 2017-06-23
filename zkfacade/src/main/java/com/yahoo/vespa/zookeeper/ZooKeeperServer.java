@@ -5,19 +5,14 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.log.LogLevel;
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
-import org.apache.zookeeper.server.quorum.QuorumPeerMain;
-
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.Optional;
 
 /**
  * Writes zookeeper config and starts zookeeper server.
@@ -25,7 +20,7 @@ import java.util.concurrent.Executors;
  * @author lulf
  * @since 5.3
  */
-public class ZooKeeperServer extends AbstractComponent{
+public class ZooKeeperServer extends AbstractComponent implements Runnable {
 
     /** 
      * The set of hosts which can access the ZooKeeper server in this VM, or empty
@@ -38,8 +33,7 @@ public class ZooKeeperServer extends AbstractComponent{
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(ZooKeeperServer.class.getName());
     private static final String ZOOKEEPER_JMX_LOG4J_DISABLE = "zookeeper.jmx.log4j.disable";
     static final String ZOOKEEPER_JUTE_MAX_BUFFER = "jute.maxbuffer";
-
-    private final ZooKeeperMain zooKeeperMain;
+    private final Thread zkServerThread;
     private final ZookeeperServerConfig config;
 
     ZooKeeperServer(ZookeeperServerConfig config, boolean startServer) {
@@ -49,10 +43,9 @@ public class ZooKeeperServer extends AbstractComponent{
         System.setProperty("zookeeper.serverCnxnFactory", "com.yahoo.vespa.zookeeper.RestrictedServerCnxnFactory");
 
         writeConfigToDisk(config);
-        ExecutorService zkServer = Executors.newFixedThreadPool(1, new DaemonThreadFactory("zookeeper server"));
-        zooKeeperMain = new ZooKeeperMain(config, zkServer);
+        zkServerThread = new Thread(this, "zookeeper server");
         if (startServer) {
-            zkServer.submit(zooKeeperMain);
+            zkServerThread.start();
         }
     }
 
@@ -125,7 +118,20 @@ public class ZooKeeperServer extends AbstractComponent{
     }
 
     private void shutdown() {
-        zooKeeperMain.shutdown();
+        zkServerThread.interrupt();
+        try {
+            zkServerThread.join();
+        } catch (InterruptedException e) {
+            log.log(LogLevel.WARNING, "Error joining server thread on shutdown", e);
+        }
+    }
+
+    @Override
+    public void run() {
+        System.setProperty(ZOOKEEPER_JMX_LOG4J_DISABLE, "true");
+        String[] args = new String[]{getDefaults().underVespaHome(config.zooKeeperConfigFile())};
+        log.log(LogLevel.DEBUG, "Starting ZooKeeper server with config: " + args[0]);
+        org.apache.zookeeper.server.quorum.QuorumPeerMain.main(args);
     }
 
     @Override
@@ -135,38 +141,5 @@ public class ZooKeeperServer extends AbstractComponent{
     }
 
     public ZookeeperServerConfig getConfig() { return config; }
-
-    /** Takes care of starting and stopping the zookeeper server properly */
-    private static class ZooKeeperMain extends QuorumPeerMain implements Runnable {
-        private final ZookeeperServerConfig config;
-        private final ExecutorService executorService;
-
-        public ZooKeeperMain(ZookeeperServerConfig config, ExecutorService executorService) {
-            super();
-            this.config = config;
-            this.executorService = executorService;
-        }
-
-        @Override
-        public void run() {
-            System.setProperty(ZOOKEEPER_JMX_LOG4J_DISABLE, "true");
-            String[] args = new String[]{getDefaults().underVespaHome(config.zooKeeperConfigFile())};
-            log.log(LogLevel.DEBUG, "Starting ZooKeeper server with config: " + args[0]);
-            try {
-                initializeAndRun(args);
-            } catch (QuorumPeerConfig.ConfigException e) {
-                throw new RuntimeException("Bad config: ", e);
-            } catch (IOException e) {
-                throw new RuntimeException("IO exception: ", e);
-            }
-        }
-
-        public void shutdown() {
-            if (quorumPeer != null) {
-                quorumPeer.shutdown();
-            }
-            executorService.shutdownNow();
-        }
-    }
 
 }
