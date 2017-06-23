@@ -120,12 +120,6 @@ Start() {
     debug "Starting crond service"
     service crond start
 
-    debug "Yinst settings"
-    yinst set zpe_policy_updater.domains=$ATHENS_DOMAIN \
-        zpe_policy_updater.autostart=on \
-        zpe_policy_updater.cron_start_hour=* \
-        zpe_policy_updater.cron_start_min=*/30 \
-        zpe_policy_updater.cron_start_delay=30
     debug "Starting all yinst packages"
     # Start yinst the way it is done when a non-Docker node is booted.
     # As this is implemented in yinst now (2017-02-08), this will take care of
