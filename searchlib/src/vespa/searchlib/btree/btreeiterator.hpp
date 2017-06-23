@@ -1329,30 +1329,30 @@ template <typename KeyT, typename DataT, typename AggrT, typename CompareT, type
 void
 BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::adjustGivenNoEntriesToLeftLeafNode()
 {
-    auto &pe = _path[0];
-    uint32_t pidx = pe.getIdx() - 1;
-    BTreeNode::Ref sRef = pe.getNode()->getChild(pidx);
-    const LeafNodeType *sNode = _allocator->mapLeafRef(sRef);
-    pe.setIdx(pidx);
-    _leaf.setNodeAndIdx(sNode, sNode->validSlots());
+    auto &pathElem = _path[0];
+    uint32_t parentIdx = pathElem.getIdx() - 1;
+    BTreeNode::Ref leafRef = pathElem.getNode()->getChild(parentIdx);
+    const LeafNodeType *leafNode = _allocator->mapLeafRef(leafRef);
+    pathElem.setIdx(parentIdx);
+    _leaf.setNodeAndIdx(leafNode, leafNode->validSlots());
 }
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 void
 BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::adjustGivenEntriesToLeftLeafNode(uint32_t given)
 {
-    uint32_t idx = _leaf.getIdx();
-    if (idx >= given) {
-        _leaf.setIdx(idx - given);
+    uint32_t leafIdx = _leaf.getIdx();
+    if (leafIdx >= given) {
+        _leaf.setIdx(leafIdx - given);
     } else {
-        auto &pe = _path[0];
-        uint32_t pidx = pe.getIdx() - 1;
-        BTreeNode::Ref sRef = pe.getNode()->getChild(pidx);
-        const LeafNodeType *sNode = _allocator->mapLeafRef(sRef);
-        idx += sNode->validSlots();
-        assert(given <= idx);
-        pe.setIdx(pidx);
-        _leaf.setNodeAndIdx(sNode, idx - given);
+        auto &pathElem = _path[0];
+        uint32_t parentIdx = pathElem.getIdx() - 1;
+        BTreeNode::Ref leafRef = pathElem.getNode()->getChild(parentIdx);
+        const LeafNodeType *leafNode = _allocator->mapLeafRef(leafRef);
+        leafIdx += leafNode->validSlots();
+        assert(given <= leafIdx);
+        pathElem.setIdx(parentIdx);
+        _leaf.setNodeAndIdx(leafNode, leafIdx - given);
     }
 }
 
@@ -1360,18 +1360,18 @@ template <typename KeyT, typename DataT, typename AggrT, typename CompareT, type
 void
 BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::adjustGivenEntriesToRightLeafNode()
 {
-    uint32_t idx = _leaf.getIdx();
-    const LeafNodeType *sNode = _leaf.getNode();
-    if (idx > sNode->validSlots()) {
-        auto &pe = _path[0];
-        const InternalNodeType *pNode = pe.getNode();
-        uint32_t pidx = pe.getIdx() + 1;
-        idx -= sNode->validSlots();
-        BTreeNode::Ref sRef = pNode->getChild(pidx);
-        sNode = _allocator->mapLeafRef(sRef);
-        assert(idx <= sNode->validSlots());
-        pe.setIdx(pidx);
-        _leaf.setNodeAndIdx(sNode, idx);
+    uint32_t leafIdx = _leaf.getIdx();
+    const LeafNodeType *leafNode = _leaf.getNode();
+    if (leafIdx > leafNode->validSlots()) {
+        auto &pathElem = _path[0];
+        const InternalNodeType *parentNode = pathElem.getNode();
+        uint32_t parentIdx = pathElem.getIdx() + 1;
+        leafIdx -= leafNode->validSlots();
+        BTreeNode::Ref leafRef = parentNode->getChild(parentIdx);
+        leafNode = _allocator->mapLeafRef(leafRef);
+        assert(leafIdx <= leafNode->validSlots());
+        pathElem.setIdx(parentIdx);
+        _leaf.setNodeAndIdx(leafNode, leafIdx);
     }
 }
 

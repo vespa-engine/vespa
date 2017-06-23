@@ -44,8 +44,10 @@ public:
     typedef typename LeafNodeType::RefPair LeafNodeTypeRefPair;
     using Inserter = BTreeInserter<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>;
 
-    static void giveLeafEntries(LeafNodeType *sNode, Iterator &itr, AggrCalcT aggrCalc);
+private:
+    static void rebalanceLeafEntries(LeafNodeType *leafNode, Iterator &itr, AggrCalcT aggrCalc);
 
+public:
     static void
     insert(BTreeNode::Ref &root,
            Iterator &itr,
