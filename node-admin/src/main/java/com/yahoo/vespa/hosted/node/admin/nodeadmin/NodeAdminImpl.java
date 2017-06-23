@@ -87,7 +87,7 @@ public class NodeAdminImpl implements NodeAdmin {
             } catch (Throwable e) {
                 logger.warning("Metric fetcher scheduler failed", e);
             }
-        }, 0, 40, TimeUnit.SECONDS);
+        }, 0, 55, TimeUnit.SECONDS);
 
         aclMaintainer.ifPresent(maintainer -> aclScheduler.scheduleWithFixedDelay(() -> {
             if (!isFrozen()) maintainer.run();
