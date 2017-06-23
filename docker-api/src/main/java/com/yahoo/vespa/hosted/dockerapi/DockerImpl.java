@@ -7,7 +7,6 @@ import com.github.dockerjava.api.command.ExecStartCmd;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.api.exception.DockerClientException;
-import com.github.dockerjava.api.exception.DockerException;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.exception.NotModifiedException;
 import com.github.dockerjava.api.model.Image;
@@ -99,7 +98,7 @@ public class DockerImpl implements Docker {
             try {
                 setupDockerNetworkIfNeeded();
             } catch (Exception e) {
-                throw new RuntimeException("Could not setup docker network", e);
+                throw new DockerException("Could not setup docker network", e);
             }
         }
     }
@@ -152,9 +151,9 @@ public class DockerImpl implements Docker {
         try {
             dockerClient.copyArchiveToContainerCmd(destinationContainer.asString())
                     .withHostResource(sourcePath).withRemotePath(destinationPath).exec();
-        } catch (DockerException e) {
+        } catch (com.github.dockerjava.api.exception.DockerException e) {
             numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Failed to copy container " + sourcePath + " to " +
+            throw new DockerException("Failed to copy container " + sourcePath + " to " +
                     destinationContainer + ":" + destinationPath, e);
         }
     }
@@ -172,9 +171,9 @@ public class DockerImpl implements Docker {
 
         try {
             dockerClient.pullImageCmd(image.asString()).exec(new ImagePullCallback(image));
-        } catch (DockerException e) {
+        } catch (com.github.dockerjava.api.exception.DockerException e) {
             numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Failed to pull image '" + image.asString() + "'", e);
+            throw new DockerException("Failed to pull image '" + image.asString() + "'", e);
         }
 
         return completionListener;
@@ -198,9 +197,9 @@ public class DockerImpl implements Docker {
         try {
             return dockerClient.listImagesCmd().withShowAll(true)
                     .withImageNameFilter(dockerImage.asString()).exec().stream().findFirst();
-        } catch (DockerException e) {
+        } catch (com.github.dockerjava.api.exception.DockerException e) {
             numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Failed to inspect image '" + dockerImage.asString() + "'", e);
+            throw new DockerException("Failed to inspect image '" + dockerImage.asString() + "'", e);
         }
     }
 
@@ -215,9 +214,9 @@ public class DockerImpl implements Docker {
             dockerClient.connectToNetworkCmd()
                     .withContainerId(containerName.asString())
                     .withNetworkId(networkName).exec();
-        } catch (DockerException e) {
+        } catch (com.github.dockerjava.api.exception.DockerException e) {
             numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Failed to connect container '" + containerName.asString() +
+            throw new DockerException("Failed to connect container '" + containerName.asString() +
                     "' to network '" + networkName + "'", e);
         }
     }
@@ -269,9 +268,9 @@ public class DockerImpl implements Docker {
             assert exitCode != null;
 
             return new ProcessResult(exitCode, new String(output.toByteArray()), new String(errors.toByteArray()));
-        } catch (DockerException | InterruptedException e) {
+        } catch (com.github.dockerjava.api.exception.DockerException | InterruptedException e) {
             numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Container '" + containerName.asString()
+            throw new DockerException("Container '" + containerName.asString()
                     + "' failed to execute " + Arrays.toString(command), e);
         }
     }
@@ -281,9 +280,9 @@ public class DockerImpl implements Docker {
             return Optional.of(dockerClient.inspectContainerCmd(container).exec());
         } catch (NotFoundException ignored) {
             return Optional.empty();
-        } catch (DockerException e) {
+        } catch (com.github.dockerjava.api.exception.DockerException e) {
             numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Failed to get info for container '" + container + "'", e);
+            throw new DockerException("Failed to get info for container '" + container + "'", e);
         }
     }
 
@@ -297,9 +296,9 @@ public class DockerImpl implements Docker {
                     stats.getNetworks(), stats.getCpuStats(), stats.getMemoryStats(), stats.getBlkioStats()));
         } catch (NotFoundException ignored) {
             return Optional.empty();
-        } catch (DockerException | InterruptedException e) {
+        } catch (com.github.dockerjava.api.exception.DockerException | InterruptedException e) {
             numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Failed to get stats for container '" + containerName.asString() + "'", e);
+            throw new DockerException("Failed to get stats for container '" + containerName.asString() + "'", e);
         }
     }
 
@@ -309,9 +308,9 @@ public class DockerImpl implements Docker {
             dockerClient.startContainerCmd(containerName.asString()).exec();
         } catch (NotModifiedException ignored) {
             // If is already started, ignore
-        } catch (DockerException e) {
+        } catch (com.github.dockerjava.api.exception.DockerException e) {
             numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Failed to start container '" + containerName.asString() + "'", e);
+            throw new DockerException("Failed to start container '" + containerName.asString() + "'", e);
         }
     }
 
@@ -321,9 +320,9 @@ public class DockerImpl implements Docker {
             dockerClient.stopContainerCmd(containerName.asString()).withTimeout(SECONDS_TO_WAIT_BEFORE_KILLING).exec();
         } catch (NotModifiedException ignored) {
             // If is already stopped, ignore
-        } catch (DockerException e) {
+        } catch (com.github.dockerjava.api.exception.DockerException e) {
             numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Failed to stop container '" + containerName.asString() + "'", e);
+            throw new DockerException("Failed to stop container '" + containerName.asString() + "'", e);
         }
     }
 
@@ -338,9 +337,9 @@ public class DockerImpl implements Docker {
             dockerClient.removeContainerCmd(containerName.asString()).exec();
         } catch (NotFoundException ignored) {
             // If container doesn't exist ignore
-        } catch (DockerException e) {
+        } catch (com.github.dockerjava.api.exception.DockerException e) {
             numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Failed to delete container '" + containerName.asString() + "'", e);
+            throw new DockerException("Failed to delete container '" + containerName.asString() + "'", e);
         }
     }
 
@@ -392,18 +391,18 @@ public class DockerImpl implements Docker {
     private List<com.github.dockerjava.api.model.Container> listAllContainers() {
         try {
             return dockerClient.listContainersCmd().withShowAll(true).exec();
-        } catch (DockerException e) {
+        } catch (com.github.dockerjava.api.exception.DockerException e) {
             numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Failed to list all containers", e);
+            throw new DockerException("Failed to list all containers", e);
         }
     }
 
     private List<Image> listAllImages() {
         try {
             return dockerClient.listImagesCmd().withShowAll(true).exec();
-        } catch (DockerException e) {
+        } catch (com.github.dockerjava.api.exception.DockerException e) {
             numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Failed to list all images", e);
+            throw new DockerException("Failed to list all images", e);
         }
     }
 
@@ -413,9 +412,9 @@ public class DockerImpl implements Docker {
             dockerClient.removeImageCmd(dockerImage.asString()).exec();
         } catch (NotFoundException ignored) {
             // Image was already deleted, ignore
-        } catch (DockerException e) {
+        } catch (com.github.dockerjava.api.exception.DockerException e) {
             numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Failed to delete docker image " + dockerImage.asString(), e);
+            throw new DockerException("Failed to delete docker image " + dockerImage.asString(), e);
         }
     }
 
@@ -424,9 +423,9 @@ public class DockerImpl implements Docker {
         try {
             dockerClient.buildImageCmd(dockerfile).withTag(image.asString())
                     .exec(new BuildImageResultCallback()).awaitImageId();
-        } catch (DockerException e) {
+        } catch (com.github.dockerjava.api.exception.DockerException e) {
             numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Failed to build image " + image.asString(), e);
+            throw new DockerException("Failed to build image " + image.asString(), e);
         }
     }
 
