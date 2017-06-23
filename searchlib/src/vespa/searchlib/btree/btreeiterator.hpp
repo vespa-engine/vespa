@@ -1325,6 +1325,55 @@ removeLast(BTreeNode::Ref rootRef)
     _leaf.setNode(nullptr);
 }
 
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
+void
+BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::adjustGivenNoEntriesToLeftLeafNode()
+{
+    auto &pe = _path[0];
+    uint32_t pidx = pe.getIdx() - 1;
+    BTreeNode::Ref sRef = pe.getNode()->getChild(pidx);
+    const LeafNodeType *sNode = _allocator->mapLeafRef(sRef);
+    pe.setIdx(pidx);
+    _leaf.setNodeAndIdx(sNode, sNode->validSlots());
+}
+
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
+void
+BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::adjustGivenEntriesToLeftLeafNode(uint32_t given)
+{
+    uint32_t idx = _leaf.getIdx();
+    if (idx >= given) {
+        _leaf.setIdx(idx - given);
+    } else {
+        auto &pe = _path[0];
+        uint32_t pidx = pe.getIdx() - 1;
+        BTreeNode::Ref sRef = pe.getNode()->getChild(pidx);
+        const LeafNodeType *sNode = _allocator->mapLeafRef(sRef);
+        idx += sNode->validSlots();
+        assert(given <= idx);
+        pe.setIdx(pidx);
+        _leaf.setNodeAndIdx(sNode, idx - given);
+    }
+}
+
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
+void
+BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::adjustGivenEntriesToRightLeafNode()
+{
+    uint32_t idx = _leaf.getIdx();
+    const LeafNodeType *sNode = _leaf.getNode();
+    if (idx > sNode->validSlots()) {
+        auto &pe = _path[0];
+        const InternalNodeType *pNode = pe.getNode();
+        uint32_t pidx = pe.getIdx() + 1;
+        idx -= sNode->validSlots();
+        BTreeNode::Ref sRef = pNode->getChild(pidx);
+        sNode = _allocator->mapLeafRef(sRef);
+        assert(idx <= sNode->validSlots());
+        pe.setIdx(pidx);
+        _leaf.setNodeAndIdx(sNode, idx);
+    }
+}
 
 } // namespace search::btree
 } // namespace search

@@ -42,6 +42,9 @@ public:
     typedef DataT DataType;
     typedef typename InternalNodeType::RefPair InternalNodeTypeRefPair;
     typedef typename LeafNodeType::RefPair LeafNodeTypeRefPair;
+    using Inserter = BTreeInserter<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>;
+
+    static void giveLeafEntries(LeafNodeType *sNode, Iterator &itr, AggrCalcT aggrCalc);
 
     static void
     insert(BTreeNode::Ref &root,
