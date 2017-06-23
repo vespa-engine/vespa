@@ -13,6 +13,6 @@ cd $DIR
 VESPA_VERSION=$1
 DOCKER_IMAGE="vespabuild"
 
-docker build -t "$DOCKER_IMAGE" -f Dockerfile.build .
-docker run --rm -v $(pwd)/..:/vespa --entrypoint /vespa/docker/build-vespa-internal.sh "$DOCKER_IMAGE" "$VESPA_VERSION" "$(id -u)" "$(id -g)"
+docker build -t "$DOCKER_IMAGE" -f build/Dockerfile .
+docker run --rm -v $(pwd)/..:/vespa --entrypoint /vespa/docker/build/build-vespa-internal.sh "$DOCKER_IMAGE" "$VESPA_VERSION" "$(id -u)" "$(id -g)"
 

@@ -12,6 +12,6 @@ cd $DIR
 
 DOCKER_IMAGE="vespabuild"
 
-docker build -t "$DOCKER_IMAGE" -f Dockerfile.build .
+docker build -t "$DOCKER_IMAGE" -f build/Dockerfile .
 docker run -ti --rm -v $(pwd)/..:/vespa --entrypoint /vespa/docker/enter-build-container-internal.sh "$DOCKER_IMAGE"
 
