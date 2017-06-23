@@ -64,7 +64,7 @@ RemoveBucketOperationTest::testSimple()
     CPPUNIT_ASSERT_EQUAL(
             std::string(
                     "BucketId(0x4000000000000001) : "
-                    "node(idx=0,crc=0xa,docs=100/100,bytes=1/1,trusted=true,active=false)"),
+                    "node(idx=0,crc=0xa,docs=100/100,bytes=1/1,trusted=true,active=false,ready=false)"),
             dumpBucket(document::BucketId(16, 1)));
 }
 
@@ -105,7 +105,7 @@ RemoveBucketOperationTest::testBucketInfoMismatchFailure()
     CPPUNIT_ASSERT_EQUAL(
             std::string(
                     "BucketId(0x4000000000000001) : "
-                    "node(idx=1,crc=0xa,docs=100/100,bytes=1/1,trusted=true,active=false)"),
+                    "node(idx=1,crc=0xa,docs=100/100,bytes=1/1,trusted=true,active=false,ready=false)"),
             dumpBucket(document::BucketId(16, 1)));
 }
 

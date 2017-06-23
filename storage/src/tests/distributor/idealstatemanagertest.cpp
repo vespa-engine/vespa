@@ -87,10 +87,10 @@ IdealStateManagerTest::testStatusPage() {
     std::ostringstream ost;
     getIdealStateManager().getBucketStatus(ost);
 
-    CPPUNIT_ASSERT_EQUAL(std::string("BucketId(0x4000000000000002) : [node(idx=0,crc=0xff,docs=10/10,bytes=10/10,trusted=true,active=true)]<br>\n"
+    CPPUNIT_ASSERT_EQUAL(std::string("BucketId(0x4000000000000002) : [node(idx=0,crc=0xff,docs=10/10,bytes=10/10,trusted=true,active=true,ready=false)]<br>\n"
                                      "<b>BucketId(0x4000000000000005):</b> <i> : split: [Splitting bucket because its maximum size (200 b, 100 docs, 100 meta, 200 b total) is "
                                      "higher than the configured limit of (100, 1000000)]</i> [node(idx=0,crc=0xff,docs=100/100,bytes=200/200,trusted=true,"
-                                     "active=true)]<br>\n"),
+                                     "active=true,ready=false)]<br>\n"),
                          ost.str());
 }
 
@@ -109,10 +109,10 @@ IdealStateManagerTest::testDisabledStateChecker() {
     getIdealStateManager().getBucketStatus(ost);
 
     CPPUNIT_ASSERT_EQUAL(std::string(
-        "BucketId(0x4000000000000002) : [node(idx=0,crc=0xff,docs=10/10,bytes=10/10,trusted=true,active=true)]<br>\n"
+        "BucketId(0x4000000000000002) : [node(idx=0,crc=0xff,docs=10/10,bytes=10/10,trusted=true,active=true,ready=false)]<br>\n"
          "<b>BucketId(0x4000000000000005):</b> <i> : split: [Splitting bucket because its maximum size (200 b, 100 docs, 100 meta, 200 b total) is "
          "higher than the configured limit of (100, 1000000)]</i> [node(idx=0,crc=0xff,docs=100/100,bytes=200/200,trusted=true,"
-         "active=true)]<br>\n"),
+         "active=true,ready=false)]<br>\n"),
          ost.str());
 
     tick();

@@ -134,11 +134,11 @@ BucketDatabaseTest::testIterating() {
         CPPUNIT_ASSERT_EQUAL(
                 std::string(
                         "BucketId(0x4000000000000010) : "
-                        "node(idx=1,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false)\n"
+                        "node(idx=1,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n"
                         "BucketId(0x400000000000002a) : "
-                        "node(idx=3,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false)\n"
+                        "node(idx=3,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n"
                         "BucketId(0x400000000000000b) : "
-                        "node(idx=2,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false)\n"),
+                        "node(idx=2,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n"),
                 proc.ost.str());
     }
 
@@ -149,7 +149,7 @@ BucketDatabaseTest::testIterating() {
         CPPUNIT_ASSERT_EQUAL(
                 std::string(
                         "BucketId(0x400000000000000b) : "
-                        "node(idx=2,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false)\n"),
+                        "node(idx=2,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n"),
                 proc.ost.str());
     }
 
@@ -160,9 +160,9 @@ BucketDatabaseTest::testIterating() {
         CPPUNIT_ASSERT_EQUAL(
                 std::string(
                         "BucketId(0x4000000000000010) : "
-                        "node(idx=1,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false)\n"
+                        "node(idx=1,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n"
                         "BucketId(0x400000000000002a) : "
-                        "node(idx=3,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false)\n"),
+                        "node(idx=3,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n"),
                 proc.ost.str());
     }
 
@@ -176,12 +176,12 @@ BucketDatabaseTest::testIterating() {
         CPPUNIT_ASSERT_EQUAL(
                 std::string(
                         "BucketId(0x4000000000000010) : "
-                        "node(idx=1,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false)\n"
+                        "node(idx=1,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n"
                         "BucketId(0x400000000000002a) : "
-                        "node(idx=4,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false), "
-                        "node(idx=5,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false)\n"
+                        "node(idx=4,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false), "
+                        "node(idx=5,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n"
                         "BucketId(0x400000000000000b) : "
-                        "node(idx=7,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false)\n"),
+                        "node(idx=7,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n"),
                 proc.ost.str());
     }
 }

@@ -106,8 +106,8 @@ StatOperationTest::testBucketList() {
                     "[distributor:0] split: "
                     "[Splitting bucket because its maximum size (200 b, 100 docs, 100 meta, 200 b total) "
                     "is higher than the configured limit of (100, 10)] "
-                    "[node(idx=0,crc=0xff,docs=100/100,bytes=200/200,trusted=true,active=false), "
-                    "node(idx=1,crc=0xff,docs=100/100,bytes=200/200,trusted=true,active=true)]"),
+                    "[node(idx=0,crc=0xff,docs=100/100,bytes=200/200,trusted=true,active=false,ready=false), "
+                    "node(idx=1,crc=0xff,docs=100/100,bytes=200/200,trusted=true,active=true,ready=false)]"),
             repl->getBuckets()[0]._bucketInformation);
 }
 

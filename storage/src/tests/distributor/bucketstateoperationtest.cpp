@@ -49,7 +49,7 @@ BucketStateOperationTest::testActiveStateSupportedInBucketDb()
     CPPUNIT_ASSERT(entry->getNode(0)->active());
     CPPUNIT_ASSERT_EQUAL(
             std::string("node(idx=0,crc=0xabc,docs=10/10,bytes=1100/1100,"
-                        "trusted=true,active=true)"),
+                        "trusted=true,active=true,ready=false)"),
             entry->getNode(0)->toString());
 }
 
@@ -148,11 +148,11 @@ BucketStateOperationTest::testActivateAndDeactivateNodes()
     CPPUNIT_ASSERT(entry.valid());
     CPPUNIT_ASSERT_EQUAL(
             std::string("node(idx=0,crc=0xabc,docs=10/10,bytes=1100/1100,"
-                        "trusted=true,active=false)"),
+                        "trusted=true,active=false,ready=false)"),
                 entry->getNodeRef(0).toString());
     CPPUNIT_ASSERT_EQUAL(
             std::string("node(idx=1,crc=0xdef,docs=15/15,bytes=1500/1500,"
-                        "trusted=false,active=true)"),
+                        "trusted=false,active=true,ready=false)"),
             entry->getNodeRef(1).toString());
 
     CPPUNIT_ASSERT(op.ok());
@@ -198,11 +198,11 @@ BucketStateOperationTest::testDoNotDeactivateIfActivateFails()
     CPPUNIT_ASSERT(entry.valid());
     CPPUNIT_ASSERT_EQUAL(
             std::string("node(idx=0,crc=0xabc,docs=10/10,bytes=1100/1100,"
-                        "trusted=true,active=true)"),
+                        "trusted=true,active=true,ready=false)"),
                 entry->getNodeRef(0).toString());
     CPPUNIT_ASSERT_EQUAL(
             std::string("node(idx=1,crc=0xdef,docs=15/15,bytes=1500/1500,"
-                        "trusted=false,active=false)"),
+                        "trusted=false,active=false,ready=false)"),
             entry->getNodeRef(1).toString());
 
     CPPUNIT_ASSERT(!op.ok());

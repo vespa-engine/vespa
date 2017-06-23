@@ -860,8 +860,8 @@ BucketDBUpdaterTest::testNodeDownCopiesGetInSync()
 
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x4000000000000001) : "
-                        "node(idx=0,crc=0x3,docs=3/3,bytes=3/3,trusted=true,active=false), "
-                        "node(idx=2,crc=0x3,docs=3/3,bytes=3/3,trusted=true,active=false)"),
+                        "node(idx=0,crc=0x3,docs=3/3,bytes=3/3,trusted=true,active=false,ready=false), "
+                        "node(idx=2,crc=0x3,docs=3/3,bytes=3/3,trusted=true,active=false,ready=false)"),
             dumpBucket(bid));
 }
 
@@ -933,11 +933,11 @@ BucketDBUpdaterTest::testBitChange()
 
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x4000000000000001) : "
-                        "node(idx=0,crc=0xa,docs=1/1,bytes=1/1,trusted=true,active=false)"),
+                        "node(idx=0,crc=0xa,docs=1/1,bytes=1/1,trusted=true,active=false,ready=false)"),
             dumpBucket(bucketlist[0]));
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x4000000000000002) : "
-                        "node(idx=0,crc=0xa,docs=1/1,bytes=1/1,trusted=true,active=false)"),
+                        "node(idx=0,crc=0xa,docs=1/1,bytes=1/1,trusted=true,active=false,ready=false)"),
             dumpBucket(bucketlist[1]));
 
     {
@@ -971,19 +971,19 @@ BucketDBUpdaterTest::testBitChange()
 
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x4000000000000000) : "
-                        "node(idx=0,crc=0xa,docs=1/1,bytes=1/1,trusted=true,active=false)"),
+                        "node(idx=0,crc=0xa,docs=1/1,bytes=1/1,trusted=true,active=false,ready=false)"),
             dumpBucket(document::BucketId(16, 0)));
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x4000000000000001) : "
-                        "node(idx=0,crc=0xa,docs=1/1,bytes=1/1,trusted=true,active=false)"),
+                        "node(idx=0,crc=0xa,docs=1/1,bytes=1/1,trusted=true,active=false,ready=false)"),
             dumpBucket(document::BucketId(16, 1)));
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x4000000000000002) : "
-                        "node(idx=0,crc=0xa,docs=1/1,bytes=1/1,trusted=true,active=false)"),
+                        "node(idx=0,crc=0xa,docs=1/1,bytes=1/1,trusted=true,active=false,ready=false)"),
             dumpBucket(document::BucketId(16, 2)));
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x4000000000000004) : "
-                        "node(idx=0,crc=0xa,docs=1/1,bytes=1/1,trusted=true,active=false)"),
+                        "node(idx=0,crc=0xa,docs=1/1,bytes=1/1,trusted=true,active=false,ready=false)"),
             dumpBucket(document::BucketId(16, 4)));
 
     {
@@ -1126,7 +1126,7 @@ BucketDBUpdaterTest::testNotifyBucketChange()
     // No database update until request bucket info replies have been received.
     CPPUNIT_ASSERT_EQUAL(std::string("BucketId(0x4000000000000001) : "
                                      "node(idx=0,crc=0x4d2,docs=1234/1234,bytes=1234/1234,"
-                                           "trusted=false,active=false)"),
+                                           "trusted=false,active=false,ready=false)"),
                          dumpBucket(document::BucketId(16, 1)));
     CPPUNIT_ASSERT_EQUAL(std::string("NONEXISTING"),
                          dumpBucket(document::BucketId(16, 2)));
@@ -1152,11 +1152,11 @@ BucketDBUpdaterTest::testNotifyBucketChange()
 
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x4000000000000001) : "
-                        "node(idx=0,crc=0x11d7,docs=200/400,bytes=2000/4000,trusted=true,active=true)"),
+                        "node(idx=0,crc=0x11d7,docs=200/400,bytes=2000/4000,trusted=true,active=true,ready=true)"),
             dumpBucket(document::BucketId(16, 1)));
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x4000000000000002) : "
-                        "node(idx=0,crc=0x2327,docs=300/500,bytes=3000/5000,trusted=true,active=false)"),
+                        "node(idx=0,crc=0x2327,docs=300/500,bytes=3000/5000,trusted=true,active=false,ready=false)"),
             dumpBucket(document::BucketId(16, 2)));
 
 }
@@ -1183,7 +1183,7 @@ BucketDBUpdaterTest::testNotifyBucketChangeFromNodeDown()
 
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x4000000000000001) : "
-                        "node(idx=1,crc=0x4d2,docs=1234/1234,bytes=1234/1234,trusted=false,active=false)"),
+                        "node(idx=1,crc=0x4d2,docs=1234/1234,bytes=1234/1234,trusted=false,active=false,ready=false)"),
             dumpBucket(document::BucketId(16, 1)));
 
     CPPUNIT_ASSERT_EQUAL(size_t(1), _sender.replies.size());
@@ -1209,7 +1209,7 @@ BucketDBUpdaterTest::testNotifyBucketChangeFromNodeDown()
     // No change
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x4000000000000001) : "
-                        "node(idx=1,crc=0x4d2,docs=1234/1234,bytes=1234/1234,trusted=false,active=false)"),
+                        "node(idx=1,crc=0x4d2,docs=1234/1234,bytes=1234/1234,trusted=false,active=false,ready=false)"),
             dumpBucket(document::BucketId(16, 1)));
 }
 
@@ -1307,9 +1307,9 @@ BucketDBUpdaterTest::testMergeReply()
 
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x40000000000004d2) : "
-                        "node(idx=0,crc=0xa,docs=100/100,bytes=1000/1000,trusted=false,active=false), "
-                        "node(idx=1,crc=0x14,docs=200/200,bytes=2000/2000,trusted=false,active=false), "
-                        "node(idx=2,crc=0x1e,docs=300/300,bytes=3000/3000,trusted=false,active=false)"),
+                        "node(idx=0,crc=0xa,docs=100/100,bytes=1000/1000,trusted=false,active=false,ready=false), "
+                        "node(idx=1,crc=0x14,docs=200/200,bytes=2000/2000,trusted=false,active=false,ready=false), "
+                        "node(idx=2,crc=0x1e,docs=300/300,bytes=3000/3000,trusted=false,active=false,ready=false)"),
             dumpBucket(document::BucketId(16, 1234)));
 };
 
@@ -1355,8 +1355,8 @@ BucketDBUpdaterTest::testMergeReplyNodeDown()
 
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x40000000000004d2) : "
-                        "node(idx=0,crc=0xa,docs=100/100,bytes=1000/1000,trusted=false,active=false), "
-                        "node(idx=1,crc=0x14,docs=200/200,bytes=2000/2000,trusted=false,active=false)"),
+                        "node(idx=0,crc=0xa,docs=100/100,bytes=1000/1000,trusted=false,active=false,ready=false), "
+                        "node(idx=1,crc=0x14,docs=200/200,bytes=2000/2000,trusted=false,active=false,ready=false)"),
             dumpBucket(document::BucketId(16, 1234)));
 };
 
@@ -1402,8 +1402,8 @@ BucketDBUpdaterTest::testMergeReplyNodeDownAfterRequestSent()
 
     CPPUNIT_ASSERT_EQUAL(
             std::string("BucketId(0x40000000000004d2) : "
-                        "node(idx=0,crc=0xa,docs=100/100,bytes=1000/1000,trusted=false,active=false), "
-                        "node(idx=1,crc=0x14,docs=200/200,bytes=2000/2000,trusted=false,active=false)"),
+                        "node(idx=0,crc=0xa,docs=100/100,bytes=1000/1000,trusted=false,active=false,ready=false), "
+                        "node(idx=1,crc=0x14,docs=200/200,bytes=2000/2000,trusted=false,active=false,ready=false)"),
             dumpBucket(document::BucketId(16, 1234)));
 };
 

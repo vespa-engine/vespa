@@ -800,9 +800,9 @@ StateCheckersTest::testSynchronizeAndMove()
         CheckerParams().expect(
                 "[Synchronizing buckets with different checksums "
                 "node(idx=0,crc=0x1,docs=1/1,bytes=1/1,trusted=false,"
-                    "active=false), "
+                    "active=false,ready=false), "
                 "node(idx=1,crc=0x2,docs=2/2,bytes=2/2,trusted=false,"
-                    "active=false)] "
+                    "active=false,ready=false)] "
                 "(scheduling pri MEDIUM)")
             .bucketInfo("0=1,1=2")
             .includeSchedulingPriority(true));
@@ -858,11 +858,11 @@ StateCheckersTest::testSynchronizeAndMove()
         CheckerParams()
             .expect("[Synchronizing buckets with different checksums "
                     "node(idx=0,crc=0x3,docs=3/3,bytes=3/3,trusted=false,"
-                        "active=false), "
+                        "active=false,ready=false), "
                     "node(idx=1,crc=0x3,docs=3/3,bytes=3/3,trusted=false,"
-                        "active=false), "
+                        "active=false,ready=false), "
                     "node(idx=2,crc=0x0,docs=0/0,bytes=0/0,trusted=false,"
-                        "active=false)]")
+                        "active=false,ready=false)]")
             .bucketInfo("0=3,1=3,2=0")
             .clusterState("distributor:1 storage:3"));
 
@@ -872,13 +872,13 @@ StateCheckersTest::testSynchronizeAndMove()
         CheckerParams()
             .expect("[Synchronizing buckets with different checksums "
                     "node(idx=0,crc=0x2,docs=3/3,bytes=4/4,trusted=false,"
-                        "active=false), "
+                        "active=false,ready=false), "
                     "node(idx=1,crc=0x1,docs=2/2,bytes=3/3,trusted=true,"
-                        "active=false), "
+                        "active=false,ready=false), "
                     "node(idx=2,crc=0x1,docs=2/2,bytes=3/3,trusted=true,"
-                        "active=false), "
+                        "active=false,ready=false), "
                     "node(idx=3,crc=0x1,docs=2/2,bytes=3/3,trusted=true,"
-                        "active=false)] "
+                        "active=false,ready=false)] "
                     "(pri 120) (scheduling pri MEDIUM)")
             .bucketInfo("0=2/3/4,1=1/2/3/t,2=1/2/3/t,3=1/2/3/t")
             .clusterState("distributor:1 storage:5")
@@ -956,9 +956,9 @@ StateCheckersTest::retiredNodesOutOfSyncAreMerged()
         CheckerParams()
             .expect("[Synchronizing buckets with different checksums "
                     "node(idx=0,crc=0x1,docs=1/1,bytes=1/1,trusted=false,"
-                        "active=false), "
+                        "active=false,ready=false), "
                     "node(idx=1,crc=0x2,docs=2/2,bytes=2/2,trusted=false,"
-                        "active=false)]")
+                        "active=false,ready=false)]")
             .bucketInfo("0=1,1=2")
             .clusterState("distributor:1 storage:4 "
                           ".0.s:r .1.s:r .2.s:r .3.s:r"));
@@ -1007,7 +1007,7 @@ StateCheckersTest::testDeleteExtraCopies()
     CPPUNIT_ASSERT_EQUAL_MSG(
             "Remove empty buckets",
             std::string("[Removing all copies since bucket is empty:node(idx=0,crc=0x0,"
-                        "docs=0/0,bytes=0/0,trusted=false,active=false)]"
+                        "docs=0/0,bytes=0/0,trusted=false,active=false,ready=false)]"
                         " (pri 100)"),
             testDeleteExtraCopies("0=0", 2, PendingMessage(), "", true));
 
@@ -1073,9 +1073,9 @@ StateCheckersTest::testDeleteExtraCopies()
             "Remove empty bucket with multiple copies",
             std::string(
                     "[Removing all copies since bucket is empty:"
-                    "node(idx=0,crc=0x0,docs=0/0,bytes=0/0,trusted=false,active=false), "
-                    "node(idx=1,crc=0x0,docs=0/0,bytes=0/0,trusted=false,active=false), "
-                    "node(idx=2,crc=0x0,docs=0/0,bytes=0/0,trusted=false,active=false)]"),
+                    "node(idx=0,crc=0x0,docs=0/0,bytes=0/0,trusted=false,active=false,ready=false), "
+                    "node(idx=1,crc=0x0,docs=0/0,bytes=0/0,trusted=false,active=false,ready=false), "
+                    "node(idx=2,crc=0x0,docs=0/0,bytes=0/0,trusted=false,active=false,ready=false)]"),
             testDeleteExtraCopies("0=0/0/0,1=0/0/0,2=0/0/0"));
 
     CPPUNIT_ASSERT_EQUAL_MSG(
