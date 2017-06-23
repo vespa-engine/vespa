@@ -6,6 +6,7 @@ import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
+import com.yahoo.vespa.hosted.dockerapi.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.DockerExecTimeoutException;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
@@ -42,8 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.ABSENT;
-import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.RUNNING;
-import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
+import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.UNKNOWN;
 
 /**
  * @author dybis
@@ -85,13 +85,21 @@ public class NodeAgentImpl implements NodeAgent {
     private final Consumer<String> serviceRestarter;
     private Future<?> currentFilebeatRestarter;
 
+    private boolean resumeScriptRun = false;
+
+    /**
+     * ABSENT means container is definitely absent - A container that was absent will not suddenly appear without
+     * NodeAgent explicitly starting it.
+     * Otherwise we can't be certain. A container that was running a minute ago may no longer be running without
+     * NodeAgent doing anything (container could have crashed). Therefore we always have to ask docker daemon
+     * to get updated state of the container.
+     */
     enum ContainerState {
         ABSENT,
-        RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN,
-        RUNNING
+        UNKNOWN
     }
 
-    private ContainerState containerState = ABSENT;
+    private ContainerState containerState = UNKNOWN;
 
     // The attributes of the last successful node repo attribute update for this node. Used to avoid redundant calls.
     private NodeAttributes lastAttributesSet = null;
@@ -132,13 +140,6 @@ public class NodeAgentImpl implements NodeAgent {
                 logger.error("Failed to restart service " + service, e);
             }
         };
-
-        // If the container is already running, initialize vespaVersion and lastCpuMetric
-        dockerOperations.getContainer(containerName)
-                .ifPresent(container -> {
-                    containerState = RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
-                    logger.info("Container is already running, setting containerState to " + containerState);
-                });
     }
 
     @Override
@@ -219,14 +220,11 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void runLocalResumeScriptIfNeeded(final ContainerNodeSpec nodeSpec) {
-        if (containerState != RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN) {
-            return;
+        if (! resumeScriptRun) {
+            addDebugMessage("Starting optional node program resume command");
+            dockerOperations.resumeNode(containerName);
+            resumeScriptRun = true;
         }
-
-        addDebugMessage("Starting optional node program resume command");
-        dockerOperations.resumeNode(containerName);
-        containerState = RUNNING;
-        logger.info("Resume command successfully executed, new containerState is " + containerState);
     }
 
     private void updateNodeRepoWithCurrentAttributes(final ContainerNodeSpec nodeSpec) {
@@ -264,10 +262,8 @@ public class NodeAgentImpl implements NodeAgent {
             maintainer.writeFilebeatConfig(containerName, nodeSpec);
         });
 
-
-        addDebugMessage("startContainerIfNeeded: containerState " + containerState + " -> " +
-                RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN);
-        containerState = RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
+        resumeScriptRun = false;
+        containerState = UNKNOWN;
         logger.info("Container successfully started, new containerState is " + containerState);
     }
 
@@ -409,6 +405,10 @@ public class NodeAgentImpl implements NodeAgent {
             } catch (OrchestratorException e) {
                 logger.info(e.getMessage());
                 addDebugMessage(e.getMessage());
+            } catch (DockerException e) {
+                numberOfUnhandledException++;
+                containerState = UNKNOWN;
+                addDebugMessage("Caught a DockerExecption, resetting containerState to " + containerState);
             } catch (Exception e) {
                 numberOfUnhandledException++;
                 logger.error("Unhandled exception, ignoring.", e);
@@ -586,7 +586,9 @@ public class NodeAgentImpl implements NodeAgent {
 
     private Optional<Container> getContainer() {
         if (containerState == ABSENT) return Optional.empty();
-        return dockerOperations.getContainer(containerName);
+        Optional<Container> container = dockerOperations.getContainer(containerName);
+        if (! container.isPresent()) containerState = ABSENT;
+        return container;
     }
 
     @Override
