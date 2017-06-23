@@ -69,7 +69,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
 
         Function<String, NodeAgent> nodeAgentFactory =
                 (hostName) -> new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
-                        storageMaintainer, metricReceiver, environment, clock, aclMaintainer);
+                        storageMaintainer, environment, clock, aclMaintainer);
         NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer,
                 NODE_AGENT_SCAN_INTERVAL_MILLIS, metricReceiver, aclMaintainer, clock);
         nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepository, nodeAdmin, clock, orchestrator, baseHostName);

@@ -34,7 +34,7 @@ public class ComponentsProviderWithMocks implements ComponentsProvider {
     private final MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
     private final Function<String, NodeAgent> nodeAgentFactory =
             (hostName) -> new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock,
-                    dockerOperationsMock, Optional.empty(), mr, environment, Clock.systemUTC(), Optional.empty());
+                    dockerOperationsMock, Optional.empty(), environment, Clock.systemUTC(), Optional.empty());
     private final NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperationsMock, nodeAgentFactory, Optional.empty(), 100, mr, Optional.empty(), Clock.systemUTC());
     private final NodeAdminStateUpdater nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, Clock.systemUTC(), orchestratorMock, "localhost.test.yahoo.com");
 
