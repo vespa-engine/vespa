@@ -73,7 +73,7 @@ public class DockerHostCapacityTest {
         assertEquals(host2, nodes.get(2));
 
         // Replace a node for host 2 with a headroom node - host2 should then be prioritized
-        Allocation allocation = new Allocation(app(DockerHostCapacity.HEADROOM_TENANT), ClusterMembership.from("container/id1/3", new Version()), Generation.inital(), false);
+        Allocation allocation = new Allocation(app(DockerCapacityConstraints.HEADROOM_TENANT), ClusterMembership.from("container/id1/3", new Version()), Generation.inital(), false);
         Node nodeF = Node.create("nodeF", Collections.singleton("::6"), Collections.emptySet(), "nodeF", Optional.of("host2"), flavorDocker, NodeType.tenant);
         Node nodeFWithAllocation = nodeF.with(allocation);
         nodes.add(nodeFWithAllocation);

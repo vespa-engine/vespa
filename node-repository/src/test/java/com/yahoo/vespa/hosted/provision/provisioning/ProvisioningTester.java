@@ -120,6 +120,16 @@ public class ProvisioningTester implements AutoCloseable {
         return allocationSnapshots;
     }
 
+    /**
+     * This is to add intermediate or final allocation snapshots to the debug array.
+     *
+     * This is typically used to visualize the end state of the node repo after an allocation.
+     * @param message
+     */
+    public void addAllocationSnapshot(String message) {
+        allocationSnapshots.add(new AllocationSnapshot(new NodeList(nodeRepository().getNodes()), "Provision tester", message));
+    }
+
     public void advanceTime(TemporalAmount duration) { clock.advance(duration); }
     public NodeRepository nodeRepository() { return nodeRepository; }
     public ManualClock clock() { return clock; }

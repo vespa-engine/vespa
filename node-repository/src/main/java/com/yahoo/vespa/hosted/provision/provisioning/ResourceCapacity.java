@@ -82,6 +82,15 @@ public class ResourceCapacity {
                 disk >= flavor.getMinDiskAvailableGb();
     }
 
+    /**
+     * @return True if that capacity is meet with this capacity - i.e this is bigger than that.
+     */
+    public boolean hasCapacityFor(ResourceCapacity that) {
+        return memory >= that.memory &&
+                cpu >= that.cpu &&
+                disk >= that.disk;
+    }
+
     int freeCapacityInFlavorEquivalence(Flavor flavor) {
         if (!hasCapacityFor(flavor)) return 0;
 

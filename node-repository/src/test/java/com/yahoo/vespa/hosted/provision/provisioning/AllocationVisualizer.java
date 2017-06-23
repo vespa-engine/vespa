@@ -29,6 +29,7 @@ public class AllocationVisualizer extends JPanel {
     private int nodeSpacing = nodeWidth / 3;
 
     private final List<AllocationSnapshot> steps;
+
     int step = 0;
 
     public AllocationVisualizer() {
@@ -49,14 +50,21 @@ public class AllocationVisualizer extends JPanel {
             if (step < steps.size() - 1) step += 1;
             repaint();
         });
+        JButton end = new JButton("End");
+        end.addActionListener(e -> {
+            step = steps.size() - 1;
+            repaint();
+        });
         this.add(back);
         this.add(forward);
+        this.add(end);
     }
 
 
     public void addStep(List<Node> nodes, String task, String message) {
         steps.add(new AllocationSnapshot(new NodeList(nodes), task, message));
     }
+
 
     @Override
     public void paintComponent(Graphics g) {
@@ -107,13 +115,16 @@ public class AllocationVisualizer extends JPanel {
                 y = y - (nodeHeight + 2);
             }
         } else {
-            g.setColor(Color.YELLOW);
+            g.setColor(getColor(node));
             int multi = (int) node.flavor().getMinMainMemoryAvailableGb();
             int height = multi * nodeHeight + ((multi - 1) * 2);
             g.fillRect(x, y - height, nodeWidth, height);
 
             // Write tenant name in allocation
-            String tenantName = node.allocation().get().owner().tenant().value();
+            String tenantName = node.state().name();
+            if (node.allocation().isPresent()) {
+                tenantName = node.allocation().get().owner().application().value().substring(0, 5);
+            }
             g.setColor(Color.BLACK);
             g.setFont(new Font("Courier New", Font.PLAIN, 12));
             g.drawString(tenantName, x + nodeWidth / 2 - 20, y - height / 2);
@@ -121,6 +132,28 @@ public class AllocationVisualizer extends JPanel {
             y = y - height - 2;
         }
         return y;
+    }
+
+    private Color getColor(Node node) {
+
+        switch (node.state()) {
+            case failed: return Color.RED;
+            case active: {
+                if (node.allocation().isPresent() && node.allocation().get().membership().retired()) {
+                    return Color.PINK;
+                } else {
+                    return Color.GREEN;
+                }
+            }
+            case parked: return Color.BLACK;
+            case reserved: return Color.MAGENTA;
+            case inactive: return Color.CYAN;
+            case ready: return Color.BLUE;
+            case dirty: return Color.ORANGE;
+            case provisioned: return Color.YELLOW;
+        }
+
+        return Color.BLACK;
     }
 
     public static void visualize(List<AllocationSnapshot> snaps) {

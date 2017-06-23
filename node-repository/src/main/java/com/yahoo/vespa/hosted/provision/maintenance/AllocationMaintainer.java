@@ -13,21 +13,22 @@ import com.yahoo.vespa.hosted.provision.provisioning.DockerHostCapacity;
 import com.yahoo.vespa.hosted.provision.provisioning.ResourceCapacity;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 /**
+ * Move nodes from hosts that are/should be reserved for spares and headroom.
+ *
+ * Is currently very restrictive in terms of number of concurrent moves and when
+ * to move.
+ *
  * @author smorgrav
  */
 public class AllocationMaintainer extends Maintainer {
 
     private final Deployer deployer;
     private final int spares;
-    private final Executor deploymentExecutor = Executors.newCachedThreadPool();
 
     protected AllocationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval, JobControl jobControl, int spares) {
         super(nodeRepository, interval, jobControl);
@@ -42,8 +43,7 @@ public class AllocationMaintainer extends Maintainer {
     }
 
     /**
-     * Remove applications from the spare nodes/hosts
-     * TODO unretire nodes that no longer needs to be migrated (the host is no longer a spare)
+     * Remove nodes from the spare hosts
      */
     private void maintainSpares() {
         List<Node> spareHosts = DockerCapacityConstraints.getSpareHosts(nodeRepository().getNodes(), spares);
@@ -52,11 +52,15 @@ public class AllocationMaintainer extends Maintainer {
                 retire(nodeOnSpareHost);
             }
         }
+
+        // TODO Now check if we have nodes that are retired by this methods on hosts that no-longer is
+        // considered spa
     }
 
     /**
-     * If more headroom is needed - retire nodes
-     * TODO unretire nodes that no longer needs to be migrated
+     * Remove nodes from the nodes that we would like to have as headroom
+     *
+     * Only retire nodes if we know there should be space on other hosts
      */
     private void maintainHeadroom() {
         // Get all nodes including the spares and headroom that we can fit as of now
@@ -65,7 +69,7 @@ public class AllocationMaintainer extends Maintainer {
                 nodeRepository().getAvailableFlavors(),
                 spares);
 
-        // Flavors with ideal headroom and sorted on smallest to biggest
+        // Flavors with ideal headroom sorted on smallest to biggest
         List<Flavor> flavors = nodeRepository().getAvailableFlavors().getFlavors().stream()
                 .filter(f -> f.getIdealHeadroom() > 0)
                 .sorted((a,b) -> ResourceCapacity.of(a).compare(ResourceCapacity.of(b)))
@@ -94,11 +98,14 @@ public class AllocationMaintainer extends Maintainer {
                 ResourceCapacity wantedCapacity = ResourceCapacity.of(flavor);
                 ResourceCapacity neededCapacity = ResourceCapacity.subtract(wantedCapacity, freeCapacity);
 
-                // TODO Check our assumption here that neededCapacity is bigger than 0
+                if (!(neededCapacity.getCpu() > 0 || neededCapacity.getDisk() > 0 || neededCapacity.getMemory() > 0)) {
+                    // TODO log warning and continue - something is wrong
+                }
 
+                // Find the set of childnodes that can give us enough capacity if we move it - sorted from the smallest to the biggest
                 List<Node> retirementAlternatives = nodeRepository().getChildNodes(parentNode.hostname()).stream()
-                        .filter(n -> ResourceCapacity.of(n).compare(neededCapacity) >= 0)
-                        .sorted((a,b) -> ResourceCapacity.of(b).compare(ResourceCapacity.of(b)))
+                        .filter(n -> ResourceCapacity.of(n).hasCapacityFor(neededCapacity))
+                        .sorted((a,b) -> ResourceCapacity.of(a).compare(ResourceCapacity.of(b)))
                         .collect(Collectors.toList());
 
                 // Now check if we have sufficient pace to allocate on a different host
@@ -109,15 +116,16 @@ public class AllocationMaintainer extends Maintainer {
                             .count();
 
                     if (numberOfhostsWhereWeCanReallocateChild > 0) {
-                        retire(child);
-                        break;
+                        boolean sucessfullyRetired = retire(child);
+                        if (sucessfullyRetired) {
+                            break; // We are done for this iteration - only one at the time
+                        }
                     }
                 }
             }
-
-            // We only try to restore for one flavor
-            break;
         }
+
+        // TODO check if we have nodes that should be unretired
     }
 
     /**
@@ -140,24 +148,17 @@ public class AllocationMaintainer extends Maintainer {
         // Lock noderepo do some
         try (Mutex lock = nodeRepository().lock(appId, Duration.ofSeconds(1))) {
 
-            // Make sure the node is still here and active now that we have aquired the lock
+            // Make sure the node is still here and active now that we have acquired the lock
             nodeRepository().getNodes(appId, Node.State.active).contains(node);
 
             // Only retire if the cluster this node belongs to does not have other retirements pending
             if (hasRetiredNodes(appId, clusterSpec)) return false;
 
-            Node retired = node.retire(Agent.AllocationMaintainer, Instant.now());
+            Node retired = node.retire(Agent.AllocationMaintainer, nodeRepository().clock().instant());
             nodeRepository().write(retired);
         }
 
         return true;
-    }
-
-    private boolean canBeReallocated(Node parentNode, List<Node> nodes) {
-        DockerCapacityConstraints.getAvailableDockerHostsSortedOnFreeCapacity(nodes)
-                .filter(n -> !n.equals(parentNode))
-                .filter(n -> capacity.freeCapacityOf(n, false).compare(ResourceCapacity.of(parentNode)) >= 0)
-                .count() > 0;
     }
 
     private boolean hasRetiredNodes(ApplicationId appid, ClusterSpec cluster) {
