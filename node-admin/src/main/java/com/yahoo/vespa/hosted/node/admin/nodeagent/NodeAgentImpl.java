@@ -403,9 +403,14 @@ public class NodeAgentImpl implements NodeAgent {
                 logger.info(e.getMessage());
                 addDebugMessage(e.getMessage());
             } catch (DockerException e) {
+                // When a new version of node-admin app is released, there is a brief period of time when both
+                // new and old version run together. If one of them stats/stops/deletes the container it manages,
+                // the other's assumption of containerState may become incorrect. It'll then start making invalid
+                // requests, for example to start a container that is already running, the containerState should
+                // therefore be reset if we get an exception from docker.
                 numberOfUnhandledException++;
                 containerState = UNKNOWN;
-                addDebugMessage("Caught a DockerExecption, resetting containerState to " + containerState);
+                logger.error("Caught a DockerExecption, resetting containerState to " + containerState, e);
             } catch (Exception e) {
                 numberOfUnhandledException++;
                 logger.error("Unhandled exception, ignoring.", e);
