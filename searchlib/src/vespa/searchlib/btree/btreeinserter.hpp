@@ -33,7 +33,7 @@ insert(BTreeNode::Ref &root,
     uint32_t idx = itr.getLeafNodeIdx() + (inRange ? 0 : 1);
     LeafNodeType * lnode = itr.getLeafNode();
     BTreeNode::Ref splitNodeRef;
-    const KeyT *splitLastKey = NULL;
+    const KeyT *splitLastKey = nullptr;
     bool inRightSplit = false;
     AggrT oldca(AggrCalcT::hasAggregated() ? lnode->getAggregated() : AggrT());
     AggrT ca;
@@ -89,7 +89,7 @@ insert(BTreeNode::Ref &root,
                     ca = node->getAggregated();
                 }
                 splitNodeRef = BTreeNode::Ref();
-                splitLastKey = NULL;
+                splitLastKey = nullptr;
             }
         } else {
             if (AggrCalcT::hasAggregated()) {

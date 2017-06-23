@@ -406,7 +406,7 @@ vespalib::string
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
 toString(const BTreeNode * node) const
 {
-    if (node == NULL) {
+    if (node == nullptr) {
         return "NULL";
     }
     vespalib::asciistream ss;

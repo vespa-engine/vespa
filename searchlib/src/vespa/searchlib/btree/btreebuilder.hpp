@@ -94,7 +94,7 @@ normalize()
             assert(_numInserts == 0);
             _allocator.holdNode(_leaf.ref, _leaf.data);
             _numLeafNodes--;
-            _leaf = LeafNodeTypeRefPair(NodeRef(), static_cast<LeafNodeType *>(NULL));
+            _leaf = LeafNodeTypeRefPair(NodeRef(), static_cast<LeafNodeType *>(nullptr));
 
         }
         if (AggrCalcT::hasAggregated()) {
@@ -136,7 +136,7 @@ normalize()
             assert(level + 1 < _inodes.size());
             iRef = leftInodes[level];
             inode = _allocator.mapInternalRef(iRef);
-            assert(inode != NULL);
+            assert(inode != nullptr);
             assert(inode->validSlots() >= 1);
             child = inode->getLastChild();
         } else {
@@ -281,7 +281,7 @@ normalize()
     /* Check fanout on root node */
     assert(level < _inodes.size());
     InternalNodeType *inode = _inodes[level].data;
-    assert(inode != NULL);
+    assert(inode != nullptr);
     assert(inode->validSlots() >= 1);
     if (inode->validSlots() == 1) {
         /* Remove top level from proposed tree since fanout is 1 */
@@ -404,7 +404,7 @@ handover()
         ret = _leaf.ref;
     }
 
-    _leaf = LeafNodeTypeRefPair(NodeRef(), static_cast<LeafNodeType *>(NULL));
+    _leaf = LeafNodeTypeRefPair(NodeRef(), static_cast<LeafNodeType *>(nullptr));
 
     _inodes.clear();
     _numInternalNodes = 0;
@@ -434,17 +434,17 @@ clear()
 {
     if (!_inodes.empty()) {
         recursiveDelete(_inodes.back().ref);
-        _leaf = LeafNodeTypeRefPair(NodeRef(), static_cast<LeafNodeType *>(NULL));
+        _leaf = LeafNodeTypeRefPair(NodeRef(), static_cast<LeafNodeType *>(nullptr));
         _inodes.clear();
     }
     if (NodeAllocatorType::isValidRef(_leaf.ref)) {
-        assert(_leaf.data != NULL);
+        assert(_leaf.data != nullptr);
         assert(_numLeafNodes == 1);
         _allocator.holdNode(_leaf.ref, _leaf.data);
         --_numLeafNodes;
-        _leaf = LeafNodeTypeRefPair(NodeRef(), static_cast<LeafNodeType *>(NULL));
+        _leaf = LeafNodeTypeRefPair(NodeRef(), static_cast<LeafNodeType *>(nullptr));
     } else {
-        assert(_leaf.data == NULL);
+        assert(_leaf.data == nullptr);
     }
     assert(_numLeafNodes == 0);
     assert(_numInternalNodes == 0);

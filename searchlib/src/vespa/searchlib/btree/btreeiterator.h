@@ -48,7 +48,7 @@ class NodeElement
 
 public:
     NodeElement()
-        : _node(NULL),
+        : _node(nullptr),
           _idx(0u)
     {
     }
@@ -117,7 +117,7 @@ public:
     bool
     valid() const
     {
-        return _node != NULL;
+        return _node != nullptr;
     }
 
     void
@@ -274,7 +274,7 @@ protected:
      */
     BTreeIteratorBase &
     operator++() {
-        if (_leaf.getNode() == NULL) {
+        if (_leaf.getNode() == nullptr) {
             return *this;
         }
         _leaf.incIdx();
