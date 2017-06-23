@@ -356,6 +356,19 @@ Test::requireThatTreeInsertWorks()
                                "{{1:101,3:103,7:107,9:109},"
                                "{10:110,11:111,13:113,15:115}}", t));
     }
+    { // give to left node to avoid split, and move to left node
+        Tree t;
+        populateTree(t, 8, 2);
+        t.remove(3);
+        t.remove(5);
+        EXPECT_TRUE(assertTree("{{7,15}} -> "
+                               "{{1:101,7:107},"
+                               "{9:109,11:111,13:113,15:115}}", t));
+        t.insert(8, 108);
+        EXPECT_TRUE(assertTree("{{9,15}} -> "
+                               "{{1:101,7:107,8:108,9:109},"
+                               "{11:111,13:113,15:115}}", t));
+    }
     { // not give to left node to avoid split, but insert at end at left node
         Tree t;
         populateTree(t, 8, 2);
@@ -379,6 +392,23 @@ Test::requireThatTreeInsertWorks()
         EXPECT_TRUE(assertTree("{{5,15}} -> "
                                "{{1:101,3:103,4:104,5:105},"
                                "{7:107,9:109,11:111,15:115}}", t));
+    }
+    { // give to right node to avoid split and move to right node
+        using MyTraits6 = BTreeTraits<6, 6, 31, false>;
+        using Tree6 = BTree<MyKey, int32_t, btree::NoAggregated, MyComp, MyTraits6>;
+
+        Tree6 t;
+        populateTree(t, 12, 2);
+        t.remove(19);
+        t.remove(21);
+        t.remove(23);
+        EXPECT_TRUE(assertTree("{{11,17}} -> "
+                               "{{1:101,3:103,5:105,7:107,9:109,11:111},"
+                               "{13:113,15:115,17:117}}", t));
+        t.insert(10, 110);
+        EXPECT_TRUE(assertTree("{{7,17}} -> "
+                               "{{1:101,3:103,5:105,7:107},"
+                               "{9:109,10:110,11:111,13:113,15:115,17:117}}", t));
     }
 }
 
