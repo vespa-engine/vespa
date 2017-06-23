@@ -66,7 +66,6 @@ public class NodeAgentImpl implements NodeAgent {
     private final Orchestrator orchestrator;
     private final DockerOperations dockerOperations;
     private final Optional<StorageMaintainer> storageMaintainer;
-    private final MetricReceiverWrapper metricReceiver;
     private final Environment environment;
     private final Clock clock;
     private final Optional<AclMaintainer> aclMaintainer;
@@ -112,7 +111,6 @@ public class NodeAgentImpl implements NodeAgent {
             final Orchestrator orchestrator,
             final DockerOperations dockerOperations,
             final Optional<StorageMaintainer> storageMaintainer,
-            final MetricReceiverWrapper metricReceiver,
             final Environment environment,
             final Clock clock,
             final Optional<AclMaintainer> aclMaintainer) {
@@ -123,7 +121,6 @@ public class NodeAgentImpl implements NodeAgent {
         this.dockerOperations = dockerOperations;
         this.storageMaintainer = storageMaintainer;
         this.logger = PrefixLogger.getNodeAgentLogger(NodeAgentImpl.class, containerName);
-        this.metricReceiver = metricReceiver;
         this.environment = environment;
         this.clock = clock;
         this.aclMaintainer = aclMaintainer;
