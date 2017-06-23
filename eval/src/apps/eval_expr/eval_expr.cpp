@@ -2,6 +2,8 @@
 
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/interpreted_function.h>
+#include <vespa/eval/eval/tensor_spec.h>
+
 
 using namespace vespalib::eval;
 
@@ -21,7 +23,14 @@ int main(int argc, char **argv) {
     InterpretedFunction interpreted(SimpleTensorEngine::ref(), function, NodeTypes());
     InterpretedFunction::Context ctx(interpreted);
     InterpretedFunction::SimpleParams params({});
-    double result = interpreted.eval(ctx, params).as_double();
-    fprintf(stdout, "%.32g\n", result);
+    const Value &result = interpreted.eval(ctx, params);
+    if (result.is_double()) {
+        fprintf(stdout, "%.32g\n", result.as_double());
+    } else if (result.is_tensor()) {
+        vespalib::string str = SimpleTensorEngine::ref().to_spec(*result.as_tensor()).to_string();
+        fprintf(stdout, "%s\n", str.c_str());
+    } else {
+        fprintf(stdout, "error\n");
+    }
     return 0;
 }
