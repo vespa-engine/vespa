@@ -13,8 +13,8 @@ void printAggregated(ostream &os, const Aggregated &aggr);
 template <typename ostream>
 void printAggregated(ostream &os, const NoAggregated &aggr)
 {
+    (void) os;
     (void) aggr;
-    os << "[noaggr]";
 }
 
 template <typename ostream>

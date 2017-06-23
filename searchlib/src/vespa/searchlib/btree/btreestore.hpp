@@ -243,7 +243,7 @@ insert(EntryRef &ref,
     }
     KeyDataType addition(key, data);
     if (retVal) {
-        apply(ref, &addition, &addition+1, NULL, NULL, comp);
+        apply(ref, &addition, &addition+1, nullptr, nullptr, comp);
     }
     return retVal;
 #else

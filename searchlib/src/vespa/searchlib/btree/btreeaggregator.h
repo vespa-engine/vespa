@@ -31,6 +31,9 @@ public:
     LeafNodeType;
     typedef AggrT AggregatedType;
 
+    static AggrT aggregate(const LeafNodeType &node, AggrCalcT aggrCalc);
+    static AggrT aggregate(const InternalNodeType &node, const NodeAllocatorType &allocator, AggrCalcT aggrCalc);
+
     static void
     recalc(LeafNodeType &node, const AggrCalcT &aggrCalc);
 

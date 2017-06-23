@@ -27,6 +27,14 @@ public:
     int32_t getMin() const { return _min; }
     int32_t getMax() const { return _max; }
 
+    bool operator==(const MinMaxAggregated &rhs) const {
+        return ((_min == rhs._min) && (_max == rhs._max));
+    }
+
+    bool operator!=(const MinMaxAggregated &rhs) const {
+        return ((_min != rhs._min) || (_max != rhs._max));
+    }
+
     void
     add(int32_t val)
     {

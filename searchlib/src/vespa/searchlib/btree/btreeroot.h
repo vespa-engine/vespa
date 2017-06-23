@@ -54,9 +54,6 @@ protected:
     using ParentType::isFrozen;
 
     vespalib::string toString(BTreeNode::Ref node, const NodeAllocatorType &allocator) const;
-    bool isValid(BTreeNode::Ref node, bool ignoreMinSlots, uint32_t level,
-                 const NodeAllocatorType &allocator, CompareT comp) const;
-
 public:
     /**
      * Read view of the frozen version of the tree.
@@ -157,12 +154,6 @@ public:
 
     vespalib::string toString(const NodeAllocatorType &allocator) const;
 
-    bool
-    isValid(const NodeAllocatorType &allocator, CompareT comp = CompareT()) const;
-
-    bool
-    isValidFrozen(const NodeAllocatorType &allocator, CompareT comp = CompareT()) const;
-
     size_t
     bitSize(const NodeAllocatorType &allocator) const;
 
@@ -208,6 +199,10 @@ public:
     using Parent2Type::getFrozenRootRelaxed;
     using Parent2Type::isFrozen;
 
+protected:
+    bool isValid(BTreeNode::Ref node, bool ignoreMinSlots, uint32_t level,
+                 const NodeAllocatorType &allocator, CompareT comp, AggrCalcT aggrCalc) const;
+
 public:
     /**
      * Create a tree from a tree builder.  This is a destructive
@@ -235,6 +230,10 @@ public:
     void
     remove(Iterator &itr,
            const AggrCalcT &aggrCalc = AggrCalcT());
+
+    bool isValid(const NodeAllocatorType &allocator, CompareT comp = CompareT()) const;
+
+    bool isValidFrozen(const NodeAllocatorType &allocator, CompareT comp = CompareT()) const;
 };
 
 

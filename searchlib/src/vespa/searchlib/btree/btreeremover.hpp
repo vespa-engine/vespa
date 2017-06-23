@@ -25,9 +25,9 @@ steal(InternalNodeType *pNode,
       uint32_t level)
 {
     BTreeNode::Ref leftVictimRef = BTreeNode::Ref();
-    NodeType * leftVictim = NULL;
+    NodeType * leftVictim = nullptr;
     BTreeNode::Ref rightVictimRef = BTreeNode::Ref();
-    NodeType * rightVictim = NULL;
+    NodeType * rightVictim = nullptr;
     if (idx > 0) {
         leftVictimRef = pNode->getChild(idx - 1);
         leftVictim = allocator.template mapRef<NodeType>(leftVictimRef);
@@ -36,7 +36,7 @@ steal(InternalNodeType *pNode,
         rightVictimRef = pNode->getChild(idx + 1);
         rightVictim = allocator.template mapRef<NodeType>(rightVictimRef);
     }
-    if (leftVictim != NULL &&
+    if (leftVictim != nullptr &&
         leftVictim->validSlots() + sNode->validSlots() <=
         NodeType::maxSlots())
     {
@@ -46,7 +46,7 @@ steal(InternalNodeType *pNode,
         pNode->remove(idx - 1);
         allocator.holdNode(leftVictimRef, leftVictim);
         itr.adjustSteal(level, true, stolen);
-    } else if (rightVictim != NULL &&
+    } else if (rightVictim != nullptr &&
                rightVictim->validSlots() + sNode->validSlots() <=
                NodeType::maxSlots())
     {
@@ -54,8 +54,8 @@ steal(InternalNodeType *pNode,
         pNode->update(idx, sNode->getLastKey(), sNodeRef);
         pNode->remove(idx + 1);
         allocator.holdNode(rightVictimRef, rightVictim);
-    } else if (leftVictim != NULL &&
-               (rightVictim == NULL ||
+    } else if (leftVictim != nullptr &&
+               (rightVictim == nullptr ||
                 leftVictim->validSlots() > rightVictim->validSlots()))
     {
         if (leftVictim->getFrozen()) {
@@ -73,7 +73,7 @@ steal(InternalNodeType *pNode,
             Aggregator::recalc(*leftVictim, allocator, aggrCalc);
         }
         itr.adjustSteal(level, false, stolen);
-    } else if (rightVictim != NULL) {
+    } else if (rightVictim != nullptr) {
         if (rightVictim->getFrozen()) {
            NodeTypeRefPair thawed =
                allocator.thawNode(rightVictimRef, rightVictim);

@@ -12,17 +12,38 @@ namespace btree
 
 template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
-void
-BTreeAggregator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::
-recalc(LeafNodeType &node, const AggrCalcT &aggrCalc)
+AggrT
+BTreeAggregator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::aggregate(const LeafNodeType &node, AggrCalcT aggrCalc)
 {
     AggrT a;
     for (uint32_t i = 0, ie = node.validSlots(); i < ie; ++i) {
         aggrCalc.add(a, aggrCalc.getVal(node.getData(i)));
     }
-    node.getAggregated() = a;
+    return a;
 }
 
+template <typename KeyT, typename DataT, typename AggrT,
+          size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
+AggrT
+BTreeAggregator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::aggregate(const InternalNodeType &node, const NodeAllocatorType &allocator, AggrCalcT aggrCalc)
+{
+    AggrT a;
+    for (uint32_t i = 0, ie = node.validSlots(); i < ie; ++i) {
+        const BTreeNode::Ref childRef = node.getChild(i);
+        const AggrT &ca(allocator.getAggregated(childRef));
+        aggrCalc.add(a, ca);
+    }
+    return a;
+}
+
+template <typename KeyT, typename DataT, typename AggrT,
+          size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
+void
+BTreeAggregator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::
+recalc(LeafNodeType &node, const AggrCalcT &aggrCalc)
+{
+    node.getAggregated() = aggregate(node, aggrCalc);
+}
 
 template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
@@ -32,13 +53,7 @@ recalc(InternalNodeType &node,
        const NodeAllocatorType &allocator,
        const AggrCalcT &aggrCalc)
 {
-    AggrT a;
-    for (uint32_t i = 0, ie = node.validSlots(); i < ie; ++i) {
-        const BTreeNode::Ref childRef = node.getChild(i);
-        const AggrT &ca(allocator.getAggregated(childRef));
-        aggrCalc.add(a, ca);
-    }
-    node.getAggregated() = a;
+    node.getAggregated() = aggregate(node, allocator, aggrCalc);
 }
 
 
