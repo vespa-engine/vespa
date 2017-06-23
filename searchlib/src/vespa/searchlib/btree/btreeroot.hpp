@@ -40,12 +40,12 @@ toString(BTreeNode::Ref node,
 }
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT>
+          typename TraitsT, class AggrCalcT>
 bool
-BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
+BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
 isValid(BTreeNode::Ref node,
         bool ignoreMinSlots, uint32_t level, const NodeAllocatorType &allocator,
-        CompareT comp) const
+        CompareT comp, AggrCalcT aggrCalc) const
 {
     if (allocator.isLeafRef(node)) {
         if (level != 0) {
@@ -61,6 +61,12 @@ isValid(BTreeNode::Ref node,
             return false;
         for (size_t i = 1; i < lnode->validSlots(); ++i) {
             if (!comp(lnode->getKey(i - 1), lnode->getKey(i))) {
+                return false;
+            }
+        }
+        if (AggrCalcT::hasAggregated()) {
+            AggrT aggregated = Aggregator::aggregate(*lnode, aggrCalc);
+            if (aggregated != lnode->getAggregated()) {
                 return false;
             }
         }
@@ -98,7 +104,7 @@ isValid(BTreeNode::Ref node,
             if (comp(allocator.getLastKey(childRef), inode->getKey(i))) {
                 return false;
             }
-            if (!isValid(childRef, false, level - 1, allocator, comp)) {
+            if (!isValid(childRef, false, level - 1, allocator, comp, aggrCalc)) {
                 return false;
             }
         }
@@ -107,6 +113,12 @@ isValid(BTreeNode::Ref node,
         }
         if (lChildren < inode->validSlots() && iChildren < inode->validSlots()) {
             return false;
+        }
+        if (AggrCalcT::hasAggregated()) {
+            AggrT aggregated = Aggregator::aggregate(*inode, allocator, aggrCalc);
+            if (aggregated != inode->getAggregated()) {
+                return false;
+            }
         }
     }
     return true;
@@ -320,31 +332,31 @@ toString(const NodeAllocatorType &allocator) const
 }
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT>
+          typename TraitsT, class AggrCalcT>
 bool
-BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
+BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
 isValid(const NodeAllocatorType &allocator,
         CompareT comp) const
 {
     if (NodeAllocatorType::isValidRef(_root)) {
         uint32_t level  = allocator.getLevel(_root);
-        return isValid(_root, true, level, allocator, comp);
+        return isValid(_root, true, level, allocator, comp, AggrCalcT());
     }
     return true;
 }
 
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
-          typename TraitsT>
+          typename TraitsT, class AggrCalcT>
 bool
-BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::
+BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
 isValidFrozen(const NodeAllocatorType &allocator,
               CompareT comp) const
 {
     BTreeNode::Ref frozenRoot = getFrozenRoot();
     if (NodeAllocatorType::isValidRef(frozenRoot)) {
         uint32_t level  = allocator.getLevel(frozenRoot);
-        return isValid(frozenRoot, true, level, allocator, comp);
+        return isValid(frozenRoot, true, level, allocator, comp, AggrCalcT());
     }
     return true;
 }
