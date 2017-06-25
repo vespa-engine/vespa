@@ -109,36 +109,40 @@ public class LocalZoneUtils {
         }
 
         Arrays.asList(
-                "/home/y/logs/daemontools_y",
-                "/home/y/logs/jdisc_core",
-                "/home/y/logs/langdetect/",
-                "/home/y/logs/vespa",
-                "/home/y/logs/yca",
-                "/home/y/logs/yck",
-                "/home/y/logs/yell",
-                "/home/y/logs/ykeykey",
-                "/home/y/logs/ykeykeyd",
-                "/home/y/logs/yms_agent",
-                "/home/y/logs/ysar",
-                "/home/y/logs/ystatus",
-                "/home/y/logs/zpe_policy_updater",
-                "/home/y/var/cache",
-                "/home/y/var/crash",
-                "/home/y/var/db/jdisc",
-                "/home/y/var/db/vespa",
-                "/home/y/var/jdisc_container",
-                "/home/y/var/jdisc_core",
-                "/home/y/var/maven",
-                "/home/y/var/run",
-                "/home/y/var/scoreboards",
-                "/home/y/var/service",
-                "/home/y/var/share",
-                "/home/y/var/spool",
-                "/home/y/var/vespa",
-                "/home/y/var/yca",
-                "/home/y/var/ycore++",
-                "/home/y/var/zookeeper")
-              .forEach(path -> createCmd.withVolume(pathToContainerStorage.resolve("node-admin" + path).toString(), path));
+                "logs/daemontools_y",
+                "logs/jdisc_core",
+                "logs/langdetect/",
+                "logs/vespa",
+                "logs/yca",
+                "logs/yck",
+                "logs/yell",
+                "logs/ykeykey",
+                "logs/ykeykeyd",
+                "logs/yms_agent",
+                "logs/ysar",
+                "logs/ystatus",
+                "logs/zpe_policy_updater",
+                "var/cache",
+                "var/crash",
+                "var/db/jdisc",
+                "var/db/vespa",
+                "var/jdisc_container",
+                "var/jdisc_core",
+                "var/maven",
+                "var/run",
+                "var/scoreboards",
+                "var/service",
+                "var/share",
+                "var/spool",
+                "var/vespa",
+                "var/yca",
+                "var/ycore++",
+                "var/zookeeper")
+            .forEach(path -> {
+                                  String absPath = getDefaults().underVespaHome(path);
+                                  Path resolved = pathToContainerStorage.resolve("node-admin" + absPath);
+                                  createCmd.withVolume(resolved.toString(), absPath);
+                              });
 
         createCmd.create();
         docker.startContainer(NODE_ADMIN_CONTAINER_NAME);
