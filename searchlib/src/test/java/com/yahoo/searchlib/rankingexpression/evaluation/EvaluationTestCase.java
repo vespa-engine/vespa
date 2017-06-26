@@ -95,7 +95,7 @@ public class EvaluationTestCase {
         tester.assertEvaluates("{ {d1:0}:4, {d1:1}:9, {d1:2 }:16 }",
                               "map(tensor0, f(x) (x * x))", "{ {d1:0}:2, {d1:1}:3, {d1:2}:4 }");
         // -- tensor map composites
-        tester.assertEvaluates("{ {d1:0}:1, {d1:1}:2, {d1:2 }:3 }", 
+        tester.assertEvaluates("{ {d1:0}:1, {d1:1}:2, {d1:2 }:3 }",
                                "log10(tensor0)", "{ {d1:0}:10, {d1:1}:100, {d1:2}:1000 }");
         tester.assertEvaluates("{ {d1:0}:-10, {d1:1}:-100, {d1:2 }:-1000 }",
                                "- tensor0", "{ {d1:0}:10, {d1:1}:100, {d1:2}:1000 }");
@@ -118,7 +118,7 @@ public class EvaluationTestCase {
         tester.assertEvaluates("{ {x:0}:0, {x:1}:0 }",     "isNan(tensor0)",  "{ {x:0}:1, {x:1}:2 }");
         tester.assertEvaluates("{ {x:0}:0, {x:1}:0 }",     "log(tensor0)",    "{ {x:0}:1, {x:1}:1 }");
         tester.assertEvaluates("{ {x:0}:0, {x:1}:1 }",     "log10(tensor0)",  "{ {x:0}:1, {x:1}:10 }");
-        tester.assertEvaluates("{ {x:0}:0, {x:1}:2 }",     "mod(tensor0, 3)", "{ {x:0}:3, {x:1}:8 }");
+        tester.assertEvaluates("{ {x:0}:0, {x:1}:2 }",     "fmod(tensor0, 3)", "{ {x:0}:3, {x:1}:8 }");
         tester.assertEvaluates("{ {x:0}:1, {x:1}:8 }",     "pow(tensor0, 3)", "{ {x:0}:1, {x:1}:2 }");
         tester.assertEvaluates("{ {x:0}:1, {x:1}:2 }",     "relu(tensor0)",   "{ {x:0}:1, {x:1}:2 }");
         tester.assertEvaluates("{ {x:0}:1, {x:1}:2 }",     "round(tensor0)",  "{ {x:0}:1, {x:1}:1.8 }");
@@ -177,7 +177,7 @@ public class EvaluationTestCase {
         tester.assertEvaluates("{ {x:0,y:0}:15, {x:1,y:0}:35 }", "join(tensor0, tensor1, f(x,y) (x*y))", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
         // -- join composites
         tester.assertEvaluates("{ }", "tensor0 * tensor0", "{}");
-        tester.assertEvaluates("{{x:0,y:0,z:0}:0.0}", "( tensor0 * tensor1 ) * ( tensor2 * tensor1 )", 
+        tester.assertEvaluates("{{x:0,y:0,z:0}:0.0}", "( tensor0 * tensor1 ) * ( tensor2 * tensor1 )",
                                "{{x:0}:1}", "{}", "{{y:0,z:0}:1}");
         tester.assertEvaluates("tensor(x{}):{}",
                                "tensor0 * tensor1", "{ {x:0}:3 }", "tensor(x{}):{ {x:1}:5 }");
@@ -225,14 +225,14 @@ public class EvaluationTestCase {
                                "tensor0 != tensor1", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:7 }");
         // TODO
         // argmax
-        // argmin        
+        // argmin
         tester.assertEvaluates("{ {x:0,y:0}:1, {x:1,y:0}:0 }",
                                "tensor0 != tensor1", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:7 }");
 
         // tensor rename
         tester.assertEvaluates("{ {newX:0,y:0}:3 }", "rename(tensor0, x, newX)", "{ {x:0,y:0}:3.0 }");
         tester.assertEvaluates("{  {x:0,y:0}:3, {x:1,y:0}:5 }", "rename(tensor0, (x, y), (y, x))", "{ {x:0,y:0}:3.0, {x:0,y:1}:5.0 }");
-        
+
         // tensor generate
         tester.assertEvaluates("{ {x:0,y:0}:0, {x:1,y:0}:0, {x:0,y:1}:1, {x:1,y:1}:0, {x:0,y:2}:0, {x:1,y:2}:1 }", "tensor(x[2],y[3])(x+1==y)");
         tester.assertEvaluates("{ {y:0,x:0}:0, {y:1,x:0}:0, {y:0,x:1}:1, {y:1,x:1}:0, {y:0,x:2}:0, {y:1,x:2}:1 }", "tensor(y[2],x[3])(y+1==x)");
@@ -241,7 +241,7 @@ public class EvaluationTestCase {
         tester.assertEvaluates("{ {x:0}:0, {x:1}:1, {x:2}:2 }", "range(x[3])");
         tester.assertEvaluates("{ {x:0,y:0,z:0}:1, {x:0,y:0,z:1}:0, {x:0,y:1,z:0}:0, {x:0,y:1,z:1}:0, {x:1,y:0,z:0}:0, {x:1,y:0,z:1}:0, {x:1,y:1,z:0}:0, {x:1,y:1,z:1}:1, }", "diag(x[2],y[2],z[2])");
         tester.assertEvaluates("6", "reduce(random(x[2],y[3]), count)");
-        
+
         // composite functions
         tester.assertEvaluates("{ {x:0}:0.25, {x:1}:0.75 }", "l1_normalize(tensor0, x)", "{ {x:0}:1, {x:1}:3 }");
         tester.assertEvaluates("{ {x:0}:0.31622776601683794, {x:1}:0.9486832980505138 }", "l2_normalize(tensor0, x)", "{ {x:0}:1, {x:1}:3 }");
@@ -279,7 +279,7 @@ public class EvaluationTestCase {
         tester.assertEvaluates("tensor(x{}):{}", "tensor0 * tensor1", "{ {x:0}:1 }", "tensor(x{}):{ {x:1}:1 }");
         tester.assertEvaluates("tensor(x{},y{}):{}", "tensor0 * tensor1", "{ {x:0}:1 }", "tensor(x{},y{}):{ {x:1,y:0}:1, {x:2,y:1}:1 }");
     }
-    
+
     @Test
     public void testProgrammaticBuildingAndPrecedence() {
         RankingExpression standardPrecedence = new RankingExpression(new ArithmeticNode(constant(2), ArithmeticOperator.PLUS, new ArithmeticNode(constant(3), ArithmeticOperator.MULTIPLY, constant(4))));
