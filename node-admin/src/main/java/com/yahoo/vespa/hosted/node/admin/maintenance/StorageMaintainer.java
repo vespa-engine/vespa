@@ -85,6 +85,7 @@ public class StorageMaintainer {
                 .withTag("namespace", "Vespa")
                 .withTag("role", "tenants")
                 .withTag("flavor", nodeSpec.nodeFlavor)
+                .withTag("canonicalFlavor", nodeSpec.nodeCanonicalFlavor)
                 .withTag("state", nodeSpec.nodeState.toString())
                 .withTag("zone", environment.getZone())
                 .withTag("parentHostname", environment.getParentHostHostname());
