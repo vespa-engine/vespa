@@ -38,11 +38,10 @@ public enum Function implements Serializable {
     tanh      { public double evaluate(double x, double y) { return tanh(x); } },
 
     atan2(2)  { public double evaluate(double x, double y) { return atan2(x,y); } },
-    fmod(2)   { public double evaluate(double x, double y) { return IEEEremainder(x,y); } },
+    fmod(2)   { public double evaluate(double x, double y) { return x % y; } },
     ldexp(2)  { public double evaluate(double x, double y) { return x*pow(2,y); } },
     max(2)    { public double evaluate(double x, double y) { return max(x,y); } },
     min(2)    { public double evaluate(double x, double y) { return min(x,y); } },
-    mod(2)    { public double evaluate(double x, double y) { return x % y; } },
     pow(2)    { public double evaluate(double x, double y) { return pow(x,y); } };
 
     private final int arity;
