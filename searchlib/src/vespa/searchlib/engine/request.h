@@ -12,10 +12,10 @@ namespace engine {
 class Request
 {
 public:
-    Request();
+    Request(const fastos::TimeStamp &start_time);
     virtual ~Request();
     void setTimeout(const fastos::TimeStamp & timeout);
-    fastos::TimeStamp  getStartTime() const { return _startTime; }
+    fastos::TimeStamp getStartTime() const { return _startTime; }
     fastos::TimeStamp getTimeOfDoom() const { return _timeOfDoom; }
     fastos::TimeStamp getTimeout() const { return _timeOfDoom -_startTime; }
     fastos::TimeStamp getTimeUsed() const;

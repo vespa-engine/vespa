@@ -7,24 +7,30 @@ namespace search {
 namespace engine {
 
 DocsumRequest::DocsumRequest()
-    : DocsumRequest(false)
-{ }
+    : DocsumRequest(false) {}
 
-DocsumRequest::~DocsumRequest() {}
+DocsumRequest::DocsumRequest(const fastos::TimeStamp &start_time)
+    : DocsumRequest(start_time, false) {}
 
 DocsumRequest::DocsumRequest(bool useRootSlime_)
-    : _flags(0u),
+    : DocsumRequest(fastos::ClockSystem::now(), useRootSlime_) {}
+
+DocsumRequest::DocsumRequest(const fastos::TimeStamp &start_time, bool useRootSlime_)
+    : Request(start_time),
+      _flags(0u),
       resultClassName(),
       useWideHits(false),
       _useRootSlime(useRootSlime_),
       hits()
-{ }
+{
+}
 
+DocsumRequest::~DocsumRequest() {}
 
 void DocsumRequest::Source::lazyDecode() const
 {
     if ((_request.get() == NULL) && (_fs4Packet != NULL)) {
-        _request.reset(new DocsumRequest());
+        _request.reset(new DocsumRequest(_start));
         PacketConverter::toDocsumRequest(*_fs4Packet, *_request);
         _fs4Packet->Free();
         _fs4Packet = NULL;

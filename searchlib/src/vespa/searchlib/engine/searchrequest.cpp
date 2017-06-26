@@ -7,7 +7,10 @@ namespace search {
 namespace engine {
 
 SearchRequest::SearchRequest()
-    : Request(),
+    : SearchRequest(fastos::ClockSystem::now()) {}
+
+SearchRequest::SearchRequest(const fastos::TimeStamp &start_time)
+    : Request(start_time),
       offset(0),
       maxhits(10),
       sortSpec(),
@@ -20,7 +23,7 @@ SearchRequest::~SearchRequest() {}
 void SearchRequest::Source::lazyDecode() const
 {
     if ((_request.get() == NULL) && (_fs4Packet != NULL)) {
-        _request.reset(new SearchRequest());
+        _request.reset(new SearchRequest(_start));
         PacketConverter::toSearchRequest(*_fs4Packet, *_request);
         _fs4Packet->Free();
         _fs4Packet = NULL;

@@ -5,15 +5,15 @@
 namespace search {
 namespace engine {
 
-Request::Request() :
-    _startTime(fastos::ClockSystem::now()),
-    _timeOfDoom(fastos::TimeStamp(fastos::TimeStamp::FUTURE)),
-    ranking(),
-    queryFlags(0),
-    location(),
-    propertiesMap(),
-    stackItems(0),
-    stackDump()
+Request::Request(const fastos::TimeStamp &start_time)
+    : _startTime(start_time),
+      _timeOfDoom(fastos::TimeStamp(fastos::TimeStamp::FUTURE)),
+      ranking(),
+      queryFlags(0),
+      location(),
+      propertiesMap(),
+      stackItems(0),
+      stackDump()
 {
 }
 
