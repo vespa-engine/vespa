@@ -600,6 +600,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
                                                                createZone(Environment.prod, "eu-west-1"),
                                                                createZone(Environment.prod, "ap-northeast-1"),
                                                                createZone(Environment.prod, "ap-northeast-2"),
+                                                               createZone(Environment.prod, "ap-southeast-1"),
                                                                createZone(Environment.prod, "us-east-3"));
         if (zone.system() == SystemName.cd || zonesWith16DistributionBits.contains(zone))
             return 16;
