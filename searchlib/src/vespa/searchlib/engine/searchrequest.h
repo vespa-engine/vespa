@@ -23,24 +23,28 @@ public:
         mutable FS4Packet_QUERYX *_fs4Packet;
         void lazyDecode() const;
         const SourceDescription _desc;
+        const fastos::TimeStamp _start;
     public:
 
         Source(SearchRequest * request)
           : _request(request),
             _fs4Packet(NULL),
-            _desc(0)
+            _desc(0),
+            _start(_request->getStartTime())
         { }
 
         Source(FS4Packet_QUERYX *query, SourceDescription desc)
           : _request(),
             _fs4Packet(query),
-            _desc(desc)
+            _desc(desc),
+            _start(fastos::ClockSystem::now())
         { }
 
         Source(Source && rhs)
           : _request(std::move(rhs._request)),
             _fs4Packet(rhs._fs4Packet),
-            _desc(std::move(rhs._desc))
+            _desc(std::move(rhs._desc)),
+            _start(rhs._start)
         {
             rhs._fs4Packet = NULL;
         }
@@ -72,6 +76,7 @@ public:
     std::vector<char> sessionId;
 
     SearchRequest();
+    explicit SearchRequest(const fastos::TimeStamp &start_time);
     ~SearchRequest();
 };
 

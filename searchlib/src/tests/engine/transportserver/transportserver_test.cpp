@@ -7,6 +7,8 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fnet/fnet.h>
 #include <vespa/searchlib/engine/errorcodes.h>
+#include <thread>
+#include <chrono>
 #include <vespa/log/log.h>
 LOG_SETUP("transportserver_test");
 
@@ -34,6 +36,11 @@ public:
 SearchReply::UP
 SyncServer::search(SearchRequest::Source request, SearchClient &)
 {
+    // fastos should use steady clock (this may fail)
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    fastos::TimeStamp my_time = fastos::ClockSystem::now();
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    EXPECT_GREATER_EQUAL(my_time.val(), request->getStartTime());
     const SearchRequest &req = *request.get();
     SearchReply::UP reply(new SearchReply());
     SearchReply &ret = *reply;
@@ -46,6 +53,11 @@ SyncServer::search(SearchRequest::Source request, SearchClient &)
 DocsumReply::UP
 SyncServer::getDocsums(DocsumRequest::Source request, DocsumClient &)
 {
+    // fastos should use steady clock (this may fail)
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    fastos::TimeStamp my_time = fastos::ClockSystem::now();
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    EXPECT_GREATER_EQUAL(my_time.val(), request->getStartTime());
     DocsumReply::UP reply(new DocsumReply());
     DocsumReply &ret = *reply;
     ret.request = request.release();

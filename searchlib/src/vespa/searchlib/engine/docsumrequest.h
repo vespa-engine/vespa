@@ -26,16 +26,18 @@ public:
         mutable FS4Packet_GETDOCSUMSX *_fs4Packet;
         void lazyDecode() const;
         const SourceDescription _desc;
+        const fastos::TimeStamp _start;
     public:
 
-        Source(DocsumRequest * request) : _request(request), _fs4Packet(NULL), _desc(0) {}
-        Source(DocsumRequest::UP request) : _request(std::move(request)), _fs4Packet(NULL), _desc(0) {}
-        Source(FS4Packet_GETDOCSUMSX *query, SourceDescription desc) : _request(), _fs4Packet(query), _desc(desc) { }
+        Source(DocsumRequest * request) : _request(request), _fs4Packet(NULL), _desc(0), _start(_request->getStartTime()) {}
+        Source(DocsumRequest::UP request) : _request(std::move(request)), _fs4Packet(NULL), _desc(0), _start(_request->getStartTime()) {}
+        Source(FS4Packet_GETDOCSUMSX *query, SourceDescription desc) : _request(), _fs4Packet(query), _desc(desc), _start(fastos::ClockSystem::now()) { }
 
         Source(Source && rhs)
           : _request(std::move(rhs._request)),
             _fs4Packet(rhs._fs4Packet),
-            _desc(std::move(rhs._desc))
+            _desc(std::move(rhs._desc)),
+            _start(rhs._start)
         {
             rhs._fs4Packet = NULL;
         }
@@ -81,8 +83,10 @@ public:
     std::vector<char> sessionId;
 
     DocsumRequest();
-    ~DocsumRequest();
+    explicit DocsumRequest(const fastos::TimeStamp &start_time);
     explicit DocsumRequest(bool useRootSlime_);
+    DocsumRequest(const fastos::TimeStamp &start_time, bool useRootSlime_);
+    ~DocsumRequest();
 
     bool useRootSlime() const { return _useRootSlime; }
 };
