@@ -115,7 +115,6 @@ public class DockerOperationsImpl implements DockerOperations {
                     .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME)
                     .withIpAddress(nodeInetAddress)
                     .withEnvironment("CONFIG_SERVER_ADDRESS", configServers)
-                    .withEnvironment("ATHENS_DOMAIN", environment.getAthensDomain())
                     .withUlimit("nofile", 262_144, 262_144)
                     .withUlimit("nproc", 32_768, 409_600)
                     .withUlimit("core", -1, -1)
