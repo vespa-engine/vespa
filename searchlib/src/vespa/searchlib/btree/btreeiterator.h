@@ -865,6 +865,10 @@ private:
                 _leaf.adjustSteal(stolen);
         }
     }
+
+    void adjustGivenNoEntriesToLeftLeafNode();
+    void adjustGivenEntriesToLeftLeafNode(uint32_t given);
+    void adjustGivenEntriesToRightLeafNode();
 };
 
 

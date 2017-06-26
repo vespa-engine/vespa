@@ -10,6 +10,73 @@
 namespace search {
 namespace btree {
 
+namespace {
+
+template <typename NodeType, typename NodeAllocatorType>
+void
+considerThawNode(NodeType *&node, BTreeNode::Ref &ref, NodeAllocatorType &allocator)
+{
+    if (node->getFrozen()) {
+        auto thawed = allocator.thawNode(ref, node);
+        ref = thawed.ref;
+        node = thawed.data;
+    }
+}
+
+}
+
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
+          typename TraitsT, class AggrCalcT>
+void
+BTreeInserter<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::rebalanceLeafEntries(LeafNodeType *leafNode, Iterator &itr, AggrCalcT aggrCalc)
+{
+    NodeAllocatorType &allocator(itr.getAllocator());
+    auto &pathElem = itr.getPath(0);
+    InternalNodeType *parentNode = pathElem.getWNode();
+    uint32_t parentIdx = pathElem.getIdx();
+    BTreeNode::Ref leafRef = parentNode->getChild(parentIdx);
+    BTreeNode::Ref leftRef = BTreeNode::Ref();
+    LeafNodeType *leftNode = nullptr;
+    BTreeNode::Ref rightRef = BTreeNode::Ref();
+    LeafNodeType *rightNode = nullptr;
+    if (parentIdx > 0) {
+        leftRef = parentNode->getChild(parentIdx - 1);
+        leftNode = allocator.template mapLeafRef(leftRef);
+    }
+    if (parentIdx + 1 < parentNode->validSlots()) {
+        rightRef = parentNode->getChild(parentIdx + 1);
+        rightNode = allocator.template mapLeafRef(rightRef);
+    }
+    if (leftNode != nullptr && leftNode->validSlots() < LeafNodeType::maxSlots() &&
+        (rightNode == nullptr || leftNode->validSlots() < rightNode->validSlots())) {
+        considerThawNode(leftNode, leftRef, allocator);
+        uint32_t oldLeftValid = leftNode->validSlots();
+        if (itr.getLeafNodeIdx() == 0 && (oldLeftValid + 1 == LeafNodeType::maxSlots())) {
+            parentNode->update(parentIdx - 1, leftNode->getLastKey(), leftRef);
+            itr.adjustGivenNoEntriesToLeftLeafNode();
+        } else {
+            leftNode->stealSomeFromRightNode(leafNode, allocator);
+            uint32_t given = leftNode->validSlots() - oldLeftValid;
+            parentNode->update(parentIdx, leafNode->getLastKey(), leafRef);
+            parentNode->update(parentIdx - 1, leftNode->getLastKey(), leftRef);
+            if (AggrCalcT::hasAggregated()) {
+                Aggregator::recalc(*leftNode, allocator, aggrCalc);
+                Aggregator::recalc(*leafNode, allocator, aggrCalc);
+            }
+            itr.adjustGivenEntriesToLeftLeafNode(given);
+        }
+    } else if (rightNode != nullptr && rightNode->validSlots() < LeafNodeType::maxSlots()) {
+        considerThawNode(rightNode, rightRef, allocator);
+        rightNode->stealSomeFromLeftNode(leafNode, allocator);
+        parentNode->update(parentIdx, leafNode->getLastKey(), leafRef);
+        parentNode->update(parentIdx + 1, rightNode->getLastKey(), rightRef);
+        if (AggrCalcT::hasAggregated()) {
+            Aggregator::recalc(*rightNode, allocator, aggrCalc);
+            Aggregator::recalc(*leafNode, allocator, aggrCalc);
+        }
+        itr.adjustGivenEntriesToRightLeafNode();
+    }
+}
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
           typename TraitsT, class AggrCalcT>
@@ -30,8 +97,12 @@ insert(BTreeNode::Ref &root,
         --itr;
     }
     root = itr.thaw(root);
+    LeafNodeType *lnode = itr.getLeafNode();
+    if (lnode->isFull() && itr.getPathSize() > 0) {
+        rebalanceLeafEntries(lnode, itr, aggrCalc);
+        lnode = itr.getLeafNode();
+    }
     uint32_t idx = itr.getLeafNodeIdx() + (inRange ? 0 : 1);
-    LeafNodeType * lnode = itr.getLeafNode();
     BTreeNode::Ref splitNodeRef;
     const KeyT *splitLastKey = nullptr;
     bool inRightSplit = false;

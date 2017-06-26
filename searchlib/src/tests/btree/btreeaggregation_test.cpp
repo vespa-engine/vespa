@@ -312,6 +312,7 @@ private:
 
     void requireThatNodeInsertWorks();
     void requireThatNodeSplitInsertWorks();
+    void requireThatTreeInsertWorks();
     void requireThatNodeStealWorks();
     void requireThatNodeRemoveWorks();
     void requireThatWeCanInsertAndRemoveFromTree();
@@ -408,14 +409,23 @@ Test::requireThatNodeInsertWorks()
     EXPECT_TRUE(assertTree("{{10:101,20:102,30:103,40:104[min=101,max=104]}}", t));
 }
 
+template <typename Tree>
 void
-getLeafNode(MyTree &t)
+populateTree(Tree &t, uint32_t count, uint32_t delta)
 {
-    t.insert(1, 101);
-    t.insert(3, 103);
-    t.insert(5, 105);
-    t.insert(7, 107);
-//    EXPECT_TRUE(assertTree("[1:101,3:103,5:105,7:107[min=101,max=107]]", t));
+    uint32_t key = 1;
+    int32_t value = 101;
+    for (uint32_t i = 0; i < count; ++i) {
+        t.insert(key, value);
+        key += delta;
+        value += delta;
+    }
+}
+
+void
+populateLeafNode(MyTree &t)
+{
+    populateTree(t, 4, 2);
 }
 
 void
@@ -423,7 +433,7 @@ Test::requireThatNodeSplitInsertWorks()
 {
     { // new entry in current node
         MyTree t;
-        getLeafNode(t);
+        populateLeafNode(t);
         t.insert(4, 104);
         EXPECT_TRUE(assertTree("{{4,7[min=101,max=107]}} -> "
                                "{{1:101,3:103,4:104[min=101,max=104]},"
@@ -431,7 +441,7 @@ Test::requireThatNodeSplitInsertWorks()
     }
     { // new entry in split node
         MyTree t;
-        getLeafNode(t);
+        populateLeafNode(t);
         t.insert(6, 106);
         EXPECT_TRUE(assertTree("{{5,7[min=101,max=107]}} -> "
                                "{{1:101,3:103,5:105[min=101,max=105]},"
@@ -439,11 +449,99 @@ Test::requireThatNodeSplitInsertWorks()
     }
     { // new entry at end
         MyTree t;
-        getLeafNode(t);
+        populateLeafNode(t);
         t.insert(8, 108);
         EXPECT_TRUE(assertTree("{{5,8[min=101,max=108]}} -> "
                                "{{1:101,3:103,5:105[min=101,max=105]},"
                                "{7:107,8:108[min=107,max=108]}}", t));
+    }
+}
+
+void
+Test::requireThatTreeInsertWorks()
+{
+    { // multi level node split
+        MyTree t;
+        populateTree(t, 16, 2);
+        EXPECT_TRUE(assertTree("{{7,15,23,31[min=101,max=131]}} -> "
+                               "{{1:101,3:103,5:105,7:107[min=101,max=107]},"
+                               "{9:109,11:111,13:113,15:115[min=109,max=115]},"
+                               "{17:117,19:119,21:121,23:123[min=117,max=123]},"
+                               "{25:125,27:127,29:129,31:131[min=125,max=131]}}", t));
+        t.insert(33, 133);
+        EXPECT_TRUE(assertTree("{{23,33[min=101,max=133]}} -> "
+                               "{{7,15,23[min=101,max=123]},{29,33[min=125,max=133]}} -> "
+                               "{{1:101,3:103,5:105,7:107[min=101,max=107]},"
+                               "{9:109,11:111,13:113,15:115[min=109,max=115]},"
+                               "{17:117,19:119,21:121,23:123[min=117,max=123]},"
+                               "{25:125,27:127,29:129[min=125,max=129]},"
+                               "{31:131,33:133[min=131,max=133]}}", t));
+    }
+    { // give to left node to avoid split
+        MyTree t;
+        populateTree(t, 8, 2);
+        t.remove(5);
+        EXPECT_TRUE(assertTree("{{7,15[min=101,max=115]}} -> "
+                               "{{1:101,3:103,7:107[min=101,max=107]},"
+                               "{9:109,11:111,13:113,15:115[min=109,max=115]}}", t));
+        t.insert(10, 110);
+        EXPECT_TRUE(assertTree("{{9,15[min=101,max=115]}} -> "
+                               "{{1:101,3:103,7:107,9:109[min=101,max=109]},"
+                               "{10:110,11:111,13:113,15:115[min=110,max=115]}}", t));
+    }
+    { // give to left node to avoid split, and move to left node
+        MyTree t;
+        populateTree(t, 8, 2);
+        t.remove(3);
+        t.remove(5);
+        EXPECT_TRUE(assertTree("{{7,15[min=101,max=115]}} -> "
+                               "{{1:101,7:107[min=101,max=107]},"
+                               "{9:109,11:111,13:113,15:115[min=109,max=115]}}", t));
+        t.insert(8, 108);
+        EXPECT_TRUE(assertTree("{{9,15[min=101,max=115]}} -> "
+                               "{{1:101,7:107,8:108,9:109[min=101,max=109]},"
+                               "{11:111,13:113,15:115[min=111,max=115]}}", t));
+    }
+    { // not give to left node to avoid split, but insert at end at left node
+        MyTree t;
+        populateTree(t, 8, 2);
+        t.remove(5);
+        EXPECT_TRUE(assertTree("{{7,15[min=101,max=115]}} -> "
+                               "{{1:101,3:103,7:107[min=101,max=107]},"
+                               "{9:109,11:111,13:113,15:115[min=109,max=115]}}", t));
+        t.insert(8, 108);
+        EXPECT_TRUE(assertTree("{{8,15[min=101,max=115]}} -> "
+                               "{{1:101,3:103,7:107,8:108[min=101,max=108]},"
+                               "{9:109,11:111,13:113,15:115[min=109,max=115]}}", t));
+    }
+    { // give to right node to avoid split
+        MyTree t;
+        populateTree(t, 8, 2);
+        t.remove(13);
+        EXPECT_TRUE(assertTree("{{7,15[min=101,max=115]}} -> "
+                               "{{1:101,3:103,5:105,7:107[min=101,max=107]},"
+                               "{9:109,11:111,15:115[min=109,max=115]}}", t));
+        t.insert(4, 104);
+        EXPECT_TRUE(assertTree("{{5,15[min=101,max=115]}} -> "
+                               "{{1:101,3:103,4:104,5:105[min=101,max=105]},"
+                               "{7:107,9:109,11:111,15:115[min=107,max=115]}}", t));
+    }
+    { // give to right node to avoid split and move to right node
+        using MyTraits6 = BTreeTraits<6, 6, 31, false>;
+        using Tree6 = BTree<MyKey, int32_t, btree::MinMaxAggregated, MyComp, MyTraits6, MinMaxAggrCalc>;
+
+        Tree6 t;
+        populateTree(t, 12, 2);
+        t.remove(19);
+        t.remove(21);
+        t.remove(23);
+        EXPECT_TRUE(assertTree("{{11,17[min=101,max=117]}} -> "
+                               "{{1:101,3:103,5:105,7:107,9:109,11:111[min=101,max=111]},"
+                               "{13:113,15:115,17:117[min=113,max=117]}}", t));
+        t.insert(10, 110);
+        EXPECT_TRUE(assertTree("{{7,17[min=101,max=117]}} -> "
+                               "{{1:101,3:103,5:105,7:107[min=101,max=107]},"
+                               "{9:109,10:110,11:111,13:113,15:115,17:117[min=109,max=117]}}", t));
     }
 }
 
@@ -538,7 +636,7 @@ void
 Test::requireThatNodeRemoveWorks()
 {
     MyTree t;
-    getLeafNode(t);
+    populateLeafNode(t);
     t.remove(3);
     EXPECT_TRUE(assertTree("{{1:101,5:105,7:107[min=101,max=107]}}", t));
     t.remove(1);
@@ -1037,6 +1135,7 @@ Test::Main()
 
     requireThatNodeInsertWorks();
     requireThatNodeSplitInsertWorks();
+    requireThatTreeInsertWorks();
     requireThatNodeStealWorks();
     requireThatNodeRemoveWorks();
     requireThatWeCanInsertAndRemoveFromTree();

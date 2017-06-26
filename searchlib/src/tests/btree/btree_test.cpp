@@ -147,12 +147,22 @@ assertTree(const std::string &exp, const Tree &t)
 
 template <typename Tree>
 void
+populateTree(Tree &t, uint32_t count, uint32_t delta)
+{
+    uint32_t key = 1;
+    int32_t value = 101;
+    for (uint32_t i = 0; i < count; ++i) {
+        t.insert(key, value);
+        key += delta;
+        value += delta;
+    }
+}
+
+template <typename Tree>
+void
 populateLeafNode(Tree &t)
 {
-    t.insert(1, 101);
-    t.insert(3, 103);
-    t.insert(5, 105);
-    t.insert(7, 107);
+    populateTree(t, 4, 2);
 }
 
 
@@ -319,24 +329,87 @@ Test::requireThatTreeInsertWorks()
     }
     { // multi level node split
         Tree t;
-        for (uint32_t i = 1; i < 27; i += 2) {
-            t.insert(i, i + 100);
-        }
-        EXPECT_TRUE(assertTree("{{5,11,17,25}} -> "
-                               "{{1:101,3:103,5:105},"
-                               "{7:107,9:109,11:111},"
-                               "{13:113,15:115,17:117},"
-                               "{19:119,21:121,23:123,25:125}}", t));
-        t.insert(27, 127);
-        EXPECT_TRUE(assertTree("{{17,27}} -> "
-                               "{{5,11,17},{23,27}} -> "
-                               "{{1:101,3:103,5:105},"
-                               "{7:107,9:109,11:111},"
-                               "{13:113,15:115,17:117},"
-                               "{19:119,21:121,23:123},"
-                               "{25:125,27:127}}", t));
+        populateTree(t, 16, 2);
+        EXPECT_TRUE(assertTree("{{7,15,23,31}} -> "
+                               "{{1:101,3:103,5:105,7:107},"
+                               "{9:109,11:111,13:113,15:115},"
+                               "{17:117,19:119,21:121,23:123},"
+                               "{25:125,27:127,29:129,31:131}}", t));
+        t.insert(33, 133);
+        EXPECT_TRUE(assertTree("{{23,33}} -> "
+                               "{{7,15,23},{29,33}} -> "
+                               "{{1:101,3:103,5:105,7:107},"
+                               "{9:109,11:111,13:113,15:115},"
+                               "{17:117,19:119,21:121,23:123},"
+                               "{25:125,27:127,29:129},"
+                               "{31:131,33:133}}", t));
     }
+    { // give to left node to avoid split
+        Tree t;
+        populateTree(t, 8, 2);
+        t.remove(5);
+        EXPECT_TRUE(assertTree("{{7,15}} -> "
+                               "{{1:101,3:103,7:107},"
+                               "{9:109,11:111,13:113,15:115}}", t));
+        t.insert(10, 110);
+        EXPECT_TRUE(assertTree("{{9,15}} -> "
+                               "{{1:101,3:103,7:107,9:109},"
+                               "{10:110,11:111,13:113,15:115}}", t));
+    }
+    { // give to left node to avoid split, and move to left node
+        Tree t;
+        populateTree(t, 8, 2);
+        t.remove(3);
+        t.remove(5);
+        EXPECT_TRUE(assertTree("{{7,15}} -> "
+                               "{{1:101,7:107},"
+                               "{9:109,11:111,13:113,15:115}}", t));
+        t.insert(8, 108);
+        EXPECT_TRUE(assertTree("{{9,15}} -> "
+                               "{{1:101,7:107,8:108,9:109},"
+                               "{11:111,13:113,15:115}}", t));
+    }
+    { // not give to left node to avoid split, but insert at end at left node
+        Tree t;
+        populateTree(t, 8, 2);
+        t.remove(5);
+        EXPECT_TRUE(assertTree("{{7,15}} -> "
+                               "{{1:101,3:103,7:107},"
+                               "{9:109,11:111,13:113,15:115}}", t));
+        t.insert(8, 108);
+        EXPECT_TRUE(assertTree("{{8,15}} -> "
+                               "{{1:101,3:103,7:107,8:108},"
+                               "{9:109,11:111,13:113,15:115}}", t));
+    }
+    { // give to right node to avoid split
+        Tree t;
+        populateTree(t, 8, 2);
+        t.remove(13);
+        EXPECT_TRUE(assertTree("{{7,15}} -> "
+                               "{{1:101,3:103,5:105,7:107},"
+                               "{9:109,11:111,15:115}}", t));
+        t.insert(4, 104);
+        EXPECT_TRUE(assertTree("{{5,15}} -> "
+                               "{{1:101,3:103,4:104,5:105},"
+                               "{7:107,9:109,11:111,15:115}}", t));
+    }
+    { // give to right node to avoid split and move to right node
+        using MyTraits6 = BTreeTraits<6, 6, 31, false>;
+        using Tree6 = BTree<MyKey, int32_t, btree::NoAggregated, MyComp, MyTraits6>;
 
+        Tree6 t;
+        populateTree(t, 12, 2);
+        t.remove(19);
+        t.remove(21);
+        t.remove(23);
+        EXPECT_TRUE(assertTree("{{11,17}} -> "
+                               "{{1:101,3:103,5:105,7:107,9:109,11:111},"
+                               "{13:113,15:115,17:117}}", t));
+        t.insert(10, 110);
+        EXPECT_TRUE(assertTree("{{7,17}} -> "
+                               "{{1:101,3:103,5:105,7:107},"
+                               "{9:109,10:110,11:111,13:113,15:115,17:117}}", t));
+    }
 }
 
 MyLeafNode::RefPair

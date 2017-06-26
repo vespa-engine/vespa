@@ -1325,6 +1325,55 @@ removeLast(BTreeNode::Ref rootRef)
     _leaf.setNode(nullptr);
 }
 
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
+void
+BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::adjustGivenNoEntriesToLeftLeafNode()
+{
+    auto &pathElem = _path[0];
+    uint32_t parentIdx = pathElem.getIdx() - 1;
+    BTreeNode::Ref leafRef = pathElem.getNode()->getChild(parentIdx);
+    const LeafNodeType *leafNode = _allocator->mapLeafRef(leafRef);
+    pathElem.setIdx(parentIdx);
+    _leaf.setNodeAndIdx(leafNode, leafNode->validSlots());
+}
+
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
+void
+BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::adjustGivenEntriesToLeftLeafNode(uint32_t given)
+{
+    uint32_t leafIdx = _leaf.getIdx();
+    if (leafIdx >= given) {
+        _leaf.setIdx(leafIdx - given);
+    } else {
+        auto &pathElem = _path[0];
+        uint32_t parentIdx = pathElem.getIdx() - 1;
+        BTreeNode::Ref leafRef = pathElem.getNode()->getChild(parentIdx);
+        const LeafNodeType *leafNode = _allocator->mapLeafRef(leafRef);
+        leafIdx += leafNode->validSlots();
+        assert(given <= leafIdx);
+        pathElem.setIdx(parentIdx);
+        _leaf.setNodeAndIdx(leafNode, leafIdx - given);
+    }
+}
+
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
+void
+BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::adjustGivenEntriesToRightLeafNode()
+{
+    uint32_t leafIdx = _leaf.getIdx();
+    const LeafNodeType *leafNode = _leaf.getNode();
+    if (leafIdx > leafNode->validSlots()) {
+        auto &pathElem = _path[0];
+        const InternalNodeType *parentNode = pathElem.getNode();
+        uint32_t parentIdx = pathElem.getIdx() + 1;
+        leafIdx -= leafNode->validSlots();
+        BTreeNode::Ref leafRef = parentNode->getChild(parentIdx);
+        leafNode = _allocator->mapLeafRef(leafRef);
+        assert(leafIdx <= leafNode->validSlots());
+        pathElem.setIdx(parentIdx);
+        _leaf.setNodeAndIdx(leafNode, leafIdx);
+    }
+}
 
 } // namespace search::btree
 } // namespace search
