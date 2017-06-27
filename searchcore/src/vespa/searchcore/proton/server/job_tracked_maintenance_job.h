@@ -23,7 +23,7 @@ public:
 
     // Implements IMaintenanceJob
     virtual bool isBlocked() const override { return _job->isBlocked(); }
-    virtual void unBlock() override { _job->unBlock(); }
+    virtual IBlockableMaintenanceJob *asBlockable() override { return _job->asBlockable(); }
     virtual void registerRunner(IMaintenanceJobRunner *runner) override {
         _job->registerRunner(runner);
     }

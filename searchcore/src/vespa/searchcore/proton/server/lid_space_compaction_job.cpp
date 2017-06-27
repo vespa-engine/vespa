@@ -48,7 +48,7 @@ LidSpaceCompactionJob::scanDocuments(const LidUsageStats &stats)
             IFrozenBucketHandler::ExclusiveBucketGuard::UP bucketGuard = _frozenHandler.acquireExclusiveBucket(document.bucketId);
             if ( ! bucketGuard ) {
                 // the job is blocked until the bucket for this document is thawed
-                setBlocked(true);
+                setBlocked(BlockedReason::FROZEN_BUCKET);
                 _retryFrozenDocument = true;
                 return true;
             } else {
@@ -88,7 +88,7 @@ LidSpaceCompactionJob::LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionC
                                              double resourceLimitFactor,
                                              IClusterStateChangedNotifier &clusterStateChangedNotifier,
                                              bool nodeRetired)
-    : IMaintenanceJob("lid_space_compaction." + handler.getName(),
+    : BlockableMaintenanceJob("lid_space_compaction." + handler.getName(),
             config.getDelay(), config.getInterval()),
       _cfg(config),
       _handler(handler),

@@ -5,6 +5,7 @@
 
 namespace proton {
 
+class IBlockableMaintenanceJob;
 class IMaintenanceJobRunner;
 
 /**
@@ -17,10 +18,6 @@ private:
     const vespalib::string _name;
     const double           _delay;
     const double           _interval;
-    bool                   _blocked;
-
-protected:
-    void setBlocked(bool v) { _blocked = v; }
 
 public:
     typedef std::unique_ptr<IMaintenanceJob> UP;
@@ -30,8 +27,7 @@ public:
                     double interval)
         : _name(name),
           _delay(delay),
-          _interval(interval),
-          _blocked(false)
+          _interval(interval)
     {}
 
     virtual ~IMaintenanceJob() {}
@@ -39,8 +35,8 @@ public:
     virtual const vespalib::string &getName() const { return _name; }
     virtual double getDelay() const { return _delay; }
     virtual double getInterval() const { return _interval; }
-    virtual bool isBlocked() const { return _blocked; }
-    virtual void unBlock() { setBlocked(false); }
+    virtual bool isBlocked() const { return false; }
+    virtual IBlockableMaintenanceJob *asBlockable() { return nullptr; }
 
     /**
      * Register maintenance job runner, in case event passed to the

@@ -3,6 +3,7 @@
 #include "maintenancecontroller.h"
 #include "maintenancejobrunner.h"
 #include "document_db_maintenance_config.h"
+#include "i_blockable_maintenance_job.h"
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/timer.h>
@@ -219,10 +220,9 @@ MaintenanceController::notifyThawedBucket(const BucketId &bucket)
     (void) bucket;
     // No need to take _jobsLock as modification of _jobs also happens in master write thread.
     for (const auto &jw : _jobs) {
-        IMaintenanceJob &job = jw->getJob();
-        if (job.isBlocked()) {
-            job.unBlock();
-            jw->run();
+        IBlockableMaintenanceJob *job = jw->getJob().asBlockable();
+        if (job && job->isBlocked()) {
+            job->unBlock(IBlockableMaintenanceJob::BlockedReason::FROZEN_BUCKET);
         }
     }
 }

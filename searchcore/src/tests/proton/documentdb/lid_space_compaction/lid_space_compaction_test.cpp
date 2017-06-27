@@ -20,6 +20,7 @@ using namespace search;
 using namespace search::index;
 using namespace vespalib;
 using storage::spi::Timestamp;
+using BlockedReason = IBlockableMaintenanceJob::BlockedReason;
 
 const uint32_t SUBDB_ID = 2;
 const double JOB_DELAY = 1.0;
@@ -393,7 +394,7 @@ TEST_F("require that job is blocked if trying to move document for frozen bucket
     EXPECT_TRUE(f._job.isBlocked());
 
     f._frozenHandler._bucket = BUCKET_ID_2;
-    f._job.unBlock();
+    f._job.unBlock(BlockedReason::FROZEN_BUCKET);
 
     EXPECT_FALSE(f.run()); // unblocked
     TEST_DO(f.assertJobContext(2, 9, 1, 0, 0));
