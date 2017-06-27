@@ -12,7 +12,7 @@ import java.util.List;
  * this interface, simply inject it into your Application. In most cases, however, you are better of injecting a
  * {@link BundleInstaller} since that provides common convenience methods.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public interface OsgiFramework {
 

@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class FelixParams {
 
@@ -44,7 +44,7 @@ public class FelixParams {
         ret.put(BundleCache.CACHE_ROOTDIR_PROP, cachePath);
         ret.put(Constants.FRAMEWORK_SYSTEMPACKAGES, exportPackages.toString());
         ret.put(Constants.SUPPORTS_BOOTCLASSPATH_EXTENSION, "true");
-        ret.put(Constants.FRAMEWORK_BOOTDELEGATION, "com.yourkit.runtime,com.yourkit.probes,com.yourkit.probes.builtin");
+        ret.put(Constants.FRAMEWORK_BOOTDELEGATION, "com.yourkit.runtime,com.yourkit.probes,com.yourkit.probes.builtin,com.singularity.*");
         return ret;
     }
 }
