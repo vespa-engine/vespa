@@ -197,14 +197,15 @@ assertActiveLids(const BoolVector &exp, const SingleValueBitNumericAttribute &ac
 }
 
 bool
-assertBlackList(const SimpleResult &exp, Blueprint::UP blackListBlueprint, bool strict)
+assertBlackList(const SimpleResult &exp, Blueprint::UP blackListBlueprint, bool strict,
+                uint32_t docIdLimit = 8)
 {
     MatchDataLayout mdl;
     MatchData::UP md = mdl.createMatchData();
     blackListBlueprint->fetchPostings(strict);
     SearchIterator::UP sb = blackListBlueprint->createSearch(*md, strict);
     SimpleResult act;
-    act.searchStrict(*sb, blackListBlueprint->get_docid_limit());
+    act.searchStrict(*sb, docIdLimit);
     return EXPECT_EQUAL(exp, act);
 }
 
