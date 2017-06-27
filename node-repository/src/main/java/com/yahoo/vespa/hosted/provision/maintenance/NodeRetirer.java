@@ -117,11 +117,11 @@ public class NodeRetirer extends Maintainer {
         // Get all the nodes that we could retire along with their deployments
         Map<Deployment, Set<Node>> nodesToRetireByDeployment = new HashMap<>();
         for (ApplicationId applicationId : activeApplications) {
-            Map<ClusterSpec, Set<Node>> nodesByCluster = getNodesBelongingToApplication(allNodes, applicationId).stream()
+            Map<ClusterSpec.Id, Set<Node>> nodesByCluster = getNodesBelongingToApplication(allNodes, applicationId).stream()
                     .collect(Collectors.groupingBy(
-                            node -> node.allocation().get().membership().cluster(),
+                            node -> node.allocation().get().membership().cluster().id(),
                             Collectors.toSet()));
-            Map<ClusterSpec, Set<Node>> retireableNodesByCluster = nodesByCluster.entrySet().stream()
+            Map<ClusterSpec.Id, Set<Node>> retireableNodesByCluster = nodesByCluster.entrySet().stream()
                     .collect(Collectors.toMap(
                             Map.Entry::getKey,
                             entry -> filterRetireableNodes(entry.getValue())));
