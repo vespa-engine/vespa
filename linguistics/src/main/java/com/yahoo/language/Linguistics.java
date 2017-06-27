@@ -24,8 +24,8 @@ import com.yahoo.language.simple.SimpleLinguistics;
  * returned by the factory methods do not. Clients should request separate processor instances
  * for each thread.</p>
  *
- * @author <a href="mailto:mathiasm@yahoo-inc.com">Mathias Moelster Lidal</a>
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Mathias Mølster Lidal
+ * @author Simon Thoresen
  * @author bratseth
  */
 public interface Linguistics {
