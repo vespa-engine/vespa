@@ -41,7 +41,7 @@ import java.util.List;
  * framework created by this ClientDriver is disabled. Calling any method on that framework will throw an
  * exception. If you need OSGi support, use either of the runApplicationWithOsgi() methods.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public abstract class ClientDriver {
 
