@@ -55,6 +55,7 @@ double Add::eval(double a, double b) const { return (a + b); }
 double Sub::eval(double a, double b) const { return (a - b); }
 double Mul::eval(double a, double b) const { return (a * b); }
 double Div::eval(double a, double b) const { return (a / b); }
+double Mod::eval(double a, double b) const { return std::fmod(a, b); }
 double Pow::eval(double a, double b) const { return std::pow(a, b); }
 double Equal::eval(double a, double b) const { return (a == b) ? 1.0 : 0.0; }
 double NotEqual::eval(double a, double b) const { return (a != b) ? 1.0 : 0.0; }
@@ -83,7 +84,6 @@ double Fabs::eval(double a) const { return std::fabs(a); }
 double Floor::eval(double a) const { return std::floor(a); }
 double Atan2::eval(double a, double b) const { return std::atan2(a, b); }
 double Ldexp::eval(double a, double b) const { return std::ldexp(a, b); }
-double Fmod::eval(double a, double b) const { return std::fmod(a, b); }
 double Min::eval(double a, double b) const { return std::min(a, b); }
 double Max::eval(double a, double b) const { return std::max(a, b); }
 double IsNan::eval(double a) const { return std::isnan(a) ? 1.0 : 0.0; }

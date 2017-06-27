@@ -355,6 +355,9 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
     void visit(const Div &) override {
         program.emplace_back(op_binary<operation::Div>);
     }
+    void visit(const Mod &) override {
+        program.emplace_back(op_binary<operation::Mod>);
+    }
     void visit(const Pow &) override {
         program.emplace_back(op_binary<operation::Pow>);
     }
@@ -463,7 +466,7 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
         program.emplace_back(op_binary<operation::Pow>);
     }
     void visit(const Fmod &) override {
-        program.emplace_back(op_binary<operation::Fmod>);
+        program.emplace_back(op_binary<operation::Mod>);
     }
     void visit(const Min &) override {
         program.emplace_back(op_binary<operation::Min>);

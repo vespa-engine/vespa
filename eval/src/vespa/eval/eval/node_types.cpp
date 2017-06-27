@@ -181,6 +181,7 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
     void visit(const Sub &node) override { resolve_op2(node); }
     void visit(const Mul &node) override { resolve_op2(node); }
     void visit(const Div &node) override { resolve_op2(node); }
+    void visit(const Mod &node) override { resolve_op2(node); }
     void visit(const Pow &node) override { resolve_op2(node); }
     void visit(const Equal &node) override { resolve_op2(node); }
     void visit(const NotEqual &node) override { resolve_op2(node); }

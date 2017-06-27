@@ -1115,6 +1115,7 @@ struct TestContext {
         TEST_DO(test_apply_op("a-b", operation::Sub(), Div10(N())));
         TEST_DO(test_apply_op("a*b", operation::Mul(), Div10(N())));
         TEST_DO(test_apply_op("a/b", operation::Div(), Div10(N())));
+        TEST_DO(test_apply_op("a%b", operation::Mod(), Div10(N())));
         TEST_DO(test_apply_op("a^b", operation::Pow(), Div10(N())));
         TEST_DO(test_apply_op("pow(a,b)", operation::Pow(), Div10(N())));
         TEST_DO(test_apply_op("a==b", operation::Equal(), Div10(N())));
@@ -1128,7 +1129,7 @@ struct TestContext {
         TEST_DO(test_apply_op("a||b", operation::Or(), Mask2Seq(SkipNth(3))));
         TEST_DO(test_apply_op("atan2(a,b)", operation::Atan2(), Div10(N())));
         TEST_DO(test_apply_op("ldexp(a,b)", operation::Ldexp(), Div10(N())));
-        TEST_DO(test_apply_op("fmod(a,b)", operation::Fmod(), Div10(N())));
+        TEST_DO(test_apply_op("fmod(a,b)", operation::Mod(), Div10(N())));
         TEST_DO(test_apply_op("min(a,b)", operation::Min(), Div10(N())));
         TEST_DO(test_apply_op("max(a,b)", operation::Max(), Div10(N())));
     }
