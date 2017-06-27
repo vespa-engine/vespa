@@ -467,19 +467,13 @@ public class NodeAgentImpl implements NodeAgent {
                 }
 
                 runLocalResumeScriptIfNeeded(nodeSpec);
-                // Because it's more important to stop a bad release from rolling out in prod,
-                // we put the resume call last. So if we fail after updating the node repo attributes
-                // but before resume, the app may go through the tenant pipeline but will halt in prod.
-                //
-                // Note that this problem exists only because there are 2 different mechanisms
-                // that should really be parts of a single mechanism:
-                //  - The content of node repo is used to determine whether a new Vespa+application
-                //    has been successfully rolled out.
-                //  - Slobrok and internal orchestrator state is used to determine whether
-                //    to allow upgrade (suspend).
-                updateNodeRepoWithCurrentAttributes(nodeSpec);
-                logger.info("Call resume against Orchestrator");
+
                 orchestrator.resume(hostname);
+
+                // Updating the node repo is best-effort:  Since resume has succeeded when getting here,
+                // suspension of the next node wil be granted.  However, the rollout of a new release IS
+                // gated on this succeeding.
+                updateNodeRepoWithCurrentAttributes(nodeSpec);
                 break;
             case inactive:
                 storageMaintainer.ifPresent(maintainer -> maintainer.removeOldFilesFromNode(containerName));
