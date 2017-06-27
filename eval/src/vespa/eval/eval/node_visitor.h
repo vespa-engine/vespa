@@ -43,6 +43,7 @@ struct NodeVisitor {
     virtual void visit(const nodes::Sub          &) = 0;
     virtual void visit(const nodes::Mul          &) = 0;
     virtual void visit(const nodes::Div          &) = 0;
+    virtual void visit(const nodes::Mod          &) = 0;
     virtual void visit(const nodes::Pow          &) = 0;
     virtual void visit(const nodes::Equal        &) = 0;
     virtual void visit(const nodes::NotEqual     &) = 0;
@@ -110,6 +111,7 @@ struct EmptyNodeVisitor : NodeVisitor {
     void visit(const nodes::Sub          &) override {}
     void visit(const nodes::Mul          &) override {}
     void visit(const nodes::Div          &) override {}
+    void visit(const nodes::Mod          &) override {}
     void visit(const nodes::Pow          &) override {}
     void visit(const nodes::Equal        &) override {}
     void visit(const nodes::NotEqual     &) override {}

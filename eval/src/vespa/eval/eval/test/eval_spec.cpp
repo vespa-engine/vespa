@@ -125,6 +125,7 @@ EvalSpec::add_arithmetic_cases() {
     add_rule({"a", -5.0, 5.0}, {"b", -5.0, 5.0}, "(a-b)", [](double a, double b){ return (a - b); });
     add_rule({"a", -5.0, 5.0}, {"b", -5.0, 5.0}, "(a*b)", [](double a, double b){ return (a * b); });
     add_rule({"a", -5.0, 5.0}, {"b", -5.0, 5.0}, "(a/b)", [](double a, double b){ return (a / b); });
+    add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "(a%b)", [](double a, double b){ return std::fmod(a, b); });
     add_rule({"a", -5.0, 5.0}, {"b", -5.0, 5.0}, "(a^b)", [](double a, double b){ return std::pow(a,b); });
     add_expression({"a", "b", "c", "d"}, "(((a+1)*(b-1))/((c+1)/(d-1)))")
         .add_case({0.0, 2.0, 0.0, 2.0}, 1.0)

@@ -28,6 +28,7 @@ OperatorRepo::OperatorRepo() : _map(), _max_size(0) {
     add(nodes::Sub());
     add(nodes::Mul());
     add(nodes::Div());
+    add(nodes::Mod());
     add(nodes::Pow());
     add(nodes::Equal());
     add(nodes::NotEqual());

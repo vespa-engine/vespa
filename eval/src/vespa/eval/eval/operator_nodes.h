@@ -157,6 +157,7 @@ public:
 struct Sub          : OperatorHelper<Sub>          { Sub()          : Helper("-", 101, LEFT)  {}};
 struct Mul          : OperatorHelper<Mul>          { Mul()          : Helper("*", 102, LEFT)  {}};
 struct Div          : OperatorHelper<Div>          { Div()          : Helper("/", 102, LEFT)  {}};
+struct Mod          : OperatorHelper<Mod>          { Mod()          : Helper("%", 102, LEFT)  {}};
 struct Pow          : OperatorHelper<Pow>          { Pow()          : Helper("^", 103, RIGHT) {}};
 struct Equal        : OperatorHelper<Equal>        { Equal()        : Helper("==", 10, LEFT)  {}};
 struct NotEqual     : OperatorHelper<NotEqual>     { NotEqual()     : Helper("!=", 10, LEFT)  {}};

@@ -204,7 +204,7 @@ TEST("require that parenthesis resolves before not/neg") {
 
 TEST("require that operators have appropriate binding order") {
     verify_operator_binding_order({    { Operator::Order::RIGHT, { "^" } },
-                                       { Operator::Order::LEFT,  { "*", "/" } },
+                                       { Operator::Order::LEFT,  { "*", "/", "%" } },
                                        { Operator::Order::LEFT,  { "+", "-" } },
                                        { Operator::Order::LEFT,  { "==", "!=", "~=", "<", "<=", ">", ">=", "in" } },
                                        { Operator::Order::LEFT,  { "&&" } },

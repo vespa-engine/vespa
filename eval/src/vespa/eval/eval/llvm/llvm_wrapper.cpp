@@ -459,6 +459,9 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         llvm::Value *a = pop_double();
         push(builder.CreateFDiv(a, b, "div_res"));
     }
+    void visit(const Mod &) override {
+        make_call_2("fmod");
+    }
     void visit(const Pow &) override {
         make_call_2(llvm::Intrinsic::pow);
     }

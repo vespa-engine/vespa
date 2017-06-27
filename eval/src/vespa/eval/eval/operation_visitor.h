@@ -18,6 +18,7 @@ struct OperationVisitor {
     virtual void visit(const operation::Sub          &) = 0;
     virtual void visit(const operation::Mul          &) = 0;
     virtual void visit(const operation::Div          &) = 0;
+    virtual void visit(const operation::Mod          &) = 0;
     virtual void visit(const operation::Pow          &) = 0;
     virtual void visit(const operation::Equal        &) = 0;
     virtual void visit(const operation::NotEqual     &) = 0;
@@ -46,7 +47,6 @@ struct OperationVisitor {
     virtual void visit(const operation::Floor        &) = 0;
     virtual void visit(const operation::Atan2        &) = 0;
     virtual void visit(const operation::Ldexp        &) = 0;
-    virtual void visit(const operation::Fmod         &) = 0;
     virtual void visit(const operation::Min          &) = 0;
     virtual void visit(const operation::Max          &) = 0;
     virtual void visit(const operation::IsNan        &) = 0;
@@ -68,6 +68,7 @@ struct DefaultOperationVisitor : OperationVisitor {
     virtual void visit(const operation::Sub          &op) override { visitDefault(op); }
     virtual void visit(const operation::Mul          &op) override { visitDefault(op); }
     virtual void visit(const operation::Div          &op) override { visitDefault(op); }
+    virtual void visit(const operation::Mod          &op) override { visitDefault(op); }
     virtual void visit(const operation::Pow          &op) override { visitDefault(op); }
     virtual void visit(const operation::Equal        &op) override { visitDefault(op); }
     virtual void visit(const operation::NotEqual     &op) override { visitDefault(op); }
@@ -96,7 +97,6 @@ struct DefaultOperationVisitor : OperationVisitor {
     virtual void visit(const operation::Floor        &op) override { visitDefault(op); }
     virtual void visit(const operation::Atan2        &op) override { visitDefault(op); }
     virtual void visit(const operation::Ldexp        &op) override { visitDefault(op); }
-    virtual void visit(const operation::Fmod         &op) override { visitDefault(op); }
     virtual void visit(const operation::Min          &op) override { visitDefault(op); }
     virtual void visit(const operation::Max          &op) override { visitDefault(op); }
     virtual void visit(const operation::IsNan        &op) override { visitDefault(op); }
