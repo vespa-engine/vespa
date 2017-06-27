@@ -117,10 +117,8 @@ public class NodeAgentImplTest {
         verify(dockerOperations, never()).scheduleDownloadOfImage(eq(containerName), any(), any());
 
         final InOrder inOrder = inOrder(dockerOperations, orchestrator, nodeRepository);
-        // TODO: Verify this isn't run unless 1st time
-        inOrder.verify(dockerOperations, times(1)).resumeNode(eq(containerName));
+        inOrder.verify(dockerOperations).resumeNode(eq(containerName));
         inOrder.verify(orchestrator).resume(hostName);
-        // TODO: This should not happen when nothing is changed. Now it happens 1st time through.
         inOrder.verify(nodeRepository).updateNodeAttributes(
                 hostName,
                 new NodeAttributes()
@@ -135,7 +133,17 @@ public class NodeAgentImplTest {
         verify(orchestrator, never()).suspend(any(String.class));
         verify(dockerOperations, never()).scheduleDownloadOfImage(eq(containerName), any(), any());
 
+        // Should not be called 2nd time
+        inOrder.verify(dockerOperations, never()).resumeNode(eq(containerName));
         inOrder.verify(orchestrator).resume(hostName);
+        // Should not be called 2nd time
+        inOrder.verify(nodeRepository, never()).updateNodeAttributes(
+                hostName,
+                new NodeAttributes()
+                        .withRestartGeneration(restartGeneration)
+                        .withRebootGeneration(rebootGeneration)
+                        .withDockerImage(dockerImage)
+                        .withVespaVersion(vespaVersion));
     }
 
     @Test
