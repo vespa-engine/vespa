@@ -13,4 +13,4 @@ cd $DIR
 VESPA_VERSION=$1
 DOCKER_IMAGE=vesparun
 
-docker build -t "$DOCKER_IMAGE":"$VESPA_VERSION" --build-arg VESPA_VERSION="$VESPA_VERSION" -f Dockerfile.run .
+docker build -t "$DOCKER_IMAGE":"$VESPA_VERSION" --build-arg VESPA_VERSION="$VESPA_VERSION" -f run/Dockerfile .
