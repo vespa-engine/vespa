@@ -35,7 +35,6 @@ public class Environment {
     private static final String ENVIRONMENT = "ENVIRONMENT";
     private static final String REGION = "REGION";
     private static final String LOGSTASH_NODES = "LOGSTASH_NODES";
-    private static final String ATHENS_DOMAIN = "ATHENS_DOMAIN";
     private static final String RUNNING_LOCALLY = "RUNNING_LOCALLY";
     private static final String COREDUMP_FEED_ENDPOINT = "COREDUMP_FEED_ENDPOINT";
 
@@ -46,7 +45,6 @@ public class Environment {
     private final InetAddressResolver inetAddressResolver;
     private final PathResolver pathResolver;
     private final List<String> logstashNodes;
-    private final String athensDomain;
     private final String feedEndpoint;
     private final boolean isRunningLocally;
 
@@ -62,7 +60,6 @@ public class Environment {
              new InetAddressResolver(),
              new PathResolver(),
              getLogstashNodesFromEnvironment(),
-             getEnvironmentVariable(ATHENS_DOMAIN),
              getEnvironmentVariable(COREDUMP_FEED_ENDPOINT),
              Optional.ofNullable(System.getenv(RUNNING_LOCALLY)).map(Boolean::valueOf).orElse(false));
     }
@@ -74,7 +71,6 @@ public class Environment {
                        InetAddressResolver inetAddressResolver,
                        PathResolver pathResolver,
                        List<String> logstashNodes,
-                       String athensDomain,
                        String feedEndpoint,
                        boolean isRunningLocally) {
         this.configServerHosts = configServerHosts;
@@ -84,7 +80,6 @@ public class Environment {
         this.inetAddressResolver = inetAddressResolver;
         this.pathResolver = pathResolver;
         this.logstashNodes = logstashNodes;
-        this.athensDomain = athensDomain;
         this.feedEndpoint = feedEndpoint;
         this.isRunningLocally = isRunningLocally;
     }
@@ -200,11 +195,7 @@ public class Environment {
     public List<String> getLogstashNodes() {
         return logstashNodes;
     }
-
-    public String getAthensDomain() {
-        return athensDomain;
-    }
-
+    
     public static class Builder {
         private Set<String> configServerHosts = Collections.emptySet();
         private String environment;
@@ -213,7 +204,6 @@ public class Environment {
         private InetAddressResolver inetAddressResolver;
         private PathResolver pathResolver;
         private List<String> logstashNodes = Collections.emptyList();
-        private String athensDomain;
         private String feedEndpoint;
         private boolean isRunningLocally = false;
 
@@ -252,11 +242,6 @@ public class Environment {
             return this;
         }
 
-        public Builder athensDomain(String athensDomain) {
-            this.athensDomain = athensDomain;
-            return this;
-        }
-
         public Builder feedEndpoint(String feedEndpoint) {
             this.feedEndpoint = feedEndpoint;
             return this;
@@ -269,7 +254,7 @@ public class Environment {
 
         public Environment build() {
             return new Environment(configServerHosts, environment, region, parentHostHostname, inetAddressResolver,
-                                   pathResolver, logstashNodes, athensDomain, feedEndpoint, isRunningLocally);
+                                   pathResolver, logstashNodes, feedEndpoint, isRunningLocally);
         }
     }
 }
