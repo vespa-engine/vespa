@@ -124,7 +124,7 @@ bool Test::search(const Node &node, IAttributeManager &attribute_manager) {
     result->fetchPostings(true);
     SearchIterator::UP iterator = result->createSearch(*md, true);
     ASSERT_TRUE((bool)iterator);
-    iterator->initRange(1, result->get_docid_limit());
+    iterator->initRange(1, 3);
     EXPECT_TRUE(!iterator->seek(1));
     return iterator->seek(2);
 }
