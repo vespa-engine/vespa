@@ -30,7 +30,7 @@ public:
     // used by create visitor
     void addTerm(Blueprint::UP term, int32_t weight);
 
-    SearchIterator::UP
+    SearchIteratorUP
     createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda,
                      bool strict) const override;
 
@@ -40,4 +40,3 @@ public:
 
 }  // namespace search::queryeval
 }  // namespace search
-

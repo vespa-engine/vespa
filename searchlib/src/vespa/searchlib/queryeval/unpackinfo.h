@@ -2,12 +2,11 @@
 
 #pragma once
 
-#include <string.h>
-#include <stdint.h>
-#include "multisearch.h"
+#include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
+
+class MultiSearch;
 
 class UnpackInfo
 {
@@ -65,5 +64,4 @@ struct NoUnpack {
     bool needUnpack(size_t index) const { (void) index; return false; }
 };
 
-} // namespace queryeval
-} // namespace search
+}

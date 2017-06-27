@@ -2,12 +2,11 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include "fieldtype.h"
 #include <vespa/searchcommon/common/datatype.h>
+#include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 const uint32_t IllegalFieldId = 0xffffffff;
 
@@ -107,6 +106,4 @@ public:
     bool isFilter() const { return _isFilter; }
 };
 
-} // namespace fef
-} // namespace search
-
+}

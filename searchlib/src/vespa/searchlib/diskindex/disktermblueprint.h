@@ -5,8 +5,7 @@
 #include "diskindex.h"
 #include <vespa/searchlib/queryeval/blueprint.h>
 
-namespace search {
-namespace diskindex {
+namespace search::diskindex {
 
 /**
  * Blueprint implementation for term searching in a disk index.
@@ -39,11 +38,9 @@ public:
 
     // Inherit doc from Blueprint.
     // For now, this DiskTermBlueprint instance must have longer lifetime than the created iterator.
-    search::queryeval::SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray & tfmda, bool strict) const override;
+    std::unique_ptr<queryeval::SearchIterator> createLeafSearch(const fef::TermFieldMatchDataArray & tfmda, bool strict) const override;
 
     void fetchPostings(bool strict) override;
 };
 
-}  // namespace diskindex
-}  // namespace search
-
+}

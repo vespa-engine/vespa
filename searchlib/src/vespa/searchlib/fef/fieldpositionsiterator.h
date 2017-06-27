@@ -4,8 +4,7 @@
 
 #include "termfieldmatchdataposition.h"
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * Iterator used to iterate over all positions of a term inside a
@@ -158,6 +157,4 @@ public:
     uint32_t size() const { return (_end - _begin); }
 };
 
-} // namespace fef
-} // namespace search
-
+}

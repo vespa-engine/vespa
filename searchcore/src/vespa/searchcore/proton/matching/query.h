@@ -10,8 +10,7 @@
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/irequestcontext.h>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 class ViewResolver;
 class ISearchContext;
@@ -93,7 +92,7 @@ public:
      * @return iterator tree
      * @param md match data used for feature unpacking
      **/
-    search::queryeval::SearchIterator::UP createSearch(search::fef::MatchData &md) const;
+    std::unique_ptr<search::queryeval::SearchIterator> createSearch(search::fef::MatchData &md) const;
 
     /**
      * Return an upper bound of how many hits this query will produce.
@@ -102,6 +101,4 @@ public:
     Blueprint::HitEstimate estimate() const;
 };
 
-} // namespace matching
-} // namespace proton
-
+}
