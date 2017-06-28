@@ -42,7 +42,7 @@ set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 
 # Default RPATH settings for CMake 3.4:
 # For non-installed targets, reference external libraries using an RPATH into the build tree.
-# For installed targets, reference external libraries using INSTALL_RPATH (i.e. /home/y/lib64 on ylinux)
+# For installed targets, reference external libraries using INSTALL_RPATH (i.e. /opt/vespa/lib64 on ylinux)
 set(CMAKE_CMAKE_SKIP_BUILD_RPATH FALSE)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
