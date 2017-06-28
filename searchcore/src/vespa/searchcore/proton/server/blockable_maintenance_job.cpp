@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "blockable_maintenance_job.h"
+#include "disk_mem_usage_state.h"
 #include "imaintenancejobrunner.h"
 
 namespace proton {
@@ -11,14 +12,36 @@ BlockableMaintenanceJob::updateBlocked(const LockGuard &)
     _blocked = !_blockReasons.empty();
 }
 
+void
+BlockableMaintenanceJob::internalNotifyDiskMemUsage(const DiskMemUsageState &state)
+{
+    bool resourcesOK = !state.aboveDiskLimit(_resourceLimitFactor) && !state.aboveMemoryLimit(_resourceLimitFactor);
+    if (resourcesOK) {
+        if (isBlocked(BlockedReason::RESOURCE_LIMITS)) {
+            unBlock(BlockedReason::RESOURCE_LIMITS);
+        }
+    } else {
+        setBlocked(BlockedReason::RESOURCE_LIMITS);
+    }
+}
+
 BlockableMaintenanceJob::BlockableMaintenanceJob(const vespalib::string &name,
                                                  double delay,
                                                  double interval)
+    : BlockableMaintenanceJob(name, delay, interval, 1.0)
+{
+}
+
+BlockableMaintenanceJob::BlockableMaintenanceJob(const vespalib::string &name,
+                                                 double delay,
+                                                 double interval,
+                                                 double resourceLimitFactor)
     : IBlockableMaintenanceJob(name, delay, interval),
       _mutex(),
       _blockReasons(),
       _blocked(false),
-      _runner(nullptr)
+      _runner(nullptr),
+      _resourceLimitFactor(resourceLimitFactor)
 {
 }
 

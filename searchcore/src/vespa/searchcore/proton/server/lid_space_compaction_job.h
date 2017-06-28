@@ -36,7 +36,6 @@ private:
     bool                          _retryFrozenDocument;
     bool                          _shouldCompactLidSpace;
     IDiskMemUsageNotifier        &_diskMemUsageNotifier;
-    double                        _resourceLimitFactor;
     IClusterStateChangedNotifier &_clusterStateChangedNotifier;
 
     bool hasTooMuchLidBloat(const search::LidUsageStats &stats) const;

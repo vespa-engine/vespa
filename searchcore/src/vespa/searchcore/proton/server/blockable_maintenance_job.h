@@ -7,6 +7,7 @@
 
 namespace proton {
 
+class DiskMemUsageState;
 class IMaintenanceJobRunner;
 
 /**
@@ -23,13 +24,22 @@ private:
     ReasonSet _blockReasons;
     bool _blocked;
     IMaintenanceJobRunner *_runner;
+    double _resourceLimitFactor;
 
     void updateBlocked(const LockGuard &guard);
+
+protected:
+    void internalNotifyDiskMemUsage(const DiskMemUsageState &state);
 
 public:
     BlockableMaintenanceJob(const vespalib::string &name,
                             double delay,
                             double interval);
+
+    BlockableMaintenanceJob(const vespalib::string &name,
+                            double delay,
+                            double interval,
+                            double resourceLimitFactor);
 
     virtual ~BlockableMaintenanceJob();
 

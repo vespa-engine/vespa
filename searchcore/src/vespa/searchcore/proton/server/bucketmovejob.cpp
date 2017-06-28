@@ -159,7 +159,7 @@ BucketMoveJob(const IBucketStateCalculator::SP &calc,
               IDiskMemUsageNotifier &diskMemUsageNotifier,
               double resourceLimitFactor,
               const vespalib::string &docTypeName)
-    : BlockableMaintenanceJob("move_buckets." + docTypeName, 0.0, 0.0),
+    : BlockableMaintenanceJob("move_buckets." + docTypeName, 0.0, 0.0, resourceLimitFactor),
       IClusterStateChangedHandler(),
       IBucketFreezeListener(),
       _calc(calc),
@@ -178,8 +178,7 @@ BucketMoveJob(const IBucketStateCalculator::SP &calc,
       _delayedMover(),
       _clusterStateChangedNotifier(clusterStateChangedNotifier),
       _bucketStateChangedNotifier(bucketStateChangedNotifier),
-      _diskMemUsageNotifier(diskMemUsageNotifier),
-      _resourceLimitFactor(resourceLimitFactor)
+      _diskMemUsageNotifier(diskMemUsageNotifier)
 {
     if (blockedDueToClusterState(_calc)) {
         setBlocked(BlockedReason::CLUSTER_STATE);
@@ -355,14 +354,7 @@ void
 BucketMoveJob::notifyDiskMemUsage(DiskMemUsageState state)
 {
     // Called by master write thread
-    bool resourcesOK = !state.aboveDiskLimit(_resourceLimitFactor) && !state.aboveMemoryLimit(_resourceLimitFactor);
-    if (resourcesOK) {
-        if (isBlocked(BlockedReason::RESOURCE_LIMITS)) {
-            unBlock(BlockedReason::RESOURCE_LIMITS);
-        }
-    } else {
-        setBlocked(BlockedReason::RESOURCE_LIMITS);
-    }
+    internalNotifyDiskMemUsage(state);
 }
 
 } // namespace proton

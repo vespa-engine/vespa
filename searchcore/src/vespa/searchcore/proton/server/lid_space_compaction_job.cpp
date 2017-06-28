@@ -89,7 +89,7 @@ LidSpaceCompactionJob::LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionC
                                              IClusterStateChangedNotifier &clusterStateChangedNotifier,
                                              bool nodeRetired)
     : BlockableMaintenanceJob("lid_space_compaction." + handler.getName(),
-            config.getDelay(), config.getInterval()),
+            config.getDelay(), config.getInterval(), resourceLimitFactor),
       _cfg(config),
       _handler(handler),
       _opStorer(opStorer),
@@ -98,7 +98,6 @@ LidSpaceCompactionJob::LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionC
       _retryFrozenDocument(false),
       _shouldCompactLidSpace(false),
       _diskMemUsageNotifier(diskMemUsageNotifier),
-      _resourceLimitFactor(resourceLimitFactor),
       _clusterStateChangedNotifier(clusterStateChangedNotifier)
 {
     _diskMemUsageNotifier.addDiskMemUsageListener(this);
@@ -137,14 +136,7 @@ void
 LidSpaceCompactionJob::notifyDiskMemUsage(DiskMemUsageState state)
 {
     // Called by master write thread
-    bool resourcesOK = !state.aboveDiskLimit(_resourceLimitFactor) && !state.aboveMemoryLimit(_resourceLimitFactor);
-    if (resourcesOK) {
-        if (isBlocked(BlockedReason::RESOURCE_LIMITS)) {
-            unBlock(BlockedReason::RESOURCE_LIMITS);
-        }
-    } else {
-        setBlocked(BlockedReason::RESOURCE_LIMITS);
-    }
+    internalNotifyDiskMemUsage(state);
 }
 
 void

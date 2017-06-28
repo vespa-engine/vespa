@@ -100,7 +100,6 @@ private:
     IClusterStateChangedNotifier      &_clusterStateChangedNotifier;
     IBucketStateChangedNotifier       &_bucketStateChangedNotifier;
     IDiskMemUsageNotifier             &_diskMemUsageNotifier;
-    double                             _resourceLimitFactor;
 
     ScanResult
     scanBuckets(size_t maxBucketsToScan,
