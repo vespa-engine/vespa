@@ -309,7 +309,7 @@ public class RestApiTest {
                 "\\{\"hostname\":\"cfg1\",\"ipAddress\":\".+?\",\"trustedBy\":\"foo.yahoo.com\"}," +
                 "\\{\"hostname\":\"cfg2\",\"ipAddress\":\".+?\",\"trustedBy\":\"foo.yahoo.com\"}," +
                 "\\{\"hostname\":\"cfg3\",\"ipAddress\":\".+?\",\"trustedBy\":\"foo.yahoo.com\"}" +
-                "]}");
+                "],\"trustedNetworks\":\\[\\]}");
         assertResponseMatches(new Request("http://localhost:8080/nodes/v2/acl/" + hostname), responsePattern);
     }
 
@@ -319,25 +319,33 @@ public class RestApiTest {
                 "\\{\"hostname\":\"cfg1\",\"ipAddress\":\".+?\",\"trustedBy\":\"cfg1\"}," +
                 "\\{\"hostname\":\"cfg2\",\"ipAddress\":\".+?\",\"trustedBy\":\"cfg1\"}," +
                 "\\{\"hostname\":\"cfg3\",\"ipAddress\":\".+?\",\"trustedBy\":\"cfg1\"}" +
-                "]}");
+                "],\"trustedNetworks\":\\[\\]}");
         assertResponseMatches(new Request("http://localhost:8080/nodes/v2/acl/cfg1"), responsePattern);
     }
 
     @Test
-    public void acl_response_with_dual_stack_node() throws Exception {
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                        ("[" + asNodeJson("dual-stack-host.yahoo.com", "default", "127.0.0.1", "::1") + "]").
-                                getBytes(StandardCharsets.UTF_8),
-                        Request.Method.POST),
-                "{\"message\":\"Added 1 nodes to the provisioned state\"}");
+    public void acl_request_by_docker_host() throws Exception {
         Pattern responsePattern = Pattern.compile("\\{\"trustedNodes\":\\[" +
-                "\\{\"hostname\":\"cfg1\",\"ipAddress\":\".+?\",\"trustedBy\":\"cfg1\"}," +
-                "\\{\"hostname\":\"cfg2\",\"ipAddress\":\".+?\",\"trustedBy\":\"cfg1\"}," +
-                "\\{\"hostname\":\"cfg3\",\"ipAddress\":\".+?\",\"trustedBy\":\"cfg1\"}," +
-                "\\{\"hostname\":\"dual-stack-host.yahoo.com\",\"ipAddress\":\"::1\",\"trustedBy\":\"cfg1\"}," +
-                "\\{\"hostname\":\"dual-stack-host.yahoo.com\",\"ipAddress\":\"127.0.0.1\",\"trustedBy\":\"cfg1\"}" +
-                ".*]}");
-        assertResponseMatches(new Request("http://localhost:8080/nodes/v2/acl/cfg1"), responsePattern);
+                "\\{\"hostname\":\"cfg1\",\"ipAddress\":\".+?\",\"trustedBy\":\"parent1.yahoo.com\"}," +
+                "\\{\"hostname\":\"cfg2\",\"ipAddress\":\".+?\",\"trustedBy\":\"parent1.yahoo.com\"}," +
+                "\\{\"hostname\":\"cfg3\",\"ipAddress\":\".+?\",\"trustedBy\":\"parent1.yahoo.com\"}]," +
+                "\"trustedNetworks\":\\[" +
+                "\\{\"network\":\"172.17.0.0/16\",\"trustedBy\":\"parent1.yahoo.com\"}]}");
+        assertResponseMatches(new Request("http://localhost:8080/nodes/v2/acl/parent1.yahoo.com"), responsePattern);
+    }
+
+    @Test
+    public void acl_response_with_dual_stack_node() throws Exception {
+        Pattern responsePattern = Pattern.compile("\\{\"trustedNodes\":\\[" +
+                "\\{\"hostname\":\"cfg1\",\"ipAddress\":\".+?\",\"trustedBy\":\"host1.yahoo.com\"}," +
+                "\\{\"hostname\":\"cfg2\",\"ipAddress\":\".+?\",\"trustedBy\":\"host1.yahoo.com\"}," +
+                "\\{\"hostname\":\"cfg3\",\"ipAddress\":\".+?\",\"trustedBy\":\"host1.yahoo.com\"}," +
+                "\\{\"hostname\":\"host1.yahoo.com\",\"ipAddress\":\"::1\",\"trustedBy\":\"host1.yahoo.com\"}," +
+                "\\{\"hostname\":\"host1.yahoo.com\",\"ipAddress\":\"127.0.0.1\",\"trustedBy\":\"host1.yahoo.com\"}," +
+                "\\{\"hostname\":\"host2.yahoo.com\",\"ipAddress\":\"::1\",\"trustedBy\":\"host1.yahoo.com\"}," +
+                "\\{\"hostname\":\"host2.yahoo.com\",\"ipAddress\":\"127.0.0.1\",\"trustedBy\":\"host1.yahoo.com\"}" +
+                "],\"trustedNetworks\":\\[\\]}");
+        assertResponseMatches(new Request("http://localhost:8080/nodes/v2/acl/host1.yahoo.com"), responsePattern);
     }
 
     @Test
