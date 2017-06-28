@@ -8,6 +8,7 @@ import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -167,7 +168,13 @@ public class NodeRetirer extends Maintainer {
             }
 
             // This takes a while, so do it outside of the application lock
-            if (! nodesToRetire.isEmpty()) deployment.activate();
+            if (! nodesToRetire.isEmpty()) {
+                try {
+                    deployment.activate();
+                } catch (Exception e) {
+                    log.log(LogLevel.INFO, "Failed to redeploy " + app.serializedForm() + ", will be redeployed later by application maintainer", e);
+                }
+            }
         }));
     }
 
