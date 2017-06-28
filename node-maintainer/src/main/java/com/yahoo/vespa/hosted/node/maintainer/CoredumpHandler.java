@@ -40,17 +40,17 @@ public class CoredumpHandler {
     private final Path coredumpsPath;
     private final Path doneCoredumpsPath;
     private final Map<String, Object> nodeAttributes;
-    private final Optional<Path> yinstStatePath;
+    private final Optional<Path> installStatePath;
     private final String feedEndpoint;
 
     public CoredumpHandler(HttpClient httpClient, CoreCollector coreCollector, Path coredumpsPath, Path doneCoredumpsPath,
-                           Map<String, Object> nodeAttributes, Optional<Path> yinstStatePath, String feedEndpoint) {
+                           Map<String, Object> nodeAttributes, Optional<Path> installStatePath, String feedEndpoint) {
         this.httpClient = httpClient;
         this.coreCollector = coreCollector;
         this.coredumpsPath = coredumpsPath;
         this.doneCoredumpsPath = doneCoredumpsPath;
         this.nodeAttributes = nodeAttributes;
-        this.yinstStatePath = yinstStatePath;
+        this.installStatePath = installStatePath;
         this.feedEndpoint = feedEndpoint;
     }
 
@@ -124,7 +124,7 @@ public class CoredumpHandler {
         if (!Files.exists(metadataPath)) {
             Path coredumpPath = Files.list(coredumpDirectory).findFirst()
                     .orElseThrow(() -> new RuntimeException("No coredump file found in processing directory " + coredumpDirectory));
-            Map<String, Object> metadata = coreCollector.collect(coredumpPath, yinstStatePath);
+            Map<String, Object> metadata = coreCollector.collect(coredumpPath, installStatePath);
             metadata.putAll(nodeAttributes);
 
             Map<String, Object> fields = new HashMap<>();

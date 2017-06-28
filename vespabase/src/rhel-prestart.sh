@@ -84,6 +84,7 @@ fixdir ${VESPA_USER} wheel 1777  logs/vespa
 fixdir ${VESPA_USER} wheel 1777  tmp/vespa
 fixdir ${VESPA_USER} wheel  755  libdata/yell/exception
 fixdir ${VESPA_USER} wheel  755  libexec/vespa/plugins/qrs
+fixdir ${VESPA_USER} wheel  755  logs/vespa/configserver
 fixdir ${VESPA_USER} wheel  755  logs/vespa/qrs
 fixdir ${VESPA_USER} wheel  755  logs/vespa/search
 fixdir ${VESPA_USER} wheel  755  var/cache/vespa/config
@@ -107,4 +108,4 @@ chown -hR ${VESPA_USER} var/db/vespa
 # END directory fixups
 
 # Delete temporary files created by storage when running.
-rm -f /home/y/tmp/hostinfo.*.*.report
+rm -f ${VESPA_HOME}/tmp/hostinfo.*.*.report

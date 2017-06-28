@@ -83,7 +83,7 @@ configure_valgrind () {
     if which valgrind >/dev/null; then
         if check_bname_in_value $VESPA_USE_VALGRIND; then
             no_valgrind=false
-            valgrind_log=/home/y/tmp/valgrind.$bname.log.$$
+            valgrind_log=$VESPA_HOME/tmp/valgrind.$bname.log.$$
             case $VESPA_VALGRIND_OPT in
                 *callgrind*) use_callgrind=true;;
             esac
@@ -99,22 +99,22 @@ configure_huge_pages () {
 }
 
 configure_use_madvise () {
-	for f in $VESPA_USE_MADVISE_LIST
-	do
-	    # log_debug_message "Testing '$f'"
-	    app=`echo $f | cut -d '=' -f1`
-	    limit=`echo $f | cut -d '=' -f2`
-	    if [ "$app" = "$bname" ]; then
-		log_debug_message "I ($bname) shall use madvise with limit $limit, as set in VESPA_USE_MADVISE_LIST"
-		export VESPA_MALLOC_MADVISE_LIMIT="$limit"
-		break
-	    fi
+    for f in $VESPA_USE_MADVISE_LIST
+    do
+        # log_debug_message "Testing '$f'"
+        app=`echo $f | cut -d '=' -f1`
+        limit=`echo $f | cut -d '=' -f2`
+        if [ "$app" = "$bname" ]; then
+            log_debug_message "I ($bname) shall use madvise with limit $limit, as set in VESPA_USE_MADVISE_LIST"
+            export VESPA_MALLOC_MADVISE_LIMIT="$limit"
+            break
+        fi
 
-	    if [ "$app" = "all" ]; then
-		log_debug_message "I shall use madvise with limit $limit, as VESPA_USE_MADVISE_LIST is 'all'"
-		export VESPA_MALLOC_MADVISE_LIMIT="$limit"
-	    fi
-	done
+        if [ "$app" = "all" ]; then
+            log_debug_message "I shall use madvise with limit $limit, as VESPA_USE_MADVISE_LIST is 'all'"
+            export VESPA_MALLOC_MADVISE_LIMIT="$limit"
+        fi
+    done
 }
 
 configure_vespa_malloc () {
@@ -136,10 +136,10 @@ configure_vespa_malloc () {
             tryfile="${VESPA_HOME}/${pre}/${suf}"
             if [ -f "$tryfile" ]; then
                 LD_PRELOAD="$tryfile"
-		log_debug_message "Using LD_PRELOAD='$tryfile'"
+                log_debug_message "Using LD_PRELOAD='$tryfile'"
                 if [ "$VESPA_USE_HUGEPAGES" ]; then
                     export VESPA_MALLOC_HUGEPAGES="$VESPA_USE_HUGEPAGES"
-		    log_debug_message "enabling hugepages for '$0-bin'."
+                    log_debug_message "enabling hugepages for '$0-bin'."
                 fi
                 break
             fi
