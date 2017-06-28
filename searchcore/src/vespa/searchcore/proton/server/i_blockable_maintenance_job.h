@@ -15,7 +15,8 @@ public:
     enum class BlockedReason {
         RESOURCE_LIMITS = 0,
         FROZEN_BUCKET = 1,
-        CLUSTER_STATE = 2
+        CLUSTER_STATE = 2,
+        OUTSTANDING_OPS = 3
     };
 
     IBlockableMaintenanceJob(const vespalib::string &name,
