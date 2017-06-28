@@ -35,10 +35,6 @@ private:
     IDocumentScanIterator::UP     _scanItr;
     bool                          _retryFrozenDocument;
     bool                          _shouldCompactLidSpace;
-    bool                          _resourcesOK;
-    bool                          _nodeRetired;
-    bool                          _runnable;  // can try to perform work
-    IMaintenanceJobRunner        *_runner;
     IDiskMemUsageNotifier        &_diskMemUsageNotifier;
     double                        _resourceLimitFactor;
     IClusterStateChangedNotifier &_clusterStateChangedNotifier;
@@ -70,7 +66,6 @@ public:
 
     // Implements IMaintenanceJob
     virtual bool run() override;
-    virtual void registerRunner(IMaintenanceJobRunner *runner) override;
 };
 
 } // namespace proton

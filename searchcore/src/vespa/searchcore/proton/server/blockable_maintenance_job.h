@@ -33,14 +33,11 @@ public:
 
     virtual ~BlockableMaintenanceJob();
 
+    bool isBlocked(BlockedReason reason);
+
     virtual void setBlocked(BlockedReason reason) override;
-
     virtual void unBlock(BlockedReason reason) override;
-
-    virtual bool isBlocked() const override {
-        LockGuard guard(_mutex);
-        return _blocked;
-    }
+    virtual bool isBlocked() const override;
     virtual void registerRunner(IMaintenanceJobRunner *runner) override { _runner = runner; }
 
 };

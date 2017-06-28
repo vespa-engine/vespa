@@ -26,6 +26,13 @@ BlockableMaintenanceJob::~BlockableMaintenanceJob()
 {
 }
 
+bool
+BlockableMaintenanceJob::isBlocked(BlockedReason reason)
+{
+    LockGuard guard(_mutex);
+    return (_blockReasons.find(reason) != _blockReasons.end());
+}
+
 void
 BlockableMaintenanceJob::setBlocked(BlockedReason reason)
 {
@@ -37,16 +44,24 @@ BlockableMaintenanceJob::setBlocked(BlockedReason reason)
 void
 BlockableMaintenanceJob::unBlock(BlockedReason reason)
 {
-    bool blocked = false;
+    bool considerRun = false;
     {
         LockGuard guard(_mutex);
+        bool blockedBefore = _blocked;
         _blockReasons.erase(reason);
         updateBlocked(guard);
-        blocked = _blocked;
+        considerRun = (!_blocked && blockedBefore);
     }
-    if (_runner && !blocked) {
+    if (_runner && considerRun) {
         _runner->run();
     }
+}
+
+bool
+BlockableMaintenanceJob::isBlocked() const
+{
+    LockGuard guard(_mutex);
+    return _blocked;
 }
 
 }
