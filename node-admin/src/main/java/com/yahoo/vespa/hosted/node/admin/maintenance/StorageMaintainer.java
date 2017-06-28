@@ -80,7 +80,7 @@ public class StorageMaintainer {
         SecretAgentScheduleMaker vespaSchedule = new SecretAgentScheduleMaker("vespa", 60, vespaCheckPath, "all")
                 .withTag("parentHostname", environment.getParentHostHostname());
 
-        Path hostLifeCheckPath = Paths.get("/home/y/libexec/yms/yms_check_host_life");
+        Path hostLifeCheckPath = Paths.get(getDefaults().underVespaHome("libexec/yms/yms_check_host_life"));
         SecretAgentScheduleMaker hostLifeSchedule = new SecretAgentScheduleMaker("host-life", 60, hostLifeCheckPath)
                 .withTag("namespace", "Vespa")
                 .withTag("role", "tenants")
