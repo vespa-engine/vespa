@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.controller.concurrent;
+package com.yahoo.concurrent;
 
 /**
  * Throws on timeout
@@ -7,6 +7,8 @@ package com.yahoo.vespa.hosted.controller.concurrent;
  */
 public class TimeoutException extends RuntimeException {
     
+    private static final long serialVersionUID = 1245343;
+
     public TimeoutException(String message) {
         super(message);
     }

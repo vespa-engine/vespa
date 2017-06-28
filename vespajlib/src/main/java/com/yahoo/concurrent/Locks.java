@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.controller.concurrent;
+package com.yahoo.concurrent;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
