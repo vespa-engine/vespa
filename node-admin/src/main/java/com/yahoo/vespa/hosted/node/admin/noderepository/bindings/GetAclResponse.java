@@ -19,9 +19,14 @@ public class GetAclResponse {
     @JsonProperty("trustedNodes")
     public final List<Node> trustedNodes;
 
+    @JsonProperty("trustedNetworks")
+    public final List<Network> trustedNetworks;
+
     @JsonCreator
-    public GetAclResponse(@JsonProperty("trustedNodes") List<Node> trustedNodes) {
+    public GetAclResponse(@JsonProperty("trustedNodes") List<Node> trustedNodes,
+                          @JsonProperty("trustedNetworks") List<Network> trustedNetworks) {
         this.trustedNodes = trustedNodes == null ? Collections.emptyList() : trustedNodes;
+        this.trustedNetworks = trustedNetworks == null ? Collections.emptyList() : trustedNetworks;
     }
 
     public static class Node {
@@ -40,6 +45,21 @@ public class GetAclResponse {
                     @JsonProperty("trustedBy") String trustedBy) {
             this.hostname = hostname;
             this.ipAddress = ipAddress;
+            this.trustedBy = trustedBy;
+        }
+    }
+
+    public static class Network {
+
+        @JsonProperty("network")
+        public final String network;
+
+        @JsonProperty("trustedBy")
+        public final String trustedBy;
+
+        @JsonCreator
+        public Network(@JsonProperty("network") String network, @JsonProperty("trustedBy") String trustedBy) {
+            this.network = network;
             this.trustedBy = trustedBy;
         }
     }
