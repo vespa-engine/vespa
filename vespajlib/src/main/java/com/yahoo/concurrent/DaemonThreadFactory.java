@@ -8,7 +8,7 @@ import java.util.concurrent.ThreadFactory;
  * A simple thread factory that decorates <code>Executors.defaultThreadFactory()</code>
  * and sets all created threads to be daemon threads.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class DaemonThreadFactory implements ThreadFactory {
     private ThreadFactory defaultThreadFactory = Executors.defaultThreadFactory();
