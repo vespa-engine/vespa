@@ -142,12 +142,12 @@ public class Maintainer {
         Path coredumpsPath = Paths.get(getFieldOrFail(arguments, "coredumpsPath").asString());
         Path doneCoredumpsPath = Paths.get(getFieldOrFail(arguments, "doneCoredumpsPath").asString());
         Map<String, Object> attributesMap = parseMap(arguments);
-        Optional<Path> yinstStatePath = SlimeUtils.optionalString(arguments.field("yinstStatePath")).map(Paths::get);
+        Optional<Path> installStatePath = SlimeUtils.optionalString(arguments.field("yinstStatePath")).map(Paths::get);
         String feedEndpoint = getFieldOrFail(arguments, "feedEndpoint").asString();
 
         try {
             CoredumpHandler coredumpHandler = new CoredumpHandler(httpClient, coreCollector, coredumpsPath,
-                                                                  doneCoredumpsPath, attributesMap, yinstStatePath,
+                                                                  doneCoredumpsPath, attributesMap, installStatePath,
                                                                   feedEndpoint);
             coredumpHandler.processAll();
         } catch (IOException e) {

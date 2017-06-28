@@ -34,7 +34,7 @@ public class CoreCollectorTest {
     private final ProcessExecuter processExecuter = mock(ProcessExecuter.class);
     private final CoreCollector coreCollector = new CoreCollector(processExecuter);
 
-    private final Path YINST_STATE_PATH = Paths.get("/path/to/yinst.state");
+    private final Path INSTALL_STATE_PATH = Paths.get("/path/to/install.state");
     private final Path TEST_CORE_PATH = Paths.get("/tmp/core.1234");
     private final Path TEST_BIN_PATH = Paths.get("/usr/bin/program");
     private final List<String> GDB_BACKTRACE = Arrays.asList("[New Thread 2703]",
@@ -42,7 +42,7 @@ public class CoreCollectorTest {
             "#0  0x00000000004004d8 in main (argv=0x1) at main.c:4", "4\t    printf(argv[3]);",
             "#0  0x00000000004004d8 in main (argv=0x1) at main.c:4");
 
-    private final List<String> YINST_STATE = Arrays.asList("package: some_package-0.0.2",
+    private final List<String> INSTALL_STATE = Arrays.asList("package: some_package-0.0.2",
             "variable 'value'",
             "ca_file /path/to/ca.pem");
 
@@ -151,26 +151,26 @@ public class CoreCollectorTest {
         mockExec(new String[]{GDB_PATH, "-n", "-ex", "thread apply all bt", "-batch",
                         "/usr/bin/program", "/tmp/core.1234"},
                 String.join("\n", GDB_BACKTRACE));
-        mockExec(new String[]{"cat", YINST_STATE_PATH.toString()}, String.join("\n", YINST_STATE));
+        mockExec(new String[]{"cat", INSTALL_STATE_PATH.toString()}, String.join("\n", INSTALL_STATE));
         mockExec(new String[]{"rpm", "-qa"}, String.join("\n", RPM_PACKAGES));
 
         Map<String, Object> expectedData = new HashMap<>();
         expectedData.put("bin_path", TEST_BIN_PATH.toString());
         expectedData.put("backtrace", new ArrayList<>(GDB_BACKTRACE));
         expectedData.put("backtrace_all_threads", new ArrayList<>(GDB_BACKTRACE));
-        expectedData.put("yinst_state", new ArrayList<>(YINST_STATE));
+        expectedData.put("yinst_state", new ArrayList<>(INSTALL_STATE));
         expectedData.put("rpm_packages", new ArrayList<>(RPM_PACKAGES));
-        assertEquals(expectedData, coreCollector.collect(TEST_CORE_PATH, Optional.of(YINST_STATE_PATH)));
+        assertEquals(expectedData, coreCollector.collect(TEST_CORE_PATH, Optional.of(INSTALL_STATE_PATH)));
     }
 
     @Test
     public void collectsPartialIfUnableToDetermineDumpingProgramTest() throws IOException, InterruptedException {
-        // We fail to get backtrace and RPM packages, but yinst state works, make sure it is returned
-        mockExec(new String[]{"cat", YINST_STATE_PATH.toString()}, String.join("\n", YINST_STATE));
+        // We fail to get backtrace and RPM packages, but install state works, make sure it is returned
+        mockExec(new String[]{"cat", INSTALL_STATE_PATH.toString()}, String.join("\n", INSTALL_STATE));
 
         Map<String, Object> expectedData = new HashMap<>();
-        expectedData.put("yinst_state", new ArrayList<>(YINST_STATE));
-        assertEquals(expectedData, coreCollector.collect(TEST_CORE_PATH, Optional.of(YINST_STATE_PATH)));
+        expectedData.put("yinst_state", new ArrayList<>(INSTALL_STATE));
+        assertEquals(expectedData, coreCollector.collect(TEST_CORE_PATH, Optional.of(INSTALL_STATE_PATH)));
     }
 
     @Test

@@ -39,11 +39,11 @@ public class CoreCollector {
         this.processExecuter = processExecuter;
     }
 
-    List<String> readYinstState(Path yinstStatePath) throws IOException {
-        Pair<Integer, String> result = processExecuter.exec(new String[]{"cat", yinstStatePath.toString()});
+    List<String> readInstallState(Path installStatePath) throws IOException {
+        Pair<Integer, String> result = processExecuter.exec(new String[]{"cat", installStatePath.toString()});
 
         if (result.getFirst() != 0) {
-            throw new RuntimeException("Failed to read yinst state file at: " + yinstStatePath + ", result: " + result);
+            throw new RuntimeException("Failed to read install state file at: " + installStatePath + ", result: " + result);
         }
         return Arrays.asList(result.getSecond().split("\n"));
     }
@@ -98,7 +98,7 @@ public class CoreCollector {
         return Arrays.asList(result.getSecond().split("\n"));
     }
 
-    Map<String, Object> collect(Path coredumpPath, Optional<Path> yinstStatePath) {
+    Map<String, Object> collect(Path coredumpPath, Optional<Path> installStatePath) {
         Map<String, Object> data = new LinkedHashMap<>();
         try {
             coredumpPath = compressCoredump(coredumpPath);
@@ -116,11 +116,11 @@ public class CoreCollector {
             logger.log(Level.WARNING, "Failed to extract backtrace", e);
         }
 
-        yinstStatePath.ifPresent(yinstState -> {
+        installStatePath.ifPresent(installState -> {
             try {
-                data.put("yinst_state", readYinstState(yinstState));
+                data.put("yinst_state", readInstallState(installState));
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Failed to read yinst state", e);
+                logger.log(Level.WARNING, "Failed to read install state", e);
             }
 
             try {
