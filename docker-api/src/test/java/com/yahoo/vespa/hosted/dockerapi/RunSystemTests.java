@@ -5,6 +5,7 @@ import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.ExecStartCmd;
 import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.system.ProcessExecuter;
 
 import java.io.IOException;
@@ -35,7 +36,7 @@ import static org.junit.Assert.assertEquals;
      RunSystemTests runSystemTests = new RunSystemTests(vespaDockerBase, pathToSystemtestsInHost);
 
      ContainerName systemtestsHost = new ContainerName("stest-1");
-     // Update maven local repository and /home/y/lib/jars with the current version of these modules inside container
+     // Update maven local repository and $VESPA_HOME/lib/jars with the current version of these modules inside container
      runSystemTests.updateContainerMavenLocalRepository(systemtestsHost);
 
      Path systemTestToRun = Paths.get("tests/search/basicsearch/basic_search.rb");
@@ -54,7 +55,7 @@ public class RunSystemTests {
     private final Path pathToVespaRepoInHost = Paths.get("").toAbsolutePath();
     private final Path pathToVespaRepoInContainer = Paths.get("/vespa");
     private final Path pathToTestRunner = pathToSystemtestsInContainer.resolve("bin/run_test.rb");
-    private final Path pathToLibJars = Paths.get("/home/y/lib/jars");
+    private final Path pathToLibJars = Paths.get(getDefaults().underVespaHome("lib/jars"));
     private final String username = System.getProperty("user.name");
 
     private final Logger logger = Logger.getLogger("systemtest");
@@ -95,7 +96,7 @@ public class RunSystemTests {
 
     /**
      * This method updates container's local repository with all artifacts that are built on host machine, then
-     * copies any existing and updated file from target to /home/y/lib/jars.
+     * copies any existing and updated file from target to $VESPA_HOME/lib/jars.
      *
      * @param containerName name of the container to install modules in, if it does not exist, a new
      *                       one will be started.
