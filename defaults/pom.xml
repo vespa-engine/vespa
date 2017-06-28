@@ -67,6 +67,17 @@
 		    </compilerArgs>
 		</configuration>
 	    </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <redirectTestOutputToFile>${test.hide}</redirectTestOutputToFile>
+                    <environmentVariables>
+                        <VESPA_HOME>/opt/vespa</VESPA_HOME>
+                        <VESPA_USER>yahoo</VESPA_USER>
+                    </environmentVariables>
+                </configuration>
+            </plugin>
 	    <plugin>
 		<groupId>org.apache.maven.plugins</groupId>
 		<artifactId>maven-install-plugin</artifactId>
