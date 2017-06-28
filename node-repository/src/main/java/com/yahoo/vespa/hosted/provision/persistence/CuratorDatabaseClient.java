@@ -12,7 +12,7 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.curator.CuratorMutex;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -276,17 +276,17 @@ public class CuratorDatabaseClient {
     }
 
     /** Acquires the single cluster-global, reentrant lock for all non-active nodes */
-    public CuratorMutex lockInactive() {
+    public Lock lockInactive() {
         return lock(root.append("locks").append("unallocatedLock"), defaultLockTimeout);
     }
 
     /** Acquires the single cluster-global, reentrant lock for active nodes of this application */
-    public CuratorMutex lock(ApplicationId application) {
+    public Lock lock(ApplicationId application) {
         return lock(application, defaultLockTimeout);
     }
 
     /** Acquires the single cluster-global, reentrant lock with the specified timeout for active nodes of this application */
-    public CuratorMutex lock(ApplicationId application, Duration timeout) {
+    public Lock lock(ApplicationId application, Duration timeout) {
         try {
             return lock(lockPath(application), timeout);
         }
@@ -295,7 +295,7 @@ public class CuratorDatabaseClient {
         }
     }
 
-    private CuratorMutex lock(Path path, Duration timeout) {
+    private Lock lock(Path path, Duration timeout) {
         return curatorDatabase.lock(path, timeout);
     }
 
@@ -332,7 +332,7 @@ public class CuratorDatabaseClient {
         transaction.commit();
     }
     
-    public CuratorMutex lockInactiveJobs() {
+    public Lock lockInactiveJobs() {
         return lock(root.append("locks").append("inactiveJobsLock"), defaultLockTimeout);
     }
 

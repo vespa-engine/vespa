@@ -14,12 +14,12 @@ import java.util.concurrent.TimeUnit;
  *
  * @author bratseth
  */
-public class CuratorMutex implements Mutex {
+public class Lock implements Mutex {
 
     private final InterProcessMutex mutex;
     private final String lockPath;
 
-    public CuratorMutex(String lockPath, CuratorFramework curator) {
+    public Lock(String lockPath, CuratorFramework curator) {
         this.lockPath = lockPath;
         mutex = new InterProcessMutex(curator, lockPath);
     }
