@@ -29,6 +29,6 @@ public class Logd extends AbstractService {
      /**
      * @return The command used to start logd
      */
-    public String getStartupCommand() { return "exec sbin/logd"; }
+    public String getStartupCommand() { return "exec sbin/vespa-logd"; }
 
 }
