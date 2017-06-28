@@ -48,7 +48,7 @@ LidSpaceCompactionJob::scanDocuments(const LidUsageStats &stats)
             IFrozenBucketHandler::ExclusiveBucketGuard::UP bucketGuard = _frozenHandler.acquireExclusiveBucket(document.bucketId);
             if ( ! bucketGuard ) {
                 // the job is blocked until the bucket for this document is thawed
-                setBlocked(true);
+                setBlocked(BlockedReason::FROZEN_BUCKET);
                 _retryFrozenDocument = true;
                 return true;
             } else {
@@ -88,8 +88,8 @@ LidSpaceCompactionJob::LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionC
                                              double resourceLimitFactor,
                                              IClusterStateChangedNotifier &clusterStateChangedNotifier,
                                              bool nodeRetired)
-    : IMaintenanceJob("lid_space_compaction." + handler.getName(),
-            config.getDelay(), config.getInterval()),
+    : BlockableMaintenanceJob("lid_space_compaction." + handler.getName(),
+            config.getDelay(), config.getInterval(), resourceLimitFactor),
       _cfg(config),
       _handler(handler),
       _opStorer(opStorer),
@@ -97,17 +97,14 @@ LidSpaceCompactionJob::LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionC
       _scanItr(),
       _retryFrozenDocument(false),
       _shouldCompactLidSpace(false),
-      _resourcesOK(true),
-      _nodeRetired(nodeRetired),
-      _runnable(true),
-      _runner(nullptr),
       _diskMemUsageNotifier(diskMemUsageNotifier),
-      _resourceLimitFactor(resourceLimitFactor),
       _clusterStateChangedNotifier(clusterStateChangedNotifier)
 {
     _diskMemUsageNotifier.addDiskMemUsageListener(this);
     _clusterStateChangedNotifier.addClusterStateChangedHandler(this);
-    refreshRunnable();
+    if (nodeRetired) {
+        setBlocked(BlockedReason::CLUSTER_STATE);
+    }
 }
 
 LidSpaceCompactionJob::~LidSpaceCompactionJob()
@@ -119,7 +116,7 @@ LidSpaceCompactionJob::~LidSpaceCompactionJob()
 bool
 LidSpaceCompactionJob::run()
 {
-    if (!_runnable) {
+    if (isBlocked()) {
         return true; // indicate work is done since no work can be done
     }
     LidUsageStats stats = _handler.getLidStatus();
@@ -136,28 +133,10 @@ LidSpaceCompactionJob::run()
 }
 
 void
-LidSpaceCompactionJob::refreshRunnable()
-{
-    _runnable = (_resourcesOK && !_nodeRetired);
-}
-
-void
-LidSpaceCompactionJob::refreshAndConsiderRunnable()
-{
-    bool oldRunnable = _runnable;
-    refreshRunnable();
-    if (_runner && _runnable && !oldRunnable) {
-        _runner->run();
-    }
-}
-
-void
 LidSpaceCompactionJob::notifyDiskMemUsage(DiskMemUsageState state)
 {
     // Called by master write thread
-    bool resourcesOK = !state.aboveDiskLimit(_resourceLimitFactor) && !state.aboveMemoryLimit(_resourceLimitFactor);
-    _resourcesOK = resourcesOK;
-    refreshAndConsiderRunnable();
+    internalNotifyDiskMemUsage(state);
 }
 
 void
@@ -165,20 +144,15 @@ LidSpaceCompactionJob::notifyClusterStateChanged(const IBucketStateCalculator::S
 {
     // Called by master write thread
     bool nodeRetired = newCalc->nodeRetired();
-    if (nodeRetired && !_nodeRetired) {
+    if (!nodeRetired) {
+        if (isBlocked(BlockedReason::CLUSTER_STATE)) {
+            LOG(info, "notifyClusterStateChanged(): Node is no longer retired -> lid space compaction job re-enabled");
+            unBlock(BlockedReason::CLUSTER_STATE);
+        }
+    } else {
         LOG(info, "notifyClusterStateChanged(): Node is retired -> lid space compaction job disabled");
+        setBlocked(BlockedReason::CLUSTER_STATE);
     }
-    if (!nodeRetired && _nodeRetired) {
-        LOG(info, "notifyClusterStateChanged(): Node is no longer retired -> lid space compaction job re-enabled");
-    }
-    _nodeRetired = nodeRetired;
-    refreshAndConsiderRunnable();
-}
-
-void
-LidSpaceCompactionJob::registerRunner(IMaintenanceJobRunner *runner)
-{
-    _runner = runner;
 }
 
 } // namespace proton

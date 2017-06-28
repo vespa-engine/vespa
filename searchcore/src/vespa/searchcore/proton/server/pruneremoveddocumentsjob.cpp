@@ -22,7 +22,7 @@ PruneRemovedDocumentsJob(const Config &config,
                          const vespalib::string &docTypeName,
                          IPruneRemovedDocumentsHandler &handler,
                          IFrozenBucketHandler &frozenHandler)
-    : IMaintenanceJob("prune_removed_documents." + docTypeName,
+    : BlockableMaintenanceJob("prune_removed_documents." + docTypeName,
                       config.getDelay(), config.getInterval()),
       _metaStore(metaStore),
       _subDbId(subDbId),
@@ -85,7 +85,7 @@ PruneRemovedDocumentsJob::run()
             BucketId bucket(metaData.getBucketId());
             IFrozenBucketHandler::ExclusiveBucketGuard::UP bucketGuard = _frozenHandler.acquireExclusiveBucket(bucket);
             if ( ! bucketGuard ) {
-                setBlocked(true);
+                setBlocked(BlockedReason::FROZEN_BUCKET);
                 _nextLid = lid;
                 flush(olid, lid, ageLimit);
                 return true;

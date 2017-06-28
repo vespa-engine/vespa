@@ -2,18 +2,20 @@
 #include <vespa/log/log.h>
 LOG_SETUP("job_tracked_maintenance_test");
 
+#include <vespa/searchcore/proton/server/i_blockable_maintenance_job.h>
 #include <vespa/searchcore/proton/server/job_tracked_maintenance_job.h>
 #include <vespa/searchcore/proton/test/simple_job_tracker.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/closuretask.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 
 using namespace proton;
 using namespace vespalib;
 using test::SimpleJobTracker;
-typedef std::unique_ptr<Gate> GateUP;
-typedef std::vector<GateUP> GateVector;
+using GateUP = std::unique_ptr<Gate>;
+using GateVector = std::vector<GateUP>;
+using BlockedReason = IBlockableMaintenanceJob::BlockedReason;
 
 GateVector
 getGateVector(size_t size)
@@ -25,18 +27,22 @@ getGateVector(size_t size)
     return retval;
 }
 
-struct MyMaintenanceJob : public IMaintenanceJob
+struct MyMaintenanceJob : public IBlockableMaintenanceJob
 {
     GateVector _runGates;
     size_t     _runIdx;
+    bool       _blocked;
     MyMaintenanceJob(size_t numRuns)
-        : IMaintenanceJob("myjob", 10, 20),
+        : IBlockableMaintenanceJob("myjob", 10, 20),
           _runGates(getGateVector(numRuns)),
-          _runIdx(0)
+          _runIdx(0),
+          _blocked(false)
     {}
-    void block() {
-        setBlocked(true);
-    }
+    void block() { setBlocked(BlockedReason::RESOURCE_LIMITS); }
+    void unBlock() { unBlock(BlockedReason::RESOURCE_LIMITS); }
+    virtual void setBlocked(BlockedReason) override { _blocked = true; }
+    virtual void unBlock(BlockedReason) override { _blocked = false; }
+    virtual bool isBlocked() const override { return _blocked; }
     virtual bool run() override {
         _runGates[_runIdx++]->await(5000);
         return _runIdx == _runGates.size();
@@ -119,13 +125,14 @@ TEST_F("require that maintenance job that is destroyed is tracked", Fixture(2))
     f.assertTracker(0, 0);
 }
 
-TEST_F("require that block calls are sent to underlying job", Fixture)
+TEST_F("require that block calls are sent to underlying jobs", Fixture)
 {
     EXPECT_FALSE(f._trackedJob->isBlocked());
+    EXPECT_TRUE(f._trackedJob->asBlockable() != nullptr);
     f._myJob->block();
     EXPECT_TRUE(f._myJob->isBlocked());
     EXPECT_TRUE(f._trackedJob->isBlocked());
-    f._trackedJob->unBlock();
+    f._myJob->unBlock();
     EXPECT_FALSE(f._myJob->isBlocked());
     EXPECT_FALSE(f._trackedJob->isBlocked());
 }

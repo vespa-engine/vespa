@@ -2,15 +2,15 @@
 
 #pragma once
 
-#include "ibucketstatecalculator.h"
-#include "ibucketmodifiedhandler.h"
-#include "ifrozenbuckethandler.h"
+#include "blockable_maintenance_job.h"
 #include "documentbucketmover.h"
-#include "i_maintenance_job.h"
-#include "iclusterstatechangedhandler.h"
-#include "ibucketfreezelistener.h"
-#include "ibucketstatechangedhandler.h"
 #include "i_disk_mem_usage_listener.h"
+#include "ibucketfreezelistener.h"
+#include "ibucketmodifiedhandler.h"
+#include "ibucketstatecalculator.h"
+#include "ibucketstatechangedhandler.h"
+#include "iclusterstatechangedhandler.h"
+#include "ifrozenbuckethandler.h"
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <set>
 
@@ -24,9 +24,9 @@ class IDiskMemUsageNotifier;
 
 /**
  * Class used to control the moving of buckets between the ready and
- * not ready sub databases.
+ * not ready sub databases based on the readiness of buckets according to the cluster state.
  */
-class BucketMoveJob : public IMaintenanceJob,
+class BucketMoveJob : public BlockableMaintenanceJob,
                       public IClusterStateChangedHandler,
                       public IBucketFreezeListener,
                       public IBucketStateChangedHandler,
@@ -97,16 +97,9 @@ private:
     DelayedBucketSet                   _delayedBucketsFrozen;
     IFrozenBucketHandler              &_frozenBuckets;
     DocumentBucketMover                _delayedMover;
-    IMaintenanceJobRunner             *_runner;
-    bool                               _clusterUp;
-    bool                               _nodeUp;
-    bool                               _nodeInitializing;
-    bool                               _resourcesOK;
-    bool                               _runnable;  // can try to perform work
     IClusterStateChangedNotifier      &_clusterStateChangedNotifier;
     IBucketStateChangedNotifier       &_bucketStateChangedNotifier;
     IDiskMemUsageNotifier             &_diskMemUsageNotifier;
-    double                             _resourceLimitFactor;
 
     ScanResult
     scanBuckets(size_t maxBucketsToScan,
@@ -125,9 +118,6 @@ private:
                 ScanIterator &itr,
                 DocumentBucketMover &mover,
                 IFrozenBucketHandler::ExclusiveBucketGuard::UP & bucketGuard);
-
-    void refreshRunnable();
-    void refreshDerivedClusterState();
 
     /**
      * Signal that the given bucket should be de-activated.
@@ -169,25 +159,17 @@ public:
     }
 
     // IMaintenanceJob API
-    virtual void registerRunner(IMaintenanceJobRunner *runner) override;
-
-    // IMaintenanceJob API
     virtual bool run() override;
 
     // IClusterStateChangedHandler API
     virtual void notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) override;
 
-
     // IBucketFreezeListener API
-    /**
-     * Signal that the given bucket has been thawed.
-     * A thawed bucket can be considered for moving.
-     */
     virtual void notifyThawedBucket(const document::BucketId &bucket) override;
 
     // IBucketStateChangedHandler API
-    void notifyBucketStateChanged(const document::BucketId &bucketId,
-                             storage::spi::BucketInfo::ActiveState newState) override;
+    virtual void notifyBucketStateChanged(const document::BucketId &bucketId,
+                                          storage::spi::BucketInfo::ActiveState newState) override;
 
     virtual void notifyDiskMemUsage(DiskMemUsageState state) override;
 };

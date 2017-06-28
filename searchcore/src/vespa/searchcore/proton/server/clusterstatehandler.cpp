@@ -25,32 +25,27 @@ class ClusterStateAdapter : public IBucketStateCalculator
 {
 private:
     ClusterState _calc;
+    bool _clusterUp;
+    bool _nodeUp;
+    bool _nodeInitializing;
+    bool _nodeRetired;
 
 public:
     ClusterStateAdapter(const ClusterState &calc)
-        : _calc(calc)
+        : _calc(calc),
+          _clusterUp(_calc.clusterUp()),
+          _nodeUp(_calc.nodeUp()),
+          _nodeInitializing(_calc.nodeInitializing()),
+          _nodeRetired(_calc.nodeRetired())
     {
     }
-
     bool shouldBeReady(const document::BucketId &bucket) const override {
         return _calc.shouldBeReady(Bucket(bucket, PartitionId(0)));
     }
-
-    bool clusterUp() const override {
-        return _calc.clusterUp();
-    }
-
-    bool nodeUp() const override {
-        return _calc.nodeUp();
-    }
-
-    bool nodeInitializing() const override {
-        return _calc.nodeInitializing();
-    }
-
-    bool nodeRetired() const override {
-        return _calc.nodeRetired();
-    }
+    bool clusterUp() const override { return _clusterUp; }
+    bool nodeUp() const override { return _nodeUp; }
+    bool nodeInitializing() const override { return _nodeInitializing; }
+    bool nodeRetired() const override { return _nodeRetired; }
 };
 
 }

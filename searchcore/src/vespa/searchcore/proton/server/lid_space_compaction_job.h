@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "blockable_maintenance_job.h"
 #include "document_db_maintenance_config.h"
 #include "i_disk_mem_usage_listener.h"
 #include "i_lid_space_compaction_handler.h"
-#include "i_maintenance_job.h"
 #include "i_operation_storer.h"
 #include "ibucketstatecalculator.h"
 #include "iclusterstatechangedhandler.h"
@@ -23,7 +23,7 @@ class IClusterStateChangedNotifier;
  * Compaction is handled by moving documents from high lids to low free lids.
  * A handler is typically working over a single document sub db.
  */
-class LidSpaceCompactionJob : public IMaintenanceJob,
+class LidSpaceCompactionJob : public BlockableMaintenanceJob,
                               public IDiskMemUsageListener,
                               public IClusterStateChangedHandler
 {
@@ -35,12 +35,7 @@ private:
     IDocumentScanIterator::UP     _scanItr;
     bool                          _retryFrozenDocument;
     bool                          _shouldCompactLidSpace;
-    bool                          _resourcesOK;
-    bool                          _nodeRetired;
-    bool                          _runnable;  // can try to perform work
-    IMaintenanceJobRunner        *_runner;
     IDiskMemUsageNotifier        &_diskMemUsageNotifier;
-    double                        _resourceLimitFactor;
     IClusterStateChangedNotifier &_clusterStateChangedNotifier;
 
     bool hasTooMuchLidBloat(const search::LidUsageStats &stats) const;
@@ -70,7 +65,6 @@ public:
 
     // Implements IMaintenanceJob
     virtual bool run() override;
-    virtual void registerRunner(IMaintenanceJobRunner *runner) override;
 };
 
 } // namespace proton

@@ -8,6 +8,7 @@
 #include <vespa/searchcore/proton/feedoperation/pruneremoveddocumentsoperation.h>
 #include <vespa/searchcore/proton/feedoperation/putoperation.h>
 #include <vespa/searchcore/proton/feedoperation/removeoperation.h>
+#include <vespa/searchcore/proton/server/blockable_maintenance_job.h>
 #include <vespa/searchcore/proton/server/executor_thread_service.h>
 #include <vespa/searchcore/proton/server/i_operation_storer.h>
 #include <vespa/searchcore/proton/server/ibucketmodifiedhandler.h>
@@ -32,6 +33,7 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/log/log.h>
+
 LOG_SETUP("maintenancecontroller_test");
 
 using namespace proton;
@@ -51,6 +53,8 @@ using vespalib::makeTask;
 using vespalib::makeClosure;
 using vespalib::Slime;
 using proton::matching::ISessionCachePruner;
+
+using BlockedReason = IBlockableMaintenanceJob::BlockedReason;
 
 typedef BucketId::List BucketIdVector;
 typedef std::set<BucketId> BucketIdSet;
@@ -277,7 +281,7 @@ public:
     }
 };
 
-struct MySimpleJob : public IMaintenanceJob
+struct MySimpleJob : public BlockableMaintenanceJob
 {
     vespalib::CountDownLatch _latch;
     size_t                   _runCnt;
@@ -285,12 +289,12 @@ struct MySimpleJob : public IMaintenanceJob
     MySimpleJob(double delay,
                 double interval,
                 uint32_t finishCount)
-        : IMaintenanceJob("my_job", delay, interval),
+        : BlockableMaintenanceJob("my_job", delay, interval),
           _latch(finishCount),
           _runCnt(0)
     {
     }
-    void block() { setBlocked(true); }
+    void block() { setBlocked(BlockedReason::FROZEN_BUCKET); }
     virtual bool run() override {
         LOG(info, "MySimpleJob::run()");
         _latch.countDown();
@@ -315,17 +319,17 @@ struct MySplitJob : public MySimpleJob
     }
 };
 
-struct MyLongRunningJob : public IMaintenanceJob
+struct MyLongRunningJob : public BlockableMaintenanceJob
 {
     vespalib::Gate _firstRun;
 
     MyLongRunningJob(double delay,
                      double interval)
-        : IMaintenanceJob("long_running_job", delay, interval),
+        : BlockableMaintenanceJob("long_running_job", delay, interval),
           _firstRun()
     {
     }
-    void block() { setBlocked(true); }
+    void block() { setBlocked(BlockedReason::FROZEN_BUCKET); }
     virtual bool run() override {
         _firstRun.countDown();
         usleep(10000);

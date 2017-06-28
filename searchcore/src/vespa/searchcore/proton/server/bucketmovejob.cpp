@@ -25,7 +25,6 @@ const char * bool2str(bool v) { return (v ? "T" : "F"); }
 
 }
 
-
 BucketMoveJob::ScanIterator::
 ScanIterator(BucketDBOwner::Guard db, uint32_t pass, BucketId lastBucket, BucketId endBucket)
     : _db(std::move(db)),
@@ -35,7 +34,6 @@ ScanIterator(BucketDBOwner::Guard db, uint32_t pass, BucketId lastBucket, Bucket
 {
 }
 
-
 BucketMoveJob::ScanIterator::
 ScanIterator(BucketDBOwner::Guard db, BucketId bucket)
     : _db(std::move(db)),
@@ -43,7 +41,6 @@ ScanIterator(BucketDBOwner::Guard db, BucketId bucket)
       _end(_db->end())
 {
 }
-
 
 BucketMoveJob::ScanIterator::ScanIterator(ScanIterator &&rhs)
     : _db(std::move(rhs._db)),
@@ -95,7 +92,6 @@ BucketMoveJob::checkBucket(const BucketId &bucket,
                          _moveHandler, _ready._metaStore->getBucketDB());
 }
 
-
 BucketMoveJob::ScanResult
 BucketMoveJob::scanBuckets(size_t maxBucketsToScan, IFrozenBucketHandler::ExclusiveBucketGuard::UP & bucketGuard)
 {
@@ -119,7 +115,6 @@ BucketMoveJob::scanBuckets(size_t maxBucketsToScan, IFrozenBucketHandler::Exclus
     return ScanResult(bucketsScanned, passDone);
 }
 
-
 void
 BucketMoveJob::moveDocuments(DocumentBucketMover &mover,
                              size_t maxDocsToMove,
@@ -139,6 +134,18 @@ BucketMoveJob::moveDocuments(DocumentBucketMover &mover,
     }
 }
 
+namespace {
+
+bool
+blockedDueToClusterState(const IBucketStateCalculator::SP &calc)
+{
+    bool clusterUp = calc.get() != nullptr && calc->clusterUp();
+    bool nodeUp = calc.get() != nullptr && calc->nodeUp();
+    bool nodeInitializing = calc.get() != nullptr && calc->nodeInitializing();
+    return !(clusterUp && nodeUp && !nodeInitializing);
+}
+
+}
 
 BucketMoveJob::
 BucketMoveJob(const IBucketStateCalculator::SP &calc,
@@ -152,7 +159,7 @@ BucketMoveJob(const IBucketStateCalculator::SP &calc,
               IDiskMemUsageNotifier &diskMemUsageNotifier,
               double resourceLimitFactor,
               const vespalib::string &docTypeName)
-    : IMaintenanceJob("move_buckets." + docTypeName, 0.0, 0.0),
+    : BlockableMaintenanceJob("move_buckets." + docTypeName, 0.0, 0.0, resourceLimitFactor),
       IClusterStateChangedHandler(),
       IBucketFreezeListener(),
       _calc(calc),
@@ -169,25 +176,19 @@ BucketMoveJob(const IBucketStateCalculator::SP &calc,
       _delayedBucketsFrozen(),
       _frozenBuckets(frozenBuckets),
       _delayedMover(),
-      _runner(nullptr),
-      _clusterUp(false),
-      _nodeUp(false),
-      _nodeInitializing(false),
-      _resourcesOK(false),
-      _runnable(false),
       _clusterStateChangedNotifier(clusterStateChangedNotifier),
       _bucketStateChangedNotifier(bucketStateChangedNotifier),
-      _diskMemUsageNotifier(diskMemUsageNotifier),
-      _resourceLimitFactor(resourceLimitFactor)
+      _diskMemUsageNotifier(diskMemUsageNotifier)
 {
-    refreshDerivedClusterState();
-    
+    if (blockedDueToClusterState(_calc)) {
+        setBlocked(BlockedReason::CLUSTER_STATE);
+    }
+
     _frozenBuckets.addListener(this);
     _clusterStateChangedNotifier.addClusterStateChangedHandler(this);
     _bucketStateChangedNotifier.addBucketStateChangedHandler(this);
     _diskMemUsageNotifier.addDiskMemUsageListener(this);
 }
-
 
 BucketMoveJob::~BucketMoveJob()
 {
@@ -197,20 +198,18 @@ BucketMoveJob::~BucketMoveJob()
     _diskMemUsageNotifier.removeDiskMemUsageListener(this);
 }
 
-
 void
 BucketMoveJob::maybeCancelMover(DocumentBucketMover &mover)
 {
     // Cancel bucket if moving in wrong direction
     if (!mover.bucketDone()) {
         bool ready = mover.getSource() == &_ready;
-        if (!_runnable ||
+        if (isBlocked() ||
             _calc->shouldBeReady(mover.getBucket()) == ready) {
             mover.cancel();
         }
     }
 }
-
 
 void
 BucketMoveJob::maybeDelayMover(DocumentBucketMover &mover, BucketId bucket)
@@ -228,19 +227,15 @@ BucketMoveJob::notifyThawedBucket(const BucketId &bucket)
 {
     if (_delayedBucketsFrozen.erase(bucket) != 0u) {
         _delayedBuckets.insert(bucket);
-        if (_runner && _runnable) {
-            _runner->run();
-        }
+        considerRun();
     }
 }
-
 
 void
 BucketMoveJob::deactivateBucket(BucketId bucket)
 {
     _delayedBuckets.insert(bucket);
 }
-
 
 void
 BucketMoveJob::activateBucket(BucketId bucket)
@@ -267,7 +262,6 @@ BucketMoveJob::changedCalculator()
     maybeCancelMover(_mover);
     maybeCancelMover(_delayedMover);
 }
-
 
 void
 BucketMoveJob::scanAndMove(size_t maxBucketsToScan,
@@ -318,47 +312,26 @@ BucketMoveJob::scanAndMove(size_t maxBucketsToScan,
     }
 }
 
-void
-BucketMoveJob::registerRunner(IMaintenanceJobRunner *runner)
-{
-    _runner = runner;
-}
-
-
 bool
 BucketMoveJob::run()
 {
-    if (!_runnable)
+    if (isBlocked()) {
         return true; // indicate work is done, since node state is bad
+    }
     scanAndMove(200, 1);
     return done();
 }
 
 void
-BucketMoveJob::refreshRunnable()
-{
-    _runnable = _clusterUp && _nodeUp && !_nodeInitializing && _resourcesOK;
-}
-
-void
-BucketMoveJob::refreshDerivedClusterState()
-{
-    _clusterUp = _calc.get() != NULL && _calc->clusterUp();
-    _nodeUp = _calc.get() != NULL && _calc->nodeUp();
-    _nodeInitializing = _calc.get() != NULL && _calc->nodeInitializing();
-    refreshRunnable();
-}
-
-void
-BucketMoveJob::notifyClusterStateChanged(const IBucketStateCalculator::SP &
-                                         newCalc)
+BucketMoveJob::notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc)
 {
     // Called by master write thread
     _calc = newCalc;
-    refreshDerivedClusterState();
     changedCalculator();
-    if (_runner && _runnable) {
-        _runner->run();
+    if (blockedDueToClusterState(_calc)) {
+        setBlocked(BlockedReason::CLUSTER_STATE);
+    } else {
+        unBlock(BlockedReason::CLUSTER_STATE);
     }
 }
 
@@ -372,20 +345,16 @@ BucketMoveJob::notifyBucketStateChanged(const BucketId &bucketId,
     } else {
         activateBucket(bucketId);
     }
-    if (!done() && _runner && _runnable) {
-        _runner->run();
+    if (!done()) {
+        considerRun();
     }
 }
 
-void BucketMoveJob::notifyDiskMemUsage(DiskMemUsageState state)
+void
+BucketMoveJob::notifyDiskMemUsage(DiskMemUsageState state)
 {
     // Called by master write thread
-    bool resourcesOK = !state.aboveDiskLimit(_resourceLimitFactor) && !state.aboveMemoryLimit(_resourceLimitFactor);
-    _resourcesOK = resourcesOK;
-    refreshRunnable();
-    if (_runner && _runnable) {
-        _runner->run();
-    }
+    internalNotifyDiskMemUsage(state);
 }
 
 } // namespace proton

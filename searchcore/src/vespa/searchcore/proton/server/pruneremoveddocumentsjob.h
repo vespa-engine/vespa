@@ -1,10 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "blockable_maintenance_job.h"
 #include "document_db_maintenance_config.h"
-#include "i_maintenance_job.h"
 #include <persistence/spi/types.h>
-// #include <vespa/searchlib/common/idocumentmetastore.h>
 
 namespace proton
 {
@@ -17,7 +16,7 @@ class IFrozenBucketHandler;
  * Job that regularly checks whether old removed documents should be
  * forgotten.
  */
-class PruneRemovedDocumentsJob : public IMaintenanceJob
+class PruneRemovedDocumentsJob : public BlockableMaintenanceJob
 {
 private:
     const IDocumentMetaStore      &_metaStore;	// external ownership
