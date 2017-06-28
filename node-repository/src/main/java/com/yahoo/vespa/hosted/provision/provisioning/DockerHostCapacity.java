@@ -34,7 +34,7 @@ public class DockerHostCapacity {
      * <p>
      * Used in prioritizing hosts for allocation in <b>descending</b> order.
      */
-    int compare(Node hostA, Node hostB) {
+    public int compare(Node hostA, Node hostB) {
         int comp = freeCapacityOf(hostB, true).compare(freeCapacityOf(hostA, true));
         if (comp == 0) {
             comp = freeCapacityOf(hostB, false).compare(freeCapacityOf(hostA, false));

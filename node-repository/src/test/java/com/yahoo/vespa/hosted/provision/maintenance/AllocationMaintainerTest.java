@@ -14,7 +14,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.provisioning.AllocationVisualizer;
 import com.yahoo.vespa.hosted.provision.provisioning.DockerHostCapacity;
@@ -23,17 +22,12 @@ import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
 
 /**
  * @author smorgrav
@@ -49,22 +43,22 @@ public class AllocationMaintainerTest {
     private RetiredExpirer retiredExpirer;
     private InactiveExpirer incactiveExpirer;
 
-    @Before
-    public void setup() {
-        Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
-        tester = new ProvisioningTester(zone, flavorsConfig());
+    public void setup(boolean headroomUseCase) {
+        Zone zone = new Zone(headroomUseCase ? Environment.dev : Environment.prod, RegionName.from("us-east"));
+        tester = new ProvisioningTester(zone, flavorsConfig(headroomUseCase));
         nodeRepository = tester.nodeRepository();
         enableDynamicAllocation(tester);
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeRepository.getAvailableFlavors(), zone);
         JobControl jobControl = new JobControl(nodeRepository.database());
         deployer = new MockDeployer(provisioner, apps);
-        maintainer = new AllocationMaintainer(deployer, nodeRepository, Duration.ofHours(1l), jobControl, 2);
+        maintainer = new AllocationMaintainer(nodeRepository, Duration.ofHours(1l), jobControl, headroomUseCase ? 0 : 2);
         retiredExpirer = new RetiredExpirer(nodeRepository, deployer, tester.clock(), Duration.ofHours(1l), jobControl);
         incactiveExpirer = new InactiveExpirer(nodeRepository, tester.clock(), Duration.ofHours(1l), jobControl);
     }
 
     @Test
     public void spare_maintenance_simple_workflow() {
+        setup(false);
         tester.makeReadyNodes(5, "d-4", NodeType.host, 32);
         deployZoneApp(tester);
 
@@ -76,8 +70,7 @@ public class AllocationMaintainerTest {
         List<HostSpec> hostsA = deployApp(appA, 3, d2);
 
         ApplicationId appB = tester.makeApplicationId();
-        List<HostSpec> hostsB = deployApp(appB, 3, d1);
-
+        deployApp(appB, 3, d1);
 
         //Fail one node
         String hostname = hostsA.get(0).hostname();
@@ -108,14 +101,60 @@ public class AllocationMaintainerTest {
         // We have we need to reclaim spares
         maintainer.maintain();
 
-        // Add checkpoint - we should have one retired node now
-        tester.addAllocationSnapshot("State after maintainer");
+        simulatePostMainenanceActivities();
+
+        // We should now have reclaimed the space for the spare node
+        Assert.assertEquals(2, capacity.getNofHostsAvailableFor(d4));
+
+        // Uncomment the statement below to walk through the allocation events visually
+        //AllocationVisualizer.visualize(tester.getAllocationSnapshots());
+    }
+
+    @Test
+    public void headroom_maintenance() {
+        setup(true);
+
+        // Allocate two applications on one docker host
+        tester.makeReadyNodes(1, "d-4", NodeType.host, 32);
+        deployZoneApp(tester);
+
+        Flavor d2 = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("d-2");
+
+        ApplicationId appA = tester.makeApplicationId();
+        List<HostSpec> hostsA = deployApp(appA, 1, d2);
+
+        ApplicationId appB = tester.makeApplicationId();
+        deployApp(appB, 1, d2);
+
+        // Add one additional docker host
+        tester.makeReadyNodes(1, "d-4", NodeType.host, 32);
+        deployZoneApp(tester);
+
+        tester.addAllocationSnapshot("Post added docker host");
+
+        // Maintenance should no try to reallocate one app from the first to the second host
+        maintainer.maintain();
+
+        simulatePostMainenanceActivities();
+
+        // We should now have headroom for 2 d-2
+        DockerHostCapacity capacity = new DockerHostCapacity(nodeRepository.getNodes());
+        Assert.assertEquals(2, capacity.getNofHostsAvailableFor(d2));
+
+        // Uncomment the statement below to walk through the allocation events visually
+        AllocationVisualizer.visualize(tester.getAllocationSnapshots());
+    }
+
+
+    private void simulatePostMainenanceActivities() {
+        // Add checkpoint - for visual inspection
+        tester.addAllocationSnapshot("Post allocation maintenance");
 
         // The retire timeout is set to 1 hour - wait more than that
         tester.advanceTime(Duration.ofHours(2l));
         retiredExpirer.maintain();
 
-        tester.addAllocationSnapshot("After retiredExpirer");
+        tester.addAllocationSnapshot("Post retiredExpirer");
 
         // The retire timeout is set to 1 hour - wait more than that
         tester.advanceTime(Duration.ofHours(2l));
@@ -125,48 +164,24 @@ public class AllocationMaintainerTest {
 
         //Assert on that we have one dirty
         List<Node> dirtyNodes = nodeRepository.getNodes(Node.State.dirty);
-        Assert.assertEquals(1, dirtyNodes.size());
 
-        // Simulate Node Agent deleting
-        nodeRepository.remove(dirtyNodes.get(0).hostname());
+        // Simulate Node Agent deleting the nodes
+        for (Node node : dirtyNodes) {
+            nodeRepository.remove(node.hostname());
+        }
 
         tester.addAllocationSnapshot("Final state");
-
-        // Uncomment the statement below to walk through the allocation events visually
-        AllocationVisualizer.visualize(tester.getAllocationSnapshots());
     }
 
-    @Test
-    public void non_prod_do_not_have_spares() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.perf, RegionName.from("us-east")), flavorsConfig());
-        enableDynamicAllocation(tester);
-        tester.makeReadyNodes(3, "host-small", NodeType.host, 32);
-        deployZoneApp(tester);
-        Flavor flavor = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("d-3");
-
-        ApplicationId application1 = tester.makeApplicationId();
-        List<HostSpec> hosts = tester.prepare(application1,
-                ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100")),
-                3, 1, flavor.canonicalName());
-        tester.activate(application1, ImmutableSet.copyOf(hosts));
-
-        List<Node> initialSpareCapacity = findSpareCapacity(tester);
-        assertThat(initialSpareCapacity.size(), is(0));
-    }
-
-    private List<Node> findSpareCapacity(ProvisioningTester tester) {
-        List<Node> nodes = tester.nodeRepository().getNodes(Node.State.values());
-        NodeList nl = new NodeList(nodes);
-        return nodes.stream()
-                .filter(n -> n.type() == NodeType.host)
-                .filter(n -> nl.childNodes(n).size() == 0) // Nodes without children
-                .collect(Collectors.toList());
-    }
-
-    private FlavorsConfig flavorsConfig() {
+    private FlavorsConfig flavorsConfig(boolean withHeadroom) {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
         b.addFlavor("d-1", 1, 1., 1, Flavor.Type.DOCKER_CONTAINER);
         b.addFlavor("d-2", 2, 2., 2, Flavor.Type.DOCKER_CONTAINER);
+        if (withHeadroom) {
+            b.addFlavor("d-2", 2, 2., 2, Flavor.Type.DOCKER_CONTAINER).idealHeadroom(2);
+        } else {
+            b.addFlavor("d-2", 2, 2., 2, Flavor.Type.DOCKER_CONTAINER);
+        }
         b.addFlavor("d-4", 4, 4., 4, Flavor.Type.BARE_METAL);
         return b.build();
     }

@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Enforce allocation constraints for docker by manipulating the NodeList we operate on.
+ * Enforce allocation constraints for docker by manipulating node sets.
  *
  * The constraints comes in two flavors: headroom and spare.
  *
@@ -40,7 +40,7 @@ import java.util.stream.Stream;
  */
 public class DockerCapacityConstraints {
 
-    /** Tenant name for headroom nodes - only used internally */
+    /** Tenant name for headroom nodes - contains illegal characters to ensure no collision with real tenants */
     public static final String HEADROOM_TENANT = "-__!@#$$%THISisHEADroom";
 
     /** This is a static utility class */
