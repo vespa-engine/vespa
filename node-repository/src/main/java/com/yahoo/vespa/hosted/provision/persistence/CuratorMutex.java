@@ -35,7 +35,7 @@ public class CuratorMutex implements Mutex {
         }
 
         if (! acquired) throw new UncheckedTimeoutException("Timed out after waiting " + timeout.toString() +
-                                                                    " to acquire lock + '" + lockPath + "'");
+                                                            " to acquire lock + '" + lockPath + "'");
     }
 
     @Override

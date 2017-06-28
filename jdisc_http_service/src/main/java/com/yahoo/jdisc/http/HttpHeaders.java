@@ -2,7 +2,7 @@
 package com.yahoo.jdisc.http;
 
 /**
- * @author <a href="mailto:anirudha@yahoo-inc.com">Anirudha Khanna</a>
+ * @author Anirudha Khanna
  */
 @SuppressWarnings("UnusedDeclaration")
 public class HttpHeaders {
