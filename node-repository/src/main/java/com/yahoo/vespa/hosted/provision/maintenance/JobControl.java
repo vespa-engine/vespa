@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
-import com.yahoo.vespa.hosted.provision.persistence.CuratorMutex;
+import com.yahoo.vespa.curator.CuratorMutex;
 
 import java.util.HashSet;
 import java.util.Set;

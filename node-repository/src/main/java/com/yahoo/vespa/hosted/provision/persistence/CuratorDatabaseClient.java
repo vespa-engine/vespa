@@ -12,6 +12,7 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.CuratorMutex;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;

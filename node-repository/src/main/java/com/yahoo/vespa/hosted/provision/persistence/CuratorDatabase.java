@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.CuratorMutex;
 import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 
