@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -164,8 +165,9 @@ public class NodeRepository extends AbstractComponent {
     /**
      * Returns a set of nodes that should be trusted by the given node.
      */
-    private Set<Node> getTrustedNodes(Node node, NodeList candidates) {
+    private NodeAcl getNodeAcl(Node node, NodeList candidates) {
         Set<Node> trustedNodes = new TreeSet<>(Comparator.comparing(Node::hostname));
+        Set<String> trustedNetworks = new HashSet<>();
 
         // For all cases below, trust:
         // - nodes in same application
@@ -196,8 +198,12 @@ public class NodeRepository extends AbstractComponent {
                 break;
 
             case proxy:
+                // No special rules for proxies
+                break;
+
             case host:
-                // No special rules for proxies and Docker hosts
+                // Docker bridge network
+                trustedNetworks.add("172.17.0.0/16");
                 break;
 
             default:
@@ -206,7 +212,7 @@ public class NodeRepository extends AbstractComponent {
                                 node.hostname(), node.type()));
         }
 
-        return Collections.unmodifiableSet(trustedNodes);
+        return new NodeAcl(node, trustedNodes, trustedNetworks);
     }
 
     /**
@@ -217,17 +223,14 @@ public class NodeRepository extends AbstractComponent {
      * @return List of node ACLs
      */
     public List<NodeAcl> getNodeAcls(Node node, boolean children) {
-        List<NodeAcl> nodeAcls = new ArrayList<>();
-
         NodeList candidates = new NodeList(getNodes());
         if (children) {
-            List<Node> childNodes = candidates.childNodes(node).asList();
-            childNodes.forEach(childNode -> nodeAcls.add(new NodeAcl(childNode, getTrustedNodes(childNode, candidates))));
+            return candidates.childNodes(node).asList().stream()
+                    .map(childNode -> getNodeAcl(childNode, candidates))
+                    .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
         } else {
-            nodeAcls.add(new NodeAcl(node, getTrustedNodes(node, candidates)));
+            return Collections.singletonList(getNodeAcl(node, candidates));
         }
-
-        return Collections.unmodifiableList(nodeAcls);
     }
 
     /** Get config node by hostname */
