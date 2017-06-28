@@ -34,6 +34,7 @@ public:
     virtual ~BlockableMaintenanceJob();
 
     bool isBlocked(BlockedReason reason);
+    void considerRun();
 
     virtual void setBlocked(BlockedReason reason) override;
     virtual void unBlock(BlockedReason reason) override;

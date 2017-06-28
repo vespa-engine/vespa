@@ -139,7 +139,9 @@ LidSpaceCompactionJob::notifyDiskMemUsage(DiskMemUsageState state)
     // Called by master write thread
     bool resourcesOK = !state.aboveDiskLimit(_resourceLimitFactor) && !state.aboveMemoryLimit(_resourceLimitFactor);
     if (resourcesOK) {
-        unBlock(BlockedReason::RESOURCE_LIMITS);
+        if (isBlocked(BlockedReason::RESOURCE_LIMITS)) {
+            unBlock(BlockedReason::RESOURCE_LIMITS);
+        }
     } else {
         setBlocked(BlockedReason::RESOURCE_LIMITS);
     }
@@ -150,13 +152,14 @@ LidSpaceCompactionJob::notifyClusterStateChanged(const IBucketStateCalculator::S
 {
     // Called by master write thread
     bool nodeRetired = newCalc->nodeRetired();
-    const BlockedReason reason = BlockedReason::CLUSTER_STATE;
-    if (nodeRetired && !isBlocked(reason)) {
+    if (!nodeRetired) {
+        if (isBlocked(BlockedReason::CLUSTER_STATE)) {
+            LOG(info, "notifyClusterStateChanged(): Node is no longer retired -> lid space compaction job re-enabled");
+            unBlock(BlockedReason::CLUSTER_STATE);
+        }
+    } else {
         LOG(info, "notifyClusterStateChanged(): Node is retired -> lid space compaction job disabled");
-        setBlocked(reason);
-    } else if (!nodeRetired && isBlocked(reason)) {
-        LOG(info, "notifyClusterStateChanged(): Node is no longer retired -> lid space compaction job re-enabled");
-        unBlock(reason);
+        setBlocked(BlockedReason::CLUSTER_STATE);
     }
 }
 

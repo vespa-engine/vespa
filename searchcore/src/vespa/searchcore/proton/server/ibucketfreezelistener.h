@@ -14,6 +14,11 @@ class IBucketFreezeListener
 {
 public:
     virtual ~IBucketFreezeListener() {}
+
+    /**
+     * Signal that the given bucket has been thawed.
+     * A thawed bucket can be considered for moving.
+     */
     virtual void notifyThawedBucket(const document::BucketId &bucket) = 0;
 };
 

@@ -34,6 +34,14 @@ BlockableMaintenanceJob::isBlocked(BlockedReason reason)
 }
 
 void
+BlockableMaintenanceJob::considerRun()
+{
+    if (_runner && !isBlocked()) {
+        _runner->run();
+    }
+}
+
+void
 BlockableMaintenanceJob::setBlocked(BlockedReason reason)
 {
     LockGuard guard(_mutex);
@@ -47,10 +55,9 @@ BlockableMaintenanceJob::unBlock(BlockedReason reason)
     bool considerRun = false;
     {
         LockGuard guard(_mutex);
-        bool blockedBefore = _blocked;
         _blockReasons.erase(reason);
         updateBlocked(guard);
-        considerRun = (!_blocked && blockedBefore);
+        considerRun = !_blocked;
     }
     if (_runner && considerRun) {
         _runner->run();
