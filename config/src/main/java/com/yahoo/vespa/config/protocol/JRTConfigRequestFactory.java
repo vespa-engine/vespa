@@ -35,8 +35,8 @@ public class JRTConfigRequestFactory {
         return "3";
     }
 
-    static String getProtocolVersion(String env, String yinstEnv, String property) {
-        return ConfigUtils.getEnvValue("3", env, yinstEnv, property);
+    static String getProtocolVersion(String env, String alternateEnv, String property) {
+        return ConfigUtils.getEnvValue("3", env, alternateEnv, property);
     }
 
     public static Set<Long> supportedProtocolVersions() {
@@ -49,8 +49,8 @@ public class JRTConfigRequestFactory {
                 System.getProperty(VESPA_CONFIG_PROTOCOL_COMPRESSION));
     }
 
-    static CompressionType getCompressionType(String env, String yinstEnv, String property) {
-        return CompressionType.valueOf(ConfigUtils.getEnvValue("LZ4", env, yinstEnv, property));
+    static CompressionType getCompressionType(String env, String alternateEnv, String property) {
+        return CompressionType.valueOf(ConfigUtils.getEnvValue("LZ4", env, alternateEnv, property));
     }
 
     static Optional<VespaVersion> getVespaVersion() {
