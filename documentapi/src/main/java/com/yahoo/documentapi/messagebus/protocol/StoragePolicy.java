@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol;
 
+import com.yahoo.concurrent.CopyOnWriteHashMap;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.document.BucketId;
 import com.yahoo.document.BucketIdFactory;
@@ -124,6 +125,68 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
         }
     }
 
+    static class TargetCachingSlobrokHostFetcher extends SlobrokHostFetcher {
+
+        /**
+         * Distributor index to resolved RPC spec cache for a single given Slobrok
+         * update generation. Uses a thread safe COW map which will grow until stable.
+         */
+        private static class GenerationCache {
+            private final int generation;
+            private final CopyOnWriteHashMap<Integer, String> targets = new CopyOnWriteHashMap<>();
+
+            GenerationCache(int generation) {
+                this.generation = generation;
+            }
+
+            public int generation() { return this.generation; }
+
+            public String get(Integer index) {
+                return targets.get(index);
+            }
+            public void put(Integer index, String target) {
+                targets.put(index, target);
+            }
+        }
+
+        private volatile GenerationCache generationCache = null;
+
+        TargetCachingSlobrokHostFetcher(SlobrokHostPatternGenerator patternGenerator, ExternalSlobrokPolicy policy) {
+            super(patternGenerator, policy);
+        }
+
+        @Override
+        public String getTargetSpec(Integer distributor, RoutingContext context) {
+            GenerationCache cache = generationCache;
+            int currentGeneration = getMirror(context).updates();
+            // The below code might race with other threads during a generation change. That is OK, as the cache
+            // is thread safe and will quickly converge to a stable state for the new generation.
+            if (cache == null || currentGeneration != cache.generation()) {
+                cache = new GenerationCache(currentGeneration);
+                generationCache = cache;
+            }
+            if (distributor != null) {
+                return cachingGetTargetSpec(distributor, context, cache);
+            }
+            // Wildcard lookup case. Must not be cached.
+            return super.getTargetSpec(null, context);
+        }
+
+        private String cachingGetTargetSpec(Integer distributor, RoutingContext context, GenerationCache cache) {
+            String cachedTarget = cache.get(distributor);
+            if (cachedTarget != null) {
+                return cachedTarget;
+            }
+            // Mirror _may_ be at a higher version if we race with generation read, but that is OK since
+            // we'll either way get the most up-to-date mapping and the cache will be invalidated on the
+            // next invocation.
+            String resolvedTarget = super.getTargetSpec(distributor, context);
+            cache.put(distributor, resolvedTarget);
+            return resolvedTarget;
+        }
+
+    }
+
     /** Class parsing the semicolon separated parameter string and exposes the appropriate value to the policy. */
     public static class Parameters {
         protected String clusterName = null;
@@ -147,7 +210,7 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
             return new SlobrokHostPatternGenerator(getClusterName());
         }
         public HostFetcher createHostFetcher(ExternalSlobrokPolicy policy) {
-            return new SlobrokHostFetcher(slobrokHostPatternGenerator, policy);
+            return new TargetCachingSlobrokHostFetcher(slobrokHostPatternGenerator, policy);
         }
         public Distribution createDistribution(ExternalSlobrokPolicy policy) {
             return (policy.configSources != null ?
