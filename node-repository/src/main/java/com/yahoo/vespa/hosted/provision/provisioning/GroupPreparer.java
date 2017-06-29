@@ -56,7 +56,7 @@ class GroupPreparer {
                               List<Node> surplusActiveNodes, MutableInteger highestIndex, int nofSpares, BiConsumer<List<Node>, String> debugRecorder) {
         try (Mutex lock = nodeRepository.lock(application)) {
 
-            // A snapshot of nodes before we start the process - used to determind if this is a replacement
+            // A snapshot of nodes before we start the process - used to determine if this is a replacement
             List<Node> nodesBefore = nodeRepository.getNodes(application, Node.State.values());
             NodeAllocation allocation = new NodeAllocation(application, cluster, requestedNodes, highestIndex, clock);
 
@@ -86,7 +86,7 @@ class GroupPreparer {
                 accepted = allocation.offer(prioritizeNodes(readyNodes, requestedNodes), !canChangeGroup);
                 allocation.update(nodeRepository.reserve(accepted));
 
-                if(nodeRepository.dynamicAllocationEnabled()) {
+                if (nodeRepository.dynamicAllocationEnabled()) {
                     // Check if we have available capacity on docker hosts that we can allocate
                     if (!allocation.fullfilled()) {
                         // The new dynamic allocation method
