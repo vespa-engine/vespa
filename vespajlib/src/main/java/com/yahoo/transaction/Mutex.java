@@ -8,6 +8,6 @@ package com.yahoo.transaction;
  */
 public interface Mutex extends AutoCloseable {
 
-    public void close();
+    void close();
 
 }

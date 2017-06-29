@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 
@@ -41,7 +42,7 @@ public class CuratorDatabase {
      * All keys, to allow reentrancy.
      * This will grow forever with the number of applications seen, but this should be too slow to be a problem.
      */
-    private final ConcurrentHashMap<Path, CuratorMutex> locks = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Path, Lock> locks = new ConcurrentHashMap<>();
 
     /**
      * Creates a curator database
@@ -58,8 +59,8 @@ public class CuratorDatabase {
 
     /** Create a reentrant lock */
     // Locks are not cached in the in-memory state
-    public CuratorMutex lock(Path path, Duration timeout) {
-        CuratorMutex lock = locks.computeIfAbsent(path, (pathArg) -> new CuratorMutex(pathArg.getAbsolute(), curator.framework()));
+    public Lock lock(Path path, Duration timeout) {
+        Lock lock = locks.computeIfAbsent(path, (pathArg) -> new Lock(pathArg.getAbsolute(), curator.framework()));
         lock.acquire(timeout);
         return lock;
     }

@@ -7,13 +7,12 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * <p>This is a thread hash map for small collections that are stable once built. Until it is stable there will be a
+ * This is a thread hash map for small collections that are stable once built. Until it is stable there will be a
  * race among all threads missing something in the map. They will then clone the map add the missing stuff and then put
  * it back as active again. Here are no locks, but the cost is that inserts will happen a lot more than necessary. The
- * map reference is volatile, but on most multicpu machines that has no cost unless modified.</p>
+ * map reference is volatile, but on most multicpu machines that has no cost unless modified.
  *
  * @author baldersheim
- * @since 5.2
  */
 public class CopyOnWriteHashMap<K, V> implements Map<K, V> {
 

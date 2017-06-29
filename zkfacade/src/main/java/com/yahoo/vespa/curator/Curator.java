@@ -61,6 +61,7 @@ public class Curator {
     }
 
     // Depend on ZooKeeperServer to make sure it is started first
+    // TODO: Move zookeeperserver config out of configserverconfig (requires update of controller services.xml as well)
     @Inject
     public Curator(ConfigserverConfig configserverConfig, ZooKeeperServer server) {
         this(createConnectionSpec(configserverConfig));

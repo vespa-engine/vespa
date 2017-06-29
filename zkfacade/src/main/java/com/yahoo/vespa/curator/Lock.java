@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.provision.persistence;
+package com.yahoo.vespa.curator;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.transaction.Mutex;
@@ -14,12 +14,12 @@ import java.util.concurrent.TimeUnit;
  *
  * @author bratseth
  */
-public class CuratorMutex implements Mutex {
+public class Lock implements Mutex {
 
     private final InterProcessMutex mutex;
     private final String lockPath;
 
-    public CuratorMutex(String lockPath, CuratorFramework curator) {
+    public Lock(String lockPath, CuratorFramework curator) {
         this.lockPath = lockPath;
         mutex = new InterProcessMutex(curator, lockPath);
     }
@@ -35,7 +35,7 @@ public class CuratorMutex implements Mutex {
         }
 
         if (! acquired) throw new UncheckedTimeoutException("Timed out after waiting " + timeout.toString() +
-                                                                    " to acquire lock + '" + lockPath + "'");
+                                                            " to acquire lock + '" + lockPath + "'");
     }
 
     @Override

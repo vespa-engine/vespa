@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
-import com.yahoo.vespa.hosted.provision.persistence.CuratorMutex;
+import com.yahoo.vespa.curator.Lock;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -42,12 +42,12 @@ public class JobControl {
     
     /** Returns true if this job is not currently deactivated */
     public boolean isActive(String jobSimpleClassName) {
-        return  ! db.readInactiveJobs().contains(jobSimpleClassName);
+        return  ! inactiveJobs().contains(jobSimpleClassName);
     }
 
     /** Set a job active or inactive */
     public void setActive(String jobSimpleClassName, boolean active) {
-        try (CuratorMutex lock = db.lockInactiveJobs()) {
+        try (Lock lock = db.lockInactiveJobs()) {
             Set<String> inactiveJobs = db.readInactiveJobs();
             if (active)
                 inactiveJobs.remove(jobSimpleClassName);

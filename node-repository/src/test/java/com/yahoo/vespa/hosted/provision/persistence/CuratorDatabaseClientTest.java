@@ -8,6 +8,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
@@ -42,18 +43,18 @@ public class CuratorDatabaseClientTest {
     public void locks_can_be_acquired_and_released() {
         ApplicationId app = ApplicationId.from(TenantName.from("testTenant"), ApplicationName.from("testApp"), InstanceName.from("testInstance"));
 
-        try (CuratorMutex mutex1 = zkClient.lock(app)) {
+        try (Lock mutex1 = zkClient.lock(app)) {
             mutex1.toString(); // reference to avoid warning
             throw new RuntimeException();
         }
         catch (RuntimeException expected) {
         }
 
-        try (CuratorMutex mutex2 = zkClient.lock(app)) {
+        try (Lock mutex2 = zkClient.lock(app)) {
             mutex2.toString(); // reference to avoid warning
         }
 
-        try (CuratorMutex mutex3 = zkClient.lock(app)) {
+        try (Lock mutex3 = zkClient.lock(app)) {
             mutex3.toString(); // reference to avoid warning
         }
 

@@ -16,8 +16,8 @@ import java.util.List;
  * algorithm would be to make a thread wait for events happening in
  * other threads to complete.
  *
- * @author <a href="mailto:havardpe@yahoo-inc.com">Haavard Pettersen</a>
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Haavard Pettersen
+ * @author Simon Thoresen
  */
 public class EventBarrier {
 

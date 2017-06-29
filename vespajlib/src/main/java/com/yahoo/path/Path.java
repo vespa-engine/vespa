@@ -13,7 +13,6 @@ import java.util.List;
  * Represents a path represented by a list of elements. Immutable
  *
  * @author lulf
- * @since 5.1
  */
 @Beta
 public final class Path {

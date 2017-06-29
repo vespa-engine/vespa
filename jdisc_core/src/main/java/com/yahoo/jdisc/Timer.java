@@ -9,7 +9,7 @@ import com.yahoo.jdisc.core.SystemTimer;
  * instance of this class into any component that needs to access time, instead of using
  * <code>System.currentTimeMillis()</code>.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 @ImplementedBy(SystemTimer.class)
 public interface Timer {
@@ -25,5 +25,6 @@ public interface Timer {
      * @return The difference, measured in milliseconds, between the current time and midnight, January 1, 1970 UTC.
      * @see java.util.Date
      */
-    public long currentTimeMillis();
+    long currentTimeMillis();
+
 }

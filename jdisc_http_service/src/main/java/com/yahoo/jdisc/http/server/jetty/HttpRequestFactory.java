@@ -12,11 +12,11 @@ import java.net.URI;
 import java.util.Enumeration;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 class HttpRequestFactory {
-    public static HttpRequest newJDiscRequest(final CurrentContainer container,
-                                              final HttpServletRequest servletRequest) {
+
+    public static HttpRequest newJDiscRequest(CurrentContainer container, HttpServletRequest servletRequest) {
         return HttpRequest.newServerRequest(
                 container,
                 getUri(servletRequest),
@@ -34,22 +34,18 @@ class HttpRequestFactory {
         }
     }
 
-    public static void copyHeaders(final HttpServletRequest from,
-                                   final HttpRequest to) {
-        for (final Enumeration<String> it = from.getHeaderNames(); it.hasMoreElements(); ) {
-            final String key = it.nextElement();
-            for (final Enumeration<String> value = from.getHeaders(key); value.hasMoreElements(); ) {
+    public static void copyHeaders(HttpServletRequest from, HttpRequest to) {
+        for (Enumeration<String> it = from.getHeaderNames(); it.hasMoreElements(); ) {
+            String key = it.nextElement();
+            for (Enumeration<String> value = from.getHeaders(key); value.hasMoreElements(); ) {
                 to.headers().add(key, value.nextElement());
             }
         }
     }
 
     private static String extraQuote(String queryString) {
-        // TODO this is just a stopgap measure, we need some sort of sane URI builder, do we have one?
-        String washed = null;
-        if (queryString == null) {
-            return null;
-        }
+        // TODO: Use an URI builder
+        if (queryString == null) return null;
 
         int toAndIncluding = -1;
         for (int i = 0; i < queryString.length(); ++i) {
@@ -59,6 +55,7 @@ class HttpRequestFactory {
             toAndIncluding = i;
         }
 
+        String washed;
         if (toAndIncluding != (queryString.length() - 1)) {
             StringBuilder w = new StringBuilder(queryString.substring(0, toAndIncluding + 1));
             for (int i = toAndIncluding + 1; i < queryString.length(); ++i) {
@@ -91,8 +88,6 @@ class HttpRequestFactory {
         default:
             return null;
         }
-
     }
-
 
 }

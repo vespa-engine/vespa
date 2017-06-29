@@ -3,7 +3,10 @@ namespace=cloud.config
 rpcport int default=19070
 httpport int default=19071
 numthreads int default=16
+
+# TODO: This seems to be only used by the the status API? If so this is unnecessary duplication and potentially lying: Remove
 zookeepercfg string default="conf/zookeeper/zookeeper.cfg"
+
 zookeeperserver[].hostname string
 zookeeperserver[].port int default=2181
 # in seconds
