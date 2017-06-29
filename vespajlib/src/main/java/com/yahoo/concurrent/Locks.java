@@ -1,5 +1,7 @@
 package com.yahoo.concurrent;
 
+import com.google.common.util.concurrent.UncheckedTimeoutException;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -37,14 +39,14 @@ public class Locks<TYPE> {
      * 
      * @param key the key to lock
      * @return the acquired lock
-     * @throws TimeoutException if the lock could not be acquired within the timeout
+     * @throws UncheckedTimeoutException if the lock could not be acquired within the timeout
      */
     public Lock lock(TYPE key) {
         try {
             ReentrantLock lock = locks.computeIfAbsent(key, k -> new ReentrantLock(true));
             boolean acquired = lock.tryLock(timeoutMs, TimeUnit.MILLISECONDS);
             if ( ! acquired)
-                throw new TimeoutException("Timed out waiting for the lock to " + key);
+                throw new UncheckedTimeoutException("Timed out waiting for the lock to " + key);
             return new Lock(lock);
         } catch (InterruptedException e) {
             throw new RuntimeException("Interrupted while waiting for lock of " + key);
