@@ -49,7 +49,6 @@ public class CuratorDatabaseClient {
     private static final Duration defaultLockTimeout = Duration.ofMinutes(1);
 
     private final NodeSerializer nodeSerializer;
-    
     private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
 
     private final CuratorDatabase curatorDatabase;

@@ -42,7 +42,7 @@ public class JobControl {
     
     /** Returns true if this job is not currently deactivated */
     public boolean isActive(String jobSimpleClassName) {
-        return  ! db.readInactiveJobs().contains(jobSimpleClassName);
+        return  ! inactiveJobs().contains(jobSimpleClassName);
     }
 
     /** Set a job active or inactive */
