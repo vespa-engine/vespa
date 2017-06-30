@@ -29,7 +29,7 @@ public class Logserver extends AbstractService {
      * @return the startup command for the logserver
      */
     public String getStartupCommand() {
-        return "exec $ROOT/bin/logserver-start " + getMyJVMArgs() + " " + getJvmArgs();
+        return "exec $ROOT/bin/vespa-logserver-start " + getMyJVMArgs() + " " + getJvmArgs();
     }
 
     /**
