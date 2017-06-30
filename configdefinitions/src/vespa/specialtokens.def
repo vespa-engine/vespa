@@ -18,7 +18,7 @@ namespace=vespa.configdefinition
 
 ## Path to makefsa binary, needed to create specialtokens-dictionary
 ## If the path is relative, vespa home is prepended
-makefsaPath string default="bin/vespa-makefsa"
+makefsaPath string default="bin64/makefsa"
 
 ## Use 'default' as the name of the list to use in regular
 ## indexing and queries

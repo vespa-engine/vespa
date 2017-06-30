@@ -24,6 +24,6 @@ public class VespaSpoolMaster extends AbstractService {
 
     @Override
     public String getStartupCommand() {
-        return "exec vespa-spoolmaster";
+        return "exec spoolmaster";
     }
 }

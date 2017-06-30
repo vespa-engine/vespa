@@ -55,7 +55,7 @@ print "WARNING: vespa-deploy-application is deprecated, use 'vespa-deploy prepar
 my $DEPLOY="vespa-deploy $flags prepare $app";
 
 system($DEPLOY);
-if ($? == 0) { print "Activate the application by running 'vespa-activate-application'\n"; }
+if ($? == 0) { print "Activate the application by running 'activate-application'\n"; }
 
 sub print_usage {
   print "\n";

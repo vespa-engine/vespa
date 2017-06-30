@@ -54,7 +54,7 @@ public class StorageNode extends ContentNode implements StorServerConfig.Produce
     public String getStartupCommand() {
         return isProviderProton()
                 ? null
-                : "exec sbin/vespa-storaged -c $VESPA_CONFIG_ID";
+                : "exec sbin/storaged -c $VESPA_CONFIG_ID";
     }
 
     @Override

@@ -54,7 +54,7 @@ public class FileDistributorService extends AbstractService implements
 
     @Override
     public String getStartupCommand() {
-        return "exec $ROOT/sbin/vespa-filedistributor"
+        return "exec $ROOT/sbin/filedistributor"
                 + " --configid " + getConfigId();
     }
 

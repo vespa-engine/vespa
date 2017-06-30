@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 
 /**
  * Validate rank setup for all search clusters (rank-profiles, index-schema, attributes configs), validating done
- * by running through the binary 'vespa-verify-ranksetup'
+ * by running through the binary 'verify_ranksetup'
  *
  * @author vegardh
  *
@@ -130,7 +130,7 @@ public class RankSetupValidator extends Validator {
     }
 
     private boolean execValidate(String configId, SearchCluster sc, String sdName, DeployLogger deployLogger) {
-        String job = "vespa-verify-ranksetup-bin " + configId;
+        String job = "verify_ranksetup-bin " + configId;
         ProcessExecuter executer = new ProcessExecuter();
         try {
             Pair<Integer, String> ret = executer.exec(job);
@@ -145,7 +145,7 @@ public class RankSetupValidator extends Validator {
     }
 
     private void validateWarn(Exception e, DeployLogger deployLogger) {
-        String msg = "Unable to execute 'vespa-verify-ranksetup', validation of rank expressions will only take place when you start Vespa: " +
+        String msg = "Unable to execute 'verify_ranksetup', validation of rank expressions will only take place when you start Vespa: " +
                 Exceptions.toMessageString(e);
         deployLogger.log(LogLevel.WARNING, msg);
     }

@@ -50,7 +50,7 @@ public class Distributor extends ContentNode {
 
     @Override
     public String getStartupCommand() {
-        return "exec sbin/vespa-distributord -c $VESPA_CONFIG_ID";
+        return "exec sbin/distributord -c $VESPA_CONFIG_ID";
     }
 
 }

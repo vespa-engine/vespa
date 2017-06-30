@@ -20,7 +20,7 @@
 #include <vespa/fastos/app.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP("vespa-verify-ranksetup");
+LOG_SETUP("verify_ranksetup");
 
 using config::ConfigContext;
 using config::ConfigHandle;
@@ -137,7 +137,7 @@ App::verifyConfig(const RankProfilesConfig &rankCfg,
 int
 App::usage()
 {
-    fprintf(stderr, "Usage: vespa-verify-ranksetup <config-id>\n");
+    fprintf(stderr, "Usage: verify_ranksetup <config-id>\n");
     return 1;
 }
 
