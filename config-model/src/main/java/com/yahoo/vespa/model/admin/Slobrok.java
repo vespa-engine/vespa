@@ -41,7 +41,7 @@ public class Slobrok extends AbstractService {
     }
 
     public String getStartupCommand() {
-        return "exec $ROOT/bin/slobrok -p " + getPort() +
+        return "exec $ROOT/bin/vespa-slobrok -p " + getPort() +
                 " -s " + getStatePort() +
                 " -c " + getConfigId();
     }
