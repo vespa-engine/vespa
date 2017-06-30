@@ -173,6 +173,7 @@
                 simplemetrics-jar-with-dependencies.jar,
                 defaults-jar-with-dependencies.jar,
                 component-jar-with-dependencies.jar,
+                zkfacade-jar-with-dependencies.jar,
                 <!-- jersey2 -->
                 aopalliance-repackaged-${hk2.version}.jar,
                 hk2-api-${hk2.version}.jar,
