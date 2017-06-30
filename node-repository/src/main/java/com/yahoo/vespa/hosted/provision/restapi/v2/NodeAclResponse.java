@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.List;
 
 /**
  * @author mpolden
@@ -45,16 +44,29 @@ public class NodeAclResponse extends HttpResponse {
         Node node = nodeRepository.getNode(hostname)
                 .orElseGet(() -> nodeRepository.getConfigNode(hostname)
                         .orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'")));
-        toSlime(nodeRepository.getNodeAcls(node, aclsForChildren), object.setArray("trustedNodes"));
+
+        Cursor trustedNodesArray = object.setArray("trustedNodes");
+        nodeRepository.getNodeAcls(node, aclsForChildren).forEach(nodeAcl -> toTrustedNodeSlime(nodeAcl, trustedNodesArray));
+
+        Cursor trustedNetworksArray = object.setArray("trustedNetworks");
+        nodeRepository.getNodeAcls(node, aclsForChildren).forEach(nodeAcl -> toTrustedNetworkSlime(nodeAcl, trustedNetworksArray));
     }
 
-    private void toSlime(List<NodeAcl> nodeAcls, Cursor array) {
-        nodeAcls.forEach(acl -> acl.trustedNodes().forEach(node -> node.ipAddresses().forEach(ipAddress -> {
+    private void toTrustedNodeSlime(NodeAcl nodeAcl, Cursor array) {
+        nodeAcl.trustedNodes().forEach(node -> node.ipAddresses().forEach(ipAddress -> {
             Cursor object = array.addObject();
             object.setString("hostname", node.hostname());
             object.setString("ipAddress", ipAddress);
-            object.setString("trustedBy", acl.node().hostname());
-        })));
+            object.setString("trustedBy", nodeAcl.node().hostname());
+        }));
+    }
+
+    private void toTrustedNetworkSlime(NodeAcl nodeAcl, Cursor array) {
+        nodeAcl.trustedNetworks().forEach(network -> {
+            Cursor object = array.addObject();
+            object.setString("network", network);
+            object.setString("trustedBy", nodeAcl.node().hostname());
+        });
     }
 
     @Override

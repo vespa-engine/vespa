@@ -22,7 +22,6 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -39,6 +38,8 @@ public class AclProvisioningTest {
     private MockCurator curator;
     private ProvisioningTester tester;
     private MockNameResolver nameResolver;
+
+    private final List<String> dockerBridgeNetwork = Collections.singletonList("172.17.0.0/16");
 
     @Before
     public void before() {
@@ -146,31 +147,27 @@ public class AclProvisioningTest {
         List<NodeAcl> acls = tester.nodeRepository().getNodeAcls(dockerHostNodes.get(0), false);
 
         // Trusted nodes is all Docker hosts and all config servers
-        assertAcls(Arrays.asList(dockerHostNodes, configServers), acls.get(0));
+        assertAcls(Arrays.asList(dockerHostNodes, configServers), dockerBridgeNetwork, acls.get(0));
     }
 
 
     @Test
-    public void trusted_nodes_for_docker_hosts_and_proxy_nodes_in_zone_application() {
+    public void trusted_nodes_for_docker_hosts_nodes_in_zone_application() {
         ApplicationId applicationId = tester.makeApplicationId(); // use same id for both allocate calls below
         List<Node> configServers = setConfigServers("cfg1:1234,cfg2:1234,cfg3:1234");
 
         // Populate repo
-        tester.makeReadyNodes(3, "default", NodeType.proxy);
         tester.makeReadyNodes(2, "default", NodeType.host);
 
-        // Allocate 3 proxy nodes
-        List<Node> activeProxyNodes = allocateNodes(NodeType.proxy, applicationId);
-        assertEquals(3, activeProxyNodes.size());
-        // Allocate 2 Docker hosts, a total of 5 hosts
-        List<Node> activeDockerHostsAndProxyNodes = allocateNodes(NodeType.host, applicationId);
-        assertEquals(5, activeDockerHostsAndProxyNodes.size());
+        // Allocate 2 Docker hosts
+        List<Node> activeDockerHostNodes = allocateNodes(NodeType.host, applicationId);
+        assertEquals(2, activeDockerHostNodes.size());
 
         // Check trusted nodes for all nodes
-        activeDockerHostsAndProxyNodes.forEach(node -> {
+        activeDockerHostNodes.forEach(node -> {
             System.out.println("Checking node " + node);
             List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(node, false);
-            assertAcls(Arrays.asList(activeDockerHostsAndProxyNodes, configServers), nodeAcls);
+            assertAcls(Arrays.asList(activeDockerHostNodes, configServers), dockerBridgeNetwork, nodeAcls);
         });
     }
 
@@ -238,17 +235,30 @@ public class AclProvisioningTest {
     }
 
     private static void assertAcls(List<List<Node>> expected, NodeAcl actual) {
-        assertAcls(expected, Collections.singletonList(actual));
+        assertAcls(expected, Collections.emptyList(), Collections.singletonList(actual));
     }
 
     private static void assertAcls(List<List<Node>> expected, List<NodeAcl> actual) {
-        List<Node> nodes = expected.stream()
+        assertAcls(expected, Collections.emptyList(), actual);
+    }
+
+    private static void assertAcls(List<List<Node>> expected, List<String> expectedNetworks, NodeAcl actual) {
+        assertAcls(expected, expectedNetworks, Collections.singletonList(actual));
+    }
+
+    private static void assertAcls(List<List<Node>> expectedNodes, List<String> expectedNetworks, List<NodeAcl> actual) {
+        Set<Node> expectedTrustedNodes = expectedNodes.stream()
                 .flatMap(Collection::stream)
-                .sorted(Comparator.comparing(Node::hostname))
-                .collect(Collectors.toList());
-        List<Node> trustedNodes = actual.stream()
+                .collect(Collectors.toSet());
+        Set<Node> actualTrustedNodes = actual.stream()
                 .flatMap(acl -> acl.trustedNodes().stream())
-                .collect(Collectors.toList());
-        assertEquals(nodes, trustedNodes);
+                .collect(Collectors.toSet());
+        assertEquals(expectedTrustedNodes, actualTrustedNodes);
+
+        Set<String> expectedTrustedNetworks = new HashSet<>(expectedNetworks);
+        Set<String> actualTrustedNetworks = actual.stream()
+                .flatMap(acl -> acl.trustedNetworks().stream())
+                .collect(Collectors.toSet());
+        assertEquals(expectedTrustedNetworks, actualTrustedNetworks);
     }
 }

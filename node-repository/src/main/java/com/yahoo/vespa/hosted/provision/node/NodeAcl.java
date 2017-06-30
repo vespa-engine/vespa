@@ -7,7 +7,8 @@ import com.yahoo.vespa.hosted.provision.Node;
 import java.util.Set;
 
 /**
- * A node ACL. The ACL contains the node which the ACL is valid for, and a set of nodes that the node should trust.
+ * A node ACL. The ACL contains the node which the ACL is valid for,
+ * a set of nodes and networks that the node should trust.
  *
  * @author mpolden
  */
@@ -15,10 +16,12 @@ public class NodeAcl {
 
     private final Node node;
     private final Set<Node> trustedNodes;
+    private final Set<String> trustedNetworks;
 
-    public NodeAcl(Node node, Set<Node> trustedNodes) {
+    public NodeAcl(Node node, Set<Node> trustedNodes, Set<String> trustedNetworks) {
         this.node = node;
         this.trustedNodes = ImmutableSet.copyOf(trustedNodes);
+        this.trustedNetworks = ImmutableSet.copyOf(trustedNetworks);
     }
 
     public Node node() {
@@ -27,5 +30,9 @@ public class NodeAcl {
 
     public Set<Node> trustedNodes() {
         return trustedNodes;
+    }
+
+    public Set<String> trustedNetworks() {
+        return trustedNetworks;
     }
 }
