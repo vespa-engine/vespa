@@ -80,7 +80,7 @@ public class Dispatch extends AbstractService implements SearchInterface,
      * @return the startup command
      */
     public String getStartupCommand() {
-        return "exec sbin/fdispatch -c $VESPA_CONFIG_ID";
+        return "exec sbin/vespa-dispatch -c $VESPA_CONFIG_ID";
     }
 
     public int getFrtPort()  { return getRelativePort(0); }

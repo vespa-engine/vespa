@@ -63,11 +63,11 @@ ROOT=${VESPA_HOME%/}
 printf "WARNING: vespa-activate-application is deprecated, use 'vespa-deploy activate' instead\n\n"
 
 if [ "-f" == "$1" ] ; then
-    $ROOT/bin/deploy activate
+    $ROOT/bin/vespa-deploy activate
 else
     STATUS=$($ROOT/bin/vespa-status-filedistribution)
     if [ $? -eq 0 ] ; then
-       $ROOT/bin/deploy activate
+       $ROOT/bin/vespa-deploy activate
     else
        echo "$STATUS"
        echo
