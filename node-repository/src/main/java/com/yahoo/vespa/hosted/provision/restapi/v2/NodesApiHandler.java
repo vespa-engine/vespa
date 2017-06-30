@@ -109,12 +109,11 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     private HttpResponse handleAllocationEnquiry(HttpRequest request) {
         ObjectMapper mapper = new ObjectMapper();
-        AllocationEnquiryPayload payload = null;
+        AllocationEnquiryPayload payload;
         try {
-
             payload = mapper.readValue(request.getData(), AllocationEnquiryPayload.class);
         } catch (IOException e) {
-            return new ErrorResponse(400, "Something", e.getMessage());
+            return ErrorResponse.badRequest(e.getMessage());
         }
 
         // Build up flavors
@@ -155,7 +154,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
             response.allocations.put(allocation.id, success);
         }
 
-        // Get numbers
+        // Get aggregate allocation numbers
         response.flavorCapacity = enquiry.getFlavorCapacity();
         response.clusterCapacity = enquiry.getClusterCapacity();
 
