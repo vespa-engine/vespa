@@ -8,30 +8,32 @@
 #include <vespa/searchcore/proton/common/bucketfactory.h>
 #include <vespa/searchcore/proton/common/commit_time_tracker.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
+#include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
 #include <vespa/searchcore/proton/index/i_index_writer.h>
 #include <vespa/searchcore/proton/metrics/feed_metrics.h>
-#include <vespa/searchcore/proton/server/ifrozenbuckethandler.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
-#include <vespa/searchcore/proton/server/searchable_feed_view.h>
+#include <vespa/searchcore/proton/server/ifrozenbuckethandler.h>
 #include <vespa/searchcore/proton/server/isummaryadapter.h>
 #include <vespa/searchcore/proton/server/matchview.h>
-#include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
+#include <vespa/searchcore/proton/server/searchable_feed_view.h>
 #include <vespa/searchcore/proton/test/document_meta_store_context_observer.h>
 #include <vespa/searchcore/proton/test/dummy_document_store.h>
 #include <vespa/searchcore/proton/test/dummy_summary_manager.h>
-#include <vespa/searchcore/proton/test/mock_index_writer.h>
-#include <vespa/searchcore/proton/test/mock_index_manager.h>
-#include <vespa/searchcore/proton/test/mock_summary_adapter.h>
 #include <vespa/searchcore/proton/test/mock_gid_to_lid_change_handler.h>
+#include <vespa/searchcore/proton/test/mock_index_manager.h>
+#include <vespa/searchcore/proton/test/mock_index_writer.h>
+#include <vespa/searchcore/proton/test/mock_summary_adapter.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchcore/proton/test/threading_service_observer.h>
+#include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/searchlib/docstore/cachestats.h>
 #include <vespa/searchlib/docstore/idocumentstore.h>
-#include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <mutex>
+
 #include <vespa/log/log.h>
 LOG_SETUP("feedview_test");
 
@@ -47,6 +49,7 @@ using proton::test::MockGidToLidChangeHandler;
 using search::AttributeVector;
 using search::CacheStats;
 using search::DocumentMetaData;
+using search::IDestructorCallback;
 using search::SearchableStats;
 using search::index::schema::CollectionType;
 using search::index::schema::DataType;
@@ -637,7 +640,7 @@ struct FixtureBase
 
     void performMove(MoveOperation &op) {
         op.setSerialNum(++serial);
-        getFeedView().handleMove(op);
+        getFeedView().handleMove(op, IDestructorCallback::SP());
     }
 
     void moveAndWait(const DocumentContext &docCtx, uint32_t fromLid, uint32_t toLid) {

@@ -78,7 +78,7 @@ public:
     void prepareDeleteBucket(DeleteBucketOperation &delOp) override;
     void handleDeleteBucket(const DeleteBucketOperation &delOp) override;
     void prepareMove(MoveOperation &putOp) override;
-    void handleMove(const MoveOperation &moveOp) override;
+    void handleMove(const MoveOperation &moveOp, std::shared_ptr<search::IDestructorCallback> moveDoneCtx) override;
     void heartBeat(search::SerialNum serialNum) override;
     void sync() override;
     void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp) override;

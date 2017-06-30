@@ -1,13 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include "feedstates.h"
+
 #include "feedconfigstore.h"
-#include "replaypacketdispatcher.h"
+#include "feedstates.h"
 #include "ifeedview.h"
 #include "ireplayconfig.h"
-#include <vespa/searchcore/proton/common/eventlogger.h>
-#include <vespa/vespalib/util/closuretask.h>
+#include "replaypacketdispatcher.h"
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandler.h>
+#include <vespa/searchcore/proton/common/eventlogger.h>
+#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/exceptions.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.feedstates");
 
@@ -118,7 +121,7 @@ public:
         (void) op;
     }
     virtual void replay(const MoveOperation &op) override {
-        _feed_view_ptr->handleMove(op);
+        _feed_view_ptr->handleMove(op, search::IDestructorCallback::SP());
     }
     virtual void replay(const CreateBucketOperation &) override {
     }

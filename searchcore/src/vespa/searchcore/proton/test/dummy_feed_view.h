@@ -36,7 +36,7 @@ struct DummyFeedView : public IFeedView
     virtual void prepareDeleteBucket(DeleteBucketOperation &) override {}
     virtual void handleDeleteBucket(const DeleteBucketOperation &) override {}
     virtual void prepareMove(MoveOperation &) override {}
-    virtual void handleMove(const MoveOperation &) override {}
+    virtual void handleMove(const MoveOperation &, std::shared_ptr<search::IDestructorCallback>) override {}
     virtual void heartBeat(search::SerialNum) override {}
     virtual void sync() override {}
     virtual void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &) override {}

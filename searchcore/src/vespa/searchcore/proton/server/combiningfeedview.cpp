@@ -1,15 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "combiningfeedview.h"
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
-#include <vespa/document/fieldvalue/document.h>
+#include <vespa/searchlib/common/idestructorcallback.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.combiningfeedview");
 
 using document::DocumentTypeRepo;
 using document::DocumentId;
+using search::IDestructorCallback;
 
 namespace proton
 {
@@ -31,7 +33,6 @@ getRepo(const std::vector<IFeedView::SP> &views)
 
 };
 
-
 CombiningFeedView::CombiningFeedView(const std::vector<IFeedView::SP> &views,
                                      const IBucketStateCalculator::SP &calc)
     : _repo(getRepo(views)),
@@ -52,18 +53,15 @@ CombiningFeedView::CombiningFeedView(const std::vector<IFeedView::SP> &views,
     }
 }
 
-
 CombiningFeedView::~CombiningFeedView()
 {
 }
-
 
 const ISimpleDocumentMetaStore *
 CombiningFeedView::getDocumentMetaStorePtr() const
 {
     return NULL;
 }
-
 
 void
 CombiningFeedView::findPrevDbdId(const document::GlobalId &gid,
@@ -92,18 +90,15 @@ CombiningFeedView::findPrevDbdId(const document::GlobalId &gid,
     }
 }
 
-
 const DocumentTypeRepo::SP &
 CombiningFeedView::getDocumentTypeRepo() const
 {
     return _repo;
 }
 
-
 /**
  * Similar to IFeedHandler and IPersistenceHandler functions.
  */
-
 void
 CombiningFeedView::preparePut(PutOperation &putOp)
 {
@@ -118,7 +113,6 @@ CombiningFeedView::preparePut(PutOperation &putOp)
         findPrevDbdId(gid, putOp);
     }
 }
-
 
 void
 CombiningFeedView::handlePut(FeedToken *token,
@@ -137,7 +131,6 @@ CombiningFeedView::handlePut(FeedToken *token,
     }
 }
 
-
 void
 CombiningFeedView::prepareUpdate(UpdateOperation &updOp)
 {
@@ -146,7 +139,6 @@ CombiningFeedView::prepareUpdate(UpdateOperation &updOp)
         getNotReadyFeedView()->prepareUpdate(updOp);
     }
 }
-
 
 void
 CombiningFeedView::handleUpdate(FeedToken *token,
@@ -159,7 +151,6 @@ CombiningFeedView::handleUpdate(FeedToken *token,
     _views[subDbId]->handleUpdate(token, updOp);
 }
 
-
 void
 CombiningFeedView::prepareRemove(RemoveOperation &rmOp)
 {
@@ -170,7 +161,6 @@ CombiningFeedView::prepareRemove(RemoveOperation &rmOp)
         findPrevDbdId(gid, rmOp);
     }
 }
-
 
 void
 CombiningFeedView::handleRemove(FeedToken *token,
@@ -202,7 +192,6 @@ CombiningFeedView::prepareDeleteBucket(DeleteBucketOperation &delOp)
     }
 }
 
-
 void
 CombiningFeedView::handleDeleteBucket(const DeleteBucketOperation &delOp)
 {
@@ -210,7 +199,6 @@ CombiningFeedView::handleDeleteBucket(const DeleteBucketOperation &delOp)
         view->handleDeleteBucket(delOp);
     }
 }
-
 
 void
 CombiningFeedView::prepareMove(MoveOperation &moveOp)
@@ -220,22 +208,20 @@ CombiningFeedView::prepareMove(MoveOperation &moveOp)
     _views[subDbId]->prepareMove(moveOp);
 }
 
-
 void
-CombiningFeedView::handleMove(const MoveOperation &moveOp)
+CombiningFeedView::handleMove(const MoveOperation &moveOp, IDestructorCallback::SP moveDoneCtx)
 {
     assert(moveOp.getValidDbdId());
     uint32_t subDbId = moveOp.getSubDbId();
     uint32_t prevSubDbId = moveOp.getPrevSubDbId();
     if (moveOp.getValidPrevDbdId() && prevSubDbId != subDbId) {
-        _views[subDbId]->handleMove(moveOp);
+        _views[subDbId]->handleMove(moveOp, moveDoneCtx);
         // XXX: index executor not synced.
-        _views[prevSubDbId]->handleMove(moveOp);
+        _views[prevSubDbId]->handleMove(moveOp, moveDoneCtx);
     } else {
-        _views[subDbId]->handleMove(moveOp);
+        _views[subDbId]->handleMove(moveOp, moveDoneCtx);
     }
 }
-
 
 void
 CombiningFeedView::heartBeat(search::SerialNum serialNum)
@@ -244,7 +230,6 @@ CombiningFeedView::heartBeat(search::SerialNum serialNum)
         view->heartBeat(serialNum);
     }
 }
-
 
 void
 CombiningFeedView::sync()
@@ -260,7 +245,6 @@ CombiningFeedView::forceCommit(search::SerialNum serialNum)
         view->forceCommit(serialNum);
     }
 }
-
 
 void
 CombiningFeedView::
@@ -286,7 +270,6 @@ CombiningFeedView::setCalculator(const IBucketStateCalculator::SP &newCalc)
     _forceReady = !_clusterUp || !hasNotReadyFeedView();
 }
 
-
 bool
 CombiningFeedView::shouldBeReady(const document::BucketId &bucket) const
 {
@@ -302,6 +285,5 @@ CombiningFeedView::shouldBeReady(const document::BucketId &bucket) const
     bool isActive = readyMetaStore->getBucketDB().takeGuard()->isActiveBucket(bucket);
     return _forceReady || isActive || _calc->shouldBeReady(bucket);
 }
-
 
 } // namespace proton

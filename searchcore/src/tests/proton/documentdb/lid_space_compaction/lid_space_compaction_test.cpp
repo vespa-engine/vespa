@@ -2,23 +2,25 @@
 #include <vespa/log/log.h>
 LOG_SETUP("lid_space_compaction_test");
 
+#include <vespa/searchcore/proton/server/i_disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/server/i_lid_space_compaction_handler.h>
+#include <vespa/searchcore/proton/server/ifrozenbuckethandler.h>
+#include <vespa/searchcore/proton/server/imaintenancejobrunner.h>
 #include <vespa/searchcore/proton/server/lid_space_compaction_handler.h>
 #include <vespa/searchcore/proton/server/lid_space_compaction_job.h>
 #include <vespa/searchcore/proton/test/clusterstatehandler.h>
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/test/test.h>
+#include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/searchcore/proton/server/ifrozenbuckethandler.h>
-#include <vespa/searchcore/proton/server/i_disk_mem_usage_notifier.h>
-#include <vespa/searchcore/proton/server/imaintenancejobrunner.h>
 
 using namespace document;
 using namespace proton;
-using namespace search;
 using namespace search::index;
+using namespace search;
 using namespace vespalib;
+using search::IDestructorCallback;
 using storage::spi::Timestamp;
 using BlockedReason = IBlockableMaintenanceJob::BlockedReason;
 
@@ -99,8 +101,9 @@ struct MyHandler : public ILidSpaceCompactionHandler
         _moveToLid = moveToLid;
         return MoveOperation::UP(new MoveOperation());
     }
-    virtual void handleMove(const MoveOperation &) override {
+    virtual void handleMove(const MoveOperation &, IDestructorCallback::SP moveDoneCtx) override {
         ++_handleMoveCnt;
+        (void) moveDoneCtx;
     }
     virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op) override {
         _wantedSubDbId = op.getSubDbId();

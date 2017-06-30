@@ -1,38 +1,40 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "ireplayconfig.h"
-#include "storeonlyfeedview.h"
 #include "forcecommitcontext.h"
+#include "ireplayconfig.h"
 #include "operationdonecontext.h"
-#include "removedonecontext.h"
-#include "updatedonecontext.h"
 #include "putdonecontext.h"
+#include "removedonecontext.h"
+#include "storeonlyfeedview.h"
+#include "updatedonecontext.h"
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/searchcore/proton/common/commit_time_tracker.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
-#include <vespa/searchcore/proton/metrics/feed_metrics.h>
 #include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
+#include <vespa/searchcore/proton/metrics/feed_metrics.h>
+#include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/searchlib/common/scheduletaskcallback.h>
-#include <vespa/document/datatype/documenttype.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.storeonlyfeedview");
 
 using document::BucketId;
-using document::DocumentTypeRepo;
 using document::Document;
 using document::DocumentId;
+using document::DocumentTypeRepo;
 using document::DocumentUpdate;
 using search::index::Schema;
+using search::makeLambdaTask;
+using search::IDestructorCallback;
 using storage::spi::BucketInfoResult;
 using storage::spi::Timestamp;
 using vespalib::IllegalStateException;
 using vespalib::makeClosure;
 using vespalib::makeTask;
 using vespalib::make_string;
-using search::makeLambdaTask;
 
 namespace proton {
 
@@ -55,17 +57,46 @@ FeedToken::UP dupFeedToken(FeedToken *token)
     }
 }
 
+class PutDoneContextForMove : public PutDoneContext {
+private:
+    IDestructorCallback::SP _moveDoneCtx;
+
+public:
+    PutDoneContextForMove(std::unique_ptr<FeedToken> token,
+                          const FeedOperation::Type opType,
+                          PerDocTypeFeedMetrics &metrics,
+                          IDestructorCallback::SP moveDoneCtx)
+        : PutDoneContext(std::move(token), opType, metrics),
+          _moveDoneCtx(std::move(moveDoneCtx))
+    {}
+    virtual ~PutDoneContextForMove() {}
+};
+
+std::shared_ptr<PutDoneContext>
+createPutDoneContext(FeedToken::UP &token,
+                     FeedOperation::Type opType,
+                     PerDocTypeFeedMetrics &metrics,
+                     bool force,
+                     IDestructorCallback::SP moveDoneCtx)
+{
+    std::shared_ptr<PutDoneContext> result;
+    if (token || force) {
+        if (moveDoneCtx) {
+            result = std::make_shared<PutDoneContextForMove>(std::move(token), opType, metrics, std::move(moveDoneCtx));
+        } else {
+            result = std::make_shared<PutDoneContext>(std::move(token), opType, metrics);
+        }
+    }
+    return result;
+}
+
 std::shared_ptr<PutDoneContext>
 createPutDoneContext(FeedToken::UP &token,
                      FeedOperation::Type opType,
                      PerDocTypeFeedMetrics &metrics,
                      bool force)
 {
-    std::shared_ptr<PutDoneContext> result;
-    if (token || force) {
-        result = std::make_shared<PutDoneContext>(std::move(token), opType, metrics);
-    }
-    return result;
+    return createPutDoneContext(token, opType, metrics, force, IDestructorCallback::SP());
 }
 
 std::shared_ptr<UpdateDoneContext>
@@ -240,7 +271,7 @@ StoreOnlyFeedView::internalPut(FeedToken::UP token,
     }
     if (docAlreadyExists && putOp.changedDbdId()) {
         assert(!putOp.getValidDbdId(_params._subDbId));
-        internalRemove(std::move(token), serialNum, putOp.getPrevLid(), putOp.getType());
+        internalRemove(std::move(token), serialNum, putOp.getPrevLid(), putOp.getType(), IDestructorCallback::SP());
     }
     if (token.get() != NULL) {
         token->ack(putOp.getType(), _params._metrics);
@@ -536,7 +567,7 @@ StoreOnlyFeedView::internalRemove(FeedToken::UP token,
     if (rmOp.getValidPrevDbdId(_params._subDbId)) {
         if (rmOp.changedDbdId()) {
             assert(!rmOp.getValidDbdId(_params._subDbId));
-            internalRemove(std::move(token), serialNum, rmOp.getPrevLid(), rmOp.getType());
+            internalRemove(std::move(token), serialNum, rmOp.getPrevLid(), rmOp.getType(), IDestructorCallback::SP());
         }
     }
     if (token.get() != NULL) {
@@ -544,20 +575,62 @@ StoreOnlyFeedView::internalRemove(FeedToken::UP token,
     }
 }
 
+namespace {
+
+class RemoveDoneContextForMove : public RemoveDoneContext {
+private:
+    IDestructorCallback::SP _moveDoneCtx;
+
+public:
+    RemoveDoneContextForMove(std::unique_ptr<FeedToken> token,
+                             const FeedOperation::Type opType,
+                             PerDocTypeFeedMetrics &metrics,
+                             vespalib::Executor &executor,
+                             IDocumentMetaStore &documentMetaStore,
+                             uint32_t lid,
+                             IDestructorCallback::SP moveDoneCtx)
+        : RemoveDoneContext(std::move(token), opType, metrics, executor, documentMetaStore, lid),
+          _moveDoneCtx(std::move(moveDoneCtx))
+    {}
+    virtual ~RemoveDoneContextForMove() {}
+};
+
+std::shared_ptr<RemoveDoneContext>
+createRemoveDoneContext(std::unique_ptr<FeedToken> token,
+                        const FeedOperation::Type opType,
+                        PerDocTypeFeedMetrics &metrics,
+                        vespalib::Executor &executor,
+                        IDocumentMetaStore &documentMetaStore,
+                        uint32_t lid,
+                        IDestructorCallback::SP moveDoneCtx)
+{
+    if (moveDoneCtx) {
+        return std::make_shared<RemoveDoneContextForMove>
+                (std::move(token), opType, metrics, executor, documentMetaStore, lid, std::move(moveDoneCtx));
+    } else {
+        return std::make_shared<RemoveDoneContext>
+                (std::move(token), opType, metrics, executor, documentMetaStore, lid);
+    }
+}
+
+}
+
 void
 StoreOnlyFeedView::internalRemove(FeedToken::UP token,
                                   SerialNum serialNum,
                                   search::DocumentIdT lid,
-                                  FeedOperation::Type opType)
+                                  FeedOperation::Type opType,
+                                  IDestructorCallback::SP moveDoneCtx)
 {
     _summaryAdapter->remove(serialNum, lid);
     bool explicitReuseLid = _lidReuseDelayer.delayReuse(lid);
     std::shared_ptr<RemoveDoneContext> onWriteDone;
     if (explicitReuseLid || token) {
-        onWriteDone = std::make_shared<RemoveDoneContext>
-                      (std::move(token), opType, _params._metrics,
-                       _writeService.master(), _metaStore,
-                       explicitReuseLid ? lid : 0u);
+        onWriteDone = createRemoveDoneContext(std::move(token), opType, _params._metrics, _writeService.master(),
+                                              _metaStore, (explicitReuseLid ? lid : 0u), moveDoneCtx);
+    } else if (moveDoneCtx) {
+        onWriteDone = createRemoveDoneContext(FeedToken::UP(), opType, _params._metrics, _writeService.master(),
+                                              _metaStore, 0u, moveDoneCtx);
     }
     bool immediateCommit = _commitTimeTracker.needCommit();
     removeAttributes(serialNum, lid, immediateCommit, onWriteDone);
@@ -788,7 +861,7 @@ StoreOnlyFeedView::prepareMove(MoveOperation &moveOp)
 
 // CombiningFeedView calls this for both source and target subdb.
 void
-StoreOnlyFeedView::handleMove(const MoveOperation &moveOp)
+StoreOnlyFeedView::handleMove(const MoveOperation &moveOp, IDestructorCallback::SP doneCtx)
 {
     assert(moveOp.getValidDbdId());
     assert(moveOp.getValidPrevDbdId());
@@ -821,13 +894,12 @@ StoreOnlyFeedView::handleMove(const MoveOperation &moveOp)
         FeedToken::UP token;
         std::shared_ptr<PutDoneContext> onWriteDone =
             createPutDoneContext(token, moveOp.getType(), _params._metrics,
-                                 immediateCommit &&
-                                 moveOp.getLid() >= oldDocIdLimit);
+                                 immediateCommit && (moveOp.getLid() >= oldDocIdLimit), doneCtx);
         putAttributes(serialNum, moveOp.getLid(), *doc, immediateCommit, onWriteDone);
         putIndexedFields(serialNum, moveOp.getLid(), doc, immediateCommit, onWriteDone);
     }
     if (docAlreadyExists && moveOp.changedDbdId()) {
-        internalRemove(FeedToken::UP(), serialNum, moveOp.getPrevLid(), moveOp.getType());
+        internalRemove(FeedToken::UP(), serialNum, moveOp.getPrevLid(), moveOp.getType(), doneCtx);
     }
 }
 

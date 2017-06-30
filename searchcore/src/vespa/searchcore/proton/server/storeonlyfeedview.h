@@ -18,11 +18,7 @@
 #include <vespa/searchlib/query/base.h>
 #include <vespa/vespalib/util/threadstackexecutorbase.h>
 
-namespace search {
-
-class IDestructorCallback;
-
-}
+namespace search { class IDestructorCallback; }
 
 namespace proton {
 
@@ -195,7 +191,8 @@ private:
     void internalRemove(FeedTokenUP token,
                         SerialNum serialNum,
                         search::DocumentIdT lid,
-                        FeedOperation::Type opType);
+                        FeedOperation::Type opType,
+                        std::shared_ptr<search::IDestructorCallback> moveDoneCtx);
 
     // Ack token early if visibility delay is nonzero
     void considerEarlyAck(FeedTokenUP &token, FeedOperation::Type opType);
@@ -348,7 +345,7 @@ public:
     prepareMove(MoveOperation &putOp) override;
 
     virtual void
-    handleMove(const MoveOperation &putOp) override;
+    handleMove(const MoveOperation &putOp, std::shared_ptr<search::IDestructorCallback> doneCtx) override;
 
     virtual void
     heartBeat(search::SerialNum serialNum) override;

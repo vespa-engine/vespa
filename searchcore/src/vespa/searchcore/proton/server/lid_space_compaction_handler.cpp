@@ -1,13 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "lid_space_compaction_handler.h"
 #include "document_scan_iterator.h"
 #include "ifeedview.h"
+#include "lid_space_compaction_handler.h"
 #include <vespa/searchcore/proton/docsummary/isummarymanager.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store_context.h>
+#include <vespa/searchlib/common/idestructorcallback.h>
 
 using document::BucketId;
 using document::Document;
+using search::IDestructorCallback;
 using search::LidUsageStats;
 using storage::spi::Timestamp;
 
@@ -49,9 +51,9 @@ LidSpaceCompactionHandler::createMoveOperation(const search::DocumentMetaData &d
 }
 
 void
-LidSpaceCompactionHandler::handleMove(const MoveOperation& op)
+LidSpaceCompactionHandler::handleMove(const MoveOperation& op, IDestructorCallback::SP doneCtx)
 {
-    _subDb.getFeedView()->handleMove(op);
+    _subDb.getFeedView()->handleMove(op, std::move(doneCtx));
 }
 
 void

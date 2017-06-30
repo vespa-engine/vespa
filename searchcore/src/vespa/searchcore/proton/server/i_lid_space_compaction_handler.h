@@ -8,6 +8,8 @@
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchlib/common/lid_usage_stats.h>
 
+namespace search { class IDestructorCallback; }
+
 namespace proton {
 
 /**
@@ -50,7 +52,7 @@ struct ILidSpaceCompactionHandler
     /**
      * Performs the actual move operation.
      */
-    virtual void handleMove(const MoveOperation &op) = 0;
+    virtual void handleMove(const MoveOperation &op, std::shared_ptr<search::IDestructorCallback> moveDoneCtx) = 0;
 
     /**
      * Compacts the underlying lid space by starting using the new lid limit.

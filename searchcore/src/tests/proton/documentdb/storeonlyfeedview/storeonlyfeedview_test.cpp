@@ -6,15 +6,16 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/searchcommon/common/schema.h>
+#include <vespa/searchcore/proton/common/commit_time_tracker.h>
+#include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
 #include <vespa/searchcore/proton/metrics/feed_metrics.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/server/storeonlyfeedview.h>
-#include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
 #include <vespa/searchcore/proton/test/mock_summary_adapter.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
-#include <vespa/searchcore/proton/common/commit_time_tracker.h>
-#include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/searchlib/common/serialnum.h>
+#include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
@@ -28,9 +29,10 @@ using document::DocumentTypeRepo;
 using document::DocumentUpdate;
 using document::GlobalId;
 using search::DocumentIdT;
+using search::IDestructorCallback;
+using search::SerialNum;
 using search::index::DocBuilder;
 using search::index::Schema;
-using search::SerialNum;
 using storage::spi::Timestamp;
 using vespalib::make_string;
 using namespace proton;
@@ -200,7 +202,7 @@ TEST_F("require that handleMove adds document to target "
     op.setSerialNum(1);
     EXPECT_EQUAL(0, f.put_count);
     f.runInMaster([&] () { f.feedview->prepareMove(op); });
-    f.runInMaster([&] () { f.feedview->handleMove(op); });
+    f.runInMaster([&] () { f.feedview->handleMove(op, IDestructorCallback::SP()); });
     EXPECT_EQUAL(1, f.put_count);
     uint32_t lid = op.getDbDocumentId().getLid();
     EXPECT_TRUE(f.meta_store->validLid(lid));
@@ -209,7 +211,7 @@ TEST_F("require that handleMove adds document to target "
     op.setDbDocumentId(DbDocumentId(subdb_id + 1, lid));
     op.setPrevDbDocumentId(DbDocumentId(subdb_id, lid));
     EXPECT_EQUAL(0, f.remove_count);
-    f.runInMaster([&] () { f.feedview->handleMove(op); });
+    f.runInMaster([&] () { f.feedview->handleMove(op, IDestructorCallback::SP()); });
     EXPECT_FALSE(f.meta_store->validLid(lid));
     EXPECT_EQUAL(1, f.remove_count);
 }
@@ -235,7 +237,7 @@ TEST_F("require that handleMove handles move within same subdb", Fixture)
     op.setSerialNum(1);
     EXPECT_EQUAL(0, f.put_count); 
     EXPECT_EQUAL(0, f.remove_count);
-    f.runInMaster([&] () { f.feedview->handleMove(op); });
+    f.runInMaster([&] () { f.feedview->handleMove(op, IDestructorCallback::SP()); });
     EXPECT_EQUAL(1, f.put_count);
     EXPECT_EQUAL(1, f.remove_count);
     uint32_t lid = op.getDbDocumentId().getLid();
