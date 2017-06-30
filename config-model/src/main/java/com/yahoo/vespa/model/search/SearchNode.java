@@ -235,7 +235,7 @@ public class SearchNode extends AbstractService implements
 
     @Override
     public String getStartupCommand() {
-        String startup = getEnvVariables() + "exec $ROOT/sbin/vespa-proton " + "--identity " + getConfigId();
+        String startup = getEnvVariables() + "exec $ROOT/sbin/proton " + "--identity " + getConfigId();
         if (serviceLayerService != null) {
             startup = startup + " --serviceidentity " + serviceLayerService.getConfigId();
         }
