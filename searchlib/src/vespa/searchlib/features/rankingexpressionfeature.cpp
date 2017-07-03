@@ -54,6 +54,7 @@ private:
 
 public:
     CompiledRankingExpressionExecutor(const CompiledFunction &compiled_function);
+    bool isPure() override { return true; }
     void execute(uint32_t docId) override;
 };
 
@@ -70,6 +71,7 @@ private:
 
 public:
     LazyCompiledRankingExpressionExecutor(const CompiledFunction &compiled_function);
+    bool isPure() override { return true; }
     void execute(uint32_t docId) override;
 };
 
@@ -102,6 +104,7 @@ private:
 public:
     InterpretedRankingExpressionExecutor(const InterpretedFunction &function,
                                          ConstArrayRef<char> input_is_object);
+    bool isPure() override { return true; }
     void execute(uint32_t docId) override;
 };
 
