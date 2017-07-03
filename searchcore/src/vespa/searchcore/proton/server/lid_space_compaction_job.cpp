@@ -56,7 +56,10 @@ LidSpaceCompactionJob::scanDocuments(const LidUsageStats &stats)
             } else {
                 MoveOperation::UP op = _handler.createMoveOperation(document, stats.getLowestFreeLid());
                 _opStorer.storeOperation(*op);
-                _handler.handleMove(*op, search::IDestructorCallback::SP());
+                _handler.handleMove(*op, _moveOpsLimiter->beginOperation());
+                if (isBlocked(BlockedReason::OUTSTANDING_OPS)) {
+                    return true;
+                }
             }
         }
     }
@@ -87,11 +90,11 @@ LidSpaceCompactionJob::LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionC
                                              IOperationStorer &opStorer,
                                              IFrozenBucketHandler &frozenHandler,
                                              IDiskMemUsageNotifier &diskMemUsageNotifier,
-                                             double resourceLimitFactor,
+                                             const BlockableMaintenanceJobConfig &blockableConfig,
                                              IClusterStateChangedNotifier &clusterStateChangedNotifier,
                                              bool nodeRetired)
     : BlockableMaintenanceJob("lid_space_compaction." + handler.getName(),
-            config.getDelay(), config.getInterval(), resourceLimitFactor),
+            config.getDelay(), config.getInterval(), blockableConfig),
       _cfg(config),
       _handler(handler),
       _opStorer(opStorer),

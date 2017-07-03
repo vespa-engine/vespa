@@ -91,6 +91,25 @@ DocumentDBLidSpaceCompactionConfig::operator==(const DocumentDBLidSpaceCompactio
            _disabled == rhs._disabled;
 }
 
+
+BlockableMaintenanceJobConfig::BlockableMaintenanceJobConfig()
+    : _resourceLimitFactor(1.0),
+      _maxOutstandingMoveOps(10)
+{}
+
+BlockableMaintenanceJobConfig::BlockableMaintenanceJobConfig(double resourceLimitFactor,
+                                                             uint32_t maxOutstandingMoveOps)
+    : _resourceLimitFactor(resourceLimitFactor),
+      _maxOutstandingMoveOps(maxOutstandingMoveOps)
+{}
+
+bool
+BlockableMaintenanceJobConfig::operator==(const BlockableMaintenanceJobConfig &rhs) const
+{
+    return _resourceLimitFactor == rhs._resourceLimitFactor &&
+           _maxOutstandingMoveOps == rhs._maxOutstandingMoveOps;
+}
+
 DocumentDBMaintenanceConfig::DocumentDBMaintenanceConfig()
     : _pruneRemovedDocuments(),
       _heartBeat(),
@@ -99,7 +118,7 @@ DocumentDBMaintenanceConfig::DocumentDBMaintenanceConfig()
       _lidSpaceCompaction(),
       _attributeUsageFilterConfig(),
       _attributeUsageSampleInterval(60.0),
-      _resourceLimitFactor(1.0)
+      _blockableJobConfig()
 {
 }
 
@@ -112,7 +131,7 @@ DocumentDBMaintenanceConfig(const DocumentDBPruneRemovedDocumentsConfig &
                             const DocumentDBLidSpaceCompactionConfig &lidSpaceCompaction,
                             const AttributeUsageFilterConfig &attributeUsageFilterConfig,
                             double attributeUsageSampleInterval,
-                            double resourceLimitFactor)
+                            const BlockableMaintenanceJobConfig &blockableJobConfig)
     : _pruneRemovedDocuments(pruneRemovedDocuments),
       _heartBeat(heartBeat),
       _sessionCachePruneInterval(groupingSessionPruneInterval),
@@ -120,7 +139,7 @@ DocumentDBMaintenanceConfig(const DocumentDBPruneRemovedDocumentsConfig &
       _lidSpaceCompaction(lidSpaceCompaction),
       _attributeUsageFilterConfig(attributeUsageFilterConfig),
       _attributeUsageSampleInterval(attributeUsageSampleInterval),
-      _resourceLimitFactor(resourceLimitFactor)
+      _blockableJobConfig(blockableJobConfig)
 {
 }
 
@@ -135,7 +154,7 @@ operator==(const DocumentDBMaintenanceConfig &rhs) const
         _lidSpaceCompaction == rhs._lidSpaceCompaction &&
         _attributeUsageFilterConfig == rhs._attributeUsageFilterConfig &&
         _attributeUsageSampleInterval == rhs._attributeUsageSampleInterval &&
-        _resourceLimitFactor == rhs._resourceLimitFactor;
+        _blockableJobConfig == rhs._blockableJobConfig;
 }
 
 } // namespace proton

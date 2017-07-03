@@ -600,7 +600,7 @@ ControllerFixtureBase::ControllerFixtureBase(double resourceLimitFactor)
       _diskMemUsageNotifier(),
       _bmj(_calc, _moveHandler, _modifiedHandler, _ready._subDb,
            _notReady._subDb, _fbh, _clusterStateHandler, _bucketHandler,
-           _diskMemUsageNotifier, resourceLimitFactor,
+           _diskMemUsageNotifier, BlockableMaintenanceJobConfig(resourceLimitFactor, 10),
            "test")
 {}
 ControllerFixtureBase::~ControllerFixtureBase() {}

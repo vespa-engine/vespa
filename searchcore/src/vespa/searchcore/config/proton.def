@@ -410,4 +410,13 @@ hwinfo.disk.samplewritesize long default = 1073741824
 hwinfo.disk.slowwritespeedlimit double default = 100.0
 
 ## Adjustment to resource limit when determining if maintenance jobs can run.
+##
+## Currently used by 'lid_space_compaction' and 'move_buckets' jobs.
 maintenancejobs.resourcelimitfactor double default = 1.05
+
+## The max outstanding move operations a maintenance job can have before being blocked.
+##
+## The job is unblocked (and executed again) when this goes under the limit again.
+## Currently used by 'lid_space_compaction' job.
+maintenancejobs.maxoutstandingmoveops int default=10
+

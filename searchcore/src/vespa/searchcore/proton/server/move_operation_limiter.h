@@ -18,7 +18,6 @@ class IBlockableMaintenanceJob;
  */
 class MoveOperationLimiter : public std::enable_shared_from_this<MoveOperationLimiter> {
 private:
-    using SP = std::shared_ptr<MoveOperationLimiter>;
     using LockGuard = std::lock_guard<std::mutex>;
 
     struct Callback;
@@ -32,6 +31,7 @@ private:
     void endOperation();
 
 public:
+    using SP = std::shared_ptr<MoveOperationLimiter>;
     MoveOperationLimiter(IBlockableMaintenanceJob *job,
                          uint32_t maxOutstandingOps);
     ~MoveOperationLimiter();

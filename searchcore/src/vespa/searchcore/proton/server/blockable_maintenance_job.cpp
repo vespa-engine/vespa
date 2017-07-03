@@ -3,6 +3,7 @@
 #include "blockable_maintenance_job.h"
 #include "disk_mem_usage_state.h"
 #include "imaintenancejobrunner.h"
+#include "document_db_maintenance_config.h"
 
 namespace proton {
 
@@ -28,25 +29,27 @@ BlockableMaintenanceJob::internalNotifyDiskMemUsage(const DiskMemUsageState &sta
 BlockableMaintenanceJob::BlockableMaintenanceJob(const vespalib::string &name,
                                                  double delay,
                                                  double interval)
-    : BlockableMaintenanceJob(name, delay, interval, 1.0)
+    : BlockableMaintenanceJob(name, delay, interval, BlockableMaintenanceJobConfig())
 {
 }
 
 BlockableMaintenanceJob::BlockableMaintenanceJob(const vespalib::string &name,
                                                  double delay,
                                                  double interval,
-                                                 double resourceLimitFactor)
+                                                 const BlockableMaintenanceJobConfig &config)
     : IBlockableMaintenanceJob(name, delay, interval),
       _mutex(),
       _blockReasons(),
       _blocked(false),
       _runner(nullptr),
-      _resourceLimitFactor(resourceLimitFactor)
+      _resourceLimitFactor(config.getResourceLimitFactor()),
+      _moveOpsLimiter(std::make_shared<MoveOperationLimiter>(this, config.getMaxOutstandingMoveOps()))
 {
 }
 
 BlockableMaintenanceJob::~BlockableMaintenanceJob()
 {
+    _moveOpsLimiter->clearJob();
 }
 
 bool
