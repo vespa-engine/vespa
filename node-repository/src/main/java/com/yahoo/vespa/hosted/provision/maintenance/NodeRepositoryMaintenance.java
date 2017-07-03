@@ -84,6 +84,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 new Zone(SystemName.cd, Environment.prod, RegionName.from("cd-us-central-1")),
                 new Zone(SystemName.cd, Environment.prod, RegionName.from("cd-us-central-2")),
                 new Zone(SystemName.main, Environment.perf, RegionName.from("us-east-3")),
+                new Zone(SystemName.main, Environment.prod, RegionName.from("us-east-3")),
                 new Zone(SystemName.main, Environment.prod, RegionName.from("us-west-1")));
     }
 
