@@ -81,7 +81,11 @@ public class Curator {
         return sb.toString();
     }
 
-    private Curator(String connectionSpec) {
+    /** 
+     * Create a curator instance which connects to the zookeeper servers given by a connection spec
+     * on the format "hostname1:port,hostname2:port" ...
+     */
+    public Curator(String connectionSpec) {
         Objects.requireNonNull(connectionSpec, "The curator connection spec cannot be null");
         this.connectionSpec = connectionSpec;
         this.serverCount = connectionSpec.split(",").length;
