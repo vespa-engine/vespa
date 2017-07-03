@@ -66,7 +66,7 @@ import static com.yahoo.jdisc.http.server.jetty.ConnectorFactory.JDiscServerConn
 import static com.yahoo.jdisc.http.server.jetty.Exceptions.throwUnchecked;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  * @author bjorncs
  */
 @Beta
