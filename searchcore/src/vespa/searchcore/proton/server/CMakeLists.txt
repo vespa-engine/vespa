@@ -63,6 +63,7 @@ vespa_add_library(searchcore_server STATIC
     memory_flush_config_updater.cpp
     memoryflush.cpp
     minimal_document_retriever.cpp
+    move_operation_limiter.cpp
     ooscli.cpp
     operationdonecontext.cpp
     persistencehandlerproxy.cpp

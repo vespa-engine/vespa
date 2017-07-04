@@ -17,7 +17,7 @@
 namespace proton
 {
 
-
+class BlockableMaintenanceJobConfig;
 class IBucketStateChangedNotifier;
 class IClusterStateChangedNotifier;
 class IDiskMemUsageNotifier;
@@ -141,7 +141,7 @@ public:
                   IClusterStateChangedNotifier &clusterStateChangedNotifier,
                   IBucketStateChangedNotifier &bucketStateChangedNotifier,
                   IDiskMemUsageNotifier &diskMemUsageNotifier,
-                  double resourceLimitFactor,
+                  const BlockableMaintenanceJobConfig &blockableConfig,
                   const vespalib::string &docTypeName);
 
     virtual ~BucketMoveJob();

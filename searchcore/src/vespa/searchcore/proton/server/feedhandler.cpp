@@ -1,24 +1,26 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "ddbstate.h"
 #include "feedhandler.h"
 #include "feedstates.h"
-#include "replaypacketdispatcher.h"
-#include "tlcproxy.h"
-#include "ddbstate.h"
 #include "i_feed_handler_owner.h"
 #include "ifeedview.h"
+#include "replaypacketdispatcher.h"
+#include "tlcproxy.h"
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/documentapi/messagebus/messages/documentreply.h>
 #include <vespa/documentapi/messagebus/messages/feedreply.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentreply.h>
 #include <vespa/documentapi/messagebus/messages/updatedocumentreply.h>
-#include <vespa/searchcore/proton/persistenceengine/transport_latch.h>
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandler.h>
-#include <vespa/searchcorespi/index/ithreadingservice.h>
-#include <vespa/vespalib/util/closuretask.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
+#include <vespa/searchcore/proton/persistenceengine/transport_latch.h>
+#include <vespa/searchcorespi/index/ithreadingservice.h>
+#include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/document/datatype/documenttype.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.feedhandler");
 
@@ -736,7 +738,7 @@ FeedHandler::handleMove(MoveOperation &op)
     assert(op.getValidPrevDbdId());
     assert(op.getSubDbId() != op.getPrevSubDbId());
     storeOperation(op);
-    _activeFeedView->handleMove(op);
+    _activeFeedView->handleMove(op, search::IDestructorCallback::SP());
 }
 
 

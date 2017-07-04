@@ -117,24 +117,25 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
         visibilityDelay = TimeStamp::Seconds(std::min(proton.maxvisibilitydelay, ddbConfig.visibilitydelay));
         isDocumentTypeGlobal = ddbConfig.global;
     }
-    return DocumentDBMaintenanceConfig::SP(
-            new DocumentDBMaintenanceConfig(
-                    DocumentDBPruneRemovedDocumentsConfig(
-                            pruneRemovedDocumentsInterval,
-                            pruneRemovedDocumentsAge),
-                    DocumentDBHeartBeatConfig(),
-                    proton.grouping.sessionmanager.pruning.interval,
-                    visibilityDelay,
-                    DocumentDBLidSpaceCompactionConfig(
-                            proton.lidspacecompaction.interval,
-                            proton.lidspacecompaction.allowedlidbloat,
-                            proton.lidspacecompaction.allowedlidbloatfactor,
-                            isDocumentTypeGlobal),
-                    AttributeUsageFilterConfig(
-                            proton.writefilter.attribute.enumstorelimit,
-                            proton.writefilter.attribute.multivaluelimit),
-                    proton.writefilter.sampleinterval,
-                    proton.maintenancejobs.resourcelimitfactor));
+    return std::make_shared<DocumentDBMaintenanceConfig>(
+            DocumentDBPruneRemovedDocumentsConfig(
+                    pruneRemovedDocumentsInterval,
+                    pruneRemovedDocumentsAge),
+            DocumentDBHeartBeatConfig(),
+            proton.grouping.sessionmanager.pruning.interval,
+            visibilityDelay,
+            DocumentDBLidSpaceCompactionConfig(
+                    proton.lidspacecompaction.interval,
+                    proton.lidspacecompaction.allowedlidbloat,
+                    proton.lidspacecompaction.allowedlidbloatfactor,
+                    isDocumentTypeGlobal),
+            AttributeUsageFilterConfig(
+                    proton.writefilter.attribute.enumstorelimit,
+                    proton.writefilter.attribute.multivaluelimit),
+            proton.writefilter.sampleinterval,
+            BlockableMaintenanceJobConfig(
+                    proton.maintenancejobs.resourcelimitfactor,
+                    proton.maintenancejobs.maxoutstandingmoveops));
 }
 
 

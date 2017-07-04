@@ -67,6 +67,20 @@ public:
     uint32_t getMaxDocsToScan() const { return _maxDocsToScan; }
 };
 
+class BlockableMaintenanceJobConfig {
+private:
+    double _resourceLimitFactor;
+    uint32_t _maxOutstandingMoveOps;
+
+public:
+    BlockableMaintenanceJobConfig();
+    BlockableMaintenanceJobConfig(double resourceLimitFactor,
+                                  uint32_t maxOutstandingMoveOps);
+    bool operator==(const BlockableMaintenanceJobConfig &rhs) const;
+    double getResourceLimitFactor() const { return _resourceLimitFactor; }
+    uint32_t getMaxOutstandingMoveOps() const { return _maxOutstandingMoveOps; }
+};
+
 class DocumentDBMaintenanceConfig
 {
 public:
@@ -80,7 +94,7 @@ private:
     DocumentDBLidSpaceCompactionConfig    _lidSpaceCompaction;
     AttributeUsageFilterConfig            _attributeUsageFilterConfig;
     double                                _attributeUsageSampleInterval;
-    double                                _resourceLimitFactor;
+    BlockableMaintenanceJobConfig         _blockableJobConfig;
 
 public:
     DocumentDBMaintenanceConfig();
@@ -92,43 +106,33 @@ public:
                                 const DocumentDBLidSpaceCompactionConfig &lidSpaceCompaction,
                                 const AttributeUsageFilterConfig &attributeUsageFilterConfig,
                                 double attributeUsageSampleInterval,
-                                double resourceLimitFactor);
+                                const BlockableMaintenanceJobConfig &blockableJobConfig);
 
     bool
     operator==(const DocumentDBMaintenanceConfig &rhs) const;
 
-    const DocumentDBPruneRemovedDocumentsConfig &
-    getPruneRemovedDocumentsConfig() const
-    {
+    const DocumentDBPruneRemovedDocumentsConfig &getPruneRemovedDocumentsConfig() const {
         return _pruneRemovedDocuments;
     }
-
-    const DocumentDBHeartBeatConfig &
-    getHeartBeatConfig() const
-    {
+    const DocumentDBHeartBeatConfig &getHeartBeatConfig() const {
         return _heartBeat;
     }
-
-    double
-    getSessionCachePruneInterval() const
-    {
+    double getSessionCachePruneInterval() const {
         return _sessionCachePruneInterval;
     }
-
     fastos::TimeStamp getVisibilityDelay() const { return _visibilityDelay; }
-
     const DocumentDBLidSpaceCompactionConfig &getLidSpaceCompactionConfig() const {
         return _lidSpaceCompaction;
     }
-
     const AttributeUsageFilterConfig &getAttributeUsageFilterConfig() const {
         return _attributeUsageFilterConfig;
     }
-
     double getAttributeUsageSampleInterval() const {
         return _attributeUsageSampleInterval;
     }
-    double getResourceLimitFactor() const { return _resourceLimitFactor; }
+    const BlockableMaintenanceJobConfig &getBlockableJobConfig() const {
+        return _blockableJobConfig;
+    }
 };
 
 } // namespace proton

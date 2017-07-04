@@ -1,13 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/log/log.h>
 LOG_SETUP("combiningfeedview_test");
+
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/server/combiningfeedview.h>
 #include <vespa/searchcore/proton/test/test.h>
+#include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 using document::DocumentTypeRepo;
 using document::DocumentUpdate;
+using search::IDestructorCallback;
 using search::SerialNum;
 using storage::spi::Timestamp;
 using namespace proton;
@@ -79,7 +82,7 @@ struct MyFeedView : public test::DummyFeedView
     virtual void handleDeleteBucket(const DeleteBucketOperation &) override
     { ++_handleDeleteBucket; }
     virtual void prepareMove(MoveOperation &) override { ++_prepareMove; }
-    virtual void handleMove(const MoveOperation &) override { ++_handleMove; }
+    virtual void handleMove(const MoveOperation &, IDestructorCallback::SP) override { ++_handleMove; }
     virtual void heartBeat(SerialNum) override { ++_heartBeat; }
     virtual void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &) override { ++_handlePrune; }
     virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op) override {
@@ -332,7 +335,7 @@ TEST_F("require that prepareMove() sends op to correct feed view", Fixture)
 TEST_F("require that handleMove() sends op to 2 feed views", Fixture)
 {
     MoveOperation op = f.move(1, DbDocumentId(READY, 1), DbDocumentId(NOT_READY, 1));
-    f._view.handleMove(op);
+    f._view.handleMove(op, IDestructorCallback::SP());
     EXPECT_EQUAL(1u, f._ready._view->_handleMove);
     EXPECT_EQUAL(0u, f._removed._view->_handleMove);
     EXPECT_EQUAL(1u, f._notReady._view->_handleMove);
@@ -343,7 +346,7 @@ TEST_F("require that handleMove() sends op to 1 feed view", Fixture)
 {
     // same source and target
     MoveOperation op = f.move(1, DbDocumentId(READY, 1), DbDocumentId(READY, 1));
-    f._view.handleMove(op);
+    f._view.handleMove(op, IDestructorCallback::SP());
     EXPECT_EQUAL(1u, f._ready._view->_handleMove);
     EXPECT_EQUAL(0u, f._removed._view->_handleMove);
     EXPECT_EQUAL(0u, f._notReady._view->_handleMove);

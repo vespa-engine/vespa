@@ -52,7 +52,7 @@ public:
                           IOperationStorer &opStorer,
                           IFrozenBucketHandler &frozenHandler,
                           IDiskMemUsageNotifier &diskMemUsageNotifier,
-                          double resourceLimitFactor,
+                          const BlockableMaintenanceJobConfig &blockableConfig,
                           IClusterStateChangedNotifier &clusterStateChangedNotifier,
                           bool nodeRetired);
     ~LidSpaceCompactionJob();

@@ -95,6 +95,7 @@ vespa_define_module(
     src/tests/proton/documentdb/job_tracked_maintenance_job
     src/tests/proton/documentdb/lid_space_compaction
     src/tests/proton/documentdb/maintenancecontroller
+    src/tests/proton/documentdb/move_operation_limiter
     src/tests/proton/documentdb/storeonlyfeedview
     src/tests/proton/documentmetastore
     src/tests/proton/documentmetastore/lidreusedelayer

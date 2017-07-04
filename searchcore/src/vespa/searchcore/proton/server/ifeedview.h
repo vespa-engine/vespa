@@ -7,6 +7,8 @@
 
 namespace document { class DocumentTypeRepo; }
 
+namespace search { class IDestructorCallback; }
+
 namespace proton
 {
 
@@ -55,7 +57,7 @@ public:
     virtual void prepareDeleteBucket(DeleteBucketOperation &delOp) = 0;
     virtual void handleDeleteBucket(const DeleteBucketOperation &delOp) = 0;
     virtual void prepareMove(MoveOperation &putOp) = 0;
-    virtual void handleMove(const MoveOperation &putOp) = 0;
+    virtual void handleMove(const MoveOperation &putOp, std::shared_ptr<search::IDestructorCallback> doneCtx) = 0;
     virtual void heartBeat(search::SerialNum serialNum) = 0;
     virtual void sync() = 0;
     virtual void forceCommit(search::SerialNum serialNum) = 0;

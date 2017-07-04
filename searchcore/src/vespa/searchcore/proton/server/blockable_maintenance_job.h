@@ -2,11 +2,13 @@
 #pragma once
 
 #include "i_blockable_maintenance_job.h"
+#include "move_operation_limiter.h"
 #include <mutex>
 #include <unordered_set>
 
 namespace proton {
 
+class BlockableMaintenanceJobConfig;
 class DiskMemUsageState;
 class IMaintenanceJobRunner;
 
@@ -29,6 +31,8 @@ private:
     void updateBlocked(const LockGuard &guard);
 
 protected:
+    MoveOperationLimiter::SP _moveOpsLimiter;
+
     void internalNotifyDiskMemUsage(const DiskMemUsageState &state);
 
 public:
@@ -39,7 +43,7 @@ public:
     BlockableMaintenanceJob(const vespalib::string &name,
                             double delay,
                             double interval,
-                            double resourceLimitFactor);
+                            const BlockableMaintenanceJobConfig &config);
 
     virtual ~BlockableMaintenanceJob();
 

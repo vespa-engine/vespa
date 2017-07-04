@@ -24,6 +24,7 @@
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
+#include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -33,7 +34,6 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/log/log.h>
-
 LOG_SETUP("maintenancecontroller_test");
 
 using namespace proton;
@@ -43,16 +43,17 @@ using document::Document;
 using document::DocumentId;
 using fastos::ClockSystem;
 using fastos::TimeStamp;
+using proton::matching::ISessionCachePruner;
 using search::AttributeGuard;
 using search::DocumentIdT;
 using search::DocumentMetaData;
+using search::IDestructorCallback;
 using search::SerialNum;
 using storage::spi::BucketInfo;
 using storage::spi::Timestamp;
-using vespalib::makeTask;
-using vespalib::makeClosure;
 using vespalib::Slime;
-using proton::matching::ISessionCachePruner;
+using vespalib::makeClosure;
+using vespalib::makeTask;
 
 using BlockedReason = IBlockableMaintenanceJob::BlockedReason;
 
@@ -406,7 +407,7 @@ struct MockLidSpaceCompactionHandler : public ILidSpaceCompactionHandler
     virtual search::LidUsageStats getLidStatus() const override { return search::LidUsageStats(); }
     virtual IDocumentScanIterator::UP getIterator() const override { return IDocumentScanIterator::UP(); }
     virtual MoveOperation::UP createMoveOperation(const search::DocumentMetaData &, uint32_t) const override { return MoveOperation::UP(); }
-    virtual void handleMove(const MoveOperation &) override {}
+    virtual void handleMove(const MoveOperation &, IDestructorCallback::SP) override {}
     virtual void handleCompactLidSpace(const CompactLidSpaceOperation &) override {}
 };
 
@@ -499,7 +500,7 @@ public:
                            _mcCfg->getLidSpaceCompactionConfig(),
                            _mcCfg->getAttributeUsageFilterConfig(),
                            _mcCfg->getAttributeUsageSampleInterval(),
-                           _mcCfg->getResourceLimitFactor()));
+                           _mcCfg->getBlockableJobConfig()));
         _mcCfg = newCfg;
         forwardMaintenanceConfig();
     }
@@ -516,7 +517,7 @@ public:
                            _mcCfg->getLidSpaceCompactionConfig(),
                            _mcCfg->getAttributeUsageFilterConfig(),
                            _mcCfg->getAttributeUsageSampleInterval(),
-                           _mcCfg->getResourceLimitFactor()));
+                           _mcCfg->getBlockableJobConfig()));
         _mcCfg = newCfg;
         forwardMaintenanceConfig();
     }
@@ -533,7 +534,7 @@ public:
                            _mcCfg->getLidSpaceCompactionConfig(),
                            _mcCfg->getAttributeUsageFilterConfig(),
                            _mcCfg->getAttributeUsageSampleInterval(),
-                           _mcCfg->getResourceLimitFactor()));
+                           _mcCfg->getBlockableJobConfig()));
         _mcCfg = newCfg;
         forwardMaintenanceConfig();
     }
@@ -548,7 +549,7 @@ public:
                            cfg,
                            _mcCfg->getAttributeUsageFilterConfig(),
                            _mcCfg->getAttributeUsageSampleInterval(),
-                           _mcCfg->getResourceLimitFactor()));
+                           _mcCfg->getBlockableJobConfig()));
         _mcCfg = newCfg;
         forwardMaintenanceConfig();
     }

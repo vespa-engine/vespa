@@ -5,31 +5,33 @@
 #include <vespa/documentapi/messagebus/messages/removedocumentreply.h>
 #include <vespa/documentapi/messagebus/messages/updatedocumentreply.h>
 #include <vespa/persistence/spi/result.h>
+#include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/common/bucketfactory.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
-#include <vespa/searchcore/proton/metrics/feed_metrics.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/feedoperation/pruneremoveddocumentsoperation.h>
 #include <vespa/searchcore/proton/feedoperation/putoperation.h>
 #include <vespa/searchcore/proton/feedoperation/removeoperation.h>
 #include <vespa/searchcore/proton/feedoperation/updateoperation.h>
 #include <vespa/searchcore/proton/feedoperation/wipehistoryoperation.h>
+#include <vespa/searchcore/proton/metrics/feed_metrics.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/server/configstore.h>
+#include <vespa/searchcore/proton/server/ddbstate.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/server/feedhandler.h>
 #include <vespa/searchcore/proton/server/i_feed_handler_owner.h>
 #include <vespa/searchcore/proton/server/ireplayconfig.h>
-#include <vespa/searchcore/proton/server/ddbstate.h>
 #include <vespa/searchcore/proton/test/dummy_feed_view.h>
+#include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogclient.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/closuretask.h>
-#include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/vespalib/util/exceptions.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP("feedhandler_test");
 
@@ -44,6 +46,7 @@ using documentapi::DocumentReply;
 using documentapi::RemoveDocumentReply;
 using documentapi::UpdateDocumentReply;
 using mbus::Reply;
+using search::IDestructorCallback;
 using search::SerialNum;
 using search::index::schema::CollectionType;
 using search::index::schema::DataType;
@@ -231,7 +234,7 @@ struct MyFeedView : public test::DummyFeedView {
     }
     virtual void handleRemove(FeedToken *token, const RemoveOperation &) override
     { ++remove_count; ackToken(token); }
-    virtual void handleMove(const MoveOperation &) override { ++move_count; }
+    virtual void handleMove(const MoveOperation &, IDestructorCallback::SP) override { ++move_count; }
     virtual void heartBeat(SerialNum) override { ++heartbeat_count; }
     virtual void handlePruneRemovedDocuments(
             const PruneRemovedDocumentsOperation &) override { ++prune_removed_count; }

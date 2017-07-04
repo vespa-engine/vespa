@@ -22,6 +22,7 @@
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchcorespi/plugin/iindexmanagerfactory.h>
+#include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/searchlib/common/lambdatask.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/test/directory_handler.h>
@@ -31,20 +32,21 @@
 
 #include <iostream>
 
+using namespace cloud::config::filedistribution;
 using namespace document;
-using namespace proton;
 using namespace proton::matching;
-using namespace search;
+using namespace proton;
 using namespace search::common;
 using namespace search::index;
 using namespace search::transactionlog;
-using namespace cloud::config::filedistribution;
+using namespace search;
 using namespace searchcorespi;
 using namespace vespalib;
 
 using proton::bucketdb::BucketDBHandler;
 using proton::bucketdb::IBucketDBHandler;
 using proton::bucketdb::IBucketDBHandlerInitializer;
+using search::IDestructorCallback;
 using search::test::DirectoryHandler;
 using searchcorespi::IFlushTarget;
 using searchcorespi::index::IThreadingService;
@@ -773,7 +775,7 @@ struct DocumentHandler
     }
     void moveDoc(MoveOperation &op) {
         IFeedView::SP feedView = _f._subDb.getFeedView();
-        _f.runInMaster([&]() {    feedView->handleMove(op); } );
+        _f.runInMaster([&]() {    feedView->handleMove(op, IDestructorCallback::SP()); } );
     }
     void removeDoc(RemoveOperation &op)
     {
