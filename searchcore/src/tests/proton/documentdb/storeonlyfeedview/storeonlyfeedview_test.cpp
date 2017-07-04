@@ -1,5 +1,4 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Unit tests for storeonlyfeedview.
 
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/base/globalid.h>
@@ -10,6 +9,8 @@
 #include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
 #include <vespa/searchcore/proton/metrics/feed_metrics.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
+#include <vespa/searchcore/proton/server/putdonecontext.h>
+#include <vespa/searchcore/proton/server/removedonecontext.h>
 #include <vespa/searchcore/proton/server/storeonlyfeedview.h>
 #include <vespa/searchcore/proton/test/mock_summary_adapter.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
@@ -63,20 +64,22 @@ DocumentTypeRepo::SP myGetDocumentTypeRepo() {
     return repo;
 }
 
-struct MyMinimalFeedView : StoreOnlyFeedView {
+struct MyMinimalFeedView : public StoreOnlyFeedView {
     typedef std::unique_ptr<MyMinimalFeedView> UP;
 
-    int removeAttributes_count;
-    int removeIndexedFields_count;
+    int removeMultiAttributesCount;
+    int removeMultiIndexFieldsCount;
     int heartBeatAttributes_count;
     int heartBeatIndexedFields_count;
+    int &outstandingMoveOps;
 
     MyMinimalFeedView(const ISummaryAdapter::SP &summary_adapter,
                       const DocumentMetaStore::SP &meta_store,
                       searchcorespi::index::IThreadingService &writeService,
                       documentmetastore::ILidReuseDelayer &lidReuseDelayer,
                       CommitTimeTracker &commitTimeTracker,
-                      const PersistentParams &params) :
+                      const PersistentParams &params,
+                      int &outstandingMoveOps_) :
         StoreOnlyFeedView(StoreOnlyFeedView::Context(summary_adapter,
                         search::index::Schema::SP(),
                         DocumentMetaStoreContext::SP(
@@ -86,22 +89,24 @@ struct MyMinimalFeedView : StoreOnlyFeedView {
                         lidReuseDelayer,
                         commitTimeTracker),
                         params),
-        removeAttributes_count(0),
-        removeIndexedFields_count(0),
+        removeMultiAttributesCount(0),
+        removeMultiIndexFieldsCount(0),
         heartBeatAttributes_count(0),
-        heartBeatIndexedFields_count(0) {
+        heartBeatIndexedFields_count(0),
+        outstandingMoveOps(outstandingMoveOps_)
+    {
     }
     virtual void removeAttributes(SerialNum s, const LidVector &l,
                                   bool immediateCommit, OnWriteDoneType onWriteDone) override {
         StoreOnlyFeedView::removeAttributes(s, l, immediateCommit, onWriteDone);
-        ++removeAttributes_count;
+        ++removeMultiAttributesCount;
     }
     virtual void removeIndexedFields(SerialNum s, const LidVector &l,
                                      bool immediateCommit,
                                      OnWriteDoneType onWriteDone) override {
         StoreOnlyFeedView::removeIndexedFields(s, l,
                                                immediateCommit, onWriteDone);
-        ++removeIndexedFields_count;
+        ++removeMultiIndexFieldsCount;
     }
     virtual void heartBeatIndexedFields(SerialNum s) override {
         StoreOnlyFeedView::heartBeatIndexedFields(s);
@@ -113,22 +118,86 @@ struct MyMinimalFeedView : StoreOnlyFeedView {
     }
 };
 
+struct MoveOperationFeedView : public MyMinimalFeedView {
+    typedef std::unique_ptr<MoveOperationFeedView> UP;
+
+    int putAttributesCount;
+    int putIndexFieldsCount;
+    int removeAttributesCount;
+    int removeIndexFieldsCount;
+    std::vector<IDestructorCallback::SP> onWriteDoneContexts;
+    MoveOperationFeedView(const ISummaryAdapter::SP &summary_adapter,
+                          const DocumentMetaStore::SP &meta_store,
+                          searchcorespi::index::IThreadingService &writeService,
+                          documentmetastore::ILidReuseDelayer &lidReuseDelayer,
+                          CommitTimeTracker &commitTimeTracker,
+                          const PersistentParams &params,
+                          int &outstandingMoveOps_) :
+            MyMinimalFeedView(summary_adapter, meta_store, writeService, lidReuseDelayer,
+                              commitTimeTracker, params, outstandingMoveOps_),
+            putAttributesCount(0),
+            putIndexFieldsCount(0),
+            removeAttributesCount(0),
+            removeIndexFieldsCount(0),
+            onWriteDoneContexts()
+    {}
+    virtual void putAttributes(SerialNum, search::DocumentIdT, const document::Document &,
+                               bool, OnPutDoneType onWriteDone) override {
+        ++putAttributesCount;
+        EXPECT_EQUAL(1, outstandingMoveOps);
+        onWriteDoneContexts.push_back(onWriteDone);
+    }
+    virtual void putIndexedFields(SerialNum, search::DocumentIdT, const document::Document::SP &,
+                                  bool, OnOperationDoneType onWriteDone) override {
+        ++putIndexFieldsCount;
+        EXPECT_EQUAL(1, outstandingMoveOps);
+        onWriteDoneContexts.push_back(onWriteDone);
+    }
+    virtual void removeAttributes(SerialNum, search::DocumentIdT,
+                                  bool, OnRemoveDoneType onWriteDone) override {
+        ++removeAttributesCount;
+        EXPECT_EQUAL(1, outstandingMoveOps);
+        onWriteDoneContexts.push_back(onWriteDone);
+    }
+    virtual void removeIndexedFields(SerialNum, search::DocumentIdT,
+                                     bool, OnRemoveDoneType onWriteDone) override {
+        ++removeIndexFieldsCount;
+        EXPECT_EQUAL(1, outstandingMoveOps);
+        onWriteDoneContexts.push_back(onWriteDone);
+    }
+    void clearWriteDoneContexts() { onWriteDoneContexts.clear(); }
+};
+
+struct MoveOperationCallback : public IDestructorCallback {
+    int &outstandingMoveOps;
+    MoveOperationCallback(int &outstandingMoveOps_) : outstandingMoveOps(outstandingMoveOps_) {
+        ++outstandingMoveOps;
+    }
+    virtual ~MoveOperationCallback() {
+        ASSERT_GREATER(outstandingMoveOps, 0);
+        --outstandingMoveOps;
+    }
+};
+
 const uint32_t subdb_id = 0;
 
-struct Fixture {
+template <typename FeedViewType>
+struct FixtureBase {
     int remove_count;
     int put_count;
     int heartbeat_count;
+    int outstandingMoveOps;
     DocumentMetaStore::SP meta_store;
     ExecutorThreadingService writeService;
     documentmetastore::LidReuseDelayer _lidReuseDelayer;
     CommitTimeTracker _commitTimeTracker;
-    MyMinimalFeedView::UP feedview;
+    typename FeedViewType::UP feedview;
  
-    Fixture(SubDbType subDbType = SubDbType::READY)
+    FixtureBase(SubDbType subDbType = SubDbType::READY)
         : remove_count(0),
           put_count(0),
           heartbeat_count(0),
+          outstandingMoveOps(0),
           meta_store(new DocumentMetaStore(std::make_shared<BucketDBOwner>(),
                                            DocumentMetaStore::getFixedName(),
                                            search::GrowStrategy(),
@@ -139,20 +208,17 @@ struct Fixture {
           writeService(),
           _lidReuseDelayer(writeService, *meta_store),
           _commitTimeTracker(fastos::TimeStamp()),
-          feedview() {
+          feedview()
+    {
         PerDocTypeFeedMetrics metrics(0);
-        StoreOnlyFeedView::PersistentParams
-            params(0, 0, DocTypeName("foo"), metrics, subdb_id,
-                   subDbType);
+        StoreOnlyFeedView::PersistentParams params(0, 0, DocTypeName("foo"), metrics, subdb_id, subDbType);
         meta_store->constructFreeList();
-        ISummaryAdapter::SP adapter(new MySummaryAdapter(
-                        remove_count, put_count, heartbeat_count));
-        feedview.reset(new MyMinimalFeedView(adapter, meta_store, writeService,
-                                             _lidReuseDelayer,
-                                             _commitTimeTracker, params));
+        ISummaryAdapter::SP adapter = std::make_unique<MySummaryAdapter>(remove_count, put_count, heartbeat_count);
+        feedview = std::make_unique<FeedViewType>(adapter, meta_store, writeService, _lidReuseDelayer,
+                                                  _commitTimeTracker, params, outstandingMoveOps);
     }
 
-    ~Fixture() {
+    ~FixtureBase() {
         writeService.sync();
     }
 
@@ -181,6 +247,33 @@ struct Fixture {
 
 };
 
+using Fixture = FixtureBase<MyMinimalFeedView>;
+
+struct MoveFixture : public FixtureBase<MoveOperationFeedView> {
+
+    IDestructorCallback::SP beginMoveOp() {
+        return std::make_shared<MoveOperationCallback>(outstandingMoveOps);
+    }
+
+    void assertPutCount(int expCnt) {
+        EXPECT_EQUAL(expCnt, put_count);
+        EXPECT_EQUAL(expCnt, feedview->putAttributesCount);
+        EXPECT_EQUAL(expCnt, feedview->putIndexFieldsCount);
+    }
+
+    void assertRemoveCount(int expCnt) {
+        EXPECT_EQUAL(expCnt, remove_count);
+        EXPECT_EQUAL(expCnt, feedview->removeAttributesCount);
+        EXPECT_EQUAL(expCnt, feedview->removeIndexFieldsCount);
+    }
+
+    void assertAndClearMoveOp() {
+        EXPECT_EQUAL(1, outstandingMoveOps);
+        feedview->clearWriteDoneContexts();
+        EXPECT_EQUAL(0, outstandingMoveOps);
+    }
+};
+
 TEST_F("require that prepareMove sets target db document id", Fixture)
 {
     Document::SP doc(new Document);
@@ -192,32 +285,48 @@ TEST_F("require that prepareMove sets target db document id", Fixture)
     EXPECT_EQUAL(1u, target_id.getLid());
 }
 
-TEST_F("require that handleMove adds document to target "
-       "and removes it from source", Fixture)
+MoveOperation::UP
+makeMoveOp(Document::SP doc, DbDocumentId sourceDbdId, uint32_t targetSubDbId)
 {
-    Document::SP doc(new Document);
-    MoveOperation op(doc->getId().getGlobalId().convertToBucketId(),
-                     Timestamp(10), doc,
-                     DbDocumentId(subdb_id + 1, 1), subdb_id);
-    op.setSerialNum(1);
-    EXPECT_EQUAL(0, f.put_count);
-    f.runInMaster([&] () { f.feedview->prepareMove(op); });
-    f.runInMaster([&] () { f.feedview->handleMove(op, IDestructorCallback::SP()); });
-    EXPECT_EQUAL(1, f.put_count);
-    uint32_t lid = op.getDbDocumentId().getLid();
-    EXPECT_TRUE(f.meta_store->validLid(lid));
-
-    // Change the MoveOperation so this is the source sub db.
-    op.setDbDocumentId(DbDocumentId(subdb_id + 1, lid));
-    op.setPrevDbDocumentId(DbDocumentId(subdb_id, lid));
-    EXPECT_EQUAL(0, f.remove_count);
-    f.runInMaster([&] () { f.feedview->handleMove(op, IDestructorCallback::SP()); });
-    EXPECT_FALSE(f.meta_store->validLid(lid));
-    EXPECT_EQUAL(1, f.remove_count);
+    MoveOperation::UP result = std::make_unique<MoveOperation>(doc->getId().getGlobalId().convertToBucketId(),
+                                                               Timestamp(10), doc, sourceDbdId, targetSubDbId);
+    result->setSerialNum(1);
+    return result;
 }
 
+MoveOperation::UP
+makeMoveOp(DbDocumentId sourceDbdId, uint32_t targetSubDbId)
+{
+    return makeMoveOp(std::make_shared<Document>(), sourceDbdId, targetSubDbId);
+}
 
-TEST_F("require that handleMove handles move within same subdb", Fixture)
+TEST_F("require that handleMove() adds document to target and removes it from source and propagates destructor callback", MoveFixture)
+{
+    uint32_t lid = 0;
+    { // move from (subdb_id + 1) -> this (subdb_id)
+        MoveOperation::UP op = makeMoveOp(DbDocumentId(subdb_id + 1, 1), subdb_id);
+        TEST_DO(f.assertPutCount(0));
+        f.runInMaster([&]() { f.feedview->prepareMove(*op); });
+        f.runInMaster([&]() { f.feedview->handleMove(*op, f.beginMoveOp()); });
+        TEST_DO(f.assertPutCount(1));
+        TEST_DO(f.assertAndClearMoveOp());
+        lid = op->getDbDocumentId().getLid();
+        EXPECT_EQUAL(1u, lid);
+        EXPECT_TRUE(f.meta_store->validLid(lid));
+    }
+
+    { // move from this (subdb_id) -> (subdb_id + 1)
+        MoveOperation::UP op = makeMoveOp(DbDocumentId(subdb_id, 1), subdb_id + 1);
+        op->setDbDocumentId(DbDocumentId(subdb_id + 1, 1));
+        TEST_DO(f.assertRemoveCount(0));
+        f.runInMaster([&]() { f.feedview->handleMove(*op, f.beginMoveOp()); });
+        EXPECT_FALSE(f.meta_store->validLid(lid));
+        TEST_DO(f.assertRemoveCount(1));
+        TEST_DO(f.assertAndClearMoveOp());
+    }
+}
+
+TEST_F("require that handleMove() handles move within same subdb and propagates destructor callback", MoveFixture)
 {
     Document::SP doc(new Document);
     DocumentId doc1id("groupdoc:test:foo:1");
@@ -230,20 +339,18 @@ TEST_F("require that handleMove handles move within same subdb", Fixture)
                       Timestamp(10), docSize, 2); });
     f.runInMaster([&] () { f.meta_store->remove(1); });
     f.meta_store->removeComplete(1);
-    MoveOperation op(doc->getId().getGlobalId().convertToBucketId(),
-                     Timestamp(10), doc,
-                     DbDocumentId(subdb_id, 2), subdb_id);
-    op.setTargetLid(1);
-    op.setSerialNum(1);
-    EXPECT_EQUAL(0, f.put_count); 
-    EXPECT_EQUAL(0, f.remove_count);
-    f.runInMaster([&] () { f.feedview->handleMove(op, IDestructorCallback::SP()); });
-    EXPECT_EQUAL(1, f.put_count);
-    EXPECT_EQUAL(1, f.remove_count);
-    uint32_t lid = op.getDbDocumentId().getLid();
+    MoveOperation::UP op = makeMoveOp(doc, DbDocumentId(subdb_id, 2), subdb_id);
+    op->setTargetLid(1);
+    TEST_DO(f.assertPutCount(0));
+    TEST_DO(f.assertRemoveCount(0));
+    f.runInMaster([&] () { f.feedview->handleMove(*op, f.beginMoveOp()); });
+    TEST_DO(f.assertPutCount(1));
+    TEST_DO(f.assertRemoveCount(1));
+    TEST_DO(f.assertAndClearMoveOp());
+    uint32_t lid = op->getDbDocumentId().getLid();
+    EXPECT_EQUAL(1u, lid);
     EXPECT_TRUE(f.meta_store->validLid(lid));
 }
-
 
 TEST_F("require that prune removed documents removes documents",
        Fixture(SubDbType::REMOVED))
@@ -262,8 +369,8 @@ TEST_F("require that prune removed documents removes documents",
     EXPECT_FALSE(f.meta_store->validLid(1));
     EXPECT_TRUE(f.meta_store->validLid(2));
     EXPECT_FALSE(f.meta_store->validLid(3));
-    EXPECT_EQUAL(0, f.feedview->removeAttributes_count);
-    EXPECT_EQUAL(0, f.feedview->removeIndexedFields_count);
+    EXPECT_EQUAL(0, f.feedview->removeMultiAttributesCount);
+    EXPECT_EQUAL(0, f.feedview->removeMultiIndexFieldsCount);
 }
 
 TEST_F("require that heartbeat propagates and commits meta store", Fixture)
