@@ -29,19 +29,25 @@ public class Locks<TYPE> {
     
     private final long timeoutMs;
     
-    public Locks(int timeout, TimeUnit timeoutUnit) {
+    /** Create locks with a default timeout */
+    public Locks(long timeout, TimeUnit timeoutUnit) {
         timeoutMs = timeoutUnit.toMillis(timeout);
     }
 
+    /** Locks key. This will block until the key is acquired or the default timeout is reached. */
+    public Lock lock(TYPE key) {
+        return lock(key, timeoutMs, TimeUnit.MILLISECONDS);
+    }
+
     /**
-     * Locks key. This will block until the key is acquired.
+     * Locks key. This will block until the key is acquired or the timeout is reached.
      * Users of this <b>must</b> close any lock acquired.
-     * 
+     *
      * @param key the key to lock
      * @return the acquired lock
      * @throws UncheckedTimeoutException if the lock could not be acquired within the timeout
      */
-    public Lock lock(TYPE key) {
+    public Lock lock(TYPE key, long timeout, TimeUnit timeoutUnit) {
         try {
             ReentrantLock lock = locks.computeIfAbsent(key, k -> new ReentrantLock(true));
             boolean acquired = lock.tryLock(timeoutMs, TimeUnit.MILLISECONDS);
