@@ -93,6 +93,7 @@ install(FILES
     configdefinitions/src/vespa/attributes.def
     configdefinitions/src/vespa/cluster-info.def
     configdefinitions/src/vespa/cluster-list.def
+    configdefinitions/src/vespa/cluster-member-info.def
     configdefinitions/src/vespa/configserver.def
     configdefinitions/src/vespa/fleetcontroller.def
     configdefinitions/src/vespa/ilscripts.def
