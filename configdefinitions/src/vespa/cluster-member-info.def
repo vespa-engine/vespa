@@ -1,0 +1,9 @@
+# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Information about a given node's (the node receiving the config) membership in a cluster. See also cluster-info
+namespace=cloud.config
+
+# The unique index of this node in the cluster.
+# Node indexes are not necessarily continuous and starting at zero.
+index int
+
+

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
+import com.yahoo.cloud.config.ClusterMemberInfoConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -48,7 +49,8 @@ public class Container extends AbstractService implements
         ComponentsConfig.Producer,
         JdiscBindingsConfig.Producer,
         ContainerHttpConfig.Producer,
-        ContainerMbusConfig.Producer {
+        ContainerMbusConfig.Producer,
+        ClusterMemberInfoConfig.Producer {
     public static final int BASEPORT = Defaults.getDefaults().vespaWebServicePort();
     public static final String SINGLENODE_CONTAINER_SERVICESPEC = "default_singlenode_container";
 
@@ -65,7 +67,7 @@ public class Container extends AbstractService implements
     
     /** Whether this node has been marked as retired (e.g, will be removed) */
     private final boolean retired;
-    /** The index of this node. Non-critical: This is persisted on hosted, just a counter otherwise. */
+    /** The unique index of this node */
     private final int index;
 
     private final ComponentGroup<Handler<?>> handlers = new ComponentGroup<>(this, "handler");
@@ -375,6 +377,11 @@ public class Container extends AbstractService implements
     @Override
     public void getConfig(ContainerMbusConfig.Builder builder) {
         builder.enabled(messageBusEnabled).port(getMessagingPort());
+    }
+
+    @Override
+    public void getConfig(ClusterMemberInfoConfig.Builder builder) {
+        builder.index(index);
     }
 
     @Override
