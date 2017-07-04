@@ -74,7 +74,7 @@ public class NodeRetirerTester {
     }
 
     NodeRetirer makeNodeRetirer(RetirementPolicy policy) {
-         return new NodeRetirer(nodeRepository, zone, flavorSpareChecker, Duration.ofDays(1), deployer, jobControl, policy);
+         return new NodeRetirer(nodeRepository, flavorSpareChecker, Duration.ofDays(1), deployer, jobControl, policy);
     }
 
     void createReadyNodesByFlavor(int... nums) {

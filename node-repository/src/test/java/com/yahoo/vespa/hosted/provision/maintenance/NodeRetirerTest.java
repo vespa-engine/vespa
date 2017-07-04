@@ -12,6 +12,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -19,20 +20,33 @@ import java.util.stream.Stream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author freva
  */
 public class NodeRetirerTest {
-    private final RetirementPolicy policy = node -> node.ipAddresses().equals(Collections.singleton("::1"));
     private NodeRetirerTester tester;
     private NodeRetirer retirer;
+    private final RetirementPolicy policy = mock(RetirementPolicy.class);
 
     @Before
     public void setup() {
+        doAnswer(invok -> {
+            boolean shouldRetire = ((Node) invok.getArguments()[0]).ipAddresses().equals(Collections.singleton("::1"));
+            return shouldRetire ? Optional.of("Some reason") : Optional.empty();
+        }).when(policy).shouldRetire(any(Node.class));
+        when(policy.isActive()).thenReturn(true);
+
         NodeFlavors nodeFlavors = NodeRetirerTester.makeFlavors(5);
         tester = new NodeRetirerTester(nodeFlavors);
-        retirer = tester.makeNodeRetirer(policy);
+        retirer = spy(tester.makeNodeRetirer(policy));
 
         tester.createReadyNodesByFlavor(21, 42, 27, 15, 8);
         tester.deployApp("vespa",  "calendar",  new int[]{3},       new int[]{7});
@@ -147,5 +161,14 @@ public class NodeRetirerTest {
                 tester.nodeRepository.park(node.hostname(), Agent.system, "Parked for unit testing"));
         long actualOneRetired = retirer.getNumberNodesAllowToRetireForCluster(tester.nodeRepository.getNodes(app), 2);
         assertEquals(1, actualOneRetired);
+    }
+
+    @Test
+    public void inactivePolicyDoesNothingTest() {
+        when(policy.isActive()).thenReturn(false);
+        retirer.maintain();
+
+        verify(retirer, never()).retireUnallocated();
+        verify(retirer, never()).retireAllocated();
     }
 }
