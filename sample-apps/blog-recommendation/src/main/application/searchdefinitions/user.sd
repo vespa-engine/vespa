@@ -11,8 +11,7 @@ search user {
             indexing: summary | attribute
         }
 
-        # see http://vespa.corp.yahoo.com/6/documentation/reference/search-definitions.html#tensor-type-spec
-        field user_item_cf type tensor {
+        field user_item_cf type tensor(user_item_cf[10]) {
             indexing: summary | attribute
             attribute: tensor(user_item_cf[10])
         }
