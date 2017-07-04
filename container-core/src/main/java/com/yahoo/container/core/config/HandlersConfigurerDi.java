@@ -140,8 +140,7 @@ public class HandlersConfigurerDi {
         public void useBundles(Collection<FileReference> bundles) {
             log.info("Installing bundles from the latest application");
 
-            List<FileReference> fileReferences = new ArrayList<>(bundles);
-            int bundlesRemovedOrInstalled = bundleLoader.use(fileReferences);
+            int bundlesRemovedOrInstalled = bundleLoader.use(new ArrayList<>(bundles));
 
             if (bundlesRemovedOrInstalled > 0) {
                 refreshPackages();
