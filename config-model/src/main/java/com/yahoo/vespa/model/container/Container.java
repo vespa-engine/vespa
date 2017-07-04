@@ -381,6 +381,7 @@ public class Container extends AbstractService implements
 
     @Override
     public void getConfig(ClusterMemberInfoConfig.Builder builder) {
+        builder.clusterId(clusterName);
         builder.index(index);
     }
 

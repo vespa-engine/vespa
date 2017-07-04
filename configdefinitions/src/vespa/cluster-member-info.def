@@ -2,8 +2,12 @@
 # Information about a given node's (the node receiving the config) membership in a cluster. See also cluster-info
 namespace=cloud.config
 
+# the id of the cluster this node is a member of
+clusterId string
+
 # The unique index of this node in the cluster.
 # Node indexes are not necessarily continuous and starting at zero.
 index int
+
 
 
