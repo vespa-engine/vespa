@@ -2,10 +2,10 @@
 library(jsonlite)
 library(dplyr)
 
-file_path_document <- '/Users/tmartins/projects/yahoo/sw/vespa-examples/blog-recommendation-support/data/blog-job/user_item_cf_cv/product.json'
-file_path_user <- '/Users/tmartins/projects/yahoo/sw/vespa-examples/blog-recommendation-support/data/blog-job/user_item_cf_cv/user.json'
-file_path_train <- '/Users/tmartins/projects/yahoo/sw/vespa-examples/blog-recommendation-support/data/blog-job/training_and_test_indices/train.txt'
-output_file <- '/Users/tmartins/projects/yahoo/sw/vespa-examples/blog-recommendation-support/data/blog-job/nn_model/training_set.txt'
+file_path_document <- 'blog-job/user_item_cf_cv/product.json'
+file_path_user <- 'blog-job/user_item_cf_cv/user.json'
+file_path_train <- 'blog-job/training_and_test_indices/train.txt'
+output_file <- 'blog-job/nn_model/training_set.txt'
 
 # get ids from documents that have a latent vector
 lines <- readLines(file_path_document)

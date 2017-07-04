@@ -1,8 +1,7 @@
-#! /Users/tmartins/anaconda/envs/tensorflow/bin/python
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 """
-Train a 2 layers neural network to compute the probability of a user 
+Train a 2 layers neural network to compute the probability of a user
 represented by the vector u liking a document represented by the vector d.
 
 Usage: ./vespaModel.py --product_features_file_path path \
@@ -13,30 +12,30 @@ Expected File formats:
 
 - product_features_file_path contains a file with rows following the JSON format below:
 
-{"post_id" : 20, 
- "user_item_cf" : {"user_item_cf:5" : -0.66617566, 
-                   "user_item_cf:6" : 0.29197264, 
-                   "user_item_cf:1" : -0.15582734, 
-                   "user_item_cf:7" : 0.3350679, 
-                   "user_item_cf:2" : -0.16676047, 
-                   "user_item_cf:9" : -0.31653953, 
-                   "user_item_cf:3" : -0.21495385, 
-                   "user_item_cf:4" : -0.036676258, 
-                   "user_item_cf:8" : 0.122069225, 
+{"post_id" : 20,
+ "user_item_cf" : {"user_item_cf:5" : -0.66617566,
+                   "user_item_cf:6" : 0.29197264,
+                   "user_item_cf:1" : -0.15582734,
+                   "user_item_cf:7" : 0.3350679,
+                   "user_item_cf:2" : -0.16676047,
+                   "user_item_cf:9" : -0.31653953,
+                   "user_item_cf:3" : -0.21495385,
+                   "user_item_cf:4" : -0.036676258,
+                   "user_item_cf:8" : 0.122069225,
                    "user_item_cf:0" : 0.20922394}}
 
 - user_features_file_path contains a file with rows following the JSON format below:
 
-{"user_id" : 270, 
- "user_item_cf" : {"user_item_cf:5" : -0.54011273, 
-                   "user_item_cf:6" : 0.2723072, 
-                   "user_item_cf:1" : -0.23280832, 
-                   "user_item_cf:7" : -0.011183357, 
-                   "user_item_cf:2" : -0.3987285, 
-                   "user_item_cf:9" : -0.05703937, 
-                   "user_item_cf:3" : 0.04699418, 
-                   "user_item_cf:4" : 0.06679048, 
-                   "user_item_cf:8" : 0.31399783, 
+{"user_id" : 270,
+ "user_item_cf" : {"user_item_cf:5" : -0.54011273,
+                   "user_item_cf:6" : 0.2723072,
+                   "user_item_cf:1" : -0.23280832,
+                   "user_item_cf:7" : -0.011183357,
+                   "user_item_cf:2" : -0.3987285,
+                   "user_item_cf:9" : -0.05703937,
+                   "user_item_cf:3" : 0.04699418,
+                   "user_item_cf:4" : 0.06679048,
+                   "user_item_cf:8" : 0.31399783,
                    "user_item_cf:0" : 0.5000366}}
 
 - dataset_file_path contains a file with rows containing tab-separated post_id, user_id, label such as the sample below:
@@ -70,7 +69,7 @@ class getData:
         indexes = ['user_item_cf:' + str(x) for x in range(0,10,1)]
         values = [json['user_item_cf'][x] for x in indexes]
         return [id, values]
-        
+
     def get_product_features_lookup(self):
         product_features = [self.parse_cf_features(json.loads(line), 'post_id') for line in open(self.product_features_file_path)]
         return dict(product_features)
@@ -108,15 +107,15 @@ class getData:
         input_u_shuffled = input_u[shuffle_indices]
         input_d_shuffled = input_d[shuffle_indices]
         input_y_shuffled = input_y[shuffle_indices]
-        
+
         # Split train/test set
         dev_samples = int(len(input_u_shuffled)*perc)
         u_train, u_dev = input_u_shuffled[:-dev_samples], input_u_shuffled[-dev_samples:]
         d_train, d_dev = input_d_shuffled[:-dev_samples], input_d_shuffled[-dev_samples:]
         y_train, y_dev = input_y_shuffled[:-dev_samples], input_y_shuffled[-dev_samples:]
         print("Train/Dev split: {:d}/{:d}".format(len(y_train), len(y_dev)))
-        
-        return u_train, u_dev, d_train, d_dev, y_train, y_dev        
+
+        return u_train, u_dev, d_train, d_dev, y_train, y_dev
 
     def batch_iter(self, data, batch_size, num_epochs, shuffle=True):
         """
@@ -140,7 +139,7 @@ class getData:
 class vespaRunTimeModel:
     """
     Model that combine user and document features and needs to be evaluated at query time.
-    """    
+    """
     def __init__(self, user_feature_length, doc_feature_length, hidden_length):
 
         # placeholders
@@ -153,11 +152,11 @@ class vespaRunTimeModel:
 
         # hidden layer
         self.W_hidden = tf.Variable(
-            tf.truncated_normal([user_feature_length + 
+            tf.truncated_normal([user_feature_length +
                 doc_feature_length, hidden_length], stddev=0.1), name = 'W_hidden')
         self.b_hidden = tf.Variable(tf.constant(0.1, shape=[hidden_length]), name = 'b_hidden')
 
-        self.hidden_layer = tf.nn.relu(tf.matmul(self.input_concat, self.W_hidden) + self.b_hidden, 
+        self.hidden_layer = tf.nn.relu(tf.matmul(self.input_concat, self.W_hidden) + self.b_hidden,
             name = 'hidden_layer')
 
         # output layer
@@ -237,10 +236,10 @@ class serializeVespaModel:
     """
     Serialize TensorFlow variables to Vespa JSON format
 
-    Example:    
+    Example:
         checkpoint_dir = "./runs/1473845959/checkpoints"
         output_dir = "./runs/1473845959/vespa_variables"
-        
+
         serializer = serializeVespaModel(checkpoint_dir, output_dir)
         serializer.serialize_to_disk(variable_name = "W_hidden", dimension_names = ['input', 'hidden'])
         serializer.serialize_to_disk(variable_name = "b_hidden", dimension_names = ['hidden'])
@@ -262,7 +261,7 @@ class serializeVespaModel:
             for element in variable:
                 dimension_address.append((dimension_names[0], str(count)))
                 count += 1
-                cells.append({ 'address': dict(dimension_address), "value": float(element) })                
+                cells.append({ 'address': dict(dimension_address), "value": float(element) })
             return cells
         else:
             count = 0
@@ -277,7 +276,7 @@ class serializeVespaModel:
         variable = self.reader.get_tensor(variable_name)
         cells = self.write_cell_value(variable, dimension_names)
         return json.dumps({'cells': cells})
-        
+
     def serialize_to_disk(self, variable_name, dimension_names):
         text_file = open(os.path.join(output_dir, variable_name + ".json"), "w")
         text_file.write(serializer.write_to_vespa_json_format(variable_name, dimension_names))
@@ -285,7 +284,7 @@ class serializeVespaModel:
 
 
 def task_train():
-    # Data 
+    # Data
     tf.flags.DEFINE_string("product_features_file_path", '', "File containing product features")
     tf.flags.DEFINE_string("user_features_file_path", '', "File containing user features")
     tf.flags.DEFINE_string("dataset_file_path", '', "File containing labels for each document user pair")
@@ -316,13 +315,13 @@ def task_train():
         FLAGS.product_features_file_path,
         FLAGS.user_features_file_path,
         FLAGS.dataset_file_path)
-    
+
     input_u, input_d, input_y = data_pre_processing.prepare_dataset()
     u_train, u_dev, d_train, d_dev, y_train, y_dev = data_pre_processing.create_train_test_sets(input_u, input_d, input_y, seed = 10, perc = 0.2)
 
     user_feature_length = input_u.shape[1]
     doc_feature_length = input_d.shape[1]
-    
+
 
     # Create a graph
     with tf.Graph().as_default():
@@ -332,11 +331,11 @@ def task_train():
           allow_soft_placement=FLAGS.allow_soft_placement,
           log_device_placement=FLAGS.log_device_placement)
         sess = tf.Session(config=session_conf)
-        with sess.as_default():    
+        with sess.as_default():
 
             # instanciate a model
-            vespa_model = vespaRunTimeModel(user_feature_length = user_feature_length, 
-                doc_feature_length = doc_feature_length, 
+            vespa_model = vespaRunTimeModel(user_feature_length = user_feature_length,
+                doc_feature_length = doc_feature_length,
                 hidden_length = FLAGS.hidden_length_factor * (user_feature_length + doc_feature_length))
 
             # create a train operation
@@ -344,7 +343,7 @@ def task_train():
 
             # Summaries for loss and accuracy
             train_summary_op, dev_summary_op = vespa_model.summary_oprations()
-            
+
             # Output directory for models and summaries
             out_dir = vespa_model.create_output_dir()
 
@@ -380,7 +379,7 @@ def task_train():
                 print("")
             if current_step % FLAGS.checkpoint_every == 0:
                 path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-                print("Saved model checkpoint to {}\n".format(path))            
+                print("Saved model checkpoint to {}\n".format(path))
 
 if __name__ == "__main__":
 
