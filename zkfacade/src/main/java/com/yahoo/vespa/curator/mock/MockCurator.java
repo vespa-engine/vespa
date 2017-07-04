@@ -1,8 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator.mock;
 
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.yahoo.collections.Pair;
+import com.yahoo.concurrent.Lock;
+import com.yahoo.concurrent.Locks;
 import com.yahoo.path.Path;
 import static com.yahoo.vespa.curator.mock.MemoryFileSystem.Node;
 
@@ -81,6 +84,7 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * <p>A <b>non thread safe</b> mock of the curator API.
@@ -103,6 +107,7 @@ public class MockCurator extends Curator {
     private int monotonicallyIncreasingNumber = 0;
     private final boolean stableOrdering;
     private String connectionSpec = "";
+    private final Locks<String> locks = new Locks<>(Long.MAX_VALUE, TimeUnit.DAYS);
 
     /** The file system used by this mock to store zookeeper files and directories */
     private final MemoryFileSystem fileSystem = new MemoryFileSystem();
@@ -297,6 +302,7 @@ public class MockCurator extends Curator {
         return counter;
     }
 
+    /** Create a mutex which ensures exclusive access within this single vm */
     @Override
     public InterProcessLock createMutex(String path) {
         return new MockLock(path);
@@ -398,29 +404,46 @@ public class MockCurator extends Curator {
 
     }
 
+    /** A lock which works inside a single vm */
     private class MockLock extends InterProcessSemaphoreMutex {
 
+        private final String path;
+        
+        private Lock lock = null;
+        
         public MockLock(String path) {
             super(curatorFramework, path);
+            this.path = path;
         }
 
         @Override
         public boolean acquire(long timeout, TimeUnit unit) {
-            if (throwExceptionOnLock) {
+            if (throwExceptionOnLock)
                 throw new CuratorLockException("Thrown by mock");
+            if (timeoutOnLock) return false;
+            
+            try {
+                lock = locks.lock(path, timeout, unit);
+                return true;
             }
-            return !timeoutOnLock;
+            catch (UncheckedTimeoutException e) {
+                return false;
+            }
         }
 
         @Override
         public void acquire() {
-            if (throwExceptionOnLock) {
+            if (throwExceptionOnLock)
                 throw new CuratorLockException("Thrown by mock");
-            }
+
+            lock = locks.lock(path);
         }
 
         @Override
-        public void release() {  }
+        public void release() { 
+            if (lock != null)
+                lock.close();
+        }
 
     }
 
@@ -482,10 +505,10 @@ public class MockCurator extends Curator {
 
     private class MockLongValue implements AtomicValue<Long> {
 
-        private long value;
+        private AtomicLong value = new AtomicLong();
 
         public MockLongValue(long value) {
-            this.value = value;
+            this.value.set(value);
         }
 
         @Override
@@ -494,17 +517,17 @@ public class MockCurator extends Curator {
         }
 
         public void setValue(long value) {
-            this.value = value;
+            this.value.set(value);
         }
 
         @Override
         public Long preValue() {
-            return value;
+            return value.get();
         }
 
         @Override
         public Long postValue() {
-            return value;
+            return value.get();
         }
 
         @Override
