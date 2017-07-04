@@ -29,6 +29,7 @@ using document::DocumentId;
 using document::DocumentTypeRepo;
 using document::DocumentUpdate;
 using document::GlobalId;
+using namespace proton;
 using search::DocumentIdT;
 using search::IDestructorCallback;
 using search::SerialNum;
@@ -36,24 +37,24 @@ using search::index::DocBuilder;
 using search::index::Schema;
 using storage::spi::Timestamp;
 using vespalib::make_string;
-using namespace proton;
 
 namespace {
 
 class MySummaryAdapter : public test::MockSummaryAdapter {
-    int &_rm_count;
-    int &_put_count;
-    int &_heartbeat_count;
+private:
+    int &_rmCount;
+    int &_putCount;
+    int &_heartbeatCount;
 
 public:
-    MySummaryAdapter(int &remove_count, int &put_count, int &heartbeat_count)
-        : _rm_count(remove_count),
-          _put_count(put_count),
-          _heartbeat_count(heartbeat_count) {
+    MySummaryAdapter(int &removeCount, int &putCount, int &heartbeatCount)
+        : _rmCount(removeCount),
+          _putCount(putCount),
+          _heartbeatCount(heartbeatCount) {
     }
-    virtual void put(SerialNum, const Document &, DocumentIdT) override { ++ _put_count; }
-    virtual void remove(SerialNum, DocumentIdT) override { ++_rm_count; }
-    virtual void heartBeat(SerialNum) override { ++_heartbeat_count; }
+    virtual void put(SerialNum, const Document &, DocumentIdT) override { ++ _putCount; }
+    virtual void remove(SerialNum, DocumentIdT) override { ++_rmCount; }
+    virtual void heartBeat(SerialNum) override { ++_heartbeatCount; }
 };
 
 DocumentTypeRepo::SP myGetDocumentTypeRepo() {
@@ -65,34 +66,34 @@ DocumentTypeRepo::SP myGetDocumentTypeRepo() {
 }
 
 struct MyMinimalFeedView : public StoreOnlyFeedView {
-    typedef std::unique_ptr<MyMinimalFeedView> UP;
+    using UP = std::unique_ptr<MyMinimalFeedView>;
 
     int removeMultiAttributesCount;
     int removeMultiIndexFieldsCount;
-    int heartBeatAttributes_count;
-    int heartBeatIndexedFields_count;
+    int heartBeatAttributesCount;
+    int heartBeatIndexedFieldsCount;
     int &outstandingMoveOps;
 
-    MyMinimalFeedView(const ISummaryAdapter::SP &summary_adapter,
-                      const DocumentMetaStore::SP &meta_store,
+    MyMinimalFeedView(const ISummaryAdapter::SP &summaryAdapter,
+                      const DocumentMetaStore::SP &metaStore,
                       searchcorespi::index::IThreadingService &writeService,
                       documentmetastore::ILidReuseDelayer &lidReuseDelayer,
                       CommitTimeTracker &commitTimeTracker,
                       const PersistentParams &params,
                       int &outstandingMoveOps_) :
-        StoreOnlyFeedView(StoreOnlyFeedView::Context(summary_adapter,
-                        search::index::Schema::SP(),
-                        DocumentMetaStoreContext::SP(
-                                new DocumentMetaStoreContext(meta_store)),
-                        myGetDocumentTypeRepo(),
-                        writeService,
-                        lidReuseDelayer,
-                        commitTimeTracker),
-                        params),
+        StoreOnlyFeedView(StoreOnlyFeedView::Context(summaryAdapter,
+                          search::index::Schema::SP(),
+                          DocumentMetaStoreContext::SP(
+                                  new DocumentMetaStoreContext(metaStore)),
+                                                     myGetDocumentTypeRepo(),
+                                                     writeService,
+                                                     lidReuseDelayer,
+                                                     commitTimeTracker),
+                          params),
         removeMultiAttributesCount(0),
         removeMultiIndexFieldsCount(0),
-        heartBeatAttributes_count(0),
-        heartBeatIndexedFields_count(0),
+        heartBeatAttributesCount(0),
+        heartBeatIndexedFieldsCount(0),
         outstandingMoveOps(outstandingMoveOps_)
     {
     }
@@ -110,30 +111,30 @@ struct MyMinimalFeedView : public StoreOnlyFeedView {
     }
     virtual void heartBeatIndexedFields(SerialNum s) override {
         StoreOnlyFeedView::heartBeatIndexedFields(s);
-        ++heartBeatIndexedFields_count;
+        ++heartBeatIndexedFieldsCount;
     }
     virtual void heartBeatAttributes(SerialNum s) override {
         StoreOnlyFeedView::heartBeatAttributes(s);
-        ++heartBeatAttributes_count;
+        ++heartBeatAttributesCount;
     }
 };
 
 struct MoveOperationFeedView : public MyMinimalFeedView {
-    typedef std::unique_ptr<MoveOperationFeedView> UP;
+    using UP = std::unique_ptr<MoveOperationFeedView>;
 
     int putAttributesCount;
     int putIndexFieldsCount;
     int removeAttributesCount;
     int removeIndexFieldsCount;
     std::vector<IDestructorCallback::SP> onWriteDoneContexts;
-    MoveOperationFeedView(const ISummaryAdapter::SP &summary_adapter,
-                          const DocumentMetaStore::SP &meta_store,
+    MoveOperationFeedView(const ISummaryAdapter::SP &summaryAdapter,
+                          const DocumentMetaStore::SP &metaStore,
                           searchcorespi::index::IThreadingService &writeService,
                           documentmetastore::ILidReuseDelayer &lidReuseDelayer,
                           CommitTimeTracker &commitTimeTracker,
                           const PersistentParams &params,
                           int &outstandingMoveOps_) :
-            MyMinimalFeedView(summary_adapter, meta_store, writeService, lidReuseDelayer,
+            MyMinimalFeedView(summaryAdapter, metaStore, writeService, lidReuseDelayer,
                               commitTimeTracker, params, outstandingMoveOps_),
             putAttributesCount(0),
             putIndexFieldsCount(0),
@@ -183,39 +184,38 @@ const uint32_t subdb_id = 0;
 
 template <typename FeedViewType>
 struct FixtureBase {
-    int remove_count;
-    int put_count;
-    int heartbeat_count;
+    int removeCount;
+    int putCount;
+    int heartbeatCount;
     int outstandingMoveOps;
-    DocumentMetaStore::SP meta_store;
+    DocumentMetaStore::SP metaStore;
     ExecutorThreadingService writeService;
-    documentmetastore::LidReuseDelayer _lidReuseDelayer;
-    CommitTimeTracker _commitTimeTracker;
+    documentmetastore::LidReuseDelayer lidReuseDelayer;
+    CommitTimeTracker commitTimeTracker;
     typename FeedViewType::UP feedview;
  
     FixtureBase(SubDbType subDbType = SubDbType::READY)
-        : remove_count(0),
-          put_count(0),
-          heartbeat_count(0),
+        : removeCount(0),
+          putCount(0),
+          heartbeatCount(0),
           outstandingMoveOps(0),
-          meta_store(new DocumentMetaStore(std::make_shared<BucketDBOwner>(),
-                                           DocumentMetaStore::getFixedName(),
-                                           search::GrowStrategy(),
-                                           DocumentMetaStore::IGidCompare::SP(
-                                                   new DocumentMetaStore::
-                                                   DefaultGidCompare),
-                                           subDbType)),
+          metaStore(new DocumentMetaStore(std::make_shared<BucketDBOwner>(),
+                                          DocumentMetaStore::getFixedName(),
+                                          search::GrowStrategy(),
+                                          DocumentMetaStore::IGidCompare::SP(
+                                                  new DocumentMetaStore::DefaultGidCompare),
+                                          subDbType)),
           writeService(),
-          _lidReuseDelayer(writeService, *meta_store),
-          _commitTimeTracker(fastos::TimeStamp()),
+          lidReuseDelayer(writeService, *metaStore),
+          commitTimeTracker(fastos::TimeStamp()),
           feedview()
     {
         PerDocTypeFeedMetrics metrics(0);
         StoreOnlyFeedView::PersistentParams params(0, 0, DocTypeName("foo"), metrics, subdb_id, subDbType);
-        meta_store->constructFreeList();
-        ISummaryAdapter::SP adapter = std::make_unique<MySummaryAdapter>(remove_count, put_count, heartbeat_count);
-        feedview = std::make_unique<FeedViewType>(adapter, meta_store, writeService, _lidReuseDelayer,
-                                                  _commitTimeTracker, params, outstandingMoveOps);
+        metaStore->constructFreeList();
+        ISummaryAdapter::SP adapter = std::make_unique<MySummaryAdapter>(removeCount, putCount, heartbeatCount);
+        feedview = std::make_unique<FeedViewType>(adapter, metaStore, writeService, lidReuseDelayer,
+                                                  commitTimeTracker, params, outstandingMoveOps);
     }
 
     ~FixtureBase() {
@@ -223,12 +223,12 @@ struct FixtureBase {
     }
 
     void addSingleDocToMetaStore(uint32_t expected_lid) {
-        typedef DocumentMetaStore::Result Result;
+        using Result = DocumentMetaStore::Result;
         DocumentId id(make_string("groupdoc:test:foo:%d", expected_lid));
-        Result inspect = meta_store->inspect(id.getGlobalId());
+        Result inspect = metaStore->inspect(id.getGlobalId());
         uint32_t docSize = 1;
         EXPECT_EQUAL(expected_lid,
-                     meta_store->put(id.getGlobalId(),
+                     metaStore->put(id.getGlobalId(),
                                      id.getGlobalId().convertToBucketId(),
                                      Timestamp(10), docSize, inspect.getLid()).getLid());
     }
@@ -236,7 +236,7 @@ struct FixtureBase {
     void addDocsToMetaStore(int count) {
         for (int i = 1; i <= count; ++i) {
             addSingleDocToMetaStore(i);
-            EXPECT_TRUE(meta_store->validLid(i));
+            EXPECT_TRUE(metaStore->validLid(i));
         }
     }
 
@@ -256,13 +256,13 @@ struct MoveFixture : public FixtureBase<MoveOperationFeedView> {
     }
 
     void assertPutCount(int expCnt) {
-        EXPECT_EQUAL(expCnt, put_count);
+        EXPECT_EQUAL(expCnt, putCount);
         EXPECT_EQUAL(expCnt, feedview->putAttributesCount);
         EXPECT_EQUAL(expCnt, feedview->putIndexFieldsCount);
     }
 
     void assertRemoveCount(int expCnt) {
-        EXPECT_EQUAL(expCnt, remove_count);
+        EXPECT_EQUAL(expCnt, removeCount);
         EXPECT_EQUAL(expCnt, feedview->removeAttributesCount);
         EXPECT_EQUAL(expCnt, feedview->removeIndexFieldsCount);
     }
@@ -280,9 +280,9 @@ TEST_F("require that prepareMove sets target db document id", Fixture)
     MoveOperation op(BucketId(20, 42), Timestamp(10), doc, 1, subdb_id + 1);
     f.runInMaster([&] () { f.feedview->prepareMove(op); });
 
-    DbDocumentId target_id = op.getDbDocumentId();
-    EXPECT_EQUAL(subdb_id, target_id.getSubDbId());
-    EXPECT_EQUAL(1u, target_id.getLid());
+    DbDocumentId targetId = op.getDbDocumentId();
+    EXPECT_EQUAL(subdb_id, targetId.getSubDbId());
+    EXPECT_EQUAL(1u, targetId.getLid());
 }
 
 MoveOperation::UP
@@ -312,7 +312,7 @@ TEST_F("require that handleMove() adds document to target and removes it from so
         TEST_DO(f.assertAndClearMoveOp());
         lid = op->getDbDocumentId().getLid();
         EXPECT_EQUAL(1u, lid);
-        EXPECT_TRUE(f.meta_store->validLid(lid));
+        EXPECT_TRUE(f.metaStore->validLid(lid));
     }
 
     { // move from this (subdb_id) -> (subdb_id + 1)
@@ -320,7 +320,7 @@ TEST_F("require that handleMove() adds document to target and removes it from so
         op->setDbDocumentId(DbDocumentId(subdb_id + 1, 1));
         TEST_DO(f.assertRemoveCount(0));
         f.runInMaster([&]() { f.feedview->handleMove(*op, f.beginMoveOp()); });
-        EXPECT_FALSE(f.meta_store->validLid(lid));
+        EXPECT_FALSE(f.metaStore->validLid(lid));
         TEST_DO(f.assertRemoveCount(1));
         TEST_DO(f.assertAndClearMoveOp());
     }
@@ -331,14 +331,14 @@ TEST_F("require that handleMove() handles move within same subdb and propagates 
     Document::SP doc(new Document);
     DocumentId doc1id("groupdoc:test:foo:1");
     uint32_t docSize = 1;
-    f.runInMaster([&] () { f.meta_store->put(doc1id.getGlobalId(),
+    f.runInMaster([&] () { f.metaStore->put(doc1id.getGlobalId(),
                       doc1id.getGlobalId().convertToBucketId(),
                       Timestamp(9), docSize, 1); });
-    f.runInMaster([&] () { f.meta_store->put(doc->getId().getGlobalId(),
+    f.runInMaster([&] () { f.metaStore->put(doc->getId().getGlobalId(),
                       doc->getId().getGlobalId().convertToBucketId(),
                       Timestamp(10), docSize, 2); });
-    f.runInMaster([&] () { f.meta_store->remove(1); });
-    f.meta_store->removeComplete(1);
+    f.runInMaster([&] () { f.metaStore->remove(1); });
+    f.metaStore->removeComplete(1);
     MoveOperation::UP op = makeMoveOp(doc, DbDocumentId(subdb_id, 2), subdb_id);
     op->setTargetLid(1);
     TEST_DO(f.assertPutCount(0));
@@ -349,7 +349,7 @@ TEST_F("require that handleMove() handles move within same subdb and propagates 
     TEST_DO(f.assertAndClearMoveOp());
     uint32_t lid = op->getDbDocumentId().getLid();
     EXPECT_EQUAL(1u, lid);
-    EXPECT_TRUE(f.meta_store->validLid(lid));
+    EXPECT_TRUE(f.metaStore->validLid(lid));
 }
 
 TEST_F("require that prune removed documents removes documents",
@@ -365,25 +365,25 @@ TEST_F("require that prune removed documents removes documents",
     op.setSerialNum(1);  // allows use of meta store.
     f.runInMaster([&] () { f.feedview->handlePruneRemovedDocuments(op); });
 
-    EXPECT_EQUAL(2, f.remove_count);
-    EXPECT_FALSE(f.meta_store->validLid(1));
-    EXPECT_TRUE(f.meta_store->validLid(2));
-    EXPECT_FALSE(f.meta_store->validLid(3));
+    EXPECT_EQUAL(2, f.removeCount);
+    EXPECT_FALSE(f.metaStore->validLid(1));
+    EXPECT_TRUE(f.metaStore->validLid(2));
+    EXPECT_FALSE(f.metaStore->validLid(3));
     EXPECT_EQUAL(0, f.feedview->removeMultiAttributesCount);
     EXPECT_EQUAL(0, f.feedview->removeMultiIndexFieldsCount);
 }
 
 TEST_F("require that heartbeat propagates and commits meta store", Fixture)
 {
-    EXPECT_EQUAL(0u, f.meta_store->getStatus().getLastSyncToken());
-    EXPECT_EQUAL(0, f.feedview->heartBeatIndexedFields_count);
-    EXPECT_EQUAL(0, f.feedview->heartBeatAttributes_count);
-    EXPECT_EQUAL(0, f.heartbeat_count);
+    EXPECT_EQUAL(0u, f.metaStore->getStatus().getLastSyncToken());
+    EXPECT_EQUAL(0, f.feedview->heartBeatIndexedFieldsCount);
+    EXPECT_EQUAL(0, f.feedview->heartBeatAttributesCount);
+    EXPECT_EQUAL(0, f.heartbeatCount);
     f.runInMaster([&] () { f.feedview->heartBeat(2); });
-    EXPECT_EQUAL(2u, f.meta_store->getStatus().getLastSyncToken());
-    EXPECT_EQUAL(1, f.feedview->heartBeatIndexedFields_count);
-    EXPECT_EQUAL(1, f.feedview->heartBeatAttributes_count);
-    EXPECT_EQUAL(1, f.heartbeat_count);
+    EXPECT_EQUAL(2u, f.metaStore->getStatus().getLastSyncToken());
+    EXPECT_EQUAL(1, f.feedview->heartBeatIndexedFieldsCount);
+    EXPECT_EQUAL(1, f.feedview->heartBeatAttributesCount);
+    EXPECT_EQUAL(1, f.heartbeatCount);
 }
 
 }  // namespace
