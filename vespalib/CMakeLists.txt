@@ -47,6 +47,7 @@ vespa_define_module(
     src/tests/linkedptr
     src/tests/make_fixture_macros
     src/tests/memory
+    src/tests/net/async_resolver
     src/tests/net/lazy_resolver
     src/tests/net/selector
     src/tests/net/socket
