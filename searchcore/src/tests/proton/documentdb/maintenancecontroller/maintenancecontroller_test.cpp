@@ -211,37 +211,26 @@ class MyFeedHandler : public IDocumentMoveHandler,
 public:
     MyFeedHandler(FastOS_ThreadId &executorThreadId);
 
-    virtual
-    ~MyFeedHandler();
+    virtual~MyFeedHandler();
 
-    bool
-    isExecutorThread();
+    bool isExecutorThread();
 
-    virtual void
-    handleMove(MoveOperation &op) override;
+    virtual void handleMove(MoveOperation &op, IDestructorCallback::SP moveDoneCtx) override;
 
-    virtual void
-    performPruneRemovedDocuments(PruneRemovedDocumentsOperation &op) override;
+    virtual void performPruneRemovedDocuments(PruneRemovedDocumentsOperation &op) override;
 
-    virtual void
-    heartBeat() override;
+    virtual void heartBeat() override;
 
-    void
-    setSubDBs(const std::vector<MyDocumentSubDB *> &subDBs);
+    void setSubDBs(const std::vector<MyDocumentSubDB *> &subDBs);
 
-    SerialNum
-    incSerialNum()
-    {
+    SerialNum incSerialNum() {
         return ++_serialNum;
     }
 
     // Implements IOperationStorer
-    virtual void
-    storeOperation(FeedOperation &op) override;
+    virtual void storeOperation(FeedOperation &op) override;
 
-    uint32_t
-    getHeartBeats()
-    {
+    uint32_t getHeartBeats() {
         return _heartBeats;
     }
 };
@@ -782,8 +771,9 @@ MyFeedHandler::isExecutorThread()
 
 
 void
-MyFeedHandler::handleMove(MoveOperation &op)
+MyFeedHandler::handleMove(MoveOperation &op, IDestructorCallback::SP moveDoneCtx)
 {
+    (void) moveDoneCtx;
     assert(isExecutorThread());
     assert(op.getValidPrevDbdId());
     _subDBs[op.getSubDbId()]->prepareMove(op);

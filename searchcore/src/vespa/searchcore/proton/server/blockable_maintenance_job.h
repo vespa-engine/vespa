@@ -15,7 +15,7 @@ class IMaintenanceJobRunner;
 /**
  * Implementation of a maintenance job that can be blocked and unblocked due to various external reasons.
  * A blocked job is not executed by the IMaintenanceJobRunner wrapping the job.
- * When unblocked for a , the job is scheduled for execution again if it is totally unblocked.
+ * When unblocked for a given reason, the job is scheduled for execution again if it is totally unblocked.
  */
 class BlockableMaintenanceJob : public IBlockableMaintenanceJob {
 private:

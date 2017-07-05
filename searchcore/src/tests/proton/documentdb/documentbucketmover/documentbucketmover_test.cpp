@@ -1,19 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/common/bucketfactory.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/server/bucketmovejob.h>
 #include <vespa/searchcore/proton/server/documentbucketmover.h>
+#include <vespa/searchcore/proton/server/i_move_operation_limiter.h>
+#include <vespa/searchcore/proton/server/idocumentmovehandler.h>
+#include <vespa/searchcore/proton/server/imaintenancejobrunner.h>
+#include <vespa/searchcore/proton/server/maintenancedocumentsubdb.h>
+#include <vespa/searchcore/proton/test/buckethandler.h>
+#include <vespa/searchcore/proton/test/clusterstatehandler.h>
+#include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/searchcore/proton/feedoperation/moveoperation.h>
-#include <vespa/searchcore/proton/server/idocumentmovehandler.h>
-#include <vespa/searchcore/proton/test/clusterstatehandler.h>
-#include <vespa/searchcore/proton/test/buckethandler.h>
-#include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
-#include <vespa/searchcore/proton/server/maintenancedocumentsubdb.h>
-#include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 
 using namespace proton;
 using document::BucketId;
@@ -23,18 +24,20 @@ using document::DocumentTypeRepo;
 using document::GlobalId;
 using search::DocumentIdT;
 using search::DocumentMetaData;
+using search::IDestructorCallback;
 using search::index::DocBuilder;
 using search::index::Schema;
+using storage::spi::BucketInfo;
 using storage::spi::Timestamp;
 using vespalib::make_string;
-using storage::spi::BucketInfo;
 
-typedef std::vector<MoveOperation> MoveOperationVector;
-typedef std::vector<Document::SP> DocumentVector;
-typedef BucketId::List BucketIdVector;
-typedef std::set<BucketId> BucketIdSet;
-typedef BucketMoveJob::ScanPosition ScanPos;
-typedef BucketMoveJob::ScanIterator ScanItr;
+using BlockedReason = IBlockableMaintenanceJob::BlockedReason;
+using BucketIdSet = std::set<BucketId>;
+using BucketIdVector = BucketId::List;
+using DocumentVector = std::vector<Document::SP>;
+using MoveOperationVector = std::vector<MoveOperation>;
+using ScanItr = BucketMoveJob::ScanIterator;
+using ScanPos = BucketMoveJob::ScanPosition;
 
 namespace {
 
@@ -43,28 +46,46 @@ const uint32_t SECOND_SCAN_PASS = 2;
 
 }
 
+struct MyMoveOperationLimiter : public IMoveOperationLimiter {
+    uint32_t beginOpCount;
+    MyMoveOperationLimiter() : beginOpCount(0) {}
+    virtual IDestructorCallback::SP beginOperation() override {
+        ++beginOpCount;
+        return IDestructorCallback::SP();
+    }
+};
+
 struct MyMoveHandler : public IDocumentMoveHandler
 {
     BucketDBOwner &_bucketDb;
     MoveOperationVector _moves;
     size_t _numCachedBuckets;
-    MyMoveHandler(BucketDBOwner &bucketDb)
+    bool _storeMoveDoneContexts;
+    std::vector<IDestructorCallback::SP> _moveDoneContexts;
+    MyMoveHandler(BucketDBOwner &bucketDb, bool storeMoveDoneContext = false)
         : _bucketDb(bucketDb),
           _moves(),
-          _numCachedBuckets()
+          _numCachedBuckets(),
+          _storeMoveDoneContexts(storeMoveDoneContext),
+          _moveDoneContexts()
     {}
-    virtual void handleMove(MoveOperation &op) override {
+    virtual void handleMove(MoveOperation &op, IDestructorCallback::SP moveDoneCtx) override {
         _moves.push_back(op);
         if (_bucketDb.takeGuard()->isCachedBucket(op.getBucketId())) {
             ++_numCachedBuckets;
+        }
+        if (_storeMoveDoneContexts) {
+            _moveDoneContexts.push_back(std::move(moveDoneCtx));
         }
     }
     void reset() {
         _moves.clear();
         _numCachedBuckets = 0;
     }
+    void clearMoveDoneContexts() {
+        _moveDoneContexts.clear();
+    }
 };
-
 
 struct MyDocumentRetriever : public DocumentRetrieverBaseForTest
 {
@@ -88,7 +109,6 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest
     }
 };
 
-
 struct MyBucketModifiedHandler : public IBucketModifiedHandler
 {
     BucketIdVector _modified;
@@ -99,7 +119,6 @@ struct MyBucketModifiedHandler : public IBucketModifiedHandler
     }
     void reset() { _modified.clear(); }
 };
-
 
 struct MySubDb
 {
@@ -190,11 +209,11 @@ struct MySubDbTwoBuckets : public MySubDb
     }
 };
 
-
 struct MoveFixture
 {
     test::UserDocumentsBuilder _builder;
     std::shared_ptr<BucketDBOwner> _bucketDB;
+    MyMoveOperationLimiter     _limiter;
     DocumentBucketMover        _mover;
     MySubDbTwoBuckets          _source;
     BucketDBOwner              _bucketDb;
@@ -202,7 +221,8 @@ struct MoveFixture
     MoveFixture()
         : _builder(),
           _bucketDB(std::make_shared<BucketDBOwner>()),
-          _mover(),
+          _limiter(),
+          _mover(_limiter),
           _source(_builder, _bucketDB, 0u, SubDbType::READY),
           _bucketDb(),
           _handler(_bucketDb)
@@ -219,15 +239,14 @@ struct MoveFixture
     }
 };
 
-
 TEST("require that initial bucket mover is done")
 {
-    DocumentBucketMover dbm;
-    EXPECT_TRUE(dbm.bucketDone());
-    dbm.moveDocuments(2);
-    EXPECT_TRUE(dbm.bucketDone());
+    MyMoveOperationLimiter limiter;
+    DocumentBucketMover mover(limiter);
+    EXPECT_TRUE(mover.bucketDone());
+    mover.moveDocuments(2);
+    EXPECT_TRUE(mover.bucketDone());
 }
-
 
 bool
 assertEqual(const BucketId &bucket, const test::Document &doc,
@@ -243,20 +262,19 @@ assertEqual(const BucketId &bucket, const test::Document &doc,
     return true;
 }
 
-
 TEST_F("require that we can move all documents", MoveFixture)
 {
     f.setupForBucket(f._source.bucket(1), 6, 9);
     f.moveDocuments(5);
     EXPECT_TRUE(f._mover.bucketDone());
     EXPECT_EQUAL(5u, f._handler._moves.size());
+    EXPECT_EQUAL(5u, f._limiter.beginOpCount);
     for (size_t i = 0; i < 5u; ++i) {
         assertEqual(f._source.bucket(1), f._source.docs(1)[0], 6, 9, f._handler._moves[0]);
     }
 }
 
-TEST_F("require that bucket is cached when IDocumentMoveHandler handles move operation",
-        MoveFixture)
+TEST_F("require that bucket is cached when IDocumentMoveHandler handles move operation", MoveFixture)
 {
     f.setupForBucket(f._source.bucket(1), 6, 9);
     f.moveDocuments(5);
@@ -288,7 +306,6 @@ TEST_F("require that we can move documents in several steps", MoveFixture)
     EXPECT_EQUAL(5u, f._handler._moves.size());
 }
 
-
 struct ScanFixtureBase
 {
     test::UserDocumentsBuilder _builder;
@@ -316,7 +333,6 @@ ScanFixtureBase::ScanFixtureBase()
 {}
 ScanFixtureBase::~ScanFixtureBase() {}
 
-
 struct ScanFixture : public ScanFixtureBase
 {
     ScanFixture() : ScanFixtureBase()
@@ -332,7 +348,6 @@ struct ScanFixture : public ScanFixtureBase
     }
 };
 
-
 struct OnlyNotReadyScanFixture : public ScanFixtureBase
 {
     OnlyNotReadyScanFixture() : ScanFixtureBase()
@@ -342,7 +357,6 @@ struct OnlyNotReadyScanFixture : public ScanFixtureBase
         _notReady.insertDocs(_builder.getDocs());
     }
 };
-
 
 struct OnlyReadyScanFixture : public ScanFixtureBase
 {
@@ -354,7 +368,6 @@ struct OnlyReadyScanFixture : public ScanFixtureBase
     }
 };
 
-
 struct BucketVector : public BucketId::List
 {
     BucketVector() : BucketId::List() {}
@@ -363,7 +376,6 @@ struct BucketVector : public BucketId::List
         return *this;
     }
 };
-
 
 void
 advanceToFirstBucketWithDocs(ScanItr &itr, SubDbType subDbType)
@@ -380,7 +392,6 @@ advanceToFirstBucketWithDocs(ScanItr &itr, SubDbType subDbType)
     }
 }
 
-
 void assertEquals(const BucketVector &exp, ScanItr &itr, SubDbType subDbType)
 {
     for (size_t i = 0; i < exp.size(); ++i) {
@@ -392,7 +403,6 @@ void assertEquals(const BucketVector &exp, ScanItr &itr, SubDbType subDbType)
     advanceToFirstBucketWithDocs(itr, subDbType);
     EXPECT_FALSE(itr.valid());
 }
-
 
 TEST_F("require that we can iterate all buckets from start to end", ScanFixture)
 {
@@ -409,7 +419,6 @@ TEST_F("require that we can iterate all buckets from start to end", ScanFixture)
                      add(f._ready.bucket(8)), itr, SubDbType::READY);
     }
 }
-
 
 TEST_F("require that we can iterate from the middle of not ready buckets", ScanFixture)
 {
@@ -432,7 +441,6 @@ TEST_F("require that we can iterate from the middle of not ready buckets", ScanF
     }
 }
 
-
 TEST_F("require that we can iterate from the middle of ready buckets", ScanFixture)
 {
     BucketId bucket = f._ready.bucket(6);
@@ -454,7 +462,6 @@ TEST_F("require that we can iterate from the middle of ready buckets", ScanFixtu
     }
 }
 
-
 TEST_F("require that we can iterate only not ready buckets", OnlyNotReadyScanFixture)
 {
     ScanItr itr = f.getItr();
@@ -462,7 +469,6 @@ TEST_F("require that we can iterate only not ready buckets", OnlyNotReadyScanFix
                  add(f._notReady.bucket(2)).
                  add(f._notReady.bucket(4)), itr, SubDbType::NOTREADY);
 }
-
 
 TEST_F("require that we can iterate only ready buckets", OnlyReadyScanFixture)
 {
@@ -472,13 +478,11 @@ TEST_F("require that we can iterate only ready buckets", OnlyReadyScanFixture)
                  add(f._ready.bucket(8)), itr, SubDbType::READY);
 }
 
-
 TEST_F("require that we can iterate zero buckets", ScanFixtureBase)
 {
     ScanItr itr = f.getItr();
     EXPECT_FALSE(itr.valid());
 }
-
 
 struct MyFrozenBucketHandler : public IFrozenBucketHandler
 {
@@ -522,6 +526,14 @@ struct MyFrozenBucketHandler : public IFrozenBucketHandler
     }
 };
 
+struct MyCountJobRunner : public IMaintenanceJobRunner {
+    uint32_t runCount;
+    MyCountJobRunner(IMaintenanceJob &job) : runCount(0) {
+        job.registerRunner(this);
+    }
+    virtual void run() override { ++runCount; }
+};
+
 struct ControllerFixtureBase
 {
     test::UserDocumentsBuilder  _builder;
@@ -536,7 +548,8 @@ struct ControllerFixtureBase
     MyFrozenBucketHandler       _fbh;
     test::DiskMemUsageNotifier  _diskMemUsageNotifier;
     BucketMoveJob               _bmj;
-    ControllerFixtureBase(double resourceLimitFactor);
+    MyCountJobRunner            _runner;
+    ControllerFixtureBase(const BlockableMaintenanceJobConfig &blockableConfig, bool storeMoveDoneContexts);
     ~ControllerFixtureBase();
     ControllerFixtureBase &addReady(const BucketId &bucket) {
         _calc->addReady(bucket);
@@ -587,29 +600,34 @@ struct ControllerFixtureBase
     }
 };
 
-ControllerFixtureBase::ControllerFixtureBase(double resourceLimitFactor)
+ControllerFixtureBase::ControllerFixtureBase(const BlockableMaintenanceJobConfig &blockableConfig, bool storeMoveDoneContexts)
     : _builder(),
       _calc(new test::BucketStateCalculator),
       _bucketHandler(),
       _modifiedHandler(),
       _bucketDB(std::make_shared<BucketDBOwner>()),
-      _moveHandler(*_bucketDB),
+      _moveHandler(*_bucketDB, storeMoveDoneContexts),
       _ready(_builder.getRepo(), _bucketDB, 1, SubDbType::READY),
       _notReady(_builder.getRepo(), _bucketDB, 2, SubDbType::NOTREADY),
       _fbh(),
       _diskMemUsageNotifier(),
       _bmj(_calc, _moveHandler, _modifiedHandler, _ready._subDb,
            _notReady._subDb, _fbh, _clusterStateHandler, _bucketHandler,
-           _diskMemUsageNotifier, BlockableMaintenanceJobConfig(resourceLimitFactor, 10),
-           "test")
-{}
+           _diskMemUsageNotifier, blockableConfig,
+           "test"),
+      _runner(_bmj)
+{
+}
+
 ControllerFixtureBase::~ControllerFixtureBase() {}
 constexpr double RESOURCE_LIMIT_FACTOR = 1.0;
+constexpr uint32_t MAX_OUTSTANDING_OPS = 10;
+const BlockableMaintenanceJobConfig BLOCKABLE_CONFIG(RESOURCE_LIMIT_FACTOR, MAX_OUTSTANDING_OPS);
 
 struct ControllerFixture : public ControllerFixtureBase
 {
-    ControllerFixture(double resourceLimitFactor = RESOURCE_LIMIT_FACTOR)
-        : ControllerFixtureBase(resourceLimitFactor)
+    ControllerFixture(const BlockableMaintenanceJobConfig &blockableConfig = BLOCKABLE_CONFIG)
+        : ControllerFixtureBase(blockableConfig, blockableConfig.getMaxOutstandingMoveOps() != MAX_OUTSTANDING_OPS)
     {
         _builder.createDocs(1, 1, 4); // 3 docs
         _builder.createDocs(2, 4, 6); // 2 docs
@@ -621,10 +639,9 @@ struct ControllerFixture : public ControllerFixtureBase
     }
 };
 
-
 struct OnlyReadyControllerFixture : public ControllerFixtureBase
 {
-    OnlyReadyControllerFixture() : ControllerFixtureBase(RESOURCE_LIMIT_FACTOR)
+    OnlyReadyControllerFixture() : ControllerFixtureBase(BLOCKABLE_CONFIG, false)
     {
         _builder.createDocs(1, 1, 2); // 1 docs
         _builder.createDocs(2, 2, 4); // 2 docs
@@ -633,7 +650,6 @@ struct OnlyReadyControllerFixture : public ControllerFixtureBase
         _ready.insertDocs(_builder.getDocs());
     }
 };
-
 
 TEST_F("require that nothing is moved if bucket state says so", ControllerFixture)
 {
@@ -645,7 +661,6 @@ TEST_F("require that nothing is moved if bucket state says so", ControllerFixtur
     EXPECT_TRUE(f.docsMoved().empty());
     EXPECT_TRUE(f.bucketsModified().empty());
 }
-
 
 TEST_F("require that not ready bucket is moved to ready if bucket state says so", ControllerFixture)
 {
@@ -663,7 +678,6 @@ TEST_F("require that not ready bucket is moved to ready if bucket state says so"
     EXPECT_EQUAL(f._notReady.bucket(4), f.bucketsModified()[0]);
 }
 
-
 TEST_F("require that ready bucket is moved to not ready if bucket state says so", ControllerFixture)
 {
     // bucket 2 should be moved
@@ -677,9 +691,7 @@ TEST_F("require that ready bucket is moved to not ready if bucket state says so"
     EXPECT_EQUAL(f._ready.bucket(2), f.bucketsModified()[0]);
 }
 
-
-TEST_F("require that maxBucketsToScan is taken into consideration between not ready and ready scanning",
-       ControllerFixture)
+TEST_F("require that maxBucketsToScan is taken into consideration between not ready and ready scanning", ControllerFixture)
 {
     // bucket 4 should moved (last bucket)
     f.addReady(f._ready.bucket(1));
@@ -702,7 +714,6 @@ TEST_F("require that maxBucketsToScan is taken into consideration between not re
     EXPECT_EQUAL(1u, f.bucketsModified().size());
     EXPECT_EQUAL(f._notReady.bucket(4), f.bucketsModified()[0]);
 }
-
 
 TEST_F("require that we move buckets in several steps", ControllerFixture)
 {
@@ -751,7 +762,6 @@ TEST_F("require that we move buckets in several steps", ControllerFixture)
     EXPECT_EQUAL(3u, f.bucketsModified().size());
     EXPECT_EQUAL(f._notReady.bucket(4), f.bucketsModified()[2]);
 }
-
 
 TEST_F("require that we can change calculator and continue scanning where we left off", ControllerFixture)
 {
@@ -845,7 +855,6 @@ TEST_F("require that we can change calculator and continue scanning where we lef
     EXPECT_EQUAL(f._ready.bucket(1), f.calcAsked()[3]);
 }
 
-
 TEST_F("require that current bucket moving is cancelled when we change calculator", ControllerFixture)
 {
     // bucket 1 should be moved
@@ -884,7 +893,6 @@ TEST_F("require that current bucket moving is cancelled when we change calculato
     EXPECT_EQUAL(f._ready.bucket(1), f.calcAsked()[3]);
 }
 
-
 TEST_F("require that last bucket is moved before reporting done", ControllerFixture)
 {
     // bucket 4 should be moved
@@ -900,7 +908,6 @@ TEST_F("require that last bucket is moved before reporting done", ControllerFixt
     EXPECT_EQUAL(3u, f.docsMoved().size());
     EXPECT_EQUAL(4u, f.calcAsked().size());
 }
-
 
 TEST_F("require that frozen bucket is not moved until thawed", ControllerFixture)
 {
@@ -918,7 +925,6 @@ TEST_F("require that frozen bucket is not moved until thawed", ControllerFixture
     EXPECT_EQUAL(1u, f.bucketsModified().size());
     EXPECT_EQUAL(f._ready.bucket(1), f.bucketsModified()[0]);
 }
-
 
 TEST_F("require that thawed bucket is moved before other buckets", ControllerFixture)
 {
@@ -945,7 +951,6 @@ TEST_F("require that thawed bucket is moved before other buckets", ControllerFix
     EXPECT_EQUAL(3u, f.bucketsModified().size());
     EXPECT_EQUAL(f._notReady.bucket(4), f.bucketsModified()[2]);
 }
-
 
 TEST_F("require that re-frozen thawed bucket is not moved until re-thawed", ControllerFixture)
 {
@@ -982,7 +987,6 @@ TEST_F("require that re-frozen thawed bucket is not moved until re-thawed", Cont
     EXPECT_EQUAL(6u, f.calcAsked().size());
 }
 
-
 TEST_F("require that thawed bucket is not moved if new calculator does not say so", ControllerFixture)
 {
     // bucket 3 should be moved
@@ -1004,7 +1008,6 @@ TEST_F("require that thawed bucket is not moved if new calculator does not say s
     EXPECT_EQUAL(1u, f.calcAsked().size());
     EXPECT_EQUAL(f._notReady.bucket(3), f.calcAsked()[0]);
 }
-
 
 TEST_F("require that current bucket mover is cancelled if bucket is frozen", ControllerFixture)
 {
@@ -1045,7 +1048,6 @@ TEST_F("require that current bucket mover is cancelled if bucket is frozen", Con
     EXPECT_EQUAL(f._notReady.bucket(3), f.calcAsked()[4]);
 }
 
-
 TEST_F("require that current bucket mover is not cancelled if another bucket is frozen", ControllerFixture)
 {
     // bucket 3 and 4 should be moved
@@ -1067,7 +1069,6 @@ TEST_F("require that current bucket mover is not cancelled if another bucket is 
     EXPECT_EQUAL(3u, f.calcAsked().size());
 }
 
-
 TEST_F("require that active bucket is not moved from ready to not ready until being not active", ControllerFixture)
 {
     // bucket 1 should be moved but is active
@@ -1086,7 +1087,6 @@ TEST_F("require that active bucket is not moved from ready to not ready until be
     EXPECT_EQUAL(1u, f.bucketsModified().size());
     EXPECT_EQUAL(f._ready.bucket(1), f.bucketsModified()[0]);
 }
-
 
 TEST_F("require that de-activated bucket is moved before other buckets", OnlyReadyControllerFixture)
 {
@@ -1113,7 +1113,6 @@ TEST_F("require that de-activated bucket is moved before other buckets", OnlyRea
     EXPECT_EQUAL(f._ready.bucket(3), f.bucketsModified()[2]);
 }
 
-
 TEST_F("require that de-activated bucket is not moved if new calculator does not say so", ControllerFixture)
 {
     // bucket 1 should be moved
@@ -1132,7 +1131,6 @@ TEST_F("require that de-activated bucket is not moved if new calculator does not
     EXPECT_EQUAL(1u, f.calcAsked().size());
     EXPECT_EQUAL(f._ready.bucket(1), f.calcAsked()[0]);
 }
-
 
 TEST_F("require that de-activated bucket is not moved if frozen as well", ControllerFixture)
 {
@@ -1156,7 +1154,6 @@ TEST_F("require that de-activated bucket is not moved if frozen as well", Contro
     EXPECT_EQUAL(f._ready.bucket(1), f.bucketsModified()[0]);
 }
 
-
 TEST_F("require that thawed bucket is not moved if active as well", ControllerFixture)
 {
     // bucket 1 should be moved
@@ -1179,7 +1176,8 @@ TEST_F("require that thawed bucket is not moved if active as well", ControllerFi
     EXPECT_EQUAL(f._ready.bucket(1), f.bucketsModified()[0]);
 }
 
-TEST_F("ready bucket not moved to not ready if node is marked as retired", ControllerFixture) {
+TEST_F("ready bucket not moved to not ready if node is marked as retired", ControllerFixture)
+{
     f._calc->setNodeRetired(true);
     // Bucket 2 would be moved from ready to not ready in a non-retired case, but not when retired.
     f.addReady(f._ready.bucket(1));
@@ -1190,7 +1188,8 @@ TEST_F("ready bucket not moved to not ready if node is marked as retired", Contr
 
 // Technically this should never happen since a retired node is never in the ideal state,
 // but test this case for the sake of completion.
-TEST_F("inactive not ready bucket not moved to ready if node is marked as retired", ControllerFixture) {
+TEST_F("inactive not ready bucket not moved to ready if node is marked as retired", ControllerFixture)
+{
     f._calc->setNodeRetired(true);
     f.addReady(f._ready.bucket(1));
     f.addReady(f._ready.bucket(2));
@@ -1200,7 +1199,8 @@ TEST_F("inactive not ready bucket not moved to ready if node is marked as retire
     EXPECT_EQUAL(0u, f.docsMoved().size());
 }
 
-TEST_F("explicitly active not ready bucket can be moved to ready even if node is marked as retired", ControllerFixture) {
+TEST_F("explicitly active not ready bucket can be moved to ready even if node is marked as retired", ControllerFixture)
+{
     f._calc->setNodeRetired(true);
     f.addReady(f._ready.bucket(1));
     f.addReady(f._ready.bucket(2));
@@ -1217,9 +1217,12 @@ TEST_F("explicitly active not ready bucket can be moved to ready even if node is
 
 struct ResourceLimitControllerFixture : public ControllerFixture
 {
-    using ControllerFixture::ControllerFixture;
+    ResourceLimitControllerFixture(double resourceLimitFactor = RESOURCE_LIMIT_FACTOR) :
+        ControllerFixture(BlockableMaintenanceJobConfig(resourceLimitFactor, MAX_OUTSTANDING_OPS))
+    {}
+
     void testJobStopping(DiskMemUsageState blockingUsageState) {
-        // Bucket 1 shold be moved
+        // Bucket 1 should be moved
         addReady(_ready.bucket(2));
         // Note: This depends on f._bmj.run() moving max 1 documents
         EXPECT_TRUE(!_bmj.run());
@@ -1238,7 +1241,7 @@ struct ResourceLimitControllerFixture : public ControllerFixture
     }
 
     void testJobNotStopping(DiskMemUsageState blockingUsageState) {
-        // Bucket 1 shold be moved
+        // Bucket 1 should be moved
         addReady(_ready.bucket(2));
         // Note: This depends on f._bmj.run() moving max 1 documents
         EXPECT_TRUE(!_bmj.run());
@@ -1252,33 +1255,100 @@ struct ResourceLimitControllerFixture : public ControllerFixture
     }
 };
 
-
 TEST_F("require that bucket move stops when disk limit is reached", ResourceLimitControllerFixture)
 {
     f.testJobStopping(DiskMemUsageState(ResourceUsageState(0.7, 0.8), ResourceUsageState()));
 }
-
 
 TEST_F("require that bucket move stops when memory limit is reached", ResourceLimitControllerFixture)
 {
     f.testJobStopping(DiskMemUsageState(ResourceUsageState(), ResourceUsageState(0.7, 0.8)));
 }
 
-
 TEST_F("require that bucket move uses resource limit factor for disk resource limit", ResourceLimitControllerFixture(1.2))
 {
     f.testJobNotStopping(DiskMemUsageState(ResourceUsageState(0.7, 0.8), ResourceUsageState()));
 }
-
 
 TEST_F("require that bucket move uses resource limit factor for memory resource limit", ResourceLimitControllerFixture(1.2))
 {
     f.testJobNotStopping(DiskMemUsageState(ResourceUsageState(), ResourceUsageState(0.7, 0.8)));
 }
 
+struct MaxOutstandingMoveOpsFixture : public ControllerFixture
+{
+    MaxOutstandingMoveOpsFixture(uint32_t maxOutstandingOps) :
+            ControllerFixture(BlockableMaintenanceJobConfig(RESOURCE_LIMIT_FACTOR, maxOutstandingOps))
+    {
+        // Bucket 1 should be moved from ready -> notready
+        addReady(_ready.bucket(2));
+    }
+
+    void assertRunToBlocked() {
+        EXPECT_TRUE(_bmj.run()); // job becomes blocked as max outstanding limit is reached
+        EXPECT_FALSE(_bmj.done());
+        EXPECT_TRUE(_bmj.isBlocked());
+        EXPECT_TRUE(_bmj.isBlocked(BlockedReason::OUTSTANDING_OPS));
+    }
+    void assertRunToNotBlocked() {
+        EXPECT_FALSE(_bmj.run());
+        EXPECT_FALSE(_bmj.done());
+        EXPECT_FALSE(_bmj.isBlocked());
+    }
+    void assertRunToFinished() {
+        EXPECT_TRUE(_bmj.run());
+        EXPECT_TRUE(_bmj.done());
+        EXPECT_FALSE(_bmj.isBlocked());
+    }
+    void assertDocsMoved(uint32_t expDocsMovedCnt, uint32_t expMoveContextsCnt) {
+        EXPECT_EQUAL(expDocsMovedCnt, docsMoved().size());
+        EXPECT_EQUAL(expMoveContextsCnt, _moveHandler._moveDoneContexts.size());
+    }
+    void unblockJob(uint32_t expRunnerCnt) {
+        _moveHandler.clearMoveDoneContexts(); // unblocks job and try to execute it via runner
+        EXPECT_EQUAL(expRunnerCnt, _runner.runCount);
+        EXPECT_FALSE(_bmj.isBlocked());
+    }
+
+};
+
+TEST_F("require that bucket move job is blocked if it has too many outstanding move operations (max=1)", MaxOutstandingMoveOpsFixture(1))
+{
+    TEST_DO(f.assertRunToBlocked());
+    TEST_DO(f.assertDocsMoved(1, 1));
+    TEST_DO(f.assertRunToBlocked());
+    TEST_DO(f.assertDocsMoved(1, 1));
+
+    TEST_DO(f.unblockJob(1));
+    TEST_DO(f.assertRunToBlocked());
+    TEST_DO(f.assertDocsMoved(2, 1));
+
+    TEST_DO(f.unblockJob(2));
+    TEST_DO(f.assertRunToBlocked());
+    TEST_DO(f.assertDocsMoved(3, 1));
+
+    TEST_DO(f.unblockJob(3));
+    TEST_DO(f.assertRunToFinished());
+    TEST_DO(f.assertDocsMoved(3, 0));
+}
+
+TEST_F("require that bucket move job is blocked if it has too many outstanding move operations (max=2)", MaxOutstandingMoveOpsFixture(2))
+{
+    TEST_DO(f.assertRunToNotBlocked());
+    TEST_DO(f.assertDocsMoved(1, 1));
+
+    TEST_DO(f.assertRunToBlocked());
+    TEST_DO(f.assertDocsMoved(2, 2));
+
+    TEST_DO(f.unblockJob(1));
+    TEST_DO(f.assertRunToNotBlocked());
+    TEST_DO(f.assertDocsMoved(3, 1));
+
+    TEST_DO(f.assertRunToFinished());
+    TEST_DO(f.assertDocsMoved(3, 1));
+}
 
 TEST_MAIN()
 {
     TEST_RUN_ALL();
 }
-
