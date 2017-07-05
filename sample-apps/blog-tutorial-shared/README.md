@@ -28,10 +28,10 @@ Pre-computed data used throughout the tutorial will be made available shortly.
 
 ### Create Training Dataset
 
-    $ ./generateDataset.R -d blog_job/user_item_cf_cv/product.json \
-                          -u blog_job/user_item_cf_cv/user.json \
-                          -t blog_job/training_and_test_indices/train.txt \
-                          -o blog_job/nn_model/training_set.txt
+    $ ./src/R/generateDataset.R -d blog_job/user_item_cf_cv/product.json \
+                                -u blog_job/user_item_cf_cv/user.json \
+                                -t blog_job/training_and_test_indices/train.txt \
+                                -o blog_job/nn_model/training_set.txt
 
 ### Train model with TensorFlow
 
