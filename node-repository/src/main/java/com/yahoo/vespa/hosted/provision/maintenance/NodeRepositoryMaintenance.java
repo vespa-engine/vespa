@@ -6,13 +6,13 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostLivenessTracker;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.maintenance.retire.RetireIPv4OnlyNodes;
+import com.yahoo.vespa.hosted.provision.maintenance.retire.RetirementPolicy;
+import com.yahoo.vespa.hosted.provision.maintenance.retire.RetirementPolicyList;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorSpareChecker;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorSpareCount;
 import com.yahoo.vespa.orchestrator.Orchestrator;
@@ -76,16 +76,10 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         nodeRebooter = new NodeRebooter(nodeRepository, clock, durationFromEnv("reboot_interval").orElse(defaults.rebootInterval), jobControl);
         metricsReporter = new MetricsReporter(nodeRepository, metric, durationFromEnv("metrics_interval").orElse(defaults.metricsInterval), jobControl);
 
+        RetirementPolicy policy = new RetirementPolicyList(new RetireIPv4OnlyNodes(zone));
         FlavorSpareChecker flavorSpareChecker = new FlavorSpareChecker(
                 NodeRetirer.SPARE_NODES_POLICY, FlavorSpareCount.constructFlavorSpareCountGraph(zone.nodeFlavors().get().getFlavors()));
-        nodeRetirer = new NodeRetirer(nodeRepository, zone, flavorSpareChecker, durationFromEnv("retire_interval").orElse(defaults.nodeRetirerInterval), deployer, jobControl,
-                new RetireIPv4OnlyNodes(),
-                new Zone(SystemName.cd, Environment.dev, RegionName.from("cd-us-central-1")),
-                new Zone(SystemName.cd, Environment.prod, RegionName.from("cd-us-central-1")),
-                new Zone(SystemName.cd, Environment.prod, RegionName.from("cd-us-central-2")),
-                new Zone(SystemName.main, Environment.perf, RegionName.from("us-east-3")),
-                new Zone(SystemName.main, Environment.prod, RegionName.from("us-east-3")),
-                new Zone(SystemName.main, Environment.prod, RegionName.from("us-west-1")));
+        nodeRetirer = new NodeRetirer(nodeRepository, flavorSpareChecker, durationFromEnv("retire_interval").orElse(defaults.nodeRetirerInterval), deployer, jobControl, policy);
     }
 
     @Override

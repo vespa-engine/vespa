@@ -7,7 +7,6 @@ import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -17,7 +16,6 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorSpareChecker;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -46,15 +44,9 @@ public class NodeRetirer extends Maintainer {
     private final FlavorSpareChecker flavorSpareChecker;
     private final RetirementPolicy retirementPolicy;
 
-    public NodeRetirer(NodeRepository nodeRepository, Zone zone, FlavorSpareChecker flavorSpareChecker, Duration interval,
-                       Deployer deployer, JobControl jobControl, RetirementPolicy retirementPolicy, Zone... applies) {
+    public NodeRetirer(NodeRepository nodeRepository, FlavorSpareChecker flavorSpareChecker, Duration interval,
+                       Deployer deployer, JobControl jobControl, RetirementPolicy retirementPolicy) {
         super(nodeRepository, interval, jobControl);
-        if (! Arrays.asList(applies).contains(zone)) {
-            String targetZones = Arrays.stream(applies).map(Zone::toString).collect(Collectors.joining(", "));
-            log.info("NodeRetirer should only run in " + targetZones + " and not in " + zone + ", stopping.");
-            deconstruct();
-        }
-
         this.deployer = deployer;
         this.retirementPolicy = retirementPolicy;
         this.flavorSpareChecker = flavorSpareChecker;
@@ -62,6 +54,8 @@ public class NodeRetirer extends Maintainer {
 
     @Override
     protected void maintain() {
+        if (! retirementPolicy.isActive()) return;
+
         if (retireUnallocated()) {
             retireAllocated();
         }
@@ -79,7 +73,7 @@ public class NodeRetirer extends Maintainer {
 
             long numFlavorsWithUnsuccessfullyRetiredNodes = allNodes.stream()
                     .filter(node -> node.state() == Node.State.ready)
-                    .filter(retirementPolicy::shouldRetire)
+                    .filter(node -> retirementPolicy.shouldRetire(node).isPresent())
                     .collect(Collectors.groupingBy(
                             Node::flavor,
                             Collectors.toSet()))
@@ -90,10 +84,11 @@ public class NodeRetirer extends Maintainer {
                             Node nodeToRetire = iter.next();
                             if (! flavorSpareChecker.canRetireUnallocatedNodeWithFlavor(nodeToRetire.flavor())) break;
 
-                            nodeRepository().write(nodeToRetire.with(nodeToRetire.status().withWantToDeprovision(true)));
-                            nodeRepository().park(nodeToRetire.hostname(), Agent.NodeRetirer,
-                                    "Policy: " + retirementPolicy.getClass().getSimpleName());
-                            iter.remove();
+                            retirementPolicy.shouldRetire(nodeToRetire).ifPresent(reason -> {
+                                nodeRepository().write(nodeToRetire.with(nodeToRetire.status().withWantToDeprovision(true)));
+                                nodeRepository().park(nodeToRetire.hostname(), Agent.NodeRetirer, reason);
+                                iter.remove();
+                            });
                         }
 
                         if (! nodesThatShouldBeRetiredForFlavor.isEmpty()) {
@@ -155,16 +150,17 @@ public class NodeRetirer extends Maintainer {
                         .flatMap(node -> node.map(Stream::of).orElseGet(Stream::empty))
                         .collect(Collectors.toSet());
 
-                nodesToRetire.forEach(node -> {
-                    log.info("Setting wantToRetire and wantToDeprovision for host " + node.hostname() +
-                            " with flavor " + node.flavor().name() +
-                            " allocated to " + node.allocation().get().owner() + ". Policy: " +
-                            retirementPolicy.getClass().getSimpleName());
-                    Node updatedNode = node.with(node.status()
-                            .withWantToRetire(true)
-                            .withWantToDeprovision(true));
-                    nodeRepository().write(updatedNode);
-                });
+                nodesToRetire.forEach(node ->
+                        retirementPolicy.shouldRetire(node).ifPresent(reason -> {
+                            log.info("Setting wantToRetire and wantToDeprovision for host " + node.hostname() +
+                                    " with flavor " + node.flavor().name() +
+                                    " allocated to " + node.allocation().get().owner() + ". Reason: " + reason);
+
+                            Node updatedNode = node.with(node.status()
+                                    .withWantToRetire(true)
+                                    .withWantToDeprovision(true));
+                            nodeRepository().write(updatedNode);
+                        }));
             }
 
             // This takes a while, so do it outside of the application lock
@@ -208,7 +204,7 @@ public class NodeRetirer extends Maintainer {
         return nodes.stream()
                 .filter(node -> node.state() == Node.State.active)
                 .filter(node -> !node.status().wantToRetire())
-                .filter(retirementPolicy::shouldRetire)
+                .filter(node -> retirementPolicy.shouldRetire(node).isPresent())
                 .collect(Collectors.toSet());
     }
 
