@@ -6,7 +6,6 @@ import com.yahoo.config.model.api.ServiceInfo;
 import java.util.HashMap;
 import java.util.Optional;
 
-
 /**
  * Representation of a process which runs a service
  *
@@ -20,7 +19,7 @@ public interface Service extends ConfigProducer {
      * configuration.
      * TODO: Should change this to Optional of String
      */
-    public String getStartupCommand();
+    String getStartupCommand();
 
     /**
      * Services that wish that a command should be run before shutdown
@@ -28,32 +27,32 @@ public interface Service extends ConfigProducer {
      * by the config sentinel before sending SIGTERM to the service.
      * The command is executed without a timeout.
      */
-    public Optional<String> getPreShutdownCommand();
+    Optional<String> getPreShutdownCommand();
 
     /**
      * Tells if this service should be autostarted by
      * config-sentinel. Returned value will be used to configure the
      * config-sentinel.
      */
-    public boolean getAutostartFlag();
+    boolean getAutostartFlag();
 
     /**
      * Tells if this service should be autorestarted by
      * config-sentinel. Returned value will be used to configure the
      * config-sentinel.
      */
-    public boolean getAutorestartFlag();
+    boolean getAutorestartFlag();
 
     /**
      * Returns the type of service. E.g. the class-name without the
      * package prefix.
      */
-    public String getServiceType();
+    String getServiceType();
 
    /**
      * Returns the name that identifies this service for the config-sentinel.
      */
-    public String getServiceName();
+    String getServiceName();
 
     /**
      * Returns the desired base port for this service, or '0' if this
@@ -61,7 +60,7 @@ public interface Service extends ConfigProducer {
      *
      * @return The desired base port for this service.
      */
-    public int getWantedPort();
+    int getWantedPort();
 
     /**
      * Returns true if the desired base port (returned by
@@ -70,37 +69,37 @@ public interface Service extends ConfigProducer {
      *
      * @return true if this Service requires the wanted base port.
      */
-    public boolean requiresWantedPort();
+    boolean requiresWantedPort();
 
     /**
      * Returns the number of ports needed by this service.
      */
-    public int getPortCount();
+    int getPortCount();
 
     /**
      * Returns a PortsMeta object, giving access to more information
      * about the different ports of this service.
      */
-    public PortsMeta getPortsMeta();
+    PortsMeta getPortsMeta();
 
     /**
      * @return the physical host on which this service runs.
      */
-    public Host getHost();
+    Host getHost();
 
     /**
      * Get meta information about service.
      * @return an instance of {@link com.yahoo.config.model.api.ServiceInfo}
      */
-    public ServiceInfo getServiceInfo();
+    ServiceInfo getServiceInfo();
 
     /**
      * @return The hostname on which this service runs.
      */
-    public String getHostName();
+    String getHostName();
 
     /** Optional JVM execution args for this service */
-    public String getJvmArgs();
+    String getJvmArgs();
 
     /**
      * Computes and returns the i'th port for this service, based on
@@ -110,7 +109,7 @@ public interface Service extends ConfigProducer {
      * @return the i'th port relative to the base port.
      * @throws IllegalStateException if i is out of range.
      */
-    public int getRelativePort(int i);
+    int getRelativePort(int i);
 
     /**
      * Gets a service property value mapped to the given key
@@ -120,23 +119,21 @@ public interface Service extends ConfigProducer {
      * @param defStr default String value returned if no value for key found
      * @return the associated String value for the given key, or
      */
-    public String getServicePropertyString(String key, String defStr);
+    String getServicePropertyString(String key, String defStr);
 
-    /**
-     * @return the service health port, to report status to yamas
-     */
-    public int getHealthPort();
+    int getHealthPort();
 
     /**
      *
      * @return HashMap of default dimensions for metrics.
      */
-    public HashMap<String,String> getDefaultMetricDimensions();
+    HashMap<String,String> getDefaultMetricDimensions();
 
     /**
      * Return the Affinity of this service if it has.
      *
      * @return The {@link com.yahoo.vespa.model.Affinity} for this service.
      */
-    public Optional<Affinity> getAffinity();
+    Optional<Affinity> getAffinity();
+
 }

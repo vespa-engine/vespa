@@ -4,7 +4,7 @@
     <admin version="2.0">
         <adminserver hostalias="node1"/>
         <logserver hostalias="node1"/>
-        <yamas systemname="news_staging" interval="60"/>
+        <monitoring systemname="news_staging" interval="60"/>
     </admin>
 
     <container version="1.0">

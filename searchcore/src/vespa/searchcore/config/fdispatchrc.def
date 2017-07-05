@@ -33,7 +33,7 @@ defaultslowquerylimitfactor     double       default=2.0 restart
 ## If 0, fdispatch will not offer RPC service.
 frtport                         int         default=0 restart
 
-## Port to use for yamas health reporting
+## Port for health reporting
 healthport int default=0 restart
 
 ## The maximum time between successful reads on a socket before timeout. 

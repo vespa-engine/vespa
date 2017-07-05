@@ -435,7 +435,7 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
     }
 
     // TODO: Make producers depend on AdminModel instead
-    /** Returns a monitoring service (yamas if that is configured, null otherwise) */
+    /** Returns a monitoring service if configured, null otherwise */
     protected Monitoring getMonitoringService() {
         AbstractConfigProducerRoot root = getRoot();
         Admin admin = (root == null? null : root.getAdmin());

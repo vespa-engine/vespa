@@ -4,10 +4,9 @@ package com.yahoo.vespa.model.admin.monitoring;
 import java.util.Objects;
 
 /**
- * Properties for yamas monitoring service
+ * Monitoring service properties
  *
  * @author hmusum
- * @since 5.1.20
  */
 public class DefaultMonitoring implements Monitoring {
 

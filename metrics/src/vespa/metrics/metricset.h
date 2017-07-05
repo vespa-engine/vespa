@@ -22,7 +22,7 @@ class MetricSet : public Metric
     bool _registrationAltered; // Set to true if metrics have been
                                // registered/unregistered since last time
                                // it was reset
-    std::string _dimensionKey; // If this metric is part of a dimension (yamas-speak),
+    std::string _dimensionKey; // If this metric is part of a monitoring dimension,
                                // the key of the dimension should be set here.
                                // If so, the name of the metric is used as dimension value.
 
