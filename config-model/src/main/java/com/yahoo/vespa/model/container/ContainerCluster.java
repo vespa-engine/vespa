@@ -55,7 +55,7 @@ import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.PortsMeta;
 import com.yahoo.vespa.model.Service;
-import com.yahoo.vespa.model.admin.monitoring.MonitoringSystem;
+import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.clients.ContainerDocumentApi;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.Component;
@@ -626,9 +626,9 @@ public final class ContainerCluster
 
     @Override
     public void getConfig(HealthMonitorConfig.Builder builder) {
-        MonitoringSystem monitoringSystem = getMonitoringService();
-        if (monitoringSystem != null) {
-            builder.snapshot_interval(monitoringSystem.getIntervalSeconds());
+        Monitoring monitoring = getMonitoringService();
+        if (monitoring != null) {
+            builder.snapshot_interval(monitoring.getIntervalSeconds());
         }
     }
 

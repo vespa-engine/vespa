@@ -16,12 +16,11 @@ import java.util.Set;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultMetricsConsumer.VESPA_CONSUMER_ID;
 
 /**
- * Helper class for parsing yamasmetric config.
+ * Helper class for parsing metric config.
  *
  * TODO: Remove when 'metric-consumers' under 'admin' is disallowed
  *
- * @author trygve
- * @since 5.1
+ * @author Trygve Berdal
  */
 public class DomMetricBuilderHelper {
 

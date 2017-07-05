@@ -13,7 +13,7 @@ import static org.junit.Assert.assertThat;
 /**
  * @author havardpe
  **/
-public class YamasConfigSnoopTest {
+public class MonitoringConfigSnoopTest {
 
     private TestRoot root;
 

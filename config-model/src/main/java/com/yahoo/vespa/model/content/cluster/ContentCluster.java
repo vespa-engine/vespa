@@ -23,7 +23,7 @@ import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.monitoring.Metric;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
-import com.yahoo.vespa.model.admin.monitoring.MonitoringSystem;
+import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerCluster;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerComponent;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerConfigurer;
@@ -48,7 +48,6 @@ import org.w3c.dom.Element;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * A content cluster.
@@ -650,10 +649,10 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
 
     @Override
     public void getConfig(MetricsmanagerConfig.Builder builder) {
-        MonitoringSystem monitoringSystem = getMonitoringService();
-        if (monitoringSystem != null) {
+        Monitoring monitoring = getMonitoringService();
+        if (monitoring != null) {
             builder.snapshot(new MetricsmanagerConfig.Snapshot.Builder().
-                    periods(monitoringSystem.getIntervalSeconds()).periods(300));
+                    periods(monitoring.getIntervalSeconds()).periods(300));
         }
         builder.consumer(
                 new MetricsmanagerConfig.Consumer.Builder().

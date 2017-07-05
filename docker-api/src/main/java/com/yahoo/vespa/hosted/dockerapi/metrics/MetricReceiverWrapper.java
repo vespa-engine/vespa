@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 /**
  * Export metrics to both /state/v1/metrics and makes them available programmatically.
- * Each metric belongs to a yamas application
+ * Each metric belongs to a monitoring application
  *
  * @author freva
  */
@@ -108,7 +108,7 @@ public class MetricReceiverWrapper {
         return applicationMetrics.get(application).metricsByDimensions();
     }
 
-    // Application is yamas application, not Vespa application
+    // "Application" is the monitoring application, not Vespa application
     private static class ApplicationMetrics {
         private final Map<Dimensions, Map<String, MetricValue>> metricsByDimensions = new LinkedHashMap<>();
 

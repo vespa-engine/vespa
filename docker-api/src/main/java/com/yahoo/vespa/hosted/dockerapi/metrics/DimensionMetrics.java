@@ -26,9 +26,9 @@ public class DimensionMetrics {
 
     Map<String, Object> getMetrics() {
         final Map<String, Object> routing = new HashMap<>();
-        final Map<String, Object> routingYamas = new HashMap<>();
-        routing.put("yamas", routingYamas);
-        routingYamas.put("namespaces", Collections.singletonList("Vespa"));
+        final Map<String, Object> routingMonitoring = new HashMap<>();
+        routing.put("yamas", routingMonitoring);
+        routingMonitoring.put("namespaces", Collections.singletonList("Vespa"));
 
         Map<String, Object> report = new HashMap<>();
         report.put("application", application);

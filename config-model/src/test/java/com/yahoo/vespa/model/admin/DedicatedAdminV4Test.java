@@ -11,7 +11,7 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.monitoring.Metric;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
-import com.yahoo.vespa.model.admin.monitoring.Yamas;
+import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 
@@ -69,9 +69,9 @@ public class DedicatedAdminV4Test {
         assertHostContainsServices(model, "hosts/myhost2",
                                    "logserver", "logd", "filedistributorservice");
 
-        Yamas yamas = model.getAdmin().getYamas();
-        assertEquals("vespa.routing", yamas.getClustername());
-        assertEquals(60L, (long) yamas.getIntervalSeconds());
+        Monitoring monitoring = model.getAdmin().getMonitoring();
+        assertEquals("vespa.routing", monitoring.getClustername());
+        assertEquals(60L, (long) monitoring.getIntervalSeconds());
 
         MetricsConsumer consumer = model.getAdmin().getLegacyUserMetricsConsumers().get(VESPA_CONSUMER_ID);
         assertNotNull(consumer);

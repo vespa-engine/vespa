@@ -5,7 +5,7 @@
   <admin version="4.0">
     <slobroks><nodes count="3" flavor="small"/></slobroks>
     <logservers><nodes count="1" dedicated="true"/></logservers>
-    <yamas systemname="vespa.routing" interval="60" />
+    <monitoring systemname="vespa.routing" interval="60" />
     <metric-consumers>
       <consumer name="yamas">
         <metric name="upstreams_generated" />
