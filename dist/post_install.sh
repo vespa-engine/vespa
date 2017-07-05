@@ -70,6 +70,13 @@ ln -s $PREFIX/lib/jars/zkfacade-jar-with-dependencies.jar $INSTALLPATH/conf/conf
 ln -s $PREFIX/conf/configserver-app/components $INSTALLPATH/lib/jars/config-models
 ln -s vespa-storaged-bin $INSTALLPATH/sbin/vespa-distributord-bin
 
+# Setup default enviroment
+mkdir -p $INSTALLPATH/conf/vespa
+cat > $INSTALLPATH/conf/vespa/default-env.txt <<EOF
+fallback VESPA_HOME $PREFIX
+override VESPA_USER vespa
+EOF
+
 # Temporary when renaming programs in filedistribution
 ln -s vespa-filedistributor $INSTALLPATH/sbin/filedistributor
 ln -s vespa-filedistributor-bin $INSTALLPATH/sbin/filedistributor-bin
