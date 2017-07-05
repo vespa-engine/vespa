@@ -10,6 +10,9 @@ import java.util.Optional;
  */
 public interface RetirementPolicy {
 
+    /**
+     * Returns whether the policy is currently active. NodeRetirer ask every time before executing.
+     */
     boolean isActive();
 
     /**

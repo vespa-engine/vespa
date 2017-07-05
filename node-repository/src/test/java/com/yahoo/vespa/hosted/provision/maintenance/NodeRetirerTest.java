@@ -38,8 +38,8 @@ public class NodeRetirerTest {
 
     @Before
     public void setup() {
-        doAnswer(invok -> {
-            boolean shouldRetire = ((Node) invok.getArguments()[0]).ipAddresses().equals(Collections.singleton("::1"));
+        doAnswer(invoke -> {
+            boolean shouldRetire = ((Node) invoke.getArguments()[0]).ipAddresses().equals(Collections.singleton("::1"));
             return shouldRetire ? Optional.of("Some reason") : Optional.empty();
         }).when(policy).shouldRetire(any(Node.class));
         when(policy.isActive()).thenReturn(true);
