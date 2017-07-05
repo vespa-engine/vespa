@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "i_move_operation_limiter.h"
 #include <vespa/searchlib/common/idestructorcallback.h>
 #include <memory>
 #include <mutex>
@@ -16,7 +17,8 @@ class IBlockableMaintenanceJob;
  * Create a destructor callback with beginOperation() and pass this to the component(s) responsible for handling the move operation.
  * When this object is destructed (in any thread) the limiter is signaled and the job can be unblocked (if blocked).
  */
-class MoveOperationLimiter : public std::enable_shared_from_this<MoveOperationLimiter> {
+class MoveOperationLimiter : public IMoveOperationLimiter,
+                             public std::enable_shared_from_this<MoveOperationLimiter> {
 private:
     using LockGuard = std::lock_guard<std::mutex>;
 
@@ -37,8 +39,7 @@ public:
     ~MoveOperationLimiter();
     void clearJob();
     bool isAboveLimit() const;
-    std::shared_ptr<search::IDestructorCallback> beginOperation();
+    virtual std::shared_ptr<search::IDestructorCallback> beginOperation() override;
 };
-
 
 }

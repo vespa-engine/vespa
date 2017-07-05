@@ -278,8 +278,7 @@ public:
     /**
      * Implements IDocumentMoveHandler
      */
-    virtual void
-    handleMove(MoveOperation &op) override;
+    virtual void handleMove(MoveOperation &op, std::shared_ptr<search::IDestructorCallback> moveDoneCtx) override;
 
     /**
      * Implements IHeartBeatHandler

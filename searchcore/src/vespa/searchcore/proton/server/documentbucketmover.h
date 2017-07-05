@@ -12,6 +12,7 @@ namespace proton {
 
 class BucketDBOwner;
 class IDocumentMoveHandler;
+class IMoveOperationLimiter;
 class MaintenanceDocumentSubDB;
 
 /**
@@ -22,14 +23,15 @@ class MaintenanceDocumentSubDB;
 class DocumentBucketMover
 {
 private:
-    document::BucketId        _bucket;
+    IMoveOperationLimiter          &_limiter;
+    document::BucketId              _bucket;
     const MaintenanceDocumentSubDB *_source;
-    uint32_t                  _targetSubDbId;
-    IDocumentMoveHandler     *_handler;
-    BucketDBOwner            *_bucketDb;
-    bool                      _bucketDone;
-    document::GlobalId        _lastGid;
-    bool                      _lastGidValid;
+    uint32_t                        _targetSubDbId;
+    IDocumentMoveHandler           *_handler;
+    BucketDBOwner                  *_bucketDb;
+    bool                            _bucketDone;
+    document::GlobalId              _lastGid;
+    bool                            _lastGidValid;
 
     void moveDocument(search::DocumentIdT lid,
                       const document::GlobalId &gid,
@@ -37,7 +39,7 @@ private:
 
     void setBucketDone();
 public:
-    DocumentBucketMover();
+    DocumentBucketMover(IMoveOperationLimiter &limiter);
     void setupForBucket(const document::BucketId &bucket,
                         const MaintenanceDocumentSubDB *source,
                         uint32_t targetSubDbId,

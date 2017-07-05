@@ -1,10 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentbucketmover.h"
+#include "i_move_operation_limiter.h"
 #include "idocumentmovehandler.h"
 #include "maintenancedocumentsubdb.h"
-#include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
+#include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/persistenceengine/i_document_retriever.h>
 
 using document::BucketId;
@@ -33,13 +34,14 @@ DocumentBucketMover::moveDocument(DocumentIdT lid,
     // inconsistent bucket info (getBucketInfo()) while moving between ready and not-ready
     // sub dbs as the bucket info is not updated atomically in this case.
     _bucketDb->takeGuard()->cacheBucket(bucketId);
-    _handler->handleMove(op);
+    _handler->handleMove(op, _limiter.beginOperation());
     _bucketDb->takeGuard()->uncacheBucket();
 }
 
 
-DocumentBucketMover::DocumentBucketMover()
-    : _bucket(),
+DocumentBucketMover::DocumentBucketMover(IMoveOperationLimiter &limiter)
+    : _limiter(limiter),
+      _bucket(),
       _source(nullptr),
       _targetSubDbId(0),
       _handler(nullptr),

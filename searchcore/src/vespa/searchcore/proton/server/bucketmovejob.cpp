@@ -167,7 +167,7 @@ BucketMoveJob(const IBucketStateCalculator::SP &calc,
       _modifiedHandler(modifiedHandler),
       _ready(ready),
       _notReady(notReady),
-      _mover(),
+      _mover(*_moveOpsLimiter),
       _doneScan(false),
       _scanPos(),
       _scanPass(FIRST_SCAN_PASS),
@@ -175,7 +175,7 @@ BucketMoveJob(const IBucketStateCalculator::SP &calc,
       _delayedBuckets(),
       _delayedBucketsFrozen(),
       _frozenBuckets(frozenBuckets),
-      _delayedMover(),
+      _delayedMover(*_moveOpsLimiter),
       _clusterStateChangedNotifier(clusterStateChangedNotifier),
       _bucketStateChangedNotifier(bucketStateChangedNotifier),
       _diskMemUsageNotifier(diskMemUsageNotifier)
@@ -319,6 +319,9 @@ BucketMoveJob::run()
         return true; // indicate work is done, since node state is bad
     }
     scanAndMove(200, 1);
+    if (isBlocked(BlockedReason::OUTSTANDING_OPS)) {
+        return true;
+    }
     return done();
 }
 

@@ -547,7 +547,7 @@ TEST_F("require that handleMove calls FeedView", FeedHandlerFixture)
     MoveOperation op(doc_context.bucketId, Timestamp(2), doc_context.doc,
                      DbDocumentId(0, 2), 1);
     op.setDbDocumentId(DbDocumentId(1, 2));
-    f.runAsMaster([&]() { f.handler.handleMove(op); });
+    f.runAsMaster([&]() { f.handler.handleMove(op, IDestructorCallback::SP()); });
     EXPECT_EQUAL(1, f.feedView.move_count);
     EXPECT_EQUAL(1, f.tls_writer.store_count);
 }

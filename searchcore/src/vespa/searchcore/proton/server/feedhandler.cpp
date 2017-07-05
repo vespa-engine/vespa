@@ -730,7 +730,7 @@ FeedHandler::handleOperation(FeedToken token, FeedOperation::UP op)
 }
 
 void
-FeedHandler::handleMove(MoveOperation &op)
+FeedHandler::handleMove(MoveOperation &op, std::shared_ptr<search::IDestructorCallback> moveDoneCtx)
 {
     assert(_writeService.master().isCurrentThread());
     _activeFeedView->prepareMove(op);
@@ -738,7 +738,7 @@ FeedHandler::handleMove(MoveOperation &op)
     assert(op.getValidPrevDbdId());
     assert(op.getSubDbId() != op.getPrevSubDbId());
     storeOperation(op);
-    _activeFeedView->handleMove(op, search::IDestructorCallback::SP());
+    _activeFeedView->handleMove(op, std::move(moveDoneCtx));
 }
 
 
