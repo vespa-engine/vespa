@@ -11,7 +11,7 @@ import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.*;
 import com.yahoo.vespa.model.*;
 import com.yahoo.vespa.model.admin.Admin;
-import com.yahoo.vespa.model.admin.monitoring.MonitoringSystem;
+import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.utils.FreezableMap;
 
 import java.io.*;
@@ -436,14 +436,14 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
 
     // TODO: Make producers depend on AdminModel instead
     /** Returns a monitoring service (yamas if that is configured, null otherwise) */
-    protected MonitoringSystem getMonitoringService() {
+    protected Monitoring getMonitoringService() {
         AbstractConfigProducerRoot root = getRoot();
         Admin admin = (root == null? null : root.getAdmin());
         if (admin == null) {
             return null;
         }
-        if (admin.getYamas() != null) {
-            return admin.getYamas();
+        if (admin.getMonitoring() != null) {
+            return admin.getMonitoring();
         }
         return null;
     }

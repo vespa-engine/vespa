@@ -11,7 +11,7 @@ AdminV2 =
    (ConfigServer | ConfigServers)? &
    FileDistribution? &
    AdminSlobroks? &
-   AdminYamas? &
+   (LegacyAdminMonitoring | AdminMonitoring)? &
    (LegacyMetricConsumers | Metrics)? &
    ClusterControllers?
  }
@@ -29,7 +29,7 @@ AdminV4 =
     element minSlobroksPerCluster { xsd:positiveInteger }? &
     AdminV4Slobroks? &
     AdminV4LogServers? &
-    AdminYamas? &
+    (LegacyAdminMonitoring | AdminMonitoring)? &
     (LegacyMetricConsumers | Metrics)?
   }
 
@@ -51,14 +51,14 @@ AdminSlobroks =
       }+
    }
 
-AdminYmon =
-   element ymon {
-      attribute endpoint { xsd:anyURI { minLength = "1" } }?,
-      attribute clustername { xsd:NCName }?,
-      attribute interval { xsd:int }?
+AdminMonitoring =
+   element monitoring {
+      attribute interval { xsd:int }?,
+      attribute systemname { xsd:string }?
    }
 
-AdminYamas =
+# TODO: Alternative name for the 'monitoring' tag. Remove on Vespa 7
+LegacyAdminMonitoring =
    element yamas {
       attribute interval { xsd:int }?,
       attribute systemname { xsd:string }?
@@ -90,6 +90,7 @@ Metrics = element metrics {
     }+
 }
 
+# TODO: Remove on Vespa 7
 LegacyMetricConsumers = element metric-consumers {
     element consumer {
         attribute name { xsd:string { pattern = "[a-zA-Z][_a-zA-Z0-9]*" } }&

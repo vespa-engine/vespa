@@ -10,7 +10,8 @@ import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.admin.*;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
-import com.yahoo.vespa.model.admin.monitoring.Yamas;
+import com.yahoo.vespa.model.admin.monitoring.DefaultMonitoring;
+import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.admin.monitoring.builder.xml.MetricsBuilder;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
@@ -62,14 +63,14 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
 
     @Override
     protected Admin doBuild(AbstractConfigProducer parent, Element adminElement) {
-        Yamas yamas = getYamas(XML.getChild(adminElement, "yamas"));
+        Monitoring monitoring = getMonitoring(getChildWithFallback(adminElement, "monitoring", "yamas"));
 
         Metrics metrics = new MetricsBuilder(applicationType, predefinedMetricSets)
                 .buildMetrics(XML.getChild(adminElement, "metrics"));
         Map<String, MetricsConsumer> legacyMetricsConsumers = DomMetricBuilderHelper
                 .buildMetricsConsumers(XML.getChild(adminElement, "metric-consumers"));
 
-        Admin admin = new Admin(parent, yamas, metrics, legacyMetricsConsumers, multitenant);
+        Admin admin = new Admin(parent, monitoring, metrics, legacyMetricsConsumers, multitenant);
 
         doBuildAdmin(admin, adminElement);
 
@@ -79,21 +80,22 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         admin.setFileDistribution(new FileDistributionConfigProducer.Builder(fileDistributionOptions).build(parent, fileRegistry));
         return admin;
     }
+    
+    private Element getChildWithFallback(Element parent, String childName, String alternativeChildName) {
+        Element child = XML.getChild(parent, childName);
+        if (child != null) return child;
+        return XML.getChild(parent, alternativeChildName);
+    }
 
     protected abstract void doBuildAdmin(Admin admin, Element adminE);
 
-    private Yamas getYamas(Element yamasE) {
-        Yamas yamas;
-        if (yamasE == null) {
-            yamas = new Yamas(DEFAULT_CLUSTER_NAME, DEFAULT_INTERVAL);
-        } else {
-            Integer minutes = getMonitoringInterval(yamasE);
-            if (minutes == null) {
-                minutes = DEFAULT_INTERVAL;
-            }
-            yamas = new Yamas(yamasE.getAttribute("systemname"), minutes);
-        }
-        return yamas;
+    private Monitoring getMonitoring(Element monitoringElement) {
+        if (monitoringElement == null) return new DefaultMonitoring(DEFAULT_CLUSTER_NAME, DEFAULT_INTERVAL);
+
+        Integer minutes = getMonitoringInterval(monitoringElement);
+        if (minutes == null)
+            minutes = DEFAULT_INTERVAL;
+        return new DefaultMonitoring(monitoringElement.getAttribute("systemname"), minutes);
     }
 
     private Integer getMonitoringInterval(Element monitoringE) {

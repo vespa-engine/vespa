@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.component;
 
-import com.yahoo.vespa.model.admin.monitoring.MonitoringSystem;
+import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.container.StatisticsConfig;
 
 /**
@@ -15,11 +15,11 @@ public class StatisticsComponent extends SimpleComponent implements StatisticsCo
     
     @Override
     public void getConfig(StatisticsConfig.Builder builder) {
-        MonitoringSystem monitoringSystem = getMonitoringService();
-        if (monitoringSystem != null) {
+        Monitoring monitoring = getMonitoringService();
+        if (monitoring != null) {
             builder.
-                collectionintervalsec(monitoringSystem.getIntervalSeconds().doubleValue()).
-                loggingintervalsec(monitoringSystem.getIntervalSeconds().doubleValue());
+                collectionintervalsec(monitoring.getIntervalSeconds().doubleValue()).
+                loggingintervalsec(monitoring.getIntervalSeconds().doubleValue());
         }
         builder.values(new StatisticsConfig.Values.Builder().
                 name("query_latency").

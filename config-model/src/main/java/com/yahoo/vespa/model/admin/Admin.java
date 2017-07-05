@@ -11,7 +11,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.*;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
-import com.yahoo.vespa.model.admin.monitoring.Yamas;
+import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
@@ -36,7 +36,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private final Yamas yamas;
+    private final Monitoring monitoring;
     private final Metrics metrics;
     private final Map<String, MetricsConsumer> legacyMetricsConsumers;
     private final List<Configserver> configservers = new ArrayList<>();
@@ -56,12 +56,12 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     private final boolean multitenant;
 
     public Admin(AbstractConfigProducer parent,
-                 Yamas yamas,
+                 Monitoring monitoring,
                  Metrics metrics,
                  Map<String, MetricsConsumer> legacyMetricsConsumers,
                  boolean multitenant) {
         super(parent, "admin");
-        this.yamas = yamas;
+        this.monitoring = monitoring;
         this.metrics = metrics;
         this.legacyMetricsConsumers = legacyMetricsConsumers;
         this.multitenant = multitenant;
@@ -71,9 +71,9 @@ public class Admin extends AbstractConfigProducer implements Serializable {
         return defaultConfigserver;
     }
 
-    /** Returns the configured yamas end point. Is null if yamas is not configured */
-    public Yamas getYamas() {
-        return yamas;
+    /** Returns the configured monitoring endpoint, or null if not configured */
+    public Monitoring getMonitoring() {
+        return monitoring;
     }
 
     public Metrics getUserMetrics() { return metrics; }

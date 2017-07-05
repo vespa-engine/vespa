@@ -2,23 +2,25 @@
 package com.yahoo.vespa.model.admin.monitoring;
 
 /**
- * Interface for different monitoring services
+ * Interface for monitoring services
  *
  * @author hmusum
  */
-public interface MonitoringSystem {
+public interface Monitoring {
+
     /**
      * @return Snapshot interval in minutes
      */
-    public Integer getInterval();
+    Integer getInterval();
 
     /**
      * @return Snapshot interval in seconds.
      */
-    public Integer getIntervalSeconds();
+    Integer getIntervalSeconds();
 
     /**
      * @return the monitoring cluster name
      */
-    public String getClustername();
+    String getClustername();
+
 }

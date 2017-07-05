@@ -15,7 +15,7 @@ import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.config.storage.StorDevicesConfig;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.model.AbstractService;
-import com.yahoo.vespa.model.admin.monitoring.MonitoringSystem;
+import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.content.ContentNode;
@@ -294,7 +294,7 @@ public class SearchNode extends AbstractService implements
 
     @Override
     public void getConfig(MetricsmanagerConfig.Builder builder) {
-        MonitoringSystem point = getMonitoringService();
+        Monitoring point = getMonitoringService();
         if (point != null) {
             builder.snapshot(new MetricsmanagerConfig.Snapshot.Builder().
                     periods(point.getIntervalSeconds()).periods(300));

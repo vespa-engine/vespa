@@ -11,7 +11,7 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.admin.Admin;
-import com.yahoo.vespa.model.admin.monitoring.Yamas;
+import com.yahoo.vespa.model.admin.monitoring.DefaultMonitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import org.w3c.dom.Document;
@@ -57,7 +57,7 @@ public class ContentClusterUtils {
 
     public static ContentCluster createCluster(String clusterXml, MockRoot root) throws Exception {
         Document doc = XML.getDocument(clusterXml);
-        Admin admin = new Admin(root, new Yamas("vespa", 60), new Metrics(), Collections.emptyMap(), false);
+        Admin admin = new Admin(root, new DefaultMonitoring("vespa", 60), new Metrics(), Collections.emptyMap(), false);
         ConfigModelContext context = ConfigModelContext.create(null, root.getDeployState(), null, root, null);
         
         return new ContentCluster.Builder(admin).build(Collections.emptyList(), context, doc.getDocumentElement());

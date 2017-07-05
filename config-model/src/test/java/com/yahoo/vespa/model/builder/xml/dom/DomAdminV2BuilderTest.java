@@ -9,7 +9,7 @@ import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.admin.*;
-import com.yahoo.vespa.model.admin.monitoring.Yamas;
+import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Element;
@@ -152,7 +152,7 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
     @Test
     public void basicYamasNoXml() {
         Admin admin = buildAdmin(servicesNoYamas());
-        Yamas y = admin.getYamas();
+        Monitoring y = admin.getMonitoring();
         assertThat(y.getClustername(), is("vespa"));
         assertThat(y.getInterval(), is(1));
     }
@@ -166,7 +166,7 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
     @Test
     public void basicYamasXml() {
         Admin admin = buildAdmin(servicesYamas());
-        Yamas y = admin.getYamas();
+        Monitoring y = admin.getMonitoring();
         assertThat(y.getClustername(), is("foo"));
         assertThat(y.getInterval(), is(1));
     }
@@ -174,7 +174,7 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
     @Test
     public void yamasWithIntervalOverride() {
         Admin admin = buildAdmin(servicesYamasIntervalOverride());
-        Yamas y = admin.getYamas();
+        Monitoring y = admin.getMonitoring();
         assertThat(y.getClustername(), is("foo"));
         assertThat(y.getInterval(), is(5));
     }

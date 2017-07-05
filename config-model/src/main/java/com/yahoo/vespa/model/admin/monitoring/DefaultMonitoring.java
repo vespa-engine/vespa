@@ -4,19 +4,17 @@ package com.yahoo.vespa.model.admin.monitoring;
 import java.util.Objects;
 
 /**
- *
- * Represents an abstract monitoring service
+ * Properties for yamas monitoring service
  *
  * @author hmusum
  * @since 5.1.20
- *
-*/
-class AbstractMonitoringSystem implements MonitoringSystem {
+ */
+public class DefaultMonitoring implements Monitoring {
 
     private final Integer interval;
     private final String clustername;
 
-    public AbstractMonitoringSystem(String clustername, Integer interval) {
+    public DefaultMonitoring(String clustername, Integer interval) {
         Objects.requireNonNull(clustername);
         Objects.requireNonNull(interval);
         this.clustername = clustername;
@@ -39,3 +37,5 @@ class AbstractMonitoringSystem implements MonitoringSystem {
     }
 
 }
+
+
