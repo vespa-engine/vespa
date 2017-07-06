@@ -1,4 +1,9 @@
 # Vespa sample applications - Basic Search
-Set up a simple Vespa application on one node.
-Feed and run simple queries
+
+A simple Vespa application which can be deployed on one node, which supports
+feeding and running simple queries.
+
+Please refer to the
+[https://git.corp.yahoo.com/pages/vespa/documentation/documentation/vespa-quick-start.html](vespa quick start guide)
+for more information.
 
