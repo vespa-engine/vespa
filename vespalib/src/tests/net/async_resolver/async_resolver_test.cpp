@@ -237,6 +237,9 @@ TEST_F("require that multiple cache entries can be evicted at the same time", Re
     EXPECT_EQUAL(f1.get_total_cnt(), 6u);
     EXPECT_EQUAL(f1.resolve("tcp/d:123"), "tcp/127.0.4.1:123");
     EXPECT_EQUAL(f1.get_total_cnt(), 6u);
+    f1.set_now(0.0); // a has already been evicted from cache
+    EXPECT_EQUAL(f1.resolve("tcp/a:123"), "tcp/127.0.1.1:123");
+    EXPECT_EQUAL(f1.get_total_cnt(), 7u);
 }
 
 TEST_F("require that slow host lookups trigger warning (manual log inspection)", TimeBomb(60)) {
@@ -283,6 +286,25 @@ TEST_F("require that discarding result handlers will avoid pending work (but com
     EXPECT_EQUAL(result1.spec(), "tcp/127.0.0.7:123");
     EXPECT_EQUAL(result2.spec(), "tcp/127.0.0.7:123");
     EXPECT_EQUAL(result3.spec(), "invalid");
+}
+
+TEST_F("require that cache races can be provoked", TimeBomb(60)) {
+    auto host_resolver = std::make_shared<BlockingHostResolver>(2);
+    AsyncResolver::Params params;
+    params.resolver = host_resolver;
+    params.num_threads = 2;
+    auto resolver = AsyncResolver::create(params);
+    SocketAddress result1;
+    SocketAddress result2;
+    auto handler1 = std::make_shared<ResultSetter>(result1);
+    auto handler2 = std::make_shared<ResultSetter>(result2);
+    resolver->resolve_async("tcp/same_host:123", handler1);
+    resolver->resolve_async("tcp/same_host:123", handler2);
+    host_resolver->wait_for_callers();
+    host_resolver->release_callers();
+    resolver->wait_for_pending_resolves();
+    EXPECT_EQUAL(result1.spec(), "tcp/127.0.0.7:123");
+    EXPECT_EQUAL(result2.spec(), "tcp/127.0.0.7:123");
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

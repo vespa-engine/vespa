@@ -66,6 +66,7 @@ AsyncResolver::CachingHostResolver::lookup(const vespalib::string &host_name, ve
         _map.erase(_queue.front());
         _queue.pop();
     }
+    assert(_map.size() == _queue.size());
     auto pos = _map.find(host_name);
     if (pos != _map.end()) {
         ip_address = pos->second.ip_address;
@@ -83,6 +84,7 @@ AsyncResolver::CachingHostResolver::store(const vespalib::string &host_name, con
     if (res.second) {
         _queue.push(res.first);
     }
+    assert(_map.size() == _queue.size());
 }
 
 AsyncResolver::CachingHostResolver::CachingHostResolver(Clock::SP clock, HostResolver::SP resolver, seconds max_result_age)
