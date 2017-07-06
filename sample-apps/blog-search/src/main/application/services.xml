@@ -1,11 +1,13 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
-<services version='1.0' xmlns:deploy="vespa" xmlns:preprocess="properties">
+<services version='1.0'>
 
   <jdisc id='default' version='1.0'>
     <search/>
     <document-api/>
-    <nodes count='1'/>
+    <nodes>
+      <node hostalias='node1'/>
+    </nodes>
   </jdisc>
 
   <content id='blog_post' version='1.0'>
@@ -13,7 +15,9 @@
     <documents>
       <document mode='index' type='blog_post'/>
     </documents>
-    <nodes count='1'/>
+    <nodes>
+      <node hostalias='node1' distribution-key="0"/>
+    </nodes>
     <engine>
       <proton>
         <searchable-copies>1</searchable-copies>

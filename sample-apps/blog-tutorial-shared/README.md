@@ -9,7 +9,7 @@
 Parses JSON from the file trainPosts.json downloaded from Kaggle during the [blog search tutorial](https://git.corp.yahoo.com/pages/vespa/documentation/documentation/tutorials/blog-search.html) and format it according to Vespa Document JSON format.
 
     $ python parse.py -p trainPosts.json > somefile.json
-    
+
 Give it the flag "-p" or "--popularity", and the script also calculates and adds the field `popularity`, as introduced [in the tutorial](https://git.corp.yahoo.com/pages/vespa/documentation/documentation/tutorials/blog-search.html#blog-popularity-signal).
 
 ## Vespa Tutorial pt. 2
@@ -24,23 +24,18 @@ Give it the flag "-p" or "--popularity", and the script also calculates and adds
 
 ## Vespa Tutorial pt.3
 
-Pre-computed data used through out the tutorial can be found [here](http://trdstorage.trondheim.corp.yahoo.com/~tmartins/vespa_tutorial_data/).
-
-You can download ```vespa_tutorial_data.tar.gz``` (144MB) and decompress it with
-
-    $ wget http://trdstorage.trondheim.corp.yahoo.com/~tmartins/vespa_tutorial_data.tar.gz
-    $ tar -xvzf vespa_tutorial_data.tar.gz 
+Pre-computed data used throughout the tutorial will be made available shortly.
 
 ### Create Training Dataset
 
-    $ ./generateDataset.R -d vespa_tutorial_data/user_item_cf_cv/product.json \
-                          -u vespa_tutorial_data/user_item_cf_cv/user.json \
-                          -t vespa_tutorial_data/training_and_test_indices/train.txt \
-                          -o vespa_tutorial_data/nn_model/training_set.txt
+    $ ./src/R/generateDataset.R -d blog_job/user_item_cf_cv/product.json \
+                                -u blog_job/user_item_cf_cv/user.json \
+                                -t blog_job/training_and_test_indices/train.txt \
+                                -o blog_job/nn_model/training_set.txt
 
 ### Train model with TensorFlow
 
-Train the model with 
+Train the model with
 
     $ python vespaModel.py --product_features_file_path vespa_tutorial_data/user_item_cf_cv/product.json \
                            --user_features_file_path vespa_tutorial_data/user_item_cf_cv/user.json \
@@ -49,21 +44,21 @@ Train the model with
 Model parameters and summary statistics will be saved at folder ```runs/${start_time}``` with ```${start_time}``` representing the time you started to train the model.
 
 Visualize the accuracy and loss metrics with
-    
+
     $ tensorboard --logdir runs/1473845959/summaries/
 
 **Note**: The folder ```1473845959``` depends on the time you start to train the model and will be different in your case.
 
-### Export model parameters to Tensor Vespa format 
+### Export model parameters to Tensor Vespa format
 
-```checkpoint_dir``` holds the folder that TensorFlow writes the learned model parameters (stored using protobuf) and ```output_dir``` is the folder that we will output the model parameters in 
+```checkpoint_dir``` holds the folder that TensorFlow writes the learned model parameters (stored using protobuf) and ```output_dir``` is the folder that we will output the model parameters in
 Vespa Tensor format.
 
     import vespaModel
 
     checkpoint_dir = "./runs/1473845959/checkpoints"
     output_dir = "application_package/constants"
-       
+
     serializer = serializeVespaModel(checkpoint_dir, output_dir)
     serializer.serialize_to_disk(variable_name = "W_hidden", dimension_names = ['input', 'hidden'])
     serializer.serialize_to_disk(variable_name = "b_hidden", dimension_names = ['hidden'])
@@ -74,22 +69,22 @@ The python code containing the class ```serializeVespaModel``` can be found at: 
 
 ### Offline evaluation
 
-Query Vespa using the rank-profile ```tensor``` for users in the test set and return 100 blog post recommendations. Use those recommendations in the information contained in the test set to compute 
-metrics defined in the Tutorial pt. 2. 
+Query Vespa using the rank-profile ```tensor``` for users in the test set and return 100 blog post recommendations. Use those recommendations in the information contained in the test set to compute
+metrics defined in the Tutorial pt. 2.
 
     pig -x local -f tutorial_compute_metric.pig \
       -param VESPA_HADOOP_JAR=vespa-hadoop.jar \
-      -param TEST_INDICES=blog-job/training_and_test_indices/testing_set_ids \ 
+      -param TEST_INDICES=blog-job/training_and_test_indices/testing_set_ids \
       -param ENDPOINT=$(hostname):8080
       -param NUMBER_RECOMMENDATIONS=100
-      -param RANKING_NAME=tensor    
+      -param RANKING_NAME=tensor
       -param OUTPUT=blog-job/cf-metric
 
 Repeat the process, but now using the rank-profile ```nn_tensor```.
 
     pig -x local -f tutorial_compute_metric.pig \
       -param VESPA_HADOOP_JAR=vespa-hadoop.jar \
-      -param TEST_INDICES=blog-job/training_and_test_indices/testing_set_ids \ 
+      -param TEST_INDICES=blog-job/training_and_test_indices/testing_set_ids \
       -param ENDPOINT=$(hostname):8080
       -param NUMBER_RECOMMENDATIONS=100
       -param RANKING_NAME=nn_tensor

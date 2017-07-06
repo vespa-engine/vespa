@@ -28,7 +28,7 @@ public class BlogTensorSearcher extends Searcher {
             // Modify the query by restricting to blog_posts...
             query.getModel().setRestrict("blog_post");
 
-            // ... that has a tensor field fed and does not contains already read items.
+            // ... that has a tensor field fed and does not contain already read items.
             NotItem notItem = new NotItem();
             notItem.addItem(new IntItem(1, "has_user_item_cf"));
             for (String item : getReadItems(query)) {

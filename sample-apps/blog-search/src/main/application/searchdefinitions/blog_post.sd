@@ -20,41 +20,44 @@ search blog_post {
             indexing: summary | index
         }
 
-	    field blog type string {
-	        indexing: summary
-	    }
+        field blog type string {
+            indexing: summary
+        }
 
-	    field post_id type string {
-	        indexing: summary 
-	    }
+        field post_id type string {
+            indexing: summary
+        }
 
         field tags type array<string> {
-            indexing: summary 
+            indexing: summary
         }
 
         field blogname type string {
-            indexing: summary 
+            indexing: summary
         }
 
         field content type string {
-            indexing: summary 
+            indexing: summary | index
         }
 
         field categories type array<string> {
-            indexing: summary 
+            indexing: summary
+        }
+
+        field date type int {
+            indexing: summary | attribute
         }
 
     }
-
 
     fieldset default {
         fields: title, content
     }
 
-    rank-profile song inherits default {
-	    first-phase {
-	        expression:nativeRank(title)
+    rank-profile post inherits default {
+        first-phase {
+            expression:nativeRank(title, content)
         }
     }
-
 }
+

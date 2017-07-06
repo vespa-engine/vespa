@@ -44,7 +44,7 @@ search blog_post {
             indexing: summary | index
         }
 
-        field user_item_cf type tensor {
+        field user_item_cf type tensor(user_item_cf[10]) {
             indexing: summary | attribute
             attribute: tensor(user_item_cf[10])
         }
@@ -84,75 +84,38 @@ search blog_post {
         type: tensor(final[1])
     }
 
-    constant input_transform_1 {
-        file: constants/input_transform_1.json
-        type: tensor(user_item_cf[10], input[20])
-    }
-
-    constant input_transform_2 {
-        file: constants/input_transform_2.json
-        type: tensor(user_item_cf[10], input[20])
-    }
-
+    # rank profile with neural network model as second phase
     rank-profile nn_tensor {
 
-        # Why no work?
-        macro inline matmul(x, y, dim) {
-            expression: sum(x * y, dim)
-        }
-
-        macro matmul_user_item_cf(x, y) {
-            expression: sum(x * y, user_item_cf)
-        }
-
-        macro matmul_hidden(x, y) {
-            expression: sum(x * y, hidden)
-        }
-
-        macro matmul_input(x, y) {
-            expression: sum(x * y, input)
-        }
-
-        macro add(x,y) {
-            expression: x + y
-        }
-
-        # The input to the neural network is the concatenation of the document and query vectors
+        # The input to the neural network is the
+        # concatenation of the document and query vectors.
         macro nn_input() {
-            expression {
-                matmul_user_item_cf(attribute(user_item_cf), constant(input_transform_1))
-                +
-                matmul_user_item_cf(query(user_item_cf), constant(input_transform_2))
-            }
+            expression: concat(attribute(user_item_cf), query(user_item_cf), input)
         }
 
+        # Computes the hidden layer
         macro hidden_layer() {
-            expression {
-                relu(add(matmul_input(nn_input, constant(W_hidden)), constant(b_hidden)))
-
-                # The '+' causes an error. Why?
-                # relu(matmul(nn_input, constant(W_hidden), "input") + constant(b_hidden))
-            }
+            expression: relu(sum(nn_input * constant(W_hidden), input) + constant(b_hidden))
         }
 
+        # Computes the output layer
         macro final_layer() {
-            expression{
-                sigmoid(add(matmul_hidden(hidden_layer, constant(W_final)), constant(b_final)))
-
-                # Same as above
-                # sigmoid(matmul(hidden_layer, constant(W_final), "hidden") + constant(b_final))
-            }
+            expression: sigmoid(sum(hidden_layer * constant(W_final), hidden) + constant(b_final))
         }
 
+
+        # First-phase ranking:
+        # Dot-product between user and document latent factors
         first-phase {
             expression: sum(query(user_item_cf) * attribute(user_item_cf))
         }
 
+        # Second-phase ranking:
+        # Neural network model based on the user and latent factors
         second-phase {
             rerank-count: 200
             expression: sum(final_layer)
         }
-
     }
 
 }
