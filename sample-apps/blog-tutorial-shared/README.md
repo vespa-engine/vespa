@@ -1,5 +1,7 @@
 # Vespa tutorial utility scripts
 
+This directory contains utility code for the blog-search and blog-recommendation sample applications.
+
 ## Vespa Tutorial pt. 1
 
 ### From raw JSON to Vespa Feeding format

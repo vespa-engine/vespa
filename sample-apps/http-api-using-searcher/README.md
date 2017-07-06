@@ -1,4 +1,7 @@
 # Vespa sample applications - Building a HTTP API using a searcher
 
-Refer to search/handler-tutorial.html for documentation FIXME real link soon
+Please refer to
+[https://git.corp.yahoo.com/pages/vespa/documentation/documentation/search/handler-tutorial.html](HTTP API use-case)
+for more information.
+
 
