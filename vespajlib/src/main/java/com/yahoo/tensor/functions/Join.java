@@ -295,8 +295,8 @@ public class Join extends PrimitiveTensorFunction {
             return mappedGeneralJoin(a, b, joinedType); // fallback
         }
 
-        boolean switchTensors = a.size() > b.size();
-        if (switchTensors) {
+        boolean swapTensors = a.size() > b.size();
+        if (swapTensors) {
             Tensor temp = a;
             a = b;
             b = temp;
@@ -326,7 +326,7 @@ public class Join extends PrimitiveTensorFunction {
                 TensorAddress combinedAddress = joinAddresses(aCell.getKey(), aIndexesInJoined,
                         bCell.getKey(), bIndexesInJoined, joinedType);
                 if (combinedAddress == null) continue; // not combinable
-                double combinedValue = switchTensors ?
+                double combinedValue = swapTensors ?
                         combinator.applyAsDouble(bCell.getValue(), aCell.getValue()) :
                         combinator.applyAsDouble(aCell.getValue(), bCell.getValue());
                 builder.cell(combinedAddress, combinedValue);
