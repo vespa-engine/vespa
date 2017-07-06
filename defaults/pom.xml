@@ -74,7 +74,7 @@
                     <redirectTestOutputToFile>${test.hide}</redirectTestOutputToFile>
                     <environmentVariables>
                         <VESPA_HOME>/opt/vespa</VESPA_HOME>
-                        <VESPA_USER>yahoo</VESPA_USER>
+                        <VESPA_USER>vespa</VESPA_USER>
                     </environmentVariables>
                 </configuration>
             </plugin>

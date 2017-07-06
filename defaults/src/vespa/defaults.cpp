@@ -14,7 +14,7 @@
 namespace {
 
 const char *defaultHome = "/opt/vespa";
-const char *defaultUser = "yahoo";
+const char *defaultUser = "vespa";
 int defaultWebServicePort = 8080;
 int defaultPortBase = 19000;
 int defaultPortConfigServerRpc = 19070;
