@@ -11,6 +11,7 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -128,7 +129,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
             /**
              * This is a temporary "state" or rest call that we use to enable a smooth rollout of
              * dynamic docker flavor allocations. Once we have switch everything we remove this
-             * and change the code in the nodeadmin to delete directly.
+             * and change the code in the node-admin to delete directly.
              *
              * Should only be called by node-admin for docker containers (the docker constraint is
              * enforced in the remove method)
@@ -150,7 +151,9 @@ public class NodesApiHandler extends LoggingRequestHandler {
         String path = request.getUri().getPath();
         if ( ! path.startsWith("/nodes/v2/node/")) throw new NotFoundException("Nothing at '" + path + "'");
         Node node = nodeFromRequest(request);
-        nodeRepository.write(new NodePatcher(nodeFlavors, request.getData(), node, nodeRepository.clock()).apply());
+        try (Mutex lock = nodeRepository.lock(node)) {
+            nodeRepository.write(new NodePatcher(nodeFlavors, request.getData(), node, nodeRepository.clock()).apply());
+        }
         return new MessageResponse("Updated " + node.hostname());
     }
 
