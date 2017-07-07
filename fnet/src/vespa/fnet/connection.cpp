@@ -8,6 +8,7 @@
 #include "iserveradapter.h"
 #include "config.h"
 #include "transport_thread.h"
+#include "transport.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".fnet");
@@ -49,8 +50,28 @@ SyncPacket::Free()
         _cond.Signal();
     _cond.Unlock();
 }
-
 }
+
+
+FNET_Connection::ResolveHandler::ResolveHandler(FNET_Connection *conn)
+    : connection(conn),
+      address()
+{
+    connection->AddRef();
+}
+
+void
+FNET_Connection::ResolveHandler::handle_result(vespalib::SocketAddress result)
+{
+    address = result;
+    connection->Owner()->Add(connection);
+}
+
+FNET_Connection::ResolveHandler::~ResolveHandler()
+{
+    connection->SubRef();
+}
+
 
 ///////////////////////
 // PROTECTED METHODS //
@@ -394,6 +415,7 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
       _serverAdapter(serverAdapter),
       _adminChannel(nullptr),
       _socket(std::move(socket)),
+      _resolve_handler(nullptr),
       _context(),
       _state(FNET_CONNECTED), // <-- NB
       _flags(),
@@ -422,13 +444,13 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
                                  FNET_IPacketHandler *adminHandler,
                                  FNET_Context adminContext,
                                  FNET_Context context,
-                                 vespalib::SocketHandle socket,
                                  const char *spec)
-    : FNET_IOComponent(owner, socket.get(), spec, /* time-out = */ true),
+    : FNET_IOComponent(owner, -1, spec, /* time-out = */ true),
       _streamer(streamer),
       _serverAdapter(serverAdapter),
       _adminChannel(nullptr),
-      _socket(std::move(socket)),
+      _socket(),
+      _resolve_handler(nullptr),
       _context(context),
       _state(FNET_CONNECTING),
       _flags(),
@@ -445,7 +467,6 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
       _callbackTarget(nullptr),
       _cleanup(nullptr)
 {
-    assert(_socket.valid());
     if (adminHandler != nullptr) {
         FNET_Channel::UP admin(new FNET_Channel(FNET_NOID, this, adminHandler, adminContext));
         _adminChannel = admin.get();
@@ -484,7 +505,29 @@ FNET_Connection::Init()
     }
 
     // handle close by admin channel init
-    return (_state <= FNET_CONNECTED);
+    if (_state == FNET_CLOSED) {
+        return false;
+    }
+
+    // initiate async resolve
+    if (IsClient()) {
+        _resolve_handler = std::make_shared<ResolveHandler>(this);
+        Owner()->owner().resolve_async(GetSpec(), _resolve_handler);
+    }
+    return true;
+}
+
+
+bool
+FNET_Connection::handle_add_event()
+{
+    if (_resolve_handler) {
+        auto tweak = [this](vespalib::SocketHandle &handle) { return Owner()->tune(handle); };
+        _socket = _resolve_handler->address.connect(tweak);
+        _ioc_socket_fd = _socket.get();
+        _resolve_handler.reset();
+    }
+    return _socket.valid();
 }
 
 
@@ -653,6 +696,7 @@ FNET_Connection::CleanupHook()
 void
 FNET_Connection::Close()
 {
+    _resolve_handler.reset();
     detach_selector();
     SetState(FNET_CLOSED);
     _ioc_socket_fd = -1;

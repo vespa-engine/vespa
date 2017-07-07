@@ -8,6 +8,7 @@
 #include "channellookup.h"
 #include "packetqueue.h"
 #include <vespa/vespalib/net/socket_handle.h>
+#include <vespa/vespalib/net/async_resolver.h>
 
 class FNET_IPacketStreamer;
 class FNET_IServerAdapter;
@@ -77,10 +78,19 @@ private:
         bool _callbackWait;
         bool _discarding;
     };
+    struct ResolveHandler : public vespalib::AsyncResolver::ResultHandler {
+        FNET_Connection *connection;
+        vespalib::SocketAddress address;
+        ResolveHandler(FNET_Connection *conn);
+        void handle_result(vespalib::SocketAddress result) override;
+        ~ResolveHandler();
+    };
+    using ResolveHandlerSP = std::shared_ptr<ResolveHandler>;
     FNET_IPacketStreamer    *_streamer;        // custom packet streamer
     FNET_IServerAdapter     *_serverAdapter;   // only on server side
     FNET_Channel            *_adminChannel;    // only on client side
     vespalib::SocketHandle   _socket;          // socket for this conn
+    ResolveHandlerSP         _resolve_handler; // async resolve callback
     FNET_Context             _context;         // connection context
     State                    _state;           // connection state
     Flags                    _flags;           // Packed flags.
@@ -231,7 +241,6 @@ public:
      * @param adminHandler packet handler for admin channel
      * @param adminContext context for admin channel
      * @param context initial context for this connection
-     * @param socket the underlying socket used for IO
      * @param spec connect spec
      **/
     FNET_Connection(FNET_TransportThread *owner,
@@ -240,7 +249,6 @@ public:
                     FNET_IPacketHandler *adminHandler,
                     FNET_Context adminContext,
                     FNET_Context context,
-                    vespalib::SocketHandle socket,
                     const char *spec);
 
     /**
@@ -316,6 +324,17 @@ public:
      * @return success(true)/failure(false)
      **/
     bool Init();
+
+    /**
+     * Called by the transport thread as the initial part of adding
+     * this connection to the selection loop. If this is an incoming
+     * connection (already connected) this function does nothing. If
+     * this is an outgoing connection this function will use the async
+     * resolve result to create a socket and initiate async connect.
+     *
+     * @return false if connection broken, true otherwise.
+     **/
+    bool handle_add_event() override;
 
     /**
      * Register a cleanup handler to be invoked when this connection is
