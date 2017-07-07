@@ -130,6 +130,10 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
                 throw new RuntimeException("If you have indexed search you need to have proton as engine");
             }
 
+            if (c.isMemfilePersistence()) {
+                admin.deployLogger().log(Level.WARNING, "'vds' engine is deprecated and will soon be removed. 'proton' is only recommended engine.");
+            }
+
             if (documentsElement != null) {
                 ModelElement e = documentsElement.getChild("document-processing");
                 if (e != null) {
