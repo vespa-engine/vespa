@@ -227,7 +227,7 @@ public class LocalZoneUtils {
             }
         }
         System.out.println("prepare " + applicationName);
-        final String deployPath = getDefaults().underVespaHome("bin/deploy");
+        final String deployPath = getDefaults().underVespaHome("bin/vespa-deploy");
         ProcessResult copyProcess = docker.executeInContainer(CONFIG_SERVER_CONTAINER_NAME, deployPath, "-e",
                 tenantName, "-a", applicationName, "prepare", pathToAppOnConfigServer.toString());
         if (! copyProcess.isSuccess()) {

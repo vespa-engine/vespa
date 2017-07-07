@@ -540,7 +540,7 @@ public class NodeAgentImplTest {
                 .replaceAll("\\s", "")
                 .replaceAll("\\n", "");
 
-        String[] expectedCommand = {"rpc_invoke",  "-t", "2",  "tcp/localhost:19091",  "setExtraMetrics", expectedMetrics};
+        String[] expectedCommand = {"vespa-rpc-invoke",  "-t", "2",  "tcp/localhost:19091",  "setExtraMetrics", expectedMetrics};
         doAnswer(invocation -> {
             ContainerName calledContainerName = (ContainerName) invocation.getArguments()[0];
             long calledTimeout = (long) invocation.getArguments()[1];

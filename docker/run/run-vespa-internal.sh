@@ -21,6 +21,6 @@ export VESPA_CONFIG_SERVERS=$(hostname)
 
 # Print log forever
 while true; do
-  /opt/vespa/bin/logfmt -f /opt/vespa/logs/vespa/vespa.log
+  /opt/vespa/bin/vespa-logfmt -f /opt/vespa/logs/vespa/vespa.log
   sleep 10
 done

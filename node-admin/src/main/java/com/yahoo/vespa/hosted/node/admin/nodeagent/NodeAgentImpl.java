@@ -579,7 +579,7 @@ public class NodeAgentImpl implements NodeAgent {
             String wrappedMetrics = "s:" + params.toString();
 
             // Push metrics to the metrics proxy in each container - give it maximum 1 seconds to complete
-            String[] command = {"rpc_invoke",  "-t", "2",  "tcp/localhost:19091",  "setExtraMetrics", wrappedMetrics};
+            String[] command = {"vespa-rpc-invoke",  "-t", "2",  "tcp/localhost:19091",  "setExtraMetrics", wrappedMetrics};
             dockerOperations.executeCommandInContainerAsRoot(containerName, 5L, command);
         } catch (DockerExecTimeoutException | JsonProcessingException  e) {
             logger.warning("Unable to push metrics to container: " + containerName, e);

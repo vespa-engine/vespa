@@ -120,7 +120,7 @@ case $1 in
         fail=true
         for ((sleepcount=0;$sleepcount<600;sleepcount=$sleepcount+1)) ; do
             usleep 100000
-            if [ -f $P_CONFIG_PROXY ] && kill -0 `cat $P_CONFIG_PROXY` && pingproxy -s `hostname` 2>/dev/null
+            if [ -f $P_CONFIG_PROXY ] && kill -0 `cat $P_CONFIG_PROXY` && vespa-ping-configproxy -s `hostname` 2>/dev/null
             then
                 echo "config proxy started (runserver pid `cat $P_CONFIG_PROXY`)"
                 fail=false
@@ -130,7 +130,7 @@ case $1 in
         if $fail ; then
             echo "Failed to start config proxy!" 1>&2
             echo "look for reason in vespa.log, last part follows..."
-            tail -n 15 $LOGFILE | logfmt -
+            tail -n 15 $LOGFILE | vespa-logfmt -
             exit 1
         fi
 

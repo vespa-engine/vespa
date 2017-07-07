@@ -101,7 +101,7 @@ function InternalMain {
     yinst start cloudconfig_server
 
     touch $VESPA_HOME/logs/jdisc_core/jdisc_core.log
-    $VESPA_HOME/bin/logfmt -N -f $VESPA_HOME/logs/jdisc_core/jdisc_core.log
+    $VESPA_HOME/bin/vespa-logfmt -N -f $VESPA_HOME/logs/jdisc_core/jdisc_core.log
 }
 
 function Main {
