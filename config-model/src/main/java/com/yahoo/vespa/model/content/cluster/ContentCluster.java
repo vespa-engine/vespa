@@ -132,7 +132,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
             }
 
             if (c.isMemfilePersistence()) {
-                admin.deployLogger().log(Level.WARNING, "'vds' engine is deprecated and will sonn be removed. 'proton' is only recommended engine.");
+                admin.deployLogger().log(Level.WARNING, "'vds' engine is deprecated and will soon be removed. 'proton' is only recommended engine.");
             }
 
             if (documentsElement != null) {
