@@ -77,7 +77,6 @@ get_var() {
 populate_environment () {
     # these are the variables we want while running vespa:
     # VESPA_HOME - where is Vespa installed
-    # VESPA_USER - The user running the vespa programs
     # VESPA_CONFIGSERVERS - the host (or list of host) where a configserver runs
     # VESPA_CONFIG_SOURCES - possible override as the first place to get config
 
@@ -101,6 +100,11 @@ populate_environment () {
 
     read_conf_file
     consider_fallback ROOT ${VESPA_HOME%/}
+    if id yahoo >/dev/null 2>&1 ; then
+        consider_fallback VESPA_USER "yahoo"
+    elif id vespa >/dev/null 2>&1 ; then
+        consider_fallback VESPA_USER "vespa"
+    fi
 }
 
 populate_environment
