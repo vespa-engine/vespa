@@ -12,6 +12,9 @@ import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -210,7 +213,7 @@ public class Join extends PrimitiveTensorFunction {
         if (a instanceof IndexedTensor && b instanceof IndexedTensor)
             return indexedGeneralJoin((IndexedTensor) a, (IndexedTensor) b, joinedType);
         else
-            return mappedGeneralJoin(a, b, joinedType);
+            return mappedHashJoin(a, b, joinedType);
     }
 
     private Tensor indexedGeneralJoin(IndexedTensor a, IndexedTensor b, TensorType joinedType) {
@@ -286,6 +289,54 @@ public class Join extends PrimitiveTensorFunction {
         return builder.build();
     }
 
+    private Tensor mappedHashJoin(Tensor a, Tensor b, TensorType joinedType) {
+        TensorType commonDimensionType = commonDimensions(a, b);
+        if (commonDimensionType.dimensions().isEmpty()) {
+            return mappedGeneralJoin(a, b, joinedType); // fallback
+        }
+
+        boolean swapTensors = a.size() > b.size();
+        if (swapTensors) {
+            Tensor temp = a;
+            a = b;
+            b = temp;
+        }
+
+        // Map dimension indexes to common and joined type
+        int[] aIndexesInCommon = mapIndexes(commonDimensionType, a.type());
+        int[] bIndexesInCommon = mapIndexes(commonDimensionType, b.type());
+        int[] aIndexesInJoined = mapIndexes(a.type(), joinedType);
+        int[] bIndexesInJoined = mapIndexes(b.type(), joinedType);
+
+        // Iterate once through the smaller tensor and construct a hash map for common dimensions
+        Map<TensorAddress, List<Tensor.Cell>> aCellsByCommonAddress = new HashMap<>();
+        for (Iterator<Tensor.Cell> cellIterator = a.cellIterator(); cellIterator.hasNext(); ) {
+            Tensor.Cell aCell = cellIterator.next();
+            TensorAddress partialCommonAddress = partialCommonAddress(aCell, aIndexesInCommon);
+            aCellsByCommonAddress.putIfAbsent(partialCommonAddress, new ArrayList<>());
+            aCellsByCommonAddress.get(partialCommonAddress).add(aCell);
+        }
+
+        // Iterate once through the larger tensor and use the hash map to find joinable cells
+        Tensor.Builder builder = Tensor.Builder.of(joinedType);
+        for (Iterator<Tensor.Cell> cellIterator = b.cellIterator(); cellIterator.hasNext(); ) {
+            Tensor.Cell bCell = cellIterator.next();
+            TensorAddress partialCommonAddress = partialCommonAddress(bCell, bIndexesInCommon);
+            for (Tensor.Cell aCell : aCellsByCommonAddress.getOrDefault(partialCommonAddress, Collections.emptyList())) {
+                TensorAddress combinedAddress = joinAddresses(aCell.getKey(), aIndexesInJoined,
+                        bCell.getKey(), bIndexesInJoined, joinedType);
+                if (combinedAddress == null) continue; // not combinable
+                double combinedValue = swapTensors ?
+                        combinator.applyAsDouble(bCell.getValue(), aCell.getValue()) :
+                        combinator.applyAsDouble(aCell.getValue(), bCell.getValue());
+                builder.cell(combinedAddress, combinedValue);
+            }
+        }
+
+        return builder.build();
+    }
+
+
     /**
      * Returns the an array having one entry in order for each dimension of fromType
      * containing the index at which toType contains the same dimension name.
@@ -323,5 +374,35 @@ public class Join extends PrimitiveTensorFunction {
         }
         return true;
     }
-    
+
+
+    /**
+     * Returns common dimension of a and b as a new tensor type
+     */
+    private TensorType commonDimensions(Tensor a, Tensor b) {
+        TensorType.Builder typeBuilder = new TensorType.Builder();
+        TensorType aType = a.type();
+        TensorType bType = b.type();
+        for (int i = 0; i < aType.dimensions().size(); ++i) {
+            TensorType.Dimension aDim = aType.dimensions().get(i);
+            for (int j = 0; j < bType.dimensions().size(); ++j) {
+                TensorType.Dimension bDim = bType.dimensions().get(j);
+                if (aDim.equals(bDim)) {
+                    typeBuilder.set(bDim);
+                }
+            }
+        }
+        return typeBuilder.build();
+    }
+
+    private TensorAddress partialCommonAddress(Tensor.Cell cell, int[] indexMap) {
+        TensorAddress address = cell.getKey();
+        String[] labels = new String[indexMap.length];
+        for (int i = 0; i < labels.length; ++i) {
+            labels[i] = address.label(indexMap[i]);
+        }
+        return TensorAddress.of(labels);
+
+    }
+
 }

@@ -107,11 +107,11 @@ public class TensorFunctionBenchmark {
         double time = 0;
 
         // ---------------- Mapped with extra space (sidesteps current special-case optimizations):
-        // 410 ms
-        time = new TensorFunctionBenchmark().benchmark(20, vectors(100, 300, TensorType.Dimension.Type.mapped), TensorType.Dimension.Type.mapped, true);
+        // 9.9 ms
+        time = new TensorFunctionBenchmark().benchmark(1000, vectors(100, 300, TensorType.Dimension.Type.mapped), TensorType.Dimension.Type.mapped, true);
         System.out.printf("Mapped vectors, x space  time per join: %1$8.3f ms\n", time);
-        // 770 ms
-        time = new TensorFunctionBenchmark().benchmark(20, matrix(100, 300, TensorType.Dimension.Type.mapped), TensorType.Dimension.Type.mapped, true);
+        // 10.5 ms
+        time = new TensorFunctionBenchmark().benchmark(1000, matrix(100, 300, TensorType.Dimension.Type.mapped), TensorType.Dimension.Type.mapped, true);
         System.out.printf("Mapped matrix, x space   time per join: %1$8.3f ms\n", time);
 
         // ---------------- Mapped:
