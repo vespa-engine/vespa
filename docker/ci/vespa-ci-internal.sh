@@ -22,7 +22,7 @@ cd "${SOURCE_DIR}"
 git -c advice.detachedHead=false checkout ${GIT_COMMIT}
 source /opt/rh/devtoolset-6/enable || true
 sh ./bootstrap.sh full
-MAVEN_OPTS="-Xms128m -Xmx512m" mvn -T ${NUM_THREADS} install
+MAVEN_OPTS="-Xms128m -Xmx512m" mvn -V -T ${NUM_THREADS} install
 cd "${BUILD_DIR}"
 cmake3 -DCMAKE_INSTALL_PREFIX=/opt/vespa \
       -DJAVA_HOME=/usr/lib/jvm/java-openjdk \
