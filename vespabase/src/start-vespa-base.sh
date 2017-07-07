@@ -67,8 +67,4 @@ no_transparent_hugepages
 disable_vm_zone_reclaim_mode
 drop_caches
 
-if [ -f /tmp/.ylock-arena.shm ]; then
-  chown yahoo:wheel /tmp/.ylock-arena.shm
-fi
-
 exec vespa-run-as-vespa-user ${VESPA_HOME}/bin/vespa-config-ctl start
