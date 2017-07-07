@@ -45,8 +45,8 @@ public class Defaults {
     static private String findVespaUser() {
         Optional<String> vespaUserEnv = Optional.ofNullable(System.getenv("VESPA_USER"));
         if (! vespaUserEnv.isPresent()) {
-            log.fine("VESPA_USER not set, using yahoo");
-            return "yahoo";
+            log.fine("VESPA_USER not set, using vespa");
+            return "vespa";
         }
         return vespaUserEnv.get().trim();
     }

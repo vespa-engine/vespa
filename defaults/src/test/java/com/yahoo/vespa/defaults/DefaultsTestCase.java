@@ -19,7 +19,7 @@ public class DefaultsTestCase {
 
     @Test
     public void testFindVespaUser() {
-        assertEquals("yahoo", Defaults.getDefaults().vespaUser());
+        assertEquals("vespa", Defaults.getDefaults().vespaUser());
     }
 
 }
