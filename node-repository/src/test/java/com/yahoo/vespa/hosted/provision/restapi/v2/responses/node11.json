@@ -12,6 +12,7 @@
   "minMainMemoryAvailableGb":0.5,
   "description":"Flavor-name-is-docker",
   "minCpuCores":0.2,
+  "fastDisk":true,
   "environment":"DOCKER_CONTAINER",
   "rebootGeneration":0,
   "currentRebootGeneration":0,

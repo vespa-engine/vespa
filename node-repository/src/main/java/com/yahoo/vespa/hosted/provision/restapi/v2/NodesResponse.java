@@ -149,6 +149,7 @@ class NodesResponse extends HttpResponse {
             object.setDouble("minCpuCores", node.flavor().getMinCpuCores());
         if (node.flavor().cost() > 0)
             object.setLong("cost", node.flavor().cost());
+        object.setBool("fastDisk", node.flavor().hasFastDisk());
         object.setString("environment", node.flavor().getType().name());
         if (node.allocation().isPresent()) {
             toSlime(node.allocation().get().owner(), object.setObject("owner"));
