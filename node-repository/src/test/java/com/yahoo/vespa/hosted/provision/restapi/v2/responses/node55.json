@@ -11,6 +11,7 @@
   "minMainMemoryAvailableGb":16.0,
   "description":"Flavor-name-is-default",
   "minCpuCores":2.0,
+  "fastDisk":true,
   "environment":"BARE_METAL",
   "rebootGeneration": 1,
   "currentRebootGeneration": 0,

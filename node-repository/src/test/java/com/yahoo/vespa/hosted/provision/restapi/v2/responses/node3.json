@@ -9,6 +9,7 @@
   "canonicalFlavor":"default",
   "description":"Flavor-name-is-expensive",
   "cost":200,
+  "fastDisk":true,
   "environment":"BARE_METAL",
   "owner": {
     "tenant": "tenant3",
