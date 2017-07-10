@@ -15,26 +15,18 @@ import static org.junit.Assert.assertTrue;
  * @since 5.1
  */
 public class NodeVectorTest {
-    @Test
-    public void require_vector_is_resized() {
-        TestNodeVector v = new TestNodeVector("foo");
-        v.setSize(2);
-        assertThat(v.size(), is(2));
-        v.setSize(1);
-        assertThat(v.size(), is(1));
-    }
 
     @Test(expected = NodeVector.ReadOnlyException.class)
-    public void require_that_add_throws_exception() { new TestNodeVector("foo").add("bar"); }
+    public void require_that_add_throws_exception() { new TestNodeVector("foo").add(barNode()); }
 
     @Test(expected = NodeVector.ReadOnlyException.class)
-    public void require_that_addindex_throws_exception() { new TestNodeVector("foo").add(0, "bar"); }
+    public void require_that_addindex_throws_exception() { new TestNodeVector("foo").add(0, barNode()); }
 
     @Test(expected = NodeVector.ReadOnlyException.class)
-    public void require_that_addAll_throws_exception() { new TestNodeVector("foo").addAll(Arrays.asList("bar")); }
+    public void require_that_addAll_throws_exception() { new TestNodeVector("foo").addAll(Arrays.asList(barNode())); }
 
     @Test(expected = NodeVector.ReadOnlyException.class)
-    public void require_that_addAllindex_throws_exception() { new TestNodeVector("foo").addAll(0, Arrays.asList("bar")); }
+    public void require_that_addAllindex_throws_exception() { new TestNodeVector("foo").addAll(0, Arrays.asList(barNode())); }
 
     @Test(expected = NodeVector.ReadOnlyException.class)
     public void require_that_clear_throws_exception() { new TestNodeVector("foo").clear(); }
@@ -56,33 +48,29 @@ public class NodeVectorTest {
 
     @Test
     public void require_that_contains_works() {
-        String val = "foo";
-        TestNodeVector v = new TestNodeVector(val);
-        v.setSize(1);
+        StringNode val = new StringNode("foo");
+        TestNodeVector v = new TestNodeVector(val.getValue());
         assertTrue(v.contains(val));
-        assertFalse(v.contains("bar"));
+        assertFalse(v.contains(barNode()));
         assertTrue(v.containsAll(Arrays.asList(val)));
-        assertFalse(v.containsAll(Arrays.asList(val, "bar")));
+        assertFalse(v.containsAll(Arrays.asList(val, barNode())));
     }
 
     @Test
     public void require_that_indexOf_works() {
-        String val = "foo";
-        TestNodeVector v = new TestNodeVector(val);
-        assertTrue(v.isEmpty());
-        v.setSize(1);
+        StringNode val = new StringNode("foo");
+        TestNodeVector v = new TestNodeVector(val.getValue());
         assertFalse(v.isEmpty());
         assertThat(v.indexOf(val), is(0));
-        assertThat(v.indexOf("bar"), is(-1));
+        assertThat(v.indexOf(barNode()), is(-1));
         assertThat(v.lastIndexOf(val), is(0));
-        assertThat(v.lastIndexOf("bar"), is(-1));
+        assertThat(v.lastIndexOf(barNode()), is(-1));
     }
 
     @Test
     public void require_that_iterators_work() {
         String val = "foo";
-        TestNodeVector v = new TestNodeVector(val);
-        v.setSize(3);
+        TestNodeVector v = new TestNodeVector(val, val, val);
         assertTrue(v.listIterator().hasNext());
         assertTrue(v.listIterator(0).hasNext());
         assertTrue(v.listIterator(1).hasNext());
@@ -93,24 +81,21 @@ public class NodeVectorTest {
     @Test
     public void require_that_sublisting_works() {
         String val = "foo";
-        TestNodeVector v = new TestNodeVector(val);
-        v.setSize(3);
+        TestNodeVector v = new TestNodeVector(val, val, val);
         assertThat(v.subList(0, 1).size(), is(1));
         assertThat(v.subList(0, 2).size(), is(2));
         assertThat(v.subList(0, 3).size(), is(3));
-        String[] vals = v.toArray(new String[0]);
+        StringNode[] vals = v.toArray(new StringNode[0]);
         assertThat(vals.length, is(3));
     }
 
-    private static class TestNodeVector extends NodeVector<String> {
-        private final String value;
-        public TestNodeVector(String value) {
-            this.value = value;
-        }
+    private StringNode barNode() { return new StringNode("bar");}
 
-        @Override
-        protected String createNew() {
-            return value;
+    private static class TestNodeVector extends LeafNodeVector<String, StringNode> {
+
+        TestNodeVector(String... values) {
+            super(Arrays.asList(values), new StringNode());
         }
     }
+
 }
