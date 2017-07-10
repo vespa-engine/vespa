@@ -21,8 +21,12 @@ git clone --no-checkout --no-hardlinks file:///vespa "${SOURCE_DIR}"
 cd "${SOURCE_DIR}"
 git -c advice.detachedHead=false checkout ${GIT_COMMIT}
 source /opt/rh/devtoolset-6/enable || true
+
+export MAVEN_OPTS="-Xms128m -Xmx512m"
 sh ./bootstrap.sh full
-MAVEN_OPTS="-Xms128m -Xmx512m" mvn -V -T ${NUM_THREADS} install
+mvn install -T 2.0C -U -V -DskipTests=true -Dmaven.javadoc.skip=true
+mvn install -nsu -T 2.0C -V
+
 cd "${BUILD_DIR}"
 cmake3 -DCMAKE_INSTALL_PREFIX=/opt/vespa \
       -DJAVA_HOME=/usr/lib/jvm/java-openjdk \
