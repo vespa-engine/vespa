@@ -9,6 +9,7 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
+import com.yahoo.vespa.config.server.ActivationException;
 import com.yahoo.vespa.config.server.tenant.ActivateLock;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TimeoutBudget;
@@ -202,25 +203,25 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                                 ", current active session=" + currentActiveSessionSessionId);
         if (currentActiveSession.isNewerThan(activeSessionAtCreate) &&
                 currentActiveSessionSessionId != sessionId) {
-            String errMsg = currentActiveSession.logPre()+"Cannot activate session " +
+            String errMsg = currentActiveSession.logPre() + "Cannot activate session " +
                             sessionId + " because the currently active session (" +
                             currentActiveSessionSessionId + ") has changed since session " + sessionId +
                             " was created (was " + activeSessionAtCreate + " at creation time)";
             if (ignoreStaleSessionFailure) {
                 log.warning(errMsg + " (Continuing because of force.)");
             } else {
-                throw new IllegalStateException(errMsg);
+                throw new ActivationException(errMsg);
             }
         }
     }
 
-    // As of now, config generation is based on session id, and config generation must be an monotonically
+    // As of now, config generation is based on session id, and config generation must be a monotonically
     // increasing number
     private void checkIfActiveIsNewerThanSessionToBeActivated(long sessionId, long currentActiveSessionId) {
         if (sessionId < currentActiveSessionId) {
-            throw new IllegalArgumentException("It is not possible to activate session " + sessionId +
-                                               ", because it is older than current active session (" + 
-                                               currentActiveSessionId + ")");
+            throw new ActivationException("It is not possible to activate session " + sessionId +
+                                          ", because it is older than current active session (" +
+                                          currentActiveSessionId + ")");
         }
     }
 
