@@ -79,7 +79,7 @@ public class Headers implements Map<String, List<String>> {
     }
 
     @Override
-    public Set<Entry<String, List<String>>> entrySet() {
+    public Set<Map.Entry<String, List<String>>> entrySet() {
         return h.entrySet();
     }
 
