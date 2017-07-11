@@ -13,12 +13,9 @@ import com.yahoo.container.core.DiagnosticsConfig;
 import com.yahoo.container.di.ComponentDeconstructor;
 import com.yahoo.container.di.Container;
 import com.yahoo.container.di.componentgraph.core.ComponentGraph;
-import com.yahoo.container.di.componentgraph.core.DotGraph;
 import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.container.di.osgi.OsgiUtil;
-import com.yahoo.container.handler.observability.OverviewHandler;
 import com.yahoo.container.logging.AccessLog;
-import com.yahoo.container.logging.AccessLogInterface;
 import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.service.ClientProvider;
@@ -28,14 +25,12 @@ import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.log.LogLevel;
 import com.yahoo.osgi.OsgiImpl;
 import com.yahoo.statistics.Statistics;
-
 import org.osgi.framework.Bundle;
 import org.osgi.framework.wiring.BundleWiring;
 import scala.collection.immutable.Set;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
@@ -153,7 +148,6 @@ public class HandlersConfigurerDi {
 
         RegistriesHack registriesHack = currentGraph.getInstance(RegistriesHack.class);
         assert (registriesHack != null);
-        injectDotGraph();
     }
 
     @SuppressWarnings("deprecation")
@@ -174,16 +168,6 @@ public class HandlersConfigurerDi {
                     bind(com.yahoo.filedistribution.fileacquirer.FileAcquirer.class).toInstance(vespaContainer.getFileAcquirer());
             }
         });
-    }
-
-    private void injectDotGraph() {
-        try {
-            OverviewHandler overviewHandler = currentGraph.getInstance(OverviewHandler.class);
-            overviewHandler.setDotGraph(DotGraph.generate(currentGraph));
-        } catch (Exception e) {
-            log.fine("No overview handler");
-        }
-
     }
 
     public void reloadConfig(long generation) {
