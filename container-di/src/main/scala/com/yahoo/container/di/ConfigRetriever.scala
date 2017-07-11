@@ -2,17 +2,15 @@
 package com.yahoo.container.di
 
 
-import config.Subscriber
 import java.util.logging.{Level, Logger}
 
-import com.yahoo.log.LogLevel
-import ConfigRetriever._
-
-import annotation.tailrec
 import com.yahoo.config.ConfigInstance
+import com.yahoo.container.di.ConfigRetriever._
+import com.yahoo.container.di.config.Subscriber
+import com.yahoo.log.LogLevel
 
-import scala.collection.JavaConversions._
-import com.yahoo.vespa.config.ConfigKey
+import scala.annotation.tailrec
+import scala.collection.JavaConverters._
 
 /**
  * @author tonytv
@@ -64,7 +62,7 @@ final class ConfigRetriever(bootstrapKeys: Set[ConfigKeyT],
   private def configIfChanged[T <: ConfigSnapshot](subscriber: Subscriber,
                                                    constructor: Map[ConfigKeyT, ConfigInstance] => T ):
   Option[T] = {
-    if (subscriber.configChanged) Some(constructor(subscriber.config.toMap))
+    if (subscriber.configChanged) Some(constructor(subscriber.config.asScala.toMap))
     else None
   }
 

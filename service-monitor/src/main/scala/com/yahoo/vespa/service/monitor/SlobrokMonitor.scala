@@ -3,9 +3,10 @@ package com.yahoo.vespa.service.monitor
 
 import com.yahoo.jrt.slobrok.api.Mirror.Entry
 import com.yahoo.jrt.slobrok.api.{Mirror, SlobrokList}
-import com.yahoo.jrt.{Transport, Supervisor}
+import com.yahoo.jrt.{Supervisor, Transport}
 import com.yahoo.vespa.service.monitor.SlobrokMonitor._
-import scala.collection.convert.wrapAsJava._
+
+import scala.collection.JavaConverters._
 
 /**
  * @author bakksjo
@@ -16,7 +17,7 @@ class SlobrokMonitor {
   private val mirror = new Mirror(supervisor, slobrokList)
 
   def setSlobrokConnectionSpecs(slobrokConnectionSpecs: Traversable[String]): Unit = {
-    val slobrokConnectionSpecsJavaList: java.util.List[String] = slobrokConnectionSpecs.toList
+    val slobrokConnectionSpecsJavaList: java.util.List[String] = slobrokConnectionSpecs.toList.asJava
     slobrokList.setup(slobrokConnectionSpecsJavaList.toArray(new Array[java.lang.String](0)))
   }
 

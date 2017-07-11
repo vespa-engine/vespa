@@ -1,15 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.standalone
 
-import com.yahoo.config.model.test.MockRoot
 import com.yahoo.config.{ConfigBuilder, ConfigInstance}
 import com.yahoo.container.di.ConfigKeyT
-import com.yahoo.vespa.model.VespaModel
-import scala.collection.JavaConversions._
-import scala.collection.JavaConverters._
+import com.yahoo.container.di.config.{Subscriber, SubscriberFactory}
+import com.yahoo.container.standalone.StandaloneSubscriberFactory._
 import com.yahoo.vespa.config.ConfigKey
-import com.yahoo.container.di.config.{SubscriberFactory, Subscriber}
-import StandaloneSubscriberFactory._
+import com.yahoo.vespa.model.VespaModel
+
+import scala.collection.JavaConverters._
 
 /**
  * @author tonytv
@@ -50,7 +49,7 @@ class StandaloneSubscriberFactory(root: VespaModel) extends SubscriberFactory {
   }
 
   override def getSubscriber(configKeys: java.util.Set[_ <: ConfigKey[_]]) =
-    new StandaloneSubscriber(configKeys.toSet.asInstanceOf[Set[ConfigKeyT]])
+    new StandaloneSubscriber(configKeys.asScala.toSet.asInstanceOf[Set[ConfigKeyT]])
 
   def reloadActiveSubscribers(generation: Long) {
     throw new RuntimeException("unsupported")
