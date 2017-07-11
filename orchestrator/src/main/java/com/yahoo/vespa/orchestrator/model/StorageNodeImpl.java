@@ -87,7 +87,7 @@ public class StorageNodeImpl implements StorageNode {
     @Override
     public String toString() {
         return "StorageNodeImpl{" +
-                "applicationInstance=" + applicationInstance +
+                "applicationInstance=" + applicationInstance.reference() +
                 ", clusterId=" + clusterId +
                 ", storageService=" + storageService +
                 '}';
