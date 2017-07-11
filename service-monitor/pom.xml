@@ -27,7 +27,7 @@
         <dependency>
             <groupId>io.reactivex</groupId>
             <artifactId>rxscala_${scala.major-version}</artifactId>
-            <version>0.26.5</version>
+            <version>0.23.1</version>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
