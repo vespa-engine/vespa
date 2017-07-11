@@ -18,8 +18,8 @@ NUM_THREADS=$((${NUM_CORES} * 2))
 
 function build_java {
     cd "${SOURCE_DIR}"
-    mvn install -T 2.0C -U -V -DskipTests=true -Dmaven.javadoc.skip=true
-    mvn install -nsu -T 2.0C -V &
+    mvn install -nsu -T 2.0C -V -DskipTests=true -Dmaven.javadoc.skip=true
+    mvn install -nsu -T 2.0C -V
 }
 
 function build_c {
