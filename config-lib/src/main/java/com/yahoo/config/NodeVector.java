@@ -29,17 +29,6 @@ public abstract class NodeVector<NODE> implements java.util.List<NODE> {
         return size();
     }
 
-    /**
-     * Resizes this NodeVector. Removes or adds new nodes as needed.
-     *
-     * @param n the new size of this NodeVector
-     */
-    // TODO: remove, only used by unit tests
-    public void setSize(int n) {
-        while (size() > n) vector.remove(n);
-        while (size() < n) vector.add(createNew());
-    }
-
     @SuppressWarnings("serial")
     public static class ReadOnlyException extends RuntimeException {
     }
