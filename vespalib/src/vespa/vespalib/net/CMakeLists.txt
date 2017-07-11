@@ -2,7 +2,6 @@
 vespa_add_library(vespalib_vespalib_net OBJECT
     SOURCES
     async_resolver.cpp
-    lazy_resolver.cpp
     selector.cpp
     server_socket.cpp
     socket.cpp
