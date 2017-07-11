@@ -226,6 +226,14 @@
                     <groupId>net.alchim31.maven</groupId>
                     <artifactId>scala-maven-plugin</artifactId>
                     <version>3.2.2</version>
+                    <configuration>
+                        <args>
+                            <arg>-unchecked</arg>
+                            <arg>-deprecation</arg>
+                            <arg>-feature</arg>
+                            <arg>-explaintypes</arg>
+                        </args>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>com.yahoo.vespa</groupId>
