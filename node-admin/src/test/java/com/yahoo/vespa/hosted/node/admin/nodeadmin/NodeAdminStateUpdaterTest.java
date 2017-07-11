@@ -97,8 +97,8 @@ public class NodeAdminStateUpdaterTest {
         verify(nodeAdmin, times(1)).setFrozen(eq(false));
         when(nodeAdmin.setFrozen(eq(true))).thenReturn(true);
         when(nodeAdmin.subsystemFreezeDuration()).thenReturn(Duration.ofSeconds(1));
-        doThrow(new RuntimeException("Cannot allow to suspend because some reason")).doNothing()
-                .when(orchestrator).suspend(eq(parentHostname), eq(suspendHostnames));
+        doThrow(new RuntimeException("Cannot allow to suspend because some reason"))
+                .when(orchestrator).suspend(eq(parentHostname));
         tickAfter(35);
         assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN));
         verify(refresher, times(1)).signalWorkToBeDone();
@@ -109,7 +109,7 @@ public class NodeAdminStateUpdaterTest {
         when(nodeAdmin.setFrozen(eq(true))).thenReturn(true);
         when(nodeAdmin.subsystemFreezeDuration()).thenReturn(NodeAdminStateUpdater.FREEZE_CONVERGENCE_TIMEOUT.plusMinutes(1));
         doThrow(new RuntimeException("Cannot allow to suspend because some reason")).doNothing()
-                .when(orchestrator).suspend(eq(parentHostname), eq(suspendHostnames));
+                .when(orchestrator).suspend(eq(parentHostname));
         tickAfter(35);
         assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN));
         verify(refresher, times(1)).signalWorkToBeDone();
@@ -119,11 +119,13 @@ public class NodeAdminStateUpdaterTest {
         assertTrue(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN));
         verify(nodeAdmin, times(2)).setFrozen(eq(false));
 
-        // At this point orchestrator says its OK to suspend, but something goes wrong when we try to stop services
+        // At this point orchestrator will say its OK to suspend, but something goes wrong when we try to stop services
+        verify(orchestrator, times(0)).suspend(eq(parentHostname), eq(suspendHostnames));
         doThrow(new RuntimeException("Failed to stop services")).doNothing().when(nodeAdmin).stopNodeAgentServices(eq(activeHostnames));
         when(nodeAdmin.subsystemFreezeDuration()).thenReturn(Duration.ofSeconds(1));
         assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED));
         tickAfter(0); // Change in wanted state, no need to wait
+        verify(orchestrator, times(1)).suspend(eq(parentHostname), eq(suspendHostnames));
         verify(refresher, times(2)).signalWorkToBeDone(); // No change in desired state
         // Make sure we dont roll back if we fail to stop services - we will try to stop again next tick
         verify(nodeAdmin, times(2)).setFrozen(eq(false));
@@ -139,8 +141,7 @@ public class NodeAdminStateUpdaterTest {
         assertTrue(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED));
         verify(refresher, times(2)).signalWorkToBeDone(); // No change in desired state
         verifyNoMoreInteractions(nodeAdmin);
-
-
+        
         // Lets try going back to resumed
         when(nodeAdmin.setFrozen(eq(false))).thenReturn(false).thenReturn(true); // NodeAgents not converged to yet
         assertFalse(refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED));

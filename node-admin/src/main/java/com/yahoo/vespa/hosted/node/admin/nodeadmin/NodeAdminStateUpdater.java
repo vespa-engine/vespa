@@ -22,7 +22,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.RESUMED;
-import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.SUSPENDED;
 import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN;
 
 /**
@@ -101,7 +100,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     }
 
     void tick() {
-        State wantedState = null;
+        State wantedStateCopy;
         synchronized (monitor) {
             while (! workToDoNow) {
                 long remainder = delaysBetweenEachTickMillis - Duration.between(lastTick, clock.instant()).toMillis();
@@ -116,30 +115,25 @@ public class NodeAdminStateUpdater extends AbstractComponent {
             lastTick = clock.instant();
             workToDoNow = false;
 
-            if (currentState != this.wantedState) {
-                wantedState = this.wantedState;
-            }
+            // wantedState may change asynchronously, so we grab a copy of it here
+            wantedStateCopy = this.wantedState;
         }
 
-        if (wantedState != null) { // There is a state we want to be in, but aren't right now
-            boolean converged = false;
-            try {
-                convergeState(wantedState);
-                converged = true;
-            } catch (OrchestratorException | ConvergenceException e) {
-                log.info("Unable to converge to " + wantedState + ": " + e.getMessage());
-            } catch (Exception e) {
-                log.log(LogLevel.ERROR, "Error while trying to converge to " + wantedState, e);
-            }
+        try {
+            convergeState(wantedStateCopy);
+        } catch (OrchestratorException | ConvergenceException e) {
+            log.info("Unable to converge to " + wantedStateCopy + ": " + e.getMessage());
+        } catch (Exception e) {
+            log.log(LogLevel.ERROR, "Error while trying to converge to " + wantedStateCopy, e);
+        }
 
-            if (wantedState != RESUMED && !converged) {
-                Duration subsystemFreezeDuration = nodeAdmin.subsystemFreezeDuration();
-                if (subsystemFreezeDuration.compareTo(FREEZE_CONVERGENCE_TIMEOUT) > 0) {
-                    // We have spent too long time trying to freeze and node admin is still not frozen.
-                    // To avoid node agents stalling for too long, we'll force unfrozen ticks now.
-                    log.info("Timed out trying to freeze, will force unfreezed ticks");
-                    nodeAdmin.setFrozen(false);
-                }
+        if (wantedStateCopy != RESUMED && currentState == RESUMED) {
+            Duration subsystemFreezeDuration = nodeAdmin.subsystemFreezeDuration();
+            if (subsystemFreezeDuration.compareTo(FREEZE_CONVERGENCE_TIMEOUT) > 0) {
+                // We have spent too much time trying to freeze and node admin is still not frozen.
+                // To avoid node agents stalling for too long, we'll force unfrozen ticks now.
+                log.info("Timed out trying to freeze, will force unfreezed ticks");
+                nodeAdmin.setFrozen(false);
             }
         }
 
@@ -147,50 +141,53 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     }
 
     /**
-     * This method attempts to converge node-admin towards one of the {@link State}
+     * This method attempts to converge node-admin w/agents to a {@link State}
+     * with respect to: freeze, Orchestrator, and services running.
      */
     private void convergeState(State wantedState) {
+        if (currentState == wantedState) {
+            return;
+        }
+
         boolean wantFrozen = wantedState != RESUMED;
         if (!nodeAdmin.setFrozen(wantFrozen)) {
             throw new ConvergenceException("NodeAdmin is not yet " + (wantFrozen ? "frozen" : "unfrozen"));
         }
 
-        if (wantedState == RESUMED) {
-            orchestrator.resume(dockerHostHostName);
-            if (wantedState == updateAndGetCurrentState(RESUMED)) return;
+        switch (wantedState) {
+            case RESUMED:
+                orchestrator.resume(dockerHostHostName);
+                break;
+            case SUSPENDED_NODE_ADMIN:
+                orchestrator.suspend(dockerHostHostName);
+                break;
+            case SUSPENDED:
+                // Fetch active nodes from node repo before suspending nodes.
+                // It is only possible to suspend active nodes,
+                // the orchestrator will fail if trying to suspend nodes in other states.
+                // Even though state is frozen we need to interact with node repo, but
+                // the data from node repo should not be used for anything else.
+                // We should also suspend host's hostname to suspend node-admin
+                List<String> nodesInActiveState = getNodesInActiveState();
+
+                List<String> nodesToSuspend = new ArrayList<>();
+                nodesToSuspend.addAll(nodesInActiveState);
+                nodesToSuspend.add(dockerHostHostName);
+                orchestrator.suspend(dockerHostHostName, nodesToSuspend);
+
+                // The node agent services are stopped by this thread, which is OK only
+                // because the node agents are frozen (see above).
+                nodeAdmin.stopNodeAgentServices(nodesInActiveState);
+                break;
+            default:
+                throw new IllegalStateException("Unknown wanted state " + wantedState);
         }
 
-        // Fetch active nodes from node repo before suspending nodes.
-        // It is only possible to suspend active nodes,
-        // the orchestrator will fail if trying to suspend nodes in other states.
-        // Even though state is frozen we need to interact with node repo, but
-        // the data from node repo should not be used for anything else.
-        // We should also suspend host's hostname to suspend node-admin
-        List<String> nodesInActiveState;
-        try {
-            nodesInActiveState = getNodesInActiveState();
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to get nodes from node repo", e);
-        }
-
-        if (currentState == RESUMED) {
-            List<String> nodesToSuspend = new ArrayList<>(nodesInActiveState);
-            nodesToSuspend.add(dockerHostHostName);
-            orchestrator.suspend(dockerHostHostName, nodesToSuspend);
-
-            if (wantedState == updateAndGetCurrentState(SUSPENDED_NODE_ADMIN)) return;
-        }
-
-        nodeAdmin.stopNodeAgentServices(nodesInActiveState);
-        updateAndGetCurrentState(SUSPENDED);
-    }
-
-    private State updateAndGetCurrentState(State currentState) {
+        log.info("State changed from " + currentState + " to " + wantedState);
         synchronized (monitor) {
-            log.info("State change: " + this.currentState + " -> " + currentState
-                    + (currentState == wantedState ? " [converged]" : ""));
-            this.currentState = currentState;
-            return currentState;
+            // Writes to currentState must be synchronized. Reads doesn't have to since this thread
+            // is the only one modifying it.
+            currentState = wantedState;
         }
     }
 
@@ -221,12 +218,16 @@ public class NodeAdminStateUpdater extends AbstractComponent {
         }
     }
 
-    private List<String> getNodesInActiveState() throws IOException {
-        return nodeRepository.getContainersToRun()
-                             .stream()
-                             .filter(nodespec -> nodespec.nodeState == Node.State.active)
-                             .map(nodespec -> nodespec.hostname)
-                             .collect(Collectors.toList());
+    private List<String> getNodesInActiveState() {
+        try {
+            return nodeRepository.getContainersToRun()
+                                 .stream()
+                                 .filter(nodespec -> nodespec.nodeState == Node.State.active)
+                                 .map(nodespec -> nodespec.hostname)
+                                 .collect(Collectors.toList());
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to get nodes from node repo", e);
+        }
     }
 
     public void start(long stateConvergeInterval) {
