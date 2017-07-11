@@ -80,10 +80,13 @@ struct ResolveFixture {
     size_t get_cnt(const vespalib::string &host) { return host_resolver->get_cnt(host); }
     size_t get_total_cnt() { return host_resolver->get_total_cnt(); }
     void set_now(double s) { clock->set_now(MyClock::seconds(s)); }
-    ResolveFixture() : clock(new MyClock()), host_resolver(new MyHostResolver()), async_resolver() {
+    ResolveFixture(size_t max_cache_size = 10000)
+        : clock(new MyClock()), host_resolver(new MyHostResolver()), async_resolver()
+    {
         AsyncResolver::Params params;
         params.clock = clock;
         params.resolver = host_resolver;
+        params.max_cache_size = max_cache_size;
         params.max_result_age = AsyncResolver::seconds(60.0);
         params.max_resolve_time = AsyncResolver::seconds(1.0);
         params.num_threads = 4;
@@ -115,6 +118,7 @@ TEST("require that async resolver internal duration type is appropriate") {
 
 TEST("require that default async resolver is tuned as expected") {
     AsyncResolver::Params params;
+    EXPECT_EQUAL(params.max_cache_size, 10000u);
     EXPECT_EQUAL(params.max_result_age.count(), 60.0);
     EXPECT_EQUAL(params.max_resolve_time.count(), 1.0);
     EXPECT_EQUAL(params.num_threads, 4u);    
@@ -200,6 +204,20 @@ TEST_F("require that cached results expire at the right time", ResolveFixture())
     EXPECT_EQUAL(f1.resolve("tcp/localhost:123"), "tcp/127.0.0.2:123");
     EXPECT_EQUAL(f1.get_cnt("localhost"), 2u);
     EXPECT_EQUAL(f1.get_total_cnt(), 2u);
+}
+
+TEST_F("require that max cache size is honored", ResolveFixture(3)) {
+    EXPECT_EQUAL(f1.resolve("tcp/a:123"), "tcp/127.0.1.1:123");
+    EXPECT_EQUAL(f1.resolve("tcp/b:123"), "tcp/127.0.2.1:123");
+    EXPECT_EQUAL(f1.resolve("tcp/c:123"), "tcp/127.0.3.1:123");
+    EXPECT_EQUAL(f1.resolve("tcp/d:123"), "tcp/127.0.4.1:123");
+    EXPECT_EQUAL(f1.get_total_cnt(), 4u);
+    EXPECT_EQUAL(f1.resolve("tcp/b:123"), "tcp/127.0.2.1:123");
+    EXPECT_EQUAL(f1.get_total_cnt(), 4u);
+    EXPECT_EQUAL(f1.resolve("tcp/a:123"), "tcp/127.0.1.1:123");
+    EXPECT_EQUAL(f1.get_total_cnt(), 5u);
+    EXPECT_EQUAL(f1.resolve("tcp/b:123"), "tcp/127.0.2.1:123");
+    EXPECT_EQUAL(f1.get_total_cnt(), 6u);
 }
 
 TEST_F("require that missing ip address gives invalid address", ResolveFixture()) {

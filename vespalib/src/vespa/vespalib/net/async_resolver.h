@@ -60,6 +60,7 @@ public:
     struct Params {
         Clock::SP        clock;
         HostResolver::SP resolver;
+        size_t           max_cache_size;
         seconds          max_result_age;
         seconds          max_resolve_time;
         size_t           num_threads;
@@ -91,17 +92,19 @@ private:
         using Itr = Map::iterator;
         Clock::SP        _clock;
         HostResolver::SP _resolver;
+        size_t           _max_cache_size;
         seconds          _max_result_age;
         std::mutex       _lock;
         Map              _map;
         ArrayQueue<Itr>  _queue;
 
+        bool should_evict_oldest_entry(const std::lock_guard<std::mutex> &guard, time_point now);
         bool lookup(const vespalib::string &host_name, vespalib::string &ip_address);
         void resolve(const vespalib::string &host_name, vespalib::string &ip_address);
         void store(const vespalib::string &host_name, const vespalib::string &ip_address);
 
     public:
-        CachingHostResolver(Clock::SP clock, HostResolver::SP resolver, seconds max_result_age);
+        CachingHostResolver(Clock::SP clock, HostResolver::SP resolver, size_t max_cache_size, seconds max_result_age);
         vespalib::string ip_address(const vespalib::string &host_name) override;
     };
 

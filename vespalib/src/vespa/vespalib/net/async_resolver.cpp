@@ -31,6 +31,7 @@ AsyncResolver::SimpleHostResolver::ip_address(const vespalib::string &host_name)
 AsyncResolver::Params::Params()
     : clock(std::make_shared<SteadyClock>()),
       resolver(std::make_shared<SimpleHostResolver>()),
+      max_cache_size(10000),
       max_result_age(60.0),
       max_resolve_time(1.0),
       num_threads(4)
@@ -58,11 +59,23 @@ AsyncResolver::LoggingHostResolver::ip_address(const vespalib::string &host_name
 //-----------------------------------------------------------------------------
 
 bool
+AsyncResolver::CachingHostResolver::should_evict_oldest_entry(const std::lock_guard<std::mutex> &, time_point now)
+{
+    if (_queue.empty()) {
+        return false;
+    }
+    if (_queue.size() > _max_cache_size) {
+        return true;
+    }
+    return (_queue.front()->second.end_time <= now);
+}
+
+bool
 AsyncResolver::CachingHostResolver::lookup(const vespalib::string &host_name, vespalib::string &ip_address)
 {
     auto now = _clock->now();
     std::lock_guard<std::mutex> guard(_lock);
-    while (!_queue.empty() && (_queue.front()->second.end_time <= now)) {
+    while (should_evict_oldest_entry(guard, now)) {
         _map.erase(_queue.front());
         _queue.pop();
     }
@@ -87,9 +100,10 @@ AsyncResolver::CachingHostResolver::store(const vespalib::string &host_name, con
     assert(_map.size() == _queue.size());
 }
 
-AsyncResolver::CachingHostResolver::CachingHostResolver(Clock::SP clock, HostResolver::SP resolver, seconds max_result_age)
+AsyncResolver::CachingHostResolver::CachingHostResolver(Clock::SP clock, HostResolver::SP resolver, size_t max_cache_size, seconds max_result_age)
     : _clock(std::move(clock)),
       _resolver(std::move(resolver)),
+      _max_cache_size(max_cache_size),
       _max_result_age(max_result_age),
       _lock(),
       _map(),
@@ -151,7 +165,7 @@ AsyncResolver::SP
 AsyncResolver::create(Params params)
 {
     auto logger = std::make_shared<LoggingHostResolver>(params.clock, std::move(params.resolver), params.max_resolve_time);
-    auto cacher = std::make_shared<CachingHostResolver>(std::move(params.clock), std::move(logger), params.max_result_age);
+    auto cacher = std::make_shared<CachingHostResolver>(std::move(params.clock), std::move(logger), params.max_cache_size, params.max_result_age);
     return SP(new AsyncResolver(std::move(cacher), params.num_threads));
 }
 
