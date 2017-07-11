@@ -1,22 +1,23 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.plugin.util
 
-import org.scalatest.junit.{JUnitSuite, ShouldMatchersForJUnit}
+import org.scalatest.junit.{AssertionsForJUnit, JUnitSuite}
 import org.junit.Test
-
 import IO.using
 import java.io.Closeable
+
+import org.scalatest.Matchers
 
 /**
  * @author  tonytv
  */
-class IOTest extends JUnitSuite with ShouldMatchersForJUnit  {
+class IOTest extends JUnitSuite with AssertionsForJUnit with Matchers  {
   class ClosingException extends RuntimeException
   class FunctionException extends RuntimeException
 
   object throwWhenClosingResource extends Closeable {
     def close() {
-      throw new ClosingException();
+      throw new ClosingException()
     }
   }
 

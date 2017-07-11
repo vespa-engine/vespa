@@ -1,16 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.plugin.bundle
 
-import org.scalatest.junit.{JUnitSuite, ShouldMatchersForJUnit}
+import org.scalatest.junit.{AssertionsForJUnit, JUnitSuite}
 import org.junit.Test
 import com.yahoo.container.plugin.bundle.AnalyzeBundle.PublicPackages
 import com.yahoo.container.plugin.osgi.ExportPackages
 import java.io.File
 
+import org.scalatest.Matchers
+
 /**
  * @author  tonytv
  */
-class AnalyzeBundleTest extends JUnitSuite with ShouldMatchersForJUnit {
+class AnalyzeBundleTest extends JUnitSuite with AssertionsForJUnit with Matchers {
   val jarDir = new File("src/test/resources/jar")
 
   val PublicPackages(exports, globals) = AnalyzeBundle.publicPackagesAggregated(
