@@ -14,6 +14,7 @@ vespa_define_module(
     src/examples/ping
     src/examples/proxy
     src/examples/timeout
+    src/tests/connect
     src/tests/connection_spread
     src/tests/databuffer
     src/tests/examples

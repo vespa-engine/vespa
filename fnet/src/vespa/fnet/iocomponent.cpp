@@ -136,6 +136,13 @@ FNET_IOComponent::EnableWriteEvent(bool enabled)
 }
 
 
+bool
+FNET_IOComponent::handle_add_event()
+{
+    return true;
+}
+
+
 void
 FNET_IOComponent::CleanupHook()
 {

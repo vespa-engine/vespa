@@ -5,6 +5,7 @@
 #include "context.h"
 #include <memory>
 #include <vector>
+#include <vespa/vespalib/net/async_resolver.h>
 
 class FastOS_TimeInterface;
 class FNET_TransportThread;
@@ -26,6 +27,7 @@ private:
     using Thread = std::unique_ptr<FNET_TransportThread>;
     using Threads = std::vector<Thread>;
 
+    vespalib::AsyncResolver::SP _async_resolver;
     Threads _threads;
 
 public:
@@ -36,8 +38,23 @@ public:
      * the current thread become the transport thread. Main may only
      * be called for single-threaded transports.
      **/
-    FNET_Transport(size_t num_threads = 1);
+    FNET_Transport(vespalib::AsyncResolver::SP resolver, size_t num_threads);
+    FNET_Transport(size_t num_threads = 1)
+        : FNET_Transport(vespalib::AsyncResolver::get_shared(), num_threads) {}
     ~FNET_Transport();
+
+    /**
+     * Resolve a connect spec into a socket address to be used to
+     * connect to a remote socket. This operation will be performed
+     * asynchronously and the result will be given to the result
+     * handler when ready. The result handler may be discarded to
+     * cancel the request.
+     *
+     * @param spec connect spec
+     * @param result handler
+     **/
+    void resolve_async(const vespalib::string &spec,
+                       vespalib::AsyncResolver::ResultHandler::WP result_handler);
 
     /**
      * Select one of the underlying transport threads. The selection

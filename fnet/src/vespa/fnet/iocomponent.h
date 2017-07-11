@@ -301,6 +301,17 @@ public:
 
     //----------- virtual methods below ----------------------//
 
+    /**
+     * This function is called as the first step of adding an io
+     * component to the selection loop. The default implementation
+     * will always return true. This can be overridden to perform
+     * delayed setup in the network thread. If this function returns
+     * false, the component is broken and should be closed
+     * immediately.
+     *
+     * @return false if broken, true otherwise.
+     **/
+    virtual bool handle_add_event();
 
     /**
      * This method is called by the SubRef methods just before the

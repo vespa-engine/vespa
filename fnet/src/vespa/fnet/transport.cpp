@@ -22,8 +22,9 @@ struct HashState {
 
 } // namespace <unnamed>
 
-FNET_Transport::FNET_Transport(size_t num_threads)
-    : _threads()
+FNET_Transport::FNET_Transport(vespalib::AsyncResolver::SP resolver, size_t num_threads)
+    : _async_resolver(std::move(resolver)),
+      _threads()
 {
     assert(num_threads >= 1);
     for (size_t i = 0; i < num_threads; ++i) {
@@ -31,7 +32,17 @@ FNET_Transport::FNET_Transport(size_t num_threads)
     }
 }
 
-FNET_Transport::~FNET_Transport() { }
+FNET_Transport::~FNET_Transport()
+{
+    _async_resolver->wait_for_pending_resolves();
+}
+
+void
+FNET_Transport::resolve_async(const vespalib::string &spec,
+                              vespalib::AsyncResolver::ResultHandler::WP result_handler)
+{
+    _async_resolver->resolve_async(spec, std::move(result_handler));
+}
 
 FNET_TransportThread *
 FNET_Transport::select_thread(const void *key, size_t key_len) const

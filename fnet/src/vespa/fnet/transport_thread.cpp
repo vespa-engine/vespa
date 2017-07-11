@@ -276,16 +276,10 @@ FNET_TransportThread::Connect(const char *spec, FNET_IPacketStreamer *streamer,
                               FNET_IServerAdapter *serverAdapter,
                               FNET_Context connContext)
 {
-    auto tweak = [this](SocketHandle &handle) { return tune(handle); };
-    SocketHandle handle = SocketSpec(spec).client_address().connect(tweak);
-    if (handle.valid()) {
-        std::unique_ptr<FNET_Connection> conn = std::make_unique<FNET_Connection>(this, streamer, serverAdapter,
-                adminHandler, adminContext, connContext, std::move(handle), spec);
-        if (conn->Init()) {
-            conn->AddRef_NoLock();
-            Add(conn.get(), /*needRef = */ false);
-            return conn.release();
-        }
+    std::unique_ptr<FNET_Connection> conn = std::make_unique<FNET_Connection>(this, streamer, serverAdapter,
+            adminHandler, adminContext, connContext, spec);
+    if (conn->Init()) {
+        return conn.release();
     }
     return nullptr;
 }
@@ -460,9 +454,14 @@ FNET_TransportThread::handle_wakeup()
 
         switch (packet->GetCommand()) {
         case FNET_ControlPacket::FNET_CMD_IOC_ADD:
-            AddComponent(context._value.IOC);
-            context._value.IOC->_flags._ioc_added = true;
-            context._value.IOC->attach_selector(_selector);
+            if (context._value.IOC->handle_add_event()) {
+                AddComponent(context._value.IOC);
+                context._value.IOC->_flags._ioc_added = true;
+                context._value.IOC->attach_selector(_selector);
+            } else {
+                context._value.IOC->Close();
+                AddDeleteComponent(context._value.IOC);
+            }
             break;
         case FNET_ControlPacket::FNET_CMD_IOC_ENABLE_READ:
             context._value.IOC->EnableReadEvent(true);
