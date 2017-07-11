@@ -3,19 +3,19 @@ package com.yahoo.container.standalone
 
 import java.io.File
 import java.lang.reflect.Constructor
+import java.nio.file.Path
 import java.util
 import java.util.concurrent.TimeUnit
+
 import com.yahoo.config.FileReference
 import com.yahoo.config.application.api.FileRegistry
 import com.yahoo.config.application.api.FileRegistry.Entry
+import com.yahoo.container.standalone.LocalFileDb._
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer
 import com.yahoo.net.HostName
-import scala.collection.JavaConversions._
 
-
-import LocalFileDb._
+import scala.collection.JavaConverters._
 import scala.collection.mutable
-import java.nio.file.Path
 
 
 /**
@@ -52,11 +52,11 @@ class LocalFileDb(appPath: Path) extends FileAcquirer with FileRegistry {
     HostName.getLocalhost
 
   def allRelativePaths: java.util.Set[String] = {
-    new java.util.HashSet(fileReferenceToFile.values.map(_.getPath))
+    new java.util.HashSet(fileReferenceToFile.values.map(_.getPath).asJavaCollection)
   }
 
   override def export(): util.List[Entry] = {
-    new java.util.ArrayList(fileReferenceToFile.keys.map{ (ref: FileReference) => new Entry(fileReferenceToFile.get(ref).get.getPath, ref)})
+    new java.util.ArrayList(fileReferenceToFile.keys.map{ (ref: FileReference) => new Entry(fileReferenceToFile.get(ref).get.getPath, ref)}.asJavaCollection)
   }
 }
 

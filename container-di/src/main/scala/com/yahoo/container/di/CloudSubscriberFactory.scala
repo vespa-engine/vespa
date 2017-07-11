@@ -1,16 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di
 
-import com.yahoo.config.{ConfigInstance}
-import CloudSubscriberFactory._
-import config.{Subscriber, SubscriberFactory}
-import scala.collection.JavaConversions._
-import com.yahoo.vespa.config.ConfigKey
-import scala.Some
-import com.yahoo.config.subscription.{ConfigHandle, ConfigSource, ConfigSourceSet, ConfigSubscriber}
-import java.lang.IllegalArgumentException
 import java.util.logging.Logger
+
+import com.yahoo.config.ConfigInstance
+import com.yahoo.config.subscription.{ConfigHandle, ConfigSource, ConfigSourceSet, ConfigSubscriber}
+import com.yahoo.container.di.CloudSubscriberFactory._
+import com.yahoo.container.di.config.{Subscriber, SubscriberFactory}
 import com.yahoo.log.LogLevel
+import com.yahoo.vespa.config.ConfigKey
+
+import scala.collection.JavaConverters._
 
 
 /**
@@ -24,7 +24,7 @@ class CloudSubscriberFactory(configSource: ConfigSource) extends SubscriberFacto
   private val activeSubscribers = new java.util.WeakHashMap[CloudSubscriber, Int]()
 
   override def getSubscriber(configKeys: java.util.Set[_ <: ConfigKey[_]]): Subscriber = {
-    val subscriber = new CloudSubscriber(configKeys.toSet.asInstanceOf[Set[ConfigKeyT]], configSource)
+    val subscriber = new CloudSubscriber(configKeys.asScala.toSet.asInstanceOf[Set[ConfigKeyT]], configSource)
 
     testGeneration.foreach(subscriber.subscriber.reload(_)) //TODO: test specific code, remove
     activeSubscribers.put(subscriber, 0)
@@ -36,7 +36,7 @@ class CloudSubscriberFactory(configSource: ConfigSource) extends SubscriberFacto
   override def reloadActiveSubscribers(generation: Long) {
     testGeneration = Some(generation)
 
-    val l = activeSubscribers.keySet().toSet
+    val l = activeSubscribers.keySet().asScala.toSet
     l.foreach { _.subscriber.reload(generation) }
   }
 }
@@ -59,7 +59,7 @@ object CloudSubscriberFactory {
 
     //mapValues returns a view,, so we need to force evaluation of it here to prevent deferred evaluation.
     override def config = handles.mapValues(_.getConfig).toMap.view.force.
-      asInstanceOf[Map[ConfigKey[ConfigInstance], ConfigInstance]]
+      asInstanceOf[Map[ConfigKey[ConfigInstance], ConfigInstance]].asJava
 
     override def waitNextGeneration() = {
       require(!handles.isEmpty)
