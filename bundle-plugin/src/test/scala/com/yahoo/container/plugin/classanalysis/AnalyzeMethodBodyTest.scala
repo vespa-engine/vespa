@@ -1,19 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.plugin.classanalysis
 
-import org.scalatest.junit.{AssertionsForJUnit, JUnitSuite}
+import org.scalatest.junit.{JUnitSuite, ShouldMatchersForJUnit}
 import sampleclasses._
 import TestUtilities._
 import org.junit.Test
 import java.io.PrintStream
 
-import org.scalatest.Matchers
-
 /**
  * Tests that classes used in method bodies are included in the imports list.
  * @author  tonytv
  */
-class AnalyzeMethodBodyTest extends JUnitSuite with AssertionsForJUnit with Matchers {
+class AnalyzeMethodBodyTest extends JUnitSuite with ShouldMatchersForJUnit {
   @Test def require_that_class_of_locals_are_included() {
     analyzeClass[Methods].referencedClasses should contain(name[Base])
   }

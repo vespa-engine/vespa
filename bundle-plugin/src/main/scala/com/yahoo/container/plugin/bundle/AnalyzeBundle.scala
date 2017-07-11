@@ -1,11 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.plugin.bundle
 
-import java.io.File
 import java.util.jar.{Manifest => JarManifest}
-
-import com.yahoo.container.plugin.osgi.ExportPackageParser
-import com.yahoo.container.plugin.osgi.ExportPackages.Export
+import java.io.File
+import com.yahoo.container.plugin.osgi.{ExportPackages, ExportPackageParser}
+import ExportPackages.Export
+import collection.immutable.LinearSeq
 import com.yahoo.container.plugin.util.JarFiles
 
 
