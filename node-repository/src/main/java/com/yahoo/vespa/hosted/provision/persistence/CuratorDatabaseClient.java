@@ -26,10 +26,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Client which reads and writes nodes to a curator database.
@@ -116,6 +118,29 @@ public class CuratorDatabaseClient {
         transaction.commit();
         log.log(LogLevel.INFO, "Removed: " + state + " node " + hostName);
         return true;
+    }
+
+    /**
+     * Writes the given nodes and returns a copy of the incoming nodes in their persisted state.
+     *
+     * @param  nodes the list of nodes to write
+     * @param  agent the agent causing this change
+     * @return the nodes in their persisted state
+     */
+    public List<Node> writeTo(List<Node> nodes, Agent agent, Optional<String> reason) {
+        if (nodes.isEmpty()) return Collections.emptyList();
+
+        List<Node> writtenNodes = new ArrayList<>(nodes.size());
+
+        try (NestedTransaction nestedTransaction = new NestedTransaction()) {
+            Map<Node.State, List<Node>> nodesByState = nodes.stream().collect(Collectors.groupingBy(Node::state));
+            for (Map.Entry<Node.State, List<Node>> entry : nodesByState.entrySet()) {
+                writtenNodes.addAll(writeTo(entry.getKey(), entry.getValue(), agent, reason, nestedTransaction));
+                nestedTransaction.commit();
+            }
+        }
+
+        return writtenNodes;
     }
 
     /**

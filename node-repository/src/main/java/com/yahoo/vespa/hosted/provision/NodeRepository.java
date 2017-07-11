@@ -511,8 +511,7 @@ public class NodeRepository extends AbstractComponent {
      *
      * @return the written node for convenience
      */
-    public Node write(Node node) { return db.writeTo(node.state(), node,
-                                                     Agent.system, Optional.empty()); }
+    public Node write(Node node) { return db.writeTo(node.state(), node, Agent.system, Optional.empty()); }
 
     /**
      * Writes these nodes after they have changed some internal state but NOT changed their state field.
@@ -520,17 +519,7 @@ public class NodeRepository extends AbstractComponent {
      *
      * @return the written nodes for convenience
      */
-    public List<Node> write(List<Node> nodes) {
-        if (nodes.isEmpty()) return Collections.emptyList();
-
-        // decide current state and make sure all nodes have it (alternatively we could create a transaction here)
-        Node.State state = nodes.get(0).state();
-        for (Node node : nodes) {
-            if ( node.state() != state)
-                throw new IllegalArgumentException("Multiple states: " + node.state() + " and " + state);
-        }
-        return db.writeTo(state, nodes, Agent.system, Optional.empty());
-    }
+    public List<Node> write(List<Node> nodes) { return db.writeTo(nodes, Agent.system, Optional.empty()); }
 
     /**
      * Performs an operation requiring locking on all nodes matching some filter.

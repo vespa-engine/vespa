@@ -6,7 +6,10 @@ import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
 import com.yahoo.io.IOUtils;
+import com.yahoo.slime.Cursor;
+import com.yahoo.slime.Slime;
 import com.yahoo.text.Utf8;
+import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
 import org.junit.After;
 import org.junit.Before;
@@ -14,8 +17,10 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -436,6 +441,23 @@ public class RestApiTest {
     }
 
     @Test
+    public void test_hardware_patching_of_docker_host() throws Exception {
+        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"), Optional.of(false));
+        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/parent1.yahoo.com"), Optional.of(false));
+
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/parent1.yahoo.com",
+                        Utf8.toBytes("{" +
+                                "\"hardwareFailureType\": \"memory_mcelog\"" +
+                                "}"
+                        ),
+                        Request.Method.PATCH),
+                "{\"message\":\"Updated parent1.yahoo.com\"}");
+
+        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"), Optional.of(true));
+        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/parent1.yahoo.com"), Optional.of(true));
+    }
+
+    @Test
     public void test_node_patch_to_remove_docker_ready_fields() throws Exception {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com",
                         Utf8.toBytes("{" +
@@ -498,6 +520,24 @@ public class RestApiTest {
                       .map(ip -> "\"" + ip + "\"")
                       .collect(Collectors.joining(",")) +
                 "],";
+    }
+
+    private Optional<Boolean> getHardwareFailure(String json) {
+        Slime slime = SlimeUtils.jsonToSlime(json.getBytes());
+        Cursor hardwareFailure = slime.get().field("hardwareFailure");
+        if (!hardwareFailure.valid()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(hardwareFailure.asBool());
+    }
+
+    private void assertHardwareFailure(Request request, Optional<Boolean> expectedHardwareFailure) throws CharacterCodingException {
+        Response response = container.handleRequest(request);
+        assertEquals(response.getStatus(), 200);
+        String json = response.getBodyAsString();
+        Optional<Boolean> actualHardwareFailure = getHardwareFailure(json);
+        assertEquals(expectedHardwareFailure, actualHardwareFailure);
     }
 
     /** Asserts a particular response and 200 as response status */
