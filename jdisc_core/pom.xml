@@ -56,17 +56,31 @@
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>
             <scope>compile</scope>
-            <classifier>no_aop</classifier>
+            <classifier>no_aop</classifier> <!-- Non-AOP version required for Java 8 compatibility -->
         </dependency>
         <dependency>
             <groupId>com.google.inject.extensions</groupId>
             <artifactId>guice-assistedinject</artifactId>
             <scope>compile</scope>
+            <exclusions>
+                <!-- Depends on AOP version of Guice 3.0, which is not Java 8 compatible -->
+                <exclusion>
+                    <groupId>com.google.inject</groupId>
+                    <artifactId>guice</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.google.inject.extensions</groupId>
             <artifactId>guice-multibindings</artifactId>
             <scope>compile</scope>
+            <exclusions>
+                <!-- Depends on AOP version of Guice 3.0, which is not Java 8 compatible -->
+                <exclusion>
+                    <groupId>com.google.inject</groupId>
+                    <artifactId>guice</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>commons-daemon</groupId>
