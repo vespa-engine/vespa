@@ -1,15 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.plugin.osgi
 
-import org.scalatest.junit.{JUnitSuite, ShouldMatchersForJUnit}
+import org.scalatest.junit.{AssertionsForJUnit, JUnitSuite}
 import org.junit.Test
-
-import ExportPackages.{Parameter, Export}
+import ExportPackages.{Export, Parameter}
+import org.scalatest.Matchers
 
 /**
  * @author  tonytv
  */
-class ExportPackageParserTest extends JUnitSuite with ShouldMatchersForJUnit {
+class ExportPackageParserTest extends JUnitSuite with AssertionsForJUnit with Matchers {
   val versionParameter = Parameter("version", "1.2.3.sample")
 
   @Test
