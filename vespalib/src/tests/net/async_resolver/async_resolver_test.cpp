@@ -184,11 +184,11 @@ TEST_F("require that resolved hosts are cached", ResolveFixture()) {
     EXPECT_EQUAL(f1.get_total_cnt(), 1u);
 }
 
-TEST_F("require that host names resolving to themselves (ip addresses) are also cached", ResolveFixture()) {
+TEST_F("require that host names resolving to themselves (ip addresses) are not cached", ResolveFixture()) {
     EXPECT_EQUAL(f1.resolve("tcp/127.0.0.1:123"), "tcp/127.0.0.1:123");
     EXPECT_EQUAL(f1.resolve("tcp/127.0.0.1:456"), "tcp/127.0.0.1:456");
-    EXPECT_EQUAL(f1.get_cnt("127.0.0.1"), 1u);
-    EXPECT_EQUAL(f1.get_total_cnt(), 1u);
+    EXPECT_EQUAL(f1.get_cnt("127.0.0.1"), 2u);
+    EXPECT_EQUAL(f1.get_total_cnt(), 2u);
 }
 
 TEST_F("require that cached results expire at the right time", ResolveFixture()) {

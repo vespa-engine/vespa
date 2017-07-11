@@ -105,7 +105,9 @@ AsyncResolver::CachingHostResolver::ip_address(const vespalib::string &host_name
         return ip_address;
     }
     ip_address = _resolver->ip_address(host_name);
-    store(host_name, ip_address);
+    if (ip_address != host_name) {
+        store(host_name, ip_address);
+    }
     return ip_address;
 }
 
