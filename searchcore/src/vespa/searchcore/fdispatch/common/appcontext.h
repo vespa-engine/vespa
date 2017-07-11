@@ -5,7 +5,6 @@
 #pragma once
 
 #include <vespa/vespalib/util/clock.h>
-#include <vespa/vespalib/net/lazy_resolver.h>
 
 class FastS_NodeManager;
 class FNET_Transport;
@@ -32,14 +31,12 @@ class FastS_AppContext
 private:
     FastS_TimeKeeper _timeKeeper;
     double           _createTime;
-    vespalib::LazyResolver::SP _lazy_resolver;
 
 public:
     FastS_AppContext();
     virtual ~FastS_AppContext();
 
     FastS_TimeKeeper *GetTimeKeeper() { return &_timeKeeper; }
-    vespalib::LazyResolver &get_lazy_resolver() { return *_lazy_resolver; }
 
     virtual FastS_NodeManager *GetNodeManager();
     virtual FNET_Transport *GetFNETTransport();

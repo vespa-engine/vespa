@@ -22,8 +22,7 @@ FastS_TimeKeeper::~FastS_TimeKeeper()
 
 FastS_AppContext::FastS_AppContext()
     : _timeKeeper(),
-      _createTime(),
-      _lazy_resolver(vespalib::LazyResolver::create())
+      _createTime()
 {
     _createTime = _timeKeeper.GetTime();
 }

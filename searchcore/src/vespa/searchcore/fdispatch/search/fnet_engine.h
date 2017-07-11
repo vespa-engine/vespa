@@ -6,7 +6,6 @@
 #include "engine_base.h"
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/fnet/ipackethandler.h>
-#include <vespa/vespalib/net/lazy_resolver.h>
 
 //----------------------------------------------------------------------
 
@@ -82,7 +81,6 @@ private:
     std::string   _hostName;
     int           _portNumber;
     std::string   _spec;
-    vespalib::LazyResolver::Address::SP _lazy_address;
     FNET_Transport  *_transport;
     FNET_Connection *_conn;
     WarnTask         _warnTask;
