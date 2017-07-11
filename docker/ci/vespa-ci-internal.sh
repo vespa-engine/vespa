@@ -1,6 +1,7 @@
 #!/bin/bash
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 set -e
+set -m
 set -x
 
 if [ $# -ne 1 ]; then
@@ -15,6 +16,18 @@ BUILD_DIR=~/build
 NUM_CORES=$(nproc --all)
 NUM_THREADS=$((${NUM_CORES} * 2))
 
+function build_java {
+    cd "${SOURCE_DIR}"
+    mvn install -T 2.0C -U -V -DskipTests=true -Dmaven.javadoc.skip=true
+    mvn install -nsu -T 2.0C -V &
+}
+
+function build_c {
+    cd "${BUILD_DIR}"
+    make -j ${NUM_THREADS}
+    ctest3 -j ${NUM_THREADS}
+}
+
 mkdir "${SOURCE_DIR}"
 mkdir "${BUILD_DIR}"
 git clone --no-checkout --no-hardlinks file:///vespa "${SOURCE_DIR}"
@@ -24,8 +37,6 @@ source /opt/rh/devtoolset-6/enable || true
 
 export MAVEN_OPTS="-Xms128m -Xmx512m"
 sh ./bootstrap.sh full
-mvn install -T 2.0C -U -V -DskipTests=true -Dmaven.javadoc.skip=true
-mvn install -nsu -T 2.0C -V
 
 cd "${BUILD_DIR}"
 cmake3 -DCMAKE_INSTALL_PREFIX=/opt/vespa \
@@ -36,5 +47,28 @@ cmake3 -DCMAKE_INSTALL_PREFIX=/opt/vespa \
       -DCMAKE_BUILD_RPATH=/opt/vespa/lib64 \
       -DVALGRIND_UNIT_TESTS=no \
       "${SOURCE_DIR}"
-make -j ${NUM_THREADS}
-ctest3 -j ${NUM_THREADS}
+
+pids=()
+
+# Java build and test
+build_java &
+pids+=($!)
+
+# C++ build and test
+build_c &
+pids+=($!)
+
+EXIT_CODE=0
+for pid in "${pids[@]}"; do
+    wait $pid || EXIT_CODE=$?
+    echo "$pid ${EXIT_CODE}"
+    if [[ "${EXIT_CODE}" != 0 ]]; then
+        echo STOPPING
+        break;
+    fi
+done
+
+# Kill any remaining process
+kill $(jobs -p) 2>/dev/null
+
+exit ${EXIT_CODE}
