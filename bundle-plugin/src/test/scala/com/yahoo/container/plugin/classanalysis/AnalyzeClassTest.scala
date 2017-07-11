@@ -2,19 +2,22 @@
 package com.yahoo.container.plugin.classanalysis
 
 import org.junit.Test
-import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
+import org.scalatest.junit.{AssertionsForJUnit, JUnitSuite}
 import java.awt.Image
 import java.awt.image.{ImagingOpException, Kernel}
+
 import sampleclasses._
 import TestUtilities._
 import com.yahoo.osgi.annotation.{ExportPackage, Version}
 import javax.security.auth.login.LoginException
 
+import org.scalatest.Matchers
+
 /**
  * Tests that analysis of class files works.
  * @author  tonytv
  */
-class AnalyzeClassTest extends JUnitSuite with ShouldMatchersForJUnit {
+class AnalyzeClassTest extends JUnitSuite with AssertionsForJUnit with Matchers {
   @Test def require_that_full_class_name_is_returned() {
     analyzeClass[Base].name should be(name[Base])
   }
