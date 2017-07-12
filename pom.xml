@@ -953,22 +953,22 @@
             <dependency>
                 <groupId>org.scala-lang.modules</groupId>
                 <artifactId>scala-parser-combinators_${scala.major-version}</artifactId>
-                <version>1.0.6</version>
+                <version>1.0.1</version>
             </dependency>
             <dependency>
                 <groupId>org.scala-lang.modules</groupId>
                 <artifactId>scala-xml_${scala.major-version}</artifactId>
-                <version>1.0.6</version>
+                <version>1.0.2</version>
             </dependency>
             <dependency>
                 <groupId>org.scalatest</groupId>
                 <artifactId>scalatest_${scala.major-version}</artifactId>
-                <version>3.0.3</version>
+                <version>2.2.2</version>
             </dependency>
             <dependency>
                 <groupId>org.json4s</groupId>
                 <artifactId>json4s-native_${scala.major-version}</artifactId>
-                <version>3.5.2</version>
+                <version>3.3.0</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -1082,8 +1082,8 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <test.hide>true</test.hide>
     	<doclint>all</doclint>
-        <scala.major-version>2.12</scala.major-version>
-        <scala.version>${scala.major-version}.2</scala.version>
+        <scala.major-version>2.11</scala.major-version>
+        <scala.version>${scala.major-version}.4</scala.version>
         <surefire.version>2.19.1</surefire.version> <!-- NOTE bjorncs 15.06.2017: Version 2.20 has OoM issues -->
     </properties>
 
