@@ -1,6 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.filter;
 
+import com.yahoo.jdisc.HeaderFields;
+import com.yahoo.jdisc.http.Cookie;
+import com.yahoo.jdisc.http.HttpHeaders;
+import com.yahoo.jdisc.http.HttpRequest;
+import com.yahoo.jdisc.http.HttpRequest.Version;
+import com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpRequest;
+
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.security.Principal;
@@ -14,15 +21,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
-
-
-import com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpRequest;
-import com.yahoo.jdisc.HeaderFields;
-import com.yahoo.jdisc.http.Cookie;
-import com.yahoo.jdisc.http.HttpHeaders;
-import com.yahoo.jdisc.http.HttpRequest;
-import com.yahoo.jdisc.http.HttpRequest.Version;
 
 /**
  * The Request class on which all filters will operate upon.
@@ -266,6 +266,10 @@ public abstract class DiscFilterRequest {
 
     public void setCookies(List<Cookie> cookies) {
         parent.encodeCookieHeader(cookies);
+    }
+
+    public long getConnectedAt(TimeUnit unit) {
+        return parent.getConnectedAt(unit);
     }
 
     public String getProtocol() {

@@ -4,6 +4,8 @@ package com.yahoo.jdisc.http.filter;
 import com.yahoo.jdisc.http.Cookie;
 import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.jdisc.http.servlet.ServletRequest;
+import org.eclipse.jetty.server.HttpConnection;
+import org.mockito.Mockito;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -14,6 +16,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.yahoo.jdisc.http.HttpRequest.Version;
+import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
@@ -60,6 +63,9 @@ public class ServletFilterRequestTest {
         parent.setParameter(listParamName, listParamValue);
         parent.addHeader(headerName, headerValue);
         parent.setAttribute(attributeName, attributeValue);
+        HttpConnection connection = Mockito.mock(HttpConnection.class);
+        when(connection.getCreatedTimeStamp()).thenReturn(System.currentTimeMillis());
+        parent.setAttribute("org.eclipse.jetty.server.HttpConnection", connection);
         return new ServletRequest(parent, uri);
     }
 
