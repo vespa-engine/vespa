@@ -25,6 +25,8 @@ import com.yahoo.container.di.removeStackTrace
 import scala.util.Try
 import scala.Some
 
+import scala.language.existentials
+
 /**
  * @author tonytv
  * @author gjoranv
@@ -177,13 +179,13 @@ class ComponentGraph(val generation: Long = 0) {
         assert(wildCardType.getLowerBounds.isEmpty)
         assert(wildCardType.getUpperBounds.size == 1)
         wildCardType.getUpperBounds.head.asInstanceOf[Class[AnyRef]]
-      case clazz: Class[AnyRef] => clazz
+      case clazz: Class[_] => clazz
       case typeVariable: TypeVariable[_] =>
         throw new RuntimeException("Can't create ComponentRegistry of unknown type variable " + typeVariable)
     }
 
     componentRegistryNodes.find(_.componentClass == componentType).
-      getOrElse(newComponentRegistryNode(componentClass))
+      getOrElse(newComponentRegistryNode(componentClass.asInstanceOf[Class[AnyRef]]))
   }
 
   def handleConfigParameter(node : ComponentNode,  clazz: Class[_]) : ConfigKeyT = {

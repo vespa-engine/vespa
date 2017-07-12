@@ -231,7 +231,7 @@
                             <arg>-unchecked</arg>
                             <arg>-deprecation</arg>
                             <arg>-feature</arg>
-                            <arg>-explaintypes</arg>
+                            <arg>-Xfatal-warnings</arg>
                         </args>
                     </configuration>
                 </plugin>

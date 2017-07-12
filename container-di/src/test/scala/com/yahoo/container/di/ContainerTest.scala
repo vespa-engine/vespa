@@ -19,7 +19,7 @@ import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
-import scala.language.postfixOps
+import scala.language.{existentials, postfixOps}
 import scala.util.Try
 
 /**

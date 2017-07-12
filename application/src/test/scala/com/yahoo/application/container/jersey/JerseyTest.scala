@@ -1,26 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.application.container.jersey
 
-import java.nio.file.{Path, Files, Paths}
+import java.nio.file.{Files, Path, Paths}
 import javax.ws.rs.core.UriBuilder
 
 import com.yahoo.application.Networking
-
+import com.yahoo.application.container.JDiscTest._
 import com.yahoo.container.test.jars.jersey.resources.TestResourceBase
+import com.yahoo.container.test.jars.jersey.{resources => jarResources}
 import com.yahoo.vespa.scalalib.osgi.maven.ProjectBundleClassPaths
 import com.yahoo.vespa.scalalib.osgi.maven.ProjectBundleClassPaths.BundleClasspathMapping
 import org.apache.http.HttpResponse
 import org.apache.http.client.methods.HttpGet
-import org.apache.http.impl.client.DefaultHttpClient
+import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.util.EntityUtils
+import org.hamcrest.CoreMatchers.is
 import org.junit.Assert._
 import org.junit.Test
-
-import com.yahoo.container.test.jars.jersey.{resources => jarResources}
-
-import org.hamcrest.CoreMatchers.is
-
-import com.yahoo.application.container.JDiscTest._
 
 import scala.io.Source
 
@@ -125,7 +121,7 @@ class JerseyTest {
       </services>,
       Networking.enable)) { jdisc =>
 
-      val client = new DefaultHttpClient
+      val client = HttpClientBuilder.create().build()
 
       def httpGetter(path: HttpPath) = {
         client.execute(new HttpGet(s"http://localhost:$getListenPort/rest-api/${path.stripPrefix("/")}"))

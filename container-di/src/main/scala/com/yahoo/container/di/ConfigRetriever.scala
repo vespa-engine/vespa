@@ -11,6 +11,7 @@ import com.yahoo.log.LogLevel
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
+import scala.language.postfixOps
 
 /**
  * @author tonytv
