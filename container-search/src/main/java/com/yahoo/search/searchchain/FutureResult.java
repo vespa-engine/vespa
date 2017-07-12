@@ -1,6 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchchain;
 
+import com.yahoo.search.Query;
+import com.yahoo.search.Result;
+import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.yolean.Exceptions;
+
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -9,11 +14,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import com.yahoo.yolean.Exceptions;
-import com.yahoo.search.Query;
-import com.yahoo.search.Result;
-import com.yahoo.search.result.ErrorMessage;
 
 /**
  * Extends a {@code FutureTask<Result>}, with some added error handling
@@ -59,7 +59,8 @@ public class FutureResult extends FutureTask<Result> {
      */
     @Override
     public Result get(long timeout, TimeUnit timeunit) {
-        return getIfAvailable(timeout, timeunit).orElse(new Result(getQuery(), createTimeoutError()));
+        return getIfAvailable(timeout, timeunit)
+                .orElseGet(() -> new Result(getQuery(), createTimeoutError()));
     }
 
     /**
