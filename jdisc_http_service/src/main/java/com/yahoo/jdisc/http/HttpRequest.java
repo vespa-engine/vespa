@@ -192,14 +192,13 @@ public class HttpRequest extends Request implements ServletOrJdiscHttpRequest {
 
     /**
      * <p>For server requests, this returns the timestamp of when the underlying HTTP channel was connected.
-     * This is whatever value was returned by {@link
-     * com.yahoo.jdisc.Timer#currentTimeMillis()} at the time.</p>
      *
      * <p>For client requests, this returns the same value as {@link #creationTime(java.util.concurrent.TimeUnit)}.</p>
      *
      * @param unit the unit to return the time in
      * @return the timestamp of when the underlying HTTP channel was connected, or request creation time
      */
+    @Override
     public long getConnectedAt(TimeUnit unit) {
         return unit.convert(connectedAt, TimeUnit.MILLISECONDS);
     }

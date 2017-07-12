@@ -25,8 +25,8 @@ import java.net.URI;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.yahoo.jdisc.http.server.jetty.JDiscHttpServlet.getConnector;
 import static com.yahoo.jdisc.http.server.jetty.Exceptions.throwUnchecked;
+import static com.yahoo.jdisc.http.server.jetty.JDiscHttpServlet.getConnector;
 
 /**
  * Runs JDisc security filters for Servlets
@@ -126,9 +126,9 @@ class JDiscFilterInvokerFilter implements Filter {
         try {
             final AccessLogEntry accessLogEntry = null; // Not used in this context.
             return new HttpRequestDispatch(jDiscContext,
-                    accessLogEntry,
-                    getConnector(request).getMetricContext(),
-                    request, response);
+                                           accessLogEntry,
+                                           getConnector(request).getMetricContext(),
+                                           request, response);
         } catch (IOException e) {
             throw throwUnchecked(e);
         }

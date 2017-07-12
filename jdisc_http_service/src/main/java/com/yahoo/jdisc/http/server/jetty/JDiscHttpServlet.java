@@ -4,7 +4,6 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.handler.OverloadException;
-import org.eclipse.jetty.server.HttpConnection;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
@@ -20,6 +19,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnection;
 import static com.yahoo.jdisc.http.server.jetty.ConnectorFactory.JDiscServerConnector;
 
 /**
@@ -104,9 +104,6 @@ class JDiscHttpServlet extends HttpServlet {
         }
     }
 
-    static HttpConnection getConnection(HttpServletRequest request) {
-        return (HttpConnection)request.getAttribute("org.eclipse.jetty.server.HttpConnection");
-    }
     static JDiscServerConnector getConnector(HttpServletRequest request) {
         return (JDiscServerConnector)getConnection(request).getConnector();
     }

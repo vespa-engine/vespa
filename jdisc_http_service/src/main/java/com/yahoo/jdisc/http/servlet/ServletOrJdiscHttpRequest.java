@@ -9,29 +9,32 @@ import java.net.SocketAddress;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Common interface for JDisc and servlet http requests.
  */
 public interface ServletOrJdiscHttpRequest {
 
-    public void copyHeaders(HeaderFields target);
+    void copyHeaders(HeaderFields target);
 
-    public Map<String, List<String>> parameters();
+    Map<String, List<String>> parameters();
 
-    public URI getUri();
+    URI getUri();
 
-    public HttpRequest.Version getVersion();
+    HttpRequest.Version getVersion();
 
-    public String getRemoteHostAddress();
-    public String getRemoteHostName();
-    public int getRemotePort();
+    String getRemoteHostAddress();
+    String getRemoteHostName();
+    int getRemotePort();
 
-    public void setRemoteAddress(SocketAddress remoteAddress);
+    void setRemoteAddress(SocketAddress remoteAddress);
 
-    public Map<String, Object> context();
+    Map<String, Object> context();
 
-    public List<Cookie> decodeCookieHeader();
+    List<Cookie> decodeCookieHeader();
 
-    public void encodeCookieHeader(List<Cookie> cookies);
+    void encodeCookieHeader(List<Cookie> cookies);
+
+    long getConnectedAt(TimeUnit unit);
 }

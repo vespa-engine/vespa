@@ -21,6 +21,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnection;
 
 /**
  * Mutable wrapper to use a {@link javax.servlet.http.HttpServletRequest}
@@ -39,6 +42,7 @@ public class ServletRequest extends HttpServletRequestWrapper implements Servlet
     private final Set<String> headerBlacklist = new HashSet<>();
     private final Map<String, Object> context = new HashMap<>();
     private final Map<String, List<String>> parameters = new HashMap<>();
+    private final long connectedAt;
 
     private URI uri;
     private String remoteHostAddress;
@@ -57,6 +61,7 @@ public class ServletRequest extends HttpServletRequestWrapper implements Servlet
         remoteHostAddress = request.getRemoteAddr();
         remoteHostName = request.getRemoteHost();
         remotePort = request.getRemotePort();
+        connectedAt = getConnection(request).getCreatedTimeStamp();
 
         headerFields = new HeaderFields();
         Enumeration<String> parentHeaders = request.getHeaderNames();
@@ -241,5 +246,10 @@ public class ServletRequest extends HttpServletRequestWrapper implements Servlet
     @Override
     public void encodeCookieHeader(List<Cookie> cookies) {
         setHeaders(HttpHeaders.Names.COOKIE, Cookie.toCookieHeader(cookies));
+    }
+
+    @Override
+    public long getConnectedAt(TimeUnit unit) {
+        return unit.convert(connectedAt, TimeUnit.MILLISECONDS);
     }
 }

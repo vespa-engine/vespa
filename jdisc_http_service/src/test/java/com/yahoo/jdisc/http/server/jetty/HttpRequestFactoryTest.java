@@ -1,19 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.security.Principal;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.Locale;
-import java.util.Map;
+import com.google.inject.Key;
+import com.yahoo.jdisc.Container;
+import com.yahoo.jdisc.References;
+import com.yahoo.jdisc.ResourceReference;
+import com.yahoo.jdisc.Response;
+import com.yahoo.jdisc.handler.RequestHandler;
+import com.yahoo.jdisc.http.HttpRequest;
+import com.yahoo.jdisc.service.CurrentContainer;
+import org.eclipse.jetty.server.HttpConnection;
+import org.testng.annotations.Test;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.DispatcherType;
@@ -29,18 +26,21 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpUpgradeHandler;
 import javax.servlet.http.Part;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.security.Principal;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.Locale;
+import java.util.Map;
 
-import com.yahoo.jdisc.ResourceReference;
-import com.yahoo.jdisc.References;
-import com.yahoo.jdisc.Response;
-import org.testng.annotations.Test;
-
-import com.google.inject.Key;
-import com.yahoo.jdisc.Container;
-import com.yahoo.jdisc.handler.RequestHandler;
-import com.yahoo.jdisc.http.HttpRequest;
-import com.yahoo.jdisc.service.CurrentContainer;
-
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.testng.AssertJUnit.fail;
 
 /**
@@ -70,8 +70,9 @@ public class HttpRequestFactoryTest {
 
         @Override
         public Object getAttribute(String name) {
-            // TODO Auto-generated method stub
-            return null;
+            HttpConnection connection = mock(HttpConnection.class);
+            when(connection.getCreatedTimeStamp()).thenReturn(System.currentTimeMillis());
+            return connection;
         }
 
         @Override

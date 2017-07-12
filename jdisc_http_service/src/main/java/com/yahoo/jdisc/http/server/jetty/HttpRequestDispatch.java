@@ -18,7 +18,6 @@ import javax.servlet.AsyncContext;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
@@ -29,6 +28,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.jdisc.http.HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
+import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnection;
 import static com.yahoo.jdisc.http.server.jetty.Exceptions.throwUnchecked;
 
 /**
@@ -99,7 +99,7 @@ class HttpRequestDispatch {
 
     private void honourMaxKeepAliveRequests() {
         if (jDiscContext.serverConfig.maxKeepAliveRequests() > 0) {
-            HttpConnection connection = JDiscHttpServlet.getConnection(servletRequest);
+            HttpConnection connection = getConnection(servletRequest);
             if (connection.getMessagesIn() >= jDiscContext.serverConfig.maxKeepAliveRequests()) {
                 connection.getGenerator().setPersistent(false);
             }
