@@ -57,12 +57,17 @@ public class NodeAdminStateUpdater extends AbstractComponent {
             Clock clock,
             Orchestrator orchestrator,
             String dockerHostHostName) {
+        log.log(LogLevel.INFO, objectToString() + ": Creating object");
         this.nodeRepository = nodeRepository;
         this.nodeAdmin = nodeAdmin;
         this.clock = clock;
         this.orchestrator = orchestrator;
         this.dockerHostHostName = dockerHostHostName;
         this.lastTick = clock.instant();
+    }
+
+    private String objectToString() {
+        return this.getClass().getName() + "@" + System.identityHashCode(this);
     }
 
     public enum State { RESUMED, SUSPENDED_NODE_ADMIN, SUSPENDED}
@@ -248,6 +253,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
         if (!terminated.compareAndSet(false, true)) {
             throw new RuntimeException("Can not re-stop a node agent.");
         }
+        log.log(LogLevel.INFO, objectToString() + ": Deconstruct called");
         signalWorkToBeDone();
         try {
             loopThread.join(10000);
@@ -258,5 +264,6 @@ public class NodeAdminStateUpdater extends AbstractComponent {
             log.log(LogLevel.ERROR, "Interrupted; Could not stop thread");
         }
         nodeAdmin.shutdown();
+        log.log(LogLevel.INFO, objectToString() + ": Deconstruct complete");
     }
 }
