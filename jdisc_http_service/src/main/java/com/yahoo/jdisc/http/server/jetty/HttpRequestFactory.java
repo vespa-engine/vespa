@@ -6,10 +6,11 @@ import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.service.CurrentContainer;
 
 import javax.servlet.http.HttpServletRequest;
-
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.Enumeration;
+
+import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnection;
 
 /**
  * @author Simon Thoresen Hult
@@ -24,7 +25,7 @@ class HttpRequestFactory {
                 HttpRequest.Method.valueOf(servletRequest.getMethod()),
                 HttpRequest.Version.fromString(servletRequest.getProtocol()),
                 new InetSocketAddress(servletRequest.getRemoteAddr(), servletRequest.getRemotePort()),
-                JDiscHttpServlet.getConnection(servletRequest).getCreatedTimeStamp());
+                getConnection(servletRequest).getCreatedTimeStamp());
     }
 
     public static URI getUri(HttpServletRequest servletRequest) {
