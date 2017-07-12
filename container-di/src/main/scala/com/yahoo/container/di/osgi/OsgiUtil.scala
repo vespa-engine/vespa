@@ -7,6 +7,7 @@ import java.util.jar.{JarEntry, JarFile}
 import java.util.logging.{Level, Logger}
 import java.util.stream.Collectors
 
+import com.google.common.io.Files.fileTreeTraverser
 import com.yahoo.component.ComponentSpecification
 import com.yahoo.container.di.Osgi.RelativePath
 import com.yahoo.vespa.scalalib.arm.Using.using
@@ -15,11 +16,7 @@ import com.yahoo.vespa.scalalib.osgi.maven.ProjectBundleClassPaths.BundleClasspa
 import org.osgi.framework.Bundle
 import org.osgi.framework.wiring.BundleWiring
 
-import com.google.common.io.Files.fileTreeTraverser
-
-import scala.collection.convert.decorateAsScala._
-
-import com.yahoo.vespa.scalalib.java.function.FunctionConverters._
+import scala.collection.JavaConverters._
 
 /**
  * Tested by com.yahoo.application.container.jersey.JerseyTest

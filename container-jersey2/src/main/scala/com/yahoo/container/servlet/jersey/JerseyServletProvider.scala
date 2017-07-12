@@ -12,15 +12,16 @@ import com.yahoo.container.di.config.RestApiContext.BundleInfo
 import com.yahoo.container.jaxrs.annotation.Component
 import com.yahoo.container.servlet.jersey.util.ResourceConfigUtil.registerComponent
 import org.eclipse.jetty.servlet.ServletHolder
-import org.glassfish.hk2.api.{TypeLiteral, InjectionResolver}
-import org.glassfish.hk2.utilities.binding.AbstractBinder
+import org.glassfish.hk2.api.{InjectionResolver, TypeLiteral}
 import org.glassfish.hk2.utilities.Binder
+import org.glassfish.hk2.utilities.binding.AbstractBinder
 import org.glassfish.jersey.media.multipart.MultiPartFeature
 import org.glassfish.jersey.server.ResourceConfig
 import org.glassfish.jersey.servlet.ServletContainer
 import org.objectweb.asm.ClassReader
 
-import scala.collection.convert.wrapAsScala._
+import scala.collection.JavaConverters._
+
 import scala.util.control.Exception
 
 
@@ -32,7 +33,7 @@ class JerseyServletProvider(restApiContext: RestApiContext) extends Provider[Ser
 
   private def resourceConfig(restApiContext: RestApiContext) = {
     val resourceConfig = ResourceConfig.forApplication(
-      new JerseyApplication(resourcesAndProviders(restApiContext.getBundles)))
+      new JerseyApplication(resourcesAndProviders(restApiContext.getBundles.asScala)))
 
     registerComponent(resourceConfig, componentInjectorBinder(restApiContext))
     registerComponent(resourceConfig, jacksonDatatypeJdk8Provider)
@@ -44,7 +45,7 @@ class JerseyServletProvider(restApiContext: RestApiContext) extends Provider[Ser
   def resourcesAndProviders(bundles: Traversable[BundleInfo]) =
     (for {
       bundle <- bundles.view
-      classEntry <- bundle.getClassEntries
+      classEntry <- bundle.getClassEntries.asScala
       className <- detectResourceOrProvider(bundle.classLoader, classEntry)
     } yield loadClass(bundle.symbolicName, bundle.classLoader, className)).toSet
 
@@ -83,7 +84,7 @@ class JerseyServletProvider(restApiContext: RestApiContext) extends Provider[Ser
   }
 
   def componentInjectorBinder(restApiContext: RestApiContext): Binder = {
-    val componentGraphProvider = new ComponentGraphProvider(restApiContext.getInjectableComponents.toTraversable)
+    val componentGraphProvider = new ComponentGraphProvider(restApiContext.getInjectableComponents.asScala)
     val componentAnnotationType = new TypeLiteral[InjectionResolver[Component]] {}
 
     new AbstractBinder {
