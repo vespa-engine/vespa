@@ -57,6 +57,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
             Clock clock,
             Orchestrator orchestrator,
             String dockerHostHostName) {
+        log.log(LogLevel.INFO, "NodeAdminStateUpdater created");
         this.nodeRepository = nodeRepository;
         this.nodeAdmin = nodeAdmin;
         this.clock = clock;
@@ -248,6 +249,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
         if (!terminated.compareAndSet(false, true)) {
             throw new RuntimeException("Can not re-stop a node agent.");
         }
+        log.log(LogLevel.INFO, "Deconstruct called");
         signalWorkToBeDone();
         try {
             loopThread.join(10000);
@@ -258,5 +260,6 @@ public class NodeAdminStateUpdater extends AbstractComponent {
             log.log(LogLevel.ERROR, "Interrupted; Could not stop thread");
         }
         nodeAdmin.shutdown();
+        log.log(LogLevel.INFO, "Deconstruct complete");
     }
 }
