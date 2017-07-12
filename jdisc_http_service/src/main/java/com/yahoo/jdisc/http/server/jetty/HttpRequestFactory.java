@@ -13,6 +13,7 @@ import java.util.Enumeration;
 
 /**
  * @author Simon Thoresen Hult
+ * @author bjorncs
  */
 class HttpRequestFactory {
 
@@ -22,7 +23,8 @@ class HttpRequestFactory {
                 getUri(servletRequest),
                 HttpRequest.Method.valueOf(servletRequest.getMethod()),
                 HttpRequest.Version.fromString(servletRequest.getProtocol()),
-                new InetSocketAddress(servletRequest.getRemoteAddr(), servletRequest.getRemotePort()));
+                new InetSocketAddress(servletRequest.getRemoteAddr(), servletRequest.getRemotePort()),
+                JDiscHttpServlet.getConnection(servletRequest).getCreatedTimeStamp());
     }
 
     public static URI getUri(HttpServletRequest servletRequest) {
