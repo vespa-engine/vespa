@@ -6,14 +6,14 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.name.Names;
 import com.yahoo.application.Networking;
-import com.yahoo.component.AbstractComponent;
-import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.config.model.ConfigModelRepo;
-import com.yahoo.container.Container;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
 import com.yahoo.application.container.impl.ClassLoaderOsgiFramework;
 import com.yahoo.application.container.impl.StandaloneContainerRunner;
+import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.provider.ComponentRegistry;
+import com.yahoo.config.model.ConfigModelRepo;
+import com.yahoo.container.Container;
 import com.yahoo.container.standalone.StandaloneContainerApplication;
 import com.yahoo.container.standalone.StandaloneContainerApplication$;
 import com.yahoo.docproc.jdisc.DocumentProcessingHandler;
@@ -23,7 +23,6 @@ import com.yahoo.jdisc.test.TestDriver;
 import com.yahoo.processing.handler.ProcessingHandler;
 import com.yahoo.search.handler.SearchHandler;
 
-import java.io.File;
 import java.nio.file.Path;
 
 /**
@@ -48,17 +47,12 @@ public final class JDisc implements AutoCloseable {
     private final boolean deletePathWhenClosing;
 
     private JDisc(Path path, boolean deletePathWhenClosing, Networking networking, ConfigModelRepo configModelRepo) {
-        try {
-            this.path = path;
-            this.deletePathWhenClosing = deletePathWhenClosing;
-            testDriver = TestDriver.newInstance(osgiFramework, "", false, //StandaloneContainerApplication.class,
-                                                bindings(path, configModelRepo, networking));
+        this.path = path;
+        this.deletePathWhenClosing = deletePathWhenClosing;
+        testDriver = TestDriver.newInstance(osgiFramework, "", false, //StandaloneContainerApplication.class,
+                                            bindings(path, configModelRepo, networking));
 
-            application = (StandaloneContainerApplication) testDriver.application();
-        } catch (Throwable t) {
-            StackTrace.filterLogAndDieToJDiscInit(t);
-            throw t;
-        }
+        application = (StandaloneContainerApplication) testDriver.application();
     }
 
     private Module bindings(final Path path, final ConfigModelRepo configModelRepo, final Networking networking) {
