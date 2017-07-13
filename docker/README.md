@@ -29,8 +29,6 @@ Execute ```./run-vespa.sh <Vespa version number>``` to start Vespa.
 This starts a Docker container using the Docker image (*vesparun*) from the previous step.
 Vespa will be started inside the container.
 
-*On OS X, the container runs inside the Docker VM. Execute ```docker-machine ssh vespa-docker-machine``` to enter the VM. The services can also be reached directly from the host on the IP given by ```docker-machine ip vespa-docker-machine```*
-
 
 ## Building Vespa inside a Docker container
 Execute ```./enter-build-container.sh``` to enter the Vespa build environment inside a Docker container.
