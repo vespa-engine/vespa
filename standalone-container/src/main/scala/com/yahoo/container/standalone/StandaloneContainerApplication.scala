@@ -29,7 +29,7 @@ import com.yahoo.vespa.model.container.xml.ContainerModelBuilder.Networking
 import com.yahoo.vespa.model.container.xml.{ConfigServerContainerModelBuilder, ContainerModelBuilder}
 import org.w3c.dom.Element
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.util.Try
 
 /**
@@ -210,7 +210,7 @@ object StandaloneContainerApplication {
       elements map { e => s"${e.getNodeName} id='${e.getAttribute("id")}'" }
     }
 
-    val jDiscElements = ContainerModelBuilder.configModelIds flatMap { name => XML.getChildren(element, name.getName) }
+    val jDiscElements = ContainerModelBuilder.configModelIds.asScala flatMap { name => XML.getChildren(element, name.getName).asScala }
     jDiscElements.toList match {
       case List(e) => e
       case Nil  => throw new RuntimeException("No jdisc element found under services.")
@@ -222,7 +222,7 @@ object StandaloneContainerApplication {
     val element = XmlHelper.getDocument(applicationPackage.getServices).getDocumentElement
     val nodeName = element.getNodeName
 
-    if (ContainerModelBuilder.configModelIds.map(_.getName).contains(nodeName)) element
+    if (ContainerModelBuilder.configModelIds.asScala.map(_.getName).contains(nodeName)) element
     else getJDiscInServices(element)
   }
 

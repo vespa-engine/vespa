@@ -1,10 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container
 
+import java.lang.reflect.Type
+
+import com.google.inject.Key
 import com.yahoo.config.ConfigInstance
 import com.yahoo.vespa.config.ConfigKey
-import java.lang.reflect.Type
-import com.google.inject.Key
+
+import scala.language.implicitConversions
 
 /**
  *

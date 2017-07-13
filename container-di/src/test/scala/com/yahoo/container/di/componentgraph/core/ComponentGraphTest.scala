@@ -1,23 +1,25 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di.componentgraph.core
 
-import org.junit.Test
-import org.junit.Assert._
-import org.hamcrest.CoreMatchers.{is, sameInstance, equalTo, not, containsString}
+import java.util.concurrent.{Executor, Executors}
 
+import com.google.inject.name.{Named, Names}
+import com.google.inject.{AbstractModule, Guice, Inject, Key, Provider => GuiceProvider}
 import com.yahoo.component.provider.ComponentRegistry
-import com.google.inject.name.{Names, Named}
-import com.yahoo.component.{ComponentId, AbstractComponent}
-import org.hamcrest.Matcher
-import com.yahoo.vespa.config.ConfigKey
-import com.yahoo.config.{ConfigInstance}
-import com.yahoo.config.test.{TestConfig, Test2Config}
-import java.util.concurrent.{Executors, Executor}
-import com.google.inject.{Guice, Key, AbstractModule, Inject, Provider=>GuiceProvider}
-import com.yahoo.container.di._
+import com.yahoo.component.{AbstractComponent, ComponentId}
+import com.yahoo.config.ConfigInstance
 import com.yahoo.config.subscription.ConfigGetter
-import com.yahoo.container.di.config.{JerseyInjectionConfig, JerseyBundlesConfig, RestApiContext}
+import com.yahoo.config.test.{Test2Config, TestConfig}
+import com.yahoo.container.di._
 import com.yahoo.container.di.componentgraph.Provider
+import com.yahoo.container.di.config.{JerseyBundlesConfig, JerseyInjectionConfig, RestApiContext}
+import com.yahoo.vespa.config.ConfigKey
+import org.hamcrest.CoreMatchers.{containsString, equalTo, is, not, sameInstance}
+import org.hamcrest.Matcher
+import org.junit.Assert._
+import org.junit.Test
+
+import scala.language.implicitConversions
 
 /**
  * @author gjoranv
@@ -330,7 +332,7 @@ class ComponentGraphTest {
   def child_injector_can_inject_multiple_instances_for_same_key() {
     def executorProvider() = Executors.newSingleThreadExecutor()
 
-    val (graphSize, executorA, executorB)  = buildGraphWithChildInjector(executorProvider)
+    val (graphSize, executorA, executorB)  = buildGraphWithChildInjector(() => executorProvider())
 
     assertThat(graphSize, is(4))
     assertThat(executorA, not(sameInstance(executorB)))

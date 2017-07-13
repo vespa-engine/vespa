@@ -1,18 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di.componentgraph.core
 
-import com.yahoo.component.{ComponentSpecification, ComponentId}
-import com.yahoo.container.di.Osgi.RelativePath
-import com.yahoo.container.di.config.RestApiContext
-import org.osgi.framework.wiring.BundleWiring
-import scala.collection.JavaConverters._
-
-import scala.collection.convert.wrapAsJava._
-import RestApiContext.BundleInfo
-import JerseyNode._
-import com.yahoo.container.di.Osgi
-import org.osgi.framework.Bundle
 import java.net.URL
+
+import com.yahoo.component.{ComponentId, ComponentSpecification}
+import com.yahoo.container.di.Osgi
+import com.yahoo.container.di.Osgi.RelativePath
+import com.yahoo.container.di.componentgraph.core.JerseyNode._
+import com.yahoo.container.di.config.RestApiContext
+import com.yahoo.container.di.config.RestApiContext.BundleInfo
+import org.osgi.framework.Bundle
+import org.osgi.framework.wiring.BundleWiring
+
+import scala.collection.JavaConverters._
 
 /**
  * Represents an instance of RestApiContext
@@ -70,7 +70,7 @@ object JerseyNode {
                                     webInfUrl(bundle),
                                     bundle.adapt(classOf[BundleWiring]).getClassLoader)
 
-    bundleInfo.setClassEntries(classEntries)
+    bundleInfo.setClassEntries(classEntries.asJavaCollection)
     bundleInfo
   }
 

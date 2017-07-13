@@ -1,11 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.codegen
 
-import java.io.{FileNotFoundException, FileOutputStream, PrintStream, File}
-import ConfigGenerator.{indentCode, createClassName}
-import util.Random
-import scala.collection.JavaConversions._
+import java.io.{File, FileNotFoundException, FileOutputStream, PrintStream}
 
+import com.yahoo.config.codegen.ConfigGenerator.{createClassName, indentCode}
+
+import scala.collection.JavaConverters._
+import scala.util.Random
 /**
  * Builds one Java class based on the given CNode tree.
  *
@@ -104,7 +105,7 @@ class JavaClassBuilder(
   }
 
   private def getDefSchema: String = {
-    nd.getNormalizedContent.map { line =>
+    nd.getNormalizedContent.asScala.map { line =>
       "\"" +
         line.replace("\"", "\\\"") +
         "\""

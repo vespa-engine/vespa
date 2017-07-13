@@ -1,17 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.http.filter
 
-import com.yahoo.container.core.ChainsConfig
-import com.yahoo.component.provider.ComponentRegistry
-import com.yahoo.jdisc.http.filter.chain.{RequestFilterChain, ResponseFilterChain}
-import com.yahoo.jdisc.http.filter.{RequestFilter, ResponseFilter}
-import com.yahoo.jdisc.http.filter.{SecurityResponseFilterChain, SecurityRequestFilterChain, SecurityResponseFilter, SecurityRequestFilter}
-import com.yahoo.component.{ComponentSpecification, ComponentId, AbstractComponent}
 import com.yahoo.component.chain.model.ChainsModelBuilder
 import com.yahoo.component.chain.{Chain, ChainedComponent, ChainsConfigurer}
+import com.yahoo.component.provider.ComponentRegistry
+import com.yahoo.component.{AbstractComponent, ComponentId, ComponentSpecification}
+import com.yahoo.container.core.ChainsConfig
+import com.yahoo.container.http.filter.FilterChainRepository._
+import com.yahoo.jdisc.http.filter.chain.{RequestFilterChain, ResponseFilterChain}
+import com.yahoo.jdisc.http.filter.{RequestFilter, ResponseFilter, SecurityRequestFilter, SecurityRequestFilterChain, SecurityResponseFilter, SecurityResponseFilterChain}
 import com.yahoo.processing.execution.chain.ChainRegistry
-import FilterChainRepository._
-import scala.collection.JavaConversions._
+
+import scala.collection.JavaConverters._
 
 
 /**
@@ -48,7 +48,7 @@ class FilterChainRepository(chainsConfig: ChainsConfig,
     val wrappedFilters = new ComponentRegistry[FilterWrapper]
 
     def registerWrappedFilters(registry: ComponentRegistry[_ <: AnyRef]) {
-      for ((id, filter) <- registry.allComponentsById())
+      for ((id, filter) <- registry.allComponentsById().asScala)
         wrappedFilters.register(id, new FilterWrapper(id, filter))
     }
 
@@ -65,14 +65,14 @@ class FilterChainRepository(chainsConfig: ChainsConfig,
 
     for {
       registry <- registries
-      (id, filter) <- registry.allComponentsById()
+      (id, filter) <- registry.allComponentsById().asScala
     } destination.register(id, wrapSecurityFilter(filter))
   }
 
   private def addAllChains(destination: ComponentRegistry[AnyRef], chainsConfig: ChainsConfig, filters: ComponentRegistry[_ <: AnyRef]*) {
     val chainRegistry = buildChainsRegistry(chainsConfig, filters)
 
-    for (chain <- chainRegistry.allComponents()) {
+    for (chain <- chainRegistry.allComponents().asScala) {
       destination.register(chain.getId, toJDiscChain(chain))
     }
   }
@@ -89,7 +89,7 @@ class FilterChainRepository(chainsConfig: ChainsConfig,
 
   private def toJDiscChain(chain: Chain[FilterWrapper]): AnyRef = {
     checkFilterTypesCompatible(chain)
-    val jDiscFilters = chain.components() map {_.filter}
+    val jDiscFilters = chain.components().asScala map {_.filter}
 
     wrapJDiscChain(wrapSecurityFilters(jDiscFilters.toList))
   }
@@ -98,8 +98,8 @@ class FilterChainRepository(chainsConfig: ChainsConfig,
     if (filters.size == 1) filters.head
     else {
       filters.head match {
-        case _: RequestFilter  => RequestFilterChain.newInstance(filters.asInstanceOf[List[RequestFilter]])
-        case _: ResponseFilter => ResponseFilterChain.newInstance(filters.asInstanceOf[List[ResponseFilter]])
+        case _: RequestFilter  => RequestFilterChain.newInstance(filters.asInstanceOf[List[RequestFilter]].asJava)
+        case _: ResponseFilter => ResponseFilterChain.newInstance(filters.asInstanceOf[List[ResponseFilter]].asJava)
       }
     }
   }
@@ -119,8 +119,8 @@ class FilterChainRepository(chainsConfig: ChainsConfig,
 
   def createSecurityChain(filters: List[AnyRef]): AnyRef = {
     filters.head match {
-      case _: SecurityRequestFilter  => SecurityRequestFilterChain.newInstance(filters.asInstanceOf[List[SecurityRequestFilter]])
-      case _: SecurityResponseFilter => SecurityResponseFilterChain.newInstance(filters.asInstanceOf[List[SecurityResponseFilter]])
+      case _: SecurityRequestFilter  => SecurityRequestFilterChain.newInstance(filters.asInstanceOf[List[SecurityRequestFilter]].asJava)
+      case _: SecurityResponseFilter => SecurityResponseFilterChain.newInstance(filters.asInstanceOf[List[SecurityResponseFilter]].asJava)
       case _ => throw new IllegalArgumentException("Unexpected class " + filters.head.getClass)
     }
   }
@@ -142,7 +142,7 @@ class FilterChainRepository(chainsConfig: ChainsConfig,
         throw new RuntimeException("Can't mix request and response filters in chain %s: %s, %s".format(chain.getId, a.getId, b.getId))
     }
 
-    overlappingPairIterator(chain.components).foreach {
+    overlappingPairIterator(chain.components.asScala).foreach {
       case Seq(_) =>
       case Seq(filter1: FilterWrapper, filter2: FilterWrapper) =>
         check(filter1, filter2)
