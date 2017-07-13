@@ -2,10 +2,28 @@
 
 #include "disk_mem_usage_filter.h"
 #include "i_disk_mem_usage_listener.h"
+#include <vespa/log/log.h>
+
+LOG_SETUP(".proton.server.disk_mem_usage_filter");
 
 namespace proton {
 
 namespace {
+
+void
+makeMemoryStatsMessage(std::ostream &os,
+                       double memoryUsed,
+                       double memoryLimit,
+                       const vespalib::ProcessMemoryStats &memoryStats,
+                       uint64_t physicalMemory)
+{
+    os << "stats: { ";
+    os << "mapped: { virt: " << memoryStats.getMappedVirt() << ", rss: " << memoryStats.getMappedRss() << "}, ";
+    os << "anonymous: { virt: " << memoryStats.getAnonymousVirt() << ", rss: " << memoryStats.getAnonymousRss() << "}, ";
+    os << "physicalMemory: " << physicalMemory << ", ";
+    os << "memoryUsed: " << memoryUsed << ", ";
+    os << "memoryLimit: " << memoryLimit << "}";
+}
 
 void
 makeMemoryLimitMessage(std::ostream &os,
@@ -14,18 +32,25 @@ makeMemoryLimitMessage(std::ostream &os,
                        const vespalib::ProcessMemoryStats &memoryStats,
                        uint64_t physicalMemory)
 {
-    os << "memoryLimitReached: { "
-            "action: \"add more content nodes\", "
-            "reason: \""
-            "memory used (" << memoryUsed << ") > "
-            "memory limit (" << memoryLimit << ")"
-            "\", mapped: { virt: " <<
-            memoryStats.getMappedVirt() << ", rss: " <<
-            memoryStats.getMappedRss() << "}, anonymous: { virt: " <<
-            memoryStats.getAnonymousVirt() << ", rss: " <<
-            memoryStats.getAnonymousRss() << "}, physicalMemory: " <<
-            physicalMemory << ", memoryLimit : " <<
-            memoryLimit << "}";
+    os << "memoryLimitReached: { ";
+    os << "action: \"add more content nodes\", ";
+    os << "reason: \"memory used (" << memoryUsed << ") > memory limit (" << memoryLimit << ")\", ";
+    makeMemoryStatsMessage(os, memoryUsed, memoryLimit, memoryStats, physicalMemory);
+    os << "}";
+}
+
+void
+makeDiskStatsMessage(std::ostream &os,
+                     double diskUsed,
+                     double diskLimit,
+                     const DiskMemUsageFilter::space_info &diskStats)
+{
+    os << "stats: { ";
+    os << "capacity: " << diskStats.capacity << ", ";
+    os << "free: " << diskStats.free << ", ";
+    os << "available: " << diskStats.available << ", ";
+    os << "diskUsed: " << diskUsed << ", ";
+    os << "diskLimit: " << diskLimit << "}";
 }
 
 void
@@ -34,16 +59,31 @@ makeDiskLimitMessage(std::ostream &os,
                      double diskLimit,
                      const DiskMemUsageFilter::space_info &diskStats)
 {
-    os << "diskLimitReached: { "
-            "action: \"add more content nodes\", "
-            "reason: \""
-            "disk used (" << diskUsed << ") > "
-            "disk limit (" << diskLimit << ")"
-            "\", capacity: " <<
-            diskStats.capacity << ", free: " <<
-            diskStats.free << ", available: " <<
-            diskStats.available << ", diskLimit: " <<
-            diskLimit << "}";
+    os << "diskLimitReached: { ";
+    os << "action: \"add more content nodes\", ";
+    os << "reason: \"disk used (" << diskUsed << ") > disk limit (" << diskLimit << ")\", ";
+    makeDiskStatsMessage(os, diskUsed, diskLimit, diskStats);
+    os << "}";
+}
+
+
+vespalib::string
+makeUnblockingMessage(double memoryUsed,
+                      double memoryLimit,
+                      const vespalib::ProcessMemoryStats &memoryStats,
+                      uint64_t physicalMemory,
+                      double diskUsed,
+                      double diskLimit,
+                      const DiskMemUsageFilter::space_info &diskStats)
+{
+    std::ostringstream os;
+    os << "memoryLimitOK: { ";
+    makeMemoryStatsMessage(os, memoryUsed, memoryLimit, memoryStats, physicalMemory);
+    os << "}, ";
+    os << "diskLimitOK: { ";
+    makeDiskStatsMessage(os, diskUsed, diskLimit, diskStats);
+    os << "}";
+    return os.str();
 }
 
 }
@@ -68,9 +108,22 @@ DiskMemUsageFilter::recalcState(const Guard &guard)
         makeDiskLimitMessage(message, diskUsed, _config._diskLimit, _diskStats);
     }
     if (hasMessage) {
+        if (_acceptWrite) {
+            LOG(warning, "Write operations are now blocked: '%s'", message.str().c_str());
+        }
         _state = State(false, message.str());
         _acceptWrite = false;
     } else {
+        if (!_acceptWrite) {
+            vespalib::string unblockMsg = makeUnblockingMessage(memoryUsed,
+                                                                _config._memoryLimit,
+                                                                _memoryStats,
+                                                                _physicalMemory,
+                                                                diskUsed,
+                                                                _config._diskLimit,
+                                                                _diskStats);
+            LOG(info, "Write operations are now un-blocked: '%s'", unblockMsg.c_str());
+        }
         _state = State();
         _acceptWrite = true;
     }
