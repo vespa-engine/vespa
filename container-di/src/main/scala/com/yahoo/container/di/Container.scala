@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di
 
-import java.util.{IdentityHashMap, Random}
 import java.util.logging.{Level, Logger}
+import java.util.{IdentityHashMap, Random}
 
 import com.google.inject.{Guice, Injector}
 import com.yahoo.config._
@@ -17,10 +17,10 @@ import com.yahoo.container.{BundlesConfig, ComponentsConfig}
 import com.yahoo.protect.Process
 import com.yahoo.vespa.config.ConfigKey
 
-import scala.collection.JavaConversions._
-import scala.math.max
+import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 import scala.language.postfixOps
+import scala.math.max
 
 
 /**
@@ -38,7 +38,7 @@ class Container(
   val bundlesConfigKey    = new ConfigKey(classOf[BundlesConfig], configId)
   val componentsConfigKey = new ConfigKey(classOf[ComponentsConfig], configId)
 
-  var configurer = new ConfigRetriever(Set(bundlesConfigKey, componentsConfigKey), subscriberFactory.getSubscriber(_))
+  var configurer = new ConfigRetriever(Set(bundlesConfigKey, componentsConfigKey), (keys) => subscriberFactory.getSubscriber(keys.asJava))
   var previousConfigGeneration = -1L
   var leastGeneration = -1L
 
@@ -51,7 +51,7 @@ class Container(
       val oldComponents = new IdentityHashMap[AnyRef, AnyRef]()
       oldGraph.allComponentsAndProviders foreach (oldComponents.put(_, null))
       newGraph.allComponentsAndProviders foreach (oldComponents.remove(_))
-      oldComponents.keySet foreach (componentDeconstructor.deconstruct(_))
+      oldComponents.keySet.asScala foreach (componentDeconstructor.deconstruct(_))
     }
 
     try {
@@ -157,8 +157,8 @@ class Container(
 
   def injectNodes(config: ComponentsConfig, graph: ComponentGraph) {
     for {
-      component <- config.components()
-      inject <- component.inject()
+      component <- config.components().asScala
+      inject <- component.inject().asScala
     } {
       def getNode = ComponentGraph.getNode(graph, _: String)
 
@@ -194,7 +194,7 @@ class Container(
     def isRestApiContext(clazz: Class[_]) = classOf[RestApiContext].isAssignableFrom(clazz)
     def asRestApiContext(clazz: Class[_]) = clazz.asInstanceOf[Class[RestApiContext]]
 
-    for (config : ComponentsConfig.Components <- componentsConfig.components) {
+    for (config : ComponentsConfig.Components <- componentsConfig.components.asScala) {
       val specification = bundleInstatiationSpecification(config)
       val componentClass = osgi.resolveClass(specification)
 

@@ -14,7 +14,7 @@ import org.apache.maven.plugins.annotations.{Mojo, Parameter, ResolutionScope}
 import org.apache.maven.project.MavenProject
 import org.codehaus.plexus.archiver.jar.JarArchiver
 
-import scala.collection.convert.wrapAsScala._
+import scala.collection.JavaConverters._
 
 /**
  * @author  tonytv
@@ -91,7 +91,7 @@ class AssembleContainerPluginMojo extends AbstractMojo {
   private def copyConfigDefinitions(file: File, jarArchiver: JarArchiver) {
     JarFiles.withJarFile(file) { jarFile =>
       for {
-        entry <- jarFile.entries()
+        entry <- jarFile.entries().asScala
         name = entry.getName
         if name.startsWith("configdefinitions/") && name.endsWith(".def")
 

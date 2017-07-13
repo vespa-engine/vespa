@@ -5,7 +5,7 @@ import com.yahoo.vespa.scalalib.osgi.maven.ProjectBundleClassPaths;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import scala.collection.JavaConversions;
+import scala.collection.JavaConverters;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -28,7 +28,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Verifies the bundle jar file built and its manifest.
@@ -144,7 +143,7 @@ public class BundleIT {
         assertThat(bundleClassPaths.mainBundle().bundleSymbolicName(), is("bundle-plugin-test"));
 
         Collection<String> mainBundleClassPaths =
-                JavaConversions.asJavaCollection(bundleClassPaths.mainBundle().classPathElements());
+                JavaConverters.asJavaCollectionConverter(bundleClassPaths.mainBundle().classPathElements()).asJavaCollection();
 
         assertThat(mainBundleClassPaths,
                 hasItems(

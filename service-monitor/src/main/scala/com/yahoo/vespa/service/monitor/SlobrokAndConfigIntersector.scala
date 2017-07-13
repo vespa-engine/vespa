@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.monitor
 
-import java.util.{Collections, Optional}
 import java.util.logging.Logger
+import java.util.{Collections, Optional}
 
 import com.google.inject.Inject
 import com.yahoo.cloud.config.ConfigserverConfig
@@ -15,10 +15,9 @@ import com.yahoo.vespa.service.monitor.SlobrokAndConfigIntersector._
 import com.yahoo.vespa.service.monitor.SlobrokMonitor._
 import com.yahoo.vespa.service.monitor.config.InstancesObservables
 import com.yahoo.vespa.service.monitor.config.InstancesObservables._
-import rx.lang.scala.{Subscription, Observable}
+import rx.lang.scala.{Observable, Subscription}
 
-import scala.collection.convert.decorateAsJava._
-import scala.collection.convert.decorateAsScala._
+import scala.collection.JavaConverters._
 import scala.collection.immutable.Set
 import scala.concurrent.duration._
 import scala.language.postfixOps

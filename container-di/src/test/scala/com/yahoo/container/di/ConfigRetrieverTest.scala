@@ -1,15 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di
 
-import org.junit.Assert._
-import org.hamcrest.CoreMatchers.{is, instanceOf => hamcrestInstanceOf}
+import com.yahoo.config.test.{Bootstrap1Config, Bootstrap2Config, TestConfig}
+import com.yahoo.container.di.ConfigRetriever.{BootstrapConfigs, ComponentsConfigs}
 import com.yahoo.vespa.config.ConfigKey
-import com.yahoo.config.test.{TestConfig, Bootstrap2Config, Bootstrap1Config}
-import com.yahoo.container.di.ConfigRetriever.{ComponentsConfigs, BootstrapConfigs}
-import org.junit.{Ignore, After, Before, Test}
-import scala.collection.JavaConversions._
-import scala.reflect.ClassTag
+import org.hamcrest.CoreMatchers.{is, instanceOf => hamcrestInstanceOf}
 import org.hamcrest.Matcher
+import org.junit.Assert._
+import org.junit.{After, Before, Ignore, Test}
+
+import scala.reflect.ClassTag
+import scala.collection.JavaConverters._
 
 /**
  *
@@ -79,7 +80,7 @@ class ConfigRetrieverTest {
     new ConfigRetriever(
       Set(new ConfigKey(classOf[Bootstrap1Config], configId),
           new ConfigKey(classOf[Bootstrap2Config], configId)),
-      subscriber.getSubscriber(_))
+      (keys) => subscriber.getSubscriber(keys.asJava))
   }
 
   def writeConfig = dirConfigSource.writeConfig _

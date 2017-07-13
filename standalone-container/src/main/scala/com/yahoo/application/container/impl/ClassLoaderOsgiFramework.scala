@@ -1,20 +1,21 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.application.container.impl
 
-import com.yahoo.jdisc.application.{OsgiHeader, OsgiFramework}
-import java.util
-import org.osgi.framework._
 import java.io.InputStream
-import util.concurrent.atomic.AtomicInteger
-import util.jar.JarFile
-import util.{Dictionary, Collections, Hashtable}
-
-import scala.collection.JavaConversions._
-import com.yahoo.container.standalone.StandaloneContainerApplication
-import collection.mutable.ArrayBuffer
 import java.net.{URL, URLClassLoader}
+import java.util
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.jar.JarFile
+import java.util.{Collections, Dictionary, Hashtable}
+
+import com.yahoo.container.standalone.StandaloneContainerApplication
+import com.yahoo.jdisc.application.{OsgiFramework, OsgiHeader}
+import org.osgi.framework._
 import org.osgi.framework.wiring._
-import org.osgi.resource.{Wire, Capability, Requirement}
+import org.osgi.resource.{Capability, Requirement, Wire}
+
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * A (mock) OSGI implementation which loads classes from the system classpath
@@ -55,7 +56,7 @@ final class ClassLoaderOsgiFramework extends OsgiFramework {
 
   override def bundleContext():BundleContext = BundleContextImpl
 
-  override def bundles() = bundleList
+  override def bundles() = bundleList.asJava
 
   override def start() {}
 
@@ -139,7 +140,7 @@ final class ClassLoaderOsgiFramework extends OsgiFramework {
   private object SystemBundleImpl extends BundleImpl {
     override val getBundleId = 0L
     override def getVersion = Version.emptyVersion
-    override def getHeaders: Dictionary[String, String] = new Hashtable[String, String](Map(OsgiHeader.APPLICATION -> classOf[StandaloneContainerApplication].getName))
+    override def getHeaders: Dictionary[String, String] = new Hashtable[String, String](Map(OsgiHeader.APPLICATION -> classOf[StandaloneContainerApplication].getName).asJava)
   }
 
 
@@ -157,7 +158,7 @@ final class ClassLoaderOsgiFramework extends OsgiFramework {
       val jarFile = new JarFile(location.getFile)
       try {
         val attributes = jarFile.getManifest.getMainAttributes
-        new Hashtable[String, String](attributes.entrySet().map( entry => entry.getKey.toString -> entry.getValue.toString).toMap)
+        new Hashtable[String, String](attributes.entrySet().asScala.map( entry => entry.getKey.toString -> entry.getValue.toString).toMap.asJava)
       } finally {
         jarFile.close()
       }

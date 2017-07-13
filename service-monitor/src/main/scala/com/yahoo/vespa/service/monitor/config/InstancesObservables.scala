@@ -8,14 +8,13 @@ import com.yahoo.cloud.config.LbServicesConfig
 import com.yahoo.cloud.config.LbServicesConfig.Tenants.Applications.Hosts
 import com.yahoo.cloud.config.LbServicesConfig.Tenants.Applications.Hosts.Services.Ports
 import com.yahoo.config.subscription.ConfigSourceSet
-import com.yahoo.vespa.applicationmodel.{ApplicationInstanceId, TenantId, ServiceClusterKey, ServiceCluster, ServiceInstance, ApplicationInstance, ServiceType, HostName, ConfigId, ClusterId, ApplicationInstanceReference}
+import com.yahoo.vespa.applicationmodel.{ApplicationInstance, ApplicationInstanceId, ApplicationInstanceReference, ClusterId, ConfigId, HostName, ServiceCluster, ServiceClusterKey, ServiceInstance, ServiceType, TenantId}
 import com.yahoo.vespa.service.monitor.config.InstancesObservables._
 import rx.lang.scala.JavaConversions._
 import rx.lang.scala.{Observable, Subscription}
 import rx.schedulers.Schedulers
 
-import scala.collection.convert.decorateAsJava._
-import scala.collection.convert.wrapAsScala._
+import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
 /**
@@ -63,8 +62,8 @@ object InstancesObservables {
 
   private def asInstanceReferenceToHostConfigMap(config: LbServicesConfig) = {
     for {
-      (tenantIdString, tenantConfig) <- config.tenants()
-      (applicationIdString, applicationConfig) <- tenantConfig.applications()
+      (tenantIdString, tenantConfig) <- config.tenants().asScala
+      (applicationIdString, applicationConfig) <- tenantConfig.applications().asScala
     } yield {
       val applicationInstanceReference: ApplicationInstanceReference = new ApplicationInstanceReference(
         new TenantId(tenantIdString),
@@ -80,19 +79,19 @@ object InstancesObservables {
     }
 
     for {
-      (hostName, hostConfig) <- hostsConfigs
+      (hostName, hostConfig) <- hostsConfigs.asScala
       slobrokService <- Option(hostConfig.services("slobrok"))
     } yield SlobrokService(
       hostName,
-      rpcPort(slobrokService.ports()).getOrElse(throw new RuntimeException("Found slobrok without rpc port")))
+      rpcPort(slobrokService.ports().asScala).getOrElse(throw new RuntimeException("Found slobrok without rpc port")))
   }
 
   private def asServiceClusterSet(hostsConfigs: java.util.Map[String, Hosts])
   : java.util.Set[ServiceCluster[Void]] = {
 
     val serviceInstancesGroupedByCluster: Map[ServiceClusterKey, Iterable[ServiceInstance[Void]]] = (for {
-      (hostName, hostConfig) <- hostsConfigs.view
-      (serviceName, servicesConfig) <- hostConfig.services()
+      (hostName, hostConfig) <- hostsConfigs.asScala.view
+      (serviceName, servicesConfig) <- hostConfig.services().asScala
     } yield {
       (new ServiceClusterKey(new ClusterId(servicesConfig.clustername()), new ServiceType(servicesConfig.`type`())),
         new ServiceInstance(new ConfigId(servicesConfig.configId()), new HostName(hostName), null.asInstanceOf[Void]))

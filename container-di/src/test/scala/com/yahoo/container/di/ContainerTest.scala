@@ -1,28 +1,26 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di
 
-import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.{SimpleComponent, SimpleComponent2}
-import com.yahoo.container.di.componentgraph.Provider
-import com.yahoo.container.di.componentgraph.core.{ComponentGraph, ComponentNode, Node}
-import org.junit.{After, Before, Ignore, Test}
-import org.junit.Assert._
-import org.hamcrest.CoreMatchers._
-import com.yahoo.config.test.TestConfig
 import com.yahoo.component.AbstractComponent
-import ContainerTest._
-
-import scala.collection.JavaConversions
 import com.yahoo.config.di.IntConfig
-
-import scala.concurrent.{Await, Future, future}
-import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.Try
-import com.yahoo.container.di.config.RestApiContext
+import com.yahoo.config.test.TestConfig
 import com.yahoo.container.bundle.MockBundle
+import com.yahoo.container.di.ContainerTest._
+import com.yahoo.container.di.componentgraph.Provider
+import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.{SimpleComponent, SimpleComponent2}
 import com.yahoo.container.di.componentgraph.core.ComponentNode.ComponentConstructorException
+import com.yahoo.container.di.componentgraph.core.{ComponentGraph, Node}
+import com.yahoo.container.di.config.RestApiContext
+import org.hamcrest.CoreMatchers._
+import org.junit.Assert._
+import org.junit.{After, Before, Ignore, Test}
 
-import scala.language.postfixOps
+import scala.collection.JavaConverters._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
+import scala.language.{existentials, postfixOps}
+import scala.util.Try
 
 /**
  * @author tonytv
@@ -396,5 +394,5 @@ object ContainerTest {
     componentGraph.getInstance(classOf[ComponentTakingConfig])
   }
 
-  def convertMap[K, V](map: java.util.Map[K, V]): Map[K, V] = JavaConversions.mapAsScalaMap(map).toMap
+  def convertMap[K, V](map: java.util.Map[K, V]): Map[K, V] = map.asScala.toMap
 }
