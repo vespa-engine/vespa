@@ -80,7 +80,7 @@ public class ProxyServer implements Runnable {
         this.delayedResponseHandling = delayedResponseHandling;
         this.memoryCache = memoryCache;
         this.rpcServer = createRpcServer(spec);
-        clientUpdater = new ClientUpdater(memoryCache, rpcServer, statistics, delayedResponses, mode);
+        clientUpdater = new ClientUpdater(rpcServer, statistics, delayedResponses);
         this.configClient = createClient(clientUpdater, delayedResponses, source, timingValues, memoryCache, configClient);
     }
 
@@ -262,7 +262,7 @@ public class ProxyServer implements Runnable {
         }
     }
 
-    public MemoryCache getMemoryCache() {
+    MemoryCache getMemoryCache() {
         return memoryCache;
     }
 

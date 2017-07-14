@@ -19,7 +19,7 @@ import java.util.Optional;
  */
 public class ConfigTester {
 
-    private final long defaultTimeout = 10000;
+    private static final long defaultTimeout = 10000;
 
     public JRTServerConfigRequest createRequest(RawConfig config) {
         return createRequest(config, defaultTimeout);
@@ -28,10 +28,6 @@ public class ConfigTester {
     public JRTServerConfigRequest createRequest(RawConfig config, long timeout) {
         return createRequest(config.getName(), config.getConfigId(), config.getNamespace(),
                              config.getConfigMd5(), config.getDefMd5(), config.getGeneration(), timeout);
-    }
-
-    public JRTServerConfigRequest createRequest(String configName, String configId, String namespace) {
-        return createRequest(configName, configId, namespace, defaultTimeout);
     }
 
     public JRTServerConfigRequest createRequest(String configName, String configId, String namespace, long timeout) {

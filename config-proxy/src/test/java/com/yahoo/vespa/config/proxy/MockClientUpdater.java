@@ -10,12 +10,12 @@ import java.time.Instant;
 class MockClientUpdater extends ClientUpdater {
     private RawConfig lastConfig;
 
-    MockClientUpdater(MemoryCache memoryCache) {
-        this(new ConfigProxyStatistics(), new Mode(), memoryCache);
+    MockClientUpdater() {
+        this(new ConfigProxyStatistics());
     }
 
-    private MockClientUpdater(ConfigProxyStatistics statistics, Mode mode, MemoryCache memoryCache) {
-        super(memoryCache, new MockRpcServer(), statistics, new DelayedResponses(statistics), mode);
+    private MockClientUpdater(ConfigProxyStatistics statistics) {
+        super(new MockRpcServer(), statistics, new DelayedResponses(statistics));
     }
 
     @Override

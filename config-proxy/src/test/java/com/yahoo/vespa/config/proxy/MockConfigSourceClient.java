@@ -14,18 +14,18 @@ import java.util.List;
  * @author hmusum
  */
 public class MockConfigSourceClient implements ConfigSourceClient{
-    private final ClientUpdater clientUpdater;
     private final MockConfigSource configSource;
+    private final MemoryCache memoryCache;
 
-    MockConfigSourceClient(ClientUpdater clientUpdater, MockConfigSource configSource) {
-        this.clientUpdater = clientUpdater;
+    MockConfigSourceClient(MockConfigSource configSource, MemoryCache memoryCache) {
         this.configSource = configSource;
+        this.memoryCache = memoryCache;
     }
 
     @Override
     public RawConfig getConfig(RawConfig input, JRTServerConfigRequest request) {
         final RawConfig config = getConfig(input.getKey());
-        clientUpdater.getMemoryCache().put(config);
+        memoryCache.put(config);
         return config;
     }
 
