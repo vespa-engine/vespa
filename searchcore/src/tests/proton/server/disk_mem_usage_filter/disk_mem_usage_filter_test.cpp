@@ -74,10 +74,9 @@ TEST_F("Check that disk limit can be reached", Fixture)
     f.triggerDiskLimit();
     f.testWrite("diskLimitReached: { "
                 "action: \"add more content nodes\", "
-                "reason: \""
-                "disk used (0.9) > disk limit (0.8)"
-                "\", "
-                "capacity: 100, free: 20, available: 10, diskLimit: 0.8}");
+                "reason: \"disk used (0.9) > disk limit (0.8)\", "
+                "stats: { "
+                "capacity: 100, free: 20, available: 10, diskUsed: 0.9, diskLimit: 0.8}}");
 }
 
 TEST_F("Check that memory limit can be reached", Fixture)
@@ -86,12 +85,11 @@ TEST_F("Check that memory limit can be reached", Fixture)
     f.triggerMemoryLimit();
     f.testWrite("memoryLimitReached: { "
                 "action: \"add more content nodes\", "
-                "reason: \""
-                "memory used (0.875) > memory limit (0.8)"
-                "\", "
+                "reason: \"memory used (0.875) > memory limit (0.8)\", "
+                "stats: { "
                 "mapped: { virt: 58720259, rss: 58720258}, "
                 "anonymous: { virt: 58720257, rss: 58720256}, "
-                "physicalMemory: 67108864, memoryLimit : 0.8}");
+                "physicalMemory: 67108864, memoryUsed: 0.875, memoryLimit: 0.8}}");
 }
 
 TEST_F("Check that both disk limit and memory limit can be reached", Fixture)
@@ -101,18 +99,16 @@ TEST_F("Check that both disk limit and memory limit can be reached", Fixture)
     f.triggerDiskLimit();
     f.testWrite("memoryLimitReached: { "
                 "action: \"add more content nodes\", "
-                "reason: \""
-                "memory used (0.875) > memory limit (0.8)"
-                "\", "
+                "reason: \"memory used (0.875) > memory limit (0.8)\", "
+                "stats: { "
                 "mapped: { virt: 58720259, rss: 58720258}, "
                 "anonymous: { virt: 58720257, rss: 58720256}, "
-                "physicalMemory: 67108864, memoryLimit : 0.8}, "
+                "physicalMemory: 67108864, memoryUsed: 0.875, memoryLimit: 0.8}}, "
                 "diskLimitReached: { "
                 "action: \"add more content nodes\", "
-                "reason: \""
-                "disk used (0.9) > disk limit (0.8)"
-                "\", "
-                "capacity: 100, free: 20, available: 10, diskLimit: 0.8}");
+                "reason: \"disk used (0.9) > disk limit (0.8)\", "
+                "stats: { "
+                "capacity: 100, free: 20, available: 10, diskUsed: 0.9, diskLimit: 0.8}}");
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
