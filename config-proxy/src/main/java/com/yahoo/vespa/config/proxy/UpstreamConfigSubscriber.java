@@ -25,7 +25,8 @@ public class UpstreamConfigSubscriber implements Subscriber {
     private final ClientUpdater clientUpdater;
     private final ConfigSource configSourceSet;
     private final TimingValues timingValues;
-    private Map<ConfigSourceSet, JRTConfigRequester> requesterPool;
+    private final Map<ConfigSourceSet, JRTConfigRequester> requesterPool;
+    private final MemoryCache memoryCache;
     private GenericConfigSubscriber subscriber;
     private GenericConfigHandle handle;
 
@@ -33,12 +34,14 @@ public class UpstreamConfigSubscriber implements Subscriber {
                              ClientUpdater clientUpdater,
                              ConfigSource configSourceSet,
                              TimingValues timingValues,
-                             Map<ConfigSourceSet, JRTConfigRequester> requesterPool) {
+                             Map<ConfigSourceSet, JRTConfigRequester> requesterPool,
+                             MemoryCache memoryCache) {
         this.config = config;
         this.clientUpdater = clientUpdater;
         this.configSourceSet = configSourceSet;
         this.timingValues = timingValues;
         this.requesterPool = requesterPool;
+        this.memoryCache = memoryCache;
     }
 
     void subscribe() {
@@ -68,7 +71,7 @@ public class UpstreamConfigSubscriber implements Subscriber {
                     "', generation=" + newConfig.getGeneration() +
                     ", payload=" + newConfig.getPayload());
         }
-        // memoryCache.put(); TODO: Add here later and remove in ClientUpdater
+        memoryCache.put(newConfig);
         clientUpdater.updateSubscribers(newConfig);
     }
 

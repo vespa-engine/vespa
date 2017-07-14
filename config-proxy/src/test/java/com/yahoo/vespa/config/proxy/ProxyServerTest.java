@@ -23,9 +23,9 @@ import static org.junit.Assert.*;
 public class ProxyServerTest {
 
     private final MemoryCache memoryCache = new MemoryCache();
-    private MockClientUpdater clientUpdater = new MockClientUpdater(memoryCache);
+    private MockClientUpdater clientUpdater = new MockClientUpdater();
     private final MockConfigSource source = new MockConfigSource(clientUpdater);
-    private MockConfigSourceClient client = new MockConfigSourceClient(clientUpdater, source);
+    private MockConfigSourceClient client = new MockConfigSourceClient(source, memoryCache);
     private final ConfigProxyStatistics statistics = new ConfigProxyStatistics();
     private ProxyServer proxy;
 

@@ -10,51 +10,36 @@ import java.util.logging.Logger;
 
 /**
  * Updates clients subscribing to config when config changes or the
- * timeout they have specified has elapsed.
+ * timeout they have specified has elapsed. Not used when in 'memorycache' mode.
  *
  * @author hmusum
  */
 class ClientUpdater {
     private final static Logger log = Logger.getLogger(ClientUpdater.class.getName());
 
-    private final MemoryCache memoryCache;
     private final ConfigProxyStatistics statistics;
     private final RpcServer rpcServer;
     private final DelayedResponses delayedResponses;
-    private final Mode mode;
 
-    ClientUpdater(MemoryCache memoryCache,
-                  RpcServer rpcServer,
+    ClientUpdater(RpcServer rpcServer,
                   ConfigProxyStatistics statistics,
-                  DelayedResponses delayedResponses,
-                  Mode mode) {
-        this.memoryCache = memoryCache;
+                  DelayedResponses delayedResponses) {
         this.rpcServer = rpcServer;
         this.statistics = statistics;
         this.delayedResponses = delayedResponses;
-        this.mode = mode;
     }
 
     /**
      * This method will be called when a response with changed config is received from upstream
      * (content or generation has changed) or the server timeout has elapsed.
-     * Updates the cache with the returned config.
+     * Updates the cache with the returned config. Will only be called when in default mode
      *
      * @param config new config
      */
     void updateSubscribers(RawConfig config) {
-        // ignore updates if we are in one of these modes (we will then only serve from cache).
-        if (!mode.requiresConfigSource()) {
-            if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "Not updating " + config.getKey() + "," + config.getGeneration() +
-                        ", since we are in '" + mode + "' mode");
-            }
-            return;
-        }
         if (log.isLoggable(LogLevel.DEBUG)) {
             log.log(LogLevel.DEBUG, "Config updated for " + config.getKey() + "," + config.getGeneration());
         }
-        memoryCache.put(config);
         sendResponse(config);
     }
 
@@ -105,8 +90,4 @@ class ClientUpdater {
         }
     }
 
-    // TODO: Remove, temporary until MapBackedConfigSource has been refactored
-    public MemoryCache getMemoryCache() {
-        return memoryCache;
-    }
 }
