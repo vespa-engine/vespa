@@ -112,6 +112,7 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
     }
 
     private void warnOnStaleContainers() {
+        log.log(Level.FINE, "Checking for stale containers");
         try {
             List<DeactivatedContainer> snapshot = getDeactivatedContainersSnapshot();
             if (snapshot.isEmpty()) return;
@@ -122,11 +123,13 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
     }
 
     private static void triggerGc() {
+        log.log(Level.FINE, "Triggering GC");
         System.gc();
         System.runFinalization(); // this is required to trigger enqueuing of phantom references on some Linux systems
     }
 
     private void enforceDestructionOfGarbageCollectedContainers() {
+        log.log(Level.FINE, "Enforcing destruction of GCed containers");
         ActiveContainerPhantomReference reference;
         while ((reference = (ActiveContainerPhantomReference) garbageCollectedContainers.poll()) != null) {
             try {
