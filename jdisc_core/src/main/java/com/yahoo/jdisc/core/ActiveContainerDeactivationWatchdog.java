@@ -67,7 +67,7 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
                                            WATCHDOG_FREQUENCY.getSeconds(),
                                            WATCHDOG_FREQUENCY.getSeconds(),
                                            TimeUnit.SECONDS);
-        this.scheduler.scheduleAtFixedRate(System::gc,
+        this.scheduler.scheduleAtFixedRate(ActiveContainerDeactivationWatchdog::triggerGc,
                                            GC_TRIGGER_FREQUENCY.getSeconds(),
                                            GC_TRIGGER_FREQUENCY.getSeconds(),
                                            TimeUnit.SECONDS);
@@ -119,6 +119,11 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
         } catch (Throwable t) {
             log.log(Level.WARNING, "Watchdog task died!", t);
         }
+    }
+
+    private static void triggerGc() {
+        System.gc();
+        System.runFinalization(); // this is required to trigger enqueuing of phantom references on some Linux systems
     }
 
     private void enforceDestructionOfGarbageCollectedContainers() {
