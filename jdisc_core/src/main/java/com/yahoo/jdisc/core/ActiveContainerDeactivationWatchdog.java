@@ -53,7 +53,7 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
     ActiveContainerDeactivationWatchdog() {
         this(
                 Clock.systemUTC(),
-                new ScheduledThreadPoolExecutor(3, runnable -> {
+                new ScheduledThreadPoolExecutor(1, runnable -> {
                     Thread thread = new Thread(runnable, "active-container-deactivation-watchdog");
                     thread.setDaemon(true);
                     return thread;
@@ -63,6 +63,7 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
     ActiveContainerDeactivationWatchdog(Clock clock, ScheduledExecutorService scheduler) {
         this.clock = clock;
         this.scheduler = scheduler;
+        // NOTE: Make sure to update the unit test if the order commands are registered is changed.
         this.scheduler.scheduleAtFixedRate(this::warnOnStaleContainers,
                                            WATCHDOG_FREQUENCY.getSeconds(),
                                            WATCHDOG_FREQUENCY.getSeconds(),
@@ -112,6 +113,7 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
     }
 
     private void warnOnStaleContainers() {
+        log.log(Level.FINE, "Checking for stale containers");
         try {
             List<DeactivatedContainer> snapshot = getDeactivatedContainersSnapshot();
             if (snapshot.isEmpty()) return;
@@ -122,11 +124,13 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
     }
 
     private static void triggerGc() {
+        log.log(Level.FINE, "Triggering GC");
         System.gc();
         System.runFinalization(); // this is required to trigger enqueuing of phantom references on some Linux systems
     }
 
     private void enforceDestructionOfGarbageCollectedContainers() {
+        log.log(Level.FINE, "Enforcing destruction of GCed containers");
         ActiveContainerPhantomReference reference;
         while ((reference = (ActiveContainerPhantomReference) garbageCollectedContainers.poll()) != null) {
             try {

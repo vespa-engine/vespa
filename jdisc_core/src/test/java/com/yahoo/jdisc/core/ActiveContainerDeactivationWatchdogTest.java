@@ -84,12 +84,14 @@ public class ActiveContainerDeactivationWatchdogTest {
 
         WeakReference<ActiveContainer> containerWeakReference = new WeakReference<>(container);
         container = null; // make container instance collectable by GC
-        System.gc();
-        System.runFinalization(); // this is required to trigger enqueuing of phantom references on some Linux systems
+
+        executor.triggerGcCommand.run();
 
         assertNull("Container is not GCed - probably because the watchdog has a concrete reference to it",
                    containerWeakReference.get());
-        executor.containerDestructorCommand.run();
+
+        executor.enforceDestructionOfGarbageCollectedContainersCommand.run();
+
         assertTrue("Destructor is not called on deactivated container", destructed.get());
     }
 
@@ -124,7 +126,9 @@ public class ActiveContainerDeactivationWatchdogTest {
 
     private static class ExecutorMock extends ScheduledThreadPoolExecutor {
 
-        public Runnable containerDestructorCommand;
+        public Runnable warnOnStaleContainersCommand;
+        public Runnable triggerGcCommand;
+        public Runnable enforceDestructionOfGarbageCollectedContainersCommand;
         private int registrationCounter = 0;
 
         public ExecutorMock() {
@@ -133,14 +137,19 @@ public class ActiveContainerDeactivationWatchdogTest {
 
         @Override
         public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
-            if (registrationCounter == 2) {
-                containerDestructorCommand = command;
-            } else if (registrationCounter > 2){
+            if (registrationCounter == 0) {
+                warnOnStaleContainersCommand = command;
+            } else if (registrationCounter == 1) {
+                triggerGcCommand = command;
+            } else if (registrationCounter == 2) {
+                enforceDestructionOfGarbageCollectedContainersCommand = command;
+            } else {
                 throw new IllegalStateException("Unexpected registration");
             }
             ++registrationCounter;
             return null;
         }
+
     }
 
 }
