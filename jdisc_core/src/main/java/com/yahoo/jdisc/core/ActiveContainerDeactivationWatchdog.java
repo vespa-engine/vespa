@@ -53,7 +53,7 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
     ActiveContainerDeactivationWatchdog() {
         this(
                 Clock.systemUTC(),
-                new ScheduledThreadPoolExecutor(3, runnable -> {
+                new ScheduledThreadPoolExecutor(1, runnable -> {
                     Thread thread = new Thread(runnable, "active-container-deactivation-watchdog");
                     thread.setDaemon(true);
                     return thread;
