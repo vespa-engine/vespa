@@ -63,6 +63,7 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
     ActiveContainerDeactivationWatchdog(Clock clock, ScheduledExecutorService scheduler) {
         this.clock = clock;
         this.scheduler = scheduler;
+        // NOTE: Make sure to update the unit test if the order commands are registered is changed.
         this.scheduler.scheduleAtFixedRate(this::warnOnStaleContainers,
                                            WATCHDOG_FREQUENCY.getSeconds(),
                                            WATCHDOG_FREQUENCY.getSeconds(),
