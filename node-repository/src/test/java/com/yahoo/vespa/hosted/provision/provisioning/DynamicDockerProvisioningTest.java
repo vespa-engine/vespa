@@ -32,6 +32,23 @@ import static org.junit.Assert.fail;
  */
 public class DynamicDockerProvisioningTest {
 
+    @Test(expected = OutOfCapacityException.class)
+    public void multiple_groups_are_on_separate_parent_hosts() {
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")), flavorsConfig());
+        enableDynamicAllocation(tester);
+        tester.makeReadyNodes(5, "host-small", NodeType.host, 32);
+        deployZoneApp(tester);
+        Flavor flavor = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("d-1");
+
+        //Deploy an application of 6 nodes of 3 nodes in each cluster. We only have 3 docker hosts available
+        ApplicationId application1 = tester.makeApplicationId();
+        tester.prepare(application1,
+                ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100")),
+                6, 2, flavor.canonicalName());
+
+        fail("Two groups have been allocated to the same parent host");
+    }
+
     @Test
     public void spare_capacity_used_only_when_replacement() {
         // Use spare capacity only when replacement (i.e one node is failed)
