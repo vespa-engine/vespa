@@ -11,6 +11,7 @@
 
     <modules>
         <module>basic-search-java</module>
+        <module>basic-search-tensor</module>
         <module>blog-recommendation</module>
         <module>boolean-search</module>
         <module>http-api-using-request-handlers-and-processors</module>
