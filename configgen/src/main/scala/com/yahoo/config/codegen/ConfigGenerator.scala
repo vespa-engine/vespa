@@ -186,11 +186,8 @@ object ConfigGenerator {
       // TODO @link gives javadoc warnings, although the syntax seems to be valid
       //def link = "{@link " + {nodeClass(inner)} + "#" + {nodeClass(inner)} + "(Builder)}"
       def link = {nodeClass(inner)} + "(Builder)"
-      def visibility = inner match {
-        case array: InnerCNode if inner.isArray => "public"
-        case _ => "private"
-      }
 
+      def ctor =
       <code>
         |/**
         | * @deprecated  Not for public use.
@@ -198,10 +195,15 @@ object ConfigGenerator {
         | *    Replaced by {link}
         | */
         |@Deprecated
-        |{visibility} {nodeClass(inner)}() {{
+        |private {nodeClass(inner)}() {{
         |  this(new Builder(), false);
         |}}
       </code>.text.stripMargin.trim
+
+      inner match {
+        case array: InnerCNode if inner.isArray => ctor
+        case _ => ""
+      }
     }
 
     // TODO: merge these two constructors into one when the config library uses builders to set values from payload.
