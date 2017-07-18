@@ -25,3 +25,6 @@ cp -p ../dist/vespa.spec tmp/vespa.spec
 docker build -t "$CI_DOCKER_IMAGE" -f ci/Dockerfile .
 docker run --rm -v ${DIR}/..:/vespa --entrypoint /vespa-ci-internal.sh "$CI_DOCKER_IMAGE" "$GIT_COMMIT" \
    2>&1 | tee vespa-ci-$(date +%Y-%m-%dT%H:%M:%S%z).log
+
+# Needed because of piping docker run to tee above
+exit ${PIPESTATUS[0]}
