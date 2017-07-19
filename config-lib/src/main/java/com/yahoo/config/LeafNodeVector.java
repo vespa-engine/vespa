@@ -34,7 +34,6 @@ public class LeafNodeVector<REAL, NODE extends LeafNode<REAL>> extends NodeVecto
         realValues = realList(vector);
     }
 
-    @SuppressWarnings("unchecked")
     public List<REAL> asList() {
         return realValues;
     }
@@ -62,7 +61,7 @@ public class LeafNodeVector<REAL, NODE extends LeafNode<REAL>> extends NodeVecto
          for (String s : values)
              fileReferences.add(new FileReference(ReferenceNode.stripQuotes(s)));
 
-        return new LeafNodeVector<FileReference, FileNode>(fileReferences, new FileNode());
+        return new LeafNodeVector<>(fileReferences, new FileNode());
     }
 
     public static LeafNodeVector<Path, PathNode> createPathNodeVector(Collection<FileReference> values) {
@@ -70,6 +69,6 @@ public class LeafNodeVector<REAL, NODE extends LeafNode<REAL>> extends NodeVecto
         for (FileReference fileReference : values)
             paths.add(Paths.get(fileReference.value()));
 
-        return new LeafNodeVector<Path, PathNode>(paths, new PathNode());
+        return new LeafNodeVector<>(paths, new PathNode());
     }
 }
