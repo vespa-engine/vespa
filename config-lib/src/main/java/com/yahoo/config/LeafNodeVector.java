@@ -34,25 +34,25 @@ public class LeafNodeVector<REAL, NODE extends LeafNode<REAL>> extends NodeVecto
         realValues = realList(vector);
     }
 
+    @SuppressWarnings("unchecked")
+    public List<REAL> asList() {
+        return realValues;
+    }
+
     /**
      * Creates a new Node by cloning the default node.
      */
     @SuppressWarnings("unchecked")
-    private NODE createNew(NODE defaultNode) {
+    private static <NODE extends LeafNode<?>> NODE createNew(NODE defaultNode) {
         return (NODE) (defaultNode).clone();
     }
 
-    private List<REAL> realList(List<NODE> nodes) {
-        List<REAL> reals = new ArrayList<REAL>();
-        for(NODE node : vector) {
+    private static<REAL, NODE extends LeafNode<REAL>> List<REAL> realList(List<NODE> nodes) {
+        List<REAL> reals = new ArrayList<>();
+        for(NODE node : nodes) {
             reals.add(node.value());
         }
         return Collections.unmodifiableList(reals);
-    }
-
-    @SuppressWarnings("unchecked")
-    public List<REAL> asList() {
-        return realValues;
     }
 
     // TODO: Try to eliminate the need for this method when we have moved FileAcquirer to the config library
