@@ -12,7 +12,7 @@ import com.yahoo.vespa.scalalib.osgi.maven.ProjectBundleClassPaths
 import com.yahoo.vespa.scalalib.osgi.maven.ProjectBundleClassPaths.BundleClasspathMapping
 import org.apache.http.HttpResponse
 import org.apache.http.client.methods.HttpGet
-import org.apache.http.impl.client.DefaultHttpClient
+import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.util.EntityUtils
 import org.hamcrest.CoreMatchers.is
 import org.junit.Assert._
@@ -121,9 +121,9 @@ class JerseyTest {
       </services>,
       Networking.enable)) { jdisc =>
 
-      val client = new DefaultHttpClient()
 
       def httpGetter(path: HttpPath) = {
+        val client = HttpClientBuilder.create().build()
         client.execute(new HttpGet(s"http://localhost:$getListenPort/rest-api/${path.stripPrefix("/")}"))
       }
 
