@@ -15,11 +15,6 @@ public abstract class NodeVector<NODE> implements java.util.List<NODE> {
     protected final ArrayList<NODE> vector = new ArrayList<NODE>();
 
     /**
-     * Creates a new Node.
-     */
-    protected abstract NODE createNew();
-
-    /**
      * Returns the number of elements in this NodeVector.
      * Alias for size().
      *

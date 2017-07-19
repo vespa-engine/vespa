@@ -45,7 +45,7 @@ public class LeafNodeVector<REAL, NODE extends LeafNode<REAL>> extends NodeVecto
      * Creates a new Node by cloning the default node.
      */
     @SuppressWarnings("unchecked")
-    protected NODE createNew() {
+    private NODE createNew() {
         return (NODE) (defaultNode).clone();
     }
 
