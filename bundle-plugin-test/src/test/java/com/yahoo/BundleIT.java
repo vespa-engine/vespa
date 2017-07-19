@@ -1,11 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo;
 
-import com.yahoo.vespa.scalalib.osgi.maven.ProjectBundleClassPaths;
+import com.yahoo.osgi.maven.ProjectBundleClassPaths;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import scala.collection.JavaConverters;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -132,18 +131,17 @@ public class BundleIT {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void bundle_class_path_mappings_are_generated() throws URISyntaxException {
-        URL mappingsUrl = getClass().getResource("/" + ProjectBundleClassPaths.classPathMappingsFileName());
+    public void bundle_class_path_mappings_are_generated() throws URISyntaxException, IOException {
+        URL mappingsUrl = getClass().getResource("/" + com.yahoo.osgi.maven.ProjectBundleClassPaths.CLASSPATH_MAPPINGS_FILENAME);
         assertNotNull(
-                "Could not find " + ProjectBundleClassPaths.classPathMappingsFileName() + " in the test output directory",
+                "Could not find " + ProjectBundleClassPaths.CLASSPATH_MAPPINGS_FILENAME + " in the test output directory",
                 mappingsUrl);
 
         ProjectBundleClassPaths bundleClassPaths = ProjectBundleClassPaths.load(Paths.get(mappingsUrl.toURI()));
 
-        assertThat(bundleClassPaths.mainBundle().bundleSymbolicName(), is("bundle-plugin-test"));
+        assertThat(bundleClassPaths.mainBundle.bundleSymbolicName, is("bundle-plugin-test"));
 
-        Collection<String> mainBundleClassPaths =
-                JavaConverters.asJavaCollectionConverter(bundleClassPaths.mainBundle().classPathElements()).asJavaCollection();
+        Collection<String> mainBundleClassPaths = bundleClassPaths.mainBundle.classPathElements;
 
         assertThat(mainBundleClassPaths,
                 hasItems(

@@ -29,10 +29,6 @@
             <artifactId>annotations</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.json4s</groupId>
-            <artifactId>json4s-native_${scala.major-version}</artifactId>
-        </dependency>
     </dependencies>
     <build>
         <plugins>

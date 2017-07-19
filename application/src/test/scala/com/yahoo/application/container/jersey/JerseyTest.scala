@@ -8,8 +8,8 @@ import com.yahoo.application.Networking
 import com.yahoo.application.container.JDiscTest._
 import com.yahoo.container.test.jars.jersey.resources.TestResourceBase
 import com.yahoo.container.test.jars.jersey.{resources => jarResources}
-import com.yahoo.vespa.scalalib.osgi.maven.ProjectBundleClassPaths
-import com.yahoo.vespa.scalalib.osgi.maven.ProjectBundleClassPaths.BundleClasspathMapping
+import com.yahoo.osgi.maven.ProjectBundleClassPaths
+import com.yahoo.osgi.maven.ProjectBundleClassPaths.BundleClasspathMapping
 import org.apache.http.HttpResponse
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.HttpClientBuilder
@@ -18,6 +18,7 @@ import org.hamcrest.CoreMatchers.is
 import org.junit.Assert._
 import org.junit.Test
 
+import scala.collection.JavaConverters._
 import scala.io.Source
 
 /**
@@ -51,11 +52,11 @@ class JerseyTest {
 
   @Test
   def jersey_resources_in_provided_dependencies_can_be_invoked_from_application(): Unit = {
-    val providedDependency = BundleClasspathMapping(bundleSymbolicName, List(testClassesDirectory))
+    val providedDependency = new BundleClasspathMapping(bundleSymbolicName, List(testClassesDirectory).asJava)
 
-    save(ProjectBundleClassPaths(
-      mainBundle = BundleClasspathMapping("main", List()),
-      providedDependencies = List(providedDependency)))
+    save(new ProjectBundleClassPaths(
+      new BundleClasspathMapping("main", List().asJava),
+      List(providedDependency).asJava))
 
     with_jersey_resources() { httpGetter =>
       assertResourcesResponds(classPathResources, httpGetter)
@@ -153,12 +154,12 @@ class JerseyTest {
   }
 
   def saveMainBundleClassPathMappings(classPathElement: String): Unit = {
-    val mainBundleClassPathMappings = BundleClasspathMapping(bundleSymbolicName, List(classPathElement))
-    save(ProjectBundleClassPaths(mainBundleClassPathMappings, providedDependencies = List()))
+    val mainBundleClassPathMappings = new BundleClasspathMapping(bundleSymbolicName, List(classPathElement).asJava)
+    save(new ProjectBundleClassPaths(mainBundleClassPathMappings, List().asJava))
   }
 
   def save(projectBundleClassPaths: ProjectBundleClassPaths): Unit = {
-    val path = Paths.get(testClassesDirectory).resolve(ProjectBundleClassPaths.classPathMappingsFileName)
+    val path = Paths.get(testClassesDirectory).resolve(ProjectBundleClassPaths.CLASSPATH_MAPPINGS_FILENAME)
     ProjectBundleClassPaths.save(path, projectBundleClassPaths)
   }
 

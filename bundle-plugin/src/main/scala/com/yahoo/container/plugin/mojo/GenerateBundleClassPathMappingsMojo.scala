@@ -6,13 +6,14 @@ import java.nio.file.Paths
 
 import com.google.common.base.Preconditions
 import com.yahoo.container.plugin.bundle.AnalyzeBundle
-import com.yahoo.vespa.scalalib.osgi.maven.ProjectBundleClassPaths
-import ProjectBundleClassPaths.BundleClasspathMapping
-import com.yahoo.vespa.scalalib.osgi.maven.ProjectBundleClassPaths
+import com.yahoo.osgi.maven.ProjectBundleClassPaths
+import com.yahoo.osgi.maven.ProjectBundleClassPaths.BundleClasspathMapping
 import org.apache.maven.artifact.Artifact
 import org.apache.maven.plugin.AbstractMojo
-import org.apache.maven.plugins.annotations.{ResolutionScope, Mojo, Parameter}
+import org.apache.maven.plugins.annotations.{Mojo, Parameter, ResolutionScope}
 import org.apache.maven.project.MavenProject
+
+import scala.collection.JavaConverters._
 
 
 
@@ -61,13 +62,12 @@ class GenerateBundleClassPathMappingsMojo extends AbstractMojo {
 
     val classPathElements =  (outputDirectory +: embeddedArtifactsFiles).map(_.getAbsolutePath)
 
-    val classPathMappings = ProjectBundleClassPaths(
-      mainBundle = BundleClasspathMapping(bundleSymbolicName, classPathElements),
-      providedDependencies =  providedJarArtifacts flatMap createDependencyClasspathMapping
-    )
+    val classPathMappings = new ProjectBundleClassPaths(
+      new BundleClasspathMapping(bundleSymbolicName, classPathElements.asJava),
+      providedJarArtifacts.flatMap(createDependencyClasspathMapping).asJava)
 
     ProjectBundleClassPaths.save(
-      testOutputPath.resolve(ProjectBundleClassPaths.classPathMappingsFileName),
+      testOutputPath.resolve(ProjectBundleClassPaths.CLASSPATH_MAPPINGS_FILENAME),
       classPathMappings)
   }
 
@@ -82,7 +82,7 @@ class GenerateBundleClassPathMappingsMojo extends AbstractMojo {
   */
   def createDependencyClasspathMapping(artifact: Artifact): Option[BundleClasspathMapping] = {
     for (bundleSymbolicName <- bundleSymbolicNameForArtifact(artifact))
-    yield BundleClasspathMapping(bundleSymbolicName, classPathElements = List(artifact.getFile.getAbsolutePath))
+    yield new BundleClasspathMapping(bundleSymbolicName, List(artifact.getFile.getAbsolutePath).asJava)
   }
 
   def bundleSymbolicNameForArtifact(artifact: Artifact): Option[String] = {
