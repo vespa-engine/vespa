@@ -16,47 +16,43 @@ import java.util.List;
  */
 public class LeafNodeVector<REAL, NODE extends LeafNode<REAL>> extends NodeVector<NODE> {
 
-    NODE defaultNode;
+    private final List<REAL> realValues;
 
-    /**
-     * Creates a new vector with the given default node.
-     */
-    // TODO: remove this ctor when the library uses reflection via builders, and resizing won't be necessary
-    public LeafNodeVector(NODE defaultNode) {
+    // TODO: take class instead of default node
+    public LeafNodeVector(List<REAL> values, NODE defaultNode) {
         assert (defaultNode != null) : "The default node cannot be null";
 
-        this.defaultNode = defaultNode;
-        if (createNew() == null) {
+        if (createNew(defaultNode) == null) {
             throw new NullPointerException("Unable to duplicate the default node.");
         }
-    }
 
-    // TODO: take class instead of default node when the library uses reflection via builders
-    public LeafNodeVector(List<REAL> values, NODE defaultNode) {
-        this(defaultNode);
         for (REAL value : values) {
-            NODE node = createNew();
+            NODE node = createNew(defaultNode);
             node.value = value;
             vector.add(node);
         }
+        realValues = realList(vector);
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<REAL> asList() {
+        return realValues;
     }
 
     /**
      * Creates a new Node by cloning the default node.
      */
     @SuppressWarnings("unchecked")
-    private NODE createNew() {
+    private static <NODE extends LeafNode<?>> NODE createNew(NODE defaultNode) {
         return (NODE) (defaultNode).clone();
     }
 
-    // TODO: create unmodifiable list in ctor when the library uses reflection via builders
-    @SuppressWarnings("unchecked")
-    public List<REAL> asList() {
-        List<REAL> ret = new ArrayList<REAL>();
-        for(NODE node : vector) {
-            ret.add(node.value());
+    private static<REAL, NODE extends LeafNode<REAL>> List<REAL> realList(List<NODE> nodes) {
+        List<REAL> reals = new ArrayList<>();
+        for(NODE node : nodes) {
+            reals.add(node.value());
         }
-        return Collections.unmodifiableList(ret);
+        return Collections.unmodifiableList(reals);
     }
 
     // TODO: Try to eliminate the need for this method when we have moved FileAcquirer to the config library
