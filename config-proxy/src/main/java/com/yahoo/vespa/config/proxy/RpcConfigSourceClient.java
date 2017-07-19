@@ -53,7 +53,7 @@ class RpcConfigSourceClient implements ConfigSourceClient {
         this.delayedResponses = delayedResponses;
         this.timingValues = timingValues;
         checkConfigSources();
-        exec = Executors.newCachedThreadPool(new DaemonThreadFactory());
+        exec = Executors.newCachedThreadPool(new DaemonThreadFactory("subscriber-"));
         requesterPool = createRequesterPool(configSourceSet, timingValues);
     }
 
