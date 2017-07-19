@@ -12,8 +12,6 @@ import com.yahoo.component.ComponentSpecification
 import com.yahoo.container.di.Osgi.RelativePath
 import com.yahoo.osgi.maven.ProjectBundleClassPaths
 import com.yahoo.osgi.maven.ProjectBundleClassPaths.BundleClasspathMapping
-import com.yahoo.vespa.scalalib.arm.Using.using
-import com.yahoo.vespa.scalalib.java.function.FunctionConverters._
 import org.osgi.framework.Bundle
 import org.osgi.framework.wiring.BundleWiring
 
@@ -119,15 +117,27 @@ object OsgiUtil {
       if (packagePathsToScan.isEmpty) (name: String) => true
       else (name: String) => packagePathsToScan(packagePath(name))
 
-    using(new JarFile(jarPath.toFile)) { jarFile =>
+    var jarFile: JarFile = null
+    try {
+      jarFile = new JarFile(jarPath.toFile)
       jarFile.stream().
         map[String] { entry: JarEntry => entry.getName}.
         filter { name: String => name.endsWith(classFileTypeSuffix)}.
         filter(acceptedPackage).
         collect(Collectors.toList()).
         asScala
+    } finally {
+      if (jarFile != null) jarFile.close()
     }
   }
 
   def packageToPath(packageName: String) = packageName.replaceAllLiterally(".", "/")
+
+  implicit class JavaPredicate[T](f: T => Boolean) extends Predicate[T] {
+    override def test(t: T): Boolean = f(t)
+  }
+
+  implicit class JavaFunction[T, R](f: T => R) extends java.util.function.Function[T, R] {
+    override def apply(t: T): R = f(t)
+  }
 }
