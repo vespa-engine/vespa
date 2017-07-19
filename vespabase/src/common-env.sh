@@ -100,10 +100,10 @@ populate_environment () {
 
     read_conf_file
     consider_fallback ROOT ${VESPA_HOME%/}
-    if id yahoo >/dev/null 2>&1 ; then
-        consider_fallback VESPA_USER "yahoo"
-    elif id vespa >/dev/null 2>&1 ; then
+    if id vespa >/dev/null 2>&1 ; then
         consider_fallback VESPA_USER "vespa"
+    elif id nobody >/dev/null 2>&1 ; then
+        consider_fallback VESPA_USER "nobody"
     fi
 }
 

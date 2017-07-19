@@ -59,7 +59,9 @@ findroot
 # END environment bootstrap section
 
 [ "$VESPA_HOME" ] || { echo "Missing VESPA_HOME variable" 1>&2; exit 1; }
-[ "$VESPA_USER" ] || { echo "Missing VESPA_USER variable" 1>&2; exit 1; }
+if [ "$VESPA_USER" = "" ]; then
+    VESPA_USER=$(id -run)
+fi
 
 cd $VESPA_HOME || { echo "Cannot cd to $VESPA_HOME" 1>&2; exit 1; }
 
