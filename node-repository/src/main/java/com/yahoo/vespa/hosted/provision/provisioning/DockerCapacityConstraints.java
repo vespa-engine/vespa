@@ -42,18 +42,23 @@ public class DockerCapacityConstraints {
     /** This is a static utility class */
     private DockerCapacityConstraints() {}
 
-    /**
-     * Spare nodes in first iteration is a node that fills up the two
-     * largest hosts (in terms of free capacity)
-     */
-    public static List<Node> addSpareNodes(List<Node> nodes, int spares) {
+    public static List<Node> findSpareHosts(List<Node> nodes, int spares) {
         DockerHostCapacity capacity = new DockerHostCapacity(nodes);
-        List<Flavor> spareFlavors = nodes.stream()
+        return nodes.stream()
                 .filter(node -> node.type().equals(NodeType.host))
                 .filter(dockerHost -> dockerHost.state().equals(Node.State.active))
                 .filter(dockerHost -> capacity.freeIPs(dockerHost) > 0)
                 .sorted(capacity::compare)
                 .limit(spares)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Spare nodes in first iteration is a node that fills up the two
+     * largest hosts (in terms of free capacity)
+     */
+    public static List<Node> addSpareNodes(List<Node> nodes, int spares) {
+        List<Flavor> spareFlavors = findSpareHosts(nodes, spares).stream()
                 .map(dockerHost -> freeCapacityAsFlavor(dockerHost, nodes))
                 .collect(Collectors.toList());
 

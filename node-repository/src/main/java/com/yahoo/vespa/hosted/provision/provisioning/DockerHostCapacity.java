@@ -101,14 +101,19 @@ public class DockerHostCapacity {
 
     /**
      * Calculate the remaining capacity for the dockerHost.
+     * @param dockerHost The host to find free capacity of.
+     * @param headroomAsReservedCapacity True if headroom allocations should count as used capacity
+     *
+     * @return A default (empty) capacity if not a docker host, otherwise the free/unallocated/rest capacity
      */
-    private ResourceCapacity freeCapacityOf(Node dockerHost, boolean includeHeadroom) {
+    public ResourceCapacity freeCapacityOf(Node dockerHost, boolean headroomAsReservedCapacity) {
         // Only hosts have free capacity
         if (!dockerHost.type().equals(NodeType.host)) return new ResourceCapacity();
 
         ResourceCapacity hostCapacity = new ResourceCapacity(dockerHost);
         for (Node container : allNodes.childNodes(dockerHost).asList()) {
-            if (includeHeadroom || !(container.allocation().isPresent() && container.allocation().get().owner().tenant().value().equals(HEADROOM_TENANT))) {
+            if (headroomAsReservedCapacity || !(container.allocation().isPresent() &&
+                    container.allocation().get().owner().tenant().value().equals(HEADROOM_TENANT))) {
                 hostCapacity.subtract(container);
             }
         }
