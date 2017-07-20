@@ -63,25 +63,25 @@ public class AclMaintainer implements Runnable {
         }
         final Command flush = new FlushCommand(Chain.INPUT);
         final Command rollback = new PolicyCommand(Chain.INPUT, Action.ACCEPT);
-        log.info("Start modifying ACL rules");
+        log.info("Start modifying ACL rules for " + containerName.asString());
         try {
             log.info("Running ACL command '" + flush.asString() + "'");
             dockerOperations.executeCommandInNetworkNamespace(containerName, flush.asArray(IPTABLES_COMMAND));
             acl.toCommands().forEach(command -> {
-                log.info("Running ACL command '" + command.asString() + "'");
+                log.info("Running ACL command '" + command.asString() + "' for " + containerName.asString());
                 dockerOperations.executeCommandInNetworkNamespace(containerName,
                                                                   command.asArray(IPTABLES_COMMAND));
             });
             containerAcls.put(containerName, acl);
         } catch (Exception e) {
-            log.error("Exception occurred while configuring ACLs, attempting rollback", e);
+            log.error("Exception occurred while configuring ACLs for " + containerName.asString() + ", attempting rollback", e);
             try {
                 dockerOperations.executeCommandInNetworkNamespace(containerName, rollback.asArray(IPTABLES_COMMAND));
             } catch (Exception ne) {
-                log.error("Rollback failed, giving up", ne);
+                log.error("Rollback of ACLs for " + containerName.asString() + " failed, giving up", ne);
             }
         }
-        log.info("Finished modifying ACL rules");
+        log.info("Finished modifying ACL rules for " + containerName.asString());
     }
 
     private synchronized void configureAcls() {
