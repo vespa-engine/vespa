@@ -81,7 +81,6 @@ public class NodePrioritizer {
     }
 
     private void addSurplusNodes(List<Node> surplusNodes) {
-        //TODO change group index if content
         for (Node node : surplusNodes) {
             nodes.put(node, toNodePriority(node, true, false));
         }
@@ -221,7 +220,6 @@ public class NodePrioritizer {
         List<NodePriority> prioritizedNodes = nodes.values().stream().collect(Collectors.toList());
         Collections.sort(prioritizedNodes, (a,b) -> NodePriority.compare(a,b));
 
-        List<Node> result = new ArrayList<>();
         for (NodePriority nodePriority : prioritizedNodes) {
 
             // The replacement heuristic assumes that new nodes are offered after already existing nodes

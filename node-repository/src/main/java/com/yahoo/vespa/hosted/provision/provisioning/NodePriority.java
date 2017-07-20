@@ -84,8 +84,8 @@ public class NodePriority {
         if (freeCapacity != 0) return freeCapacity;
 
         // Choose cheapest node
-        if (n1.node.flavor().cost() < n1.node.flavor().cost()) return -1;
-        if (n2.node.flavor().cost() < n2.node.flavor().cost()) return 1;
+        if (n1.node.flavor().cost() < n2.node.flavor().cost()) return -1;
+        if (n2.node.flavor().cost() < n1.node.flavor().cost()) return 1;
 
         // All else equal choose hostname lexically
         return n1.node.hostname().compareTo(n2.node.hostname());
