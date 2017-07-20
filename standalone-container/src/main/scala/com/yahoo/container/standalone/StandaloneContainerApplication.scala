@@ -24,7 +24,7 @@ import com.yahoo.text.XML
 import com.yahoo.vespa.defaults.Defaults
 import com.yahoo.vespa.model.VespaModel
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder
-import com.yahoo.vespa.model.container.Container
+import com.yahoo.vespa.model.container.{Container, ContainerModel}
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder.Networking
 import com.yahoo.vespa.model.container.xml.{ConfigServerContainerModelBuilder, ContainerModelBuilder}
 import org.w3c.dom.Element
@@ -180,7 +180,7 @@ object StandaloneContainerApplication {
     val spec = containerRootElement(applicationPackage)
     val containerModel = newContainerModelBuilder(networkingOption).build(deployState, configModelRepo, vespaRoot, spec)
     containerModel.getCluster().prepare()
-    containerModel.initialize(configModelRepo)
+    DeprecationSuppressor.initializeContainerModel(containerModel, configModelRepo)
     val container = first(containerModel.getCluster().getContainers)
 
     // TODO: If we can do the mutations below on the builder, we can separate out model finalization from the
@@ -227,4 +227,13 @@ object StandaloneContainerApplication {
   }
 
   def path(s: String) = FileSystems.getDefault.getPath(s)
+
+  // Ugly hack required since Scala cannot suppress warnings. https://issues.scala-lang.org/browse/SI-7934
+  private object DeprecationSuppressor extends DeprecationSuppressor
+  @deprecated("", "")
+  private class DeprecationSuppressor {
+    def initializeContainerModel(containerModel: ContainerModel, configModelRepo: ConfigModelRepo): Unit = {
+      containerModel.initialize(configModelRepo)
+    }
+  }
 }

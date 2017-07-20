@@ -99,13 +99,6 @@
       <plugin>
         <groupId>net.alchim31.maven</groupId>
         <artifactId>scala-maven-plugin</artifactId>
-        <configuration>
-          <args>
-            <arg>-unchecked</arg>
-            <arg>-feature</arg>
-            <arg>-deprecation</arg>
-          </args>
-        </configuration>
         <executions>
           <execution>
             <id>compile</id>
