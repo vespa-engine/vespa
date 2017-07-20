@@ -236,6 +236,10 @@ public class NodeAllocation {
         return new ArrayList<>(nodes);
     }
 
+    public Set<Node> getAcceptedNodes() {
+        return nodes;
+    }
+
     private List<Node> byDecreasingIndex(Set<Node> nodes) {
         return nodes.stream().sorted(nodeIndexComparator().reversed()).collect(Collectors.toList());
     }

@@ -60,6 +60,10 @@ public class MockNodeRepository extends NodeRepository {
         Collections.sort(ipAddressesForAllHost);
         final HashSet<String> ipAddresses = new HashSet<>(ipAddressesForAllHost);
 
+        final List<String> additionalIpAddressesForAllHost = Arrays.asList("::2", "::3", "::4");
+        Collections.sort(additionalIpAddressesForAllHost);
+        final HashSet<String> additionalIpAddresses = new HashSet<>(additionalIpAddressesForAllHost);
+
         nodes.add(createNode("node1", "host1.yahoo.com", ipAddresses, Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));
         nodes.add(createNode("node2", "host2.yahoo.com", ipAddresses, Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));
         nodes.add(createNode("node3", "host3.yahoo.com", ipAddresses, Optional.empty(), flavors.getFlavorOrThrow("expensive"), NodeType.tenant));
@@ -83,7 +87,8 @@ public class MockNodeRepository extends NodeRepository {
         nodes.add(node10);
 
         nodes.add(createNode("node55", "host55.yahoo.com", ipAddresses, Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));
-        nodes.add(createNode("parent1", "parent1.yahoo.com", ipAddresses, Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.host));
+        nodes.add(createNode("parent1", "parent1.yahoo.com", ipAddresses, additionalIpAddresses, Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.host));
+        nodes.add(createNode("parent2", "dockerhost4", ipAddresses, additionalIpAddresses, Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.host));
 
         nodes = addNodes(nodes);
         nodes.remove(6);
@@ -92,6 +97,12 @@ public class MockNodeRepository extends NodeRepository {
         setReady(nodes);
         fail("host5.yahoo.com", Agent.system, "Failing to unit test");
         setDirty("host55.yahoo.com");
+
+        ApplicationId zoneApp = ApplicationId.from(TenantName.from("zoneapp"), ApplicationName.from("zoneapp"), InstanceName.from("zoneapp"));
+        ClusterSpec zoneCluster = ClusterSpec.request(ClusterSpec.Type.container,
+                ClusterSpec.Id.from("node-admin"),
+                Version.fromString("6.42"));
+        activate(provisioner.prepare(zoneApp, zoneCluster, Capacity.fromRequiredNodeType(NodeType.host), 1, null), zoneApp, provisioner);
 
         ApplicationId app1 = ApplicationId.from(TenantName.from("tenant1"), ApplicationName.from("application1"), InstanceName.from("instance1"));
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1"), Version.fromString("6.42"));

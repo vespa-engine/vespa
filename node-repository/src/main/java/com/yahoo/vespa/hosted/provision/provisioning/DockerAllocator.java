@@ -133,7 +133,7 @@ public class DockerAllocator {
      *
      * TODO propagate this information either through the node object or from the configserver deployer
      */
-    private static boolean isReplacement(NodeSpec nodeSpec, List<Node> nodesBefore, List<Node> nodesReserved) {
+    public static boolean isReplacement(NodeSpec nodeSpec, List<Node> nodesBefore, List<Node> nodesReserved) {
         int wantedCount = 0;
         if (nodeSpec instanceof NodeSpec.CountNodeSpec) {
             NodeSpec.CountNodeSpec countSpec = (NodeSpec.CountNodeSpec) nodeSpec;

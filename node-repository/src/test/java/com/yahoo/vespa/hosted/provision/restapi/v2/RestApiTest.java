@@ -506,7 +506,8 @@ public class RestApiTest {
 
     private JDisc container;
     @Before
-    public void startContainer() { container = JDisc.fromServicesXml(ContainerConfig.servicesXmlV2(0), Networking.disable); }
+    public void startContainer() {
+        container = JDisc.fromServicesXml(ContainerConfig.servicesXmlV2(0), Networking.disable); }
     @After
     public void stopContainer() { container.close(); }
 

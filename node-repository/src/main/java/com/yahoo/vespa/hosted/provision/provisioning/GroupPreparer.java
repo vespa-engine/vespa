@@ -3,23 +3,14 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.time.Clock;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 import java.util.function.BiConsumer;
 
 /**
@@ -65,24 +56,20 @@ class GroupPreparer {
 
                 NodePrioritizer prioritizer = new NodePrioritizer(
                         nodeRepository.getNodes(),
+                        application,
+                        cluster,
+                        requestedNodes,
                         nodeRepository.getAvailableFlavors(),
-                        a -> nodeRepository.getNode(a.parentHostname().orElse(" NOT-A-NODE !"), Node.State.values()),
-                        getDockerFlavor(requestedNodes),
-                        requestedNodes.specifiesNonStockFlavor(),
                         1,
                         nofSpares);
-                prioritizer.addApplicationNodes(nodeRepository.getNodes(application, Node.State.active, Node.State.inactive, Node.State.reserved));
-                prioritizer.addSurplusNodes(surplusActiveNodes);
-                prioritizer.addReadyNodes(nodeRepository.getNodes(Node.State.ready));
-                prioritizer.addNewNodes(createNewNodes(nodeRepository.getNodes(), getDockerFlavor(requestedNodes), cluster));
-
+                prioritizer.initNodes(surplusActiveNodes, nodeRepository.dynamicAllocationEnabled());
                 NodeAllocation allocation = new NodeAllocation(application, cluster, requestedNodes, highestIndex, clock);
-                List<Node> acceptedNodes = allocation.offer(prioritizer.toPrioritizedNodeList(false), false); //TODO replacement
+                prioritizer.offer(allocation);
 
                 if (allocation.fullfilled()) {
-                    nodeRepository.reserve(prioritizer.filterInactiveAndReadyNodes(acceptedNodes));
-                    nodeRepository.addDockerNodes(prioritizer.filterNewNodes(acceptedNodes));
-                    surplusActiveNodes.removeAll(prioritizer.filterSurplusNodes(acceptedNodes));
+                    nodeRepository.reserve(prioritizer.filterInactiveAndReadyNodes(allocation.getAcceptedNodes()));
+                    nodeRepository.addDockerNodes(prioritizer.filterNewNodes(allocation.getAcceptedNodes()));
+                    surplusActiveNodes.removeAll(prioritizer.filterSurplusNodes(allocation.getAcceptedNodes()));
                     return allocation.finalNodes(surplusActiveNodes);
                 } else {
                     throw new OutOfCapacityException("Could not satisfy " + requestedNodes + " for " + cluster +
@@ -90,14 +77,6 @@ class GroupPreparer {
                 }
             }
         }
-    }
-
-    private Optional<Flavor> getDockerFlavor(NodeSpec nodeSpec) {
-        if (nodeSpec instanceof NodeSpec.CountNodeSpec) {
-            NodeSpec.CountNodeSpec countSpec = (NodeSpec.CountNodeSpec) nodeSpec;
-            return Optional.of(countSpec.getFlavor());
-        }
-        return Optional.empty();
     }
 
     private String outOfCapacityDetails(NodeAllocation allocation) {
@@ -108,60 +87,5 @@ class GroupPreparer {
             return ": Not enough nodes available due to retirement.";
         }
         return ".";
-    }
-
-    /**
-     * Create new nodes on all hosts that have capacity for the requested flavor
-     * (regardless of headroom and spare constraints) and where the parent nodes does not have
-     * a conflicting node (a node in the same cluster).
-     *
-     * @param allNodes The existing nodes in the node-repository (thus no headroom and spares here)
-     */
-    private List<Node> createNewNodes(List<Node> allNodes, Optional<Flavor> dockerFlavor, ClusterSpec clusterSpec) {
-        List<Node> newNodes = new ArrayList<>();
-        // Only create nodes if this is docker and the dynamic allocation is enabled
-        if (!nodeRepository.dynamicAllocationEnabled() || !dockerFlavor.isPresent()) return newNodes;
-
-        Flavor flavor = dockerFlavor.get();
-        DockerHostCapacity capacity = new DockerHostCapacity(allNodes);
-        for (Node node : allNodes) {
-            // For each host
-            if (node.type() == NodeType.host) {
-                NodeList list = new NodeList(allNodes);
-                NodeList childrenWithSameApp = list.childNodes(node).owner(null);
-                for (Node child : childrenWithSameApp.asList()) {
-                    // Look for nodes from the same cluster
-                    if (child.allocation().get().membership().cluster().id().equals(clusterSpec.id())) {
-
-                    }
-                }
-
-                if (capacity.hasCapacity(node, flavor)) {
-                    Set<String> ipAddresses = DockerHostCapacity.findFreeIps(node, allNodes);
-                    if (ipAddresses.isEmpty()) continue;
-                    String ipAddress = ipAddresses.stream().findFirst().get();
-                    String hostname = lookupHostname(ipAddress);
-                    if (hostname == null) continue;
-                    Node newNode = Node.createDockerNode("fake-" + hostname, Collections.singleton(ipAddress),
-                            Collections.emptySet(), hostname, Optional.of(node.hostname()), flavor, NodeType.tenant);
-                    newNodes.add(newNode);
-                }
-            }
-        }
-        return newNodes;
-    }
-
-    /**
-     * From ipAddress - get hostname
-     *
-     * @return hostname or null if not able to do the loopup
-     */
-    private static String lookupHostname(String ipAddress) {
-        try {
-            return InetAddress.getByName(ipAddress).getHostName();
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 }
