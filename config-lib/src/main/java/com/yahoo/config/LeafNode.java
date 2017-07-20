@@ -37,19 +37,6 @@ public abstract class LeafNode<T> extends Node implements Cloneable {
     }
 
     /**
-     * Try to initialize this node with the given value. Returns true
-     * on success, false otherwise.
-     *
-     * @param value     the string represention of the desired node value.
-     * @return true on success, false otherwise.
-     */
-    final boolean initialize(String value) {
-        boolean success = setValue(value);
-        initialized |= success;
-        return success;
-    }
-
-    /**
      * Subclasses must implement this, in compliance with the rules given in the return tag.
      *
      * @return the String representation of the node value, or the string "(null)" if the value is null.
