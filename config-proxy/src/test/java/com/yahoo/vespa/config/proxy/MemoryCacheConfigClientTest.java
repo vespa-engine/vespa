@@ -18,10 +18,10 @@ public class MemoryCacheConfigClientTest {
     @Test
     public void basic() {
         MemoryCache cache = new MemoryCache();
-        cache.put(Helper.fooConfig);
+        cache.put(ConfigTester.fooConfig);
         MemoryCacheConfigClient client = new MemoryCacheConfigClient(cache);
-        assertThat(client.getConfig(Helper.fooConfig, null), is(Helper.fooConfig));
-        assertNull(client.getConfig(Helper.barConfig, null));
+        assertThat(client.getConfig(ConfigTester.fooConfig, null), is(ConfigTester.fooConfig));
+        assertNull(client.getConfig(ConfigTester.barConfig, null));
 
         assertThat(client.getActiveSourceConnection(), is("N/A"));
         assertThat(client.getSourceConnections(), is(Collections.singletonList("N/A")));

@@ -29,7 +29,7 @@ public class ProxyServerTest {
     private final ConfigProxyStatistics statistics = new ConfigProxyStatistics();
     private ProxyServer proxy;
 
-    static final RawConfig fooConfig = Helper.fooConfig;
+    static final RawConfig fooConfig = ConfigTester.fooConfig;
 
     // errorConfig based on fooConfig
     private static final ConfigKey<?> errorConfigKey = new ConfigKey<>("error", fooConfig.getConfigId(), fooConfig.getNamespace());
@@ -64,7 +64,7 @@ public class ProxyServerTest {
         assertEquals(0, memoryCache.size());
         RawConfig res = proxy.resolveConfig(tester.createRequest(fooConfig));
         assertNotNull(res);
-        assertThat(res.getPayload().toString(), is(Helper.fooPayload.toString()));
+        assertThat(res.getPayload().toString(), is(ConfigTester.fooPayload.toString()));
         assertEquals(1, memoryCache.size());
         assertThat(memoryCache.get(new ConfigCacheKey(fooConfig.getKey(), fooConfig.getDefMd5())), is(res));
 
@@ -127,7 +127,7 @@ public class ProxyServerTest {
         assertEquals(0, memoryCache.size());
         RawConfig res = proxy.resolveConfig(tester.createRequest(fooConfig));
         assertNotNull(res);
-        assertThat(res.getPayload().toString(), is(Helper.fooPayload.toString()));
+        assertThat(res.getPayload().toString(), is(ConfigTester.fooPayload.toString()));
         assertEquals(1, memoryCache.size());
         assertThat(memoryCache.get(new ConfigCacheKey(fooConfig.getKey(), fooConfig.getDefMd5())), is(res));
 
@@ -165,7 +165,7 @@ public class ProxyServerTest {
         res = proxy.resolveConfig(tester.createRequest(fooConfig));
         assertNotNull(res);
         assertNotNull(res.getPayload().getData());
-        assertThat(res.getPayload().toString(), is(Helper.fooPayload.toString()));
+        assertThat(res.getPayload().toString(), is(ConfigTester.fooPayload.toString()));
         assertEquals(1, cacheManager.size());
 
         JRTServerConfigRequest newRequestBasedOnResponse = tester.createRequest(res);
@@ -179,7 +179,7 @@ public class ProxyServerTest {
         ConfigTester tester = new ConfigTester();
         RawConfig res = proxy.resolveConfig(tester.createRequest(fooConfig));
         assertNotNull(res);
-        assertThat(res.getPayload().toString(), is(Helper.fooPayload.toString()));
+        assertThat(res.getPayload().toString(), is(ConfigTester.fooPayload.toString()));
 
         // Simulate deployment, add config with new config generation
         long previousGeneration = res.getGeneration();
@@ -193,7 +193,7 @@ public class ProxyServerTest {
     @Test
     public void testReconfigurationAsClient() {
         long generation = 1;
-        RawConfig fooConfig = Helper.fooConfig;
+        RawConfig fooConfig = ConfigTester.fooConfig;
         source.put(fooConfig.getKey(), fooConfig);
 
         clientUpdater.waitForConfigGeneration(fooConfig.getKey(), generation);
@@ -201,7 +201,7 @@ public class ProxyServerTest {
 
         // Update payload in config
         generation++;
-        final ConfigPayload payload = Helper.createConfigPayload("bar", "value2");
+        final ConfigPayload payload = ConfigTester.createConfigPayload("bar", "value2");
         RawConfig fooConfig2 = createConfigWithNextConfigGeneration(fooConfig, 0, Payload.from(payload));
         source.put(fooConfig2.getKey(), fooConfig2);
 
@@ -221,7 +221,7 @@ public class ProxyServerTest {
         return createConfigWithNextConfigGeneration(config, errorCode, config.getPayload());
     }
 
-    static RawConfig createConfigWithNextConfigGeneration(RawConfig config, int errorCode, Payload payload) {
+    private static RawConfig createConfigWithNextConfigGeneration(RawConfig config, int errorCode, Payload payload) {
         return new RawConfig(config.getKey(), config.getDefMd5(),
                              payload, config.getConfigMd5(),
                              config.getGeneration() + 1, errorCode, config.getDefContent(), Optional.empty());
