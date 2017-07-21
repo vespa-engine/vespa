@@ -54,7 +54,9 @@
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
           <archive>
-            <manifestFile>src/main/manifest.mf</manifestFile>
+            <manifest>
+              <mainClass>com.yahoo.config.codegen.MakeConfig</mainClass>
+            </manifest>
           </archive>
         </configuration>
       </plugin>
