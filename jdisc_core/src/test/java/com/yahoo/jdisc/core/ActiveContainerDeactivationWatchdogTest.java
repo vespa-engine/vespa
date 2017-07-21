@@ -69,7 +69,8 @@ public class ActiveContainerDeactivationWatchdogTest {
     }
 
     @Test
-    @Ignore
+    @Ignore("Ignored as it assumes phantom references are enqueued right after first GC have cleared the weak reference. " +
+            "This is the case on most JVMs.")
     public void deactivated_container_destructed_if_its_reference_counter_is_nonzero() {
         ExecutorMock executor = new ExecutorMock();
         ActiveContainerDeactivationWatchdog watchdog =
