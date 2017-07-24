@@ -118,7 +118,8 @@ public class DockerOperationsImpl implements DockerOperations {
                     .withUlimit("nofile", 262_144, 262_144)
                     .withUlimit("nproc", 32_768, 409_600)
                     .withUlimit("core", -1, -1)
-                    .withAddCapability("SYS_PTRACE"); // Needed for gcore, pstack etc.
+                    .withAddCapability("SYS_PTRACE") // Needed for gcore, pstack etc.
+                    .withAddCapability("SYS_ADMIN"); // Needed for perf
 
             if (environment.isRunningLocally()) {
                 command.withEntrypoint("/usr/local/bin/start-services.sh", "--run-local");
