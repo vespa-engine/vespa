@@ -14,9 +14,12 @@ cd $DIR
 
 GIT_COMMIT=$1
 DOCKER_IMAGE="vespaengine/vespa-dev:latest"
+INTERNAL_DIR=/vespa
 
-docker run --rm -v ${DIR}/..:/vespa --entrypoint /vespa/docker/ci/vespa-ci-internal.sh "$DOCKER_IMAGE" "$GIT_COMMIT" \
-   2>&1 | tee vespa-ci-$(date +%Y-%m-%dT%H:%M:%S%z).log
+mkdir -p logs
+
+docker run --rm -v ${DIR}/..:${INTERNAL_DIR} --entrypoint ${INTERNAL_DIR}/docker/ci/vespa-ci-internal.sh "$DOCKER_IMAGE" "$GIT_COMMIT" \
+   2>&1 | tee logs/vespa-ci-$(date +%Y-%m-%dT%H:%M:%S).log
 
 # Needed because of piping docker run to tee above
 exit ${PIPESTATUS[0]}
