@@ -15,8 +15,6 @@ MAPPED_DIR=/vespa
 SOURCE_DIR=~/vespa
 BUILD_DIR=~/build
 LOG_DIR=~/log
-NUM_CORES=$(nproc --all)
-NUM_THREADS=$((${NUM_CORES} * 2))
 
 function build_java {
     cd "${SOURCE_DIR}"
@@ -34,6 +32,7 @@ function build_cpp {
         -DCMAKE_BUILD_RPATH=/opt/vespa/lib64 \
         -DVALGRIND_UNIT_TESTS=no \
         "${SOURCE_DIR}"
+    NUM_THREADS=$(($(nproc --all) * 2))
     make -j ${NUM_THREADS}
     ctest3 -j ${NUM_THREADS}
 }
