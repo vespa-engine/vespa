@@ -200,7 +200,7 @@ DocsumFilter::getFieldValue(const DocsumFieldSpec::FieldIdentifier & fieldId,
                 return _cachedValue.get();
             }
         }
-        [[fallthrough]];
+        //@fallthrough@
     default:
         return fv;
     }

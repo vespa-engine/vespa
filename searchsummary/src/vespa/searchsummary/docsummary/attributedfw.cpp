@@ -49,7 +49,7 @@ ResType inferType(const IAttributeVector & vec) {
                 switch (t) {
                 case BasicType::TENSOR:
                     retval = RES_TENSOR;
-                    [[fallthrough]];
+                    //@fallthrough@
                 default:
                     retval = RES_STRING;
                 }

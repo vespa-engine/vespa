@@ -999,8 +999,8 @@ ArithmeticValueNode::getValue(std::unique_ptr<Value> lval,
                 return std::unique_ptr<Value>(new StringValue(
                             slval.getValue() + srval.getValue()));
             }
-            [[fallthrough]];
         }
+        //@fallthrough@
         case SUB:
         case MUL:
         case DIV:
@@ -1049,8 +1049,8 @@ ArithmeticValueNode::getValue(std::unique_ptr<Value> lval,
                 }
                 return std::unique_ptr<Value>(new FloatValue(res));
             }
-            [[fallthrough]];
         }
+        //@fallthrough@
         case MOD:
         {
             if (lval->getType() == Value::Integer &&
@@ -1064,8 +1064,8 @@ ArithmeticValueNode::getValue(std::unique_ptr<Value> lval,
                     throw vespalib::IllegalArgumentException("Division by zero");
                 }
             }
-            [[fallthrough]];
         }
+        //@fallthrough@
     }
     return std::unique_ptr<Value>(new InvalidValue);
 }
@@ -1089,8 +1089,8 @@ ArithmeticValueNode::traceValue(std::unique_ptr<Value> lval,
                     << "' -> '" << *result << "'.\n";
                 return result;
             }
-            [[fallthrough]];
         }
+        //@fallthrough@
         case SUB:
         case MUL:
         case DIV:
@@ -1135,8 +1135,8 @@ ArithmeticValueNode::traceValue(std::unique_ptr<Value> lval,
                     << "\n";
                 return result;
             }
-            [[fallthrough]];
         }
+        //@fallthrough@
         case MOD:
         {
             if (lval->getType() == Value::Integer &&
@@ -1151,8 +1151,8 @@ ArithmeticValueNode::traceValue(std::unique_ptr<Value> lval,
                     << "\n";
                 return result;
             }
-            [[fallthrough]];
         }
+        //@fallthrough@
     }
     out << "Failed to do operation " << getOperatorName()
         << " on values of type " << lval->getType() << " and "

@@ -64,7 +64,7 @@ DiskState::DiskState(const vespalib::stringref & serialized)
                             "must be a positive floating point number",
                             VESPA_STRLOC);
                 }
-                [[fallthrough]];
+                //@fallthrough@
             case 'm':
                 if (key.size() > 1) break;
                 _description = document::StringUtil::unescape(value);
