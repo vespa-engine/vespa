@@ -1,5 +1,6 @@
 package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
 
+import com.yahoo.vespa.hosted.node.verification.spec.CommandExecutor;
 import com.yahoo.vespa.hosted.node.verification.spec.parse.ParseInstructions;
 import com.yahoo.vespa.hosted.node.verification.spec.parse.OutputParser;
 import com.yahoo.vespa.hosted.node.verification.spec.parse.ParseResult;

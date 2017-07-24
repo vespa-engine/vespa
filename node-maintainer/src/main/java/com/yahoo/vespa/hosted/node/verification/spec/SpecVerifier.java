@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 import com.yahoo.vespa.hosted.node.verification.spec.noderepo.NodeGenerator;
 import com.yahoo.vespa.hosted.node.verification.spec.noderepo.NodeInfoRetriever;
 import com.yahoo.vespa.hosted.node.verification.spec.noderepo.NodeJsonModel;
+import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfoRetriever;
 import com.yahoo.vespa.hosted.node.verification.spec.yamasreport.YamasSpecReport;
 
 import java.net.MalformedURLException;

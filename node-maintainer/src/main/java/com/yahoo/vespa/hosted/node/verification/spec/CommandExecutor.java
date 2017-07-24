@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
+package com.yahoo.vespa.hosted.node.verification.spec;
 
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;

@@ -1,6 +1,6 @@
 package com.yahoo.vespa.hosted.node.verification.spec.mock;
 
-import com.yahoo.vespa.hosted.node.verification.spec.retrievers.CommandExecutor;
+import com.yahoo.vespa.hosted.node.verification.spec.CommandExecutor;
 
 import java.io.IOException;
 import java.nio.file.Files;
