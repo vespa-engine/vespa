@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.node.verification.spec.hardware;
+package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
 
 /**
  * Created by olaa on 30/06/2017.

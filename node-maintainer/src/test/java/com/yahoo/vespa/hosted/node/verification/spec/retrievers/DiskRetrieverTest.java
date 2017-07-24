@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.node.verification.spec.hardware;
+package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
 
 import com.yahoo.vespa.hosted.node.verification.spec.parse.ParseResult;
 import com.yahoo.vespa.hosted.node.verification.spec.mock.MockCommandExecutor;

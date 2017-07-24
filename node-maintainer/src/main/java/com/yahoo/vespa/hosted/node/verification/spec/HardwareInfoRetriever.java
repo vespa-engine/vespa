@@ -1,6 +1,6 @@
 package com.yahoo.vespa.hosted.node.verification.spec;
 
-import com.yahoo.vespa.hosted.node.verification.spec.hardware.*;
+import com.yahoo.vespa.hosted.node.verification.spec.retrievers.*;
 
 import java.util.ArrayList;
 

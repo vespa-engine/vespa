@@ -2,7 +2,7 @@ package com.yahoo.vespa.hosted.node.verification.spec.noderepo;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.yahoo.vespa.hosted.node.verification.spec.hardware.HardwareInfo;
+import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 
 /**
  * Created by olaa on 05/07/2017.
@@ -24,16 +24,8 @@ public class NodeJsonModel {
     @JsonProperty("additionalIpAddresses")
     private String[] additionalIpAddresses;
 
-
-    public double getMinDiskAvailableGb() {
-        return minDiskAvailableGb;
-    }
-
-    public double getMinMainMemoryAvailableGb() {
-        return minMainMemoryAvailableGb;
-    }
-    public double getMinCpuCores() {
-        return minCpuCores;
+    public String[] getAdditionalIpAddresses() {
+        return additionalIpAddresses;
     }
 
     public HardwareInfo copyToHardwareInfo(){
@@ -42,9 +34,15 @@ public class NodeJsonModel {
         hardwareInfo.setMinDiskAvailableGb(this.minDiskAvailableGb);
         hardwareInfo.setMinCpuCores((int) Math.round(this.minCpuCores));
         hardwareInfo.setFastDisk(this.fastDisk);
-        hardwareInfo.setAdditionalIpAddresses(this.additionalIpAddresses);
-        hardwareInfo.setIpAddresses(this.ipAddresses);
         return hardwareInfo;
     }
-
+    public String getIpv6Address() {
+        String ipv6Regex = "^((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*::((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*|((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4})){7}$";
+        for (String ipAddress : ipAddresses) {
+            if (ipAddress.matches(ipv6Regex)) {
+                return ipAddress;
+            }
+        }
+        return null;
+    }
 }

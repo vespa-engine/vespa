@@ -1,4 +1,7 @@
-package com.yahoo.vespa.hosted.node.verification.spec;
+package com.yahoo.vespa.hosted.node.verification.spec.noderepo;
+
+import com.yahoo.vespa.hosted.node.verification.spec.noderepo.NodeJsonModel;
+import com.yahoo.vespa.hosted.node.verification.spec.yamasreport.YamasSpecReport;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
@@ -12,6 +15,13 @@ import java.util.logging.Logger;
 public class IPAddressVerifier {
 
     private static final Logger logger = Logger.getLogger(IPAddressVerifier.class.getName());
+
+    public void reportFaultyIpAddresses(NodeJsonModel nodeJsonModel, YamasSpecReport yamasSpecReport){
+        String[] faultyIpAddresses = getFaultyIpAddresses(nodeJsonModel.getIpv6Address(), nodeJsonModel.getAdditionalIpAddresses());
+        if(faultyIpAddresses.length > 0){
+            yamasSpecReport.setFaultyIpAddresses(faultyIpAddresses);
+        }
+    }
 
     protected String reverseLookUp(String ipAddress) throws NamingException {
         Hashtable env = new Hashtable();
@@ -53,7 +63,7 @@ public class IPAddressVerifier {
         return newIpAddress.toString();
     }
 
-    public String[] verifyAdditionalIpAddresses(String ipAddress, String[] additionalIpAddresses) {
+    public String[] getFaultyIpAddresses(String ipAddress, String[] additionalIpAddresses) {
         if(ipAddress == null || additionalIpAddresses == null || additionalIpAddresses.length == 0) return new String[0];
         String realHostname;
         ArrayList<String> faultyIpAddresses = new ArrayList<>();
@@ -65,12 +75,12 @@ public class IPAddressVerifier {
             return new String[0];
         }
         for (String additionalIpAddress : additionalIpAddresses) {
-            verifyAdditionalIpAddress(realHostname, additionalIpAddress, faultyIpAddresses);
+            addIfFaultyIpAddress(realHostname, additionalIpAddress, faultyIpAddresses);
         }
         return faultyIpAddresses.stream().toArray(String[]::new);
     }
 
-    private void verifyAdditionalIpAddress(String realHostname, String additionalIpAddress, ArrayList<String> faultyIpAddresses) {
+    private void addIfFaultyIpAddress(String realHostname, String additionalIpAddress, ArrayList<String> faultyIpAddresses) {
             try {
                 String additionalHostName = reverseLookUp(additionalIpAddress);
                 if(!realHostname.equals(additionalHostName)) {
@@ -83,27 +93,4 @@ public class IPAddressVerifier {
 
     }
 
-    public static void main(String[] args) throws Exception  {
-        try {
-            Hashtable env = new Hashtable();
-            env.put("java.naming.factory.initial","com.sun.jndi.dns.DnsContextFactory");
-
-            DirContext ctx = new InitialDirContext(env);
-            //98.138.253.109
-            //Attributes attrs = ctx.getAttributes("1.0.6.f.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.9.7.7.0.c.0.4.9.9.8.0.2.0.0.1.ip6.arpa",new String[] {"PTR"});
-            Attributes attrs = ctx.getAttributes("109.253.138.98.in-addr.arpa",new String[] {"PTR"});
-            for (NamingEnumeration ae = attrs.getAll(); ae.hasMoreElements();) {
-                Attribute attr = (Attribute)ae.next();
-                String attrId = attr.getID();
-                for (Enumeration values = attr.getAll(); values.hasMoreElements();
-                     System.out.println(attrId + ": " + values.nextElement()));
-            }
-
-            ctx.close();
-        }
-
-        catch(Exception e) {
-            e.printStackTrace();
-        }
-    }
 }

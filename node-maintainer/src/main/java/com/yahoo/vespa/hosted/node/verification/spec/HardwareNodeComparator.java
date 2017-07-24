@@ -1,6 +1,6 @@
 package com.yahoo.vespa.hosted.node.verification.spec;
 
-import com.yahoo.vespa.hosted.node.verification.spec.hardware.HardwareInfo;
+import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 import com.yahoo.vespa.hosted.node.verification.spec.yamasreport.SpecReportDimensions;
 import com.yahoo.vespa.hosted.node.verification.spec.yamasreport.SpecReportMetrics;
 import com.yahoo.vespa.hosted.node.verification.spec.yamasreport.YamasSpecReport;
@@ -80,10 +80,6 @@ public class HardwareNodeComparator {
     }
 
     private static void setNetMetrics(HardwareInfo node, HardwareInfo actualHardware, SpecReportMetrics specReportMetrics) {
-        String[] faultyIpAddresses = new IPAddressVerifier().verifyAdditionalIpAddresses(node.getIpv6Address(), node.getAdditionalIpAddresses());
-        if (faultyIpAddresses.length > 0) {
-            specReportMetrics.setFaultyIpAddresses(faultyIpAddresses);
-        }
         double expectedInterfaceSpeed = node.getInterfaceSpeedMbs();
         double actualInterfaceSpeed = actualHardware.getInterfaceSpeedMbs();
         if (!insideThreshold(expectedInterfaceSpeed, actualInterfaceSpeed)) {

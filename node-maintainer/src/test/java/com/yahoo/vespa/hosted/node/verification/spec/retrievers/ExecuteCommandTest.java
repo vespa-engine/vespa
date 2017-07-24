@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.node.verification.spec.hardware;
+package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
 
 import org.junit.Test;
 

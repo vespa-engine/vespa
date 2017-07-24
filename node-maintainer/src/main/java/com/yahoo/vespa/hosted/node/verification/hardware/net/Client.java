@@ -1,4 +1,4 @@
-package com.yahoo.hardwarebenchmark.net;
+package com.yahoo.vespa.hosted.node.verification.hardware.net;
 
 import java.io.DataOutputStream;
 import java.io.File;
