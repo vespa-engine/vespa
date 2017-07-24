@@ -13,17 +13,9 @@ DIR=$(cd "${RELATIVE_DIR}" && pwd)
 cd $DIR
 
 GIT_COMMIT=$1
-BUILD_DOCKER_IMAGE="vespabuild"
-CI_DOCKER_IMAGE="vespaci"
+DOCKER_IMAGE="vespaengine/vespa-dev:latest"
 
-docker build -t "$BUILD_DOCKER_IMAGE" -f build/Dockerfile .
-
-# Create a temporary copy of the rpm spec file inside docker directory so it can be referenced by the Dockerfile
-rm -rf tmp; mkdir tmp
-cp -p ../dist/vespa.spec tmp/vespa.spec
-
-docker build -t "$CI_DOCKER_IMAGE" -f ci/Dockerfile .
-docker run --rm -v ${DIR}/..:/vespa --entrypoint /vespa-ci-internal.sh "$CI_DOCKER_IMAGE" "$GIT_COMMIT" \
+docker run --rm -v ${DIR}/..:/vespa --entrypoint /vespa/docker/ci/vespa-ci-internal.sh "$DOCKER_IMAGE" "$GIT_COMMIT" \
    2>&1 | tee vespa-ci-$(date +%Y-%m-%dT%H:%M:%S%z).log
 
 # Needed because of piping docker run to tee above
