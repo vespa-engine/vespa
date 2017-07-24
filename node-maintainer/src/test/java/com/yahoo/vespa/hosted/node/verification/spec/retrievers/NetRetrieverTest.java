@@ -63,7 +63,7 @@ public class NetRetrieverTest {
 
     @Test
     public void test_parseNetInterface_get_ipv_from_ifconfig_testFile() throws IOException {
-        ArrayList<String> mockOutput = commandExecutor.readFromFile(NET_FIND_INTERFACE);
+        ArrayList<String> mockOutput = MockCommandExecutor.readFromFile(NET_FIND_INTERFACE);
         parseResults = net.parseNetInterface(mockOutput);
         net.updateHardwareInfoWithNet(parseResults);
         assertTrue(hardwareInfo.getIpv4Connectivity());
@@ -72,7 +72,7 @@ public class NetRetrieverTest {
 
     @Test
     public void test_parseNetInterface_get_ipv_from_ifconfigNotIpv6_testFile() throws IOException {
-        ArrayList<String> mockOutput = commandExecutor.readFromFile(NET_FIND_INTERFACE+ "NoIpv6");
+        ArrayList<String> mockOutput = MockCommandExecutor.readFromFile(NET_FIND_INTERFACE+ "NoIpv6");
         parseResults = net.parseNetInterface(mockOutput);
 
         ArrayList<ParseResult> expextedParseResults = new ArrayList<>(Arrays.asList(
@@ -83,7 +83,7 @@ public class NetRetrieverTest {
 
     @Test
     public void test_parseNetInterface_get_interfaceName_from_ifconfig_testFile() throws IOException{
-        ArrayList<String> mockOutput = commandExecutor.readFromFile(NET_FIND_INTERFACE);
+        ArrayList<String> mockOutput = MockCommandExecutor.readFromFile(NET_FIND_INTERFACE);
         parseResults = net.parseNetInterface(mockOutput);
         String interfaceName = net.findInterfaceName(parseResults);
         String expectedInterfaceName = "eth0";
@@ -92,7 +92,7 @@ public class NetRetrieverTest {
 
     @Test
     public void test_parseInterfaceSpeed_get_interfaceSpeed_from_eth0_testFile() throws IOException{
-        ArrayList<String> mockOutput = commandExecutor.readFromFile("src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/eth0");
+        ArrayList<String> mockOutput = MockCommandExecutor.readFromFile("src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/eth0");
         ParseResult parseResult = net.parseInterfaceSpeed(mockOutput);
         ParseResult expectedParseResult = new ParseResult("Speed","1000Mb/s");
         assertEquals(expectedParseResult,parseResult);

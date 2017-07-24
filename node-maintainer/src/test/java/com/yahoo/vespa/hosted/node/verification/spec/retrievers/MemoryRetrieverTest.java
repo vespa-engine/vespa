@@ -38,7 +38,7 @@ public class MemoryRetrieverTest {
 
     @Test
     public void test_parseMemInfoFile_should_return_valid_parseResult() throws IOException{
-        ArrayList<String> commandOutput = commandExecutor.readFromFile(FILENAME);
+        ArrayList<String> commandOutput = MockCommandExecutor.readFromFile(FILENAME);
         ParseResult parseResult = memory.parseMemInfoFile(commandOutput);
         ParseResult expectedParseResult = new ParseResult("MemTotal", "4042128 kB");
         assertEquals(expectedParseResult, parseResult);

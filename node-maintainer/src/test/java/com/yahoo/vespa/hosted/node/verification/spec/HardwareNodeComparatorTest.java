@@ -11,8 +11,8 @@ import static org.junit.Assert.*;
  */
 public class HardwareNodeComparatorTest {
 
-    HardwareInfo actualHardware;
-    HardwareInfo nodeInfo;
+    private HardwareInfo actualHardware;
+    private HardwareInfo nodeInfo;
 
     @Before
     public void setup() {

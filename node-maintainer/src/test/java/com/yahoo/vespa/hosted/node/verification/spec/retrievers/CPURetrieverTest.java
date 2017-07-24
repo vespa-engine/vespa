@@ -18,7 +18,7 @@ public class CPURetrieverTest {
     private final String FILENAME = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/cpuinfoTest";
     private HardwareInfo hardwareInfo;
     private  MockCommandExecutor commandExecutor;
-    CPURetriever cpu;
+    private CPURetriever cpu;
 
     @Before
     public void setup(){
@@ -38,7 +38,7 @@ public class CPURetrieverTest {
 
     @Test
     public void test_parseCPUInfoFile_should_return_valid_ArrayList() throws IOException{
-        ArrayList<String> commandOutput = commandExecutor.readFromFile(FILENAME);
+        ArrayList<String> commandOutput = MockCommandExecutor.readFromFile(FILENAME);
         ArrayList<ParseResult> ParseResults = cpu.parseCPUInfoFile(commandOutput);
         String expectedSearchWord = "cpu MHz";
         String expectedValue = "2493.821";
