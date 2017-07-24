@@ -116,9 +116,10 @@ main(int argc, char **argv)
             break;
         case 'r':
             doResetLevels = true;
+            [[fallthrough]];
         case 'c':
             shouldCreateFile = true;
-            // fallthrough
+            [[fallthrough]];
         case 'n':
             shouldCreateEntry = true;
             break;

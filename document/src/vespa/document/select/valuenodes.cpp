@@ -999,6 +999,7 @@ ArithmeticValueNode::getValue(std::unique_ptr<Value> lval,
                 return std::unique_ptr<Value>(new StringValue(
                             slval.getValue() + srval.getValue()));
             }
+            [[fallthrough]];
         }
         case SUB:
         case MUL:
@@ -1048,6 +1049,7 @@ ArithmeticValueNode::getValue(std::unique_ptr<Value> lval,
                 }
                 return std::unique_ptr<Value>(new FloatValue(res));
             }
+            [[fallthrough]];
         }
         case MOD:
         {
@@ -1062,6 +1064,7 @@ ArithmeticValueNode::getValue(std::unique_ptr<Value> lval,
                     throw vespalib::IllegalArgumentException("Division by zero");
                 }
             }
+            [[fallthrough]];
         }
     }
     return std::unique_ptr<Value>(new InvalidValue);
@@ -1086,6 +1089,7 @@ ArithmeticValueNode::traceValue(std::unique_ptr<Value> lval,
                     << "' -> '" << *result << "'.\n";
                 return result;
             }
+            [[fallthrough]];
         }
         case SUB:
         case MUL:
@@ -1131,6 +1135,7 @@ ArithmeticValueNode::traceValue(std::unique_ptr<Value> lval,
                     << "\n";
                 return result;
             }
+            [[fallthrough]];
         }
         case MOD:
         {
@@ -1146,6 +1151,7 @@ ArithmeticValueNode::traceValue(std::unique_ptr<Value> lval,
                     << "\n";
                 return result;
             }
+            [[fallthrough]];
         }
     }
     out << "Failed to do operation " << getOperatorName()

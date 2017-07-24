@@ -56,8 +56,10 @@ JSONWriter::quote(const char * str, size_t len)
         case '\"':
         case '\\':
             v[j++] = '\\';
+            [[fallthrough]];
         default:
             v[j++] = str[i];
+            break;
         }
     }
     v[j++] = '\"';
