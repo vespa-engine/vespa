@@ -52,8 +52,9 @@ ProtocolRepository::getRoutingPolicy(const string &protocolName,
                                      const string &policyName,
                                      const string &policyParam)
 {
+    string cacheKey = protocolName;
+    cacheKey.append('.').append(policyName).append(".").append(policyParam);
     vespalib::LockGuard guard(_lock);
-    string cacheKey = protocolName + "." + policyName + "." + policyParam;
     RoutingPolicyCache::iterator cit = _routingPolicyCache.find(cacheKey);
     if (cit != _routingPolicyCache.end()) {
         return cit->second;
@@ -67,12 +68,10 @@ ProtocolRepository::getRoutingPolicy(const string &protocolName,
     try {
         policy = pit->second->createPolicy(policyName, policyParam);
     } catch (const std::exception &e) {
-        LOG(error, "Protocol '%s' threw an exception; %s",
-            protocolName.c_str(), e.what());
+        LOG(error, "Protocol '%s' threw an exception; %s", protocolName.c_str(), e.what());
     }
     if (policy.get() == NULL) {
-        LOG(error, "Protocol '%s' failed to create routing policy '%s' "
-            "with parameter '%s'.",
+        LOG(error, "Protocol '%s' failed to create routing policy '%s' with parameter '%s'.",
             protocolName.c_str(), policyName.c_str(), policyParam.c_str());
         return IRoutingPolicy::SP();
     }
