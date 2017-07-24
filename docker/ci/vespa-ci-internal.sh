@@ -11,6 +11,7 @@ if [ $# -ne 1 ]; then
 fi
 
 GIT_COMMIT=$1
+MAPPED_DIR=/vespa
 SOURCE_DIR=~/vespa
 BUILD_DIR=~/build
 LOG_DIR=~/log
@@ -41,7 +42,7 @@ mkdir "${SOURCE_DIR}"
 mkdir "${BUILD_DIR}"
 mkdir "${LOG_DIR}"
 
-git clone --no-checkout --no-hardlinks file:///vespa "${SOURCE_DIR}"
+git clone --no-checkout --no-hardlinks file://${MAPPED_DIR} "${SOURCE_DIR}"
 cd "${SOURCE_DIR}"
 git -c advice.detachedHead=false checkout ${GIT_COMMIT}
 source /opt/rh/devtoolset-6/enable || true
@@ -76,7 +77,7 @@ set +o pipefail
 # Kill any remaining jobs, ignoring error when no jobs are running
 kill $(jobs -p) 2>/dev/null || true
 
-cp ${LOG_DIR}/java.log /vespa/docker/logs/vespa-ci-java-${TIMESTAMP}.log
-cp ${LOG_DIR}/cpp.log /vespa/docker/logs/vespa-ci-cpp-${TIMESTAMP}.log
+cp ${LOG_DIR}/java.log ${MAPPED_DIR}/docker/logs/vespa-ci-java-${TIMESTAMP}.log
+cp ${LOG_DIR}/cpp.log ${MAPPED_DIR}/docker/logs/vespa-ci-cpp-${TIMESTAMP}.log
 
 exit ${EXIT_CODE}
