@@ -59,7 +59,9 @@ class Activator {
                                                    "Could not find all requested hosts." +
                                                    "\nRequested: " + hosts +
                                                    "\nReserved: " + toHostNames(reserved) +
-                                                   "\nActive: " + toHostNames(active));
+                                                   "\nActive: " + toHostNames(active) +
+                                                   "\nThis might happen if the time from reserving host to activation takes " +
+                                                   "longer time than reservation expiry (the hosts will then no longer be reserved)");
 
             List<Node> activeToRemove = removeHostsFromList(hostnames, active);
             activeToRemove = activeToRemove.stream().map(Node::unretire).collect(Collectors.toList()); // only active nodes can be retired
