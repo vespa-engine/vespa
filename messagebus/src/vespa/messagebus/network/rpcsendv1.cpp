@@ -232,11 +232,10 @@ RPCSendV1::RequestDone(FRT_RPCRequest *req)
         const char       *trace            = ret[7]._string._str;
 
         if (payloadLen > 0) {
-            IProtocol::SP protocol = _net->getOwner().getProtocol(protocolName);
-            if (protocol.get() != NULL) {
-                Routable::UP routable = protocol->decode(version,
-                                                         BlobRef(payload, payloadLen));
-                if (routable.get() != NULL) {
+            IProtocol * protocol = _net->getOwner().getProtocol(protocolName);
+            if (protocol != nullptr) {
+                Routable::UP routable = protocol->decode(version, BlobRef(payload, payloadLen));
+                if (routable) {
                     if (routable->isReply()) {
                         reply.reset(static_cast<Reply*>(routable.release()));
                     } else {
@@ -293,8 +292,8 @@ RPCSendV1::invoke(FRT_RPCRequest *req)
     uint32_t           payloadLen    = args[7]._data._len;
     uint32_t           traceLevel    = args[8]._intval32;
 
-    IProtocol::SP protocol = _net->getOwner().getProtocol(protocolName);
-    if (protocol.get() == NULL) {
+    IProtocol * protocol = _net->getOwner().getProtocol(protocolName);
+    if (protocol == nullptr) {
         replyError(req, version, traceLevel,
                    Error(ErrorCode::UNKNOWN_PROTOCOL,
                          make_string("Protocol '%s' is not known by %s.", protocolName, _serverIdent.c_str())));

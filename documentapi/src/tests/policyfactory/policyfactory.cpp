@@ -97,8 +97,8 @@ Test::Main()
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)mbus::ErrorCode::UNKNOWN_POLICY, reply->getError(0).getCode());
 
-    mbus::IProtocol::SP obj = srv.mb.getProtocol(DocumentProtocol::NAME);
-    DocumentProtocol *protocol = dynamic_cast<DocumentProtocol*>(obj.get());
+    mbus::IProtocol * obj = srv.mb.getProtocol(DocumentProtocol::NAME);
+    DocumentProtocol *protocol = dynamic_cast<DocumentProtocol*>(obj);
     ASSERT_TRUE(protocol != NULL);
     protocol->putRoutingPolicyFactory("MyPolicy", IRoutingPolicyFactory::SP(new MyFactory()));
 

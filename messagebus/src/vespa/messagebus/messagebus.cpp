@@ -286,10 +286,8 @@ MessageBus::setupRouting(const RoutingSpec &spec)
     std::map<string, RoutingTable::SP> rtm;
     for (uint32_t i = 0; i < spec.getNumTables(); ++i) {
         const RoutingTableSpec &cfg = spec.getTable(i);
-        IProtocol::SP protocol = getProtocol(cfg.getProtocol());
-        if (protocol.get() == 0) { // protocol not found
-            LOG(info, "Protocol '%s' is not supported, ignoring routing table.",
-                cfg.getProtocol().c_str());
+        if (getProtocol(cfg.getProtocol()) == nullptr) { // protocol not found
+            LOG(info, "Protocol '%s' is not supported, ignoring routing table.", cfg.getProtocol().c_str());
             continue;
         }
         RoutingTable::SP rt(new RoutingTable(cfg));
@@ -303,7 +301,7 @@ MessageBus::setupRouting(const RoutingSpec &spec)
     return true;
 }
 
-IProtocol::SP
+IProtocol *
 MessageBus::getProtocol(const string &name)
 {
     return _protocolRepository->getProtocol(name);

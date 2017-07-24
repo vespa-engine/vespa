@@ -63,7 +63,7 @@ Test::Main()
     IRoutingPolicy::SP policy = repo.getRoutingPolicy("foo", "bar", "baz");
     prev = repo.putProtocol(IProtocol::SP(new TestProtocol("foo")));
     ASSERT_TRUE(prev.get() != NULL);
-    ASSERT_NOT_EQUAL(prev.get(), repo.getProtocol("foo").get());
+    ASSERT_NOT_EQUAL(prev.get(), repo.getProtocol("foo"));
 
     policy = repo.getRoutingPolicy("foo", "bar", "baz");
     ASSERT_TRUE(policy.get() == NULL);

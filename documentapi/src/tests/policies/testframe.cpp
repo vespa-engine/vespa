@@ -324,7 +324,7 @@ TestFrame::waitSlobrok(const string &pattern, uint32_t cnt)
 SystemStateHandle
 TestFrame::getSystemState()
 {
-    mbus::IProtocol::SP protocol = _mbus->getProtocol(DocumentProtocol::NAME);
+    mbus::IProtocol * protocol = _mbus->getProtocol(DocumentProtocol::NAME);
     return SystemStateHandle(static_cast<DocumentProtocol&>(*protocol).getSystemState());
 }
 

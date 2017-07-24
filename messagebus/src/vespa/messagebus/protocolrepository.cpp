@@ -19,10 +19,9 @@ ProtocolRepository::clearPolicyCache()
 IProtocol::SP
 ProtocolRepository::putProtocol(const IProtocol::SP & protocol)
 {
-    vespalib::LockGuard guard(_lock);
     const string &name = protocol->getName();
     if (_protocols.find(name) != _protocols.end()) {
-        _routingPolicyCache.clear();
+        clearPolicyCache();
     }
     IProtocol::SP prev = _protocols[name];
     _protocols[name] = protocol;
@@ -32,19 +31,17 @@ ProtocolRepository::putProtocol(const IProtocol::SP & protocol)
 bool
 ProtocolRepository::hasProtocol(const string &name) const
 {
-    vespalib::LockGuard guard(_lock);
     return _protocols.find(name) != _protocols.end();
 }
 
-IProtocol::SP
+IProtocol *
 ProtocolRepository::getProtocol(const string &name)
 {
-    vespalib::LockGuard guard(_lock);
     ProtocolMap::iterator it = _protocols.find(name);
     if (it != _protocols.end()) {
-        return it->second;
+        return it->second.get();
     }
-    return IProtocol::SP();
+    return nullptr;
 }
 
 IRoutingPolicy::SP
