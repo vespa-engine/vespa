@@ -1,14 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "sourcesession.h"
-#include "sourcesessionparams.h"
-#include "error.h"
 #include "errorcode.h"
 #include "messagebus.h"
 #include "replygate.h"
 #include "tracelevel.h"
-#include <algorithm>
 #include <vespa/messagebus/routing/routingtable.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
+using vespalib::make_string;
 
 namespace mbus {
 
@@ -48,15 +47,11 @@ SourceSession::send(Message::UP msg, const string &routeName, bool parseIfNotFou
             msg->setRoute(*route);
             found = true;
         } else if (!parseIfNotFound) {
-            string str = vespalib::make_vespa_string(
-                    "Route '%s' not found.",
-                    routeName.c_str());
+            string str = make_string("Route '%s' not found.", routeName.c_str());
             return Result(Error(ErrorCode::ILLEGAL_ROUTE, str), std::move(msg));
         }
     } else if (!parseIfNotFound) {
-        string str = vespalib::make_vespa_string(
-                "No routing table available for protocol '%s'.",
-                msg->getProtocol().c_str());
+        string str = make_string("No routing table available for protocol '%s'.", msg->getProtocol().c_str());
         return Result(Error(ErrorCode::ILLEGAL_ROUTE, str), std::move(msg));
     }
     if (!found) {
@@ -82,13 +77,12 @@ SourceSession::send(Message::UP msg)
     {
         vespalib::MonitorGuard guard(_monitor);
         if (_closed) {
-            return Result(Error(ErrorCode::SEND_QUEUE_CLOSED,
-                                "Source session is closed."), std::move(msg));
+            return Result(Error(ErrorCode::SEND_QUEUE_CLOSED, "Source session is closed."), std::move(msg));
         }
         if (_throttlePolicy.get() != NULL && !_throttlePolicy->canSend(*msg, _pendingCount)) {
             return Result(Error(ErrorCode::SEND_QUEUE_FULL,
-                                vespalib::make_vespa_string("Too much pending data (%d messages).",
-                                                            _pendingCount)), std::move(msg));
+                                make_string("Too much pending data (%d messages).", _pendingCount)),
+                          std::move(msg));
         }
         msg->pushHandler(_replyHandler);
         if (_throttlePolicy.get() != NULL) {
@@ -98,9 +92,8 @@ SourceSession::send(Message::UP msg)
     }
     if (msg->getTrace().shouldTrace(TraceLevel::COMPONENT)) {
         msg->getTrace().trace(TraceLevel::COMPONENT,
-                          vespalib::make_vespa_string("Source session accepted a %d byte message. "
-                                                "%d message(s) now pending.",
-                                                msg->getApproxSize(), _pendingCount));
+                              make_string("Source session accepted a %d byte message. %d message(s) now pending.",
+                                          msg->getApproxSize(), _pendingCount));
     }
     msg->pushHandler(*this);
     _sequencer.handleMessage(std::move(msg));
@@ -122,9 +115,7 @@ SourceSession::handleReply(Reply::UP reply)
     }
     if (reply->getTrace().shouldTrace(TraceLevel::COMPONENT)) {
         reply->getTrace().trace(TraceLevel::COMPONENT,
-                            vespalib::make_vespa_string("Source session received reply. "
-                                                  "%d message(s) now pending.",
-                                                  _pendingCount));
+                                make_string("Source session received reply. %d message(s) now pending.", _pendingCount));
     }
     IReplyHandler &handler = reply->getCallStack().pop(*reply);
     handler.handleReply(std::move(reply));

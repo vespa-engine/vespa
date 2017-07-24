@@ -36,9 +36,9 @@ RouteSpec::toConfig(string &cfg, const string &prefix) const
     cfg.append(prefix).append("name ").append(RoutingSpec::toConfigString(_name)).append("\n");
     uint32_t numHops = _hops.size();
     if (numHops > 0) {
-        cfg.append(prefix).append("hop[").append(vespalib::make_vespa_string("%d", numHops)).append("]\n");
+        cfg.append(prefix).append("hop[").append(vespalib::make_string("%d", numHops)).append("]\n");
         for (uint32_t i = 0; i < numHops; ++i) {
-            cfg.append(prefix).append("hop[").append(vespalib::make_vespa_string("%d", i)).append("] ");
+            cfg.append(prefix).append("hop[").append(vespalib::make_string("%d", i)).append("] ");
             cfg.append(RoutingSpec::toConfigString(_hops[i])).append("\n");
         }
     }

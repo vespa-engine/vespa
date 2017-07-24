@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <map>
-#include <vespa/vespalib/util/sync.h>
 #include "iprotocol.h"
+#include <vespa/vespalib/util/sync.h>
+#include <map>
 
 namespace mbus {
 
@@ -16,7 +16,8 @@ private:
     typedef std::map<string, IProtocol::SP> ProtocolMap;
     typedef std::map<string, IRoutingPolicy::SP> RoutingPolicyCache;
 
-    vespalib::Lock     _lock;
+    vespalib::Lock     _lock; // Only guards the cache,
+                              // not the protocols as they are set up during messagebus construction.
     ProtocolMap        _protocols;
     RoutingPolicyCache _routingPolicyCache;
 
@@ -52,7 +53,7 @@ public:
      * @param name The name of the protocol to return.
      * @return The protocol registered, or null.
      */
-    IProtocol::SP getProtocol(const string &name);
+    IProtocol * getProtocol(const string &name);
 
     /**
      * Creates and returns a routing policy that matches the given arguments. If a routing policy has been
