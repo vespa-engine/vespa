@@ -8,8 +8,11 @@
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/tracelevel.h>
 #include <vespa/vespalib/util/atomic.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/messagebus/network/inetwork.h>
 #include <stack>
+
+using vespalib::make_string;
 
 namespace mbus {
 
@@ -287,20 +290,16 @@ RoutingNode::notifyMerge()
     // Execute the {@link RoutingPolicy#merge(RoutingContext)} method of the current routing policy. If a
     // policy fails to produce a reply, this attaches an error reply to this node.
     const PolicyDirective &dir = _routingContext->getDirective();
-    _trace.trace(TraceLevel::SPLIT_MERGE, vespalib::make_vespa_string(
-                    "Routing policy '%s' merging replies.",
-                    dir.getName().c_str()));
+    _trace.trace(TraceLevel::SPLIT_MERGE, make_string("Routing policy '%s' merging replies.", dir.getName().c_str()));
     try {
         _policy->merge(*_routingContext);
     } catch (const std::exception &e) {
-        setError(ErrorCode::POLICY_ERROR, vespalib::make_vespa_string(
-                        "Policy '%s' threw an exception; %s",
-                        dir.getName().c_str(), e.what()));
+        setError(ErrorCode::POLICY_ERROR, make_string("Policy '%s' threw an exception; %s",
+                                                      dir.getName().c_str(), e.what()));
     }
     if (_reply.get() == NULL) {
-        setError(ErrorCode::APP_FATAL_ERROR, vespalib::make_vespa_string(
-                        "Routing policy '%s' failed to merge replies.",
-                        dir.getName().c_str()));
+        setError(ErrorCode::APP_FATAL_ERROR, make_string("Routing policy '%s' failed to merge replies.",
+                                                         dir.getName().c_str()));
     }
     
     // Notifies the parent node.
@@ -392,8 +391,7 @@ RoutingNode::lookupHop()
             const HopBlueprint *hop = table->getHop(name);
             configureFromBlueprint(*hop);
             _trace.trace(TraceLevel::SPLIT_MERGE,
-                         vespalib::make_vespa_string("Recognized '%s' as %s.",
-                                               name.c_str(), hop->toString().c_str()));
+                         make_string("Recognized '%s' as %s.", name.c_str(), hop->toString().c_str()));
             return true;
         }
     }
@@ -409,14 +407,13 @@ RoutingNode::lookupRoute()
         RouteDirective &dir = static_cast<RouteDirective&>(*hop.getDirective(0));
         if (table.get() == NULL || !table->hasRoute(dir.getName())) {
             setError(ErrorCode::ILLEGAL_ROUTE,
-                     vespalib::make_vespa_string("Route '%s' does not exist.",
-                                           dir.getName().c_str()));
+                     make_string("Route '%s' does not exist.", dir.getName().c_str()));
             return false;
         }
         insertRoute(*table->getRoute(dir.getName()));
         _trace.trace(TraceLevel::SPLIT_MERGE,
-                     vespalib::make_vespa_string("Route '%s' retrieved by directive; new route is '%s'.",
-                                           dir.getName().c_str(), _route.toString().c_str()));
+                     make_string("Route '%s' retrieved by directive; new route is '%s'.",
+                                 dir.getName().c_str(), _route.toString().c_str()));
         return true;
     }
     if (table.get() != NULL) {
@@ -424,8 +421,7 @@ RoutingNode::lookupRoute()
         if (table->hasRoute(name)) {
             insertRoute(*table->getRoute(name));
             _trace.trace(TraceLevel::SPLIT_MERGE,
-                         vespalib::make_vespa_string("Recognized '%s' as route '%s'.",
-                                               name.c_str(), _route.toString().c_str()));
+                         make_string("Recognized '%s' as route '%s'.", name.c_str(), _route.toString().c_str()));
             return true;
         }
     }
@@ -480,36 +476,27 @@ RoutingNode::executePolicySelect()
     const PolicyDirective &dir = _routingContext->getDirective();
     _policy = _mbus.getRoutingPolicy(_msg.getProtocol(), dir.getName(), dir.getParam());
     if (_policy.get() == NULL) {
-        setError(ErrorCode::UNKNOWN_POLICY, vespalib::make_vespa_string(
-                        "Protocol '%s' could not create routing policy "
-                        "'%s' with parameter '%s'.",
-                        _msg.getProtocol().c_str(), dir.getName().c_str(),
-                        dir.getParam().c_str()));
+        setError(ErrorCode::UNKNOWN_POLICY, make_string(
+                "Protocol '%s' could not create routing policy '%s' with parameter '%s'.",
+                _msg.getProtocol().c_str(), dir.getName().c_str(), dir.getParam().c_str()));
         return false;
     }
-    _trace.trace(TraceLevel::SPLIT_MERGE, vespalib::make_vespa_string(
-                    "Running routing policy '%s'.",
-                    dir.getName().c_str()));
+    _trace.trace(TraceLevel::SPLIT_MERGE, make_string("Running routing policy '%s'.", dir.getName().c_str()));
     try {
         _policy->select(*_routingContext);
     } catch (const std::exception &e) {
-        setError(ErrorCode::POLICY_ERROR, vespalib::make_vespa_string(
-                        "Policy '%s' threw an exception; %s",
-                        dir.getName().c_str(), e.what()));
+        setError(ErrorCode::POLICY_ERROR, make_string("Policy '%s' threw an exception; %s",
+                                                      dir.getName().c_str(), e.what()));
         return false;
     }
     if (_children.empty()) {
         if (_reply.get() == NULL) {
             setError(ErrorCode::NO_SERVICES_FOR_ROUTE,
-                     vespalib::make_vespa_string(
-                             "Policy '%s' selected no recipients for "
-                             "route '%s'.",
-                             dir.getName().c_str(), _route.toString().c_str()));
+                     make_string("Policy '%s' selected no recipients for route '%s'.",
+                                 dir.getName().c_str(), _route.toString().c_str()));
         } else {
             _trace.trace(TraceLevel::SPLIT_MERGE,
-                         vespalib::make_vespa_string(
-                                 "Policy '%s' assigned a reply to this branch.",
-                                 dir.getName().c_str()));
+                         make_string("Policy '%s' assigned a reply to this branch.", dir.getName().c_str()));
         }
         return false;
     }
@@ -519,8 +506,8 @@ RoutingNode::executePolicySelect()
         RoutingNode *child = *it;
         Hop &hop = child->_route.getHop(0);
         child->_trace.trace(TraceLevel::SPLIT_MERGE,
-                            vespalib::make_vespa_string("Component '%s' selected by policy '%s'.",
-                                                  hop.toString().c_str(), dir.getName().c_str()));
+                            make_string("Component '%s' selected by policy '%s'.",
+                                        hop.toString().c_str(), dir.getName().c_str()));
     }
     return true;
 }
@@ -535,7 +522,7 @@ RoutingNode::resolveChildren(uint32_t childDepth)
     {
         RoutingNode *child = *it;
         child->_trace.trace(TraceLevel::SPLIT_MERGE,
-                            vespalib::make_vespa_string("Resolving '%s'.", child->_route.toString().c_str()));
+                            make_string("Resolving '%s'.", child->_route.toString().c_str()));
         child->_isActive = (child->_reply.get() == NULL);
         if (child->_isActive) {
             ++numActiveChildren;
@@ -591,4 +578,3 @@ RoutingNode::shouldIgnoreResult()
 }
 
 } // namespace mbus
-
