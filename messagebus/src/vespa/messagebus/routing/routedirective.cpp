@@ -2,6 +2,8 @@
 #include "routedirective.h"
 #include <vespa/vespalib/util/stringfmt.h>
 
+using vespalib::make_string;
+
 namespace mbus {
 
 RouteDirective::RouteDirective(const vespalib::stringref & name) :
@@ -22,13 +24,13 @@ RouteDirective::matches(const IHopDirective &dir) const
 string
 RouteDirective::toString() const
 {
-    return vespalib::make_string("route:%s", _name.c_str());
+    return make_string("route:%s", _name.c_str());
 }
 
 string
 RouteDirective::toDebugString() const
 {
-    return vespalib::make_string("RouteDirective(name = '%s')", _name.c_str());
+    return make_string("RouteDirective(name = '%s')", _name.c_str());
 }
 
 } // mbus

@@ -13,6 +13,7 @@
 LOG_SETUP(".messagebus");
 
 using vespalib::LockGuard;
+using vespalib::make_string;
 
 namespace {
 
@@ -370,14 +371,10 @@ MessageBus::deliverMessage(Message::UP msg, const string &session)
     }
     if (msgHandler == NULL) {
         deliverError(std::move(msg), ErrorCode::UNKNOWN_SESSION,
-                     vespalib::make_string(
-                             "Session '%s' does not exist.",
-                             session.c_str()));
+                     make_string("Session '%s' does not exist.", session.c_str()));
     } else if (!checkPending(*msg)) {
         deliverError(std::move(msg), ErrorCode::SESSION_BUSY,
-                     vespalib::make_string(
-                             "Session '%s' is busy, try again later.",
-                             session.c_str()));
+                     make_string("Session '%s' is busy, try again later.", session.c_str()));
     } else {
         _msn->deliverMessage(std::move(msg), *msgHandler);
     }
