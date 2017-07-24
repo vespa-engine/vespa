@@ -218,8 +218,9 @@ public class NodeAllocation {
         if (surplus > 0) { // retire until surplus is 0, prefer to retire higher indexes to minimize redistribution
             for (Node node : byDecreasingIndex(nodes)) {
                 if ( ! node.allocation().get().membership().retired() && node.state().equals(Node.State.active)) {
-                    changedNodes.add(node.retire(Agent.application, clock.instant()));
-                    surplusNodes.add(node); // offer this node to other groups
+                    Node retiredNode = node.retire(Agent.application, clock.instant());
+                    changedNodes.add(retiredNode);
+                    surplusNodes.add(retiredNode); // offer this node to other groups
                     if (--surplus == 0) break;
                 }
             }

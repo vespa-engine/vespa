@@ -60,6 +60,20 @@ public class MultigroupProvisioningTest {
         deploy(application1, 6, 3, tester);
     }
 
+    @Test
+    public void test_provisioning_of_multiple_groups2() {
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+
+        ApplicationId application1 = tester.makeApplicationId();
+
+        tester.makeReadyNodes(6, "default");
+
+        deploy(application1,4, 2, tester);
+        deploy(application1, 2, 2, tester);
+        deploy(application1,4, 2, tester);
+
+    }
+
     /**
      * This demonstrates a case where we end up provisioning new nodes rather than reusing retired nodes
      * due to asymmetric group sizes after step 2 (second group has 3 additional retired nodes).

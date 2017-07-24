@@ -52,9 +52,9 @@ public class NodePriority {
         if (n1.node.state().equals(Node.State.active) && !n2.node.state().equals(Node.State.active)) return -1;
         if (n2.node.state().equals(Node.State.active) && !n1.node.state().equals(Node.State.active)) return 1;
 
-        // Choose surplus nodes
-        if (n1.isSurplusNode && !n2.isSurplusNode) return -1;
-        if (n2.isSurplusNode && !n1.isSurplusNode) return 1;
+        // Choose active node that is not retired first (surplus is active but retired)
+        if (!n1.isSurplusNode && n2.isSurplusNode) return -1;
+        if (!n2.isSurplusNode && n1.isSurplusNode) return 1;
 
         // Choose inactive nodes
         if (n1.node.state().equals(Node.State.inactive) && !n2.node.state().equals(Node.State.inactive)) return -1;
@@ -79,13 +79,14 @@ public class NodePriority {
         if (n1.parent.isPresent() && !n2.parent.isPresent()) return -1;
         if (n2.parent.isPresent() && !n1.parent.isPresent()) return 1;
 
-        // Choose the node with parent node with the least capacity
+        // Choose the node with parent node with the least capacity (TODO parameterize this as this is pretty much the core of the algorithm)
         int freeCapacity = n1.freeParentCapacity.compare(n2.freeParentCapacity);
         if (freeCapacity != 0) return freeCapacity;
 
         // Choose cheapest node
         if (n1.node.flavor().cost() < n2.node.flavor().cost()) return -1;
         if (n2.node.flavor().cost() < n1.node.flavor().cost()) return 1;
+
 
         // All else equal choose hostname lexically
         return n1.node.hostname().compareTo(n2.node.hostname());

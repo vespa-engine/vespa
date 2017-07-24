@@ -227,7 +227,13 @@ public class NodePrioritizer {
 
             // Only add new allocations that violates the spare constraint if this is a replacement
             if (!nodePriority.violatesSpares || isReplacement || !nodePriority.isNewNode) {
-                allocation.offer(Collections.singletonList(nodePriority.node), nodePriority.isSurplusNode);
+                List<Node> acceptedNodes = allocation.offer(Collections.singletonList(nodePriority.node), nodePriority.isSurplusNode);
+                // Update with the potentially changed node (new object)
+                if (!acceptedNodes.isEmpty()) {
+                    nodePriority.node = acceptedNodes.get(0);
+                    nodes.remove(nodePriority.node);
+                    nodes.put(acceptedNodes.get(0), nodePriority);
+                }
             }
         }
     }

@@ -70,7 +70,8 @@ class GroupPreparer {
                     nodeRepository.reserve(prioritizer.filterInactiveAndReadyNodes(allocation.getAcceptedNodes()));
                     nodeRepository.addDockerNodes(prioritizer.filterNewNodes(allocation.getAcceptedNodes()));
                     surplusActiveNodes.removeAll(prioritizer.filterSurplusNodes(allocation.getAcceptedNodes()));
-                    return allocation.finalNodes(surplusActiveNodes);
+                    List<Node> result = allocation.finalNodes(surplusActiveNodes);
+                    return result;
                 } else {
                     throw new OutOfCapacityException("Could not satisfy " + requestedNodes + " for " + cluster +
                             outOfCapacityDetails(allocation));
