@@ -21,10 +21,12 @@ import com.yahoo.jdisc.http.filter.chain.RequestFilterChain;
 import com.yahoo.jdisc.http.filter.chain.ResponseFilterChain;
 import com.yahoo.processing.execution.chain.ChainRegistry;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
@@ -83,15 +85,34 @@ public class FilterChainRepository extends AbstractComponent {
     private static Object toJDiscChain(Chain<FilterWrapper> chain) {
         checkFilterTypesCompatible(chain);
         List<?> jdiscFilters = chain.components().stream()
-                .map(filterWrapper -> filterWrapper.filter)
-                .collect(toList());
-        Object head = jdiscFilters.get(0);
-        if (jdiscFilters.size() == 1) return head;
+                        .map(filterWrapper -> filterWrapper.filter)
+                        .collect(toList());
+        List<?> wrappedFilters = wrapSecurityFilters(jdiscFilters);
+        Object head = wrappedFilters.get(0);
+        if (wrappedFilters.size() == 1) return head;
         else if (head instanceof RequestFilter)
-            return RequestFilterChain.newInstance((List<RequestFilter>) jdiscFilters);
+            return RequestFilterChain.newInstance((List<RequestFilter>) wrappedFilters);
         else if (head instanceof ResponseFilter)
-            return ResponseFilterChain.newInstance((List<ResponseFilter>) jdiscFilters);
+            return ResponseFilterChain.newInstance((List<ResponseFilter>) wrappedFilters);
         throw new IllegalStateException();
+    }
+
+    private static List<?> wrapSecurityFilters(List<?> filters) {
+        if (filters.isEmpty()) return emptyList();
+        List<Object> aggregatedSecurityFilters = new ArrayList<>();
+        List<Object> wrappedFilters = new ArrayList<>();
+        for (Object filter : filters) {
+            if (isSecurityFilter(filter)) {
+                aggregatedSecurityFilters.add(filter);
+            } else {
+                if (!aggregatedSecurityFilters.isEmpty()) {
+                    wrappedFilters.add(createSecurityChain(aggregatedSecurityFilters));
+                    aggregatedSecurityFilters.clear();
+                }
+                wrappedFilters.add(filter);
+            }
+        }
+        return wrappedFilters;
     }
 
     private static void checkFilterTypesCompatible(Chain<FilterWrapper> chain) {
