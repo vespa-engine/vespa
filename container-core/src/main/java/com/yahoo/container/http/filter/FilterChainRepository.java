@@ -112,6 +112,9 @@ public class FilterChainRepository extends AbstractComponent {
                 wrappedFilters.add(filter);
             }
         }
+        if (!aggregatedSecurityFilters.isEmpty()) {
+            wrappedFilters.add(createSecurityChain(aggregatedSecurityFilters));
+        }
         return wrappedFilters;
     }
 
