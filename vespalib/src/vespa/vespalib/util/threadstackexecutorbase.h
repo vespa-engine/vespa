@@ -10,6 +10,7 @@
 #include "runnable.h"
 #include <memory>
 #include <vector>
+#include <functional>
 #include <vespa/fastos/thread.h>
 
 namespace vespalib {
