@@ -17,7 +17,6 @@
 
     <modules>
         <module>../annotations</module>
-        <module>../scalalib</module>
         <module>../bundle-plugin</module>
         <module>../configgen</module>
         <module>../config-class-plugin</module>

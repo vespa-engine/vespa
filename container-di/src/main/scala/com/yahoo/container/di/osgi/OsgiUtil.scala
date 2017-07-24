@@ -10,10 +10,8 @@ import java.util.stream.Collectors
 import com.google.common.io.Files.fileTreeTraverser
 import com.yahoo.component.ComponentSpecification
 import com.yahoo.container.di.Osgi.RelativePath
-import com.yahoo.vespa.scalalib.arm.Using.using
-import com.yahoo.vespa.scalalib.java.function.FunctionConverters._
-import com.yahoo.vespa.scalalib.osgi.maven.ProjectBundleClassPaths
-import com.yahoo.vespa.scalalib.osgi.maven.ProjectBundleClassPaths.BundleClasspathMapping
+import com.yahoo.osgi.maven.ProjectBundleClassPaths
+import com.yahoo.osgi.maven.ProjectBundleClassPaths.BundleClasspathMapping
 import org.osgi.framework.Bundle
 import org.osgi.framework.wiring.BundleWiring
 
@@ -46,7 +44,7 @@ object OsgiUtil {
                                                             bundleSpec: ComponentSpecification,
                                                             packagesToScan: Set[String]) = {
     classEntriesFrom(
-      bundleClassPathMapping(bundleSpec, classLoader).classPathElements,
+      bundleClassPathMapping(bundleSpec, classLoader).classPathElements.asScala.toList,
       packagesToScan)
   }
 
@@ -59,7 +57,7 @@ object OsgiUtil {
       projectBundleClassPaths.mainBundle
     } else {
       log.log(Level.WARNING, s"Dependencies of the bundle $bundleSpec will not be scanned. Please file a feature request if you need this" )
-      matchingBundleClassPathMapping(bundleSpec, projectBundleClassPaths.providedDependencies)
+      matchingBundleClassPathMapping(bundleSpec, projectBundleClassPaths.providedDependencies.asScala.toList)
     }
   }
 
@@ -71,9 +69,9 @@ object OsgiUtil {
   }
 
   private def loadProjectBundleClassPaths(classLoader: ClassLoader): ProjectBundleClassPaths = {
-    val classPathMappingsFileLocation = classLoader.getResource(ProjectBundleClassPaths.classPathMappingsFileName)
+    val classPathMappingsFileLocation = classLoader.getResource(ProjectBundleClassPaths.CLASSPATH_MAPPINGS_FILENAME)
     if (classPathMappingsFileLocation == null)
-      throw new RuntimeException(s"Couldn't find ${ProjectBundleClassPaths.classPathMappingsFileName}  in the class path.")
+      throw new RuntimeException(s"Couldn't find ${ProjectBundleClassPaths.CLASSPATH_MAPPINGS_FILENAME}  in the class path.")
 
     ProjectBundleClassPaths.load(Paths.get(classPathMappingsFileLocation.toURI))
   }
@@ -119,15 +117,27 @@ object OsgiUtil {
       if (packagePathsToScan.isEmpty) (name: String) => true
       else (name: String) => packagePathsToScan(packagePath(name))
 
-    using(new JarFile(jarPath.toFile)) { jarFile =>
+    var jarFile: JarFile = null
+    try {
+      jarFile = new JarFile(jarPath.toFile)
       jarFile.stream().
         map[String] { entry: JarEntry => entry.getName}.
         filter { name: String => name.endsWith(classFileTypeSuffix)}.
         filter(acceptedPackage).
         collect(Collectors.toList()).
         asScala
+    } finally {
+      if (jarFile != null) jarFile.close()
     }
   }
 
   def packageToPath(packageName: String) = packageName.replaceAllLiterally(".", "/")
+
+  implicit class JavaPredicate[T](f: T => Boolean) extends Predicate[T] {
+    override def test(t: T): Boolean = f(t)
+  }
+
+  implicit class JavaFunction[T, R](f: T => R) extends java.util.function.Function[T, R] {
+    override def apply(t: T): R = f(t)
+  }
 }

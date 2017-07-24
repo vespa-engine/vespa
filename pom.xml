@@ -1039,6 +1039,5 @@
         <module>vsm</module>
         <module>yolean</module>
         <module>zkfacade</module>
-        <module>scalalib</module>
     </modules>
 </project>
