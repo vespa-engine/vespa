@@ -14,8 +14,8 @@ import static org.junit.Assert.*;
  */
 public class DiskBenchmarkTest {
 
-    DiskBenchmark diskBenchmark;
-    HardwareResults hardwareResults;
+    private DiskBenchmark diskBenchmark;
+    private HardwareResults hardwareResults;
     private MockCommandExecutor commandExecutor;
 
     private final String VALID_OUTPUT_FILE = "src/test/java/com/yahoo/vespa/hosted/node/verification/hardware/resources/diskBenchmarkValidOutput";

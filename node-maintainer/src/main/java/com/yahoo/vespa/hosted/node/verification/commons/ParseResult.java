@@ -1,9 +1,12 @@
 package com.yahoo.vespa.hosted.node.verification.commons;
 
+import java.util.Objects;
+
 /**
  * Created by sgrostad on 17/07/2017.
  */
 public class ParseResult {
+
     private final String searchWord;
     private final String value;
 
@@ -34,9 +37,7 @@ public class ParseResult {
 
     @Override
     public int hashCode() {
-        int hash = 17;
-        hash = 37 * hash + searchWord.length() + value.length();
-        return hash;
+        return Objects.hash(searchWord, value);
     }
 
     @Override

@@ -15,6 +15,7 @@ import java.util.logging.Logger;
  * Created by sgrostad on 11/07/2017.
  */
 public class CPUBenchmark implements Benchmark {
+
     private final String CPU_BENCHMARK_COMMAND = "perf stat -e cycles dd if=/dev/zero of=/dev/null count=100000 2>&1 | grep 'cycles\\|seconds'";
     private final String CYCLES_SEARCH_WORD = "cycles";
     private final String SECONDS_SEARCH_WORD = "seconds";

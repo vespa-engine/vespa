@@ -1,6 +1,4 @@
-package com.yahoo.vespa.hosted.node.verification.spec.noderepo; /**
- * Created by olaa on 04/07/2017.
- */
+package com.yahoo.vespa.hosted.node.verification.spec.noderepo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -9,6 +7,9 @@ import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Created by olaa on 04/07/2017.
+ */
 public class NodeInfoRetriever {
 
     private static final Logger logger = Logger.getLogger(NodeInfoRetriever.class.getName());

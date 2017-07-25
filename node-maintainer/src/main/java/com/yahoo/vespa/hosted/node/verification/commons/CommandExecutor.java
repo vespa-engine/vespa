@@ -31,7 +31,6 @@ public class CommandExecutor {
         executor.execute(cmdLine);
     }
 
-
     private void writeOutputStreamToResults(ByteArrayOutputStream outputStream, ArrayList<String> results) throws IOException {
         String out = outputStream.toString();
         BufferedReader br = new BufferedReader(new StringReader(out));

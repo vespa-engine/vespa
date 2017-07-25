@@ -17,6 +17,10 @@ import java.util.logging.Logger;
 public class MemoryRetriever implements HardwareRetriever {
 
     private static final String MEMORY_INFO_COMMAND = "cat /proc/meminfo";
+    final static String searchWord = "MemTotal";
+    final static String regexSplit = ":\\s";
+    final static int searchElementIndex = 0;
+    final static int returnElementIndex = 1;
     private static final Logger logger = Logger.getLogger(MemoryRetriever.class.getName());
     private final HardwareInfo hardwareInfo;
     private final CommandExecutor commandExecutor;
@@ -38,10 +42,6 @@ public class MemoryRetriever implements HardwareRetriever {
     }
 
     protected ParseResult parseMemInfoFile(ArrayList<String> commandOutput) {
-        String searchWord = "MemTotal";
-        String regexSplit = ":\\s";
-        int searchElementIndex = 0;
-        int returnElementIndex = 1;
         ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(searchWord));
         ParseInstructions parseInstructions = new ParseInstructions(searchElementIndex, returnElementIndex, regexSplit, searchWords);
         ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
@@ -58,7 +58,6 @@ public class MemoryRetriever implements HardwareRetriever {
         String[] split = totMem.split(" ");
         double value = Double.parseDouble(split[0]);
         double kiloToGiga = 1000000.0;
-        value /= kiloToGiga;
-        return value;
+        return value / kiloToGiga;
     }
 }

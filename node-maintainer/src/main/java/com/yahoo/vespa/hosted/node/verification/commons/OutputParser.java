@@ -7,6 +7,7 @@ import java.util.regex.Pattern;
  * Created by sgrostad on 17/07/2017.
  */
 public class OutputParser {
+
     public static ArrayList<ParseResult> parseOutput(ParseInstructions parseInstructions, ArrayList<String> commandOutput) {
         ArrayList<ParseResult> results = new ArrayList<>();
         int searchElementIndex = parseInstructions.getSearchElementIndex();

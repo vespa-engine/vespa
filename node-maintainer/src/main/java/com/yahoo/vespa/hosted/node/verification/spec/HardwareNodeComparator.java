@@ -120,7 +120,9 @@ public class HardwareNodeComparator {
     }
 
     private static boolean insideThreshold(double value1, double value2) {
-        return value1 > 0.8 * value2 && value1 < 1.2 * value2;
+        double lowerThresholdPercentage = 0.8;
+        double upperThresholdPercentage = 1.2;
+        return value1 > lowerThresholdPercentage * value2 && value1 < upperThresholdPercentage * value2;
     }
 
 }

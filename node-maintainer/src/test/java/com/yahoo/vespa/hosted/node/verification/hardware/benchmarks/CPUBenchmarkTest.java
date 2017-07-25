@@ -20,7 +20,7 @@ public class CPUBenchmarkTest {
     private HardwareResults hardwareResults;
     private MockCommandExecutor commandExecutor;
     private CPUBenchmark cpu;
-    private double delta = 0.01;
+    private final static double delta = 0.01;
 
     @Before
     public void setup(){
