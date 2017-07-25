@@ -28,7 +28,7 @@ public class CPURetrieverTest {
     }
 
     @Test
-    public void test_updateInfo_should_write_numOfCpuCores_to_hardware_info() throws Exception {
+    public void updateInfo_should_write_numOfCpuCores_to_hardware_info() throws Exception {
         commandExecutor.addCommand("cat " + FILENAME);
         cpu.updateInfo();
         double expectedAmountOfCores = 4;
@@ -37,7 +37,7 @@ public class CPURetrieverTest {
     }
 
     @Test
-    public void test_parseCPUInfoFile_should_return_valid_ArrayList() throws IOException{
+    public void parseCPUInfoFile_should_return_valid_ArrayList() throws IOException{
         ArrayList<String> commandOutput = MockCommandExecutor.readFromFile(FILENAME);
         ArrayList<ParseResult> ParseResults = cpu.parseCPUInfoFile(commandOutput);
         String expectedSearchWord = "cpu MHz";
@@ -57,7 +57,7 @@ public class CPURetrieverTest {
     }
 
     @Test
-    public void test_setCpuCores_counts_cores_correctly(){
+    public void setCpuCores_counts_cores_correctly(){
         ArrayList<ParseResult> parseResults = new ArrayList<>();
         parseResults.add(new ParseResult("cpu MHz","2000"));
         parseResults.add(new ParseResult("cpu MHz","2000"));

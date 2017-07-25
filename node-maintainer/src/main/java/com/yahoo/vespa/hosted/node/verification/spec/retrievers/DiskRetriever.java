@@ -17,16 +17,15 @@ import java.util.logging.Logger;
 public class DiskRetriever implements HardwareRetriever {
     private static final String DISK_CHECK_TYPE = "lsblk -d -o name,rota";
     private static final String DISK_CHECK_SIZE = "df -BG /";
-    private final String DISK_NAME = "sda";
-    final static String DISK_TYPE_REGEX_SPLIT = "\\s+";
-    final static int DISK_TYPE_SEARCH_ELEMENT_INDEX = 0;
-    final static int DISK_TYPE_RETURN_ELEMENT_INDEX = 1;
-    String DISK_SIZE_SEARCH_WORD = ".*\\d+.*";
-    String DISK_SIZE_ = "\\s+";
-    int searchElementIndex_DISK_SIZE = 3;
-    int returnElementIndex_DISK_SIZE = 1;
+    private static final String DISK_NAME = "sda";
+    private static final String DISK_TYPE_REGEX_SPLIT = "\\s+";
+    private static final int DISK_TYPE_SEARCH_ELEMENT_INDEX = 0;
+    private static final int DISK_TYPE_RETURN_ELEMENT_INDEX = 1;
+    private static final String DISK_SIZE_SEARCH_WORD = ".*\\d+.*";
+    private static final String DISK_SIZE_REGEX_SPLIT = "\\s+";
+    private static final int DISK_SIZE_SEARCH_ELEMENT_INDEX = 3;
+    private static final int DISK_SIZE_RETURN_ELEMENT_INDEX = 1;
     private static final Logger logger = Logger.getLogger(DiskRetriever.class.getName());
-
     private final HardwareInfo hardwareInfo;
     private final CommandExecutor commandExecutor;
 
@@ -90,7 +89,7 @@ public class DiskRetriever implements HardwareRetriever {
 
     protected ParseResult parseDiskSize(ArrayList<String> commandOutput) {
         ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(DISK_SIZE_SEARCH_WORD));
-        ParseInstructions parseInstructions = new ParseInstructions(searchElementIndex_DISK_SIZE, returnElementIndex_DISK_SIZE, DISK_SIZE_, searchWords);
+        ParseInstructions parseInstructions = new ParseInstructions(DISK_SIZE_SEARCH_ELEMENT_INDEX, DISK_SIZE_RETURN_ELEMENT_INDEX, DISK_SIZE_REGEX_SPLIT, searchWords);
         return OutputParser.parseSingleOutput(parseInstructions, commandOutput);
     }
 

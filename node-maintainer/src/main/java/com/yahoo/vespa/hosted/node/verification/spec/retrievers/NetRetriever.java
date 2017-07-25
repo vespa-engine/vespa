@@ -21,6 +21,14 @@ public class NetRetriever implements HardwareRetriever {
     private static final String SEARCH_WORD_INTERFACE_IPV6 = "inet6";
     private static final String SEARCH_WORD_INTERFACE_NAME = "eth.";
     private static final String SEARCH_WORD_INTERFACE_SPEED = "Speed";
+    private static final String INTERFACE_NAME_REGEX_SPLIT = "\\s+";
+    private static final String INTERFACE_NAME_SKIP_WORD = "lo";
+    private static final String INTERFACE_NAME_SKIP_UNTIL_WORD = "";
+    private static final int INTERFACE_NAME_SEARCH_ELEMENT_INDEX = 0;
+    private static final int INTERFACE_NAME_RETURN_ELEMENT_INDEX = 0;
+    private static final String INTERFACE_SPEED_REGEX_SPLIT = ":";
+    private static final int INTERFACE_SPEED_SEARCH_ELEMENT_INDEX = 0;
+    private static final int INTERFACE_SPEED_RETURN_ELEMENT_INDEX = 1;
     private static final Logger logger = Logger.getLogger(NetRetriever.class.getName());
     private final HardwareInfo hardwareInfo;
     private final CommandExecutor commandExecutor;
@@ -56,25 +64,17 @@ public class NetRetriever implements HardwareRetriever {
     }
 
     protected ArrayList<ParseResult> parseNetInterface(ArrayList<String> commandOutput) {
-        String regexSplit = "\\s+";
-        String skipWord = "lo";
-        String skipUntilWord = "";
-        int searchElementIndex = 0;
-        int returnElementIndex = 0;
         ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD_INTERFACE_IP4, SEARCH_WORD_INTERFACE_IPV6, SEARCH_WORD_INTERFACE_NAME));
-        ParseInstructions parseInstructions = new ParseInstructions(searchElementIndex, returnElementIndex, regexSplit, searchWords);
-        parseInstructions.setSkipWord(skipWord);
-        parseInstructions.setSkipUntilKeyword(skipUntilWord);
+        ParseInstructions parseInstructions = new ParseInstructions(INTERFACE_NAME_SEARCH_ELEMENT_INDEX, INTERFACE_NAME_RETURN_ELEMENT_INDEX, INTERFACE_NAME_REGEX_SPLIT, searchWords);
+        parseInstructions.setSkipWord(INTERFACE_NAME_SKIP_WORD);
+        parseInstructions.setSkipUntilKeyword(INTERFACE_NAME_SKIP_UNTIL_WORD);
         ArrayList<ParseResult> parseResults = OutputParser.parseOutPutWithSkips(parseInstructions, commandOutput);
         return parseResults;
     }
 
     protected ParseResult parseInterfaceSpeed(ArrayList<String> commandOutput) {
-        String regexSplit = ":";
-        int searchElementIndex = 0;
-        int returnElementIndex = 1;
         ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD_INTERFACE_SPEED));
-        ParseInstructions parseInstructions = new ParseInstructions(searchElementIndex, returnElementIndex, regexSplit, searchWords);
+        ParseInstructions parseInstructions = new ParseInstructions(INTERFACE_SPEED_SEARCH_ELEMENT_INDEX, INTERFACE_SPEED_RETURN_ELEMENT_INDEX, INTERFACE_SPEED_REGEX_SPLIT, searchWords);
         ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
         return parseResult;
     }

@@ -32,7 +32,7 @@ public class NetRetrieverTest {
     }
 
     @Test
-    public void test_updateInfo_should_store_ipv4_ipv6_connectivity_and_interface_speed() {
+    public void updateInfo_should_store_ipv4_ipv6_connectivity_and_interface_speed() {
         commandExecutor.addCommand("cat " + NET_FIND_INTERFACE);
         commandExecutor.addCommand("cat " + NET_CHECK_INTERFACE_SPEED + "eth0");
         net.updateInfo();
@@ -44,7 +44,7 @@ public class NetRetrieverTest {
     }
 
     @Test
-    public void test_findInterface_valid_input() throws IOException{
+    public void findInterface_valid_input() throws IOException{
         commandExecutor.addCommand("cat " + NET_FIND_INTERFACE);
         parseResults = net.findInterface();
         ParseResult expectedParseResult = new ParseResult("eth0", "eth0");
@@ -52,7 +52,7 @@ public class NetRetrieverTest {
     }
 
     @Test
-    public void test_findInterfaceSpeed_valid_input() throws IOException{
+    public void findInterfaceSpeed_valid_input() throws IOException{
         commandExecutor.addCommand("cat " + NET_FIND_INTERFACE);
         commandExecutor.addCommand("cat " + NET_CHECK_INTERFACE_SPEED + "eth0");
         parseResults = net.findInterface();
@@ -62,7 +62,7 @@ public class NetRetrieverTest {
     }
 
     @Test
-    public void test_parseNetInterface_get_ipv_from_ifconfig_testFile() throws IOException {
+    public void parseNetInterface_get_ipv_from_ifconfig_testFile() throws IOException {
         ArrayList<String> mockOutput = MockCommandExecutor.readFromFile(NET_FIND_INTERFACE);
         parseResults = net.parseNetInterface(mockOutput);
         net.updateHardwareInfoWithNet(parseResults);
@@ -71,7 +71,7 @@ public class NetRetrieverTest {
     }
 
     @Test
-    public void test_parseNetInterface_get_ipv_from_ifconfigNotIpv6_testFile() throws IOException {
+    public void parseNetInterface_get_ipv_from_ifconfigNotIpv6_testFile() throws IOException {
         ArrayList<String> mockOutput = MockCommandExecutor.readFromFile(NET_FIND_INTERFACE+ "NoIpv6");
         parseResults = net.parseNetInterface(mockOutput);
 
@@ -82,7 +82,7 @@ public class NetRetrieverTest {
     }
 
     @Test
-    public void test_parseNetInterface_get_interfaceName_from_ifconfig_testFile() throws IOException{
+    public void parseNetInterface_get_interfaceName_from_ifconfig_testFile() throws IOException{
         ArrayList<String> mockOutput = MockCommandExecutor.readFromFile(NET_FIND_INTERFACE);
         parseResults = net.parseNetInterface(mockOutput);
         String interfaceName = net.findInterfaceName(parseResults);
@@ -91,7 +91,7 @@ public class NetRetrieverTest {
     }
 
     @Test
-    public void test_parseInterfaceSpeed_get_interfaceSpeed_from_eth0_testFile() throws IOException{
+    public void parseInterfaceSpeed_get_interfaceSpeed_from_eth0_testFile() throws IOException{
         ArrayList<String> mockOutput = MockCommandExecutor.readFromFile("src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/eth0");
         ParseResult parseResult = net.parseInterfaceSpeed(mockOutput);
         ParseResult expectedParseResult = new ParseResult("Speed","1000Mb/s");
@@ -99,20 +99,20 @@ public class NetRetrieverTest {
     }
 
     @Test
-    public void test_findInterfaceName_should_return_interface_name(){
+    public void findInterfaceName_should_return_interface_name(){
         parseResults.add(new ParseResult("eth0", "eth0"));
         String expectedInterfaceName = "eth0";
         assertEquals(expectedInterfaceName, net.findInterfaceName(parseResults));
     }
     @Test
-    public void test_findInterfaceName_should_return_empty_interface_name(){
+    public void findInterfaceName_should_return_empty_interface_name(){
         parseResults.add(new ParseResult("et", "et0"));
         String expectedInterfaceName = "";
         assertEquals(expectedInterfaceName, net.findInterfaceName(parseResults));
     }
 
     @Test
-    public void test_updateHardwareinfoWithNet_valid_input(){
+    public void updateHardwareinfoWithNet_valid_input(){
         parseResults.add(new ParseResult("eth0", "eth0"));
         parseResults.add(new ParseResult("inet", "inet"));
         parseResults.add(new ParseResult("inet6", "inet6"));

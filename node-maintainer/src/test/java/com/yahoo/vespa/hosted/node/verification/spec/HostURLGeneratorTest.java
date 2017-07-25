@@ -14,7 +14,7 @@ import static org.mockito.Mockito.when;
 public class HostURLGeneratorTest {
 
     @Test
-    public void test_generateNodeInfoUrl_test_if_url_is_formatted_correctly() throws Exception {
+    public void generateNodeInfoUrl_test_if_url_is_formatted_correctly() throws Exception {
         String zoneHostName = "http://cfg1.prod.us-west-1.vespahosted.gq1.yahoo.com:4080";
         String midUrl = "/nodes/v2/node/";
         String nodeHostName = "13305821.ostk.bm2.prod.gq1.yahoo.com";

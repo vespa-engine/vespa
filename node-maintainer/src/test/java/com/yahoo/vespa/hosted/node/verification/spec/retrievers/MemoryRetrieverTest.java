@@ -29,7 +29,7 @@ public class MemoryRetrieverTest {
     }
 
     @Test
-    public void test_updateInfo_should_set_memory_available_in_hardwareInfo() throws IOException{
+    public void updateInfo_should_set_memory_available_in_hardwareInfo() throws IOException{
         commandExecutor.addCommand("cat " + FILENAME);
         memory.updateInfo();
         double expectedMemory = 4.042128;
@@ -37,7 +37,7 @@ public class MemoryRetrieverTest {
     }
 
     @Test
-    public void test_parseMemInfoFile_should_return_valid_parseResult() throws IOException{
+    public void parseMemInfoFile_should_return_valid_parseResult() throws IOException{
         ArrayList<String> commandOutput = MockCommandExecutor.readFromFile(FILENAME);
         ParseResult parseResult = memory.parseMemInfoFile(commandOutput);
         ParseResult expectedParseResult = new ParseResult("MemTotal", "4042128 kB");
@@ -45,7 +45,7 @@ public class MemoryRetrieverTest {
     }
 
     @Test
-    public void test_updateMemoryInfo_valid_input(){
+    public void updateMemoryInfo_valid_input(){
         ParseResult testParseResult = new ParseResult("MemTotal", "4042128");
         memory.updateMemoryInfo(testParseResult);
         double expectedMemory = 4.042128;
@@ -53,7 +53,7 @@ public class MemoryRetrieverTest {
     }
 
     @Test
-    public void test_convertToGB_valid_input(){
+    public void convertToGB_valid_input(){
         String testTotMem = "4042128";
         double expectedTotMem = 4.042128;
         assertEquals(expectedTotMem, memory.convertKBToGB(testTotMem), delta);

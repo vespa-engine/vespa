@@ -29,13 +29,13 @@ public class HardwareNodeComparatorTest {
     }
 
     @Test
-    public void test_compare_should_be_equal() {
+    public void compare_should_be_equal() {
         assertTrue(HardwareNodeComparator.compare(nodeInfo, actualHardware).getMetrics().isMatch());
 
     }
 
     @Test
-    public void test_compare_different_amount_of_cores_should_be_false() {
+    public void compare_different_amount_of_cores_should_be_false() {
         actualHardware.setMinCpuCores(4);
         nodeInfo.setMinCpuCores(1);
         assertFalse(HardwareNodeComparator.compare(nodeInfo, actualHardware).getMetrics().isMatch());
