@@ -7,15 +7,13 @@
 #include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vdslib/state/random.h>
 #include <sstream>
 #include <cmath>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".vdslib.nodestate");
 
-namespace storage {
-namespace lib {
+namespace storage::lib {
 
 NodeState::NodeState(const NodeState &) = default;
 NodeState & NodeState::operator = (const NodeState &) = default;
@@ -615,5 +613,4 @@ NodeState::getTextualDifference(const NodeState& other) const {
     return total.str();
 }
 
-} // lib
-} // storage
+}

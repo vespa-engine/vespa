@@ -11,12 +11,9 @@
 #pragma once
 
 #include "diskstate.h"
-#include "state.h"
-#include "random.h"
 #include <vespa/document/bucket/bucketidfactory.h>
 
-namespace storage {
-namespace lib {
+namespace storage::lib {
 
 class NodeState : public document::Printable
 {
@@ -104,6 +101,4 @@ public:
 
 };
 
-} // lib
-} // storage
-
+}

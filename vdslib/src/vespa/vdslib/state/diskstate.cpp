@@ -10,8 +10,7 @@
 
 LOG_SETUP(".vdslib.diskstate");
 
-namespace storage {
-namespace lib {
+namespace storage::lib {
 
 DiskState::DiskState()
     : _state(0),
@@ -161,5 +160,4 @@ DiskState::operator!=(const DiskState& other) const
     return (_state != other._state || _capacity != other._capacity);
 }
 
-} // lib
-} // storage
+}

@@ -10,8 +10,7 @@
 #include <vespa/document/util/printable.h>
 #include <vespa/vespalib/objects/floatingpointtype.h>
 
-namespace storage {
-namespace lib {
+namespace storage::lib {
 
 class DiskState : public document::Printable {
     const State* _state;
@@ -23,8 +22,7 @@ public:
     typedef std::shared_ptr<DiskState> SP;
 
     DiskState();
-    DiskState(const State&, const vespalib::stringref & description = "",
-              double capacity = 1.0);
+    DiskState(const State&, const vespalib::stringref & description = "", double capacity = 1.0);
     explicit DiskState(const vespalib::stringref & serialized);
 
     void serialize(vespalib::asciistream & out, const vespalib::stringref & prefix = "",
@@ -44,6 +42,4 @@ public:
 
 };
 
-} // lib
-} // storage
-
+}
