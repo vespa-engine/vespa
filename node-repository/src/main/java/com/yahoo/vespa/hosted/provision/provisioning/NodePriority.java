@@ -60,14 +60,14 @@ public class NodePriority {
         if (n1.node.state().equals(Node.State.inactive) && !n2.node.state().equals(Node.State.inactive)) return -1;
         if (n2.node.state().equals(Node.State.inactive) && !n1.node.state().equals(Node.State.inactive)) return 1;
 
-        // Choose reserved nodes
-        if (n1.node.state().equals(Node.State.reserved) && !n2.node.state().equals(Node.State.reserved)) return -1;
-        if (n2.node.state().equals(Node.State.reserved) && !n1.node.state().equals(Node.State.reserved)) return 1;
+        // Choose reserved nodes from a previous allocation attempt (the exist in node repo)
+        if (isInNodeRepoAndReserved(n1) && isInNodeRepoAndReserved(n2)) return -1;
+        if (isInNodeRepoAndReserved(n2) && isInNodeRepoAndReserved(n1)) return 1;
 
-        // The node state has to be equal here
+        // The node state should be equal here
         if (!n1.node.state().equals(n2.node.state())) {
             throw new RuntimeException(
-                    String.format("Nodes for allocation is not in expected state. Got %s and %s.",
+                    String.format("Error during node priority comparison. Node states are not equal as expected. Got %s and %s.",
                             n1.node.state(), n2.node.state()));
         }
 
@@ -75,7 +75,7 @@ public class NodePriority {
         if (n1.preferredOnFlavor && !n2.preferredOnFlavor) return -1;
         if (n2.preferredOnFlavor && !n1.preferredOnFlavor) return 1;
 
-        // Choose docker node over non-docker node (this is to differentiate between docker replaces non-docker flavors)
+        // Choose docker node over non-docker node (is this to differentiate between docker replaces non-docker flavors?)
         if (n1.parent.isPresent() && !n2.parent.isPresent()) return -1;
         if (n2.parent.isPresent() && !n1.parent.isPresent()) return 1;
 
@@ -87,8 +87,12 @@ public class NodePriority {
         if (n1.node.flavor().cost() < n2.node.flavor().cost()) return -1;
         if (n2.node.flavor().cost() < n1.node.flavor().cost()) return 1;
 
-
-        // All else equal choose hostname lexically
+        // All else equal choose hostname alphabetically
         return n1.node.hostname().compareTo(n2.node.hostname());
+    }
+
+    private static boolean isInNodeRepoAndReserved(NodePriority nodePri) {
+        if (nodePri.isNewNode) return false;
+        return nodePri.node.state().equals(Node.State.reserved);
     }
 }

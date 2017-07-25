@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Builds up a priority queue of which nodes should be offered to the allocation.
@@ -51,9 +52,8 @@ public class NodePrioritizer {
         this.clusterSpec = clusterSpec;
         this.appId = appId;
 
-        // Add spare and headroom allocations
-        spareHosts = DockerCapacityConstraints.findSpareHosts(allNodes, spares);
-        headroomViolatedHosts = new ArrayList<>();
+        spareHosts = findSpareHosts(allNodes, spares);
+        headroomViolatedHosts = findHeadroomHosts(allNodes, spareHosts, nodeFlavors);
 
         this.capacity = new DockerHostCapacity(allNodes);
 
@@ -158,7 +158,7 @@ public class NodePrioritizer {
 
         if (pri.parent.isPresent()) {
             Node parent = pri.parent.get();
-            pri.freeParentCapacity = capacity.freeCapacityOf(parent, true);
+            pri.freeParentCapacity = capacity.freeCapacityOf(parent, true, false);
 
             /**
              * To be conservative we have a restriction of how many nodes we can retire for each cluster,
@@ -227,5 +227,48 @@ public class NodePrioritizer {
         return allNodes.stream()
                 .filter(n -> n.hostname().equals(node.parentHostname().orElse(" NOT A NODE")))
                 .findAny();
+    }
+
+    private static List<Node> findSpareHosts(List<Node> nodes, int spares) {
+        DockerHostCapacity capacity = new DockerHostCapacity(nodes);
+        return nodes.stream()
+                .filter(node -> node.type().equals(NodeType.host))
+                .filter(dockerHost -> dockerHost.state().equals(Node.State.active))
+                .filter(dockerHost -> capacity.freeIPs(dockerHost) > 0)
+                .sorted(capacity::compareWithoutRetired)
+                .limit(spares)
+                .collect(Collectors.toList());
+    }
+
+    private static List<Node> findHeadroomHosts(List<Node> nodes, List<Node> spareNodes, NodeFlavors flavors) {
+        DockerHostCapacity capacity = new DockerHostCapacity(nodes);
+        List<Node> headroomNodes = new ArrayList<>();
+
+        List<Node> hostsSortedOnLeastCapacity = nodes.stream()
+                .filter(n -> !spareNodes.contains(n))
+                .filter(node -> node.type().equals(NodeType.host))
+                .filter(dockerHost -> dockerHost.state().equals(Node.State.active))
+                .filter(dockerHost -> capacity.freeIPs(dockerHost) > 0)
+                .sorted((a,b) -> capacity.compareWithoutRetired(b,a))
+                .collect(Collectors.toList());
+
+        for (Flavor flavor : flavors.getFlavors()) {
+            for (int i = 0; i < flavor.getIdealHeadroom(); i++) {
+                Node lastNode = null;
+                for (Node potentialHeadroomHost : hostsSortedOnLeastCapacity) {
+                    if (headroomNodes.contains(potentialHeadroomHost)) continue;
+                    lastNode = potentialHeadroomHost;
+                    if (capacity.hasCapacity(potentialHeadroomHost, flavor)) {
+                        headroomNodes.add(potentialHeadroomHost);
+                        continue;
+                    }
+                }
+                if (lastNode != null) {
+                    headroomNodes.add(lastNode);
+                }
+            }
+        }
+
+        return headroomNodes;
     }
 }
