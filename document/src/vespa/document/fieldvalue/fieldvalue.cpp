@@ -43,9 +43,12 @@ std::unique_ptr<ByteBuffer> FieldValue::serialize() const {
     nbostream stream;
     serialize(stream);
 
-    std::unique_ptr<ByteBuffer> retVal(new ByteBuffer(stream.size()));
-    retVal->putBytes(stream.peek(), stream.size());
-    return retVal;
+    nbostream::Buffer buf;
+    stream.swap(buf);
+    size_t sz = buf.size();
+    auto bb = std::make_unique<ByteBuffer>(nbostream::Buffer::stealAlloc(std::move(buf)), sz);
+    bb->setPos(sz);
+    return bb;
 }
 
 size_t

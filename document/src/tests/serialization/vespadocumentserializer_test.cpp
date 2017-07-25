@@ -519,15 +519,16 @@ TEST("requireThatUncompressedStructFieldValueCanBeSerialized") {
 TEST("requireThatCompressedStructFieldValueCanBeSerialized") {
     StructDataType structType(getStructDataType());
     StructFieldValue value = getStructFieldValue(structType);
-    const_cast<StructDataType &>(value.getStructType()).setCompressionConfig(CompressionConfig(CompressionConfig::LZ4, 0, 95));
+    const_cast<StructDataType *>(static_cast<const StructDataType *>(value.getDataType()))
+            ->setCompressionConfig(CompressionConfig(CompressionConfig::LZ4, 0, 95));
     checkStructSerialization(value, CompressionConfig::LZ4);
 }
 
 TEST("requireThatReserializationPreservesCompressionIfUnmodified") {
     StructDataType structType(getStructDataType());
     StructFieldValue value = getStructFieldValue(structType);
-    const_cast<StructDataType &>(value.getStructType()).
-        setCompressionConfig(CompressionConfig(CompressionConfig::LZ4, 0, 95));
+    const_cast<StructDataType *>(static_cast<const StructDataType *>(value.getDataType()))
+            ->setCompressionConfig(CompressionConfig(CompressionConfig::LZ4, 0, 95));
 
     TEST_DO(checkStructSerialization(value, CompressionConfig::LZ4));
 

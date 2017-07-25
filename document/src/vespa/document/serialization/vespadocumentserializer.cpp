@@ -344,6 +344,8 @@ void VespaDocumentSerializer::writeUnchanged(const SerializableArray &value) {
 
     const ByteBuffer* buffer = value.getSerializedBuffer();
     uint32_t sz = (buffer != NULL) ? buffer->getLength() : 0;
+    size_t estimatedRequiredSpace = sz + 4 + 1 + 8 + 4 + field_info.size()*12;
+    _stream.reserve(_stream.size() + estimatedRequiredSpace);
     _stream << sz;
     _stream << static_cast<uint8_t>(value.getCompression());
     if (CompressionConfig::isCompressed(value.getCompression())) {
