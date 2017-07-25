@@ -161,17 +161,6 @@ void ArrayFieldValueTest::testArray()
 
         // Failure situations.
 
-        // Refuse to accept non-array types
-    try{
-        ArrayFieldValue value6(*DataType::TAG);
-        CPPUNIT_FAIL("Didn't complain about non-array type");
-    } catch (std::exception& e) {
-        fprintf(stderr, "Exception = %s\n", e.what());
-        CPPUNIT_ASSERT_CONTAIN(
-                "Cannot generate an array value with non-array type",
-                e.what());
-    }
-
         // Verify that datatypes are verified
         // Created almost equal types to try to get it to fail
     ArrayDataType type1(*DataType::INT);

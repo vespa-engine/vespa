@@ -9,7 +9,7 @@
  */
 #pragma once
 
-#include <vespa/document/datatype/datatype.h>
+#include "datatype.h"
 
 namespace document {
 

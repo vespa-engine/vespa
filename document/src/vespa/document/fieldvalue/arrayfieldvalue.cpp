@@ -12,6 +12,7 @@
 LOG_SETUP(".document.fieldvalue.array");
 
 using namespace vespalib::xml;
+using vespalib::make_string;
 
 namespace document {
 
@@ -27,11 +28,6 @@ ArrayFieldValue::ArrayFieldValue(const DataType &type)
     : CollectionFieldValue(type),
       _array()
 {
-    if (!type.inherits(ArrayDataType::classId)) {
-        throw IllegalArgumentException(
-                "Cannot generate an array value with non-array type "
-                + type.toString() + ".", VESPA_STRLOC);
-    }
     _array.reset(static_cast<IArray *>(createArray(getNestedType()).release()));
 }
 
@@ -60,7 +56,7 @@ void
 ArrayFieldValue::remove(uint32_t index)
 {
     if (_array->size() <= index) {
-        throw IllegalArgumentException(vespalib::make_string(
+        throw IllegalArgumentException(make_string(
                 "Cannot remove index %u from an array of size %lu.",
                 index, (unsigned long)_array->size()), VESPA_STRLOC);
     }
@@ -73,7 +69,7 @@ ArrayFieldValue::addValue(const FieldValue& value)
     if (getNestedType().isValueType(value)) {
         _array->push_back(value);
     } else {
-        throw IllegalArgumentException(vespalib::make_string(
+        throw IllegalArgumentException(make_string(
                 "Cannot add value of type %s to array containing type %s.",
                 value.getDataType()->toString().c_str(),
                 getNestedType().toString().c_str()), VESPA_STRLOC);
@@ -92,7 +88,7 @@ ArrayFieldValue::containsValue(const FieldValue& value) const
         }
         return false;
     } else {
-        throw IllegalArgumentException(vespalib::make_string(
+        throw IllegalArgumentException(make_string(
                 "Value of type %s can't possibly be in array of type %s.",
                 value.getDataType()->toString().c_str(),
                 getDataType()->toString().c_str()), VESPA_STRLOC);
@@ -114,7 +110,7 @@ ArrayFieldValue::removeValue(const FieldValue& value)
         }
         return (oldSize != _array->size());
     } else {
-        throw IllegalArgumentException(vespalib::make_string(
+        throw IllegalArgumentException(make_string(
                 "Value of type %s can't possibly be in array of type %s.",
                 value.getDataType()->toString().c_str(),
                 getDataType()->toString().c_str()), VESPA_STRLOC);

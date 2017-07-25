@@ -193,15 +193,6 @@ void StructFieldValueTest::testStruct()
 
         // Failure situations.
 
-        // Refuse to accept non-struct types
-    try{
-        StructFieldValue value6(*DataType::DOCUMENT);
-        CPPUNIT_FAIL("Didn't complain about non-struct type");
-    } catch (std::exception& e) {
-        CPPUNIT_ASSERT_CONTAIN("Cannot generate a struct value with "
-                               "non-struct type", e.what());
-    }
-
         // Refuse to set wrong types
     try{
         value2.setValue(intF, StringFieldValue("bar"));

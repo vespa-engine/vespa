@@ -217,6 +217,7 @@ using vespalib::ComplexArrayT;
 using vespalib::PrimitiveArrayT;
 
 namespace {
+
 class FieldValueFactory : public ComplexArrayT<FieldValue>::Factory
 {
 public:
@@ -226,6 +227,7 @@ public:
 private:
     DataType::CP _dataType;
 };
+
 }
 
 std::unique_ptr<vespalib::IArrayBase>
