@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.node.verification.spec.parse;
+package com.yahoo.vespa.hosted.node.verification.commons;
 
 import java.util.ArrayList;
 
@@ -6,20 +6,7 @@ import java.util.ArrayList;
  * Created by sgrostad on 17/07/2017.
  */
 public class ParseInstructions {
-    public int getSearchElementIndex() {
-        return searchElementIndex;
-    }
 
-    public int getValueElementIndex() {
-        return valueElementIndex;
-    }
-
-    public String getSplitRegex() {
-        return splitRegex;
-    }
-    public ArrayList<String> getSearchWords() {
-        return searchWords;
-    }
     private final int searchElementIndex;
     private final int valueElementIndex;
     private final String splitRegex;
@@ -33,6 +20,14 @@ public class ParseInstructions {
         this.splitRegex = splitRegex;
         this.searchWords = searchWords;
     }
+
+    public int getSearchElementIndex() {return searchElementIndex;}
+
+    public int getValueElementIndex() {return valueElementIndex;}
+
+    public String getSplitRegex() {return splitRegex;}
+
+    public ArrayList<String> getSearchWords() {return searchWords;}
 
     public void setSkipWord(String skipWord){
         this.skipWord = skipWord;

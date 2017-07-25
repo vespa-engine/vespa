@@ -1,6 +1,6 @@
-package com.yahoo.vespa.hosted.node.verification.hardware.mock;
+package com.yahoo.vespa.hosted.node.verification.mock;
 
-import com.yahoo.vespa.hosted.node.verification.hardware.CommandExecutor;
+import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -37,7 +37,7 @@ public class MockCommandExecutor extends CommandExecutor {
         mockCommands.add(DUMMY_COMMAND);
     }
 
-    public ArrayList<String> readFromFile(String filepath) throws IOException {
+    public static ArrayList<String> readFromFile(String filepath) throws IOException {
         return new ArrayList<>(Arrays.asList(new String(Files.readAllBytes(Paths.get(filepath))).split("\n")));
     }
 

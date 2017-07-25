@@ -1,8 +1,11 @@
-package com.yahoo.vespa.hosted.node.verification.hardware.parse;
+package com.yahoo.vespa.hosted.node.verification.commons;
 
+import com.yahoo.vespa.hosted.node.verification.commons.*;
+import com.yahoo.vespa.hosted.node.verification.mock.MockCommandExecutor;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -19,6 +22,7 @@ public class OutputParserTest {
     private final String SEARCH_WORD_1 = "Parsing";
     private final String SEARCH_WORD_2 = "this";
     private final String REGEX_SEARCH_WORD = ".*S.*";
+    private final String PARSE_OUTPUT_WITH_SKIPS_TEST_FILE = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/parseOutputWithSkipsTest";
 
     private ArrayList<String> commandOutput;
     private ArrayList<String> searchWords;
@@ -79,5 +83,27 @@ public class OutputParserTest {
         assertEquals(expectedParseResult, parseResult);
     }
 
+    @Test
+    public void test_parseOutputWithSkips_should_return_two_matches() throws IOException{
+        searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD_1));
+        ParseInstructions parseInstructions = new ParseInstructions(1, 7, " ", searchWords);
+        parseInstructions.setSkipWord("SkipFromKeyword");
+        parseInstructions.setSkipUntilKeyword("skipUntilKeyword");
+        ArrayList<String> commandSkipOutput = MockCommandExecutor.readFromFile(PARSE_OUTPUT_WITH_SKIPS_TEST_FILE);
+        ArrayList<ParseResult> parseResults = OutputParser.parseOutPutWithSkips(parseInstructions, commandSkipOutput);
+        ParseResult expectedParseResult = new ParseResult(SEARCH_WORD_1, RETURN_VALUE);
+        assertEquals(expectedParseResult, parseResults.get(0));
+        assertEquals(expectedParseResult, parseResults.get(1));
+    }
 
+    @Test
+    public void test_skipToIndex_should_return_correct_index() throws IOException{
+        searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD_1));
+        ParseInstructions parseInstructions = new ParseInstructions(0, 0, " ", searchWords);
+        parseInstructions.setSkipUntilKeyword("skipUntilKeyword");
+        ArrayList<String> commandSkipOutput = MockCommandExecutor.readFromFile(PARSE_OUTPUT_WITH_SKIPS_TEST_FILE);
+        int indexReturned = OutputParser.skipToIndex(3, parseInstructions, commandSkipOutput);
+        int expectedReturnIndex = 10;
+        assertEquals(expectedReturnIndex, indexReturned);
+    }
 }

@@ -1,7 +1,7 @@
 package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
 
-import com.yahoo.vespa.hosted.node.verification.spec.mock.*;
-import com.yahoo.vespa.hosted.node.verification.spec.parse.ParseResult;
+import com.yahoo.vespa.hosted.node.verification.commons.ParseResult;
+import com.yahoo.vespa.hosted.node.verification.mock.*;
 import org.junit.Before;
 import org.junit.Test;
 

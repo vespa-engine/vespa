@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.node.verification.spec.parse;
+package com.yahoo.vespa.hosted.node.verification.commons;
 
 import java.util.ArrayList;
 import java.util.regex.Pattern;

@@ -1,9 +1,6 @@
 package com.yahoo.vespa.hosted.node.verification.hardware.benchmarks;
 
-import com.yahoo.vespa.hosted.node.verification.hardware.CommandExecutor;
-import com.yahoo.vespa.hosted.node.verification.hardware.parse.ParseInstructions;
-import com.yahoo.vespa.hosted.node.verification.hardware.parse.OutputParser;
-import com.yahoo.vespa.hosted.node.verification.hardware.parse.ParseResult;
+import com.yahoo.vespa.hosted.node.verification.commons.*;
 
 import java.io.*;
 import java.util.ArrayList;

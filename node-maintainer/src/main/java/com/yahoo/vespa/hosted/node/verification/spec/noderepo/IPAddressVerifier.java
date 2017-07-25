@@ -1,6 +1,5 @@
 package com.yahoo.vespa.hosted.node.verification.spec.noderepo;
 
-import com.yahoo.vespa.hosted.node.verification.spec.noderepo.NodeJsonModel;
 import com.yahoo.vespa.hosted.node.verification.spec.yamasreport.YamasSpecReport;
 
 import javax.naming.NamingEnumeration;

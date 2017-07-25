@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.node.verification.hardware;
+package com.yahoo.vespa.hosted.node.verification.commons;
 
 import org.junit.Before;
 import org.junit.Test;

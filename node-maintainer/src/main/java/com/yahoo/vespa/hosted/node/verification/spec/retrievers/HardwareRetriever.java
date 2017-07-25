@@ -5,5 +5,6 @@ package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
  */
 public interface HardwareRetriever {
 
-    public void updateInfo();
+    void updateInfo();
+
 }

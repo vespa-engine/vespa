@@ -1,23 +1,23 @@
-package com.yahoo.vespa.hosted.node.verification.spec.parse;
+package com.yahoo.vespa.hosted.node.verification.commons;
 
 /**
  * Created by sgrostad on 17/07/2017.
  */
 public class ParseResult {
-    public String getSearchWord() {
-        return searchWord;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
     private final String searchWord;
     private final String value;
 
     public ParseResult(String searchWord, String value) {
         this.searchWord = searchWord;
         this.value = value;
+    }
+
+    public String getSearchWord() {
+        return searchWord;
+    }
+
+    public String getValue() {
+        return value;
     }
 
     @Override
@@ -40,7 +40,7 @@ public class ParseResult {
     }
 
     @Override
-    public String toString() {
+    public String toString(){
         return "Search word: " + searchWord + ", Value: " + value;
     }
 }
