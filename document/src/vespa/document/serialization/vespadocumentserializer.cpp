@@ -151,6 +151,17 @@ void VespaDocumentSerializer::write(const Document &value,
     _stream.write(doc_stream.peek(), doc_stream.size());
 }
 
+void VespaDocumentSerializer::visit(const StructFieldValue &value)
+{
+    if (!structNeedsReserialization(value)) {
+        const StructFieldValue::Chunks & chunks = value.getChunks();
+        assert(chunks.size() == 1);
+        writeUnchanged(chunks[0]);
+    } else {
+        write(value, AllFields());
+    }
+}
+
 void VespaDocumentSerializer::write(const AnnotationReferenceFieldValue &value)
 {
     putInt1_2_4Bytes(_stream, value.getAnnotationIndex());
