@@ -52,7 +52,7 @@ class GroupPreparer {
             // Use new, ready nodes. Lock ready pool to ensure that nodes are not grabbed by others.
             try (Mutex readyLock = nodeRepository.lockUnallocated()) {
 
-                // Create a prioritized set of nodes for the cluster
+                // Create a prioritized set of nodes
                 NodePrioritizer prioritizer = new NodePrioritizer(
                         nodeRepository.getNodes(),
                         application,
