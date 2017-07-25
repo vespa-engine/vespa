@@ -7,9 +7,9 @@ import com.yahoo.vespa.hosted.node.verification.spec.yamasreport.YamasSpecReport
 
 /**
  * Created by olaa on 04/07/2017.
+ * Compares two HardwareInfo objects
  */
 public class HardwareNodeComparator {
-
 
     public static YamasSpecReport compare(HardwareInfo node, HardwareInfo actualHardware) {
         Boolean equalHardware = true;

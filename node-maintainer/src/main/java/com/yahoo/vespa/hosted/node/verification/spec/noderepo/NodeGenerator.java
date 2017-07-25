@@ -4,6 +4,7 @@ import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 
 /**
  * Created by olaa on 07/07/2017.
+ * Converts a NodeJsonModel object to a HardwareInfo object.
  */
 public class NodeGenerator {
 

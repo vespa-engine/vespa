@@ -14,6 +14,11 @@ import java.util.Hashtable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Created by olaa on 14/07/2017.
+ * Checks if all additional Ipv6 addresses has the same hostname as the main Ipv6 address.
+ */
+
 public class IPAddressVerifier {
 
     private static final Logger logger = Logger.getLogger(IPAddressVerifier.class.getName());

@@ -17,6 +17,8 @@ import java.util.logging.Logger;
 
 /**
  * Created by olaa on 14/07/2017.
+ * Creates two HardwareInfo objects, one with spec from node repository and one from spec retrieved at the node.
+ * Compares the objects and returns the result.
  */
 public class SpecVerifier {
 

@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 
 /**
  * Created by olaa on 04/07/2017.
+ * Parse JSON from node repository and stores information as a NodeJsonModel object.
  */
 public class NodeInfoRetriever {
 

@@ -5,6 +5,7 @@ import java.net.URL;
 
 /**
  * Created by olaa on 14/07/2017.
+ * Makes the URL used to retrieve the JSON from the node repository with information about the node's spec.
  */
 public class HostURLGenerator {
 

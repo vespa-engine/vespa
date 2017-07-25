@@ -2,6 +2,7 @@ package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
 
 /**
  * Created by olaa on 04/07/2017.
+ * All information the different retrievers retrieve is stored as a HardwareInfo object.
  */
 
 public class HardwareInfo {

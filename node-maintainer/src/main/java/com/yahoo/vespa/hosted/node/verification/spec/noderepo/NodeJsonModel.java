@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 
 /**
  * Created by olaa on 05/07/2017.
+ * Object with the information node repositories has about the node.
  */
 
 @JsonIgnoreProperties(ignoreUnknown = true)

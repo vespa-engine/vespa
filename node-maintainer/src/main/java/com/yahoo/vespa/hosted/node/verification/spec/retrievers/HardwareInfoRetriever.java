@@ -6,6 +6,7 @@ import java.util.ArrayList;
 
 /**
  * Created by olaa on 30/06/2017.
+ * Makes a HardwareInfo object and calls all the retrievers for this object.
  */
 public class HardwareInfoRetriever {
 
