@@ -76,7 +76,7 @@ set +o pipefail
 # Kill any remaining jobs, ignoring error when no jobs are running
 kill $(jobs -p) 2>/dev/null || true
 
-cp ${LOG_DIR}/java.log ${MAPPED_DIR}/docker/logs/vespa-ci-java-${TIMESTAMP}.log
-cp ${LOG_DIR}/cpp.log ${MAPPED_DIR}/docker/logs/vespa-ci-cpp-${TIMESTAMP}.log
+sudo cp ${LOG_DIR}/java.log ${MAPPED_DIR}/docker/logs/vespa-ci-java-${TIMESTAMP}.log
+sudo cp ${LOG_DIR}/cpp.log ${MAPPED_DIR}/docker/logs/vespa-ci-cpp-${TIMESTAMP}.log
 
 exit ${EXIT_CODE}
