@@ -82,9 +82,7 @@ Test::Main()
     mbus::Slobrok slobrok;
     LoadTypeSet loadTypes;
     mbus::TestServer
-        srv(mbus::MessageBusParams()
-            .addProtocol(mbus::IProtocol::SP(new DocumentProtocol(
-                                    loadTypes, repo))),
+        srv(mbus::MessageBusParams().addProtocol(mbus::IProtocol::SP(new DocumentProtocol(loadTypes, repo))),
             mbus::RPCNetworkParams().setSlobrokConfig(slobrok.config()));
     mbus::Receptor handler;
     mbus::SourceSession::UP src = srv.mb.createSourceSession(mbus::SourceSessionParams().setReplyHandler(handler));
@@ -97,8 +95,8 @@ Test::Main()
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)mbus::ErrorCode::UNKNOWN_POLICY, reply->getError(0).getCode());
 
-    mbus::IProtocol::SP obj = srv.mb.getProtocol(DocumentProtocol::NAME);
-    DocumentProtocol *protocol = dynamic_cast<DocumentProtocol*>(obj.get());
+    mbus::IProtocol * obj = srv.mb.getProtocol(DocumentProtocol::NAME);
+    DocumentProtocol * protocol = dynamic_cast<DocumentProtocol*>(obj);
     ASSERT_TRUE(protocol != NULL);
     protocol->putRoutingPolicyFactory("MyPolicy", IRoutingPolicyFactory::SP(new MyFactory()));
 

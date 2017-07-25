@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <memory>
 #include <vespa/messagebus/common.h>
+#include <memory>
 
 namespace mbus {
 
@@ -29,7 +29,7 @@ public:
      * @param name The name of the protocol to return.
      * @return The named protocol.
      */
-    virtual std::shared_ptr<IProtocol> getProtocol(const string &name) = 0;
+    virtual IProtocol * getProtocol(const string &name) = 0;
 
     /**
      * All messages that arrive in the network layer is passed to its owner through this function.

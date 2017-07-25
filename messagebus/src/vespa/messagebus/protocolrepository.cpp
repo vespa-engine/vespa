@@ -6,7 +6,7 @@ LOG_SETUP(".protocolrepository");
 
 namespace mbus {
 
-ProtocolRepository::ProtocolRepository() {}
+ProtocolRepository::ProtocolRepository() : _numProtocols(0) {}
 ProtocolRepository::~ProtocolRepository() {}
 
 void
@@ -19,32 +19,38 @@ ProtocolRepository::clearPolicyCache()
 IProtocol::SP
 ProtocolRepository::putProtocol(const IProtocol::SP & protocol)
 {
-    vespalib::LockGuard guard(_lock);
     const string &name = protocol->getName();
-    if (_protocols.find(name) != _protocols.end()) {
-        _routingPolicyCache.clear();
+    size_t protocolIndex = _numProtocols;
+    for (size_t i(0); i < _numProtocols; i++) {
+        if (_protocols[i].first == name) {
+            protocolIndex = i;
+            break;
+        }
     }
-    IProtocol::SP prev = _protocols[name];
-    _protocols[name] = protocol;
+    if (protocolIndex == _numProtocols) {
+        assert(_numProtocols < MAX_PROTOCOLS);
+        _protocols[protocolIndex].first = name;
+        _protocols[protocolIndex].second = nullptr;
+        _numProtocols++;
+    } else {
+        clearPolicyCache();
+    }
+    _protocols[protocolIndex].second = protocol.get();
+    IProtocol::SP prev = _activeProtocols[name];
+    _activeProtocols[name] = protocol;
     return prev;
 }
 
-bool
-ProtocolRepository::hasProtocol(const string &name) const
-{
-    vespalib::LockGuard guard(_lock);
-    return _protocols.find(name) != _protocols.end();
-}
-
-IProtocol::SP
+IProtocol *
 ProtocolRepository::getProtocol(const string &name)
 {
-    vespalib::LockGuard guard(_lock);
-    ProtocolMap::iterator it = _protocols.find(name);
-    if (it != _protocols.end()) {
-        return it->second;
+    for (size_t i(0); i < _numProtocols; i++) {
+        if (_protocols[i].first == name) {
+            return _protocols[i].second;
+        }
     }
-    return IProtocol::SP();
+
+    return nullptr;
 }
 
 IRoutingPolicy::SP
@@ -59,8 +65,8 @@ ProtocolRepository::getRoutingPolicy(const string &protocolName,
     if (cit != _routingPolicyCache.end()) {
         return cit->second;
     }
-    ProtocolMap::iterator pit = _protocols.find(protocolName);
-    if (pit == _protocols.end()) {
+    ProtocolMap::iterator pit = _activeProtocols.find(protocolName);
+    if (pit == _activeProtocols.end()) {
         LOG(error, "Protocol '%s' not supported.", protocolName.c_str());
         return IRoutingPolicy::SP();
     }
