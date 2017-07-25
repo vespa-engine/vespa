@@ -5,6 +5,8 @@ import com.yahoo.vespa.hosted.node.verification.commons.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Created by sgrostad on 11/07/2017.
@@ -18,6 +20,7 @@ public class MemoryBenchmark implements Benchmark {
     private static final String MEM_BENCHMARK_WRITE_SPEED = "dd if=/dev/zero of=RAM_test/data_tmp bs=1M count=512";
     private static final String MEM_BENCHMARK_READ_SPEED = "dd if=RAM_test/data_tmp of=/dev/null bs=1M count=512";
     private final String READ_AND_WRITE_SEARCH_WORD = "GB/s";
+    private static final Logger logger = Logger.getLogger(MemoryBenchmark.class.getName());
     private final HardwareResults hardwareResults;
     private final CommandExecutor commandExecutor;
 
@@ -36,7 +39,7 @@ public class MemoryBenchmark implements Benchmark {
             updateMemoryReadSpeed(parseResult.getValue());
         }
         catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Failed to perform memory benchmark", e);
         }
         finally {
             breakDownMountPoint();
@@ -53,13 +56,13 @@ public class MemoryBenchmark implements Benchmark {
             commandExecutor.executeCommand(MEM_BENCHMARK_UNMOUNT_TMPFS);
         }
         catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Failed to unmount tmpfs folder", e);
         }
         try {
             commandExecutor.executeCommand(MEM_BENCHMARK_DELETE_FOLDER);
         }
         catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Failed to delete memory benchmark folder", e);
         }
     }
 

@@ -5,6 +5,8 @@ import com.yahoo.vespa.hosted.node.verification.commons.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Created by sgrostad on 11/07/2017.
@@ -13,6 +15,7 @@ public class NetBenchmark implements Benchmark {
 
     private final String NET_BENCHMARK_COMMAND = "ping6 -c 10 www.yahoo.com | grep transmitted";
     private final String PING_SEARCH_WORD = "loss,";
+    private static final Logger logger = Logger.getLogger(NetBenchmark.class.getName());
 
     private final HardwareResults hardwareResults;
     private final CommandExecutor commandExecutor;
@@ -29,7 +32,7 @@ public class NetBenchmark implements Benchmark {
             setIpv6Connectivity(parseResult);
         }
         catch (IOException e) {
-            System.err.println(e);
+            logger.log(Level.WARNING, "Failed to perform net benchmark", e);
         }
     }
 

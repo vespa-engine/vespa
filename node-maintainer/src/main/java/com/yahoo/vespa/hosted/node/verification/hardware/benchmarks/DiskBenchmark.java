@@ -5,6 +5,8 @@ import com.yahoo.vespa.hosted.node.verification.commons.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -16,6 +18,7 @@ public class DiskBenchmark implements Benchmark {
     private final String KILO_BYTE_SEARCH_WORD = "kB/s";
     private final String MEGA_BYTE_SEARCH_WORD = "MB/s";
     private final String GIGA_BYTE_SEARCH_WORD = "GB/s";
+    Logger logger = Logger.getLogger(DiskBenchmark.class.getName());
     private final HardwareResults hardwareResults;
     private final CommandExecutor commandExecutor;
 
@@ -31,7 +34,7 @@ public class DiskBenchmark implements Benchmark {
             setDiskSpeed(parseResult);
         }
         catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Failed to perform disk benchmark", e);
         }
     }
 

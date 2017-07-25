@@ -5,6 +5,8 @@ import com.yahoo.vespa.hosted.node.verification.commons.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Created by sgrostad on 11/07/2017.
@@ -13,6 +15,7 @@ public class CPUBenchmark implements Benchmark {
     private final String CPU_BENCHMARK_COMMAND = "perf stat -e cycles dd if=/dev/zero of=/dev/null count=100000 2>&1 | grep 'cycles\\|seconds'";
     private final String CYCLES_SEARCH_WORD = "cycles";
     private final String SECONDS_SEARCH_WORD = "seconds";
+    private static final Logger logger = Logger.getLogger(CPUBenchmark.class.getName());
 
     private final HardwareResults hardwareResults;
     private final CommandExecutor commandExecutor;
@@ -29,7 +32,7 @@ public class CPUBenchmark implements Benchmark {
             setCpuCyclesPerSec(parseResults);
         }
         catch (IOException e){
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Failed to perform CPU benchmark", e);
         }
 
     }

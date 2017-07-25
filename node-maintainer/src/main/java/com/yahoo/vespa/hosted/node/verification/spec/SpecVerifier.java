@@ -12,11 +12,15 @@ import com.yahoo.vespa.hosted.node.verification.spec.yamasreport.YamasSpecReport
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Created by olaa on 14/07/2017.
  */
 public class SpecVerifier {
+
+    private static final Logger logger = Logger.getLogger(SpecVerifier.class.getName());
 
     public void verifySpec(String zoneHostName){
         URL nodeRepoUrl;
@@ -25,7 +29,7 @@ public class SpecVerifier {
             nodeRepoUrl = hostURLGenerator.generateNodeInfoUrl(zoneHostName);
         }
         catch (MalformedURLException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Failed to generate config server url", e);
             return;
         }
         NodeJsonModel nodeJsonModel = NodeInfoRetriever.retrieve(nodeRepoUrl);
