@@ -38,4 +38,5 @@ public class HardwareVerifier {
     public static void main(String[] args) {
         HardwareVerifier.verifyHardware();
     }
+
 }

@@ -78,4 +78,5 @@ public class SpecReportDimensions {
     public void setIpv6Match(boolean ipv6Match) {
         this.ipv6Match = ipv6Match;
     }
+
 }

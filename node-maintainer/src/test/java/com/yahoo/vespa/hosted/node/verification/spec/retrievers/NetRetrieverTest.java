@@ -74,7 +74,6 @@ public class NetRetrieverTest {
     public void parseNetInterface_get_ipv_from_ifconfigNotIpv6_testFile() throws IOException {
         ArrayList<String> mockOutput = MockCommandExecutor.readFromFile(NET_FIND_INTERFACE+ "NoIpv6");
         parseResults = net.parseNetInterface(mockOutput);
-
         ArrayList<ParseResult> expextedParseResults = new ArrayList<>(Arrays.asList(
                 new ParseResult("eth0","eth0"),
                 new ParseResult("inet","inet")));

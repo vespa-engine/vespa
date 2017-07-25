@@ -44,4 +44,5 @@ public class ParseResult {
     public String toString() {
         return "Search word: " + searchWord + ", Value: " + value;
     }
+
 }

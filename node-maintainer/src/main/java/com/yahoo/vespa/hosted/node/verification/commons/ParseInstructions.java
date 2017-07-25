@@ -52,4 +52,5 @@ public class ParseInstructions {
     public String getSkipUntilKeyword() {
         return this.skipUntilKeyword;
     }
+
 }

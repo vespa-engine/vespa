@@ -102,7 +102,12 @@ public class NetRetriever implements HardwareRetriever {
                     String speedValue = parseResult.getValue().replaceAll("[^\\d.]", "");
                     double speed = Double.parseDouble(speedValue);
                     hardwareInfo.setInterfaceSpeedMbs(speed);
+                    break;
+                default:
+                    if (parseResult.getSearchWord().matches(SEARCH_WORD_INTERFACE_NAME)) break;
+                    throw new RuntimeException("Invalid ParseResult search word");
             }
         }
     }
+
 }

@@ -75,4 +75,5 @@ public class YamasHardwareReport {
             wrappedObjects.put(name, value);
         }
     }
+
 }

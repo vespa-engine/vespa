@@ -18,4 +18,5 @@ public class NodeGenerator {
         addStandardSpecifications(node);
         return node;
     }
+
 }

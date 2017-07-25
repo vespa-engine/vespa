@@ -60,4 +60,5 @@ public class MemoryRetriever implements HardwareRetriever {
         double kiloToGiga = 1000000.0;
         return value / kiloToGiga;
     }
+
 }

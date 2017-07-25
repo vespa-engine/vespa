@@ -37,4 +37,5 @@ public class HardwareReportMetrics {
     public void setMemoryReadSpeedGBs(Double memoryReadSpeedGBs) {
         this.memoryReadSpeedGBs = memoryReadSpeedGBs != null ? memoryReadSpeedGBs : -1;
     }
+
 }

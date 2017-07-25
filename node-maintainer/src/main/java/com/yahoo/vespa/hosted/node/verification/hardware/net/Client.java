@@ -40,4 +40,5 @@ public class Client {
         double finish = System.currentTimeMillis() / 1000.0;
         System.out.println(((double) file.length() / (finish - start)) + " B/s");
     }
+
 }

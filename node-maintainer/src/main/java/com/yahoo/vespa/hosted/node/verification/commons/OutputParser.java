@@ -78,4 +78,5 @@ public class OutputParser {
     private static boolean matchingSearchWord(ArrayList<String> searchWords, String searchWordCandidate) {
         return searchWords.stream().anyMatch(w -> Pattern.compile(w).matcher(searchWordCandidate).matches());
     }
+
 }

@@ -95,4 +95,5 @@ public class MemoryBenchmark implements Benchmark {
         }
         return true;
     }
+
 }

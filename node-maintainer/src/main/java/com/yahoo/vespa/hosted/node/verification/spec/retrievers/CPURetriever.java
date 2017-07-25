@@ -54,4 +54,5 @@ public class CPURetriever implements HardwareRetriever {
     protected int countCpuCores(ArrayList<ParseResult> parseResults) {
         return parseResults.size();
     }
+
 }
