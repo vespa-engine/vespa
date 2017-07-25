@@ -55,7 +55,7 @@ public class CPUBenchmarkTest {
 
     @Test
     public void parseCpuCyclesPerSec_return_correct_ArrayList() throws IOException {
-        ArrayList<String> mockCommandOutput = commandExecutor.readFromFile(cpuEuropeanDelimiters);
+        ArrayList<String> mockCommandOutput = MockCommandExecutor.readFromFile(cpuEuropeanDelimiters);
         ArrayList<ParseResult> parseResults = cpu.parseCpuCyclesPerSec(mockCommandOutput);
         ParseResult expectedParseCyclesResult = new ParseResult("cycles", "2.066.201.729");
         ParseResult expectedParseSecondsResult = new ParseResult("seconds", "0,957617512");

@@ -53,7 +53,7 @@ public class DiskBenchmarkTest {
 
     @Test
     public void parseDiskSpeed_valid_input() throws Exception {
-        ArrayList<String> mockCommandOutput = commandExecutor.readFromFile(VALID_OUTPUT_FILE);
+        ArrayList<String> mockCommandOutput = MockCommandExecutor.readFromFile(VALID_OUTPUT_FILE);
         ParseResult parseResult = diskBenchmark.parseDiskSpeed(mockCommandOutput);
         ParseResult expectedParseResult = new ParseResult("MB/s", "243");
         assertEquals(expectedParseResult, parseResult);
@@ -61,7 +61,7 @@ public class DiskBenchmarkTest {
 
     @Test
     public void parseDiskSpeed_invalid_input() throws Exception {
-        ArrayList<String> mockCommandOutput = commandExecutor.readFromFile(INVALID_OUTPUT_FILE);
+        ArrayList<String> mockCommandOutput = MockCommandExecutor.readFromFile(INVALID_OUTPUT_FILE);
         ParseResult parseResult = diskBenchmark.parseDiskSpeed(mockCommandOutput);
         ParseResult expectedParseResult = new ParseResult("invalid", "invalid");
         assertEquals(expectedParseResult, parseResult);

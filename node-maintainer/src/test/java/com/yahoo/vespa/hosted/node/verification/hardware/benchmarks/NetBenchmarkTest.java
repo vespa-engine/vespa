@@ -58,7 +58,7 @@ public class NetBenchmarkTest {
     @Test
     public void parsePingResponse_valid_ping_response_should_return_ipv6_connectivity() throws IOException {
         String command = "src/test/java/com/yahoo/vespa/hosted/node/verification/hardware/resources/validpingresponse";
-        ArrayList<String> mockCommandOutput = commandExecutor.readFromFile(command);
+        ArrayList<String> mockCommandOutput = MockCommandExecutor.readFromFile(command);
         ParseResult parseResult = netBenchmark.parsePingResponse(mockCommandOutput);
         String expectedPing = "0%";
         assertEquals(expectedPing, parseResult.getValue());
@@ -67,7 +67,7 @@ public class NetBenchmarkTest {
     @Test
     public void parsePingResponse_invalid_ping_response_should_return_invalid_ParseResult() throws IOException {
         String command = "src/test/java/com/yahoo/vespa/hosted/node/verification/hardware/resources/crazypingresponse";
-        ArrayList<String> mockCommandOutput = commandExecutor.readFromFile(command);
+        ArrayList<String> mockCommandOutput = MockCommandExecutor.readFromFile(command);
         ParseResult parseResult = netBenchmark.parsePingResponse(mockCommandOutput);
         ParseResult expectedParseResult = new ParseResult("invalid", "invalid");
         assertEquals(expectedParseResult, parseResult);

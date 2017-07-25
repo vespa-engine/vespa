@@ -31,7 +31,7 @@ public class IPAddressVerifier {
     }
 
     protected String reverseLookUp(String ipAddress) throws NamingException {
-        Hashtable env = new Hashtable();
+        Hashtable<String, String> env = new Hashtable<>();
         env.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
         String ipAddressInLookupFormat = convertToLookupFormat(ipAddress);
         String attributeName = ipAddress;
@@ -39,9 +39,9 @@ public class IPAddressVerifier {
         //98.138.253.109
         //Attributes attrs = ctx.getAttributes("1.0.6.f.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.9.7.7.0.c.0.4.9.9.8.0.2.0.0.1.ip6.arpa",new String[] {"PTR"});
         Attributes attrs = ctx.getAttributes(attributeName, new String[]{"PTR"});
-        for (NamingEnumeration ae = attrs.getAll(); ae.hasMoreElements(); ) {
-            Attribute attr = (Attribute) ae.next();
-            Enumeration vals = attr.getAll();
+        for (NamingEnumeration<? extends Attribute> ae = attrs.getAll(); ae.hasMoreElements(); ) {
+            Attribute attr = ae.next();
+            Enumeration<?> vals = attr.getAll();
             if (vals.hasMoreElements()) {
                 return vals.nextElement().toString();
             }
