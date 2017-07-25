@@ -6,7 +6,7 @@ LOG_SETUP(".protocolrepository");
 
 namespace mbus {
 
-ProtocolRepository::ProtocolRepository() {}
+ProtocolRepository::ProtocolRepository() : _numProtocols(0) {}
 ProtocolRepository::~ProtocolRepository() {}
 
 void
@@ -20,27 +20,36 @@ IProtocol::SP
 ProtocolRepository::putProtocol(const IProtocol::SP & protocol)
 {
     const string &name = protocol->getName();
-    if (_protocols.find(name) != _protocols.end()) {
+    size_t protocolIndex = _numProtocols;
+    for (size_t i(0); i < _numProtocols; i++) {
+        if (_protocols[i].first == name) {
+            protocolIndex = i;
+            break;
+        }
+    }
+    if (protocolIndex == _numProtocols) {
+        assert(_numProtocols < MAX_PROTOCOLS);
+        _protocols[protocolIndex].first = name;
+        _protocols[protocolIndex].first = nullptr;
+        _numProtocols++;
+    } else {
         clearPolicyCache();
     }
-    IProtocol::SP prev = _protocols[name];
-    _protocols[name] = protocol;
+    _protocols[protocolIndex].second = protocol.get();
+    IProtocol::SP prev = _activeProtocols[name];
+    _activeProtocols[name] = protocol;
     return prev;
-}
-
-bool
-ProtocolRepository::hasProtocol(const string &name) const
-{
-    return _protocols.find(name) != _protocols.end();
 }
 
 IProtocol *
 ProtocolRepository::getProtocol(const string &name)
 {
-    ProtocolMap::iterator it = _protocols.find(name);
-    if (it != _protocols.end()) {
-        return it->second.get();
+    for (size_t i(0); i < _numProtocols; i++) {
+        if (_protocols[i].first == name) {
+            return _protocols[i].second;
+        }
     }
+
     return nullptr;
 }
 
@@ -56,8 +65,8 @@ ProtocolRepository::getRoutingPolicy(const string &protocolName,
     if (cit != _routingPolicyCache.end()) {
         return cit->second;
     }
-    ProtocolMap::iterator pit = _protocols.find(protocolName);
-    if (pit == _protocols.end()) {
+    ProtocolMap::iterator pit = _activeProtocols.find(protocolName);
+    if (pit == _activeProtocols.end()) {
         LOG(error, "Protocol '%s' not supported.", protocolName.c_str());
         return IRoutingPolicy::SP();
     }

@@ -10,15 +10,20 @@ namespace mbus {
 /**
  * Implements a thread-safe repository for protocols and their routing policies. This manages an internal cache of
  * routing policies so that similarly referenced policy directives share the same instance of a policy.
+ * However for speed the protocols themselves must be kept alive on the outside when returned from
+ * putProtocol. There is only room for a limited number of protocols.
  */
 class ProtocolRepository {
 private:
-    typedef std::map<string, IProtocol::SP> ProtocolMap;
-    typedef std::map<string, IRoutingPolicy::SP> RoutingPolicyCache;
+    using ProtocolMap = std::map<string, IProtocol::SP>;
+    using RoutingPolicyCache = std::map<string, IRoutingPolicy::SP>;
 
     vespalib::Lock     _lock; // Only guards the cache,
                               // not the protocols as they are set up during messagebus construction.
-    ProtocolMap        _protocols;
+    static constexpr size_t MAX_PROTOCOLS = 16;
+    std::pair<string, IProtocol *> _protocols[MAX_PROTOCOLS];
+    size_t                         _numProtocols;
+    ProtocolMap        _activeProtocols;
     RoutingPolicyCache _routingPolicyCache;
 
 public:
@@ -29,7 +34,8 @@ public:
     /**
      * Registers a protocol with this repository. This will overwrite any protocol that was registered earlier
      * that has the same name. If this method detects a protocol replacement, it will clear its internal
-     * routing policy cache.
+     * routing policy cache. You must keep the old protocol returned until there can be no usages of the references
+     * acquired from getProtocol.
      *
      * @param protocol The protocol to register.
      * @return The previous protocol registered under this name.
@@ -77,4 +83,3 @@ public:
 };
 
 }
-
