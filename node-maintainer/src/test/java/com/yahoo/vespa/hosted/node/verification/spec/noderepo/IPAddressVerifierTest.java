@@ -3,7 +3,8 @@ package com.yahoo.vespa.hosted.node.verification.spec.noderepo;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
@@ -22,10 +23,11 @@ public class IPAddressVerifierTest {
         additionalIp1 = "2001:4998:c:2977::106f";
         additionalIp2 = "2001:4998:c:2977::106a";
         additionalIp3 = "2001:4998:c:2977::106c";
-        additionalIpAddresses = new String[] {additionalIp1, additionalIp2, additionalIp3};
+        additionalIpAddresses = new String[]{additionalIp1, additionalIp2, additionalIp3};
     }
+
     @Test
-    public void verifyAdditionalIpAddress_should_add_IP_address_when_different_hostname() throws Exception{
+    public void verifyAdditionalIpAddress_should_add_IP_address_when_different_hostname() throws Exception {
         String realHostName = "www.yahoo.com";
         String wrongHostName = "www.nrk.no";
         doReturn(realHostName).when(ipAddressVerifier).reverseLookUp(ipAddress);
@@ -33,7 +35,7 @@ public class IPAddressVerifierTest {
         doReturn(realHostName).when(ipAddressVerifier).reverseLookUp(additionalIp2);
         doReturn(wrongHostName).when(ipAddressVerifier).reverseLookUp(additionalIp3);
         String[] faultyIpAddresses = ipAddressVerifier.getFaultyIpAddresses(ipAddress, additionalIpAddresses);
-        String[] expectedFaultyIpAddresses = new String[] {additionalIp3};
+        String[] expectedFaultyIpAddresses = new String[]{additionalIp3};
         assertArrayEquals(expectedFaultyIpAddresses, faultyIpAddresses);
     }
 

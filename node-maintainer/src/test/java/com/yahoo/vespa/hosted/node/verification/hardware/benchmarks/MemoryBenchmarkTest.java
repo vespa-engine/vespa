@@ -1,7 +1,7 @@
 package com.yahoo.vespa.hosted.node.verification.hardware.benchmarks;
 
 import com.yahoo.vespa.hosted.node.verification.commons.ParseResult;
-import com.yahoo.vespa.hosted.node.verification.mock.*;
+import com.yahoo.vespa.hosted.node.verification.mock.MockCommandExecutor;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -40,6 +40,7 @@ public class MemoryBenchmarkTest {
         assertEquals(expectedReadSpeed, hardwareResults.getMemoryReadSpeedGBs(), delta);
         assertEquals(expectedWriteSpeed, hardwareResults.getMemoryWriteSpeedGBs(), delta);
     }
+
     @Test
     public void parseMemorySpeed_valid_output() throws Exception {
         Double expectedSpeed = 12.1;
@@ -62,27 +63,27 @@ public class MemoryBenchmarkTest {
     }
 
     @Test
-    public void memoryReadSpeed_valid_input_should_update_hardwareResults(){
+    public void memoryReadSpeed_valid_input_should_update_hardwareResults() {
         Double expectedMemoryReadSpeed = 12.1;
         memoryBenchmark.updateMemoryReadSpeed(expectedMemoryReadSpeed.toString());
         assertEquals(expectedMemoryReadSpeed, hardwareResults.getMemoryReadSpeedGBs(), delta);
     }
 
     @Test
-    public void memoryReadSpeed_invalid_input_should_not_update_hardwareResults(){
+    public void memoryReadSpeed_invalid_input_should_not_update_hardwareResults() {
         memoryBenchmark.updateMemoryReadSpeed("Invalid speed");
         assertNull(hardwareResults.getMemoryReadSpeedGBs());
     }
 
     @Test
-    public void memoryWriteSpeed_valid_input_should_update_hardwareResults(){
+    public void memoryWriteSpeed_valid_input_should_update_hardwareResults() {
         Double expectedMemoryWriteSpeed = 3.8;
         memoryBenchmark.updateMemoryWriteSpeed(expectedMemoryWriteSpeed.toString());
         assertEquals(expectedMemoryWriteSpeed, hardwareResults.getMemoryWriteSpeedGBs(), delta);
     }
 
     @Test
-    public void memoryWriteSpeed_invalid_input_should_not_update_hardwareResults(){
+    public void memoryWriteSpeed_invalid_input_should_not_update_hardwareResults() {
         memoryBenchmark.updateMemoryWriteSpeed("Invalid speed");
         assertNull(hardwareResults.getMemoryWriteSpeedGBs());
     }
@@ -106,4 +107,5 @@ public class MemoryBenchmarkTest {
         validMemory = memoryBenchmark.isValidMemory(benchmarkOutput);
         assertFalse(validMemory);
     }
+
 }

@@ -4,18 +4,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Created by olaa on 12/07/2017.
  */
 public class YamasSpecReportTest {
-    
+
     SpecReportDimensions specReportDimensions;
     SpecReportMetrics specReportMetrics;
-    
+
     @Before
-    public void setup(){
+    public void setup() {
         specReportDimensions = new SpecReportDimensions();
         specReportMetrics = new SpecReportMetrics();
         specReportDimensions.setCpuCoresMatch(true);
@@ -39,7 +39,7 @@ public class YamasSpecReportTest {
     }
 
     @Test
-    public void Json_is_in_wanted_format() throws Exception{
+    public void Json_is_in_wanted_format() throws Exception {
         YamasSpecReport yamasSpecReport = new YamasSpecReport();
         yamasSpecReport.setMetrics(specReportMetrics);
         yamasSpecReport.setDimensions(specReportDimensions);

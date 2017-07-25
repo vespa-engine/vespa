@@ -4,7 +4,8 @@ import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Created by olaa on 07/07/2017.

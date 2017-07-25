@@ -23,7 +23,7 @@ public class MockCommandExecutor extends CommandExecutor {
     }
 
     @Override
-    public ArrayList<String> executeCommand(String command) throws IOException{
+    public ArrayList<String> executeCommand(String command) throws IOException {
         String mockCommand = mockCommands.get(counter++);
         if (mockCommand.equals(DUMMY_COMMAND)) return null;
         return super.executeCommand(mockCommand);
@@ -44,4 +44,5 @@ public class MockCommandExecutor extends CommandExecutor {
     public ArrayList<String> outputFromString(String output) {
         return new ArrayList<>(Arrays.asList(output.split("\n")));
     }
+
 }

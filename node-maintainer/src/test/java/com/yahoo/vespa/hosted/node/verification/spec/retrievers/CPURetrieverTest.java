@@ -1,27 +1,27 @@
 package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
 
 import com.yahoo.vespa.hosted.node.verification.commons.ParseResult;
-import com.yahoo.vespa.hosted.node.verification.mock.*;
+import com.yahoo.vespa.hosted.node.verification.mock.MockCommandExecutor;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Created by olaa on 03/07/2017.
  */
 public class CPURetrieverTest {
 
-    private final String FILENAME = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/cpuinfoTest";
+    private static final String FILENAME = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/cpuinfoTest";
     private HardwareInfo hardwareInfo;
-    private  MockCommandExecutor commandExecutor;
+    private MockCommandExecutor commandExecutor;
     private CPURetriever cpu;
 
     @Before
-    public void setup(){
+    public void setup() {
         hardwareInfo = new HardwareInfo();
         commandExecutor = new MockCommandExecutor();
         cpu = new CPURetriever(hardwareInfo, commandExecutor);
@@ -37,7 +37,7 @@ public class CPURetrieverTest {
     }
 
     @Test
-    public void parseCPUInfoFile_should_return_valid_ArrayList() throws IOException{
+    public void parseCPUInfoFile_should_return_valid_ArrayList() throws IOException {
         ArrayList<String> commandOutput = MockCommandExecutor.readFromFile(FILENAME);
         ArrayList<ParseResult> ParseResults = cpu.parseCPUInfoFile(commandOutput);
         String expectedSearchWord = "cpu MHz";
@@ -57,11 +57,11 @@ public class CPURetrieverTest {
     }
 
     @Test
-    public void setCpuCores_counts_cores_correctly(){
+    public void setCpuCores_counts_cores_correctly() {
         ArrayList<ParseResult> parseResults = new ArrayList<>();
-        parseResults.add(new ParseResult("cpu MHz","2000"));
-        parseResults.add(new ParseResult("cpu MHz","2000"));
-        parseResults.add(new ParseResult("cpu MHz","2000"));
+        parseResults.add(new ParseResult("cpu MHz", "2000"));
+        parseResults.add(new ParseResult("cpu MHz", "2000"));
+        parseResults.add(new ParseResult("cpu MHz", "2000"));
         cpu.setCpuCores(parseResults);
         int expectedCpuCores = 3;
         assertEquals(expectedCpuCores, hardwareInfo.getMinCpuCores());
