@@ -106,7 +106,7 @@ StructuredFieldValue::onIterateNested(PathRange nested, IteratorHandler & handle
                     return ModificationStatus::MODIFIED;
                 } else if (status == ModificationStatus::MODIFIED) {
                     LOG(spam, "field exists, status = MODIFIED");
-                    const_cast<StructuredFieldValue&>(*this).setFieldValue(fpe.getFieldRef(), fpe.getFieldValueToSet());
+                    const_cast<StructuredFieldValue&>(*this).setFieldValue(fpe.getFieldRef(), fpe.stealFieldValueToSet());
                     return ModificationStatus::MODIFIED;
                 } else {
                     return status;
@@ -116,7 +116,7 @@ StructuredFieldValue::onIterateNested(PathRange nested, IteratorHandler & handle
                 ModificationStatus status = fpe.getFieldValueToSet().iterateNested(nested.next(), handler);
                 if (status == ModificationStatus::MODIFIED) {
                     LOG(spam, "field did not exist, status = MODIFIED");
-                    const_cast<StructuredFieldValue&>(*this).setFieldValue(fpe.getFieldRef(), fpe.getFieldValueToSet());
+                    const_cast<StructuredFieldValue&>(*this).setFieldValue(fpe.getFieldRef(), fpe.stealFieldValueToSet());
                     return status;
                 }
             }
