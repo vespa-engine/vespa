@@ -10,9 +10,9 @@ public class HardwareInfo {
     private double minDiskAvailableGb;
     private double minMainMemoryAvailableGb;
     private int minCpuCores;
-    private Boolean fastDisk;
-    private Boolean ipv4Connectivity;
-    private Boolean ipv6Connectivity;
+    private boolean fastDisk;
+    private boolean ipv4Connectivity;
+    private boolean ipv6Connectivity;
     private double interfaceSpeedMbs;
 
 
@@ -32,19 +32,19 @@ public class HardwareInfo {
         this.minDiskAvailableGb = minDiskAvailableGb;
     }
 
-    public Boolean getIpv6Connectivity() {
+    public boolean getIpv6Connectivity() {
         return ipv6Connectivity;
     }
 
-    public void setIpv6Connectivity(Boolean ipv6Connectivity) {
+    public void setIpv6Connectivity(boolean ipv6Connectivity) {
         this.ipv6Connectivity = ipv6Connectivity;
     }
 
-    public Boolean getIpv4Connectivity() {
+    public boolean getIpv4Connectivity() {
         return ipv4Connectivity;
     }
 
-    public void setIpv4Connectivity(Boolean ipv4Connectivity) {
+    public void setIpv4Connectivity(boolean ipv4Connectivity) {
         this.ipv4Connectivity = ipv4Connectivity;
     }
 
@@ -56,11 +56,11 @@ public class HardwareInfo {
         this.minMainMemoryAvailableGb = minMainMemoryAvailableGb;
     }
 
-    public void setFastDisk(Boolean fastDisk) {
+    public void setFastDisk(boolean fastDisk) {
         this.fastDisk = fastDisk;
     }
 
-    public Boolean getFastDisk() {
+    public boolean getFastDisk() {
         return fastDisk;
     }
 
