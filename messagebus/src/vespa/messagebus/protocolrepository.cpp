@@ -30,7 +30,7 @@ ProtocolRepository::putProtocol(const IProtocol::SP & protocol)
     if (protocolIndex == _numProtocols) {
         assert(_numProtocols < MAX_PROTOCOLS);
         _protocols[protocolIndex].first = name;
-        _protocols[protocolIndex].first = nullptr;
+        _protocols[protocolIndex].second = nullptr;
         _numProtocols++;
     } else {
         clearPolicyCache();
