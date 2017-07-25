@@ -68,6 +68,8 @@ public class CPUBenchmark implements Benchmark {
                 case SECONDS_SEARCH_WORD:
                     seconds = makeSecondsDouble(parseResult.getValue());
                     break;
+                default:
+                    throw new RuntimeException("Invalid ParseResult searchWord");
             }
         }
         if (cycles != 0 && seconds != 0) {

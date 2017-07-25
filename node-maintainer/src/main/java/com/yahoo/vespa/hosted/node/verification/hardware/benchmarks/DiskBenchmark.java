@@ -71,6 +71,8 @@ public class DiskBenchmark implements Benchmark {
                 case GIGA_BYTE_SEARCH_WORD:
                     diskSpeedMBs = convertToMBs(diskSpeed, convertGBsToMBs);
                     break;
+                default:
+                    throw new RuntimeException("Invalid ParseResult searchWord");
             }
         }
 
