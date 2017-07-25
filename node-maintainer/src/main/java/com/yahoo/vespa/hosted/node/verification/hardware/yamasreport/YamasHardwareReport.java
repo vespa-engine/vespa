@@ -21,7 +21,7 @@ public class YamasHardwareReport {
     @JsonProperty
     private HardwareReportMetrics metrics;
     @JsonProperty
-    JsonObjectWrapper routing;
+    JsonObjectWrapper<JsonObjectWrapper<String[]>> routing;
 
     public YamasHardwareReport() {
         this.timestamp = System.currentTimeMillis() / 1000L;
@@ -45,8 +45,8 @@ public class YamasHardwareReport {
     }
 
     private void setRouting() {
-        JsonObjectWrapper wrap = new JsonObjectWrapper("namespace", new String[]{"Vespa"});
-        routing = new JsonObjectWrapper("yamas", wrap);
+        JsonObjectWrapper<String[]> wrap = new JsonObjectWrapper<>("namespace", new String[]{"Vespa"});
+        routing = new JsonObjectWrapper<>("yamas", wrap);
     }
 
     public void createFromHardwareResults(HardwareResults hardwareResults) {

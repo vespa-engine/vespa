@@ -19,7 +19,7 @@ public class YamasSpecReport {
     @JsonProperty
     private SpecReportMetrics metrics;
     @JsonProperty
-    private JsonObjectWrapper routing;
+    private JsonObjectWrapper<JsonObjectWrapper<String[]>> routing;
 
     public YamasSpecReport() {
         this.timeStamp = System.currentTimeMillis() / 1000L;
@@ -51,8 +51,8 @@ public class YamasSpecReport {
     }
 
     private void setRouting() {
-        JsonObjectWrapper wrap = new JsonObjectWrapper("namespace", new String[]{"Vespa"});
-        routing = new JsonObjectWrapper("yamas", wrap);
+        JsonObjectWrapper<String[]> wrap = new JsonObjectWrapper<>("namespace", new String[]{"Vespa"});
+        routing = new JsonObjectWrapper<>("yamas", wrap);
     }
 
     class JsonObjectWrapper<T> {
