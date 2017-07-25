@@ -115,6 +115,11 @@ const DataType &FieldPathEntry::getDataType() const
                             : *_dataType;
 }
 
+FieldValue::UP FieldPathEntry::stealFieldValueToSet() const
+{
+    return FieldValue::UP(_fillInVal.release());
+}
+
 void
 FieldPathEntry::visitMembers(vespalib::ObjectVisitor &visitor) const
 {

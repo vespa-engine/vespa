@@ -83,7 +83,8 @@ public:
     const vespalib::string& getVariableName() const { return _variableName; }
 
     FieldValue * getFieldValueToSetPtr() const { return _fillInVal.get(); }
-    FieldValue& getFieldValueToSet() const { return *_fillInVal; }
+    FieldValue & getFieldValueToSet() const { return *_fillInVal; }
+    std::unique_ptr<FieldValue> stealFieldValueToSet() const;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     /**
      * Parses a string of the format {["]escaped string["]} to its unescaped value.
