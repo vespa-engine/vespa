@@ -60,6 +60,7 @@ public class SpecVerifier {
         if (args.length != 1) {
             throw new RuntimeException("Expected only 1 argument - config server zone url");
         }
+
         String zoneHostName = args[0];
         SpecVerifier specVerifier = new SpecVerifier();
         specVerifier.verifySpec(zoneHostName);

@@ -56,6 +56,7 @@ public class YamasSpecReport {
     }
 
     class JsonObjectWrapper<T> {
+
         private Map<String, T> wrappedObjects = new HashMap<String, T>();
 
         public JsonObjectWrapper(String name, T wrappedObject) {

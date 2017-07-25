@@ -25,7 +25,6 @@ public class Server {
         while ((currentLength = inputStream.read(buffer)) != -1) {
             fileOutputStream.write(buffer, 0, currentLength);
         }
-
     }
 
     public static void main(String[] args) {

@@ -22,7 +22,6 @@ public class HardwareInfoRetriever {
             hardwareInfoType.updateInfo();
         }
         return hardwareInfo;
-
     }
 
 }

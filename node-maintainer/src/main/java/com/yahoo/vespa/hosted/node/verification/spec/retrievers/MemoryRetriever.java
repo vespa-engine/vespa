@@ -45,7 +45,6 @@ public class MemoryRetriever implements HardwareRetriever {
         ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(searchWord));
         ParseInstructions parseInstructions = new ParseInstructions(searchElementIndex, returnElementIndex, regexSplit, searchWords);
         ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
-        ;
         return parseResult;
     }
 

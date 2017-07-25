@@ -40,7 +40,6 @@ public class CPUBenchmark implements Benchmark {
         } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to perform CPU benchmark", e);
         }
-
     }
 
     protected ArrayList<ParseResult> parseCpuCyclesPerSec(ArrayList<String> commandOutput) {
