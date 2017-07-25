@@ -282,17 +282,4 @@ ArrayFieldValue::onIterateNested(PathRange nested, IteratorHandler & handler) co
 using vespalib::ComplexArrayT;
 using vespalib::PrimitiveArrayT;
 
-namespace {
-class FieldValueFactory : public ComplexArrayT<FieldValue>::Factory
-{
-public:
-    FieldValueFactory(DataType::UP dataType) : _dataType(dataType.release()) { }
-    FieldValue * create() override { return _dataType->createFieldValue().release(); }
-    FieldValueFactory * clone() const override { return new FieldValueFactory(*this); }
-private:
-    DataType::CP _dataType;
-};
-
-}
-
 } // document
