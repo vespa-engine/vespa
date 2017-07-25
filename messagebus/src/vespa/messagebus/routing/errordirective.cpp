@@ -2,6 +2,8 @@
 #include "errordirective.h"
 #include <vespa/vespalib/util/stringfmt.h>
 
+using vespalib::make_string;
+
 namespace mbus {
 
 ErrorDirective::ErrorDirective(const vespalib::stringref &msg) :
@@ -11,13 +13,13 @@ ErrorDirective::ErrorDirective(const vespalib::stringref &msg) :
 string
 ErrorDirective::toString() const
 {
-    return vespalib::make_string("(%s)", _msg.c_str());
+    return make_string("(%s)", _msg.c_str());
 }
 
 string
 ErrorDirective::toDebugString() const
 {
-    return vespalib::make_string("ErrorDirective(msg = '%s')", _msg.c_str());
+    return make_string("ErrorDirective(msg = '%s')", _msg.c_str());
 }
 
 } // mbus

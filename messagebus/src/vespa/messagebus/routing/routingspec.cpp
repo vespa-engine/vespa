@@ -2,6 +2,8 @@
 #include "routingspec.h"
 #include <vespa/vespalib/util/stringfmt.h>
 
+using vespalib::make_string;
+
 namespace mbus {
 
 RoutingSpec::RoutingSpec() :
@@ -45,9 +47,9 @@ RoutingSpec::toConfig(string &cfg, const string &prefix) const
 {
     uint32_t numTables = _tables.size();
     if (numTables > 0) {
-        cfg.append(prefix).append("routingtable[").append(vespalib::make_vespa_string("%d", numTables)).append("]\n");
+        cfg.append(prefix).append("routingtable[").append(make_string("%d", numTables)).append("]\n");
         for (uint32_t i = 0; i < numTables; ++i) {
-            _tables[i].toConfig(cfg, vespalib::make_vespa_string("%sroutingtable[%d].", prefix.c_str(), i));
+            _tables[i].toConfig(cfg, make_string("%sroutingtable[%d].", prefix.c_str(), i));
         }
     }
 }

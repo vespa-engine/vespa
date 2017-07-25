@@ -28,8 +28,7 @@ VerbatimDirective::toString() const
 string
 VerbatimDirective::toDebugString() const
 {
-    return vespalib::make_vespa_string("VerbatimDirective(image = '%s')",
-                                       _image.c_str());
+    return vespalib::make_string("VerbatimDirective(image = '%s')", _image.c_str());
 }
 
 } // mbus

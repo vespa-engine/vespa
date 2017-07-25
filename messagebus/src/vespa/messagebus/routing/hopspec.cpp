@@ -3,6 +3,8 @@
 #include "routingspec.h"
 #include <vespa/vespalib/util/stringfmt.h>
 
+using vespalib::make_string;
+
 namespace mbus {
 
 HopSpec::HopSpec(const string &name, const string &selector) :
@@ -46,9 +48,9 @@ HopSpec::toConfig(string &cfg, const string &prefix) const
     }
     uint32_t numRecipients = _recipients.size();
     if (numRecipients > 0) {
-        cfg.append(prefix).append("recipient[").append(vespalib::make_vespa_string("%d", numRecipients)).append("]\n");
+        cfg.append(prefix).append("recipient[").append(make_string("%d", numRecipients)).append("]\n");
         for (uint32_t i = 0; i < numRecipients; ++i) {
-            cfg.append(prefix).append("recipient[").append(vespalib::make_vespa_string("%d", i)).append("] ");
+            cfg.append(prefix).append("recipient[").append(make_string("%d", i)).append("] ");
             cfg.append(RoutingSpec::toConfigString(_recipients[i])).append("\n");
         }
     }

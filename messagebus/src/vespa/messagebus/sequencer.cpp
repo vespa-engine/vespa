@@ -3,6 +3,8 @@
 #include "tracelevel.h"
 #include <vespa/vespalib/util/stringfmt.h>
 
+using vespalib::make_string;
+
 namespace mbus {
 
 Sequencer::Sequencer(IMessageHandler &sender) :
@@ -42,7 +44,7 @@ Sequencer::filter(Message::UP msg)
                 it->second = new MessageQueue();
             }
             msg->getTrace().trace(TraceLevel::COMPONENT,
-                                  vespalib::make_vespa_string("Sequencer queued message with sequence id '%" PRIu64 "'.", seqId));
+                                  make_string("Sequencer queued message with sequence id '%" PRIu64 "'.", seqId));
             it->second->push(msg.get());
             msg.release();
             return Message::UP();
@@ -56,8 +58,8 @@ void
 Sequencer::sequencedSend(Message::UP msg)
 {
     msg->getTrace().trace(TraceLevel::COMPONENT,
-                          vespalib::make_vespa_string("Sequencer sending message with sequence id '%" PRIu64 "'.",
-                                                msg->getContext().value.UINT64));
+                          make_string("Sequencer sending message with sequence id '%" PRIu64 "'.",
+                                      msg->getContext().value.UINT64));
     msg->pushHandler(*this);
     _sender.handleMessage(std::move(msg));
 }
@@ -80,7 +82,7 @@ Sequencer::handleReply(Reply::UP reply)
 {
     uint64_t seq = reply->getContext().value.UINT64;
     reply->getTrace().trace(TraceLevel::COMPONENT,
-                            vespalib::make_vespa_string("Sequencer received reply with sequence id '%" PRIu64 "'.", seq));
+                            make_string("Sequencer received reply with sequence id '%" PRIu64 "'.", seq));
     Message::UP msg;
     {
         vespalib::LockGuard guard(_lock);
