@@ -17,12 +17,15 @@ import javax.xml.transform.TransformerException;
 public class ApplicationPreprocessorTest {
 
     @Rule
-    public TemporaryFolder outputDir;
+    public TemporaryFolder outputDir = new TemporaryFolder();
 
     // Basic test just to check that instantiation and run() works. Unit testing is in config-application-package
     @Test
     public void basic() throws ParserConfigurationException, TransformerException, SAXException, IOException {
-        ApplicationPreprocessor preprocessor = new ApplicationPreprocessor(new File("src/test/resources/simple"), Optional.empty(), Optional.empty(), Optional.empty());
+        ApplicationPreprocessor preprocessor = new ApplicationPreprocessor(new File("src/test/resources/simple"),
+                                                                           Optional.of(outputDir.newFolder()),
+                                                                           Optional.empty(),
+                                                                           Optional.empty());
         preprocessor.run();
     }
 
