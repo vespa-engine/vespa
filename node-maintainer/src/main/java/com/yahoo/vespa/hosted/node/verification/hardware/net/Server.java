@@ -8,6 +8,8 @@ import java.net.Socket;
 
 /**
  * Created by olaa on 19/07/2017.
+ * Receives file from client.
+ * Not used, can be deleted
  */
 public class Server {
 

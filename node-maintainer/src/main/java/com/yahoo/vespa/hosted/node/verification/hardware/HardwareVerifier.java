@@ -13,6 +13,9 @@ import com.yahoo.vespa.hosted.node.verification.hardware.yamasreport.YamasHardwa
 import java.util.ArrayList;
 import java.util.Arrays;
 
+/**
+ * Benchmarks different hardware components and creates report
+ */
 public class HardwareVerifier {
 
     public static void verifyHardware() {

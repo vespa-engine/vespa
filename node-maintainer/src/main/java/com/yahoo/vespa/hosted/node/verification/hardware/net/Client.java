@@ -8,6 +8,8 @@ import java.net.Socket;
 
 /**
  * Created by olaa on 19/07/2017.
+ * Sends file to server, for checking connection speed.
+ * Not used, can be deleted
  */
 public class Client {
 

@@ -12,6 +12,7 @@ import java.util.ArrayList;
 
 /**
  * Created by olaa on 03/07/2017.
+ * Wrapper for executing terminal commands
  */
 public class CommandExecutor {
 

@@ -5,6 +5,7 @@ import java.util.regex.Pattern;
 
 /**
  * Created by sgrostad on 17/07/2017.
+ * Parses terminal command output, and returns results based on ParseInstructions
  */
 public class OutputParser {
 

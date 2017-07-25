@@ -10,6 +10,7 @@ import java.util.Map;
 
 /**
  * Created by sgrostad on 12/07/2017.
+ * JSON-mapped class for reporting to YAMAS
  */
 public class YamasHardwareReport {
 
