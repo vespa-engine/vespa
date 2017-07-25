@@ -23,6 +23,7 @@ public class NetRetrieverTest {
     private MockCommandExecutor commandExecutor;
     private NetRetriever net;
     private ArrayList<ParseResult> parseResults;
+    private static final double DELTA = 0.1;
 
     @Before
     public void setup() {
@@ -40,8 +41,7 @@ public class NetRetrieverTest {
         assertTrue(hardwareInfo.getIpv4Connectivity());
         assertTrue(hardwareInfo.getIpv6Connectivity());
         double expectedInterfaceSpeed = 1000;
-        double delta = 0.01;
-        assertEquals(expectedInterfaceSpeed, hardwareInfo.getInterfaceSpeedMbs(), delta);
+        assertEquals(expectedInterfaceSpeed, hardwareInfo.getInterfaceSpeedMbs(), DELTA);
     }
 
     @Test
@@ -120,8 +120,7 @@ public class NetRetrieverTest {
         parseResults.add(new ParseResult("Speed", "1000Mb/s"));
         net.updateHardwareInfoWithNet(parseResults);
         double expectedInterfaceSpeed = 1000;
-        double delta = 0.01;
-        assertEquals(expectedInterfaceSpeed, hardwareInfo.getInterfaceSpeedMbs(), delta);
+        assertEquals(expectedInterfaceSpeed, hardwareInfo.getInterfaceSpeedMbs(), DELTA);
         assertTrue(hardwareInfo.getIpv4Connectivity());
         assertTrue(hardwareInfo.getIpv6Connectivity());
     }

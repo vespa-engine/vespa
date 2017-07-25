@@ -57,8 +57,8 @@ public class CPUBenchmark implements Benchmark {
     }
 
     protected double getCyclesPerSecond(ArrayList<ParseResult> parseResults) {
-        double cycles = 0;
-        double seconds = 0;
+        double cycles = -1;
+        double seconds = -1;
         for (ParseResult parseResult : parseResults) {
             switch (parseResult.getSearchWord()) {
                 case CYCLES_SEARCH_WORD:
@@ -71,10 +71,10 @@ public class CPUBenchmark implements Benchmark {
                     throw new RuntimeException("Invalid ParseResult searchWord");
             }
         }
-        if (cycles != 0 && seconds != 0) {
+        if (cycles > 0 && seconds > 0) {
             return convertToGHz(cycles, seconds);
         }
-        return 0;
+        return -1;
     }
 
     protected double makeCyclesDouble(String cycles) {
@@ -82,7 +82,7 @@ public class CPUBenchmark implements Benchmark {
         if (checkIfNumber(cycles)) {
             return Double.parseDouble(cycles);
         }
-        return 0;
+        return -1;
     }
 
     protected double makeSecondsDouble(String seconds) {
@@ -90,7 +90,7 @@ public class CPUBenchmark implements Benchmark {
         if (checkIfNumber(seconds)) {
             return Double.parseDouble(seconds);
         }
-        return 0;
+        return -1;
     }
 
     protected boolean checkIfNumber(String numberCandidate) {

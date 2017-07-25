@@ -19,7 +19,7 @@ public class MemoryRetrieverTest {
     private HardwareInfo hardwareInfo;
     private MockCommandExecutor commandExecutor;
     private MemoryRetriever memory;
-    private final double delta = 0.01;
+    private final double DELTA = 0.1;
 
     @Before
     public void setup() {
@@ -33,7 +33,7 @@ public class MemoryRetrieverTest {
         commandExecutor.addCommand("cat " + FILENAME);
         memory.updateInfo();
         double expectedMemory = 4.042128;
-        assertEquals(expectedMemory, hardwareInfo.getMinMainMemoryAvailableGb(), delta);
+        assertEquals(expectedMemory, hardwareInfo.getMinMainMemoryAvailableGb(), DELTA);
     }
 
     @Test
@@ -49,14 +49,14 @@ public class MemoryRetrieverTest {
         ParseResult testParseResult = new ParseResult("MemTotal", "4042128");
         memory.updateMemoryInfo(testParseResult);
         double expectedMemory = 4.042128;
-        assertEquals(expectedMemory, hardwareInfo.getMinMainMemoryAvailableGb(), delta);
+        assertEquals(expectedMemory, hardwareInfo.getMinMainMemoryAvailableGb(), DELTA);
     }
 
     @Test
     public void convertToGB_valid_input() {
         String testTotMem = "4042128";
         double expectedTotMem = 4.042128;
-        assertEquals(expectedTotMem, memory.convertKBToGB(testTotMem), delta);
+        assertEquals(expectedTotMem, memory.convertKBToGB(testTotMem), DELTA);
     }
 
 }

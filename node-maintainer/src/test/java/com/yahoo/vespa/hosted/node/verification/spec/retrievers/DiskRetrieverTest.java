@@ -20,7 +20,7 @@ public class DiskRetrieverTest {
     private HardwareInfo hardwareInfo;
     private DiskRetriever diskRetriever;
     private static String CAT_RESOURCE_PATH = "cat src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/";
-    private static final double delta = 0.1;
+    private static final double DELTA = 0.1;
 
     @Before
     public void setup() {
@@ -36,7 +36,7 @@ public class DiskRetrieverTest {
         diskRetriever.updateInfo();
         assertTrue(hardwareInfo.getFastDisk());
         double expectedSize = 63D;
-        assertEquals(expectedSize, hardwareInfo.getMinDiskAvailableGb(), delta);
+        assertEquals(expectedSize, hardwareInfo.getMinDiskAvailableGb(), DELTA);
     }
 
     @Test
@@ -51,7 +51,7 @@ public class DiskRetrieverTest {
         commandExecutor.addCommand(CAT_RESOURCE_PATH + "filesize");
         diskRetriever.updateDiskSize();
         double expectedSize = 63D;
-        assertEquals(expectedSize, hardwareInfo.getMinDiskAvailableGb(), delta);
+        assertEquals(expectedSize, hardwareInfo.getMinDiskAvailableGb(), DELTA);
     }
 
     @Test

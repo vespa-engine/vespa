@@ -15,6 +15,8 @@ import static org.junit.Assert.assertEquals;
  */
 public class NodeGeneratorTest {
 
+    private static final double DELTA = 0.1;
+
     @Test
     public void convertJsonModel_should_return_correct_HardwareInfo() throws Exception {
         URL url = new File("src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/nodeInfoTest.json").toURI().toURL();
@@ -24,13 +26,12 @@ public class NodeGeneratorTest {
         double expectedMinMainMemoryAvailable = 24.0;
         double expectedMinCpuCores = 24.0;
         double expectedInterfaceSpeedMbs = 1000;
-        double delta = 0.1;
-        assertEquals(expectedMinDiskAvailable, hardwareInfo.getMinDiskAvailableGb(), delta);
-        assertEquals(expectedMinMainMemoryAvailable, hardwareInfo.getMinMainMemoryAvailableGb(), delta);
-        assertEquals(expectedMinCpuCores, hardwareInfo.getMinCpuCores(), delta);
+        assertEquals(expectedMinDiskAvailable, hardwareInfo.getMinDiskAvailableGb(), DELTA);
+        assertEquals(expectedMinMainMemoryAvailable, hardwareInfo.getMinMainMemoryAvailableGb(), DELTA);
+        assertEquals(expectedMinCpuCores, hardwareInfo.getMinCpuCores(), DELTA);
         assertTrue(hardwareInfo.getIpv4Connectivity());
         assertTrue(hardwareInfo.getIpv6Connectivity());
-        assertEquals(expectedInterfaceSpeedMbs, hardwareInfo.getInterfaceSpeedMbs(), delta);
+        assertEquals(expectedInterfaceSpeedMbs, hardwareInfo.getInterfaceSpeedMbs(), DELTA);
         assertFalse(hardwareInfo.getFastDisk());
     }
 

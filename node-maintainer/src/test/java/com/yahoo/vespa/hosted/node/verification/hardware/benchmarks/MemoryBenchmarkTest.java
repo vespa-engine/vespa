@@ -20,7 +20,7 @@ public class MemoryBenchmarkTest {
     private MemoryBenchmark memoryBenchmark;
     private HardwareResults hardwareResults;
     private MockCommandExecutor commandExecutor;
-    private static final double delta = 0.01;
+    private static final double DELTA = 0.1;
 
     @Before
     public void setup() {
@@ -40,8 +40,8 @@ public class MemoryBenchmarkTest {
         memoryBenchmark.doBenchmark();
         double expectedReadSpeed = 5.9;
         double expectedWriteSpeed = 3.4;
-        assertEquals(expectedReadSpeed, hardwareResults.getMemoryReadSpeedGBs(), delta);
-        assertEquals(expectedWriteSpeed, hardwareResults.getMemoryWriteSpeedGBs(), delta);
+        assertEquals(expectedReadSpeed, hardwareResults.getMemoryReadSpeedGBs(), DELTA);
+        assertEquals(expectedWriteSpeed, hardwareResults.getMemoryWriteSpeedGBs(), DELTA);
     }
 
     @Test
@@ -69,7 +69,7 @@ public class MemoryBenchmarkTest {
     public void memoryReadSpeed_valid_input_should_update_hardwareResults() {
         Double expectedMemoryReadSpeed = 12.1;
         memoryBenchmark.updateMemoryReadSpeed(expectedMemoryReadSpeed.toString());
-        assertEquals(expectedMemoryReadSpeed, hardwareResults.getMemoryReadSpeedGBs(), delta);
+        assertEquals(expectedMemoryReadSpeed, hardwareResults.getMemoryReadSpeedGBs(), DELTA);
     }
 
     @Test
@@ -82,7 +82,7 @@ public class MemoryBenchmarkTest {
     public void memoryWriteSpeed_valid_input_should_update_hardwareResults() {
         Double expectedMemoryWriteSpeed = 3.8;
         memoryBenchmark.updateMemoryWriteSpeed(expectedMemoryWriteSpeed.toString());
-        assertEquals(expectedMemoryWriteSpeed, hardwareResults.getMemoryWriteSpeedGBs(), delta);
+        assertEquals(expectedMemoryWriteSpeed, hardwareResults.getMemoryWriteSpeedGBs(), DELTA);
     }
 
     @Test

@@ -21,7 +21,7 @@ public class DiskBenchmarkTest {
     private MockCommandExecutor commandExecutor;
     private static final String VALID_OUTPUT_FILE = "src/test/java/com/yahoo/vespa/hosted/node/verification/hardware/resources/diskBenchmarkValidOutput";
     private static final String INVALID_OUTPUT_FILE = "src/test/java/com/yahoo/vespa/hosted/node/verification/hardware/resources/diskBenchmarkInvalidOutput";
-    private static final double delta = 0.1;
+    private static final double DELTA = 0.1;
 
     @Before
     public void setup() {
@@ -37,7 +37,7 @@ public class DiskBenchmarkTest {
         diskBenchmark.doBenchmark();
         double expectedSpeed = 243;
         double actualSpeed = hardwareResults.getDiskSpeedMbs();
-        assertEquals(expectedSpeed, actualSpeed, delta);
+        assertEquals(expectedSpeed, actualSpeed, DELTA);
     }
 
     @Test
@@ -47,7 +47,7 @@ public class DiskBenchmarkTest {
         diskBenchmark.doBenchmark();
         double expectedSpeed = 0;
         double actualSpeed = hardwareResults.getDiskSpeedMbs();
-        assertEquals(expectedSpeed, actualSpeed, delta);
+        assertEquals(expectedSpeed, actualSpeed, DELTA);
     }
 
 
@@ -72,7 +72,7 @@ public class DiskBenchmarkTest {
         ParseResult parseResult = new ParseResult("MB/s", "243");
         diskBenchmark.setDiskSpeed(parseResult);
         double expectedDiskSpeed = 243;
-        assertEquals(expectedDiskSpeed, hardwareResults.getDiskSpeedMbs(), delta);
+        assertEquals(expectedDiskSpeed, hardwareResults.getDiskSpeedMbs(), DELTA);
     }
 
     @Test
@@ -80,7 +80,7 @@ public class DiskBenchmarkTest {
         ParseResult parseResult = new ParseResult("invalid", "invalid");
         diskBenchmark.setDiskSpeed(parseResult);
         double expectedDiskSpeed = 0;
-        assertEquals(expectedDiskSpeed, hardwareResults.getDiskSpeedMbs(), delta);
+        assertEquals(expectedDiskSpeed, hardwareResults.getDiskSpeedMbs(), DELTA);
     }
 
     @Test
@@ -89,9 +89,9 @@ public class DiskBenchmarkTest {
         ParseResult MBsParseResult = new ParseResult("MB/s", "243");
         ParseResult GBsParseResult = new ParseResult("GB/s", "0.243");
         double expectedMBs = 243;
-        assertEquals(expectedMBs, diskBenchmark.getDiskSpeedInMBs(KBsParseResult), delta);
-        assertEquals(expectedMBs, diskBenchmark.getDiskSpeedInMBs(MBsParseResult), delta);
-        assertEquals(expectedMBs, diskBenchmark.getDiskSpeedInMBs(GBsParseResult), delta);
+        assertEquals(expectedMBs, diskBenchmark.getDiskSpeedInMBs(KBsParseResult), DELTA);
+        assertEquals(expectedMBs, diskBenchmark.getDiskSpeedInMBs(MBsParseResult), DELTA);
+        assertEquals(expectedMBs, diskBenchmark.getDiskSpeedInMBs(GBsParseResult), DELTA);
     }
 
     @Test
@@ -119,13 +119,13 @@ public class DiskBenchmarkTest {
         String speed = "1234";
         double factor = 1000;
         double expectedSpeed = 1234000;
-        assertEquals(expectedSpeed, diskBenchmark.convertToMBs(speed, factor), delta);
+        assertEquals(expectedSpeed, diskBenchmark.convertToMBs(speed, factor), DELTA);
         factor = 1 / 1000.0;
         expectedSpeed = 1.234;
-        assertEquals(expectedSpeed, diskBenchmark.convertToMBs(speed, factor), delta);
+        assertEquals(expectedSpeed, diskBenchmark.convertToMBs(speed, factor), DELTA);
         factor = 1;
         expectedSpeed = 1234;
-        assertEquals(expectedSpeed, diskBenchmark.convertToMBs(speed, factor), delta);
+        assertEquals(expectedSpeed, diskBenchmark.convertToMBs(speed, factor), DELTA);
     }
 
 }

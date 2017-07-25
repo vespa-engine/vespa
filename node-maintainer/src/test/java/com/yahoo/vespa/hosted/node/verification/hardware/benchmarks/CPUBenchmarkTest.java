@@ -24,7 +24,7 @@ public class CPUBenchmarkTest {
     private HardwareResults hardwareResults;
     private MockCommandExecutor commandExecutor;
     private CPUBenchmark cpu;
-    private static final double delta = 0.01;
+    private static final double DELTA = 0.1;
 
     @Before
     public void setup() {
@@ -40,7 +40,7 @@ public class CPUBenchmarkTest {
         cpu.doBenchmark();
         double result = hardwareResults.getCpuCyclesPerSec();
         double expected = 2.1576482291815062;
-        assertEquals(expected, result, delta);
+        assertEquals(expected, result, DELTA);
     }
 
     @Test
@@ -50,7 +50,7 @@ public class CPUBenchmarkTest {
         cpu.doBenchmark();
         double result = hardwareResults.getCpuCyclesPerSec();
         double expected = 0;
-        assertEquals(expected, result, delta);
+        assertEquals(expected, result, DELTA);
     }
 
     @Test
@@ -70,7 +70,7 @@ public class CPUBenchmarkTest {
         parseResults.add(new ParseResult("seconds", "0,957617512"));
         cpu.setCpuCyclesPerSec(parseResults);
         double expectedCpuCyclesPerSec = 2.1576482291815062;
-        assertEquals(expectedCpuCyclesPerSec, hardwareResults.getCpuCyclesPerSec(), delta);
+        assertEquals(expectedCpuCyclesPerSec, hardwareResults.getCpuCyclesPerSec(), DELTA);
     }
 
     @Test
@@ -78,8 +78,8 @@ public class CPUBenchmarkTest {
         String toBeConvertedEuropean = "2.066.201.729";
         String toBEConvertedAlternative = "2,066,201,729";
         double expectedCycles = 2066201729;
-        assertEquals(expectedCycles, cpu.makeCyclesDouble(toBeConvertedEuropean), delta);
-        assertEquals(expectedCycles, cpu.makeCyclesDouble(toBEConvertedAlternative), delta);
+        assertEquals(expectedCycles, cpu.makeCyclesDouble(toBeConvertedEuropean), DELTA);
+        assertEquals(expectedCycles, cpu.makeCyclesDouble(toBEConvertedAlternative), DELTA);
     }
 
     @Test
@@ -87,8 +87,8 @@ public class CPUBenchmarkTest {
         String toBeConvertedEuropean = "0,957617512";
         String toBEConvertedAlternative = "0.957617512";
         double expectedSeconds = 0.957617512;
-        assertEquals(expectedSeconds, cpu.makeSecondsDouble(toBeConvertedEuropean), delta);
-        assertEquals(expectedSeconds, cpu.makeSecondsDouble(toBEConvertedAlternative), delta);
+        assertEquals(expectedSeconds, cpu.makeSecondsDouble(toBeConvertedEuropean), DELTA);
+        assertEquals(expectedSeconds, cpu.makeSecondsDouble(toBEConvertedAlternative), DELTA);
     }
 
     @Test
@@ -108,7 +108,7 @@ public class CPUBenchmarkTest {
         double cycles = 2066201729;
         double seconds = 0.957617512;
         double expectedGHz = 2.1576482291815062;
-        assertEquals(expectedGHz, cpu.convertToGHz(cycles, seconds), delta);
+        assertEquals(expectedGHz, cpu.convertToGHz(cycles, seconds), DELTA);
     }
 
 }

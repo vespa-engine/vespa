@@ -19,6 +19,7 @@ public class CPURetrieverTest {
     private HardwareInfo hardwareInfo;
     private MockCommandExecutor commandExecutor;
     private CPURetriever cpu;
+    private static final double DELTA = 0.1;
 
     @Before
     public void setup() {
@@ -32,8 +33,7 @@ public class CPURetrieverTest {
         commandExecutor.addCommand("cat " + FILENAME);
         cpu.updateInfo();
         double expectedAmountOfCores = 4;
-        double delta = 0.1;
-        assertEquals(expectedAmountOfCores, hardwareInfo.getMinCpuCores(), delta);
+        assertEquals(expectedAmountOfCores, hardwareInfo.getMinCpuCores(), DELTA);
     }
 
     @Test
