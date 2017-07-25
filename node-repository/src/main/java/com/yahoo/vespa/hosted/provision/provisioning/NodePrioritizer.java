@@ -158,7 +158,7 @@ public class NodePrioritizer {
 
         if (pri.parent.isPresent()) {
             Node parent = pri.parent.get();
-            pri.freeParentCapacity = capacity.freeCapacityOf(parent, true, false);
+            pri.freeParentCapacity = capacity.freeCapacityOf(parent, false);
 
             /**
              * To be conservative we have a restriction of how many nodes we can retire for each cluster,

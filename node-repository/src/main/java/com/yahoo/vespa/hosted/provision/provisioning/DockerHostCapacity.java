@@ -38,9 +38,9 @@ public class DockerHostCapacity {
      * Used in prioritizing hosts for allocation in <b>descending</b> order.
      */
     int compare(Node hostA, Node hostB) {
-        int comp = freeCapacityOf(hostB, true, false).compare(freeCapacityOf(hostA, true, false));
+        int comp = freeCapacityOf(hostB, false).compare(freeCapacityOf(hostA, false));
         if (comp == 0) {
-            comp = freeCapacityOf(hostB, false, false).compare(freeCapacityOf(hostA, false, false));
+            comp = freeCapacityOf(hostB, false).compare(freeCapacityOf(hostA, false));
             if (comp == 0) {
                 // If resources are equal - we want to assign to the one with the most IPaddresses free
                 comp = freeIPs(hostB) - freeIPs(hostA);
@@ -50,9 +50,9 @@ public class DockerHostCapacity {
     }
 
     int compareWithoutRetired(Node hostA, Node hostB) {
-        int comp = freeCapacityOf(hostB, true, true).compare(freeCapacityOf(hostA, true, true));
+        int comp = freeCapacityOf(hostB,  true).compare(freeCapacityOf(hostA, true));
         if (comp == 0) {
-            comp = freeCapacityOf(hostB, false, true).compare(freeCapacityOf(hostA, false, true));
+            comp = freeCapacityOf(hostB, true).compare(freeCapacityOf(hostA, true));
             if (comp == 0) {
                 // If resources are equal - we want to assign to the one with the most IPaddresses free
                 comp = freeIPs(hostB) - freeIPs(hostA);
@@ -66,7 +66,7 @@ public class DockerHostCapacity {
      * if we could allocate a flavor on the docker host.
      */
     boolean hasCapacity(Node dockerHost, Flavor flavor) {
-        return freeCapacityOf(dockerHost, true, false).hasCapacityFor(flavor) && freeIPs(dockerHost) > 0;
+        return freeCapacityOf(dockerHost, false).hasCapacityFor(flavor) && freeIPs(dockerHost) > 0;
     }
 
     /**
@@ -79,7 +79,7 @@ public class DockerHostCapacity {
     public ResourceCapacity getFreeCapacityTotal() {
         return allNodes.asList().stream()
                 .filter(n -> n.type().equals(NodeType.host))
-                .map(n -> freeCapacityOf(n, false, false))
+                .map(n -> freeCapacityOf(n, false))
                 .reduce(new ResourceCapacity(), ResourceCapacity::add);
     }
 
@@ -106,7 +106,7 @@ public class DockerHostCapacity {
     }
 
     private int canFitNumberOf(Node node, Flavor flavor) {
-        int capacityFactor = freeCapacityOf(node, false, false).freeCapacityInFlavorEquivalence(flavor);
+        int capacityFactor = freeCapacityOf(node, false).freeCapacityInFlavorEquivalence(flavor);
         int ips = freeIPs(node);
         return Math.min(capacityFactor, ips);
     }
@@ -114,21 +114,18 @@ public class DockerHostCapacity {
     /**
      * Calculate the remaining capacity for the dockerHost.
      * @param dockerHost The host to find free capacity of.
-     * @param headroomAsReservedCapacity True if headroom allocations should count as used capacity
      *
      * @return A default (empty) capacity if not a docker host, otherwise the free/unallocated/rest capacity
      */
-    public ResourceCapacity freeCapacityOf(Node dockerHost, boolean headroomAsReservedCapacity, boolean retiredAsFreeCapacity) {
+    public ResourceCapacity freeCapacityOf(Node dockerHost, boolean retiredAsFreeCapacity) {
         // Only hosts have free capacity
         if (!dockerHost.type().equals(NodeType.host)) return new ResourceCapacity();
 
         ResourceCapacity hostCapacity = new ResourceCapacity(dockerHost);
         for (Node container : allNodes.childNodes(dockerHost).asList()) {
-            if (headroomAsReservedCapacity || !(container.allocation().isPresent() &&
-                    container.allocation().get().owner().tenant().value().equals(HEADROOM_TENANT))) {
-                    if (retiredAsFreeCapacity && container.allocation().get().membership().retired()) continue;
-                hostCapacity.subtract(container);
-            }
+            if (retiredAsFreeCapacity && container.allocation().isPresent()
+                    && container.allocation().get().membership().retired()) continue;
+            hostCapacity.subtract(container);
         }
         return hostCapacity;
     }

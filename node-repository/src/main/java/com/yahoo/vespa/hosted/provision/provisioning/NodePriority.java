@@ -64,6 +64,10 @@ public class NodePriority {
         if (isInNodeRepoAndReserved(n1) && isInNodeRepoAndReserved(n2)) return -1;
         if (isInNodeRepoAndReserved(n2) && isInNodeRepoAndReserved(n1)) return 1;
 
+        // Choose ready nodes
+        if (n1.node.state().equals(Node.State.ready) && !n2.node.state().equals(Node.State.ready)) return -1;
+        if (n2.node.state().equals(Node.State.ready) && !n1.node.state().equals(Node.State.ready)) return 1;
+
         // The node state should be equal here
         if (!n1.node.state().equals(n2.node.state())) {
             throw new RuntimeException(
