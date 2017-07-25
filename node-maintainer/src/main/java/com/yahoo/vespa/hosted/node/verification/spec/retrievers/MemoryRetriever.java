@@ -1,6 +1,9 @@
 package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
 
-import com.yahoo.vespa.hosted.node.verification.commons.*;
+import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
+import com.yahoo.vespa.hosted.node.verification.commons.OutputParser;
+import com.yahoo.vespa.hosted.node.verification.commons.ParseInstructions;
+import com.yahoo.vespa.hosted.node.verification.commons.ParseResult;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,24 +16,23 @@ import java.util.logging.Logger;
  */
 public class MemoryRetriever implements HardwareRetriever {
 
-    private static final String MEMORY_INFO_COMMAND= "cat /proc/meminfo";
+    private static final String MEMORY_INFO_COMMAND = "cat /proc/meminfo";
     private static final Logger logger = Logger.getLogger(MemoryRetriever.class.getName());
     private final HardwareInfo hardwareInfo;
     private final CommandExecutor commandExecutor;
 
-    public MemoryRetriever(HardwareInfo hardwareInfo, CommandExecutor commandExecutor){
+    public MemoryRetriever(HardwareInfo hardwareInfo, CommandExecutor commandExecutor) {
         this.hardwareInfo = hardwareInfo;
         this.commandExecutor = commandExecutor;
     }
 
 
-    public void updateInfo(){
+    public void updateInfo() {
         try {
             ArrayList<String> commandOutput = commandExecutor.executeCommand(MEMORY_INFO_COMMAND);
             ParseResult parseResult = parseMemInfoFile(commandOutput);
             updateMemoryInfo(parseResult);
-        }
-        catch (IOException e){
+        } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to retrieve memory info", e);
         }
     }
@@ -43,7 +45,8 @@ public class MemoryRetriever implements HardwareRetriever {
         ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(searchWord));
         ParseInstructions parseInstructions = new ParseInstructions(searchElementIndex, returnElementIndex, regexSplit, searchWords);
         ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
-;        return parseResult;
+        ;
+        return parseResult;
     }
 
     protected void updateMemoryInfo(ParseResult parseResult) {
@@ -51,7 +54,7 @@ public class MemoryRetriever implements HardwareRetriever {
         hardwareInfo.setMinMainMemoryAvailableGb(memory);
     }
 
-    protected double convertKBToGB(String totMem){
+    protected double convertKBToGB(String totMem) {
         String[] split = totMem.split(" ");
         double value = Double.parseDouble(split[0]);
         double kiloToGiga = 1000000.0;

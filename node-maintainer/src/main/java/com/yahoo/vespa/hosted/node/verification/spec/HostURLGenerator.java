@@ -8,7 +8,7 @@ import java.net.URL;
  */
 public class HostURLGenerator {
 
-    private static final String NODE_HOSTNAME_PREFIX= "/nodes/v2/node/";
+    private static final String NODE_HOSTNAME_PREFIX = "/nodes/v2/node/";
 
     protected URL generateNodeInfoUrl(String configServerHostName) throws MalformedURLException {
         String nodeHostName = getEnvironmentVariable("HOSTNAME");

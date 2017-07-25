@@ -21,7 +21,7 @@ public class ParseResult {
     }
 
     @Override
-    public boolean equals(Object obj){
+    public boolean equals(Object obj) {
         if (this == obj) return true;
         if (obj instanceof ParseResult) {
             ParseResult parseResult = (ParseResult) obj;
@@ -33,14 +33,14 @@ public class ParseResult {
     }
 
     @Override
-    public int hashCode(){
+    public int hashCode() {
         int hash = 17;
-        hash = 37 * hash + searchWord.length() +  value.length();
+        hash = 37 * hash + searchWord.length() + value.length();
         return hash;
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return "Search word: " + searchWord + ", Value: " + value;
     }
 }

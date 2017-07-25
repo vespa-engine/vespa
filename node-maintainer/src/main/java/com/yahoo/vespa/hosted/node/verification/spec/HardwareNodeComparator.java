@@ -64,13 +64,13 @@ public class HardwareNodeComparator {
     private static void setDiskTypeMetrics(HardwareInfo node, HardwareInfo actualHardware, SpecReportMetrics specReportMetrics) {
         Boolean expectedFastDisk = node.getFastDisk();
         Boolean actualFastDisk = actualHardware.getFastDisk();
-        if(expectedFastDisk != null && actualFastDisk != null && expectedFastDisk != actualFastDisk) {
+        if (expectedFastDisk != null && actualFastDisk != null && expectedFastDisk != actualFastDisk) {
             specReportMetrics.setExpectedDiskType(expectedFastDisk);
             specReportMetrics.setActualDiskType(actualFastDisk);
         }
     }
 
-    private static void setDiskSpaceMetrics(HardwareInfo node, HardwareInfo actualHardware, SpecReportMetrics specReportMetrics){
+    private static void setDiskSpaceMetrics(HardwareInfo node, HardwareInfo actualHardware, SpecReportMetrics specReportMetrics) {
         double expectedDiskSpace = node.getMinDiskAvailableGb();
         double actualDiskSpace = actualHardware.getMinDiskAvailableGb();
         if (!insideThreshold(expectedDiskSpace, actualDiskSpace)) {
@@ -100,7 +100,7 @@ public class HardwareNodeComparator {
         return equalMemory;
     }
 
-    private static boolean compareNetInterface(HardwareInfo node, HardwareInfo actualHardware, SpecReportDimensions specReportDimensions){
+    private static boolean compareNetInterface(HardwareInfo node, HardwareInfo actualHardware, SpecReportDimensions specReportDimensions) {
         boolean equalNetInterfaceSpeed = insideThreshold(node.getInterfaceSpeedMbs(), actualHardware.getInterfaceSpeedMbs());
         boolean equalIpv6 = node.getIpv6Connectivity() == actualHardware.getIpv6Connectivity();
         boolean equalIpv4 = node.getIpv4Connectivity() == actualHardware.getIpv4Connectivity();

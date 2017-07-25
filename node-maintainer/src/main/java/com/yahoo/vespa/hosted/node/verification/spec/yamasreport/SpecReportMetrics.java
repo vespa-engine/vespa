@@ -34,13 +34,14 @@ public class SpecReportMetrics {
     @JsonProperty
     private String[] faultyIpAddresses;
 
-    public void setMatch(boolean match){
+    public void setMatch(boolean match) {
         this.match = match;
     }
 
-    public boolean isMatch(){
+    public boolean isMatch() {
         return this.match;
     }
+
     public void setExpectedMemoryAvailable(Double expectedMemoryAvailable) {
         this.expectedMemoryAvailable = expectedMemoryAvailable;
     }

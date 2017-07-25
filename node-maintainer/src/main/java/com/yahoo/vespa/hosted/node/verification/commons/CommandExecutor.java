@@ -22,6 +22,7 @@ public class CommandExecutor {
         writeOutputStreamToResults(outputStream, results);
         return results;
     }
+
     private void writeToOutputStream(ByteArrayOutputStream outputStream, String command) throws IOException {
         CommandLine cmdLine = CommandLine.parse(command);
         DefaultExecutor executor = new DefaultExecutor();
@@ -35,7 +36,7 @@ public class CommandExecutor {
         String out = outputStream.toString();
         BufferedReader br = new BufferedReader(new StringReader(out));
         String line;
-        while((line = br.readLine()) != null) {
+        while ((line = br.readLine()) != null) {
             results.add(line);
         }
     }

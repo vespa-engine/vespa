@@ -34,11 +34,10 @@ public class Client {
         double start = System.currentTimeMillis() / 1000.0;
         try {
             client.sendFile(new Socket("localhost", 10000), file);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
         double finish = System.currentTimeMillis() / 1000.0;
-        System.out.println(((double)file.length()/(finish-start)) + " B/s");
+        System.out.println(((double) file.length() / (finish - start)) + " B/s");
     }
 }

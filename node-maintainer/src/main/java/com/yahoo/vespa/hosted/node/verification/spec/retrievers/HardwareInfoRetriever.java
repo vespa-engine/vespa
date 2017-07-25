@@ -9,7 +9,7 @@ import java.util.ArrayList;
  */
 public class HardwareInfoRetriever {
 
-    public static HardwareInfo retrieve(){
+    public static HardwareInfo retrieve() {
         HardwareInfo hardwareInfo = new HardwareInfo();
         CommandExecutor commandExecutor = new CommandExecutor();
         ArrayList<HardwareRetriever> infoList = new ArrayList<>();
@@ -18,7 +18,7 @@ public class HardwareInfoRetriever {
         infoList.add(new DiskRetriever(hardwareInfo, commandExecutor));
         infoList.add(new NetRetriever(hardwareInfo, commandExecutor));
 
-        for(HardwareRetriever hardwareInfoType : infoList) {
+        for (HardwareRetriever hardwareInfoType : infoList) {
             hardwareInfoType.updateInfo();
         }
         return hardwareInfo;

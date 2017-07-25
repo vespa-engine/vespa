@@ -1,9 +1,9 @@
 package com.yahoo.vespa.hosted.node.verification.hardware;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.*;
 import com.yahoo.vespa.hosted.node.verification.hardware.yamasreport.YamasHardwareReport;
-import com.yahoo.vespa.hosted.node.verification.commons.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,7 +20,7 @@ public class HardwareVerifier {
                 new MemoryBenchmark(hardwareResults, commandExecutor),
                 new NetBenchmark(hardwareResults, commandExecutor)));
 
-        for(Benchmark benchmark : benchmarks) {
+        for (Benchmark benchmark : benchmarks) {
             benchmark.doBenchmark();
         }
 
@@ -29,12 +29,13 @@ public class HardwareVerifier {
         ObjectMapper om = new ObjectMapper();
         try {
             System.out.println(om.writeValueAsString(yamasHardwareReport));
-        } catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
     }
-    public static void main( String[] args ) {
+
+    public static void main(String[] args) {
         HardwareVerifier.verifyHardware();
     }
 }

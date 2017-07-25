@@ -1,6 +1,9 @@
 package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
 
-import com.yahoo.vespa.hosted.node.verification.commons.*;
+import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
+import com.yahoo.vespa.hosted.node.verification.commons.OutputParser;
+import com.yahoo.vespa.hosted.node.verification.commons.ParseInstructions;
+import com.yahoo.vespa.hosted.node.verification.commons.ParseResult;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,13 +27,12 @@ public class CPURetriever implements HardwareRetriever {
         this.commandExecutor = commandExecutor;
     }
 
-    public void updateInfo(){
-        try{
+    public void updateInfo() {
+        try {
             ArrayList<String> commandOutput = commandExecutor.executeCommand(CPU_INFO_COMMAND);
             ArrayList<ParseResult> parseResults = parseCPUInfoFile(commandOutput);
             setCpuCores(parseResults);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to retrieve CPU info", e);
         }
     }

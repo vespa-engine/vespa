@@ -1,8 +1,11 @@
 package com.yahoo.vespa.hosted.node.verification.hardware.benchmarks;
 
-import com.yahoo.vespa.hosted.node.verification.commons.*;
+import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
+import com.yahoo.vespa.hosted.node.verification.commons.OutputParser;
+import com.yahoo.vespa.hosted.node.verification.commons.ParseInstructions;
+import com.yahoo.vespa.hosted.node.verification.commons.ParseResult;
 
-import java.io.*;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
@@ -22,18 +25,17 @@ public class DiskBenchmark implements Benchmark {
     private final HardwareResults hardwareResults;
     private final CommandExecutor commandExecutor;
 
-    public DiskBenchmark(HardwareResults hardwareResults, CommandExecutor commandExecutor){
-        this.hardwareResults =  hardwareResults;
+    public DiskBenchmark(HardwareResults hardwareResults, CommandExecutor commandExecutor) {
+        this.hardwareResults = hardwareResults;
         this.commandExecutor = commandExecutor;
     }
 
-    public void doBenchmark(){
-        try{
+    public void doBenchmark() {
+        try {
             ArrayList<String> commandOutput = commandExecutor.executeCommand(DISK_BENCHMARK_COMMAND);
             ParseResult parseResult = parseDiskSpeed(commandOutput);
             setDiskSpeed(parseResult);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to perform disk benchmark", e);
         }
     }
@@ -46,18 +48,19 @@ public class DiskBenchmark implements Benchmark {
         ParseInstructions parseInstructions = new ParseInstructions(searchElementIndex, returnElementIndex, splitRegexString, searchWords);
         return OutputParser.parseSingleOutput(parseInstructions, commandOutput);
     }
-    protected void setDiskSpeed(ParseResult parseResult){
+
+    protected void setDiskSpeed(ParseResult parseResult) {
         double diskSpeedMBs = getDiskSpeedInMBs(parseResult);
         hardwareResults.setDiskSpeedMbs(diskSpeedMBs);
     }
 
-    protected double getDiskSpeedInMBs(ParseResult parseResult){
+    protected double getDiskSpeedInMBs(ParseResult parseResult) {
         double diskSpeedMBs = 0;
         double convertKBsToMBs = 1 / 1000.0;
         double convertGBsToMBs = 1000.0;
         double convertMbsToMBs = 1.0;
         String diskSpeed = parseResult.getValue();
-        if (checkSpeedValidity(diskSpeed)){
+        if (checkSpeedValidity(diskSpeed)) {
             switch (parseResult.getSearchWord()) {
                 case KILO_BYTE_SEARCH_WORD:
                     diskSpeedMBs = convertToMBs(diskSpeed, convertKBsToMBs);
@@ -75,10 +78,9 @@ public class DiskBenchmark implements Benchmark {
     }
 
     protected boolean checkSpeedValidity(String speed) {
-        try{
+        try {
             Double.parseDouble(speed);
-        }
-        catch (NullPointerException | NumberFormatException e) {
+        } catch (NullPointerException | NumberFormatException e) {
             return false;
         }
         return true;

@@ -1,8 +1,11 @@
 package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
 
-import com.yahoo.vespa.hosted.node.verification.commons.*;
+import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
+import com.yahoo.vespa.hosted.node.verification.commons.OutputParser;
+import com.yahoo.vespa.hosted.node.verification.commons.ParseInstructions;
+import com.yahoo.vespa.hosted.node.verification.commons.ParseResult;
 
-import java.io.*;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
@@ -21,7 +24,7 @@ public class DiskRetriever implements HardwareRetriever {
     private final CommandExecutor commandExecutor;
 
 
-    public DiskRetriever(HardwareInfo hardwareInfo, CommandExecutor commandExecutor){
+    public DiskRetriever(HardwareInfo hardwareInfo, CommandExecutor commandExecutor) {
         this.hardwareInfo = hardwareInfo;
         this.commandExecutor = commandExecutor;
     }
@@ -30,25 +33,24 @@ public class DiskRetriever implements HardwareRetriever {
         try {
             updateDiskType();
             updateDiskSize();
-        }
-        catch(IOException e){
+        } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to retrieve disk info", e);
         }
     }
 
-    protected void updateDiskType() throws IOException{
+    protected void updateDiskType() throws IOException {
         ArrayList<String> commandOutput = commandExecutor.executeCommand(DISK_CHECK_TYPE);
         ParseResult parseResult = parseDiskType(commandOutput);
         setDiskType(parseResult);
     }
 
-    protected void updateDiskSize() throws IOException{
+    protected void updateDiskSize() throws IOException {
         ArrayList<String> commandOutput = commandExecutor.executeCommand(DISK_CHECK_SIZE);
         ParseResult parseResult = parseDiskSize(commandOutput);
         setDiskSize(parseResult);
     }
 
-    protected ParseResult parseDiskType (ArrayList<String> commandOutput) {
+    protected ParseResult parseDiskType(ArrayList<String> commandOutput) {
         String regexSplit = "\\s+";
         int searchElementIndex = 0;
         int returnElementIndex = 1;
@@ -57,7 +59,7 @@ public class DiskRetriever implements HardwareRetriever {
         return OutputParser.parseSingleOutput(parseInstructions, commandOutput);
     }
 
-    protected void setDiskType (ParseResult parseResult) {
+    protected void setDiskType(ParseResult parseResult) {
         if (!parseResult.getSearchWord().equals(DISK_NAME)) {
             return;
         }
@@ -69,7 +71,7 @@ public class DiskRetriever implements HardwareRetriever {
         } else if (parseResult.getValue().equals(nonFastDiskEnum)) {
             fastdisk = false;
         }
-       hardwareInfo.setFastDisk(fastdisk);
+        hardwareInfo.setFastDisk(fastdisk);
     }
 
     protected void setDiskSize(ParseResult parseResult) {
@@ -77,13 +79,12 @@ public class DiskRetriever implements HardwareRetriever {
             String sizeValue = parseResult.getValue().replaceAll("[^\\d.]", "");
             double diskSize = Double.parseDouble(sizeValue);
             hardwareInfo.setMinDiskAvailableGb(diskSize);
-        }
-        catch (NumberFormatException | NullPointerException e) {
+        } catch (NumberFormatException | NullPointerException e) {
             return;
         }
     }
 
-    protected ParseResult parseDiskSize (ArrayList<String> commandOutput) {
+    protected ParseResult parseDiskSize(ArrayList<String> commandOutput) {
         String searchWord = ".*\\d+.*";
         String regexSplit = "\\s+";
         int searchElementIndex = 3;

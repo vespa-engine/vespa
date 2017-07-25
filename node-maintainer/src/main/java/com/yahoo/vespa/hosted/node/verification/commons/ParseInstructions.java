@@ -14,22 +14,30 @@ public class ParseInstructions {
     private String skipWord;
     private String skipUntilKeyword;
 
-    public ParseInstructions(int searchElementIndex, int returnElementNum, String splitRegex, ArrayList<String> searchWords){
+    public ParseInstructions(int searchElementIndex, int returnElementNum, String splitRegex, ArrayList<String> searchWords) {
         this.searchElementIndex = searchElementIndex;
         this.valueElementIndex = returnElementNum;
         this.splitRegex = splitRegex;
         this.searchWords = searchWords;
     }
 
-    public int getSearchElementIndex() {return searchElementIndex;}
+    public int getSearchElementIndex() {
+        return searchElementIndex;
+    }
 
-    public int getValueElementIndex() {return valueElementIndex;}
+    public int getValueElementIndex() {
+        return valueElementIndex;
+    }
 
-    public String getSplitRegex() {return splitRegex;}
+    public String getSplitRegex() {
+        return splitRegex;
+    }
 
-    public ArrayList<String> getSearchWords() {return searchWords;}
+    public ArrayList<String> getSearchWords() {
+        return searchWords;
+    }
 
-    public void setSkipWord(String skipWord){
+    public void setSkipWord(String skipWord) {
         this.skipWord = skipWord;
     }
 
@@ -37,11 +45,11 @@ public class ParseInstructions {
         this.skipUntilKeyword = skipUntilWord;
     }
 
-    public String getSkipWord(){
+    public String getSkipWord() {
         return this.skipWord;
     }
 
-    public String getSkipUntilKeyword(){
+    public String getSkipUntilKeyword() {
         return this.skipUntilKeyword;
     }
 }

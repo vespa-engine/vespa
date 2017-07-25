@@ -8,7 +8,7 @@ import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
  * Created by olaa on 05/07/2017.
  */
 
-@JsonIgnoreProperties(ignoreUnknown=true)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class NodeJsonModel {
 
     @JsonProperty("minDiskAvailableGb")
@@ -28,7 +28,7 @@ public class NodeJsonModel {
         return additionalIpAddresses;
     }
 
-    public HardwareInfo copyToHardwareInfo(){
+    public HardwareInfo copyToHardwareInfo() {
         HardwareInfo hardwareInfo = new HardwareInfo();
         hardwareInfo.setMinMainMemoryAvailableGb(this.minMainMemoryAvailableGb);
         hardwareInfo.setMinDiskAvailableGb(this.minDiskAvailableGb);
@@ -36,6 +36,7 @@ public class NodeJsonModel {
         hardwareInfo.setFastDisk(this.fastDisk);
         return hardwareInfo;
     }
+
     public String getIpv6Address() {
         String ipv6Regex = "^((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*::((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*|((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4})){7}$";
         for (String ipAddress : ipAddresses) {

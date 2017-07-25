@@ -22,19 +22,29 @@ public class YamasHardwareReport {
     @JsonProperty
     JsonObjectWrapper routing;
 
-    public YamasHardwareReport(){
+    public YamasHardwareReport() {
         this.timestamp = System.currentTimeMillis() / 1000L;
         setRouting();
     }
 
-    public HardwareReportDimensions getDimensions() {return dimensions;}
-    public void setDimensions(HardwareReportDimensions dimensions){this.dimensions = dimensions;}
+    public HardwareReportDimensions getDimensions() {
+        return dimensions;
+    }
 
-    public HardwareReportMetrics getMetrics() {return metrics;}
-    public void setMetrics(HardwareReportMetrics metrics) {this.metrics = metrics;}
+    public void setDimensions(HardwareReportDimensions dimensions) {
+        this.dimensions = dimensions;
+    }
 
-    private void setRouting(){
-        JsonObjectWrapper wrap = new JsonObjectWrapper("namespace", new String[] {"Vespa"});
+    public HardwareReportMetrics getMetrics() {
+        return metrics;
+    }
+
+    public void setMetrics(HardwareReportMetrics metrics) {
+        this.metrics = metrics;
+    }
+
+    private void setRouting() {
+        JsonObjectWrapper wrap = new JsonObjectWrapper("namespace", new String[]{"Vespa"});
         routing = new JsonObjectWrapper("yamas", wrap);
     }
 

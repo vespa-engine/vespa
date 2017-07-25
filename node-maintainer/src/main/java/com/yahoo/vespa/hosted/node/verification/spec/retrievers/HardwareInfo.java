@@ -15,7 +15,6 @@ public class HardwareInfo {
     private double interfaceSpeedMbs;
 
 
-
     public double getInterfaceSpeedMbs() {
         return interfaceSpeedMbs;
     }
@@ -31,6 +30,7 @@ public class HardwareInfo {
     public void setMinDiskAvailableGb(double minDiskAvailableGb) {
         this.minDiskAvailableGb = minDiskAvailableGb;
     }
+
     public Boolean getIpv6Connectivity() {
         return ipv6Connectivity;
     }
@@ -46,6 +46,7 @@ public class HardwareInfo {
     public void setIpv4Connectivity(Boolean ipv4Connectivity) {
         this.ipv4Connectivity = ipv4Connectivity;
     }
+
     public double getMinMainMemoryAvailableGb() {
         return minMainMemoryAvailableGb;
     }
@@ -54,11 +55,11 @@ public class HardwareInfo {
         this.minMainMemoryAvailableGb = minMainMemoryAvailableGb;
     }
 
-    public void setFastDisk(Boolean fastDisk){
+    public void setFastDisk(Boolean fastDisk) {
         this.fastDisk = fastDisk;
     }
 
-    public Boolean getFastDisk(){
+    public Boolean getFastDisk() {
         return fastDisk;
     }
 

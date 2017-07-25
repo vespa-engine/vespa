@@ -1,6 +1,9 @@
 package com.yahoo.vespa.hosted.node.verification.hardware.benchmarks;
 
-import com.yahoo.vespa.hosted.node.verification.commons.*;
+import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
+import com.yahoo.vespa.hosted.node.verification.commons.OutputParser;
+import com.yahoo.vespa.hosted.node.verification.commons.ParseInstructions;
+import com.yahoo.vespa.hosted.node.verification.commons.ParseResult;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,10 +27,11 @@ public class MemoryBenchmark implements Benchmark {
     private final HardwareResults hardwareResults;
     private final CommandExecutor commandExecutor;
 
-    public MemoryBenchmark(HardwareResults hardwareResults, CommandExecutor commandExecutor){
+    public MemoryBenchmark(HardwareResults hardwareResults, CommandExecutor commandExecutor) {
         this.hardwareResults = hardwareResults;
         this.commandExecutor = commandExecutor;
     }
+
     public void doBenchmark() {
         try {
             setupMountPoint();
@@ -37,16 +41,14 @@ public class MemoryBenchmark implements Benchmark {
             commandOutput = commandExecutor.executeCommand(MEM_BENCHMARK_READ_SPEED);
             parseResult = parseMemorySpeed(commandOutput);
             updateMemoryReadSpeed(parseResult.getValue());
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to perform memory benchmark", e);
-        }
-        finally {
+        } finally {
             breakDownMountPoint();
         }
     }
 
-    private void setupMountPoint() throws IOException{
+    private void setupMountPoint() throws IOException {
         commandExecutor.executeCommand(MEM_BENCHMARK_CREATE_FOLDER);
         commandExecutor.executeCommand(MEM_BENCHMARK_MOUNT_TMPFS);
     }
@@ -54,14 +56,12 @@ public class MemoryBenchmark implements Benchmark {
     private void breakDownMountPoint() {
         try {
             commandExecutor.executeCommand(MEM_BENCHMARK_UNMOUNT_TMPFS);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to unmount tmpfs folder", e);
         }
         try {
             commandExecutor.executeCommand(MEM_BENCHMARK_DELETE_FOLDER);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to delete memory benchmark folder", e);
         }
     }
@@ -75,23 +75,22 @@ public class MemoryBenchmark implements Benchmark {
         return OutputParser.parseSingleOutput(parseInstructions, commandOutput);
     }
 
-    protected void updateMemoryWriteSpeed(String memorySpeed){
-        if(!isValidMemory(memorySpeed)) return;
+    protected void updateMemoryWriteSpeed(String memorySpeed) {
+        if (!isValidMemory(memorySpeed)) return;
         double memoryWriteSpeedGbs = Double.parseDouble(memorySpeed);
         hardwareResults.setMemoryWriteSpeedGBs(memoryWriteSpeedGbs);
     }
 
     protected void updateMemoryReadSpeed(String memorySpeed) {
-        if(!isValidMemory(memorySpeed)) return;
+        if (!isValidMemory(memorySpeed)) return;
         double memoryReadSpeedGbs = Double.parseDouble(memorySpeed);
         hardwareResults.setMemoryReadSpeedGBs(memoryReadSpeedGbs);
     }
 
     protected boolean isValidMemory(String benchmarkOutput) {
         try {
-             Double.parseDouble(benchmarkOutput);
-        }
-        catch (NumberFormatException | NullPointerException e) {
+            Double.parseDouble(benchmarkOutput);
+        } catch (NumberFormatException | NullPointerException e) {
             return false;
         }
         return true;

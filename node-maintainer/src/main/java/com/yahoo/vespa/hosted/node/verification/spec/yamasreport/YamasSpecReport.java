@@ -21,16 +21,16 @@ public class YamasSpecReport {
     @JsonProperty
     private JsonObjectWrapper routing;
 
-    public YamasSpecReport(){
+    public YamasSpecReport() {
         this.timeStamp = System.currentTimeMillis() / 1000L;
         setRouting();
     }
 
-    public void setDimensions(SpecReportDimensions dimensions){
-        this.dimensions=dimensions;
+    public void setDimensions(SpecReportDimensions dimensions) {
+        this.dimensions = dimensions;
     }
 
-    public SpecReportDimensions getDimensions(){
+    public SpecReportDimensions getDimensions() {
         return this.dimensions;
     }
 
@@ -38,18 +38,20 @@ public class YamasSpecReport {
         this.metrics = metrics;
     }
 
-    public void setFaultyIpAddresses(String[] faultyIpAddresses){this.metrics.setFaultyIpAddresses(faultyIpAddresses);}
+    public void setFaultyIpAddresses(String[] faultyIpAddresses) {
+        this.metrics.setFaultyIpAddresses(faultyIpAddresses);
+    }
 
-    public SpecReportMetrics getMetrics(){
+    public SpecReportMetrics getMetrics() {
         return this.metrics;
     }
 
-    public long getTimeStamp(){
+    public long getTimeStamp() {
         return this.timeStamp;
     }
 
-    private void setRouting(){
-        JsonObjectWrapper wrap = new JsonObjectWrapper("namespace", new String[] {"Vespa"});
+    private void setRouting() {
+        JsonObjectWrapper wrap = new JsonObjectWrapper("namespace", new String[]{"Vespa"});
         routing = new JsonObjectWrapper("yamas", wrap);
     }
 

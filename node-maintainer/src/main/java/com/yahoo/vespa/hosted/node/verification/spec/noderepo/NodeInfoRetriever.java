@@ -19,7 +19,7 @@ public class NodeInfoRetriever {
         try {
             nodeJsonModel = objectMapper.readValue(url, NodeJsonModel.class);
         } catch (IOException e) {
-            logger.log(Level.WARNING,"Failed to parse JSON", e);
+            logger.log(Level.WARNING, "Failed to parse JSON", e);
             return null;
         }
         return nodeJsonModel;

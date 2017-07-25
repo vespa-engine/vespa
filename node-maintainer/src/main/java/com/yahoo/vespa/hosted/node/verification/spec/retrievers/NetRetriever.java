@@ -1,8 +1,11 @@
 package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
 
-import com.yahoo.vespa.hosted.node.verification.commons.*;
+import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
+import com.yahoo.vespa.hosted.node.verification.commons.OutputParser;
+import com.yahoo.vespa.hosted.node.verification.commons.ParseInstructions;
+import com.yahoo.vespa.hosted.node.verification.commons.ParseResult;
 
-import java.io.*;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
@@ -23,24 +26,23 @@ public class NetRetriever implements HardwareRetriever {
     private final CommandExecutor commandExecutor;
 
 
-    public NetRetriever(HardwareInfo hardwareInfo, CommandExecutor commandExecutor){
+    public NetRetriever(HardwareInfo hardwareInfo, CommandExecutor commandExecutor) {
         this.hardwareInfo = hardwareInfo;
         this.commandExecutor = commandExecutor;
     }
 
     public void updateInfo() {
-        try{
+        try {
             ArrayList<ParseResult> parseResults = findInterface();
             findInterfaceSpeed(parseResults);
             updateHardwareInfoWithNet(parseResults);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to retrieve net info", e);
         }
 
     }
 
-    protected ArrayList<ParseResult> findInterface() throws IOException{
+    protected ArrayList<ParseResult> findInterface() throws IOException {
         ArrayList<String> commandOutput = commandExecutor.executeCommand(NET_FIND_INTERFACE);
         ArrayList<ParseResult> parseResults = parseNetInterface(commandOutput);
         return parseResults;
@@ -88,8 +90,8 @@ public class NetRetriever implements HardwareRetriever {
     protected void updateHardwareInfoWithNet(ArrayList<ParseResult> parseResults) {
         hardwareInfo.setIpv6Connectivity(false);
         hardwareInfo.setIpv4Connectivity(false);
-        for(ParseResult parseResult : parseResults) {
-            switch (parseResult.getSearchWord()){
+        for (ParseResult parseResult : parseResults) {
+            switch (parseResult.getSearchWord()) {
                 case SEARCH_WORD_INTERFACE_IP4:
                     hardwareInfo.setIpv4Connectivity(true);
                     break;

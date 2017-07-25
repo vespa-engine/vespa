@@ -11,7 +11,7 @@ import java.net.Socket;
  */
 public class Server {
 
-    public void serve(int portNumber) throws IOException{
+    public void serve(int portNumber) throws IOException {
         ServerSocket server;
         Socket client;
         server = new ServerSocket(portNumber);
@@ -22,7 +22,7 @@ public class Server {
         FileOutputStream fileOutputStream = new FileOutputStream("./" + fileName);
         byte[] buffer = new byte[65535];
         int currentLength;
-        while((currentLength = inputStream.read(buffer)) != -1){
+        while ((currentLength = inputStream.read(buffer)) != -1) {
             fileOutputStream.write(buffer, 0, currentLength);
         }
 
@@ -32,8 +32,7 @@ public class Server {
         Server server = new Server();
         try {
             server.serve(10000);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

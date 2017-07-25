@@ -1,6 +1,9 @@
 package com.yahoo.vespa.hosted.node.verification.hardware.benchmarks;
 
-import com.yahoo.vespa.hosted.node.verification.commons.*;
+import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
+import com.yahoo.vespa.hosted.node.verification.commons.OutputParser;
+import com.yahoo.vespa.hosted.node.verification.commons.ParseInstructions;
+import com.yahoo.vespa.hosted.node.verification.commons.ParseResult;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -20,18 +23,17 @@ public class NetBenchmark implements Benchmark {
     private final HardwareResults hardwareResults;
     private final CommandExecutor commandExecutor;
 
-    public NetBenchmark(HardwareResults hardwareResults, CommandExecutor commandExecutor){
+    public NetBenchmark(HardwareResults hardwareResults, CommandExecutor commandExecutor) {
         this.hardwareResults = hardwareResults;
         this.commandExecutor = commandExecutor;
     }
 
-    public void doBenchmark(){
+    public void doBenchmark() {
         try {
             ArrayList<String> commandOutput = commandExecutor.executeCommand(NET_BENCHMARK_COMMAND);
             ParseResult parseResult = parsePingResponse(commandOutput);
             setIpv6Connectivity(parseResult);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to perform net benchmark", e);
         }
     }
