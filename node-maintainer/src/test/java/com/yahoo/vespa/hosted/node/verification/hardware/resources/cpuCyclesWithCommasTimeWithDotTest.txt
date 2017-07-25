@@ -1,0 +1,2 @@
+   2,066,201,729      cycles
+       0.957617512 seconds time elapsed
