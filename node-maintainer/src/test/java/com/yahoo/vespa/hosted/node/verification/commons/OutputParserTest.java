@@ -33,7 +33,7 @@ public class OutputParserTest {
     }
 
     @Test
-    public void test_parseOutput_searching_for_two_normal_words(){
+    public void parseOutput_searching_for_two_normal_words(){
         searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD_1, SEARCH_WORD_2));
         ParseInstructions parseInstructions = new ParseInstructions(6,8, " ",searchWords);
         ArrayList<ParseResult> parseResults = OutputParser.parseOutput(parseInstructions, commandOutput);
@@ -44,7 +44,7 @@ public class OutputParserTest {
     }
 
     @Test
-    public void test_parseOutput_searching_for_two_normal_words_with_semicolon_as_line_split(){
+    public void parseOutput_searching_for_two_normal_words_with_semicolon_as_line_split(){
         searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD_1, SEARCH_WORD_2));
         ParseInstructions parseInstructions = new ParseInstructions(4,5, ";",searchWords);
         ArrayList<ParseResult> parseResults = OutputParser.parseOutput(parseInstructions, commandOutput);
@@ -55,7 +55,7 @@ public class OutputParserTest {
     }
 
     @Test
-    public void test_parseOutput_searching_for_word_containing_capital_s(){
+    public void parseOutput_searching_for_word_containing_capital_s(){
         searchWords = new ArrayList<>(Arrays.asList(REGEX_SEARCH_WORD));
         ParseInstructions parseInstructions = new ParseInstructions(1,8, " ",searchWords);
         ArrayList<ParseResult> parseResults = OutputParser.parseOutput(parseInstructions, commandOutput);
@@ -66,7 +66,7 @@ public class OutputParserTest {
     }
 
     @Test
-    public void test_parseSingleOutput_should_return_first_match(){
+    public void parseSingleOutput_should_return_first_match(){
         searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD_1));
         ParseInstructions parseInstructions = new ParseInstructions(6,8, " ",searchWords);
         ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
@@ -75,7 +75,7 @@ public class OutputParserTest {
     }
 
     @Test
-    public void test_parseSingleOutput_should_return_invalid_parseResult(){
+    public void parseSingleOutput_should_return_invalid_parseResult(){
         searchWords = new ArrayList<>(Arrays.asList("No match"));
         ParseInstructions parseInstructions = new ParseInstructions(6,8, " ",searchWords);
         ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
@@ -84,7 +84,7 @@ public class OutputParserTest {
     }
 
     @Test
-    public void test_parseOutputWithSkips_should_return_two_matches() throws IOException{
+    public void parseOutputWithSkips_should_return_two_matches() throws IOException{
         searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD_1));
         ParseInstructions parseInstructions = new ParseInstructions(1, 7, " ", searchWords);
         parseInstructions.setSkipWord("SkipFromKeyword");
@@ -97,7 +97,7 @@ public class OutputParserTest {
     }
 
     @Test
-    public void test_skipToIndex_should_return_correct_index() throws IOException{
+    public void skipToIndex_should_return_correct_index() throws IOException{
         searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD_1));
         ParseInstructions parseInstructions = new ParseInstructions(0, 0, " ", searchWords);
         parseInstructions.setSkipUntilKeyword("skipUntilKeyword");

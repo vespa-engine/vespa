@@ -17,7 +17,7 @@ public class MemoryBenchmarkTest {
     private MemoryBenchmark memoryBenchmark;
     private HardwareResults hardwareResults;
     private MockCommandExecutor commandExecutor;
-    private double delta = 0.01;
+    private static final double delta = 0.01;
 
     @Before
     public void setup() {
@@ -27,7 +27,7 @@ public class MemoryBenchmarkTest {
     }
 
     @Test
-    public void test_doBenchMark_should_update_read_and_write_memory_speed() {
+    public void doBenchMark_should_update_read_and_write_memory_speed() {
         commandExecutor.addDummyCommand();
         commandExecutor.addDummyCommand();
         commandExecutor.addCommand("cat src/test/java/com/yahoo/vespa/hosted/node/verification/hardware/resources/validMemoryWriteSpeed");
@@ -41,7 +41,7 @@ public class MemoryBenchmarkTest {
         assertEquals(expectedWriteSpeed, hardwareResults.getMemoryWriteSpeedGBs(), delta);
     }
     @Test
-    public void test_parseMemorySpeed_valid_output() throws Exception {
+    public void parseMemorySpeed_valid_output() throws Exception {
         Double expectedSpeed = 12.1;
         String mockOutput = "This is a test \n the memory speed to be found is " + expectedSpeed + " GB/s";
         ArrayList<String> mockCommandOutput = commandExecutor.outputFromString(mockOutput);
@@ -51,7 +51,7 @@ public class MemoryBenchmarkTest {
     }
 
     @Test
-    public void test_parseMemorySpeed_invalid_output() throws Exception {
+    public void parseMemorySpeed_invalid_output() throws Exception {
         ArrayList<String> mockCommandOutput = commandExecutor.outputFromString("");
         ParseResult parseResult = memoryBenchmark.parseMemorySpeed(mockCommandOutput);
         ParseResult expectedParseResult = new ParseResult("invalid", "invalid");
@@ -62,40 +62,40 @@ public class MemoryBenchmarkTest {
     }
 
     @Test
-    public void test_memoryReadSpeed_valid_input_should_update_hardwareResults(){
+    public void memoryReadSpeed_valid_input_should_update_hardwareResults(){
         Double expectedMemoryReadSpeed = 12.1;
         memoryBenchmark.updateMemoryReadSpeed(expectedMemoryReadSpeed.toString());
         assertEquals(expectedMemoryReadSpeed, hardwareResults.getMemoryReadSpeedGBs(), delta);
     }
 
     @Test
-    public void test_memoryReadSpeed_invalid_input_should_not_update_hardwareResults(){
+    public void memoryReadSpeed_invalid_input_should_not_update_hardwareResults(){
         memoryBenchmark.updateMemoryReadSpeed("Invalid speed");
         assertNull(hardwareResults.getMemoryReadSpeedGBs());
     }
 
     @Test
-    public void test_memoryWriteSpeed_valid_input_should_update_hardwareResults(){
+    public void memoryWriteSpeed_valid_input_should_update_hardwareResults(){
         Double expectedMemoryWriteSpeed = 3.8;
         memoryBenchmark.updateMemoryWriteSpeed(expectedMemoryWriteSpeed.toString());
         assertEquals(expectedMemoryWriteSpeed, hardwareResults.getMemoryWriteSpeedGBs(), delta);
     }
 
     @Test
-    public void test_memoryWriteSpeed_invalid_input_should_not_update_hardwareResults(){
+    public void memoryWriteSpeed_invalid_input_should_not_update_hardwareResults(){
         memoryBenchmark.updateMemoryWriteSpeed("Invalid speed");
         assertNull(hardwareResults.getMemoryWriteSpeedGBs());
     }
 
     @Test
-    public void test_isValidMemory_should_return_true_when_parameter_is_number() {
+    public void isValidMemory_should_return_true_when_parameter_is_number() {
         String benchmarkOutput = "6.32";
         boolean validMemory = memoryBenchmark.isValidMemory(benchmarkOutput);
         assertTrue(validMemory);
     }
 
     @Test
-    public void test_isValidMemory_should_return_false_when_parameter_is_not_number() {
+    public void isValidMemory_should_return_false_when_parameter_is_not_number() {
         String benchmarkOutput = "";
         boolean validMemory = memoryBenchmark.isValidMemory(benchmarkOutput);
         assertFalse(validMemory);

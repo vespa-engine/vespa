@@ -25,7 +25,7 @@ public class IPAddressVerifierTest {
         additionalIpAddresses = new String[] {additionalIp1, additionalIp2, additionalIp3};
     }
     @Test
-    public void test_verifyAdditionalIpAddress_should_add_IP_address_when_different_hostname() throws Exception{
+    public void verifyAdditionalIpAddress_should_add_IP_address_when_different_hostname() throws Exception{
         String realHostName = "www.yahoo.com";
         String wrongHostName = "www.nrk.no";
         doReturn(realHostName).when(ipAddressVerifier).reverseLookUp(ipAddress);
@@ -38,7 +38,7 @@ public class IPAddressVerifierTest {
     }
 
     @Test
-    public void test_convertToLookupFormat_should_return_properly_converted_ipv6_address() {
+    public void convertToLookupFormat_should_return_properly_converted_ipv6_address() {
         String ipv6Address = "2001:db8::567:89ab";
         String actualConvertedAddress = ipAddressVerifier.convertToLookupFormat(ipv6Address);
         String expectedConvertedAddress = "b.a.9.8.7.6.5.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa";

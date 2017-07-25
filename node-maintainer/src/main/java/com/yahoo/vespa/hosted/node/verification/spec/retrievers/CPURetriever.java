@@ -17,12 +17,11 @@ import java.util.logging.Logger;
 public class CPURetriever implements HardwareRetriever {
 
     private static final String CPU_INFO_COMMAND = "cat /proc/cpuinfo";
-    final static String searchWord = "cpu MHz";
-    final static String regexSplit = "\\s+:\\s";
-    final static int searchElementIndex = 0;
-    final static int returnElementIndex = 1;
+    private static final String SEARCH_WORD = "cpu MHz";
+    private static final String REGEX_SPLIT = "\\s+:\\s";
+    private static final int SEARCH_ELEMENT_INDEX = 0;
+    private static final int RETURN_ELEMENT_INDEX = 1;
     private static final Logger logger = Logger.getLogger(CPURetriever.class.getName());
-
     private final HardwareInfo hardwareInfo;
     private final CommandExecutor commandExecutor;
 
@@ -42,8 +41,8 @@ public class CPURetriever implements HardwareRetriever {
     }
 
     protected ArrayList<ParseResult> parseCPUInfoFile(ArrayList<String> commandOutput) {
-        ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(searchWord));
-        ParseInstructions parseInstructions = new ParseInstructions(searchElementIndex, returnElementIndex, regexSplit, searchWords);
+        ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD));
+        ParseInstructions parseInstructions = new ParseInstructions(SEARCH_ELEMENT_INDEX, RETURN_ELEMENT_INDEX, REGEX_SPLIT, searchWords);
         ArrayList<ParseResult> parseResults = OutputParser.parseOutput(parseInstructions, commandOutput);
         return parseResults;
     }

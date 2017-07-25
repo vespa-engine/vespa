@@ -39,7 +39,7 @@ public class YamasSpecReportTest {
     }
 
     @Test
-    public void test_Json_is_in_wanted_format() throws Exception{
+    public void Json_is_in_wanted_format() throws Exception{
         YamasSpecReport yamasSpecReport = new YamasSpecReport();
         yamasSpecReport.setMetrics(specReportMetrics);
         yamasSpecReport.setDimensions(specReportDimensions);

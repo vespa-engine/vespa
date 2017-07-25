@@ -14,7 +14,7 @@ import static org.junit.Assert.*;
 public class NodeGeneratorTest {
 
     @Test
-    public void test_convertJsonModel_should_return_correct_HardwareInfo() throws Exception{
+    public void convertJsonModel_should_return_correct_HardwareInfo() throws Exception{
         URL url = new File("src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/nodeInfoTest.json").toURI().toURL();
         NodeJsonModel nodeJsonModel = NodeInfoRetriever.retrieve(url);
         HardwareInfo hardwareInfo = NodeGenerator.convertJsonModel(nodeJsonModel);

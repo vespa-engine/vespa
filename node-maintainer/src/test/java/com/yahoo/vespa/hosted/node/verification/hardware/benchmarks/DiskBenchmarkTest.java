@@ -20,7 +20,7 @@ public class DiskBenchmarkTest {
 
     private final String VALID_OUTPUT_FILE = "src/test/java/com/yahoo/vespa/hosted/node/verification/hardware/resources/diskBenchmarkValidOutput";
     private final String INVALID_OUTPUT_FILE = "src/test/java/com/yahoo/vespa/hosted/node/verification/hardware/resources/diskBenchmarkInvalidOutput";
-    double delta = 0.1;
+    private static final double delta = 0.1;
 
     @Before
     public void setup(){
@@ -30,7 +30,7 @@ public class DiskBenchmarkTest {
     }
 
     @Test
-    public void test_doBenchmark_should_store_diskSpeed_when_valid_output() {
+    public void doBenchmark_should_store_diskSpeed_when_valid_output() {
         String mockCommand = "cat " + VALID_OUTPUT_FILE;
         commandExecutor.addCommand(mockCommand);
         diskBenchmark.doBenchmark();
@@ -40,7 +40,7 @@ public class DiskBenchmarkTest {
     }
 
     @Test
-    public void test_doBenchmark_should_store_diskSpeed_as_zero_when_invalid_output() {
+    public void doBenchmark_should_store_diskSpeed_as_zero_when_invalid_output() {
         String mockCommand = "cat " + INVALID_OUTPUT_FILE;
         commandExecutor.addCommand(mockCommand);
         diskBenchmark.doBenchmark();
@@ -51,7 +51,7 @@ public class DiskBenchmarkTest {
 
 
     @Test
-    public void test_parseDiskSpeed_valid_input() throws Exception{
+    public void parseDiskSpeed_valid_input() throws Exception{
         ArrayList<String> mockCommandOutput = commandExecutor.readFromFile(VALID_OUTPUT_FILE);
         ParseResult parseResult = diskBenchmark.parseDiskSpeed(mockCommandOutput);
         ParseResult expectedParseResult = new ParseResult("MB/s","243");
@@ -59,7 +59,7 @@ public class DiskBenchmarkTest {
     }
 
     @Test
-    public void test_parseDiskSpeed_invalid_input() throws Exception{
+    public void parseDiskSpeed_invalid_input() throws Exception{
         ArrayList<String> mockCommandOutput = commandExecutor.readFromFile(INVALID_OUTPUT_FILE);
         ParseResult parseResult = diskBenchmark.parseDiskSpeed(mockCommandOutput);
         ParseResult expectedParseResult = new ParseResult("invalid", "invalid");
@@ -67,7 +67,7 @@ public class DiskBenchmarkTest {
     }
 
     @Test
-    public void test_setDiskSpeed_valid_input(){
+    public void setDiskSpeed_valid_input(){
         ParseResult parseResult = new ParseResult("MB/s","243");
         diskBenchmark.setDiskSpeed(parseResult);
         double expectedDiskSpeed = 243;
@@ -75,7 +75,7 @@ public class DiskBenchmarkTest {
     }
 
     @Test
-    public void test_setDiskSpeed_invalid_input(){
+    public void setDiskSpeed_invalid_input(){
         ParseResult parseResult = new ParseResult("invalid", "invalid");
         diskBenchmark.setDiskSpeed(parseResult);
         double expectedDiskSpeed = 0;
@@ -83,7 +83,7 @@ public class DiskBenchmarkTest {
     }
 
     @Test
-    public void test_getDiskSpeedInMBs_for_KBs_MBs_and_GBs(){
+    public void getDiskSpeedInMBs_for_KBs_MBs_and_GBs(){
         ParseResult KBsParseResult = new ParseResult("kB/s", "243000");
         ParseResult MBsParseResult = new ParseResult("MB/s", "243");
         ParseResult GBsParseResult = new ParseResult("GB/s", "0.243");
@@ -94,7 +94,7 @@ public class DiskBenchmarkTest {
     }
 
     @Test
-    public void test_ckeckSpeedValidity_should_return_true_for_valid_format(){
+    public void ckeckSpeedValidity_should_return_true_for_valid_format(){
         String speed = "123";
         assertTrue(diskBenchmark.checkSpeedValidity(speed));
         speed = "30000";
@@ -104,7 +104,7 @@ public class DiskBenchmarkTest {
     }
 
     @Test
-    public void test_ckeckSpeedValidity_should_return_false_for_valid_format(){
+    public void ckeckSpeedValidity_should_return_false_for_valid_format(){
         String speed = "124 GHz";
         assertFalse(diskBenchmark.checkSpeedValidity(speed));
         speed = null;
@@ -114,7 +114,7 @@ public class DiskBenchmarkTest {
     }
 
     @Test
-    public void test_convertToMbs_should_return_properly_converted_disk_speeds(){
+    public void convertToMbs_should_return_properly_converted_disk_speeds(){
         String speed = "1234";
         double factor = 1000;
         double expectedSpeed = 1234000;

@@ -20,7 +20,7 @@ public class CPUBenchmarkTest {
     private HardwareResults hardwareResults;
     private MockCommandExecutor commandExecutor;
     private CPUBenchmark cpu;
-    private final static double delta = 0.01;
+    private static final double delta = 0.01;
 
     @Before
     public void setup(){
@@ -30,7 +30,7 @@ public class CPUBenchmarkTest {
     }
 
     @Test
-    public void test_doBenchmark_find_correct_cpuCyclesPerSec() {
+    public void doBenchmark_find_correct_cpuCyclesPerSec() {
         String mockCommand = "cat " + cpuAlternativeDelimiters;
         commandExecutor.addCommand(mockCommand);
         cpu.doBenchmark();
@@ -40,7 +40,7 @@ public class CPUBenchmarkTest {
     }
 
     @Test
-    public void test_doBenchmark_wrong_output_stores_frequency_of_zero() {
+    public void doBenchmark_wrong_output_stores_frequency_of_zero() {
         String mockCommand = "cat " + cpuWrongOutput;
         commandExecutor.addCommand(mockCommand);
         cpu.doBenchmark();
@@ -50,7 +50,7 @@ public class CPUBenchmarkTest {
     }
 
     @Test
-    public void test_parseCpuCyclesPerSec_return_correct_ArrayList() throws IOException{
+    public void parseCpuCyclesPerSec_return_correct_ArrayList() throws IOException{
         ArrayList<String> mockCommandOutput = commandExecutor.readFromFile(cpuEuropeanDelimiters);
         ArrayList<ParseResult> parseResults = cpu.parseCpuCyclesPerSec(mockCommandOutput);
         ParseResult expectedParseCyclesResult = new ParseResult("cycles","2.066.201.729");

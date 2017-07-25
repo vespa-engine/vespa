@@ -17,10 +17,10 @@ import java.util.logging.Logger;
 public class MemoryRetriever implements HardwareRetriever {
 
     private static final String MEMORY_INFO_COMMAND = "cat /proc/meminfo";
-    final static String searchWord = "MemTotal";
-    final static String regexSplit = ":\\s";
-    final static int searchElementIndex = 0;
-    final static int returnElementIndex = 1;
+    private static final String searchWord = "MemTotal";
+    private static final String regexSplit = ":\\s";
+    private static final int searchElementIndex = 0;
+    private static final int returnElementIndex = 1;
     private static final Logger logger = Logger.getLogger(MemoryRetriever.class.getName());
     private final HardwareInfo hardwareInfo;
     private final CommandExecutor commandExecutor;
