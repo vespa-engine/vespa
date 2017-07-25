@@ -7,8 +7,7 @@
 #include <memory>
 #include <vector>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * An object of this class is used to store all basic data and derived
@@ -99,5 +98,4 @@ public:
     static MatchData::UP makeTestInstance(uint32_t numTermFields, uint32_t fieldIdLimit);
 };
 
-} // namespace fef
-} // namespace search
+}

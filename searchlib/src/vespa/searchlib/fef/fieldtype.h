@@ -2,8 +2,7 @@
 
 #pragma once
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * Scoped and typesafe enum used to indicate the type of a field.
@@ -14,6 +13,4 @@ enum class FieldType {
     HIDDEN_ATTRIBUTE = 3
 };
 
-} // namespace fef
-} // namespace search
-
+}

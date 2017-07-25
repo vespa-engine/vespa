@@ -3,24 +3,17 @@
 #pragma once
 
 #include "field_spec.h"
+#include "unpackinfo.h"
 #include <vespa/searchlib/fef/handle.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 
-#include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/searchlib/queryeval/multisearch.h>
-#include <vespa/searchlib/queryeval/unpackinfo.h>
-#include <vespa/vespalib/util/array.h>
-#include <vespa/vespalib/stllike/hash_map.h>
-#include <vector>
-#include <memory>
-
 namespace vespalib { class ObjectVisitor; };
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
+class SearchIterator;
 
 /**
  * A Blueprint is an intermediate representation of a search. More
@@ -36,6 +29,7 @@ class Blueprint
 {
 public:
     typedef std::unique_ptr<Blueprint> UP;
+    typedef std::unique_ptr<SearchIterator> SearchIteratorUP;
 
     struct HitEstimate {
         uint32_t estHits;
@@ -175,7 +169,7 @@ public:
     virtual void freeze() = 0;
     bool frozen() const { return _frozen; }
 
-    virtual SearchIterator::UP createSearch(fef::MatchData &md, bool strict) const = 0;
+    virtual SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const = 0;
 
     // for debug dumping
     vespalib::string asString() const;
@@ -258,14 +252,14 @@ public:
     IntermediateBlueprint & insertChild(size_t n, Blueprint::UP child);
     IntermediateBlueprint &addChild(Blueprint::UP child);
     Blueprint::UP removeChild(size_t n);
-    SearchIterator::UP createSearch(fef::MatchData &md, bool strict) const override;
+    SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
 
     virtual HitEstimate combine(const std::vector<HitEstimate> &data) const = 0;
     virtual FieldSpecBaseList exposeFields() const = 0;
     virtual void sort(std::vector<Blueprint*> &children) const = 0;
     virtual bool inheritStrict(size_t i) const = 0;
-    virtual SearchIterator::UP
-    createIntermediateSearch(const MultiSearch::Children &subSearches,
+    virtual SearchIteratorUP
+    createIntermediateSearch(const std::vector<SearchIterator *> &subSearches,
                              bool strict, fef::MatchData &md) const = 0;
 
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
@@ -295,10 +289,10 @@ public:
     void setDocIdLimit(uint32_t limit) override final { Blueprint::setDocIdLimit(limit); }
     void fetchPostings(bool strict) override;
     void freeze() override final;
-    SearchIterator::UP createSearch(fef::MatchData &md, bool strict) const override;
+    SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
 
-    virtual SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda,
-                                            bool strict) const = 0;
+    virtual SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda,
+                                                bool strict) const = 0;
 };
 
 // for leaf nodes representing a single term
@@ -315,8 +309,7 @@ struct ComplexLeafBlueprint : LeafBlueprint {
 
 //-----------------------------------------------------------------------------
 
-} // namespace queryeval
-} // namespace search
+}
 
 void visit(vespalib::ObjectVisitor &self, const vespalib::string &name,
            const search::queryeval::Blueprint &obj);

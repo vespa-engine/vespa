@@ -24,7 +24,7 @@ public:
     // used by create visitor
     EquivBlueprint& addTerm(Blueprint::UP term, double exactness);
 
-    SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
+    SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
 
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void fetchPostings(bool strict) override;

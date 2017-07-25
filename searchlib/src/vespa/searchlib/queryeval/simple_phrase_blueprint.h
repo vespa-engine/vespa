@@ -33,7 +33,7 @@ public:
     // used by create visitor
     void addTerm(Blueprint::UP term);
 
-    SearchIterator::UP
+    SearchIteratorUP
     createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda,
                      bool strict) const override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;

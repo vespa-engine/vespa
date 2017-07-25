@@ -5,8 +5,7 @@
 #include <vespa/searchlib/common/fslimits.h>
 #include <cstdint>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 class TermFieldMatchDataPositionKey
 {
@@ -105,5 +104,4 @@ public:
     }
 };
 
-} // namespace fef
-} // namespace search
+}

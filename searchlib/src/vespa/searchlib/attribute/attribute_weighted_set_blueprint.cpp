@@ -5,6 +5,7 @@
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
 #include <vespa/searchlib/query/queryterm.h>
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 
 namespace search {
 

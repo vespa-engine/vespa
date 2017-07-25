@@ -21,8 +21,7 @@ using search::queryeval::LeafBlueprint;
 using search::queryeval::EquivBlueprint;
 using search::queryeval::Blueprint;
 
-namespace search {
-namespace diskindex {
+namespace search::diskindex {
 
 namespace {
 
@@ -97,6 +96,4 @@ DiskTermBlueprint::createLeafSearch(const TermFieldMatchDataArray & tfmda, bool 
     return search;
 }
 
-}  // namespace diskindex
-}  // namespace search
-
+}

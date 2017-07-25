@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "docsumcontext.h"
 #include <vespa/document/datatype/positiondatatype.h>
+#include <vespa/searchlib/queryeval/begin_and_end_id.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/common/transport.h>

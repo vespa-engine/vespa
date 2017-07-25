@@ -58,7 +58,6 @@ using search::queryeval::DotProductBlueprint;
 using search::queryeval::FieldSpec;
 using search::queryeval::FieldSpecBaseList;
 using search::queryeval::IRequestContext;
-using search::queryeval::MultiSearch;
 using search::queryeval::NoUnpack;
 using search::queryeval::OrLikeSearch;
 using search::queryeval::OrSearch;
@@ -149,7 +148,7 @@ AttributeFieldBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 template <bool is_strict>
 struct LocationPreFilterIterator : public OrLikeSearch<is_strict, NoUnpack>
 {
-    LocationPreFilterIterator(const MultiSearch::Children &children) : OrLikeSearch<is_strict, NoUnpack>(children, NoUnpack()) {}
+    LocationPreFilterIterator(const std::vector<SearchIterator *> &children) : OrLikeSearch<is_strict, NoUnpack>(children, NoUnpack()) {}
     virtual void doUnpack(uint32_t) override {}
 };
 
@@ -195,7 +194,7 @@ public:
     virtual SearchIterator::UP
     createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override
     {
-        MultiSearch::Children children;
+        std::vector<SearchIterator *> children;
         for (auto it(_rangeSearches.begin()), mt(_rangeSearches.end()); it != mt; it++) {
             children.push_back((*it)->createIterator(tfmda[0],
                                                      strict).release());

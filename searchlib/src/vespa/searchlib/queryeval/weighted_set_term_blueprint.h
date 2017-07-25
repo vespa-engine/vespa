@@ -34,11 +34,11 @@ public:
     // used by create visitor
     void addTerm(Blueprint::UP term, int32_t weight);
 
-    SearchIterator::UP createSearch(search::fef::MatchData &md, bool strict) const override;
+    SearchIteratorUP createSearch(search::fef::MatchData &md, bool strict) const override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 
 private:
-    SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool) const override;
+    SearchIteratorUP createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool) const override;
     void fetchPostings(bool strict) override;
 };
 

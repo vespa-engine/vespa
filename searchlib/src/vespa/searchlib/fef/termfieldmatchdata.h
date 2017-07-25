@@ -5,13 +5,12 @@
 #include "fieldpositionsiterator.h"
 #include "fieldinfo.h"
 #include <vespa/searchlib/common/feature.h>
-#include <string.h>
-#include <assert.h>
+#include <cstring>
+#include <cassert>
 
 class MatchDataHeapTest;
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 class TermMatchDataMerger;
 
@@ -274,6 +273,4 @@ public:
     static uint32_t invalidId() { return 0xdeadbeefU; }
 } __attribute__((packed));
 
-} // namespace fef
-} // namespace search
-
+}

@@ -5,8 +5,7 @@
 #include "orsearch.h"
 #include <vespa/vespalib/objects/visit.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 /**
  * A simple implementation of the Or search operation.
@@ -68,5 +67,4 @@ private:
 };
 
 
-} // namespace queryeval
-} // namespace search
+}

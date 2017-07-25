@@ -2,16 +2,13 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 typedef uint32_t FeatureHandle;
 typedef uint32_t TermFieldHandle;
 
 const uint32_t IllegalHandle = 0xffffffff;
 
-} // namespace fef
-} // namespace search
-
+}

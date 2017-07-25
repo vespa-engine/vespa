@@ -7,9 +7,7 @@
 #include <vector>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-
-namespace queryeval {
+namespace search::queryeval {
 
 
 /**
@@ -114,6 +112,4 @@ public:
     }
 };
 
-} // namespace queryeval
-} // namespace search
-
+}

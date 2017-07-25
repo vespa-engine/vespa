@@ -4,8 +4,7 @@
 #include "weighted_set_term_search.h"
 #include <vespa/vespalib/objects/visit.hpp>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 WeightedSetTermBlueprint::WeightedSetTermBlueprint(const FieldSpec &field)
     : ComplexLeafBlueprint(field),
@@ -78,5 +77,4 @@ WeightedSetTermBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
     abort();
 }
 
-}  // namespace search::queryeval
-}  // namespace search
+}
