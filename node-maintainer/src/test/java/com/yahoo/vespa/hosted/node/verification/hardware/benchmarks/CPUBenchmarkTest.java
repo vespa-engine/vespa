@@ -9,7 +9,9 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Created by sgrostad on 11/07/2017.

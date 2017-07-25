@@ -2,7 +2,12 @@ package com.yahoo.vespa.hosted.node.verification.hardware;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
-import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.*;
+import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.Benchmark;
+import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.CPUBenchmark;
+import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.DiskBenchmark;
+import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.HardwareResults;
+import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.MemoryBenchmark;
+import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.NetBenchmark;
 import com.yahoo.vespa.hosted.node.verification.hardware.yamasreport.YamasHardwareReport;
 
 import java.util.ArrayList;
