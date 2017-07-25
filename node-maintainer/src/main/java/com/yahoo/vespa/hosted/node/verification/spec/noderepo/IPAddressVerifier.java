@@ -91,7 +91,6 @@ public class IPAddressVerifier {
         } catch (NamingException e) {
             logger.log(Level.WARNING, "Unable to retrieve hostname of additional address: " + additionalIpAddress, e);
         }
-
     }
 
 }

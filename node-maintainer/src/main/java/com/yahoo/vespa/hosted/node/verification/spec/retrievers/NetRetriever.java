@@ -47,7 +47,6 @@ public class NetRetriever implements HardwareRetriever {
         } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to retrieve net info", e);
         }
-
     }
 
     protected ArrayList<ParseResult> findInterface() throws IOException {

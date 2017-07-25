@@ -13,7 +13,6 @@ public class HardwareVerifier {
     public static void verifyHardware() {
         HardwareResults hardwareResults = new HardwareResults();
         CommandExecutor commandExecutor = new CommandExecutor();
-
         ArrayList<Benchmark> benchmarks = new ArrayList<>(Arrays.asList(
                 new DiskBenchmark(hardwareResults, commandExecutor),
                 new CPUBenchmark(hardwareResults, commandExecutor),
@@ -23,7 +22,6 @@ public class HardwareVerifier {
         for (Benchmark benchmark : benchmarks) {
             benchmark.doBenchmark();
         }
-
         YamasHardwareReport yamasHardwareReport = new YamasHardwareReport();
         yamasHardwareReport.createFromHardwareResults(hardwareResults);
         ObjectMapper om = new ObjectMapper();
@@ -32,7 +30,6 @@ public class HardwareVerifier {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 
     public static void main(String[] args) {
