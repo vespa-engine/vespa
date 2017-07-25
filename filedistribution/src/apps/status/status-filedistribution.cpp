@@ -78,6 +78,7 @@ int printStatus(const std::string& zkservers)
             break;
           case HostStatus::inProgress:
             hasStarted = true;
+            //@fallthrough@
           case HostStatus::notStarted:
             notFinishedHosts[host] = hostStatus;
             break;

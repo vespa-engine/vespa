@@ -2,6 +2,7 @@
 
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/distribution/idealnodecalculator.h>
+#include <vespa/vdslib/state/random.h>
 #include <vespa/config/helper/configfetcher.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -18,8 +19,7 @@
 #include <thread>
 #include <fstream>
 
-namespace storage {
-namespace lib {
+namespace storage::lib {
 
 struct DistributionTest : public CppUnit::TestFixture {
     void testVerifyJavaDistributions();
@@ -1491,5 +1491,4 @@ DistributionTest::testEmptyAndCopy()
     CPPUNIT_ASSERT_EQUAL(uint16_t(1), d.getReadyCopies());
 }
 
-} // lib
-} // storage
+}

@@ -12,8 +12,7 @@
 #include "nodestate.h"
 #include <map>
 
-namespace storage {
-namespace lib {
+namespace storage::lib {
 
 class Distribution;
 class Group;
@@ -79,6 +78,4 @@ private:
 
 };
 
-} // lib
-} // storage
-
+}

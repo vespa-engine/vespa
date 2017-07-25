@@ -46,6 +46,7 @@ FieldSearchSpec::FieldSearchSpec(const FieldIdT & fid, const vespalib::string & 
     switch(searchDef) {
     default:
         LOG(warning, "Unknown searchdef = %d. Defaulting to AUTOUTF8", searchDef);
+        //@fallthrough@
     case VsmfieldsConfig::Fieldspec::AUTOUTF8:
     case VsmfieldsConfig::Fieldspec::NONE:
     case VsmfieldsConfig::Fieldspec::SSE2UTF8:

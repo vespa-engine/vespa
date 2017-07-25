@@ -1000,6 +1000,7 @@ ArithmeticValueNode::getValue(std::unique_ptr<Value> lval,
                             slval.getValue() + srval.getValue()));
             }
         }
+        //@fallthrough@
         case SUB:
         case MUL:
         case DIV:
@@ -1049,6 +1050,7 @@ ArithmeticValueNode::getValue(std::unique_ptr<Value> lval,
                 return std::unique_ptr<Value>(new FloatValue(res));
             }
         }
+        break;
         case MOD:
         {
             if (lval->getType() == Value::Integer &&
@@ -1063,6 +1065,7 @@ ArithmeticValueNode::getValue(std::unique_ptr<Value> lval,
                 }
             }
         }
+        break;
     }
     return std::unique_ptr<Value>(new InvalidValue);
 }
@@ -1087,6 +1090,7 @@ ArithmeticValueNode::traceValue(std::unique_ptr<Value> lval,
                 return result;
             }
         }
+        //@fallthrough@
         case SUB:
         case MUL:
         case DIV:
@@ -1132,6 +1136,7 @@ ArithmeticValueNode::traceValue(std::unique_ptr<Value> lval,
                 return result;
             }
         }
+        break;
         case MOD:
         {
             if (lval->getType() == Value::Integer &&
@@ -1147,6 +1152,7 @@ ArithmeticValueNode::traceValue(std::unique_ptr<Value> lval,
                 return result;
             }
         }
+        break;
     }
     out << "Failed to do operation " << getOperatorName()
         << " on values of type " << lval->getType() << " and "

@@ -133,7 +133,8 @@ main(int argc, char** argv)
                 break;
             case 1:
                 buf[outIdx++] = line[idx];
-            case 2:                         // FALLTHROUGH
+                //@fallthrough@
+            case 2:
                 if (line[idx++] == '&')
                     state = 0;
                 break;

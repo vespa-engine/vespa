@@ -10,8 +10,7 @@
 
 LOG_SETUP(".vdslib.diskstate");
 
-namespace storage {
-namespace lib {
+namespace storage::lib {
 
 DiskState::DiskState()
     : _state(0),
@@ -64,6 +63,7 @@ DiskState::DiskState(const vespalib::stringref & serialized)
                             "must be a positive floating point number",
                             VESPA_STRLOC);
                 }
+                continue;
             case 'm':
                 if (key.size() > 1) break;
                 _description = document::StringUtil::unescape(value);
@@ -160,5 +160,4 @@ DiskState::operator!=(const DiskState& other) const
     return (_state != other._state || _capacity != other._capacity);
 }
 
-} // lib
-} // storage
+}

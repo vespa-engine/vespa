@@ -1,8 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "distribution.h"
-#include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/vdslib/state/random.h>
+#include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/bobhash.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <boost/lexical_cast.hpp>

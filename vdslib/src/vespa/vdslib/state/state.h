@@ -14,8 +14,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
 
-namespace storage {
-namespace lib {
+namespace storage::lib {
 
 class State : public vespalib::Printable {
     vespalib::string _name;
@@ -82,6 +81,4 @@ public:
     bool oneOf(const char* states) const;
 };
 
-} // lib
-} // storage
-
+}

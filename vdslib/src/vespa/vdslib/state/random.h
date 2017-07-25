@@ -3,14 +3,13 @@
 
 #include <vespa/vespalib/util/random.h>
 
-namespace storage {
-namespace lib {
+namespace storage::lib {
 
 /**
  * Random number generator. Compatible with java.util.Random
  * Calls PRNG from vespalib, but throws away the first number generated.
  */
-class RandomGen : public vespalib::RandomGen{
+class RandomGen : public vespalib::RandomGen {
 public:
     RandomGen(int32_t seed) : vespalib::RandomGen(seed) {
         nextDouble();
@@ -30,6 +29,4 @@ public:
     }
 };
 
-} // lib
-} // storage
-
+}
