@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.node.verification.spec.hardware;
+package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
 
 import com.yahoo.vespa.hosted.node.verification.spec.parse.ParseResult;
 import com.yahoo.vespa.hosted.node.verification.spec.mock.MockCommandExecutor;
@@ -67,7 +67,7 @@ public class DiskRetrieverTest {
     public void test_parseDiskType_should_not_find_fast_disk() throws Exception {
         ArrayList<String> mockOutput = commandExecutor.outputFromString("Name  Rota \nsda 1");
         ParseResult parseResult = diskRetriever.parseDiskType(mockOutput);
-        ParseResult expectedParseResult = new ParseResult("sda","1");;
+        ParseResult expectedParseResult = new ParseResult("sda","1");
         assertEquals(expectedParseResult, parseResult);
     }
 
@@ -86,7 +86,7 @@ public class DiskRetrieverTest {
     @Test
     public void test_parseDiskSize_should_find_size_from_file_and_insert_into_parseResult() throws Exception{
         String filepath = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/filesize";
-        ArrayList<String> mockOutput = commandExecutor.readFromFile(filepath);
+        ArrayList<String> mockOutput = MockCommandExecutor.readFromFile(filepath);
         ParseResult parseResult = diskRetriever.parseDiskSize(mockOutput);
         ParseResult expectedParseResult = new ParseResult("44G","63G");
         assertEquals(expectedParseResult, parseResult);

@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.node.verification.spec.hardware;
+package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
 
 import com.yahoo.vespa.hosted.node.verification.spec.mock.MockCommandExecutor;
 import com.yahoo.vespa.hosted.node.verification.spec.parse.ParseResult;
@@ -38,7 +38,7 @@ public class MemoryRetrieverTest {
 
     @Test
     public void test_parseMemInfoFile_should_return_valid_parseResult() throws IOException{
-        ArrayList<String> commandOutput = commandExecutor.readFromFile(FILENAME);
+        ArrayList<String> commandOutput = MockCommandExecutor.readFromFile(FILENAME);
         ParseResult parseResult = memory.parseMemInfoFile(commandOutput);
         ParseResult expectedParseResult = new ParseResult("MemTotal", "4042128 kB");
         assertEquals(expectedParseResult, parseResult);

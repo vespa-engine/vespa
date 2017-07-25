@@ -38,6 +38,8 @@ public class YamasSpecReport {
         this.metrics = metrics;
     }
 
+    public void setFaultyIpAddresses(String[] faultyIpAddresses){this.metrics.setFaultyIpAddresses(faultyIpAddresses);}
+
     public SpecReportMetrics getMetrics(){
         return this.metrics;
     }

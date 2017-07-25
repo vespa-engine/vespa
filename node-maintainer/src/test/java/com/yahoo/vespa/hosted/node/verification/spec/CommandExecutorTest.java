@@ -1,5 +1,6 @@
-package com.yahoo.vespa.hosted.node.verification.spec.hardware;
+package com.yahoo.vespa.hosted.node.verification.spec;
 
+import com.yahoo.vespa.hosted.node.verification.spec.CommandExecutor;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -12,7 +13,7 @@ import static org.junit.Assert.*;
 /**
  * Created by sgrostad on 12/07/2017.
  */
-public class ExecuteCommandTest {
+public class CommandExecutorTest {
     @Test
     public void test_executeCommand_reading_executeTestFile_with_cat() throws IOException {
         CommandExecutor commandExecutor = new CommandExecutor();

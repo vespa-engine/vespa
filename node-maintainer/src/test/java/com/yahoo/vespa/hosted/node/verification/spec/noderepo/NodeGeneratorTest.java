@@ -1,6 +1,6 @@
 package com.yahoo.vespa.hosted.node.verification.spec.noderepo;
 
-import com.yahoo.vespa.hosted.node.verification.spec.hardware.HardwareInfo;
+import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 import org.junit.Test;
 
 import java.io.File;
@@ -16,7 +16,8 @@ public class NodeGeneratorTest {
     @Test
     public void test_convertJsonModel_should_return_correct_HardwareInfo() throws Exception{
         URL url = new File("src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/nodeInfoTest.json").toURI().toURL();
-        HardwareInfo hardwareInfo = NodeInfoRetriever.retrieve(url);
+        NodeJsonModel nodeJsonModel = NodeInfoRetriever.retrieve(url);
+        HardwareInfo hardwareInfo = NodeGenerator.convertJsonModel(nodeJsonModel);
         double expectedMinDiskAvailable = 500.0;
         double expectedMinMainMemoryAvailable = 24.0;
         double expectedMinCpuCores = 24.0;

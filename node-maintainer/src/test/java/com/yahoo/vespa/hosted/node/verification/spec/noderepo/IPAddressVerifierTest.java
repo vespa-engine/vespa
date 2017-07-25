@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.node.verification.spec;
+package com.yahoo.vespa.hosted.node.verification.spec.noderepo;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -9,12 +9,12 @@ import static org.mockito.Mockito.spy;
 
 public class IPAddressVerifierTest {
 
-    IPAddressVerifier ipAddressVerifier = spy(new IPAddressVerifier());
-    String ipAddress;
-    String additionalIp1;
-    String additionalIp2;
-    String additionalIp3;
-    String[] additionalIpAddresses;
+    private IPAddressVerifier ipAddressVerifier = spy(new IPAddressVerifier());
+    private String ipAddress;
+    private String additionalIp1;
+    private String additionalIp2;
+    private String additionalIp3;
+    private String[] additionalIpAddresses;
 
     @Before
     public void setup() {
@@ -32,9 +32,9 @@ public class IPAddressVerifierTest {
         doReturn(realHostName).when(ipAddressVerifier).reverseLookUp(additionalIp1);
         doReturn(realHostName).when(ipAddressVerifier).reverseLookUp(additionalIp2);
         doReturn(wrongHostName).when(ipAddressVerifier).reverseLookUp(additionalIp3);
-        String[] faultyIpAddresses = ipAddressVerifier.verifyAdditionalIpAddresses(ipAddress, additionalIpAddresses);
+        String[] faultyIpAddresses = ipAddressVerifier.getFaultyIpAddresses(ipAddress, additionalIpAddresses);
         String[] expectedFaultyIpAddresses = new String[] {additionalIp3};
-        assertEquals(expectedFaultyIpAddresses, faultyIpAddresses);
+        assertArrayEquals(expectedFaultyIpAddresses, faultyIpAddresses);
     }
 
     @Test

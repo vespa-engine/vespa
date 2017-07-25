@@ -1,7 +1,6 @@
 package com.yahoo.vespa.hosted.node.verification.spec;
 
-import com.yahoo.vespa.hosted.node.verification.spec.HardwareNodeComparator;
-import com.yahoo.vespa.hosted.node.verification.spec.hardware.HardwareInfo;
+import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -12,8 +11,8 @@ import static org.junit.Assert.*;
  */
 public class HardwareNodeComparatorTest {
 
-    HardwareInfo actualHardware;
-    HardwareInfo nodeInfo;
+    private HardwareInfo actualHardware;
+    private HardwareInfo nodeInfo;
 
     @Before
     public void setup() {
