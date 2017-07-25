@@ -43,16 +43,6 @@ public:
     IProtocol::SP putProtocol(const IProtocol::SP & protocol);
 
     /**
-     * Returns whether or not this repository contains a protocol with the given name. Given the concurrent
-     * nature of things, one should not invoke this method followed by {@link #getProtocol(String)} and expect
-     * the return value to be non-null. Instead just get the protocol and compare it to null.
-     *
-     * @param name The name to check for.
-     * @return True if the named protocol is registered.
-     */
-    bool hasProtocol(const string &name) const;
-
-    /**
      * Returns the protocol whose name matches the given argument. This method will return null if no such
      * protocol has been registered.
      *
