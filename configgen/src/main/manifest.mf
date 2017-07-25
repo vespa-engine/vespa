@@ -1,9 +1,0 @@
-Manifest-Version: 1.0
-Export-Package: com.yahoo.config.codegen
-Bundle-Vendor: Yahoo!
-Bundle-ClassPath: .,dependencies/annotation-6-SNAPSHOT.jar,dependenc
- ies/scala-library-2.9.1.jar
-Bundle-ManifestVersion: 2
-Bundle-Name: vespa config generator
-Bundle-SymbolicName: configgen
-Main-Class: com.yahoo.config.codegen.MakeConfig
