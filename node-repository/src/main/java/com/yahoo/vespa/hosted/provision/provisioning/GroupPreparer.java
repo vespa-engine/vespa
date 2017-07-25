@@ -19,11 +19,9 @@ import java.util.function.BiConsumer;
  * @author bratseth
  */
 class GroupPreparer {
-
+    private static final boolean canChangeGroup = true;
     private final NodeRepository nodeRepository;
     private final Clock clock;
-
-    private static final boolean canChangeGroup = true;
 
     public GroupPreparer(NodeRepository nodeRepository, Clock clock) {
         this.nodeRepository = nodeRepository;
@@ -54,6 +52,7 @@ class GroupPreparer {
             // Use new, ready nodes. Lock ready pool to ensure that nodes are not grabbed by others.
             try (Mutex readyLock = nodeRepository.lockUnallocated()) {
 
+                // Create a prioritized set of nodes for the cluster
                 NodePrioritizer prioritizer = new NodePrioritizer(
                         nodeRepository.getNodes(),
                         application,
@@ -62,14 +61,23 @@ class GroupPreparer {
                         nodeRepository.getAvailableFlavors(),
                         1,
                         nofSpares);
-                prioritizer.initNodes(surplusActiveNodes, nodeRepository.dynamicAllocationEnabled());
-                NodeAllocation allocation = new NodeAllocation(application, cluster, requestedNodes, highestIndex, clock);
-                prioritizer.offer(allocation);
 
+                prioritizer.addApplicationNodes();
+                prioritizer.addSurplusNodes(surplusActiveNodes);
+                prioritizer.addReadyNodes();
+                if (nodeRepository.dynamicAllocationEnabled()) {
+                    prioritizer.addNewDockerNodes();
+                }
+
+                // Allocate from the prioritized list
+                NodeAllocation allocation = new NodeAllocation(application, cluster, requestedNodes, highestIndex, clock);
+                allocation.offer(prioritizer.prioritize());
+
+                // Book-keeping
                 if (allocation.fullfilled()) {
-                    nodeRepository.reserve(prioritizer.filterInactiveAndReadyNodes(allocation.getAcceptedNodes()));
-                    nodeRepository.addDockerNodes(prioritizer.filterNewNodes(allocation.getAcceptedNodes()));
-                    surplusActiveNodes.removeAll(prioritizer.filterSurplusNodes(allocation.getAcceptedNodes()));
+                    nodeRepository.reserve(allocation.getAcceptedInactiveAndReadyNodes());
+                    nodeRepository.addDockerNodes(allocation.getAcceptedNewNodes());
+                    surplusActiveNodes.removeAll(allocation.getAcceptedSurplusNodes());
                     List<Node> result = allocation.finalNodes(surplusActiveNodes);
                     return result;
                 } else {

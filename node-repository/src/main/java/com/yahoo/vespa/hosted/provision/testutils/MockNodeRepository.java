@@ -51,6 +51,11 @@ public class MockNodeRepository extends NodeRepository {
         populate();
     }
 
+    @Override
+    public boolean dynamicAllocationEnabled() {
+        return true;
+    }
+
     private void populate() {
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(this, flavors, Zone.defaultZone());
 
@@ -68,13 +73,13 @@ public class MockNodeRepository extends NodeRepository {
         nodes.add(createNode("node2", "host2.yahoo.com", ipAddresses, Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));
         nodes.add(createNode("node3", "host3.yahoo.com", ipAddresses, Optional.empty(), flavors.getFlavorOrThrow("expensive"), NodeType.tenant));
 
-        // TODO: Use docker flavor
-        Node node4 = createNode("node4", "host4.yahoo.com", ipAddresses, Optional.of("dockerhost4"), flavors.getFlavorOrThrow("default"), NodeType.tenant);
+        Node node4 = createNode("node4", "host4.yahoo.com", ipAddresses, Optional.of("dockerhost1.yahoo.com"), flavors.getFlavorOrThrow("docker"), NodeType.tenant);
         node4 = node4.with(node4.status().withVespaVersion(new Version("6.41.0")));
         nodes.add(node4);
 
-        Node node5 = createNode("node5", "host5.yahoo.com", ipAddresses, Optional.of("parent1.yahoo.com"), flavors.getFlavorOrThrow("default"), NodeType.tenant);
+        Node node5 = createNode("node5", "host5.yahoo.com", ipAddresses, Optional.of("dockerhost2.yahoo.com"), flavors.getFlavorOrThrow("docker"), NodeType.tenant);
         nodes.add(node5.with(node5.status().withVespaVersion(new Version("1.2.3"))));
+
 
         nodes.add(createNode("node6", "host6.yahoo.com", ipAddresses, Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));
         nodes.add(createNode("node7", "host7.yahoo.com", ipAddresses, Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));
@@ -87,8 +92,13 @@ public class MockNodeRepository extends NodeRepository {
         nodes.add(node10);
 
         nodes.add(createNode("node55", "host55.yahoo.com", ipAddresses, Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));
-        nodes.add(createNode("parent1", "parent1.yahoo.com", ipAddresses, additionalIpAddresses, Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.host));
-        nodes.add(createNode("parent2", "dockerhost4", ipAddresses, additionalIpAddresses, Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.host));
+
+        /** Setup docker hosts (two of these will be reserved for spares */
+        nodes.add(createNode("dockerhost1", "dockerhost1.yahoo.com", ipAddresses, additionalIpAddresses, Optional.empty(), flavors.getFlavorOrThrow("large"), NodeType.host));
+        nodes.add(createNode("dockerhost2", "dockerhost2.yahoo.com", ipAddresses, additionalIpAddresses, Optional.empty(), flavors.getFlavorOrThrow("large"), NodeType.host));
+        nodes.add(createNode("dockerhost3", "dockerhost3.yahoo.com", ipAddresses, additionalIpAddresses, Optional.empty(), flavors.getFlavorOrThrow("large"), NodeType.host));
+        nodes.add(createNode("dockerhost4", "dockerhost4.yahoo.com", ipAddresses, additionalIpAddresses, Optional.empty(), flavors.getFlavorOrThrow("large"), NodeType.host));
+        nodes.add(createNode("dockerhost5", "dockerhost5.yahoo.com", ipAddresses, additionalIpAddresses, Optional.empty(), flavors.getFlavorOrThrow("large"), NodeType.host));
 
         nodes = addNodes(nodes);
         nodes.remove(6);
@@ -114,7 +124,7 @@ public class MockNodeRepository extends NodeRepository {
 
         ApplicationId app3 = ApplicationId.from(TenantName.from("tenant3"), ApplicationName.from("application3"), InstanceName.from("instance3"));
         ClusterSpec cluster3 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id3"), Version.fromString("6.42"));
-        activate(provisioner.prepare(app3, cluster3, Capacity.fromNodeCount(2), 1, null), app3, provisioner);
+        activate(provisioner.prepare(app3, cluster3, Capacity.fromNodeCount(2, "docker"), 1, null), app3, provisioner);
     }
 
     private void activate(List<HostSpec> hosts, ApplicationId application, NodeRepositoryProvisioner provisioner) {
@@ -122,5 +132,4 @@ public class MockNodeRepository extends NodeRepository {
         provisioner.activate(transaction, application, hosts);
         transaction.commit();
     }
-
 }

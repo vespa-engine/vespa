@@ -34,7 +34,7 @@ public class NodeAllocation {
     private final NodeSpec requestedNodes;
 
     /** The nodes this has accepted so far */
-    private final Set<Node> nodes = new LinkedHashSet<>();
+    private final Set<NodePriority> nodes = new LinkedHashSet<>();
 
     /** The number of nodes in the accepted nodes which are of the requested flavor */
     private int acceptedOfRequestedFlavor = 0;
@@ -69,19 +69,21 @@ public class NodeAllocation {
      * Note that if unallocated nodes are offered before allocated nodes, this will unnecessarily
      * reject allocated nodes due to index duplicates.
      *
-     * @param offeredNodes the nodes which are potentially on offer. These may belong to a different application etc.
-     * @param canChangeGroup whether it is ok to change the group the offered node is to belong to if necessary
+     * @param nodesPrioritized the nodes which are potentially on offer. These may belong to a different application etc.
      * @return the subset of offeredNodes which was accepted, with the correct allocation assigned
      */
-    public List<Node> offer(List<Node> offeredNodes, boolean canChangeGroup) {
+    public List<Node> offer(List<NodePriority> nodesPrioritized) {
+
         List<Node> accepted = new ArrayList<>();
-        for (Node offered : offeredNodes) {
+        for (NodePriority offeredPriority : nodesPrioritized) {
+            Node offered = offeredPriority.node;
+
             if (offered.allocation().isPresent()) {
                 boolean wantToRetireNode = false;
                 ClusterMembership membership = offered.allocation().get().membership();
                 if ( ! offered.allocation().get().owner().equals(application)) continue; // wrong application
                 if ( ! membership.cluster().equalsIgnoringGroupAndVespaVersion(cluster)) continue; // wrong cluster id/type
-                if ((! canChangeGroup || saturated()) && ! membership.cluster().group().equals(cluster.group())) continue; // wrong group and we can't or have no reason to change it
+                if ((! offeredPriority.isSurplusNode || saturated()) && ! membership.cluster().group().equals(cluster.group())) continue; // wrong group and we can't or have no reason to change it
                 if ( offered.allocation().get().isRemovable()) continue; // don't accept; causes removal
                 if ( indexes.contains(membership.index())) continue; // duplicate index (just to be sure)
 
@@ -91,8 +93,9 @@ public class NodeAllocation {
                 if ( offered.flavor().isRetired()) wantToRetireNode = true;
                 if ( offered.status().wantToRetire()) wantToRetireNode = true;
 
-                if ((!saturated() && hasCompatibleFlavor(offered)) || acceptToRetire(offered) )
-                    accepted.add(acceptNode(offered, wantToRetireNode));
+                if ((!saturated() && hasCompatibleFlavor(offered)) || acceptToRetire(offered) ) {
+                    accepted.add(acceptNode(offeredPriority, wantToRetireNode));
+                }
             }
             else if (! saturated() && hasCompatibleFlavor(offered)) {
                 if ( offeredNodeHasParentHostnameAlreadyAccepted(this.nodes, offered)) {
@@ -106,17 +109,18 @@ public class NodeAllocation {
                     continue;
                 }
                 Node alloc = offered.allocate(application, ClusterMembership.from(cluster, highestIndex.add(1)), clock.instant());
-                accepted.add(acceptNode(alloc, false));
+                offeredPriority.node = alloc;
+                accepted.add(acceptNode(offeredPriority, false));
             }
         }
 
         return accepted;
     }
 
-    private boolean offeredNodeHasParentHostnameAlreadyAccepted(Collection<Node> accepted, Node offered) {
-        for (Node acceptedNode : accepted) {
-            if (acceptedNode.parentHostname().isPresent() && offered.parentHostname().isPresent() &&
-                    acceptedNode.parentHostname().get().equals(offered.parentHostname().get())) {
+    private boolean offeredNodeHasParentHostnameAlreadyAccepted(Collection<NodePriority> accepted, Node offered) {
+        for (NodePriority acceptedNode : accepted) {
+            if (acceptedNode.node.parentHostname().isPresent() && offered.parentHostname().isPresent() &&
+                    acceptedNode.node.parentHostname().get().equals(offered.parentHostname().get())) {
                 return true;
             }
         }
@@ -150,31 +154,29 @@ public class NodeAllocation {
         return requestedNodes.isCompatible(node.flavor());
     }
 
-    /** Updates the state of some existing nodes in this list by replacing them by id with the given instances. */
-    public void update(List<Node> updatedNodes) {
-        nodes.removeAll(updatedNodes);
-        nodes.addAll(updatedNodes);
-    }
-
-    private Node acceptNode(Node node, boolean wantToRetire) {
+    private Node acceptNode(NodePriority nodePriority, boolean wantToRetire) {
+        Node node = nodePriority.node;
         if (! wantToRetire) {
             if ( ! node.state().equals(Node.State.active)) {
                 // reactivated node - make sure its not retired
                 node = node.unretire();
+                nodePriority.node= node;
             }
             acceptedOfRequestedFlavor++;
         } else {
             ++wasRetiredJustNow;
             // Retire nodes which are of an unwanted flavor, retired flavor or have an overlapping parent host
             node = node.retire(clock.instant());
+            nodePriority.node= node;
         }
         if ( ! node.allocation().get().membership().cluster().equals(cluster)) {
             // group may be different
             node = setCluster(cluster, node);
+            nodePriority.node= node;
         }
         indexes.add(node.allocation().get().membership().index());
         highestIndex.set(Math.max(highestIndex.get(), node.allocation().get().membership().index()));
-        nodes.add(node);
+        nodes.add(nodePriority);
         return node;
     }
 
@@ -210,47 +212,62 @@ public class NodeAllocation {
      * @param surplusNodes this will add nodes not any longer needed by this group to this list
      * @return the final list of nodes
      */
-    public List<Node> finalNodes(List<Node> surplusNodes) {
-        long currentRetired = nodes.stream().filter(node -> node.allocation().get().membership().retired()).count();
+    List<Node> finalNodes(List<Node> surplusNodes) {
+        long currentRetired = nodes.stream().filter(node -> node.node.allocation().get().membership().retired()).count();
         long surplus = requestedNodes.surplusGiven(nodes.size()) - currentRetired;
 
-        List<Node> changedNodes = new ArrayList<>();
         if (surplus > 0) { // retire until surplus is 0, prefer to retire higher indexes to minimize redistribution
-            for (Node node : byDecreasingIndex(nodes)) {
-                if ( ! node.allocation().get().membership().retired() && node.state().equals(Node.State.active)) {
-                    Node retiredNode = node.retire(Agent.application, clock.instant());
-                    changedNodes.add(retiredNode);
-                    surplusNodes.add(retiredNode); // offer this node to other groups
+            for (NodePriority node : byDecreasingIndex(nodes)) {
+                if ( ! node.node.allocation().get().membership().retired() && node.node.state().equals(Node.State.active)) {
+                    Node retiredNode = node.node.retire(Agent.application, clock.instant());
+                    node.node = retiredNode;
+                    surplusNodes.add(node.node); // offer this node to other groups
                     if (--surplus == 0) break;
                 }
             }
         }
         else if (surplus < 0) { // unretire until surplus is 0
-            for (Node node : byIncreasingIndex(nodes)) {
-                if ( node.allocation().get().membership().retired() && hasCompatibleFlavor(node)) {
-                    changedNodes.add(node.unretire());
+            for (NodePriority node : byIncreasingIndex(nodes)) {
+                if ( node.node.allocation().get().membership().retired() && hasCompatibleFlavor(node.node)) {
+                    node.node = node.node.unretire();
                     if (++surplus == 0) break;
                 }
             }
         }
-        update(changedNodes);
-        return new ArrayList<>(nodes);
+
+        return nodes.stream().map(n -> n.node).collect(Collectors.toList());
     }
 
-    public Set<Node> getAcceptedNodes() {
-        return nodes;
+    List<Node> getAcceptedInactiveAndReadyNodes() {
+        return nodes.stream().map(n -> n.node)
+                .filter(n -> n.state().equals(Node.State.inactive) || n.state().equals(Node.State.ready))
+                .collect(Collectors.toList());
     }
 
-    private List<Node> byDecreasingIndex(Set<Node> nodes) {
+    List<Node> getAcceptedSurplusNodes() {
+        return nodes.stream()
+                .filter(n -> n.isSurplusNode)
+                .map(n -> n.node)
+                .collect(Collectors.toList());
+    }
+
+    List<Node> getAcceptedNewNodes() {
+        return nodes.stream()
+                .filter(n -> n.isNewNode)
+                .map(n -> n.node)
+                .collect(Collectors.toList());
+    }
+
+    private List<NodePriority> byDecreasingIndex(Set<NodePriority> nodes) {
         return nodes.stream().sorted(nodeIndexComparator().reversed()).collect(Collectors.toList());
     }
 
-    private List<Node> byIncreasingIndex(Set<Node> nodes) {
+    private List<NodePriority> byIncreasingIndex(Set<NodePriority> nodes) {
         return nodes.stream().sorted(nodeIndexComparator()).collect(Collectors.toList());
     }
 
-    private Comparator<Node> nodeIndexComparator() {
-        return Comparator.comparing((Node n) -> n.allocation().get().membership().index());
+    private Comparator<NodePriority> nodeIndexComparator() {
+        return Comparator.comparing((NodePriority n) -> n.node.allocation().get().membership().index());
     }
 
 }

@@ -103,7 +103,7 @@ public class DockerAllocator {
             offers.add(node);
         }
 
-        return allocation.offer(offers, false);
+        return null;//allocation.offer(offers, false);
     }
 
     /**

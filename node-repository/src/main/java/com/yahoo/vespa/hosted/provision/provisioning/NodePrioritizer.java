@@ -18,11 +18,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Builds up a priority queue of which nodes should be offered to the allocation.
- *
+ * <p>
  * Builds up a list of NodePriority objects and sorts them according to the
  * NodePriority::compare method.
  *
@@ -38,9 +37,10 @@ public class NodePrioritizer {
     private final int maxRetires;
     private final ClusterSpec clusterSpec;
 
+    private final boolean isAllocatingForReplacement;
     private final List<Node> spareHosts;
     private final List<Node> headroomViolatedHosts;
-    private final long failedNodesInCluster;
+    private final boolean isDocker;
 
     int nofViolations = 0;
 
@@ -53,40 +53,44 @@ public class NodePrioritizer {
 
         // Add spare and headroom allocations
         spareHosts = DockerCapacityConstraints.findSpareHosts(allNodes, spares);
-        List<Node> nodesWithHeadroomAndSpares =
-                DockerCapacityConstraints.addHeadroomAndSpareNodes(allNodes, nodeFlavors, spares);
+        headroomViolatedHosts = new ArrayList<>();
 
-        this.capacity = new DockerHostCapacity(nodesWithHeadroomAndSpares);
+        this.capacity = new DockerHostCapacity(allNodes);
 
-        failedNodesInCluster = allNodes.stream()
+        long nofFailedNodes = allNodes.stream()
                 .filter(node -> node.state().equals(Node.State.failed))
                 .filter(node -> node.allocation().isPresent())
                 .filter(node -> node.allocation().get().owner().equals(appId))
                 .filter(node -> node.allocation().get().membership().cluster().id().equals(clusterSpec.id()))
                 .count();
 
-        // TODO Find hosts where we have headroom violations
-        headroomViolatedHosts = new ArrayList<>();
+        long nofNodesInCluster = allNodes.stream()
+                .filter(node -> node.allocation().isPresent())
+                .filter(node -> node.allocation().get().owner().equals(appId))
+                .filter(node -> node.allocation().get().membership().cluster().id().equals(clusterSpec.id()))
+                .count();
 
-
+        isAllocatingForReplacement = isReplacement(nofNodesInCluster, nofFailedNodes);
+        isDocker = isDocker();
     }
 
-    void initNodes(List<Node> surplusNodes, boolean dynamicAllocationEnabled) {
-        addApplicationNodes();
-        addSurplusNodes(surplusNodes);
-        addReadyNodes();
-        if (dynamicAllocationEnabled && getDockerFlavor() != null) {
-            addNewDockerNodes();
-        }
+    List<NodePriority> prioritize() {
+        List<NodePriority> priorityList = new ArrayList<>(nodes.values());
+        Collections.sort(priorityList, (a, b) -> NodePriority.compare(a, b));
+        return priorityList;
     }
 
-    private void addSurplusNodes(List<Node> surplusNodes) {
+    void addSurplusNodes(List<Node> surplusNodes) {
         for (Node node : surplusNodes) {
-            nodes.put(node, toNodePriority(node, true, false));
+            NodePriority nodePri = toNodePriority(node, true, false);
+            if (!nodePri.violatesSpares || isAllocatingForReplacement) {
+                nodes.put(node, nodePri);
+            }
         }
     }
 
-    private void addNewDockerNodes() {
+    void addNewDockerNodes() {
+        if (!isDocker) return;
         DockerHostCapacity capacity = new DockerHostCapacity(allNodes);
 
         for (Node node : allNodes) {
@@ -102,18 +106,78 @@ public class NodePrioritizer {
                     }
                 }
 
-                if (!conflictingCluster && capacity.hasCapacity(node, getDockerFlavor())) {
+                if (!conflictingCluster && capacity.hasCapacity(node, getFlavor())) {
                     Set<String> ipAddresses = DockerHostCapacity.findFreeIps(node, allNodes);
                     if (ipAddresses.isEmpty()) continue;
                     String ipAddress = ipAddresses.stream().findFirst().get();
                     String hostname = lookupHostname(ipAddress);
                     if (hostname == null) continue;
                     Node newNode = Node.createDockerNode("fake-" + hostname, Collections.singleton(ipAddress),
-                            Collections.emptySet(), hostname, Optional.of(node.hostname()), getDockerFlavor(), NodeType.tenant);
-                    nodes.put(newNode, toNodePriority(newNode, false, true));
+                            Collections.emptySet(), hostname, Optional.of(node.hostname()), getFlavor(), NodeType.tenant);
+                    NodePriority nodePri = toNodePriority(newNode, false, true);
+                    if (!nodePri.violatesSpares || isAllocatingForReplacement) {
+                        nodes.put(newNode, nodePri);
+                    }
                 }
             }
         }
+    }
+
+    void addApplicationNodes() {
+        List<Node.State> legalStates = Arrays.asList(Node.State.active, Node.State.inactive, Node.State.reserved);
+        allNodes.stream()
+                .filter(node -> node.type().equals(requestedNodes.type()))
+                .filter(node -> legalStates.contains(node.state()))
+                .filter(node -> node.allocation().isPresent())
+                .filter(node -> node.allocation().get().owner().equals(appId))
+                .map(node -> toNodePriority(node, false, false))
+                .filter(n -> !n.violatesSpares || isAllocatingForReplacement)
+                .forEach(nodePriority -> nodes.put(nodePriority.node, nodePriority));
+    }
+
+    void addReadyNodes() {
+        allNodes.stream()
+                .filter(node -> node.type().equals(requestedNodes.type()))
+                .filter(node -> node.state().equals(Node.State.ready))
+                .map(node -> toNodePriority(node, false, false))
+                .filter(n -> !n.violatesSpares || isAllocatingForReplacement)
+                .forEach(nodePriority -> nodes.put(nodePriority.node, nodePriority));
+    }
+
+    /**
+     * Convert a list of nodes to a list of node priorities. This includes finding, calculating
+     * parameters to the priority sorting procedure.
+     */
+    private NodePriority toNodePriority(Node node, boolean isSurplusNode, boolean isNewNode) {
+        NodePriority pri = new NodePriority();
+        pri.node = node;
+        pri.isSurplusNode = isSurplusNode;
+        pri.isNewNode = isNewNode;
+        pri.preferredOnFlavor = requestedNodes.specifiesNonStockFlavor() && node.flavor().equals(getFlavor());
+        pri.parent = findParentNode(node);
+
+        if (pri.parent.isPresent()) {
+            Node parent = pri.parent.get();
+            pri.freeParentCapacity = capacity.freeCapacityOf(parent, true);
+
+            /**
+             * To be conservative we have a restriction of how many nodes we can retire for each cluster,
+             * pr. allocation iteration. TODO also account for previously retired nodes? (thus removing the pr iteration restriction)
+             */
+            if (nofViolations <= maxRetires) {
+                if (spareHosts.contains(parent)) {
+                    pri.violatesSpares = true;
+                    nofViolations++;
+                }
+
+                // Headroom violation
+                if (headroomViolatedHosts.contains(parent)) {
+                    pri.violatesHeadroom = true;
+                    nofViolations++;
+                }
+            }
+        }
+        return pri;
     }
 
     /**
@@ -130,116 +194,8 @@ public class NodePrioritizer {
         return null;
     }
 
-    private void addReadyNodes() {
-        allNodes.stream()
-                .filter(node -> node.type().equals(requestedNodes.type()))
-                .filter(node -> node.state().equals(Node.State.ready))
-                .map(node -> toNodePriority(node, false, false))
-                .forEach(nodePriority -> nodes.put(nodePriority.node, nodePriority));
-    }
-
-    void addApplicationNodes() {
-        List<Node.State> legalStates = Arrays.asList(Node.State.active,Node.State.inactive, Node.State.reserved);
-        allNodes.stream()
-                .filter(node -> node.type().equals(requestedNodes.type()))
-                .filter(node -> legalStates.contains(node.state()))
-                .filter(node -> node.allocation().isPresent())
-                .filter(node -> node.allocation().get().owner().equals(appId))
-                .map(node -> toNodePriority(node, false, false))
-                .forEach(nodePriority -> nodes.put(nodePriority.node, nodePriority));
-    }
-
-    List<Node> filterNewNodes(Set<Node> acceptedNodes) {
-        List<Node> newNodes = new ArrayList<>();
-        for (Node node : acceptedNodes) {
-            if (nodes.get(node).isNewNode) {
-                newNodes.add(node);
-            }
-        }
-        return newNodes;
-    }
-
-    List<Node> filterSurplusNodes(Set<Node> acceptedNodes) {
-        List<Node> surplusNodes = new ArrayList<>();
-        for (Node node : acceptedNodes) {
-            if (nodes.get(node).isSurplusNode) {
-                surplusNodes.add(node);
-            }
-        }
-        return surplusNodes;
-    }
-
-    List<Node> filterInactiveAndReadyNodes(Set<Node> acceptedNodes) {
-        List<Node> inactiveAndReady = new ArrayList<>();
-        for (Node node : acceptedNodes) {
-            if (node.state().equals(Node.State.inactive) || node.state().equals(Node.State.ready)) {
-                inactiveAndReady.add(node);
-            }
-        }
-        return inactiveAndReady;
-    }
-
-    /**
-     * Convert a list of nodes to a list of node priorities. This includes finding, calculating
-     * parameters to the priority sorting procedure.
-     */
-    private NodePriority toNodePriority(Node node, boolean isSurplusNode, boolean isNewNode) {
-            NodePriority pri = new NodePriority();
-            pri.node = node;
-            pri.isSurplusNode = isSurplusNode;
-            pri.isNewNode = isNewNode;
-            pri.preferredOnFlavor = requestedNodes.specifiesNonStockFlavor() && node.flavor().equals(getDockerFlavor());
-            pri.parent = findParentNode(node);
-
-            if (pri.parent.isPresent()) {
-                Node parent = pri.parent.get();
-                pri.freeParentCapacity = capacity.freeCapacityOf(parent, true);
-
-                /**
-                 * To be conservative we have a restriction of how many nodes we can retire for each cluster,
-                 * pr. allocation iteration. TODO also account for previously retired nodes? (thus removing the pr iteration restriction)
-                 */
-                if (nofViolations <= maxRetires) {
-                    // Spare violation
-                    if (spareHosts.contains(parent)) {
-                        pri.violatesSpares = true;
-                        nofViolations++;
-                    }
-
-                    // Headroom violation
-                    if (headroomViolatedHosts.contains(parent)) {
-                        pri.violatesHeadroom = true;
-                        nofViolations++;
-                    }
-                }
-            }
-            return pri;
-    }
-
-    void offer(NodeAllocation allocation) {
-        List<NodePriority> prioritizedNodes = nodes.values().stream().collect(Collectors.toList());
-        Collections.sort(prioritizedNodes, (a,b) -> NodePriority.compare(a,b));
-
-        for (NodePriority nodePriority : prioritizedNodes) {
-
-            // The replacement heuristic assumes that new nodes are offered after already existing nodes
-            boolean isReplacement = isReplacement(allocation.getAcceptedNodes().size());
-
-            // Only add new allocations that violates the spare constraint if this is a replacement
-            if (!nodePriority.violatesSpares || isReplacement || !nodePriority.isNewNode) {
-                List<Node> acceptedNodes = allocation.offer(Collections.singletonList(nodePriority.node), nodePriority.isSurplusNode);
-                // Update with the potentially changed node (new object)
-                if (!acceptedNodes.isEmpty()) {
-                    nodePriority.node = acceptedNodes.get(0);
-                    nodes.remove(nodePriority.node);
-                    nodes.put(acceptedNodes.get(0), nodePriority);
-                }
-            }
-        }
-    }
-
-    private boolean isReplacement(int nodesAccepted) {
-        if (failedNodesInCluster == 0) return false;
+    private boolean isReplacement(long nofNodesInCluster, long nodeFailedNodes) {
+        if (nodeFailedNodes == 0) return false;
 
         int wantedCount = 0;
         if (requestedNodes instanceof NodeSpec.CountNodeSpec) {
@@ -247,15 +203,23 @@ public class NodePrioritizer {
             wantedCount = countSpec.getCount();
         }
 
-        return (wantedCount <= nodesAccepted + failedNodesInCluster);
+        return (wantedCount > nofNodesInCluster - nodeFailedNodes);
     }
 
-    private Flavor getDockerFlavor() {
+    private Flavor getFlavor() {
         if (requestedNodes instanceof NodeSpec.CountNodeSpec) {
             NodeSpec.CountNodeSpec countSpec = (NodeSpec.CountNodeSpec) requestedNodes;
             return countSpec.getFlavor();
         }
         return null;
+    }
+
+    private boolean isDocker() {
+        Flavor flavor = getFlavor();
+        if (flavor != null) {
+            return flavor.getType().equals(Flavor.Type.DOCKER_CONTAINER);
+        }
+        return false;
     }
 
     private Optional<Node> findParentNode(Node node) {
