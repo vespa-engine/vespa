@@ -16,12 +16,15 @@ import java.util.logging.Logger;
  */
 public class CPUBenchmark implements Benchmark {
 
-    private final String CPU_BENCHMARK_COMMAND = "perf stat -e cycles dd if=/dev/zero of=/dev/null count=100000 2>&1 | grep 'cycles\\|seconds'";
-    private final String CYCLES_SEARCH_WORD = "cycles";
-    private final String SECONDS_SEARCH_WORD = "seconds";
+    private static final String CPU_BENCHMARK_COMMAND = "perf stat -e cycles dd if=/dev/zero of=/dev/null count=100000 2>&1 | grep 'cycles\\|seconds'";
+    private static final String CYCLES_SEARCH_WORD = "cycles";
+    private static final String SECONDS_SEARCH_WORD = "seconds";
+    private static final String SPLIT_REGEX_STRING = "\\s+";
+    private static final int SEARCH_ELEMENT_INDEX = 1;
+    private static final int RETURN_ELEMENT_INDEX = 0;
     private static final Logger logger = Logger.getLogger(CPUBenchmark.class.getName());
-
     private final HardwareResults hardwareResults;
+
     private final CommandExecutor commandExecutor;
 
     public CPUBenchmark(HardwareResults hardwareResults, CommandExecutor commandExecutor) {
@@ -42,10 +45,7 @@ public class CPUBenchmark implements Benchmark {
 
     protected ArrayList<ParseResult> parseCpuCyclesPerSec(ArrayList<String> commandOutput) {
         ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(CYCLES_SEARCH_WORD, SECONDS_SEARCH_WORD));
-        String splitRegexString = "\\s+";
-        int searchElementIndex = 1;
-        int returnElementIndex = 0;
-        ParseInstructions parseInstructions = new ParseInstructions(searchElementIndex, returnElementIndex, splitRegexString, searchWords);
+        ParseInstructions parseInstructions = new ParseInstructions(SEARCH_ELEMENT_INDEX, RETURN_ELEMENT_INDEX, SPLIT_REGEX_STRING, searchWords);
         return OutputParser.parseOutput(parseInstructions, commandOutput);
     }
 

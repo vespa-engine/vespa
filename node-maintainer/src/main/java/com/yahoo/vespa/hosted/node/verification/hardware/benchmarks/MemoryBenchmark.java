@@ -22,7 +22,10 @@ public class MemoryBenchmark implements Benchmark {
     private static final String MEM_BENCHMARK_DELETE_FOLDER = "rm -rf RAM_test";
     private static final String MEM_BENCHMARK_WRITE_SPEED = "dd if=/dev/zero of=RAM_test/data_tmp bs=1M count=512";
     private static final String MEM_BENCHMARK_READ_SPEED = "dd if=RAM_test/data_tmp of=/dev/null bs=1M count=512";
-    private final String READ_AND_WRITE_SEARCH_WORD = "GB/s";
+    private static final String READ_AND_WRITE_SEARCH_WORD = "GB/s";
+    private static final String SPLIT_REGEX_STRING = " ";
+    private static final int SEARCH_ELEMENT_INDEX = 8;
+    private static final int RETURN_ELEMENT_INDEX = 7;
     private static final Logger logger = Logger.getLogger(MemoryBenchmark.class.getName());
     private final HardwareResults hardwareResults;
     private final CommandExecutor commandExecutor;
@@ -68,10 +71,7 @@ public class MemoryBenchmark implements Benchmark {
 
     protected ParseResult parseMemorySpeed(ArrayList<String> commandOutput) {
         ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(READ_AND_WRITE_SEARCH_WORD));
-        String splitRegexString = " ";
-        int searchElementIndex = 8;
-        int returnElementIndex = 7;
-        ParseInstructions parseInstructions = new ParseInstructions(searchElementIndex, returnElementIndex, splitRegexString, searchWords);
+        ParseInstructions parseInstructions = new ParseInstructions(SEARCH_ELEMENT_INDEX, RETURN_ELEMENT_INDEX, SPLIT_REGEX_STRING, searchWords);
         return OutputParser.parseSingleOutput(parseInstructions, commandOutput);
     }
 

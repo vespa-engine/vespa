@@ -16,10 +16,12 @@ import java.util.logging.Logger;
  */
 public class NetBenchmark implements Benchmark {
 
-    private final String NET_BENCHMARK_COMMAND = "ping6 -c 10 www.yahoo.com | grep transmitted";
-    private final String PING_SEARCH_WORD = "loss,";
+    private static final String NET_BENCHMARK_COMMAND = "ping6 -c 10 www.yahoo.com | grep transmitted";
+    private static final String PING_SEARCH_WORD = "loss,";
+    private static final String SPLIT_REGEX_STRING = "\\s+";
+    private static final int SEARCH_ELEMENT_INDEX = 7;
+    private static final int RETURN_ELEMENT_INDEX = 5;
     private static final Logger logger = Logger.getLogger(NetBenchmark.class.getName());
-
     private final HardwareResults hardwareResults;
     private final CommandExecutor commandExecutor;
 
@@ -40,10 +42,7 @@ public class NetBenchmark implements Benchmark {
 
     protected ParseResult parsePingResponse(ArrayList<String> commandOutput) {
         ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(PING_SEARCH_WORD));
-        String splitRegexString = "\\s+";
-        int searchElementIndex = 7;
-        int returnElementIndex = 5;
-        ParseInstructions parseInstructions = new ParseInstructions(searchElementIndex, returnElementIndex, splitRegexString, searchWords);
+        ParseInstructions parseInstructions = new ParseInstructions(SEARCH_ELEMENT_INDEX, RETURN_ELEMENT_INDEX, SPLIT_REGEX_STRING, searchWords);
         return OutputParser.parseSingleOutput(parseInstructions, commandOutput);
 
     }

@@ -17,11 +17,14 @@ import java.util.logging.Logger;
  */
 public class DiskBenchmark implements Benchmark {
 
-    private final String DISK_BENCHMARK_COMMAND = "time (dd if=/dev/zero of=/tmp/tempfile bs=16k count=16k > /dev/null; sync; rm /tmp/tempfile) 2>&1 | grep bytes | awk  '{ print $8 \" \" $9 }'";
-    private final String KILO_BYTE_SEARCH_WORD = "kB/s";
-    private final String MEGA_BYTE_SEARCH_WORD = "MB/s";
-    private final String GIGA_BYTE_SEARCH_WORD = "GB/s";
-    Logger logger = Logger.getLogger(DiskBenchmark.class.getName());
+    private static final String DISK_BENCHMARK_COMMAND = "time (dd if=/dev/zero of=/tmp/tempfile bs=16k count=16k > /dev/null; sync; rm /tmp/tempfile) 2>&1 | grep bytes | awk  '{ print $8 \" \" $9 }'";
+    private static final String KILO_BYTE_SEARCH_WORD = "kB/s";
+    private static final String MEGA_BYTE_SEARCH_WORD = "MB/s";
+    private static final String GIGA_BYTE_SEARCH_WORD = "GB/s";
+    private static final String SPLIT_REGEX_STRING = " ";
+    private static final int SEARCH_ELEMENT_INDEX = 1;
+    private static final int RETURN_ELEMENT_INDEX = 0;
+    private static final Logger logger = Logger.getLogger(DiskBenchmark.class.getName());
     private final HardwareResults hardwareResults;
     private final CommandExecutor commandExecutor;
 
@@ -42,10 +45,7 @@ public class DiskBenchmark implements Benchmark {
 
     protected ParseResult parseDiskSpeed(ArrayList<String> commandOutput) {
         ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(KILO_BYTE_SEARCH_WORD, MEGA_BYTE_SEARCH_WORD, GIGA_BYTE_SEARCH_WORD));
-        String splitRegexString = " ";
-        int searchElementIndex = 1;
-        int returnElementIndex = 0;
-        ParseInstructions parseInstructions = new ParseInstructions(searchElementIndex, returnElementIndex, splitRegexString, searchWords);
+        ParseInstructions parseInstructions = new ParseInstructions(SEARCH_ELEMENT_INDEX, RETURN_ELEMENT_INDEX, SPLIT_REGEX_STRING, searchWords);
         return OutputParser.parseSingleOutput(parseInstructions, commandOutput);
     }
 
