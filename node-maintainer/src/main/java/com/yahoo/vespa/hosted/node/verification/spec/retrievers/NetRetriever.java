@@ -86,6 +86,10 @@ public class NetRetriever implements HardwareRetriever {
         return "";
     }
 
+    protected double convertInterfaceSpeed(String speed){
+        return Double.parseDouble(speed.replaceAll("[^\\d.]", ""));
+    }
+
     protected void updateHardwareInfoWithNet(ArrayList<ParseResult> parseResults) {
         hardwareInfo.setIpv6Connectivity(false);
         hardwareInfo.setIpv4Connectivity(false);
@@ -98,8 +102,7 @@ public class NetRetriever implements HardwareRetriever {
                     hardwareInfo.setIpv6Connectivity(true);
                     break;
                 case SEARCH_WORD_INTERFACE_SPEED:
-                    String speedValue = parseResult.getValue().replaceAll("[^\\d.]", "");
-                    double speed = Double.parseDouble(speedValue);
+                    double speed = convertInterfaceSpeed(parseResult.getValue());
                     hardwareInfo.setInterfaceSpeedMbs(speed);
                     break;
                 default:

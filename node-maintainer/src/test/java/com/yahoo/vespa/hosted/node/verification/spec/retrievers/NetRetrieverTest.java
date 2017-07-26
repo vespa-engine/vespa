@@ -125,4 +125,12 @@ public class NetRetrieverTest {
         assertTrue(hardwareInfo.getIpv6Connectivity());
     }
 
+    @Test
+    public void stripInterfaceSpeed_should_return_correct_double(){
+        String interfaceSpeedToConvert = "1000Mb/s";
+        double expectedInterfaceSpeed = 1000;
+        double actualInterfaceSpeed = net.convertInterfaceSpeed(interfaceSpeedToConvert);
+        assertEquals(expectedInterfaceSpeed, actualInterfaceSpeed, DELTA);
+    }
+
 }
