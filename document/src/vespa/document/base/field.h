@@ -11,21 +11,22 @@
  */
 #pragma once
 
-#include <memory>
-#include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldset/fieldset.h>
+#include <vespa/vespalib/objects/identifiable.h>
+#include <vespa/vespalib/objects/fieldbase.h>
 #include <set>
 
 namespace document {
 
 class FieldValue;
+class DataType;
 
 class Field final : public vespalib::FieldBase,
                     public vespalib::Identifiable,
                     public FieldSet
 {
     const DataType *_dataType;
-    int _fieldId;
+    int  _fieldId;
     bool _isHeaderField;
 public:
     typedef std::shared_ptr<const Field> CSP;
@@ -37,7 +38,7 @@ public:
         }
     };
 
-    typedef std::set<const Field*, FieldPtrComparator> Set;
+    using Set = std::set<const Field*, FieldPtrComparator>;
 
     /**
      * Creates a completely specified field instance.
@@ -50,7 +51,7 @@ public:
     Field(const vespalib::stringref & name, int fieldId,
           const DataType &type, bool headerField);
 
-    Field() : Field("", 0, *DataType::INT, false) { }
+    Field();
 
     /**
      * Creates a completely specified field instance. Field ids are generated
@@ -62,7 +63,7 @@ public:
      */
     Field(const vespalib::stringref & name, const DataType &dataType, bool headerField);
 
-    FieldSet* clone() const override { return new Field(*this); }
+    Field* clone() const override { return new Field(*this); }
     std::unique_ptr<FieldValue> createValue() const;
 
     // Note that only id is checked for equality.
@@ -78,6 +79,7 @@ public:
     vespalib::string toString(bool verbose=false) const;
     bool contains(const FieldSet& fields) const override;
     Type getType() const override { return FIELD; }
+    bool valid() const { return _fieldId != 0; }
 private:
     int calculateIdV7();
 

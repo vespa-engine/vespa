@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "field.h"
 #include <vespa/vespalib/objects/cloneable.h>
 #include <vespa/document/util/identifiableid.h>
 #include <memory>
@@ -15,7 +16,6 @@ class DataType;
 class MapDataType;
 class WeightedSetDataType;
 class ArrayDataType;
-class Field;
 
 class FieldPathEntry : public vespalib::Identifiable {
 public:
@@ -29,7 +29,6 @@ public:
         VARIABLE,
         NONE
     };
-    using FieldSP = std::shared_ptr<const Field>;
     using FieldValueCP = vespalib::CloneablePtr<FieldValue>;
 
     /**
@@ -69,8 +68,8 @@ public:
 
     const DataType& getDataType() const;
 
-    bool hasField() const { return _fieldRef.get(); }
-    const Field & getFieldRef() const { return *_fieldRef; }
+    bool hasField() const { return _field.valid(); }
+    const Field & getFieldRef() const { return _field; }
 
     uint32_t getIndex() const { return _lookupIndex; }
 
@@ -90,13 +89,13 @@ public:
     static vespalib::string parseKey(vespalib::string & key);
 private:
     void setFillValue(const DataType & dataType);
-    Type              _type;
-    vespalib::string  _name;
-    FieldSP           _fieldRef;
-    const DataType *  _dataType;
-    uint32_t          _lookupIndex;
-    FieldValueCP      _lookupKey;
-    vespalib::string  _variableName;
+    Type                 _type;
+    vespalib::string     _name;
+    Field                _field;
+    const DataType     * _dataType;
+    uint32_t             _lookupIndex;
+    FieldValueCP         _lookupKey;
+    vespalib::string     _variableName;
     mutable FieldValueCP _fillInVal;
 };
 

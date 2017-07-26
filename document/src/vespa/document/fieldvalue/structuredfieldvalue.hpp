@@ -3,6 +3,7 @@
 #pragma once
 
 #include "structuredfieldvalue.h"
+#include <vespa/document/datatype/datatype.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 namespace document {
@@ -13,8 +14,7 @@ StructuredFieldValue::getAs(const Field &field) const {
     FieldValue::UP val = getValue(field);
     T *t = Identifiable::cast<T *>(val.get());
     if (val.get() && !t) {
-        throw vespalib::IllegalStateException("Field " + field.toString()
-                + " has unexpected type.", VESPA_STRLOC);
+        throw vespalib::IllegalStateException("Field " + field.toString() + " has unexpected type.", VESPA_STRLOC);
     }
     val.release();
     return std::unique_ptr<T>(t);
@@ -37,4 +37,3 @@ StructuredFieldValue::set(const vespalib::stringref & fieldName, PrimitiveType v
 }
 
 } // document
-

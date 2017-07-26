@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fieldpath.h"
-#include "field.h"
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/document/datatype/weightedsetdatatype.h>
@@ -22,7 +21,7 @@ FieldPathEntry::~FieldPathEntry() { }
 FieldPathEntry::FieldPathEntry() :
     _type(NONE),
     _name(""),
-    _fieldRef(),
+    _field(),
     _dataType(0),
     _lookupIndex(0),
     _lookupKey(),
@@ -33,7 +32,7 @@ FieldPathEntry::FieldPathEntry() :
 FieldPathEntry::FieldPathEntry(const DataType & dataType, uint32_t arrayIndex) :
     _type(ARRAY_INDEX),
     _name(""),
-    _fieldRef(),
+    _field(),
     _dataType(&dataType),
     _lookupIndex(arrayIndex),
     _lookupKey(),
@@ -46,7 +45,7 @@ FieldPathEntry::FieldPathEntry(const DataType & dataType, uint32_t arrayIndex) :
 FieldPathEntry::FieldPathEntry(const Field &fieldRef) :
     _type(STRUCT_FIELD),
     _name(fieldRef.getName()),
-    _fieldRef(new Field(fieldRef)),
+    _field(fieldRef),
     _dataType(&fieldRef.getDataType()),
     _lookupIndex(0),
     _lookupKey(),
@@ -58,7 +57,7 @@ FieldPathEntry::FieldPathEntry(const DataType & dataType, const DataType& fillTy
                                const FieldValueCP & lookupKey) :
     _type(MAP_KEY),
     _name("value"),
-    _fieldRef(),
+    _field(),
     _dataType(&dataType),
     _lookupIndex(0),
     _lookupKey(lookupKey),
@@ -85,7 +84,7 @@ FieldPathEntry::FieldPathEntry(const DataType&, const DataType& keyType,
                                const DataType& valueType, bool keysOnly, bool valuesOnly) :
     _type(keysOnly ? MAP_ALL_KEYS : MAP_ALL_VALUES),
     _name(keysOnly ? "key" : "value"),
-    _fieldRef(),
+    _field(),
     _dataType(keysOnly ? &keyType : &valueType),
     _lookupIndex(0),
     _lookupKey(),
@@ -99,7 +98,7 @@ FieldPathEntry::FieldPathEntry(const DataType&, const DataType& keyType,
 FieldPathEntry::FieldPathEntry(const DataType & dataType, const vespalib::stringref & variableName) :
     _type(VARIABLE),
     _name(""),
-    _fieldRef(),
+    _field(),
     _dataType(&dataType),
     _lookupIndex(0),
     _lookupKey(),
@@ -111,8 +110,7 @@ FieldPathEntry::FieldPathEntry(const DataType & dataType, const vespalib::string
 
 const DataType &FieldPathEntry::getDataType() const
 {
-     return _fieldRef ? _fieldRef->getDataType()
-                            : *_dataType;
+     return _field.valid() ? _field.getDataType() : *_dataType;
 }
 
 FieldValue::UP FieldPathEntry::stealFieldValueToSet() const
@@ -125,7 +123,7 @@ FieldPathEntry::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     visit(visitor, "type", _type);
     visit(visitor, "name", _name);
-    visit(visitor, "fieldRef", _fieldRef);
+    visit(visitor, "fieldRef", _field);
     visit(visitor, "dataType", _dataType);
     visit(visitor, "lookupIndex", _lookupIndex);
     visit(visitor, "lookupKey", _lookupKey);

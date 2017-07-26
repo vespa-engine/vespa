@@ -5,6 +5,8 @@
 
 namespace document {
 
+class DocumentType;
+
 class AllFields final : public FieldSet
 {
 public:

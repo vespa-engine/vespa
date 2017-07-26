@@ -2,12 +2,14 @@
 
 #include "field.h"
 #include <vespa/document/fieldvalue/fieldvalue.h>
+#include <vespa/document/datatype/datatype.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/bobhash.h>
 
 namespace document {
+
+Field::Field() : Field("", 0, *DataType::INT, false) { }
 
 Field::Field(const vespalib::stringref & name, int fieldId,
              const DataType& dataType, bool headerField)
