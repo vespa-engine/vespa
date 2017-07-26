@@ -38,7 +38,7 @@ AssignFieldPathUpdate::AssignFieldPathUpdate(
         stringref fieldPath,
         stringref whereClause,
         const FieldValue& newValue)
-    : FieldPathUpdate(repo, type, fieldPath, whereClause),
+    : FieldPathUpdate(type, fieldPath, whereClause),
       _repo(&repo),
       _newValue(newValue.clone()),
       _expression(),
@@ -54,7 +54,7 @@ AssignFieldPathUpdate::AssignFieldPathUpdate(
         stringref fieldPath,
         stringref whereClause,
         stringref expression)
-    : FieldPathUpdate(repo, type, fieldPath, whereClause),
+    : FieldPathUpdate(type, fieldPath, whereClause),
       _repo(&repo),
       _newValue(),
       _expression(expression),

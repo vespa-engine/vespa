@@ -41,8 +41,7 @@ FieldPathUpdate::FieldPathUpdate() :
 FieldPathUpdate::FieldPathUpdate(const FieldPathUpdate &) = default;
 FieldPathUpdate & FieldPathUpdate::operator =(const FieldPathUpdate &) = default;
 
-FieldPathUpdate::FieldPathUpdate(const DocumentTypeRepo &, const DataType& type,
-                                 stringref fieldPath, stringref whereClause) :
+FieldPathUpdate::FieldPathUpdate(const DataType& type, stringref fieldPath, stringref whereClause) :
     _originalFieldPath(fieldPath),
     _originalWhereClause(whereClause),
     _fieldPath()

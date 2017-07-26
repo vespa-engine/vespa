@@ -19,9 +19,9 @@ using vespalib::make_string;
 
 IMPLEMENT_IDENTIFIABLE(AddFieldPathUpdate, FieldPathUpdate);
 
-AddFieldPathUpdate::AddFieldPathUpdate(const DocumentTypeRepo& repo, const DataType& type,
-                                       stringref fieldPath, stringref whereClause, const ArrayFieldValue& values)
-    : FieldPathUpdate(repo, type, fieldPath, whereClause),
+AddFieldPathUpdate::AddFieldPathUpdate(const DataType& type, stringref fieldPath,
+                                       stringref whereClause, const ArrayFieldValue& values)
+    : FieldPathUpdate(type, fieldPath, whereClause),
       _values(vespalib::CloneablePtr<ArrayFieldValue>(values.clone()))
 {
     checkCompatibility(*_values);

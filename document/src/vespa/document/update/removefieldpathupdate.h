@@ -11,10 +11,7 @@ public:
     /** For deserialization */
     RemoveFieldPathUpdate();
 
-    RemoveFieldPathUpdate(const DocumentTypeRepo& repo,
-                          const DataType& type,
-                          stringref fieldPath,
-                          stringref whereClause = stringref());
+    RemoveFieldPathUpdate(const DataType& type, stringref fieldPath, stringref whereClause = stringref());
 
     FieldPathUpdate* clone() const override { return new RemoveFieldPathUpdate(*this); }
 

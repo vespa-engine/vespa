@@ -37,9 +37,6 @@ public:
     using SP = std::shared_ptr<FieldPathUpdate>;
     using CP = vespalib::CloneablePtr<FieldPathUpdate>;
 
-    FieldPathUpdate(const DocumentTypeRepo& repo, const DataType& type,
-                    stringref fieldPath, stringref whereClause = stringref());
-
     ~FieldPathUpdate();
 
     enum FieldPathUpdateType {
@@ -86,6 +83,8 @@ public:
             int serializationVersion);
 
 protected:
+    FieldPathUpdate(const DataType& type, stringref fieldPath, stringref whereClause = stringref());
+
     /**
      * Deserializes the given byte buffer into an instance of a FieldPathUpdate
      * object.

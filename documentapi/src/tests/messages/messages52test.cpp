@@ -94,7 +94,7 @@ Messages52Test::testUpdateDocumentMessage()
         document::DocumentId("doc:scheme:")));
 
     docUpdate->addFieldPathUpdate(document::FieldPathUpdate::CP(
-        new document::RemoveFieldPathUpdate(repo, docType, "intfield", "testdoc.intfield > 0")));
+        new document::RemoveFieldPathUpdate(docType, "intfield", "testdoc.intfield > 0")));
 
     UpdateDocumentMessage msg(docUpdate);
     msg.setOldTimestamp(666u);

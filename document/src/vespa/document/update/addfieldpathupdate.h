@@ -12,7 +12,7 @@ class AddFieldPathUpdate : public FieldPathUpdate
 public:
     /** For deserialization */
     AddFieldPathUpdate();
-    AddFieldPathUpdate(const DocumentTypeRepo& repo, const DataType& type, stringref fieldPath,
+    AddFieldPathUpdate(const DataType& type, stringref fieldPath,
                        stringref whereClause, const ArrayFieldValue& values);
     ~AddFieldPathUpdate();
 
@@ -34,4 +34,4 @@ private:
     vespalib::CloneablePtr<ArrayFieldValue> _values;
 };
 
-} // ns document
+}

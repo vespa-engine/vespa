@@ -171,8 +171,8 @@ public:
 
     DECLARE_IDENTIFIABLE(DocumentUpdate);
 private:
-    DocumentId _documentId; // The ID of the document to update.
-    const DataType *_type; // The type of document this update is for.
+    DocumentId       _documentId; // The ID of the document to update.
+    const DataType  *_type; // The type of document this update is for.
     FieldUpdateV     _updates; // The list of field updates.
     FieldPathUpdateV _fieldPathUpdates;
     int16_t          _version; // Serialization version
