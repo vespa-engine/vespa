@@ -398,11 +398,8 @@ SelectPruner::visitFieldValueNode(const FieldValueNode &expr)
         return;
     }
     try {
-        FieldPath::UP path(docType->buildFieldPath(expr.getFieldName()));
-        if (path.get() == NULL) {
-            setInvalidVal();
-            return;
-        }
+        FieldPath path;
+        docType->buildFieldPath(path, expr.getFieldName());
     } catch (vespalib::IllegalArgumentException &) {
         setInvalidVal();
         return;

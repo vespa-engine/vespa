@@ -78,14 +78,11 @@ void DocumentTypeMapping::buildFieldMap(
         LOG(debug, "Handling %s -> %d", fname.c_str(), it->second);
         try {
             if ((it->first[0] != '[') && (it->first != "summaryfeatures") && (it->first != "rankfeatures") && (it->first != "ranklog") && (it->first != "sddocname") && (it->first != "documentid")) {
-                FieldPath::UP fieldPath = docType.buildFieldPath(fname);
-                if (fieldPath.get()) {
-                    fieldMap[it->second] = *fieldPath;
-                    validCount++;
-                    LOG(spam, "Found %s -> %d in document", fname.c_str(), it->second);
-                } else {
-                    LOG(debug, "Failed to find %s -> %d in document", fname.c_str(), it->second);
-                }
+                FieldPath fieldPath;
+                docType.buildFieldPath(fieldPath, fname);
+                fieldMap[it->second] = std::move(fieldPath);
+                validCount++;
+                LOG(spam, "Found %s -> %d in document", fname.c_str(), it->second);
             }
         } catch (const std::exception & e) {
             LOG(debug, "Could not get field info for '%s' in documenttype '%s' (id = '%s') : %s",

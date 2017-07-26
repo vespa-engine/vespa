@@ -57,9 +57,6 @@ public:
         return ! (*this == other);
     }
 
-    const FieldPath& getFieldPath() const { return _fieldPath; }
-    const select::Node& getWhereClause() const { return *_whereClause; }
-
     const vespalib::string& getOriginalFieldPath() const { return _originalFieldPath; }
     const vespalib::string& getOriginalWhereClause() const { return _originalWhereClause; }
 

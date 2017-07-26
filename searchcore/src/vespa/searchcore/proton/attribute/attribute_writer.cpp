@@ -42,15 +42,8 @@ AttributeWriter::WriteContext::buildFieldPaths(const DocumentType &docType)
     size_t fieldId = 0;
     for (const auto &attrp : _attributes) {
         const vespalib::string &name = attrp->getName();
-        FieldPath::UP fp = docType.buildFieldPath(name);
-        if (!fp) {
-            LOG(warning,
-                "Mismatch between documentdefinition and schema. "
-                "No field named '%s' from schema in document type '%s'. "
-                "This might happen if an attribute field has been added and you are feeding while reconfiguring",
-                name.c_str(),
-                docType.getName().c_str());
-        }
+        FieldPath fp;
+        docType.buildFieldPath(fp, name);
         assert(fieldId < _fieldPaths.size());
         _fieldPaths[fieldId] = std::move(fp);
         ++fieldId;
@@ -206,9 +199,7 @@ PutTask::PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, c
     _fieldValues.reserve(fieldPaths.size());
     for (const auto &fieldPath : fieldPaths) {
         FieldValue::UP fv;
-        if (fieldPath) {
-            fv = doc.getNestedFieldValue(fieldPath->getFullRange());
-        }
+        fv = doc.getNestedFieldValue(fieldPath.getFullRange());
         _fieldValues.emplace_back(std::move(fv));
     }
 }

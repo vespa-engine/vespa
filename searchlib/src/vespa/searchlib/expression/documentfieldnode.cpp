@@ -139,11 +139,11 @@ void DocumentFieldNode::onPrepare(bool preserveAccurateTypes)
 void DocumentFieldNode::onDocType(const DocumentType & docType)
 {
     LOG(debug, "DocumentFieldNode::onDocType(this=%p)", this);
-    FieldPath::UP path = docType.buildFieldPath(_fieldName);
-    if (!path.get() || path->empty()) {
+    _fieldPath.clear();
+    docType.buildFieldPath(_fieldPath, _fieldName);
+    if (_fieldPath.empty()) {
         throw std::runtime_error(make_string("Field %s could not be loacated in documenttype %s", _fieldName.c_str(), docType.getName().c_str()));
     }
-    _fieldPath = *path;
 }
 
 class FieldValue2ResultNode : public ResultNode
