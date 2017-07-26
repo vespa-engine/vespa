@@ -8,6 +8,8 @@
 #include <vespa/document/datatype/documenttype.h>
 
 #include <vespa/log/log.h>
+#include <vespa/document/base/exceptions.h>
+
 LOG_SETUP(".proton.server.attributeadapter");
 
 using namespace document;
@@ -43,7 +45,10 @@ AttributeWriter::WriteContext::buildFieldPaths(const DocumentType &docType)
     for (const auto &attrp : _attributes) {
         const vespalib::string &name = attrp->getName();
         FieldPath fp;
-        docType.buildFieldPath(fp, name);
+        try {
+            docType.buildFieldPath(fp, name);
+        } catch (document::FieldNotFoundException & e) { }
+
         assert(fieldId < _fieldPaths.size());
         _fieldPaths[fieldId] = std::move(fp);
         ++fieldId;
@@ -199,7 +204,9 @@ PutTask::PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, c
     _fieldValues.reserve(fieldPaths.size());
     for (const auto &fieldPath : fieldPaths) {
         FieldValue::UP fv;
-        fv = doc.getNestedFieldValue(fieldPath.getFullRange());
+        if (!fieldPath.empty()) {
+            fv = doc.getNestedFieldValue(fieldPath.getFullRange());
+        }
         _fieldValues.emplace_back(std::move(fv));
     }
 }
