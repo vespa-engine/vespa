@@ -16,7 +16,7 @@
 namespace document {
 
 class StructuredDataType : public DataType {
-    FieldPath::UP onBuildFieldPath(const vespalib::stringref & remainFieldName) const override;
+    void onBuildFieldPath(FieldPath & path, const vespalib::stringref & remainFieldName) const override;
 
 protected:
     StructuredDataType();

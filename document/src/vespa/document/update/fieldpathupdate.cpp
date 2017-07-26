@@ -47,16 +47,12 @@ FieldPathUpdate::FieldPathUpdate(const DocumentTypeRepo& repo, const DataType& t
                                  stringref fieldPath, stringref whereClause) :
     _originalFieldPath(fieldPath),
     _originalWhereClause(whereClause),
-    _fieldPath(type.buildFieldPath(_originalFieldPath).release()),
+    _fieldPath(),
     _whereClause(!_originalWhereClause.empty()
                  ? parseDocumentSelection(_originalWhereClause, repo)
                  : std::unique_ptr<select::Node>())
 {
-    if (!_fieldPath) {
-        throw IllegalArgumentException(
-                make_string("Could not create field path update for: path='%s', where='%s'",
-                            fieldPath.c_str(), whereClause.c_str()), VESPA_STRLOC);
-    }
+    type.buildFieldPath(_fieldPath, _originalFieldPath);
 }
 
 FieldPathUpdate::~FieldPathUpdate()  { }
@@ -74,16 +70,14 @@ FieldPathUpdate::applyTo(Document& doc) const
     std::unique_ptr<IteratorHandler> handler(getIteratorHandler(doc));
 
     if (!_whereClause) {
-        doc.iterateNested(*_fieldPath, *handler);
+        doc.iterateNested(_fieldPath, *handler);
     } else {
         select::ResultList results = _whereClause->contains(doc);
-        for (select::ResultList::const_iterator i = results.begin();
-             i != results.end(); ++i)
-        {
+        for (select::ResultList::const_iterator i = results.begin(); i != results.end(); ++i) {
             LOG(spam, "vars = %s", handler->getVariables().toString().c_str());
             if (*i->second == select::Result::True) {
                 handler->setVariables(i->first);
-                doc.iterateNested(*_fieldPath, *handler);
+                doc.iterateNested(_fieldPath, *handler);
             }
         }
     }
@@ -92,8 +86,8 @@ FieldPathUpdate::applyTo(Document& doc) const
 bool
 FieldPathUpdate::affectsDocumentBody() const
 {
-    if (_fieldPath->empty() || !(*_fieldPath)[0].hasField()) return false;
-    const Field& field = (*_fieldPath)[0].getFieldRef();
+    if (_fieldPath.empty() || !_fieldPath[0].hasField()) return false;
+    const Field& field = _fieldPath[0].getFieldRef();
     return !field.isHeaderField();
 }
 
@@ -119,10 +113,10 @@ FieldPathUpdate::checkCompatibility(const FieldValue& fv) const
 const DataType&
 FieldPathUpdate::getResultingDataType() const
 {
-    if (_fieldPath->empty()) {
+    if (_fieldPath.empty()) {
         throw vespalib::IllegalStateException("Cannot get resulting data type from an empty field path", VESPA_STRLOC);
     }
-    return _fieldPath->rbegin()->getDataType();
+    return _fieldPath.rbegin()->getDataType();
 }
 
 vespalib::string
@@ -144,10 +138,7 @@ FieldPathUpdate::deserialize(const DocumentTypeRepo& repo,
     _originalWhereClause = getString(buffer);
 
     try {
-        _fieldPath = type.buildFieldPath(_originalFieldPath).release();
-        if (!_fieldPath) {
-            throw DeserializeException(make_string("Invalid field path: '%s'", _originalFieldPath.c_str()), VESPA_STRLOC);
-        }
+        type.buildFieldPath(_fieldPath, _originalFieldPath);
         _whereClause = !_originalWhereClause.empty()
                        ? parseDocumentSelection(_originalWhereClause, repo)
                        : std::unique_ptr<select::Node>();

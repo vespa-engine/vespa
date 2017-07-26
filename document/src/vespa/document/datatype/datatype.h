@@ -129,12 +129,11 @@ public:
      * @param remainFieldName. The remaining part of the fieldname that you want the path of.
      * @return pointer to field path or null if an error occured
      */
-    FieldPath::UP buildFieldPath(
-            const vespalib::stringref & remainFieldName) const;
+    void buildFieldPath(FieldPath & fieldPath, const vespalib::stringref & remainFieldName) const;
 
     DECLARE_IDENTIFIABLE_ABSTRACT(DataType);
 private:
-    virtual FieldPath::UP onBuildFieldPath( const vespalib::stringref & remainFieldName) const = 0;
+    virtual void onBuildFieldPath(FieldPath & fieldPath, const vespalib::stringref & remainFieldName) const = 0;
 };
 
 } // document

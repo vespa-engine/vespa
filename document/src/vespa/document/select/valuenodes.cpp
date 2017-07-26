@@ -340,15 +340,8 @@ IteratorHandler::getInternalValue(const FieldValue& fval) const
 
 void
 FieldValueNode::initFieldPath(const DocumentType& type) const {
-    if (_fieldPath.size() == 0) {
-        FieldPath::UP path(type.buildFieldPath(_fieldExpression));
-        if (!path.get()) {
-            throw FieldNotFoundException(
-                    vespalib::make_string("Could not create field path for doc type: '%s' field: '%s'",
-                                          type.toString().c_str(), _fieldExpression.c_str()),
-                    VESPA_STRLOC);
-        }
-        _fieldPath = *path;
+    if (_fieldPath.empty()) {
+        type.buildFieldPath(_fieldPath, _fieldExpression);
     }
 }
 

@@ -17,9 +17,8 @@ class MapDataType;
 class WeightedSetDataType;
 class ArrayDataType;
 
-class FieldPathEntry : public vespalib::Identifiable {
+class FieldPathEntry {
 public:
-    DECLARE_IDENTIFIABLE_NS(document, FieldPathEntry);
     enum Type {
         STRUCT_FIELD,
         ARRAY_INDEX,
@@ -35,6 +34,11 @@ public:
        Creates a empty field path entry.
     */
     FieldPathEntry();
+
+    FieldPathEntry(FieldPathEntry &&) = default;
+    FieldPathEntry & operator=(FieldPathEntry &&) = default;
+    FieldPathEntry(const FieldPathEntry &);
+    FieldPathEntry & operator=(const FieldPathEntry &);
 
     /**
        Creates a field path entry for a struct field lookup.
@@ -80,7 +84,7 @@ public:
     FieldValue * getFieldValueToSetPtr() const { return _fillInVal.get(); }
     FieldValue & getFieldValueToSet() const { return *_fillInVal; }
     std::unique_ptr<FieldValue> stealFieldValueToSet() const;
-    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    void visitMembers(vespalib::ObjectVisitor &visitor) const;
     /**
      * Parses a string of the format {["]escaped string["]} to its unescaped value.
      * @param key is the incoming value, and contains what is left when done.
@@ -113,10 +117,10 @@ public:
     typedef std::unique_ptr<FieldPath> UP;
 
     FieldPath();
-    FieldPath(const FieldPath& other);
-    FieldPath& operator=(const FieldPath& rhs);
-    FieldPath(FieldPath && other) noexcept = default;
-    FieldPath& operator=(FieldPath && rhs) noexcept = default;
+    FieldPath(const FieldPath &);
+    FieldPath & operator=(const FieldPath &);
+    FieldPath(FieldPath &&) = default;
+    FieldPath & operator=(FieldPath &&) = default;
     ~FieldPath();
 
     template <typename InputIterator>
@@ -124,10 +128,8 @@ public:
         : _path(first, last)
     { }
 
-    FieldPath * clone() const { return new FieldPath(*this); }
-
-    iterator insert(iterator pos, const FieldPathEntry& entry);
-    void push_back(const FieldPathEntry& entry);
+    iterator insert(iterator pos, FieldPathEntry && entry);
+    void push_back(FieldPathEntry && entry);
 
     iterator begin() { return _path.begin(); }
     iterator end() { return _path.end(); }
@@ -148,13 +150,9 @@ public:
 
     Container::size_type size() const { return _path.size(); }
     bool empty() const { return _path.empty(); }
-    reference operator[](Container::size_type i) {
-        return _path[i];
-    }
+    reference operator[](Container::size_type i) { return _path[i]; }
 
-    const_reference operator[](Container::size_type i) const {
-        return _path[i];
-    }
+    const_reference operator[](Container::size_type i) const { return _path[i]; }
 
     void visitMembers(vespalib::ObjectVisitor &visitor) const;
 

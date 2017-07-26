@@ -2,11 +2,11 @@
 #pragma once
 
 #include "updatevisitor.h"
+#include <vespa/document/base/fieldpath.h>
 #include <vespa/document/util/printable.h>
 #include <vespa/document/util/identifiableid.h>
 #include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/vespalib/objects/cloneable.h>
-#include <vespa/vespalib/stllike/string.h>
 
 namespace document {
 
@@ -17,7 +17,6 @@ class FieldValue;
 class BucketIdFactory;
 class Document;
 class DataType;
-class FieldPath;
 
 namespace select { class Node; }
 namespace fieldvalue { class IteratorHandler; }
@@ -58,7 +57,7 @@ public:
         return ! (*this == other);
     }
 
-    const FieldPath& getFieldPath() const { return *_fieldPath; }
+    const FieldPath& getFieldPath() const { return _fieldPath; }
     const select::Node& getWhereClause() const { return *_whereClause; }
 
     const vespalib::string& getOriginalFieldPath() const { return _originalFieldPath; }
@@ -111,9 +110,8 @@ private:
     vespalib::string _originalFieldPath;
     vespalib::string _originalWhereClause;
 
-    vespalib::CloneablePtr<FieldPath> _fieldPath;
+    FieldPath                     _fieldPath;
     std::shared_ptr<select::Node> _whereClause;
 };
 
-} // ns document
-
+}

@@ -14,8 +14,8 @@ using vespalib::make_string;
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE_NS(document, FieldPathEntry, vespalib::Identifiable)
-
+FieldPathEntry::FieldPathEntry(const FieldPathEntry &) = default;
+FieldPathEntry & FieldPathEntry::operator=(const FieldPathEntry & ) = default;
 FieldPathEntry::~FieldPathEntry() { }
 
 FieldPathEntry::FieldPathEntry() :
@@ -174,30 +174,19 @@ FieldPath::FieldPath()
     : _path()
 { }
 
-FieldPath::FieldPath(const FieldPath& other)
-    : _path(other._path)
-{ }
-
+FieldPath::FieldPath(const FieldPath &) = default;
+FieldPath & FieldPath::operator=(const FieldPath &) = default;
 FieldPath::~FieldPath() { }
 
-FieldPath&
-FieldPath::operator=(const FieldPath& rhs)
-{
-    if (&rhs != this) {
-        _path = rhs._path;
-    }
-    return *this;
-}
-
 FieldPath::iterator
-FieldPath::insert(iterator pos, const FieldPathEntry& entry)
+FieldPath::insert(iterator pos, FieldPathEntry && entry)
 {
-    return _path.insert(pos, entry);
+    return _path.insert(pos, std::move(entry));
 }
 void
-FieldPath::push_back(const FieldPathEntry& entry)
+FieldPath::push_back(FieldPathEntry && entry)
 {
-    _path.push_back(entry);
+    _path.push_back(std::move(entry));
 }
 
 void
@@ -215,8 +204,9 @@ FieldPath::clear()
 void
 FieldPath::visitMembers(vespalib::ObjectVisitor& visitor) const
 {
+    (void) visitor;
     for (uint32_t i = 0; i < _path.size(); ++i) {
-        visit(visitor, vespalib::make_string("[%u]", i), _path[i]);
+//        visit(visitor, vespalib::make_string("[%u]", i), _path[i]);
     }
 }
 

@@ -71,23 +71,20 @@ PrimitiveDataType::createFieldValue() const
 }
 
 void
-PrimitiveDataType::print(std::ostream& out, bool verbose,
-                         const std::string& indent) const
+PrimitiveDataType::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     (void) verbose; (void) indent;
     out << "PrimitiveDataType(" << getName() << ", id " << getId() << ")";
 }
 
-FieldPath::UP
-PrimitiveDataType::onBuildFieldPath(const vespalib::stringref & rest) const
+void
+PrimitiveDataType::onBuildFieldPath(FieldPath &, const vespalib::stringref & rest) const
 {
-    if (rest.length()) {
+    if ( ! rest.empty()) {
         std::ostringstream ost;
         ost << "Datatype " << *this << " does not support further recursive structure: " << rest;
         throw vespalib::IllegalArgumentException(ost.str());
     }
-
-    return FieldPath::UP(new FieldPath());
 }
 
 

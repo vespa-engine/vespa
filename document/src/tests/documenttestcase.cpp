@@ -84,8 +84,6 @@ void DocumentTest::testSizeOf()
 
 void DocumentTest::testFieldPath()
 {
-    FieldPathEntry empty;
-    empty.asString();
     const vespalib::string testValues[] = { "{}", "", "",
                                        "{}r", "", "r",
                                        "{{}}", "{", "}",
@@ -234,8 +232,9 @@ DocumentTest::testVariables()
 
     {
         VariableIteratorHandler handler;
-        FieldPath::UP path = type.buildFieldPath("iiiarray[$x][$y][$z]");
-        doc.iterateNested(path->getFullRange(), handler);
+        FieldPath path;
+        type.buildFieldPath(path, "iiiarray[$x][$y][$z]");
+        doc.iterateNested(path.getFullRange(), handler);
 
         std::string fasit =
             "x: 0,y: 0,z: 0, - 1\n"
@@ -390,9 +389,9 @@ DocumentTest::testModifyDocument()
 
     ModifyIteratorHandler handler;
 
-    FieldPath::UP path
-        = doc->getDataType()->buildFieldPath("l1s1.structmap.value.smap{leonardo}");
-    doc->iterateNested(path->getFullRange(), handler);
+    FieldPath path;
+    doc->getDataType()->buildFieldPath(path, "l1s1.structmap.value.smap{leonardo}");
+    doc->iterateNested(path.getFullRange(), handler);
 
     doc->print(std::cerr, true, "");
 }

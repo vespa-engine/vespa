@@ -77,17 +77,15 @@ WeightedSetDataType::operator==(const DataType& other) const
 {
     if (this == &other) return true;
     if (!CollectionDataType::operator==(other)) return false;
-    const WeightedSetDataType* w(
-            dynamic_cast<const WeightedSetDataType*>(&other));
+    const WeightedSetDataType* w(dynamic_cast<const WeightedSetDataType*>(&other));
     return (w != 0 && _createIfNonExistent == w->_createIfNonExistent
                    && _removeIfZero == w->_removeIfZero);
 }
 
-FieldPath::UP
-WeightedSetDataType::onBuildFieldPath(const vespalib::stringref & remainFieldName) const
+void
+WeightedSetDataType::onBuildFieldPath(FieldPath & path, const vespalib::stringref & remainFieldName) const
 {
-    return MapDataType::buildFieldPathImpl(
-            *this, remainFieldName, getNestedType(), *DataType::INT);
+    MapDataType::buildFieldPathImpl(path, *this, remainFieldName, getNestedType(), *DataType::INT);
 }
 
 } // document

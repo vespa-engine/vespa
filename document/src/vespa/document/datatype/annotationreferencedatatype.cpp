@@ -37,9 +37,7 @@ unique_ptr<FieldValue> AnnotationReferenceDataType::createFieldValue() const {
     return FieldValue::UP(new AnnotationReferenceFieldValue(*this, 0));
 }
 
-unique_ptr<FieldPath> AnnotationReferenceDataType::onBuildFieldPath( const vespalib::stringref &) const {
-    return unique_ptr<FieldPath>(new FieldPath);
-}
+void AnnotationReferenceDataType::onBuildFieldPath(FieldPath &, const vespalib::stringref &) const { }
 
 
 }  // namespace document

@@ -9,16 +9,16 @@
 namespace document::select {
 
 void
-BodyFieldDetector::detectFieldType(const FieldValueNode *expr,
-                                   const DocumentType &type)
+BodyFieldDetector::detectFieldType(const FieldValueNode *expr, const DocumentType &type)
 {
     if (type.getName() != expr->getDocType()) {
         return;
     }
     try {
-        FieldPath::UP path(type.buildFieldPath(expr->getFieldName()));
-        if (path.get() && path->size() != 0) {
-            if ((*path)[0].getFieldRef().isHeaderField()) {
+        FieldPath path;
+        type.buildFieldPath(path, expr->getFieldName());
+        if ( ! path.empty() ) {
+            if (path[0].getFieldRef().isHeaderField()) {
                 foundHeaderField = true;
             } else {
                 foundBodyField = true;

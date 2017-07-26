@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <iomanip>
 #include <vespa/log/log.h>
+#include <vespa/document/base/exceptions.h>
 
 LOG_SETUP(".document.datatype.document");
 
@@ -76,8 +77,10 @@ DocumentType::addFieldSet(const vespalib::string & name, const FieldSet::Fields 
 {
     for (FieldSet::Fields::const_iterator it(fields.begin()), mt(fields.end()); it != mt; it++) {
         if ( ! _fields->hasField(*it) ) {
-            FieldPath::UP fieldPath = _fields->buildFieldPath(*it);
-            if (fieldPath.get() == nullptr) {
+            FieldPath fieldPath;
+            try {
+                _fields->buildFieldPath(fieldPath, *it);
+            } catch (FieldNotFoundException & e) {
                 throw IllegalArgumentException("Fieldset '" + name + "': No field with name '" + *it +
                                                "' in document type '" + getName() + "'.", VESPA_STRLOC);
             }

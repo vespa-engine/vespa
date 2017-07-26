@@ -2,6 +2,9 @@
 
 #include "structureddatatype.h"
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/document/base/exceptions.h>
+
+using vespalib::make_string;
 
 namespace document {
 
@@ -17,8 +20,7 @@ StructuredDataType::StructuredDataType(const vespalib::stringref &name)
 {
 }
 
-StructuredDataType::StructuredDataType(const vespalib::stringref &name,
-                                       int dataTypeId)
+StructuredDataType::StructuredDataType(const vespalib::stringref &name, int dataTypeId)
     : DataType(name, dataTypeId)
 {
 }
@@ -53,8 +55,8 @@ int32_t StructuredDataType::createId(const vespalib::stringref &name)
     return crappyJavaStringHash(ost.str());
 }
 
-FieldPath::UP
-StructuredDataType::onBuildFieldPath(const vespalib::stringref & remainFieldName) const
+void
+StructuredDataType::onBuildFieldPath(FieldPath & path, const vespalib::stringref & remainFieldName) const
 {
     vespalib::stringref currFieldName(remainFieldName);
     vespalib::stringref subFieldName;
@@ -71,17 +73,16 @@ StructuredDataType::onBuildFieldPath(const vespalib::stringref & remainFieldName
         }
     }
 
-    // LOG(debug, "Field %s of datatype %s split into %s and %s", remainFieldName.c_str(), getName().c_str(), currFieldName.c_str(), subFieldName.c_str());
+    // LOG(debug, "Field %s of datatype %s split into %s and %s",
+    //     remainFieldName.c_str(), getName().c_str(), currFieldName.c_str(), subFieldName.c_str());
     if (hasField(currFieldName)) {
         const document::Field &fp = getField(currFieldName);
-        FieldPath::UP fieldPath = fp.getDataType().buildFieldPath(subFieldName);
-        if (!fieldPath) {
-            return FieldPath::UP();
-        }
-        fieldPath->insert(fieldPath->begin(), FieldPathEntry(fp));
-        return fieldPath;
+        fp.getDataType().buildFieldPath(path, subFieldName);
+
+        path.insert(path.begin(), FieldPathEntry(fp));
     } else {
-        return FieldPath::UP();
+        throw FieldNotFoundException(currFieldName, make_string("Invalid field path '%s', no field named '%s'",
+                                                   remainFieldName.c_str(), currFieldName.c_str()));
     }
 }
 

@@ -55,66 +55,51 @@ MapDataType::operator==(const DataType& other) const
     return (*_keyType == *w->_keyType) && (*_valueType == *w->_valueType);
 }
 
-FieldPath::UP
-MapDataType::buildFieldPathImpl(const DataType &dataType,
+void
+MapDataType::buildFieldPathImpl(FieldPath & path, const DataType &dataType,
                                 const vespalib::stringref &remainFieldName,
-                                const DataType &keyType,
-                                const DataType &valueType)
+                                const DataType &keyType, const DataType &valueType)
 {
     if (!remainFieldName.empty() && remainFieldName[0] == '{') {
         vespalib::string rest = remainFieldName;
         vespalib::string keyValue = FieldPathEntry::parseKey(rest);
 
-        FieldPath::UP path = valueType.buildFieldPath((rest[0] == '.') ? rest.substr(1) : rest);
-        if (!path) {
-            return FieldPath::UP();
-        }
+        valueType.buildFieldPath(path, (rest[0] == '.') ? rest.substr(1) : rest);
 
         if (remainFieldName[1] == '$') {
-            path->insert(path->begin(), FieldPathEntry(valueType, keyValue.substr(1)));
+            path.insert(path.begin(), FieldPathEntry(valueType, keyValue.substr(1)));
         } else {
             FieldValue::UP fv = keyType.createFieldValue();
             *fv = keyValue;
-            path->insert(path->begin(),
-                         FieldPathEntry(valueType, dataType,
-                                        vespalib::CloneablePtr<FieldValue>(fv.release())));
+            path.insert(path.begin(), FieldPathEntry(valueType, dataType, vespalib::CloneablePtr<FieldValue>(fv.release())));
         }
-
-        return path;
     } else if (memcmp(remainFieldName.c_str(), "key", 3) == 0) {
         size_t endPos = 3;
         if (remainFieldName[endPos] == '.') {
             endPos++;
         }
 
-        FieldPath::UP path = keyType.buildFieldPath(remainFieldName.substr(endPos));
-        if (!path) {
-            return FieldPath::UP();
-        }
-        path->insert(path->begin(), FieldPathEntry(dataType, keyType, valueType, true, false));
-        return path;
+        keyType.buildFieldPath(path, remainFieldName.substr(endPos));
+
+        path.insert(path.begin(), FieldPathEntry(dataType, keyType, valueType, true, false));
     } else if (memcmp(remainFieldName.c_str(), "value", 5) == 0) {
         size_t endPos = 5;
         if (remainFieldName[endPos] == '.') {
             endPos++;
         }
 
-        FieldPath::UP path = valueType.buildFieldPath(remainFieldName.substr(endPos));
-        if (!path) {
-            return FieldPath::UP();
-        }
-        path->insert(path->begin(), FieldPathEntry(dataType, keyType, valueType, false, true));
-        return path;
-    }
+        valueType.buildFieldPath(path, remainFieldName.substr(endPos));
 
-    return keyType.buildFieldPath(remainFieldName);
+        path.insert(path.begin(), FieldPathEntry(dataType, keyType, valueType, false, true));
+    } else {
+        keyType.buildFieldPath(path, remainFieldName);
+    }
 }
 
-FieldPath::UP
-MapDataType::onBuildFieldPath(const vespalib::stringref &remainFieldName) const
+void
+MapDataType::onBuildFieldPath(FieldPath & fieldPath, const vespalib::stringref &remainFieldName) const
 {
-    return buildFieldPathImpl(*this, remainFieldName,
-                              getKeyType(), getValueType());
+    buildFieldPathImpl(fieldPath, *this, remainFieldName, getKeyType(), getValueType());
 }
 
 }  // namespace document

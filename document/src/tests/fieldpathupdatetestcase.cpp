@@ -1,21 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/document/base/testdocman.h>
-#include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/document/select/node.h>
+#include <vespa/document/base/exceptions.h>
+
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/document/update/documentupdate.h>
 
 #include <vespa/document/repo/configbuilder.h>
-#include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/util/exceptions.h>
-#include <fstream>
-#include <sstream>
+
 
 using vespalib::Identifiable;
 using namespace document::config_builder;
@@ -608,7 +606,7 @@ FieldPathUpdateTestCase::testApplyAssignFieldNotExistingInPath()
                         new AssignFieldPathUpdate(*_repo, *doc->getDataType(),
                                 "nosuchnum", "", "foobar.num + $value")));
         CPPUNIT_ASSERT(false);
-    } catch (const vespalib::IllegalArgumentException&) {
+    } catch (const FieldNotFoundException&) {
     }
 }
 
