@@ -24,7 +24,6 @@ IMPLEMENT_IDENTIFIABLE(AssignFieldPathUpdate, FieldPathUpdate);
 
 AssignFieldPathUpdate::AssignFieldPathUpdate()
     : FieldPathUpdate(),
-      _repo(),
       _newValue(),
       _expression(),
       _removeIfZero(false),
@@ -33,13 +32,11 @@ AssignFieldPathUpdate::AssignFieldPathUpdate()
 
 
 AssignFieldPathUpdate::AssignFieldPathUpdate(
-        const DocumentTypeRepo& repo,
         const DataType& type,
         stringref fieldPath,
         stringref whereClause,
         const FieldValue& newValue)
     : FieldPathUpdate(type, fieldPath, whereClause),
-      _repo(&repo),
       _newValue(newValue.clone()),
       _expression(),
       _removeIfZero(false),
@@ -49,13 +46,11 @@ AssignFieldPathUpdate::AssignFieldPathUpdate(
 }
 
 AssignFieldPathUpdate::AssignFieldPathUpdate(
-        const DocumentTypeRepo& repo,
         const DataType& type,
         stringref fieldPath,
         stringref whereClause,
         stringref expression)
     : FieldPathUpdate(type, fieldPath, whereClause),
-      _repo(&repo),
       _newValue(),
       _expression(expression),
       _removeIfZero(false),
@@ -125,7 +120,7 @@ ModificationStatus
 AssignValueIteratorHandler::doModify(FieldValue& fv) {
     LOG(spam, "fv = %s", fv.toString().c_str());
     if (!(*fv.getDataType() == *_newValue.getDataType())) {
-        std::string err = vespalib::make_string(
+        vespalib::string err = vespalib::make_string(
                 "Trying to assign \"%s\" of type %s to an instance of type %s",
                 _newValue.toString().c_str(), _newValue.getClass().name(),
                 fv.getClass().name());
@@ -232,7 +227,6 @@ AssignFieldPathUpdate::deserialize(const DocumentTypeRepo& repo,
                                    ByteBuffer& buffer, uint16_t version)
 {
     FieldPathUpdate::deserialize(repo, type, buffer, version);
-    _repo = &repo;
 
     uint8_t flags = 0x00;
     buffer.getByte(flags);
@@ -245,7 +239,7 @@ AssignFieldPathUpdate::deserialize(const DocumentTypeRepo& repo,
     } else {
         _newValue.reset(getResultingDataType().createFieldValue().release());
         nbostream stream(buffer.getBufferAtPos(), buffer.getRemaining());
-        VespaDocumentDeserializer deserializer(*_repo, stream, version);
+        VespaDocumentDeserializer deserializer(repo, stream, version);
         deserializer.read(*_newValue);
         buffer.incPos(buffer.getRemaining() - stream.size());
     }

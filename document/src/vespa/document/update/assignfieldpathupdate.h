@@ -19,14 +19,12 @@ public:
     /** For deserialization */
     AssignFieldPathUpdate();
 
-    AssignFieldPathUpdate(const DocumentTypeRepo& repo,
-                          const DataType& type,
+    AssignFieldPathUpdate(const DataType& type,
                           stringref fieldPath,
                           stringref whereClause,
                           const FieldValue& newValue);
 
-    AssignFieldPathUpdate(const DocumentTypeRepo& repo,
-                          const DataType& type,
+    AssignFieldPathUpdate(const DataType& type,
                           stringref fieldPath,
                           stringref whereClause,
                           stringref expression);
@@ -45,9 +43,7 @@ public:
     const FieldValue & getValue() const { return *_newValue; }
 
     FieldPathUpdate* clone() const override;
-
     bool operator==(const FieldPathUpdate& other) const override;
-
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_IDENTIFIABLE(AssignFieldPathUpdate);
@@ -60,7 +56,6 @@ private:
 
     std::unique_ptr<fieldvalue::IteratorHandler> getIteratorHandler(Document& doc, const DocumentTypeRepo & repo) const override;
 
-    const DocumentTypeRepo *_repo;
     vespalib::CloneablePtr<FieldValue> _newValue;
     vespalib::string _expression;
     bool             _removeIfZero;
