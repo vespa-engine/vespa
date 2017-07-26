@@ -1,0 +1,114 @@
+
+{
+  "url": "https://api.vespa.corp.yahoo.com:4443/zone/v2/prod/us-west-1/nodes/v2/node/zt74722.ostk.bm2.prod.gq1.yahoo.com",
+  "id": "zt74722.ostk.bm2.prod.gq1.yahoo.com",
+  "state": "active",
+  "type": "host",
+  "hostname": "zt74722.ostk.bm2.prod.gq1.yahoo.com",
+  "openStackId": "653c39c1-bda4-47ee-a277-d5319eb57af7",
+  "flavor": "C-77E/256/960",
+  "canonicalFlavor": "C-77E/256/960",
+  "minDiskAvailableGb": 1920.0,
+  "minMainMemoryAvailableGb": 256.0,
+  "description": "BARE_METAL with 48.0 CPUs, 256.0 Gb memory and 1920.0 Gb ssd",
+  "minCpuCores": 48.0,
+  "cost": 150,
+  "fastDisk": true,
+  "environment": "BARE_METAL",
+  "owner": {
+    "tenant": "hosted-vespa",
+    "application": "routing",
+    "instance": "default"
+  },
+  "membership": {
+    "clustertype": "container",
+    "clusterid": "node-admin",
+    "group": "0",
+    "index": 77,
+    "retired": false
+  },
+  "restartGeneration": 0,
+  "currentRestartGeneration": 0,
+  "wantedDockerImage": "docker-registry.ops.yahoo.com:4443/vespa/ci:6.128.19",
+  "wantedVespaVersion": "6.128.19",
+  "rebootGeneration": 3,
+  "currentRebootGeneration": 3,
+  "vespaVersion": "6.130.27",
+  "currentDockerImage": "docker-registry.ops.yahoo.com:4443/vespa/ci:6.130.27",
+  "hostedVersion": "6.130.27",
+  "convergedStateVersion": "6.130.27",
+  "failCount": 1,
+  "hardwareFailure": false,
+  "wantToRetire": false,
+  "wantToDeprovision": false,
+  "history": [
+    {
+      "event": "failed",
+      "at": 1499293603487,
+      "agent": "system"
+    },
+    {
+      "event": "rebooted",
+      "at": 1499351267086,
+      "agent": "system"
+    },
+    {
+      "event": "readied",
+      "at": 1499351270674,
+      "agent": "system"
+    },
+    {
+      "event": "requested",
+      "at": 1499350936347,
+      "agent": "system"
+    },
+    {
+      "event": "reserved",
+      "at": 1499353058227,
+      "agent": "application"
+    },
+    {
+      "event": "activated",
+      "at": 1499353080459,
+      "agent": "application"
+    }
+  ],
+  "ipAddresses": [
+    "10.213.181.113",
+    "2001:4998:c:2940::111c"
+  ],
+  "additionalIpAddresses": [
+    "2001:4998:c:2940::1138",
+    "2001:4998:c:2940::1139",
+    "2001:4998:c:2940::1136",
+    "2001:4998:c:2940::1137",
+    "2001:4998:c:2940::1130",
+    "2001:4998:c:2940::1131",
+    "2001:4998:c:2940::1134",
+    "2001:4998:c:2940::1135",
+    "2001:4998:c:2940::1132",
+    "2001:4998:c:2940::1133",
+    "2001:4998:c:2940::111f",
+    "2001:4998:c:2940::111d",
+    "2001:4998:c:2940::111e",
+    "2001:4998:c:2940::113a",
+    "2001:4998:c:2940::113b",
+    "2001:4998:c:2940::113c",
+    "2001:4998:c:2940::1127",
+    "2001:4998:c:2940::1128",
+    "2001:4998:c:2940::1125",
+    "2001:4998:c:2940::1126",
+    "2001:4998:c:2940::1129",
+    "2001:4998:c:2940::1120",
+    "2001:4998:c:2940::1123",
+    "2001:4998:c:2940::1124",
+    "2001:4998:c:2940::1121",
+    "2001:4998:c:2940::1122",
+    "2001:4998:c:2940::112e",
+    "2001:4998:c:2940::112f",
+    "2001:4998:c:2940::112c",
+    "2001:4998:c:2940::112d",
+    "2001:4998:c:2940::112a",
+    "2001:4998:c:2940::112b"
+  ]
+}
