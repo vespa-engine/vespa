@@ -59,7 +59,7 @@ public:
 }
 
 std::unique_ptr<IteratorHandler>
-RemoveFieldPathUpdate::getIteratorHandler(Document&) const {
+RemoveFieldPathUpdate::getIteratorHandler(Document&, const DocumentTypeRepo &) const {
     return std::make_unique<RemoveIteratorHandler>();
 }
 

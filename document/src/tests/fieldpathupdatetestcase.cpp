@@ -288,16 +288,13 @@ struct TestFieldPathUpdate : FieldPathUpdate
 
     TestFieldPathUpdate(const TestFieldPathUpdate& other);
 
-    std::unique_ptr<IteratorHandler> getIteratorHandler(Document&) const override
-    {
-        return std::unique_ptr<IteratorHandler>(
-                new TestIteratorHandler(_str));
+    std::unique_ptr<IteratorHandler> getIteratorHandler(Document&, const DocumentTypeRepo &) const override {
+        return std::unique_ptr<IteratorHandler>(new TestIteratorHandler(_str));
     }
 
     TestFieldPathUpdate* clone() const override { return new TestFieldPathUpdate(*this); }
 
-    void print(std::ostream& out, bool, const std::string&) const override
-    {
+    void print(std::ostream& out, bool, const std::string&) const override {
         out << "TestFieldPathUpdate()";
     }
 
@@ -547,6 +544,7 @@ void
 FieldPathUpdateTestCase::testApplyAssignFieldNotExistingInExpression()
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:bat:man")));
+    doc->setRepo(*_repo);
     CPPUNIT_ASSERT(doc->hasValue("num") == false);
     doc->setValue("num", IntFieldValue(10));
 

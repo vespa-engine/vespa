@@ -104,7 +104,7 @@ AddFieldPathUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& ty
 }
 
 std::unique_ptr<IteratorHandler>
-AddFieldPathUpdate::getIteratorHandler(Document&) const {
+AddFieldPathUpdate::getIteratorHandler(Document&, const DocumentTypeRepo &) const {
     return std::make_unique<AddIteratorHandler>(*_values);
 }
 

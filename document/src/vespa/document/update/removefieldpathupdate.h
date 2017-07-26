@@ -26,7 +26,7 @@ private:
     void deserialize(const DocumentTypeRepo& repo, const DataType& type,
                      ByteBuffer& buffer, uint16_t version) override;
 
-    std::unique_ptr<fieldvalue::IteratorHandler> getIteratorHandler(Document&) const override;
+    std::unique_ptr<fieldvalue::IteratorHandler> getIteratorHandler(Document &, const DocumentTypeRepo &) const override;
 };
 
 

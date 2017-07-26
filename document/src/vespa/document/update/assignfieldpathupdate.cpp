@@ -185,10 +185,10 @@ AssignExpressionIteratorHandler::doModify(FieldValue& fv) {
 }
 
 std::unique_ptr<IteratorHandler>
-AssignFieldPathUpdate::getIteratorHandler(Document& doc) const
+AssignFieldPathUpdate::getIteratorHandler(Document& doc, const DocumentTypeRepo & repo) const
 {
     if (!_expression.empty()) {
-        return std::make_unique<AssignExpressionIteratorHandler>(*_repo, doc, _expression, _removeIfZero, _createMissingPath);
+        return std::make_unique<AssignExpressionIteratorHandler>(repo, doc, _expression, _removeIfZero, _createMissingPath);
     } else {
         return std::make_unique<AssignValueIteratorHandler>(*_newValue, _removeIfZero, _createMissingPath);
     }
@@ -211,8 +211,7 @@ AssignFieldPathUpdate::operator==(const FieldPathUpdate& other) const
 }
 
 void
-AssignFieldPathUpdate::print(std::ostream& out, bool verbose,
-                             const std::string& indent) const
+AssignFieldPathUpdate::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     out << "AssignFieldPathUpdate(\n";
     FieldPathUpdate::print(out, verbose, indent + "  ");

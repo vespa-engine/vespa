@@ -61,7 +61,7 @@ FieldPathUpdate::operator==(const FieldPathUpdate& other) const
 void
 FieldPathUpdate::applyTo(Document& doc) const
 {
-    std::unique_ptr<IteratorHandler> handler(getIteratorHandler(doc));
+    std::unique_ptr<IteratorHandler> handler(getIteratorHandler(doc, *doc.getRepo()));
 
     if (_originalWhereClause.empty()) {
         doc.iterateNested(_fieldPath, *handler);
