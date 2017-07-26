@@ -35,22 +35,17 @@ parseDocumentSelection(vespalib::stringref query, const DocumentTypeRepo& repo)
 FieldPathUpdate::FieldPathUpdate() :
     _originalFieldPath(),
     _originalWhereClause(),
-    _fieldPath(),
-    _whereClause()
-{
-}
+    _fieldPath()
+{ }
 
 FieldPathUpdate::FieldPathUpdate(const FieldPathUpdate &) = default;
 FieldPathUpdate & FieldPathUpdate::operator =(const FieldPathUpdate &) = default;
 
-FieldPathUpdate::FieldPathUpdate(const DocumentTypeRepo& repo, const DataType& type,
+FieldPathUpdate::FieldPathUpdate(const DocumentTypeRepo &, const DataType& type,
                                  stringref fieldPath, stringref whereClause) :
     _originalFieldPath(fieldPath),
     _originalWhereClause(whereClause),
-    _fieldPath(),
-    _whereClause(!_originalWhereClause.empty()
-                 ? parseDocumentSelection(_originalWhereClause, repo)
-                 : std::unique_ptr<select::Node>())
+    _fieldPath()
 {
     type.buildFieldPath(_fieldPath, _originalFieldPath);
 }
@@ -69,10 +64,11 @@ FieldPathUpdate::applyTo(Document& doc) const
 {
     std::unique_ptr<IteratorHandler> handler(getIteratorHandler(doc));
 
-    if (!_whereClause) {
+    if (_originalWhereClause.empty()) {
         doc.iterateNested(_fieldPath, *handler);
     } else {
-        select::ResultList results = _whereClause->contains(doc);
+        std::unique_ptr<select::Node> whereClause = parseDocumentSelection(_originalWhereClause, *doc.getRepo());
+        select::ResultList results = whereClause->contains(doc);
         for (select::ResultList::const_iterator i = results.begin(); i != results.end(); ++i) {
             LOG(spam, "vars = %s", handler->getVariables().toString().c_str());
             if (*i->second == select::Result::True) {
@@ -130,21 +126,15 @@ FieldPathUpdate::getString(ByteBuffer& buffer)
 }
 
 void
-FieldPathUpdate::deserialize(const DocumentTypeRepo& repo,
+FieldPathUpdate::deserialize(const DocumentTypeRepo&,
                              const DataType& type,
                              ByteBuffer& buffer, uint16_t)
 {
     _originalFieldPath = getString(buffer);
     _originalWhereClause = getString(buffer);
 
-    try {
-        type.buildFieldPath(_fieldPath, _originalFieldPath);
-        _whereClause = !_originalWhereClause.empty()
-                       ? parseDocumentSelection(_originalWhereClause, repo)
-                       : std::unique_ptr<select::Node>();
-    } catch (const select::ParsingFailedException& e) {
-        throw DeserializeException(e.what(), VESPA_STRLOC);
-    }
+     type.buildFieldPath(_fieldPath, _originalFieldPath);
+
 }
 
 std::unique_ptr<FieldPathUpdate>

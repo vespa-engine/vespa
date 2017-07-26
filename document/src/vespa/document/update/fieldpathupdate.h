@@ -107,8 +107,7 @@ private:
     vespalib::string _originalFieldPath;
     vespalib::string _originalWhereClause;
 
-    FieldPath                     _fieldPath;
-    std::shared_ptr<select::Node> _whereClause;
+    FieldPath        _fieldPath;
 };
 
 }
