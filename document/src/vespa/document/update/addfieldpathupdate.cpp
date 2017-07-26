@@ -21,10 +21,10 @@ IMPLEMENT_IDENTIFIABLE(AddFieldPathUpdate, FieldPathUpdate);
 
 AddFieldPathUpdate::AddFieldPathUpdate(const DataType& type, stringref fieldPath,
                                        stringref whereClause, const ArrayFieldValue& values)
-    : FieldPathUpdate(type, fieldPath, whereClause),
+    : FieldPathUpdate(fieldPath, whereClause),
       _values(vespalib::CloneablePtr<ArrayFieldValue>(values.clone()))
 {
-    checkCompatibility(*_values);
+    checkCompatibility(*_values, type);
 }
 
 AddFieldPathUpdate::AddFieldPathUpdate()
@@ -93,7 +93,9 @@ AddFieldPathUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& ty
 {
     FieldPathUpdate::deserialize(repo, type, buffer, version);
 
-    const DataType& fieldType = getResultingDataType();
+    FieldPath path;
+    type.buildFieldPath(path, getOriginalFieldPath());
+    const DataType& fieldType = getResultingDataType(path);
     assert(fieldType.inherits(ArrayDataType::classId));
     FieldValue::UP val = fieldType.createFieldValue();
     _values.reset(static_cast<ArrayFieldValue*>(val.release()));

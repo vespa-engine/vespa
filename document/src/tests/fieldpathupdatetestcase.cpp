@@ -284,7 +284,7 @@ struct TestFieldPathUpdate : FieldPathUpdate
     mutable std::string _str;
 
     ~TestFieldPathUpdate();
-    TestFieldPathUpdate(const DataType *type, const std::string& fieldPath, const std::string& whereClause);
+    TestFieldPathUpdate(const std::string& fieldPath, const std::string& whereClause);
 
     TestFieldPathUpdate(const TestFieldPathUpdate& other);
 
@@ -303,9 +303,8 @@ struct TestFieldPathUpdate : FieldPathUpdate
 };
 
 TestFieldPathUpdate::~TestFieldPathUpdate() { }
-TestFieldPathUpdate::TestFieldPathUpdate(const DataType *type, const std::string& fieldPath,
-                                         const std::string& whereClause)
-    : FieldPathUpdate(*type, fieldPath, whereClause)
+TestFieldPathUpdate::TestFieldPathUpdate(const std::string& fieldPath, const std::string& whereClause)
+    : FieldPathUpdate(fieldPath, whereClause)
 {
 }
 
@@ -348,7 +347,7 @@ FieldPathUpdateTestCase::testWhereClause()
     DocumentTypeRepo repo(getRepoConfig());
     Document::UP doc(createTestDocument(repo));
     std::string where = "test.l1s1.structmap.value.smap{$x} == \"dicaprio\"";
-    TestFieldPathUpdate update(doc->getDataType(), "l1s1.structmap.value.smap{$x}", where);
+    TestFieldPathUpdate update("l1s1.structmap.value.smap{$x}", where);
     update.applyTo(*doc);
     CPPUNIT_ASSERT_EQUAL(std::string("dicaprio"), update._str);
 }
@@ -358,7 +357,7 @@ FieldPathUpdateTestCase::testNoIterateMapValues()
 {
     DocumentTypeRepo repo(getRepoConfig());
     Document::UP doc(createTestDocument(repo));
-    TestFieldPathUpdate update(doc->getDataType(), "l1s1.structwset.primitive1", "true");
+    TestFieldPathUpdate update("l1s1.structwset.primitive1", "true");
     update.applyTo(*doc);
     CPPUNIT_ASSERT_EQUAL(std::string("3;5"), update._str);
 }
@@ -372,7 +371,7 @@ FieldPathUpdateTestCase::testRemoveField()
     CPPUNIT_ASSERT_EQUAL(vespalib::string("cocacola"), doc->getValue("strfoo")->getAsString());
     //doc->print(std::cerr, true, "");
     DocumentUpdate docUp(_foobar_type, DocumentId("doc:barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new RemoveFieldPathUpdate(*doc->getDataType(), "strfoo")));
+    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new RemoveFieldPathUpdate("strfoo")));
     docUp.applyTo(*doc);
     CPPUNIT_ASSERT(doc->hasValue("strfoo") == false);
 }
@@ -394,8 +393,7 @@ FieldPathUpdateTestCase::testApplyRemoveMultiList()
     //doc->print(std::cerr, true, "");
     DocumentUpdate docUp(_foobar_type, DocumentId("doc:barbar:foofoo"));
     docUp.addFieldPathUpdate(FieldPathUpdate::CP(
-            new RemoveFieldPathUpdate(*doc->getDataType(),
-                                      "strarray[$x]", "foobar.strarray[$x] == \"remove val 1\"")));
+            new RemoveFieldPathUpdate("strarray[$x]", "foobar.strarray[$x] == \"remove val 1\"")));
     docUp.applyTo(*doc);
     {
         std::unique_ptr<ArrayFieldValue> strArray = doc->getAs<ArrayFieldValue>(doc->getField("strarray"));
@@ -419,7 +417,7 @@ FieldPathUpdateTestCase::testApplyRemoveEntireListField()
     }
     //doc->print(std::cerr, true, "");
     DocumentUpdate docUp(_foobar_type, DocumentId("doc:barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new RemoveFieldPathUpdate(*doc->getDataType(), "strarray", "")));
+    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new RemoveFieldPathUpdate("strarray", "")));
     docUp.applyTo(*doc);
     CPPUNIT_ASSERT(!doc->hasValue("strarray"));
 }
@@ -438,8 +436,7 @@ FieldPathUpdateTestCase::testApplyRemoveMultiWset()
     CPPUNIT_ASSERT(doc->hasValue("strwset"));
     //doc->print(std::cerr, true, "");
     DocumentUpdate docUp(_foobar_type, DocumentId("doc:barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new RemoveFieldPathUpdate(*doc->getDataType(),
-                                                                           "strwset{remove val 1}")));
+    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new RemoveFieldPathUpdate("strwset{remove val 1}")));
     docUp.applyTo(*doc);
     {
         std::unique_ptr<WeightedSetFieldValue> strWset = doc->getAs<WeightedSetFieldValue>(doc->getField("strwset"));
@@ -475,8 +472,7 @@ FieldPathUpdateTestCase::testApplyAssignMath()
     doc->setValue("num", IntFieldValue(34));
 
     DocumentUpdate docUp(_foobar_type, DocumentId("doc:barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(
-            new AssignFieldPathUpdate(*doc->getDataType(), "num", "", "($value * 2) / $value")));
+    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("num", "", "($value * 2) / $value")));
     docUp.applyTo(*doc);
     CPPUNIT_ASSERT_EQUAL(static_cast<const FieldValue&>(IntFieldValue(2)), *doc->getValue("num"));
 }
@@ -488,7 +484,7 @@ FieldPathUpdateTestCase::testApplyAssignMathByteToZero()
     doc->setValue("byteval", ByteFieldValue(3));
 
     DocumentUpdate docUp(_foobar_type, DocumentId("doc:barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate(*doc->getDataType(), "byteval", "", "$value - 3")));
+    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("byteval", "", "$value - 3")));
     docUp.applyTo(*doc);
     CPPUNIT_ASSERT_EQUAL(static_cast<const FieldValue&>(ByteFieldValue(0)), *doc->getValue("byteval"));
 }
@@ -501,8 +497,7 @@ FieldPathUpdateTestCase::testApplyAssignMathNotModifiedOnUnderflow()
     doc->setValue("byteval", ByteFieldValue(low_value));
 
     DocumentUpdate docUp(_foobar_type, DocumentId("doc:barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(
-            new AssignFieldPathUpdate(*doc->getDataType(), "byteval", "", "$value - 4")));
+    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("byteval", "", "$value - 4")));
     docUp.applyTo(*doc);
     // Over/underflow will happen. You must have control of your data types.
     CPPUNIT_ASSERT_EQUAL(static_cast<const FieldValue&>(ByteFieldValue((char)(low_value - 4))), *doc->getValue("byteval"));
@@ -515,8 +510,7 @@ FieldPathUpdateTestCase::testApplyAssignMathNotModifiedOnOverflow()
     doc->setValue("byteval", ByteFieldValue(127));
 
     DocumentUpdate docUp(_foobar_type, DocumentId("doc:barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(
-            new AssignFieldPathUpdate(*doc->getDataType(), "byteval", "", "$value + 200")));
+    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("byteval", "", "$value + 200")));
     docUp.applyTo(*doc);
     // Over/underflow will happen. You must have control of your data types.
     CPPUNIT_ASSERT_EQUAL(static_cast<const FieldValue&>(ByteFieldValue(static_cast<char>(static_cast<int>(127+200)))), *doc->getValue("byteval"));
@@ -530,8 +524,7 @@ FieldPathUpdateTestCase::testApplyAssignMathDivZero()
     doc->setValue("num", IntFieldValue(10));
 
     DocumentUpdate docUp(_foobar_type, DocumentId("doc:barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(
-            new AssignFieldPathUpdate(*doc->getDataType(), "num", "", "$value / ($value - 10)")));
+    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("num", "", "$value / ($value - 10)")));
     docUp.applyTo(*doc);
     CPPUNIT_ASSERT_EQUAL(static_cast<const FieldValue&>(IntFieldValue(10)), *doc->getValue("num"));
 }
@@ -545,8 +538,7 @@ FieldPathUpdateTestCase::testApplyAssignFieldNotExistingInExpression()
     doc->setValue("num", IntFieldValue(10));
 
     DocumentUpdate docUp(_foobar_type, DocumentId("doc:barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(
-            new AssignFieldPathUpdate(*doc->getDataType(), "num", "", "foobar.num2 + $value")));
+    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("num", "", "foobar.num2 + $value")));
     docUp.applyTo(*doc);
     CPPUNIT_ASSERT_EQUAL(static_cast<const FieldValue&>(IntFieldValue(10)), *doc->getValue("num"));
 }
@@ -555,11 +547,12 @@ void
 FieldPathUpdateTestCase::testApplyAssignFieldNotExistingInPath()
 {
     Document::UP doc(new Document(_foobar_type, DocumentId("doc:bat:man")));
+    doc->setRepo(*_repo);
 
     DocumentUpdate docUp(_foobar_type, DocumentId("doc:barbar:foofoo"));
     try {
-        docUp.addFieldPathUpdate(FieldPathUpdate::CP(
-                new AssignFieldPathUpdate(*doc->getDataType(), "nosuchnum", "", "foobar.num + $value")));
+        docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("nosuchnum", "", "foobar.num + $value")));
+        docUp.applyTo(*doc);
         CPPUNIT_ASSERT(false);
     } catch (const FieldNotFoundException&) {
     }
@@ -572,8 +565,7 @@ FieldPathUpdateTestCase::testApplyAssignTargetNotExisting()
     CPPUNIT_ASSERT(doc->hasValue("num") == false);
 
     DocumentUpdate docUp(_foobar_type, DocumentId("doc:barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(
-            new AssignFieldPathUpdate(*doc->getDataType(), "num", "", "$value + 5")));
+    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("num", "", "$value + 5")));
     docUp.applyTo(*doc);
     CPPUNIT_ASSERT_EQUAL(static_cast<const FieldValue&>(IntFieldValue(5)), *doc->getValue("num"));
 }
@@ -616,7 +608,7 @@ FieldPathUpdateTestCase::testApplyAssignMathRemoveIfZero()
     CPPUNIT_ASSERT(doc->hasValue("num") == true);
 
     DocumentUpdate docUp(_foobar_type, DocumentId("doc:barbar:foofoo"));
-    FieldPathUpdate::CP up1(new AssignFieldPathUpdate(*doc->getDataType(), "num", "", "($value * 2) / $value - 2"));
+    FieldPathUpdate::CP up1(new AssignFieldPathUpdate("num", "", "($value * 2) / $value - 2"));
     static_cast<AssignFieldPathUpdate&>(*up1).setRemoveIfZero(true);
     docUp.addFieldPathUpdate(up1);
 
@@ -1115,7 +1107,7 @@ FieldPathUpdateTestCase::testSerializeRemove()
     DocumentUpdate docUp(_foobar_type, DocumentId("doc:barbar:foofoo"));
     CPPUNIT_ASSERT(!docUp.affectsDocumentBody());
 
-    FieldPathUpdate::CP update1(new RemoveFieldPathUpdate(*doc->getDataType(), "structmap{ribbit}", std::string()));
+    FieldPathUpdate::CP update1(new RemoveFieldPathUpdate("structmap{ribbit}", std::string()));
     docUp.addFieldPathUpdate(update1);
 
     testSerialize(*_repo, docUp);
@@ -1129,8 +1121,7 @@ FieldPathUpdateTestCase::testSerializeAssignMath()
     doc->setValue("num", IntFieldValue(34));
 
     DocumentUpdate docUp(_foobar_type, DocumentId("doc:barbar:foofoo"));
-    docUp.addFieldPathUpdate(FieldPathUpdate::CP(
-            new AssignFieldPathUpdate(*doc->getDataType(), "num", "", "($value * 2) / $value")));
+    docUp.addFieldPathUpdate(FieldPathUpdate::CP(new AssignFieldPathUpdate("num", "", "($value * 2) / $value")));
     testSerialize(*_repo, docUp);
 }
 
@@ -1140,7 +1131,7 @@ FieldPathUpdateTestCase::createDocumentUpdateForSerialization(const DocumentType
     const DocumentType *docType(repo.getDocumentType("serializetest"));
     DocumentUpdate::UP docUp(new DocumentUpdate(*docType, DocumentId("doc:serialization:xlanguage")));
 
-    FieldPathUpdate::CP assign(new AssignFieldPathUpdate(*docType, "intfield", "", "3"));
+    FieldPathUpdate::CP assign(new AssignFieldPathUpdate("intfield", "", "3"));
     static_cast<AssignFieldPathUpdate&>(*assign).setRemoveIfZero(true);
     static_cast<AssignFieldPathUpdate&>(*assign).setCreateMissingPath(false);
     docUp->addFieldPathUpdate(assign);
@@ -1150,7 +1141,7 @@ FieldPathUpdateTestCase::createDocumentUpdateForSerialization(const DocumentType
     fArray.add(FloatFieldValue(5.0));
 
     docUp->addFieldPathUpdate(FieldPathUpdate::CP(new AddFieldPathUpdate(*docType, "arrayoffloatfield", "", fArray)));
-    docUp->addFieldPathUpdate(FieldPathUpdate::CP(new RemoveFieldPathUpdate(*docType, "intfield", "serializetest.intfield > 0")));
+    docUp->addFieldPathUpdate(FieldPathUpdate::CP(new RemoveFieldPathUpdate("intfield", "serializetest.intfield > 0")));
 
     return docUp;
 }
@@ -1197,4 +1188,4 @@ FieldPathUpdateTestCase::testGenerateSerializedFile()
     close(fd);
 }
 
-} // ns document
+}

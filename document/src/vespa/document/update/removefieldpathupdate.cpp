@@ -15,11 +15,8 @@ RemoveFieldPathUpdate::RemoveFieldPathUpdate()
 {
 }
 
-RemoveFieldPathUpdate::RemoveFieldPathUpdate(
-        const DataType& type,
-        stringref fieldPath,
-        stringref whereClause)
-    : FieldPathUpdate(type, fieldPath, whereClause)
+RemoveFieldPathUpdate::RemoveFieldPathUpdate(stringref fieldPath, stringref whereClause)
+    : FieldPathUpdate(fieldPath, whereClause)
 {
 }
 

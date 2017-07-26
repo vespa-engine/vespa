@@ -36,21 +36,17 @@ AssignFieldPathUpdate::AssignFieldPathUpdate(
         stringref fieldPath,
         stringref whereClause,
         const FieldValue& newValue)
-    : FieldPathUpdate(type, fieldPath, whereClause),
+    : FieldPathUpdate(fieldPath, whereClause),
       _newValue(newValue.clone()),
       _expression(),
       _removeIfZero(false),
       _createMissingPath(true)
 {
-    checkCompatibility(*_newValue);
+    checkCompatibility(*_newValue, type);
 }
 
-AssignFieldPathUpdate::AssignFieldPathUpdate(
-        const DataType& type,
-        stringref fieldPath,
-        stringref whereClause,
-        stringref expression)
-    : FieldPathUpdate(type, fieldPath, whereClause),
+AssignFieldPathUpdate::AssignFieldPathUpdate(stringref fieldPath, stringref whereClause, stringref expression)
+    : FieldPathUpdate(fieldPath, whereClause),
       _newValue(),
       _expression(expression),
       _removeIfZero(false),
@@ -222,8 +218,7 @@ AssignFieldPathUpdate::print(std::ostream& out, bool verbose, const std::string&
 }
 
 void
-AssignFieldPathUpdate::deserialize(const DocumentTypeRepo& repo,
-                                   const DataType& type,
+AssignFieldPathUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& type,
                                    ByteBuffer& buffer, uint16_t version)
 {
     FieldPathUpdate::deserialize(repo, type, buffer, version);
@@ -237,7 +232,9 @@ AssignFieldPathUpdate::deserialize(const DocumentTypeRepo& repo,
     if (flags & ARITHMETIC_EXPRESSION) {
         _expression = getString(buffer);
     } else {
-        _newValue.reset(getResultingDataType().createFieldValue().release());
+        FieldPath path;
+        type.buildFieldPath(path, getOriginalFieldPath());
+        _newValue.reset(getResultingDataType(path).createFieldValue().release());
         nbostream stream(buffer.getBufferAtPos(), buffer.getRemaining());
         VespaDocumentDeserializer deserializer(repo, stream, version);
         deserializer.read(*_newValue);

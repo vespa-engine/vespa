@@ -62,10 +62,10 @@ public:
      * the field path.
      * @throws IllegalArgumentException upon datatype mismatch.
      */
-    void checkCompatibility(const FieldValue& fv) const;
+    void checkCompatibility(const FieldValue& fv, const DataType & type) const;
 
     /** @return Whether or not the first field path element is a body field */
-    bool affectsDocumentBody() const;
+    bool affectsDocumentBody(const DataType & type) const;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
@@ -83,7 +83,7 @@ public:
             int serializationVersion);
 
 protected:
-    FieldPathUpdate(const DataType& type, stringref fieldPath, stringref whereClause = stringref());
+    FieldPathUpdate(stringref fieldPath, stringref whereClause = stringref());
 
     /**
      * Deserializes the given byte buffer into an instance of a FieldPathUpdate
@@ -97,7 +97,7 @@ protected:
                              ByteBuffer& buffer, uint16_t version);
 
     /** @return the datatype of the last path element in the field path */
-    const DataType& getResultingDataType() const;
+    const DataType& getResultingDataType(const FieldPath & path) const;
     enum SerializedMagic {AssignMagic=0, RemoveMagic=1, AddMagic=2};
 private:
     // TODO: rename to createIteratorHandler?
@@ -105,8 +105,6 @@ private:
 
     vespalib::string _originalFieldPath;
     vespalib::string _originalWhereClause;
-
-    FieldPath        _fieldPath;
 };
 
 }

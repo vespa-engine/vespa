@@ -19,15 +19,8 @@ public:
     /** For deserialization */
     AssignFieldPathUpdate();
 
-    AssignFieldPathUpdate(const DataType& type,
-                          stringref fieldPath,
-                          stringref whereClause,
-                          const FieldValue& newValue);
-
-    AssignFieldPathUpdate(const DataType& type,
-                          stringref fieldPath,
-                          stringref whereClause,
-                          stringref expression);
+    AssignFieldPathUpdate(const DataType& type, stringref fieldPath, stringref whereClause, const FieldValue& newValue);
+    AssignFieldPathUpdate(stringref fieldPath, stringref whereClause, stringref expression);
     ~AssignFieldPathUpdate();
 
     void setRemoveIfZero(bool removeIfZero) {
@@ -51,8 +44,7 @@ public:
 
 private:
     uint8_t getSerializedType() const override { return AssignMagic; }
-    void deserialize(const DocumentTypeRepo& repo, const DataType& type,
-                     ByteBuffer& buffer, uint16_t version) override;
+    void deserialize(const DocumentTypeRepo& repo, const DataType& type, ByteBuffer& buffer, uint16_t version) override;
 
     std::unique_ptr<fieldvalue::IteratorHandler> getIteratorHandler(Document& doc, const DocumentTypeRepo & repo) const override;
 
