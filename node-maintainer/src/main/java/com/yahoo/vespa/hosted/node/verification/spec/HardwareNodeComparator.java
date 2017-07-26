@@ -1,6 +1,7 @@
 package com.yahoo.vespa.hosted.node.verification.spec;
 
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
+import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo.DiskType;
 import com.yahoo.vespa.hosted.node.verification.spec.yamasreport.SpecReportDimensions;
 import com.yahoo.vespa.hosted.node.verification.spec.yamasreport.SpecReportMetrics;
 import com.yahoo.vespa.hosted.node.verification.spec.yamasreport.YamasSpecReport;
@@ -62,8 +63,8 @@ public class HardwareNodeComparator {
     }
 
     private static void setDiskTypeMetrics(HardwareInfo node, HardwareInfo actualHardware, SpecReportMetrics specReportMetrics) {
-        Boolean expectedFastDisk = node.getFastDisk();
-        Boolean actualFastDisk = actualHardware.getFastDisk();
+        DiskType expectedFastDisk = node.getDiskType();
+        DiskType actualFastDisk = actualHardware.getDiskType();
         if (expectedFastDisk != null && actualFastDisk != null && expectedFastDisk != actualFastDisk) {
             specReportMetrics.setExpectedDiskType(expectedFastDisk);
             specReportMetrics.setActualDiskType(actualFastDisk);
@@ -112,9 +113,9 @@ public class HardwareNodeComparator {
     }
 
     private static boolean compareDisk(HardwareInfo node, HardwareInfo actualHardware, SpecReportDimensions specReportDimensions) {
-        boolean equalDiskType = node.getFastDisk() == actualHardware.getFastDisk();
+        boolean equalDiskType = node.getDiskType() == actualHardware.getDiskType();
         boolean equalDiskSize = insideThreshold(node.getMinDiskAvailableGb(), actualHardware.getMinDiskAvailableGb());
-        specReportDimensions.setFastDiskMatch(equalDiskType);
+        specReportDimensions.setDiskTypeMatch(equalDiskType);
         specReportDimensions.setDiskAvailableMatch(equalDiskSize);
         return equalDiskType && equalDiskSize;
     }

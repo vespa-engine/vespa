@@ -1,6 +1,7 @@
 package com.yahoo.vespa.hosted.node.verification.spec;
 
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
+import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo.DiskType;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -41,5 +42,14 @@ public class HardwareNodeComparatorTest {
         nodeInfo.setMinCpuCores(1);
         assertFalse(HardwareNodeComparator.compare(nodeInfo, actualHardware).getMetrics().isMatch());
     }
+
+    @Test
+    public void compare_different_disk_type_should_return_false() {
+        actualHardware.setDiskType(DiskType.UNKNOWN);
+        nodeInfo.setDiskType(DiskType.FAST);
+        assertFalse(HardwareNodeComparator.compare(nodeInfo, actualHardware).getMetrics().isMatch());
+    }
+
+
 
 }

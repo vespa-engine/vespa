@@ -10,10 +10,10 @@ public class HardwareInfo {
     private double minDiskAvailableGb;
     private double minMainMemoryAvailableGb;
     private int minCpuCores;
-    private boolean fastDisk;
     private boolean ipv4Connectivity;
     private boolean ipv6Connectivity;
     private double interfaceSpeedMbs;
+    private DiskType diskType;
 
 
     public double getInterfaceSpeedMbs() {
@@ -56,12 +56,12 @@ public class HardwareInfo {
         this.minMainMemoryAvailableGb = minMainMemoryAvailableGb;
     }
 
-    public void setFastDisk(boolean fastDisk) {
-        this.fastDisk = fastDisk;
+    public void setDiskType(DiskType diskType) {
+        this.diskType = diskType;
     }
 
-    public boolean getFastDisk() {
-        return fastDisk;
+    public DiskType getDiskType() {
+        return diskType;
     }
 
     public int getMinCpuCores() {
@@ -71,5 +71,7 @@ public class HardwareInfo {
     public void setMinCpuCores(int minCpuCores) {
         this.minCpuCores = minCpuCores;
     }
+
+    public enum DiskType {SLOW, FAST, UNKNOWN};
 
 }

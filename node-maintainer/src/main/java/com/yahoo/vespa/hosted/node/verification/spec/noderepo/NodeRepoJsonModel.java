@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.verification.spec.noderepo;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
+import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo.DiskType;
 
 /**
  * Created by olaa on 05/07/2017.
@@ -34,7 +35,7 @@ public class NodeRepoJsonModel {
         hardwareInfo.setMinMainMemoryAvailableGb(this.minMainMemoryAvailableGb);
         hardwareInfo.setMinDiskAvailableGb(this.minDiskAvailableGb);
         hardwareInfo.setMinCpuCores((int) Math.round(this.minCpuCores));
-        hardwareInfo.setFastDisk(this.fastDisk);
+        hardwareInfo.setDiskType(this.fastDisk ? DiskType.FAST : DiskType.SLOW);
         return hardwareInfo;
     }
 

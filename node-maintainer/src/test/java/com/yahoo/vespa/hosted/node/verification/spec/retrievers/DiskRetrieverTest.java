@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -34,7 +35,7 @@ public class DiskRetrieverTest {
         commandExecutor.addCommand(CAT_RESOURCE_PATH + "DiskTypeFastDisk");
         commandExecutor.addCommand(CAT_RESOURCE_PATH + "filesize");
         diskRetriever.updateInfo();
-        assertTrue(hardwareInfo.getFastDisk());
+        assertEquals(hardwareInfo.getDiskType(), HardwareInfo.DiskType.FAST);
         double expectedSize = 63D;
         assertEquals(expectedSize, hardwareInfo.getMinDiskAvailableGb(), DELTA);
     }
@@ -43,7 +44,7 @@ public class DiskRetrieverTest {
     public void updateDiskType__should_store_diskType_in_hardwareInfo() throws IOException {
         commandExecutor.addCommand(CAT_RESOURCE_PATH + "DiskTypeFastDisk");
         diskRetriever.updateDiskType();
-        assertTrue(hardwareInfo.getFastDisk());
+        assertEquals(hardwareInfo.getDiskType(), HardwareInfo.DiskType.FAST);
     }
 
     @Test
@@ -90,6 +91,13 @@ public class DiskRetrieverTest {
         ParseResult parseResult = diskRetriever.parseDiskSize(mockOutput);
         ParseResult expectedParseResult = new ParseResult("44G", "63G");
         assertEquals(expectedParseResult, parseResult);
+    }
+
+    @Test
+    public void setDiskType_invalid_ParseResult_should_set_fastDisk_to_null() {
+        ParseResult parseResult = new ParseResult("Invalid", "Invalid");
+        diskRetriever.setDiskType(parseResult);
+        assertNull(hardwareInfo.getDiskType());
     }
 
 }

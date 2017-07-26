@@ -32,7 +32,7 @@ public class NodeJsonConverterTest {
         assertTrue(hardwareInfo.getIpv4Connectivity());
         assertTrue(hardwareInfo.getIpv6Connectivity());
         assertEquals(expectedInterfaceSpeedMbs, hardwareInfo.getInterfaceSpeedMbs(), DELTA);
-        assertFalse(hardwareInfo.getFastDisk());
+        assertEquals(hardwareInfo.getDiskType(), HardwareInfo.DiskType.SLOW);
     }
 
 }
