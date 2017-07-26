@@ -17,8 +17,9 @@ NUM_THREADS=$4
 function bootstrap {
     source /opt/rh/devtoolset-6/enable || true
     export MAVEN_OPTS="-Xms128m -Xmx512m"
-    sh ./bootstrap.sh full
-    cmake3 -DCMAKE_INSTALL_PREFIX=/opt/vespa \
+    cd "${SOURCE_DIR}" && sh ./bootstrap.sh full
+    cd "${BUILD_DIR}" && cmake3 \
+        -DCMAKE_INSTALL_PREFIX=/opt/vespa \
         -DJAVA_HOME=/usr/lib/jvm/java-openjdk \
         -DEXTRA_LINK_DIRECTORY="/opt/vespa-boost/lib;/opt/vespa-libtorrent/lib;/opt/vespa-zookeeper-c-client/lib;/opt/vespa-cppunit/lib;/usr/lib64/llvm3.9/lib" \
         -DEXTRA_INCLUDE_DIRECTORY="/opt/vespa-boost/include;/opt/vespa-libtorrent/include;/opt/vespa-zookeeper-c-client/include;/opt/vespa-cppunit/include;/usr/include/llvm3.9" \
