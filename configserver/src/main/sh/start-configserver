@@ -60,15 +60,29 @@ findroot
 
 cd ${VESPA_HOME} || { echo "Cannot cd to ${VESPA_HOME}" 1>&2; exit 1; }
 
-if [ -f ${VESPA_HOME}/conf/zookeeper/zookeeper.cfg ]; then
-    chown ${VESPA_USER} ${VESPA_HOME}/conf/zookeeper/zookeeper.cfg
-    chmod 644 ${VESPA_HOME}/conf/zookeeper/zookeeper.cfg
-fi
+fixfile () {
+    if [ -f $1 ]; then
+        if [ "${VESPA_USER}" ]; then
+            chown ${VESPA_USER} $1
+        fi
+        chmod 644 $1
+    fi
+}
 
-if [ -f ${VESPA_HOME}/var/zookeeper/myid ]; then
-    chown ${VESPA_USER} ${VESPA_HOME}/var/zookeeper/myid
-    chmod 644 ${VESPA_HOME}/var/zookeeper/myid
-fi
+fixddir () {
+    if ! [ -d $1 ]; then
+       echo "Creating data directory $1"
+       mkdir -p $1 || exit 1
+    fi
+    if [ "${VESPA_USER}" ]; then
+       chown ${VESPA_USER} $1
+    fi
+    chmod 755 $1
+}
+
+fixfile ${VESPA_HOME}/conf/zookeeper/zookeeper.cfg
+fixfile ${VESPA_HOME}/var/zookeeper/myid
+fixddir ${VESPA_HOME}/var/zookeeper/version-2
 
 ${VESPA_HOME}/libexec/vespa/vespa-config.pl -isthisaconfigserver 1>/dev/null
 if [ "$?" != "0" ] ; then
@@ -78,13 +92,6 @@ fi
 
 fixlimits
 checkjava
-
-ZOOKEEPER_DATA_PATH="${VESPA_HOME}/var/zookeeper/version-2"
-if [ ! -d "$ZOOKEEPER_DATA_PATH" ]; then
-    echo "Creating data directory $ZOOKEEPER_DATA_PATH"
-    mkdir -p $ZOOKEEPER_DATA_PATH
-    chown yahoo:users $ZOOKEEPER_DATA_PATH
-fi
 
 ZOOKEEPER_LOG_FILE="${VESPA_HOME}/logs/vespa/zookeeper.configserver.log"
 rm -f $ZOOKEEPER_LOG_FILE*lck
@@ -123,8 +130,7 @@ serveruserargs="$cloudconfig_server__jvmargs"
 jvmargs="$baseuserargs $serveruserargs"
 
 printenv > $cfpfile
-mkdir -p $bundlecachedir
-chown -R ${VESPA_USER} $bundlecachedir
+fixddir $bundlecachedir
 
 vespa-run-as-vespa-user vespa-runserver -s configserver -r 30 -p $pidfile -- \
 	java \
