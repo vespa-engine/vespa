@@ -18,8 +18,7 @@ LOG_DIR=~/log
 
 function build_java {
     cd "${SOURCE_DIR}"
-    mvn install -nsu -B -T 2.0C -V -DskipTests=true -Dmaven.javadoc.skip=true
-    mvn install -nsu -B -T 2.0C -V
+    mvn install -nsu -B -T 2.0C -V # Should ideally split out test phase, but some unit tests fails on 'mvn test'
 }
 
 function build_cpp {
