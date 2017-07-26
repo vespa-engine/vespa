@@ -728,7 +728,7 @@ Messages50Test::testUpdateDocumentMessage()
     document::DocumentUpdate::SP
         upd(new document::DocumentUpdate(docType, document::DocumentId("doc:scheme:")));
     upd->addFieldPathUpdate(document::FieldPathUpdate::CP(
-                    new document::RemoveFieldPathUpdate(docType, "intfield", "testdoc.intfield > 0")));
+            new document::RemoveFieldPathUpdate("intfield", "testdoc.intfield > 0")));
     UpdateDocumentMessage msg(upd);
     msg.setOldTimestamp(666u);
     msg.setNewTimestamp(777u);
@@ -758,21 +758,21 @@ Messages50Test::testBatchDocumentUpdateMessage()
         document::DocumentUpdate::SP upd;
         upd.reset(new document::DocumentUpdate(docType, document::DocumentId("userdoc:footype:1234:foo")));
         upd->addFieldPathUpdate(document::FieldPathUpdate::CP(
-                        new document::RemoveFieldPathUpdate(docType, "intfield", "testdoc.intfield > 0")));
+                        new document::RemoveFieldPathUpdate("intfield", "testdoc.intfield > 0")));
         msg.addUpdate(upd);
     }
     {
         document::DocumentUpdate::SP upd;
         upd.reset(new document::DocumentUpdate(docType, document::DocumentId("orderdoc(32,17):footype:1234:123456789:foo")));
         upd->addFieldPathUpdate(document::FieldPathUpdate::CP(
-                        new document::RemoveFieldPathUpdate(docType, "intfield", "testdoc.intfield > 0")));
+                        new document::RemoveFieldPathUpdate("intfield", "testdoc.intfield > 0")));
         msg.addUpdate(upd);
     }
     try {
         document::DocumentUpdate::SP upd;
         upd.reset(new document::DocumentUpdate(docType, document::DocumentId("userdoc:footype:5678:foo")));
         upd->addFieldPathUpdate(document::FieldPathUpdate::CP(
-                        new document::RemoveFieldPathUpdate(docType, "intfield", "testdoc.intfield > 0")));
+                        new document::RemoveFieldPathUpdate("intfield", "testdoc.intfield > 0")));
         msg.addUpdate(upd);
         EXPECT_TRUE(false);
     } catch (...) {
@@ -781,7 +781,7 @@ Messages50Test::testBatchDocumentUpdateMessage()
         document::DocumentUpdate::SP upd;
         upd.reset(new document::DocumentUpdate(docType, document::DocumentId("groupdoc:footype:hable:foo")));
         upd->addFieldPathUpdate(document::FieldPathUpdate::CP(
-                        new document::RemoveFieldPathUpdate(docType, "intfield", "testdoc.intfield > 0")));
+                        new document::RemoveFieldPathUpdate("intfield", "testdoc.intfield > 0")));
         msg.addUpdate(upd);
         EXPECT_TRUE(false);
     } catch (...) {

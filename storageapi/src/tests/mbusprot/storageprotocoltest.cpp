@@ -278,18 +278,14 @@ void
 StorageProtocolTest::testUpdate51()
 {
     ScopedName test("testUpdate51");
-    document::DocumentUpdate::SP update(
-            new document::DocumentUpdate(*_testDoc->getDataType(), _testDoc->getId()));
-    std::shared_ptr<document::AssignValueUpdate> assignUpdate(
-            new document::AssignValueUpdate(document::IntFieldValue(17)));
+    document::DocumentUpdate::SP update(new document::DocumentUpdate(*_testDoc->getDataType(), _testDoc->getId()));
+    std::shared_ptr<document::AssignValueUpdate> assignUpdate(new document::AssignValueUpdate(document::IntFieldValue(17)));
     document::FieldUpdate fieldUpdate(_testDoc->getField("headerval"));
     fieldUpdate.addUpdate(*assignUpdate);
     update->addUpdate(fieldUpdate);
 
-    update->addFieldPathUpdate(
-            document::FieldPathUpdate::CP(
-                    new document::RemoveFieldPathUpdate(*_testDoc->getDataType(),
-                                                        "headerval", "testdoctype1.headerval > 0")));
+    update->addFieldPathUpdate(document::FieldPathUpdate::CP(
+                    new document::RemoveFieldPathUpdate("headerval", "testdoctype1.headerval > 0")));
 
     UpdateCommand::SP cmd(new UpdateCommand(_bucket, update, 14));
     CPPUNIT_ASSERT_EQUAL(Timestamp(0), cmd->getOldTimestamp());
