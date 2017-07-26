@@ -6,6 +6,7 @@
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/variablemap.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
+#include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <boost/numeric/conversion/cast.hpp>

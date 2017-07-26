@@ -5,6 +5,8 @@
 
 namespace document {
 
+class ArrayFieldValue;
+
 class AddFieldPathUpdate : public FieldPathUpdate
 {
 public:

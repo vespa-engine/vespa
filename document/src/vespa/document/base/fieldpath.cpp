@@ -111,7 +111,7 @@ FieldPathEntry::FieldPathEntry(const DataType & dataType, const vespalib::string
 
 const DataType &FieldPathEntry::getDataType() const
 {
-     return _fieldRef.get() ? _fieldRef->getDataType()
+     return _fieldRef ? _fieldRef->getDataType()
                             : *_dataType;
 }
 
@@ -173,11 +173,11 @@ vespalib::string FieldPathEntry::parseKey(vespalib::string & key)
 }
 
 FieldPath::FieldPath()
-    : Cloneable(), _path()
+    : _path()
 { }
 
 FieldPath::FieldPath(const FieldPath& other)
-    : Cloneable(), _path(other._path)
+    : _path(other._path)
 { }
 
 FieldPath::~FieldPath() { }

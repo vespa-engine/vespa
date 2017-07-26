@@ -4,6 +4,7 @@
 #include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/util/serializableexceptions.h>
+#include <vespa/document/util/bytebuffer.h>
 #include <ostream>
 
 #include <vespa/log/log.h>
@@ -38,10 +39,11 @@ FieldPathUpdate::FieldPathUpdate() :
 {
 }
 
-FieldPathUpdate::FieldPathUpdate(const DocumentTypeRepo& repo,
-                                 const DataType& type,
-                                 stringref fieldPath,
-                                 stringref whereClause) :
+FieldPathUpdate::FieldPathUpdate(const FieldPathUpdate &) = default;
+FieldPathUpdate & FieldPathUpdate::operator =(const FieldPathUpdate &) = default;
+
+FieldPathUpdate::FieldPathUpdate(const DocumentTypeRepo& repo, const DataType& type,
+                                 stringref fieldPath, stringref whereClause) :
     _originalFieldPath(fieldPath),
     _originalWhereClause(whereClause),
     _fieldPath(type.buildFieldPath(_originalFieldPath).release()),
@@ -49,7 +51,7 @@ FieldPathUpdate::FieldPathUpdate(const DocumentTypeRepo& repo,
                  ? parseDocumentSelection(_originalWhereClause, repo)
                  : std::unique_ptr<select::Node>())
 {
-    if (!_fieldPath.get()) {
+    if (!_fieldPath) {
         throw IllegalArgumentException(
                 make_string("Could not create field path update for: path='%s', where='%s'",
                             fieldPath.c_str(), whereClause.c_str()), VESPA_STRLOC);
@@ -142,7 +144,7 @@ FieldPathUpdate::deserialize(const DocumentTypeRepo& repo,
 
     try {
         _fieldPath = type.buildFieldPath(_originalFieldPath).release();
-        if (!_fieldPath.get()) {
+        if (!_fieldPath) {
             throw DeserializeException(make_string("Invalid field path: '%s'", _originalFieldPath.c_str()), VESPA_STRLOC);
         }
         _whereClause = !_originalWhereClause.empty()

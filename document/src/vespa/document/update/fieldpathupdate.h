@@ -2,14 +2,11 @@
 #pragma once
 
 #include "updatevisitor.h"
-#include "valueupdate.h"
-#include <vespa/document/datatype/datatype.h>
-#include <vespa/document/util/serializable.h>
-#include <vespa/document/util/xmlserializable.h>
-#include <vespa/document/fieldvalue/fieldvalue.h>
-#include <vespa/document/select/node.h>
-#include <vespa/document/select/resultlist.h>
+#include <vespa/document/util/printable.h>
+#include <vespa/document/util/identifiableid.h>
+#include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/vespalib/objects/cloneable.h>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace document {
 
@@ -18,26 +15,31 @@ class DocumentTypeRepo;
 class Field;
 class FieldValue;
 class BucketIdFactory;
+class Document;
+class DataType;
+class FieldPath;
+
+namespace select { class Node; }
+namespace fieldvalue { class IteratorHandler; }
 
 class FieldPathUpdate : public vespalib::Cloneable,
                         public Printable,
                         public vespalib::Identifiable
 {
 protected:
-    typedef vespalib::stringref stringref;
+    using stringref = vespalib::stringref;
     /** To be used for deserialization */
     FieldPathUpdate();
+    FieldPathUpdate(const FieldPathUpdate &);
+    FieldPathUpdate & operator =(const FieldPathUpdate &);
 
    static vespalib::string getString(ByteBuffer& buffer);
 public:
-    typedef select::ResultList::VariableMap VariableMap;
-    typedef std::shared_ptr<FieldPathUpdate> SP;
-    typedef vespalib::CloneablePtr<FieldPathUpdate> CP;
+    using SP = std::shared_ptr<FieldPathUpdate>;
+    using CP = vespalib::CloneablePtr<FieldPathUpdate>;
 
-    FieldPathUpdate(const DocumentTypeRepo& repo,
-                    const DataType& type,
-                    stringref fieldPath,
-                    stringref whereClause = stringref());
+    FieldPathUpdate(const DocumentTypeRepo& repo, const DataType& type,
+                    stringref fieldPath, stringref whereClause = stringref());
 
     ~FieldPathUpdate();
 

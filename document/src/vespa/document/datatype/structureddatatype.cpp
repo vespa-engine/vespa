@@ -75,7 +75,7 @@ StructuredDataType::onBuildFieldPath(const vespalib::stringref & remainFieldName
     if (hasField(currFieldName)) {
         const document::Field &fp = getField(currFieldName);
         FieldPath::UP fieldPath = fp.getDataType().buildFieldPath(subFieldName);
-        if (!fieldPath.get()) {
+        if (!fieldPath) {
             return FieldPath::UP();
         }
         fieldPath->insert(fieldPath->begin(), FieldPathEntry(fp));

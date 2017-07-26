@@ -65,20 +65,19 @@ MapDataType::buildFieldPathImpl(const DataType &dataType,
         vespalib::string rest = remainFieldName;
         vespalib::string keyValue = FieldPathEntry::parseKey(rest);
 
-        FieldPath::UP path =
-            valueType.buildFieldPath((rest[0] == '.') ? rest.substr(1) : rest);
-        if (!path.get()) {
+        FieldPath::UP path = valueType.buildFieldPath((rest[0] == '.') ? rest.substr(1) : rest);
+        if (!path) {
             return FieldPath::UP();
         }
 
         if (remainFieldName[1] == '$') {
-            path->insert(path->begin(),
-                         FieldPathEntry(valueType, keyValue.substr(1)));
+            path->insert(path->begin(), FieldPathEntry(valueType, keyValue.substr(1)));
         } else {
             FieldValue::UP fv = keyType.createFieldValue();
             *fv = keyValue;
-            path->insert(path->begin(), FieldPathEntry(valueType, dataType,
-                                 vespalib::CloneablePtr<FieldValue>(fv.release())));
+            path->insert(path->begin(),
+                         FieldPathEntry(valueType, dataType,
+                                        vespalib::CloneablePtr<FieldValue>(fv.release())));
         }
 
         return path;
@@ -88,13 +87,11 @@ MapDataType::buildFieldPathImpl(const DataType &dataType,
             endPos++;
         }
 
-        FieldPath::UP path
-            = keyType.buildFieldPath(remainFieldName.substr(endPos));
-        if (!path.get()) {
+        FieldPath::UP path = keyType.buildFieldPath(remainFieldName.substr(endPos));
+        if (!path) {
             return FieldPath::UP();
         }
-        path->insert(path->begin(), FieldPathEntry(dataType, keyType,
-                                                   valueType, true, false));
+        path->insert(path->begin(), FieldPathEntry(dataType, keyType, valueType, true, false));
         return path;
     } else if (memcmp(remainFieldName.c_str(), "value", 5) == 0) {
         size_t endPos = 5;
@@ -102,13 +99,11 @@ MapDataType::buildFieldPathImpl(const DataType &dataType,
             endPos++;
         }
 
-        FieldPath::UP path
-            = valueType.buildFieldPath(remainFieldName.substr(endPos));
-        if (!path.get()) {
+        FieldPath::UP path = valueType.buildFieldPath(remainFieldName.substr(endPos));
+        if (!path) {
             return FieldPath::UP();
         }
-        path->insert(path->begin(), FieldPathEntry(dataType, keyType,
-                                                   valueType, false, true));
+        path->insert(path->begin(), FieldPathEntry(dataType, keyType, valueType, false, true));
         return path;
     }
 

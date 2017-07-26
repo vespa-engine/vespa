@@ -6,9 +6,7 @@
 #include <memory>
 #include <vector>
 
-namespace vespalib {
-class ObjectVisitor;
-}
+namespace vespalib { class ObjectVisitor; }
 
 namespace document {
 
@@ -31,9 +29,8 @@ public:
         VARIABLE,
         NONE
     };
-    typedef std::shared_ptr<const Field> FieldSP;
-    typedef vespalib::CloneablePtr<DataType> DataTypeCP;
-    typedef vespalib::CloneablePtr<FieldValue> FieldValueCP;
+    using FieldSP = std::shared_ptr<const Field>;
+    using FieldValueCP = vespalib::CloneablePtr<FieldValue>;
 
     /**
        Creates a empty field path entry.
@@ -53,8 +50,7 @@ public:
     /**
        Creates a field path entry for a map or wset key lookup.
     */
-    FieldPathEntry(const DataType & dataType, const DataType& fillType,
-                   const FieldValueCP & lookupKey);
+    FieldPathEntry(const DataType & dataType, const DataType& fillType, const FieldValueCP & lookupKey);
 
     /**
        Creates a field path entry for a map key or value only traversal.
@@ -106,7 +102,7 @@ private:
 
 //typedef std::deque<FieldPathEntry> FieldPath;
 // Facade over FieldPathEntry container that exposes cloneability
-class FieldPath : public vespalib::Cloneable {
+class FieldPath {
     typedef std::vector<FieldPathEntry> Container;
 public:
     typedef Container::reference reference;
@@ -120,12 +116,16 @@ public:
     FieldPath();
     FieldPath(const FieldPath& other);
     FieldPath& operator=(const FieldPath& rhs);
+    FieldPath(FieldPath && other) noexcept = default;
+    FieldPath& operator=(FieldPath && rhs) noexcept = default;
     ~FieldPath();
 
     template <typename InputIterator>
     FieldPath(InputIterator first, InputIterator last)
         : _path(first, last)
     { }
+
+    FieldPath * clone() const { return new FieldPath(*this); }
 
     iterator insert(iterator pos, const FieldPathEntry& entry);
     void push_back(const FieldPathEntry& entry);
@@ -157,11 +157,7 @@ public:
         return _path[i];
     }
 
-    FieldPath* clone() const override {
-        return new FieldPath(*this);
-    }
-
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    void visitMembers(vespalib::ObjectVisitor &visitor) const;
 
     template <typename IT>
     class Range {

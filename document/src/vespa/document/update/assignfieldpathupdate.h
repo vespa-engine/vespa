@@ -61,10 +61,10 @@ private:
     std::unique_ptr<fieldvalue::IteratorHandler> getIteratorHandler(Document& doc) const override;
 
     const DocumentTypeRepo *_repo;
-    FieldValue::CP _newValue;
+    vespalib::CloneablePtr<FieldValue> _newValue;
     vespalib::string _expression;
-    bool _removeIfZero;
-    bool _createMissingPath;
+    bool             _removeIfZero;
+    bool             _createMissingPath;
 };
 
 } // ns document

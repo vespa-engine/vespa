@@ -4,9 +4,11 @@
 #include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
+#include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <ostream>
+#include <cassert>
 
 using vespalib::nbostream;
 
