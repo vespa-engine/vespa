@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.verification.hardware.yamasreport;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.HardwareResults;
+import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.BenchmarkResults;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -49,14 +49,14 @@ public class YamasHardwareReport {
         routing = new JsonObjectWrapper<>("yamas", wrap);
     }
 
-    public void createFromHardwareResults(HardwareResults hardwareResults) {
+    public void createFromHardwareResults(BenchmarkResults benchmarkResults) {
         metrics = new HardwareReportMetrics();
         dimensions = new HardwareReportDimensions();
-        metrics.setCpuCyclesPerSec(hardwareResults.getCpuCyclesPerSec());
-        metrics.setDiskSpeedMbs(hardwareResults.getDiskSpeedMbs());
-        metrics.setIpv6Connectivity(hardwareResults.isIpv6Connectivity());
-        metrics.setMemoryWriteSpeedGBs(hardwareResults.getMemoryWriteSpeedGBs());
-        metrics.setMemoryReadSpeedGBs(hardwareResults.getMemoryReadSpeedGBs());
+        metrics.setCpuCyclesPerSec(benchmarkResults.getCpuCyclesPerSec());
+        metrics.setDiskSpeedMbs(benchmarkResults.getDiskSpeedMbs());
+        metrics.setIpv6Connectivity(benchmarkResults.isIpv6Connectivity());
+        metrics.setMemoryWriteSpeedGBs(benchmarkResults.getMemoryWriteSpeedGBs());
+        metrics.setMemoryReadSpeedGBs(benchmarkResults.getMemoryReadSpeedGBs());
     }
 
     class JsonObjectWrapper<T> {

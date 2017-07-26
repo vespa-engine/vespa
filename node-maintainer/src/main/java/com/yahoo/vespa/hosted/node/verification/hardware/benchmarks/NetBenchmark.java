@@ -22,11 +22,11 @@ public class NetBenchmark implements Benchmark {
     private static final int SEARCH_ELEMENT_INDEX = 7;
     private static final int RETURN_ELEMENT_INDEX = 5;
     private static final Logger logger = Logger.getLogger(NetBenchmark.class.getName());
-    private final HardwareResults hardwareResults;
+    private final BenchmarkResults benchmarkResults;
     private final CommandExecutor commandExecutor;
 
-    public NetBenchmark(HardwareResults hardwareResults, CommandExecutor commandExecutor) {
-        this.hardwareResults = hardwareResults;
+    public NetBenchmark(BenchmarkResults benchmarkResults, CommandExecutor commandExecutor) {
+        this.benchmarkResults = benchmarkResults;
         this.commandExecutor = commandExecutor;
     }
 
@@ -53,7 +53,7 @@ public class NetBenchmark implements Benchmark {
             String packetLoss = pingResponse.replaceAll("[^\\d.]", "");
             if (packetLoss.equals("")) return;
             if (Double.parseDouble(packetLoss) > 99) return;
-            hardwareResults.setIpv6Connectivity(true);
+            benchmarkResults.setIpv6Connectivity(true);
         }
     }
 

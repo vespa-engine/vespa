@@ -10,7 +10,7 @@ import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
  */
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class NodeJsonModel {
+public class NodeRepoJsonModel {
 
     @JsonProperty("minDiskAvailableGb")
     private double minDiskAvailableGb;

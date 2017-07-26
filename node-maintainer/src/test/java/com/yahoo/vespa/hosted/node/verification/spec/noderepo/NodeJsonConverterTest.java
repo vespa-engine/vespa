@@ -13,15 +13,15 @@ import static org.junit.Assert.assertEquals;
 /**
  * Created by olaa on 07/07/2017.
  */
-public class NodeGeneratorTest {
+public class NodeJsonConverterTest {
 
     private static final double DELTA = 0.1;
 
     @Test
     public void convertJsonModel_should_return_correct_HardwareInfo() throws Exception {
         URL url = new File("src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/nodeInfoTest.json").toURI().toURL();
-        NodeJsonModel nodeJsonModel = NodeInfoRetriever.retrieve(url);
-        HardwareInfo hardwareInfo = NodeGenerator.convertJsonModel(nodeJsonModel);
+        NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(url);
+        HardwareInfo hardwareInfo = NodeJsonConverter.convertJsonModelToHardwareInfo(nodeRepoJsonModel);
         double expectedMinDiskAvailable = 500.0;
         double expectedMinMainMemoryAvailable = 24.0;
         double expectedMinCpuCores = 24.0;

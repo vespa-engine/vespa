@@ -17,7 +17,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class NetBenchmarkTest {
 
-    private HardwareResults hardwareResults;
+    private BenchmarkResults benchmarkResults;
     private NetBenchmark netBenchmark;
     private MockCommandExecutor commandExecutor;
     private static String VALID_PING_RESPONSE = "src/test/java/com/yahoo/vespa/hosted/node/verification/hardware/resources/validpingresponse";
@@ -26,9 +26,9 @@ public class NetBenchmarkTest {
 
     @Before
     public void setup() {
-        hardwareResults = new HardwareResults();
+        benchmarkResults = new BenchmarkResults();
         commandExecutor = new MockCommandExecutor();
-        netBenchmark = new NetBenchmark(hardwareResults, commandExecutor);
+        netBenchmark = new NetBenchmark(benchmarkResults, commandExecutor);
     }
 
     @Test
@@ -36,7 +36,7 @@ public class NetBenchmarkTest {
         String mockCommand = "cat " + VALID_PING_RESPONSE;
         commandExecutor.addCommand(mockCommand);
         netBenchmark.doBenchmark();
-        assertTrue(hardwareResults.isIpv6Connectivity());
+        assertTrue(benchmarkResults.isIpv6Connectivity());
     }
 
     @Test
@@ -44,7 +44,7 @@ public class NetBenchmarkTest {
         String mockCommand = "cat " + INVALID_PING_RESPONSE;
         commandExecutor.addCommand(mockCommand);
         netBenchmark.doBenchmark();
-        assertFalse(hardwareResults.isIpv6Connectivity());
+        assertFalse(benchmarkResults.isIpv6Connectivity());
     }
 
     @Test
@@ -52,7 +52,7 @@ public class NetBenchmarkTest {
         String mockCommand = "cat " + CRAZY_PING_RESPONSE;
         commandExecutor.addCommand(mockCommand);
         netBenchmark.doBenchmark();
-        assertFalse(hardwareResults.isIpv6Connectivity());
+        assertFalse(benchmarkResults.isIpv6Connectivity());
     }
 
     @Test
@@ -77,21 +77,21 @@ public class NetBenchmarkTest {
     public void setIpv6Connectivity_valid_ping_response_should_return_ipv6_connectivity() {
         ParseResult parseResult = new ParseResult("loss,", "0%");
         netBenchmark.setIpv6Connectivity(parseResult);
-        assertTrue(hardwareResults.isIpv6Connectivity());
+        assertTrue(benchmarkResults.isIpv6Connectivity());
     }
 
     @Test
     public void setIpv6Connectivity_invalid_ping_response_should_return_no_ipv6_connectivity_1() {
         ParseResult parseResult = new ParseResult("loss,", "100%");
         netBenchmark.setIpv6Connectivity(parseResult);
-        assertFalse(hardwareResults.isIpv6Connectivity());
+        assertFalse(benchmarkResults.isIpv6Connectivity());
     }
 
     @Test
     public void setIpv6Connectivity_invalid_ping_response_should_return_no_ipv6_connectivity_2() {
         ParseResult parseResult = new ParseResult("loss,", "invalid");
         netBenchmark.setIpv6Connectivity(parseResult);
-        assertFalse(hardwareResults.isIpv6Connectivity());
+        assertFalse(benchmarkResults.isIpv6Connectivity());
     }
 
 }

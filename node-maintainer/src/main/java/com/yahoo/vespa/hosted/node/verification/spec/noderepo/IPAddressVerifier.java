@@ -23,8 +23,8 @@ public class IPAddressVerifier {
 
     private static final Logger logger = Logger.getLogger(IPAddressVerifier.class.getName());
 
-    public void reportFaultyIpAddresses(NodeJsonModel nodeJsonModel, YamasSpecReport yamasSpecReport) {
-        String[] faultyIpAddresses = getFaultyIpAddresses(nodeJsonModel.getIpv6Address(), nodeJsonModel.getAdditionalIpAddresses());
+    public void reportFaultyIpAddresses(NodeRepoJsonModel nodeRepoJsonModel, YamasSpecReport yamasSpecReport) {
+        String[] faultyIpAddresses = getFaultyIpAddresses(nodeRepoJsonModel.getIpv6Address(), nodeRepoJsonModel.getAdditionalIpAddresses());
         if (faultyIpAddresses.length > 0) {
             yamasSpecReport.setFaultyIpAddresses(faultyIpAddresses);
         }

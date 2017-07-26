@@ -18,15 +18,15 @@ import static org.junit.Assert.assertNull;
 public class MemoryBenchmarkTest {
 
     private MemoryBenchmark memoryBenchmark;
-    private HardwareResults hardwareResults;
+    private BenchmarkResults benchmarkResults;
     private MockCommandExecutor commandExecutor;
     private static final double DELTA = 0.1;
 
     @Before
     public void setup() {
-        hardwareResults = new HardwareResults();
+        benchmarkResults = new BenchmarkResults();
         commandExecutor = new MockCommandExecutor();
-        memoryBenchmark = new MemoryBenchmark(hardwareResults, commandExecutor);
+        memoryBenchmark = new MemoryBenchmark(benchmarkResults, commandExecutor);
     }
 
     @Test
@@ -40,8 +40,8 @@ public class MemoryBenchmarkTest {
         memoryBenchmark.doBenchmark();
         double expectedReadSpeed = 5.9;
         double expectedWriteSpeed = 3.4;
-        assertEquals(expectedReadSpeed, hardwareResults.getMemoryReadSpeedGBs(), DELTA);
-        assertEquals(expectedWriteSpeed, hardwareResults.getMemoryWriteSpeedGBs(), DELTA);
+        assertEquals(expectedReadSpeed, benchmarkResults.getMemoryReadSpeedGBs(), DELTA);
+        assertEquals(expectedWriteSpeed, benchmarkResults.getMemoryWriteSpeedGBs(), DELTA);
     }
 
     @Test
@@ -69,26 +69,26 @@ public class MemoryBenchmarkTest {
     public void memoryReadSpeed_valid_input_should_update_hardwareResults() {
         Double expectedMemoryReadSpeed = 12.1;
         memoryBenchmark.updateMemoryReadSpeed(expectedMemoryReadSpeed.toString());
-        assertEquals(expectedMemoryReadSpeed, hardwareResults.getMemoryReadSpeedGBs(), DELTA);
+        assertEquals(expectedMemoryReadSpeed, benchmarkResults.getMemoryReadSpeedGBs(), DELTA);
     }
 
     @Test
     public void memoryReadSpeed_invalid_input_should_not_update_hardwareResults() {
         memoryBenchmark.updateMemoryReadSpeed("Invalid speed");
-        assertNull(hardwareResults.getMemoryReadSpeedGBs());
+        assertNull(benchmarkResults.getMemoryReadSpeedGBs());
     }
 
     @Test
     public void memoryWriteSpeed_valid_input_should_update_hardwareResults() {
         Double expectedMemoryWriteSpeed = 3.8;
         memoryBenchmark.updateMemoryWriteSpeed(expectedMemoryWriteSpeed.toString());
-        assertEquals(expectedMemoryWriteSpeed, hardwareResults.getMemoryWriteSpeedGBs(), DELTA);
+        assertEquals(expectedMemoryWriteSpeed, benchmarkResults.getMemoryWriteSpeedGBs(), DELTA);
     }
 
     @Test
     public void memoryWriteSpeed_invalid_input_should_not_update_hardwareResults() {
         memoryBenchmark.updateMemoryWriteSpeed("Invalid speed");
-        assertNull(hardwareResults.getMemoryWriteSpeedGBs());
+        assertNull(benchmarkResults.getMemoryWriteSpeedGBs());
     }
 
     @Test
