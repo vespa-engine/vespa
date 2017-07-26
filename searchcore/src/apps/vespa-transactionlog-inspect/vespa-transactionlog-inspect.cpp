@@ -1,8 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/config/helper/configgetter.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/fieldvalue/document.h>
+
 #include <vespa/searchcore/proton/server/replaypacketdispatcher.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogclient.h>
@@ -10,13 +9,15 @@
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <vespa/document/config/config-documenttypes.h>
-#include <iostream>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/fastos/app.h>
+#include <iostream>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-transactionlog-inspect");
-
 
 using namespace proton;
 using namespace search;
@@ -36,8 +37,7 @@ struct DummyFileHeaderContext : public FileHeaderContext
 };
 
 
-namespace
-{
+namespace {
 
 class ConfigFile
 {
