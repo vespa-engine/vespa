@@ -25,8 +25,8 @@ public class SpecVerifier {
 
     private static final Logger logger = Logger.getLogger(SpecVerifier.class.getName());
 
-    public void verifySpec(String zoneHostName, CommandExecutor commandExecutor) throws IOException {
-        NodeRepoJsonModel nodeRepoJsonModel = getNodeRepositoryJSON(zoneHostName, commandExecutor);
+    public void verifySpec(String configServerHostName, CommandExecutor commandExecutor) throws IOException {
+        NodeRepoJsonModel nodeRepoJsonModel = getNodeRepositoryJSON(configServerHostName, commandExecutor);
         HardwareInfo actualHardware = HardwareInfoRetriever.retrieve(commandExecutor);
         YamasSpecReport yamasSpecReport = makeYamasSpecReport(actualHardware, nodeRepoJsonModel);
         printResults(yamasSpecReport);
@@ -39,10 +39,10 @@ public class SpecVerifier {
         return yamasSpecReport;
     }
 
-    protected NodeRepoJsonModel getNodeRepositoryJSON(String zoneHostName, CommandExecutor commandExecutor) throws IOException {
+    protected NodeRepoJsonModel getNodeRepositoryJSON(String configServerHostName, CommandExecutor commandExecutor) throws IOException {
         URL nodeRepoUrl;
         HostURLGenerator hostURLGenerator = new HostURLGenerator();
-        nodeRepoUrl = hostURLGenerator.generateNodeInfoUrl(zoneHostName, commandExecutor);
+        nodeRepoUrl = hostURLGenerator.generateNodeInfoUrl(configServerHostName, commandExecutor);
         NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(nodeRepoUrl);
         return nodeRepoJsonModel;
     }
@@ -62,10 +62,10 @@ public class SpecVerifier {
         if (args.length != 1) {
             throw new RuntimeException("Expected only 1 argument - config server zone url");
         }
-        String zoneHostName = args[0];
+        String configServerHostName = args[0];
         CommandExecutor commandExecutor = new CommandExecutor();
         SpecVerifier specVerifier = new SpecVerifier();
-        specVerifier.verifySpec(zoneHostName, commandExecutor);
+        specVerifier.verifySpec(configServerHostName, commandExecutor);
     }
 
 }
