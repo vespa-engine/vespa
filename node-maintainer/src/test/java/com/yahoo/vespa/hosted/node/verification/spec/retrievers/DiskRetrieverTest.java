@@ -1,6 +1,7 @@
 package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
 
 import com.yahoo.vespa.hosted.node.verification.commons.ParseResult;
+import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo.DiskType;
 import com.yahoo.vespa.hosted.node.verification.mock.MockCommandExecutor;
 import org.junit.Before;
 import org.junit.Test;
@@ -9,8 +10,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Created by olaa on 06/07/2017.
@@ -35,7 +34,7 @@ public class DiskRetrieverTest {
         commandExecutor.addCommand(CAT_RESOURCE_PATH + "DiskTypeFastDisk");
         commandExecutor.addCommand(CAT_RESOURCE_PATH + "filesize");
         diskRetriever.updateInfo();
-        assertEquals(hardwareInfo.getDiskType(), HardwareInfo.DiskType.FAST);
+        assertEquals(DiskType.FAST, hardwareInfo.getDiskType());
         double expectedSize = 63D;
         assertEquals(expectedSize, hardwareInfo.getMinDiskAvailableGb(), DELTA);
     }
@@ -44,7 +43,7 @@ public class DiskRetrieverTest {
     public void updateDiskType__should_store_diskType_in_hardwareInfo() throws IOException {
         commandExecutor.addCommand(CAT_RESOURCE_PATH + "DiskTypeFastDisk");
         diskRetriever.updateDiskType();
-        assertEquals(hardwareInfo.getDiskType(), HardwareInfo.DiskType.FAST);
+        assertEquals(DiskType.FAST, hardwareInfo.getDiskType());
     }
 
     @Test

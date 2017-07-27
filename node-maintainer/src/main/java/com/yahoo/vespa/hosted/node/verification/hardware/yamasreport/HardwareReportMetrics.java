@@ -8,17 +8,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class HardwareReportMetrics {
 
     @JsonProperty
-    private Double cpuCyclesPerSec;
+    private double cpuCyclesPerSec;
     @JsonProperty
-    private Double diskSpeedMbs;
+    private double diskSpeedMbs;
     @JsonProperty
-    private Boolean ipv6Connectivity;
+    private boolean ipv6Connectivity;
     @JsonProperty
-    private Double memoryWriteSpeedGBs;
+    private double memoryWriteSpeedGBs;
     @JsonProperty
-    private Double memoryReadSpeedGBs;
+    private double memoryReadSpeedGBs;
 
-    public void setCpuCyclesPerSec(Double cpuCyclesPerSec) {
+    public void setCpuCyclesPerSec(double cpuCyclesPerSec) {
         this.cpuCyclesPerSec = cpuCyclesPerSec;
     }
 
@@ -36,6 +36,26 @@ public class HardwareReportMetrics {
 
     public void setMemoryReadSpeedGBs(Double memoryReadSpeedGBs) {
         this.memoryReadSpeedGBs = memoryReadSpeedGBs != null ? memoryReadSpeedGBs : -1;
+    }
+
+    public Double getCpuCyclesPerSec() {
+        return cpuCyclesPerSec;
+    }
+
+    public double getDiskSpeedMbs() {
+        return diskSpeedMbs;
+    }
+
+    public Boolean getIpv6Connectivity() {
+        return ipv6Connectivity;
+    }
+
+    public double getMemoryWriteSpeedGBs() {
+        return memoryWriteSpeedGBs;
+    }
+
+    public double getMemoryReadSpeedGBs() {
+        return memoryReadSpeedGBs;
     }
 
 }

@@ -17,7 +17,6 @@ import static org.junit.Assert.*;
 
 public class SpecVerifierTest {
 
-    private SpecVerifier specVerifier;
     private MockCommandExecutor mockCommandExecutor;
     private static final String ABSOLUTE_PATH = Paths.get(".").toAbsolutePath().normalize().toString();
     private static final String RESOURCE_PATH = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/";
@@ -34,7 +33,6 @@ public class SpecVerifierTest {
     @Before
     public void setup() {
         mockCommandExecutor = new MockCommandExecutor();
-        specVerifier = new SpecVerifier();
     }
 
 
@@ -47,7 +45,7 @@ public class SpecVerifierTest {
         mockCommandExecutor.addCommand("cat " + DISK_SIZE_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + NET_INTERFACE_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + NET_INTERFACE_SPEED_INFO_PATH);
-        assertTrue(specVerifier.verifySpec(URL_RESOURCE_PATH, mockCommandExecutor));
+        assertTrue(SpecVerifier.verifySpec(URL_RESOURCE_PATH, mockCommandExecutor));
     }
 
     @Test
@@ -59,7 +57,7 @@ public class SpecVerifierTest {
         mockCommandExecutor.addCommand("cat " + DISK_SIZE_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + NET_INTERFACE_INFO_PATH + "NoIpv6");
         mockCommandExecutor.addCommand("cat " + NET_INTERFACE_SPEED_INFO_PATH);
-        assertFalse(specVerifier.verifySpec(URL_RESOURCE_PATH, mockCommandExecutor));
+        assertFalse(SpecVerifier.verifySpec(URL_RESOURCE_PATH, mockCommandExecutor));
     }
 
     @Test
@@ -74,7 +72,7 @@ public class SpecVerifierTest {
         actualHardware.setDiskType(HardwareInfo.DiskType.SLOW);
         URL url = new File(NODE_REPO_PATH).toURI().toURL();
         NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(url);
-        YamasSpecReport yamasSpecReport = specVerifier.makeYamasSpecReport(actualHardware, nodeRepoJsonModel);
+        YamasSpecReport yamasSpecReport = SpecVerifier.makeYamasSpecReport(actualHardware, nodeRepoJsonModel);
         long timeStamp = yamasSpecReport.getTimeStamp();
         String expectedJson = "{\"timeStamp\":" + timeStamp + ",\"dimensions\":{\"memoryMatch\":true,\"cpuCoresMatch\":true,\"diskTypeMatch\":true,\"netInterfaceSpeedMatch\":false,\"diskAvailableMatch\":true,\"ipv4Match\":true,\"ipv6Match\":true},\"metrics\":{\"match\":false,\"expectedInterfaceSpeed\":1000.0,\"actualInterfaceSpeed\":10009.0},\"routing\":{\"yamas\":{\"namespace\":[\"Vespa\"]}}}";
         ObjectMapper om = new ObjectMapper();
@@ -85,7 +83,7 @@ public class SpecVerifierTest {
     @Test
     public void getNodeRepositoryJSON_should_return_valid_nodeRepoJSONModel() throws Exception {
         mockCommandExecutor.addCommand("echo nodeRepo.json");
-        NodeRepoJsonModel actualNodeRepoJsonModel = specVerifier.getNodeRepositoryJSON(URL_RESOURCE_PATH, mockCommandExecutor);
+        NodeRepoJsonModel actualNodeRepoJsonModel = SpecVerifier.getNodeRepositoryJSON(URL_RESOURCE_PATH, mockCommandExecutor);
         double expectedMinCpuCores = 4D;
         double expectedMinMainMemoryAvailableGb = 4.04D;
         double expectedMinDiskAvailableGb = 63D;

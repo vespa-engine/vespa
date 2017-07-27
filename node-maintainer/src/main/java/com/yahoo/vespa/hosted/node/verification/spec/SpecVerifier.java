@@ -25,7 +25,7 @@ public class SpecVerifier {
 
     private static final Logger logger = Logger.getLogger(SpecVerifier.class.getName());
 
-    public boolean verifySpec(String configServerHostName, CommandExecutor commandExecutor) throws IOException {
+    public static boolean verifySpec(String configServerHostName, CommandExecutor commandExecutor) throws IOException {
         NodeRepoJsonModel nodeRepoJsonModel = getNodeRepositoryJSON(configServerHostName, commandExecutor);
         HardwareInfo actualHardware = HardwareInfoRetriever.retrieve(commandExecutor);
         YamasSpecReport yamasSpecReport = makeYamasSpecReport(actualHardware, nodeRepoJsonModel);
@@ -33,14 +33,14 @@ public class SpecVerifier {
         return yamasSpecReport.getMetrics().isMatch();
     }
 
-    protected YamasSpecReport makeYamasSpecReport(HardwareInfo actualHardware, NodeRepoJsonModel nodeRepoJsonModel){
+    protected static YamasSpecReport makeYamasSpecReport(HardwareInfo actualHardware, NodeRepoJsonModel nodeRepoJsonModel){
         YamasSpecReport yamasSpecReport = HardwareNodeComparator.compare(NodeJsonConverter.convertJsonModelToHardwareInfo(nodeRepoJsonModel), actualHardware);
         IPAddressVerifier ipAddressVerifier = new IPAddressVerifier();
         ipAddressVerifier.reportFaultyIpAddresses(nodeRepoJsonModel, yamasSpecReport);
         return yamasSpecReport;
     }
 
-    protected NodeRepoJsonModel getNodeRepositoryJSON(String configServerHostName, CommandExecutor commandExecutor) throws IOException {
+    protected static NodeRepoJsonModel getNodeRepositoryJSON(String configServerHostName, CommandExecutor commandExecutor) throws IOException {
         URL nodeRepoUrl;
         HostURLGenerator hostURLGenerator = new HostURLGenerator();
         nodeRepoUrl = hostURLGenerator.generateNodeInfoUrl(configServerHostName, commandExecutor);
@@ -48,7 +48,7 @@ public class SpecVerifier {
         return nodeRepoJsonModel;
     }
 
-    private void printResults(YamasSpecReport yamasSpecReport) {
+    private static void printResults(YamasSpecReport yamasSpecReport) {
         //TODO: Instead of println, report JSON to YAMAS
         ObjectMapper om = new ObjectMapper();
         try {
@@ -65,8 +65,7 @@ public class SpecVerifier {
         }
         String configServerHostName = args[0];
         CommandExecutor commandExecutor = new CommandExecutor();
-        SpecVerifier specVerifier = new SpecVerifier();
-        specVerifier.verifySpec(configServerHostName, commandExecutor);
+        SpecVerifier.verifySpec(configServerHostName, commandExecutor);
     }
 
 }
