@@ -21,7 +21,6 @@ public class NodeRepoInfoRetriever {
         NodeRepoJsonModel nodeRepoJsonModel;
         ObjectMapper objectMapper = new ObjectMapper();
         for (URL nodeInfoURL : nodeInfoUrls) {
-            System.out.println(nodeInfoURL.toString());
             try {
                 nodeRepoJsonModel = objectMapper.readValue(nodeInfoURL, NodeRepoJsonModel.class);
                 return nodeRepoJsonModel;

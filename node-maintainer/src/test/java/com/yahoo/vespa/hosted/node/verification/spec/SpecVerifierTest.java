@@ -24,12 +24,12 @@ public class SpecVerifierTest {
     private static final String RESOURCE_PATH = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources";
     private static final String URL_RESOURCE_PATH = "file://" + ABSOLUTE_PATH + "/" + RESOURCE_PATH;
     private static final String NODE_REPO_PATH = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/nodeInfoTest.json";
-    private static final String CPU_INFO_PATH = RESOURCE_PATH + "cpuinfoTest";
-    private static final String MEMORY_INFO_PATH = RESOURCE_PATH + "meminfoTest";
-    private static final String DISK_TYPE_INFO_PATH = RESOURCE_PATH + "DiskTypeFastDisk";
-    private static final String DISK_SIZE_INFO_PATH = RESOURCE_PATH + "filesize";
-    private static final String NET_INTERFACE_INFO_PATH = RESOURCE_PATH + "ifconfig";
-    private static final String NET_INTERFACE_SPEED_INFO_PATH = RESOURCE_PATH + "eth0";
+    private static final String CPU_INFO_PATH = RESOURCE_PATH + "/cpuinfoTest";
+    private static final String MEMORY_INFO_PATH = RESOURCE_PATH + "/meminfoTest";
+    private static final String DISK_TYPE_INFO_PATH = RESOURCE_PATH + "/DiskTypeFastDisk";
+    private static final String DISK_SIZE_INFO_PATH = RESOURCE_PATH + "/filesize";
+    private static final String NET_INTERFACE_INFO_PATH = RESOURCE_PATH + "/ifconfig";
+    private static final String NET_INTERFACE_SPEED_INFO_PATH = RESOURCE_PATH + "/eth0";
     private static final double DELTA = 0.1;
 
     @Before
@@ -86,6 +86,7 @@ public class SpecVerifierTest {
 
     @Test
     public void getNodeRepositoryJSON_should_return_valid_nodeRepoJSONModel() throws Exception {
+        mockCommandExecutor.addCommand("echo notUsed " + URL_RESOURCE_PATH);
         mockCommandExecutor.addCommand("echo nodeRepo.json");
         NodeRepoJsonModel actualNodeRepoJsonModel = SpecVerifier.getNodeRepositoryJSON(mockCommandExecutor); //TODO fix
         double expectedMinCpuCores = 4D;
