@@ -55,4 +55,23 @@ public class HostURLGeneratorTest {
         }
     }
 
+    @Test
+    public void buildNodeInfoURL_should_add_protocol_and_port_in_front_when_protocol_is_absent() throws IOException{
+        String configServerHostName = "www.yahoo.com";
+        String nodeHostName = "index.html";
+        String nodeHostnamePrefix = "/nodes/v2/node/";
+        String portNumber = ":4080";
+        String expectedUrl = "http://" + configServerHostName + portNumber + nodeHostnamePrefix + nodeHostName;
+        assertEquals(expectedUrl, hostURLGenerator.buildNodeInfoURL(configServerHostName, nodeHostName).toString());
+    }
+
+    @Test
+    public void buildNodeInfoURL_should_not_add_protocol_and_port_in_front_when_protocol_already_exists() throws IOException{
+        String configServerHostName = "http://www.yahoo.com";
+        String nodeHostName = "index.html";
+        String nodeHostnamePrefix = "/nodes/v2/node/";
+        String expectedUrl = configServerHostName + nodeHostnamePrefix + nodeHostName;
+        assertEquals(expectedUrl, hostURLGenerator.buildNodeInfoURL(configServerHostName, nodeHostName).toString());
+    }
+
 }

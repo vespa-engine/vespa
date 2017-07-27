@@ -31,7 +31,7 @@ public class HostURLGenerator {
         return nodeInfoUrls;
     }
 
-    private static URL buildNodeInfoURL(String configServerHostName, String nodeHostName) throws MalformedURLException {
+    protected static URL buildNodeInfoURL(String configServerHostName, String nodeHostName) throws MalformedURLException {
         if (configServerHostName.matches(PROTOCOL_REGEX)){
             return new URL(configServerHostName + NODE_HOSTNAME_PREFIX + nodeHostName);
         }
