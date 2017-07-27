@@ -70,7 +70,7 @@ readConfFile();
 use strict;
 use warnings;
 use feature qw(switch say);
-use vars qw/ $opt_c $opt_h $opt_n $opt_v $opt_f $opt_t $opt_a $opt_e $opt_E $opt_r $opt_i $opt_p $opt_H $opt_R /;
+use vars qw/ $opt_c $opt_h $opt_n $opt_v $opt_f $opt_t $opt_a $opt_e $opt_E $opt_r $opt_i $opt_p $opt_H $opt_R $opt_F /;
 use Env qw($HOME);
 use JSON;
 use Getopt::Std;
@@ -100,7 +100,7 @@ my $version = "v2";
 my $configserver = "";
 my $port = "19071";
 
-getopts('c:fhnt:ve:E:r:a:i:p:HR:');
+getopts('c:fhnt:ve:E:r:a:i:p:HR:F:');
 
 if ($opt_h) {
   usage();
@@ -147,16 +147,18 @@ my $command = shift;
 given($command) {
   when ("upload") {
     my $application_package = shift;
-    if (!$application_package) {
-      print "Command failed. No application package specified\n";
-      usage("upload");
-      exit 1;
+    if (!$opt_F) {
+      if (!$application_package) {
+        print "Command failed. No application package specified\n";
+        usage("upload");
+        exit 1;
+      }
+      if (!(-e $application_package)) {
+        print "Command failed. No such directory found: '$application_package'\n";
+        exit 1;
+      }
+      check_application_directory($application_package);
     }
-    if (!(-e $application_package)) {
-      print "Command failed. No such directory found: '$application_package'\n";
-      exit 1;
-    }
-    check_application_directory($application_package);
 
     do_http_request("upload", $application_package);
   }
@@ -415,18 +417,23 @@ sub http_upload {
 sub http_upload_lowlevel {
   my ($source, $app) = @_;
 
-  my $TAR="tar -C $app --dereference --exclude='.[a-zA-Z0-9]*' --exclude=ext -cf - . --transform=\"s#^#application/#\" ";
   my $url = $source . $pathPrefix;
-  my $appPath = `readlink -m $app`;
-  my $appName = `basename $appPath`;
-  chomp($appName);
   $url = add_url_property_from_flag($url, $opt_v, "verbose");
-  $url = add_url_property($url, "name=$appName");
-  print "Uploading application '$app' using $url\n";
-  if (-f $app) {
-    `cat $app | $CURL_POST_ZIP $url`;
+  if ($opt_F) {
+    $url = add_url_property_from_option($url, $opt_F, "from");
+    `$CURL_POST $url`;
   } else {
-    `$TAR | $GZIP | $CURL_POST $url`;
+    my $TAR="tar -C $app --dereference --exclude='.[a-zA-Z0-9]*' --exclude=ext -cf - . --transform=\"s#^#application/#\" ";
+    my $appPath = `readlink -m $app`;
+    my $appName = `basename $appPath`;
+    chomp($appName);
+    $url = add_url_property($url, "name=$appName");
+    print "Uploading application '$app' using $url\n";
+    if (-f $app) {
+      `cat $app | $CURL_POST_ZIP $url`;
+    } else {
+      `$TAR | $GZIP | $CURL_POST $url`;
+    }
   }
 }
 
