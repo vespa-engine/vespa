@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.net.URL;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Created by olaa on 14/07/2017.
@@ -43,6 +44,7 @@ public class HostURLGeneratorTest {
         try{
             mockCommandExecutor.addCommand(CAT_WRONG_HOSTNAME_PATH);
             hostURLGenerator.generateNodeInfoUrl(CONFIG_SERVER_HOSTNAME, mockCommandExecutor);
+            fail("Expected an IOExeption to be thrown");
         } catch (IOException e){
             String expectedExceptionMessage = "Unexpected output from \"hostname\" command.";
             assertEquals(expectedExceptionMessage, e.getMessage());

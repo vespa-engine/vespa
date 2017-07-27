@@ -94,10 +94,11 @@ public class DiskRetrieverTest {
     }
 
     @Test
-    public void setDiskType_invalid_ParseResult_should_set_fastDisk_to_null() {
+    public void setDiskType_invalid_ParseResult_should_set_fastDisk_to_invalid() {
         ParseResult parseResult = new ParseResult("Invalid", "Invalid");
         diskRetriever.setDiskType(parseResult);
-        assertNull(hardwareInfo.getDiskType());
+        HardwareInfo.DiskType expectedDiskType = HardwareInfo.DiskType.UNKNOWN;
+        assertEquals(expectedDiskType, hardwareInfo.getDiskType());
     }
 
 }

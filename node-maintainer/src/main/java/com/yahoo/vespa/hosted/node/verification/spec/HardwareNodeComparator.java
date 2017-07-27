@@ -12,22 +12,22 @@ import com.yahoo.vespa.hosted.node.verification.spec.yamasreport.YamasSpecReport
  */
 public class HardwareNodeComparator {
 
-    public static YamasSpecReport compare(HardwareInfo node, HardwareInfo actualHardware) {
+    public static YamasSpecReport compare(HardwareInfo nodeRepoHardwareInfo, HardwareInfo actualHardware) {
         Boolean equalHardware = true;
         YamasSpecReport yamasSpecReport = new YamasSpecReport();
         SpecReportDimensions specReportDimensions = new SpecReportDimensions();
         SpecReportMetrics specReportMetrics = new SpecReportMetrics();
 
-        if (node == null || actualHardware == null) {
+        if (nodeRepoHardwareInfo == null || actualHardware == null) {
             return yamasSpecReport;
         }
 
-        setReportMetrics(node, actualHardware, specReportMetrics);
+        setReportMetrics(nodeRepoHardwareInfo, actualHardware, specReportMetrics);
 
-        equalHardware &= compareMemory(node, actualHardware, specReportDimensions);
-        equalHardware &= compareCPU(node, actualHardware, specReportDimensions);
-        equalHardware &= compareNetInterface(node, actualHardware, specReportDimensions);
-        equalHardware &= compareDisk(node, actualHardware, specReportDimensions);
+        equalHardware &= compareMemory(nodeRepoHardwareInfo, actualHardware, specReportDimensions);
+        equalHardware &= compareCPU(nodeRepoHardwareInfo, actualHardware, specReportDimensions);
+        equalHardware &= compareNetInterface(nodeRepoHardwareInfo, actualHardware, specReportDimensions);
+        equalHardware &= compareDisk(nodeRepoHardwareInfo, actualHardware, specReportDimensions);
 
         specReportMetrics.setMatch(equalHardware);
         yamasSpecReport.setDimensions(specReportDimensions);

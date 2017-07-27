@@ -64,18 +64,17 @@ public class DiskRetriever implements HardwareRetriever {
     }
 
     protected void setDiskType(ParseResult parseResult) {
+        hardwareInfo.setDiskType(DiskType.UNKNOWN);
         if (!parseResult.getSearchWord().equals(DISK_NAME)) {
             return;
         }
         String fastDiskSymbol = "0";
         String nonFastDiskSymbol = "1";
-        DiskType diskType = DiskType.UNKNOWN;
         if (parseResult.getValue().equals(fastDiskSymbol)) {
-            diskType = DiskType.FAST;
+            hardwareInfo.setDiskType(DiskType.FAST);
         } else if (parseResult.getValue().equals(nonFastDiskSymbol)) {
-            diskType = DiskType.SLOW;
+            hardwareInfo.setDiskType(DiskType.SLOW);
         }
-        hardwareInfo.setDiskType(diskType);
     }
 
     protected void setDiskSize(ParseResult parseResult) {

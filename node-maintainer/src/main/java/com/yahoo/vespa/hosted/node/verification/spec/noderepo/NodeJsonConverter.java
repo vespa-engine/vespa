@@ -10,13 +10,19 @@ public class NodeJsonConverter {
 
     private static void addStandardSpecifications(HardwareInfo nodeRepoHardwareInfo) {
         nodeRepoHardwareInfo.setIpv4Connectivity(true);
-        nodeRepoHardwareInfo.setIpv6Connectivity(true);
         nodeRepoHardwareInfo.setInterfaceSpeedMbs(1000);
+    }
+
+    protected static void setIpv6AddressConnectivity(NodeRepoJsonModel nodeRepoJsonModel, HardwareInfo nodeRepoHardwareInfo){
+        if (nodeRepoJsonModel.getIpv6Address() != null){
+            nodeRepoHardwareInfo.setIpv6Connectivity(true);
+        }
     }
 
     public static HardwareInfo convertJsonModelToHardwareInfo(NodeRepoJsonModel nodeRepoJsonModel) {
         HardwareInfo nodeRepoHardwareInfo = nodeRepoJsonModel.copyToHardwareInfo();
         addStandardSpecifications(nodeRepoHardwareInfo);
+        setIpv6AddressConnectivity(nodeRepoJsonModel, nodeRepoHardwareInfo);
         return nodeRepoHardwareInfo;
     }
 
