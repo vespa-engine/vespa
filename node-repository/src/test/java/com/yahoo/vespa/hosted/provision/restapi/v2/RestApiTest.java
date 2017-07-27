@@ -389,7 +389,7 @@ public class RestApiTest {
                        "{\"message\":\"Moved host2.yahoo.com to parked\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host2.yahoo.com",
                                    new byte[0], Request.Method.PUT),
-                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Can not set parked node host2.yahoo.com allocated to tenant1.application1.instance1 as 'container/id1/0/1' ready. It is not dirty.\"}");
+                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Can not set parked node host2.yahoo.com allocated to tenant2.application2.instance2 as 'content/id2/0/0' ready. It is not dirty.\"}");
         // (... while dirty then ready works (the ready move will be initiated by node maintenance))
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/host2.yahoo.com",
                                    new byte[0], Request.Method.PUT),
@@ -446,18 +446,18 @@ public class RestApiTest {
     @Test
     public void test_hardware_patching_of_docker_host() throws Exception {
         assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"), Optional.of(false));
-        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/parent1.yahoo.com"), Optional.of(false));
+        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com"), Optional.of(false));
 
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/parent1.yahoo.com",
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com",
                         Utf8.toBytes("{" +
                                 "\"hardwareFailureType\": \"memory_mcelog\"" +
                                 "}"
                         ),
                         Request.Method.PATCH),
-                "{\"message\":\"Updated parent1.yahoo.com\"}");
+                "{\"message\":\"Updated dockerhost2.yahoo.com\"}");
 
         assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"), Optional.of(true));
-        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/parent1.yahoo.com"), Optional.of(true));
+        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com"), Optional.of(true));
     }
 
     @Test
@@ -562,10 +562,10 @@ public class RestApiTest {
 
     private void assertHardwareFailure(Request request, Optional<Boolean> expectedHardwareFailure) throws CharacterCodingException {
         Response response = container.handleRequest(request);
-        assertEquals(response.getStatus(), 200);
         String json = response.getBodyAsString();
         Optional<Boolean> actualHardwareFailure = getHardwareFailure(json);
         assertEquals(expectedHardwareFailure, actualHardwareFailure);
+        assertEquals(200, response.getStatus());
     }
 
     /** Asserts a particular response and 200 as response status */

@@ -49,7 +49,7 @@ public class DockerHostCapacity {
         return comp;
     }
 
-    int compareWithoutRetired(Node hostA, Node hostB) {
+    int compareWithoutInactive(Node hostA, Node hostB) {
         int comp = freeCapacityOf(hostB,  true).compare(freeCapacityOf(hostA, true));
         if (comp == 0) {
             comp = freeCapacityOf(hostB, true).compare(freeCapacityOf(hostA, true));
@@ -67,6 +67,10 @@ public class DockerHostCapacity {
      */
     boolean hasCapacity(Node dockerHost, Flavor flavor) {
         return freeCapacityOf(dockerHost, false).hasCapacityFor(flavor) && freeIPs(dockerHost) > 0;
+    }
+
+    boolean hasCapacityWhenRetiredAndInactiveNodesAreGone(Node dockerHost, Flavor flavor) {
+        return freeCapacityOf(dockerHost, true).hasCapacityFor(flavor) && freeIPs(dockerHost) > 0;
     }
 
     /**
@@ -117,17 +121,28 @@ public class DockerHostCapacity {
      *
      * @return A default (empty) capacity if not a docker host, otherwise the free/unallocated/rest capacity
      */
-    public ResourceCapacity freeCapacityOf(Node dockerHost, boolean retiredAsFreeCapacity) {
+    public ResourceCapacity freeCapacityOf(Node dockerHost, boolean treatInactiveOrRetiredAsUnusedCapacity) {
         // Only hosts have free capacity
         if (!dockerHost.type().equals(NodeType.host)) return new ResourceCapacity();
 
         ResourceCapacity hostCapacity = new ResourceCapacity(dockerHost);
         for (Node container : allNodes.childNodes(dockerHost).asList()) {
-            if (retiredAsFreeCapacity && container.allocation().isPresent()
-                    && container.allocation().get().membership().retired()) continue;
-            hostCapacity.subtract(container);
+            boolean isUsedCapacity = !(treatInactiveOrRetiredAsUnusedCapacity && isInactiveOrRetired(container));
+            if (isUsedCapacity) {
+                hostCapacity.subtract(container);
+            }
         }
         return hostCapacity;
+    }
+
+    private boolean isInactiveOrRetired(Node node) {
+        boolean isInactive = node.state().equals(Node.State.inactive);
+        boolean isRetired = false;
+        if (node.allocation().isPresent()) {
+            isRetired = node.allocation().get().membership().retired();
+        }
+
+        return isInactive || isRetired;
     }
 
     /**

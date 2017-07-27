@@ -1,7 +1,7 @@
 {
   "url": "http://localhost:8080/nodes/v2/node/host2.yahoo.com",
   "id": "host2.yahoo.com",
-  "state": "reserved",
+  "state": "active",
   "type": "tenant",
   "hostname": "host2.yahoo.com",
   "openStackId": "node2",
@@ -14,15 +14,15 @@
   "fastDisk": true,
   "environment": "BARE_METAL",
   "owner": {
-    "tenant": "tenant1",
-    "application": "application1",
-    "instance": "instance1"
+    "tenant": "tenant2",
+    "application": "application2",
+    "instance": "instance2"
   },
   "membership": {
-    "clustertype": "container",
-    "clusterid": "id1",
+    "clustertype": "content",
+    "clusterid": "id2",
     "group": "0",
-    "index": 1,
+    "index": 0,
     "retired": false
   },
   "restartGeneration": 0,
@@ -43,6 +43,11 @@
     },
     {
       "event": "reserved",
+      "at": 123,
+      "agent": "application"
+    },
+    {
+      "event": "activated",
       "at": 123,
       "agent": "application"
     }

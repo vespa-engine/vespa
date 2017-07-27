@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,25 +36,21 @@ public class NodePrioritizer {
     private final DockerHostCapacity capacity;
     private final NodeSpec requestedNodes;
     private final ApplicationId appId;
-    private final int maxRetires;
     private final ClusterSpec clusterSpec;
 
     private final boolean isAllocatingForReplacement;
-    private final List<Node> spareHosts;
-    private final List<Node> headroomViolatedHosts;
+    private final Set<Node> spareHosts;
+    private final Map<Node, Boolean> headroomHosts;
     private final boolean isDocker;
 
-    int nofViolations = 0;
-
-    NodePrioritizer(List<Node> allNodes, ApplicationId appId, ClusterSpec clusterSpec, NodeSpec nodeSpec, NodeFlavors nodeFlavors, int maxRetires, int spares) {
+    NodePrioritizer(List<Node> allNodes, ApplicationId appId, ClusterSpec clusterSpec, NodeSpec nodeSpec, NodeFlavors nodeFlavors, int spares) {
         this.allNodes = Collections.unmodifiableList(allNodes);
         this.requestedNodes = nodeSpec;
-        this.maxRetires = maxRetires;
         this.clusterSpec = clusterSpec;
         this.appId = appId;
 
         spareHosts = findSpareHosts(allNodes, spares);
-        headroomViolatedHosts = findHeadroomHosts(allNodes, spareHosts, nodeFlavors);
+        headroomHosts = findHeadroomHosts(allNodes, spareHosts, nodeFlavors);
 
         this.capacity = new DockerHostCapacity(allNodes);
 
@@ -72,6 +69,78 @@ public class NodePrioritizer {
 
         isAllocatingForReplacement = isReplacement(nofNodesInCluster, nofFailedNodes);
         isDocker = isDocker();
+    }
+
+    /**
+     * From ipAddress - get hostname
+     *
+     * @return hostname or null if not able to do the loopup
+     */
+    private static String lookupHostname(String ipAddress) {
+        try {
+            return InetAddress.getByName(ipAddress).getHostName();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private static Set<Node> findSpareHosts(List<Node> nodes, int spares) {
+        DockerHostCapacity capacity = new DockerHostCapacity(new ArrayList<>(nodes));
+        return nodes.stream()
+                .filter(node -> node.type().equals(NodeType.host))
+                .filter(dockerHost -> dockerHost.state().equals(Node.State.active))
+                .filter(dockerHost -> capacity.freeIPs(dockerHost) > 0)
+                .sorted(capacity::compareWithoutInactive)
+                .limit(spares)
+                .collect(Collectors.toSet());
+    }
+
+    private static Map<Node, Boolean> findHeadroomHosts(List<Node> nodes, Set<Node> spareNodes, NodeFlavors flavors) {
+        DockerHostCapacity capacity = new DockerHostCapacity(nodes);
+        Map<Node, Boolean> headroomNodesToViolation = new HashMap<>();
+
+        List<Node> hostsSortedOnLeastCapacity = nodes.stream()
+                .filter(n -> !spareNodes.contains(n))
+                .filter(node -> node.type().equals(NodeType.host))
+                .filter(dockerHost -> dockerHost.state().equals(Node.State.active))
+                .filter(dockerHost -> capacity.freeIPs(dockerHost) > 0)
+                .sorted((a, b) -> capacity.compareWithoutInactive(b, a))
+                .collect(Collectors.toList());
+
+        for (Flavor flavor : flavors.getFlavors().stream().filter(f -> f.getIdealHeadroom() > 0).collect(Collectors.toList())) {
+            Set<Node> tempHeadroom = new HashSet<>();
+            Set<Node> notEnoughCapacity = new HashSet<>();
+            for (Node host : hostsSortedOnLeastCapacity) {
+                if (headroomNodesToViolation.containsKey(host)) continue;
+                if (capacity.hasCapacityWhenRetiredAndInactiveNodesAreGone(host, flavor)) {
+                    headroomNodesToViolation.put(host, false);
+                    tempHeadroom.add(host);
+                } else {
+                    notEnoughCapacity.add(host);
+                }
+
+                if (tempHeadroom.size() == flavor.getIdealHeadroom()) {
+                    continue;
+                }
+            }
+
+            // Now check if we have enough headroom - if not choose the nodes that almost has it
+            if (tempHeadroom.size() < flavor.getIdealHeadroom()) {
+                List<Node> violations = notEnoughCapacity.stream()
+                        .sorted((a, b) -> capacity.compare(b, a))
+                        .limit(flavor.getIdealHeadroom() - tempHeadroom.size())
+                        .collect(Collectors.toList());
+
+                // TODO should we be selective on which application on the node that violates the headroom?
+                for (Node nodeViolatingHeadrom : violations) {
+                    headroomNodesToViolation.put(nodeViolatingHeadrom, true);
+                }
+
+            }
+        }
+
+        return headroomNodesToViolation;
     }
 
     List<NodePriority> prioritize() {
@@ -131,7 +200,6 @@ public class NodePrioritizer {
                 .filter(node -> node.allocation().isPresent())
                 .filter(node -> node.allocation().get().owner().equals(appId))
                 .map(node -> toNodePriority(node, false, false))
-                .filter(n -> !n.violatesSpares || isAllocatingForReplacement)
                 .forEach(nodePriority -> nodes.put(nodePriority.node, nodePriority));
     }
 
@@ -160,38 +228,16 @@ public class NodePrioritizer {
             Node parent = pri.parent.get();
             pri.freeParentCapacity = capacity.freeCapacityOf(parent, false);
 
-            /**
-             * To be conservative we have a restriction of how many nodes we can retire for each cluster,
-             * pr. allocation iteration. TODO also account for previously retired nodes? (thus removing the pr iteration restriction)
-             */
-            if (nofViolations <= maxRetires) {
-                if (spareHosts.contains(parent)) {
-                    pri.violatesSpares = true;
-                    nofViolations++;
-                }
+            if (spareHosts.contains(parent)) {
+                pri.violatesSpares = true;
+            }
 
-                // Headroom violation
-                if (headroomViolatedHosts.contains(parent)) {
-                    pri.violatesHeadroom = true;
-                    nofViolations++;
-                }
+            if (headroomHosts.containsKey(parent)) {
+                pri.violatesHeadroom = headroomHosts.get(parent);
             }
         }
-        return pri;
-    }
 
-    /**
-     * From ipAddress - get hostname
-     *
-     * @return hostname or null if not able to do the loopup
-     */
-    private static String lookupHostname(String ipAddress) {
-        try {
-            return InetAddress.getByName(ipAddress).getHostName();
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
-        return null;
+        return pri;
     }
 
     private boolean isReplacement(long nofNodesInCluster, long nodeFailedNodes) {
@@ -216,10 +262,7 @@ public class NodePrioritizer {
 
     private boolean isDocker() {
         Flavor flavor = getFlavor();
-        if (flavor != null) {
-            return flavor.getType().equals(Flavor.Type.DOCKER_CONTAINER);
-        }
-        return false;
+        return (flavor != null) && flavor.getType().equals(Flavor.Type.DOCKER_CONTAINER);
     }
 
     private Optional<Node> findParentNode(Node node) {
@@ -227,48 +270,5 @@ public class NodePrioritizer {
         return allNodes.stream()
                 .filter(n -> n.hostname().equals(node.parentHostname().orElse(" NOT A NODE")))
                 .findAny();
-    }
-
-    private static List<Node> findSpareHosts(List<Node> nodes, int spares) {
-        DockerHostCapacity capacity = new DockerHostCapacity(nodes);
-        return nodes.stream()
-                .filter(node -> node.type().equals(NodeType.host))
-                .filter(dockerHost -> dockerHost.state().equals(Node.State.active))
-                .filter(dockerHost -> capacity.freeIPs(dockerHost) > 0)
-                .sorted(capacity::compareWithoutRetired)
-                .limit(spares)
-                .collect(Collectors.toList());
-    }
-
-    private static List<Node> findHeadroomHosts(List<Node> nodes, List<Node> spareNodes, NodeFlavors flavors) {
-        DockerHostCapacity capacity = new DockerHostCapacity(nodes);
-        List<Node> headroomNodes = new ArrayList<>();
-
-        List<Node> hostsSortedOnLeastCapacity = nodes.stream()
-                .filter(n -> !spareNodes.contains(n))
-                .filter(node -> node.type().equals(NodeType.host))
-                .filter(dockerHost -> dockerHost.state().equals(Node.State.active))
-                .filter(dockerHost -> capacity.freeIPs(dockerHost) > 0)
-                .sorted((a,b) -> capacity.compareWithoutRetired(b,a))
-                .collect(Collectors.toList());
-
-        for (Flavor flavor : flavors.getFlavors()) {
-            for (int i = 0; i < flavor.getIdealHeadroom(); i++) {
-                Node lastNode = null;
-                for (Node potentialHeadroomHost : hostsSortedOnLeastCapacity) {
-                    if (headroomNodes.contains(potentialHeadroomHost)) continue;
-                    lastNode = potentialHeadroomHost;
-                    if (capacity.hasCapacity(potentialHeadroomHost, flavor)) {
-                        headroomNodes.add(potentialHeadroomHost);
-                        continue;
-                    }
-                }
-                if (lastNode != null) {
-                    headroomNodes.add(lastNode);
-                }
-            }
-        }
-
-        return headroomNodes;
     }
 }

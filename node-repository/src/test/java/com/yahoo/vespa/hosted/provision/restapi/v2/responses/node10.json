@@ -1,7 +1,7 @@
 {
   "url": "http://localhost:8080/nodes/v2/node/host10.yahoo.com",
   "id": "host10.yahoo.com",
-  "state": "active",
+  "state": "reserved",
   "type": "tenant",
   "hostname": "host10.yahoo.com",
   "parentHostname": "parent1.yahoo.com",
@@ -15,15 +15,15 @@
   "fastDisk": true,
   "environment": "BARE_METAL",
   "owner": {
-    "tenant": "tenant3",
-    "application": "application3",
-    "instance": "instance3"
+    "tenant": "tenant1",
+    "application": "application1",
+    "instance": "instance1"
   },
   "membership": {
-    "clustertype": "content",
-    "clusterid": "id3",
+    "clustertype": "container",
+    "clusterid": "id1",
     "group": "0",
-    "index": 0,
+    "index": 1,
     "retired": false
   },
   "restartGeneration": 0,
@@ -48,11 +48,6 @@
     },
     {
       "event": "reserved",
-      "at": 123,
-      "agent": "application"
-    },
-    {
-      "event": "activated",
       "at": 123,
       "agent": "application"
     }

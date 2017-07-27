@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
@@ -15,11 +16,19 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.path.Path;
+import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import org.junit.Assert;
 import org.junit.Test;
 
+import java.time.Instant;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -31,6 +40,146 @@ import static org.junit.Assert.fail;
  * @author mortent
  */
 public class DynamicDockerProvisioningTest {
+
+    /**
+     * Test reloaction of nodes that violates headroom.
+     *
+     * Setup 4 docker hosts and allocate one container on each (from two different applications)
+     * No spares - only headroom (4xd-2)
+     *
+     * One application is now violating headroom and need relocation
+     *
+     *  Initial allocation of app 1 and 2 --> final allocation (headroom marked as H):
+     *
+     * | H  |  H  | H   | H   |        |    |    |    |    |
+     * | H  |  H  | H1a | H1b |   -->  |    |    |    |    |
+     * |    |     | 2a  | 2b  |        | 1a | 1b | 2a | 2b |
+     *
+     */
+    @Test
+    public void relocate_nodes_from_headroom_hosts() {
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.perf, RegionName.from("us-east")), flavorsConfig(true));
+        enableDynamicAllocation(tester);
+        tester.makeReadyNodes(4, "host", "host-small", NodeType.host, 32);
+        deployZoneApp(tester);
+        List<Node> dockerHosts = tester.nodeRepository().getNodes(NodeType.host, Node.State.active);
+        Flavor flavor = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("d-1");
+
+        // Application 1
+        ApplicationId application1 = makeApplicationId("t1", "a1");
+        ClusterSpec clusterSpec1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"));
+        addAndAssignNode(application1, "1a", dockerHosts.get(2).hostname(), flavor, 0, tester);
+        addAndAssignNode(application1, "1b", dockerHosts.get(3).hostname(), flavor, 1, tester);
+
+        // Application 2
+        ApplicationId application2 = makeApplicationId("t2", "a2");
+        ClusterSpec clusterSpec2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"));
+        addAndAssignNode(application2, "2a", dockerHosts.get(2).hostname(), flavor, 0, tester);
+        addAndAssignNode(application2, "2b", dockerHosts.get(3).hostname(), flavor, 1, tester);
+
+        // Redeploy one of the applications
+        redeply(application1, clusterSpec1, flavor, tester);
+
+        // Assert that the nodes are spread across all hosts (to allow headroom)
+        Set<String> hostsWithChildren = new HashSet<>();
+        for (Node node : tester.nodeRepository().getNodes(NodeType.tenant, Node.State.active)) {
+            if (!isInactiveOrRetired(node)) {
+                hostsWithChildren.add(node.parentHostname().get());
+            }
+        }
+        Assert.assertEquals(4, hostsWithChildren.size());
+    }
+
+    /**
+     * Test relocation of nodes from spare hosts.
+     *
+     * Setup 4 docker hosts and allocate one container on each (from two different applications)
+     * No headroom defined - only 2 spares.
+     *
+     * Check that it relocates containers away from the 2 spares
+     *
+     *  Initial allocation of app 1 and 2 --> final allocation:
+     *
+     * |    |    |    |    |        |    |    |    |    |
+     * |    |    |    |    |   -->  | 2a | 2b |    |    |
+     * | 1a | 1b | 2a | 2b |        | 1a | 1b |    |    |
+     *
+     */
+    @Test
+    public void relocate_nodes_from_spare_hosts() {
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")), flavorsConfig());
+        enableDynamicAllocation(tester);
+        tester.makeReadyNodes(4, "host", "host-small", NodeType.host, 32);
+        deployZoneApp(tester);
+        List<Node> dockerHosts = tester.nodeRepository().getNodes(NodeType.host, Node.State.active);
+        Flavor flavor = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("d-1");
+
+        // Application 1
+        ApplicationId application1 = makeApplicationId("t1", "a1");
+        ClusterSpec clusterSpec1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"));
+        addAndAssignNode(application1, "1a", dockerHosts.get(0).hostname(), flavor, 0, tester);
+        addAndAssignNode(application1, "1b", dockerHosts.get(1).hostname(), flavor, 1, tester);
+
+        // Application 2
+        ApplicationId application2 = makeApplicationId("t2", "a2");
+        ClusterSpec clusterSpec2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"));
+        addAndAssignNode(application2, "2a", dockerHosts.get(2).hostname(), flavor, 0, tester);
+        addAndAssignNode(application2, "2b", dockerHosts.get(3).hostname(), flavor, 1, tester);
+
+        // Redeploy both applications (to be agnostic on which hosts are picked as spares)
+        redeply(application1, clusterSpec1, flavor, tester);
+        redeply(application2, clusterSpec2, flavor, tester);
+
+        // Assert that we have two spare nodes (two hosts that are don't have allocations)
+        Set<String> hostsWithChildren = new HashSet<>();
+        for (Node node : tester.nodeRepository().getNodes(NodeType.tenant, Node.State.active)) {
+            if (!isInactiveOrRetired(node)) {
+                hostsWithChildren.add(node.parentHostname().get());
+            }
+        }
+        Assert.assertEquals(2, hostsWithChildren.size());
+    }
+
+    /**
+     * Test redeployment of nodes that violates spare headroom - but without alternatives
+     *
+     * Setup 2 docker hosts and allocate one app with a container on each
+     * No headroom defined - only 2 spares.
+     *
+     * Initial allocation of app 1 --> final allocation:
+     *
+     * |    |    |        |    |    |
+     * |    |    |   -->  |    |    |
+     * | 1a | 1b |        | 1a | 1b |
+     *
+     */
+    @Test
+    public void do_not_relocate_nodes_from_spare_if_no_where_to_reloacte_them() {
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")), flavorsConfig());
+        enableDynamicAllocation(tester);
+        tester.makeReadyNodes(2, "host", "host-small", NodeType.host, 32);
+        deployZoneApp(tester);
+        List<Node> dockerHosts = tester.nodeRepository().getNodes(NodeType.host, Node.State.active);
+        Flavor flavor = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("d-1");
+
+        // Application 1
+        ApplicationId application1 = makeApplicationId("t1", "a1");
+        ClusterSpec clusterSpec1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"));
+        addAndAssignNode(application1, "1a", dockerHosts.get(0).hostname(), flavor, 0, tester);
+        addAndAssignNode(application1, "1b", dockerHosts.get(1).hostname(), flavor, 1, tester);
+
+        // Redeploy both applications (to be agnostic on which hosts are picked as spares)
+        redeply(application1, clusterSpec1, flavor, tester);
+
+        // Assert that we have two spare nodes (two hosts that are don't have allocations)
+        Set<String> hostsWithChildren = new HashSet<>();
+        for (Node node : tester.nodeRepository().getNodes(NodeType.tenant, Node.State.active)) {
+            if (!isInactiveOrRetired(node)) {
+                hostsWithChildren.add(node.parentHostname().get());
+            }
+        }
+        Assert.assertEquals(2, hostsWithChildren.size());
+    }
 
     @Test(expected = OutOfCapacityException.class)
     public void multiple_groups_are_on_separate_parent_hosts() {
@@ -93,9 +242,6 @@ public class DynamicDockerProvisioningTest {
         List<Node> finalSpareCapacity = findSpareCapacity(tester);
 
         assertThat(finalSpareCapacity.size(), is(1));
-
-        // Uncomment the statement below to walk through the allocation events visually
-        //AllocationVisualizer.visualize(tester.getAllocationSnapshots());
     }
 
     @Test
@@ -116,6 +262,29 @@ public class DynamicDockerProvisioningTest {
         assertThat(initialSpareCapacity.size(), is(0));
     }
 
+    private ApplicationId makeApplicationId(String tenant, String appName) {
+        return ApplicationId.from(tenant, appName, "default");
+    }
+
+    private void redeply(ApplicationId id, ClusterSpec spec, Flavor flavor, ProvisioningTester tester) {
+        List<HostSpec> hostSpec = tester.prepare(id, spec, 2,1, flavor.canonicalName());
+        tester.activate(id, new HashSet<>(hostSpec));
+    }
+
+    private Node addAndAssignNode(ApplicationId id, String hostname, String parentHostname, Flavor flavor, int index, ProvisioningTester tester) {
+        Node node1a = Node.create("open1", Collections.singleton("127.0.0.100"), new HashSet<>(), hostname, Optional.of(parentHostname), flavor, NodeType.tenant);
+        ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100")).changeGroup(Optional.of(ClusterSpec.Group.from(0)));
+        ClusterMembership clusterMembership1 = ClusterMembership.from(clusterSpec,index);
+        Node node1aAllocation = node1a.allocate(id,clusterMembership1, Instant.now());
+
+        tester.nodeRepository().addNodes(Collections.singletonList(node1aAllocation));
+        NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(tester.getCurator()));
+        tester.nodeRepository().activate(Collections.singletonList(node1aAllocation), transaction);
+        transaction.commit();
+
+        return node1aAllocation;
+    }
+
     private List<Node> findSpareCapacity(ProvisioningTester tester) {
         List<Node> nodes = tester.nodeRepository().getNodes(Node.State.values());
         NodeList nl = new NodeList(nodes);
@@ -123,6 +292,22 @@ public class DynamicDockerProvisioningTest {
                 .filter(n -> n.type() == NodeType.host)
                 .filter(n -> nl.childNodes(n).size() == 0) // Nodes without children
                 .collect(Collectors.toList());
+    }
+
+    private FlavorsConfig flavorsConfig(boolean includeHeadroom) {
+        FlavorConfigBuilder b = new FlavorConfigBuilder();
+        b.addFlavor("host-large", 6., 6., 6, Flavor.Type.BARE_METAL);
+        b.addFlavor("host-small", 3., 3., 3, Flavor.Type.BARE_METAL);
+        b.addFlavor("d-1", 1, 1., 1, Flavor.Type.DOCKER_CONTAINER);
+        b.addFlavor("d-2", 2, 2., 2, Flavor.Type.DOCKER_CONTAINER);
+        if (includeHeadroom) {
+            b.addFlavor("d-2-4", 2, 2., 2, Flavor.Type.DOCKER_CONTAINER, 4);
+        }
+        b.addFlavor("d-3", 3, 3., 3, Flavor.Type.DOCKER_CONTAINER);
+        b.addFlavor("d-3-disk", 3, 3., 5, Flavor.Type.DOCKER_CONTAINER);
+        b.addFlavor("d-3-mem", 3, 5., 3, Flavor.Type.DOCKER_CONTAINER);
+        b.addFlavor("d-3-cpu", 5, 3., 3, Flavor.Type.DOCKER_CONTAINER);
+        return b.build();
     }
 
     private FlavorsConfig flavorsConfig() {
@@ -152,5 +337,15 @@ public class DynamicDockerProvisioningTest {
 
     private void enableDynamicAllocation(ProvisioningTester tester) {
         tester.getCurator().set(Path.fromString("/provision/v1/dynamicDockerAllocation"), new byte[0]);
+    }
+
+    private boolean isInactiveOrRetired(Node node) {
+        boolean isInactive = node.state().equals(Node.State.inactive);
+        boolean isRetired = false;
+        if (node.allocation().isPresent()) {
+            isRetired = node.allocation().get().membership().retired();
+        }
+
+        return isInactive || isRetired;
     }
 }

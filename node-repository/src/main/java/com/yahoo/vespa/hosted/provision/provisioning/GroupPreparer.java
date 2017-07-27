@@ -19,7 +19,6 @@ import java.util.function.BiConsumer;
  * @author bratseth
  */
 class GroupPreparer {
-    private static final boolean canChangeGroup = true;
     private final NodeRepository nodeRepository;
     private final Clock clock;
 
@@ -59,7 +58,6 @@ class GroupPreparer {
                         cluster,
                         requestedNodes,
                         nodeRepository.getAvailableFlavors(),
-                        1,
                         nofSpares);
 
                 prioritizer.addApplicationNodes();
