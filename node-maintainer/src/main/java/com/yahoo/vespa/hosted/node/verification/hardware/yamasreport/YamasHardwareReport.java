@@ -49,7 +49,7 @@ public class YamasHardwareReport {
         routing = new JsonObjectWrapper<>("yamas", wrap);
     }
 
-    public void createFromHardwareResults(BenchmarkResults benchmarkResults) {
+    public void createReportFromBenchmarkResults(BenchmarkResults benchmarkResults) {
         metrics = new HardwareReportMetrics();
         dimensions = new HardwareReportDimensions();
         metrics.setCpuCyclesPerSec(benchmarkResults.getCpuCyclesPerSec());

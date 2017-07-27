@@ -16,11 +16,10 @@ import java.util.Arrays;
 /**
  * Benchmarks different hardware components and creates report
  */
-public class HardwareVerifier {
+public class HardwareBenchmarker {
 
-    public static void verifyHardware() {
+    public static void hardwareBenchmarks(CommandExecutor commandExecutor) {
         BenchmarkResults benchmarkResults = new BenchmarkResults();
-        CommandExecutor commandExecutor = new CommandExecutor();
         ArrayList<Benchmark> benchmarks = new ArrayList<>(Arrays.asList(
                 new DiskBenchmark(benchmarkResults, commandExecutor),
                 new CPUBenchmark(benchmarkResults, commandExecutor),
@@ -30,8 +29,18 @@ public class HardwareVerifier {
         for (Benchmark benchmark : benchmarks) {
             benchmark.doBenchmark();
         }
+
+        YamasHardwareReport yamasHardwareReport = makeYamasHardwareReport(benchmarkResults);
+        printBenchmarkResults(yamasHardwareReport);
+    }
+
+    protected static YamasHardwareReport makeYamasHardwareReport(BenchmarkResults benchmarkResults){
         YamasHardwareReport yamasHardwareReport = new YamasHardwareReport();
-        yamasHardwareReport.createFromHardwareResults(benchmarkResults);
+        yamasHardwareReport.createReportFromBenchmarkResults(benchmarkResults);
+        return yamasHardwareReport;
+    }
+
+    private static void printBenchmarkResults(YamasHardwareReport yamasHardwareReport){
         ObjectMapper om = new ObjectMapper();
         try {
             System.out.println(om.writeValueAsString(yamasHardwareReport));
@@ -41,7 +50,8 @@ public class HardwareVerifier {
     }
 
     public static void main(String[] args) {
-        HardwareVerifier.verifyHardware();
+        CommandExecutor commandExecutor = new CommandExecutor();
+        HardwareBenchmarker.hardwareBenchmarks(commandExecutor);
     }
 
 }
