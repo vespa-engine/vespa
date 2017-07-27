@@ -174,6 +174,7 @@ void
 DataType::buildFieldPath(FieldPath & path, const vespalib::stringref  & remainFieldName) const
 {
     if ( !remainFieldName.empty() ) {
+        path.reserve(4);  // Optimize for short paths
         onBuildFieldPath(path,remainFieldName);
     }
 }

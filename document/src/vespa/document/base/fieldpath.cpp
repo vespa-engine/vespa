@@ -178,28 +178,11 @@ FieldPath::FieldPath(const FieldPath &) = default;
 FieldPath & FieldPath::operator=(const FieldPath &) = default;
 FieldPath::~FieldPath() { }
 
-FieldPath::iterator
-FieldPath::insert(iterator pos, FieldPathEntry && entry)
-{
-    return _path.insert(pos, std::move(entry));
-}
-void
-FieldPath::push_back(FieldPathEntry && entry)
-{
-    _path.push_back(std::move(entry));
-}
-
-void
-FieldPath::pop_back()
-{
-    _path.pop_back();
-}
-
-void
-FieldPath::clear()
-{
-    _path.clear();
-}
+FieldPath::iterator FieldPath::insert(iterator pos, FieldPathEntry && entry) { return _path.insert(pos, std::move(entry)); }
+void FieldPath::push_back(FieldPathEntry && entry) { _path.push_back(std::move(entry)); }
+void FieldPath::pop_back() { _path.pop_back(); }
+void FieldPath::clear() { _path.clear(); }
+void FieldPath::reserve(size_t sz) { _path.reserve(sz); }
 
 void
 FieldPath::visitMembers(vespalib::ObjectVisitor& visitor) const

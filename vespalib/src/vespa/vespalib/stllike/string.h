@@ -180,8 +180,8 @@ public:
     small_string(const void * s, size_type sz) : _buf(_stack), _sz(sz) { init(s); }
     small_string(const stringref & s) : _buf(_stack), _sz(s.size()) { init(s.c_str()); }
     small_string(const std::string & s) : _buf(_stack), _sz(s.size()) { init(s.c_str()); }
-    small_string(const small_string & rhs) : _buf(_stack), _sz(rhs.size()) { init(rhs.c_str()); }
-    small_string(const small_string & rhs, size_type pos, size_type sz=npos)
+    small_string(const small_string & rhs) noexcept : _buf(_stack), _sz(rhs.size()) { init(rhs.c_str()); }
+    small_string(const small_string & rhs, size_type pos, size_type sz=npos) noexcept
         : _buf(_stack), _sz(std::min(sz, rhs.size()-pos))
     {
         init(rhs.c_str()+pos);
@@ -520,7 +520,7 @@ public:
     }
 private:
     void assign_slower(const void * s, size_type sz) __attribute((noinline));
-    void init_slower(const void *s) __attribute((noinline));
+    void init_slower(const void *s) noexcept __attribute((noinline));
     void _reserveBytes(size_type newBufferSize);
     void reserveBytes(size_type newBufferSize) {
         if (newBufferSize > _bufferSize) {
@@ -533,7 +533,7 @@ private:
     char * buffer() { return _buf; }
     const char * buffer() const { return _buf; }
     void appendAlloc(const void * s, size_type sz) __attribute__((noinline));
-    void init(const void *s) {
+    void init(const void *s) noexcept {
         if (__builtin_expect(_sz < StackSize, true)) {
             _bufferSize = StackSize;
             memcpy(_stack, s, _sz);

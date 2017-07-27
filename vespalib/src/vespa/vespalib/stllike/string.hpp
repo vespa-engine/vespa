@@ -91,7 +91,7 @@ void small_string<StackSize>::assign_slower(const void * s, size_type sz)
 }
 
 template <uint32_t StackSize>
-void small_string<StackSize>::init_slower(const void *s)
+void small_string<StackSize>::init_slower(const void *s) noexcept
 {   
     _bufferSize = _sz+1;
     _buf = (char *) malloc(_bufferSize);

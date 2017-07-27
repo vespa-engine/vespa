@@ -252,9 +252,12 @@ MapFieldValue::hasChanged() const
 MapFieldValue::const_iterator
 MapFieldValue::find(const FieldValue& key) const
 {
-    for(size_t i(0), m(_keys->size()); i < m; i++) {
-        if ((*_keys)[i] == key) {
-            return const_iterator(*this, i);
+    size_t sz = _keys->size();
+    if ((sz > 0) && (key.getClass().id() == (*_keys)[0].getClass().id())) {
+        for (size_t i(0), m(_keys->size()); i < m; i++) {
+            if ((*_keys)[i].fastCompare(key) == 0) {
+                return const_iterator(*this, i);
+            }
         }
     }
     return end();
@@ -263,17 +266,18 @@ MapFieldValue::find(const FieldValue& key) const
 MapFieldValue::iterator
 MapFieldValue::find(const FieldValue& key)
 {
-    for(size_t i(0), m(_keys->size()); i < m; i++) {
-        if ((*_keys)[i] == key) {
-            return iterator(*this, i);
+    size_t sz = _keys->size();
+    if ((sz > 0) && (key.getClass().id() == (*_keys)[0].getClass().id())) {
+        for (size_t i(0), m(_keys->size()); i < m; i++) {
+            if ((*_keys)[i].fastCompare(key) == 0) {
+                return iterator(*this, i);
+            }
         }
     }
     return end();
 }
 bool
-MapFieldValue::checkAndRemove(const FieldValue& key,
-                             ModificationStatus status,
-                              bool wasModified,
+MapFieldValue::checkAndRemove(const FieldValue& key, ModificationStatus status, bool wasModified,
                               std::vector<const FieldValue*>& keysToRemove) const
 {
     if (status == ModificationStatus::REMOVED) {

@@ -38,6 +38,7 @@ public:
 
     FieldValue& assign(const FieldValue&) override ;
     int compare(const FieldValue& other) const override;
+    int fastCompare(const FieldValue& other) const override;
 
     FieldValue& operator=(const vespalib::stringref &) override;
     FieldValue& operator=(int32_t) override;

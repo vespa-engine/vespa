@@ -58,13 +58,13 @@ public:
     void setValue(const char* val, size_t size) { setValue(stringref(val, size)); }
 
     int compare(const FieldValue& other) const override;
+    int fastCompare(const FieldValue& other) const override;
 
     vespalib::string getAsString() const override;
     std::pair<const char*, size_t> getAsRaw() const override;
 
     void printXml(XmlOutputStream& out) const override;
-    void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     FieldValue& assign(const FieldValue&) override;
     bool hasChanged() const  override{ return _altered; }
 

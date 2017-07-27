@@ -35,8 +35,8 @@ public:
     */
     FieldPathEntry();
 
-    FieldPathEntry(FieldPathEntry &&) = default;
-    FieldPathEntry & operator=(FieldPathEntry &&) = default;
+    FieldPathEntry(FieldPathEntry &&) noexcept = default;
+    FieldPathEntry & operator=(FieldPathEntry &&) noexcept = default;
     FieldPathEntry(const FieldPathEntry &);
     FieldPathEntry & operator=(const FieldPathEntry &);
 
@@ -147,6 +147,7 @@ public:
 
     void pop_back();
     void clear();
+    void reserve(size_t sz);
 
     Container::size_type size() const { return _path.size(); }
     bool empty() const { return _path.empty(); }
