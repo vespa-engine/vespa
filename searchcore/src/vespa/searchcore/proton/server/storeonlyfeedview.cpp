@@ -392,15 +392,15 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token,
     considerEarlyAck(token, updOp.getType());
 
     bool immediateCommit = _commitTimeTracker.needCommit();
-    auto onWriteDone = createUpdateDoneContext(token, updOp.getType(),
-                                               _params._metrics, updOp.getUpdate());
+    auto onWriteDone = createUpdateDoneContext(token, updOp.getType(), _params._metrics, updOp.getUpdate());
     updateAttributes(serialNum, lid, upd, immediateCommit, onWriteDone);
 
     _writeService.index().execute(
-            makeLambdaTask([&]()
+            makeLambdaTask([feedToken = std::move(token), upd = updOp.getUpdate(), serialNum,
+                           lid, immediateCommit, onWriteDone, this]() mutable
                            {
-                               applyUpdateToDocumentsAndIndex(std::move(token), serialNum, lid, updOp.getUpdate(),
-                                                            immediateCommit, std::move(onWriteDone));
+                               applyUpdateToDocumentsAndIndex(std::move(feedToken), serialNum, lid, upd,
+                                                              immediateCommit, onWriteDone);
                            }));
 }
 
