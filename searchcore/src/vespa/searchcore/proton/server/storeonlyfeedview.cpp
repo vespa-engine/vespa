@@ -356,8 +356,7 @@ StoreOnlyFeedView::handleUpdate(FeedToken *token,
 
 void
 StoreOnlyFeedView::internalUpdate(FeedToken::UP token,
-                                  const UpdateOperation &updOp)
-{
+                                  const UpdateOperation &updOp) {
     if (updOp.getUpdate().get() == NULL) {
         LOG(warning, "database(%s): ignoring invalid update operation",
             _params._docTypeName.toString().c_str());
@@ -369,12 +368,13 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token,
     const DocumentId &docId = upd.getId();
     const search::DocumentIdT lid = updOp.getLid();
     VLOG(getDebugLevel(lid, upd.getId()),
-        "database(%s): internalUpdate: serialNum(%" PRIu64
-        "), docId(%s), lid(%d)",
-        _params._docTypeName.toString().c_str(),
-        serialNum,
-        upd.getId().toString().c_str(),
-        lid);
+         "database(%s): internalUpdate: serialNum(%"
+                 PRIu64
+                 "), docId(%s), lid(%d)",
+         _params._docTypeName.toString().c_str(),
+         serialNum,
+         upd.getId().toString().c_str(),
+         lid);
 
     if (useDocumentMetaStore(serialNum)) {
         search::DocumentIdT storedLid;
@@ -393,9 +393,18 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token,
 
     bool immediateCommit = _commitTimeTracker.needCommit();
     auto onWriteDone = createUpdateDoneContext(token, updOp.getType(),
-            _params._metrics, updOp.getUpdate());
+                                               _params._metrics, updOp.getUpdate());
     updateAttributes(serialNum, lid, upd, immediateCommit, onWriteDone);
-    UpdateScope updateScope(getUpdateScope(upd));
+
+    applyUpdateToDocumentsAndIndex(token, serialNum, lid, updOp.getUpdate(), immediateCommit, onWriteDone);
+}
+
+void
+StoreOnlyFeedView::applyUpdateToDocumentsAndIndex(FeedToken::UP token, SerialNum serialNum, search::DocumentIdT lid,
+                                                  DocumentUpdate::SP upd, bool immediateCommit,
+                                                  OnOperationDoneType onWriteDone)
+{
+    UpdateScope updateScope(getUpdateScope(*upd));
     /*
      * XXX: Flushing issue
      *
@@ -408,7 +417,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token,
      */
     if (updateScope._indexedFields || updateScope._nonAttributeFields) {
         updateIndexAndDocumentStore(updateScope._indexedFields,
-                                    serialNum, lid, upd,
+                                    serialNum, lid, *upd,
                                     immediateCommit,
                                     onWriteDone);
     }

@@ -174,6 +174,10 @@ private:
                                 bool immediateCommit,
                                 OnOperationDoneType onWriteDone);
 
+    void applyUpdateToDocumentsAndIndex(FeedTokenUP token, SerialNum serialNum, search::DocumentIdT lid,
+                                        document::DocumentUpdate::SP upd, bool immediateCommit,
+                                        OnOperationDoneType onWriteDone);
+
     bool
     lookupDocId(const document::DocumentId &gid,
                 search::DocumentIdT & lid) const;
