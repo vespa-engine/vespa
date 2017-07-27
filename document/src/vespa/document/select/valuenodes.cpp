@@ -195,9 +195,6 @@ FieldValueNode::FieldValueNode(const vespalib::string& doctype,
 {
 }
 
-//FieldValueNode::FieldValueNode(const FieldValueNode &) = default;
-//FieldValueNode & FieldValueNode::operator = (const FieldValueNode &) = default;
-
 FieldValueNode::~FieldValueNode() {}
 vespalib::string
 FieldValueNode::extractFieldName(const std::string & fieldExpression) {

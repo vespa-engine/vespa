@@ -117,8 +117,8 @@ public:
     typedef std::unique_ptr<FieldPath> UP;
 
     FieldPath();
-    FieldPath(const FieldPath &) = delete;
-    FieldPath & operator=(const FieldPath &) = delete;
+    FieldPath(const FieldPath &);
+    FieldPath & operator=(const FieldPath &);
     FieldPath(FieldPath &&) = default;
     FieldPath & operator=(FieldPath &&) = default;
     ~FieldPath();

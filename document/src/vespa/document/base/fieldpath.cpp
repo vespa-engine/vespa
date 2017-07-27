@@ -179,8 +179,8 @@ FieldPath::FieldPath()
     : _path()
 { }
 
-//FieldPath::FieldPath(const FieldPath &) = default;
-//FieldPath & FieldPath::operator=(const FieldPath &) = default;
+FieldPath::FieldPath(const FieldPath &) = default;
+FieldPath & FieldPath::operator=(const FieldPath &) = default;
 FieldPath::~FieldPath() { }
 
 FieldPath::iterator FieldPath::insert(iterator pos, FieldPathEntry && entry) { return _path.insert(pos, std::move(entry)); }
