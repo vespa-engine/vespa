@@ -54,13 +54,13 @@ FieldPathEntry::FieldPathEntry(const Field &fieldRef) :
 { }
 
 FieldPathEntry::FieldPathEntry(const DataType & dataType, const DataType& fillType,
-                               const FieldValueCP & lookupKey) :
+                               FieldValue::UP lookupKey) :
     _type(MAP_KEY),
     _name("value"),
     _field(),
     _dataType(&dataType),
     _lookupIndex(0),
-    _lookupKey(lookupKey),
+    _lookupKey(lookupKey.release()),
     _variableName(),
     _fillInVal()
 {
@@ -70,10 +70,15 @@ FieldPathEntry::FieldPathEntry(const DataType & dataType, const DataType& fillTy
 void FieldPathEntry::setFillValue(const DataType & dataType)
 {
     const DataType * dt = & dataType;
-    while (dt->inherits(CollectionDataType::classId) || dt->inherits(MapDataType::classId)) {
-        dt = dt->inherits(CollectionDataType::classId)
-             ? &static_cast<const CollectionDataType *>(dt)->getNestedType()
-             : &static_cast<const MapDataType *>(dt)->getValueType();
+
+    while (true) {
+        if (dt->inherits(CollectionDataType::classId)) {
+            dt = &static_cast<const CollectionDataType *>(dt)->getNestedType();
+        } else if (dt->inherits(MapDataType::classId)) {
+            dt = &static_cast<const MapDataType *>(dt)->getValueType();
+        } else {
+            break;
+        }
     }
     if (dt->inherits(PrimitiveDataType::classId)) {
         _fillInVal.reset(dt->createFieldValue().release());
@@ -174,8 +179,8 @@ FieldPath::FieldPath()
     : _path()
 { }
 
-FieldPath::FieldPath(const FieldPath &) = default;
-FieldPath & FieldPath::operator=(const FieldPath &) = default;
+//FieldPath::FieldPath(const FieldPath &) = default;
+//FieldPath & FieldPath::operator=(const FieldPath &) = default;
 FieldPath::~FieldPath() { }
 
 FieldPath::iterator FieldPath::insert(iterator pos, FieldPathEntry && entry) { return _path.insert(pos, std::move(entry)); }

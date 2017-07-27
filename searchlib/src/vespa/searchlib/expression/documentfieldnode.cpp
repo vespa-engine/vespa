@@ -29,7 +29,7 @@ DocumentFieldNode::~DocumentFieldNode()
 
 DocumentFieldNode::DocumentFieldNode(const DocumentFieldNode & rhs) :
     DocumentAccessorNode(rhs),
-    _fieldPath(rhs._fieldPath),
+//    _fieldPath(rhs._fieldPath),
     _value(rhs._value),
     _fieldName(rhs._fieldName),
     _doc(NULL)
@@ -40,7 +40,7 @@ DocumentFieldNode & DocumentFieldNode::operator = (const DocumentFieldNode & rhs
 {
     if (this != &rhs) {
         DocumentAccessorNode::operator=(rhs);
-        _fieldPath = rhs._fieldPath;
+//        _fieldPath = rhs._fieldPath;
         _value = rhs._value;
         _fieldName = rhs._fieldName;
         _doc = NULL;

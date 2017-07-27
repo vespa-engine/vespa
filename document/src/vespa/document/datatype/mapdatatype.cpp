@@ -71,7 +71,7 @@ MapDataType::buildFieldPathImpl(FieldPath & path, const DataType &dataType,
         } else {
             FieldValue::UP fv = keyType.createFieldValue();
             *fv = keyValue;
-            path.insert(path.begin(), FieldPathEntry(valueType, dataType, vespalib::CloneablePtr<FieldValue>(fv.release())));
+            path.insert(path.begin(), FieldPathEntry(valueType, dataType, std::move(fv)));
         }
     } else if (memcmp(remainFieldName.c_str(), "key", 3) == 0) {
         size_t endPos = 3;

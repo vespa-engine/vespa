@@ -195,8 +195,8 @@ FieldValueNode::FieldValueNode(const vespalib::string& doctype,
 {
 }
 
-FieldValueNode::FieldValueNode(const FieldValueNode &) = default;
-FieldValueNode & FieldValueNode::operator = (const FieldValueNode &) = default;
+//FieldValueNode::FieldValueNode(const FieldValueNode &) = default;
+//FieldValueNode & FieldValueNode::operator = (const FieldValueNode &) = default;
 
 FieldValueNode::~FieldValueNode() {}
 vespalib::string

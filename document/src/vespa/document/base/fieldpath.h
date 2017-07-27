@@ -53,7 +53,7 @@ public:
     /**
        Creates a field path entry for a map or wset key lookup.
     */
-    FieldPathEntry(const DataType & dataType, const DataType& fillType, const FieldValueCP & lookupKey);
+    FieldPathEntry(const DataType & dataType, const DataType& fillType, std::unique_ptr<FieldValue> lookupKey);
 
     /**
        Creates a field path entry for a map key or value only traversal.
@@ -117,8 +117,8 @@ public:
     typedef std::unique_ptr<FieldPath> UP;
 
     FieldPath();
-    FieldPath(const FieldPath &);
-    FieldPath & operator=(const FieldPath &);
+    FieldPath(const FieldPath &) = delete;
+    FieldPath & operator=(const FieldPath &) = delete;
     FieldPath(FieldPath &&) = default;
     FieldPath & operator=(FieldPath &&) = default;
     ~FieldPath();
