@@ -38,14 +38,14 @@ public:
 
     FieldValue& assign(const FieldValue&) override ;
     int compare(const FieldValue& other) const override;
-    int fastCompare(const FieldValue& other) const override;
+    int fastCompare(const FieldValue& other) const override final;
 
     FieldValue& operator=(const vespalib::stringref &) override;
     FieldValue& operator=(int32_t) override;
     FieldValue& operator=(int64_t) override;
     FieldValue& operator=(float) override;
     FieldValue& operator=(double) override;
-    size_t hash() const override { return vespalib::hash<Number>()(_value); }
+    size_t hash() const override final { return vespalib::hash<Number>()(_value); }
 
     char getAsByte() const override;
     int32_t getAsInt() const override;
@@ -55,7 +55,7 @@ public:
     vespalib::string getAsString() const override;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    bool hasChanged() const override { return _altered; }
+    bool hasChanged() const override final { return _altered; }
 };
 
 } // document

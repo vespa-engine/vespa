@@ -9,7 +9,7 @@
 namespace vespalib {
 
 template <typename T, typename B>
-class PrimitiveArrayT : public IArrayT<B>
+class PrimitiveArrayT final : public IArrayT<B>
 {
     using typename IArrayT<B>::iterator;
 public:
@@ -33,7 +33,7 @@ private:
 };
 
 template <typename B>
-class ComplexArrayT : public IArrayT<B>
+class ComplexArrayT final : public IArrayT<B>
 {
     using typename IArrayT<B>::iterator;
 public:
