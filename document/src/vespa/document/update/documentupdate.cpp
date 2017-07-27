@@ -174,6 +174,7 @@ DocumentUpdate::applyTo(Document& doc) const
     for(const auto & update : _updates) {
         update.applyTo(doc);
     }
+    TransactionGuard guard(doc);
     // Apply fieldpath updates
     for (const auto & update : _fieldPathUpdates) {
         update->applyTo(doc);

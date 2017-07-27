@@ -80,6 +80,7 @@ public:
     bool contains(const FieldSet& fields) const override;
     Type getType() const override { return FIELD; }
     bool valid() const { return _fieldId != 0; }
+    uint32_t hash() const { return getId(); }
 private:
     int calculateIdV7();
 

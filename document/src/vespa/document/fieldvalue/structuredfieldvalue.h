@@ -13,6 +13,8 @@
 #include "fieldvalue.h"
 #include <vespa/document/base/field.h>
 
+#define VESPA_DLL_LOCAL  __attribute__ ((visibility("hidden")))
+
 namespace document {
 
 class ArrayFieldValue;
@@ -26,12 +28,20 @@ class StringFieldValue;
 class StructFieldValue;
 class MapFieldValue;
 class WeightedSetFieldValue;
+class StructuredCache;
 
 class StructuredFieldValue : public FieldValue
 {
     const DataType *_type;
+    std::unique_ptr<StructuredCache> _cache;
 
     UP onGetNestedFieldValue(PathRange nested) const override;
+    /** @return Retrieve value of given field. Null pointer if not set.
+     * Will use container as inplace is present.
+     */
+    VESPA_DLL_LOCAL FieldValue::UP getValue(const Field& field, FieldValue::UP container) const;
+    VESPA_DLL_LOCAL void updateValue(const Field & field, FieldValue::UP value) const;
+    VESPA_DLL_LOCAL void returnValue(const Field & field, FieldValue::UP value) const;
 
 protected:
     StructuredFieldValue(const DataType &type);
@@ -94,10 +104,9 @@ protected:
 
     fieldvalue::ModificationStatus
     onIterateNested(PathRange nested, fieldvalue::IteratorHandler & handler) const override;
-
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(StructuredFieldValue);
-
+    ~StructuredFieldValue();
 
     virtual StructuredFieldValue* clone() const override = 0;
     const DataType *getDataType() const override { return _type; }
@@ -110,23 +119,30 @@ public:
      */
     virtual const Field& getField(const vespalib::stringref & name) const = 0;
 
+    void beginTransaction();
+    void commitTransaction();
+
     /**
      * Retrieve value of given field and assign it to given field.
      *
      * @return True if field is set and stored in value, false if unset.
      * @throws vespalib::IllegalArgumentException If value given has wrong type
      */
-    inline bool getValue(const Field& field, FieldValue& value) const
-        { return getFieldValue(field, value); }
+    bool getValue(const Field& field, FieldValue& value) const {
+        return getFieldValue(field, value);
+    }
     /** @return Retrieve value of given field. Null pointer if not set. */
-    inline FieldValue::UP getValue(const Field& field) const
-        { return getFieldValue(field); }
+    FieldValue::UP getValue(const Field& field) const {
+        return getFieldValue(field);
+    }
     /** @return Retrieve value of given field. Null pointer if not set. */
-    inline FieldValue::UP getValue(const vespalib::stringref & name) const
-        { return getFieldValue(getField(name)); }
+    FieldValue::UP getValue(const vespalib::stringref & name) const {
+        return getFieldValue(getField(name));
+    }
     /** @return True if value is set. */
-    inline bool hasValue(const Field& field) const
-        { return hasFieldValue(field); }
+    bool hasValue(const Field& field) const {
+        return hasFieldValue(field);
+    }
 
     /**
      * Set the given field to contain given value.
@@ -136,8 +152,9 @@ public:
     inline void setValue(const Field& field, const FieldValue& value)
         { setFieldValue(field, value); }
     /** Remove the value of given field if it is set. */
-    inline void remove(const Field& field)
-        { removeFieldValue(field); }
+
+    //These are affected by the begin/commitTanasaction
+    void remove(const Field& field);
 
     virtual void clear() = 0;
 
@@ -173,6 +190,18 @@ public:
 
     template <typename T>
     std::unique_ptr<T> getAs(const Field &field) const;
+};
+
+class TransactionGuard {
+public:
+    TransactionGuard(StructuredFieldValue & value)
+        : _value(value)
+    {
+        _value.beginTransaction();
+    }
+    ~TransactionGuard() { _value.commitTransaction(); }
+private:
+    StructuredFieldValue & _value;
 };
 
 } // document

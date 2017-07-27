@@ -76,9 +76,9 @@ CPPUNIT_TEST_SUITE_REGISTRATION(DocumentTest);
 
 void DocumentTest::testSizeOf()
 {
-    CPPUNIT_ASSERT_EQUAL(120ul, sizeof(Document));
-    CPPUNIT_ASSERT_EQUAL(64ul, sizeof(StructFieldValue));
-    CPPUNIT_ASSERT_EQUAL(16ul, sizeof(StructuredFieldValue));
+    CPPUNIT_ASSERT_EQUAL(136ul, sizeof(Document));
+    CPPUNIT_ASSERT_EQUAL(72ul, sizeof(StructFieldValue));
+    CPPUNIT_ASSERT_EQUAL(24ul, sizeof(StructuredFieldValue));
     CPPUNIT_ASSERT_EQUAL(64ul, sizeof(SerializableArray));
 }
 

@@ -4,6 +4,7 @@
 #include "iteratorhandler.h"
 #include "weightedsetfieldvalue.h"
 #include "arrayfieldvalue.h"
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".document.fieldvalue.structured");
@@ -41,6 +42,8 @@ StructuredFieldValue::StructuredFieldValue(const DataType &type)
       _type(&type)
 {
 }
+
+StructuredFieldValue::~StructuredFieldValue() {}
 
 void StructuredFieldValue::setType(const DataType& type)
 {
@@ -87,6 +90,78 @@ StructuredFieldValue::onGetNestedFieldValue(PathRange nested) const
     return fv;
 }
 
+namespace {
+    using ValuePair = std::pair<fieldvalue::ModificationStatus, FieldValue::UP>;
+    using Cache = vespalib::hash_map<Field, ValuePair>;
+}
+
+class StructuredCache {
+public:
+    void remove(const Field & field) {
+        ValuePair & entry = _cache[field];
+        entry.first = ModificationStatus::REMOVED;
+        entry.second.reset();
+    }
+    Cache::iterator find(const Field & field) {
+        return _cache.find(field);
+    }
+    void set(const Field & field, FieldValue::UP value, ModificationStatus status) {
+        ValuePair & entry = _cache[field];
+        entry.first = status;
+        entry.second = std::move(value);
+    }
+    Cache::iterator begin() { return _cache.begin(); }
+    Cache::iterator end() { return _cache.end(); }
+private:
+    Cache _cache;
+};
+
+
+void
+StructuredFieldValue::remove(const Field& field) {
+    if (_cache) {
+        _cache->remove(field);
+    } else {
+        removeFieldValue(field);
+    }
+}
+
+void
+StructuredFieldValue::updateValue(const Field & field, FieldValue::UP value) const {
+    if (_cache) {
+        _cache->set(field, std::move(value), ModificationStatus::MODIFIED);
+    } else {
+        const_cast<StructuredFieldValue&>(*this).setFieldValue(field, std::move(value));
+    }
+}
+
+void
+StructuredFieldValue::returnValue(const Field & field, FieldValue::UP value) const {
+    if (_cache) {
+        _cache->set(field, std::move(value), ModificationStatus::NOT_MODIFIED);
+    }
+}
+
+FieldValue::UP
+StructuredFieldValue::getValue(const Field& field, FieldValue::UP container) const {
+    if (_cache) {
+        auto found = _cache->find(field);
+        if (found == _cache->end()) {
+            container = getFieldValue(field);
+            _cache->set(field, FieldValue::UP(), ModificationStatus::NOT_MODIFIED);
+        } else {
+            container = std::move(found->second.second);
+        }
+    } else {
+        if (container) {
+            getFieldValue(field, *container);
+        } else {
+            container = getFieldValue(field);
+        }
+    }
+    return container;
+}
+
 ModificationStatus
 StructuredFieldValue::onIterateNested(PathRange nested, IteratorHandler & handler) const
 {
@@ -95,33 +170,34 @@ StructuredFieldValue::onIterateNested(PathRange nested, IteratorHandler & handle
     if ( ! nested.atEnd()) {
         const FieldPathEntry & fpe = nested.cur();
         if (fpe.getType() == FieldPathEntry::STRUCT_FIELD) {
-            bool exists = getValue(fpe.getFieldRef(), fpe.getFieldValueToSet());
-            LOG(spam, "fieldRef = %s", fpe.getFieldRef().toString().c_str());
-            LOG(spam, "fieldValueToSet = %s", fpe.getFieldValueToSet().toString().c_str());
-            if (exists) {
-                ModificationStatus status = fpe.getFieldValueToSet().iterateNested(nested.next(), handler);
+            const Field & field = fpe.getFieldRef();
+            FieldValue::UP value = getValue(field, FieldValue::UP());
+            LOG(spam, "fieldRef = %s", field.toString().c_str());
+            LOG(spam, "fieldValueToSet = %s", value->toString().c_str());
+            ModificationStatus status = ModificationStatus::NOT_MODIFIED;
+            if (value) {
+                status = value->iterateNested(nested.next(), handler);
                 if (status == ModificationStatus::REMOVED) {
                     LOG(spam, "field exists, status = REMOVED");
-                    const_cast<StructuredFieldValue&>(*this).remove(fpe.getFieldRef());
-                    return ModificationStatus::MODIFIED;
+                    const_cast<StructuredFieldValue&>(*this).remove(field);
+                    status = ModificationStatus::MODIFIED;
                 } else if (status == ModificationStatus::MODIFIED) {
                     LOG(spam, "field exists, status = MODIFIED");
-                    const_cast<StructuredFieldValue&>(*this).setFieldValue(fpe.getFieldRef(), fpe.stealFieldValueToSet());
-                    return ModificationStatus::MODIFIED;
+                    updateValue(field, std::move(value));
                 } else {
-                    return status;
+                    returnValue(field, std::move(value));
                 }
             } else if (handler.createMissingPath()) {
                 LOG(spam, "createMissingPath is true");
-                ModificationStatus status = fpe.getFieldValueToSet().iterateNested(nested.next(), handler);
+                status = fpe.getFieldValueToSet().iterateNested(nested.next(), handler);
                 if (status == ModificationStatus::MODIFIED) {
                     LOG(spam, "field did not exist, status = MODIFIED");
-                    const_cast<StructuredFieldValue&>(*this).setFieldValue(fpe.getFieldRef(), fpe.stealFieldValueToSet());
-                    return status;
+                    updateValue(field, fpe.stealFieldValueToSet());
                 }
+            } else {
+                LOG(spam, "field did not exist, returning NOT_MODIFIED");
             }
-            LOG(spam, "field did not exist, returning NOT_MODIFIED");
-            return ModificationStatus::NOT_MODIFIED;
+            return status;
         } else {
             throw IllegalArgumentException("Illegal field path for struct value");
         }
@@ -129,10 +205,7 @@ StructuredFieldValue::onIterateNested(PathRange nested, IteratorHandler & handle
         ModificationStatus status = handler.modify(const_cast<StructuredFieldValue&>(*this));
         if (status == ModificationStatus::REMOVED) {
             LOG(spam, "field REMOVED");
-            return status;
-        }
-
-        if (handler.handleComplex(*this)) {
+        } else if (handler.handleComplex(*this)) {
             LOG(spam, "handleComplex");
             std::vector<const Field*> fieldsToRemove;
             for (const_iterator it(begin()), mt(end()); it != mt; ++it) {
@@ -141,7 +214,7 @@ StructuredFieldValue::onIterateNested(PathRange nested, IteratorHandler & handle
                     fieldsToRemove.push_back(&it.field());
                     status = ModificationStatus::MODIFIED;
                 } else if (currStatus == ModificationStatus::MODIFIED) {
-                    status = currStatus;
+                    status = ModificationStatus::MODIFIED;
                 }
             }
 
@@ -152,6 +225,22 @@ StructuredFieldValue::onIterateNested(PathRange nested, IteratorHandler & handle
 
         return status;
     }
+}
+
+void
+StructuredFieldValue::beginTransaction() {
+    _cache = std::make_unique<StructuredCache>();
+}
+void
+StructuredFieldValue::commitTransaction() {
+    for (auto & e : *_cache) {
+        if (e.second.first == ModificationStatus::REMOVED) {
+            removeFieldValue(e.first);
+        } else if (e.second.first == ModificationStatus ::MODIFIED) {
+            setFieldValue(e.first, std::move(e.second.second));
+        }
+    }
+    _cache.reset();
 }
 
 using ConstCharP = const char *;
