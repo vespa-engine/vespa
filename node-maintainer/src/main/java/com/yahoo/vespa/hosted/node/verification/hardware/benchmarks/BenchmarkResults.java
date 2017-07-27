@@ -8,7 +8,6 @@ public class BenchmarkResults {
 
     private double cpuCyclesPerSec;
     private double diskSpeedMbs;
-    private boolean ipv6Connectivity;
     private Double memoryWriteSpeedGBs;
     private Double memoryReadSpeedGBs;
 
@@ -43,14 +42,6 @@ public class BenchmarkResults {
 
     public void setDiskSpeedMbs(double diskSpeedMbs) {
         this.diskSpeedMbs = diskSpeedMbs;
-    }
-
-    public boolean isIpv6Connectivity() {
-        return ipv6Connectivity;
-    }
-
-    public void setIpv6Connectivity(boolean ipv6Connectivity) {
-        this.ipv6Connectivity = ipv6Connectivity;
     }
 
 }

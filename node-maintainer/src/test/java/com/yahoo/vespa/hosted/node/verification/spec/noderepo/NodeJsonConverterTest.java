@@ -31,8 +31,8 @@ public class NodeJsonConverterTest {
         assertEquals(expectedMinDiskAvailable, hardwareInfo.getMinDiskAvailableGb(), DELTA);
         assertEquals(expectedMinMainMemoryAvailable, hardwareInfo.getMinMainMemoryAvailableGb(), DELTA);
         assertEquals(expectedMinCpuCores, hardwareInfo.getMinCpuCores(), DELTA);
-        assertTrue(hardwareInfo.getIpv4Connectivity());
-        assertFalse(hardwareInfo.getIpv6Connectivity());
+        assertTrue(hardwareInfo.getIpv4Interface());
+        assertFalse(hardwareInfo.getIpv6Interface());
         assertEquals(expectedInterfaceSpeedMbs, hardwareInfo.getInterfaceSpeedMbs(), DELTA);
         assertEquals(hardwareInfo.getDiskType(), HardwareInfo.DiskType.SLOW);
     }

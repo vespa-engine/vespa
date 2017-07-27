@@ -30,6 +30,7 @@ public class SpecVerifierTest {
     private static final String DISK_SIZE_INFO_PATH = RESOURCE_PATH + "/filesize";
     private static final String NET_INTERFACE_INFO_PATH = RESOURCE_PATH + "/ifconfig";
     private static final String NET_INTERFACE_SPEED_INFO_PATH = RESOURCE_PATH + "/eth0";
+    private static final String PING_RESPONSE = RESOURCE_PATH + "/validpingresponse";
     private static final double DELTA = 0.1;
 
     @Before
@@ -48,6 +49,7 @@ public class SpecVerifierTest {
         mockCommandExecutor.addCommand("cat " + DISK_SIZE_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + NET_INTERFACE_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + NET_INTERFACE_SPEED_INFO_PATH);
+        mockCommandExecutor.addCommand("cat " + PING_RESPONSE);
         assertTrue(SpecVerifier.verifySpec(mockCommandExecutor));
     }
 
@@ -61,6 +63,7 @@ public class SpecVerifierTest {
         mockCommandExecutor.addCommand("cat " + DISK_SIZE_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + NET_INTERFACE_INFO_PATH + "NoIpv6");
         mockCommandExecutor.addCommand("cat " + NET_INTERFACE_SPEED_INFO_PATH);
+        mockCommandExecutor.addCommand("cat " + PING_RESPONSE);
         assertFalse(SpecVerifier.verifySpec(mockCommandExecutor));
     }
 
@@ -71,14 +74,14 @@ public class SpecVerifierTest {
         actualHardware.setMinMainMemoryAvailableGb(24);
         actualHardware.setInterfaceSpeedMbs(10009); //this is wrong
         actualHardware.setMinDiskAvailableGb(500);
-        actualHardware.setIpv4Connectivity(true);
-        actualHardware.setIpv6Connectivity(false);
+        actualHardware.setIpv4Interface(true);
+        actualHardware.setIpv6Interface(false);
         actualHardware.setDiskType(HardwareInfo.DiskType.SLOW);
         ArrayList<URL> url = new ArrayList<>(Arrays.asList(new File(NODE_REPO_PATH).toURI().toURL())); //TODO fix
         NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(url);
         YamasSpecReport yamasSpecReport = SpecVerifier.makeYamasSpecReport(actualHardware, nodeRepoJsonModel);
         long timeStamp = yamasSpecReport.getTimeStamp();
-        String expectedJson = "{\"timeStamp\":" + timeStamp + ",\"dimensions\":{\"memoryMatch\":true,\"cpuCoresMatch\":true,\"diskTypeMatch\":true,\"netInterfaceSpeedMatch\":false,\"diskAvailableMatch\":true,\"ipv4Match\":true,\"ipv6Match\":true},\"metrics\":{\"match\":false,\"expectedInterfaceSpeed\":1000.0,\"actualInterfaceSpeed\":10009.0},\"routing\":{\"yamas\":{\"namespace\":[\"Vespa\"]}}}";
+        String expectedJson = "{\"timeStamp\":" + timeStamp + ",\"dimensions\":{\"memoryMatch\":true,\"cpuCoresMatch\":true,\"diskTypeMatch\":true,\"netInterfaceSpeedMatch\":false,\"diskAvailableMatch\":true,\"ipv4Match\":true,\"ipv6Match\":true},\"metrics\":{\"match\":false,\"expectedInterfaceSpeed\":1000.0,\"actualInterfaceSpeed\":10009.0,\"actualIpv6Connection\":false},\"routing\":{\"yamas\":{\"namespace\":[\"Vespa\"]}}}";
         ObjectMapper om = new ObjectMapper();
         String actualJson = om.writeValueAsString(yamasSpecReport);
         assertEquals(expectedJson, actualJson);

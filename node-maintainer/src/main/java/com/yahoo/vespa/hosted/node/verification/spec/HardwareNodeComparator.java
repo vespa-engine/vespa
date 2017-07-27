@@ -87,6 +87,9 @@ public class HardwareNodeComparator {
             specReportMetrics.setExpectedInterfaceSpeed(expectedInterfaceSpeed);
             specReportMetrics.setActualInterfaceSpeed(actualInterfaceSpeed);
         }
+        if (!actualHardware.isIpv6Connection()){
+            specReportMetrics.setActualIpv6Connection(false);
+        }
     }
 
     private static boolean compareCPU(HardwareInfo node, HardwareInfo actualHardware, SpecReportDimensions specReportDimensions) {
@@ -103,8 +106,8 @@ public class HardwareNodeComparator {
 
     private static boolean compareNetInterface(HardwareInfo node, HardwareInfo actualHardware, SpecReportDimensions specReportDimensions) {
         boolean equalNetInterfaceSpeed = insideThreshold(node.getInterfaceSpeedMbs(), actualHardware.getInterfaceSpeedMbs());
-        boolean equalIpv6 = node.getIpv6Connectivity() == actualHardware.getIpv6Connectivity();
-        boolean equalIpv4 = node.getIpv4Connectivity() == actualHardware.getIpv4Connectivity();
+        boolean equalIpv6 = node.getIpv6Interface() == actualHardware.getIpv6Interface();
+        boolean equalIpv4 = node.getIpv4Interface() == actualHardware.getIpv4Interface();
         specReportDimensions.setNetInterfaceSpeedMatch(equalNetInterfaceSpeed);
         specReportDimensions.setIpv6Match(equalIpv6);
         specReportDimensions.setIpv4Match(equalIpv4);

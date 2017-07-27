@@ -12,8 +12,6 @@ public class HardwareReportMetrics {
     @JsonProperty
     private double diskSpeedMbs;
     @JsonProperty
-    private boolean ipv6Connectivity;
-    @JsonProperty
     private double memoryWriteSpeedGBs;
     @JsonProperty
     private double memoryReadSpeedGBs;
@@ -26,9 +24,6 @@ public class HardwareReportMetrics {
         this.diskSpeedMbs = diskSpeedMbs != null ? diskSpeedMbs : -1;
     }
 
-    public void setIpv6Connectivity(Boolean ipv6Connectivity) {
-        this.ipv6Connectivity = ipv6Connectivity;
-    }
 
     public void setMemoryWriteSpeedGBs(Double memoryWriteSpeedGBs) {
         this.memoryWriteSpeedGBs = memoryWriteSpeedGBs != null ? memoryWriteSpeedGBs : -1;
@@ -44,10 +39,6 @@ public class HardwareReportMetrics {
 
     public double getDiskSpeedMbs() {
         return diskSpeedMbs;
-    }
-
-    public Boolean getIpv6Connectivity() {
-        return ipv6Connectivity;
     }
 
     public double getMemoryWriteSpeedGBs() {

@@ -7,7 +7,6 @@ import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.CPUBenchmark
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.DiskBenchmark;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.BenchmarkResults;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.MemoryBenchmark;
-import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.NetBenchmark;
 import com.yahoo.vespa.hosted.node.verification.hardware.yamasreport.YamasHardwareReport;
 
 import java.util.ArrayList;
@@ -23,15 +22,14 @@ public class HardwareBenchmarker {
         ArrayList<Benchmark> benchmarks = new ArrayList<>(Arrays.asList(
                 new DiskBenchmark(benchmarkResults, commandExecutor),
                 new CPUBenchmark(benchmarkResults, commandExecutor),
-                new MemoryBenchmark(benchmarkResults, commandExecutor),
-                new NetBenchmark(benchmarkResults, commandExecutor)));
-
+                new MemoryBenchmark(benchmarkResults, commandExecutor)));
         for (Benchmark benchmark : benchmarks) {
             benchmark.doBenchmark();
         }
 
         YamasHardwareReport yamasHardwareReport = makeYamasHardwareReport(benchmarkResults);
         printBenchmarkResults(yamasHardwareReport);
+        TerminationController.terminateIfInvalidBenchmarkResults(benchmarkResults);
     }
 
     protected static YamasHardwareReport makeYamasHardwareReport(BenchmarkResults benchmarkResults){

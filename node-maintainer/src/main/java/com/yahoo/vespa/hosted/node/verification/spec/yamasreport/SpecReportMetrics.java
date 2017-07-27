@@ -34,6 +34,13 @@ public class SpecReportMetrics {
     private Integer actualcpuCores;
     @JsonProperty
     private String[] faultyIpAddresses;
+    @JsonProperty
+    private Boolean actualIpv6Connection;
+
+    public void setActualIpv6Connection(boolean actualIpv6Connection) {
+        this.actualIpv6Connection = actualIpv6Connection;
+    }
+
 
     public void setMatch(boolean match) {
         this.match = match;

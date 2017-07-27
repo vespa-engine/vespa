@@ -16,6 +16,7 @@ public class HardwareInfoRetrieverTest {
     private static final String DISK_SIZE_INFO_PATH = RESOURCE_PATH + "filesize";
     private static final String NET_INTERFACE_INFO_PATH = RESOURCE_PATH + "ifconfigNoIpv6";
     private static final String NET_INTERFACE_SPEED_INFO_PATH = RESOURCE_PATH + "eth0";
+    private static String PING_RESPONSE = RESOURCE_PATH + "invalidpingresponse";
     private MockCommandExecutor mockCommandExecutor;
     private HardwareInfo expectedHardwareInfo;
     private static final double DELTA = 0.1;
@@ -29,13 +30,16 @@ public class HardwareInfoRetrieverTest {
         mockCommandExecutor.addCommand("cat " + DISK_SIZE_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + NET_INTERFACE_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + NET_INTERFACE_SPEED_INFO_PATH);
+        mockCommandExecutor.addCommand("cat " + PING_RESPONSE);
+
         expectedHardwareInfo = new HardwareInfo();
         expectedHardwareInfo.setMinCpuCores(4);
         expectedHardwareInfo.setMinMainMemoryAvailableGb(4.042128);
         expectedHardwareInfo.setInterfaceSpeedMbs(1000);
         expectedHardwareInfo.setMinDiskAvailableGb(63);
-        expectedHardwareInfo.setIpv4Connectivity(true);
-        expectedHardwareInfo.setIpv6Connectivity(false);
+        expectedHardwareInfo.setIpv4Interface(true);
+        expectedHardwareInfo.setIpv6Interface(false);
+        expectedHardwareInfo.setIpv6Connection(false);
         expectedHardwareInfo.setDiskType(HardwareInfo.DiskType.FAST);
     }
 
@@ -45,9 +49,10 @@ public class HardwareInfoRetrieverTest {
         assertEquals(expectedHardwareInfo.getMinDiskAvailableGb(), actualHardwareInfo.getMinDiskAvailableGb(), DELTA);
         assertEquals(expectedHardwareInfo.getMinMainMemoryAvailableGb(), actualHardwareInfo.getMinMainMemoryAvailableGb(), DELTA);
         assertEquals(expectedHardwareInfo.getMinCpuCores(), actualHardwareInfo.getMinCpuCores());
-        assertEquals(expectedHardwareInfo.getIpv4Connectivity(), actualHardwareInfo.getIpv4Connectivity());
-        assertEquals(expectedHardwareInfo.getIpv6Connectivity(), actualHardwareInfo.getIpv6Connectivity());
+        assertEquals(expectedHardwareInfo.getIpv4Interface(), actualHardwareInfo.getIpv4Interface());
+        assertEquals(expectedHardwareInfo.getIpv6Interface(), actualHardwareInfo.getIpv6Interface());
         assertEquals(expectedHardwareInfo.getInterfaceSpeedMbs(), actualHardwareInfo.getInterfaceSpeedMbs(), DELTA);
         assertEquals(expectedHardwareInfo.getDiskType(), actualHardwareInfo.getDiskType());
+        assertEquals(expectedHardwareInfo.isIpv6Connection(), actualHardwareInfo.isIpv6Connection());
     }
 }

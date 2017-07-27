@@ -9,13 +9,13 @@ import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 public class NodeJsonConverter {
 
     private static void addStandardSpecifications(HardwareInfo nodeRepoHardwareInfo) {
-        nodeRepoHardwareInfo.setIpv4Connectivity(true);
+        nodeRepoHardwareInfo.setIpv4Interface(true);
         nodeRepoHardwareInfo.setInterfaceSpeedMbs(1000);
     }
 
     protected static void setIpv6AddressConnectivity(NodeRepoJsonModel nodeRepoJsonModel, HardwareInfo nodeRepoHardwareInfo){
         if (nodeRepoJsonModel.getIpv6Address() != null){
-            nodeRepoHardwareInfo.setIpv6Connectivity(true);
+            nodeRepoHardwareInfo.setIpv6Interface(true);
         }
     }
 

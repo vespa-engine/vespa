@@ -20,13 +20,11 @@ public class YamasHardwareReportTest {
         BenchmarkResults benchmarkResults = new BenchmarkResults();
         benchmarkResults.setCpuCyclesPerSec(expectedCpuCyclesPerSec);
         benchmarkResults.setDiskSpeedMbs(expectedDiskSpeedMbps);
-        benchmarkResults.setIpv6Connectivity(expectedIpv6Connectivity);
         benchmarkResults.setMemoryReadSpeedGBs(expectedMemoryReadSpeedGBs);
         benchmarkResults.setMemoryWriteSpeedGBs(expectedMemoryWriteSpeedGBs);
         yamasHardwareReport.createReportFromBenchmarkResults(benchmarkResults);
         assertEquals(expectedCpuCyclesPerSec, yamasHardwareReport.getMetrics().getCpuCyclesPerSec(), DELTA);
         assertEquals(expectedDiskSpeedMbps, yamasHardwareReport.getMetrics().getDiskSpeedMbs(), DELTA);
-        assertEquals(expectedIpv6Connectivity, yamasHardwareReport.getMetrics().getIpv6Connectivity());
         assertEquals(expectedMemoryReadSpeedGBs, yamasHardwareReport.getMetrics().getMemoryReadSpeedGBs(), DELTA);
         assertEquals(expectedMemoryWriteSpeedGBs, yamasHardwareReport.getMetrics().getMemoryWriteSpeedGBs(), DELTA);
     }

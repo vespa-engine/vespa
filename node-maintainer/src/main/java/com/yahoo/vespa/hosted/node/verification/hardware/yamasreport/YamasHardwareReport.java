@@ -54,7 +54,6 @@ public class YamasHardwareReport {
         dimensions = new HardwareReportDimensions();
         metrics.setCpuCyclesPerSec(benchmarkResults.getCpuCyclesPerSec());
         metrics.setDiskSpeedMbs(benchmarkResults.getDiskSpeedMbs());
-        metrics.setIpv6Connectivity(benchmarkResults.isIpv6Connectivity());
         metrics.setMemoryWriteSpeedGBs(benchmarkResults.getMemoryWriteSpeedGBs());
         metrics.setMemoryReadSpeedGBs(benchmarkResults.getMemoryReadSpeedGBs());
     }
