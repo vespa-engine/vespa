@@ -183,8 +183,10 @@ FieldPath::FieldPath(const FieldPath &) = default;
 FieldPath & FieldPath::operator=(const FieldPath &) = default;
 FieldPath::~FieldPath() { }
 
-FieldPath::iterator FieldPath::insert(iterator pos, FieldPathEntry && entry) { return _path.insert(pos, std::move(entry)); }
-void FieldPath::push_back(FieldPathEntry && entry) { _path.push_back(std::move(entry)); }
+FieldPath::iterator FieldPath::insert(iterator pos, std::unique_ptr<FieldPathEntry> entry) {
+    return _path.insert(pos, vespalib::CloneablePtr<FieldPathEntry>(entry.release()));
+}
+void FieldPath::push_back(std::unique_ptr<FieldPathEntry> entry) { _path.emplace_back(entry.release()); }
 void FieldPath::pop_back() { _path.pop_back(); }
 void FieldPath::clear() { _path.clear(); }
 void FieldPath::reserve(size_t sz) { _path.reserve(sz); }
