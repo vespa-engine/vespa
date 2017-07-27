@@ -396,7 +396,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token,
                                                _params._metrics, updOp.getUpdate());
     updateAttributes(serialNum, lid, upd, immediateCommit, onWriteDone);
 
-    applyUpdateToDocumentsAndIndex(token, serialNum, lid, updOp.getUpdate(), immediateCommit, onWriteDone);
+    applyUpdateToDocumentsAndIndex(std::move(token), serialNum, lid, updOp.getUpdate(), immediateCommit, std::move(onWriteDone));
 }
 
 void
