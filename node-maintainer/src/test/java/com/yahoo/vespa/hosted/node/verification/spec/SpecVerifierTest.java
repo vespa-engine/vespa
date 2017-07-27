@@ -12,6 +12,8 @@ import org.junit.Test;
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import static org.junit.Assert.*;
 
@@ -19,7 +21,7 @@ public class SpecVerifierTest {
 
     private MockCommandExecutor mockCommandExecutor;
     private static final String ABSOLUTE_PATH = Paths.get(".").toAbsolutePath().normalize().toString();
-    private static final String RESOURCE_PATH = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/";
+    private static final String RESOURCE_PATH = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources";
     private static final String URL_RESOURCE_PATH = "file://" + ABSOLUTE_PATH + "/" + RESOURCE_PATH;
     private static final String NODE_REPO_PATH = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/nodeInfoTest.json";
     private static final String CPU_INFO_PATH = RESOURCE_PATH + "cpuinfoTest";
@@ -38,6 +40,7 @@ public class SpecVerifierTest {
 
     @Test
     public void verifySpec_equal_nodeRepoInfo_and_hardware_should_return_true() throws Exception{
+        mockCommandExecutor.addCommand("echo notUsed " + URL_RESOURCE_PATH);
         mockCommandExecutor.addCommand("echo nodeRepo.json");
         mockCommandExecutor.addCommand("cat " + CPU_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + MEMORY_INFO_PATH);
@@ -45,11 +48,12 @@ public class SpecVerifierTest {
         mockCommandExecutor.addCommand("cat " + DISK_SIZE_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + NET_INTERFACE_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + NET_INTERFACE_SPEED_INFO_PATH);
-        assertTrue(SpecVerifier.verifySpec(URL_RESOURCE_PATH, mockCommandExecutor));
+        assertTrue(SpecVerifier.verifySpec(mockCommandExecutor));
     }
 
     @Test
     public void verifySpec_inequal_nodeRepoInfo_and_hardware_should_return_false() throws Exception {
+        mockCommandExecutor.addCommand("echo notUsed " + URL_RESOURCE_PATH);
         mockCommandExecutor.addCommand("echo nodeRepo.json");
         mockCommandExecutor.addCommand("cat " + CPU_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + MEMORY_INFO_PATH);
@@ -57,7 +61,7 @@ public class SpecVerifierTest {
         mockCommandExecutor.addCommand("cat " + DISK_SIZE_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + NET_INTERFACE_INFO_PATH + "NoIpv6");
         mockCommandExecutor.addCommand("cat " + NET_INTERFACE_SPEED_INFO_PATH);
-        assertFalse(SpecVerifier.verifySpec(URL_RESOURCE_PATH, mockCommandExecutor));
+        assertFalse(SpecVerifier.verifySpec(mockCommandExecutor));
     }
 
     @Test
@@ -70,7 +74,7 @@ public class SpecVerifierTest {
         actualHardware.setIpv4Connectivity(true);
         actualHardware.setIpv6Connectivity(false);
         actualHardware.setDiskType(HardwareInfo.DiskType.SLOW);
-        URL url = new File(NODE_REPO_PATH).toURI().toURL();
+        ArrayList<URL> url = new ArrayList<>(Arrays.asList(new File(NODE_REPO_PATH).toURI().toURL())); //TODO fix
         NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(url);
         YamasSpecReport yamasSpecReport = SpecVerifier.makeYamasSpecReport(actualHardware, nodeRepoJsonModel);
         long timeStamp = yamasSpecReport.getTimeStamp();
@@ -83,7 +87,7 @@ public class SpecVerifierTest {
     @Test
     public void getNodeRepositoryJSON_should_return_valid_nodeRepoJSONModel() throws Exception {
         mockCommandExecutor.addCommand("echo nodeRepo.json");
-        NodeRepoJsonModel actualNodeRepoJsonModel = SpecVerifier.getNodeRepositoryJSON(URL_RESOURCE_PATH, mockCommandExecutor);
+        NodeRepoJsonModel actualNodeRepoJsonModel = SpecVerifier.getNodeRepositoryJSON(mockCommandExecutor); //TODO fix
         double expectedMinCpuCores = 4D;
         double expectedMinMainMemoryAvailableGb = 4.04D;
         double expectedMinDiskAvailableGb = 63D;

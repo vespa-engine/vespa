@@ -32,6 +32,7 @@ public class CPURetriever implements HardwareRetriever {
 
     public void updateInfo() {
         try {
+            commandExecutor.
             ArrayList<String> commandOutput = commandExecutor.executeCommand(CPU_INFO_COMMAND);
             ArrayList<ParseResult> parseResults = parseCPUInfoFile(commandOutput);
             setCpuCores(parseResults);

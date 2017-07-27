@@ -1,9 +1,11 @@
 package com.yahoo.vespa.hosted.node.verification.spec.noderepo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.vespa.hosted.node.verification.spec.HostURLGenerator;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -15,16 +17,20 @@ public class NodeRepoInfoRetriever {
 
     private static final Logger logger = Logger.getLogger(NodeRepoInfoRetriever.class.getName());
 
-    public static NodeRepoJsonModel retrieve(URL url) {
+    public static NodeRepoJsonModel retrieve(ArrayList<URL> nodeInfoUrls) throws IOException {
         NodeRepoJsonModel nodeRepoJsonModel;
         ObjectMapper objectMapper = new ObjectMapper();
-        try {
-            nodeRepoJsonModel = objectMapper.readValue(url, NodeRepoJsonModel.class);
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Failed to parse JSON", e);
-            return null;
+        for (URL nodeInfoURL : nodeInfoUrls) {
+            System.out.println(nodeInfoURL.toString());
+            try {
+                nodeRepoJsonModel = objectMapper.readValue(nodeInfoURL, NodeRepoJsonModel.class);
+                return nodeRepoJsonModel;
+
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Failed to parse JSON from config server: " + nodeInfoURL.toString(), e);
+            }
         }
-        return nodeRepoJsonModel;
+        throw new IOException("Failed to parse JSON from all possible config servers.");
     }
 
 }

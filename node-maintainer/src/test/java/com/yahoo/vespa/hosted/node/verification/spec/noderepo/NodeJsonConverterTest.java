@@ -5,6 +5,8 @@ import org.junit.Test;
 
 import java.io.File;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -19,8 +21,8 @@ public class NodeJsonConverterTest {
 
     @Test
     public void convertJsonModel_should_return_correct_HardwareInfo() throws Exception {
-        URL url = new File("src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/nodeInfoTest.json").toURI().toURL();
-        NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(url);
+        ArrayList<URL> urls = new ArrayList<>(Arrays.asList(new File("src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/nodeInfoTest.json").toURI().toURL()));
+        NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(urls);
         HardwareInfo hardwareInfo = NodeJsonConverter.convertJsonModelToHardwareInfo(nodeRepoJsonModel);
         double expectedMinDiskAvailable = 500.0;
         double expectedMinMainMemoryAvailable = 24.0;

@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.node.verification.spec;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
+import com.yahoo.vespa.hosted.node.verification.commons.OutputParser;
+import com.yahoo.vespa.hosted.node.verification.commons.ParseInstructions;
 import com.yahoo.vespa.hosted.node.verification.spec.noderepo.IPAddressVerifier;
 import com.yahoo.vespa.hosted.node.verification.spec.noderepo.NodeJsonConverter;
 import com.yahoo.vespa.hosted.node.verification.spec.noderepo.NodeRepoInfoRetriever;
@@ -14,6 +16,7 @@ import com.yahoo.vespa.hosted.node.verification.spec.yamasreport.YamasSpecReport
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
 /**
@@ -25,8 +28,8 @@ public class SpecVerifier {
 
     private static final Logger logger = Logger.getLogger(SpecVerifier.class.getName());
 
-    public static boolean verifySpec(String configServerHostName, CommandExecutor commandExecutor) throws IOException {
-        NodeRepoJsonModel nodeRepoJsonModel = getNodeRepositoryJSON(configServerHostName, commandExecutor);
+    public static boolean verifySpec(CommandExecutor commandExecutor) throws IOException {
+        NodeRepoJsonModel nodeRepoJsonModel = getNodeRepositoryJSON(commandExecutor);
         HardwareInfo actualHardware = HardwareInfoRetriever.retrieve(commandExecutor);
         YamasSpecReport yamasSpecReport = makeYamasSpecReport(actualHardware, nodeRepoJsonModel);
         printResults(yamasSpecReport);
@@ -40,11 +43,9 @@ public class SpecVerifier {
         return yamasSpecReport;
     }
 
-    protected static NodeRepoJsonModel getNodeRepositoryJSON(String configServerHostName, CommandExecutor commandExecutor) throws IOException {
-        URL nodeRepoUrl;
-        HostURLGenerator hostURLGenerator = new HostURLGenerator();
-        nodeRepoUrl = hostURLGenerator.generateNodeInfoUrl(configServerHostName, commandExecutor);
-        NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(nodeRepoUrl);
+    protected static NodeRepoJsonModel getNodeRepositoryJSON(CommandExecutor commandExecutor) throws IOException {
+        ArrayList<URL> nodeInfoUrls = HostURLGenerator.generateNodeInfoUrl(commandExecutor);
+        NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(nodeInfoUrls);
         return nodeRepoJsonModel;
     }
 
@@ -58,14 +59,9 @@ public class SpecVerifier {
         }
     }
 
-
     public static void main(String[] args) throws IOException {
-        if (args.length != 1) {
-            throw new RuntimeException("Expected only 1 argument - config server zone url");
-        }
-        String configServerHostName = args[0];
         CommandExecutor commandExecutor = new CommandExecutor();
-        SpecVerifier.verifySpec(configServerHostName, commandExecutor);
+        SpecVerifier.verifySpec(commandExecutor);
     }
 
 }
