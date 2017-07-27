@@ -395,7 +395,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token,
     auto onWriteDone = createUpdateDoneContext(token, updOp.getType(), _params._metrics, updOp.getUpdate());
     updateAttributes(serialNum, lid, upd, immediateCommit, onWriteDone);
 
-    _writeService.index().execute(
+    _writeService.attributeFieldWriter().execute(serialNum,
             makeLambdaTask([feedToken = std::move(token), upd = updOp.getUpdate(), serialNum,
                            lid, immediateCommit, onWriteDone, this]() mutable
                            {
