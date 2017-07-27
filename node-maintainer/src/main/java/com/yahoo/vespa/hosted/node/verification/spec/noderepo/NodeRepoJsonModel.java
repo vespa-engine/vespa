@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo.Dis
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class NodeRepoJsonModel {
-
     @JsonProperty("minDiskAvailableGb")
     private double minDiskAvailableGb;
     @JsonProperty("minMainMemoryAvailableGb")
@@ -47,6 +46,26 @@ public class NodeRepoJsonModel {
             }
         }
         return null;
+    }
+
+    public double getMinDiskAvailableGb() {
+        return minDiskAvailableGb;
+    }
+
+    public double getMinMainMemoryAvailableGb() {
+        return minMainMemoryAvailableGb;
+    }
+
+    public double getMinCpuCores() {
+        return minCpuCores;
+    }
+
+    public boolean isFastDisk() {
+        return fastDisk;
+    }
+
+    public String[] getIpAddresses() {
+        return ipAddresses;
     }
 
 }

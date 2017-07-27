@@ -25,11 +25,12 @@ public class SpecVerifier {
 
     private static final Logger logger = Logger.getLogger(SpecVerifier.class.getName());
 
-    public void verifySpec(String configServerHostName, CommandExecutor commandExecutor) throws IOException {
+    public boolean verifySpec(String configServerHostName, CommandExecutor commandExecutor) throws IOException {
         NodeRepoJsonModel nodeRepoJsonModel = getNodeRepositoryJSON(configServerHostName, commandExecutor);
         HardwareInfo actualHardware = HardwareInfoRetriever.retrieve(commandExecutor);
         YamasSpecReport yamasSpecReport = makeYamasSpecReport(actualHardware, nodeRepoJsonModel);
         printResults(yamasSpecReport);
+        return yamasSpecReport.getMetrics().isMatch();
     }
 
     protected YamasSpecReport makeYamasSpecReport(HardwareInfo actualHardware, NodeRepoJsonModel nodeRepoJsonModel){
