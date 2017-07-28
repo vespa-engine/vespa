@@ -59,8 +59,8 @@ class NodePriority {
         if (n2.node.state().equals(Node.State.inactive) && !n1.node.state().equals(Node.State.inactive)) return 1;
 
         // Choose reserved nodes from a previous allocation attempt (the exist in node repo)
-        if (isInNodeRepoAndReserved(n1) && isInNodeRepoAndReserved(n2)) return -1;
-        if (isInNodeRepoAndReserved(n2) && isInNodeRepoAndReserved(n1)) return 1;
+        if (isInNodeRepoAndReserved(n1) && !isInNodeRepoAndReserved(n2)) return -1;
+        if (isInNodeRepoAndReserved(n2) && !isInNodeRepoAndReserved(n1)) return 1;
 
         // Choose ready nodes
         if (n1.node.state().equals(Node.State.ready) && !n2.node.state().equals(Node.State.ready)) return -1;
