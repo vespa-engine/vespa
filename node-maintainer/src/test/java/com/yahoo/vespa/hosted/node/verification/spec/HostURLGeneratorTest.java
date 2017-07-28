@@ -35,7 +35,7 @@ public class HostURLGeneratorTest {
     public void generateNodeInfoUrl_test_if_url_is_formatted_correctly() throws Exception {
         mockCommandExecutor.addCommand(CAT_CONFIG_SERVER_HOST_NAME_PATH);
         mockCommandExecutor.addCommand(CAT_NODE_HOST_NAME_PATH);
-        ArrayList<URL> url = hostURLGenerator.generateNodeInfoUrl(mockCommandExecutor);
+        ArrayList<URL> url = HostURLGenerator.generateNodeInfoUrl(mockCommandExecutor);
         String expectedUrl = CONFIG_SERVER_HOSTNAME + NODE_HOSTNAME_PREFIX + EXPECTED_HOSTNAME;
         String actualUrl = url.get(0).toString();
         assertEquals(expectedUrl, actualUrl);
@@ -47,7 +47,7 @@ public class HostURLGeneratorTest {
         try{
             mockCommandExecutor.addCommand(CAT_CONFIG_SERVER_HOST_NAME_PATH);
             mockCommandExecutor.addCommand(CAT_WRONG_HOSTNAME_PATH);
-            hostURLGenerator.generateNodeInfoUrl(mockCommandExecutor);
+            HostURLGenerator.generateNodeInfoUrl(mockCommandExecutor);
             fail("Expected an IOExeption to be thrown");
         } catch (IOException e){
             String expectedExceptionMessage = "Unexpected output from \"hostname\" command.";
@@ -62,7 +62,7 @@ public class HostURLGeneratorTest {
         String nodeHostnamePrefix = "/nodes/v2/node/";
         String portNumber = ":4080";
         String expectedUrl = "http://" + configServerHostName + portNumber + nodeHostnamePrefix + nodeHostName;
-        assertEquals(expectedUrl, hostURLGenerator.buildNodeInfoURL(configServerHostName, nodeHostName).toString());
+        assertEquals(expectedUrl, HostURLGenerator.buildNodeInfoURL(configServerHostName, nodeHostName).toString());
     }
 
     @Test
@@ -71,7 +71,7 @@ public class HostURLGeneratorTest {
         String nodeHostName = "index.html";
         String nodeHostnamePrefix = "/nodes/v2/node/";
         String expectedUrl = configServerHostName + nodeHostnamePrefix + nodeHostName;
-        assertEquals(expectedUrl, hostURLGenerator.buildNodeInfoURL(configServerHostName, nodeHostName).toString());
+        assertEquals(expectedUrl, HostURLGenerator.buildNodeInfoURL(configServerHostName, nodeHostName).toString());
     }
 
 }
