@@ -47,15 +47,15 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
 
     private static final TenantName tenant = TenantName.from("test");
 
-    public static final HashMap<String, String> postHeaders = new HashMap<>();
+    private static final HashMap<String, String> postHeaders = new HashMap<>();
 
-    protected String pathPrefix = "/application/v2/session/";
-    protected String createdMessage = " created.\"";
-    protected String tenantMessage = "";
+    private String pathPrefix = "/application/v2/session/";
+    private String createdMessage = " created.\"";
+    private String tenantMessage = "";
 
     public File testApp = new File("src/test/apps/app");
-    public LocalSessionRepo localSessionRepo;
-    public TenantApplications applicationRepo;
+    private LocalSessionRepo localSessionRepo;
+    private TenantApplications applicationRepo;
 
     static {
         postHeaders.put(SessionCreateHandler.contentTypeHeader, SessionCreateHandler.APPLICATION_X_GZIP);
@@ -237,23 +237,17 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
         return null;
     }
 
-    SessionCreateHandler createHandler(Tenants tenants) throws Exception {
+    private SessionCreateHandler createHandler(Tenants tenants) throws Exception {
         TestTenantBuilder testTenantBuilder = new TestTenantBuilder();
         final ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
-        return new SessionCreateHandler(new Executor() {
-            @SuppressWarnings("NullableProblems")
-            @Override
-            public void execute(Runnable command) {
-                command.run();
-            }
-        }, AccessLog.voidAccessLog(), tenants, configserverConfig,
+        return new SessionCreateHandler(Runnable::run, AccessLog.voidAccessLog(), tenants, configserverConfig,
                                         new ApplicationRepository(testTenantBuilder.createTenants(),
-                                                                  HostProvisionerProvider.withProvisioner(new SessionActiveHandlerTest.MockProvisioner()),
+                                                                  HostProvisionerProvider.withProvisioner(new SessionHandlerTest.MockProvisioner()),
                                                                   new MockCurator(),
                                                                   new LogServerLogGrabber(),
                                                                   new ApplicationConvergenceChecker(),
                                                                   new HttpProxy(new SimpleHttpFetcher()),
-                                                                  new ConfigserverConfig(new ConfigserverConfig.Builder())));
+                                                                  configserverConfig));
     }
 
     public HttpRequest post() throws FileNotFoundException {

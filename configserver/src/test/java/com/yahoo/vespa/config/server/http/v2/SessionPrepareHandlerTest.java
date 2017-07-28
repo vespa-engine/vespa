@@ -48,13 +48,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Executor;
 
 import static com.yahoo.jdisc.Response.Status.*;
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
+import static com.yahoo.vespa.config.server.http.HandlerTest.assertHttpStatusCodeErrorCodeAndMessage;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
@@ -70,16 +69,17 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     private static final TenantName tenant = TenantName.from("test");
     private TestTenantBuilder builder;
 
-    protected Curator curator;
+    private Curator curator;
     private SessionZooKeeperClient zooKeeperClient;
     private LocalSessionRepo localRepo;
+    private TenantApplications applicationRepo;
 
     private String preparedMessage = " prepared.\"}";
     private String tenantMessage = "";
 
     @Before
     public void setupRepo() throws Exception {
-        TenantApplications applicationRepo = new MemoryTenantApplications();
+        applicationRepo = new MemoryTenantApplications();
         curator = new MockCurator();
         localRepo = new LocalSessionRepo(applicationRepo);
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
@@ -92,16 +92,16 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     public void require_error_when_session_id_does_not_exist() throws Exception {
         // No session with this id exists
         HttpResponse response = createHandler().handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 9999L));
-        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(response, NOT_FOUND, HttpErrorResponse.errorCodes.NOT_FOUND, "Session 9999 was not found");
+        assertHttpStatusCodeErrorCodeAndMessage(response, NOT_FOUND, HttpErrorResponse.errorCodes.NOT_FOUND, "Session 9999 was not found");
     }
 
     @Test
     public void require_error_when_session_id_not_a_number() throws Exception {
         final String session = "notanumber/prepared";
         HttpResponse response = createHandler().handle(SessionHandlerTest.createTestRequest(pathPrefix + session));
-        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(response, BAD_REQUEST,
-                                                            HttpErrorResponse.errorCodes.BAD_REQUEST,
-                                                            "Session id in request is not a number, request was 'http://" + hostname + ":" + port + pathPrefix + session + "'");
+        assertHttpStatusCodeErrorCodeAndMessage(response, BAD_REQUEST,
+                                                HttpErrorResponse.errorCodes.BAD_REQUEST,
+                                                "Session id in request is not a number, request was 'http://" + hostname + ":" + port + pathPrefix + session + "'");
     }
 
     @Test
@@ -112,16 +112,17 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     private void testUnsupportedMethod(com.yahoo.container.jdisc.HttpRequest request) throws Exception {
         HttpResponse response = createHandler().handle(request);
-        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(response, METHOD_NOT_ALLOWED,
-                                                            HttpErrorResponse.errorCodes.METHOD_NOT_ALLOWED,
-                                                            "Method '" + request.getMethod().name() + "' is not supported");
+        assertHttpStatusCodeErrorCodeAndMessage(response, METHOD_NOT_ALLOWED,
+                                                HttpErrorResponse.errorCodes.METHOD_NOT_ALLOWED,
+                                                "Method '" + request.getMethod().name() + "' is not supported");
     }
 
     @Test
     public void require_that_activate_url_is_returned_on_success() throws Exception {
         MockSession session = new MockSession(1, null);
         localRepo.addSession(session);
-        HttpResponse response = createHandler().handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L));
+        HttpResponse response = createHandler().handle(
+                SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L));
         assertThat(session.getStatus(), is(Session.Status.PREPARE));
         assertNotNull(response);
         assertThat(response.getStatus(), is(OK));
@@ -130,7 +131,8 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     @Test
     public void require_debug() throws Exception {
-        HttpResponse response = createHandler().handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 9999L, "?debug=true"));
+        HttpResponse response = createHandler().handle(
+                SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 9999L, "?debug=true"));
         assertThat(response.getStatus(), is(NOT_FOUND));
         assertThat(SessionHandlerTest.getRenderedString(response), containsString("NotFoundException"));
     }
@@ -140,7 +142,8 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         MockSession session = new MockSession(1, null);
         session.doVerboseLogging = true;
         localRepo.addSession(session);
-        HttpResponse response = createHandler().handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L, "?verbose=true"));
+        HttpResponse response = createHandler().handle(
+                SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L, "?verbose=true"));
         assertThat(response.getStatus(), is(OK));
         assertThat(SessionHandlerTest.getRenderedString(response), containsString("debuglog"));
     }
@@ -172,8 +175,10 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         sessHandler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L));
         session.setStatus(Session.Status.PREPARE);
         zooKeeperClient.writeStatus(Session.Status.PREPARE);
-        HttpResponse getResponse = sessHandler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.GET, Cmd.PREPARED, 1L));
-        assertResponseContains(getResponse, "\"activate\":\"http://foo:1337" + pathPrefix + "1/active\",\"message\":\"Session 1" + preparedMessage);
+        HttpResponse getResponse = sessHandler.handle(
+                SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.GET, Cmd.PREPARED, 1L));
+        assertResponseContains(getResponse, "\"activate\":\"http://foo:1337" + pathPrefix +
+                "1/active\",\"message\":\"Session 1" + preparedMessage);
     }
 
     @Test
@@ -183,16 +188,18 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         SessionHandler sessHandler = createHandler(fromLocalSessionRepo(localRepo, Clock.systemUTC()));
         session.setStatus(Session.Status.NEW);
         zooKeeperClient.writeStatus(Session.Status.NEW);
-        HttpResponse getResponse = sessHandler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.GET, Cmd.PREPARED, 1L));
-        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(getResponse, BAD_REQUEST,
-                                                            HttpErrorResponse.errorCodes.BAD_REQUEST,
-                                                            "Session not prepared: 1");
+        HttpResponse getResponse = sessHandler.handle(
+                SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.GET, Cmd.PREPARED, 1L));
+        assertHttpStatusCodeErrorCodeAndMessage(getResponse, BAD_REQUEST,
+                                                HttpErrorResponse.errorCodes.BAD_REQUEST,
+                                                "Session not prepared: 1");
         session.setStatus(Session.Status.ACTIVATE);
         zooKeeperClient.writeStatus(Session.Status.ACTIVATE);
-        getResponse = sessHandler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.GET, Cmd.PREPARED, 1L));
-        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(getResponse, BAD_REQUEST,
-                                                            HttpErrorResponse.errorCodes.BAD_REQUEST,
-                                                            "Session is active: 1");
+        getResponse = sessHandler.handle(
+                SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.GET, Cmd.PREPARED, 1L));
+        assertHttpStatusCodeErrorCodeAndMessage(getResponse, BAD_REQUEST,
+                                                HttpErrorResponse.errorCodes.BAD_REQUEST,
+                                                "Session is active: 1");
     }
 
     @Test
@@ -201,10 +208,11 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         localRepo.addSession(session);
         session.setStatus(Session.Status.ACTIVATE);
         SessionHandler sessionHandler = createHandler(fromLocalSessionRepo(localRepo, Clock.systemUTC()));
-        HttpResponse putResponse = sessionHandler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L));
-        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(putResponse, BAD_REQUEST,
-                                                            HttpErrorResponse.errorCodes.BAD_REQUEST,
-                                                            "Session is active: 1");
+        HttpResponse putResponse = sessionHandler.handle(
+                SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L));
+        assertHttpStatusCodeErrorCodeAndMessage(putResponse, BAD_REQUEST,
+                                                HttpErrorResponse.errorCodes.BAD_REQUEST,
+                                                "Session is active: 1");
     }
 
     @Test
@@ -212,18 +220,19 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         MockSession session = new MockSession(1, null);
         localRepo.addSession(session);
         SessionHandler sessHandler = createHandler(fromLocalSessionRepo(localRepo, Clock.systemUTC()));
-        HttpResponse getResponse = sessHandler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.GET, Cmd.PREPARED, 9999L));
-        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(getResponse, NOT_FOUND,
-                                                            HttpErrorResponse.errorCodes.NOT_FOUND,
-                                                            "Session 9999 was not found");
+        HttpResponse getResponse = sessHandler.handle(
+                SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.GET, Cmd.PREPARED, 9999L));
+        assertHttpStatusCodeErrorCodeAndMessage(getResponse, NOT_FOUND,
+                                                HttpErrorResponse.errorCodes.NOT_FOUND,
+                                                "Session 9999 was not found");
     }
-
 
     @Test
     public void require_that_tenant_is_in_response() throws Exception {
         MockSession session = new MockSession(1, null);
         localRepo.addSession(session);
-        HttpResponse response = createHandler(addTestTenant()).handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L));
+        HttpResponse response = createHandler().handle(
+                SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L));
         assertNotNull(response);
         assertThat(response.getStatus(), is(OK));
         assertThat(session.getStatus(), is(Session.Status.PREPARE));
@@ -232,6 +241,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     @Test
     public void require_that_preparing_with_multiple_tenants_work() throws Exception {
+        // Need different repos for 'default' tenant as opposed to the 'test' tenant
         TenantApplications applicationRepoDefault = new MemoryTenantApplications();
         LocalSessionRepo localRepoDefault = new LocalSessionRepo(applicationRepoDefault);
         final TenantName tenantName = TenantName.defaultName();
@@ -245,7 +255,8 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         localRepoDefault.addSession(session);
         pathPrefix = "/application/v2/tenant/default/session/";
 
-        HttpResponse response = handler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, sessionId));
+        HttpResponse response = handler.handle(
+                SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, sessionId));
         assertNotNull(response);
         assertThat(SessionHandlerTest.getRenderedString(response), response.getStatus(), is(OK));
         assertThat(session.getStatus(), is(Session.Status.PREPARE));
@@ -254,7 +265,8 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         session = new MockSession(sessionId, null);
         localRepo.addSession(session);
         String applicationName = "myapp";
-        pathPrefix = "/application/v2/tenant/" + tenant + "/session/" + sessionId + "/prepared?applicationName=" + applicationName;
+        pathPrefix = "/application/v2/tenant/" + tenant + "/session/" + sessionId +
+                "/prepared?applicationName=" + applicationName;
         response = handler.handle(SessionHandlerTest.createTestRequest(pathPrefix));
         assertNotNull(response);
         assertThat(SessionHandlerTest.getRenderedString(response), response.getStatus(), is(OK));
@@ -263,7 +275,8 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         sessionId++;
         session = new MockSession(sessionId, null);
         localRepo.addSession(session);
-        pathPrefix = "/application/v2/tenant/" + tenant + "/session/" + sessionId + "/prepared?applicationName=" + applicationName + "&instance=quux";
+        pathPrefix = "/application/v2/tenant/" + tenant + "/session/" + sessionId +
+                "/prepared?applicationName=" + applicationName + "&instance=quux";
         response = handler.handle(SessionHandlerTest.createTestRequest(pathPrefix));
         assertNotNull(response);
         assertThat(SessionHandlerTest.getRenderedString(response), response.getStatus(), is(OK));
@@ -274,29 +287,35 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     public void require_that_config_change_actions_are_in_response() throws Exception {
         MockSession session = new MockSession(1, null);
         localRepo.addSession(session);
-        HttpResponse response = createHandler(addTestTenant()).handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L));
+        HttpResponse response = createHandler().handle(
+                SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L));
         assertResponseContains(response, "\"configChangeActions\":{\"restart\":[],\"refeed\":[]}");
     }
 
     @Test
     public void require_that_config_change_actions_are_logged_if_existing() throws Exception {
-        List<ServiceInfo> services = Collections.singletonList(new ServiceInfo("serviceName", "serviceType", null,
-                                                                               ImmutableMap.of("clustername", "foo", "clustertype", "bar"), "configId", "hostName"));
+        List<ServiceInfo> services = Collections.singletonList(
+                new ServiceInfo("serviceName", "serviceType", null,
+                                ImmutableMap.of("clustername", "foo", "clustertype", "bar"), "configId", "hostName"));
         ConfigChangeActions actions = new ConfigChangeActions(Arrays.asList(
                 new MockRestartAction("change", services),
                 new MockRefeedAction("change-id", false, "other change", services, "test")));
         MockSession session = new MockSession(1, null, actions);
         localRepo.addSession(session);
-        HttpResponse response = createHandler(addTestTenant()).handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L));
-        assertResponseContains(response, "Change(s) between active and new application that require restart:\\nIn cluster 'foo' of type 'bar");
-        assertResponseContains(response, "Change(s) between active and new application that may require re-feed:\\nchange-id: Consider removing data and re-feed document type 'test'");
+        HttpResponse response = createHandler().handle(
+                SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L));
+        assertResponseContains(response,
+                               "Change(s) between active and new application that require restart:\\nIn cluster 'foo' of type 'bar");
+        assertResponseContains(response,
+                               "Change(s) between active and new application that may require re-feed:\\nchange-id: Consider removing data and re-feed document type 'test'");
     }
 
     @Test
     public void require_that_config_change_actions_are_not_logged_if_not_existing() throws Exception {
         MockSession session = new MockSession(1, null);
         localRepo.addSession(session);
-        HttpResponse response = createHandler(addTestTenant()).handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L));
+        HttpResponse response = createHandler().handle(
+                SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L));
         assertResponseNotContains(response, "Change(s) between active and new application that require restart");
         assertResponseNotContains(response, "Change(s) between active and new application that require re-feed");
     }
@@ -306,7 +325,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         String message = "No nodes available";
         SessionThrowingException session = new SessionThrowingException(new OutOfCapacityException(message));
         localRepo.addSession(session);
-        HttpResponse response = createHandler(addTestTenant())
+        HttpResponse response = createHandler()
                 .handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L));
         assertEquals(400, response.getStatus());
         Slime data = getData(response);
@@ -317,9 +336,10 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     @Test
     public void test_application_lock_failure() throws InterruptedException, IOException {
         String message = "Timed out after waiting PT1M to acquire lock '/provision/v1/locks/foo/bar/default'";
-        SessionThrowingException session = new SessionThrowingException(new ApplicationLockException(new UncheckedTimeoutException(message)));
+        SessionThrowingException session =
+                new SessionThrowingException(new ApplicationLockException(new UncheckedTimeoutException(message)));
         localRepo.addSession(session);
-        HttpResponse response = createHandler(addTestTenant())
+        HttpResponse response = createHandler()
                 .handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L));
         assertEquals(500, response.getStatus());
         Slime data = getData(response);
@@ -335,12 +355,6 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         return data;
     }
 
-    private static void assertResponse(HttpResponse response, String activateString) throws IOException {
-        // TODO Test when more logging is added
-        //assertThat(baos.toString(), startsWith("{\"log\":[{\"time\":"));
-        assertThat(SessionHandlerTest.getRenderedString(response), endsWith(activateString));
-    }
-
     private static void assertResponseContains(HttpResponse response, String string) throws IOException {
         assertThat(SessionHandlerTest.getRenderedString(response), containsString(string));
     }
@@ -348,7 +362,6 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     private static void assertResponseNotContains(HttpResponse response, String string) throws IOException {
         assertThat(SessionHandlerTest.getRenderedString(response), not(containsString(string)));
     }
-
 
     private SessionHandler createHandler() {
         return createHandler(addTestTenant());
@@ -362,22 +375,16 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         return addTenant(tenant, localRepo, new RemoteSessionRepo(), new MockSessionFactory());
     }
 
-    private static SessionHandler createHandler(TestTenantBuilder builder) {
+    private SessionHandler createHandler(TestTenantBuilder builder) {
         final ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
-        return new SessionPrepareHandler(new Executor() {
-            @SuppressWarnings("NullableProblems")
-            @Override
-            public void execute(Runnable command) {
-                command.run();
-            }
-        }, AccessLog.voidAccessLog(), builder.createTenants(), configserverConfig,
+        return new SessionPrepareHandler(Runnable::run, AccessLog.voidAccessLog(), builder.createTenants(), configserverConfig,
                                          new ApplicationRepository(builder.createTenants(),
-                                                                   HostProvisionerProvider.withProvisioner(new SessionActiveHandlerTest.MockProvisioner()),
-                                                                   new MockCurator(),
+                                                                   HostProvisionerProvider.withProvisioner(new MockProvisioner()),
+                                                                   curator,
                                                                    new LogServerLogGrabber(),
                                                                    new ApplicationConvergenceChecker(),
                                                                    new HttpProxy(new SimpleHttpFetcher()),
-                                                                   new ConfigserverConfig(new ConfigserverConfig.Builder())));
+                                                                   configserverConfig));
     }
 
     private TestTenantBuilder addTenant(TenantName tenantName,
@@ -387,20 +394,30 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         builder.createTenant(tenantName).withSessionFactory(sessionFactory)
                 .withLocalSessionRepo(localSessionRepo)
                 .withRemoteSessionRepo(remoteSessionRepo)
-                .withApplicationRepo(new MemoryTenantApplications());
+                .withApplicationRepo(applicationRepo);
         return builder;
     }
 
     public static class SessionThrowingException extends LocalSession {
         private final RuntimeException exception;
 
-        public SessionThrowingException(RuntimeException exception) {
-            super(TenantName.defaultName(), 1, null, new SessionContext(null, new MockSessionZKClient(MockApplicationPackage.createEmpty()), null, null, new HostRegistry<>(), null));
+        SessionThrowingException(RuntimeException exception) {
+            super(TenantName.defaultName(), 1, null,
+                  new SessionContext(null,
+                                     new MockSessionZKClient(MockApplicationPackage.createEmpty()),
+                                     null,
+                                     null,
+                                     new HostRegistry<>(),
+                                     null));
             this.exception = exception;
         }
 
         @Override
-        public ConfigChangeActions prepare(DeployLogger logger, PrepareParams params, Optional<ApplicationSet> application, Path tenantPath, Instant now) {
+        public ConfigChangeActions prepare(DeployLogger logger,
+                                           PrepareParams params,
+                                           Optional<ApplicationSet> application,
+                                           Path tenantPath,
+                                           Instant now) {
             throw exception;
         }
 

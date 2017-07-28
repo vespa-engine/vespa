@@ -7,6 +7,12 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostFilter;
+import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.ProvisionLogger;
+import com.yahoo.config.provision.Provisioner;
 import com.yahoo.io.IOUtils;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
@@ -24,6 +30,8 @@ import com.yahoo.vespa.config.server.session.*;
 
 import java.io.*;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -210,5 +218,52 @@ public class SessionHandlerTest {
         }
     }
 
+    public static class MockProvisioner implements Provisioner {
 
+        public boolean activated = false;
+        public boolean removed = false;
+        public boolean restarted = false;
+        public ApplicationId lastApplicationId;
+        public Collection<HostSpec> lastHosts;
+
+        @Override
+        public List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts) {
+            transaction.commit();
+            activated = true;
+            lastApplicationId = application;
+            lastHosts = hosts;
+        }
+
+        @Override
+        public void remove(NestedTransaction transaction, ApplicationId application) {
+            removed = true;
+            lastApplicationId = application;
+        }
+
+        @Override
+        public void restart(ApplicationId application, HostFilter filter) {
+            restarted = true;
+            lastApplicationId = application;
+        }
+
+    }
+
+    public static class FailingMockProvisioner extends MockProvisioner {
+
+        @Override
+        public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts) {
+            throw new IllegalArgumentException("Cannot activate application");
+        }
+
+        @Override
+        public void remove(NestedTransaction transaction, ApplicationId application) {
+            throw new IllegalArgumentException("Cannot remove application");
+        }
+
+    }
 }
