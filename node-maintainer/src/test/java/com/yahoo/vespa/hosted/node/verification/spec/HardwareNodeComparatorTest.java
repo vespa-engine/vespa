@@ -16,7 +16,6 @@ public class HardwareNodeComparatorTest {
     private HardwareInfo actualHardware;
     private HardwareInfo nodeInfo;
 
-    //TODO update this
     @Before
     public void setup() {
         actualHardware = new HardwareInfo();

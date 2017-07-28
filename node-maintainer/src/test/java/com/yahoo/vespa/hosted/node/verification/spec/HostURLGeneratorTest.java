@@ -17,7 +17,6 @@ import static org.junit.Assert.fail;
 public class HostURLGeneratorTest {
 
     private MockCommandExecutor mockCommandExecutor;
-    private HostURLGenerator hostURLGenerator;
     private static final String CAT_NODE_HOST_NAME_PATH = "cat src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/hostURLGeneratorTest";
     private static final String CAT_CONFIG_SERVER_HOST_NAME_PATH = "cat src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/nodeHostNameOutput";
     private static final String CAT_WRONG_HOSTNAME_PATH = "cat src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/hostURLGeneratorExceptionTest";
@@ -28,7 +27,6 @@ public class HostURLGeneratorTest {
     @Before
     public void setup() {
         mockCommandExecutor = new MockCommandExecutor();
-        hostURLGenerator = new HostURLGenerator();
     }
 
     @Test

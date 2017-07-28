@@ -55,7 +55,7 @@ public class HostURLGenerator {
         ArrayList<String> output = commandExecutor.executeCommand(CONFIG_SERVER_HOST_NAME_COMMAND);
         if (output.size() != 1)
             throw new IOException("Expected one line return from the command: " + CONFIG_SERVER_HOST_NAME_COMMAND);
-        String[] configServerHostNames = parseOutHostNames(output.get(0)); //TODO check if actually size is
+        String[] configServerHostNames = parseOutHostNames(output.get(0));
         return configServerHostNames;
     }
 

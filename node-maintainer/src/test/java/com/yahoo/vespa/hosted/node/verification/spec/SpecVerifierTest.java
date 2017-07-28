@@ -79,7 +79,7 @@ public class SpecVerifierTest {
         actualHardware.setIpv4Interface(true);
         actualHardware.setIpv6Interface(false);
         actualHardware.setDiskType(HardwareInfo.DiskType.SLOW);
-        ArrayList<URL> url = new ArrayList<>(Arrays.asList(new File(NODE_REPO_PATH).toURI().toURL())); //TODO fix
+        ArrayList<URL> url = new ArrayList<>(Arrays.asList(new File(NODE_REPO_PATH).toURI().toURL()));
         NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(url);
         YamasSpecReport yamasSpecReport = SpecVerifier.makeYamasSpecReport(actualHardware, nodeRepoJsonModel);
         long timeStamp = yamasSpecReport.getTimeStamp();
@@ -93,7 +93,7 @@ public class SpecVerifierTest {
     public void getNodeRepositoryJSON_should_return_valid_nodeRepoJSONModel() throws Exception {
         mockCommandExecutor.addCommand("echo notUsed " + URL_RESOURCE_PATH);
         mockCommandExecutor.addCommand("echo nodeRepo.json");
-        NodeRepoJsonModel actualNodeRepoJsonModel = SpecVerifier.getNodeRepositoryJSON(mockCommandExecutor); //TODO fix
+        NodeRepoJsonModel actualNodeRepoJsonModel = SpecVerifier.getNodeRepositoryJSON(mockCommandExecutor);
         double expectedMinCpuCores = 4D;
         double expectedMinMainMemoryAvailableGb = 4.04D;
         double expectedMinDiskAvailableGb = 63D;
