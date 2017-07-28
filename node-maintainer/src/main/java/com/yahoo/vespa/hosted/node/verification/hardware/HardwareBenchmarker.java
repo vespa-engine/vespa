@@ -17,7 +17,7 @@ import java.util.Arrays;
  */
 public class HardwareBenchmarker {
 
-    public static void hardwareBenchmarks(CommandExecutor commandExecutor) {
+    public static boolean hardwareBenchmarks(CommandExecutor commandExecutor) {
         BenchmarkResults benchmarkResults = new BenchmarkResults();
         ArrayList<Benchmark> benchmarks = new ArrayList<>(Arrays.asList(
                 new DiskBenchmark(benchmarkResults, commandExecutor),
@@ -30,6 +30,7 @@ public class HardwareBenchmarker {
         YamasHardwareReport yamasHardwareReport = makeYamasHardwareReport(benchmarkResults);
         printBenchmarkResults(yamasHardwareReport);
         TerminationController.terminateIfInvalidBenchmarkResults(benchmarkResults);
+        return true;
     }
 
     protected static YamasHardwareReport makeYamasHardwareReport(BenchmarkResults benchmarkResults){

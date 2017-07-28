@@ -15,32 +15,34 @@ public class TerminationController {
     private static final double DISK_SPEED_LOWER_LIMIT = 50D;
 
     public static void terminateIfInvalidBenchmarkResults(BenchmarkResults benchmarkResults) {
+        if (!isBenchmarkResultsValid(benchmarkResults)) {
+            System.exit(1);
+        }
+    }
 
-        boolean invalidResults = false;
+    public static boolean isBenchmarkResultsValid(BenchmarkResults benchmarkResults){
+        boolean invalidResults = true;
 
         if (benchmarkResults.getCpuCyclesPerSec() < CPU_FREQUENCY_LOWER_LIMIT) {
             logger.log(Level.WARNING, "CPU frequency below accepted value. Value: " + benchmarkResults.getCpuCyclesPerSec() + " GHz");
-            invalidResults = true;
+            invalidResults = false;
         }
 
         if (benchmarkResults.getMemoryWriteSpeedGBs() < MEMORY_WRITE_SPEED_LOWER_LIMIT) {
             logger.log(Level.WARNING, "Memory write speed below accepted value. Value: " + benchmarkResults.getMemoryWriteSpeedGBs() + " GB/s");
-            invalidResults = true;
+            invalidResults = false;
         }
 
         if (benchmarkResults.getMemoryReadSpeedGBs() < MEMORY_READ_SPEED_LOWER_LIMIT) {
             logger.log(Level.WARNING, "Memory read speed below accepted value. Value: " + benchmarkResults.getMemoryReadSpeedGBs() + " GB/s");
-            invalidResults = true;
+            invalidResults = false;
         }
 
         if (benchmarkResults.getDiskSpeedMbs() < DISK_SPEED_LOWER_LIMIT) {
             logger.log(Level.WARNING, "Disk speed below accepted value. Value: " + benchmarkResults.getDiskSpeedMbs() + " MB/s");
-            invalidResults = true;
+            invalidResults = false;
         }
-
-        if (invalidResults) {
-            System.exit(1);
-        }
-
+        return invalidResults;
     }
+
 }
