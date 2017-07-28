@@ -47,4 +47,11 @@ public class IPAddressVerifierTest {
         assertEquals(expectedConvertedAddress, actualConvertedAddress);
     }
 
+    @Test
+    public void getFaultyIpAddresses_should_return_empty_array_when_parameters_are_invalid () {
+        assertEquals(0, ipAddressVerifier.getFaultyIpAddresses(null, null).length);
+        String invalidIpAddress = "This is an invalid IP address";
+        assertEquals(0, ipAddressVerifier.getFaultyIpAddresses(invalidIpAddress, additionalIpAddresses).length);
+    }
+
 }

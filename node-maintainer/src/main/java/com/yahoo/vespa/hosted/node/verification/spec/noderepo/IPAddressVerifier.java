@@ -37,8 +37,6 @@ public class IPAddressVerifier {
         String ipAddressInLookupFormat = convertToLookupFormat(ipAddress);
         String attributeName = ipAddress;
         DirContext ctx = new InitialDirContext(env);
-        //98.138.253.109
-        //Attributes attrs = ctx.getAttributes("1.0.6.f.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.9.7.7.0.c.0.4.9.9.8.0.2.0.0.1.ip6.arpa",new String[] {"PTR"});
         Attributes attrs = ctx.getAttributes(attributeName, new String[]{"PTR"});
         for (NamingEnumeration<? extends Attribute> ae = attrs.getAll(); ae.hasMoreElements(); ) {
             Attribute attr = ae.next();

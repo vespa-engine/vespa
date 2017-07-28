@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.verification.hardware.yamasreport;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.BenchmarkResults;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class YamasHardwareReportTest {
 
@@ -14,7 +14,6 @@ public class YamasHardwareReportTest {
     public void createFromHardwareResults_should_create_correct_report () {
         double expectedCpuCyclesPerSec = 4;
         double expectedDiskSpeedMbps = 120;
-        boolean expectedIpv6Connectivity = true;
         double expectedMemoryReadSpeedGBs = 7.1;
         double expectedMemoryWriteSpeedGBs = 5.9;
         BenchmarkResults benchmarkResults = new BenchmarkResults();
