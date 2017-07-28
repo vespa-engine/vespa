@@ -75,7 +75,7 @@ public class MemoryBenchmarkTest {
     @Test
     public void memoryReadSpeed_invalid_input_should_not_update_hardwareResults() {
         memoryBenchmark.updateMemoryReadSpeed("Invalid speed");
-        assertNull(benchmarkResults.getMemoryReadSpeedGBs());
+        assertEquals(0D ,benchmarkResults.getMemoryReadSpeedGBs(), DELTA);
     }
 
     @Test
@@ -88,7 +88,7 @@ public class MemoryBenchmarkTest {
     @Test
     public void memoryWriteSpeed_invalid_input_should_not_update_hardwareResults() {
         memoryBenchmark.updateMemoryWriteSpeed("Invalid speed");
-        assertNull(benchmarkResults.getMemoryWriteSpeedGBs());
+        assertEquals(0D ,benchmarkResults.getMemoryWriteSpeedGBs(), DELTA);
     }
 
     @Test

@@ -8,23 +8,23 @@ public class BenchmarkResults {
 
     private double cpuCyclesPerSec;
     private double diskSpeedMbs;
-    private Double memoryWriteSpeedGBs;
-    private Double memoryReadSpeedGBs;
+    private double memoryWriteSpeedGBs;
+    private double memoryReadSpeedGBs;
 
 
-    public Double getMemoryWriteSpeedGBs() {
+    public double getMemoryWriteSpeedGBs() {
         return memoryWriteSpeedGBs;
     }
 
-    public void setMemoryWriteSpeedGBs(Double memoryWriteSpeedGBs) {
+    public void setMemoryWriteSpeedGBs(double memoryWriteSpeedGBs) {
         this.memoryWriteSpeedGBs = memoryWriteSpeedGBs;
     }
 
-    public Double getMemoryReadSpeedGBs() {
+    public double getMemoryReadSpeedGBs() {
         return memoryReadSpeedGBs;
     }
 
-    public void setMemoryReadSpeedGBs(Double memoryReadSpeedGBs) {
+    public void setMemoryReadSpeedGBs(double memoryReadSpeedGBs) {
         this.memoryReadSpeedGBs = memoryReadSpeedGBs;
     }
 
