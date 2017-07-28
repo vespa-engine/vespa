@@ -136,7 +136,7 @@ FieldPathEntry::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "fillInVal", _fillInVal);
 }
 
-vespalib::string FieldPathEntry::parseKey(vespalib::string & key)
+vespalib::string FieldPathEntry::parseKey(vespalib::stringref & key)
 {
     vespalib::string v;
     const char *c = key.c_str();

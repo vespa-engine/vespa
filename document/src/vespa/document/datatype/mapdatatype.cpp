@@ -61,7 +61,7 @@ MapDataType::buildFieldPathImpl(FieldPath & path, const DataType &dataType,
                                 const DataType &keyType, const DataType &valueType)
 {
     if (!remainFieldName.empty() && remainFieldName[0] == '{') {
-        vespalib::string rest = remainFieldName;
+        vespalib::stringref rest = remainFieldName;
         vespalib::string keyValue = FieldPathEntry::parseKey(rest);
 
         valueType.buildFieldPath(path, (rest[0] == '.') ? rest.substr(1) : rest);

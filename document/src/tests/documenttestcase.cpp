@@ -99,10 +99,10 @@ void DocumentTest::testFieldPath()
                                        "{\"\"}", "", ""
                                      };
     for (size_t i(0); i < sizeof(testValues)/sizeof(testValues[0]); i+=3) {
-        vespalib::string tmp = testValues[i];
+        vespalib::stringref tmp = testValues[i];
         vespalib::string key = FieldPathEntry::parseKey(tmp);
         CPPUNIT_ASSERT_EQUAL(testValues[i+1], key);
-        CPPUNIT_ASSERT_EQUAL(testValues[i+2], tmp);
+        CPPUNIT_ASSERT_EQUAL(testValues[i+2], vespalib::string(tmp));
     }
 }
 

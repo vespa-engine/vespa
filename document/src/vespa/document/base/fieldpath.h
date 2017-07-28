@@ -92,7 +92,7 @@ public:
      * @param key is the incoming value, and contains what is left when done.
      * *return The unescaped value
      */
-    static vespalib::string parseKey(vespalib::string & key);
+    static vespalib::string parseKey(vespalib::stringref & key);
 private:
     void setFillValue(const DataType & dataType);
     Type                 _type;
