@@ -21,7 +21,7 @@ public class TerminationControllerTest {
     private static final double INVALID_MEMORY_READ_SPEED = 0.1;
 
     @Before
-    public void setup(){
+    public void setup() {
         benchmarkResults = new BenchmarkResults();
         benchmarkResults.setCpuCyclesPerSec(VALID_CPU_FREQUENCY);
         benchmarkResults.setDiskSpeedMbs(VALID_DISK_SPEED);
@@ -30,30 +30,30 @@ public class TerminationControllerTest {
     }
 
     @Test
-    public void isBenchmarkResultsValid_should_return_true(){
+    public void isBenchmarkResultsValid_should_return_true() {
         assertTrue(TerminationController.isBenchmarkResultsValid(benchmarkResults));
     }
 
     @Test
-    public void isBenchmarkResultsValid_should_be_false_because_of_cpu_frequency(){
+    public void isBenchmarkResultsValid_should_be_false_because_of_cpu_frequency() {
         benchmarkResults.setCpuCyclesPerSec(INVALID_CPU_FREQUENCY);
         assertFalse(TerminationController.isBenchmarkResultsValid(benchmarkResults));
     }
 
     @Test
-    public void isBenchmarkResultsValid_should_be_false_because_of_disk_speed(){
+    public void isBenchmarkResultsValid_should_be_false_because_of_disk_speed() {
         benchmarkResults.setDiskSpeedMbs(INVALID_DISK_SPEED);
         assertFalse(TerminationController.isBenchmarkResultsValid(benchmarkResults));
     }
 
     @Test
-    public void isBenchmarkResultsValid_should_be_false_because_of_memory_write_speed(){
+    public void isBenchmarkResultsValid_should_be_false_because_of_memory_write_speed() {
         benchmarkResults.setMemoryWriteSpeedGBs(INVALID_MEMORY_WRITE_SPEED);
         assertFalse(TerminationController.isBenchmarkResultsValid(benchmarkResults));
     }
 
     @Test
-    public void isBenchmarkResultsValid_should_be_false_because_of_memory_read_speed(){
+    public void isBenchmarkResultsValid_should_be_false_because_of_memory_read_speed() {
         benchmarkResults.setMemoryReadSpeedGBs(INVALID_MEMORY_READ_SPEED);
         assertFalse(TerminationController.isBenchmarkResultsValid(benchmarkResults));
     }

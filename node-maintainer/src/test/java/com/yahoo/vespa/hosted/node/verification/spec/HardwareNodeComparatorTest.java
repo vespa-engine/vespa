@@ -15,6 +15,7 @@ public class HardwareNodeComparatorTest {
 
     private HardwareInfo actualHardware;
     private HardwareInfo nodeInfo;
+
     //TODO update this
     @Before
     public void setup() {
@@ -49,7 +50,6 @@ public class HardwareNodeComparatorTest {
         nodeInfo.setDiskType(DiskType.FAST);
         assertFalse(HardwareNodeComparator.compare(nodeInfo, actualHardware).getMetrics().isMatch());
     }
-
 
 
 }

@@ -1,8 +1,8 @@
 package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
 
 import com.yahoo.vespa.hosted.node.verification.commons.ParseResult;
-import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo.DiskType;
 import com.yahoo.vespa.hosted.node.verification.mock.MockCommandExecutor;
+import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo.DiskType;
 import org.junit.Before;
 import org.junit.Test;
 

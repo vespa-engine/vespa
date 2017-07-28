@@ -43,20 +43,20 @@ public class HostURLGeneratorTest {
     }
 
     @Test
-    public void generateNodeInfoURL_expected_IOException(){
-        try{
+    public void generateNodeInfoURL_expected_IOException() {
+        try {
             mockCommandExecutor.addCommand(CAT_CONFIG_SERVER_HOST_NAME_PATH);
             mockCommandExecutor.addCommand(CAT_WRONG_HOSTNAME_PATH);
             HostURLGenerator.generateNodeInfoUrl(mockCommandExecutor);
             fail("Expected an IOExeption to be thrown");
-        } catch (IOException e){
+        } catch (IOException e) {
             String expectedExceptionMessage = "Unexpected output from \"hostname\" command.";
             assertEquals(expectedExceptionMessage, e.getMessage());
         }
     }
 
     @Test
-    public void buildNodeInfoURL_should_add_protocol_and_port_in_front_when_protocol_is_absent() throws IOException{
+    public void buildNodeInfoURL_should_add_protocol_and_port_in_front_when_protocol_is_absent() throws IOException {
         String configServerHostName = "www.yahoo.com";
         String nodeHostName = "index.html";
         String nodeHostnamePrefix = "/nodes/v2/node/";
@@ -66,7 +66,7 @@ public class HostURLGeneratorTest {
     }
 
     @Test
-    public void buildNodeInfoURL_should_not_add_protocol_and_port_in_front_when_protocol_already_exists() throws IOException{
+    public void buildNodeInfoURL_should_not_add_protocol_and_port_in_front_when_protocol_already_exists() throws IOException {
         String configServerHostName = "http://www.yahoo.com";
         String nodeHostName = "index.html";
         String nodeHostnamePrefix = "/nodes/v2/node/";

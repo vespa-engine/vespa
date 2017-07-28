@@ -1,7 +1,6 @@
 package com.yahoo.vespa.hosted.node.verification.spec.noderepo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.vespa.hosted.node.verification.spec.HostURLGenerator;
 
 import java.io.IOException;
 import java.net.URL;

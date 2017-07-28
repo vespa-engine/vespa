@@ -133,7 +133,7 @@ public class NetRetrieverTest {
     }
 
     @Test
-    public void stripInterfaceSpeed_should_return_correct_double(){
+    public void stripInterfaceSpeed_should_return_correct_double() {
         String interfaceSpeedToConvert = "1000Mb/s";
         double expectedInterfaceSpeed = 1000;
         double actualInterfaceSpeed = net.convertInterfaceSpeed(interfaceSpeedToConvert);

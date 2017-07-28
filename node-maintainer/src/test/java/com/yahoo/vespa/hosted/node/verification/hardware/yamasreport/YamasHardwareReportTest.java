@@ -11,7 +11,7 @@ public class YamasHardwareReportTest {
     private static final double DELTA = 0.1;
 
     @Test
-    public void createFromHardwareResults_should_create_correct_report () {
+    public void createFromHardwareResults_should_create_correct_report() {
         double expectedCpuCyclesPerSec = 4;
         double expectedDiskSpeedMbps = 120;
         double expectedMemoryReadSpeedGBs = 7.1;

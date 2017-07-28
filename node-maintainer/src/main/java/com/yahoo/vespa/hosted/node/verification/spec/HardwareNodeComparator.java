@@ -87,7 +87,7 @@ public class HardwareNodeComparator {
             specReportMetrics.setExpectedInterfaceSpeed(expectedInterfaceSpeed);
             specReportMetrics.setActualInterfaceSpeed(actualInterfaceSpeed);
         }
-        if (!actualHardware.isIpv6Connection()){
+        if (!actualHardware.isIpv6Connection()) {
             specReportMetrics.setActualIpv6Connection(false);
         }
     }

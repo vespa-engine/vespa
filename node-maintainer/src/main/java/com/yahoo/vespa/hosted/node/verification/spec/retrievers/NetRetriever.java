@@ -68,7 +68,7 @@ public class NetRetriever implements HardwareRetriever {
         parseResults.add(parseInterfaceSpeed(commandOutput));
     }
 
-    protected void testPingResponse(ArrayList<ParseResult> parseResults) throws IOException{
+    protected void testPingResponse(ArrayList<ParseResult> parseResults) throws IOException {
         ArrayList<String> commandOutput = commandExecutor.executeCommand(PING_NET_COMMAND);
         parseResults.add(parsePingResponse(commandOutput));
     }
@@ -105,7 +105,7 @@ public class NetRetriever implements HardwareRetriever {
         return "";
     }
 
-    protected double convertInterfaceSpeed(String speed){
+    protected double convertInterfaceSpeed(String speed) {
         return Double.parseDouble(speed.replaceAll("[^\\d.]", ""));
     }
 

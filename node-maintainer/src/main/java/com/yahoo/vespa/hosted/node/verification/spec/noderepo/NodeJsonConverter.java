@@ -13,8 +13,8 @@ public class NodeJsonConverter {
         nodeRepoHardwareInfo.setInterfaceSpeedMbs(1000);
     }
 
-    protected static void setIpv6AddressConnectivity(NodeRepoJsonModel nodeRepoJsonModel, HardwareInfo nodeRepoHardwareInfo){
-        if (nodeRepoJsonModel.getIpv6Address() != null){
+    protected static void setIpv6AddressConnectivity(NodeRepoJsonModel nodeRepoJsonModel, HardwareInfo nodeRepoHardwareInfo) {
+        if (nodeRepoJsonModel.getIpv6Address() != null) {
             nodeRepoHardwareInfo.setIpv6Interface(true);
         }
     }

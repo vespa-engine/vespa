@@ -8,9 +8,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Created by olaa on 07/07/2017.

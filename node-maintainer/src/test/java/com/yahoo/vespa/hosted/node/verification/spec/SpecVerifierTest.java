@@ -42,7 +42,7 @@ public class SpecVerifierTest {
 
 
     @Test
-    public void verifySpec_equal_nodeRepoInfo_and_hardware_should_return_true() throws Exception{
+    public void verifySpec_equal_nodeRepoInfo_and_hardware_should_return_true() throws Exception {
         mockCommandExecutor.addCommand("echo notUsed " + URL_RESOURCE_PATH);
         mockCommandExecutor.addCommand("echo nodeRepo.json");
         mockCommandExecutor.addCommand("cat " + CPU_INFO_PATH);

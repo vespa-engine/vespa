@@ -3,8 +3,6 @@ package com.yahoo.vespa.hosted.node.verification.spec;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
-import com.yahoo.vespa.hosted.node.verification.commons.OutputParser;
-import com.yahoo.vespa.hosted.node.verification.commons.ParseInstructions;
 import com.yahoo.vespa.hosted.node.verification.spec.noderepo.IPAddressVerifier;
 import com.yahoo.vespa.hosted.node.verification.spec.noderepo.NodeJsonConverter;
 import com.yahoo.vespa.hosted.node.verification.spec.noderepo.NodeRepoInfoRetriever;
@@ -14,7 +12,6 @@ import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfoRetr
 import com.yahoo.vespa.hosted.node.verification.spec.yamasreport.YamasSpecReport;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.logging.Logger;
@@ -36,7 +33,7 @@ public class SpecVerifier {
         return yamasSpecReport.getMetrics().isMatch();
     }
 
-    protected static YamasSpecReport makeYamasSpecReport(HardwareInfo actualHardware, NodeRepoJsonModel nodeRepoJsonModel){
+    protected static YamasSpecReport makeYamasSpecReport(HardwareInfo actualHardware, NodeRepoJsonModel nodeRepoJsonModel) {
         YamasSpecReport yamasSpecReport = HardwareNodeComparator.compare(NodeJsonConverter.convertJsonModelToHardwareInfo(nodeRepoJsonModel), actualHardware);
         IPAddressVerifier ipAddressVerifier = new IPAddressVerifier();
         ipAddressVerifier.reportFaultyIpAddresses(nodeRepoJsonModel, yamasSpecReport);

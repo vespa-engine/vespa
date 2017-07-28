@@ -3,9 +3,9 @@ package com.yahoo.vespa.hosted.node.verification.hardware;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.Benchmark;
+import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.BenchmarkResults;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.CPUBenchmark;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.DiskBenchmark;
-import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.BenchmarkResults;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.MemoryBenchmark;
 import com.yahoo.vespa.hosted.node.verification.hardware.yamasreport.YamasHardwareReport;
 
@@ -33,13 +33,13 @@ public class HardwareBenchmarker {
         return true;
     }
 
-    protected static YamasHardwareReport makeYamasHardwareReport(BenchmarkResults benchmarkResults){
+    protected static YamasHardwareReport makeYamasHardwareReport(BenchmarkResults benchmarkResults) {
         YamasHardwareReport yamasHardwareReport = new YamasHardwareReport();
         yamasHardwareReport.createReportFromBenchmarkResults(benchmarkResults);
         return yamasHardwareReport;
     }
 
-    private static void printBenchmarkResults(YamasHardwareReport yamasHardwareReport){
+    private static void printBenchmarkResults(YamasHardwareReport yamasHardwareReport) {
         ObjectMapper om = new ObjectMapper();
         try {
             System.out.println(om.writeValueAsString(yamasHardwareReport));

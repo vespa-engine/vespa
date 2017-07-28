@@ -20,7 +20,7 @@ public class TerminationController {
         }
     }
 
-    public static boolean isBenchmarkResultsValid(BenchmarkResults benchmarkResults){
+    public static boolean isBenchmarkResultsValid(BenchmarkResults benchmarkResults) {
         boolean validResults = true;
 
         if (benchmarkResults.getCpuCyclesPerSec() < CPU_FREQUENCY_LOWER_LIMIT) {

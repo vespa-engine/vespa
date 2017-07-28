@@ -32,20 +32,20 @@ public class HostURLGenerator {
     }
 
     protected static URL buildNodeInfoURL(String configServerHostName, String nodeHostName) throws MalformedURLException {
-        if (configServerHostName.matches(PROTOCOL_REGEX)){
+        if (configServerHostName.matches(PROTOCOL_REGEX)) {
             return new URL(configServerHostName + NODE_HOSTNAME_PREFIX + nodeHostName);
         }
-        return new URL( HTTP + configServerHostName + PORT_NUMBER + NODE_HOSTNAME_PREFIX + nodeHostName);
+        return new URL(HTTP + configServerHostName + PORT_NUMBER + NODE_HOSTNAME_PREFIX + nodeHostName);
     }
 
-    protected static String generateNodeHostName(CommandExecutor commandExecutor) throws IOException{
+    protected static String generateNodeHostName(CommandExecutor commandExecutor) throws IOException {
         String nodeHostName = getEnvironmentVariable(commandExecutor);
-        return  nodeHostName;
+        return nodeHostName;
     }
 
     protected static String getEnvironmentVariable(CommandExecutor commandExecutor) throws IOException {
         ArrayList<String> output = commandExecutor.executeCommand("hostname");
-        if (output.size() == 1){
+        if (output.size() == 1) {
             return output.get(0);
         }
         throw new IOException("Unexpected output from \"hostname\" command.");
@@ -53,7 +53,8 @@ public class HostURLGenerator {
 
     protected static String[] getConfigServerHostNames(CommandExecutor commandExecutor) throws IOException {
         ArrayList<String> output = commandExecutor.executeCommand(CONFIG_SERVER_HOST_NAME_COMMAND);
-        if (output.size() != 1) throw new IOException("Expected one line return from the command: " + CONFIG_SERVER_HOST_NAME_COMMAND);
+        if (output.size() != 1)
+            throw new IOException("Expected one line return from the command: " + CONFIG_SERVER_HOST_NAME_COMMAND);
         String[] configServerHostNames = parseOutHostNames(output.get(0)); //TODO check if actually size is
         return configServerHostNames;
     }

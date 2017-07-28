@@ -81,6 +81,8 @@ public class HardwareInfo {
         this.minCpuCores = minCpuCores;
     }
 
-    public enum DiskType {SLOW, FAST, UNKNOWN};
+    public enum DiskType {SLOW, FAST, UNKNOWN}
+
+    ;
 
 }

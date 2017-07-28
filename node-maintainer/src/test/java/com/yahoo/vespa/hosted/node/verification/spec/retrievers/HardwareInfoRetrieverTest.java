@@ -22,7 +22,7 @@ public class HardwareInfoRetrieverTest {
     private static final double DELTA = 0.1;
 
     @Before
-    public void setup(){
+    public void setup() {
         mockCommandExecutor = new MockCommandExecutor();
         mockCommandExecutor.addCommand("cat " + CPU_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + MEMORY_INFO_PATH);
@@ -44,7 +44,7 @@ public class HardwareInfoRetrieverTest {
     }
 
     @Test
-    public void retriever_should_return_valid_HardwareInfo(){
+    public void retriever_should_return_valid_HardwareInfo() {
         HardwareInfo actualHardwareInfo = HardwareInfoRetriever.retrieve(mockCommandExecutor);
         assertEquals(expectedHardwareInfo.getMinDiskAvailableGb(), actualHardwareInfo.getMinDiskAvailableGb(), DELTA);
         assertEquals(expectedHardwareInfo.getMinMainMemoryAvailableGb(), actualHardwareInfo.getMinMainMemoryAvailableGb(), DELTA);

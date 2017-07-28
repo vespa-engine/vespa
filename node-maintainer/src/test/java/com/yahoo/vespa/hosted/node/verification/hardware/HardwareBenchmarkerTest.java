@@ -4,7 +4,7 @@ import com.yahoo.vespa.hosted.node.verification.mock.MockCommandExecutor;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 public class HardwareBenchmarkerTest {
 
@@ -16,12 +16,13 @@ public class HardwareBenchmarkerTest {
     private static final String VALID_MEMORY_READ_BENCHMARK_PATH = RESOURCE_PATH + "validMemoryReadSpeed";
 
     @Before
-    public void setup(){
+    public void setup() {
         mockCommandExecutor = new MockCommandExecutor();
 
     }
+
     @Test
-    public void hardwareBenchmarks_should_return_true(){
+    public void hardwareBenchmarks_should_return_true() {
         mockCommandExecutor.addCommand("cat " + VALID_DISK_BENCHMARK_PATH);
         mockCommandExecutor.addCommand("cat " + VALID_CPU_BENCHMARK_PATH);
         mockCommandExecutor.addDummyCommand();

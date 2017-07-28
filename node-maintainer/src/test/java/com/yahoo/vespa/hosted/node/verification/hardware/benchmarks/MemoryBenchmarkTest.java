@@ -7,10 +7,9 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 /**
  * Created by olaa on 14/07/2017.
@@ -75,7 +74,7 @@ public class MemoryBenchmarkTest {
     @Test
     public void memoryReadSpeed_invalid_input_should_not_update_hardwareResults() {
         memoryBenchmark.updateMemoryReadSpeed("Invalid speed");
-        assertEquals(0D ,benchmarkResults.getMemoryReadSpeedGBs(), DELTA);
+        assertEquals(0D, benchmarkResults.getMemoryReadSpeedGBs(), DELTA);
     }
 
     @Test
@@ -88,7 +87,7 @@ public class MemoryBenchmarkTest {
     @Test
     public void memoryWriteSpeed_invalid_input_should_not_update_hardwareResults() {
         memoryBenchmark.updateMemoryWriteSpeed("Invalid speed");
-        assertEquals(0D ,benchmarkResults.getMemoryWriteSpeedGBs(), DELTA);
+        assertEquals(0D, benchmarkResults.getMemoryWriteSpeedGBs(), DELTA);
     }
 
     @Test
