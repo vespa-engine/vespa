@@ -9,6 +9,32 @@ LOG_SETUP(".persistence.slotfile.options");
 
 namespace storage::memfile {
 
+Options::Options()
+    : _minimumFileMetaSlots(512),
+      _maximumFileMetaSlots(0),
+      _minimumFileHeaderBlockSize(102848),
+      _maximumFileHeaderBlockSize(0),
+      _minimumFileSize(1048576),
+      _maximumFileSize(0),
+      _fileBlockSize(4096),
+      _revertTimePeriod(300 * 1000000ull),
+      _keepRemoveTimePeriod(604800 * 1000000ull),
+      _maxDocumentVersions(5),
+      _cacheSize(0),
+      _initialIndexRead(65536),
+      _maximumGapToReadThrough(65536),
+      _diskFullFactor(0.98),
+      _growFactor(2.0),
+      _overrepresentMetaDataFactor(1.2),
+      _overrepresentHeaderBlockFactor(1.1),
+      _defaultRemoveDocType()
+{
+}
+
+Options::Options(const Options &) noexcept = default;
+Options & Options::operator=(const Options &) noexcept = default;
+~Options() { }
+
 Options::Options(const vespa::config::storage::StorMemfilepersistenceConfig& newConfig,
                  const vespa::config::content::PersistenceConfig& newPersistenceConfig)
     : _minimumFileMetaSlots(newConfig.minimumFileMetaSlots),
@@ -34,6 +60,31 @@ Options::Options(const vespa::config::storage::StorMemfilepersistenceConfig& new
             newConfig.store50BackwardsCompatibleRemoveEntriesWithDoctype)
 {
     validate();
+}
+
+bool
+Options::operator==(const Options& options) const {
+    if (_minimumFileMetaSlots == options._minimumFileMetaSlots
+        && _maximumFileMetaSlots == options._maximumFileMetaSlots
+        && _minimumFileHeaderBlockSize
+           == options._minimumFileHeaderBlockSize
+        && _maximumFileHeaderBlockSize
+           == options._maximumFileHeaderBlockSize
+        && _minimumFileSize == options._minimumFileSize
+        && _maximumFileSize == options._maximumFileSize
+        && _fileBlockSize == options._fileBlockSize
+        && _revertTimePeriod == options._revertTimePeriod
+        && _maxDocumentVersions == options._maxDocumentVersions
+        && _keepRemoveTimePeriod == options._keepRemoveTimePeriod
+        && _cacheSize == options._cacheSize
+        && _initialIndexRead == options._initialIndexRead
+        && _maximumGapToReadThrough == options._maximumGapToReadThrough
+        && _diskFullFactor == options._diskFullFactor
+        && _defaultRemoveDocType == options._defaultRemoveDocType)
+    {
+        return true;
+    }
+    return false;
 }
 
 namespace {
