@@ -21,28 +21,28 @@ public class TerminationController {
     }
 
     public static boolean isBenchmarkResultsValid(BenchmarkResults benchmarkResults){
-        boolean invalidResults = true;
+        boolean validResults = true;
 
         if (benchmarkResults.getCpuCyclesPerSec() < CPU_FREQUENCY_LOWER_LIMIT) {
             logger.log(Level.WARNING, "CPU frequency below accepted value. Value: " + benchmarkResults.getCpuCyclesPerSec() + " GHz");
-            invalidResults = false;
+            validResults = false;
         }
 
         if (benchmarkResults.getMemoryWriteSpeedGBs() < MEMORY_WRITE_SPEED_LOWER_LIMIT) {
             logger.log(Level.WARNING, "Memory write speed below accepted value. Value: " + benchmarkResults.getMemoryWriteSpeedGBs() + " GB/s");
-            invalidResults = false;
+            validResults = false;
         }
 
         if (benchmarkResults.getMemoryReadSpeedGBs() < MEMORY_READ_SPEED_LOWER_LIMIT) {
             logger.log(Level.WARNING, "Memory read speed below accepted value. Value: " + benchmarkResults.getMemoryReadSpeedGBs() + " GB/s");
-            invalidResults = false;
+            validResults = false;
         }
 
         if (benchmarkResults.getDiskSpeedMbs() < DISK_SPEED_LOWER_LIMIT) {
             logger.log(Level.WARNING, "Disk speed below accepted value. Value: " + benchmarkResults.getDiskSpeedMbs() + " MB/s");
-            invalidResults = false;
+            validResults = false;
         }
-        return invalidResults;
+        return validResults;
     }
 
 }
