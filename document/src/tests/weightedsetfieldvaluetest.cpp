@@ -116,6 +116,7 @@ void WeightedSetFieldValueTest::testWeightedSet()
             // By value
         buffer->setPos(0);
         deserialize(*buffer, value2);
+        CPPUNIT_ASSERT_EQUAL(size_t(3), value2.size());
         CPPUNIT_ASSERT(value2.remove(IntFieldValue(1)));
         CPPUNIT_ASSERT(!value2.contains(IntFieldValue(1)));
         CPPUNIT_ASSERT_EQUAL(size_t(2), value2.size());

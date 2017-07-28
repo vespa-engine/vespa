@@ -18,23 +18,27 @@ class MapFieldValue : public FieldValue
 private:
     typedef vespalib::IArrayT<FieldValue> IArray;
     const MapDataType *_type;
-    IArray::UP _keys;
-    IArray::UP _values;
-    bool _altered;
+    size_t             _count;
+    IArray::UP         _keys;
+    IArray::UP         _values;
+    std::vector<bool>  _present;
+    bool               _altered;
 
     virtual bool addValue(const FieldValue& fv);
     virtual bool containsValue(const FieldValue& fv) const { return contains(fv); }
     virtual bool removeValue(const FieldValue& fv) { return erase(fv); }
-    bool checkAndRemove(const FieldValue& key,
-                        fieldvalue::ModificationStatus status,
-                        bool wasModified,
-                        std::vector<const FieldValue*>& keysToRemove) const;
+    bool checkAndRemove(const FieldValue& key, fieldvalue::ModificationStatus status,
+                        bool wasModified, std::vector<const FieldValue*>& keysToRemove) const;
     fieldvalue::ModificationStatus onIterateNested(PathRange nested, fieldvalue::IteratorHandler & handler) const override;
     // Utility method to avoid constant explicit casting
     const MapDataType& getMapType() const { return *_type; }
 
     void verifyKey(const FieldValue & key) const __attribute__((noinline));
     void verifyValue(const FieldValue & value) const __attribute__((noinline));
+    size_t nextPresent(size_t index) const {
+        for (; index < _present.size() && !_present[index]; ++index);
+        return index;
+    }
 public:
     typedef std::unique_ptr<MapFieldValue> UP;
     class iterator {
@@ -43,8 +47,7 @@ public:
         iterator(MapFieldValue & map, size_t index) : _map(&map), _index(index) { }
         bool operator == (const iterator & rhs) const { return _map == rhs._map && _index == rhs._index; }
         bool operator != (const iterator & rhs) const { return _map != rhs._map || _index != rhs._index; }
-        iterator& operator++() { ++_index; return *this; }
-        iterator operator++(int) { iterator other(*this); ++_index; return other; }
+        iterator& operator++() { _index = _map->nextPresent(_index+1); return *this; }
         const pair & operator * () const { setCurr(); return _current; }
         const pair * operator -> () const { setCurr(); return &_current; }
         size_t offset() const { return _index; }
@@ -63,8 +66,7 @@ public:
         const_iterator(const MapFieldValue & map, size_t index) : _map(&map), _index(index) { }
         bool operator == (const const_iterator & rhs) const { return _map == rhs._map && _index == rhs._index; }
         bool operator != (const const_iterator & rhs) const { return _map != rhs._map || _index != rhs._index; }
-        const_iterator& operator++() { ++_index; return *this; }
-        const_iterator operator++(int) { const_iterator other(*this); ++_index; return other; }
+        const_iterator& operator++() {  _index = _map->nextPresent(_index+1); return *this; }
         const pair & operator * () const { setCurr(); return _current; }
         const pair * operator -> () const { setCurr(); return &_current; }
     private:
@@ -74,7 +76,7 @@ public:
         }
         const MapFieldValue *_map;
         size_t               _index;
-        mutable pair   _current;
+        mutable pair         _current;
     };
 
     MapFieldValue(const DataType &mapType);
@@ -82,12 +84,7 @@ public:
 
     MapFieldValue(const MapFieldValue & rhs);
     MapFieldValue & operator = (const MapFieldValue & rhs);
-    void swap(MapFieldValue & rhs) {
-        std::swap(_keys, rhs._keys);
-        std::swap(_values, rhs._values);
-        std::swap(_altered, rhs._altered);
-        std::swap(_type, rhs._type);
-    }
+    void swap(MapFieldValue & rhs);
 
     void accept(FieldValueVisitor &visitor) override { visitor.visit(*this); }
     void accept(ConstFieldValueVisitor &visitor) const override { visitor.visit(*this); }
@@ -112,11 +109,11 @@ public:
     bool contains(const FieldValue& key) const;
 
     // CollectionFieldValue methods kept for compatability's sake
-    virtual bool isEmpty() const { return _keys->empty(); }
-    virtual size_t size() const { return _keys->size(); }
-    virtual void clear() { _keys->clear(); _values->clear(); }
-    void reserve(size_t sz) { _keys->reserve(sz); _values->reserve(sz); }
-    void resize(size_t sz) { _keys->resize(sz); _values->resize(sz); }
+    virtual bool isEmpty() const { return _count == 0; }
+    virtual size_t size() const { return _count; }
+    virtual void clear();
+    void reserve(size_t sz);
+    void resize(size_t sz);
 
     fieldvalue::ModificationStatus iterateNestedImpl(PathRange nested, fieldvalue::IteratorHandler & handler,
                                                      const FieldValue& complexFieldValue) const;
@@ -130,11 +127,11 @@ public:
     const DataType *getDataType() const override { return _type; }
     void printXml(XmlOutputStream& out) const override;
 
-    const_iterator begin() const { return const_iterator(*this, 0); }
-    iterator begin() { return iterator(*this, 0); }
+    const_iterator begin() const { return const_iterator(*this, nextPresent(0)); }
+    iterator begin() { return iterator(*this, nextPresent(0)); }
 
-    const_iterator end() const { return const_iterator(*this, size()); }
-    iterator end() { return iterator(*this, size()); }
+    const_iterator end() const { return const_iterator(*this, _present.size()); }
+    iterator end() { return iterator(*this, _present.size()); }
 
     const_iterator find(const FieldValue& fv) const;
     iterator find(const FieldValue& fv);

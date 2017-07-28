@@ -36,8 +36,10 @@ const MapDataType *verifyMapType(const DataType& type) {
 MapFieldValue::MapFieldValue(const DataType &mapType)
     : FieldValue(),
       _type(verifyMapType(mapType)),
+      _count(0),
       _keys(static_cast<IArray *>(createArray(getMapType().getKeyType()).release())),
       _values(static_cast<IArray *>(createArray(getMapType().getValueType()).release())),
+      _present(),
       _altered(true)
 {
 }
@@ -49,8 +51,10 @@ MapFieldValue::~MapFieldValue()
 MapFieldValue::MapFieldValue(const MapFieldValue & rhs) :
     FieldValue(rhs),
     _type(rhs._type),
+    _count(rhs._count),
     _keys(rhs._keys ? rhs._keys->clone() : nullptr),
     _values(rhs._values ? rhs._values->clone() : nullptr),
+    _present(rhs._present),
     _altered(rhs._altered)
 {
 }
@@ -63,6 +67,16 @@ MapFieldValue::operator = (const MapFieldValue & rhs)
         swap(copy);
     }
     return *this;
+}
+
+void
+MapFieldValue::swap(MapFieldValue & rhs) {
+    std::swap(_count, rhs._count);
+    std::swap(_keys, rhs._keys);
+    std::swap(_values, rhs._values);
+    std::swap(_present, rhs._present);
+    std::swap(_altered, rhs._altered);
+    std::swap(_type, rhs._type);
 }
 
 void MapFieldValue::verifyKey(const FieldValue & fv) const
@@ -95,7 +109,6 @@ MapFieldValue::insertVerify(const FieldValue& key, const FieldValue& value)
         }
     } else {
         push_back(key, value);
-        _altered = true;
         result = true;
     }
     return result;
@@ -104,8 +117,10 @@ MapFieldValue::insertVerify(const FieldValue& key, const FieldValue& value)
 void
 MapFieldValue::push_back(const FieldValue& key, const FieldValue& value)
 {
+    _count++;
     _keys->push_back(key);
     _values->push_back(value);
+    _present.push_back(true);
     _altered = true;
 }
 
@@ -113,8 +128,10 @@ MapFieldValue::push_back(const FieldValue& key, const FieldValue& value)
 void
 MapFieldValue::push_back(FieldValue::UP key, FieldValue::UP value)
 {
+    _count++;
     _keys->push_back(*key);
     _values->push_back(*value);
+    _present.push_back(true);
     _altered = true;
 }
 
@@ -156,6 +173,27 @@ MapFieldValue::contains(const FieldValue& key) const
     return find(key) != end();
 }
 
+void
+MapFieldValue::clear() {
+    _keys->clear();
+    _values->clear();
+    _present.clear();
+    _count = 0;
+}
+void
+MapFieldValue::reserve(size_t sz) {
+    _keys->reserve(sz);
+    _values->reserve(sz);
+    _present.reserve(sz);
+}
+
+void MapFieldValue::resize(size_t sz) {
+    _keys->resize(sz);
+    _values->resize(sz);
+    _present.resize(sz, true);
+    _count = std::count(_present.begin(), _present.end(), true);
+}
+
 bool
 MapFieldValue::erase(const FieldValue& key)
 {
@@ -163,8 +201,8 @@ MapFieldValue::erase(const FieldValue& key)
     iterator found(find(key));
     bool result(found != end());
     if (result) {
-        _keys->erase(_keys->begin() + found.offset());
-        _values->erase(_values->begin() + found.offset());
+        _count--;
+        _present[found.offset()] = false;
         _altered = true;
     }
     return result;
@@ -186,8 +224,8 @@ MapFieldValue::compare(const FieldValue& other) const
 
     const MapFieldValue& o(dynamic_cast<const MapFieldValue&>(other));
 
-    if (_keys->size() != o._keys->size()) {
-        return (_keys->size() - o._keys->size());
+    if (size() != o.size()) {
+        return (size() - o.size());
     }
 
     const_iterator it1 = begin();
@@ -222,7 +260,7 @@ MapFieldValue::print(std::ostream& out, bool verbose, const std::string& indent)
         out << " - ";
         item.second->print(out, verbose, indent + "  ");
     }
-    if (_keys->size() > 0) out << "\n" << indent;
+    if (size() > 0) out << "\n" << indent;
     out << ")";
 }
 
@@ -252,10 +290,9 @@ MapFieldValue::hasChanged() const
 MapFieldValue::const_iterator
 MapFieldValue::find(const FieldValue& key) const
 {
-    size_t sz = _keys->size();
-    if ((sz > 0) && (key.getClass().id() == (*_keys)[0].getClass().id())) {
-        for (size_t i(0), m(_keys->size()); i < m; i++) {
-            if ((*_keys)[i].fastCompare(key) == 0) {
+    if ((size() > 0) && (key.getClass().id() == (*_keys)[0].getClass().id())) {
+        for (size_t i(0), m(_present.size()); i < m; i++) {
+            if (_present[i] && ((*_keys)[i].fastCompare(key) == 0)) {
                 return const_iterator(*this, i);
             }
         }
@@ -266,10 +303,9 @@ MapFieldValue::find(const FieldValue& key) const
 MapFieldValue::iterator
 MapFieldValue::find(const FieldValue& key)
 {
-    size_t sz = _keys->size();
-    if ((sz > 0) && (key.getClass().id() == (*_keys)[0].getClass().id())) {
-        for (size_t i(0), m(_keys->size()); i < m; i++) {
-            if ((*_keys)[i].fastCompare(key) == 0) {
+    if ((size() > 0) && (key.getClass().id() == (*_keys)[0].getClass().id())) {
+        for (size_t i(0), m(_present.size()); i < m; i++) {
+            if (_present[i] && ((*_keys)[i].fastCompare(key) == 0)) {
                 return iterator(*this, i);
             }
         }
@@ -326,20 +362,20 @@ MapFieldValue::iterateNestedImpl(PathRange nested,
         }
         case FieldPathEntry::MAP_ALL_KEYS:
             LOG(spam, "MAP_ALL_KEYS");
-            for (const_iterator it(begin()), mt(end()); it != mt; it++) {
+            for (const auto & entry : *this) {
                 if (isWSet) {
-                    handler.setWeight(static_cast<const IntFieldValue &>(*it->second).getValue());
+                    handler.setWeight(static_cast<const IntFieldValue &>(*entry.second).getValue());
                 }
-                wasModified = checkAndRemove(*it->first,
-                                             it->first->iterateNested(nested.next(), handler),
+                wasModified = checkAndRemove(*entry.first,
+                                             entry.first->iterateNested(nested.next(), handler),
                                              wasModified, keysToRemove);
             }
             break;
         case FieldPathEntry::MAP_ALL_VALUES:
             LOG(spam, "MAP_ALL_VALUES");
-            for (const_iterator it(begin()), mt(end()); it != mt; it++) {
-                wasModified = checkAndRemove(*it->second,
-                                             it->second->iterateNested(nested.next(), handler),
+            for (const auto & entry : *this) {
+                wasModified = checkAndRemove(*entry.second,
+                                             entry.second->iterateNested(nested.next(), handler),
                                              wasModified, keysToRemove);
             }
             break;
@@ -357,11 +393,11 @@ MapFieldValue::iterateNestedImpl(PathRange nested,
                 }
             } else {
                 PathRange next = nested.next();
-                for (const_iterator it(begin()), mt(end()); it != mt; it++) {
-                    LOG(spam, "key is '%s'", it->first->toString().c_str());
-                    handler.getVariables()[fpe.getVariableName()] = IndexValue(*it->first);
+                for (const auto & entry : *this) {
+                    LOG(spam, "key is '%s'", entry.first->toString().c_str());
+                    handler.getVariables()[fpe.getVariableName()] = IndexValue(*entry.first);
                     LOG(spam, "vars at this time = %s", handler.getVariables().toString().c_str());
-                    wasModified = checkAndRemove(*it->first, it->second->iterateNested(next, handler),
+                    wasModified = checkAndRemove(*entry.first, entry.second->iterateNested(next, handler),
                                                  wasModified, keysToRemove);
                 }
                 handler.getVariables().erase(fpe.getVariableName());
@@ -370,11 +406,11 @@ MapFieldValue::iterateNestedImpl(PathRange nested,
         }
         default:
             LOG(spam, "default");
-            for (const_iterator it(begin()), mt(end()); it != mt; it++) {
+            for (const auto & entry : *this) {
                 if (isWSet) {
-                    handler.setWeight(static_cast<const IntFieldValue &>(*it->second).getValue());
+                    handler.setWeight(static_cast<const IntFieldValue &>(*entry.second).getValue());
                 }
-                wasModified = checkAndRemove(*it->first, it->first->iterateNested(nested, handler),
+                wasModified = checkAndRemove(*entry.first, entry.first->iterateNested(nested, handler),
                                              wasModified, keysToRemove);
                 // Don't iterate over values
                 /*wasModified = checkAndRemove(*it->second,
@@ -397,13 +433,12 @@ MapFieldValue::iterateNestedImpl(PathRange nested,
 
         if (handler.handleComplex(complexFieldValue)) {
             LOG(spam, "calling handler.handleComplex for all map keys");
-            for (const_iterator it(begin()), mt(end()); it != mt; it++) {
+            for (const auto & entry : *this) {
                 if (isWSet) {
-                    handler.setWeight(static_cast<const IntFieldValue &>(*it->second).getValue());
+                    handler.setWeight(static_cast<const IntFieldValue &>(*entry.second).getValue());
                 }
-                wasModified = checkAndRemove(*it->first,
-                        it->first->iterateNested(nested, handler),
-                        wasModified, keysToRemove);
+                wasModified = checkAndRemove(*entry.first, entry.first->iterateNested(nested, handler),
+                                             wasModified, keysToRemove);
                 // XXX: Map value iteration is currently disabled since it changes
                 // existing search behavior
                 /*wasModified = checkAndRemove(*it->second,
@@ -413,12 +448,9 @@ MapFieldValue::iterateNestedImpl(PathRange nested,
         }
     }
     handler.setWeight(1);
-    for (std::vector<const FieldValue*>::iterator
-             i = keysToRemove.begin(), last = keysToRemove.end();
-         i != last; ++i)
-    {
-        LOG(spam, "erasing map entry with key %s", (*i)->toString().c_str());
-        const_cast<MapFieldValue&>(*this).erase(**i);
+    for (const FieldValue * key: keysToRemove) {
+        LOG(spam, "erasing map entry with key %s", key->toString().c_str());
+        const_cast<MapFieldValue&>(*this).erase(*key);
     }
     return wasModified ? ModificationStatus::MODIFIED : ModificationStatus::NOT_MODIFIED;
 }

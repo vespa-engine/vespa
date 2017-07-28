@@ -383,8 +383,7 @@ void VespaDocumentSerializer::write(const StructFieldValue &value,
 }
 
 void VespaDocumentSerializer::write(const WeightedSetFieldValue &value) {
-    const WeightedSetDataType *type =
-        static_cast<const WeightedSetDataType *>(value.getDataType());
+    const WeightedSetDataType *type = static_cast<const WeightedSetDataType *>(value.getDataType());
     _stream << static_cast<uint32_t>(type->getNestedType().getId());
     _stream << static_cast<uint32_t>(value.size());
     for (const auto & entry : value) {
