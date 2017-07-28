@@ -145,23 +145,25 @@ vespalib::string FieldPathEntry::parseKey(vespalib::stringref & key)
     if ((c < e) && (c[0] == '{')) {
         for(c++;(c < e) && isspace(c[0]); c++);
         if ((c < e) && (c[0] == '"')) {
-            for (c++; (c < e) && (c[0] != '"'); c++) {
+            const char * start = ++c;
+            for (; (c < e) && (c[0] != '"'); c++) {
                 if (c[0] == '\\') {
-                    c++;
-                }
-                if (c < e) {
-                    v += c[0];
+                    v.append(start, c-start);
+                    start = ++c;
                 }
             }
+            v.append(start, c-start);
             if ((c < e) && (c[0] == '"')) {
                 c++;
             } else {
                 throw IllegalArgumentException(make_string("Escaped key '%s' is incomplete. No matching '\"'", key.c_str()), VESPA_STRLOC);
             }
         } else {
-            for (;(c < e) && (c[0] != '}'); c++) {
-                v += c[0];
+            const char * start = c;
+            while ((c < e) && (c[0] != '}')) {
+                c++;
             }
+            v.append(start, c-start);
         }
         for(;(c < e) && isspace(c[0]); c++);
         if ((c < e) && (c[0] == '}')) {
