@@ -32,8 +32,8 @@ Options::Options()
 }
 
 Options::Options(const Options &) noexcept = default;
-Options & Options::operator=(const Options &) noexcept = default;
-~Options() { }
+Options & Options::operator=(const Options &) = default;
+Options::~Options() { }
 
 Options::Options(const vespa::config::storage::StorMemfilepersistenceConfig& newConfig,
                  const vespa::config::content::PersistenceConfig& newPersistenceConfig)

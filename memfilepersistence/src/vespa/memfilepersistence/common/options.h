@@ -68,12 +68,9 @@ struct Options : public vespalib::Printable
      * such that the current defaults can be easily viewed.
      */
     Options();
-
     Options(const Options &) noexcept;
-    Options & operator=(const Options &) noexcept;
-
-
-    ~Options() { }
+    Options & operator=(const Options &);
+    ~Options();
 
     Options(const vespa::config::storage::StorMemfilepersistenceConfig& newConfig,
             const vespa::config::content::PersistenceConfig& newPersistenceConfig);
