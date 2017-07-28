@@ -39,9 +39,10 @@ public class ListApplicationsHandlerTest {
         applicationRepo = testBuilder.tenants().get(mytenant).getApplicationRepo();
         applicationRepo2 = testBuilder.tenants().get(foobar).getApplicationRepo();
         Tenants tenants = testBuilder.createTenants();
-        handler = new ListApplicationsHandler(command -> {
-            command.run();
-        }, AccessLog.voidAccessLog(), tenants, new Zone(Environment.dev, RegionName.from("us-east")));
+        handler = new ListApplicationsHandler(Runnable::run,
+                                              AccessLog.voidAccessLog(),
+                                              tenants,
+                                              new Zone(Environment.dev, RegionName.from("us-east")));
     }
 
     @Test
@@ -94,7 +95,7 @@ public class ListApplicationsHandlerTest {
                 "[\"" + url + "quux/environment/dev/region/us-east/instance/foo\"]");
     }
 
-    void assertResponse(String url, int expectedStatus, String expectedResponse) throws IOException {
+    private void assertResponse(String url, int expectedStatus, String expectedResponse) throws IOException {
         assertResponse(url, expectedStatus, expectedResponse, GET);
     }
 

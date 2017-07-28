@@ -12,8 +12,8 @@ import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.deploy.MockDeployer;
 import com.yahoo.vespa.config.server.host.HostRegistries;
+import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
-import com.yahoo.vespa.config.server.http.v2.SessionActiveHandlerTest;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.rpc.UncompressedConfigResponseFactory;
@@ -56,7 +56,7 @@ public class ConfigServerBootstrapTest extends TestWithTenant {
         tenants.writeTenantPath(tenant2);
 
         applicationRepository = new ApplicationRepository(tenants,
-                                                          HostProvisionerProvider.withProvisioner(new SessionActiveHandlerTest.MockProvisioner()),
+                                                          HostProvisionerProvider.withProvisioner(new SessionHandlerTest.MockProvisioner()),
                                                           curator,
                                                           new LogServerLogGrabber(),
                                                           new ApplicationConvergenceChecker(),

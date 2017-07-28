@@ -11,14 +11,9 @@ import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.Capacity;
-import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.ProvisionInfo;
-import com.yahoo.config.provision.ProvisionLogger;
-import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -27,7 +22,6 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.path.Path;
 import com.yahoo.slime.JsonFormat;
-import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.PathProvider;
 import com.yahoo.vespa.config.server.SuperModelGenerationCounter;
@@ -70,9 +64,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.time.Clock;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 import static com.yahoo.jdisc.Response.Status.*;
@@ -368,8 +360,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
     }
 
     private void writeApplicationId(SessionZooKeeperClient zkc, String applicationName) {
-        ApplicationId id = ApplicationId.from(tenant,
-                                              ApplicationName.from(applicationName), InstanceName.defaultName());
+        ApplicationId id = ApplicationId.from(tenant, ApplicationName.from(applicationName), InstanceName.defaultName());
         zkc.writeApplicationId(id);
     }
 
@@ -396,52 +387,4 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
                                           new ConfigserverConfig(new ConfigserverConfig.Builder())));
     }
 
-    public static class MockProvisioner implements Provisioner {
-
-        boolean activated = false;
-        boolean removed = false;
-        boolean restarted = false;
-        ApplicationId lastApplicationId;
-        Collection<HostSpec> lastHosts;
-
-        @Override
-        public List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts) {
-            transaction.commit();
-            activated = true;
-            lastApplicationId = application;
-            lastHosts = hosts;
-        }
-
-        @Override
-        public void remove(NestedTransaction transaction, ApplicationId application) {
-            removed = true;
-            lastApplicationId = application;
-        }
-
-        @Override
-        public void restart(ApplicationId application, HostFilter filter) {
-            restarted = true;
-            lastApplicationId = application;
-        }
-
-    }
-
-    public static class FailingMockProvisioner extends MockProvisioner {
-
-        @Override
-        public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts) {
-            throw new IllegalArgumentException("Cannot activate application");
-        }
-
-        @Override
-        public void remove(NestedTransaction transaction, ApplicationId application) {
-            throw new IllegalArgumentException("Cannot remove application");
-        }
-
-    }
 }

@@ -175,7 +175,7 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
             }
         }, AccessLog.voidAccessLog(), testTenantBuilder.createTenants(),
                                          new ApplicationRepository(testTenantBuilder.createTenants(),
-                                                                   HostProvisionerProvider.withProvisioner(new SessionActiveHandlerTest.MockProvisioner()),
+                                                                   HostProvisionerProvider.withProvisioner(new SessionHandlerTest.MockProvisioner()),
                                                                    new MockCurator(),
                                                                    new LogServerLogGrabber(),
                                                                    new ApplicationConvergenceChecker(),

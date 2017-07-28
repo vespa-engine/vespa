@@ -9,6 +9,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker;
 import com.yahoo.vespa.config.server.host.HostRegistries;
+import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.http.v2.SessionActiveHandlerTest;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
@@ -65,7 +66,7 @@ public class InjectedGlobalComponentRegistryTest {
         defRepo = new StaticConfigDefinitionRepo();
         permanentApplicationPackage = new PermanentApplicationPackage(configserverConfig);
         hostRegistries = new HostRegistries();
-        hostProvisionerProvider = HostProvisionerProvider.withProvisioner(new SessionActiveHandlerTest.MockProvisioner());
+        hostProvisionerProvider = HostProvisionerProvider.withProvisioner(new SessionHandlerTest.MockProvisioner());
         zone = Zone.defaultZone();
         globalComponentRegistry = new InjectedGlobalComponentRegistry(curator, configCurator, metrics, modelFactoryRegistry, serverDB, sessionPreparer, rpcServer, configserverConfig, generationCounter, defRepo, permanentApplicationPackage, hostRegistries, hostProvisionerProvider, zone);
     }

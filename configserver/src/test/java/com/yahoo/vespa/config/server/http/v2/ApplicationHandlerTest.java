@@ -81,7 +81,7 @@ public class ApplicationHandlerTest {
     private final static TenantName mytenantName = TenantName.from("mytenant");
     private final static TenantName foobar = TenantName.from("foobar");
     private Tenants tenants;
-    private SessionActiveHandlerTest.MockProvisioner provisioner;
+    private SessionHandlerTest.MockProvisioner provisioner;
     private MockStateApiFactory stateApiFactory = new MockStateApiFactory();
     private final HttpProxy mockHttpProxy = mock(HttpProxy.class);
 
@@ -92,7 +92,7 @@ public class ApplicationHandlerTest {
         testBuilder.createTenant(foobar).withReloadHandler(new MockReloadHandler());
 
         tenants = testBuilder.createTenants();
-        provisioner = new SessionActiveHandlerTest.MockProvisioner();
+        provisioner = new SessionHandlerTest.MockProvisioner();
         mockHandler = createMockApplicationHandler(
                 provisioner,
                 new ApplicationConvergenceChecker(stateApiFactory),
@@ -254,7 +254,7 @@ public class ApplicationHandlerTest {
     @Test
     @Ignore
     public void testFailingProvisioner() throws Exception {
-        provisioner = new SessionActiveHandlerTest.FailingMockProvisioner();
+        provisioner = new SessionHandlerTest.FailingMockProvisioner();
         mockHandler = createMockApplicationHandler(
                 provisioner,
                 new ApplicationConvergenceChecker(stateApiFactory),
