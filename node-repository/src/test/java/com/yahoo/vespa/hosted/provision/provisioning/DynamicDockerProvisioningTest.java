@@ -20,19 +20,23 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
@@ -78,7 +82,7 @@ public class DynamicDockerProvisioningTest {
         addAndAssignNode(application2, "2b", dockerHosts.get(3).hostname(), flavor, 1, tester);
 
         // Redeploy one of the applications
-        redeply(application1, clusterSpec1, flavor, tester);
+        deployapp(application1, clusterSpec1, flavor, tester, 2);
 
         // Assert that the nodes are spread across all hosts (to allow headroom)
         Set<String> hostsWithChildren = new HashSet<>();
@@ -127,8 +131,8 @@ public class DynamicDockerProvisioningTest {
         addAndAssignNode(application2, "2b", dockerHosts.get(3).hostname(), flavor, 1, tester);
 
         // Redeploy both applications (to be agnostic on which hosts are picked as spares)
-        redeply(application1, clusterSpec1, flavor, tester);
-        redeply(application2, clusterSpec2, flavor, tester);
+        deployapp(application1, clusterSpec1, flavor, tester, 2);
+        deployapp(application2, clusterSpec2, flavor, tester, 2);
 
         // Assert that we have two spare nodes (two hosts that are don't have allocations)
         Set<String> hostsWithChildren = new HashSet<>();
@@ -138,6 +142,61 @@ public class DynamicDockerProvisioningTest {
             }
         }
         Assert.assertEquals(2, hostsWithChildren.size());
+    }
+
+    /**
+     * Test an allocation workflow:
+     *
+     * 5 Hosts of capacity 3 (2 spares)
+     * - Allocate app with 3 nodes
+     * - Allocate app with 2 nodes
+     * - Fail host and check redistribution
+     */
+    @Test
+    public void reloacte_failed_nodes() {
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")), flavorsConfig());
+        enableDynamicAllocation(tester);
+        tester.makeReadyNodes(5, "host", "host-small", NodeType.host, 32);
+        deployZoneApp(tester);
+        List<Node> dockerHosts = tester.nodeRepository().getNodes(NodeType.host, Node.State.active);
+        Flavor flavor = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("d-1");
+
+        // Application 1
+        ApplicationId application1 = makeApplicationId("t1", "a1");
+        ClusterSpec clusterSpec1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"));
+        deployapp(application1, clusterSpec1, flavor, tester, 3);
+
+        // Application 2
+        ApplicationId application2 = makeApplicationId("t2", "a2");
+        ClusterSpec clusterSpec2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"));
+        deployapp(application2, clusterSpec2, flavor, tester, 2);
+
+        // Application 3
+        ApplicationId application3 = makeApplicationId("t3", "a3");
+        ClusterSpec clusterSpec3 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"));
+        deployapp(application3, clusterSpec3, flavor, tester, 2);
+
+        // App 2 and 3 should have been allocated to the same nodes - fail on of the parent hosts from there
+        String parent = tester.nodeRepository().getNodes(application2).stream().findAny().get().parentHostname().get();
+        tester.nodeRepository().failRecursively(parent, Agent.system, "Testing");
+
+        // Redeploy all applications
+        deployapp(application1, clusterSpec1, flavor, tester, 3);
+        deployapp(application2, clusterSpec2, flavor, tester, 2);
+        deployapp(application3, clusterSpec3, flavor, tester, 2);
+
+        Map<Integer, Integer> numberOfChildrenStat = new HashMap<>();
+        for (Node node : dockerHosts) {
+            int nofChildren = tester.nodeRepository().getChildNodes(node.hostname()).size();
+            if (!numberOfChildrenStat.containsKey(nofChildren)) {
+                numberOfChildrenStat.put(nofChildren, 0);
+            }
+            numberOfChildrenStat.put(nofChildren, numberOfChildrenStat.get(nofChildren) + 1);
+        }
+
+        assertEquals(3l, (long)numberOfChildrenStat.get(3));
+        assertEquals(1l, (long)numberOfChildrenStat.get(0));
+        assertEquals(1l, (long)numberOfChildrenStat.get(1));
     }
 
     /**
@@ -169,7 +228,7 @@ public class DynamicDockerProvisioningTest {
         addAndAssignNode(application1, "1b", dockerHosts.get(1).hostname(), flavor, 1, tester);
 
         // Redeploy both applications (to be agnostic on which hosts are picked as spares)
-        redeply(application1, clusterSpec1, flavor, tester);
+        deployapp(application1, clusterSpec1, flavor, tester, 2);
 
         // Assert that we have two spare nodes (two hosts that are don't have allocations)
         Set<String> hostsWithChildren = new HashSet<>();
@@ -266,8 +325,8 @@ public class DynamicDockerProvisioningTest {
         return ApplicationId.from(tenant, appName, "default");
     }
 
-    private void redeply(ApplicationId id, ClusterSpec spec, Flavor flavor, ProvisioningTester tester) {
-        List<HostSpec> hostSpec = tester.prepare(id, spec, 2,1, flavor.canonicalName());
+    private void deployapp(ApplicationId id, ClusterSpec spec, Flavor flavor, ProvisioningTester tester, int nodecount) {
+        List<HostSpec> hostSpec = tester.prepare(id, spec, nodecount,1, flavor.canonicalName());
         tester.activate(id, new HashSet<>(hostSpec));
     }
 

@@ -22,10 +22,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Builds up a priority queue of which nodes should be offered to the allocation.
- * <p>
- * Builds up a list of NodePriority objects and sorts them according to the
- * NodePriority::compare method.
+ * Builds up data structures necessary for node prioritization. It wraps each node
+ * up in a NodePriority object with attributes used in sorting.
+ *
+ * The actual sorting/prioritization is implemented in the NodePriority class as a compare method.
  *
  * @author smorgrav
  */
@@ -85,6 +85,12 @@ public class NodePrioritizer {
         return null;
     }
 
+    /**
+     * Spare hosts are the two hosts in the system with the most free capacity.
+     *
+     * We do not count retired or inactive nodes as used capacity (as they could have been
+     * moved to create space for the spare node in the first place).
+     */
     private static Set<Node> findSpareHosts(List<Node> nodes, int spares) {
         DockerHostCapacity capacity = new DockerHostCapacity(new ArrayList<>(nodes));
         return nodes.stream()
@@ -96,6 +102,12 @@ public class NodePrioritizer {
                 .collect(Collectors.toSet());
     }
 
+    /**
+     * Headroom are the nodes with the least but sufficient space for the requested headroom.
+     *
+     * If not enough headroom - the headroom violating hosts are the once that are closest to fulfull
+     * a headroom request.
+     */
     private static Map<Node, Boolean> findHeadroomHosts(List<Node> nodes, Set<Node> spareNodes, NodeFlavors flavors) {
         DockerHostCapacity capacity = new DockerHostCapacity(nodes);
         Map<Node, Boolean> headroomNodesToViolation = new HashMap<>();
@@ -132,7 +144,6 @@ public class NodePrioritizer {
                         .limit(flavor.getIdealHeadroom() - tempHeadroom.size())
                         .collect(Collectors.toList());
 
-                // TODO should we be selective on which application on the node that violates the headroom?
                 for (Node nodeViolatingHeadrom : violations) {
                     headroomNodesToViolation.put(nodeViolatingHeadrom, true);
                 }
@@ -143,12 +154,19 @@ public class NodePrioritizer {
         return headroomNodesToViolation;
     }
 
+    /**
+     * @return The list of nodes sorted by NodePriority::compare
+     */
     List<NodePriority> prioritize() {
         List<NodePriority> priorityList = new ArrayList<>(nodes.values());
         Collections.sort(priorityList, (a, b) -> NodePriority.compare(a, b));
         return priorityList;
     }
 
+    /**
+     * Add nodes that have been previously reserved to the same application from
+     * an earlier downsizing of a cluster
+     */
     void addSurplusNodes(List<Node> surplusNodes) {
         for (Node node : surplusNodes) {
             NodePriority nodePri = toNodePriority(node, true, false);
@@ -158,6 +176,9 @@ public class NodePrioritizer {
         }
     }
 
+    /**
+     * Add a node on each docker host with enough capacity for the requested flavor
+     */
     void addNewDockerNodes() {
         if (!isDocker) return;
         DockerHostCapacity capacity = new DockerHostCapacity(allNodes);
@@ -192,6 +213,9 @@ public class NodePrioritizer {
         }
     }
 
+    /**
+     * Add existing nodes allocated to the application
+     */
     void addApplicationNodes() {
         List<Node.State> legalStates = Arrays.asList(Node.State.active, Node.State.inactive, Node.State.reserved);
         allNodes.stream()
@@ -203,6 +227,9 @@ public class NodePrioritizer {
                 .forEach(nodePriority -> nodes.put(nodePriority.node, nodePriority));
     }
 
+    /**
+     * Add nodes already provisioned, but not allocatied to any application
+     */
     void addReadyNodes() {
         allNodes.stream()
                 .filter(node -> node.type().equals(requestedNodes.type()))

@@ -5,11 +5,11 @@ import com.yahoo.vespa.hosted.provision.Node;
 import java.util.Optional;
 
 /**
- * Encapsulates all the information nessesary to prioritize node for allocation.
+ * Encapsulates all the information necessary to prioritize node for allocation.
  *
  * @author smorgrav
  */
-public class NodePriority {
+class NodePriority {
 
     Node node;
 
@@ -19,10 +19,10 @@ public class NodePriority {
     /** The parent host (docker or hypervisor) */
     Optional<Node> parent = Optional.empty();
 
-    /** True if the node is allocated to a host that should be spare (without allocations */
+    /** True if the node is allocated to a host that should be dedicated as a spare */
     boolean violatesSpares;
 
-    /** True if the node is allocated on slots that should be headroom */
+    /** True if the node is allocated on slots that should be dedicated to headroom */
     boolean violatesHeadroom;
 
     /** True if this is a node that has been retired earlier in the allocation process */
@@ -36,8 +36,6 @@ public class NodePriority {
 
     /**
      * Compare two node priorities.
-     *
-     * Sorting order accending - thus negative if higher priority
      *
      * @return negative if first priority is higher than second node
      */
