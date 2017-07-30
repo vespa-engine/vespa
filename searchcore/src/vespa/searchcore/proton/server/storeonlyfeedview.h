@@ -174,6 +174,7 @@ private:
 
     void addSerialNumToProcess(SerialNum serial);
     void waitForSerialNum(SerialNum serial);
+    void releaseSerialNum();
 protected:
     virtual void internalDeleteBucket(const DeleteBucketOperation &delOp);
     virtual void heartBeatIndexedFields(SerialNum serialNum);

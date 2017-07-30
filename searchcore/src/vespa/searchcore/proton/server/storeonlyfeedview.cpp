@@ -410,7 +410,6 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token,
 void StoreOnlyFeedView::addSerialNumToProcess(SerialNum serial) {
     vespalib::MonitorGuard guard(_orderLock);
     _processOrder.push_back(serial);
-    guard.broadcast();
 }
 
 void StoreOnlyFeedView::waitForSerialNum(SerialNum serial) {
@@ -418,10 +417,13 @@ void StoreOnlyFeedView::waitForSerialNum(SerialNum serial) {
     while (_processOrder.front() != serial) {
         guard.wait();
     }
+}
+
+void StoreOnlyFeedView::releaseSerialNum() {
+    vespalib::MonitorGuard guard(_orderLock);
     _processOrder.erase(_processOrder.begin());
     guard.broadcast();
 }
-
 void
 StoreOnlyFeedView::applyUpdateToDocumentsAndIndex(FeedToken::UP token, SerialNum serialNum, search::DocumentIdT lid,
                                                   DocumentUpdate::SP upd, bool immediateCommit,
@@ -494,6 +496,7 @@ StoreOnlyFeedView::updateIndexAndDocumentStore(bool indexedFieldsInScope,
             }
             waitForSerialNum(serialNum);
             _summaryAdapter->put(serialNum, *newDoc, lid);
+            releaseSerialNum();
         }
         if (indexedFieldsInScope) {
             updateIndexedFields(serialNum, lid, newDoc, immediateCommit, onWriteDone);
