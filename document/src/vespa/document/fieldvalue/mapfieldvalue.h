@@ -9,18 +9,27 @@
 
 #include "fieldvalue.h"
 #include <vespa/vespalib/util/polymorphicarray.h>
+#include <vespa/vespalib/stllike/hash_map.h>
+
+#define VESPA_DLL_LOCAL  __attribute__ ((visibility("hidden")))
 
 namespace document {
 
+namespace mapfieldvalue {
+    class HashMap;
+}
 class MapFieldValue : public FieldValue
 {
+public:
+    using IArray=vespalib::IArrayT<FieldValue>;
+    using HashMapUP = std::unique_ptr<mapfieldvalue::HashMap>;
 private:
-    typedef vespalib::IArrayT<FieldValue> IArray;
     const MapDataType *_type;
     size_t             _count;
     IArray::UP         _keys;
     IArray::UP         _values;
     std::vector<bool>  _present;
+    mutable HashMapUP  _lookupMap;
     bool               _altered;
 
     virtual bool addValue(const FieldValue& fv);
@@ -38,6 +47,9 @@ private:
         for (; index < _present.size() && !_present[index]; ++index);
         return index;
     }
+    VESPA_DLL_LOCAL HashMapUP buildLookupMap() const __attribute__((noinline));
+    VESPA_DLL_LOCAL void ensureLookupMap() const;
+    VESPA_DLL_LOCAL ssize_t findIndex(const FieldValue& fv) const;
 public:
     typedef std::unique_ptr<MapFieldValue> UP;
     class iterator {

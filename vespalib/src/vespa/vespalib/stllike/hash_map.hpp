@@ -12,6 +12,11 @@ hash_map<K, V, H, EQ, M>::hash_map(size_t reserveSize) :
 { }
 
 template <typename K, typename V, typename H, typename EQ, typename M>
+hash_map<K, V, H, EQ, M>::hash_map(size_t reserveSize, H hasher, EQ equality) :
+    _ht(reserveSize, hasher, equality)
+{ }
+
+template <typename K, typename V, typename H, typename EQ, typename M>
 hash_map<K, V, H, EQ, M>::~hash_map() { }
 
 template <typename K, typename V, typename H, typename EQ, typename M>
