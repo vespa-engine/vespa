@@ -24,7 +24,7 @@ set(C_WARN_OPTS "-Winline -Wuninitialized -Werror -Wall -W -Wchar-subscripts -Wc
 set(CXX_SPECIFIC_WARN_OPTS "-Wsuggest-override -Wnon-virtual-dtor")
 
 # C and C++ compiler flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -Og ${C_WARN_OPTS} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0 -DBOOST_DISABLE_ASSERTS -march=westmere -mtune=intel ${EXTRA_C_FLAGS}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O3 ${C_WARN_OPTS} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0 -DBOOST_DISABLE_ASSERTS -march=westmere -mtune=intel ${EXTRA_C_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_C_FLAGS} ${CXX_SPECIFIC_WARN_OPTS} -std=c++1z -fvisibility-inlines-hidden -fdiagnostics-color=auto ${EXTRA_CXX_FLAGS}")
 
 # Linker flags
