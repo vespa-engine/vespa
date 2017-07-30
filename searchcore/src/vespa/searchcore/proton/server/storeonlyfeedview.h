@@ -138,6 +138,9 @@ protected:
     }
 
 private:
+    vespalib::Monitor      _orderLock;
+    std::vector<SerialNum> _processOrder;
+
     bool useDocumentMetaStore(SerialNum replaySerialNum) const {
         return replaySerialNum > _params._flushedDocumentMetaStoreSerialNum;
     }
@@ -158,21 +161,19 @@ private:
 
     // Removes documents from meta store and document store.
     // returns the number of documents removed.
-    size_t removeDocuments(const RemoveDocumentsOperation &op,
-                           bool remove_index_and_attribute_fields,
+    size_t removeDocuments(const RemoveDocumentsOperation &op, bool remove_index_and_attribute_fields,
                            bool immediateCommit);
 
-    void internalRemove(FeedTokenUP token,
-                        SerialNum serialNum,
-                        search::DocumentIdT lid,
-                        FeedOperation::Type opType,
-                        std::shared_ptr<search::IDestructorCallback> moveDoneCtx);
+    void internalRemove(FeedTokenUP token, SerialNum serialNum, search::DocumentIdT lid,
+                        FeedOperation::Type opType, std::shared_ptr<search::IDestructorCallback> moveDoneCtx);
 
     // Ack token early if visibility delay is nonzero
     void considerEarlyAck(FeedTokenUP &token, FeedOperation::Type opType);
 
     virtual void notifyGidToLidChange(const document::GlobalId &gid, uint32_t lid);
 
+    void addSerialNumToProcess(SerialNum serial);
+    void waitForSerialNum(SerialNum serial);
 protected:
     virtual void internalDeleteBucket(const DeleteBucketOperation &delOp);
     virtual void heartBeatIndexedFields(SerialNum serialNum);

@@ -395,6 +395,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token,
     auto onWriteDone = createUpdateDoneContext(token, updOp.getType(), _params._metrics, updOp.getUpdate());
     updateAttributes(serialNum, lid, upd, immediateCommit, onWriteDone);
 
+    addSerialNumToProcess(serialNum);
     _writeService
             .attributeFieldWriter()
             .execute(serialNum,
@@ -404,6 +405,21 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token,
                          applyUpdateToDocumentsAndIndex(std::move(feedToken), serialNum, lid, upd,
                                                         immediateCommit, onWriteDone);
                      });
+}
+
+void StoreOnlyFeedView::addSerialNumToProcess(SerialNum serial) {
+    vespalib::MonitorGuard guard(_orderLock);
+    _processOrder.push_back(serial);
+    guard.broadcast();
+}
+
+void StoreOnlyFeedView::waitForSerialNum(SerialNum serial) {
+    vespalib::MonitorGuard guard(_orderLock);
+    while (_processOrder.front() != serial) {
+        guard.wait();
+    }
+    _processOrder.erase(_processOrder.begin());
+    guard.broadcast();
 }
 
 void
@@ -476,6 +492,7 @@ StoreOnlyFeedView::updateIndexAndDocumentStore(bool indexedFieldsInScope,
             if (shouldTrace(onWriteDone, 1)) {
                 onWriteDone->getToken()->trace(1, "Then we update summary.");
             }
+            waitForSerialNum(serialNum);
             _summaryAdapter->put(serialNum, *newDoc, lid);
         }
         if (indexedFieldsInScope) {
