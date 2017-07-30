@@ -8,6 +8,8 @@
 #include <vespa/document/datatype/annotationreferencedatatype.h>
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/datatype/weightedsetdatatype.h>
+#include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/document/fieldvalue/annotationreferencefieldvalue.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/bytefieldvalue.h>

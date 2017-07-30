@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "weightedsetfieldvalue.h"
+#include <vespa/document/datatype/weightedsetdatatype.h>
+#include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <ostream>
@@ -20,8 +22,7 @@ IMPLEMENT_IDENTIFIABLE_ABSTRACT(WeightedSetFieldValue, CollectionFieldValue);
 
 namespace {
 const DataType &getKeyType(const DataType &type) {
-    const WeightedSetDataType *wtype =
-        Identifiable::cast<const WeightedSetDataType *>(&type);
+    const WeightedSetDataType *wtype = Identifiable::cast<const WeightedSetDataType *>(&type);
     if (!wtype) {
         throw IllegalArgumentException("Cannot generate a weighted set value with non-weighted set "
                                        "type " + type.toString() + ".", VESPA_STRLOC);
@@ -58,24 +59,22 @@ WeightedSetFieldValue::add(const FieldValue& key, int weight)
         _map.erase(key);
         return false;
     }
-    return _map.insert(FieldValue::UP(key.clone()), FieldValue::UP(new IntFieldValue(weight)));
+    return _map.insert(FieldValue::UP(key.clone()), std::make_unique<IntFieldValue>(weight));
 }
 
 bool
-WeightedSetFieldValue::addIgnoreZeroWeight(const FieldValue& key,
-                                           int32_t weight)
+WeightedSetFieldValue::addIgnoreZeroWeight(const FieldValue& key, int32_t weight)
 {
     verifyKey(key);
     _altered = true;
-    return _map.insert(FieldValue::UP(key.clone()),
-                       FieldValue::UP(new IntFieldValue(weight)));
+    return _map.insert(FieldValue::UP(key.clone()), std::make_unique<IntFieldValue>(weight));
 }
 
 void
 WeightedSetFieldValue::push_back(FieldValue::UP key, int weight)
 {
     _altered = true;
-    _map.push_back(std::move(key), FieldValue::UP(new IntFieldValue(weight)));
+    _map.push_back(std::move(key), std::make_unique<IntFieldValue>(weight));
 }
 
 void
@@ -145,40 +144,35 @@ WeightedSetFieldValue::compare(const FieldValue& other) const
     int diff = CollectionFieldValue::compare(other);
     if (diff != 0) return diff;
 
-    const WeightedSetFieldValue& wset(
-            dynamic_cast<const WeightedSetFieldValue&>(other));
+    const WeightedSetFieldValue& wset(dynamic_cast<const WeightedSetFieldValue&>(other));
     return _map.compare(wset._map);
 }
 
 void
 WeightedSetFieldValue::printXml(XmlOutputStream& xos) const
 {
-    for (WeightedFieldValueMap::const_iterator it = _map.begin();
-         it != _map.end(); ++it)
-    {
-        const IntFieldValue& fv = static_cast<const IntFieldValue&>(*it->second);
+    for (const auto & entry : _map) {
+
+        const IntFieldValue& fv = static_cast<const IntFieldValue&>(*entry.second);
         xos << XmlTag("item") << XmlAttribute("weight", fv.getValue())
-            << *it->first
+            << *entry.first
             << XmlEndTag();
     }
 }
 
 void
-WeightedSetFieldValue::print(std::ostream& out, bool verbose,
-                       const std::string& indent) const
+WeightedSetFieldValue::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     out << getDataType()->getName() << "(";
 
     int count = 0;
-    for (WeightedFieldValueMap::const_iterator it = _map.begin();
-         it != _map.end(); ++it)
-    {
+    for (const auto & entry : _map) {
         if (count++ != 0) {
             out << ",";
         }
         out << "\n" << indent << "  ";
-        it->first->print(out, verbose, indent + "  ");
-        const IntFieldValue& fv = static_cast<const IntFieldValue&>(*it->second);
+        entry.first->print(out, verbose, indent + "  ");
+        const IntFieldValue& fv = static_cast<const IntFieldValue&>(*entry.second);
         out << " - weight " << fv.getValue();
     }
     if (_map.size() > 0) out << "\n" << indent;

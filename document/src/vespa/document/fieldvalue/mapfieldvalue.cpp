@@ -4,6 +4,7 @@
 #include "weightedsetfieldvalue.h"
 #include "iteratorhandler.h"
 #include <vespa/document/base/exceptions.h>
+#include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <ostream>
 
@@ -285,6 +286,15 @@ MapFieldValue::hasChanged() const
     // Keys are not allowed to change in a map, so the keys should not be
     // referred to externally, and should thus not need to be checked.
     return _altered;
+}
+const DataType *
+MapFieldValue::getDataType() const {
+    return _type;
+}
+
+FieldValue::UP
+MapFieldValue::createValue() const {
+    return getMapType().getValueType().createFieldValue();
 }
 
 MapFieldValue::const_iterator

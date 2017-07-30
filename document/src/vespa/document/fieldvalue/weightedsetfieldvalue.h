@@ -10,7 +10,6 @@
 #include "collectionfieldvalue.h"
 #include "mapfieldvalue.h"
 #include "intfieldvalue.h"
-#include <vespa/document/datatype/weightedsetdatatype.h>
 #include <map>
 
 namespace document {

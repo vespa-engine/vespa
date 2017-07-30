@@ -8,8 +8,7 @@
 #pragma once
 
 #include "fieldvalue.h"
-#include <vespa/document/datatype/mapdatatype.h>
-#include <vespa/vespalib/util/polymorphicarrays.h>
+#include <vespa/vespalib/util/polymorphicarray.h>
 
 namespace document {
 
@@ -124,7 +123,7 @@ public:
     int compare(const FieldValue&) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     bool hasChanged() const override;
-    const DataType *getDataType() const override { return _type; }
+    const DataType *getDataType() const override;
     void printXml(XmlOutputStream& out) const override;
 
     const_iterator begin() const { return const_iterator(*this, nextPresent(0)); }
@@ -136,12 +135,7 @@ public:
     const_iterator find(const FieldValue& fv) const;
     iterator find(const FieldValue& fv);
 
-    FieldValue::UP createKey() const {
-        return getMapType().getKeyType().createFieldValue();
-    }
-    FieldValue::UP createValue() const {
-        return getMapType().getValueType().createFieldValue();
-    }
+    FieldValue::UP createValue() const;
 
     DECLARE_IDENTIFIABLE_ABSTRACT(MapFieldValue);
 };
