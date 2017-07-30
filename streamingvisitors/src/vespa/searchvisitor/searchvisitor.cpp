@@ -5,6 +5,8 @@
 #include "searchvisitor.h"
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/datatype/weightedsetdatatype.h>
+#include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/searchlib/aggregation/modifiers.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/uca/ucaconverter.h>
