@@ -395,7 +395,9 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token,
     auto onWriteDone = createUpdateDoneContext(token, updOp.getType(), _params._metrics, updOp.getUpdate());
     updateAttributes(serialNum, lid, upd, immediateCommit, onWriteDone);
 
-    addSerialNumToProcess(serialNum);
+    if (useDocumentStore(serialNum)) {
+        addSerialNumToProcess(serialNum);
+    }
     _writeService
             .attributeFieldWriter()
             .execute(serialNum,
