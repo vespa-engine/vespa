@@ -347,7 +347,50 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
     bool immediateCommit = _commitTimeTracker.needCommit();
     auto onWriteDone = createUpdateDoneContext(token, updOp.getType(), _params._metrics, updOp.getUpdate());
     updateAttributes(serialNum, lid, upd, immediateCommit, onWriteDone);
-    UpdateScope updateScope(getUpdateScope(upd));
+
+    if (_commitTimeTracker.hasVisibilityDelay() || ! token) {
+        WriteTokenProducer writeTokenProducer;
+        applyUpdateToDocumentsAndIndex(std::move(token), serialNum, lid, updOp.getUpdate(),
+                                       immediateCommit, onWriteDone, std::move(writeTokenProducer));
+    } else {
+        WriteTokenProducer writeTokenProducer(this, serialNum);
+        _writeService
+                .attributeFieldWriter()
+                .execute(serialNum,
+                         [feedToken = std::move(token), upd = updOp.getUpdate(), serialNum, lid, immediateCommit,
+                                 onWriteDone, writeTokenProducer = std::move(writeTokenProducer), this]() mutable {
+                             applyUpdateToDocumentsAndIndex(std::move(feedToken), serialNum, lid, upd,
+                                                            immediateCommit, onWriteDone,
+                                                            std::move(writeTokenProducer));
+                         });
+    }
+}
+
+void StoreOnlyFeedView::addSerialNumToProcess(SerialNum serial) {
+    vespalib::MonitorGuard guard(_orderLock);
+    _processOrder.push_back(serial);
+}
+
+void StoreOnlyFeedView::waitForSerialNum(SerialNum serial) {
+    vespalib::MonitorGuard guard(_orderLock);
+    while (_processOrder.front() != serial) {
+        guard.wait();
+    }
+}
+
+void StoreOnlyFeedView::releaseSerialNum(SerialNum serial) {
+    vespalib::MonitorGuard guard(_orderLock);
+    assert(_processOrder.front() == serial);
+    _processOrder.erase(_processOrder.begin());
+    guard.broadcast();
+}
+
+void
+StoreOnlyFeedView::applyUpdateToDocumentsAndIndex(FeedToken::UP token, SerialNum serialNum, search::DocumentIdT lid,
+                                                  DocumentUpdate::SP upd, bool immediateCommit,
+                                                  OnOperationDoneType onWriteDone, WriteTokenProducer writeTokenProducer)
+{
+    UpdateScope updateScope(getUpdateScope(*upd));
     /*
      * XXX: Flushing issue
      *
@@ -358,11 +401,9 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
      * Similarly, if subclass has attributes that are not updated.
      *
      */
-    if (updateScope._indexedFields || updateScope._nonAttributeFields) {
-        updateIndexAndDocumentStore(updateScope._indexedFields,
-                                    serialNum, lid, upd,
-                                    immediateCommit,
-                                    onWriteDone);
+    if (updateScope.hasIndexOrNonAttributeFields()) {
+        updateIndexAndDocumentStore(updateScope._indexedFields, serialNum, lid, *upd,
+                                    immediateCommit, onWriteDone, std::move(writeTokenProducer));
     }
     if (!updateScope._indexedFields && onWriteDone) {
         if (onWriteDone->shouldTrace(1)) {
@@ -373,12 +414,9 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
 
 
 void
-StoreOnlyFeedView::updateIndexAndDocumentStore(bool indexedFieldsInScope,
-                                               SerialNum serialNum,
-                                               search::DocumentIdT lid,
-                                               const DocumentUpdate &upd,
-                                               bool immediateCommit,
-                                               OnOperationDoneType onWriteDone)
+StoreOnlyFeedView::updateIndexAndDocumentStore(bool indexedFieldsInScope, SerialNum serialNum, search::DocumentIdT lid,
+                                               const DocumentUpdate &upd, bool immediateCommit,
+                                               OnOperationDoneType onWriteDone, WriteTokenProducer writeTokenProducer)
 {
     Document::UP prevDoc(_summaryAdapter->get(lid, *_repo));
     assert(onWriteDone->getToken() == NULL || useDocumentStore(serialNum));
@@ -409,10 +447,16 @@ StoreOnlyFeedView::updateIndexAndDocumentStore(bool indexedFieldsInScope,
             if (shouldTrace(onWriteDone, 1)) {
                 onWriteDone->getToken()->trace(1, "Then we update summary.");
             }
+            WriteToken writeToken = writeTokenProducer.getWriteToken();
             _summaryAdapter->put(serialNum, *newDoc, lid);
-        }
-        if (indexedFieldsInScope) {
-            updateIndexedFields(serialNum, lid, newDoc, immediateCommit, onWriteDone);
+            if (indexedFieldsInScope) {
+                updateIndexedFields(serialNum, lid, newDoc, immediateCommit, onWriteDone);
+            }
+        } else {
+            WriteToken writeToken = writeTokenProducer.getWriteToken();
+            if (indexedFieldsInScope) {
+                updateIndexedFields(serialNum, lid, newDoc, immediateCommit, onWriteDone);
+            }
         }
     } else {
         // Replaying, document removed and lid reused before summary
