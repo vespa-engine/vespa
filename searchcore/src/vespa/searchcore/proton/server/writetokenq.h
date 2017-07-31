@@ -41,7 +41,6 @@ public:
     class WriteTokenProducer {
     public:
         WriteTokenProducer() : WriteTokenProducer(nullptr, -1) { }
-        WriteTokenProducer(WriteTokenQ * tokenQ, SerialNum serialNum);
         WriteTokenProducer(WriteTokenProducer && rhs) noexcept
             : _tokenQ(rhs._tokenQ), _serialNum(rhs._serialNum)
         {
@@ -58,9 +57,15 @@ public:
             return WriteToken(tmp, _serialNum);
         }
     private:
+        friend WriteTokenQ;
+        WriteTokenProducer(WriteTokenQ * tokenQ, SerialNum serialNum);
         WriteTokenQ  *_tokenQ;
         SerialNum     _serialNum;
     };
+
+    WriteTokenProducer getTokenProducer(SerialNum serialNum) {
+        return WriteTokenProducer(this, serialNum);
+    }
 private:
     void addSerialNumToProcess(SerialNum serial);
     void waitForSerialNum(SerialNum serial);

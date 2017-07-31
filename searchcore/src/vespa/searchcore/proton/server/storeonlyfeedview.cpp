@@ -356,7 +356,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
         applyUpdateToDocumentsAndIndex(std::move(token), serialNum, lid, updOp.getUpdate(),
                                        immediateCommit, onWriteDone, std::move(writeTokenProducer));
     } else {
-        WriteTokenProducer writeTokenProducer(&_writeTokenQ, serialNum);
+        WriteTokenProducer writeTokenProducer(_writeTokenQ.getTokenProducer(serialNum));
         _writeService
                 .attributeFieldWriter()
                 .execute(serialNum,
