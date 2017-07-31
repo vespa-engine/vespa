@@ -1,1 +1,10 @@
-63
+  --- Physical volume ---
+  PV Name               /dev/sdc1
+  VG Name               new_vg
+  PV Size               63.0 GB / not usable 3.40 MB
+  Allocatable           yes
+  PE Size (KByte)       4096
+  Total PE              4388
+  Free PE               4375
+  Allocated PE          13
+  PV UUID               Joqlch-yWSj-kuEn-IdwM-01S9-XO8M-mcpsVe
