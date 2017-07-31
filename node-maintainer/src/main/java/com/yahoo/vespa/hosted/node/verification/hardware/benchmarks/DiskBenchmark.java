@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  */
 public class DiskBenchmark implements Benchmark {
 
-    private static final String DISK_BENCHMARK_COMMAND = "time (dd if=/dev/zero of=/tmp/tempfile bs=16G count=1 > /dev/null; sync; rm /tmp/tempfile) 2>&1 | grep bytes | awk  '{ print $8 \" \" $9 }'";
+    private static final String DISK_BENCHMARK_COMMAND = "(dd if=/dev/zero of=/tmp/output conv=fdatasync bs=4G count=4; rm -f /tmp/output;) 2>&1 | grep bytes | awk  '{ print $8 \" \" $9 }'";
     private static final String KILO_BYTE_SEARCH_WORD = "kB/s";
     private static final String MEGA_BYTE_SEARCH_WORD = "MB/s";
     private static final String GIGA_BYTE_SEARCH_WORD = "GB/s";
