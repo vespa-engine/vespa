@@ -51,10 +51,7 @@ public class StorageMaintainer {
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static Optional<String> kernelVersion = Optional.empty();
 
-    private static final long intervalSec = 1000;
-
     private final Logger logger = Logger.getLogger(StorageMaintainer.class.getName());
-    private final Object monitor = new Object();
     private final CounterWrapper numberOfNodeAdminMaintenanceFails;
     private final Docker docker;
     private final Environment environment;
@@ -127,30 +124,19 @@ public class StorageMaintainer {
         }
     }
 
-    public Optional<Long> updateIfNeededAndGetDiskMetricsFor(ContainerName containerName) {
-        // Calculating disk usage is IO expensive operation and its value changes relatively slowly, we want to perform
-        // that calculation rarely. Additionally, we spread out the calculation for different containers by adding
-        // a random deviation.
-        MaintenanceThrottler maintenanceThrottler = getMaintenanceThrottlerFor(containerName);
-        if (maintenanceThrottler.shouldUpdateDiskUsageNow()) {
-            // Throttle to one disk usage calculation at a time.
-            synchronized (monitor) {
-                PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
-                Path containerDir = environment.pathInNodeAdminFromPathInNode(containerName, "/home/");
-                try {
-                    long used = getDiscUsedInBytes(containerDir);
-                    maintenanceThrottler.setDiskUsage(used);
-                } catch (Throwable e) {
-                    logger.error("Problems during disk usage calculations: " + e.getMessage());
-                }
-            }
+    public Optional<Long> getDiskUsageFor(ContainerName containerName) {
+        Path containerDir = environment.pathInNodeAdminFromPathInNode(containerName, "/home/");
+        try {
+            return Optional.of(getDiskUsedInBytes(containerDir));
+        } catch (Throwable e) {
+            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
+            logger.error("Problems during disk usage calculations in " + containerDir.toAbsolutePath(), e);
+            return Optional.empty();
         }
-
-        return maintenanceThrottler.diskUsage;
     }
 
     // Public for testing
-    long getDiscUsedInBytes(Path path) throws IOException, InterruptedException {
+    long getDiskUsedInBytes(Path path) throws IOException, InterruptedException {
         final String[] command = {"du", "-xsk", path.toString()};
 
         Process duCommand = new ProcessBuilder().command(command).start();
@@ -418,23 +404,11 @@ public class StorageMaintainer {
     }
 
     private class MaintenanceThrottler {
-        private Instant nextDiskUsageUpdateAt;
         private Instant nextRemoveOldFilesAt;
         private Instant nextHandleOldCoredumpsAt;
-        private Optional<Long> diskUsage = Optional.empty();
 
         MaintenanceThrottler() {
             reset();
-        }
-
-        boolean shouldUpdateDiskUsageNow() {
-            return !nextDiskUsageUpdateAt.isAfter(clock.instant());
-        }
-
-        void setDiskUsage(long diskUsage) {
-            this.diskUsage = Optional.of(diskUsage);
-            long distributedSecs = (long) (intervalSec * (0.5 + Math.random()));
-            nextDiskUsageUpdateAt = clock.instant().plusSeconds(distributedSecs);
         }
 
         void updateNextRemoveOldFilesTime() {
@@ -454,9 +428,8 @@ public class StorageMaintainer {
         }
 
         void reset() {
-            nextDiskUsageUpdateAt = clock.instant().minus(Duration.ofDays(1));
-            nextRemoveOldFilesAt = clock.instant().minus(Duration.ofDays(1));
-            nextHandleOldCoredumpsAt = clock.instant().minus(Duration.ofDays(1));
+            nextRemoveOldFilesAt = Instant.EPOCH;
+            nextHandleOldCoredumpsAt = Instant.EPOCH;
         }
     }
 }
