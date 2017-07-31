@@ -148,8 +148,21 @@ private:
     void internalPut(FeedTokenUP token, const PutOperation &putOp);
     void internalUpdate(FeedTokenUP token, const UpdateOperation &updOp);
 
-    bool lookupDocId(const document::DocumentId &gid, search::DocumentIdT & lid) const;
-    void internalRemove(FeedTokenUP token, const RemoveOperation &rmOp);
+    void
+    updateIndexAndDocumentStore(bool indexedFieldsInScope,
+                                SerialNum serialNum,
+                                search::DocumentIdT lid,
+                                const document::DocumentUpdate &upd,
+                                bool immediateCommit,
+                                OnOperationDoneType onWriteDone);
+
+    bool
+    lookupDocId(const document::DocumentId &gid,
+                search::DocumentIdT & lid) const;
+
+    void
+    internalRemove(FeedTokenUP token,
+                   const RemoveOperation &rmOp);
 
     // Removes documents from meta store and document store.
     // returns the number of documents removed.
