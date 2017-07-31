@@ -18,7 +18,7 @@ public class MemoryBenchmark implements Benchmark {
 
     private static final String MEM_BENCHMARK_CREATE_FOLDER = "mkdir -p RAM_test";
     private static final String MEM_BENCHMARK_MOUNT_TMPFS = "sudo mount tmpfs -t tmpfs RAM_test/";
-    private static final String MEM_BENCHMARK_UNMOUNT_TMPFS = "umount RAM_test";
+    private static final String MEM_BENCHMARK_UNMOUNT_TMPFS = "sudo umount RAM_test";
     private static final String MEM_BENCHMARK_DELETE_FOLDER = "rm -rf RAM_test";
     private static final String MEM_BENCHMARK_WRITE_SPEED = "dd if=/dev/zero of=RAM_test/data_tmp bs=1M count=512";
     private static final String MEM_BENCHMARK_READ_SPEED = "dd if=RAM_test/data_tmp of=/dev/null bs=1M count=512";
@@ -27,11 +27,11 @@ public class MemoryBenchmark implements Benchmark {
     private static final int SEARCH_ELEMENT_INDEX = 8;
     private static final int RETURN_ELEMENT_INDEX = 7;
     private static final Logger logger = Logger.getLogger(MemoryBenchmark.class.getName());
-    private final HardwareResults hardwareResults;
+    private final BenchmarkResults benchmarkResults;
     private final CommandExecutor commandExecutor;
 
-    public MemoryBenchmark(HardwareResults hardwareResults, CommandExecutor commandExecutor) {
-        this.hardwareResults = hardwareResults;
+    public MemoryBenchmark(BenchmarkResults benchmarkResults, CommandExecutor commandExecutor) {
+        this.benchmarkResults = benchmarkResults;
         this.commandExecutor = commandExecutor;
     }
 
@@ -78,13 +78,13 @@ public class MemoryBenchmark implements Benchmark {
     protected void updateMemoryWriteSpeed(String memorySpeed) {
         if (!isValidMemory(memorySpeed)) return;
         double memoryWriteSpeedGbs = Double.parseDouble(memorySpeed);
-        hardwareResults.setMemoryWriteSpeedGBs(memoryWriteSpeedGbs);
+        benchmarkResults.setMemoryWriteSpeedGBs(memoryWriteSpeedGbs);
     }
 
     protected void updateMemoryReadSpeed(String memorySpeed) {
         if (!isValidMemory(memorySpeed)) return;
         double memoryReadSpeedGbs = Double.parseDouble(memorySpeed);
-        hardwareResults.setMemoryReadSpeedGBs(memoryReadSpeedGbs);
+        benchmarkResults.setMemoryReadSpeedGBs(memoryReadSpeedGbs);
     }
 
     protected boolean isValidMemory(String benchmarkOutput) {

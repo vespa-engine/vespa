@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -17,8 +18,12 @@ import static org.junit.Assert.assertTrue;
  */
 public class NetRetrieverTest {
 
-    private static final String NET_FIND_INTERFACE = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/ifconfig";
-    private static final String NET_CHECK_INTERFACE_SPEED = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/";
+    private static final String RESOURCE_PATH = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/";
+    private static final String NET_FIND_INTERFACE = RESOURCE_PATH + "ifconfig";
+    private static final String NET_CHECK_INTERFACE_SPEED = RESOURCE_PATH + "eth0";
+    private static String VALID_PING_RESPONSE = RESOURCE_PATH + "validpingresponse";
+    private static String INVALID_PING_RESPONSE = RESOURCE_PATH + "invalidpingresponse";
+    private static String PING_SEARCH_WORD = "loss,";
     private HardwareInfo hardwareInfo;
     private MockCommandExecutor commandExecutor;
     private NetRetriever net;
@@ -34,12 +39,14 @@ public class NetRetrieverTest {
     }
 
     @Test
-    public void updateInfo_should_store_ipv4_ipv6_connectivity_and_interface_speed() {
+    public void updateInfo_should_store_ipv4_ipv6_interface_and_interface_speed() {
         commandExecutor.addCommand("cat " + NET_FIND_INTERFACE);
-        commandExecutor.addCommand("cat " + NET_CHECK_INTERFACE_SPEED + "eth0");
+        commandExecutor.addCommand("cat " + NET_CHECK_INTERFACE_SPEED);
+        commandExecutor.addCommand("cat " + VALID_PING_RESPONSE);
         net.updateInfo();
-        assertTrue(hardwareInfo.getIpv4Connectivity());
-        assertTrue(hardwareInfo.getIpv6Connectivity());
+        assertTrue(hardwareInfo.getIpv4Interface());
+        assertTrue(hardwareInfo.getIpv6Interface());
+        assertTrue(hardwareInfo.isIpv6Connection());
         double expectedInterfaceSpeed = 1000;
         assertEquals(expectedInterfaceSpeed, hardwareInfo.getInterfaceSpeedMbs(), DELTA);
     }
@@ -55,7 +62,7 @@ public class NetRetrieverTest {
     @Test
     public void findInterfaceSpeed_valid_input() throws IOException {
         commandExecutor.addCommand("cat " + NET_FIND_INTERFACE);
-        commandExecutor.addCommand("cat " + NET_CHECK_INTERFACE_SPEED + "eth0");
+        commandExecutor.addCommand("cat " + NET_CHECK_INTERFACE_SPEED);
         parseResults = net.findInterface();
         net.findInterfaceSpeed(parseResults);
         ParseResult expectedParseResults = new ParseResult("Speed", "1000Mb/s");
@@ -67,8 +74,8 @@ public class NetRetrieverTest {
         ArrayList<String> mockOutput = MockCommandExecutor.readFromFile(NET_FIND_INTERFACE);
         parseResults = net.parseNetInterface(mockOutput);
         net.updateHardwareInfoWithNet(parseResults);
-        assertTrue(hardwareInfo.getIpv4Connectivity());
-        assertTrue(hardwareInfo.getIpv6Connectivity());
+        assertTrue(hardwareInfo.getIpv4Interface());
+        assertTrue(hardwareInfo.getIpv6Interface());
     }
 
     @Test
@@ -121,8 +128,53 @@ public class NetRetrieverTest {
         net.updateHardwareInfoWithNet(parseResults);
         double expectedInterfaceSpeed = 1000;
         assertEquals(expectedInterfaceSpeed, hardwareInfo.getInterfaceSpeedMbs(), DELTA);
-        assertTrue(hardwareInfo.getIpv4Connectivity());
-        assertTrue(hardwareInfo.getIpv6Connectivity());
+        assertTrue(hardwareInfo.getIpv4Interface());
+        assertTrue(hardwareInfo.getIpv6Interface());
+    }
+
+    @Test
+    public void stripInterfaceSpeed_should_return_correct_double() {
+        String interfaceSpeedToConvert = "1000Mb/s";
+        double expectedInterfaceSpeed = 1000;
+        double actualInterfaceSpeed = net.convertInterfaceSpeed(interfaceSpeedToConvert);
+        assertEquals(expectedInterfaceSpeed, actualInterfaceSpeed, DELTA);
+    }
+
+    @Test
+    public void parsePingResponse_valid_ping_response_should_return_ipv6_connectivity() throws IOException {
+        ArrayList<String> mockCommandOutput = MockCommandExecutor.readFromFile(VALID_PING_RESPONSE);
+        ParseResult parseResult = net.parsePingResponse(mockCommandOutput);
+        String expectedPing = "0%";
+        assertEquals(expectedPing, parseResult.getValue());
+    }
+
+    @Test
+    public void parsePingResponse_invalid_ping_response_should_return_invalid_ParseResult() throws IOException {
+        ArrayList<String> mockCommandOutput = MockCommandExecutor.readFromFile(INVALID_PING_RESPONSE);
+        ParseResult parseResult = net.parsePingResponse(mockCommandOutput);
+        ParseResult expectedParseResult = new ParseResult(PING_SEARCH_WORD, "invalid");
+        assertEquals(expectedParseResult, parseResult);
+    }
+
+    @Test
+    public void setIpv6Connectivity_valid_ping_response_should_return_ipv6_connectivity() {
+        ParseResult parseResult = new ParseResult(PING_SEARCH_WORD, "0%");
+        net.setIpv6Connectivity(parseResult);
+        assertTrue(hardwareInfo.isIpv6Connection());
+    }
+
+    @Test
+    public void setIpv6Connectivity_invalid_ping_response_should_return_no_ipv6_connectivity_1() {
+        ParseResult parseResult = new ParseResult(PING_SEARCH_WORD, "100%");
+        net.setIpv6Connectivity(parseResult);
+        assertFalse(hardwareInfo.isIpv6Connection());
+    }
+
+    @Test
+    public void setIpv6Connectivity_invalid_ping_response_should_return_no_ipv6_connectivity_2() {
+        ParseResult parseResult = new ParseResult(PING_SEARCH_WORD, "invalid");
+        net.setIpv6Connectivity(parseResult);
+        assertFalse(hardwareInfo.isIpv6Connection());
     }
 
 }

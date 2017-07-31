@@ -4,6 +4,7 @@ import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
 import com.yahoo.vespa.hosted.node.verification.commons.OutputParser;
 import com.yahoo.vespa.hosted.node.verification.commons.ParseInstructions;
 import com.yahoo.vespa.hosted.node.verification.commons.ParseResult;
+import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo.DiskType;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -63,18 +64,17 @@ public class DiskRetriever implements HardwareRetriever {
     }
 
     protected void setDiskType(ParseResult parseResult) {
+        hardwareInfo.setDiskType(DiskType.UNKNOWN);
         if (!parseResult.getSearchWord().equals(DISK_NAME)) {
             return;
         }
-        String fastDiskEnum = "0";
-        String nonFastDiskEnum = "1";
-        Boolean fastdisk = null;
-        if (parseResult.getValue().equals(fastDiskEnum)) {
-            fastdisk = true;
-        } else if (parseResult.getValue().equals(nonFastDiskEnum)) {
-            fastdisk = false;
+        String fastDiskSymbol = "0";
+        String nonFastDiskSymbol = "1";
+        if (parseResult.getValue().equals(fastDiskSymbol)) {
+            hardwareInfo.setDiskType(DiskType.FAST);
+        } else if (parseResult.getValue().equals(nonFastDiskSymbol)) {
+            hardwareInfo.setDiskType(DiskType.SLOW);
         }
-        hardwareInfo.setFastDisk(fastdisk);
     }
 
     protected void setDiskSize(ParseResult parseResult) {

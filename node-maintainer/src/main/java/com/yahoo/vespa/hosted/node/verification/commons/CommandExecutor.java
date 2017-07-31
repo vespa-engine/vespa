@@ -25,7 +25,9 @@ public class CommandExecutor {
     }
 
     private void writeToOutputStream(ByteArrayOutputStream outputStream, String command) throws IOException {
-        CommandLine cmdLine = CommandLine.parse(command);
+        CommandLine cmdLine = new CommandLine("/bin/bash");
+        cmdLine.addArgument("-c", false);
+        cmdLine.addArgument(command, false);
         DefaultExecutor executor = new DefaultExecutor();
         PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
         executor.setStreamHandler(streamHandler);

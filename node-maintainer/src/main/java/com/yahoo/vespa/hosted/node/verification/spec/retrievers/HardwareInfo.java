@@ -10,10 +10,11 @@ public class HardwareInfo {
     private double minDiskAvailableGb;
     private double minMainMemoryAvailableGb;
     private int minCpuCores;
-    private boolean fastDisk;
-    private boolean ipv4Connectivity;
-    private boolean ipv6Connectivity;
+    private boolean ipv4Interface;
+    private boolean ipv6Interface;
+    private boolean ipv6Connection;
     private double interfaceSpeedMbs;
+    private DiskType diskType;
 
 
     public double getInterfaceSpeedMbs() {
@@ -32,20 +33,28 @@ public class HardwareInfo {
         this.minDiskAvailableGb = minDiskAvailableGb;
     }
 
-    public boolean getIpv6Connectivity() {
-        return ipv6Connectivity;
+    public boolean getIpv6Interface() {
+        return ipv6Interface;
     }
 
-    public void setIpv6Connectivity(boolean ipv6Connectivity) {
-        this.ipv6Connectivity = ipv6Connectivity;
+    public void setIpv6Interface(boolean ipv6Interface) {
+        this.ipv6Interface = ipv6Interface;
     }
 
-    public boolean getIpv4Connectivity() {
-        return ipv4Connectivity;
+    public boolean getIpv4Interface() {
+        return ipv4Interface;
     }
 
-    public void setIpv4Connectivity(boolean ipv4Connectivity) {
-        this.ipv4Connectivity = ipv4Connectivity;
+    public void setIpv4Interface(boolean ipv4Interface) {
+        this.ipv4Interface = ipv4Interface;
+    }
+
+    public boolean isIpv6Connection() {
+        return ipv6Connection;
+    }
+
+    public void setIpv6Connection(boolean ipv6Connection) {
+        this.ipv6Connection = ipv6Connection;
     }
 
     public double getMinMainMemoryAvailableGb() {
@@ -56,12 +65,12 @@ public class HardwareInfo {
         this.minMainMemoryAvailableGb = minMainMemoryAvailableGb;
     }
 
-    public void setFastDisk(boolean fastDisk) {
-        this.fastDisk = fastDisk;
+    public void setDiskType(DiskType diskType) {
+        this.diskType = diskType;
     }
 
-    public boolean getFastDisk() {
-        return fastDisk;
+    public DiskType getDiskType() {
+        return diskType;
     }
 
     public int getMinCpuCores() {
@@ -71,5 +80,9 @@ public class HardwareInfo {
     public void setMinCpuCores(int minCpuCores) {
         this.minCpuCores = minCpuCores;
     }
+
+    public enum DiskType {SLOW, FAST, UNKNOWN}
+
+    ;
 
 }

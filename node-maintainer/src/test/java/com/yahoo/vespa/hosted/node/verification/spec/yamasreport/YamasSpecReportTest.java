@@ -1,6 +1,7 @@
 package com.yahoo.vespa.hosted.node.verification.spec.yamasreport;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -24,13 +25,13 @@ public class YamasSpecReportTest {
         specReportDimensions.setIpv6Match(true);
         specReportDimensions.setMemoryMatch(true);
         specReportDimensions.setNetInterfaceSpeedMatch(true);
-        specReportDimensions.setFastDiskMatch(true);
+        specReportDimensions.setDiskTypeMatch(true);
         specReportMetrics.setActualInterfaceSpeed(100D);
         specReportMetrics.setExpectedInterfaceSpeed(100D);
         specReportMetrics.setActualDiskSpaceAvailable(500D);
         specReportMetrics.setExpectedDiskSpaceAvailable(500D);
-        specReportMetrics.setActualDiskType(true);
-        specReportMetrics.setExpectedDiskType(true);
+        specReportMetrics.setActualDiskType(HardwareInfo.DiskType.FAST);
+        specReportMetrics.setExpectedDiskType(HardwareInfo.DiskType.FAST);
         specReportMetrics.setActualMemoryAvailable(123D);
         specReportMetrics.setExpectedMemoryAvailable(123D);
         specReportMetrics.setActualcpuCores(4);
@@ -45,7 +46,7 @@ public class YamasSpecReportTest {
         yamasSpecReport.setDimensions(specReportDimensions);
         yamasSpecReport.setMetrics(specReportMetrics);
         long time = yamasSpecReport.getTimeStamp();
-        String expectedJson = "{\"timeStamp\":" + time + ",\"dimensions\":{\"memoryMatch\":true,\"cpuCoresMatch\":true,\"fastDiskMatch\":true,\"netInterfaceSpeedMatch\":true,\"diskAvailableMatch\":true,\"ipv4Match\":true,\"ipv6Match\":true},\"metrics\":{\"match\":true,\"expectedMemoryAvailable\":123.0,\"actualMemoryAvailable\":123.0,\"expectedFastDisk\":true,\"actualFastDisk\":true,\"expectedDiskSpaceAvailable\":500.0,\"actualDiskSpaceAvailable\":500.0,\"expectedInterfaceSpeed\":100.0,\"actualInterfaceSpeed\":100.0,\"expectedcpuCores\":4,\"actualcpuCores\":4},\"routing\":{\"yamas\":{\"namespace\":[\"Vespa\"]}}}";
+        String expectedJson = "{\"timeStamp\":" + time + ",\"dimensions\":{\"memoryMatch\":true,\"cpuCoresMatch\":true,\"diskTypeMatch\":true,\"netInterfaceSpeedMatch\":true,\"diskAvailableMatch\":true,\"ipv4Match\":true,\"ipv6Match\":true},\"metrics\":{\"match\":true,\"expectedMemoryAvailable\":123.0,\"actualMemoryAvailable\":123.0,\"expectedDiskType\":\"FAST\",\"actualDiskType\":\"FAST\",\"expectedDiskSpaceAvailable\":500.0,\"actualDiskSpaceAvailable\":500.0,\"expectedInterfaceSpeed\":100.0,\"actualInterfaceSpeed\":100.0,\"expectedcpuCores\":4,\"actualcpuCores\":4},\"routing\":{\"yamas\":{\"namespace\":[\"Vespa\"]}}}";
         ObjectMapper om = new ObjectMapper();
         String json = om.writeValueAsString(yamasSpecReport);
         assertEquals(expectedJson, json);

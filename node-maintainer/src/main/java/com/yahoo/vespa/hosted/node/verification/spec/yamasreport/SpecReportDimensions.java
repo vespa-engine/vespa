@@ -13,7 +13,7 @@ public class SpecReportDimensions {
     @JsonProperty
     private boolean cpuCoresMatch;
     @JsonProperty
-    private boolean fastDiskMatch;
+    private boolean diskTypeMatch;
     @JsonProperty
     private boolean netInterfaceSpeedMatch;
     @JsonProperty
@@ -47,12 +47,12 @@ public class SpecReportDimensions {
         this.cpuCoresMatch = cpuCoresMatch;
     }
 
-    public boolean isFastDiskMatch() {
-        return fastDiskMatch;
+    public boolean isDiskTypeMatch() {
+        return diskTypeMatch;
     }
 
-    public void setFastDiskMatch(boolean fastDiskMatch) {
-        this.fastDiskMatch = fastDiskMatch;
+    public void setDiskTypeMatch(boolean diskTypeMatch) {
+        this.diskTypeMatch = diskTypeMatch;
     }
 
     public boolean isDiskAvailableMatch() {

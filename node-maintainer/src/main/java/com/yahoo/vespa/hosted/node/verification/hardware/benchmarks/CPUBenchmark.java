@@ -23,12 +23,12 @@ public class CPUBenchmark implements Benchmark {
     private static final int SEARCH_ELEMENT_INDEX = 1;
     private static final int RETURN_ELEMENT_INDEX = 0;
     private static final Logger logger = Logger.getLogger(CPUBenchmark.class.getName());
-    private final HardwareResults hardwareResults;
+    private final BenchmarkResults benchmarkResults;
 
     private final CommandExecutor commandExecutor;
 
-    public CPUBenchmark(HardwareResults hardwareResults, CommandExecutor commandExecutor) {
-        this.hardwareResults = hardwareResults;
+    public CPUBenchmark(BenchmarkResults benchmarkResults, CommandExecutor commandExecutor) {
+        this.benchmarkResults = benchmarkResults;
         this.commandExecutor = commandExecutor;
     }
 
@@ -52,7 +52,7 @@ public class CPUBenchmark implements Benchmark {
     protected void setCpuCyclesPerSec(ArrayList<ParseResult> parseResults) {
         double cpuCyclesPerSec = getCyclesPerSecond(parseResults);
         if (cpuCyclesPerSec > 0) {
-            hardwareResults.setCpuCyclesPerSec(cpuCyclesPerSec);
+            benchmarkResults.setCpuCyclesPerSec(cpuCyclesPerSec);
         }
     }
 

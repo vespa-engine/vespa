@@ -7,9 +7,9 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Created by sgrostad on 12/07/2017.
@@ -17,7 +17,7 @@ import static org.junit.Assert.assertEquals;
 public class DiskBenchmarkTest {
 
     private DiskBenchmark diskBenchmark;
-    private HardwareResults hardwareResults;
+    private BenchmarkResults benchmarkResults;
     private MockCommandExecutor commandExecutor;
     private static final String VALID_OUTPUT_FILE = "src/test/java/com/yahoo/vespa/hosted/node/verification/hardware/resources/diskBenchmarkValidOutput";
     private static final String INVALID_OUTPUT_FILE = "src/test/java/com/yahoo/vespa/hosted/node/verification/hardware/resources/diskBenchmarkInvalidOutput";
@@ -26,8 +26,8 @@ public class DiskBenchmarkTest {
     @Before
     public void setup() {
         commandExecutor = new MockCommandExecutor();
-        hardwareResults = new HardwareResults();
-        diskBenchmark = new DiskBenchmark(hardwareResults, commandExecutor);
+        benchmarkResults = new BenchmarkResults();
+        diskBenchmark = new DiskBenchmark(benchmarkResults, commandExecutor);
     }
 
     @Test
@@ -36,7 +36,7 @@ public class DiskBenchmarkTest {
         commandExecutor.addCommand(mockCommand);
         diskBenchmark.doBenchmark();
         double expectedSpeed = 243;
-        double actualSpeed = hardwareResults.getDiskSpeedMbs();
+        double actualSpeed = benchmarkResults.getDiskSpeedMbs();
         assertEquals(expectedSpeed, actualSpeed, DELTA);
     }
 
@@ -46,7 +46,7 @@ public class DiskBenchmarkTest {
         commandExecutor.addCommand(mockCommand);
         diskBenchmark.doBenchmark();
         double expectedSpeed = 0;
-        double actualSpeed = hardwareResults.getDiskSpeedMbs();
+        double actualSpeed = benchmarkResults.getDiskSpeedMbs();
         assertEquals(expectedSpeed, actualSpeed, DELTA);
     }
 
@@ -72,7 +72,7 @@ public class DiskBenchmarkTest {
         ParseResult parseResult = new ParseResult("MB/s", "243");
         diskBenchmark.setDiskSpeed(parseResult);
         double expectedDiskSpeed = 243;
-        assertEquals(expectedDiskSpeed, hardwareResults.getDiskSpeedMbs(), DELTA);
+        assertEquals(expectedDiskSpeed, benchmarkResults.getDiskSpeedMbs(), DELTA);
     }
 
     @Test
@@ -80,7 +80,7 @@ public class DiskBenchmarkTest {
         ParseResult parseResult = new ParseResult("invalid", "invalid");
         diskBenchmark.setDiskSpeed(parseResult);
         double expectedDiskSpeed = 0;
-        assertEquals(expectedDiskSpeed, hardwareResults.getDiskSpeedMbs(), DELTA);
+        assertEquals(expectedDiskSpeed, benchmarkResults.getDiskSpeedMbs(), DELTA);
     }
 
     @Test

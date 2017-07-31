@@ -2,6 +2,7 @@ package com.yahoo.vespa.hosted.node.verification.spec.yamasreport;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo.DiskType;
 
 /**
  * Created by olaa on 12/07/2017.
@@ -16,9 +17,9 @@ public class SpecReportMetrics {
     @JsonProperty
     private Double actualMemoryAvailable;
     @JsonProperty
-    private Boolean expectedFastDisk;
+    private DiskType expectedDiskType;
     @JsonProperty
-    private Boolean actualFastDisk;
+    private DiskType actualDiskType;
     @JsonProperty
     private Double expectedDiskSpaceAvailable;
     @JsonProperty
@@ -33,6 +34,13 @@ public class SpecReportMetrics {
     private Integer actualcpuCores;
     @JsonProperty
     private String[] faultyIpAddresses;
+    @JsonProperty
+    private Boolean actualIpv6Connection;
+
+    public void setActualIpv6Connection(boolean actualIpv6Connection) {
+        this.actualIpv6Connection = actualIpv6Connection;
+    }
+
 
     public void setMatch(boolean match) {
         this.match = match;
@@ -50,12 +58,12 @@ public class SpecReportMetrics {
         this.actualMemoryAvailable = actualMemoryAvailable;
     }
 
-    public void setExpectedDiskType(Boolean expectedFastDisk) {
-        this.expectedFastDisk = expectedFastDisk;
+    public void setExpectedDiskType(DiskType expectedFastDisk) {
+        this.expectedDiskType = expectedFastDisk;
     }
 
-    public void setActualDiskType(Boolean actualFastDisk) {
-        this.actualFastDisk = actualFastDisk;
+    public void setActualDiskType(DiskType actualFastDisk) {
+        this.actualDiskType = actualFastDisk;
     }
 
     public void setExpectedDiskSpaceAvailable(Double expectedDiskSpaceAvailable) {

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.verification.spec.noderepo;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
+import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo.DiskType;
 
 /**
  * Created by olaa on 05/07/2017.
@@ -10,8 +11,7 @@ import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
  */
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class NodeJsonModel {
-
+public class NodeRepoJsonModel {
     @JsonProperty("minDiskAvailableGb")
     private double minDiskAvailableGb;
     @JsonProperty("minMainMemoryAvailableGb")
@@ -34,7 +34,7 @@ public class NodeJsonModel {
         hardwareInfo.setMinMainMemoryAvailableGb(this.minMainMemoryAvailableGb);
         hardwareInfo.setMinDiskAvailableGb(this.minDiskAvailableGb);
         hardwareInfo.setMinCpuCores((int) Math.round(this.minCpuCores));
-        hardwareInfo.setFastDisk(this.fastDisk);
+        hardwareInfo.setDiskType(this.fastDisk ? DiskType.FAST : DiskType.SLOW);
         return hardwareInfo;
     }
 
@@ -46,6 +46,26 @@ public class NodeJsonModel {
             }
         }
         return null;
+    }
+
+    public double getMinDiskAvailableGb() {
+        return minDiskAvailableGb;
+    }
+
+    public double getMinMainMemoryAvailableGb() {
+        return minMainMemoryAvailableGb;
+    }
+
+    public double getMinCpuCores() {
+        return minCpuCores;
+    }
+
+    public boolean isFastDisk() {
+        return fastDisk;
+    }
+
+    public String[] getIpAddresses() {
+        return ipAddresses;
     }
 
 }

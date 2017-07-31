@@ -10,9 +10,8 @@ import java.util.ArrayList;
  */
 public class HardwareInfoRetriever {
 
-    public static HardwareInfo retrieve() {
+    public static HardwareInfo retrieve(CommandExecutor commandExecutor) {
         HardwareInfo hardwareInfo = new HardwareInfo();
-        CommandExecutor commandExecutor = new CommandExecutor();
         ArrayList<HardwareRetriever> infoList = new ArrayList<>();
         infoList.add(new CPURetriever(hardwareInfo, commandExecutor));
         infoList.add(new MemoryRetriever(hardwareInfo, commandExecutor));

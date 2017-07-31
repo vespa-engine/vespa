@@ -2,15 +2,14 @@ package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
 
 import com.yahoo.vespa.hosted.node.verification.commons.ParseResult;
 import com.yahoo.vespa.hosted.node.verification.mock.MockCommandExecutor;
+import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo.DiskType;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Created by olaa on 06/07/2017.
@@ -31,22 +30,20 @@ public class DiskRetrieverTest {
     }
 
     @Test
-    @Ignore // Temporary - Just to get factory going again
     public void updateInfo_should_store_diskType_and_diskSize_in_hardware_info() {
         commandExecutor.addCommand(CAT_RESOURCE_PATH + "DiskTypeFastDisk");
         commandExecutor.addCommand(CAT_RESOURCE_PATH + "filesize");
         diskRetriever.updateInfo();
-        assertTrue(hardwareInfo.getFastDisk());
+        assertEquals(DiskType.FAST, hardwareInfo.getDiskType());
         double expectedSize = 63D;
         assertEquals(expectedSize, hardwareInfo.getMinDiskAvailableGb(), DELTA);
     }
 
     @Test
-    @Ignore // Temporary - Just to get factory going again
     public void updateDiskType__should_store_diskType_in_hardwareInfo() throws IOException {
         commandExecutor.addCommand(CAT_RESOURCE_PATH + "DiskTypeFastDisk");
         diskRetriever.updateDiskType();
-        assertTrue(hardwareInfo.getFastDisk());
+        assertEquals(DiskType.FAST, hardwareInfo.getDiskType());
     }
 
     @Test
@@ -93,6 +90,14 @@ public class DiskRetrieverTest {
         ParseResult parseResult = diskRetriever.parseDiskSize(mockOutput);
         ParseResult expectedParseResult = new ParseResult("44G", "63G");
         assertEquals(expectedParseResult, parseResult);
+    }
+
+    @Test
+    public void setDiskType_invalid_ParseResult_should_set_fastDisk_to_invalid() {
+        ParseResult parseResult = new ParseResult("Invalid", "Invalid");
+        diskRetriever.setDiskType(parseResult);
+        HardwareInfo.DiskType expectedDiskType = HardwareInfo.DiskType.UNKNOWN;
+        assertEquals(expectedDiskType, hardwareInfo.getDiskType());
     }
 
 }

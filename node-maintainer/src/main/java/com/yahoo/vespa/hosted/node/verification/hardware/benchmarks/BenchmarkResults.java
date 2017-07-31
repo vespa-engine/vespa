@@ -4,28 +4,27 @@ package com.yahoo.vespa.hosted.node.verification.hardware.benchmarks;
  * Created by sgrostad on 11/07/2017.
  * Stores results from benchmarks
  */
-public class HardwareResults {
+public class BenchmarkResults {
 
     private double cpuCyclesPerSec;
     private double diskSpeedMbs;
-    private boolean ipv6Connectivity;
-    private Double memoryWriteSpeedGBs;
-    private Double memoryReadSpeedGBs;
+    private double memoryWriteSpeedGBs;
+    private double memoryReadSpeedGBs;
 
 
-    public Double getMemoryWriteSpeedGBs() {
+    public double getMemoryWriteSpeedGBs() {
         return memoryWriteSpeedGBs;
     }
 
-    public void setMemoryWriteSpeedGBs(Double memoryWriteSpeedGBs) {
+    public void setMemoryWriteSpeedGBs(double memoryWriteSpeedGBs) {
         this.memoryWriteSpeedGBs = memoryWriteSpeedGBs;
     }
 
-    public Double getMemoryReadSpeedGBs() {
+    public double getMemoryReadSpeedGBs() {
         return memoryReadSpeedGBs;
     }
 
-    public void setMemoryReadSpeedGBs(Double memoryReadSpeedGBs) {
+    public void setMemoryReadSpeedGBs(double memoryReadSpeedGBs) {
         this.memoryReadSpeedGBs = memoryReadSpeedGBs;
     }
 
@@ -43,14 +42,6 @@ public class HardwareResults {
 
     public void setDiskSpeedMbs(double diskSpeedMbs) {
         this.diskSpeedMbs = diskSpeedMbs;
-    }
-
-    public boolean isIpv6Connectivity() {
-        return ipv6Connectivity;
-    }
-
-    public void setIpv6Connectivity(boolean ipv6Connectivity) {
-        this.ipv6Connectivity = ipv6Connectivity;
     }
 
 }

@@ -29,6 +29,11 @@ public class NetRetriever implements HardwareRetriever {
     private static final String INTERFACE_SPEED_REGEX_SPLIT = ":";
     private static final int INTERFACE_SPEED_SEARCH_ELEMENT_INDEX = 0;
     private static final int INTERFACE_SPEED_RETURN_ELEMENT_INDEX = 1;
+    private static final String PING_NET_COMMAND = "ping6 -c 1 www.yahoo.com | grep transmitted";
+    private static final String PING_SEARCH_WORD = "loss,";
+    private static final String PING_SPLIT_REGEX_STRING = "\\s+";
+    private static final int PING_SEARCH_ELEMENT_INDEX = 7;
+    private static final int PING_RETURN_ELEMENT_INDEX = 5;
     private static final Logger logger = Logger.getLogger(NetRetriever.class.getName());
     private final HardwareInfo hardwareInfo;
     private final CommandExecutor commandExecutor;
@@ -43,6 +48,7 @@ public class NetRetriever implements HardwareRetriever {
         try {
             ArrayList<ParseResult> parseResults = findInterface();
             findInterfaceSpeed(parseResults);
+            testPingResponse(parseResults);
             updateHardwareInfoWithNet(parseResults);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to retrieve net info", e);
@@ -62,6 +68,11 @@ public class NetRetriever implements HardwareRetriever {
         parseResults.add(parseInterfaceSpeed(commandOutput));
     }
 
+    protected void testPingResponse(ArrayList<ParseResult> parseResults) throws IOException {
+        ArrayList<String> commandOutput = commandExecutor.executeCommand(PING_NET_COMMAND);
+        parseResults.add(parsePingResponse(commandOutput));
+    }
+
     protected ArrayList<ParseResult> parseNetInterface(ArrayList<String> commandOutput) {
         ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD_INTERFACE_IP4, SEARCH_WORD_INTERFACE_IPV6, SEARCH_WORD_INTERFACE_NAME));
         ParseInstructions parseInstructions = new ParseInstructions(INTERFACE_NAME_SEARCH_ELEMENT_INDEX, INTERFACE_NAME_RETURN_ELEMENT_INDEX, INTERFACE_NAME_REGEX_SPLIT, searchWords);
@@ -78,6 +89,14 @@ public class NetRetriever implements HardwareRetriever {
         return parseResult;
     }
 
+    protected ParseResult parsePingResponse(ArrayList<String> commandOutput) {
+        ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(PING_SEARCH_WORD));
+        ParseInstructions parseInstructions = new ParseInstructions(PING_SEARCH_ELEMENT_INDEX, PING_RETURN_ELEMENT_INDEX, PING_SPLIT_REGEX_STRING, searchWords);
+        ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
+        parseResult = parseResult.getSearchWord().equals(PING_SEARCH_WORD) ? parseResult : new ParseResult(PING_SEARCH_WORD, "invalid");
+        return parseResult;
+    }
+
     protected String findInterfaceName(ArrayList<ParseResult> parseResults) {
         for (ParseResult parseResult : parseResults) {
             if (!parseResult.getSearchWord().matches(SEARCH_WORD_INTERFACE_NAME)) continue;
@@ -86,26 +105,42 @@ public class NetRetriever implements HardwareRetriever {
         return "";
     }
 
+    protected double convertInterfaceSpeed(String speed) {
+        return Double.parseDouble(speed.replaceAll("[^\\d.]", ""));
+    }
+
     protected void updateHardwareInfoWithNet(ArrayList<ParseResult> parseResults) {
-        hardwareInfo.setIpv6Connectivity(false);
-        hardwareInfo.setIpv4Connectivity(false);
+        hardwareInfo.setIpv6Interface(false);
+        hardwareInfo.setIpv4Interface(false);
         for (ParseResult parseResult : parseResults) {
             switch (parseResult.getSearchWord()) {
                 case SEARCH_WORD_INTERFACE_IP4:
-                    hardwareInfo.setIpv4Connectivity(true);
+                    hardwareInfo.setIpv4Interface(true);
                     break;
                 case SEARCH_WORD_INTERFACE_IPV6:
-                    hardwareInfo.setIpv6Connectivity(true);
+                    hardwareInfo.setIpv6Interface(true);
                     break;
                 case SEARCH_WORD_INTERFACE_SPEED:
-                    String speedValue = parseResult.getValue().replaceAll("[^\\d.]", "");
-                    double speed = Double.parseDouble(speedValue);
+                    double speed = convertInterfaceSpeed(parseResult.getValue());
                     hardwareInfo.setInterfaceSpeedMbs(speed);
+                    break;
+                case PING_SEARCH_WORD:
+                    setIpv6Connectivity(parseResult);
                     break;
                 default:
                     if (parseResult.getSearchWord().matches(SEARCH_WORD_INTERFACE_NAME)) break;
-                    throw new RuntimeException("Invalid ParseResult search word");
+                    throw new RuntimeException("Invalid ParseResult search word " + parseResult.getSearchWord());
             }
+        }
+    }
+
+    protected void setIpv6Connectivity(ParseResult parseResult) {
+        if (parseResult.getSearchWord().equals(PING_SEARCH_WORD)) {
+            String pingResponse = parseResult.getValue();
+            String packetLoss = pingResponse.replaceAll("[^\\d.]", "");
+            if (packetLoss.equals("")) return;
+            if (Double.parseDouble(packetLoss) > 99) return;
+            hardwareInfo.setIpv6Connection(true);
         }
     }
 

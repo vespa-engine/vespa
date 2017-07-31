@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  */
 public class DiskBenchmark implements Benchmark {
 
-    private static final String DISK_BENCHMARK_COMMAND = "time (dd if=/dev/zero of=/tmp/tempfile bs=16k count=16k > /dev/null; sync; rm /tmp/tempfile) 2>&1 | grep bytes | awk  '{ print $8 \" \" $9 }'";
+    private static final String DISK_BENCHMARK_COMMAND = "time (dd if=/dev/zero of=/tmp/tempfile bs=16G count=1 > /dev/null; sync; rm /tmp/tempfile) 2>&1 | grep bytes | awk  '{ print $8 \" \" $9 }'";
     private static final String KILO_BYTE_SEARCH_WORD = "kB/s";
     private static final String MEGA_BYTE_SEARCH_WORD = "MB/s";
     private static final String GIGA_BYTE_SEARCH_WORD = "GB/s";
@@ -25,11 +25,11 @@ public class DiskBenchmark implements Benchmark {
     private static final int SEARCH_ELEMENT_INDEX = 1;
     private static final int RETURN_ELEMENT_INDEX = 0;
     private static final Logger logger = Logger.getLogger(DiskBenchmark.class.getName());
-    private final HardwareResults hardwareResults;
+    private final BenchmarkResults benchmarkResults;
     private final CommandExecutor commandExecutor;
 
-    public DiskBenchmark(HardwareResults hardwareResults, CommandExecutor commandExecutor) {
-        this.hardwareResults = hardwareResults;
+    public DiskBenchmark(BenchmarkResults benchmarkResults, CommandExecutor commandExecutor) {
+        this.benchmarkResults = benchmarkResults;
         this.commandExecutor = commandExecutor;
     }
 
@@ -51,7 +51,7 @@ public class DiskBenchmark implements Benchmark {
 
     protected void setDiskSpeed(ParseResult parseResult) {
         double diskSpeedMBs = getDiskSpeedInMBs(parseResult);
-        hardwareResults.setDiskSpeedMbs(diskSpeedMBs);
+        benchmarkResults.setDiskSpeedMbs(diskSpeedMBs);
     }
 
     protected double getDiskSpeedInMBs(ParseResult parseResult) {

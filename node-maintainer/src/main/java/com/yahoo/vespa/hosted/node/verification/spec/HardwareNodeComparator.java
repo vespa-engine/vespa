@@ -1,6 +1,7 @@
 package com.yahoo.vespa.hosted.node.verification.spec;
 
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
+import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo.DiskType;
 import com.yahoo.vespa.hosted.node.verification.spec.yamasreport.SpecReportDimensions;
 import com.yahoo.vespa.hosted.node.verification.spec.yamasreport.SpecReportMetrics;
 import com.yahoo.vespa.hosted.node.verification.spec.yamasreport.YamasSpecReport;
@@ -11,22 +12,22 @@ import com.yahoo.vespa.hosted.node.verification.spec.yamasreport.YamasSpecReport
  */
 public class HardwareNodeComparator {
 
-    public static YamasSpecReport compare(HardwareInfo node, HardwareInfo actualHardware) {
+    public static YamasSpecReport compare(HardwareInfo nodeRepoHardwareInfo, HardwareInfo actualHardware) {
         Boolean equalHardware = true;
         YamasSpecReport yamasSpecReport = new YamasSpecReport();
         SpecReportDimensions specReportDimensions = new SpecReportDimensions();
         SpecReportMetrics specReportMetrics = new SpecReportMetrics();
 
-        if (node == null || actualHardware == null) {
+        if (nodeRepoHardwareInfo == null || actualHardware == null) {
             return yamasSpecReport;
         }
 
-        setReportMetrics(node, actualHardware, specReportMetrics);
+        setReportMetrics(nodeRepoHardwareInfo, actualHardware, specReportMetrics);
 
-        equalHardware &= compareMemory(node, actualHardware, specReportDimensions);
-        equalHardware &= compareCPU(node, actualHardware, specReportDimensions);
-        equalHardware &= compareNetInterface(node, actualHardware, specReportDimensions);
-        equalHardware &= compareDisk(node, actualHardware, specReportDimensions);
+        equalHardware &= compareMemory(nodeRepoHardwareInfo, actualHardware, specReportDimensions);
+        equalHardware &= compareCPU(nodeRepoHardwareInfo, actualHardware, specReportDimensions);
+        equalHardware &= compareNetInterface(nodeRepoHardwareInfo, actualHardware, specReportDimensions);
+        equalHardware &= compareDisk(nodeRepoHardwareInfo, actualHardware, specReportDimensions);
 
         specReportMetrics.setMatch(equalHardware);
         yamasSpecReport.setDimensions(specReportDimensions);
@@ -62,8 +63,8 @@ public class HardwareNodeComparator {
     }
 
     private static void setDiskTypeMetrics(HardwareInfo node, HardwareInfo actualHardware, SpecReportMetrics specReportMetrics) {
-        Boolean expectedFastDisk = node.getFastDisk();
-        Boolean actualFastDisk = actualHardware.getFastDisk();
+        DiskType expectedFastDisk = node.getDiskType();
+        DiskType actualFastDisk = actualHardware.getDiskType();
         if (expectedFastDisk != null && actualFastDisk != null && expectedFastDisk != actualFastDisk) {
             specReportMetrics.setExpectedDiskType(expectedFastDisk);
             specReportMetrics.setActualDiskType(actualFastDisk);
@@ -86,6 +87,9 @@ public class HardwareNodeComparator {
             specReportMetrics.setExpectedInterfaceSpeed(expectedInterfaceSpeed);
             specReportMetrics.setActualInterfaceSpeed(actualInterfaceSpeed);
         }
+        if (!actualHardware.isIpv6Connection()) {
+            specReportMetrics.setActualIpv6Connection(false);
+        }
     }
 
     private static boolean compareCPU(HardwareInfo node, HardwareInfo actualHardware, SpecReportDimensions specReportDimensions) {
@@ -102,8 +106,8 @@ public class HardwareNodeComparator {
 
     private static boolean compareNetInterface(HardwareInfo node, HardwareInfo actualHardware, SpecReportDimensions specReportDimensions) {
         boolean equalNetInterfaceSpeed = insideThreshold(node.getInterfaceSpeedMbs(), actualHardware.getInterfaceSpeedMbs());
-        boolean equalIpv6 = node.getIpv6Connectivity() == actualHardware.getIpv6Connectivity();
-        boolean equalIpv4 = node.getIpv4Connectivity() == actualHardware.getIpv4Connectivity();
+        boolean equalIpv6 = node.getIpv6Interface() == actualHardware.getIpv6Interface();
+        boolean equalIpv4 = node.getIpv4Interface() == actualHardware.getIpv4Interface();
         specReportDimensions.setNetInterfaceSpeedMatch(equalNetInterfaceSpeed);
         specReportDimensions.setIpv6Match(equalIpv6);
         specReportDimensions.setIpv4Match(equalIpv4);
@@ -112,9 +116,9 @@ public class HardwareNodeComparator {
     }
 
     private static boolean compareDisk(HardwareInfo node, HardwareInfo actualHardware, SpecReportDimensions specReportDimensions) {
-        boolean equalDiskType = node.getFastDisk() == actualHardware.getFastDisk();
+        boolean equalDiskType = node.getDiskType() == actualHardware.getDiskType();
         boolean equalDiskSize = insideThreshold(node.getMinDiskAvailableGb(), actualHardware.getMinDiskAvailableGb());
-        specReportDimensions.setFastDiskMatch(equalDiskType);
+        specReportDimensions.setDiskTypeMatch(equalDiskType);
         specReportDimensions.setDiskAvailableMatch(equalDiskSize);
         return equalDiskType && equalDiskSize;
     }

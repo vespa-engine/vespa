@@ -9,9 +9,9 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
 
 /**
  * Created by sgrostad on 11/07/2017.
@@ -21,7 +21,7 @@ public class CPUBenchmarkTest {
     private static final String cpuEuropeanDelimiters = "src/test/java/com/yahoo/vespa/hosted/node/verification/hardware/resources/cpuCyclesWithDotsTimeWithCommaTest.txt";
     private static final String cpuAlternativeDelimiters = "src/test/java/com/yahoo/vespa/hosted/node/verification/hardware/resources/cpuCyclesWithCommasTimeWithDotTest.txt";
     private static final String cpuWrongOutput = "src/test/java/com/yahoo/vespa/hosted/node/verification/hardware/resources/cpuWrongOutputTest.txt";
-    private HardwareResults hardwareResults;
+    private BenchmarkResults benchmarkResults;
     private MockCommandExecutor commandExecutor;
     private CPUBenchmark cpu;
     private static final double DELTA = 0.1;
@@ -29,8 +29,8 @@ public class CPUBenchmarkTest {
     @Before
     public void setup() {
         commandExecutor = new MockCommandExecutor();
-        hardwareResults = new HardwareResults();
-        cpu = new CPUBenchmark(hardwareResults, commandExecutor);
+        benchmarkResults = new BenchmarkResults();
+        cpu = new CPUBenchmark(benchmarkResults, commandExecutor);
     }
 
     @Test
@@ -38,7 +38,7 @@ public class CPUBenchmarkTest {
         String mockCommand = "cat " + cpuAlternativeDelimiters;
         commandExecutor.addCommand(mockCommand);
         cpu.doBenchmark();
-        double result = hardwareResults.getCpuCyclesPerSec();
+        double result = benchmarkResults.getCpuCyclesPerSec();
         double expected = 2.1576482291815062;
         assertEquals(expected, result, DELTA);
     }
@@ -48,7 +48,7 @@ public class CPUBenchmarkTest {
         String mockCommand = "cat " + cpuWrongOutput;
         commandExecutor.addCommand(mockCommand);
         cpu.doBenchmark();
-        double result = hardwareResults.getCpuCyclesPerSec();
+        double result = benchmarkResults.getCpuCyclesPerSec();
         double expected = 0;
         assertEquals(expected, result, DELTA);
     }
@@ -70,7 +70,7 @@ public class CPUBenchmarkTest {
         parseResults.add(new ParseResult("seconds", "0,957617512"));
         cpu.setCpuCyclesPerSec(parseResults);
         double expectedCpuCyclesPerSec = 2.1576482291815062;
-        assertEquals(expectedCpuCyclesPerSec, hardwareResults.getCpuCyclesPerSec(), DELTA);
+        assertEquals(expectedCpuCyclesPerSec, benchmarkResults.getCpuCyclesPerSec(), DELTA);
     }
 
     @Test
