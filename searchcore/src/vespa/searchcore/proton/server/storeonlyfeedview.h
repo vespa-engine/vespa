@@ -30,12 +30,7 @@ class PutDoneContext;
 class RemoveDoneContext;
 class CommitTimeTracker;
 
-namespace documentmetastore
-{
-
-class ILidReuseDelayer;
-
-}
+namespace documentmetastore { class ILidReuseDelayer; }
 
 
 /**
@@ -53,10 +48,8 @@ public:
     typedef std::shared_ptr<StoreOnlyFeedView> SP;
     typedef search::SerialNum SerialNum;
     typedef LidVectorContext::LidVector LidVector;
-    using OnWriteDoneType =
-        const std::shared_ptr<search::IDestructorCallback> &;
-    using OnForceCommitDoneType =
-        const std::shared_ptr<ForceCommitContext> &;
+    using OnWriteDoneType =const std::shared_ptr<search::IDestructorCallback> &;
+    using OnForceCommitDoneType =const std::shared_ptr<ForceCommitContext> &;
     using OnOperationDoneType = const std::shared_ptr<OperationDoneContext> &;
     using OnPutDoneType = const std::shared_ptr<PutDoneContext> &;
     using OnRemoveDoneType = const std::shared_ptr<RemoveDoneContext> &;
@@ -86,8 +79,7 @@ public:
               _writeService(writeService),
               _lidReuseDelayer(lidReuseDelayer),
               _commitTimeTracker(commitTimeTracker)
-        {
-        }
+        {}
     };
 
     struct PersistentParams
@@ -105,15 +97,13 @@ public:
                          PerDocTypeFeedMetrics &metrics,
                          uint32_t subDbId,
                          SubDbType subDbType)
-            : _flushedDocumentMetaStoreSerialNum(
-                      flushedDocumentMetaStoreSerialNum),
+            : _flushedDocumentMetaStoreSerialNum(flushedDocumentMetaStoreSerialNum),
               _flushedDocumentStoreSerialNum(flushedDocumentStoreSerialNum),
               _docTypeName(docTypeName),
               _metrics(metrics),
               _subDbId(subDbId),
               _subDbType(subDbType)
-        {
-        }
+        {}
     };
 
 protected:
@@ -125,7 +115,9 @@ protected:
         UpdateScope()
             : _indexedFields(false),
               _nonAttributeFields(false)
-        {
+        {}
+        bool hasIndexOrNonAttributeFields() const {
+            return _indexedFields || _nonAttributeFields;
         }
     };
 
@@ -317,46 +309,20 @@ public:
      * when replaying the spooler we don't have a feed token.
      */
 
-    virtual void
-    preparePut(PutOperation &putOp) override;
-
-    virtual void
-    handlePut(FeedToken *token, const PutOperation &putOp) override;
-
-    virtual void
-    prepareUpdate(UpdateOperation &updOp) override;
-
-    virtual void
-    handleUpdate(FeedToken *token, const UpdateOperation &updOp) override;
-
-    virtual void
-    prepareRemove(RemoveOperation &rmOp) override;
-
-    virtual void
-    handleRemove(FeedToken *token, const RemoveOperation &rmOp) override;
-
-    virtual void
-    prepareDeleteBucket(DeleteBucketOperation &delOp) override;
-
-    virtual void
-    handleDeleteBucket(const DeleteBucketOperation &delOp) override;
-
-    virtual void
-    prepareMove(MoveOperation &putOp) override;
-
-    virtual void
-    handleMove(const MoveOperation &putOp, std::shared_ptr<search::IDestructorCallback> doneCtx) override;
-
-    virtual void
-    heartBeat(search::SerialNum serialNum) override;
-
-    virtual void
-    sync() override;
-
+    virtual void preparePut(PutOperation &putOp) override;
+    virtual void handlePut(FeedToken *token, const PutOperation &putOp) override;
+    virtual void prepareUpdate(UpdateOperation &updOp) override;
+    virtual void handleUpdate(FeedToken *token, const UpdateOperation &updOp) override;
+    virtual void prepareRemove(RemoveOperation &rmOp) override;
+    virtual void handleRemove(FeedToken *token, const RemoveOperation &rmOp) override;
+    virtual void prepareDeleteBucket(DeleteBucketOperation &delOp) override;
+    virtual void handleDeleteBucket(const DeleteBucketOperation &delOp) override;
+    virtual void prepareMove(MoveOperation &putOp) override;
+    virtual void handleMove(const MoveOperation &putOp, std::shared_ptr<search::IDestructorCallback> doneCtx) override;
+    virtual void heartBeat(search::SerialNum serialNum) override;
+    virtual void sync() override;
     virtual void forceCommit(SerialNum serialNum) override;
-
-    virtual void forceCommit(SerialNum serialNum,
-                             OnForceCommitDoneType onCommitDone);
+    virtual void forceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone);
 
     /**
      * Prune lids present in operation.  Caller must call doneSegment()
@@ -364,13 +330,8 @@ public:
      *
      * Called by writer thread.
      */
-    virtual void
-    handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp) override;
-
-    virtual void
-    handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
-
+    virtual void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp) override;
+    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
 };
 
-} // namespace proton
-
+}

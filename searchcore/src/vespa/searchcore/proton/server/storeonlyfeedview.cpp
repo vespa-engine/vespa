@@ -12,7 +12,6 @@
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
 #include <vespa/searchcore/proton/metrics/feed_metrics.h>
-#include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/searchlib/common/scheduletaskcallback.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/closuretask.h>
@@ -40,9 +39,7 @@ namespace proton {
 
 namespace {
 
-bool shouldTrace(StoreOnlyFeedView::OnOperationDoneType onWriteDone,
-                 uint32_t traceLevel)
-{
+bool shouldTrace(StoreOnlyFeedView::OnOperationDoneType onWriteDone, uint32_t traceLevel) {
     return onWriteDone && onWriteDone->shouldTrace(traceLevel);
 }
 
@@ -51,7 +48,7 @@ FeedToken::UP dupFeedToken(FeedToken *token)
     // If token is not NULL then a new feed token is created, referencing
     // same shared state as old token.
     if (token != NULL) {
-        return FeedToken::UP(new FeedToken(*token));
+        return std::make_unique<FeedToken>(*token);
     } else {
         return FeedToken::UP();
     }
@@ -62,10 +59,8 @@ private:
     IDestructorCallback::SP _moveDoneCtx;
 
 public:
-    PutDoneContextForMove(std::unique_ptr<FeedToken> token,
-                          const FeedOperation::Type opType,
-                          PerDocTypeFeedMetrics &metrics,
-                          IDestructorCallback::SP moveDoneCtx)
+    PutDoneContextForMove(std::unique_ptr<FeedToken> token, const FeedOperation::Type opType,
+                          PerDocTypeFeedMetrics &metrics, IDestructorCallback::SP moveDoneCtx)
         : PutDoneContext(std::move(token), opType, metrics),
           _moveDoneCtx(std::move(moveDoneCtx))
     {}
@@ -73,10 +68,7 @@ public:
 };
 
 std::shared_ptr<PutDoneContext>
-createPutDoneContext(FeedToken::UP &token,
-                     FeedOperation::Type opType,
-                     PerDocTypeFeedMetrics &metrics,
-                     bool force,
+createPutDoneContext(FeedToken::UP &token, FeedOperation::Type opType, PerDocTypeFeedMetrics &metrics, bool force,
                      IDestructorCallback::SP moveDoneCtx)
 {
     std::shared_ptr<PutDoneContext> result;
@@ -91,18 +83,13 @@ createPutDoneContext(FeedToken::UP &token,
 }
 
 std::shared_ptr<PutDoneContext>
-createPutDoneContext(FeedToken::UP &token,
-                     FeedOperation::Type opType,
-                     PerDocTypeFeedMetrics &metrics,
-                     bool force)
+createPutDoneContext(FeedToken::UP &token, FeedOperation::Type opType, PerDocTypeFeedMetrics &metrics, bool force)
 {
     return createPutDoneContext(token, opType, metrics, force, IDestructorCallback::SP());
 }
 
 std::shared_ptr<UpdateDoneContext>
-createUpdateDoneContext(FeedToken::UP &token,
-                        FeedOperation::Type opType,
-                        PerDocTypeFeedMetrics &metrics,
+createUpdateDoneContext(FeedToken::UP &token, FeedOperation::Type opType, PerDocTypeFeedMetrics &metrics,
                         const document::DocumentUpdate::SP &upd)
 {
     return std::make_shared<UpdateDoneContext>(std::move(token), opType, metrics, upd);
@@ -111,8 +98,7 @@ createUpdateDoneContext(FeedToken::UP &token,
 }  // namespace
 
 
-StoreOnlyFeedView::StoreOnlyFeedView(const Context &ctx,
-                                     const PersistentParams &params)
+StoreOnlyFeedView::StoreOnlyFeedView(const Context &ctx, const PersistentParams &params)
     : IFeedView(),
       FeedDebugger(),
       _summaryAdapter(ctx._summaryAdapter),
@@ -138,15 +124,12 @@ StoreOnlyFeedView::sync()
 void
 StoreOnlyFeedView::forceCommit(SerialNum serialNum)
 {
-    forceCommit(serialNum,
-                std::make_shared<ForceCommitContext>(_writeService.master(),
-                                                     _metaStore));
+    forceCommit(serialNum, std::make_shared<ForceCommitContext>(_writeService.master(), _metaStore));
 }
 
 
 void
-StoreOnlyFeedView::forceCommit(SerialNum serialNum,
-                               OnForceCommitDoneType onCommitDone)
+StoreOnlyFeedView::forceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone)
 {
     (void) serialNum;
     std::vector<uint32_t> lidsToReuse;
@@ -158,8 +141,7 @@ StoreOnlyFeedView::forceCommit(SerialNum serialNum,
 
 
 void
-StoreOnlyFeedView::considerEarlyAck(FeedToken::UP &token,
-                                    FeedOperation::Type opType)
+StoreOnlyFeedView::considerEarlyAck(FeedToken::UP &token, FeedOperation::Type opType)
 {
     if (_commitTimeTracker.hasVisibilityDelay() && token) {
         token->ack(opType, _params._metrics);
@@ -169,11 +151,8 @@ StoreOnlyFeedView::considerEarlyAck(FeedToken::UP &token,
 
 
 void
-StoreOnlyFeedView::putAttributes(SerialNum serialNum,
-                                 search::DocumentIdT lid,
-                                 const Document &doc,
-                                 bool immediateCommit,
-                                 OnPutDoneType onWriteDone)
+StoreOnlyFeedView::putAttributes(SerialNum serialNum, search::DocumentIdT lid, const Document &doc,
+                                 bool immediateCommit, OnPutDoneType onWriteDone)
 {
     (void) serialNum;
     (void) lid;
@@ -183,11 +162,8 @@ StoreOnlyFeedView::putAttributes(SerialNum serialNum,
 }
 
 void
-StoreOnlyFeedView::putIndexedFields(SerialNum serialNum,
-                                    search::DocumentIdT lid,
-                                    const Document::SP &newDoc,
-                                    bool immediateCommit,
-                                    OnOperationDoneType onWriteDone)
+StoreOnlyFeedView::putIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const Document::SP &newDoc,
+                                    bool immediateCommit, OnOperationDoneType onWriteDone)
 {
     (void) serialNum;
     (void) lid;
@@ -198,9 +174,10 @@ StoreOnlyFeedView::putIndexedFields(SerialNum serialNum,
 
 
 namespace {
-void setPrev(DocumentOperation &op,
-             const documentmetastore::IStore::Result &result,
-             uint32_t subDbId, bool markedAsRemoved) {
+
+void setPrev(DocumentOperation &op, const documentmetastore::IStore::Result &result,
+             uint32_t subDbId, bool markedAsRemoved)
+{
     if (result._found) {
         op.setPrevDbDocumentId(DbDocumentId(subDbId, result._lid));
         op.setPrevMarkedAsRemoved(markedAsRemoved);
@@ -222,16 +199,14 @@ StoreOnlyFeedView::preparePut(PutOperation &putOp)
 
 
 void
-StoreOnlyFeedView::handlePut(FeedToken *token,
-                             const PutOperation &putOp)
+StoreOnlyFeedView::handlePut(FeedToken *token, const PutOperation &putOp)
 {
     internalPut(dupFeedToken(token), putOp);
 }
 
 
 void
-StoreOnlyFeedView::internalPut(FeedToken::UP token,
-                               const PutOperation &putOp)
+StoreOnlyFeedView::internalPut(FeedToken::UP token, const PutOperation &putOp)
 {
     assert(putOp.getValidDbdId());
     assert(putOp.notMovingLidInSameSubDb());
@@ -240,19 +215,12 @@ StoreOnlyFeedView::internalPut(FeedToken::UP token,
     const Document::SP &doc = putOp.getDocument();
     const DocumentId &docId = doc->getId();
     VLOG(getDebugLevel(putOp.getNewOrPrevLid(_params._subDbId), doc->getId()),
-         "database(%s): internalPut: serialNum(%" PRIu64 "), "
-         "docId(%s), lid(%u,%u) prevLid(%u,%u)"
+         "database(%s): internalPut: serialNum(%" PRIu64 "), docId(%s), "
+         "lid(%u,%u) prevLid(%u,%u)"
          " subDbId %u document(%ld) = {\n%s\n}",
-         _params._docTypeName.toString().c_str(),
-         serialNum,
-         doc->getId().toString().c_str(),
-         putOp.getSubDbId(),
-         putOp.getLid(),
-         putOp.getPrevSubDbId(),
-         putOp.getPrevLid(),
-         _params._subDbId,
-         doc->toString(true).size(),
-         doc->toString(true).c_str());
+         _params._docTypeName.toString().c_str(), serialNum, doc->getId().toString().c_str(),
+         putOp.getSubDbId(), putOp.getLid(), putOp.getPrevSubDbId(), putOp.getPrevLid(),
+         _params._subDbId, doc->toString(true).size(), doc->toString(true).c_str());
 
     uint32_t oldDocIdLimit = _metaStore.getCommittedDocIdLimit();
     adjustMetaStore(putOp, docId);
@@ -264,8 +232,7 @@ StoreOnlyFeedView::internalPut(FeedToken::UP token,
         bool immediateCommit = _commitTimeTracker.needCommit();
         std::shared_ptr<PutDoneContext> onWriteDone =
             createPutDoneContext(token, putOp.getType(), _params._metrics,
-                                 immediateCommit &&
-                                 putOp.getLid() >= oldDocIdLimit);
+                                 immediateCommit && putOp.getLid() >= oldDocIdLimit);
         putAttributes(serialNum, putOp.getLid(), *doc, immediateCommit, onWriteDone);
         putIndexedFields(serialNum, putOp.getLid(), doc, immediateCommit, onWriteDone);
     }
@@ -305,11 +272,8 @@ StoreOnlyFeedView::getUpdateScope(const DocumentUpdate &upd)
 
 
 void
-StoreOnlyFeedView::updateAttributes(SerialNum serialNum,
-                                    search::DocumentIdT lid,
-                                    const document::DocumentUpdate &upd,
-                                    bool immediateCommit,
-                                    OnOperationDoneType onWriteDone)
+StoreOnlyFeedView::updateAttributes(SerialNum serialNum, search::DocumentIdT lid, const document::DocumentUpdate &upd,
+                                    bool immediateCommit, OnOperationDoneType onWriteDone)
 {
     (void) serialNum;
     (void) lid;
@@ -320,11 +284,8 @@ StoreOnlyFeedView::updateAttributes(SerialNum serialNum,
 
 
 void
-StoreOnlyFeedView::updateIndexedFields(SerialNum serialNum,
-                                       search::DocumentIdT lid,
-                                       const Document::SP &newDoc,
-                                       bool immediateCommit,
-                                       OnOperationDoneType onWriteDone)
+StoreOnlyFeedView::updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const Document::SP &newDoc,
+                                       bool immediateCommit, OnOperationDoneType onWriteDone)
 {
     (void) serialNum;
     (void) lid;
@@ -347,17 +308,14 @@ StoreOnlyFeedView::prepareUpdate(UpdateOperation &updOp)
 
 
 void
-StoreOnlyFeedView::handleUpdate(FeedToken *token,
-                                const UpdateOperation &updOp)
+StoreOnlyFeedView::handleUpdate(FeedToken *token, const UpdateOperation &updOp)
 {
     internalUpdate(dupFeedToken(token), updOp);
 }
 
 
 void
-StoreOnlyFeedView::internalUpdate(FeedToken::UP token,
-                                  const UpdateOperation &updOp)
-{
+StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &updOp) {
     if (updOp.getUpdate().get() == NULL) {
         LOG(warning, "database(%s): ignoring invalid update operation",
             _params._docTypeName.toString().c_str());
@@ -369,12 +327,9 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token,
     const DocumentId &docId = upd.getId();
     const search::DocumentIdT lid = updOp.getLid();
     VLOG(getDebugLevel(lid, upd.getId()),
-        "database(%s): internalUpdate: serialNum(%" PRIu64
-        "), docId(%s), lid(%d)",
-        _params._docTypeName.toString().c_str(),
-        serialNum,
-        upd.getId().toString().c_str(),
-        lid);
+         "database(%s): internalUpdate: serialNum(%lu), docId(%s), lid(%d)",
+         _params._docTypeName.toString().c_str(), serialNum,
+         upd.getId().toString().c_str(), lid);
 
     if (useDocumentMetaStore(serialNum)) {
         search::DocumentIdT storedLid;
@@ -382,9 +337,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token,
         assert(lookupOk);
         (void) lookupOk;
         assert(storedLid == updOp.getLid());
-        bool updateOk = _metaStore.updateMetaData(updOp.getLid(),
-                                                  updOp.getBucketId(),
-                                                  updOp.getTimestamp());
+        bool updateOk = _metaStore.updateMetaData(updOp.getLid(), updOp.getBucketId(), updOp.getTimestamp());
         assert(updateOk);
         (void) updateOk;
         _metaStore.commit(serialNum, serialNum);
@@ -490,9 +443,7 @@ StoreOnlyFeedView::lookupDocId(const DocumentId &docId,
 
 
 void
-StoreOnlyFeedView::removeAttributes(SerialNum serialNum,
-                                    search::DocumentIdT lid,
-                                    bool immediateCommit,
+StoreOnlyFeedView::removeAttributes(SerialNum serialNum, search::DocumentIdT lid, bool immediateCommit,
                                     OnRemoveDoneType onWriteDone)
 {
     (void) serialNum;
@@ -503,9 +454,7 @@ StoreOnlyFeedView::removeAttributes(SerialNum serialNum,
 
 
 void
-StoreOnlyFeedView::removeIndexedFields(SerialNum serialNum,
-                                       search::DocumentIdT lid,
-                                       bool immediateCommit,
+StoreOnlyFeedView::removeIndexedFields(SerialNum serialNum, search::DocumentIdT lid, bool immediateCommit,
                                        OnRemoveDoneType onWriteDone)
 {
     (void) serialNum;
@@ -521,24 +470,21 @@ StoreOnlyFeedView::prepareRemove(RemoveOperation &rmOp)
     const DocumentId &id = rmOp.getDocumentId();
     const document::GlobalId &gid = id.getGlobalId();
     documentmetastore::IStore::Result inspectRes = _metaStore.inspect(gid);
-    if (_params._subDbType == SubDbType::REMOVED)
+    if (_params._subDbType == SubDbType::REMOVED) {
         rmOp.setDbDocumentId(DbDocumentId(_params._subDbId, inspectRes._lid));
-    setPrev(rmOp, inspectRes, _params._subDbId,
-            _params._subDbType == SubDbType::REMOVED);
+    }
+    setPrev(rmOp, inspectRes, _params._subDbId, _params._subDbType == SubDbType::REMOVED);
 }
 
 
 void
-StoreOnlyFeedView::handleRemove(FeedToken *token,
-                                const RemoveOperation &rmOp)
-{
+StoreOnlyFeedView::handleRemove(FeedToken *token, const RemoveOperation &rmOp) {
     internalRemove(dupFeedToken(token), rmOp);
 }
 
 
 void
-StoreOnlyFeedView::internalRemove(FeedToken::UP token,
-                                  const RemoveOperation &rmOp)
+StoreOnlyFeedView::internalRemove(FeedToken::UP token, const RemoveOperation &rmOp)
 {
     assert(rmOp.getValidNewOrPrevDbdId());
     assert(rmOp.notMovingLidInSameSubDb());
@@ -546,16 +492,10 @@ StoreOnlyFeedView::internalRemove(FeedToken::UP token,
     const SerialNum serialNum = rmOp.getSerialNum();
     const DocumentId &docId = rmOp.getDocumentId();
     VLOG(getDebugLevel(rmOp.getNewOrPrevLid(_params._subDbId), docId),
-         "database(%s): internalRemove: serialNum(%" PRIu64 "), "
-         "docId(%s), lid(%u,%u) prevlid(%u,%u), subDbId %u",
-         _params._docTypeName.toString().c_str(),
-         serialNum,
-         docId.toString().c_str(),
-         rmOp.getSubDbId(),
-         rmOp.getLid(),
-         rmOp.getPrevSubDbId(),
-         rmOp.getPrevLid(),
-         _params._subDbId);
+         "database(%s): internalRemove: serialNum(%" PRIu64 "), docId(%s), "
+         "lid(%u,%u) prevlid(%u,%u), subDbId %u",
+         _params._docTypeName.toString().c_str(), serialNum, docId.toString().c_str(),
+         rmOp.getSubDbId(), rmOp.getLid(), rmOp.getPrevSubDbId(), rmOp.getPrevLid(), _params._subDbId);
 
     adjustMetaStore(rmOp, docId);
     considerEarlyAck(token, rmOp.getType());
@@ -582,12 +522,9 @@ private:
     IDestructorCallback::SP _moveDoneCtx;
 
 public:
-    RemoveDoneContextForMove(std::unique_ptr<FeedToken> token,
-                             const FeedOperation::Type opType,
-                             PerDocTypeFeedMetrics &metrics,
-                             vespalib::Executor &executor,
-                             IDocumentMetaStore &documentMetaStore,
-                             uint32_t lid,
+    RemoveDoneContextForMove(std::unique_ptr<FeedToken> token, const FeedOperation::Type opType,
+                             PerDocTypeFeedMetrics &metrics, vespalib::Executor &executor,
+                             IDocumentMetaStore &documentMetaStore, uint32_t lid,
                              IDestructorCallback::SP moveDoneCtx)
         : RemoveDoneContext(std::move(token), opType, metrics, executor, documentMetaStore, lid),
           _moveDoneCtx(std::move(moveDoneCtx))
@@ -596,12 +533,9 @@ public:
 };
 
 std::shared_ptr<RemoveDoneContext>
-createRemoveDoneContext(std::unique_ptr<FeedToken> token,
-                        const FeedOperation::Type opType,
-                        PerDocTypeFeedMetrics &metrics,
-                        vespalib::Executor &executor,
-                        IDocumentMetaStore &documentMetaStore,
-                        uint32_t lid,
+createRemoveDoneContext(std::unique_ptr<FeedToken> token, const FeedOperation::Type opType,
+                        PerDocTypeFeedMetrics &metrics, vespalib::Executor &executor,
+                        IDocumentMetaStore &documentMetaStore, uint32_t lid,
                         IDestructorCallback::SP moveDoneCtx)
 {
     if (moveDoneCtx) {
@@ -616,11 +550,8 @@ createRemoveDoneContext(std::unique_ptr<FeedToken> token,
 }
 
 void
-StoreOnlyFeedView::internalRemove(FeedToken::UP token,
-                                  SerialNum serialNum,
-                                  search::DocumentIdT lid,
-                                  FeedOperation::Type opType,
-                                  IDestructorCallback::SP moveDoneCtx)
+StoreOnlyFeedView::internalRemove(FeedToken::UP token, SerialNum serialNum, search::DocumentIdT lid,
+                                  FeedOperation::Type opType, IDestructorCallback::SP moveDoneCtx)
 {
     _summaryAdapter->remove(serialNum, lid);
     bool explicitReuseLid = _lidReuseDelayer.delayReuse(lid);
@@ -645,10 +576,8 @@ void putMetaData(documentmetastore::IStore &meta_store, const DocumentId &doc_id
                            op.getBucketId(), op.getTimestamp(), op.getSerializedDocSize(), op.getLid()));
     if (!putRes.ok()) {
         throw IllegalStateException(
-                make_string("Could not put <lid, gid> pair for "
-                            "%sdocument with id '%s' and gid '%s'",
-                            is_removed_doc ? "removed " : "",
-                            doc_id.toString().c_str(),
+                make_string("Could not put <lid, gid> pair for %sdocument with id '%s' and gid '%s'",
+                            is_removed_doc ? "removed " : "", doc_id.toString().c_str(),
                             doc_id.getGlobalId().toString().c_str()));
     }
     assert(op.getLid() == putRes._lid);
@@ -663,18 +592,14 @@ void removeMetaData(documentmetastore::IStore &meta_store, const DocumentId &doc
     (void) meta;
     if (!meta_store.remove(op.getPrevLid())) {
         throw IllegalStateException(
-                make_string("Could not remove <lid, gid> pair for "
-                            "%sdocument with id '%s' and gid '%s'",
-                            is_removed_doc ? "removed " : "",
-                            doc_id.toString().c_str(),
+                make_string("Could not remove <lid, gid> pair for %sdocument with id '%s' and gid '%s'",
+                            is_removed_doc ? "removed " : "", doc_id.toString().c_str(),
                             doc_id.getGlobalId().toString().c_str()));
     }
 }
 
 void
-moveMetaData(documentmetastore::IStore &meta_store,
-             const DocumentId &doc_id,
-             const DocumentOperation &op)
+moveMetaData(documentmetastore::IStore &meta_store, const DocumentId &doc_id, const DocumentOperation &op)
 {
     (void) doc_id;
     assert(op.getLid() != op.getPrevLid());
@@ -687,31 +612,28 @@ moveMetaData(documentmetastore::IStore &meta_store,
     meta_store.move(op.getPrevLid(), op.getLid());
 }
 
-
 }  // namespace
 
 void
-StoreOnlyFeedView::adjustMetaStore(const DocumentOperation &op,
-                                   const DocumentId &docId)
+StoreOnlyFeedView::adjustMetaStore(const DocumentOperation &op, const DocumentId &docId)
 {
     const SerialNum serialNum = op.getSerialNum();
     if (useDocumentMetaStore(serialNum)) {
         if (op.getValidDbdId(_params._subDbId)) {
             if (op.getType() == FeedOperation::MOVE &&
                 op.getValidPrevDbdId(_params._subDbId) &&
-                op.getLid() != op.getPrevLid()) {
+                op.getLid() != op.getPrevLid())
+            {
                 moveMetaData(_metaStore, docId, op);
                 notifyGidToLidChange(docId.getGlobalId(), op.getLid());
             } else {
-                putMetaData(_metaStore, docId, op,
-                            _params._subDbType == SubDbType::REMOVED);
+                putMetaData(_metaStore, docId, op, _params._subDbType == SubDbType::REMOVED);
                 if (op.getDbDocumentId() != op.getPrevDbDocumentId()) {
                     notifyGidToLidChange(docId.getGlobalId(), op.getLid());
                 }
             }
         } else if (op.getValidPrevDbdId(_params._subDbId)) {
-            removeMetaData(_metaStore, docId, op,
-                           _params._subDbType == SubDbType::REMOVED);
+            removeMetaData(_metaStore, docId, op, _params._subDbType == SubDbType::REMOVED);
             notifyGidToLidChange(docId.getGlobalId(), 0u);
         }
         _metaStore.commit(serialNum, serialNum);
@@ -720,9 +642,7 @@ StoreOnlyFeedView::adjustMetaStore(const DocumentOperation &op,
 
 
 void
-StoreOnlyFeedView::removeAttributes(SerialNum serialNum,
-                                    const LidVector &lidsToRemove,
-                                    bool immediateCommit,
+StoreOnlyFeedView::removeAttributes(SerialNum serialNum, const LidVector &lidsToRemove, bool immediateCommit,
                                     OnWriteDoneType onWriteDone)
 {
     (void) serialNum;
@@ -733,9 +653,7 @@ StoreOnlyFeedView::removeAttributes(SerialNum serialNum,
 
 
 void
-StoreOnlyFeedView::removeIndexedFields(SerialNum serialNum,
-                                       const LidVector &lidsToRemove,
-                                       bool immediateCommit,
+StoreOnlyFeedView::removeIndexedFields(SerialNum serialNum, const LidVector &lidsToRemove, bool immediateCommit,
                                        OnWriteDoneType onWriteDone)
 {
     (void) serialNum;
@@ -762,8 +680,7 @@ std::vector<document::GlobalId> getGidsToRemove(const IDocumentMetaStore &metaSt
 }
 
 size_t
-StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op,
-                                   bool remove_index_and_attributes,
+StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remove_index_and_attributes,
                                    bool immediateCommit)
 {
     const SerialNum serialNum = op.getSerialNum();
@@ -814,15 +731,11 @@ StoreOnlyFeedView::prepareDeleteBucket(DeleteBucketOperation &delOp)
     const BucketId &bucket = delOp.getBucketId();
     LidVector lidsToRemove;
     _metaStore.getLids(bucket, lidsToRemove);
-    LOG(debug,
-        "prepareDeleteBucket(): docType(%s), bucket(%s), lidsToRemove(%zu)",
-        _params._docTypeName.toString().c_str(),
-        bucket.toString().c_str(), lidsToRemove.size());
+    LOG(debug, "prepareDeleteBucket(): docType(%s), bucket(%s), lidsToRemove(%zu)",
+        _params._docTypeName.toString().c_str(), bucket.toString().c_str(), lidsToRemove.size());
 
     if (!lidsToRemove.empty()) {
-        LidVectorContext::SP ctx
-            (new LidVectorContext(_metaStore.getCommittedDocIdLimit(),
-                                  lidsToRemove));
+        LidVectorContext::SP ctx(new LidVectorContext(_metaStore.getCommittedDocIdLimit(), lidsToRemove));
         delOp.setLidsToRemove(_params._subDbId, ctx);
     }
 }
@@ -840,10 +753,8 @@ StoreOnlyFeedView::internalDeleteBucket(const DeleteBucketOperation &delOp)
 {
     bool immediateCommit = _commitTimeTracker.needCommit();
     size_t rm_count = removeDocuments(delOp, true, immediateCommit);
-    LOG(debug,
-        "internalDeleteBucket(): docType(%s), bucket(%s), lidsToRemove(%zu)",
-        _params._docTypeName.toString().c_str(),
-        delOp.getBucketId().toString().c_str(), rm_count);
+    LOG(debug, "internalDeleteBucket(): docType(%s), bucket(%s), lidsToRemove(%zu)",
+        _params._docTypeName.toString().c_str(), delOp.getBucketId().toString().c_str(), rm_count);
 }
 
 
@@ -871,19 +782,11 @@ StoreOnlyFeedView::handleMove(const MoveOperation &moveOp, IDestructorCallback::
     const Document::SP &doc = moveOp.getDocument();
     const DocumentId &docId = doc->getId();
     VLOG(getDebugLevel(moveOp.getNewOrPrevLid(_params._subDbId), doc->getId()),
-         "database(%s): handleMove: serialNum(%" PRIu64 "), "
-         "docId(%s), lid(%u,%u) prevLid(%u,%u)"
-         " subDbId %u document(%ld) = {\n%s\n}",
-         _params._docTypeName.toString().c_str(),
-         serialNum,
-         doc->getId().toString().c_str(),
-         moveOp.getSubDbId(),
-         moveOp.getLid(),
-         moveOp.getPrevSubDbId(),
-         moveOp.getPrevLid(),
-         _params._subDbId,
-         doc->toString(true).size(),
-         doc->toString(true).c_str());
+         "database(%s): handleMove: serialNum(%" PRIu64 "), docId(%s), "
+         "lid(%u,%u) prevLid(%u,%u) subDbId %u document(%ld) = {\n%s\n}",
+         _params._docTypeName.toString().c_str(), serialNum, doc->getId().toString().c_str(),
+         moveOp.getSubDbId(), moveOp.getLid(), moveOp.getPrevSubDbId(), moveOp.getPrevLid(),
+         _params._subDbId, doc->toString(true).size(), doc->toString(true).c_str());
 
     uint32_t oldDocIdLimit = _metaStore.getCommittedDocIdLimit();
     adjustMetaStore(moveOp, docId);
@@ -927,11 +830,7 @@ handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp)
     assert(pruneOp.getSubDbId() == _params._subDbId);
     uint32_t rm_count = removeDocuments(pruneOp, false, false);
 
-    LOG(debug,
-        "MinimalFeedView::handlePruneRemovedDocuments called,"
-        " doctype(%s)"
-        " %u lids pruned,"
-        " limit %u",
+    LOG(debug, "MinimalFeedView::handlePruneRemovedDocuments called, doctype(%s) %u lids pruned, limit %u",
         _params._docTypeName.toString().c_str(), rm_count,
         static_cast<uint32_t>(pruneOp.getLidsToRemove()->getDocIdLimit()));
 }
@@ -944,9 +843,7 @@ StoreOnlyFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
     if (useDocumentMetaStore(serialNum)) {
         getDocumentMetaStore()->get().compactLidSpace(op.getLidLimit());
         std::shared_ptr<ForceCommitContext>
-            commitContext(std::make_shared<ForceCommitContext>
-                          (_writeService.master(),
-                           _metaStore));
+            commitContext(std::make_shared<ForceCommitContext>(_writeService.master(), _metaStore));
         commitContext->holdUnblockShrinkLidSpace();
         forceCommit(serialNum, commitContext);
     }
