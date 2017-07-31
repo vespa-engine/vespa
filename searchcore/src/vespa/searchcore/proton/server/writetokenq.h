@@ -19,12 +19,12 @@ public:
     class WriteToken {
     public:
         WriteToken() : WriteToken(nullptr, -1) { }
-        WriteToken(WriteTokenQ * feedView, SerialNum serialNum);
+        WriteToken(WriteTokenQ * tokenQ, SerialNum serialNum);
 
         WriteToken(WriteToken && rhs) noexcept
-                : _feedView(rhs._feedView), _serialNum(rhs._serialNum)
+                : _tokenQ(rhs._tokenQ), _serialNum(rhs._serialNum)
         {
-            rhs._feedView = nullptr;
+            rhs._tokenQ = nullptr;
         }
 
         WriteToken(const WriteToken &) = delete;
@@ -35,17 +35,17 @@ public:
         }
     private:
         void cleanup();
-        WriteTokenQ * _feedView;
+        WriteTokenQ * _tokenQ;
         SerialNum _serialNum;
     };
     class WriteTokenProducer {
     public:
         WriteTokenProducer() : WriteTokenProducer(nullptr, -1) { }
-        WriteTokenProducer(WriteTokenQ * feedView, SerialNum serialNum);
+        WriteTokenProducer(WriteTokenQ * tokenQ, SerialNum serialNum);
         WriteTokenProducer(WriteTokenProducer && rhs) noexcept
-            : _feedView(rhs._feedView), _serialNum(rhs._serialNum)
+            : _tokenQ(rhs._tokenQ), _serialNum(rhs._serialNum)
         {
-            rhs._feedView = nullptr;
+            rhs._tokenQ = nullptr;
         }
         WriteTokenProducer(const WriteTokenProducer &) = delete;
         WriteTokenProducer & operator = (const WriteTokenProducer &) = delete;
@@ -53,12 +53,12 @@ public:
             getWriteToken();
         }
         WriteToken getWriteToken() {
-            WriteTokenQ * f = _feedView;
-            _feedView = nullptr;
-            return WriteToken(f, _serialNum);
+            WriteTokenQ * tmp = _tokenQ;
+            _tokenQ = nullptr;
+            return WriteToken(tmp, _serialNum);
         }
     private:
-        WriteTokenQ  *_feedView;
+        WriteTokenQ  *_tokenQ;
         SerialNum     _serialNum;
     };
 private:

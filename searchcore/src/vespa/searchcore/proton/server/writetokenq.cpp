@@ -12,26 +12,26 @@ WriteTokenQ::WriteTokenQ()
 
 WriteTokenQ::~WriteTokenQ() { }
 
-WriteTokenQ::WriteToken::WriteToken(WriteTokenQ * feedView, SerialNum serialNum)
-: _feedView(feedView), _serialNum(serialNum)
+WriteTokenQ::WriteToken::WriteToken(WriteTokenQ * tokenQ, SerialNum serialNum)
+    : _tokenQ(tokenQ), _serialNum(serialNum)
 {
-    if (_feedView) {
-        _feedView->waitForSerialNum(_serialNum);
+    if (_tokenQ) {
+        _tokenQ->waitForSerialNum(_serialNum);
     }
 }
 
 void WriteTokenQ::WriteToken::cleanup() {
-    if (_feedView) {
-        _feedView->releaseSerialNum(_serialNum);
-        _feedView = nullptr;
+    if (_tokenQ) {
+        _tokenQ->releaseSerialNum(_serialNum);
+        _tokenQ = nullptr;
     }
 }
 
-WriteTokenQ::WriteTokenProducer::WriteTokenProducer(WriteTokenQ * feedView, SerialNum serialNum)
-    : _feedView(feedView), _serialNum(serialNum)
+WriteTokenQ::WriteTokenProducer::WriteTokenProducer(WriteTokenQ * tokenQ, SerialNum serialNum)
+    : _tokenQ(tokenQ), _serialNum(serialNum)
 {
-    if (_feedView) {
-        _feedView->addSerialNumToProcess(_serialNum);
+    if (_tokenQ) {
+        _tokenQ->addSerialNumToProcess(_serialNum);
     }
 }
 
