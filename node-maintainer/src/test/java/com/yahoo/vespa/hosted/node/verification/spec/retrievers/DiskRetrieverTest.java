@@ -88,7 +88,7 @@ public class DiskRetrieverTest {
         String filepath = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/filesize";
         ArrayList<String> mockOutput = MockCommandExecutor.readFromFile(filepath);
         ParseResult parseResult = diskRetriever.parseDiskSize(mockOutput);
-        ParseResult expectedParseResult = new ParseResult("44G", "63G");
+        ParseResult expectedParseResult = new ParseResult("63", "63");
         assertEquals(expectedParseResult, parseResult);
     }
 

@@ -45,13 +45,16 @@ public class NetRetriever implements HardwareRetriever {
     }
 
     public void updateInfo() {
+        ArrayList<ParseResult> parseResults = new ArrayList<>();
         try {
-            ArrayList<ParseResult> parseResults = findInterface();
+            parseResults = findInterface();
             findInterfaceSpeed(parseResults);
             testPingResponse(parseResults);
-            updateHardwareInfoWithNet(parseResults);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to retrieve net info", e);
+        }
+        finally {
+            updateHardwareInfoWithNet(parseResults);
         }
     }
 

@@ -26,6 +26,7 @@ public class SpecVerifierTest {
     private static final String RESOURCE_PATH = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources";
     private static final String URL_RESOURCE_PATH = "file://" + ABSOLUTE_PATH + "/" + RESOURCE_PATH;
     private static final String NODE_REPO_PATH = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/nodeInfoTest.json";
+    private static final String YAMAS_REPORT_PATH = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/SpecVerifierReport";
     private static final String CPU_INFO_PATH = RESOURCE_PATH + "/cpuinfoTest";
     private static final String MEMORY_INFO_PATH = RESOURCE_PATH + "/meminfoTest";
     private static final String DISK_TYPE_INFO_PATH = RESOURCE_PATH + "/DiskTypeFastDisk";
@@ -82,8 +83,9 @@ public class SpecVerifierTest {
         ArrayList<URL> url = new ArrayList<>(Arrays.asList(new File(NODE_REPO_PATH).toURI().toURL()));
         NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(url);
         YamasSpecReport yamasSpecReport = SpecVerifier.makeYamasSpecReport(actualHardware, nodeRepoJsonModel);
-        long timeStamp = yamasSpecReport.getTimeStamp();
-        String expectedJson = "{\"timeStamp\":" + timeStamp + ",\"dimensions\":{\"memoryMatch\":true,\"cpuCoresMatch\":true,\"diskTypeMatch\":true,\"netInterfaceSpeedMatch\":false,\"diskAvailableMatch\":true,\"ipv4Match\":true,\"ipv6Match\":true},\"metrics\":{\"match\":false,\"expectedInterfaceSpeed\":1000.0,\"actualInterfaceSpeed\":10009.0,\"actualIpv6Connection\":false},\"routing\":{\"yamas\":{\"namespace\":[\"Vespa\"]}}}";
+        long timeStamp = 1501504035;
+        yamasSpecReport.setTimeStamp(timeStamp);
+        String expectedJson = MockCommandExecutor.readFromFile(YAMAS_REPORT_PATH).get(0);
         ObjectMapper om = new ObjectMapper();
         String actualJson = om.writeValueAsString(yamasSpecReport);
         assertEquals(expectedJson, actualJson);
