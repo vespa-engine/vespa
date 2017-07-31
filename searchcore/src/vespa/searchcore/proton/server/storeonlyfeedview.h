@@ -167,6 +167,7 @@ private:
 
     class WriteToken {
     public:
+        WriteToken() : WriteToken(nullptr, -1) { }
         WriteToken(StoreOnlyFeedView * feedView, SerialNum serialNum)
             : _feedView(feedView), _serialNum(serialNum)
         {
@@ -180,15 +181,26 @@ private:
         {
             rhs._feedView = nullptr;
         }
+        WriteToken & operator = (WriteToken && rhs) noexcept {
+            cleanup();
+            _feedView = rhs._feedView;
+            _serialNum = rhs._serialNum;
+            rhs._feedView = nullptr;
+            return *this;
+        }
         WriteToken(const WriteToken &) = delete;
         WriteToken & operator =(const WriteToken &) = delete;
 
         ~WriteToken() {
-            if (_feedView) {
-                _feedView->releaseSerialNum();
-            }
+            cleanup();
         }
     private:
+        void cleanup() {
+            if (_feedView) {
+                _feedView->releaseSerialNum(_serialNum);
+                _feedView = nullptr;
+            }
+        }
         StoreOnlyFeedView * _feedView;
         SerialNum _serialNum;
     };
@@ -223,7 +235,7 @@ private:
     };
     void addSerialNumToProcess(SerialNum serial);
     void waitForSerialNum(SerialNum serial);
-    void releaseSerialNum();
+    void releaseSerialNum(SerialNum serial);
 
     void updateIndexAndDocumentStore(bool indexedFieldsInScope, SerialNum serialNum, search::DocumentIdT lid,
                                      const document::DocumentUpdate &upd, bool immediateCommit,

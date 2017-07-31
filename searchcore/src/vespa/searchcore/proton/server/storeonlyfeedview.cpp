@@ -384,8 +384,9 @@ void StoreOnlyFeedView::waitForSerialNum(SerialNum serial) {
     }
 }
 
-void StoreOnlyFeedView::releaseSerialNum() {
+void StoreOnlyFeedView::releaseSerialNum(SerialNum serial) {
     vespalib::MonitorGuard guard(_orderLock);
+    assert(_processOrder.front() == serial);
     _processOrder.erase(_processOrder.begin());
     guard.broadcast();
 }
@@ -443,6 +444,7 @@ StoreOnlyFeedView::updateIndexAndDocumentStore(bool indexedFieldsInScope, Serial
         vespalib::nbostream os;
         prevDoc->serialize(os);
         Document::SP newDoc(new Document(*_repo, os));
+        WriteToken writeToken;
         if (useDocumentStore(serialNum)) {
             LOG(spam, "Original document :\n%s", newDoc->toXml("  ").c_str());
             LOG(spam, "Update\n%s", upd.toXml().c_str());
@@ -451,9 +453,8 @@ StoreOnlyFeedView::updateIndexAndDocumentStore(bool indexedFieldsInScope, Serial
             if (shouldTrace(onWriteDone, 1)) {
                 onWriteDone->getToken()->trace(1, "Then we update summary.");
             }
-            WriteToken writeToken = writeTokenProducer.getWriteToken();
+            writeToken = std::move(writeTokenProducer.getWriteToken());
             _summaryAdapter->put(serialNum, *newDoc, lid);
-            releaseSerialNum();
         }
         if (indexedFieldsInScope) {
             updateIndexedFields(serialNum, lid, newDoc, immediateCommit, onWriteDone);
