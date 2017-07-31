@@ -50,6 +50,10 @@ public class YamasSpecReport {
         return this.timeStamp;
     }
 
+    public void setTimeStamp(long timeStamp) {
+        this.timeStamp = timeStamp;
+    }
+
     private void setRouting() {
         JsonObjectWrapper<String[]> wrap = new JsonObjectWrapper<>("namespace", new String[]{"Vespa"});
         routing = new JsonObjectWrapper<>("yamas", wrap);

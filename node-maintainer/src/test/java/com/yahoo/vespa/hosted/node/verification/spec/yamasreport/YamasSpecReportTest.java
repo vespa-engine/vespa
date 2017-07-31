@@ -1,6 +1,7 @@
 package com.yahoo.vespa.hosted.node.verification.spec.yamasreport;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.vespa.hosted.node.verification.mock.MockCommandExecutor;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 import org.junit.Before;
 import org.junit.Test;
@@ -12,8 +13,10 @@ import static org.junit.Assert.assertEquals;
  */
 public class YamasSpecReportTest {
 
-    SpecReportDimensions specReportDimensions;
-    SpecReportMetrics specReportMetrics;
+    private SpecReportDimensions specReportDimensions;
+    private SpecReportMetrics specReportMetrics;
+    private static final String YAMAS_REPORT_PATH = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/yamasJSON";
+
 
     @Before
     public void setup() {
@@ -45,8 +48,9 @@ public class YamasSpecReportTest {
         yamasSpecReport.setMetrics(specReportMetrics);
         yamasSpecReport.setDimensions(specReportDimensions);
         yamasSpecReport.setMetrics(specReportMetrics);
-        long time = yamasSpecReport.getTimeStamp();
-        String expectedJson = "{\"timeStamp\":" + time + ",\"dimensions\":{\"memoryMatch\":true,\"cpuCoresMatch\":true,\"diskTypeMatch\":true,\"netInterfaceSpeedMatch\":true,\"diskAvailableMatch\":true,\"ipv4Match\":true,\"ipv6Match\":true},\"metrics\":{\"match\":true,\"expectedMemoryAvailable\":123.0,\"actualMemoryAvailable\":123.0,\"expectedDiskType\":\"FAST\",\"actualDiskType\":\"FAST\",\"expectedDiskSpaceAvailable\":500.0,\"actualDiskSpaceAvailable\":500.0,\"expectedInterfaceSpeed\":100.0,\"actualInterfaceSpeed\":100.0,\"expectedcpuCores\":4,\"actualcpuCores\":4},\"routing\":{\"yamas\":{\"namespace\":[\"Vespa\"]}}}";
+        long timeStamp = 1501504035;
+        yamasSpecReport.setTimeStamp(timeStamp);
+        String expectedJson = MockCommandExecutor.readFromFile(YAMAS_REPORT_PATH).get(0);
         ObjectMapper om = new ObjectMapper();
         String json = om.writeValueAsString(yamasSpecReport);
         assertEquals(expectedJson, json);
