@@ -53,7 +53,7 @@ Java modules can be built on any environment having Java and Maven:
 
 
 ## Run Vespa on a local machine
-A basic, single-node install if found in the 
+A basic, single-node install is found in the 
 [quick start](https://git.corp.yahoo.com/pages/vespa/documentation/documentation/vespa-quick-start.html).
 For multi-node and using Node Admin, read [node-admin/README.md](node-admin/README.md).
 
