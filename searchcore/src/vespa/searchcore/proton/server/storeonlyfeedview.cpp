@@ -215,6 +215,7 @@ StoreOnlyFeedView::internalPut(FeedToken::UP token, const PutOperation &putOp)
     assert(putOp.notMovingLidInSameSubDb());
 
     const SerialNum serialNum = putOp.getSerialNum();
+    WriteTokenProducer writeTokenProducer(_writeTokenQ.getTokenProducer(serialNum));
     const Document::SP &doc = putOp.getDocument();
     const DocumentId &docId = doc->getId();
     VLOG(getDebugLevel(putOp.getNewOrPrevLid(_params._subDbId), doc->getId()),
@@ -230,6 +231,8 @@ StoreOnlyFeedView::internalPut(FeedToken::UP token, const PutOperation &putOp)
     considerEarlyAck(token, putOp.getType());
 
     bool docAlreadyExists = putOp.getValidPrevDbdId(_params._subDbId);
+
+    WriteToken writeToken = writeTokenProducer.getWriteToken();
     if (putOp.getValidDbdId(_params._subDbId)) {
         _summaryAdapter->put(serialNum, *doc, putOp.getLid());
         bool immediateCommit = _commitTimeTracker.needCommit();
@@ -512,8 +515,8 @@ StoreOnlyFeedView::internalRemove(FeedToken::UP token, const RemoveOperation &rm
 {
     assert(rmOp.getValidNewOrPrevDbdId());
     assert(rmOp.notMovingLidInSameSubDb());
-
     const SerialNum serialNum = rmOp.getSerialNum();
+    WriteTokenProducer writeTokenProducer(_writeTokenQ.getTokenProducer(serialNum));
     const DocumentId &docId = rmOp.getDocumentId();
     VLOG(getDebugLevel(rmOp.getNewOrPrevLid(_params._subDbId), docId),
          "database(%s): internalRemove: serialNum(%" PRIu64 "), docId(%s), "
@@ -523,6 +526,8 @@ StoreOnlyFeedView::internalRemove(FeedToken::UP token, const RemoveOperation &rm
 
     adjustMetaStore(rmOp, docId);
     considerEarlyAck(token, rmOp.getType());
+    WriteToken writeToken = writeTokenProducer.getWriteToken();
+
     if (rmOp.getValidDbdId(_params._subDbId)) {
         Document::UP clearDoc(new Document(*_docType, docId));
         clearDoc->setRepo(*_repo);
@@ -708,6 +713,7 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remo
                                    bool immediateCommit)
 {
     const SerialNum serialNum = op.getSerialNum();
+    WriteTokenProducer writeTokenProducer(_writeTokenQ.getTokenProducer(serialNum));
     const LidVectorContext::SP &ctx = op.getLidsToRemove(_params._subDbId);
     if (!ctx.get()) {
         if (useDocumentMetaStore(serialNum)) {
@@ -728,6 +734,7 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remo
         explicitReuseLids = _lidReuseDelayer.delayReuse(lidsToRemove);
     }
     std::shared_ptr<search::IDestructorCallback> onWriteDone;
+    WriteToken writeToken = writeTokenProducer.getWriteToken();
     if (remove_index_and_attributes) {
         if (explicitReuseLids) {
             onWriteDone = std::make_shared<search::ScheduleTaskCallback>(
@@ -803,6 +810,8 @@ StoreOnlyFeedView::handleMove(const MoveOperation &moveOp, IDestructorCallback::
     assert(moveOp.movingLidIfInSameSubDb());
 
     const SerialNum serialNum = moveOp.getSerialNum();
+    WriteTokenProducer writeTokenProducer(_writeTokenQ.getTokenProducer(serialNum));
+
     const Document::SP &doc = moveOp.getDocument();
     const DocumentId &docId = doc->getId();
     VLOG(getDebugLevel(moveOp.getNewOrPrevLid(_params._subDbId), doc->getId()),
@@ -815,6 +824,7 @@ StoreOnlyFeedView::handleMove(const MoveOperation &moveOp, IDestructorCallback::
     uint32_t oldDocIdLimit = _metaStore.getCommittedDocIdLimit();
     adjustMetaStore(moveOp, docId);
     bool docAlreadyExists = moveOp.getValidPrevDbdId(_params._subDbId);
+    WriteToken writeToken = writeTokenProducer.getWriteToken();
     if (moveOp.getValidDbdId(_params._subDbId)) {
         _summaryAdapter->put(serialNum, *doc, moveOp.getLid());
         bool immediateCommit = _commitTimeTracker.needCommit();
@@ -834,11 +844,13 @@ StoreOnlyFeedView::handleMove(const MoveOperation &moveOp, IDestructorCallback::
 void
 StoreOnlyFeedView::heartBeat(search::SerialNum serialNum)
 {
+    WriteTokenProducer writeTokenProducer(_writeTokenQ.getTokenProducer(serialNum));
     assert(_writeService.master().isCurrentThread());
     _metaStore.removeAllOldGenerations();
     if (serialNum > _metaStore.getLastSerialNum()) {
         _metaStore.commit(serialNum, serialNum);
     }
+    WriteToken writeToken = writeTokenProducer.getWriteToken();
     _summaryAdapter->heartBeat(serialNum);
     heartBeatIndexedFields(serialNum);
     heartBeatAttributes(serialNum);
