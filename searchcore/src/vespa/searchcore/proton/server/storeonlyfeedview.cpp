@@ -360,16 +360,22 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
     auto onWriteDone = createUpdateDoneContext(token, updOp.getType(), _params._metrics, updOp.getUpdate());
     updateAttributes(serialNum, lid, upd, immediateCommit, onWriteDone);
 
-    WriteTokenProducer writeTokenProducer(this, serialNum);
-    _writeService
-            .attributeFieldWriter()
-            .execute(serialNum,
-                     [feedToken = std::move(token), upd = updOp.getUpdate(), serialNum, lid, immediateCommit,
-                             onWriteDone, writeTokenProducer = std::move(writeTokenProducer), this]() mutable
-                     {
-                         applyUpdateToDocumentsAndIndex(std::move(feedToken), serialNum, lid, upd,
-                                                        immediateCommit, onWriteDone, std::move(writeTokenProducer));
-                     });
+    if (_commitTimeTracker.hasVisibilityDelay() || ! token) {
+        WriteTokenProducer writeTokenProducer;
+        applyUpdateToDocumentsAndIndex(std::move(token), serialNum, lid, updOp.getUpdate(),
+                                       immediateCommit, onWriteDone, std::move(writeTokenProducer));
+    } else {
+        WriteTokenProducer writeTokenProducer(this, serialNum);
+        _writeService
+                .attributeFieldWriter()
+                .execute(serialNum,
+                         [feedToken = std::move(token), upd = updOp.getUpdate(), serialNum, lid, immediateCommit,
+                                 onWriteDone, writeTokenProducer = std::move(writeTokenProducer), this]() mutable {
+                             applyUpdateToDocumentsAndIndex(std::move(feedToken), serialNum, lid, upd,
+                                                            immediateCommit, onWriteDone,
+                                                            std::move(writeTokenProducer));
+                         });
+    }
 }
 
 void StoreOnlyFeedView::addSerialNumToProcess(SerialNum serial) {
