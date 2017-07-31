@@ -345,8 +345,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
     considerEarlyAck(token, updOp.getType());
 
     bool immediateCommit = _commitTimeTracker.needCommit();
-    auto onWriteDone = createUpdateDoneContext(token, updOp.getType(),
-            _params._metrics, updOp.getUpdate());
+    auto onWriteDone = createUpdateDoneContext(token, updOp.getType(), _params._metrics, updOp.getUpdate());
     updateAttributes(serialNum, lid, upd, immediateCommit, onWriteDone);
     UpdateScope updateScope(getUpdateScope(upd));
     /*
@@ -366,8 +365,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
                                     onWriteDone);
     }
     if (!updateScope._indexedFields && onWriteDone) {
-        if (onWriteDone->shouldTrace(1))
-        {
+        if (onWriteDone->shouldTrace(1)) {
             token->trace(1, "Partial update applied.");
         }
     }
@@ -396,11 +394,9 @@ StoreOnlyFeedView::updateIndexAndDocumentStore(bool indexedFieldsInScope,
         return;
     }
     if (upd.getId() == prevDoc->getId()) {
-        if (shouldTrace(onWriteDone, 1))
-        {
+        if (shouldTrace(onWriteDone, 1)) {
             FeedToken *token = onWriteDone->getToken();
-            token->trace(1, "The update looks like : " +
-                         upd.toString(token->shouldTrace(2)));
+            token->trace(1, "The update looks like : " + upd.toString(token->shouldTrace(2)));
         }
         vespalib::nbostream os;
         prevDoc->serialize(os);

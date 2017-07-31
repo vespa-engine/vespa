@@ -133,9 +133,7 @@ protected:
     documentmetastore::ILidReuseDelayer     &_lidReuseDelayer;
     CommitTimeTracker                       &_commitTimeTracker;
 
-    bool
-    useDocumentStore(SerialNum replaySerialNum) const
-    {
+    bool useDocumentStore(SerialNum replaySerialNum) const {
         return replaySerialNum > _params._flushedDocumentStoreSerialNum;
     }
 
@@ -146,45 +144,20 @@ private:
         return replaySerialNum > _params._flushedDocumentMetaStoreSerialNum;
     }
 
-    void
-    adjustMetaStore(const DocumentOperation &op,
-                    const document::DocumentId &docId);
+    void adjustMetaStore(const DocumentOperation &op, const document::DocumentId &docId);
+    void internalPut(FeedTokenUP token, const PutOperation &putOp);
+    void internalUpdate(FeedTokenUP token, const UpdateOperation &updOp);
 
-    void
-    internalPut(FeedTokenUP token,
-                const PutOperation &putOp);
-
-    void
-    internalUpdate(FeedTokenUP token,
-                   const UpdateOperation &updOp);
-
-    void
-    updateIndexAndDocumentStore(bool indexedFieldsInScope,
-                                SerialNum serialNum,
-                                search::DocumentIdT lid,
-                                const document::DocumentUpdate &upd,
-                                bool immediateCommit,
-                                OnOperationDoneType onWriteDone);
-
-    bool
-    lookupDocId(const document::DocumentId &gid,
-                search::DocumentIdT & lid) const;
-
-    void
-    internalRemove(FeedTokenUP token,
-                   const RemoveOperation &rmOp);
+    bool lookupDocId(const document::DocumentId &gid, search::DocumentIdT & lid) const;
+    void internalRemove(FeedTokenUP token, const RemoveOperation &rmOp);
 
     // Removes documents from meta store and document store.
     // returns the number of documents removed.
-    size_t removeDocuments(const RemoveDocumentsOperation &op,
-                           bool remove_index_and_attribute_fields,
+    size_t removeDocuments(const RemoveDocumentsOperation &op, bool remove_index_and_attribute_fields,
                            bool immediateCommit);
 
-    void internalRemove(FeedTokenUP token,
-                        SerialNum serialNum,
-                        search::DocumentIdT lid,
-                        FeedOperation::Type opType,
-                        std::shared_ptr<search::IDestructorCallback> moveDoneCtx);
+    void internalRemove(FeedTokenUP token, SerialNum serialNum, search::DocumentIdT lid,
+                        FeedOperation::Type opType, std::shared_ptr<search::IDestructorCallback> moveDoneCtx);
 
     // Ack token early if visibility delay is nonzero
     void considerEarlyAck(FeedTokenUP &token, FeedOperation::Type opType);
@@ -202,106 +175,52 @@ protected:
     heartBeatAttributes(SerialNum serialNum);
 
 private:
-    virtual void
-    putAttributes(SerialNum serialNum,
-                  search::DocumentIdT lid,
-                  const document::Document &doc,
-                  bool immediateCommit,
-                  OnPutDoneType onWriteDone);
+    virtual void putAttributes(SerialNum serialNum, search::DocumentIdT lid, const document::Document &doc,
+                               bool immediateCommit, OnPutDoneType onWriteDone);
 
-    virtual void
-    putIndexedFields(SerialNum serialNum,
-                     search::DocumentIdT lid,
-                     const document::Document::SP &newDoc,
-                     bool immediateCommit,
-                     OnOperationDoneType onWriteDone);
+    virtual void putIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const document::Document::SP &newDoc,
+                                  bool immediateCommit, OnOperationDoneType onWriteDone);
 
-    virtual UpdateScope
-    getUpdateScope(const document::DocumentUpdate &upd);
+    virtual UpdateScope getUpdateScope(const document::DocumentUpdate &upd);
 
-    virtual void
-    updateAttributes(SerialNum serialNum,
-                     search::DocumentIdT lid,
-                     const document::DocumentUpdate &upd,
-                     bool immediateCommit,
-                     OnOperationDoneType onWriteDone);
+    virtual void updateAttributes(SerialNum serialNum, search::DocumentIdT lid, const document::DocumentUpdate &upd,
+                                  bool immediateCommit, OnOperationDoneType onWriteDone);
 
-    virtual void
-    updateIndexedFields(SerialNum serialNum,
-                        search::DocumentIdT lid,
-                        const document::Document::SP &newDoc,
-                        bool immediateCommit,
-                        OnOperationDoneType onWriteDone);
+    virtual void updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const document::Document::SP &newDoc,
+                                     bool immediateCommit, OnOperationDoneType onWriteDone);
 
-    virtual void
-    removeAttributes(SerialNum serialNum,
-                     search::DocumentIdT lid,
-                     bool immediateCommit,
-                     OnRemoveDoneType onWriteDone);
+    virtual void removeAttributes(SerialNum serialNum, search::DocumentIdT lid,
+                                  bool immediateCommit, OnRemoveDoneType onWriteDone);
 
-    virtual void
-    removeIndexedFields(SerialNum serialNum,
-                        search::DocumentIdT lid,
-                        bool immediateCommit,
-                        OnRemoveDoneType onWriteDone);
+    virtual void removeIndexedFields(SerialNum serialNum, search::DocumentIdT lid,
+                                     bool immediateCommit, OnRemoveDoneType onWriteDone);
 
 protected:
-    virtual void
-    removeAttributes(SerialNum serialNum,
-                     const LidVector &lidsToRemove,
-                     bool immediateCommit,
-                     OnWriteDoneType onWriteDone);
+    virtual void removeAttributes(SerialNum serialNum, const LidVector &lidsToRemove,
+                                  bool immediateCommit, OnWriteDoneType onWriteDone);
 
-    virtual void
-    removeIndexedFields(SerialNum serialNum,
-                        const LidVector &lidsToRemove,
-                        bool immediateCommit,
-                        OnWriteDoneType onWriteDone);
+    virtual void removeIndexedFields(SerialNum serialNum, const LidVector &lidsToRemove,
+                                     bool immediateCommit, OnWriteDoneType onWriteDone);
 
 public:
-    StoreOnlyFeedView(const Context &ctx,
-                      const PersistentParams &params);
+    StoreOnlyFeedView(const Context &ctx, const PersistentParams &params);
 
     virtual ~StoreOnlyFeedView() {}
 
-    const ISummaryAdapter::SP &
-    getSummaryAdapter() const { return _summaryAdapter; }
-
-    const search::index::Schema::SP &
-    getSchema() const { return _schema; }
-
-    const PersistentParams &
-    getPersistentParams() const { return _params; }
-
-    const search::IDocumentStore &
-    getDocumentStore() const { return _summaryAdapter->getDocumentStore(); }
-
-    const IDocumentMetaStoreContext::SP &
-    getDocumentMetaStore() const { return _documentMetaStoreContext; }
-
-    searchcorespi::index::IThreadingService &getWriteService() {
-        return _writeService;
-    }
-
-    documentmetastore::ILidReuseDelayer &
-    getLidReuseDelayer()
-    {
-        return _lidReuseDelayer;
-    }
-
+    const ISummaryAdapter::SP &getSummaryAdapter() const { return _summaryAdapter; }
+    const search::index::Schema::SP &getSchema() const { return _schema; }
+    const PersistentParams &getPersistentParams() const { return _params; }
+    const search::IDocumentStore &getDocumentStore() const { return _summaryAdapter->getDocumentStore(); }
+    const IDocumentMetaStoreContext::SP &getDocumentMetaStore() const { return _documentMetaStoreContext; }
+    searchcorespi::index::IThreadingService &getWriteService() { return _writeService; }
+    documentmetastore::ILidReuseDelayer &getLidReuseDelayer() { return _lidReuseDelayer; }
     CommitTimeTracker &getCommitTimeTracker() { return _commitTimeTracker; }
 
     /**
      * Implements IFeedView.
      */
-    virtual const document::DocumentTypeRepo::SP &
-    getDocumentTypeRepo() const override { return _repo; }
-
-    /**
-     * Implements IFeedView.
-     */
-    virtual const ISimpleDocumentMetaStore *
-    getDocumentMetaStorePtr() const override;
+    virtual const document::DocumentTypeRepo::SP &getDocumentTypeRepo() const override { return _repo; }
+    virtual const ISimpleDocumentMetaStore *getDocumentMetaStorePtr() const override;
 
     /**
      * Similar to IPersistenceHandler functions.
