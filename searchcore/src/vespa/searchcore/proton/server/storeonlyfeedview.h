@@ -181,13 +181,7 @@ private:
         {
             rhs._feedView = nullptr;
         }
-        WriteToken & operator = (WriteToken && rhs) noexcept {
-            cleanup();
-            _feedView = rhs._feedView;
-            _serialNum = rhs._serialNum;
-            rhs._feedView = nullptr;
-            return *this;
-        }
+
         WriteToken(const WriteToken &) = delete;
         WriteToken & operator =(const WriteToken &) = delete;
 

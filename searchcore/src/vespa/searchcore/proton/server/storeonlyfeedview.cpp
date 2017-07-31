@@ -444,7 +444,6 @@ StoreOnlyFeedView::updateIndexAndDocumentStore(bool indexedFieldsInScope, Serial
         vespalib::nbostream os;
         prevDoc->serialize(os);
         Document::SP newDoc(new Document(*_repo, os));
-        WriteToken writeToken;
         if (useDocumentStore(serialNum)) {
             LOG(spam, "Original document :\n%s", newDoc->toXml("  ").c_str());
             LOG(spam, "Update\n%s", upd.toXml().c_str());
@@ -453,11 +452,16 @@ StoreOnlyFeedView::updateIndexAndDocumentStore(bool indexedFieldsInScope, Serial
             if (shouldTrace(onWriteDone, 1)) {
                 onWriteDone->getToken()->trace(1, "Then we update summary.");
             }
-            writeToken = std::move(writeTokenProducer.getWriteToken());
+            WriteToken writeToken = writeTokenProducer.getWriteToken();
             _summaryAdapter->put(serialNum, *newDoc, lid);
-        }
-        if (indexedFieldsInScope) {
-            updateIndexedFields(serialNum, lid, newDoc, immediateCommit, onWriteDone);
+            if (indexedFieldsInScope) {
+                updateIndexedFields(serialNum, lid, newDoc, immediateCommit, onWriteDone);
+            }
+        } else {
+            WriteToken writeToken = writeTokenProducer.getWriteToken();
+            if (indexedFieldsInScope) {
+                updateIndexedFields(serialNum, lid, newDoc, immediateCommit, onWriteDone);
+            }
         }
     } else {
         // Replaying, document removed and lid reused before summary
