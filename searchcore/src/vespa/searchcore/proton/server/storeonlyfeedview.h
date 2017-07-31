@@ -79,8 +79,7 @@ public:
               _writeService(writeService),
               _lidReuseDelayer(lidReuseDelayer),
               _commitTimeTracker(commitTimeTracker)
-        {
-        }
+        {}
     };
 
     struct PersistentParams
@@ -104,8 +103,7 @@ public:
               _metrics(metrics),
               _subDbId(subDbId),
               _subDbType(subDbType)
-        {
-        }
+        {}
     };
 
 protected:
@@ -117,7 +115,9 @@ protected:
         UpdateScope()
             : _indexedFields(false),
               _nonAttributeFields(false)
-        {
+        {}
+        bool hasIndexOrNonAttributeFields() const {
+            return _indexedFields || _nonAttributeFields;
         }
     };
 
@@ -148,13 +148,6 @@ private:
     void adjustMetaStore(const DocumentOperation &op, const document::DocumentId &docId);
     void internalPut(FeedTokenUP token, const PutOperation &putOp);
     void internalUpdate(FeedTokenUP token, const UpdateOperation &updOp);
-    void updateIndexAndDocumentStore(bool indexedFieldsInScope, SerialNum serialNum, search::DocumentIdT lid,
-                                     const document::DocumentUpdate &upd, bool immediateCommit,
-                                     OnOperationDoneType onWriteDone);
-
-    void applyUpdateToDocumentsAndIndex(FeedTokenUP token, SerialNum serialNum, search::DocumentIdT lid,
-                                        document::DocumentUpdate::SP upd, bool immediateCommit,
-                                        OnOperationDoneType onWriteDone);
 
     bool lookupDocId(const document::DocumentId &gid, search::DocumentIdT & lid) const;
     void internalRemove(FeedTokenUP token, const RemoveOperation &rmOp);
@@ -172,9 +165,73 @@ private:
 
     virtual void notifyGidToLidChange(const document::GlobalId &gid, uint32_t lid);
 
+    class WriteToken {
+    public:
+        WriteToken(StoreOnlyFeedView * feedView, SerialNum serialNum)
+            : _feedView(feedView), _serialNum(serialNum)
+        {
+            if (_feedView) {
+                _feedView->waitForSerialNum(_serialNum);
+            }
+        }
+
+        WriteToken(WriteToken && rhs) noexcept
+                : _feedView(rhs._feedView), _serialNum(rhs._serialNum)
+        {
+            rhs._feedView = nullptr;
+        }
+        WriteToken(const WriteToken &) = delete;
+        WriteToken & operator =(const WriteToken &) = delete;
+
+        ~WriteToken() {
+            if (_feedView) {
+                _feedView->releaseSerialNum();
+            }
+        }
+    private:
+        StoreOnlyFeedView * _feedView;
+        SerialNum _serialNum;
+    };
+    class WriteTokenProducer {
+    public:
+        WriteTokenProducer() : WriteTokenProducer(nullptr, -1) { }
+        WriteTokenProducer(StoreOnlyFeedView * feedView, SerialNum serialNum)
+            : _feedView(feedView), _serialNum(serialNum)
+        {
+            if (_feedView) {
+                _feedView->addSerialNumToProcess(_serialNum);
+            }
+        }
+        WriteTokenProducer(WriteTokenProducer && rhs) noexcept
+            : _feedView(rhs._feedView), _serialNum(rhs._serialNum)
+        {
+            rhs._feedView = nullptr;
+        }
+        WriteTokenProducer(const WriteTokenProducer &) = delete;
+        WriteTokenProducer & operator = (const WriteTokenProducer &) = delete;
+        ~WriteTokenProducer() {
+            getWriteToken();
+        }
+        WriteToken getWriteToken() {
+            StoreOnlyFeedView * f = _feedView;
+            _feedView = nullptr;
+            return WriteToken(f, _serialNum);
+        }
+    private:
+        StoreOnlyFeedView  *_feedView;
+        SerialNum           _serialNum;
+    };
     void addSerialNumToProcess(SerialNum serial);
     void waitForSerialNum(SerialNum serial);
     void releaseSerialNum();
+
+    void updateIndexAndDocumentStore(bool indexedFieldsInScope, SerialNum serialNum, search::DocumentIdT lid,
+                                     const document::DocumentUpdate &upd, bool immediateCommit,
+                                     OnOperationDoneType onWriteDone, WriteTokenProducer writeTokenProducer);
+
+    void applyUpdateToDocumentsAndIndex(FeedTokenUP token, SerialNum serialNum, search::DocumentIdT lid,
+                                        document::DocumentUpdate::SP upd, bool immediateCommit,
+                                        OnOperationDoneType onWriteDone, WriteTokenProducer writeTokenProducer);
 protected:
     virtual void internalDeleteBucket(const DeleteBucketOperation &delOp);
     virtual void heartBeatIndexedFields(SerialNum serialNum);
