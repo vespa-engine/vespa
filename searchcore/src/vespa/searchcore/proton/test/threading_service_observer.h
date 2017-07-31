@@ -15,6 +15,7 @@ private:
     searchcorespi::index::IThreadingService &_service;
     ThreadServiceObserver _master;
     ThreadServiceObserver _index;
+    ThreadServiceObserver _summary;
     search::SequencedTaskExecutorObserver _indexFieldInverter;
     search::SequencedTaskExecutorObserver _indexFieldWriter;
     search::SequencedTaskExecutorObserver _attributeFieldWriter;
@@ -24,6 +25,7 @@ public:
         : _service(service),
           _master(_service.master()),
           _index(service.index()),
+          _summary(service.summary()),
           _indexFieldInverter(_service.indexFieldInverter()),
           _indexFieldWriter(_service.indexFieldWriter()),
           _attributeFieldWriter(_service.attributeFieldWriter())
@@ -36,20 +38,17 @@ public:
     const ThreadServiceObserver &indexObserver() const {
         return _index;
     }
-    const search::SequencedTaskExecutorObserver &indexFieldInverterObserver()
-        const
-    {
+    const ThreadServiceObserver &summaryObserver() const {
+        return _index;
+    }
+    const search::SequencedTaskExecutorObserver &indexFieldInverterObserver() const {
         return _indexFieldInverter;
     }
-    const search::SequencedTaskExecutorObserver &indexFieldWriterObserver()
-        const
-    {
+    const search::SequencedTaskExecutorObserver &indexFieldWriterObserver() const {
         return _indexFieldWriter;
     }
 
-    const search::SequencedTaskExecutorObserver &attributeFieldWriterObserver()
-        const
-    {
+    const search::SequencedTaskExecutorObserver &attributeFieldWriterObserver() const {
         return _attributeFieldWriter;
     }
 
@@ -68,6 +67,9 @@ public:
     }
     virtual searchcorespi::index::IThreadService &index() override {
         return _index;
+    }
+    virtual searchcorespi::index::IThreadService &summary() override {
+        return _summary;
     }
     virtual search::ISequencedTaskExecutor &indexFieldInverter() override {
         return _indexFieldInverter;

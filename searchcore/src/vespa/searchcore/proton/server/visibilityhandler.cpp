@@ -47,6 +47,7 @@ void VisibilityHandler::commitAndWait()
     // Always sync attribute writer threads so attribute vectors are
     // properly updated when document retriver rebuilds document
     _writeService.attributeFieldWriter().sync();
+    _writeService.summary().sync();
 }
 
 bool VisibilityHandler::startCommit(const LockGuard & unused)

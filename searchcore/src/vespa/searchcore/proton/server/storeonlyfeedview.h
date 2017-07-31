@@ -17,6 +17,7 @@
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/searchlib/query/base.h>
 #include <vespa/vespalib/util/threadstackexecutorbase.h>
+#include <future>
 
 namespace search { class IDestructorCallback; }
 
@@ -54,6 +55,8 @@ public:
     using OnPutDoneType = const std::shared_ptr<PutDoneContext> &;
     using OnRemoveDoneType = const std::shared_ptr<RemoveDoneContext> &;
     using FeedTokenUP = std::unique_ptr<FeedToken>;
+    using FutureDoc = std::shared_future<document::Document::UP>;
+    using PromisedDoc = std::promise<document::Document::UP>;
 
     struct Context
     {
@@ -121,26 +124,34 @@ protected:
         }
     };
 
-protected:
+private:
     const ISummaryAdapter::SP                _summaryAdapter;
-    const search::index::Schema::SP          _schema;
     const IDocumentMetaStoreContext::SP      _documentMetaStoreContext;
     const document::DocumentTypeRepo::SP     _repo;
-    searchcorespi::index::IThreadingService &_writeService;
-    PersistentParams                         _params;
-    IDocumentMetaStore                      &_metaStore;
     const document::DocumentType            *_docType;
     documentmetastore::ILidReuseDelayer     &_lidReuseDelayer;
     CommitTimeTracker                       &_commitTimeTracker;
 
+protected:
+    const search::index::Schema::SP          _schema;
+    searchcorespi::index::IThreadingService &_writeService;
+    PersistentParams                         _params;
+    IDocumentMetaStore                      &_metaStore;
+
+private:
+    searchcorespi::index::IThreadService & summaryExecutor() {
+        return _writeService.summary();
+    }
+    void putSummary(SerialNum serialNum,  search::DocumentIdT lid, FutureDoc doc);
+    void putSummary(SerialNum serialNum,  search::DocumentIdT lid, document::Document::SP doc);
+    void removeSummary(SerialNum serialNum,  search::DocumentIdT lid);
+    void heartBeatSummary(SerialNum serialNum);
+
+
     bool useDocumentStore(SerialNum replaySerialNum) const {
         return replaySerialNum > _params._flushedDocumentStoreSerialNum;
     }
-
-private:
-    bool
-    useDocumentMetaStore(SerialNum replaySerialNum) const
-    {
+    bool useDocumentMetaStore(SerialNum replaySerialNum) const {
         return replaySerialNum > _params._flushedDocumentMetaStoreSerialNum;
     }
 
@@ -148,21 +159,8 @@ private:
     void internalPut(FeedTokenUP token, const PutOperation &putOp);
     void internalUpdate(FeedTokenUP token, const UpdateOperation &updOp);
 
-    void
-    updateIndexAndDocumentStore(bool indexedFieldsInScope,
-                                SerialNum serialNum,
-                                search::DocumentIdT lid,
-                                const document::DocumentUpdate &upd,
-                                bool immediateCommit,
-                                OnOperationDoneType onWriteDone);
-
-    bool
-    lookupDocId(const document::DocumentId &gid,
-                search::DocumentIdT & lid) const;
-
-    void
-    internalRemove(FeedTokenUP token,
-                   const RemoveOperation &rmOp);
+    bool lookupDocId(const document::DocumentId &gid, search::DocumentIdT & lid) const;
+    void internalRemove(FeedTokenUP token, const RemoveOperation &rmOp);
 
     // Removes documents from meta store and document store.
     // returns the number of documents removed.
@@ -177,15 +175,13 @@ private:
 
     virtual void notifyGidToLidChange(const document::GlobalId &gid, uint32_t lid);
 
+    void updateIndexAndDocumentStore(SerialNum serialNum, search::DocumentIdT lid, document::DocumentUpdate::SP upd,
+                                     OnOperationDoneType onWriteDone, PromisedDoc promisedDoc);
+
 protected:
-    virtual void
-    internalDeleteBucket(const DeleteBucketOperation &delOp);
-
-    virtual void
-    heartBeatIndexedFields(SerialNum serialNum);
-
-    virtual void
-    heartBeatAttributes(SerialNum serialNum);
+    virtual void internalDeleteBucket(const DeleteBucketOperation &delOp);
+    virtual void heartBeatIndexedFields(SerialNum serialNum);
+    virtual void heartBeatAttributes(SerialNum serialNum);
 
 private:
     virtual void putAttributes(SerialNum serialNum, search::DocumentIdT lid, const document::Document &doc,
@@ -200,6 +196,8 @@ private:
                                   bool immediateCommit, OnOperationDoneType onWriteDone);
 
     virtual void updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const document::Document::SP &newDoc,
+                                     bool immediateCommit, OnOperationDoneType onWriteDone);
+    virtual void updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, FutureDoc doc,
                                      bool immediateCommit, OnOperationDoneType onWriteDone);
 
     virtual void removeAttributes(SerialNum serialNum, search::DocumentIdT lid,

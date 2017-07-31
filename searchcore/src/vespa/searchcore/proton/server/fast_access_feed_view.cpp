@@ -116,6 +116,7 @@ void
 FastAccessFeedView::sync()
 {
     _writeService.attributeFieldWriter().sync();
+    _writeService.summary().sync();
 }
 
 
