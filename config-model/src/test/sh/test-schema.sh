@@ -31,3 +31,7 @@ $cmd
 cmd="java -jar $jar src/main/resources/schema/deployment.rng src/test/schema-test-files/deployment.xml"
 echo $cmd
 $cmd
+
+cmd="java -jar $jar src/main/resources/schema/validation-overrides.rng src/test/schema-test-files/validation-overrides.xml"
+echo $cmd
+$cmd

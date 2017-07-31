@@ -43,6 +43,7 @@ public class SchemaValidator {
     static final String servicesXmlSchemaName = "services.rnc";
     static final String hostsXmlSchemaName = "hosts.rnc";
     static final String deploymentXmlSchemaName = "deployment.rnc";
+    static final String validationOverridesXmlSchemaName = "validation-overrides.rnc";
     private final CustomErrorHandler errorHandler = new CustomErrorHandler();
     private final ValidationDriver driver;
     private DeployLogger deployLogger;

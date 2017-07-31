@@ -31,6 +31,12 @@ resources/schema/deployment.rng: resources/schema/deployment.rnc
 resources/schema/deployment.xsd: resources/schema/deployment.rng
 	java -jar $(trangjar) -I rng -O xsd resources/schema/deployment.rng resources/schema/deployment.xsd
 
+resources/schema/validation-overrides.rng: resources/schema/validation-overrides.rnc
+	java -jar $(trangjar) -I rnc -O rng resources/schema/validation-overrides.rnc resources/schema/validation-overrides.rng
+
+resources/schema/deployment.xsd: resources/schema/validation-overrides.rng
+	java -jar $(trangjar) -I rng -O xsd resources/schema/validation-overrides.rng resources/schema/validation-overrides.xsd
+
 clean:
 	rm -f resources/schema/*.rng
 	rm -f resources/schema/*.xsd
