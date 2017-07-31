@@ -124,7 +124,7 @@ public class StorageMaintainer {
         }
     }
 
-    public Optional<Long> updateIfNeededAndGetDiskMetricsFor(ContainerName containerName) {
+    public Optional<Long> getDiskUsageFor(ContainerName containerName) {
         Path containerDir = environment.pathInNodeAdminFromPathInNode(containerName, "/home/");
         try {
             return Optional.of(getDiscUsedInBytes(containerDir));
