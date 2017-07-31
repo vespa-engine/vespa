@@ -8,6 +8,7 @@
 #include "replaypacketdispatcher.h"
 #include "searchcontext.h"
 #include "tlcproxy.h"
+#include "writetokenq.h"
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/feeddebugger.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
@@ -54,6 +55,7 @@ public:
     using OnPutDoneType = const std::shared_ptr<PutDoneContext> &;
     using OnRemoveDoneType = const std::shared_ptr<RemoveDoneContext> &;
     using FeedTokenUP = std::unique_ptr<FeedToken>;
+    using WriteTokenProducer = WriteTokenQ::WriteTokenProducer;
 
     struct Context
     {
@@ -138,8 +140,7 @@ protected:
     }
 
 private:
-    vespalib::Monitor      _orderLock;
-    std::vector<SerialNum> _processOrder;
+    WriteTokenQ _writeTokenQ;
 
     bool useDocumentMetaStore(SerialNum replaySerialNum) const {
         return replaySerialNum > _params._flushedDocumentMetaStoreSerialNum;
@@ -164,72 +165,6 @@ private:
     void considerEarlyAck(FeedTokenUP &token, FeedOperation::Type opType);
 
     virtual void notifyGidToLidChange(const document::GlobalId &gid, uint32_t lid);
-
-    class WriteToken {
-    public:
-        WriteToken() : WriteToken(nullptr, -1) { }
-        WriteToken(StoreOnlyFeedView * feedView, SerialNum serialNum)
-            : _feedView(feedView), _serialNum(serialNum)
-        {
-            if (_feedView) {
-                _feedView->waitForSerialNum(_serialNum);
-            }
-        }
-
-        WriteToken(WriteToken && rhs) noexcept
-                : _feedView(rhs._feedView), _serialNum(rhs._serialNum)
-        {
-            rhs._feedView = nullptr;
-        }
-
-        WriteToken(const WriteToken &) = delete;
-        WriteToken & operator =(const WriteToken &) = delete;
-
-        ~WriteToken() {
-            cleanup();
-        }
-    private:
-        void cleanup() {
-            if (_feedView) {
-                _feedView->releaseSerialNum(_serialNum);
-                _feedView = nullptr;
-            }
-        }
-        StoreOnlyFeedView * _feedView;
-        SerialNum _serialNum;
-    };
-    class WriteTokenProducer {
-    public:
-        WriteTokenProducer() : WriteTokenProducer(nullptr, -1) { }
-        WriteTokenProducer(StoreOnlyFeedView * feedView, SerialNum serialNum)
-            : _feedView(feedView), _serialNum(serialNum)
-        {
-            if (_feedView) {
-                _feedView->addSerialNumToProcess(_serialNum);
-            }
-        }
-        WriteTokenProducer(WriteTokenProducer && rhs) noexcept
-            : _feedView(rhs._feedView), _serialNum(rhs._serialNum)
-        {
-            rhs._feedView = nullptr;
-        }
-        WriteTokenProducer(const WriteTokenProducer &) = delete;
-        WriteTokenProducer & operator = (const WriteTokenProducer &) = delete;
-        ~WriteTokenProducer() {
-            getWriteToken();
-        }
-        WriteToken getWriteToken() {
-            StoreOnlyFeedView * f = _feedView;
-            _feedView = nullptr;
-            return WriteToken(f, _serialNum);
-        }
-    private:
-        StoreOnlyFeedView  *_feedView;
-        SerialNum           _serialNum;
-    };
-    void addSerialNumToProcess(SerialNum serial);
-    void waitForSerialNum(SerialNum serial);
-    void releaseSerialNum(SerialNum serial);
 
     void updateIndexAndDocumentStore(bool indexedFieldsInScope, SerialNum serialNum, search::DocumentIdT lid,
                                      const document::DocumentUpdate &upd, bool immediateCommit,

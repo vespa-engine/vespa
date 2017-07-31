@@ -37,6 +37,8 @@ using vespalib::make_string;
 
 namespace proton {
 
+using WriteToken = WriteTokenQ::WriteToken;
+
 namespace {
 
 bool shouldTrace(StoreOnlyFeedView::OnOperationDoneType onWriteDone, uint32_t traceLevel) {
@@ -110,7 +112,8 @@ StoreOnlyFeedView::StoreOnlyFeedView(const Context &ctx, const PersistentParams 
       _metaStore(_documentMetaStoreContext->get()),
       _docType(NULL),
       _lidReuseDelayer(ctx._lidReuseDelayer),
-      _commitTimeTracker(ctx._commitTimeTracker)
+      _commitTimeTracker(ctx._commitTimeTracker),
+      _writeTokenQ()
 {
     _docType = _repo->getDocumentType(_params._docTypeName.getName());
 }
@@ -353,7 +356,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
         applyUpdateToDocumentsAndIndex(std::move(token), serialNum, lid, updOp.getUpdate(),
                                        immediateCommit, onWriteDone, std::move(writeTokenProducer));
     } else {
-        WriteTokenProducer writeTokenProducer(this, serialNum);
+        WriteTokenProducer writeTokenProducer(&_writeTokenQ, serialNum);
         _writeService
                 .attributeFieldWriter()
                 .execute(serialNum,
@@ -364,25 +367,6 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
                                                             std::move(writeTokenProducer));
                          });
     }
-}
-
-void StoreOnlyFeedView::addSerialNumToProcess(SerialNum serial) {
-    vespalib::MonitorGuard guard(_orderLock);
-    _processOrder.push_back(serial);
-}
-
-void StoreOnlyFeedView::waitForSerialNum(SerialNum serial) {
-    vespalib::MonitorGuard guard(_orderLock);
-    while (_processOrder.front() != serial) {
-        guard.wait();
-    }
-}
-
-void StoreOnlyFeedView::releaseSerialNum(SerialNum serial) {
-    vespalib::MonitorGuard guard(_orderLock);
-    assert(_processOrder.front() == serial);
-    _processOrder.erase(_processOrder.begin());
-    guard.broadcast();
 }
 
 void
