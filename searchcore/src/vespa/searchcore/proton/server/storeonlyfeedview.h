@@ -123,25 +123,25 @@ protected:
         }
     };
 
-protected:
+private:
     const ISummaryAdapter::SP                _summaryAdapter;
-    const search::index::Schema::SP          _schema;
     const IDocumentMetaStoreContext::SP      _documentMetaStoreContext;
     const document::DocumentTypeRepo::SP     _repo;
-    searchcorespi::index::IThreadingService &_writeService;
-    PersistentParams                         _params;
-    IDocumentMetaStore                      &_metaStore;
     const document::DocumentType            *_docType;
     documentmetastore::ILidReuseDelayer     &_lidReuseDelayer;
     CommitTimeTracker                       &_commitTimeTracker;
+    WriteTokenQ                              _writeTokenQ;
 
+protected:
+    const search::index::Schema::SP          _schema;
+    searchcorespi::index::IThreadingService &_writeService;
+    PersistentParams                         _params;
+    IDocumentMetaStore                      &_metaStore;
+
+private:
     bool useDocumentStore(SerialNum replaySerialNum) const {
         return replaySerialNum > _params._flushedDocumentStoreSerialNum;
     }
-
-private:
-    WriteTokenQ _writeTokenQ;
-
     bool useDocumentMetaStore(SerialNum replaySerialNum) const {
         return replaySerialNum > _params._flushedDocumentMetaStoreSerialNum;
     }

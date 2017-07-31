@@ -104,16 +104,16 @@ StoreOnlyFeedView::StoreOnlyFeedView(const Context &ctx, const PersistentParams 
     : IFeedView(),
       FeedDebugger(),
       _summaryAdapter(ctx._summaryAdapter),
-      _schema(ctx._schema),
       _documentMetaStoreContext(ctx._documentMetaStoreContext),
       _repo(ctx._repo),
-      _writeService(ctx._writeService),
-      _params(params),
-      _metaStore(_documentMetaStoreContext->get()),
       _docType(NULL),
       _lidReuseDelayer(ctx._lidReuseDelayer),
       _commitTimeTracker(ctx._commitTimeTracker),
-      _writeTokenQ()
+      _writeTokenQ(),
+      _schema(ctx._schema),
+      _writeService(ctx._writeService),
+      _params(params),
+      _metaStore(_documentMetaStoreContext->get())
 {
     _docType = _repo->getDocumentType(_params._docTypeName.getName());
 }
