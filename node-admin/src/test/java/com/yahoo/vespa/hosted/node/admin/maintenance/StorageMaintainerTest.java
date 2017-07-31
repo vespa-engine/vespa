@@ -48,7 +48,7 @@ public class StorageMaintainerTest {
         int writeSize = 10000;
         writeNBytesToFile(folder.newFile(), writeSize);
 
-        long usedBytes = storageMaintainer.getDiscUsedInBytes(folder.getRoot().toPath());
+        long usedBytes = storageMaintainer.getDiskUsedInBytes(folder.getRoot().toPath());
         if (usedBytes * 4 < writeSize || usedBytes > writeSize * 4)
             fail("Used bytes is " + usedBytes + ", but wrote " + writeSize + " bytes, not even close.");
     }

@@ -127,7 +127,7 @@ public class StorageMaintainer {
     public Optional<Long> getDiskUsageFor(ContainerName containerName) {
         Path containerDir = environment.pathInNodeAdminFromPathInNode(containerName, "/home/");
         try {
-            return Optional.of(getDiscUsedInBytes(containerDir));
+            return Optional.of(getDiskUsedInBytes(containerDir));
         } catch (Throwable e) {
             PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
             logger.error("Problems during disk usage calculations in " + containerDir.toAbsolutePath(), e);
@@ -136,7 +136,7 @@ public class StorageMaintainer {
     }
 
     // Public for testing
-    long getDiscUsedInBytes(Path path) throws IOException, InterruptedException {
+    long getDiskUsedInBytes(Path path) throws IOException, InterruptedException {
         final String[] command = {"du", "-xsk", path.toString()};
 
         Process duCommand = new ProcessBuilder().command(command).start();
