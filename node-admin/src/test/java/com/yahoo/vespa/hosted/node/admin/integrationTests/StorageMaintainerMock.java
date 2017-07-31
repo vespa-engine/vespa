@@ -24,7 +24,7 @@ public class StorageMaintainerMock extends StorageMaintainer {
     }
 
     @Override
-    public Optional<Long> updateIfNeededAndGetDiskMetricsFor(ContainerName containerName) {
+    public Optional<Long> getDiskUsageFor(ContainerName containerName) {
         return Optional.empty();
     }
 

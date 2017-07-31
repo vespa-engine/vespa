@@ -527,7 +527,7 @@ public class NodeAgentImpl implements NodeAgent {
         final long memoryTotalBytesCache = ((Number) ((Map) stats.getMemoryStats().get("stats")).get("cache")).longValue();
         final Optional<Long> diskTotalBytes = nodeSpec.minDiskAvailableGb.map(size -> (long) (size * bytesInGB));
         final Optional<Long> diskTotalBytesUsed = storageMaintainer.flatMap(maintainer -> maintainer
-                        .updateIfNeededAndGetDiskMetricsFor(containerName));
+                        .getDiskUsageFor(containerName));
 
         // CPU usage by a container as percentage of total host CPU, cpuPercentageOfHost, is given by dividing used
         // CPU time by the container with CPU time used by the entire system.
