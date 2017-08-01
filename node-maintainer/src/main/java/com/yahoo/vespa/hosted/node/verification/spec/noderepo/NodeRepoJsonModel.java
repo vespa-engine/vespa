@@ -48,6 +48,16 @@ public class NodeRepoJsonModel {
         return null;
     }
 
+    public String getIpv4Address() {
+        String ipv4Regex = "((1?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}(1?\\d\\d?|2[0-4]\\d|2\u200C\u200B5[0-5])";
+        for (String ipAddress : ipAddresses) {
+            if (ipAddress.matches(ipv4Regex)) {
+                return ipAddress;
+            }
+        }
+        return null;
+    }
+
     public double getMinDiskAvailableGb() {
         return minDiskAvailableGb;
     }

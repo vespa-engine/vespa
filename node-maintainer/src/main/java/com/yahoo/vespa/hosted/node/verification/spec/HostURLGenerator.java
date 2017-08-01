@@ -31,11 +31,19 @@ public class HostURLGenerator {
         return nodeInfoUrls;
     }
 
-    protected static URL buildNodeInfoURL(String configServerHostName, String nodeHostName) throws MalformedURLException {
-        if (configServerHostName.matches(PROTOCOL_REGEX)) {
-            return new URL(configServerHostName + NODE_HOSTNAME_PREFIX + nodeHostName);
-        }
-        return new URL(HTTP + configServerHostName + PORT_NUMBER + NODE_HOSTNAME_PREFIX + nodeHostName);
+    protected static String[] getConfigServerHostNames(CommandExecutor commandExecutor) throws IOException {
+        ArrayList<String> output = commandExecutor.executeCommand(CONFIG_SERVER_HOST_NAME_COMMAND);
+        if (output.size() != 1)
+            throw new IOException("Expected one line return from the command: " + CONFIG_SERVER_HOST_NAME_COMMAND);
+        String[] configServerHostNames = parseOutHostNames(output.get(0));
+        return configServerHostNames;
+    }
+
+    private static String[] parseOutHostNames(String output) throws IOException {
+        String[] outputSplit = output.trim().split(PARSE_OUT_HOSTNAMES_REGEX);
+        if (outputSplit.length != 2) throw new IOException("Expected config server host names to have index 1");
+        String[] configServerHostNames = outputSplit[1].split(PARSE_ALL_HOSTNAMES_REGEX);
+        return configServerHostNames;
     }
 
     protected static String generateNodeHostName(CommandExecutor commandExecutor) throws IOException {
@@ -51,19 +59,11 @@ public class HostURLGenerator {
         throw new IOException("Unexpected output from \"hostname\" command.");
     }
 
-    protected static String[] getConfigServerHostNames(CommandExecutor commandExecutor) throws IOException {
-        ArrayList<String> output = commandExecutor.executeCommand(CONFIG_SERVER_HOST_NAME_COMMAND);
-        if (output.size() != 1)
-            throw new IOException("Expected one line return from the command: " + CONFIG_SERVER_HOST_NAME_COMMAND);
-        String[] configServerHostNames = parseOutHostNames(output.get(0));
-        return configServerHostNames;
-    }
-
-    private static String[] parseOutHostNames(String output) throws IOException {
-        String[] outputSplit = output.trim().split(PARSE_OUT_HOSTNAMES_REGEX);
-        if (outputSplit.length != 2) throw new IOException("Expected config server hsot names to have index 1");
-        String[] configServerHostNames = outputSplit[1].split(PARSE_ALL_HOSTNAMES_REGEX);
-        return configServerHostNames;
+    protected static URL buildNodeInfoURL(String configServerHostName, String nodeHostName) throws MalformedURLException {
+        if (configServerHostName.matches(PROTOCOL_REGEX)) {
+            return new URL(configServerHostName + NODE_HOSTNAME_PREFIX + nodeHostName);
+        }
+        return new URL(HTTP + configServerHostName + PORT_NUMBER + NODE_HOSTNAME_PREFIX + nodeHostName);
     }
 
 }

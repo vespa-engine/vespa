@@ -49,13 +49,15 @@ public class NetRetriever implements HardwareRetriever {
         try {
             parseResults = findInterface();
             findInterfaceSpeed(parseResults);
-            testPingResponse(parseResults);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to retrieve net info", e);
         }
-        finally {
-            updateHardwareInfoWithNet(parseResults);
+        try {
+            testPingResponse(parseResults);
+        } catch (IOException e){
+            logger.log(Level.WARNING, "Failed to ping6", e);
         }
+        updateHardwareInfoWithNet(parseResults);
     }
 
     protected ArrayList<ParseResult> findInterface() throws IOException {
