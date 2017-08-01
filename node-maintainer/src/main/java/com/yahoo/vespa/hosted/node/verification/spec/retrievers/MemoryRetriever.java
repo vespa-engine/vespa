@@ -17,10 +17,10 @@ import java.util.logging.Logger;
 public class MemoryRetriever implements HardwareRetriever {
 
     private static final String MEMORY_INFO_COMMAND = "cat /proc/meminfo";
-    private static final String searchWord = "MemTotal";
-    private static final String regexSplit = ":\\s";
-    private static final int searchElementIndex = 0;
-    private static final int returnElementIndex = 1;
+    private static final String SEARCH_WORD = "MemTotal";
+    private static final String REGEX_SPLIT = ":\\s";
+    private static final int SEARCH_ELEMENT_INDEX = 0;
+    private static final int RETURN_ELEMENT_INDEX = 1;
     private static final Logger logger = Logger.getLogger(MemoryRetriever.class.getName());
     private final HardwareInfo hardwareInfo;
     private final CommandExecutor commandExecutor;
@@ -37,14 +37,17 @@ public class MemoryRetriever implements HardwareRetriever {
             ParseResult parseResult = parseMemInfoFile(commandOutput);
             updateMemoryInfo(parseResult);
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Failed to retrieve memory info", e);
+            logger.log(Level.WARNING, "Failed to retrieve memory info. ", e);
         }
     }
 
-    protected ParseResult parseMemInfoFile(ArrayList<String> commandOutput) {
-        ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(searchWord));
-        ParseInstructions parseInstructions = new ParseInstructions(searchElementIndex, returnElementIndex, regexSplit, searchWords);
+    protected ParseResult parseMemInfoFile(ArrayList<String> commandOutput) throws IOException {
+        ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD));
+        ParseInstructions parseInstructions = new ParseInstructions(SEARCH_ELEMENT_INDEX, RETURN_ELEMENT_INDEX, REGEX_SPLIT, searchWords);
         ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
+        if (!parseResult.getSearchWord().matches(SEARCH_WORD)){
+            throw new IOException("Failed to parse memory info file.");
+        }
         return parseResult;
     }
 

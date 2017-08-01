@@ -24,6 +24,10 @@ public class NodeRepoJsonModel {
     private String[] ipAddresses;
     @JsonProperty("additionalIpAddresses")
     private String[] additionalIpAddresses;
+    @JsonProperty
+    private String hostname;
+    @JsonProperty
+    private String environment;
 
     public String[] getAdditionalIpAddresses() {
         return additionalIpAddresses;
@@ -35,6 +39,7 @@ public class NodeRepoJsonModel {
         hardwareInfo.setMinDiskAvailableGb(this.minDiskAvailableGb);
         hardwareInfo.setMinCpuCores((int) Math.round(this.minCpuCores));
         hardwareInfo.setDiskType(this.fastDisk ? DiskType.FAST : DiskType.SLOW);
+        hardwareInfo.setIpv6Connection(getIpv6Address() != null);
         return hardwareInfo;
     }
 
@@ -42,6 +47,16 @@ public class NodeRepoJsonModel {
         String ipv6Regex = "^((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*::((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*|((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4})){7}$";
         for (String ipAddress : ipAddresses) {
             if (ipAddress.matches(ipv6Regex)) {
+                return ipAddress;
+            }
+        }
+        return null;
+    }
+
+    public String getIpv4Address() {
+        String ipv4Regex = "((1?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}(1?\\d\\d?|2[0-4]\\d|2\u200C\u200B5[0-5])";
+        for (String ipAddress : ipAddresses) {
+            if (ipAddress.matches(ipv4Regex)) {
                 return ipAddress;
             }
         }
@@ -66,6 +81,14 @@ public class NodeRepoJsonModel {
 
     public String[] getIpAddresses() {
         return ipAddresses;
+    }
+
+    public String getHostname() {
+        return hostname;
+    }
+
+    public String getEnvironment() {
+        return environment;
     }
 
 }

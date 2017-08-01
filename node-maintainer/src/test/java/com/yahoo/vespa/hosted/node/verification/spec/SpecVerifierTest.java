@@ -57,6 +57,13 @@ public class SpecVerifierTest {
     }
 
     @Test
+    public void verifySpec_environment_is_virtual_machine_should_return_true() throws Exception {
+        mockCommandExecutor.addCommand("echo notUsed " + URL_RESOURCE_PATH);
+        mockCommandExecutor.addCommand("echo nodeRepoVirtualMachine.json");
+        assertTrue(SpecVerifier.verifySpec(mockCommandExecutor));
+    }
+
+    @Test
     public void verifySpec_inequal_nodeRepoInfo_and_hardware_should_return_false() throws Exception {
         mockCommandExecutor.addCommand("echo notUsed " + URL_RESOURCE_PATH);
         mockCommandExecutor.addCommand("echo nodeRepo.json");
@@ -71,7 +78,7 @@ public class SpecVerifierTest {
     }
 
     @Test
-    public void makeYamasSpecReport_should_return_false_interface_speed() throws Exception {
+    public void makeYamasSpecReport_should_return_false_interface_speed_and_ipv6_connection() throws Exception {
         HardwareInfo actualHardware = new HardwareInfo();
         actualHardware.setMinCpuCores(24);
         actualHardware.setMinMainMemoryAvailableGb(24);
@@ -79,6 +86,7 @@ public class SpecVerifierTest {
         actualHardware.setMinDiskAvailableGb(500);
         actualHardware.setIpv4Interface(true);
         actualHardware.setIpv6Interface(false);
+        actualHardware.setIpv6Connection(true);
         actualHardware.setDiskType(HardwareInfo.DiskType.SLOW);
         ArrayList<URL> url = new ArrayList<>(Arrays.asList(new File(NODE_REPO_PATH).toURI().toURL()));
         NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(url);
@@ -98,7 +106,7 @@ public class SpecVerifierTest {
         NodeRepoJsonModel actualNodeRepoJsonModel = SpecVerifier.getNodeRepositoryJSON(mockCommandExecutor);
         double expectedMinCpuCores = 4D;
         double expectedMinMainMemoryAvailableGb = 4.04D;
-        double expectedMinDiskAvailableGb = 63D;
+        double expectedMinDiskAvailableGb = 1759.84;
         boolean expectedFastDisk = true;
         String expectedIpv6Address = "2001:4998:c:2940::111c";
         assertEquals(expectedIpv6Address, actualNodeRepoJsonModel.getIpv6Address());

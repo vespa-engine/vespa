@@ -3,7 +3,7 @@
   "id": "20004731.ostk.bm1.prod.ir2.yahoo.com",
   "state": "ready",
   "type": "tenant",
-  "hostname": "20004731.ostk.bm1.prod.ir2.yahoo.com",
+  "hostname": "",
   "openStackId": "77df66c5-3cbc-4905-b0e9-f790bddd13bf",
   "fastDisk": false,
   "flavor": "C-2B/24/500",

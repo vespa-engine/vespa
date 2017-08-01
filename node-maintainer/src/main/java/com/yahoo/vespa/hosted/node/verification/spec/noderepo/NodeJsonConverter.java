@@ -9,20 +9,26 @@ import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 public class NodeJsonConverter {
 
     private static void addStandardSpecifications(HardwareInfo nodeRepoHardwareInfo) {
-        nodeRepoHardwareInfo.setIpv4Interface(true);
         nodeRepoHardwareInfo.setInterfaceSpeedMbs(1000);
     }
 
-    protected static void setIpv6AddressConnectivity(NodeRepoJsonModel nodeRepoJsonModel, HardwareInfo nodeRepoHardwareInfo) {
+    protected static void setIpv6Interface(NodeRepoJsonModel nodeRepoJsonModel, HardwareInfo nodeRepoHardwareInfo) {
         if (nodeRepoJsonModel.getIpv6Address() != null) {
             nodeRepoHardwareInfo.setIpv6Interface(true);
+        }
+    }
+
+    protected static void setIpv4Interface(NodeRepoJsonModel nodeRepoJsonModel, HardwareInfo nodeRepoHardwareInfo) {
+        if (nodeRepoJsonModel.getIpv4Address() != null) {
+            nodeRepoHardwareInfo.setIpv4Interface(true);
         }
     }
 
     public static HardwareInfo convertJsonModelToHardwareInfo(NodeRepoJsonModel nodeRepoJsonModel) {
         HardwareInfo nodeRepoHardwareInfo = nodeRepoJsonModel.copyToHardwareInfo();
         addStandardSpecifications(nodeRepoHardwareInfo);
-        setIpv6AddressConnectivity(nodeRepoJsonModel, nodeRepoHardwareInfo);
+        setIpv4Interface(nodeRepoJsonModel, nodeRepoHardwareInfo);
+        setIpv6Interface(nodeRepoJsonModel, nodeRepoHardwareInfo);
         return nodeRepoHardwareInfo;
     }
 

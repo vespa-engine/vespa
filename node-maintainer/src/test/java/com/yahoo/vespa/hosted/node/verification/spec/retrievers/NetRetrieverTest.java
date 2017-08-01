@@ -12,6 +12,7 @@ import java.util.Arrays;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Created by sgrostad on 07/07/2017.
@@ -149,11 +150,15 @@ public class NetRetrieverTest {
     }
 
     @Test
-    public void parsePingResponse_invalid_ping_response_should_return_invalid_ParseResult() throws IOException {
+    public void parsePingResponse_invalid_ping_response_should_throw_IOException() throws IOException {
         ArrayList<String> mockCommandOutput = MockCommandExecutor.readFromFile(INVALID_PING_RESPONSE);
-        ParseResult parseResult = net.parsePingResponse(mockCommandOutput);
-        ParseResult expectedParseResult = new ParseResult(PING_SEARCH_WORD, "invalid");
-        assertEquals(expectedParseResult, parseResult);
+        try {
+            ParseResult parseResult = net.parsePingResponse(mockCommandOutput);
+            fail("Expected an IOException to be thrown");
+        } catch (IOException e) {
+            String expectedExceptionMessage = "Failed to parse ping output.";
+            assertEquals(expectedExceptionMessage, e.getMessage());
+        }
     }
 
     @Test
