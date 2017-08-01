@@ -24,6 +24,8 @@ public class NodeRepoJsonModel {
     private String[] ipAddresses;
     @JsonProperty("additionalIpAddresses")
     private String[] additionalIpAddresses;
+    @JsonProperty
+    private String hostname;
 
     public String[] getAdditionalIpAddresses() {
         return additionalIpAddresses;
@@ -76,6 +78,10 @@ public class NodeRepoJsonModel {
 
     public String[] getIpAddresses() {
         return ipAddresses;
+    }
+
+    public String getHostname() {
+        return hostname;
     }
 
 }

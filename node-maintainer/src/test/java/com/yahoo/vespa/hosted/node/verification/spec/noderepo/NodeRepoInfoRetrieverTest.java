@@ -39,7 +39,7 @@ public class NodeRepoInfoRetrieverTest {
         assertEquals(expectedMinCpuCores, nodeRepoJsonModel.getMinCpuCores(), DELTA);
     }
     @Test
-    public void retrieve_should_throw_IOEqxception_when_no_valid_URLs() throws MalformedURLException {
+    public void retrieve_should_throw_IOException_when_no_valid_URLs() throws MalformedURLException {
         urls = new ArrayList<>();
         String exceptionMessage = "Failed to parse JSON from all possible config servers.";
         try {

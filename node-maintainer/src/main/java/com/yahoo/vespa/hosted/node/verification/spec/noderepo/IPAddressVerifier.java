@@ -24,16 +24,57 @@ public class IPAddressVerifier {
     private static final Logger logger = Logger.getLogger(IPAddressVerifier.class.getName());
 
     public void reportFaultyIpAddresses(NodeRepoJsonModel nodeRepoJsonModel, YamasSpecReport yamasSpecReport) {
-        String[] faultyIpAddresses = getFaultyIpAddresses(nodeRepoJsonModel.getIpv6Address(), nodeRepoJsonModel.getAdditionalIpAddresses());
+        String[] faultyIpAddresses = getFaultyIpAddresses(nodeRepoJsonModel);
         if (faultyIpAddresses.length > 0) {
             yamasSpecReport.setFaultyIpAddresses(faultyIpAddresses);
         }
     }
 
+    public String[] getFaultyIpAddresses(NodeRepoJsonModel jsonModel) {
+        String expectedHostname = jsonModel.getHostname();
+        ArrayList<String> faultyIpAddresses = new ArrayList<>();
+        if (expectedHostname == null || expectedHostname.equals(""))
+            return new String[0];
+        if (!isValidIpv4(jsonModel.getIpv4Address(), expectedHostname)) {
+            faultyIpAddresses.add(jsonModel.getIpv4Address());
+        }
+        if (!isValidIpv6(jsonModel.getIpv6Address(), expectedHostname)) {
+            faultyIpAddresses.add(jsonModel.getIpv6Address());
+        }
+        return faultyIpAddresses.stream().toArray(String[]::new);
+    }
+
+    private boolean isValidIpv4(String ipv4Address, String expectedHostname) {
+        if (ipv4Address == null) {
+            return true;
+        }
+        String ipv4LookupFormat = convertIpv4ToLookupFormat(ipv4Address);
+        try {
+            String ipv4Hostname = reverseLookUp(ipv4LookupFormat);
+            return ipv4Hostname.equals(expectedHostname);
+        } catch (NamingException e) {
+            logger.log(Level.WARNING, "Could not get IPv4 hostname", e);
+        }
+        return false;
+    }
+
+    private boolean isValidIpv6(String ipv6Address, String expectedHostname) {
+        if (ipv6Address == null) {
+            return true;
+        }
+        String ipv6LookupFormat = convertIpv6ToLookupFormat(ipv6Address);
+        try {
+            String ipv6Hostname = reverseLookUp(ipv6LookupFormat);
+            return ipv6Hostname.equals(expectedHostname);
+        } catch (NamingException e) {
+            logger.log(Level.WARNING, "Could not get IPv6 hostname", e);
+        }
+        return false;
+    }
+
     protected String reverseLookUp(String ipAddress) throws NamingException {
         Hashtable<String, String> env = new Hashtable<>();
         env.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
-        String ipAddressInLookupFormat = convertToLookupFormat(ipAddress);
         String attributeName = ipAddress;
         DirContext ctx = new InitialDirContext(env);
         Attributes attrs = ctx.getAttributes(attributeName, new String[]{"PTR"});
@@ -41,16 +82,17 @@ public class IPAddressVerifier {
             Attribute attr = ae.next();
             Enumeration<?> vals = attr.getAll();
             if (vals.hasMoreElements()) {
-                return vals.nextElement().toString();
+                String hostname = vals.nextElement().toString();
+                return hostname.substring(0, hostname.length() - 1);
             }
         }
         ctx.close();
         return "";
     }
 
-    protected String convertToLookupFormat(String ipAddress) {
+    protected String convertIpv6ToLookupFormat(String ipAddress) {
         StringBuilder newIpAddress = new StringBuilder();
-        String doubleColonReplacement = "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.";
+        String doubleColonReplacement = "0.0.0.0.0.0.0.0.0.0.0.0.";
         String domain = "ip6.arpa";
         String[] hextets = ipAddress.split(":");
         for (int i = hextets.length - 1; i >= 0; i--) {
@@ -68,32 +110,15 @@ public class IPAddressVerifier {
         return newIpAddress.toString();
     }
 
-    public String[] getFaultyIpAddresses(String ipAddress, String[] additionalIpAddresses) {
-        if (ipAddress == null || additionalIpAddresses == null || additionalIpAddresses.length == 0)
-            return new String[0];
-        String realHostname;
-        ArrayList<String> faultyIpAddresses = new ArrayList<>();
-        try {
-            realHostname = reverseLookUp(ipAddress);
-        } catch (NamingException e) {
-            logger.log(Level.WARNING, "Unable to look up host name of address " + ipAddress, e);
-            return new String[0];
+    protected String convertIpv4ToLookupFormat(String ipAddress) {
+        String domain = "in-addr.arpa";
+        String[] octets = ipAddress.split("\\.");
+        StringBuilder convertedIpAddress = new StringBuilder();
+        for (int i = octets.length - 1; i >= 0; i--) {
+            convertedIpAddress.append(octets[i] + ".");
         }
-        for (String additionalIpAddress : additionalIpAddresses) {
-            addIfFaultyIpAddress(realHostname, additionalIpAddress, faultyIpAddresses);
-        }
-        return faultyIpAddresses.stream().toArray(String[]::new);
-    }
-
-    private void addIfFaultyIpAddress(String realHostname, String additionalIpAddress, ArrayList<String> faultyIpAddresses) {
-        try {
-            String additionalHostName = reverseLookUp(additionalIpAddress);
-            if (!realHostname.equals(additionalHostName)) {
-                faultyIpAddresses.add(additionalIpAddress);
-            }
-        } catch (NamingException e) {
-            logger.log(Level.WARNING, "Unable to retrieve hostname of additional address: " + additionalIpAddress, e);
-        }
+        convertedIpAddress.append(domain);
+        return convertedIpAddress.toString();
     }
 
 }
