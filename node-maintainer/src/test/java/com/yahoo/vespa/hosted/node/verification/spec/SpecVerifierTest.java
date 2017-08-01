@@ -57,6 +57,13 @@ public class SpecVerifierTest {
     }
 
     @Test
+    public void verifySpec_environment_is_virtual_machine_should_return_true() throws Exception {
+        mockCommandExecutor.addCommand("echo notUsed " + URL_RESOURCE_PATH);
+        mockCommandExecutor.addCommand("echo nodeRepoVirtualMachine.json");
+        assertTrue(SpecVerifier.verifySpec(mockCommandExecutor));
+    }
+
+    @Test
     public void verifySpec_inequal_nodeRepoInfo_and_hardware_should_return_false() throws Exception {
         mockCommandExecutor.addCommand("echo notUsed " + URL_RESOURCE_PATH);
         mockCommandExecutor.addCommand("echo nodeRepo.json");

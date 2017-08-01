@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.node.verification.spec.yamasreport.YamasSpecReport
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -24,9 +25,14 @@ import java.util.logging.Logger;
 public class SpecVerifier {
 
     private static final Logger logger = Logger.getLogger(SpecVerifier.class.getName());
+    private static final String VIRTUAL_ENVIRONMENT= "VIRTUAL_MACHINE";
 
     public static boolean verifySpec(CommandExecutor commandExecutor) throws IOException {
         NodeRepoJsonModel nodeRepoJsonModel = getNodeRepositoryJSON(commandExecutor);
+        if (nodeRepoJsonModel.getEnvironment().equals(VIRTUAL_ENVIRONMENT)) {
+            logger.log(Level.INFO, "Node is virtual machine - No need for verification");
+            return true;
+        }
         HardwareInfo actualHardware = HardwareInfoRetriever.retrieve(commandExecutor);
         YamasSpecReport yamasSpecReport = makeYamasSpecReport(actualHardware, nodeRepoJsonModel);
         printResults(yamasSpecReport);
