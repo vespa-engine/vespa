@@ -193,10 +193,10 @@ createShrinkLidSpaceFlushTarget(IDocumentStore::SP docStore)
 
 }
 
-IFlushTarget::List SummaryManager::getFlushTargets()
+IFlushTarget::List SummaryManager::getFlushTargets(searchcorespi::index::IThreadService & summaryService)
 {
     IFlushTarget::List ret;
-    ret.push_back(std::make_shared<SummaryFlushTarget>(getBackingStore()));
+    ret.push_back(std::make_shared<SummaryFlushTarget>(getBackingStore(), summaryService));
     if (dynamic_cast<LogDocumentStore *>(_docStore.get()) != NULL) {
         ret.push_back(std::make_shared<SummaryCompactTarget>(getBackingStore()));
     }

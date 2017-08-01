@@ -20,8 +20,6 @@ using document::Document;
 using document::DocumentId;
 using document::DocumentTypeRepo;
 using document::DocumentUpdate;
-using proton::matching::MatchContext;
-using proton::matching::Matcher;
 using search::index::Schema;
 using storage::spi::BucketInfoResult;
 using storage::spi::Timestamp;
@@ -100,11 +98,36 @@ SearchableFeedView::putIndexedFields(SerialNum serialNum,
         return;
     }
     _writeService.index().execute(
-            makeLambdaTask([=]
-                           { performIndexPut(serialNum, lid, newDoc,
-                                   immediateCommit, onWriteDone); }));
+            makeLambdaTask([=] {
+                performIndexPut(serialNum, lid, newDoc, immediateCommit, onWriteDone);
+            }));
 }
 
+void
+SearchableFeedView::performIndexPut(SerialNum serialNum,
+                                    search::DocumentIdT lid,
+                                    const Document &doc,
+                                    bool immediateCommit,
+                                    OnOperationDoneType onWriteDone)
+{
+    assert(_writeService.index().isCurrentThread());
+    VLOG(getDebugLevel(lid, doc.getId()),
+         "database(%s): performIndexPut: serialNum(%" PRIu64 "), "
+                 "docId(%s), lid(%d)",
+         _params._docTypeName.toString().c_str(),
+         serialNum,
+         doc.getId().toString().c_str(), lid);
+
+    _indexWriter->put(serialNum, doc, lid);
+    if (immediateCommit) {
+        _indexWriter->commit(serialNum, onWriteDone);
+    }
+    if (shouldTrace(onWriteDone, 1)) {
+        FeedToken *token = onWriteDone->getToken();
+        token->trace(1, "Document indexed = . New Value : " +
+                        doc.toString(token->shouldTrace(2)));
+    }
+}
 
 void
 SearchableFeedView::performIndexPut(SerialNum serialNum,
@@ -113,25 +136,18 @@ SearchableFeedView::performIndexPut(SerialNum serialNum,
                                     bool immediateCommit,
                                     OnOperationDoneType onWriteDone)
 {
-    assert(_writeService.index().isCurrentThread());
-    VLOG(getDebugLevel(lid, doc->getId()),
-        "database(%s): performIndexPut: serialNum(%" PRIu64 "), "
-        "docId(%s), lid(%d)",
-        _params._docTypeName.toString().c_str(),
-        serialNum,
-        doc->getId().toString().c_str(), lid);
-
-    _indexWriter->put(serialNum, *doc, lid);
-    if (immediateCommit) {
-        _indexWriter->commit(serialNum, onWriteDone);
-    }
-    if (shouldTrace(onWriteDone, 1)) {
-        FeedToken *token = onWriteDone->getToken();
-        token->trace(1, "Document indexed = . New Value : " +
-                doc->toString(token->shouldTrace(2)));
-    }
+    performIndexPut(serialNum, lid, *doc, immediateCommit, onWriteDone);
 }
 
+void
+SearchableFeedView::performIndexPut(SerialNum serialNum,
+                                    search::DocumentIdT lid,
+                                    FutureDoc doc,
+                                    bool immediateCommit,
+                                    OnOperationDoneType onWriteDone)
+{
+    performIndexPut(serialNum, lid, *doc.get(), immediateCommit, onWriteDone);
+}
 
 void
 SearchableFeedView::heartBeatIndexedFields(SerialNum serialNum)
@@ -184,11 +200,23 @@ SearchableFeedView::updateIndexedFields(SerialNum serialNum,
         onWriteDone->getToken()->trace(1, "Then we can update the index.");
     }
     _writeService.index().execute(
-            makeLambdaTask([=]()
-                           { performIndexPut(serialNum, lid, newDoc,
-                                   immediateCommit, onWriteDone); }));
+            makeLambdaTask([=]() {
+                performIndexPut(serialNum, lid, newDoc, immediateCommit, onWriteDone);
+            }));
 }
 
+void
+SearchableFeedView::updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, FutureDoc futureDoc,
+                                        bool immediateCommit, OnOperationDoneType onWriteDone)
+{
+    if (shouldTrace(onWriteDone, 1)) {
+        onWriteDone->getToken()->trace(1, "Then we can update the index.");
+    }
+    _writeService.index().execute(
+            makeLambdaTask([=]() {
+                performIndexPut(serialNum, lid, futureDoc, immediateCommit, onWriteDone);
+            }));
+}
 
 void
 SearchableFeedView::removeIndexedFields(SerialNum serialNum,

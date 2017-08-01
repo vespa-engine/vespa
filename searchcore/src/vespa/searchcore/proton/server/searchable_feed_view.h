@@ -3,7 +3,6 @@
 #pragma once
 
 #include "fast_access_feed_view.h"
-#include "matchview.h"
 #include <vespa/searchcore/proton/attribute/i_attribute_writer.h>
 #include <vespa/searchcore/proton/index/i_index_writer.h>
 
@@ -45,7 +44,20 @@ private:
     void
     performIndexPut(SerialNum serialNum,
                     search::DocumentIdT lid,
+                    const document::Document &doc,
+                    bool immediateCommit,
+                    OnOperationDoneType onWriteDone);
+
+    void
+    performIndexPut(SerialNum serialNum,
+                    search::DocumentIdT lid,
                     const document::Document::SP &doc,
+                    bool immediateCommit,
+                    OnOperationDoneType onWriteDone);
+    void
+    performIndexPut(SerialNum serialNum,
+                    search::DocumentIdT lid,
+                    FutureDoc doc,
                     bool immediateCommit,
                     OnOperationDoneType onWriteDone);
 
@@ -81,6 +93,12 @@ private:
     updateIndexedFields(SerialNum serialNum,
                         search::DocumentIdT lid,
                         const document::Document::SP &newDoc,
+                        bool immediateCommit,
+                        OnOperationDoneType onWriteDone) override;
+    virtual void
+    updateIndexedFields(SerialNum serialNum,
+                        search::DocumentIdT lid,
+                        FutureDoc newDoc,
                         bool immediateCommit,
                         OnOperationDoneType onWriteDone) override;
 

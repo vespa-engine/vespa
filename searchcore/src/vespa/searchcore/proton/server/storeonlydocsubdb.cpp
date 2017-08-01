@@ -362,7 +362,7 @@ StoreOnlyDocSubDB::getFlushTargets()
 IFlushTarget::List
 StoreOnlyDocSubDB::getFlushTargetsInternal()
 {
-    IFlushTarget::List ret(_rSummaryMgr->getFlushTargets());
+    IFlushTarget::List ret(_rSummaryMgr->getFlushTargets(_writeService.summary()));
     ret.push_back(_dmsFlushTarget);
     ret.push_back(_dmsShrinkTarget);
     return ret;
