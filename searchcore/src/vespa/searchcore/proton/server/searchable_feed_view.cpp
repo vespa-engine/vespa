@@ -142,7 +142,7 @@ SearchableFeedView::performIndexPut(SerialNum serialNum,
 void
 SearchableFeedView::performIndexPut(SerialNum serialNum,
                                     search::DocumentIdT lid,
-                                    FutureDoc doc,
+                                    const FutureDoc & doc,
                                     bool immediateCommit,
                                     OnOperationDoneType onWriteDone)
 {
@@ -206,7 +206,7 @@ SearchableFeedView::updateIndexedFields(SerialNum serialNum,
 }
 
 void
-SearchableFeedView::updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, FutureDoc futureDoc,
+SearchableFeedView::updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const FutureDoc & futureDoc,
                                         bool immediateCommit, OnOperationDoneType onWriteDone)
 {
     if (shouldTrace(onWriteDone, 1)) {

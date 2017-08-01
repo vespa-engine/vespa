@@ -57,7 +57,7 @@ private:
     void
     performIndexPut(SerialNum serialNum,
                     search::DocumentIdT lid,
-                    FutureDoc doc,
+                    const FutureDoc & doc,
                     bool immediateCommit,
                     OnOperationDoneType onWriteDone);
 
@@ -98,7 +98,7 @@ private:
     virtual void
     updateIndexedFields(SerialNum serialNum,
                         search::DocumentIdT lid,
-                        FutureDoc newDoc,
+                        const FutureDoc & newDoc,
                         bool immediateCommit,
                         OnOperationDoneType onWriteDone) override;
 

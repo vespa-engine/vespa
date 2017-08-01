@@ -197,7 +197,7 @@ private:
 
     virtual void updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const document::Document::SP &newDoc,
                                      bool immediateCommit, OnOperationDoneType onWriteDone);
-    virtual void updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, FutureDoc doc,
+    virtual void updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const FutureDoc & doc,
                                      bool immediateCommit, OnOperationDoneType onWriteDone);
 
     virtual void removeAttributes(SerialNum serialNum, search::DocumentIdT lid,

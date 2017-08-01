@@ -290,7 +290,7 @@ StoreOnlyFeedView::updateIndexedFields(SerialNum, search::DocumentIdT, const Doc
 }
 
 void
-StoreOnlyFeedView::updateIndexedFields(SerialNum, search::DocumentIdT, FutureDoc, bool, OnOperationDoneType)
+StoreOnlyFeedView::updateIndexedFields(SerialNum, search::DocumentIdT, const FutureDoc &, bool, OnOperationDoneType)
 {
     abort(); // Should never be called.
 }
