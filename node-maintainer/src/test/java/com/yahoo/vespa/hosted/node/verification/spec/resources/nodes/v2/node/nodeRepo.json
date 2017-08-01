@@ -7,7 +7,7 @@
   "openStackId": "653c39c1-bda4-47ee-a277-d5319eb57af7",
   "flavor": "C-77E/256/960",
   "canonicalFlavor": "C-77E/256/960",
-  "minDiskAvailableGb": 63.0,
+  "minDiskAvailableGb": 1759.84,
   "minMainMemoryAvailableGb": 4.042128,
   "description": "BARE_METAL with 48.0 CPUs, 256.0 Gb memory and 1920.0 Gb ssd",
   "minCpuCores": 4.0,

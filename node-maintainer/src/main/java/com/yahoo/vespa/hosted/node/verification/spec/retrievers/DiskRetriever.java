@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  */
 public class DiskRetriever implements HardwareRetriever {
     private static final String DISK_CHECK_TYPE = "lsblk -d -o name,rota";
-    private static final String DISK_CHECK_SIZE = "sudo pvdisplay --units G";
+    private static final String DISK_CHECK_SIZE = "sudo pvdisplay --units G | grep 'PV Size'";
     private static final String DISK_NAME = "sda";
     private static final String DISK_TYPE_REGEX_SPLIT = "\\s+";
     private static final int DISK_TYPE_SEARCH_ELEMENT_INDEX = 0;
@@ -53,7 +53,7 @@ public class DiskRetriever implements HardwareRetriever {
 
     protected void updateDiskSize() throws IOException {
         ArrayList<String> commandOutput = commandExecutor.executeCommand(DISK_CHECK_SIZE);
-        ParseResult parseResult = parseDiskSize(commandOutput);
+        ArrayList<ParseResult> parseResult = parseDiskSize(commandOutput);
         setDiskSize(parseResult);
     }
 
@@ -77,20 +77,22 @@ public class DiskRetriever implements HardwareRetriever {
         }
     }
 
-    protected ParseResult parseDiskSize(ArrayList<String> commandOutput) {
+    protected ArrayList<ParseResult> parseDiskSize(ArrayList<String> commandOutput) {
         ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(DISK_SIZE_SEARCH_WORD));
         ParseInstructions parseInstructions = new ParseInstructions(DISK_SIZE_SEARCH_ELEMENT_INDEX, DISK_SIZE_RETURN_ELEMENT_INDEX, DISK_SIZE_REGEX_SPLIT, searchWords);
-        return OutputParser.parseSingleOutput(parseInstructions, commandOutput);
+        return OutputParser.parseOutput(parseInstructions, commandOutput);
     }
 
-    protected void setDiskSize(ParseResult parseResult) {
+   protected void setDiskSize(ArrayList<ParseResult> parseResults) {
         try {
-            String sizeValue = parseResult.getValue().replaceAll("[^\\d.]", "");
-            double diskSize = Double.parseDouble(sizeValue);
+            double diskSize = 0;
+            for (ParseResult parseResult : parseResults) {
+                String sizeValue = parseResult.getValue().replaceAll("[^\\d.]", "");
+                diskSize += Double.parseDouble(sizeValue);
+            }
             hardwareInfo.setMinDiskAvailableGb(diskSize);
         } catch (NumberFormatException | NullPointerException e) {
             return;
         }
     }
-
 }
