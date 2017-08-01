@@ -46,7 +46,7 @@ public class HostURLGeneratorTest {
             mockCommandExecutor.addCommand(CAT_CONFIG_SERVER_HOST_NAME_PATH);
             mockCommandExecutor.addCommand(CAT_WRONG_HOSTNAME_PATH);
             HostURLGenerator.generateNodeInfoUrl(mockCommandExecutor);
-            fail("Expected an IOExeption to be thrown");
+            fail("Expected an IOException to be thrown");
         } catch (IOException e) {
             String expectedExceptionMessage = "Unexpected output from \"hostname\" command.";
             assertEquals(expectedExceptionMessage, e.getMessage());
