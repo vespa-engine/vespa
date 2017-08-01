@@ -109,7 +109,7 @@ StoreOnlyFeedView::StoreOnlyFeedView(const Context &ctx, const PersistentParams 
       _docType(NULL),
       _lidReuseDelayer(ctx._lidReuseDelayer),
       _commitTimeTracker(ctx._commitTimeTracker),
-      _writeTokenQ(),
+      _writeTokenQ(true),
       _schema(ctx._schema),
       _writeService(ctx._writeService),
       _params(params),
@@ -354,12 +354,8 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
     auto onWriteDone = createUpdateDoneContext(token, updOp.getType(), _params._metrics, updOp.getUpdate());
     updateAttributes(serialNum, lid, upd, immediateCommit, onWriteDone);
 
-    if (_commitTimeTracker.hasVisibilityDelay() || ! token) {
-        WriteTokenProducer writeTokenProducer;
-        applyUpdateToDocumentsAndIndex(std::move(token), serialNum, lid, updOp.getUpdate(),
-                                       immediateCommit, onWriteDone, std::move(writeTokenProducer));
-    } else {
-        WriteTokenProducer writeTokenProducer(_writeTokenQ.getTokenProducer(serialNum));
+    WriteTokenProducer writeTokenProducer(_writeTokenQ.getTokenProducer(serialNum));
+    if (writeTokenProducer.isDispatchAllowed()) {
         _writeService
                 .attributeFieldWriter()
                 .execute(serialNum,
@@ -369,6 +365,9 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
                                                             immediateCommit, onWriteDone,
                                                             std::move(writeTokenProducer));
                          });
+    } else {
+        applyUpdateToDocumentsAndIndex(std::move(token), serialNum, lid, updOp.getUpdate(),
+                                       immediateCommit, onWriteDone, std::move(writeTokenProducer));
     }
 }
 

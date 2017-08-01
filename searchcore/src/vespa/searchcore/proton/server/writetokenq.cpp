@@ -4,8 +4,9 @@
 
 namespace proton {
 
-WriteTokenQ::WriteTokenQ()
-    : _orderLock(),
+WriteTokenQ::WriteTokenQ(bool allowMultiThreading)
+    : _allowMultiThreading(allowMultiThreading),
+      _orderLock(),
       _released(),
       _processOrder()
 {}

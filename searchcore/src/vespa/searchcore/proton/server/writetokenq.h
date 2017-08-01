@@ -14,15 +14,13 @@ class StoreOnlyFeedView;
 class WriteTokenQ {
     using SerialNum = search::SerialNum;
 public:
-    WriteTokenQ();
-    ~WriteTokenQ();
     class WriteToken {
     public:
         WriteToken() : WriteToken(nullptr, -1) { }
         WriteToken(WriteTokenQ * tokenQ, SerialNum serialNum);
 
         WriteToken(WriteToken && rhs) noexcept
-                : _tokenQ(rhs._tokenQ), _serialNum(rhs._serialNum)
+            : _tokenQ(rhs._tokenQ), _serialNum(rhs._serialNum)
         {
             rhs._tokenQ = nullptr;
         }
@@ -56,20 +54,24 @@ public:
             _tokenQ = nullptr;
             return WriteToken(tmp, _serialNum);
         }
+        bool isDispatchAllowed() const { return _tokenQ != nullptr; }
     private:
-        friend WriteTokenQ;
+        friend class WriteTokenQ;
         WriteTokenProducer(WriteTokenQ * tokenQ, SerialNum serialNum);
         WriteTokenQ  *_tokenQ;
         SerialNum     _serialNum;
     };
 
+    WriteTokenQ(bool allowMultiThreading);
+    ~WriteTokenQ();
     WriteTokenProducer getTokenProducer(SerialNum serialNum) {
-        return WriteTokenProducer(this, serialNum);
+        return WriteTokenProducer(_allowMultiThreading ? this : nullptr, serialNum);
     }
 private:
     void addSerialNumToProcess(SerialNum serial);
     void waitForSerialNum(SerialNum serial);
     void releaseSerialNum(SerialNum serial);
+    const bool              _allowMultiThreading;
     std::mutex              _orderLock;
     std::condition_variable _released;
     std::vector<SerialNum>  _processOrder;
