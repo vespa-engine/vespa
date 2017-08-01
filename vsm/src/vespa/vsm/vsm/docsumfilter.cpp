@@ -156,9 +156,6 @@ DocsumFilter::prepareFieldSpec(DocsumFieldSpec & spec, const DocsumTools::FieldS
                     FieldPath relPath(fieldPathMap[field].begin() + 1,
                                       fieldPathMap[field].end());
                     LOG(debug, "map[%u] -> %zu elements", field, fieldPathMap[field].end() - fieldPathMap[field].begin());
-                    for (document::FieldPathEntry entry : fieldPathMap[field]) {
-                        LOG(debug, "entry: %s", entry.getName().c_str());
-                    }
                     // skip the element that correspond to the start field value
                     spec.getInputFields().push_back(DocsumFieldSpec::FieldIdentifier
                                                     (field, FieldPath(fieldPathMap[field].begin() + 1,

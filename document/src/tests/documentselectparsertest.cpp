@@ -50,7 +50,7 @@ class DocumentSelectParserTest : public CppUnit::TestFixture {
             const std::string& doctype, const std::string& id, uint32_t hint,
             const std::string& hstr);
 
-    select::FieldValueNode
+    std::unique_ptr<select::FieldValueNode>
     parseFieldValue(const std::string expression);
 
     template <typename ContainsType>
@@ -1220,30 +1220,30 @@ void DocumentSelectParserTest::testUtf8()
 //    PARSE("testdoctype1.hstringval =~ \"H.kon\"", *_doc[_doc.size()-1], True);
 }
 
-select::FieldValueNode
+std::unique_ptr<select::FieldValueNode>
 DocumentSelectParserTest::parseFieldValue(const std::string expression) {
-    return dynamic_cast<const select::FieldValueNode &>(
-        *dynamic_cast<const select::Compare &>(*_parser->parse(expression)).getLeft().clone());
+    return std::unique_ptr<select::FieldValueNode>(dynamic_cast<select::FieldValueNode *>(
+        dynamic_cast<const select::Compare &>(*_parser->parse(expression)).getLeft().clone().release()));
 }
 
 void DocumentSelectParserTest::testThatSimpleFieldValuesHaveCorrectFieldName() {
     CPPUNIT_ASSERT_EQUAL(
         vespalib::string("headerval"),
-        parseFieldValue("testdoctype1.headerval").getRealFieldName());
+        parseFieldValue("testdoctype1.headerval")->getRealFieldName());
 }
 
 void DocumentSelectParserTest::testThatComplexFieldValuesHaveCorrectFieldNames() {
     CPPUNIT_ASSERT_EQUAL(
         vespalib::string("headerval"),
-        parseFieldValue("testdoctype1.headerval{test}").getRealFieldName());
+        parseFieldValue("testdoctype1.headerval{test}")->getRealFieldName());
 
     CPPUNIT_ASSERT_EQUAL(
         vespalib::string("headerval"),
-        parseFieldValue("testdoctype1.headerval[42]").getRealFieldName());
+        parseFieldValue("testdoctype1.headerval[42]")->getRealFieldName());
 
     CPPUNIT_ASSERT_EQUAL(
         vespalib::string("headerval"),
-        parseFieldValue("testdoctype1.headerval.meow.meow{test}").getRealFieldName());
+        parseFieldValue("testdoctype1.headerval.meow.meow{test}")->getRealFieldName());
 }
 
 } // document

@@ -74,6 +74,11 @@ FieldValue::compare(const FieldValue& other) const {
              : 0;
 }
 
+int
+FieldValue::fastCompare(const FieldValue& other) const {
+    return compare(other);
+}
+
 FieldValue&
 FieldValue::assign(const FieldValue& value)
 {

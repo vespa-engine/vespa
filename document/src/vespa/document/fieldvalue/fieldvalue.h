@@ -84,6 +84,13 @@ public:
     virtual int compare(const FieldValue& other) const;
 
     /**
+     * Same as normal compar, but this one expects the types to be equal
+     * @param other
+     * @return See compare
+     */
+    virtual int fastCompare(const FieldValue& other) const;
+
+    /**
      * Returns true if this object have been altered since last
      * serialization/deserialization. If hasChanged() is false, then cached
      * information from last serialization effort is still valid.

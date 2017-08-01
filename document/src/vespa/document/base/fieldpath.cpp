@@ -54,13 +54,13 @@ FieldPathEntry::FieldPathEntry(const Field &fieldRef) :
 { }
 
 FieldPathEntry::FieldPathEntry(const DataType & dataType, const DataType& fillType,
-                               const FieldValueCP & lookupKey) :
+                               FieldValue::UP lookupKey) :
     _type(MAP_KEY),
     _name("value"),
     _field(),
     _dataType(&dataType),
     _lookupIndex(0),
-    _lookupKey(lookupKey),
+    _lookupKey(lookupKey.release()),
     _variableName(),
     _fillInVal()
 {
@@ -70,10 +70,15 @@ FieldPathEntry::FieldPathEntry(const DataType & dataType, const DataType& fillTy
 void FieldPathEntry::setFillValue(const DataType & dataType)
 {
     const DataType * dt = & dataType;
-    while (dt->inherits(CollectionDataType::classId) || dt->inherits(MapDataType::classId)) {
-        dt = dt->inherits(CollectionDataType::classId)
-             ? &static_cast<const CollectionDataType *>(dt)->getNestedType()
-             : &static_cast<const MapDataType *>(dt)->getValueType();
+
+    while (true) {
+        if (dt->inherits(CollectionDataType::classId)) {
+            dt = &static_cast<const CollectionDataType *>(dt)->getNestedType();
+        } else if (dt->inherits(MapDataType::classId)) {
+            dt = &static_cast<const MapDataType *>(dt)->getValueType();
+        } else {
+            break;
+        }
     }
     if (dt->inherits(PrimitiveDataType::classId)) {
         _fillInVal.reset(dt->createFieldValue().release());
@@ -131,7 +136,7 @@ FieldPathEntry::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "fillInVal", _fillInVal);
 }
 
-vespalib::string FieldPathEntry::parseKey(vespalib::string & key)
+vespalib::string FieldPathEntry::parseKey(vespalib::stringref & key)
 {
     vespalib::string v;
     const char *c = key.c_str();
@@ -140,23 +145,25 @@ vespalib::string FieldPathEntry::parseKey(vespalib::string & key)
     if ((c < e) && (c[0] == '{')) {
         for(c++;(c < e) && isspace(c[0]); c++);
         if ((c < e) && (c[0] == '"')) {
-            for (c++; (c < e) && (c[0] != '"'); c++) {
+            const char * start = ++c;
+            for (; (c < e) && (c[0] != '"'); c++) {
                 if (c[0] == '\\') {
-                    c++;
-                }
-                if (c < e) {
-                    v += c[0];
+                    v.append(start, c-start);
+                    start = ++c;
                 }
             }
+            v.append(start, c-start);
             if ((c < e) && (c[0] == '"')) {
                 c++;
             } else {
                 throw IllegalArgumentException(make_string("Escaped key '%s' is incomplete. No matching '\"'", key.c_str()), VESPA_STRLOC);
             }
         } else {
-            for (;(c < e) && (c[0] != '}'); c++) {
-                v += c[0];
+            const char * start = c;
+            while ((c < e) && (c[0] != '}')) {
+                c++;
             }
+            v.append(start, c-start);
         }
         for(;(c < e) && isspace(c[0]); c++);
         if ((c < e) && (c[0] == '}')) {
@@ -178,28 +185,13 @@ FieldPath::FieldPath(const FieldPath &) = default;
 FieldPath & FieldPath::operator=(const FieldPath &) = default;
 FieldPath::~FieldPath() { }
 
-FieldPath::iterator
-FieldPath::insert(iterator pos, FieldPathEntry && entry)
-{
-    return _path.insert(pos, std::move(entry));
+FieldPath::iterator FieldPath::insert(iterator pos, std::unique_ptr<FieldPathEntry> entry) {
+    return _path.insert(pos, vespalib::CloneablePtr<FieldPathEntry>(entry.release()));
 }
-void
-FieldPath::push_back(FieldPathEntry && entry)
-{
-    _path.push_back(std::move(entry));
-}
-
-void
-FieldPath::pop_back()
-{
-    _path.pop_back();
-}
-
-void
-FieldPath::clear()
-{
-    _path.clear();
-}
+void FieldPath::push_back(std::unique_ptr<FieldPathEntry> entry) { _path.emplace_back(entry.release()); }
+void FieldPath::pop_back() { _path.pop_back(); }
+void FieldPath::clear() { _path.clear(); }
+void FieldPath::reserve(size_t sz) { _path.reserve(sz); }
 
 void
 FieldPath::visitMembers(vespalib::ObjectVisitor& visitor) const

@@ -58,9 +58,9 @@ ArrayDataType::onBuildFieldPath(FieldPath & path, const vespalib::stringref & re
             getNestedType().buildFieldPath(path, remainFieldName.substr(pos));
 
             if (remainFieldName[1] == '$') {
-                path.insert(path.begin(), FieldPathEntry(getNestedType(), remainFieldName.substr(2, endPos - 2)));
+                path.insert(path.begin(), std::make_unique<FieldPathEntry>(getNestedType(), remainFieldName.substr(2, endPos - 2)));
             } else {
-                path.insert(path.begin(), FieldPathEntry(getNestedType(), atoi(remainFieldName.substr(1, endPos - 1).c_str())));
+                path.insert(path.begin(), std::make_unique<FieldPathEntry>(getNestedType(), atoi(remainFieldName.substr(1, endPos - 1).c_str())));
             }
         }
     } else {

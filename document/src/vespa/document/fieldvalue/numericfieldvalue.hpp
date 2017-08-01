@@ -53,9 +53,21 @@ NumericFieldValue<Number>::compare( const FieldValue& other) const
 }
 
 template<typename Number>
+int
+NumericFieldValue<Number>::fastCompare( const FieldValue& other) const
+{
+
+    const NumericFieldValue & otherNumber(static_cast<const NumericFieldValue &>(other));
+    return  (_value == otherNumber._value)
+            ? 0
+            : (_value - otherNumber._value > 0)
+              ? 1
+              : -1;
+}
+
+template<typename Number>
 void
-NumericFieldValue<Number>::print(
-        std::ostream& out, bool, const std::string&) const
+NumericFieldValue<Number>::print(std::ostream& out, bool, const std::string&) const
 {
     if (sizeof(Number) == 1) { // Make sure char's are printed as numbers
         out << (int) _value;

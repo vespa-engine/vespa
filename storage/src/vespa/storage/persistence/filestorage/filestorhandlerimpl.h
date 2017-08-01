@@ -51,7 +51,7 @@ public:
         uint8_t _priority;
 
         MessageEntry(const std::shared_ptr<api::StorageMessage>& cmd, const document::BucketId& bId);
-        MessageEntry(MessageEntry &&);
+        MessageEntry(MessageEntry &&) noexcept ;
         MessageEntry(const MessageEntry &);
         MessageEntry & operator = (const MessageEntry &) = delete;
         ~MessageEntry();

@@ -157,8 +157,8 @@ class FieldValueNode : public ValueNode
 
 public:
     FieldValueNode(const vespalib::string& doctype, const vespalib::string& fieldExpression);
-    FieldValueNode(const FieldValueNode &);
-    FieldValueNode & operator = (const FieldValueNode &);
+    FieldValueNode(const FieldValueNode &) = delete;
+    FieldValueNode & operator = (const FieldValueNode &) = delete;
     FieldValueNode(FieldValueNode &&) = default;
     FieldValueNode & operator = (FieldValueNode &&) = default;
     ~FieldValueNode();

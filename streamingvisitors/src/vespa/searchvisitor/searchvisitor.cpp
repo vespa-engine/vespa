@@ -735,13 +735,13 @@ void SearchVisitor::setupAttributeVector(const FieldPath &fieldPath) {
     vespalib::string attrName(fieldPath.front().getName());
     for (FieldPath::const_iterator ft(fieldPath.begin() + 1), fmt(fieldPath.end()); ft != fmt; ft++) {
         attrName.append(".");
-        attrName.append(ft->getName());
+        attrName.append((*ft)->getName());
     }
 
     enum FieldDataType { OTHER = 0, ARRAY, WSET };
     FieldDataType typeSeen = OTHER;
-    for (const document::FieldPathEntry & entry : fieldPath) {
-        int dataTypeId(entry.getDataType().getClass().id());
+    for (const auto & entry : fieldPath) {
+        int dataTypeId(entry->getDataType().getClass().id());
         if (dataTypeId == document::ArrayDataType::classId) {
             typeSeen = ARRAY;
         } else if (dataTypeId == document::MapDataType::classId) {

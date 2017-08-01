@@ -113,7 +113,7 @@ FieldPathUpdate::getResultingDataType(const FieldPath & path) const
     if (path.empty()) {
         throw vespalib::IllegalStateException("Cannot get resulting data type from an empty field path", VESPA_STRLOC);
     }
-    return path.rbegin()->getDataType();
+    return path.back().getDataType();
 }
 
 vespalib::string

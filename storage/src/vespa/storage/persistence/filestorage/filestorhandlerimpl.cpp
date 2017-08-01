@@ -248,6 +248,7 @@ FileStorHandlerImpl::schedule(const std::shared_ptr<api::StorageMessage>& msg,
 {
     assert(disk < _diskInfo.size());
     Disk& t(_diskInfo[disk]);
+    MessageEntry messageEntry(msg, getStorageMessageBucketId(*msg));
     vespalib::MonitorGuard lockGuard(t.lock);
 
     if (t.getState() == FileStorHandler::AVAILABLE) {
@@ -255,7 +256,7 @@ FileStorHandlerImpl::schedule(const std::shared_ptr<api::StorageMessage>& msg,
                 "FileStorHandler: Operation added to disk %d's queue with "
                 "priority %u", disk, msg->getPriority()));
 
-        t.queue.emplace_back(msg, getStorageMessageBucketId(*msg));
+        t.queue.emplace_back(std::move(messageEntry));
 
         LOG(spam, "Queued operation %s with priority %u.",
             msg->getType().toString().c_str(),
@@ -1219,7 +1220,7 @@ FileStorHandlerImpl::MessageEntry::MessageEntry(const MessageEntry& entry)
 { }
 
 
-FileStorHandlerImpl::MessageEntry::MessageEntry(MessageEntry && entry)
+FileStorHandlerImpl::MessageEntry::MessageEntry(MessageEntry && entry) noexcept
         : _command(std::move(entry._command)),
           _timer(entry._timer),
           _bucketId(entry._bucketId),

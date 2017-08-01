@@ -63,11 +63,17 @@ int
 LiteralFieldValueB::compare(const FieldValue& other) const
 {
     if (*getDataType() == *other.getDataType()) {
-        const LiteralFieldValueB& sval(
-                static_cast<const LiteralFieldValueB&>(other));
+        const LiteralFieldValueB& sval(static_cast<const LiteralFieldValueB&>(other));
         return getValueRef().compare(sval.getValueRef());
     }
     return (getDataType()->getId() - other.getDataType()->getId());
+}
+
+int
+LiteralFieldValueB::fastCompare(const FieldValue& other) const
+{
+    const LiteralFieldValueB& sval(static_cast<const LiteralFieldValueB&>(other));
+    return getValueRef().compare(sval.getValueRef());
 }
 
 void

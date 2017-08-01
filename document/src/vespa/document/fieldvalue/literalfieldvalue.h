@@ -54,17 +54,17 @@ public:
         _value = _backing;
         _altered = true;
     }
-    size_t hash() const override { return vespalib::hashValue(_value.c_str()); }
+    size_t hash() const override final { return vespalib::hashValue(_value.c_str()); }
     void setValue(const char* val, size_t size) { setValue(stringref(val, size)); }
 
     int compare(const FieldValue& other) const override;
+    int fastCompare(const FieldValue& other) const override final;
 
     vespalib::string getAsString() const override;
     std::pair<const char*, size_t> getAsRaw() const override;
 
     void printXml(XmlOutputStream& out) const override;
-    void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     FieldValue& assign(const FieldValue&) override;
     bool hasChanged() const  override{ return _altered; }
 

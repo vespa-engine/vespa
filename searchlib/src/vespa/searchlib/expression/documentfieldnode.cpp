@@ -112,8 +112,9 @@ void DocumentFieldNode::onPrepare(bool preserveAccurateTypes)
     if ( !_fieldPath.empty() ) {
         bool nestedMultiValue(false);
         for(document::FieldPath::const_iterator it(_fieldPath.begin()), mt(_fieldPath.end()); !nestedMultiValue && (it != mt); it++) {
-            if (it->getType() == document::FieldPathEntry::STRUCT_FIELD) {
-                const vespalib::Identifiable::RuntimeClass & cInfo(it->getFieldValueToSet().getClass());
+            const FieldPathEntry & fpe = **it;
+            if (fpe.getType() == document::FieldPathEntry::STRUCT_FIELD) {
+                const vespalib::Identifiable::RuntimeClass & cInfo(fpe.getFieldValueToSet().getClass());
                 nestedMultiValue = cInfo.inherits(CollectionFieldValue::classId) || cInfo.inherits(MapFieldValue::classId);
             }
         }

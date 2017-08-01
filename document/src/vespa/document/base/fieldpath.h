@@ -35,8 +35,8 @@ public:
     */
     FieldPathEntry();
 
-    FieldPathEntry(FieldPathEntry &&) = default;
-    FieldPathEntry & operator=(FieldPathEntry &&) = default;
+    FieldPathEntry(FieldPathEntry &&) noexcept = default;
+    FieldPathEntry & operator=(FieldPathEntry &&) noexcept = default;
     FieldPathEntry(const FieldPathEntry &);
     FieldPathEntry & operator=(const FieldPathEntry &);
 
@@ -53,7 +53,7 @@ public:
     /**
        Creates a field path entry for a map or wset key lookup.
     */
-    FieldPathEntry(const DataType & dataType, const DataType& fillType, const FieldValueCP & lookupKey);
+    FieldPathEntry(const DataType & dataType, const DataType& fillType, std::unique_ptr<FieldValue> lookupKey);
 
     /**
        Creates a field path entry for a map key or value only traversal.
@@ -66,6 +66,8 @@ public:
        Creates a field entry for an array, map or wset traversal using a variable.
     */
     FieldPathEntry(const DataType & dataType, const vespalib::stringref & variableName);
+
+    FieldPathEntry * clone() const { return new FieldPathEntry(*this); }
 
     Type getType() const { return _type; }
     const vespalib::string & getName() const { return _name; }
@@ -90,7 +92,7 @@ public:
      * @param key is the incoming value, and contains what is left when done.
      * *return The unescaped value
      */
-    static vespalib::string parseKey(vespalib::string & key);
+    static vespalib::string parseKey(vespalib::stringref & key);
 private:
     void setFillValue(const DataType & dataType);
     Type                 _type;
@@ -106,7 +108,7 @@ private:
 //typedef std::deque<FieldPathEntry> FieldPath;
 // Facade over FieldPathEntry container that exposes cloneability
 class FieldPath {
-    typedef std::vector<FieldPathEntry> Container;
+    typedef std::vector<vespalib::CloneablePtr<FieldPathEntry>> Container;
 public:
     typedef Container::reference reference;
     typedef Container::const_reference const_reference;
@@ -128,8 +130,8 @@ public:
         : _path(first, last)
     { }
 
-    iterator insert(iterator pos, FieldPathEntry && entry);
-    void push_back(FieldPathEntry && entry);
+    iterator insert(iterator pos, std::unique_ptr<FieldPathEntry> entry);
+    void push_back(std::unique_ptr<FieldPathEntry> entry);
 
     iterator begin() { return _path.begin(); }
     iterator end() { return _path.end(); }
@@ -140,19 +142,20 @@ public:
     const_reverse_iterator rbegin() const { return _path.rbegin(); }
     const_reverse_iterator rend() const { return _path.rend(); }
 
-    reference front() { return _path.front(); }
-    const_reference front() const { return _path.front(); }
-    reference back() { return _path.back(); }
-    const_reference back() const { return _path.back(); }
+    FieldPathEntry & front() { return *_path.front(); }
+    const FieldPathEntry & front() const { return *_path.front(); }
+    FieldPathEntry & back() { return *_path.back(); }
+    const FieldPathEntry & back() const { return *_path.back(); }
 
     void pop_back();
     void clear();
+    void reserve(size_t sz);
 
     Container::size_type size() const { return _path.size(); }
     bool empty() const { return _path.empty(); }
-    reference operator[](Container::size_type i) { return _path[i]; }
+    FieldPathEntry & operator[](Container::size_type i) { return *_path[i]; }
 
-    const_reference operator[](Container::size_type i) const { return _path[i]; }
+    const FieldPathEntry & operator[](Container::size_type i) const { return *_path[i]; }
 
     void visitMembers(vespalib::ObjectVisitor &visitor) const;
 
@@ -163,7 +166,7 @@ public:
         Range(IT begin_, IT end_) : _begin(begin_), _end(end_) { }
         Range next() const { return Range(_begin+1, _end); }
         bool atEnd() const { return _begin == _end; }
-        const FieldPathEntry & cur() { return *_begin; }
+        const FieldPathEntry & cur() { return **_begin; }
     private:
         IT _begin;
         IT _end;
