@@ -108,13 +108,13 @@ public class HardwareNodeComparator {
 
     private static boolean compareNetInterface(HardwareInfo node, HardwareInfo actualHardware, SpecReportDimensions specReportDimensions) {
         boolean equalNetInterfaceSpeed = insideThreshold(node.getInterfaceSpeedMbs(), actualHardware.getInterfaceSpeedMbs());
-        boolean equalIpv6 = node.getIpv6Interface() == actualHardware.getIpv6Interface();
-        boolean equalIpv4 = node.getIpv4Interface() == actualHardware.getIpv4Interface();
+        boolean equalIpv6Interface = node.getIpv6Interface() == actualHardware.getIpv6Interface();
+        boolean equalIpv4Interface = node.getIpv4Interface() == actualHardware.getIpv4Interface();
+        boolean equalIpv6Connection = node.isIpv6Connection() == actualHardware.isIpv6Connection();
         specReportDimensions.setNetInterfaceSpeedMatch(equalNetInterfaceSpeed);
-        specReportDimensions.setIpv6Match(equalIpv6);
-        specReportDimensions.setIpv4Match(equalIpv4);
-        return equalNetInterfaceSpeed && equalIpv6 && equalIpv4;
-
+        specReportDimensions.setIpv6Match(equalIpv6Interface);
+        specReportDimensions.setIpv4Match(equalIpv4Interface);
+        return equalNetInterfaceSpeed && equalIpv6Interface && equalIpv4Interface && equalIpv6Connection;
     }
 
     private static boolean compareDisk(HardwareInfo node, HardwareInfo actualHardware, SpecReportDimensions specReportDimensions) {
