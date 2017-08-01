@@ -4,6 +4,7 @@
 #include <vespa/searchlib/docstore/idocumentstore.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 
+namespace searchcorespi::index { class IThreadService; }
 namespace proton {
 
 /**
@@ -13,10 +14,14 @@ class SummaryFlushTarget : public searchcorespi::IFlushTarget {
 private:
     using FlushStats = searchcorespi::FlushStats;
     search::IDocumentStore & _docStore;
+    searchcorespi::index::IThreadService & _summaryService;
     FlushStats _lastStats;
 
+    Task::UP internalInitFlush(SerialNum currentSerial);
+
 public:
-    SummaryFlushTarget(search::IDocumentStore & docStore);
+    SummaryFlushTarget(search::IDocumentStore & docStore,
+                       searchcorespi::index::IThreadService & summaryService);
 
     // Implements IFlushTarget
     virtual MemoryGain getApproxMemoryGain() const override;
