@@ -115,8 +115,8 @@ FastAccessFeedView::forceCommit(SerialNum serialNum,
 void
 FastAccessFeedView::sync()
 {
+    Parent::sync();
     _writeService.attributeFieldWriter().sync();
-    _writeService.summary().sync();
 }
 
 

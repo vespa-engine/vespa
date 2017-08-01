@@ -119,6 +119,7 @@ StoreOnlyFeedView::StoreOnlyFeedView(const Context &ctx, const PersistentParams 
 void
 StoreOnlyFeedView::sync()
 {
+    _writeService.summary().sync();
 }
 
 void
