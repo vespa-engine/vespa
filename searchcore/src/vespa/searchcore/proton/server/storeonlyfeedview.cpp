@@ -115,7 +115,6 @@ StoreOnlyFeedView::StoreOnlyFeedView(const Context &ctx, const PersistentParams 
     _docType = _repo->getDocumentType(_params._docTypeName.getName());
 }
 
-
 void
 StoreOnlyFeedView::sync()
 {
