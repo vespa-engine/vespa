@@ -4,6 +4,7 @@ import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
 import com.yahoo.vespa.hosted.node.verification.commons.OutputParser;
 import com.yahoo.vespa.hosted.node.verification.commons.ParseInstructions;
 import com.yahoo.vespa.hosted.node.verification.commons.ParseResult;
+import org.apache.commons.exec.ExecuteException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -106,8 +107,11 @@ public class NetRetriever implements HardwareRetriever {
         try {
             ArrayList<String> commandOutput = commandExecutor.executeCommand(PING_NET_COMMAND);
             parseResults.add(parsePingResponse(commandOutput));
+        }
+        catch (ExecuteException e) {
+            logger.log(Level.WARNING, "Failed to execute ping6");
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Failed to ping6. ", e);
+            logger.log(Level.WARNING, e.getMessage());
         }
     }
 
