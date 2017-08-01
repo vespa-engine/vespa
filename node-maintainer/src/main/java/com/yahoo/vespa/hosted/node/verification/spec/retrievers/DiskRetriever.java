@@ -37,37 +37,42 @@ public class DiskRetriever implements HardwareRetriever {
     }
 
     public void updateInfo() {
-        try {
             updateDiskType();
             updateDiskSize();
+    }
+
+    protected void updateDiskType() {
+        try {
+            ArrayList<String> commandOutput = commandExecutor.executeCommand(DISK_CHECK_TYPE);
+            ParseResult parseResult = parseDiskType(commandOutput);
+            setDiskType(parseResult);
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Failed to retrieve disk info", e);
+            logger.log(Level.WARNING, "Failed to retrieve disk type", e);
         }
     }
 
-    protected void updateDiskType() throws IOException {
-        ArrayList<String> commandOutput = commandExecutor.executeCommand(DISK_CHECK_TYPE);
-        ParseResult parseResult = parseDiskType(commandOutput);
-        setDiskType(parseResult);
+    protected void updateDiskSize() {
+        try {
+            ArrayList<String> commandOutput = commandExecutor.executeCommand(DISK_CHECK_SIZE);
+            ArrayList<ParseResult> parseResult = parseDiskSize(commandOutput);
+            setDiskSize(parseResult);
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Failed to retrieve disk size", e);
+        }
     }
 
-    protected void updateDiskSize() throws IOException {
-        ArrayList<String> commandOutput = commandExecutor.executeCommand(DISK_CHECK_SIZE);
-        ArrayList<ParseResult> parseResult = parseDiskSize(commandOutput);
-        setDiskSize(parseResult);
-    }
-
-    protected ParseResult parseDiskType(ArrayList<String> commandOutput) {
+    protected ParseResult parseDiskType(ArrayList<String> commandOutput) throws IOException {
         ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(DISK_NAME));
         ParseInstructions parseInstructions = new ParseInstructions(DISK_TYPE_SEARCH_ELEMENT_INDEX, DISK_TYPE_RETURN_ELEMENT_INDEX, DISK_TYPE_REGEX_SPLIT, searchWords);
-        return OutputParser.parseSingleOutput(parseInstructions, commandOutput);
+        ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
+        if (!parseResult.getSearchWord().equals(DISK_NAME)) {
+            throw new IOException("Parsing for disk type failed");
+        }
+        return parseResult;
     }
 
     protected void setDiskType(ParseResult parseResult) {
         hardwareInfo.setDiskType(DiskType.UNKNOWN);
-        if (!parseResult.getSearchWord().equals(DISK_NAME)) {
-            return;
-        }
         String fastDiskSymbol = "0";
         String nonFastDiskSymbol = "1";
         if (parseResult.getValue().equals(fastDiskSymbol)) {
@@ -84,15 +89,18 @@ public class DiskRetriever implements HardwareRetriever {
     }
 
    protected void setDiskSize(ArrayList<ParseResult> parseResults) {
-        try {
-            double diskSize = 0;
-            for (ParseResult parseResult : parseResults) {
-                String sizeValue = parseResult.getValue().replaceAll("[^\\d.]", "");
-                diskSize += Double.parseDouble(sizeValue);
-            }
-            hardwareInfo.setMinDiskAvailableGb(diskSize);
-        } catch (NumberFormatException | NullPointerException e) {
-            return;
-        }
+       double diskSize = 0;
+       try {
+           for (ParseResult parseResult : parseResults) {
+               String sizeValue = parseResult.getValue().replaceAll("[^\\d.]", "");
+               diskSize += Double.parseDouble(sizeValue);
+           }
+       } catch (NumberFormatException | NullPointerException e) {
+           logger.log(Level.WARNING, "Parse results contained an invalid PV size - ", parseResults);
+       }
+       finally {
+           hardwareInfo.setMinDiskAvailableGb(diskSize);
+       }
     }
+
 }
