@@ -913,25 +913,26 @@ TEST_F("require that remove() notifies gid to lid change handler", SearchableFee
 bool
 assertThreadObserver(uint32_t masterExecuteCnt,
                      uint32_t indexExecuteCnt,
+                     uint32_t summaryExecuteCnt,
                      const test::ThreadingServiceObserver &observer)
 {
     if (!EXPECT_EQUAL(masterExecuteCnt, observer.masterObserver().getExecuteCnt())) return false;
     if (!EXPECT_EQUAL(indexExecuteCnt, observer.indexObserver().getExecuteCnt())) return false;
-    if (!EXPECT_EQUAL(masterExecuteCnt, observer.summaryObserver().getExecuteCnt())) return false;
+    if (!EXPECT_EQUAL(summaryExecuteCnt, observer.summaryObserver().getExecuteCnt())) return false;
     return true;
 }
 
 TEST_F("require that remove() calls removeComplete() via delayed thread service",
         SearchableFeedViewFixture)
 {
-    EXPECT_TRUE(assertThreadObserver(1, 0, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(1, 0, 0, f.writeServiceObserver()));
     f.putAndWait(f.doc1(10));
     // put index fields handled in index thread
-    EXPECT_TRUE(assertThreadObserver(2, 1, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(2, 1, 1, f.writeServiceObserver()));
     f.removeAndWait(f.doc1(20));
     // remove index fields handled in index thread
     // delayed remove complete handled in same index thread, then master thread
-    EXPECT_TRUE(assertThreadObserver(4, 2, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(4, 2, 2, f.writeServiceObserver()));
     EXPECT_EQUAL(1u, f.metaStoreObserver()._removeCompleteCnt);
     EXPECT_EQUAL(1u, f.metaStoreObserver()._removeCompleteLid);
 }
@@ -1149,11 +1150,11 @@ TEST_F("require that compactLidSpace() propagates to document meta store and doc
        SearchableFeedViewFixture)
 {
     f.populateBeforeCompactLidSpace();
-    EXPECT_TRUE(assertThreadObserver(5, 3, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(5, 3, 3, f.writeServiceObserver()));
     f.compactLidSpaceAndWait(2);
     // performIndexForceCommit in index thread, then completion callback
     // in master thread.
-    EXPECT_TRUE(assertThreadObserver(7, 4, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(7, 4, 4, f.writeServiceObserver()));
     EXPECT_EQUAL(2u, f.metaStoreObserver()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(2u, f.getDocumentStore()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(1u, f.metaStoreObserver()._holdUnblockShrinkLidSpaceCnt);
@@ -1166,12 +1167,12 @@ TEST_F("require that compactLidSpace() doesn't propagate to "
        SearchableFeedViewFixture)
 {
     f.populateBeforeCompactLidSpace();
-    EXPECT_TRUE(assertThreadObserver(5, 3, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(5, 3, 3, f.writeServiceObserver()));
     CompactLidSpaceOperation op(0, 2);
     op.setSerialNum(0);
     f.runInMaster([&] () { f.fv.handleCompactLidSpace(op); });
     // Delayed holdUnblockShrinkLidSpace() in index thread, then master thread
-    EXPECT_TRUE(assertThreadObserver(6, 3, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(6, 3, 3, f.writeServiceObserver()));
     EXPECT_EQUAL(0u, f.metaStoreObserver()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(0u, f.getDocumentStore()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(0u, f.metaStoreObserver()._holdUnblockShrinkLidSpaceCnt);
