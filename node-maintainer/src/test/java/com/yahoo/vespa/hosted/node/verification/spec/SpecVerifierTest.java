@@ -71,7 +71,7 @@ public class SpecVerifierTest {
     }
 
     @Test
-    public void makeYamasSpecReport_should_return_false_interface_speed() throws Exception {
+    public void makeYamasSpecReport_should_return_false_interface_speed_and_ipv6_connection() throws Exception {
         HardwareInfo actualHardware = new HardwareInfo();
         actualHardware.setMinCpuCores(24);
         actualHardware.setMinMainMemoryAvailableGb(24);
@@ -79,6 +79,7 @@ public class SpecVerifierTest {
         actualHardware.setMinDiskAvailableGb(500);
         actualHardware.setIpv4Interface(true);
         actualHardware.setIpv6Interface(false);
+        actualHardware.setIpv6Connection(true);
         actualHardware.setDiskType(HardwareInfo.DiskType.SLOW);
         ArrayList<URL> url = new ArrayList<>(Arrays.asList(new File(NODE_REPO_PATH).toURI().toURL()));
         NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(url);

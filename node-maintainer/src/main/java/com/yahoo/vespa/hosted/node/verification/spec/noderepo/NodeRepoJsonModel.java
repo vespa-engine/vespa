@@ -37,6 +37,7 @@ public class NodeRepoJsonModel {
         hardwareInfo.setMinDiskAvailableGb(this.minDiskAvailableGb);
         hardwareInfo.setMinCpuCores((int) Math.round(this.minCpuCores));
         hardwareInfo.setDiskType(this.fastDisk ? DiskType.FAST : DiskType.SLOW);
+        hardwareInfo.setIpv6Connection(getIpv6Address() != null);
         return hardwareInfo;
     }
 
