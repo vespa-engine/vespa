@@ -3,7 +3,6 @@
 #pragma once
 
 #include "fast_access_feed_view.h"
-#include "matchview.h"
 #include <vespa/searchcore/proton/attribute/i_attribute_writer.h>
 #include <vespa/searchcore/proton/index/i_index_writer.h>
 

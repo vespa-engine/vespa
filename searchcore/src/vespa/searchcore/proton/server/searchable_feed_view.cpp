@@ -20,8 +20,6 @@ using document::Document;
 using document::DocumentId;
 using document::DocumentTypeRepo;
 using document::DocumentUpdate;
-using proton::matching::MatchContext;
-using proton::matching::Matcher;
 using search::index::Schema;
 using storage::spi::BucketInfoResult;
 using storage::spi::Timestamp;
