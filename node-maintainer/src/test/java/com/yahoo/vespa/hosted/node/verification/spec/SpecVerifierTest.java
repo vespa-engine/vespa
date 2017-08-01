@@ -98,7 +98,7 @@ public class SpecVerifierTest {
         NodeRepoJsonModel actualNodeRepoJsonModel = SpecVerifier.getNodeRepositoryJSON(mockCommandExecutor);
         double expectedMinCpuCores = 4D;
         double expectedMinMainMemoryAvailableGb = 4.04D;
-        double expectedMinDiskAvailableGb = 63D;
+        double expectedMinDiskAvailableGb = 1759.84;
         boolean expectedFastDisk = true;
         String expectedIpv6Address = "2001:4998:c:2940::111c";
         assertEquals(expectedIpv6Address, actualNodeRepoJsonModel.getIpv6Address());

@@ -36,7 +36,7 @@ public class HardwareInfoRetrieverTest {
         expectedHardwareInfo.setMinCpuCores(4);
         expectedHardwareInfo.setMinMainMemoryAvailableGb(4.042128);
         expectedHardwareInfo.setInterfaceSpeedMbs(1000);
-        expectedHardwareInfo.setMinDiskAvailableGb(63);
+        expectedHardwareInfo.setMinDiskAvailableGb(1759.84);
         expectedHardwareInfo.setIpv4Interface(true);
         expectedHardwareInfo.setIpv6Interface(false);
         expectedHardwareInfo.setIpv6Connection(false);
