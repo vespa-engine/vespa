@@ -116,6 +116,7 @@ struct LegacyDocumentDBMetrics : metrics::MetricSet
     MatchingMetrics                              matching;
     ExecutorMetrics                              executor;
     ExecutorMetrics                              indexExecutor;
+    ExecutorMetrics                              summaryExecutor;
     PerDocTypeFeedMetrics                        feed;
     search::grouping::SessionManagerMetrics      sessionManager;
     SubDBMetrics                                 ready;

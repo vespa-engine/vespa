@@ -25,6 +25,10 @@ assertThreadObserver(uint32_t masterExecuteCnt,
                       observer.masterObserver().getExecuteCnt())) {
         return false;
     }
+    if (!EXPECT_EQUAL(masterExecuteCnt,
+                      observer.summaryObserver().getExecuteCnt())) {
+        return false;
+    }
     if (!EXPECT_EQUAL(indexExecuteCnt,
                       observer.indexObserver().getExecuteCnt())) {
         return false;

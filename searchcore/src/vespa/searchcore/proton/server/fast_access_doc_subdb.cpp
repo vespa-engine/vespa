@@ -331,6 +331,7 @@ FastAccessDocSubDB::onReprocessDone(SerialNum serialNum)
     attrWriter->commit(serialNum,
                        std::shared_ptr<search::IDestructorCallback>());
     _writeService.attributeFieldWriter().sync();
+    _writeService.summary().sync();
     Parent::onReprocessDone(serialNum);
 }
 

@@ -8,7 +8,6 @@
 #include "replaypacketdispatcher.h"
 #include "searchcontext.h"
 #include "tlcproxy.h"
-#include "writetokenq.h"
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/feeddebugger.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
@@ -18,6 +17,7 @@
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/searchlib/query/base.h>
 #include <vespa/vespalib/util/threadstackexecutorbase.h>
+#include <future>
 
 namespace search { class IDestructorCallback; }
 
@@ -55,7 +55,8 @@ public:
     using OnPutDoneType = const std::shared_ptr<PutDoneContext> &;
     using OnRemoveDoneType = const std::shared_ptr<RemoveDoneContext> &;
     using FeedTokenUP = std::unique_ptr<FeedToken>;
-    using WriteTokenProducer = WriteTokenQ::WriteTokenProducer;
+    using FutureDoc = std::shared_future<document::Document::UP>;
+    using PromisedDoc = std::promise<document::Document::UP>;
 
     struct Context
     {
@@ -130,7 +131,6 @@ private:
     const document::DocumentType            *_docType;
     documentmetastore::ILidReuseDelayer     &_lidReuseDelayer;
     CommitTimeTracker                       &_commitTimeTracker;
-    WriteTokenQ                              _writeTokenQ;
 
 protected:
     const search::index::Schema::SP          _schema;
@@ -139,6 +139,15 @@ protected:
     IDocumentMetaStore                      &_metaStore;
 
 private:
+    searchcorespi::index::IThreadService & summaryExecutor() {
+        return _writeService.summary();
+    }
+    void putSummary(SerialNum serialNum,  search::DocumentIdT lid, FutureDoc doc);
+    void putSummary(SerialNum serialNum,  search::DocumentIdT lid, document::Document::SP doc);
+    void removeSummary(SerialNum serialNum,  search::DocumentIdT lid);
+    void heartBeatSummary(SerialNum serialNum);
+
+
     bool useDocumentStore(SerialNum replaySerialNum) const {
         return replaySerialNum > _params._flushedDocumentStoreSerialNum;
     }
@@ -166,13 +175,9 @@ private:
 
     virtual void notifyGidToLidChange(const document::GlobalId &gid, uint32_t lid);
 
-    void updateIndexAndDocumentStore(bool indexedFieldsInScope, SerialNum serialNum, search::DocumentIdT lid,
-                                     const document::DocumentUpdate &upd, bool immediateCommit,
-                                     OnOperationDoneType onWriteDone, WriteTokenProducer writeTokenProducer);
+    void updateIndexAndDocumentStore(SerialNum serialNum, search::DocumentIdT lid, document::DocumentUpdate::SP upd,
+                                     OnOperationDoneType onWriteDone, PromisedDoc promisedDoc);
 
-    void applyUpdateToDocumentsAndIndex(FeedTokenUP token, SerialNum serialNum, search::DocumentIdT lid,
-                                        document::DocumentUpdate::SP upd, bool immediateCommit,
-                                        OnOperationDoneType onWriteDone, WriteTokenProducer writeTokenProducer);
 protected:
     virtual void internalDeleteBucket(const DeleteBucketOperation &delOp);
     virtual void heartBeatIndexedFields(SerialNum serialNum);
@@ -191,6 +196,8 @@ private:
                                   bool immediateCommit, OnOperationDoneType onWriteDone);
 
     virtual void updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const document::Document::SP &newDoc,
+                                     bool immediateCommit, OnOperationDoneType onWriteDone);
+    virtual void updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, FutureDoc doc,
                                      bool immediateCommit, OnOperationDoneType onWriteDone);
 
     virtual void removeAttributes(SerialNum serialNum, search::DocumentIdT lid,
