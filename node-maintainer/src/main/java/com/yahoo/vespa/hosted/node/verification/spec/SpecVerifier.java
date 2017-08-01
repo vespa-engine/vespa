@@ -58,7 +58,9 @@ public class SpecVerifier {
 
     public static void main(String[] args) throws IOException {
         CommandExecutor commandExecutor = new CommandExecutor();
-        SpecVerifier.verifySpec(commandExecutor);
+        if (!SpecVerifier.verifySpec(commandExecutor)){
+            System.exit(2);
+        }
     }
 
 }
