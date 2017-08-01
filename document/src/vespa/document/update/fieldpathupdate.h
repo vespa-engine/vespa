@@ -2,13 +2,10 @@
 #pragma once
 
 #include "updatevisitor.h"
-#include "valueupdate.h"
-#include <vespa/document/datatype/datatype.h>
-#include <vespa/document/util/serializable.h>
-#include <vespa/document/util/xmlserializable.h>
-#include <vespa/document/fieldvalue/fieldvalue.h>
-#include <vespa/document/select/node.h>
-#include <vespa/document/select/resultlist.h>
+#include <vespa/document/base/fieldpath.h>
+#include <vespa/document/util/printable.h>
+#include <vespa/document/util/identifiableid.h>
+#include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/vespalib/objects/cloneable.h>
 
 namespace document {
@@ -18,26 +15,27 @@ class DocumentTypeRepo;
 class Field;
 class FieldValue;
 class BucketIdFactory;
+class Document;
+class DataType;
+
+namespace select { class Node; }
+namespace fieldvalue { class IteratorHandler; }
 
 class FieldPathUpdate : public vespalib::Cloneable,
                         public Printable,
                         public vespalib::Identifiable
 {
 protected:
-    typedef vespalib::stringref stringref;
+    using stringref = vespalib::stringref;
     /** To be used for deserialization */
     FieldPathUpdate();
+    FieldPathUpdate(const FieldPathUpdate &);
+    FieldPathUpdate & operator =(const FieldPathUpdate &);
 
    static vespalib::string getString(ByteBuffer& buffer);
 public:
-    typedef select::ResultList::VariableMap VariableMap;
-    typedef std::shared_ptr<FieldPathUpdate> SP;
-    typedef vespalib::CloneablePtr<FieldPathUpdate> CP;
-
-    FieldPathUpdate(const DocumentTypeRepo& repo,
-                    const DataType& type,
-                    stringref fieldPath,
-                    stringref whereClause = stringref());
+    using SP = std::shared_ptr<FieldPathUpdate>;
+    using CP = vespalib::CloneablePtr<FieldPathUpdate>;
 
     ~FieldPathUpdate();
 
@@ -56,9 +54,6 @@ public:
         return ! (*this == other);
     }
 
-    const FieldPath& getFieldPath() const { return *_fieldPath; }
-    const select::Node& getWhereClause() const { return *_whereClause; }
-
     const vespalib::string& getOriginalFieldPath() const { return _originalFieldPath; }
     const vespalib::string& getOriginalWhereClause() const { return _originalWhereClause; }
 
@@ -67,10 +62,10 @@ public:
      * the field path.
      * @throws IllegalArgumentException upon datatype mismatch.
      */
-    void checkCompatibility(const FieldValue& fv) const;
+    void checkCompatibility(const FieldValue& fv, const DataType & type) const;
 
     /** @return Whether or not the first field path element is a body field */
-    bool affectsDocumentBody() const;
+    bool affectsDocumentBody(const DataType & type) const;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
@@ -88,6 +83,8 @@ public:
             int serializationVersion);
 
 protected:
+    FieldPathUpdate(stringref fieldPath, stringref whereClause = stringref());
+
     /**
      * Deserializes the given byte buffer into an instance of a FieldPathUpdate
      * object.
@@ -100,18 +97,14 @@ protected:
                              ByteBuffer& buffer, uint16_t version);
 
     /** @return the datatype of the last path element in the field path */
-    const DataType& getResultingDataType() const;
+    const DataType& getResultingDataType(const FieldPath & path) const;
     enum SerializedMagic {AssignMagic=0, RemoveMagic=1, AddMagic=2};
 private:
     // TODO: rename to createIteratorHandler?
-    virtual std::unique_ptr<fieldvalue::IteratorHandler> getIteratorHandler(Document& doc) const = 0;
+    virtual std::unique_ptr<fieldvalue::IteratorHandler> getIteratorHandler(Document& doc, const DocumentTypeRepo & repo) const = 0;
 
     vespalib::string _originalFieldPath;
     vespalib::string _originalWhereClause;
-
-    vespalib::CloneablePtr<FieldPath> _fieldPath;
-    std::shared_ptr<select::Node> _whereClause;
 };
 
-} // ns document
-
+}

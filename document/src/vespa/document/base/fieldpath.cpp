@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fieldpath.h"
-#include "field.h"
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/document/datatype/weightedsetdatatype.h>
@@ -15,14 +14,14 @@ using vespalib::make_string;
 
 namespace document {
 
-IMPLEMENT_IDENTIFIABLE_NS(document, FieldPathEntry, vespalib::Identifiable)
-
+FieldPathEntry::FieldPathEntry(const FieldPathEntry &) = default;
+FieldPathEntry & FieldPathEntry::operator=(const FieldPathEntry & ) = default;
 FieldPathEntry::~FieldPathEntry() { }
 
 FieldPathEntry::FieldPathEntry() :
     _type(NONE),
     _name(""),
-    _fieldRef(),
+    _field(),
     _dataType(0),
     _lookupIndex(0),
     _lookupKey(),
@@ -33,7 +32,7 @@ FieldPathEntry::FieldPathEntry() :
 FieldPathEntry::FieldPathEntry(const DataType & dataType, uint32_t arrayIndex) :
     _type(ARRAY_INDEX),
     _name(""),
-    _fieldRef(),
+    _field(),
     _dataType(&dataType),
     _lookupIndex(arrayIndex),
     _lookupKey(),
@@ -46,7 +45,7 @@ FieldPathEntry::FieldPathEntry(const DataType & dataType, uint32_t arrayIndex) :
 FieldPathEntry::FieldPathEntry(const Field &fieldRef) :
     _type(STRUCT_FIELD),
     _name(fieldRef.getName()),
-    _fieldRef(new Field(fieldRef)),
+    _field(fieldRef),
     _dataType(&fieldRef.getDataType()),
     _lookupIndex(0),
     _lookupKey(),
@@ -58,7 +57,7 @@ FieldPathEntry::FieldPathEntry(const DataType & dataType, const DataType& fillTy
                                const FieldValueCP & lookupKey) :
     _type(MAP_KEY),
     _name("value"),
-    _fieldRef(),
+    _field(),
     _dataType(&dataType),
     _lookupIndex(0),
     _lookupKey(lookupKey),
@@ -85,7 +84,7 @@ FieldPathEntry::FieldPathEntry(const DataType&, const DataType& keyType,
                                const DataType& valueType, bool keysOnly, bool valuesOnly) :
     _type(keysOnly ? MAP_ALL_KEYS : MAP_ALL_VALUES),
     _name(keysOnly ? "key" : "value"),
-    _fieldRef(),
+    _field(),
     _dataType(keysOnly ? &keyType : &valueType),
     _lookupIndex(0),
     _lookupKey(),
@@ -99,7 +98,7 @@ FieldPathEntry::FieldPathEntry(const DataType&, const DataType& keyType,
 FieldPathEntry::FieldPathEntry(const DataType & dataType, const vespalib::stringref & variableName) :
     _type(VARIABLE),
     _name(""),
-    _fieldRef(),
+    _field(),
     _dataType(&dataType),
     _lookupIndex(0),
     _lookupKey(),
@@ -111,8 +110,12 @@ FieldPathEntry::FieldPathEntry(const DataType & dataType, const vespalib::string
 
 const DataType &FieldPathEntry::getDataType() const
 {
-     return _fieldRef.get() ? _fieldRef->getDataType()
-                            : *_dataType;
+     return _field.valid() ? _field.getDataType() : *_dataType;
+}
+
+FieldValue::UP FieldPathEntry::stealFieldValueToSet() const
+{
+    return FieldValue::UP(_fillInVal.release());
 }
 
 void
@@ -120,7 +123,7 @@ FieldPathEntry::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     visit(visitor, "type", _type);
     visit(visitor, "name", _name);
-    visit(visitor, "fieldRef", _fieldRef);
+    visit(visitor, "fieldRef", _field);
     visit(visitor, "dataType", _dataType);
     visit(visitor, "lookupIndex", _lookupIndex);
     visit(visitor, "lookupKey", _lookupKey);
@@ -168,33 +171,22 @@ vespalib::string FieldPathEntry::parseKey(vespalib::string & key)
 }
 
 FieldPath::FieldPath()
-    : Cloneable(), _path()
+    : _path()
 { }
 
-FieldPath::FieldPath(const FieldPath& other)
-    : Cloneable(), _path(other._path)
-{ }
-
+FieldPath::FieldPath(const FieldPath &) = default;
+FieldPath & FieldPath::operator=(const FieldPath &) = default;
 FieldPath::~FieldPath() { }
 
-FieldPath&
-FieldPath::operator=(const FieldPath& rhs)
-{
-    if (&rhs != this) {
-        _path = rhs._path;
-    }
-    return *this;
-}
-
 FieldPath::iterator
-FieldPath::insert(iterator pos, const FieldPathEntry& entry)
+FieldPath::insert(iterator pos, FieldPathEntry && entry)
 {
-    return _path.insert(pos, entry);
+    return _path.insert(pos, std::move(entry));
 }
 void
-FieldPath::push_back(const FieldPathEntry& entry)
+FieldPath::push_back(FieldPathEntry && entry)
 {
-    _path.push_back(entry);
+    _path.push_back(std::move(entry));
 }
 
 void
@@ -212,8 +204,9 @@ FieldPath::clear()
 void
 FieldPath::visitMembers(vespalib::ObjectVisitor& visitor) const
 {
+    (void) visitor;
     for (uint32_t i = 0; i < _path.size(); ++i) {
-        visit(visitor, vespalib::make_string("[%u]", i), _path[i]);
+//        visit(visitor, vespalib::make_string("[%u]", i), _path[i]);
     }
 }
 

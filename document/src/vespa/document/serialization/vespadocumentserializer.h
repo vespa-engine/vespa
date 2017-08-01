@@ -101,7 +101,7 @@ private:
     void visit(const RawFieldValue &value)                 override { write(value); }
     void visit(const ShortFieldValue &value)               override { write(value); }
     void visit(const StringFieldValue &value)              override { write(value); }
-    void visit(const StructFieldValue &value)              override { write(value, AllFields()); }
+    void visit(const StructFieldValue &value)              override;
     void visit(const WeightedSetFieldValue &value)         override { write(value); }
     void visit(const TensorFieldValue &value)              override { write(value); }
     void visit(const ReferenceFieldValue& value)           override { write(value); }

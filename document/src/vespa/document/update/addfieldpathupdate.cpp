@@ -4,9 +4,11 @@
 #include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
+#include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <ostream>
+#include <cassert>
 
 using vespalib::nbostream;
 
@@ -17,12 +19,12 @@ using vespalib::make_string;
 
 IMPLEMENT_IDENTIFIABLE(AddFieldPathUpdate, FieldPathUpdate);
 
-AddFieldPathUpdate::AddFieldPathUpdate(const DocumentTypeRepo& repo, const DataType& type,
-                                       stringref fieldPath, stringref whereClause, const ArrayFieldValue& values)
-    : FieldPathUpdate(repo, type, fieldPath, whereClause),
+AddFieldPathUpdate::AddFieldPathUpdate(const DataType& type, stringref fieldPath,
+                                       stringref whereClause, const ArrayFieldValue& values)
+    : FieldPathUpdate(fieldPath, whereClause),
       _values(vespalib::CloneablePtr<ArrayFieldValue>(values.clone()))
 {
-    checkCompatibility(*_values);
+    checkCompatibility(*_values, type);
 }
 
 AddFieldPathUpdate::AddFieldPathUpdate()
@@ -91,7 +93,9 @@ AddFieldPathUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& ty
 {
     FieldPathUpdate::deserialize(repo, type, buffer, version);
 
-    const DataType& fieldType = getResultingDataType();
+    FieldPath path;
+    type.buildFieldPath(path, getOriginalFieldPath());
+    const DataType& fieldType = getResultingDataType(path);
     assert(fieldType.inherits(ArrayDataType::classId));
     FieldValue::UP val = fieldType.createFieldValue();
     _values.reset(static_cast<ArrayFieldValue*>(val.release()));
@@ -102,7 +106,7 @@ AddFieldPathUpdate::deserialize(const DocumentTypeRepo& repo, const DataType& ty
 }
 
 std::unique_ptr<IteratorHandler>
-AddFieldPathUpdate::getIteratorHandler(Document&) const {
+AddFieldPathUpdate::getIteratorHandler(Document&, const DocumentTypeRepo &) const {
     return std::make_unique<AddIteratorHandler>(*_values);
 }
 

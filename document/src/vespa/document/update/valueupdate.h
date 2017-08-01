@@ -32,8 +32,6 @@ class DocumentTypeRepo;
 class Field;
 class FieldValue;
 
-#define ACCEPT_UPDATE_VISITOR void accept(UpdateVisitor & visitor) const override { visitor.visit(*this); }
-
 class ValueUpdate : public vespalib::Identifiable,
                     public Printable,
                     public vespalib::Cloneable,

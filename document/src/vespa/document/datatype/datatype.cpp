@@ -170,13 +170,12 @@ DataType::operator<(const DataType& other) const
     return (_dataTypeId < other._dataTypeId);
 }
 
-FieldPath::UP
-DataType::buildFieldPath(const vespalib::stringref  & remainFieldName) const
+void
+DataType::buildFieldPath(FieldPath & path, const vespalib::stringref  & remainFieldName) const
 {
     if ( !remainFieldName.empty() ) {
-        return onBuildFieldPath(remainFieldName);
+        onBuildFieldPath(path,remainFieldName);
     }
-    return FieldPath::UP(new FieldPath());
 }
 
 } // document

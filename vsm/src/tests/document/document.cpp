@@ -34,9 +34,11 @@ DocumentTest::testStorageDocument()
     doc->setValue(fb, StringFieldValue("bar"));
 
     SharedFieldPathMap fpmap(new FieldPathMapT());
-    fpmap->push_back(*dt.buildFieldPath("a"));
-    fpmap->push_back(*dt.buildFieldPath("b"));
-    fpmap->push_back(FieldPath());
+    fpmap->emplace_back();
+    dt.buildFieldPath(fpmap->back(),"a");
+    fpmap->emplace_back();
+    dt.buildFieldPath(fpmap->back(), "b");
+    fpmap->emplace_back();
     ASSERT_TRUE((*fpmap)[0].size() == 1);
     ASSERT_TRUE((*fpmap)[1].size() == 1);
     ASSERT_TRUE((*fpmap)[2].size() == 0);

@@ -11,10 +11,7 @@ public:
     /** For deserialization */
     RemoveFieldPathUpdate();
 
-    RemoveFieldPathUpdate(const DocumentTypeRepo& repo,
-                          const DataType& type,
-                          stringref fieldPath,
-                          stringref whereClause = stringref());
+    RemoveFieldPathUpdate(stringref fieldPath, stringref whereClause = stringref());
 
     FieldPathUpdate* clone() const override { return new RemoveFieldPathUpdate(*this); }
 
@@ -29,9 +26,7 @@ private:
     void deserialize(const DocumentTypeRepo& repo, const DataType& type,
                      ByteBuffer& buffer, uint16_t version) override;
 
-    std::unique_ptr<fieldvalue::IteratorHandler> getIteratorHandler(Document&) const override;
+    std::unique_ptr<fieldvalue::IteratorHandler> getIteratorHandler(Document &, const DocumentTypeRepo &) const override;
 };
 
-
 } // ns document
-

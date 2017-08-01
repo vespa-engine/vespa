@@ -195,8 +195,16 @@ DocsumTest::testSlimeFieldWriter()
         { // select a subset and then all
             SlimeFieldWriter sfw;
             DocsumFieldSpec::FieldIdentifierVector fields;
-            fields.push_back(DocsumFieldSpec::FieldIdentifier(0, *type.buildFieldPath("a")));
-            fields.push_back(DocsumFieldSpec::FieldIdentifier(0, *type.buildFieldPath("c.e")));
+            {
+                FieldPath path;
+                type.buildFieldPath(path, "a");
+                fields.push_back(DocsumFieldSpec::FieldIdentifier(0, path));
+            }
+            {
+                FieldPath path;
+                type.buildFieldPath(path, "c.e");
+                fields.push_back(DocsumFieldSpec::FieldIdentifier(0, path));
+            }
             sfw.setInputFields(fields);
             TEST_DO(assertSlimeFieldWriter(sfw, value, "{\"a\":\"foo\",\"c\":{\"e\":\"qux\"}}"));
             sfw.clear();
@@ -240,10 +248,18 @@ DocsumTest::requireThatSlimeFieldWriterHandlesMap()
         { // select a subset and then all
             SlimeFieldWriter sfw;
             DocsumFieldSpec::FieldIdentifierVector fields;
-            fields.push_back(DocsumFieldSpec::FieldIdentifier(0, *mapType.buildFieldPath("value.b")));
+            {
+                FieldPath path;
+                mapType.buildFieldPath(path, "value.b");
+                fields.push_back(DocsumFieldSpec::FieldIdentifier(0, path));
+            }
             sfw.setInputFields(fields);
             TEST_DO(assertSlimeFieldWriter(sfw, mapfv, "[{\"key\":\"k1\",\"value\":{\"b\":\"bar\"}}]"));
-            fields[0] = DocsumFieldSpec::FieldIdentifier(0, *mapType.buildFieldPath("{k1}.a"));
+            {
+                FieldPath path;
+                mapType.buildFieldPath(path, "{k1}.a");
+                fields[0] = DocsumFieldSpec::FieldIdentifier(0, path);
+            }
             sfw.clear();
             sfw.setInputFields(fields);
             TEST_DO(assertSlimeFieldWriter(sfw, mapfv, "[{\"key\":\"k1\",\"value\":{\"a\":\"foo\"}}]"));

@@ -33,11 +33,6 @@ StructFieldValue::StructFieldValue(const DataType &type)
       _version(Document::getNewestSerializationVersion()),
       _hasChanged(true)
 {
-    if (!type.getClass().inherits(StructDataType::classId)) {
-        throw vespalib::IllegalArgumentException(
-                "Cannot generate a struct value with non-struct type "
-                + type.toString() + ".", VESPA_STRLOC);
-    }
 }
 
 StructFieldValue::~StructFieldValue() { }

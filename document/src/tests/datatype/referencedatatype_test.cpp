@@ -56,16 +56,16 @@ TEST_F("print() emits type name and id", Fixture) {
 }
 
 TEST_F("buildFieldPath returns empty path for empty input", Fixture) {
-    auto fp = f.refType.buildFieldPath("");
-    ASSERT_TRUE(fp.get() != nullptr);
-    EXPECT_TRUE(fp->empty());
+    FieldPath fp;
+    f.refType.buildFieldPath(fp, "");
+    EXPECT_TRUE(fp.empty());
 }
 
 TEST_F("buildFieldPath throws IllegalArgumentException for non-empty input", Fixture) {
-    EXPECT_EXCEPTION(f.refType.buildFieldPath("herebedragons"),
+    FieldPath fp;
+    EXPECT_EXCEPTION(f.refType.buildFieldPath(fp, "herebedragons"),
                      vespalib::IllegalArgumentException,
-                     "Reference data type does not support further field "
-                     "recursion: 'herebedragons'");
+                     "Reference data type does not support further field recursion: 'herebedragons'");
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -1,14 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "field.h"
 #include <vespa/vespalib/objects/cloneable.h>
 #include <vespa/document/util/identifiableid.h>
 #include <memory>
 #include <vector>
 
-namespace vespalib {
-class ObjectVisitor;
-}
+namespace vespalib { class ObjectVisitor; }
 
 namespace document {
 
@@ -17,11 +16,9 @@ class DataType;
 class MapDataType;
 class WeightedSetDataType;
 class ArrayDataType;
-class Field;
 
-class FieldPathEntry : public vespalib::Identifiable {
+class FieldPathEntry {
 public:
-    DECLARE_IDENTIFIABLE_NS(document, FieldPathEntry);
     enum Type {
         STRUCT_FIELD,
         ARRAY_INDEX,
@@ -31,14 +28,17 @@ public:
         VARIABLE,
         NONE
     };
-    typedef std::shared_ptr<const Field> FieldSP;
-    typedef vespalib::CloneablePtr<DataType> DataTypeCP;
-    typedef vespalib::CloneablePtr<FieldValue> FieldValueCP;
+    using FieldValueCP = vespalib::CloneablePtr<FieldValue>;
 
     /**
        Creates a empty field path entry.
     */
     FieldPathEntry();
+
+    FieldPathEntry(FieldPathEntry &&) = default;
+    FieldPathEntry & operator=(FieldPathEntry &&) = default;
+    FieldPathEntry(const FieldPathEntry &);
+    FieldPathEntry & operator=(const FieldPathEntry &);
 
     /**
        Creates a field path entry for a struct field lookup.
@@ -53,8 +53,7 @@ public:
     /**
        Creates a field path entry for a map or wset key lookup.
     */
-    FieldPathEntry(const DataType & dataType, const DataType& fillType,
-                   const FieldValueCP & lookupKey);
+    FieldPathEntry(const DataType & dataType, const DataType& fillType, const FieldValueCP & lookupKey);
 
     /**
        Creates a field path entry for a map key or value only traversal.
@@ -73,8 +72,8 @@ public:
 
     const DataType& getDataType() const;
 
-    bool hasField() const { return _fieldRef.get(); }
-    const Field & getFieldRef() const { return *_fieldRef; }
+    bool hasField() const { return _field.valid(); }
+    const Field & getFieldRef() const { return _field; }
 
     uint32_t getIndex() const { return _lookupIndex; }
 
@@ -83,8 +82,9 @@ public:
     const vespalib::string& getVariableName() const { return _variableName; }
 
     FieldValue * getFieldValueToSetPtr() const { return _fillInVal.get(); }
-    FieldValue& getFieldValueToSet() const { return *_fillInVal; }
-    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    FieldValue & getFieldValueToSet() const { return *_fillInVal; }
+    std::unique_ptr<FieldValue> stealFieldValueToSet() const;
+    void visitMembers(vespalib::ObjectVisitor &visitor) const;
     /**
      * Parses a string of the format {["]escaped string["]} to its unescaped value.
      * @param key is the incoming value, and contains what is left when done.
@@ -93,19 +93,19 @@ public:
     static vespalib::string parseKey(vespalib::string & key);
 private:
     void setFillValue(const DataType & dataType);
-    Type              _type;
-    vespalib::string  _name;
-    FieldSP           _fieldRef;
-    const DataType *  _dataType;
-    uint32_t          _lookupIndex;
-    FieldValueCP      _lookupKey;
-    vespalib::string  _variableName;
+    Type                 _type;
+    vespalib::string     _name;
+    Field                _field;
+    const DataType     * _dataType;
+    uint32_t             _lookupIndex;
+    FieldValueCP         _lookupKey;
+    vespalib::string     _variableName;
     mutable FieldValueCP _fillInVal;
 };
 
 //typedef std::deque<FieldPathEntry> FieldPath;
 // Facade over FieldPathEntry container that exposes cloneability
-class FieldPath : public vespalib::Cloneable {
+class FieldPath {
     typedef std::vector<FieldPathEntry> Container;
 public:
     typedef Container::reference reference;
@@ -117,8 +117,10 @@ public:
     typedef std::unique_ptr<FieldPath> UP;
 
     FieldPath();
-    FieldPath(const FieldPath& other);
-    FieldPath& operator=(const FieldPath& rhs);
+    FieldPath(const FieldPath &);
+    FieldPath & operator=(const FieldPath &);
+    FieldPath(FieldPath &&) = default;
+    FieldPath & operator=(FieldPath &&) = default;
     ~FieldPath();
 
     template <typename InputIterator>
@@ -126,8 +128,8 @@ public:
         : _path(first, last)
     { }
 
-    iterator insert(iterator pos, const FieldPathEntry& entry);
-    void push_back(const FieldPathEntry& entry);
+    iterator insert(iterator pos, FieldPathEntry && entry);
+    void push_back(FieldPathEntry && entry);
 
     iterator begin() { return _path.begin(); }
     iterator end() { return _path.end(); }
@@ -148,19 +150,11 @@ public:
 
     Container::size_type size() const { return _path.size(); }
     bool empty() const { return _path.empty(); }
-    reference operator[](Container::size_type i) {
-        return _path[i];
-    }
+    reference operator[](Container::size_type i) { return _path[i]; }
 
-    const_reference operator[](Container::size_type i) const {
-        return _path[i];
-    }
+    const_reference operator[](Container::size_type i) const { return _path[i]; }
 
-    FieldPath* clone() const override {
-        return new FieldPath(*this);
-    }
-
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    void visitMembers(vespalib::ObjectVisitor &visitor) const;
 
     template <typename IT>
     class Range {

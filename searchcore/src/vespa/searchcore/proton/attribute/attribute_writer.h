@@ -26,7 +26,7 @@ public:
     class WriteContext
     {
         uint32_t _executorId;
-        std::vector<std::unique_ptr<FieldPath>> _fieldPaths;
+        std::vector<FieldPath> _fieldPaths;
         std::vector<AttributeVector *> _attributes;
     public:
         WriteContext(uint32_t executorId);
@@ -36,7 +36,7 @@ public:
         void buildFieldPaths(const DocumentType &docType);
         void add(AttributeVector *attr);
         uint32_t getExecutorId() const { return _executorId; }
-        const std::vector<std::unique_ptr<FieldPath>> &getFieldPaths() const { return _fieldPaths; }
+        const std::vector<FieldPath> &getFieldPaths() const { return _fieldPaths; }
         const std::vector<AttributeVector *> &getAttributes() const { return _attributes; }
     };
 private:

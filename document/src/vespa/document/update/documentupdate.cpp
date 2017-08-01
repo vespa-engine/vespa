@@ -100,7 +100,7 @@ DocumentUpdate::affectsDocumentBody() const
         }
     }
     for (const auto & update : _fieldPathUpdates) {
-        if (update->affectsDocumentBody()) {
+        if (update->affectsDocumentBody(*_type)) {
             return true;
         }
     }
@@ -165,7 +165,7 @@ DocumentUpdate::applyTo(Document& doc) const
 {
     const DocumentType& type = doc.getType();
     if (_type->getName() != type.getName()) {
-	string err = make_string("Can not apply a \"%s\" document update to a \"%s\" document.",
+        string err = make_string("Can not apply a \"%s\" document update to a \"%s\" document.",
                                  _type->getName().c_str(), type.getName().c_str());
         throw IllegalArgumentException(err, VESPA_STRLOC);
     }

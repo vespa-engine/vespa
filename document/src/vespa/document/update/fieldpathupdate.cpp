@@ -1,9 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "fieldpathupdates.h"
+#include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/util/serializableexceptions.h>
+#include <vespa/document/util/bytebuffer.h>
 #include <ostream>
 
 #include <vespa/log/log.h>
@@ -32,29 +34,16 @@ parseDocumentSelection(vespalib::stringref query, const DocumentTypeRepo& repo)
 
 FieldPathUpdate::FieldPathUpdate() :
     _originalFieldPath(),
-    _originalWhereClause(),
-    _fieldPath(),
-    _whereClause()
-{
-}
+    _originalWhereClause()
+{ }
 
-FieldPathUpdate::FieldPathUpdate(const DocumentTypeRepo& repo,
-                                 const DataType& type,
-                                 stringref fieldPath,
-                                 stringref whereClause) :
+FieldPathUpdate::FieldPathUpdate(const FieldPathUpdate &) = default;
+FieldPathUpdate & FieldPathUpdate::operator =(const FieldPathUpdate &) = default;
+
+FieldPathUpdate::FieldPathUpdate(stringref fieldPath, stringref whereClause) :
     _originalFieldPath(fieldPath),
-    _originalWhereClause(whereClause),
-    _fieldPath(type.buildFieldPath(_originalFieldPath).release()),
-    _whereClause(!_originalWhereClause.empty()
-                 ? parseDocumentSelection(_originalWhereClause, repo)
-                 : std::unique_ptr<select::Node>())
-{
-    if (!_fieldPath.get()) {
-        throw IllegalArgumentException(
-                make_string("Could not create field path update for: path='%s', where='%s'",
-                            fieldPath.c_str(), whereClause.c_str()), VESPA_STRLOC);
-    }
-}
+    _originalWhereClause(whereClause)
+{ }
 
 FieldPathUpdate::~FieldPathUpdate()  { }
 
@@ -68,29 +57,32 @@ FieldPathUpdate::operator==(const FieldPathUpdate& other) const
 void
 FieldPathUpdate::applyTo(Document& doc) const
 {
-    std::unique_ptr<IteratorHandler> handler(getIteratorHandler(doc));
+    std::unique_ptr<IteratorHandler> handler(getIteratorHandler(doc, *doc.getRepo()));
 
-    if (!_whereClause) {
-        doc.iterateNested(*_fieldPath, *handler);
+    FieldPath path;
+    doc.getDataType()->buildFieldPath(path, _originalFieldPath);
+    if (_originalWhereClause.empty()) {
+        doc.iterateNested(path, *handler);
     } else {
-        select::ResultList results = _whereClause->contains(doc);
-        for (select::ResultList::const_iterator i = results.begin();
-             i != results.end(); ++i)
-        {
+        std::unique_ptr<select::Node> whereClause = parseDocumentSelection(_originalWhereClause, *doc.getRepo());
+        select::ResultList results = whereClause->contains(doc);
+        for (select::ResultList::const_iterator i = results.begin(); i != results.end(); ++i) {
             LOG(spam, "vars = %s", handler->getVariables().toString().c_str());
             if (*i->second == select::Result::True) {
                 handler->setVariables(i->first);
-                doc.iterateNested(*_fieldPath, *handler);
+                doc.iterateNested(path, *handler);
             }
         }
     }
 }
 
 bool
-FieldPathUpdate::affectsDocumentBody() const
+FieldPathUpdate::affectsDocumentBody(const DataType & type) const
 {
-    if (_fieldPath->empty() || !(*_fieldPath)[0].hasField()) return false;
-    const Field& field = (*_fieldPath)[0].getFieldRef();
+    FieldPath path;
+    type.buildFieldPath(path, _originalFieldPath);
+    if (path.empty() || !path[0].hasField()) return false;
+    const Field& field = path[0].getFieldRef();
     return !field.isHeaderField();
 }
 
@@ -102,24 +94,26 @@ FieldPathUpdate::print(std::ostream& out, bool, const std::string& indent) const
 }
 
 void
-FieldPathUpdate::checkCompatibility(const FieldValue& fv) const
+FieldPathUpdate::checkCompatibility(const FieldValue& fv, const DataType & type) const
 {
-    if ( !getResultingDataType().isValueType(fv)) {
+    FieldPath path;
+    type.buildFieldPath(path, _originalFieldPath);
+    if ( !getResultingDataType(path).isValueType(fv)) {
         throw IllegalArgumentException(
                 make_string("Cannot update a '%s' field with a '%s' value",
-                            getResultingDataType().toString().c_str(),
+                            getResultingDataType(path).toString().c_str(),
                             fv.getDataType()->toString().c_str()),
                 VESPA_STRLOC);
     }
 }
 
 const DataType&
-FieldPathUpdate::getResultingDataType() const
+FieldPathUpdate::getResultingDataType(const FieldPath & path) const
 {
-    if (_fieldPath->empty()) {
+    if (path.empty()) {
         throw vespalib::IllegalStateException("Cannot get resulting data type from an empty field path", VESPA_STRLOC);
     }
-    return _fieldPath->rbegin()->getDataType();
+    return path.rbegin()->getDataType();
 }
 
 vespalib::string
@@ -133,30 +127,15 @@ FieldPathUpdate::getString(ByteBuffer& buffer)
 }
 
 void
-FieldPathUpdate::deserialize(const DocumentTypeRepo& repo,
-                             const DataType& type,
-                             ByteBuffer& buffer, uint16_t)
+FieldPathUpdate::deserialize(const DocumentTypeRepo&, const DataType&, ByteBuffer& buffer, uint16_t)
 {
     _originalFieldPath = getString(buffer);
     _originalWhereClause = getString(buffer);
-
-    try {
-        _fieldPath = type.buildFieldPath(_originalFieldPath).release();
-        if (!_fieldPath.get()) {
-            throw DeserializeException(make_string("Invalid field path: '%s'", _originalFieldPath.c_str()), VESPA_STRLOC);
-        }
-        _whereClause = !_originalWhereClause.empty()
-                       ? parseDocumentSelection(_originalWhereClause, repo)
-                       : std::unique_ptr<select::Node>();
-    } catch (const select::ParsingFailedException& e) {
-        throw DeserializeException(e.what(), VESPA_STRLOC);
-    }
 }
 
 std::unique_ptr<FieldPathUpdate>
-FieldPathUpdate::createInstance(const DocumentTypeRepo& repo,
-                                const DataType &type, ByteBuffer& buffer,
-                                int serializationVersion)
+FieldPathUpdate::createInstance(const DocumentTypeRepo& repo, const DataType &type,
+                                ByteBuffer& buffer, int serializationVersion)
 {
     unsigned char updateType = 0;
     buffer.getByte(updateType);
@@ -179,5 +158,4 @@ FieldPathUpdate::createInstance(const DocumentTypeRepo& repo,
     return update;
 }
 
-} // ns document
-
+}

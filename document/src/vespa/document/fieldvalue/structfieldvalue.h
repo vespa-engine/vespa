@@ -61,8 +61,6 @@ public:
     const DocumentTypeRepo * getRepo() const { return _repo; }
     void setDocumentType(const DocumentType & docType) { _doc_type = & docType; }
 
-    const StructDataType & getStructType() const;
-
     void lazyDeserialize(const FixedTypeRepo &repo,
                          uint16_t version,
                          SerializableArray::EntryMap && fields,
@@ -120,6 +118,7 @@ private:
     bool hasFieldValue(const Field&) const override;
     void removeFieldValue(const Field&) override;
     VESPA_DLL_LOCAL vespalib::ConstBufferRef getRawField(uint32_t id) const;
+    VESPA_DLL_LOCAL const StructDataType & getStructType() const;
 
     // Iterator implementation
     class FieldIterator;

@@ -28,16 +28,12 @@ public:
     bool operator==(const DataType& other) const override;
     MapDataType* clone() const override { return new MapDataType(*this); }
 
-    FieldPath::UP onBuildFieldPath(
-            const vespalib::stringref &remainFieldName) const override;
-    static FieldPath::UP buildFieldPathImpl(
-            const DataType& dataType,
-            const vespalib::stringref &remainFieldName,
-            const DataType &keyType,
-            const DataType &valueType);
+    void onBuildFieldPath(FieldPath & path, const vespalib::stringref &remainFieldName) const override;
+    static void buildFieldPathImpl(FieldPath & path, const DataType& dataType,
+                                   const vespalib::stringref &remainFieldName,
+                                   const DataType &keyType, const DataType &valueType);
 
     DECLARE_IDENTIFIABLE(MapDataType);
 };
 
 } // document
-

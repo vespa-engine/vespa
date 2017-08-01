@@ -2,34 +2,34 @@
 #pragma once
 
 #include "documentoperation.h"
-#include <vespa/document/update/documentupdate.h>
+
+namespace document { class DocumentUpdate; }
 
 namespace proton {
 
 class UpdateOperation : public DocumentOperation
 {
 private:
-    document::DocumentUpdate::SP _upd;
+    using DocumentUpdateSP = std::shared_ptr<document::DocumentUpdate>;
+    DocumentUpdateSP _upd;
     UpdateOperation(Type type,
                     const document::BucketId &bucketId,
                     const storage::spi::Timestamp &timestamp,
-                    const document::DocumentUpdate::SP &upd);
+                    const DocumentUpdateSP &upd);
 public:
     UpdateOperation();
     UpdateOperation(Type type);
     UpdateOperation(const document::BucketId &bucketId,
                     const storage::spi::Timestamp &timestamp,
-                    const document::DocumentUpdate::SP &upd);
+                    const DocumentUpdateSP &upd);
     virtual ~UpdateOperation() {}
-    const document::DocumentUpdate::SP &getUpdate() const { return _upd; }
-    virtual void serialize(vespalib::nbostream &os) const override;
-    virtual void deserialize(vespalib::nbostream &is,
-                             const document::DocumentTypeRepo &repo) override;
+    const DocumentUpdateSP &getUpdate() const { return _upd; }
+    void serialize(vespalib::nbostream &os) const override;
+    void deserialize(vespalib::nbostream &is, const document::DocumentTypeRepo &repo) override;
     virtual vespalib::string toString() const override;
     static UpdateOperation makeOldUpdate(const document::BucketId &bucketId,
                                          const storage::spi::Timestamp &timestamp,
-                                         const document::DocumentUpdate::SP &upd);
+                                         const DocumentUpdateSP &upd);
 };
 
 } // namespace proton
-

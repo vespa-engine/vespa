@@ -519,17 +519,18 @@ TEST("requireThatUncompressedStructFieldValueCanBeSerialized") {
 TEST("requireThatCompressedStructFieldValueCanBeSerialized") {
     StructDataType structType(getStructDataType());
     StructFieldValue value = getStructFieldValue(structType);
-    const_cast<StructDataType &>(value.getStructType()).setCompressionConfig(CompressionConfig(CompressionConfig::LZ4, 0, 95));
+    const_cast<StructDataType *>(static_cast<const StructDataType *>(value.getDataType()))
+            ->setCompressionConfig(CompressionConfig(CompressionConfig::LZ4, 0, 95));
     checkStructSerialization(value, CompressionConfig::LZ4);
 }
 
 TEST("requireThatReserializationPreservesCompressionIfUnmodified") {
     StructDataType structType(getStructDataType());
     StructFieldValue value = getStructFieldValue(structType);
-    const_cast<StructDataType &>(value.getStructType()).
-        setCompressionConfig(CompressionConfig(CompressionConfig::LZ4, 0, 95));
+    const_cast<StructDataType *>(static_cast<const StructDataType *>(value.getDataType()))
+            ->setCompressionConfig(CompressionConfig(CompressionConfig::LZ4, 0, 95));
 
-    checkStructSerialization(value, CompressionConfig::LZ4);
+    TEST_DO(checkStructSerialization(value, CompressionConfig::LZ4));
 
     nbostream os;
     VespaDocumentSerializer serializer(os);
@@ -539,9 +540,9 @@ TEST("requireThatReserializationPreservesCompressionIfUnmodified") {
     StructFieldValue value2(struct_type);
     VespaDocumentDeserializer deserializer(repo, os, serialization_version);
     deserializer.read(value2);
-    checkStructSerialization(value, CompressionConfig::LZ4);
-    // No lazy serialization of structs anymore, only documents
-    checkStructSerialization(value2, CompressionConfig::NONE);
+    TEST_DO(checkStructSerialization(value, CompressionConfig::LZ4));
+    // Lazy serialization of structs....
+    TEST_DO(checkStructSerialization(value2, CompressionConfig::LZ4));
     EXPECT_EQUAL(value, value2);
 }
 

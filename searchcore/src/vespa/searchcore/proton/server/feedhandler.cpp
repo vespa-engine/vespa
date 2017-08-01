@@ -219,13 +219,10 @@ FeedHandler::performInternalUpdate(FeedToken::UP token, UpdateOperation &op)
 void
 FeedHandler::createNonExistingDocument(FeedToken::UP token, const UpdateOperation &op)
 {
-    Document::SP doc(new Document(op.getUpdate()->getType(),
-                                  op.getUpdate()->getId()));
+    Document::SP doc(new Document(op.getUpdate()->getType(), op.getUpdate()->getId()));
     doc->setRepo(*_activeFeedView->getDocumentTypeRepo());
     op.getUpdate()->applyTo(*doc);
-    PutOperation putOp(op.getBucketId(),
-                       op.getTimestamp(),
-                       doc);
+    PutOperation putOp(op.getBucketId(), op.getTimestamp(), doc);
     _activeFeedView->preparePut(putOp);
     storeOperation(putOp);
     if (token.get() != NULL) {

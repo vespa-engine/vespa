@@ -3,8 +3,9 @@
 #include "referencedatatype.h"
 #include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <ostream>
+
+using vespalib::make_string;
+using vespalib::IllegalArgumentException;
 
 namespace document {
 
@@ -32,15 +33,12 @@ ReferenceDataType* ReferenceDataType::clone() const {
     return new ReferenceDataType(_targetDocType, getId());
 }
 
-std::unique_ptr<FieldPath> ReferenceDataType::onBuildFieldPath(
-        const vespalib::stringref& remainingFieldName) const {
-    if (!remainingFieldName.empty()) {
-        throw vespalib::IllegalArgumentException(
-                vespalib::make_string("Reference data type does not support "
-                                      "further field recursion: '%s'",
-                                      remainingFieldName.c_str()), VESPA_STRLOC);
+void ReferenceDataType::onBuildFieldPath(FieldPath &, const vespalib::stringref& remainingFieldName) const {
+    if ( ! remainingFieldName.empty() ) {
+        throw IllegalArgumentException(make_string("Reference data type does not support further field recursion: '%s'",
+                                                   remainingFieldName.c_str()), VESPA_STRLOC);
     }
-    return std::make_unique<FieldPath>();
+
 }
 
 } // document

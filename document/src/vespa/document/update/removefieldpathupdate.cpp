@@ -15,12 +15,8 @@ RemoveFieldPathUpdate::RemoveFieldPathUpdate()
 {
 }
 
-RemoveFieldPathUpdate::RemoveFieldPathUpdate(
-        const DocumentTypeRepo& repo,
-        const DataType& type,
-        stringref fieldPath,
-        stringref whereClause)
-    : FieldPathUpdate(repo, type, fieldPath, whereClause)
+RemoveFieldPathUpdate::RemoveFieldPathUpdate(stringref fieldPath, stringref whereClause)
+    : FieldPathUpdate(fieldPath, whereClause)
 {
 }
 
@@ -60,7 +56,7 @@ public:
 }
 
 std::unique_ptr<IteratorHandler>
-RemoveFieldPathUpdate::getIteratorHandler(Document&) const {
+RemoveFieldPathUpdate::getIteratorHandler(Document&, const DocumentTypeRepo &) const {
     return std::make_unique<RemoveIteratorHandler>();
 }
 

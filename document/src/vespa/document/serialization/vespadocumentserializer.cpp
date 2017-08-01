@@ -151,6 +151,17 @@ void VespaDocumentSerializer::write(const Document &value,
     _stream.write(doc_stream.peek(), doc_stream.size());
 }
 
+void VespaDocumentSerializer::visit(const StructFieldValue &value)
+{
+    if (!structNeedsReserialization(value)) {
+        const StructFieldValue::Chunks & chunks = value.getChunks();
+        assert(chunks.size() == 1);
+        writeUnchanged(chunks[0]);
+    } else {
+        write(value, AllFields());
+    }
+}
+
 void VespaDocumentSerializer::write(const AnnotationReferenceFieldValue &value)
 {
     putInt1_2_4Bytes(_stream, value.getAnnotationIndex());
@@ -333,6 +344,8 @@ void VespaDocumentSerializer::writeUnchanged(const SerializableArray &value) {
 
     const ByteBuffer* buffer = value.getSerializedBuffer();
     uint32_t sz = (buffer != NULL) ? buffer->getLength() : 0;
+    size_t estimatedRequiredSpace = sz + 4 + 1 + 8 + 4 + field_info.size()*12;
+    _stream.reserve(_stream.size() + estimatedRequiredSpace);
     _stream << sz;
     _stream << static_cast<uint8_t>(value.getCompression());
     if (CompressionConfig::isCompressed(value.getCompression())) {

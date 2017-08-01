@@ -43,9 +43,12 @@ std::unique_ptr<ByteBuffer> FieldValue::serialize() const {
     nbostream stream;
     serialize(stream);
 
-    std::unique_ptr<ByteBuffer> retVal(new ByteBuffer(stream.size()));
-    retVal->putBytes(stream.peek(), stream.size());
-    return retVal;
+    nbostream::Buffer buf;
+    stream.swap(buf);
+    size_t sz = buf.size();
+    auto bb = std::make_unique<ByteBuffer>(nbostream::Buffer::stealAlloc(std::move(buf)), sz);
+    bb->setPos(sz);
+    return bb;
 }
 
 size_t
@@ -217,15 +220,17 @@ using vespalib::ComplexArrayT;
 using vespalib::PrimitiveArrayT;
 
 namespace {
+
 class FieldValueFactory : public ComplexArrayT<FieldValue>::Factory
 {
 public:
-    FieldValueFactory(DataType::UP dataType) : _dataType(dataType.release()) { }
+    FieldValueFactory(const DataType & dataType) : _dataType(&dataType) { }
     FieldValue * create() override { return _dataType->createFieldValue().release(); }
     FieldValueFactory * clone() const override { return new FieldValueFactory(*this); }
 private:
-    DataType::CP _dataType;
+    const DataType * _dataType;
 };
+
 }
 
 std::unique_ptr<vespalib::IArrayBase>
@@ -247,7 +252,7 @@ FieldValue::createArray(const DataType & baseType)
     case DataType::T_BYTE:
         return std::make_unique<PrimitiveArrayT<ByteFieldValue, FieldValue>>();
     default:
-        return std::make_unique<ComplexArrayT<FieldValue>>(std::make_unique<FieldValueFactory>(DataType::UP(baseType.clone())));
+        return std::make_unique<ComplexArrayT<FieldValue>>(std::make_unique<FieldValueFactory>(baseType));
     }
 }
 

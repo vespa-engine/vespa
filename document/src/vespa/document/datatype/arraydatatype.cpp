@@ -42,8 +42,8 @@ ArrayDataType::operator==(const DataType& other) const
     return other.inherits(ArrayDataType::classId);
 }
 
-FieldPath::UP
-ArrayDataType::onBuildFieldPath(const vespalib::stringref & remainFieldName) const
+void
+ArrayDataType::onBuildFieldPath(FieldPath & path, const vespalib::stringref & remainFieldName) const
 {
     if (remainFieldName[0] == '[') {
         size_t endPos = remainFieldName.find(']');
@@ -55,21 +55,17 @@ ArrayDataType::onBuildFieldPath(const vespalib::stringref & remainFieldName) con
                 pos++;
             }
 
-            FieldPath::UP path = getNestedType().buildFieldPath(remainFieldName.substr(pos));
-            if (!path.get()) {
-                return FieldPath::UP();
-            }
+            getNestedType().buildFieldPath(path, remainFieldName.substr(pos));
+
             if (remainFieldName[1] == '$') {
-                path->insert(path->begin(), FieldPathEntry(getNestedType(), remainFieldName.substr(2, endPos - 2)));
+                path.insert(path.begin(), FieldPathEntry(getNestedType(), remainFieldName.substr(2, endPos - 2)));
             } else {
-                path->insert(path->begin(), FieldPathEntry(getNestedType(), atoi(remainFieldName.substr(1, endPos - 1).c_str())));
+                path.insert(path.begin(), FieldPathEntry(getNestedType(), atoi(remainFieldName.substr(1, endPos - 1).c_str())));
             }
-
-            return path;
         }
+    } else {
+        getNestedType().buildFieldPath(path, remainFieldName);
     }
-
-    return getNestedType().buildFieldPath(remainFieldName);
 }
 
 } // document

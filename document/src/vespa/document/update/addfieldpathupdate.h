@@ -5,12 +5,14 @@
 
 namespace document {
 
+class ArrayFieldValue;
+
 class AddFieldPathUpdate : public FieldPathUpdate
 {
 public:
     /** For deserialization */
     AddFieldPathUpdate();
-    AddFieldPathUpdate(const DocumentTypeRepo& repo, const DataType& type, stringref fieldPath,
+    AddFieldPathUpdate(const DataType& type, stringref fieldPath,
                        stringref whereClause, const ArrayFieldValue& values);
     ~AddFieldPathUpdate();
 
@@ -27,9 +29,9 @@ private:
     void deserialize(const DocumentTypeRepo& repo, const DataType& type,
                      ByteBuffer& buffer, uint16_t version) override;
 
-    std::unique_ptr<fieldvalue::IteratorHandler> getIteratorHandler(Document&) const override;
+    std::unique_ptr<fieldvalue::IteratorHandler> getIteratorHandler(Document &, const DocumentTypeRepo &) const override;
 
     vespalib::CloneablePtr<ArrayFieldValue> _values;
 };
 
-} // ns document
+}
