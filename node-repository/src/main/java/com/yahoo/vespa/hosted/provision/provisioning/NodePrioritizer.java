@@ -23,15 +23,15 @@ import java.util.stream.Collectors;
 
 /**
  * Builds up data structures necessary for node prioritization. It wraps each node
- * up in a NodePriority object with attributes used in sorting.
+ * up in a PrioritizableNode object with attributes used in sorting.
  *
- * The actual sorting/prioritization is implemented in the NodePriority class as a compare method.
+ * The actual sorting/prioritization is implemented in the PrioritizableNode class as a compare method.
  *
  * @author smorgrav
  */
 public class NodePrioritizer {
 
-    private final Map<Node, NodePriority> nodes = new HashMap<>();
+    private final Map<Node, PrioritizableNode> nodes = new HashMap<>();
     private final List<Node> allNodes;
     private final DockerHostCapacity capacity;
     private final NodeSpec requestedNodes;
@@ -155,11 +155,11 @@ public class NodePrioritizer {
     }
 
     /**
-     * @return The list of nodes sorted by NodePriority::compare
+     * @return The list of nodes sorted by PrioritizableNode::compare
      */
-    List<NodePriority> prioritize() {
-        List<NodePriority> priorityList = new ArrayList<>(nodes.values());
-        Collections.sort(priorityList, (a, b) -> NodePriority.compare(a, b));
+    List<PrioritizableNode> prioritize() {
+        List<PrioritizableNode> priorityList = new ArrayList<>(nodes.values());
+        Collections.sort(priorityList);
         return priorityList;
     }
 
@@ -169,7 +169,7 @@ public class NodePrioritizer {
      */
     void addSurplusNodes(List<Node> surplusNodes) {
         for (Node node : surplusNodes) {
-            NodePriority nodePri = toNodePriority(node, true, false);
+            PrioritizableNode nodePri = toNodePriority(node, true, false);
             if (!nodePri.violatesSpares || isAllocatingForReplacement) {
                 nodes.put(node, nodePri);
             }
@@ -204,7 +204,7 @@ public class NodePrioritizer {
                     if (hostname == null) continue;
                     Node newNode = Node.createDockerNode("fake-" + hostname, Collections.singleton(ipAddress),
                             Collections.emptySet(), hostname, Optional.of(node.hostname()), getFlavor(), NodeType.tenant);
-                    NodePriority nodePri = toNodePriority(newNode, false, true);
+                    PrioritizableNode nodePri = toNodePriority(newNode, false, true);
                     if (!nodePri.violatesSpares || isAllocatingForReplacement) {
                         nodes.put(newNode, nodePri);
                     }
@@ -224,7 +224,7 @@ public class NodePrioritizer {
                 .filter(node -> node.allocation().isPresent())
                 .filter(node -> node.allocation().get().owner().equals(appId))
                 .map(node -> toNodePriority(node, false, false))
-                .forEach(nodePriority -> nodes.put(nodePriority.node, nodePriority));
+                .forEach(prioritizableNode -> nodes.put(prioritizableNode.node, prioritizableNode));
     }
 
     /**
@@ -236,15 +236,15 @@ public class NodePrioritizer {
                 .filter(node -> node.state().equals(Node.State.ready))
                 .map(node -> toNodePriority(node, false, false))
                 .filter(n -> !n.violatesSpares || isAllocatingForReplacement)
-                .forEach(nodePriority -> nodes.put(nodePriority.node, nodePriority));
+                .forEach(prioritizableNode -> nodes.put(prioritizableNode.node, prioritizableNode));
     }
 
     /**
      * Convert a list of nodes to a list of node priorities. This includes finding, calculating
      * parameters to the priority sorting procedure.
      */
-    private NodePriority toNodePriority(Node node, boolean isSurplusNode, boolean isNewNode) {
-        NodePriority pri = new NodePriority();
+    private PrioritizableNode toNodePriority(Node node, boolean isSurplusNode, boolean isNewNode) {
+        PrioritizableNode pri = new PrioritizableNode();
         pri.node = node;
         pri.isSurplusNode = isSurplusNode;
         pri.isNewNode = isNewNode;

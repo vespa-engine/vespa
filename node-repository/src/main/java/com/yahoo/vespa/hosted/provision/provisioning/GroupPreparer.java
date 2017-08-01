@@ -19,6 +19,7 @@ import java.util.function.BiConsumer;
  * @author bratseth
  */
 class GroupPreparer {
+
     private final NodeRepository nodeRepository;
     private final Clock clock;
 
@@ -52,47 +53,41 @@ class GroupPreparer {
             try (Mutex readyLock = nodeRepository.lockUnallocated()) {
 
                 // Create a prioritized set of nodes
-                NodePrioritizer prioritizer = new NodePrioritizer(
-                        nodeRepository.getNodes(),
-                        application,
-                        cluster,
-                        requestedNodes,
-                        nodeRepository.getAvailableFlavors(),
-                        nofSpares);
+                NodePrioritizer prioritizer = new NodePrioritizer(nodeRepository.getNodes(),
+                                                                  application,
+                                                                  cluster,
+                                                                  requestedNodes,
+                                                                  nodeRepository.getAvailableFlavors(),
+                                                                  nofSpares);
 
                 prioritizer.addApplicationNodes();
                 prioritizer.addSurplusNodes(surplusActiveNodes);
                 prioritizer.addReadyNodes();
-                if (nodeRepository.dynamicAllocationEnabled()) {
+                if (nodeRepository.dynamicAllocationEnabled())
                     prioritizer.addNewDockerNodes();
-                }
 
                 // Allocate from the prioritized list
                 NodeAllocation allocation = new NodeAllocation(application, cluster, requestedNodes, highestIndex, clock);
                 allocation.offer(prioritizer.prioritize());
-
-                // Book-keeping
-                if (allocation.fullfilled()) {
-                    nodeRepository.reserve(allocation.getAcceptedInactiveAndReadyNodes());
-                    nodeRepository.addDockerNodes(allocation.getAcceptedNewNodes());
-                    surplusActiveNodes.removeAll(allocation.getAcceptedSurplusNodes());
-                    List<Node> result = allocation.finalNodes(surplusActiveNodes);
-                    return result;
-                } else {
+                if (! allocation.fullfilled())
                     throw new OutOfCapacityException("Could not satisfy " + requestedNodes + " for " + cluster +
-                            outOfCapacityDetails(allocation));
-                }
+                                                     outOfCapacityDetails(allocation));
+
+                // Carry out and return allocation
+                nodeRepository.reserve(allocation.acceptedInactiveAndReadyNodes());
+                nodeRepository.addDockerNodes(allocation.acceptedNewNodes());
+                surplusActiveNodes.removeAll(allocation.acceptedSurplusNodes());
+                return allocation.finalNodes(surplusActiveNodes);
             }
         }
     }
 
     private String outOfCapacityDetails(NodeAllocation allocation) {
-        if (allocation.wouldBeFulfilledWithClashingParentHost()) {
+        if (allocation.wouldBeFulfilledWithClashingParentHost())
             return ": Not enough nodes available on separate physical hosts.";
-        }
-        if (allocation.wouldBeFulfilledWithRetiredNodes()) {
+        if (allocation.wouldBeFulfilledWithRetiredNodes())
             return ": Not enough nodes available due to retirement.";
-        }
-        return ".";
+        else
+            return ".";
     }
 }
