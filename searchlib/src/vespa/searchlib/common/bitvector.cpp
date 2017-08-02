@@ -129,7 +129,7 @@ BitVector::Index
 BitVector::count() const
 {
     // Subtract by one to compensate for guard bit
-    return internalCount(getActiveStart(), numActiveWords()) - 1;
+    return countInterval(getStartIndex(), getEndIndex());
 }
 
 BitVector::Index
