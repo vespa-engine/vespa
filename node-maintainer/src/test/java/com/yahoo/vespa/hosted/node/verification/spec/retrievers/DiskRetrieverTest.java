@@ -75,7 +75,7 @@ public class DiskRetrieverTest {
     @Test
     public void parseDiskType_with_invalid_outputstream_does_not_contain_searchword_should_throw_exception() throws Exception {
         ArrayList<String> mockOutput = commandExecutor.outputFromString("Name  Rota");
-        try{
+        try {
             ParseResult parseResult = diskRetriever.parseDiskType(mockOutput);
             fail("Should have thrown IOException when outputstream doesn't contain search word");
         } catch (IOException e) {

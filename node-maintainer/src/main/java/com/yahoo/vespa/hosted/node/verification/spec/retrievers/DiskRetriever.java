@@ -37,8 +37,8 @@ public class DiskRetriever implements HardwareRetriever {
     }
 
     public void updateInfo() {
-            updateDiskType();
-            updateDiskSize();
+        updateDiskType();
+        updateDiskSize();
     }
 
     protected void updateDiskType() {
@@ -88,19 +88,18 @@ public class DiskRetriever implements HardwareRetriever {
         return OutputParser.parseOutput(parseInstructions, commandOutput);
     }
 
-   protected void setDiskSize(ArrayList<ParseResult> parseResults) {
-       double diskSize = 0;
-       try {
-           for (ParseResult parseResult : parseResults) {
-               String sizeValue = parseResult.getValue().replaceAll("[^\\d.]", "");
-               diskSize += Double.parseDouble(sizeValue);
-           }
-       } catch (NumberFormatException | NullPointerException e) {
-           logger.log(Level.WARNING, "Parse results contained an invalid PV size - ", parseResults);
-       }
-       finally {
-           hardwareInfo.setMinDiskAvailableGb(diskSize);
-       }
+    protected void setDiskSize(ArrayList<ParseResult> parseResults) {
+        double diskSize = 0;
+        try {
+            for (ParseResult parseResult : parseResults) {
+                String sizeValue = parseResult.getValue().replaceAll("[^\\d.]", "");
+                diskSize += Double.parseDouble(sizeValue);
+            }
+        } catch (NumberFormatException | NullPointerException e) {
+            logger.log(Level.WARNING, "Parse results contained an invalid PV size - ", parseResults);
+        } finally {
+            hardwareInfo.setMinDiskAvailableGb(diskSize);
+        }
     }
 
 }

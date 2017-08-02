@@ -83,6 +83,4 @@ public class HardwareInfo {
 
     public enum DiskType {SLOW, FAST, UNKNOWN}
 
-    ;
-
 }

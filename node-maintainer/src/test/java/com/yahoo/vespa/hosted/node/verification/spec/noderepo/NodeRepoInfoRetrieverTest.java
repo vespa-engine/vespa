@@ -28,8 +28,8 @@ public class NodeRepoInfoRetrieverTest {
     }
 
     @Test
-    public void retrieve_should_return_nodeJSONModel_when_parameter_contains_valid_url () throws IOException{
-        urls.add(new URL(URL_RESOURCE_PATH  + "/nodeInfoTest.json"));
+    public void retrieve_should_return_nodeJSONModel_when_parameter_contains_valid_url() throws IOException {
+        urls.add(new URL(URL_RESOURCE_PATH + "/nodeInfoTest.json"));
         NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(urls);
         double expectedMinDiskAvailable = 500.0;
         double expectedMinMainMemoryAvailable = 24.0;
@@ -38,6 +38,7 @@ public class NodeRepoInfoRetrieverTest {
         assertEquals(expectedMinMainMemoryAvailable, nodeRepoJsonModel.getMinMainMemoryAvailableGb(), DELTA);
         assertEquals(expectedMinCpuCores, nodeRepoJsonModel.getMinCpuCores(), DELTA);
     }
+
     @Test
     public void retrieve_should_throw_IOException_when_no_valid_URLs() throws MalformedURLException {
         urls = new ArrayList<>();

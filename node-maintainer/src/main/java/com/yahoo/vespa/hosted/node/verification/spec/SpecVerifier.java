@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 public class SpecVerifier {
 
     private static final Logger logger = Logger.getLogger(SpecVerifier.class.getName());
-    private static final String VIRTUAL_ENVIRONMENT= "VIRTUAL_MACHINE";
+    private static final String VIRTUAL_ENVIRONMENT = "VIRTUAL_MACHINE";
 
     public static boolean verifySpec(CommandExecutor commandExecutor) throws IOException {
         NodeRepoJsonModel nodeRepoJsonModel = getNodeRepositoryJSON(commandExecutor);
@@ -64,7 +64,7 @@ public class SpecVerifier {
 
     public static void main(String[] args) throws IOException {
         CommandExecutor commandExecutor = new CommandExecutor();
-        if (!SpecVerifier.verifySpec(commandExecutor)){
+        if (!SpecVerifier.verifySpec(commandExecutor)) {
             System.exit(2);
         }
     }
