@@ -6,7 +6,8 @@
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/vespalib/util/xmlstream.h>
-#include <ostream>
+#include <vespa/vespalib/stllike/hash_set.hpp>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".document.fieldvalue.map");
@@ -32,7 +33,37 @@ const MapDataType *verifyMapType(const DataType& type) {
     }
     return ptr;
 }
-}  // namespace
+
+struct Hasher {
+    Hasher(const MapFieldValue::IArray * keys) : _keys(keys) {}
+    uint32_t operator () (uint32_t index) const { return (*_keys)[index].hash(); }
+    const MapFieldValue::IArray * _keys;
+};
+
+struct Extract {
+    Extract(const MapFieldValue::IArray * keys) : _keys(keys) {}
+    const FieldValue & operator () (uint32_t index) const { return (*_keys)[index]; }
+    const MapFieldValue::IArray * _keys;
+};
+
+struct Equal {
+    Equal(const MapFieldValue::IArray * keys) : _keys(keys) {}
+    bool operator () (uint32_t a, uint32_t b) const { return (*_keys)[a].fastCompare((*_keys)[b]) == 0; }
+    const MapFieldValue::IArray * _keys;
+};
+
+using HashMapT = vespalib::hash_set<uint32_t, Hasher, Equal>;
+
+}
+
+namespace mapfieldvalue {
+
+class HashMap : public HashMapT {
+public:
+    using HashMapT::HashMapT;
+};
+
+}
 
 MapFieldValue::MapFieldValue(const DataType &mapType)
     : FieldValue(),
@@ -41,6 +72,7 @@ MapFieldValue::MapFieldValue(const DataType &mapType)
       _keys(static_cast<IArray *>(createArray(getMapType().getKeyType()).release())),
       _values(static_cast<IArray *>(createArray(getMapType().getValueType()).release())),
       _present(),
+      _lookupMap(),
       _altered(true)
 {
 }
@@ -56,6 +88,7 @@ MapFieldValue::MapFieldValue(const MapFieldValue & rhs) :
     _keys(rhs._keys ? rhs._keys->clone() : nullptr),
     _values(rhs._values ? rhs._values->clone() : nullptr),
     _present(rhs._present),
+    _lookupMap(),
     _altered(rhs._altered)
 {
 }
@@ -72,12 +105,13 @@ MapFieldValue::operator = (const MapFieldValue & rhs)
 
 void
 MapFieldValue::swap(MapFieldValue & rhs) {
+    std::swap(_type, rhs._type);
     std::swap(_count, rhs._count);
     std::swap(_keys, rhs._keys);
     std::swap(_values, rhs._values);
     std::swap(_present, rhs._present);
+    std::swap(_lookupMap, rhs._lookupMap);
     std::swap(_altered, rhs._altered);
-    std::swap(_type, rhs._type);
 }
 
 void MapFieldValue::verifyKey(const FieldValue & fv) const
@@ -122,6 +156,10 @@ MapFieldValue::push_back(const FieldValue& key, const FieldValue& value)
     _keys->push_back(key);
     _values->push_back(value);
     _present.push_back(true);
+    if (_lookupMap) {
+        _lookupMap->insert(_present.size() - 1);
+    }
+
     _altered = true;
 }
 
@@ -133,6 +171,9 @@ MapFieldValue::push_back(FieldValue::UP key, FieldValue::UP value)
     _keys->push_back(*key);
     _values->push_back(*value);
     _present.push_back(true);
+    if (_lookupMap) {
+        _lookupMap->insert(_present.size() - 1);
+    }
     _altered = true;
 }
 
@@ -179,6 +220,7 @@ MapFieldValue::clear() {
     _keys->clear();
     _values->clear();
     _present.clear();
+    _lookupMap.reset();
     _count = 0;
 }
 void
@@ -192,6 +234,7 @@ void MapFieldValue::resize(size_t sz) {
     _keys->resize(sz);
     _values->resize(sz);
     _present.resize(sz, true);
+    _lookupMap.reset();
     _count = std::count(_present.begin(), _present.end(), true);
 }
 
@@ -204,6 +247,7 @@ MapFieldValue::erase(const FieldValue& key)
     if (result) {
         _count--;
         _present[found.offset()] = false;
+        _lookupMap->erase(found.offset());
         _altered = true;
     }
     return result;
@@ -297,14 +341,31 @@ MapFieldValue::createValue() const {
     return getMapType().getValueType().createFieldValue();
 }
 
+void
+MapFieldValue::ensureLookupMap() const {
+    if (!_lookupMap) {
+        _lookupMap = std::move(buildLookupMap());
+    }
+}
+
+MapFieldValue::HashMapUP
+MapFieldValue::buildLookupMap() const {
+    HashMapUP hashMap = std::make_unique<mapfieldvalue::HashMap>(size()*2, Hasher(_keys.get()), Equal(_keys.get()));
+    for (size_t i(0), m(_present.size()); i < m; i++) {
+        if (_present[i]) {
+            hashMap->insert(i);
+        }
+    }
+    return hashMap;
+}
+
 MapFieldValue::const_iterator
 MapFieldValue::find(const FieldValue& key) const
 {
     if ((size() > 0) && (key.getClass().id() == (*_keys)[0].getClass().id())) {
-        for (size_t i(0), m(_present.size()); i < m; i++) {
-            if (_present[i] && ((*_keys)[i].fastCompare(key) == 0)) {
-                return const_iterator(*this, i);
-            }
+        ssize_t index = findIndex(key);
+        if (index >= 0) {
+            return const_iterator(*this, index);
         }
     }
     return end();
@@ -314,14 +375,30 @@ MapFieldValue::iterator
 MapFieldValue::find(const FieldValue& key)
 {
     if ((size() > 0) && (key.getClass().id() == (*_keys)[0].getClass().id())) {
-        for (size_t i(0), m(_present.size()); i < m; i++) {
-            if (_present[i] && ((*_keys)[i].fastCompare(key) == 0)) {
-                return iterator(*this, i);
-            }
+        ssize_t index = findIndex(key);
+        if (index >= 0) {
+            return iterator(*this, index);
         }
     }
     return end();
 }
+
+ssize_t
+MapFieldValue::findIndex(const FieldValue& key) const
+{
+    if ((size() > 0) && (key.getClass().id() == (*_keys)[0].getClass().id())) {
+        ensureLookupMap();
+        Extract extract(_keys.get());
+        auto found = _lookupMap->find<FieldValue, Extract, vespalib::hash<FieldValue>, std::equal_to<FieldValue>>(key, extract);
+        if (found != _lookupMap->end()) {
+            uint32_t index = *found;
+            assert(_present[index]);
+            return index;
+        }
+    }
+    return -1l;
+}
+
 bool
 MapFieldValue::checkAndRemove(const FieldValue& key, ModificationStatus status, bool wasModified,
                               std::vector<const FieldValue*>& keysToRemove) const
