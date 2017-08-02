@@ -64,7 +64,7 @@ public class FutureResult extends FutureTask<Result> {
     }
 
     /**
-     * Same as get(timeout, timeunit) but returns Optiona.empty instead of a result with error if the result is 
+     * Same as get(timeout, timeunit) but returns Optional.empty instead of a result with error if the result is 
      * not available in time
      */
     public Optional<Result> getIfAvailable(long timeout, TimeUnit timeunit) {
@@ -75,6 +75,9 @@ public class FutureResult extends FutureTask<Result> {
             return Optional.of(new Result(getQuery(), createInterruptedError(e)));
         }
         catch (ExecutionException e) {
+            // allow searchers to explicitly signal timeout rather than actually time out (useful for testing)
+            if (e.getCause() instanceof com.yahoo.search.federation.TimeoutException)
+                return Optional.empty();
             return Optional.of(new Result(getQuery(), createExecutionError(e)));
         }
         catch (TimeoutException e) {

@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.federation.test;
 
-import java.util.Optional;
-
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.component.provider.ComponentRegistry;
@@ -14,6 +12,7 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.federation.FederationConfig;
 import com.yahoo.search.federation.FederationSearcher;
+import com.yahoo.search.federation.TimeoutException;
 import com.yahoo.search.federation.selection.FederationTarget;
 import com.yahoo.search.federation.selection.TargetSelector;
 import com.yahoo.search.federation.StrictContractsConfig;
@@ -88,7 +87,7 @@ public class FederationSearcherTest {
 
         @Override
         public void fill(Result result, String summaryClass, Execution execution) {
-            try { Thread.sleep(500); } catch (InterruptedException e) {}
+            throw new TimeoutException("TimeoutInFillSearcher always time out in fill");
         }
 
     }
@@ -173,7 +172,6 @@ public class FederationSearcherTest {
         tester.addSearchChain("chain2", new TimeoutInFillSearcher());
 
         Query query = new Query();
-        query.setTimeout(50);
         Result result = tester.search(query);
         tester.fill(result);
         assertEquals(1, result.hits().getConcreteSize());
