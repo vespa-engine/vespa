@@ -80,7 +80,7 @@ public class FutureResult extends FutureTask<Result> {
                 return Optional.empty();
             return Optional.of(new Result(getQuery(), createExecutionError(e)));
         }
-        catch (TimeoutException | com.yahoo.search.federation.TimeoutException e) {
+        catch (TimeoutException e) {
             return Optional.empty();
         }
     }
