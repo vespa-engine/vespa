@@ -57,16 +57,28 @@ SearchIterator::or_hits_into(BitVector &result, uint32_t begin_id)
 }
 
 void
-SearchIterator::and_hits_into(BitVector &result, uint32_t begin_id)
+SearchIterator::and_hits_into_non_strict(BitVector &result, uint32_t begin_id)
 {
-    uint32_t docidA = begin_id - 1;
+    for (uint32_t hit = result.getNextTrueBit(begin_id); !isAtEnd(hit); hit = result.getNextTrueBit(hit+1)) {
+        if ( !seek(hit) ) {
+            result.clearBit(hit);
+        }
+    }
+    result.invalidateCachedCount();
+}
+
+void
+SearchIterator::and_hits_into_strict(BitVector &result, uint32_t begin_id)
+{
+    seek(begin_id);
+    uint32_t docidA = getDocId();
     uint32_t docidB = result.getNextTrueBit(begin_id);
     while (!isAtEnd(docidB) && !isAtEnd(docidA)) {
         if (docidA < docidB) {
             if (seek(docidB)) {
                 docidA = docidB;
             } else {
-                docidA = std::max(docidB+1, getDocId());
+                docidA = getDocId();
             }
         } else if (docidA > docidB) {
             result.clearInterval(docidB, docidA);
@@ -76,6 +88,16 @@ SearchIterator::and_hits_into(BitVector &result, uint32_t begin_id)
         }
     }
     result.clearInterval(docidB, result.size());
+}
+
+void
+SearchIterator::and_hits_into(BitVector &result, uint32_t begin_id)
+{
+    if (is_strict() == vespalib::Trinary::True) {
+        and_hits_into_strict(result, begin_id);
+    } else {
+        and_hits_into_non_strict(result, begin_id);
+    }
 }
 
 vespalib::string

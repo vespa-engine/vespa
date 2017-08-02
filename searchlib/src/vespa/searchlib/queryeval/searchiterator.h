@@ -43,6 +43,8 @@ private:
      */
     uint32_t _endid;
 
+    void and_hits_into_strict(BitVector &result, uint32_t begin_id);
+    void and_hits_into_non_strict(BitVector &result, uint32_t begin_id);
 protected:
     /**
      * This method is used by the @ref doSeek method to indicate that
