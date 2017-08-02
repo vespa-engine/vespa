@@ -2,6 +2,8 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/datatype/structdatatype.h>
+#include <vespa/document/datatype/weightedsetdatatype.h>
+#include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/vsm/common/docsum.h>
 #include <vespa/vsm/vsm/flattendocsumwriter.h>
 #include <vespa/vsm/vsm/slimefieldwriter.h>

@@ -107,7 +107,7 @@ public:
     WeightedSetAccessor(const WeightedSetFieldValue & ws) : _size(ws.size()), _current(ws.begin()), _end(ws.end()) { }
     size_t size()         const { return _size; }
     bool isAtEnd()        const { return _current == _end;}
-    void next()                 { _current++; }
+    void next()                 { ++_current; }
     typename G::T value() const { return _accessor(*_current->first); }
     int32_t weight()      const { return _current->second->getAsInt(); }
 private:

@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "weightedsetdatatype.h"
-#include "primitivedatatype.h"
+#include "mapdatatype.h"
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <ostream>

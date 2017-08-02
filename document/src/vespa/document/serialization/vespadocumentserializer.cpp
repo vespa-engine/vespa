@@ -20,6 +20,7 @@
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/fieldvalue/referencefieldvalue.h>
+#include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/update/updates.h>
 #include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
@@ -383,8 +384,7 @@ void VespaDocumentSerializer::write(const StructFieldValue &value,
 }
 
 void VespaDocumentSerializer::write(const WeightedSetFieldValue &value) {
-    const WeightedSetDataType *type =
-        static_cast<const WeightedSetDataType *>(value.getDataType());
+    const WeightedSetDataType *type = static_cast<const WeightedSetDataType *>(value.getDataType());
     _stream << static_cast<uint32_t>(type->getNestedType().getId());
     _stream << static_cast<uint32_t>(value.size());
     for (const auto & entry : value) {

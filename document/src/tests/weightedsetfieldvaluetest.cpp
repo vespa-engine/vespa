@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -116,6 +117,7 @@ void WeightedSetFieldValueTest::testWeightedSet()
             // By value
         buffer->setPos(0);
         deserialize(*buffer, value2);
+        CPPUNIT_ASSERT_EQUAL(size_t(3), value2.size());
         CPPUNIT_ASSERT(value2.remove(IntFieldValue(1)));
         CPPUNIT_ASSERT(!value2.contains(IntFieldValue(1)));
         CPPUNIT_ASSERT_EQUAL(size_t(2), value2.size());
