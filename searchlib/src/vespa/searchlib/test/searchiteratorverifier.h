@@ -5,8 +5,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vector>
 
-namespace search {
-namespace test {
+namespace search::test {
 
 class SearchIteratorVerifier {
 public:
@@ -37,6 +36,7 @@ private:
     static void verify(SearchIterator & iterator, const DocIds & docIds);
     static void verify(SearchIterator & iterator, bool strict, const DocIds & docIds);
     static void verify(SearchIterator & iterator, const Ranges & ranges, bool strict, const DocIds & docIds);
+    static void verify_and_hits_into(SearchIterator & iterator, const DocIds & docIds);
     static DocIds search(SearchIterator & iterator, const Ranges & ranges, bool strict);
     static DocIds searchRelaxed(SearchIterator & search, Range range);
     static DocIds searchStrict(SearchIterator & search, Range range);
@@ -50,5 +50,4 @@ private:
     std::unique_ptr<BitVector> _everyOddBitSet;
 };
 
-}
 }
