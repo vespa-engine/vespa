@@ -433,6 +433,20 @@ TEST("requireThatSetWorks")
     EXPECT_TRUE(assertBV("[7,39,57,80,103]", v1));
 }
 
+TEST("test BitWord::startBits/endBits") {
+    EXPECT_EQUAL(BitWord::startBits(0),  0x00ul);
+    EXPECT_EQUAL(BitWord::startBits(1),  0x01ul);
+    EXPECT_EQUAL(BitWord::startBits(2),  0x03ul);
+    EXPECT_EQUAL(BitWord::startBits(61), 0x1ffffffffffffffful);
+    EXPECT_EQUAL(BitWord::startBits(62), 0x3ffffffffffffffful);
+    EXPECT_EQUAL(BitWord::startBits(63), 0x7ffffffffffffffful);
+    EXPECT_EQUAL(BitWord::endBits(0),  0xfffffffffffffffeul);
+    EXPECT_EQUAL(BitWord::endBits(1),  0xfffffffffffffffcul);
+    EXPECT_EQUAL(BitWord::endBits(2),  0xfffffffffffffff8ul);
+    EXPECT_EQUAL(BitWord::endBits(61), 0xc000000000000000ul);
+    EXPECT_EQUAL(BitWord::endBits(62), 0x8000000000000000ul);
+    EXPECT_EQUAL(BitWord::endBits(63), 0x0000000000000000ul);
+}
 
 TEST("requireThatClearIntervalWorks")
 {
@@ -454,6 +468,23 @@ TEST("requireThatClearIntervalWorks")
     EXPECT_TRUE(assertBV("[7,103,200,500]", v1));
     v1.clearInterval(20, 501);
     EXPECT_TRUE(assertBV("[7]", v1));
+
+    AllocatedBitVector v(400);
+    for (size_t intervalLength(1); intervalLength < 100; intervalLength++) {
+        for (size_t offset(100); offset < 200; offset++) {
+
+            v.clear();
+            v.notSelf();
+            EXPECT_EQUAL(400u, v.countTrueBits());
+
+            v.clearInterval(offset, offset+intervalLength);
+            EXPECT_FALSE(v.testBit(offset));
+            EXPECT_TRUE(v.testBit(offset-1));
+            EXPECT_FALSE(v.testBit(offset+intervalLength-1));
+            EXPECT_TRUE(v.testBit(offset+intervalLength));
+            EXPECT_EQUAL(400 - intervalLength, v.countTrueBits());
+        }
+    }
 }
 
 

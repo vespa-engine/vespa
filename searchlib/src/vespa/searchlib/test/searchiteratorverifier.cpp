@@ -10,11 +10,9 @@
 #include <vespa/searchlib/queryeval/andnotsearch.h>
 #include <vespa/searchlib/queryeval/orsearch.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
-#include <set>
 
 
-namespace search {
-namespace test {
+namespace search::test {
 
 using namespace search::queryeval;
 using std::make_unique;
@@ -126,6 +124,12 @@ SearchIteratorVerifier::verify() const {
 
 void
 SearchIteratorVerifier::verifyTermwise() const {
+    TEST_DO(verify_and_hits_into(*create(false), _docIds));
+    TEST_DO(verify_and_hits_into(*create(true), _docIds));
+    TEST_DO(verify_or_hits_into(*create(false), _docIds));
+    TEST_DO(verify_or_hits_into(*create(true), _docIds));
+    TEST_DO(verify_get_hits(*create(false), _docIds));
+    TEST_DO(verify_get_hits(*create(true), _docIds));
     TEST_DO(verify(false));
     TEST_DO(verify(true));
 }
@@ -216,6 +220,41 @@ SearchIteratorVerifier::verifyTermwise(SearchIterator::UP iterator, bool strict,
 }
 
 void
+SearchIteratorVerifier::verify_and_hits_into(SearchIterator & iterator, const DocIds & docIds) {
+    BitVector::UP allSet = BitVector::create(1, getDocIdLimit());
+    allSet->notSelf();
+    EXPECT_EQUAL(allSet->countTrueBits(), getDocIdLimit()-1);
+    iterator.initRange(1, getDocIdLimit());
+    iterator.and_hits_into(*allSet, 1);
+    for (size_t i(0); i < docIds.size(); i++) {
+        EXPECT_TRUE(allSet->testBit(docIds[i]));
+    }
+    EXPECT_EQUAL(allSet->countTrueBits(), docIds.size());
+}
+
+void
+SearchIteratorVerifier::verify_or_hits_into(SearchIterator & iterator, const DocIds & docIds) {
+    BitVector::UP noneSet = BitVector::create(1, getDocIdLimit());
+    EXPECT_EQUAL(noneSet->countTrueBits(), 0u);
+    iterator.initRange(1, getDocIdLimit());
+    iterator.or_hits_into(*noneSet, 1);
+    for (size_t i(0); i < docIds.size(); i++) {
+        EXPECT_TRUE(noneSet->testBit(docIds[i]));
+    }
+    EXPECT_EQUAL(noneSet->countTrueBits(), docIds.size());
+}
+
+void
+SearchIteratorVerifier::verify_get_hits(SearchIterator & iterator, const DocIds & docIds) {
+    iterator.initRange(1, getDocIdLimit());
+    BitVector::UP result = iterator.get_hits(1);
+    for (size_t i(0); i < docIds.size(); i++) {
+        EXPECT_TRUE(result->testBit(docIds[i]));
+    }
+    EXPECT_EQUAL(result->countTrueBits(), docIds.size());
+}
+
+void
 SearchIteratorVerifier::verify(SearchIterator & iterator, bool strict, const DocIds & docIds)
 {
     TEST_DO(verify(iterator, Ranges({{1, getDocIdLimit()}}), strict, docIds));
@@ -277,5 +316,4 @@ SearchIteratorVerifier::searchStrict(SearchIterator & it, Range range)
     return result;
 }
 
-}
 }

@@ -56,6 +56,7 @@ public:
      * @return The Index of the first valid bit of the bitvector.
      */
     Index getStartIndex() const { return _startOffset; }
+    Index getEndIndex() const { return getStartIndex() + size(); }
 
     /**
      * Get next bit set in the bitvector (inclusive start).

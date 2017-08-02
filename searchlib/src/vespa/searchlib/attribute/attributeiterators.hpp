@@ -17,12 +17,14 @@ template <typename SC>
 void
 AttributeIteratorBase::and_hits_into(const SC & sc, BitVector & result, uint32_t begin_id) const {
     result.foreach_truebit([&](uint32_t key) { if ( ! sc.cmp(key)) { result.clearBit(key); }}, begin_id);
+    result.invalidateCachedCount();
 }
 
 template <typename SC>
 void
 AttributeIteratorBase::or_hits_into(const SC & sc, BitVector & result, uint32_t begin_id) const {
     result.foreach_falsebit([&](uint32_t key) { if ( sc.cmp(key)) { result.setBit(key); }}, begin_id);
+    result.invalidateCachedCount();
 }
 
 
@@ -35,6 +37,7 @@ AttributeIteratorBase::get_hits(const SC & sc, uint32_t begin_id) const {
             result->setBit(docId);
         }
     }
+    result->invalidateCachedCount();
     return result;
 }
 
@@ -105,6 +108,7 @@ AttributePostingListIteratorT<PL>::get_hits(uint32_t begin_id) {
     for (; _iterator.valid() && _iterator.getKey() < getEndId(); ++_iterator) {
         result->setBit(_iterator.getKey());
     }
+    result->invalidateCachedCount();
     return result;
 }
 
@@ -117,6 +121,7 @@ AttributePostingListIteratorT<PL>::or_hits_into(BitVector & result, uint32_t beg
             result.setBit(_iterator.getKey());
         }
     }
+    result.invalidateCachedCount();
 }
 
 template <typename PL>
@@ -132,6 +137,7 @@ FilterAttributePostingListIteratorT<PL>::get_hits(uint32_t begin_id) {
     for (; _iterator.valid() && _iterator.getKey() < getEndId(); ++_iterator) {
         result->setBit(_iterator.getKey());
     }
+    result->invalidateCachedCount();
     return result;
 }
 
@@ -144,6 +150,7 @@ FilterAttributePostingListIteratorT<PL>::or_hits_into(BitVector & result, uint32
             result.setBit(_iterator.getKey());
         }
     }
+    result.invalidateCachedCount();
 }
 
 
