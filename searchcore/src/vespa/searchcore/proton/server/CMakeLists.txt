@@ -66,6 +66,7 @@ vespa_add_library(searchcore_server STATIC
     move_operation_limiter.cpp
     ooscli.cpp
     operationdonecontext.cpp
+    pendinglidtracker.cpp
     persistencehandlerproxy.cpp
     persistenceproviderproxy.cpp
     proton.cpp

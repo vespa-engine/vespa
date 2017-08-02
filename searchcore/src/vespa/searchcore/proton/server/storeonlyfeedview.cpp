@@ -89,8 +89,8 @@ createPutDoneContext(FeedToken::UP &token, FeedOperation::Type opType, PerDocTyp
 }
 
 std::shared_ptr<UpdateDoneContext>
-createUpdateDoneContext(FeedToken::UP &token, FeedOperation::Type opType, PerDocTypeFeedMetrics &metrics,
-                        const document::DocumentUpdate::SP &upd)
+createUpdateDoneContext(FeedToken::UP &token, FeedOperation::Type opType,
+                        PerDocTypeFeedMetrics &metrics, const DocumentUpdate::SP &upd)
 {
     return std::make_shared<UpdateDoneContext>(std::move(token), opType, metrics, upd);
 }
@@ -107,6 +107,7 @@ StoreOnlyFeedView::StoreOnlyFeedView(const Context &ctx, const PersistentParams 
       _docType(NULL),
       _lidReuseDelayer(ctx._lidReuseDelayer),
       _commitTimeTracker(ctx._commitTimeTracker),
+      _pendingLidTracker(),
       _schema(ctx._schema),
       _writeService(ctx._writeService),
       _params(params),
@@ -272,7 +273,7 @@ StoreOnlyFeedView::getUpdateScope(const DocumentUpdate &upd)
 
 
 void
-StoreOnlyFeedView::updateAttributes(SerialNum serialNum, search::DocumentIdT lid, const document::DocumentUpdate &upd,
+StoreOnlyFeedView::updateAttributes(SerialNum serialNum, search::DocumentIdT lid, const DocumentUpdate &upd,
                                     bool immediateCommit, OnOperationDoneType onWriteDone)
 {
     (void) serialNum;
@@ -320,18 +321,23 @@ void StoreOnlyFeedView::putSummary(SerialNum serialNum,  search::DocumentIdT lid
                 if (doc) {
                     _summaryAdapter->put(serialNum, *futureDoc.get(), lid);
                 }
+                _pendingLidTracker.consume(lid);
             }));
 }
 void StoreOnlyFeedView::putSummary(SerialNum serialNum,  search::DocumentIdT lid, Document::SP doc) {
+    _pendingLidTracker.produce(lid);
     summaryExecutor().execute(
             makeLambdaTask([serialNum, doc = std::move(doc), lid, this] {
-                    _summaryAdapter->put(serialNum, *doc, lid);
+                _summaryAdapter->put(serialNum, *doc, lid);
+                _pendingLidTracker.consume(lid);
             }));
 }
 void StoreOnlyFeedView::removeSummary(SerialNum serialNum,  search::DocumentIdT lid) {
+    _pendingLidTracker.produce(lid);
     summaryExecutor().execute(
             makeLambdaTask([serialNum, lid, this] {
                 _summaryAdapter->remove(serialNum, lid);
+                _pendingLidTracker.consume(lid);
             }));
 }
 void StoreOnlyFeedView::heartBeatSummary(SerialNum serialNum) {
@@ -387,12 +393,15 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
             putSummary(serialNum, lid, futureDoc);
         }
 
+        _pendingLidTracker.waitForConsumedLid(lid);
+        Document::UP prevDoc(_summaryAdapter->get(lid, *_repo));
+        _pendingLidTracker.produce(lid);
         _writeService
                 .attributeFieldWriter()
                 .execute(serialNum,
-                         [upd = updOp.getUpdate(), serialNum, lid, onWriteDone,
+                         [upd = updOp.getUpdate(), serialNum, prevDoc = std::move(prevDoc), onWriteDone,
                           promisedDoc = std::move(promisedDoc), this]() mutable {
-                             updateIndexAndDocumentStore(serialNum, lid, upd, onWriteDone, std::move(promisedDoc));
+                             updateDocumentStore(serialNum, std::move(prevDoc), upd, onWriteDone, std::move(promisedDoc));
                          });
     }
     if (!updateScope._indexedFields && onWriteDone) {
@@ -403,11 +412,10 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
 }
 
 void
-StoreOnlyFeedView::updateIndexAndDocumentStore(SerialNum serialNum, search::DocumentIdT lid, DocumentUpdate::SP update,
-                                               OnOperationDoneType onWriteDone, PromisedDoc promisedDoc)
+StoreOnlyFeedView::updateDocumentStore(SerialNum serialNum, Document::UP prevDoc, DocumentUpdate::SP update,
+                                       OnOperationDoneType onWriteDone, PromisedDoc promisedDoc)
 {
     const DocumentUpdate & upd = *update;
-    Document::UP prevDoc(_summaryAdapter->get(lid, *_repo));
     Document::UP newDoc;
     assert(onWriteDone->getToken() == NULL || useDocumentStore(serialNum));
     if (useDocumentStore(serialNum)) {

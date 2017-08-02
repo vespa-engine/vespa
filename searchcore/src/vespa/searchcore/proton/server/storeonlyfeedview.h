@@ -8,6 +8,7 @@
 #include "replaypacketdispatcher.h"
 #include "searchcontext.h"
 #include "tlcproxy.h"
+#include "pendinglidtracker.h"
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/feeddebugger.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
@@ -33,7 +34,6 @@ class CommitTimeTracker;
 
 namespace documentmetastore { class ILidReuseDelayer; }
 
-
 /**
  * The feed view used by the store-only sub database.
  *
@@ -45,18 +45,20 @@ class StoreOnlyFeedView : public IFeedView,
 protected:
     typedef search::transactionlog::Packet Packet;
 public:
-    typedef std::unique_ptr<StoreOnlyFeedView> UP;
-    typedef std::shared_ptr<StoreOnlyFeedView> SP;
-    typedef search::SerialNum SerialNum;
-    typedef LidVectorContext::LidVector LidVector;
+    using UP = std::unique_ptr<StoreOnlyFeedView>;
+    using SP = std::shared_ptr<StoreOnlyFeedView>;
+    using SerialNum = search::SerialNum;
+    using LidVector = LidVectorContext::LidVector;
+    using Document = document::Document;
+    using DocumentUpdate = document::DocumentUpdate;
     using OnWriteDoneType =const std::shared_ptr<search::IDestructorCallback> &;
     using OnForceCommitDoneType =const std::shared_ptr<ForceCommitContext> &;
     using OnOperationDoneType = const std::shared_ptr<OperationDoneContext> &;
     using OnPutDoneType = const std::shared_ptr<PutDoneContext> &;
     using OnRemoveDoneType = const std::shared_ptr<RemoveDoneContext> &;
     using FeedTokenUP = std::unique_ptr<FeedToken>;
-    using FutureDoc = std::shared_future<document::Document::UP>;
-    using PromisedDoc = std::promise<document::Document::UP>;
+    using FutureDoc = std::shared_future<Document::UP>;
+    using PromisedDoc = std::promise<Document::UP>;
 
     struct Context
     {
@@ -131,6 +133,7 @@ private:
     const document::DocumentType            *_docType;
     documentmetastore::ILidReuseDelayer     &_lidReuseDelayer;
     CommitTimeTracker                       &_commitTimeTracker;
+    PendingLidTracker                        _pendingLidTracker;
 
 protected:
     const search::index::Schema::SP          _schema;
@@ -143,7 +146,7 @@ private:
         return _writeService.summary();
     }
     void putSummary(SerialNum serialNum,  search::DocumentIdT lid, FutureDoc doc);
-    void putSummary(SerialNum serialNum,  search::DocumentIdT lid, document::Document::SP doc);
+    void putSummary(SerialNum serialNum,  search::DocumentIdT lid, Document::SP doc);
     void removeSummary(SerialNum serialNum,  search::DocumentIdT lid);
     void heartBeatSummary(SerialNum serialNum);
 
@@ -175,8 +178,8 @@ private:
 
     virtual void notifyGidToLidChange(const document::GlobalId &gid, uint32_t lid);
 
-    void updateIndexAndDocumentStore(SerialNum serialNum, search::DocumentIdT lid, document::DocumentUpdate::SP upd,
-                                     OnOperationDoneType onWriteDone, PromisedDoc promisedDoc);
+    void updateDocumentStore(SerialNum serialNum, Document::UP prevDoc, DocumentUpdate::SP upd,
+                             OnOperationDoneType onWriteDone, PromisedDoc promisedDoc);
 
 protected:
     virtual void internalDeleteBucket(const DeleteBucketOperation &delOp);
@@ -184,18 +187,18 @@ protected:
     virtual void heartBeatAttributes(SerialNum serialNum);
 
 private:
-    virtual void putAttributes(SerialNum serialNum, search::DocumentIdT lid, const document::Document &doc,
+    virtual void putAttributes(SerialNum serialNum, search::DocumentIdT lid, const Document &doc,
                                bool immediateCommit, OnPutDoneType onWriteDone);
 
-    virtual void putIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const document::Document::SP &newDoc,
+    virtual void putIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const Document::SP &newDoc,
                                   bool immediateCommit, OnOperationDoneType onWriteDone);
 
-    virtual UpdateScope getUpdateScope(const document::DocumentUpdate &upd);
+    virtual UpdateScope getUpdateScope(const DocumentUpdate &upd);
 
-    virtual void updateAttributes(SerialNum serialNum, search::DocumentIdT lid, const document::DocumentUpdate &upd,
+    virtual void updateAttributes(SerialNum serialNum, search::DocumentIdT lid, const DocumentUpdate &upd,
                                   bool immediateCommit, OnOperationDoneType onWriteDone);
 
-    virtual void updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const document::Document::SP &newDoc,
+    virtual void updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const Document::SP &newDoc,
                                      bool immediateCommit, OnOperationDoneType onWriteDone);
     virtual void updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const FutureDoc & doc,
                                      bool immediateCommit, OnOperationDoneType onWriteDone);
