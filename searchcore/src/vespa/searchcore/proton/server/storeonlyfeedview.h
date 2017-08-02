@@ -178,7 +178,7 @@ private:
 
     virtual void notifyGidToLidChange(const document::GlobalId &gid, uint32_t lid);
 
-    void updateDocumentStore(SerialNum serialNum, Document::UP prevDoc, DocumentUpdate::SP upd,
+    void makeUpdatedDocument(SerialNum serialNum, Document::UP prevDoc, DocumentUpdate::SP upd,
                              OnOperationDoneType onWriteDone, PromisedDoc promisedDoc);
 
 protected:

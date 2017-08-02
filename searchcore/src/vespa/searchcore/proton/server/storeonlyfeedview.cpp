@@ -401,7 +401,8 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
                 .execute(serialNum,
                          [upd = updOp.getUpdate(), serialNum, prevDoc = std::move(prevDoc), onWriteDone,
                           promisedDoc = std::move(promisedDoc), this]() mutable {
-                             updateDocumentStore(serialNum, std::move(prevDoc), upd, onWriteDone, std::move(promisedDoc));
+                             makeUpdatedDocument(serialNum, std::move(prevDoc), upd, onWriteDone,
+                                                 std::move(promisedDoc));
                          });
     }
     if (!updateScope._indexedFields && onWriteDone) {
@@ -412,7 +413,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
 }
 
 void
-StoreOnlyFeedView::updateDocumentStore(SerialNum serialNum, Document::UP prevDoc, DocumentUpdate::SP update,
+StoreOnlyFeedView::makeUpdatedDocument(SerialNum serialNum, Document::UP prevDoc, DocumentUpdate::SP update,
                                        OnOperationDoneType onWriteDone, PromisedDoc promisedDoc)
 {
     const DocumentUpdate & upd = *update;
