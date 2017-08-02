@@ -33,6 +33,7 @@ SearchIterator::get_hits(uint32_t begin_id)
         }
         docid = std::max(docid + 1, getDocId());
     }
+    result->invalidateCachedCount();
     return result;
 }
 
@@ -54,6 +55,7 @@ SearchIterator::or_hits_into(BitVector &result, uint32_t begin_id)
         }
         docid = std::max(docid + 1, getDocId());
     }
+    result.invalidateCachedCount();
 }
 
 void
