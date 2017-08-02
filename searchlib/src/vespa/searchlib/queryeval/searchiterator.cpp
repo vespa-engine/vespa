@@ -61,11 +61,7 @@ SearchIterator::or_hits_into(BitVector &result, uint32_t begin_id)
 void
 SearchIterator::and_hits_into_non_strict(BitVector &result, uint32_t begin_id)
 {
-    for (uint32_t hit = result.getNextTrueBit(begin_id); !isAtEnd(hit); hit = result.getNextTrueBit(hit+1)) {
-        if ( !seek(hit) ) {
-            result.clearBit(hit);
-        }
-    }
+    result.foreach_truebit([&](uint32_t key) { if ( ! seek(key)) { result.clearBit(key); }}, begin_id);
     result.invalidateCachedCount();
 }
 
