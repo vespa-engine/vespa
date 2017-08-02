@@ -37,6 +37,8 @@ private:
     static void verify(SearchIterator & iterator, bool strict, const DocIds & docIds);
     static void verify(SearchIterator & iterator, const Ranges & ranges, bool strict, const DocIds & docIds);
     static void verify_and_hits_into(SearchIterator & iterator, const DocIds & docIds);
+    static void verify_or_hits_into(SearchIterator & iterator, const DocIds & docIds);
+    static void verify_get_hits(SearchIterator & iterator, const DocIds & docIds);
     static DocIds search(SearchIterator & iterator, const Ranges & ranges, bool strict);
     static DocIds searchRelaxed(SearchIterator & search, Range range);
     static DocIds searchStrict(SearchIterator & search, Range range);

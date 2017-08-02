@@ -126,6 +126,10 @@ void
 SearchIteratorVerifier::verifyTermwise() const {
     TEST_DO(verify_and_hits_into(*create(false), _docIds));
     TEST_DO(verify_and_hits_into(*create(true), _docIds));
+    TEST_DO(verify_or_hits_into(*create(false), _docIds));
+    TEST_DO(verify_or_hits_into(*create(true), _docIds));
+    TEST_DO(verify_get_hits(*create(false), _docIds));
+    TEST_DO(verify_get_hits(*create(true), _docIds));
     TEST_DO(verify(false));
     TEST_DO(verify(true));
 }
@@ -226,6 +230,28 @@ SearchIteratorVerifier::verify_and_hits_into(SearchIterator & iterator, const Do
         EXPECT_TRUE(allSet->testBit(docIds[i]));
     }
     EXPECT_EQUAL(allSet->countTrueBits(), docIds.size());
+}
+
+void
+SearchIteratorVerifier::verify_or_hits_into(SearchIterator & iterator, const DocIds & docIds) {
+    BitVector::UP noneSet = BitVector::create(1, getDocIdLimit());
+    EXPECT_EQUAL(noneSet->countTrueBits(), 0u);
+    iterator.initRange(1, getDocIdLimit());
+    iterator.or_hits_into(*noneSet, 1);
+    for (size_t i(0); i < docIds.size(); i++) {
+        EXPECT_TRUE(noneSet->testBit(docIds[i]));
+    }
+    EXPECT_EQUAL(noneSet->countTrueBits(), docIds.size());
+}
+
+void
+SearchIteratorVerifier::verify_get_hits(SearchIterator & iterator, const DocIds & docIds) {
+    iterator.initRange(1, getDocIdLimit());
+    BitVector::UP result = iterator.get_hits(1);
+    for (size_t i(0); i < docIds.size(); i++) {
+        EXPECT_TRUE(result->testBit(docIds[i]));
+    }
+    EXPECT_EQUAL(result->countTrueBits(), docIds.size());
 }
 
 void
