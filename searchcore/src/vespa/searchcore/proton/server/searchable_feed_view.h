@@ -91,12 +91,6 @@ private:
     virtual void
     updateIndexedFields(SerialNum serialNum,
                         search::DocumentIdT lid,
-                        const document::Document::SP &newDoc,
-                        bool immediateCommit,
-                        OnOperationDoneType onWriteDone) override;
-    virtual void
-    updateIndexedFields(SerialNum serialNum,
-                        search::DocumentIdT lid,
                         const FutureDoc & newDoc,
                         bool immediateCommit,
                         OnOperationDoneType onWriteDone) override;
