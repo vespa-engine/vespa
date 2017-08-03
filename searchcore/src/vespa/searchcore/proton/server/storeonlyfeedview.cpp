@@ -315,6 +315,7 @@ StoreOnlyFeedView::handleUpdate(FeedToken *token, const UpdateOperation &updOp)
 }
 
 void StoreOnlyFeedView::putSummary(SerialNum serialNum,  search::DocumentIdT lid, FutureDoc futureDoc) {
+    _pendingLidTracker.produce(lid);
     summaryExecutor().execute(
             makeLambdaTask([serialNum, futureDoc, lid, this] {
                 const Document::UP & doc = futureDoc.get();
@@ -389,13 +390,13 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
             updateIndexedFields(serialNum, lid, futureDoc, immediateCommit, onWriteDone);
         }
 
+        _pendingLidTracker.waitForConsumedLid(lid);
+
         if (useDocumentStore(serialNum)) {
             putSummary(serialNum, lid, futureDoc);
         }
 
-        _pendingLidTracker.waitForConsumedLid(lid);
         Document::UP prevDoc(_summaryAdapter->get(lid, *_repo));
-        _pendingLidTracker.produce(lid);
         _writeService
                 .attributeFieldWriter()
                 .execute(serialNum,
