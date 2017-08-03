@@ -190,12 +190,14 @@ public class Maintainer {
     private static HttpClient createHttpClient(Duration timeout) {
         int timeoutInMillis = (int) timeout.toMillis();
         return HttpClientBuilder.create()
-                                .setDefaultRequestConfig(RequestConfig.custom()
-                                                                      .setConnectTimeout(timeoutInMillis)
-                                                                      .setConnectionRequestTimeout(timeoutInMillis)
-                                                                      .setSocketTimeout(timeoutInMillis)
-                                                                      .build())
-                                .build();
+                .setDefaultRequestConfig(RequestConfig.custom()
+                        .setConnectTimeout(timeoutInMillis)
+                        .setConnectionRequestTimeout(timeoutInMillis)
+                        .setSocketTimeout(timeoutInMillis)
+                        .build())
+                .setMaxConnTotal(100)
+                .setMaxConnPerRoute(10)
+                .build();
     }
 
 }

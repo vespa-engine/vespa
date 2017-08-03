@@ -7,6 +7,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.util.EntityUtils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -153,6 +154,7 @@ public class CoredumpHandler {
             throw new RuntimeException("POST to " + post.getURI() + " failed with HTTP: " +
                     response.getStatusLine().getStatusCode() + " [" + result + "]");
         }
+        EntityUtils.consume(response.getEntity());
         logger.info("Successfully reported coredump " + documentId);
     }
 
