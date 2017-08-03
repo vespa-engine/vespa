@@ -24,7 +24,6 @@ using search::index::Schema;
 using storage::spi::BucketInfoResult;
 using storage::spi::Timestamp;
 using vespalib::IllegalStateException;
-using vespalib::makeClosure;
 using vespalib::makeTask;
 using vespalib::make_string;
 using search::makeLambdaTask;
@@ -69,23 +68,14 @@ SearchableFeedView::performSync()
     _writeService.indexFieldWriter().sync();
 }
 
-
 void
 SearchableFeedView::sync()
 {
     assert(_writeService.master().isCurrentThread());
     Parent::sync();
-    indexExecute(makeClosure(this, &proton::SearchableFeedView::performSync));
+    _writeService.index().execute(makeLambdaTask([this]() { performSync(); }));
     _writeService.index().sync();
 }
-
-
-void
-SearchableFeedView::indexExecute(vespalib::Closure::UP closure)
-{
-    _writeService.index().execute(makeTask(std::move(closure)));
-}
-
 
 void
 SearchableFeedView::putIndexedFields(SerialNum serialNum,
@@ -142,19 +132,21 @@ SearchableFeedView::performIndexPut(SerialNum serialNum,
 void
 SearchableFeedView::performIndexPut(SerialNum serialNum,
                                     search::DocumentIdT lid,
-                                    const FutureDoc & doc,
+                                    const FutureDoc & futureDoc,
                                     bool immediateCommit,
                                     OnOperationDoneType onWriteDone)
 {
-    performIndexPut(serialNum, lid, *doc.get(), immediateCommit, onWriteDone);
+    const Document::UP & doc = std::move(futureDoc.get());
+    if (doc) {
+        performIndexPut(serialNum, lid, *doc, immediateCommit, onWriteDone);
+    }
 }
 
 void
 SearchableFeedView::heartBeatIndexedFields(SerialNum serialNum)
 {
-    indexExecute(makeClosure(this,
-                             &proton::SearchableFeedView::performIndexHeartBeat,
-                             serialNum));
+    _writeService.index().execute(makeLambdaTask([=] { performIndexHeartBeat(serialNum); }));
+
 }
 
 
@@ -308,8 +300,7 @@ SearchableFeedView::internalDeleteBucket(const DeleteBucketOperation &delOp)
 
 
 void
-SearchableFeedView::performIndexForceCommit(SerialNum serialNum,
-                                            OnForceCommitDoneType onCommitDone)
+SearchableFeedView::performIndexForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone)
 {
     assert(_writeService.index().isCurrentThread());
     _indexWriter->commit(serialNum, onCommitDone);
@@ -321,10 +312,7 @@ SearchableFeedView::forceCommit(SerialNum serialNum,
                                 OnForceCommitDoneType onCommitDone)
 {
     Parent::forceCommit(serialNum, onCommitDone);
-    _writeService.index().execute(
-            makeLambdaTask([=]()
-                           { performIndexForceCommit(serialNum,
-                                                     onCommitDone); }));
+    _writeService.index().execute(makeLambdaTask([=]() { performIndexForceCommit(serialNum, onCommitDone); }));
 }
 
 void

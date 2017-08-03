@@ -39,7 +39,6 @@ private:
     const std::shared_ptr<IGidToLidChangeHandler> _gidToLidChangeHandler;
 
     bool hasIndexedFields() const { return _hasIndexedFields; }
-    void indexExecute(vespalib::Closure::UP closure);
 
     void
     performIndexPut(SerialNum serialNum,
