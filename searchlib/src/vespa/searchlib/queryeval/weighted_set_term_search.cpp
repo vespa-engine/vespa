@@ -9,8 +9,7 @@
 using search::fef::TermFieldMatchData;
 using vespalib::ObjectVisitor;
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 template <typename HEAP, typename IteratorPack>
 class WeightedSetTermSearchImpl : public WeightedSetTermSearch
@@ -164,5 +163,4 @@ WeightedSetTermSearch::create(search::fef::TermFieldMatchData &tmd,
 
 //-----------------------------------------------------------------------------
 
-}  // namespace search::queryeval
-}  // namespace search
+}

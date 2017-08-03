@@ -4,8 +4,7 @@
 #include "fieldinfo.h"
 #include <algorithm>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 TermFieldMatchData::TermFieldMatchData() :
     _docId(invalidId()),
@@ -114,5 +113,4 @@ TermFieldMatchData::appendPositionToAllocatedVector(const TermFieldMatchDataPosi
     }
 }
 
-} // namespace fef
-} // namespace search
+}
