@@ -17,8 +17,7 @@
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 class MatchTools
 {
@@ -47,6 +46,7 @@ public:
                const search::fef::MatchDataLayout &mdl,
                const search::fef::RankSetup &rankSetup,
                const search::fef::Properties &featureOverrides);
+    ~MatchTools();
     const vespalib::Doom &getSoftDoom() const { return _softDoom; }
     const vespalib::Doom &getHardDoom() const { return _hardDoom; }
     QueryLimiter & getQueryLimiter() { return _queryLimiter; }
@@ -92,11 +92,11 @@ public:
                       const search::fef::RankSetup &rankSetup,
                       const search::fef::Properties &rankProperties,
                       const search::fef::Properties &featureOverrides);
+    ~MatchToolsFactory();
     bool valid() const { return _valid; }
     const MaybeMatchPhaseLimiter &match_limiter() const { return *_match_limiter; }
     MatchTools::UP createMatchTools() const;
     search::queryeval::Blueprint::HitEstimate estimate() const { return _query.estimate(); }
 };
 
-} // namespace matching
-} // namespace proton
+}

@@ -2,8 +2,7 @@
 
 #include "matching_stats.h"
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 namespace {
 
@@ -83,4 +82,3 @@ MatchingStats::updatesoftDoomFactor(double hardLimit, double softLimit, double d
 }
 
 }
-} // namespace searchcore

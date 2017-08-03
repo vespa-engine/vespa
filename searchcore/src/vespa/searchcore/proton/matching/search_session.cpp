@@ -3,8 +3,7 @@
 #include "match_tools.h"
 #include "match_context.h"
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 SearchSession::SearchSession(const SessionId &id, fastos::TimeStamp time_of_doom,
                              std::unique_ptr<MatchToolsFactory> match_tools_factory,
@@ -27,5 +26,4 @@ SearchSession::~SearchSession() { }
 SearchSession::OwnershipBundle::OwnershipBundle() { }
 SearchSession::OwnershipBundle::~OwnershipBundle() { }
 
-}
 }

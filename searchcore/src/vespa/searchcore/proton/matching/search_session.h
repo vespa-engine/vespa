@@ -7,12 +7,9 @@
 #include <memory>
 #include <vespa/fastos/timestamp.h>
 
-namespace search {
-namespace fef { class Properties; }
-}
+namespace search::fef { class Properties; }
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 class MatchToolsFactory;
 class MatchContext;
@@ -65,6 +62,4 @@ public:
     MatchToolsFactory &getMatchToolsFactory() { return *_match_tools_factory; }
 };
 
-}  // namespace proton::matching
-}  // namespace proton
-
+}

@@ -7,8 +7,7 @@
 #include <vespa/searchcore/grouping/sessionid.h>
 #include <vespa/vespalib/stllike/lrucache_map.h>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 typedef vespalib::string SessionId;
 
@@ -67,6 +66,4 @@ public:
     void close();
 };
 
-}  // namespace proton::matching
-}  // namespace proton
-
+}

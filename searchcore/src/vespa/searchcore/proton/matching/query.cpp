@@ -79,6 +79,7 @@ void AddLocationNode(const string &location_str, Node::UP &query_tree, Location 
 }
 }  // namespace
 
+Query::Query() {}
 Query::~Query() {}
 
 bool
