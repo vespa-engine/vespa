@@ -54,7 +54,7 @@ public class NodeRepoJsonModel {
     }
 
     public String getIpv4Address() {
-        String ipv4Regex = "((1?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}(1?\\d\\d?|2[0-4]\\d|2\u200C\u200B5[0-5])";
+        String ipv4Regex = "^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])$";
         for (String ipAddress : ipAddresses) {
             if (ipAddress.matches(ipv4Regex)) {
                 return ipAddress;
