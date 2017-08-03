@@ -34,6 +34,7 @@ public class SpecVerifierTest {
     private static final String NET_INTERFACE_INFO_PATH = RESOURCE_PATH + "/ifconfig";
     private static final String NET_INTERFACE_SPEED_INFO_PATH = RESOURCE_PATH + "/eth0";
     private static final String PING_RESPONSE = RESOURCE_PATH + "/validpingresponse";
+    private static final String INVALID_PING_RESPONSE = RESOURCE_PATH + "/pingresponse-all-packets-lost";
     private static final double DELTA = 0.1;
 
     @Before
@@ -64,7 +65,7 @@ public class SpecVerifierTest {
     }
 
     @Test
-    public void verifySpec_inequal_nodeRepoInfo_and_hardware_should_return_false() throws Exception {
+    public void verifySpec_unequal_nodeRepoInfo_and_hardware_should_return_false() throws Exception {
         mockCommandExecutor.addCommand("echo notUsed " + URL_RESOURCE_PATH);
         mockCommandExecutor.addCommand("echo nodeRepo.json");
         mockCommandExecutor.addCommand("cat " + CPU_INFO_PATH);
@@ -73,7 +74,7 @@ public class SpecVerifierTest {
         mockCommandExecutor.addCommand("cat " + DISK_SIZE_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + NET_INTERFACE_INFO_PATH + "NoIpv6");
         mockCommandExecutor.addCommand("cat " + NET_INTERFACE_SPEED_INFO_PATH);
-        mockCommandExecutor.addCommand("cat " + PING_RESPONSE);
+        mockCommandExecutor.addCommand("cat " + INVALID_PING_RESPONSE);
         assertFalse(SpecVerifier.verifySpec(mockCommandExecutor));
     }
 
