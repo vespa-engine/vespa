@@ -15,9 +15,7 @@
 #include <vespa/searchlib/attribute/i_document_weight_attribute.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-namespace search {
-namespace queryeval {
-namespace wand {
+namespace search::queryeval::wand {
 
 //-----------------------------------------------------------------------------
 
@@ -659,9 +657,7 @@ public:
 
 //-----------------------------------------------------------------------------
 
-} // namespace wand
-} // namespace queryeval
-} // namespace search
+}
 
 //-----------------------------------------------------------------------------
 

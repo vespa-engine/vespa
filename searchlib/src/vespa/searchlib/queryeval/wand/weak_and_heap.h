@@ -5,8 +5,7 @@
 #include <vespa/vespalib/util/priority_queue.h>
 #include <vespa/vespalib/util/sync.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
     
 /**
  * An interface used to insert scores into an underlying heap (or similar data structure)
@@ -63,6 +62,4 @@ public:
     void adjust(score_t *begin, score_t *end) override;
 };
 
-} // namespace queryeval
-} // namespace search
-
+}

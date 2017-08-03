@@ -2,8 +2,7 @@
 
 #include "weak_and_heap.h"
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 SharedWeakAndPriorityQueue::SharedWeakAndPriorityQueue(uint32_t scoresToTrack) :
     WeakAndHeap(scoresToTrack),
@@ -36,5 +35,4 @@ SharedWeakAndPriorityQueue::adjust(score_t *begin, score_t *end)
     }
 }
 
-} // namespace queryeval
-} // namespace search
+}

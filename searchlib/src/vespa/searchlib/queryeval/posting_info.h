@@ -4,8 +4,7 @@
 #include <cstdint>
 #include <memory>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
     
 /**
  * Interface for getting global information stored in underlying posting list
@@ -42,5 +41,4 @@ public:
     int32_t getMaxWeight() const { return _maxWeight; }
 };
 
-} // namespace queryeval
-} // namespace search
+}

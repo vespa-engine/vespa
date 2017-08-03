@@ -4,8 +4,7 @@
 #include <cassert>
 #include <ostream>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 SimpleResult &
 SimpleResult::addHit(uint32_t docid)
@@ -74,5 +73,4 @@ operator << (std::ostream &out, const SimpleResult &result)
     return out;
 }
 
-} // namespace queryeval
-} // namespace search
+}

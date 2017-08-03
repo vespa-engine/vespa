@@ -5,8 +5,7 @@
 #include "handle.h"
 #include "matchdata.h"
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * This class is used to describe the layout of term match data and
@@ -46,6 +45,4 @@ public:
     MatchData::UP createMatchData() const;
 };
 
-} // namespace fef
-} // namespace search
-
+}
