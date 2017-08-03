@@ -73,7 +73,7 @@ public class NetRetriever implements HardwareRetriever {
         return parseResults;
     }
 
-    protected void findInterfaceSpeed(ArrayList<ParseResult> parseResults){
+    protected void findInterfaceSpeed(ArrayList<ParseResult> parseResults) {
         try {
             String interfaceName = findInterfaceName(parseResults);
             String command = NET_CHECK_INTERFACE_SPEED + " " + interfaceName;
@@ -107,8 +107,7 @@ public class NetRetriever implements HardwareRetriever {
         try {
             ArrayList<String> commandOutput = commandExecutor.executeCommand(PING_NET_COMMAND);
             parseResults.add(parsePingResponse(commandOutput));
-        }
-        catch (ExecuteException e) {
+        } catch (ExecuteException e) {
             logger.log(Level.WARNING, "Failed to execute ping6");
         } catch (IOException e) {
             logger.log(Level.WARNING, e.getMessage());

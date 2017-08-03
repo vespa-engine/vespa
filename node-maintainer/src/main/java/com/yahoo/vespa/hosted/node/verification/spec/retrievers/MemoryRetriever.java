@@ -45,7 +45,7 @@ public class MemoryRetriever implements HardwareRetriever {
         ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD));
         ParseInstructions parseInstructions = new ParseInstructions(SEARCH_ELEMENT_INDEX, RETURN_ELEMENT_INDEX, REGEX_SPLIT, searchWords);
         ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
-        if (!parseResult.getSearchWord().matches(SEARCH_WORD)){
+        if (!parseResult.getSearchWord().matches(SEARCH_WORD)) {
             throw new IOException("Failed to parse memory info file.");
         }
         return parseResult;

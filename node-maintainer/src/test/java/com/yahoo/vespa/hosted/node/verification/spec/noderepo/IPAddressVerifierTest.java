@@ -26,7 +26,7 @@ public class IPAddressVerifierTest {
     private String ipv6LookupFormat;
 
     @Before
-    public void setup() throws Exception{
+    public void setup() throws Exception {
         ipv4Address = "10.213.181.113";
         ipv6Address = "2001:4998:c:2940::111c";
         ArrayList<URL> nodeRepoUrl = new ArrayList<>(Arrays.asList(new URL(URL_RESOURCE_PATH)));
@@ -69,7 +69,7 @@ public class IPAddressVerifierTest {
     }
 
     @Test
-    public void getFaultyIpAddresses_should_return_empty_array_when_parameters_are_invalid () {
+    public void getFaultyIpAddresses_should_return_empty_array_when_parameters_are_invalid() {
         assertEquals(0, ipAddressVerifier.getFaultyIpAddresses(new NodeRepoJsonModel()).length);
     }
 

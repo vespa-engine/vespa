@@ -115,7 +115,7 @@ public class IPAddressVerifier {
         String[] octets = ipAddress.split("\\.");
         StringBuilder convertedIpAddress = new StringBuilder();
         for (int i = octets.length - 1; i >= 0; i--) {
-            convertedIpAddress.append(octets[i] + ".");
+            convertedIpAddress.append(octets[i]).append(".");
         }
         convertedIpAddress.append(domain);
         return convertedIpAddress.toString();
