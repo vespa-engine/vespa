@@ -422,12 +422,10 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
     FutureDoc futureDoc = promisedDoc.get_future().share();
     UpdateScope updateScope(getUpdateScope(upd));
     if (updateScope.hasIndexOrNonAttributeFields()) {
+        _pendingLidTracker.waitForConsumedLid(lid);
         if (updateScope._indexedFields) {
             updateIndexedFields(serialNum, lid, futureDoc, immediateCommit, onWriteDone);
         }
-
-        _pendingLidTracker.waitForConsumedLid(lid);
-
         if (useDocumentStore(serialNum)) {
             putSummary(serialNum, lid, futureDoc);
         }

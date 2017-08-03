@@ -119,7 +119,7 @@ void
 SearchableFeedView::performIndexPut(SerialNum serialNum, search::DocumentIdT lid, const FutureDoc & futureDoc,
                                     bool immediateCommit, OnOperationDoneType onWriteDone)
 {
-    const Document::UP & doc = std::move(futureDoc.get());
+    const Document::UP & doc = futureDoc.get();
     if (doc) {
         performIndexPut(serialNum, lid, *doc, immediateCommit, onWriteDone);
     }
