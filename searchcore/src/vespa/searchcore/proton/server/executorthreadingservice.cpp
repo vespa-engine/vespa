@@ -14,8 +14,10 @@ ExecutorThreadingService::ExecutorThreadingService(uint32_t threads,
 
     : _masterExecutor(1, stackSize),
       _indexExecutor(1, stackSize, taskLimit),
+      _summaryExecutor(1, stackSize),
       _masterService(_masterExecutor),
       _indexService(_indexExecutor),
+      _summaryService(_summaryExecutor),
       _indexFieldInverter(threads, taskLimit),
       _indexFieldWriter(threads, taskLimit),
       _attributeFieldWriter(threads, taskLimit)
@@ -34,6 +36,7 @@ ExecutorThreadingService::sync()
     }
     _attributeFieldWriter.sync();
     _indexExecutor.sync();
+    _summaryExecutor.sync();
     _indexFieldInverter.sync();
     _indexFieldWriter.sync();
     if (!isMasterThread) {
@@ -48,6 +51,8 @@ ExecutorThreadingService::shutdown()
     _masterExecutor.shutdown();
     _masterExecutor.sync();
     _attributeFieldWriter.sync();
+    _summaryExecutor.shutdown();
+    _summaryExecutor.sync();
     _indexExecutor.shutdown();
     _indexExecutor.sync();
     _indexFieldInverter.sync();

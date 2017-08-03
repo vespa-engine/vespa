@@ -18,8 +18,10 @@ class ExecutorThreadingService : public searchcorespi::index::IThreadingService
 private:
     vespalib::ThreadStackExecutor _masterExecutor;
     vespalib::BlockingThreadStackExecutor _indexExecutor;
+    vespalib::ThreadStackExecutor _summaryExecutor;
     ExecutorThreadService _masterService;
     ExecutorThreadService _indexService;
+    ExecutorThreadService _summaryService;
     search::SequencedTaskExecutor _indexFieldInverter;
     search::SequencedTaskExecutor _indexFieldWriter;
     search::SequencedTaskExecutor _attributeFieldWriter;
@@ -54,6 +56,9 @@ public:
     vespalib::ThreadStackExecutorBase &getIndexExecutor() {
         return _indexExecutor;
     }
+    vespalib::ThreadStackExecutorBase &getSummaryExecutor() {
+        return _summaryExecutor;
+    }
 
     /**
      * Implements IThreadingService
@@ -63,6 +68,10 @@ public:
     }
     virtual searchcorespi::index::IThreadService &index() override {
         return _indexService;
+    }
+
+    virtual searchcorespi::index::IThreadService &summary() override {
+        return _summaryService;
     }
 
     virtual search::ISequencedTaskExecutor &indexFieldInverter() override {

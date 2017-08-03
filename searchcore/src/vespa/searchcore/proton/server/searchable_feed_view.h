@@ -3,7 +3,6 @@
 #pragma once
 
 #include "fast_access_feed_view.h"
-#include "matchview.h"
 #include <vespa/searchcore/proton/attribute/i_attribute_writer.h>
 #include <vespa/searchcore/proton/index/i_index_writer.h>
 
@@ -40,12 +39,24 @@ private:
     const std::shared_ptr<IGidToLidChangeHandler> _gidToLidChangeHandler;
 
     bool hasIndexedFields() const { return _hasIndexedFields; }
-    void indexExecute(vespalib::Closure::UP closure);
+
+    void
+    performIndexPut(SerialNum serialNum,
+                    search::DocumentIdT lid,
+                    const document::Document &doc,
+                    bool immediateCommit,
+                    OnOperationDoneType onWriteDone);
 
     void
     performIndexPut(SerialNum serialNum,
                     search::DocumentIdT lid,
                     const document::Document::SP &doc,
+                    bool immediateCommit,
+                    OnOperationDoneType onWriteDone);
+    void
+    performIndexPut(SerialNum serialNum,
+                    search::DocumentIdT lid,
+                    const FutureDoc & doc,
                     bool immediateCommit,
                     OnOperationDoneType onWriteDone);
 
@@ -80,7 +91,7 @@ private:
     virtual void
     updateIndexedFields(SerialNum serialNum,
                         search::DocumentIdT lid,
-                        const document::Document::SP &newDoc,
+                        const FutureDoc & newDoc,
                         bool immediateCommit,
                         OnOperationDoneType onWriteDone) override;
 

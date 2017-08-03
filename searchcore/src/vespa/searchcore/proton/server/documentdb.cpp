@@ -505,6 +505,7 @@ DocumentDB::performDropFeedView(IFeedView::SP feedView)
     // Also called by DocumentDB::receive() method to keep feed view alive
 
     _writeService.attributeFieldWriter().sync();
+    _writeService.summary().sync();
 
     // Feed view is kept alive in the closure's shared ptr.
     _writeService.index().execute(makeTask(makeClosure(this,
@@ -1278,6 +1279,7 @@ DocumentDB::updateLegacyMetrics(LegacyDocumentDBMetrics &metrics)
 {
     updateMatchingMetrics(metrics.matching, *_subDBs.getReadySubDB());
     metrics.executor.update(_writeService.getMasterExecutor().getStats());
+    metrics.summaryExecutor.update(_writeService.getSummaryExecutor().getStats());
     metrics.indexExecutor.update(_writeService.getIndexExecutor().getStats());
     metrics.sessionManager.update(_sessionManager->getGroupingStats());
     updateDocstoreMetrics(metrics.docstore, _subDBs, _lastDocStoreCacheStats);

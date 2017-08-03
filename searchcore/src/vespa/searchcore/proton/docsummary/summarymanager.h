@@ -15,6 +15,7 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/fastlib/text/normwordfolder.h>
 
+namespace searchcorespi::index { class IThreadService; }
 namespace search {
 
 class IBucketizer;
@@ -87,7 +88,7 @@ public:
     void putDocument(uint64_t syncToken, const document::Document & doc,
                      search::DocumentIdT lid);
     void removeDocument(uint64_t syncToken, search::DocumentIdT lid);
-    searchcorespi::IFlushTarget::List getFlushTargets();
+    searchcorespi::IFlushTarget::List getFlushTargets(searchcorespi::index::IThreadService & summaryService);
 
     /**
      * Implements ISummaryManager.

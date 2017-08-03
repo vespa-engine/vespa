@@ -11,6 +11,7 @@
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandlerinitializer.h>
 #include <vespa/searchcore/proton/docsummary/summarymanagerinitializer.h>
+#include <vespa/searchcore/proton/docsummary/summaryflushtarget.h>
 #include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoreinitializer.h>
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
@@ -362,7 +363,7 @@ StoreOnlyDocSubDB::getFlushTargets()
 IFlushTarget::List
 StoreOnlyDocSubDB::getFlushTargetsInternal()
 {
-    IFlushTarget::List ret(_rSummaryMgr->getFlushTargets());
+    IFlushTarget::List ret(_rSummaryMgr->getFlushTargets(_writeService.summary()));
     ret.push_back(_dmsFlushTarget);
     ret.push_back(_dmsShrinkTarget);
     return ret;
@@ -521,9 +522,13 @@ StoreOnlyDocSubDB::close()
 {
     assert(_writeService.master().isCurrentThread());
     search::IDocumentStore & store(_rSummaryMgr->getBackingStore());
-    SerialNum syncToken = store.initFlush(store.tentativeLastSyncToken());
-    _tlSyncer.sync(syncToken);
-    store.flush(syncToken);
+    auto summaryFlush = std::make_shared<SummaryFlushTarget>(store, _writeService.summary());
+    auto summaryFlushTask = summaryFlush->initFlush(store.tentativeLastSyncToken());
+    if (summaryFlushTask) {
+        SerialNum syncToken = summaryFlushTask->getFlushSerial();
+        _tlSyncer.sync(syncToken);
+        summaryFlushTask->run();
+    }
 }
 
 std::shared_ptr<IDocumentDBReference>

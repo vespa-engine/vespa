@@ -54,20 +54,11 @@ struct IThreadingService : public vespalib::Syncable
     IThreadingService() = default;
     virtual ~IThreadingService() {}
 
-    /**
-     * Returns a reference to the master write thread.
-     */
     virtual IThreadService &master() = 0;
-
-    /**
-     * Returns a reference to the index write thread.
-     */
     virtual IThreadService &index() = 0;
-
+    virtual IThreadService &summary() = 0;
     virtual search::ISequencedTaskExecutor &indexFieldInverter() = 0;
-
     virtual search::ISequencedTaskExecutor &indexFieldWriter() = 0;
-
     virtual search::ISequencedTaskExecutor &attributeFieldWriter() = 0;
 };
 
