@@ -40,6 +40,7 @@ public class YamasSpecReport {
 
     public void setFaultyIpAddresses(String[] faultyIpAddresses) {
         this.metrics.setFaultyIpAddresses(faultyIpAddresses);
+        metrics.setMatch(false);
     }
 
     public SpecReportMetrics getMetrics() {
