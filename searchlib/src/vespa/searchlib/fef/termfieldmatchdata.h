@@ -60,11 +60,6 @@ private:
     friend class ::MatchDataHeapTest;
 
 public:
-    /**
-     * This gives you access to the underlying positions.
-     * @return the array of positions.
-     */
-    MutablePositionsIterator getPositions() { return allocated() ? getMultiple() : getFixed(); }
     PositionsIterator begin() const { return allocated() ? getMultiple() : getFixed(); }
     PositionsIterator end() const { return allocated() ? getMultiple() + _sz : empty() ? getFixed() : getFixed()+1; }
     size_t size() const { return _sz; }
@@ -80,9 +75,7 @@ public:
      * set.
      **/
     TermFieldMatchData();
-
     TermFieldMatchData(const TermFieldMatchData & rhs);
-
     ~TermFieldMatchData();
     TermFieldMatchData & operator = (const TermFieldMatchData & rhs);
 
