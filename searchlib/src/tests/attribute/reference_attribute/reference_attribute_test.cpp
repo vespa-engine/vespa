@@ -243,6 +243,7 @@ TEST_F("require that we can save and load attribute", Fixture)
     f.commit();
     f.save();
     f.load();
+    EXPECT_EQUAL(5u, f.attr().getNumDocs());
     TEST_DO(f.assertNoRef(3));
     TEST_DO(f.assertRef(doc1, 1));
     TEST_DO(f.assertRef(doc2, 2));
