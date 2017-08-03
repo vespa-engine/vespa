@@ -12,6 +12,8 @@ import com.yahoo.vespa.hosted.node.verification.spec.yamasreport.YamasSpecReport
  */
 public class HardwareNodeComparator {
 
+    private static final double PERCENTAGE_THRESHOLD = 0.05;
+
     public static YamasSpecReport compare(HardwareInfo nodeRepoHardwareInfo, HardwareInfo actualHardware) {
         Boolean equalHardware = true;
         YamasSpecReport yamasSpecReport = new YamasSpecReport();
@@ -47,7 +49,7 @@ public class HardwareNodeComparator {
     private static void setMemoryMetrics(HardwareInfo node, HardwareInfo actualHardware, SpecReportMetrics specReportMetrics) {
         double expectedMemory = node.getMinMainMemoryAvailableGb();
         double actualMemory = actualHardware.getMinMainMemoryAvailableGb();
-        if (!insideThreshold(expectedMemory, actualMemory)) {
+        if (!insideThreshold(expectedMemory, actualMemory, PERCENTAGE_THRESHOLD)) {
             specReportMetrics.setExpectedMemoryAvailable(expectedMemory);
             specReportMetrics.setActualMemoryAvailable(actualMemory);
         }
@@ -74,7 +76,7 @@ public class HardwareNodeComparator {
     private static void setDiskSpaceMetrics(HardwareInfo node, HardwareInfo actualHardware, SpecReportMetrics specReportMetrics) {
         double expectedDiskSpace = node.getMinDiskAvailableGb();
         double actualDiskSpace = actualHardware.getMinDiskAvailableGb();
-        if (!insideThreshold(expectedDiskSpace, actualDiskSpace)) {
+        if (!insideThreshold(expectedDiskSpace, actualDiskSpace, PERCENTAGE_THRESHOLD)) {
             specReportMetrics.setExpectedDiskSpaceAvailable(expectedDiskSpace);
             specReportMetrics.setActualDiskSpaceAvailable(actualDiskSpace);
         }
@@ -83,7 +85,7 @@ public class HardwareNodeComparator {
     private static void setNetMetrics(HardwareInfo node, HardwareInfo actualHardware, SpecReportMetrics specReportMetrics) {
         double expectedInterfaceSpeed = node.getInterfaceSpeedMbs();
         double actualInterfaceSpeed = actualHardware.getInterfaceSpeedMbs();
-        if (!insideThreshold(expectedInterfaceSpeed, actualInterfaceSpeed)) {
+        if (!insideThreshold(expectedInterfaceSpeed, actualInterfaceSpeed, PERCENTAGE_THRESHOLD)) {
             specReportMetrics.setExpectedInterfaceSpeed(expectedInterfaceSpeed);
             specReportMetrics.setActualInterfaceSpeed(actualInterfaceSpeed);
         }
@@ -101,13 +103,13 @@ public class HardwareNodeComparator {
     }
 
     private static boolean compareMemory(HardwareInfo node, HardwareInfo actualHardware, SpecReportDimensions specReportDimensions) {
-        boolean equalMemory = insideThreshold(node.getMinMainMemoryAvailableGb(), actualHardware.getMinMainMemoryAvailableGb());
+        boolean equalMemory = insideThreshold(node.getMinMainMemoryAvailableGb(), actualHardware.getMinMainMemoryAvailableGb(), PERCENTAGE_THRESHOLD);
         specReportDimensions.setMemoryMatch(equalMemory);
         return equalMemory;
     }
 
     private static boolean compareNetInterface(HardwareInfo node, HardwareInfo actualHardware, SpecReportDimensions specReportDimensions) {
-        boolean equalNetInterfaceSpeed = insideThreshold(node.getInterfaceSpeedMbs(), actualHardware.getInterfaceSpeedMbs());
+        boolean equalNetInterfaceSpeed = insideThreshold(node.getInterfaceSpeedMbs(), actualHardware.getInterfaceSpeedMbs(), PERCENTAGE_THRESHOLD);
         boolean equalIpv6Interface = node.getIpv6Interface() == actualHardware.getIpv6Interface();
         boolean equalIpv4Interface = node.getIpv4Interface() == actualHardware.getIpv4Interface();
         boolean equalIpv6Connection = node.isIpv6Connection() == actualHardware.isIpv6Connection();
@@ -119,15 +121,15 @@ public class HardwareNodeComparator {
 
     private static boolean compareDisk(HardwareInfo node, HardwareInfo actualHardware, SpecReportDimensions specReportDimensions) {
         boolean equalDiskType = node.getDiskType() == actualHardware.getDiskType();
-        boolean equalDiskSize = insideThreshold(node.getMinDiskAvailableGb(), actualHardware.getMinDiskAvailableGb());
+        boolean equalDiskSize = insideThreshold(node.getMinDiskAvailableGb(), actualHardware.getMinDiskAvailableGb(), PERCENTAGE_THRESHOLD);
         specReportDimensions.setDiskTypeMatch(equalDiskType);
         specReportDimensions.setDiskAvailableMatch(equalDiskSize);
         return equalDiskType && equalDiskSize;
     }
 
-    private static boolean insideThreshold(double value1, double value2) {
-        double lowerThresholdPercentage = 0.8;
-        double upperThresholdPercentage = 1.2;
+    private static boolean insideThreshold(double value1, double value2 , double thresholdPercentage) {
+        double lowerThresholdPercentage = 1 - thresholdPercentage;
+        double upperThresholdPercentage = 1 + thresholdPercentage;
         return value1 > lowerThresholdPercentage * value2 && value1 < upperThresholdPercentage * value2;
     }
 
