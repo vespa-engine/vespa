@@ -84,6 +84,8 @@ public:
     DocId getReferencedLid(DocId doc) const;
     void notifyGidToLidChange(const GlobalId &gid, DocId referencedLid);
     void populateReferencedLids();
+    virtual void clearDocs(DocId lidLow, DocId lidLimit) override;
+    virtual void onShrinkLidSpace() override;
 };
 
 }

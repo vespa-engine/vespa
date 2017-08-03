@@ -164,6 +164,8 @@ ReferenceAttribute::onLoad()
         _indices.push_back(builder.mapEnumValueToEntryRef(enumValue));
     }
     builder.makeDictionary();
+    setNumDocs(numDocs);
+    setCommittedDocIdLimit(numDocs);
     incGeneration();
     return true;
 }
@@ -274,6 +276,30 @@ ReferenceAttribute::populateReferencedLids()
                           {   const Reference &entry = store.get(ref);
                               entry.setLid(mapper.mapGidToLid(entry.gid())); });
     }
+}
+
+void
+ReferenceAttribute::clearDocs(DocId lidLow, DocId lidLimit)
+{
+    assert(lidLow <= lidLimit);
+    assert(lidLimit <= getNumDocs());
+    for (DocId lid = lidLow; lid < lidLimit; ++lid) {
+        EntryRef oldRef = _indices[lid];
+        if (oldRef.valid()) {
+            _indices[lid] = EntryRef();
+            _store.remove(oldRef);
+        }
+    }
+}
+
+void
+ReferenceAttribute::onShrinkLidSpace()
+{
+    // References for lids > committedDocIdLimit have been cleared.
+    uint32_t committedDocIdLimit = getCommittedDocIdLimit();
+    assert(_indices.size() >= committedDocIdLimit);
+    _indices.shrink(committedDocIdLimit);
+    setNumDocs(committedDocIdLimit);
 }
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(ReferenceAttribute, AttributeVector);
