@@ -19,7 +19,7 @@ public:
 };
 
 template <class FunctionType>
-inline vespalib::Executor::Task::UP
+vespalib::Executor::Task::UP
 makeLambdaTask(FunctionType &&function)
 {
     return std::make_unique<LambdaTask<std::decay_t<FunctionType>>>
