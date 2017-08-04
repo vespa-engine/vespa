@@ -200,6 +200,8 @@ public:
     void shrinkLidSpace() override;
     static NameIdSet findIncompleteCompactedFiles(const NameIdSet & partList);
 
+    NameIdSet getAllActiveFiles() const;
+
 private:
     class WrapVisitor;
     class WrapVisitorProgress;

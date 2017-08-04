@@ -323,6 +323,23 @@ TEST("testThatEmptyIdxFilesAndDanglingDatFilesAreRemoved") {
     EXPECT_EQUAL(datastore.getDiskHeaderFootprint() + 94016u, datastore.getDiskFootprint());
 }
 
+TEST("testThatIncompleteCompactedFilesAreRemoved") {
+    LogDataStore::Config config;
+    DummyFileHeaderContext fileHeaderContext;
+    vespalib::ThreadStackExecutor executor(config.getNumThreads(), 128*1024);
+    MyTlSyncer tlSyncer;
+    LogDataStore datastore(executor, "incompletecompact-test", config,
+                           GrowStrategy(), TuneFileSummary(),
+                           fileHeaderContext, tlSyncer, NULL);
+    EXPECT_EQUAL(354ul, datastore.lastSyncToken());
+    EXPECT_EQUAL(3*(4096u + 480u), datastore.getDiskHeaderFootprint());
+    LogDataStore::NameIdSet files = datastore.getAllActiveFiles();
+    EXPECT_EQUAL(3u, files.size());
+    EXPECT_TRUE(files.find(FileChunk::NameId(1422358701368384000)) != files.end());
+    EXPECT_TRUE(files.find(FileChunk::NameId(2000000000000000000)) != files.end());
+    EXPECT_TRUE(files.find(FileChunk::NameId(2422358701368384000)) != files.end());
+}
+
 class VisitStore {
 public:
     VisitStore() :

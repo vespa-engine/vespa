@@ -823,6 +823,18 @@ LogDataStore::findIncompleteCompactedFiles(const NameIdSet & partList) {
 }
 
 LogDataStore::NameIdSet
+LogDataStore::getAllActiveFiles() const {
+    NameIdSet files;
+    vespalib::LockGuard guard(_updateLock);
+    for (const auto & fc : _fileChunks) {
+        if (fc) {
+            files.insert(fc->getNameId());
+        }
+    }
+    return files;
+}
+
+LogDataStore::NameIdSet
 LogDataStore::eraseIncompleteCompactedFiles(NameIdSet partList)
 {
     NameIdSet toRemove = findIncompleteCompactedFiles(partList);
