@@ -811,11 +811,8 @@ LogDataStore::findIncompleteCompactedFiles(const NameIdSet & partList) {
         for (FileChunk::NameId prev = *it++; it != partList.end(); it++) {
             if (prev.next() == *it) {
                 if (!incomplete.empty() && (*incomplete.rbegin() == prev)) {
-                    NameIdSet::const_iterator prevprev = it;
-                    prevprev--;
-                    prevprev--;
                     throw IllegalStateException(make_string("3 consecutive files {%ld, %ld, %ld}. Impossible",
-                                                            prevprev->getId(), prev.getId(), it->getId()));
+                                                            prev.getId()-1, prev.getId(), it->getId()));
                 }
                 incomplete.insert(*it);
             }
