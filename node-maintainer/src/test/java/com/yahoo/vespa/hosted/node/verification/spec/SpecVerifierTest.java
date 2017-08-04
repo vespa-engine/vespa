@@ -109,7 +109,7 @@ public class SpecVerifierTest {
         double expectedMinMainMemoryAvailableGb = 4.04D;
         double expectedMinDiskAvailableGb = 1759.84;
         boolean expectedFastDisk = true;
-        String expectedIpv6Address = "2001:4998:c:2940::111c";
+        String expectedIpv6Address = "2001:4998:c:2940:0:0:0:111c";
         assertEquals(expectedIpv6Address, actualNodeRepoJsonModel.getIpv6Address());
         assertEquals(expectedMinCpuCores, actualNodeRepoJsonModel.getMinCpuCores(), DELTA);
         assertEquals(expectedMinMainMemoryAvailableGb, actualNodeRepoJsonModel.getMinMainMemoryAvailableGb(), DELTA);

@@ -28,7 +28,7 @@ public class IPAddressVerifierTest {
     @Before
     public void setup() throws Exception {
         ipv4Address = "10.213.181.113";
-        ipv6Address = "2001:4998:c:2940::111c";
+        ipv6Address = "2001:4998:c:2940:0:0:0:111c";
         ArrayList<URL> nodeRepoUrl = new ArrayList<>(Arrays.asList(new URL(URL_RESOURCE_PATH)));
         nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(nodeRepoUrl);
         ipv4LookupFormat = "113.181.213.10.in-addr.arpa";
