@@ -30,11 +30,11 @@ public class NetRetriever implements HardwareRetriever {
     private static final String INTERFACE_SPEED_REGEX_SPLIT = ":";
     private static final int INTERFACE_SPEED_SEARCH_ELEMENT_INDEX = 0;
     private static final int INTERFACE_SPEED_RETURN_ELEMENT_INDEX = 1;
-    private static final String PING_NET_COMMAND = "ping6 -c 1 www.yahoo.com | grep transmitted";
-    private static final String PING_SEARCH_WORD = "loss,";
+    private static final String PING_NET_COMMAND = "ping6 -c 1 -q www.yahoo.com | grep -oP '\\d+(?=% packet loss)'";
+    private static final String PING_SEARCH_WORD = "\\d+\\.?\\d*";
     private static final String PING_SPLIT_REGEX_STRING = "\\s+";
-    private static final int PING_SEARCH_ELEMENT_INDEX = 7;
-    private static final int PING_RETURN_ELEMENT_INDEX = 5;
+    private static final int PING_SEARCH_ELEMENT_INDEX = 0;
+    private static final int PING_RETURN_ELEMENT_INDEX = 0;
     private static final Logger logger = Logger.getLogger(NetRetriever.class.getName());
     private final HardwareInfo hardwareInfo;
     private final CommandExecutor commandExecutor;
@@ -121,7 +121,7 @@ public class NetRetriever implements HardwareRetriever {
         if (!parseResult.getSearchWord().matches(PING_SEARCH_WORD)) {
             throw new IOException("Failed to parse ping output.");
         }
-        return parseResult;
+        return new ParseResult(PING_SEARCH_WORD, parseResult.getValue());
     }
 
     protected void updateHardwareInfoWithNet(ArrayList<ParseResult> parseResults) {

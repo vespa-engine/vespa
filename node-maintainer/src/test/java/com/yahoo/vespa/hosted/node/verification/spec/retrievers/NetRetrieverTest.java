@@ -24,7 +24,7 @@ public class NetRetrieverTest {
     private static final String NET_CHECK_INTERFACE_SPEED = RESOURCE_PATH + "eth0";
     private static String VALID_PING_RESPONSE = RESOURCE_PATH + "validpingresponse";
     private static String INVALID_PING_RESPONSE = RESOURCE_PATH + "invalidpingresponse";
-    private static String PING_SEARCH_WORD = "loss,";
+    private static String PING_SEARCH_WORD = "\\d+\\.?\\d*";
     private HardwareInfo hardwareInfo;
     private MockCommandExecutor commandExecutor;
     private NetRetriever net;
@@ -145,7 +145,7 @@ public class NetRetrieverTest {
     public void parsePingResponse_valid_ping_response_should_return_ipv6_connectivity() throws IOException {
         ArrayList<String> mockCommandOutput = MockCommandExecutor.readFromFile(VALID_PING_RESPONSE);
         ParseResult parseResult = net.parsePingResponse(mockCommandOutput);
-        String expectedPing = "0%";
+        String expectedPing = "0";
         assertEquals(expectedPing, parseResult.getValue());
     }
 
@@ -163,14 +163,14 @@ public class NetRetrieverTest {
 
     @Test
     public void setIpv6Connectivity_valid_ping_response_should_return_ipv6_connectivity() {
-        ParseResult parseResult = new ParseResult(PING_SEARCH_WORD, "0%");
+        ParseResult parseResult = new ParseResult(PING_SEARCH_WORD, "0");
         net.setIpv6Connectivity(parseResult);
         assertTrue(hardwareInfo.isIpv6Connection());
     }
 
     @Test
     public void setIpv6Connectivity_invalid_ping_response_should_return_no_ipv6_connectivity_1() {
-        ParseResult parseResult = new ParseResult(PING_SEARCH_WORD, "100%");
+        ParseResult parseResult = new ParseResult(PING_SEARCH_WORD, "100");
         net.setIpv6Connectivity(parseResult);
         assertFalse(hardwareInfo.isIpv6Connection());
     }
