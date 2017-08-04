@@ -355,7 +355,7 @@ void StoreOnlyFeedView::putSummary(SerialNum serialNum,  search::DocumentIdT lid
 {
     _pendingLidTracker.produce(lid);
     summaryExecutor().execute(
-            makeLambdaTask([=] {
+            makeLambdaTask([serialNum, lid, futureDoc, onDone, this] {
                 (void) onDone;
                 const Document::UP & doc = futureDoc.get();
                 if (doc) {
