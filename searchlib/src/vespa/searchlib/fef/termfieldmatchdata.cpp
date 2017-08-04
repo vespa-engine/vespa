@@ -1,11 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "termfieldmatchdata.h"
-#include "fieldinfo.h"
-#include <algorithm>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 TermFieldMatchData::TermFieldMatchData() :
     _docId(invalidId()),
@@ -114,5 +111,4 @@ TermFieldMatchData::appendPositionToAllocatedVector(const TermFieldMatchDataPosi
     }
 }
 
-} // namespace fef
-} // namespace search
+}

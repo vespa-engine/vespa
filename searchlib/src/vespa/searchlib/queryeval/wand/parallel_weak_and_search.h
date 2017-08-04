@@ -1,15 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/queryeval/searchiterator.h>
 #include "wand_parts.h"
-#include "parallel_weak_and_search.h"
 #include "weak_and_heap.h"
+#include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 /**
  * WAND search iterator that uses a shared heap between match threads.
@@ -78,8 +76,4 @@ struct ParallelWeakAndSearch : public SearchIterator
                                      bool strict);
 };
 
-} // namespace queryeval
-} // namespace search
-
-
-
+}

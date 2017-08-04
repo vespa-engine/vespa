@@ -5,8 +5,7 @@
 #include <vector>
 #include "searchiterator.h"
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 /**
  * Simple result class containing only document ids. This class will
@@ -83,6 +82,4 @@ public:
 
 std::ostream &operator << (std::ostream &out, const SimpleResult &result);
 
-} // namespace queryeval
-} // namespace search
-
+}

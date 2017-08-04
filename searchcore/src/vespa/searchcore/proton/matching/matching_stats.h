@@ -5,8 +5,7 @@
 #include <vector>
 #include <cstddef>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 /**
  * Statistics for the matching pipeline. Used for internal aggregation
@@ -154,6 +153,4 @@ public:
     MatchingStats &add(const MatchingStats &rhs);
 };
 
-} // namespace matching
-} // namespace proton
-
+}

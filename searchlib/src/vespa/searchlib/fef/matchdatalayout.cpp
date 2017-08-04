@@ -2,8 +2,7 @@
 
 #include "matchdatalayout.h"
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 MatchDataLayout::MatchDataLayout()
     : _numTermFields(0),
@@ -26,5 +25,4 @@ MatchDataLayout::createMatchData() const
     return md;
 }
 
-} // namespace fef
-} // namespace search
+}

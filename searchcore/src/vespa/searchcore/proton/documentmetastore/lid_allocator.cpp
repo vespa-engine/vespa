@@ -18,8 +18,7 @@ using search::queryeval::SearchIterator;
 using search::queryeval::SimpleLeafBlueprint;
 using vespalib::GenerationHolder;
 
-namespace proton {
-namespace documentmetastore {
+namespace proton::documentmetastore {
 
 LidAllocator::LidAllocator(uint32_t size,
                            uint32_t capacity,
@@ -324,5 +323,4 @@ LidAllocator::getNumUsedLids() const
     return _usedLids.count();
 }
 
-} // namespace documentmetastore
-} // namespace proton
+}

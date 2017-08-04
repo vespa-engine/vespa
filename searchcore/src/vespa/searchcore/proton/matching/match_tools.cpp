@@ -15,8 +15,7 @@ using namespace search::fef::indexproperties::matchphase;
 using namespace search::fef::indexproperties::matching;
 using search::IDocumentMetaStore;
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 namespace {
 
@@ -71,6 +70,8 @@ MatchTools::MatchTools(QueryLimiter & queryLimiter,
 {
     HandleRecorder::Binder bind(_handleRecorder);
 }
+
+MatchTools::~MatchTools() {}
 
 search::fef::RankProgram::UP
 MatchTools::first_phase_program() const {
@@ -167,6 +168,8 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
     }
 }
 
+MatchToolsFactory::~MatchToolsFactory() {}
+
 MatchTools::UP
 MatchToolsFactory::createMatchTools() const
 {
@@ -176,5 +179,4 @@ MatchToolsFactory::createMatchTools() const
                            _mdl, _rankSetup, _featureOverrides));
 }
 
-} // namespace matching
-} // namespace proton
+}

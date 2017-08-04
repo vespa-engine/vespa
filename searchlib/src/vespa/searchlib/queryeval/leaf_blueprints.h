@@ -7,9 +7,7 @@
 #include "fake_result.h"
 #include "searchable.h"
 
-namespace search {
-
-namespace queryeval {
+namespace search::queryeval {
 
 //-----------------------------------------------------------------------------
 
@@ -79,6 +77,4 @@ public:
 
 //-----------------------------------------------------------------------------
 
-} // namespace queryeval
-} // namespace search
-
+}

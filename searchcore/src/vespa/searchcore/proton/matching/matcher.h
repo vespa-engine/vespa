@@ -36,8 +36,7 @@ class IDocumentMetaStore;
 
 } // namespace search
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 class ISearchContext;
 class SessionManager;
@@ -178,6 +177,4 @@ public:
     double get_termwise_limit() const { return _rankSetup->get_termwise_limit(); }
 };
 
-} // namespace matching
-} // namespace proton
-
+}

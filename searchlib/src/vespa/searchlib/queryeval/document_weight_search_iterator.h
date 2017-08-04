@@ -6,8 +6,7 @@
 #include <vespa/searchlib/attribute/i_document_weight_attribute.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 class DocumentWeightSearchIterator : public SearchIterator
 {
@@ -22,14 +21,10 @@ public:
                                  const IDocumentWeightAttribute &attr,
                                  IDocumentWeightAttribute::LookupResult dict_entry)
         : _tfmd(tfmd),
-          _matchPosition(NULL),
+          _matchPosition(_tfmd.populate_fixed()),
           _iterator(attr.create(dict_entry.posting_idx)),
           _postingInfo(queryeval::MinMaxPostingInfo(dict_entry.min_weight, dict_entry.max_weight))
-    {
-        search::fef::TermFieldMatchDataPosition pos;
-        _tfmd.appendPosition(pos);
-        _matchPosition = _tfmd.getPositions();
-    }
+    { }
     void initRange(uint32_t begin, uint32_t end) override {
         SearchIterator::initRange(begin, end);
         _iterator.lower_bound(begin);
@@ -57,6 +52,4 @@ public:
     Trinary is_strict() const override { return Trinary::True; }
 };
 
-} // namespace queryeval
-} // namespace search
-
+}

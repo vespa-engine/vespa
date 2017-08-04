@@ -11,8 +11,7 @@ LOG_SETUP(".queryeval.parallel_weak_and_search");
 
 using vespalib::make_string;
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 typedef ParallelWeakAndSearch::MatchParams MatchParams;
 typedef ParallelWeakAndSearch::RankParams RankParams;
@@ -256,5 +255,4 @@ ParallelWeakAndSearch::create(search::fef::TermFieldMatchData &tfmd,
     }
 }
 
-}  // namespace queryeval
-}  // namespace search
+}

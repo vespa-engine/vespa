@@ -7,8 +7,7 @@
 #include <vespa/searchlib/common/fslimits.h>
 #include <vector>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 class FakeResult
 {
@@ -104,6 +103,4 @@ public:
 
 std::ostream &operator << (std::ostream &out, const FakeResult &result);
 
-} // namespace queryeval
-} // namespace search
-
+}

@@ -367,9 +367,9 @@ QueryTermSimple::QueryTermSimple(const string & term_, SearchTerm type) :
 {
     if (isFullRange(_term)) {
         stringref rest(_term.c_str() + 1, _term.size() - 2);
-        stringref parts[8];
+        stringref parts[9];
         size_t numParts(0);
-        while (! rest.empty() && (numParts < NELEMS(parts))) {
+        while (! rest.empty() && ((numParts + 1) < NELEMS(parts))) {
             size_t pos(rest.find(';'));
             if (pos != vespalib::string::npos) {
                 parts[numParts++] = rest.substr(0, pos);
@@ -382,8 +382,8 @@ QueryTermSimple::QueryTermSimple(const string & term_, SearchTerm type) :
                 rest = stringref();
             }
         }
-        _valid = (numParts >= 2);
-        if (numParts > 2) {
+        _valid = (numParts >= 2) && (numParts < NELEMS(parts));
+        if (_valid && numParts > 2) {
             _rangeLimit = strtol(parts[2].c_str(), NULL, 0);
             if (numParts > 3) {
                 _valid = (numParts >= 5);

@@ -10,8 +10,7 @@ LOG_SETUP(".sessionmanager");
 
 using search::grouping::GroupingSession;
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
     namespace {
         using Stats = SessionManager::Stats;
@@ -231,5 +230,4 @@ size_t SessionManager::getNumSearchSessions() const {
     return _search_map->size();
 }
 
-}  // namespace proton::matching
-}  // namespace proton
+}

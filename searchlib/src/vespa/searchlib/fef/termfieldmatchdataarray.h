@@ -6,8 +6,7 @@
 #include <cassert>
 #include <cstddef>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 class TermFieldMatchData;
 
@@ -68,6 +67,4 @@ public:
     }
 };
 
-} // namespace fef
-} // namespace search
-
+}

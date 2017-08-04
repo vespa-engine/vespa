@@ -13,8 +13,7 @@ class SingleValueBitNumericAttribute;
 class GrowStrategy;
 }
 
-namespace proton {
-namespace documentmetastore {
+namespace proton::documentmetastore {
 
 /**
  * Class responsible for allocating lids and managing
@@ -99,6 +98,4 @@ public:
 
 };
 
-} // namespace documentmetastore
-} // namespace proton
-
+}

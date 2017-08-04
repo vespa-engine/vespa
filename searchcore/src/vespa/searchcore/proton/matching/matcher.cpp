@@ -30,8 +30,7 @@ using search::queryeval::Blueprint;
 using search::queryeval::SearchIterator;
 using vespalib::Doom;
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 namespace {
 
@@ -269,6 +268,7 @@ Matcher::match(const SearchRequest &request,
         size_t estimate = std::min(static_cast<size_t>(metaStore.getCommittedDocIdLimit()),
                                    mtf->match_limiter().getDocIdSpaceEstimate());
         bool wasLimited = mtf->match_limiter().was_limited();
+        uint32_t estHits = mtf->estimate().estHits;
         if (shouldCacheSearchSession && ((result->_numFs4Hits != 0) || shouldCacheGroupingSession)) {
             SearchSession::SP session = std::make_shared<SearchSession>(sessionId, request.getTimeOfDoom(),
                                                                         std::move(mtf), std::move(owned_objects));
@@ -289,7 +289,7 @@ Matcher::match(const SearchRequest &request,
         coverage.setCovered(std::min(static_cast<size_t>(metaStore.getNumActiveLids()),
                                      (estimate * metaStore.getNumActiveLids())/metaStore.getCommittedDocIdLimit()));
         LOG(debug, "numThreadsPerSearch = %zu. Configured = %d, estimated hits=%d, totalHits=%ld",
-            numThreadsPerSearch, _rankSetup->getNumThreadsPerSearch(), mtf->estimate().estHits, reply->totalHitCount);
+            numThreadsPerSearch, _rankSetup->getNumThreadsPerSearch(), estHits, reply->totalHitCount);
     }
     total_matching_time.stop();
     my_stats.queryCollateralTime(total_matching_time.elapsed().sec() - my_stats.queryLatencyAvg());
@@ -324,5 +324,4 @@ Matcher::getRankFeatures(const DocsumRequest & req,
     return getFeatureSet(req, searchCtx, attrCtx, sessionMgr, false);
 }
 
-} // namespace matching
-} // namespace proton
+}

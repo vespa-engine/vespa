@@ -12,8 +12,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".queryeval.blueprint");
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 //-----------------------------------------------------------------------------
 
@@ -526,8 +525,7 @@ LeafBlueprint::set_tree_size(uint32_t value)
 
 //-----------------------------------------------------------------------------
 
-} // namespace queryeval
-} // namespace search
+}
 
 //-----------------------------------------------------------------------------
 
