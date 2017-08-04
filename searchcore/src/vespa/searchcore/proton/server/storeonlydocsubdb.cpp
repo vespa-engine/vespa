@@ -174,6 +174,18 @@ StoreOnlyDocSubDB::hasDocument(const document::DocumentId &id)
     return guard->get().getLid(id.getGlobalId(), lid);
 }
 
+namespace {
+
+void docStoreReplayDone(search::IDocumentStore &docStore, uint32_t docIdLimit)
+{
+    if (docIdLimit < docStore.getDocIdLimit()) {
+        docStore.compactLidSpace(docIdLimit);
+        docStore.shrinkLidSpace();
+    }
+}
+
+}
+
 void
 StoreOnlyDocSubDB::onReplayDone()
 {
@@ -181,10 +193,10 @@ StoreOnlyDocSubDB::onReplayDone()
     _dms->shrinkLidSpace();
     uint32_t docIdLimit = _dms->getCommittedDocIdLimit();
     auto &docStore = _rSummaryMgr->getBackingStore();
-    if (docIdLimit < docStore.getDocIdLimit()) {
-        docStore.compactLidSpace(docIdLimit);
-        docStore.shrinkLidSpace();
-    }
+    std::promise<bool> promise;
+    std::future<bool> future = promise.get_future();
+    _writeService.summary().execute(makeLambdaTask([&]() { docStoreReplayDone(docStore, docIdLimit); promise.set_value(true); }));
+    (void) future.get();
 }
 
 
