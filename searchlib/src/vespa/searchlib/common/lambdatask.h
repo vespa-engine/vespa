@@ -12,6 +12,9 @@ class LambdaTask : public vespalib::Executor::Task {
 public:
     LambdaTask(const FunctionType &func) : _func(func) {}
     LambdaTask(FunctionType &&func) : _func(std::move(func)) {}
+    LambdaTask(const LambdaTask &) = delete;
+    LambdaTask & operator = (const LambdaTask &) = delete;
+    ~LambdaTask() {}
     void run() override { _func(); }
 };
 
