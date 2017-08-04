@@ -351,11 +351,11 @@ StoreOnlyFeedView::handleUpdate(FeedToken *token, const UpdateOperation &updOp)
 }
 
 void StoreOnlyFeedView::putSummary(SerialNum serialNum,  search::DocumentIdT lid,
-                                   FutureDoc futureDoc, OnOperationDoneType onDone)
+                                   const FutureDoc & futureDoc, OnOperationDoneType onDone)
 {
     _pendingLidTracker.produce(lid);
     summaryExecutor().execute(
-            makeLambdaTask([serialNum, futureDoc = std::move(futureDoc), lid, onDone, this] {
+            makeLambdaTask([=] {
                 (void) onDone;
                 const Document::UP & doc = futureDoc.get();
                 if (doc) {
@@ -436,11 +436,10 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
             putSummary(serialNum, lid, futureDoc, onWriteDone);
         }
 
-        Document::UP prevDoc(_summaryAdapter->get(lid, *_repo));
         _writeService
                 .attributeFieldWriter()
                 .execute(serialNum,
-                         [upd = updOp.getUpdate(), serialNum, prevDoc = std::move(prevDoc), onWriteDone,
+                         [upd = updOp.getUpdate(), serialNum, prevDoc = _summaryAdapter->get(lid, *_repo), onWriteDone,
                           promisedDoc = std::move(promisedDoc), this]() mutable
                          {
                              makeUpdatedDocument(serialNum, std::move(prevDoc), upd,
