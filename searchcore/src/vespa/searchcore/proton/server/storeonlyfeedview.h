@@ -145,8 +145,8 @@ private:
     searchcorespi::index::IThreadService & summaryExecutor() {
         return _writeService.summary();
     }
-    void putSummary(SerialNum serialNum,  search::DocumentIdT lid, FutureDoc doc);
-    void putSummary(SerialNum serialNum,  search::DocumentIdT lid, Document::SP doc);
+    void putSummary(SerialNum serialNum,  search::DocumentIdT lid, FutureDoc doc, OnOperationDoneType onDone);
+    void putSummary(SerialNum serialNum,  search::DocumentIdT lid, Document::SP doc, OnOperationDoneType onDone);
     void removeSummary(SerialNum serialNum,  search::DocumentIdT lid);
     void heartBeatSummary(SerialNum serialNum);
 
