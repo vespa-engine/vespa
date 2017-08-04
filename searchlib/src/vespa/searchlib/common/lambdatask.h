@@ -12,11 +12,14 @@ class LambdaTask : public vespalib::Executor::Task {
 public:
     LambdaTask(const FunctionType &func) : _func(func) {}
     LambdaTask(FunctionType &&func) : _func(std::move(func)) {}
+    LambdaTask(const LambdaTask &) = delete;
+    LambdaTask & operator = (const LambdaTask &) = delete;
+    ~LambdaTask() {}
     void run() override { _func(); }
 };
 
 template <class FunctionType>
-inline vespalib::Executor::Task::UP
+vespalib::Executor::Task::UP
 makeLambdaTask(FunctionType &&function)
 {
     return std::make_unique<LambdaTask<std::decay_t<FunctionType>>>

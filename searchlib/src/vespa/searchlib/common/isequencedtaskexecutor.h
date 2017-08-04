@@ -26,7 +26,7 @@ public:
      */
     virtual uint32_t getExecutorId(uint64_t componentId) = 0;
 
-    inline uint32_t getExecutorId(vespalib::stringref componentId) {
+    uint32_t getExecutorId(vespalib::stringref componentId) {
         vespalib::hash<vespalib::stringref> hashfun;
         return getExecutorId(hashfun(componentId));
     }
@@ -49,7 +49,7 @@ public:
      * @param function      function to be wrapped in a task and later executed
      */
     template <class FunctionType>
-    inline void executeLambda(uint32_t executorId, FunctionType &&function) {
+    void executeLambda(uint32_t executorId, FunctionType &&function) {
         executeTask(executorId, makeLambdaTask(std::forward<FunctionType>(function)));
     }
     /**
@@ -67,7 +67,7 @@ public:
      * @param function      function to be wrapped in a task and later executed
      */
     template <class FunctionType>
-    inline void execute(uint64_t componentId, FunctionType &&function) {
+    void execute(uint64_t componentId, FunctionType &&function) {
         uint32_t executorId = getExecutorId(componentId);
         executeTask(executorId, makeLambdaTask(std::forward<FunctionType>(function)));
     }
@@ -82,10 +82,9 @@ public:
      * @param function      function to be wrapped in a task and later executed
      */
     template <class FunctionType>
-    inline void execute(vespalib::stringref componentId, FunctionType &&function) {
+    void execute(vespalib::stringref componentId, FunctionType &&function) {
         uint32_t executorId = getExecutorId(componentId);
-        executeTask(executorId,
-                    makeLambdaTask(std::forward<FunctionType>(function)));
+        executeTask(executorId, makeLambdaTask(std::forward<FunctionType>(function)));
     }
 };
 
