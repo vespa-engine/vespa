@@ -648,7 +648,7 @@ TEST("require that incorrectly specified diversity can be parsed") {
     EXPECT_FALSE(descending_query.isValid());
 }
 
-TEST("require that we do not f.. up the stack on bad query") {
+TEST("require that we do not break the stack on bad query") {
     QueryTermSimple term("<form><iframe+&#09;&#10;&#11;+src=\\\"javascript&#58;alert(1)\\\"&#11;&#10;&#09;;>", QueryTerm::WORD);
     EXPECT_FALSE(term.isValid());
 }
