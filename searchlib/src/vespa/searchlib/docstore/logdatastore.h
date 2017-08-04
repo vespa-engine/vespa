@@ -31,6 +31,7 @@ private:
     using NameId = FileChunk::NameId;
     using FileId = FileChunk::FileId;
 public:
+    using NameIdSet = std::set<NameId>;
     using LockGuard = vespalib::LockGuard;
     using CompressionConfig = document::CompressionConfig;
     class Config {
@@ -80,7 +81,6 @@ public:
         const WriteableFileChunk::Config & getFileConfig() const { return _fileConfig; }
     private:
         size_t                      _maxFileSize;
-        size_t                      _maxEntriesPerFile;
         double                      _maxDiskBloatFactor;
         double                      _maxBucketSpread;
         double                      _minFileSizeFactor;
@@ -190,20 +190,15 @@ public:
         return _active;
     }
 
-    virtual DataStoreStorageStats getStorageStats() const override;
+    DataStoreStorageStats getStorageStats() const override;
+    MemoryUsage getMemoryUsage() const override;
+    std::vector<DataStoreFileChunkStats> getFileChunkStats() const override;
 
-    virtual MemoryUsage getMemoryUsage() const override;
-
-    virtual std::vector<DataStoreFileChunkStats>
-    getFileChunkStats() const override;
-
-    /**
-     * Implements common::ICompactableLidSpace
-     */
-    virtual void compactLidSpace(uint32_t wantedDocLidLimit) override;
-    virtual bool canShrinkLidSpace() const override;
-    virtual size_t getEstimatedShrinkLidSpaceGain() const override;
-    virtual void shrinkLidSpace() override;
+    void compactLidSpace(uint32_t wantedDocLidLimit) override;
+    bool canShrinkLidSpace() const override;
+    size_t getEstimatedShrinkLidSpaceGain() const override;
+    void shrinkLidSpace() override;
+    static NameIdSet findIncompleteCompactedFiles(const NameIdSet & partList);
 
 private:
     class WrapVisitor;
@@ -218,7 +213,6 @@ private:
     void compactWorst();
     void compactFile(FileId chunkId);
 
-    typedef std::set<NameId> NameIdSet;
     typedef attribute::RcuVector<uint64_t> LidInfoVector;
     typedef std::vector<FileChunk::UP> FileChunkVector;
 
@@ -228,7 +222,8 @@ private:
     void verifyModificationTime(const NameIdSet & partList);
 
     void eraseDanglingDatFiles(const NameIdSet &partList, const NameIdSet &datPartList);
-    NameIdSet eraseEmptyIdxFiles(const NameIdSet &partList);
+    NameIdSet eraseEmptyIdxFiles(NameIdSet partList);
+    NameIdSet eraseIncompleteCompactedFiles(NameIdSet partList);
     void internalFlushAll();
 
     NameIdSet scanDir(const vespalib::string &dir, const vespalib::string &suffix);

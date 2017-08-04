@@ -526,7 +526,16 @@ FileChunk::isIdxFileEmpty(const vespalib::string & name)
 void
 FileChunk::eraseIdxFile(const vespalib::string & name)
 {
-    vespalib::string fileName(name + ".idx");
+    vespalib::string fileName(createIdxFileName(name));
+    if ( ! FastOS_File::Delete(fileName.c_str())) {
+        throw std::runtime_error(make_string("Failed to delete '%s'", fileName.c_str()));
+    }
+}
+
+void
+FileChunk::eraseDatFile(const vespalib::string & name)
+{
+    vespalib::string fileName(createDatFileName(name));
     if ( ! FastOS_File::Delete(fileName.c_str())) {
         throw std::runtime_error(make_string("Failed to delete '%s'", fileName.c_str()));
     }

@@ -953,6 +953,30 @@ TEST_F("require that lid space can be shrunk only after read guards are deleted"
     EXPECT_EQUAL(8u, f.store.getEstimatedShrinkLidSpaceGain());
 }
 
+LogDataStore::NameIdSet create(std::vector<size_t> list) {
+    LogDataStore::NameIdSet l;
+    for (size_t id : list) {
+        l.emplace(id);
+    }
+    return l;
+}
+
+TEST("require that findIncompleteCompactedFiles does expected filtering") {
+    EXPECT_TRUE(LogDataStore::findIncompleteCompactedFiles(create({1,3,100,200,202,204})).empty());
+    LogDataStore::NameIdSet toRemove = LogDataStore::findIncompleteCompactedFiles(create({1,3,100,200,201,204}));
+    EXPECT_EQUAL(1u, toRemove.size());
+    EXPECT_TRUE(toRemove.find(FileChunk::NameId(201)) != toRemove.end());
+    toRemove = LogDataStore::findIncompleteCompactedFiles(create({1,2,4,100,200,201,204,205}));
+    EXPECT_EQUAL(3u, toRemove.size());
+    EXPECT_TRUE(toRemove.find(FileChunk::NameId(2)) != toRemove.end());
+    EXPECT_TRUE(toRemove.find(FileChunk::NameId(201)) != toRemove.end());
+    EXPECT_TRUE(toRemove.find(FileChunk::NameId(205)) != toRemove.end());
+
+    EXPECT_EXCEPTION(LogDataStore::findIncompleteCompactedFiles(create({1,3,100,200,201,202,204})).empty(),
+                     vespalib::IllegalStateException, "3 consecutive files {200, 201, 202}. Impossible");
+
+}
+
 TEST_MAIN() {
     DummyFileHeaderContext::setCreator("logdatastore_test");
     TEST_RUN_ALL();

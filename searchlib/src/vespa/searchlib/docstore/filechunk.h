@@ -192,6 +192,7 @@ public:
     static uint64_t readDataHeader(FileRandRead &idxFile);
     static bool isIdxFileEmpty(const vespalib::string & name);
     static void eraseIdxFile(const vespalib::string & name);
+    static void eraseDatFile(const vespalib::string & name);
     static vespalib::string createIdxFileName(const vespalib::string & name);
     static vespalib::string createDatFileName(const vespalib::string & name);
 private:
