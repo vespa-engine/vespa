@@ -12,8 +12,19 @@ cp -a $SOURCE_DIRECTORY/bug-7257706/*.dat dangling-test/
 cp -a $SOURCE_DIRECTORY/bug-7257706/*.idx dangling-test/
 cp -a $SOURCE_DIRECTORY/dangling/*.dat dangling-test/
 cp -a $SOURCE_DIRECTORY/dangling/*.idx dangling-test/
+
+mkdir -p incompletecompact-test
+cp -a $SOURCE_DIRECTORY/bug-7257706/1422358701368384000.dat incompletecompact-test/
+cp -a $SOURCE_DIRECTORY/bug-7257706/1422358701368384000.idx incompletecompact-test/
+cp -a $SOURCE_DIRECTORY/bug-7257706/1422358701368384000.dat incompletecompact-test/2000000000000000000.dat
+cp -a $SOURCE_DIRECTORY/bug-7257706/1422358701368384000.idx incompletecompact-test/2000000000000000000.idx
+cp -a $SOURCE_DIRECTORY/bug-7257706/1422358701368384000.dat incompletecompact-test/2000000000000000001.dat
+cp -a $SOURCE_DIRECTORY/bug-7257706/1422358701368384000.idx incompletecompact-test/2000000000000000001.idx
+cp -a $SOURCE_DIRECTORY/bug-7257706/1422358701368384000.dat incompletecompact-test/2422358701368384000.dat
+cp -a $SOURCE_DIRECTORY/bug-7257706/1422358701368384000.idx incompletecompact-test/2422358701368384000.idx
+
 truncate --size 3830 bug-7257706-truncated/1422358701368384000.idx
 fail=0
 VESPA_LOG_TARGET=file:vlog2.txt $VALGRIND ./searchlib_logdatastore_test_app || fail=1
-rm -rf bug-7257706-truncated dangling-test
+rm -rf bug-7257706-truncated dangling-test incompletecompact-test
 exit $fail

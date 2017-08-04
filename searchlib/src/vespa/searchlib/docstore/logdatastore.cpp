@@ -21,6 +21,7 @@ using vespalib::getLastErrorString;
 using vespalib::getErrorString;
 using vespalib::GenerationHandler;
 using vespalib::make_string;
+using vespalib::IllegalStateException;
 using common::FileHeaderContext;
 using std::runtime_error;
 using document::BucketId;
@@ -656,7 +657,8 @@ lsSingleFile(const vespalib::string & fileName)
 
 }
 
-vespalib::string LogDataStore::ls(const NameIdSet & partList)
+vespalib::string
+LogDataStore::ls(const NameIdSet & partList)
 {
     vespalib::string s;
     for (auto it(++partList.begin()), mt(partList.end()); it != mt; ++it) {
@@ -751,8 +753,9 @@ LogDataStore::preload()
     NameIdSet partList = scanDir(getBaseDir(), ".idx");
     NameIdSet datPartList = scanDir(getBaseDir(), ".dat");
 
-    partList = eraseEmptyIdxFiles(partList);
+    partList = eraseEmptyIdxFiles(std::move(partList));
     eraseDanglingDatFiles(partList, datPartList);
+    partList = eraseIncompleteCompactedFiles(std::move(partList));
 
     if (!partList.empty()) {
         verifyModificationTime(partList);
@@ -785,7 +788,7 @@ LogDataStore::getLastFileChunkDocIdLimit()
 }
 
 LogDataStore::NameIdSet
-LogDataStore::eraseEmptyIdxFiles(const NameIdSet &partList)
+LogDataStore::eraseEmptyIdxFiles(NameIdSet partList)
 {
     NameIdSet nonEmptyIdxPartList;
     for (const auto & part : partList) {
@@ -798,6 +801,52 @@ LogDataStore::eraseEmptyIdxFiles(const NameIdSet &partList)
         }
     }
     return nonEmptyIdxPartList;
+}
+
+LogDataStore::NameIdSet
+LogDataStore::findIncompleteCompactedFiles(const NameIdSet & partList) {
+    NameIdSet incomplete;
+    if ( !partList.empty()) {
+        NameIdSet::const_iterator it = partList.begin();
+        for (FileChunk::NameId prev = *it++; it != partList.end(); it++) {
+            if (prev.next() == *it) {
+                if (!incomplete.empty() && (*incomplete.rbegin() == prev)) {
+                    throw IllegalStateException(make_string("3 consecutive files {%ld, %ld, %ld}. Impossible",
+                                                            prev.getId()-1, prev.getId(), it->getId()));
+                }
+                incomplete.insert(*it);
+            }
+            prev = *it;
+        }
+    }
+    return incomplete;
+}
+
+LogDataStore::NameIdSet
+LogDataStore::getAllActiveFiles() const {
+    NameIdSet files;
+    vespalib::LockGuard guard(_updateLock);
+    for (const auto & fc : _fileChunks) {
+        if (fc) {
+            files.insert(fc->getNameId());
+        }
+    }
+    return files;
+}
+
+LogDataStore::NameIdSet
+LogDataStore::eraseIncompleteCompactedFiles(NameIdSet partList)
+{
+    NameIdSet toRemove = findIncompleteCompactedFiles(partList);
+    for (NameId toBeRemoved : toRemove) {
+        partList.erase(toBeRemoved);
+        vespalib::string name(createFileName(toBeRemoved));
+        LOG(warning, "'%s' has been detected as an incompletely compacted file. Erasing it.", name.c_str());
+        FileChunk::eraseIdxFile(name);
+        FileChunk::eraseDatFile(name);
+    }
+
+    return std::move(partList);
 }
 
 void
@@ -828,13 +877,9 @@ LogDataStore::eraseDanglingDatFiles(const NameIdSet &partList, const NameIdSet &
             const char *s = name.c_str();
             throw runtime_error(make_string( "Missing file '%s.dat', found '%s.idx'", s, s));
         } else if (dbase < ibase) {
-            vespalib::string name(createDatFileName(dbase));
-            const char *s = name.c_str();
-            LOG(warning, "Removing dangling file '%s'", s);
-            if (!FastOS_File::Delete(s)) {
-                vespalib::string e = getErrorString(errno);
-                throw runtime_error(make_string("Error erasing dangling file '%s'. Error is '%s'", s, e.c_str()));
-            }
+            vespalib::string fileName = createFileName(dbase);
+            LOG(warning, "Removing dangling file '%s'", FileChunk::createDatFileName(fileName).c_str());
+            FileChunk::eraseDatFile(fileName);
             ++di;
         } else {
             ++ii;
