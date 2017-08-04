@@ -6,11 +6,14 @@
 #include "summarymanager.h"
 #include <vespa/config/print/ostreamconfigwriter.h>
 #include <vespa/juniper/rpinterface.h>
+#include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchlib/docstore/logdocumentstore.h>
+#include <vespa/searchlib/common/lambdatask.h>
 #include <vespa/searchsummary/docsummary/docsumconfig.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <sstream>
+#include <future>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.docsummary.summarymanager");
@@ -28,12 +31,57 @@ using search::IDocumentStore;
 using search::LogDocumentStore;
 using search::LogDataStore;
 using search::WriteableFileChunk;
+using search::makeLambdaTask;
 
 using search::TuneFileSummary;
 using search::common::FileHeaderContext;
 using searchcorespi::IFlushTarget;
 
 namespace proton {
+
+namespace {
+
+class ShrinkSummaryLidSpaceFlushTarget : public  ShrinkLidSpaceFlushTarget
+{
+    using ICompactableLidSpace = search::common::ICompactableLidSpace;
+    searchcorespi::index::IThreadService & _summaryService;
+
+public:
+    ShrinkSummaryLidSpaceFlushTarget(const vespalib::string &name,
+                                     Type type,
+                                     Component component,
+                                     SerialNum flushedSerialNum,
+                                     Time lastFlushTime,
+                                     searchcorespi::index::IThreadService & summaryService,
+                                     std::shared_ptr<ICompactableLidSpace> target);
+    ~ShrinkSummaryLidSpaceFlushTarget();
+    virtual Task::UP initFlush(SerialNum currentSerial) override;
+};
+
+ShrinkSummaryLidSpaceFlushTarget::ShrinkSummaryLidSpaceFlushTarget(const vespalib::string &name,
+                                                                   Type type,
+                                                                   Component component,
+                                                                   SerialNum flushedSerialNum,
+                                                                   Time lastFlushTime,
+                                                                   searchcorespi::index::IThreadService & summaryService,
+                                                                   std::shared_ptr<ICompactableLidSpace> target)
+    : ShrinkLidSpaceFlushTarget(name, type, component, flushedSerialNum, lastFlushTime, std::move(target)),
+      _summaryService(summaryService)
+{
+}
+
+ShrinkSummaryLidSpaceFlushTarget::~ShrinkSummaryLidSpaceFlushTarget() {}
+
+IFlushTarget::Task::UP
+ShrinkSummaryLidSpaceFlushTarget::initFlush(SerialNum currentSerial)
+{
+    std::promise<Task::UP> promise;
+    std::future<Task::UP> future = promise.get_future();
+    _summaryService.execute(makeLambdaTask([&]() { promise.set_value(ShrinkLidSpaceFlushTarget::initFlush(currentSerial)); }));
+    return future.get();
+}
+
+}
 
 SummaryManager::SummarySetup::
 SummarySetup(const vespalib::string & baseDir,
@@ -181,13 +229,14 @@ SummaryManager::removeDocument(uint64_t syncToken, search::DocumentIdT lid)
 namespace {
 
 IFlushTarget::SP
-createShrinkLidSpaceFlushTarget(IDocumentStore::SP docStore)
+createShrinkLidSpaceFlushTarget(searchcorespi::index::IThreadService & summaryService, IDocumentStore::SP docStore)
 {
-    return std::make_shared<ShrinkLidSpaceFlushTarget>("summary.shrink",
+    return std::make_shared<ShrinkSummaryLidSpaceFlushTarget>("summary.shrink",
                                                        IFlushTarget::Type::GC,
                                                        IFlushTarget::Component::DOCUMENT_STORE,
                                                        docStore->lastSyncToken(),
                                                        docStore->getLastFlushTime(),
+                                                       summaryService,
                                                        docStore);
 }
 
@@ -198,9 +247,9 @@ IFlushTarget::List SummaryManager::getFlushTargets(searchcorespi::index::IThread
     IFlushTarget::List ret;
     ret.push_back(std::make_shared<SummaryFlushTarget>(getBackingStore(), summaryService));
     if (dynamic_cast<LogDocumentStore *>(_docStore.get()) != NULL) {
-        ret.push_back(std::make_shared<SummaryCompactTarget>(getBackingStore()));
+        ret.push_back(std::make_shared<SummaryCompactTarget>(summaryService, getBackingStore()));
     }
-    ret.push_back(createShrinkLidSpaceFlushTarget(_docStore));
+    ret.push_back(createShrinkLidSpaceFlushTarget(summaryService, _docStore));
     return ret;
 }
 

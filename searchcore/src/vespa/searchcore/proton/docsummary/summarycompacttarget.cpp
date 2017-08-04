@@ -1,9 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "summarycompacttarget.h"
+#include <vespa/searchlib/common/lambdatask.h>
+#include <vespa/searchcorespi/index/i_thread_service.h>
+#include <future>
 
 using search::IDocumentStore;
 using search::SerialNum;
+using search::makeLambdaTask;
 using searchcorespi::FlushStats;
 using searchcorespi::IFlushTarget;
 
@@ -35,8 +39,9 @@ public:
 
 }
 
-SummaryCompactTarget::SummaryCompactTarget(IDocumentStore & docStore)
+SummaryCompactTarget::SummaryCompactTarget(searchcorespi::index::IThreadService & summaryService, IDocumentStore & docStore)
     : IFlushTarget("summary.compact", Type::GC, Component::DOCUMENT_STORE),
+      _summaryService(summaryService),
       _docStore(docStore),
       _lastStats()
 {
@@ -71,7 +76,10 @@ SummaryCompactTarget::getFlushedSerialNum() const
 IFlushTarget::Task::UP
 SummaryCompactTarget::initFlush(SerialNum currentSerial)
 {
-    return Task::UP(new Compacter(_docStore, _lastStats, currentSerial));
+    std::promise<Task::UP> promise;
+    std::future<Task::UP> future = promise.get_future();
+    _summaryService.execute(makeLambdaTask([&]() { promise.set_value(std::make_unique<Compacter>(_docStore, _lastStats, currentSerial)); }));
+    return future.get();
 }
 
 uint64_t
