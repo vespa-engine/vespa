@@ -20,9 +20,11 @@ LOG_SETUP(".proton.matching.matcher");
 
 using search::fef::Properties;
 using namespace search::fef::indexproperties::matching;
-using namespace search;
 using namespace search::engine;
 using namespace search::grouping;
+using search::DocumentMetaData;
+using search::LidUsageStats;
+using search::FeatureSet;
 using search::attribute::IAttributeContext;
 using search::fef::MatchDataLayout;
 using search::fef::MatchData;
@@ -35,7 +37,7 @@ namespace proton::matching {
 namespace {
 
 // used to give out empty blacklist blueprints
-struct StupidMetaStore : IDocumentMetaStore {
+struct StupidMetaStore : search::IDocumentMetaStore {
     bool getGid(DocId, GlobalId &) const override { return false; }
     bool getGidEvenIfMoved(DocId, GlobalId &) const override { return false; }
     bool getLid(const GlobalId &, DocId &) const override { return false; }
@@ -121,7 +123,7 @@ Matcher::getFeatureSet(const DocsumRequest & req,
     return findFeatureSet(req, *mtf, summaryFeatures);
 }
 
-Matcher::Matcher(const index::Schema &schema,
+Matcher::Matcher(const search::index::Schema &schema,
                  const Properties &props,
                  const vespalib::Clock &clock,
                  QueryLimiter &queryLimiter,
@@ -137,9 +139,9 @@ Matcher::Matcher(const index::Schema &schema,
       _queryLimiter(queryLimiter),
       _distributionKey(distributionKey)
 {
-    features::setup_search_features(_blueprintFactory);
-    fef::test::setup_fef_test_plugin(_blueprintFactory);
-    _rankSetup.reset(new fef::RankSetup(_blueprintFactory, _indexEnv));
+    search::features::setup_search_features(_blueprintFactory);
+    search::fef::test::setup_fef_test_plugin(_blueprintFactory);
+    _rankSetup.reset(new search::fef::RankSetup(_blueprintFactory, _indexEnv));
     _rankSetup->configure(); // reads config values from the property map
     if (!_rankSetup->compile()) {
         throw vespalib::IllegalArgumentException("failed to compile rank setup", VESPA_STRLOC);
@@ -163,7 +165,7 @@ std::unique_ptr<MatchToolsFactory>
 Matcher::create_match_tools_factory(const search::engine::Request &request,
                                     ISearchContext &searchContext,
                                     IAttributeContext &attrContext,
-                                    const IDocumentMetaStore &metaStore,
+                                    const search::IDocumentMetaStore &metaStore,
                                     const Properties &feature_overrides) const
 {
     const Properties & rankProperties = request.propertiesMap.rankProperties();
@@ -211,7 +213,7 @@ Matcher::match(const SearchRequest &request,
                ISearchContext &searchContext,
                IAttributeContext &attrContext,
                SessionManager &sessionMgr,
-               const IDocumentMetaStore &metaStore,
+               const search::IDocumentMetaStore &metaStore,
                SearchSession::OwnershipBundle &&owned_objects)
 {
     fastos::StopWatch total_matching_time;

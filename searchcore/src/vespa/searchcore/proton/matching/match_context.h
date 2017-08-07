@@ -6,8 +6,7 @@
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <memory>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 class MatchContext {
     using IAttributeContext = search::attribute::IAttributeContext;
@@ -30,6 +29,4 @@ public:
     void releaseEnumGuards() { _attrCtx->releaseEnumGuards(); }
 };
 
-}  // namespace proton::matching
-}  // namespace proton
-
+}
