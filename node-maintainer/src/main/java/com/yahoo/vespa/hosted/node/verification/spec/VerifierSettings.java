@@ -9,23 +9,23 @@ import com.yahoo.vespa.hosted.node.verification.spec.noderepo.NodeRepoJsonModel;
 
 public class VerifierSettings {
 
-    private final boolean ipv6;
+    private final boolean checkIPv6;
 
     public VerifierSettings(){
-        this.ipv6 = true;
+        this.checkIPv6 = true;
     }
 
     public VerifierSettings(NodeRepoJsonModel nodeRepoJsonModel){
         if (nodeRepoJsonModel.getIpv6Address() != null){
-            ipv6 = true;
+            checkIPv6 = true;
         }
         else {
-            ipv6 = false;
+            checkIPv6 = false;
         }
     }
 
-    public boolean isIpv6() {
-        return ipv6;
+    public boolean isCheckIPv6() {
+        return checkIPv6;
     }
 
 }
