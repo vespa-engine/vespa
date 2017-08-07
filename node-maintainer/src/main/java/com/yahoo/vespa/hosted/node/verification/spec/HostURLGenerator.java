@@ -31,6 +31,16 @@ public class HostURLGenerator {
         return nodeInfoUrls;
     }
 
+    public static ArrayList<URL> generateNodeInfoUrl(CommandExecutor commandExecutor, String commaSeparatedUrls) throws IOException {
+        ArrayList<URL> nodeInfoUrls = new ArrayList<>();
+        String[] configServerHostNames = commaSeparatedUrls.split(PARSE_ALL_HOSTNAMES_REGEX);
+        String nodeHostName = generateNodeHostName(commandExecutor);
+        for (String configServerHostName : configServerHostNames) {
+            nodeInfoUrls.add(buildNodeInfoURL(configServerHostName, nodeHostName));
+        }
+        return nodeInfoUrls;
+    }
+
     protected static String[] getConfigServerHostNames(CommandExecutor commandExecutor) throws IOException {
         ArrayList<String> output = commandExecutor.executeCommand(CONFIG_SERVER_HOST_NAME_COMMAND);
         if (output.size() != 1)

@@ -27,8 +27,8 @@ public class SpecVerifier {
     private static final Logger logger = Logger.getLogger(SpecVerifier.class.getName());
     private static final String VIRTUAL_ENVIRONMENT = "VIRTUAL_MACHINE";
 
-    public static boolean verifySpec(CommandExecutor commandExecutor) throws IOException {
-        NodeRepoJsonModel nodeRepoJsonModel = getNodeRepositoryJSON(commandExecutor);
+    public static boolean verifySpec(CommandExecutor commandExecutor, ArrayList<URL> nodeInfoUrls) throws IOException {
+        NodeRepoJsonModel nodeRepoJsonModel = getNodeRepositoryJSON(nodeInfoUrls);
         if (nodeRepoJsonModel.getEnvironment().equals(VIRTUAL_ENVIRONMENT)) {
             logger.log(Level.INFO, "Node is virtual machine - No need for verification");
             return true;
@@ -46,8 +46,7 @@ public class SpecVerifier {
         return yamasSpecReport;
     }
 
-    protected static NodeRepoJsonModel getNodeRepositoryJSON(CommandExecutor commandExecutor) throws IOException {
-        ArrayList<URL> nodeInfoUrls = HostURLGenerator.generateNodeInfoUrl(commandExecutor);
+    protected static NodeRepoJsonModel getNodeRepositoryJSON(ArrayList<URL> nodeInfoUrls) throws IOException {
         NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(nodeInfoUrls);
         return nodeRepoJsonModel;
     }
@@ -64,9 +63,17 @@ public class SpecVerifier {
 
     public static void main(String[] args) throws IOException {
         CommandExecutor commandExecutor = new CommandExecutor();
-        if (!SpecVerifier.verifySpec(commandExecutor)) {
+        ArrayList<URL> nodeInfoUrls;
+        if (args.length == 0) {
+            nodeInfoUrls = HostURLGenerator.generateNodeInfoUrl(commandExecutor);
+        } else {
+            nodeInfoUrls = HostURLGenerator.generateNodeInfoUrl(commandExecutor, args[0]);
+        }
+
+        if (!SpecVerifier.verifySpec(commandExecutor, nodeInfoUrls)) {
             System.exit(2);
         }
+
     }
 
 }

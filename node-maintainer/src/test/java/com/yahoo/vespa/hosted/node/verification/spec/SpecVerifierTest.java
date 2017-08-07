@@ -45,8 +45,7 @@ public class SpecVerifierTest {
 
     @Test
     public void verifySpec_equal_nodeRepoInfo_and_hardware_should_return_true() throws Exception {
-        mockCommandExecutor.addCommand("echo notUsed " + URL_RESOURCE_PATH);
-        mockCommandExecutor.addCommand("echo nodeRepo.json");
+        ArrayList<URL> nodeInfoUrls = new ArrayList(Arrays.asList(new URL(URL_RESOURCE_PATH + "/nodeRepo.json")));
         mockCommandExecutor.addCommand("cat " + CPU_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + MEMORY_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + DISK_TYPE_INFO_PATH);
@@ -54,20 +53,18 @@ public class SpecVerifierTest {
         mockCommandExecutor.addCommand("cat " + NET_INTERFACE_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + NET_INTERFACE_SPEED_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + PING_RESPONSE);
-        assertTrue(SpecVerifier.verifySpec(mockCommandExecutor));
+        assertTrue(SpecVerifier.verifySpec(mockCommandExecutor, nodeInfoUrls));
     }
 
     @Test
     public void verifySpec_environment_is_virtual_machine_should_return_true() throws Exception {
-        mockCommandExecutor.addCommand("echo notUsed " + URL_RESOURCE_PATH);
-        mockCommandExecutor.addCommand("echo nodeRepoVirtualMachine.json");
-        assertTrue(SpecVerifier.verifySpec(mockCommandExecutor));
+        ArrayList<URL> nodeInfoUrls = new ArrayList(Arrays.asList(new URL(URL_RESOURCE_PATH + "/nodeRepoVirtualMachine.json")));
+        assertTrue(SpecVerifier.verifySpec(mockCommandExecutor, nodeInfoUrls));
     }
 
     @Test
     public void verifySpec_unequal_nodeRepoInfo_and_hardware_should_return_false() throws Exception {
-        mockCommandExecutor.addCommand("echo notUsed " + URL_RESOURCE_PATH);
-        mockCommandExecutor.addCommand("echo nodeRepo.json");
+        ArrayList<URL> nodeInfoUrls = new ArrayList(Arrays.asList(new URL(URL_RESOURCE_PATH + "/nodeRepo.json")));
         mockCommandExecutor.addCommand("cat " + CPU_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + MEMORY_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + DISK_TYPE_INFO_PATH);
@@ -75,7 +72,7 @@ public class SpecVerifierTest {
         mockCommandExecutor.addCommand("cat " + NET_INTERFACE_INFO_PATH + "NoIpv6");
         mockCommandExecutor.addCommand("cat " + NET_INTERFACE_SPEED_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + INVALID_PING_RESPONSE);
-        assertFalse(SpecVerifier.verifySpec(mockCommandExecutor));
+        assertFalse(SpecVerifier.verifySpec(mockCommandExecutor, nodeInfoUrls));
     }
 
     @Test
@@ -102,9 +99,8 @@ public class SpecVerifierTest {
 
     @Test
     public void getNodeRepositoryJSON_should_return_valid_nodeRepoJSONModel() throws Exception {
-        mockCommandExecutor.addCommand("echo notUsed " + URL_RESOURCE_PATH);
-        mockCommandExecutor.addCommand("echo nodeRepo.json");
-        NodeRepoJsonModel actualNodeRepoJsonModel = SpecVerifier.getNodeRepositoryJSON(mockCommandExecutor);
+        ArrayList<URL> nodeInfoUrls = new ArrayList(Arrays.asList(new URL(URL_RESOURCE_PATH + "/nodeRepo.json")));
+        NodeRepoJsonModel actualNodeRepoJsonModel = SpecVerifier.getNodeRepositoryJSON(nodeInfoUrls);
         double expectedMinCpuCores = 4D;
         double expectedMinMainMemoryAvailableGb = 4.04D;
         double expectedMinDiskAvailableGb = 1759.84;
