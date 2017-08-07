@@ -27,20 +27,15 @@ public class HardwareBenchmarker {
         for (Benchmark benchmark : benchmarks) {
             benchmark.doBenchmark();
         }
-        BenchmarkReport benchmarkReport = BenchmarkResultInspector.makeBenchmarkReport(benchmarkResults);
+        BenchmarkReport benchmarkReport = makeBenchmarkReport(benchmarkResults);
         printBenchmarkResults(benchmarkReport);
-        return isAllBenchmarksOK(benchmarkReport);
+
+        return true;
     }
 
-    private static boolean isAllBenchmarksOK(BenchmarkReport benchmarkReport) {
-        ObjectMapper om = new ObjectMapper();
-        try {
-            String jsonReport = om.writeValueAsString(benchmarkReport);
-            return jsonReport.length() == 2;
-        } catch (JsonProcessingException e){
-            e.printStackTrace();
-            return false;
-        }
+    protected static BenchmarkReport makeBenchmarkReport(BenchmarkResults benchmarkResults) {
+        BenchmarkReport benchmarkReport = BenchmarkResultInspector.isBenchmarkResultsValid(benchmarkResults);
+        return benchmarkReport;
     }
 
     private static void printBenchmarkResults(BenchmarkReport benchmarkReport) {
