@@ -5,7 +5,7 @@ import com.yahoo.vespa.hosted.node.verification.mock.MockCommandExecutor;
 import com.yahoo.vespa.hosted.node.verification.spec.noderepo.NodeRepoInfoRetriever;
 import com.yahoo.vespa.hosted.node.verification.spec.noderepo.NodeRepoJsonModel;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
-import com.yahoo.vespa.hosted.node.verification.spec.yamasreport.YamasSpecReport;
+import com.yahoo.vespa.hosted.node.verification.spec.report.VerificationReport;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -26,7 +26,6 @@ public class SpecVerifierTest {
     private static final String RESOURCE_PATH = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources";
     private static final String URL_RESOURCE_PATH = "file://" + ABSOLUTE_PATH + "/" + RESOURCE_PATH;
     private static final String NODE_REPO_PATH = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/nodeInfoTest.json";
-    private static final String YAMAS_REPORT_PATH = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/SpecVerifierReport";
     private static final String CPU_INFO_PATH = RESOURCE_PATH + "/cpuinfoTest";
     private static final String MEMORY_INFO_PATH = RESOURCE_PATH + "/meminfoTest";
     private static final String DISK_TYPE_INFO_PATH = RESOURCE_PATH + "/DiskTypeFastDisk";
@@ -36,16 +35,19 @@ public class SpecVerifierTest {
     private static final String PING_RESPONSE = RESOURCE_PATH + "/validpingresponse";
     private static final String INVALID_PING_RESPONSE = RESOURCE_PATH + "/pingresponse-all-packets-lost";
     private static final double DELTA = 0.1;
+    ArrayList<URL> nodeInfoUrls;
 
     @Before
     public void setup() {
         mockCommandExecutor = new MockCommandExecutor();
+        nodeInfoUrls = new ArrayList<>();
+
     }
 
 
     @Test
     public void verifySpec_equal_nodeRepoInfo_and_hardware_should_return_true() throws Exception {
-        ArrayList<URL> nodeInfoUrls = new ArrayList(Arrays.asList(new URL(URL_RESOURCE_PATH + "/nodeRepo.json")));
+        nodeInfoUrls.add(new URL(URL_RESOURCE_PATH + "/nodeRepo.json"));
         mockCommandExecutor.addCommand("cat " + CPU_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + MEMORY_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + DISK_TYPE_INFO_PATH);
@@ -58,13 +60,13 @@ public class SpecVerifierTest {
 
     @Test
     public void verifySpec_environment_is_virtual_machine_should_return_true() throws Exception {
-        ArrayList<URL> nodeInfoUrls = new ArrayList(Arrays.asList(new URL(URL_RESOURCE_PATH + "/nodeRepoVirtualMachine.json")));
+        nodeInfoUrls.add(new URL(URL_RESOURCE_PATH + "/nodeRepoVirtualMachine.json"));
         assertTrue(SpecVerifier.verifySpec(mockCommandExecutor, nodeInfoUrls));
     }
 
     @Test
     public void verifySpec_unequal_nodeRepoInfo_and_hardware_should_return_false() throws Exception {
-        ArrayList<URL> nodeInfoUrls = new ArrayList(Arrays.asList(new URL(URL_RESOURCE_PATH + "/nodeRepo.json")));
+        nodeInfoUrls.add(new URL(URL_RESOURCE_PATH + "/nodeRepo.json"));
         mockCommandExecutor.addCommand("cat " + CPU_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + MEMORY_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + DISK_TYPE_INFO_PATH);
@@ -76,30 +78,28 @@ public class SpecVerifierTest {
     }
 
     @Test
-    public void makeYamasSpecReport_should_return_false_interface_speed_and_ipv6_connection() throws Exception {
+    public void makeVerificationSpecReport_should_return_false_interface_speed_and_ipv6_connection() throws Exception {
         HardwareInfo actualHardware = new HardwareInfo();
         actualHardware.setMinCpuCores(24);
         actualHardware.setMinMainMemoryAvailableGb(24);
-        actualHardware.setInterfaceSpeedMbs(10009); //this is wrong
+        actualHardware.setInterfaceSpeedMbs(100); //this is wrong
         actualHardware.setMinDiskAvailableGb(500);
         actualHardware.setIpv4Interface(true);
-        actualHardware.setIpv6Interface(false);
+        actualHardware.setIpv6Interface(true);
         actualHardware.setIpv6Connection(true);
         actualHardware.setDiskType(HardwareInfo.DiskType.SLOW);
-        ArrayList<URL> url = new ArrayList<>(Arrays.asList(new File(NODE_REPO_PATH).toURI().toURL()));
-        NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(url);
-        YamasSpecReport yamasSpecReport = SpecVerifier.makeYamasSpecReport(actualHardware, nodeRepoJsonModel);
-        long timeStamp = 1501504035;
-        yamasSpecReport.setTimeStamp(timeStamp);
-        String expectedJson = MockCommandExecutor.readFromFile(YAMAS_REPORT_PATH).get(0);
+        nodeInfoUrls.add(new File(NODE_REPO_PATH).toURI().toURL());
+        NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(nodeInfoUrls);
+        VerificationReport verificationSpecReport = SpecVerifier.makeVerificationReport(actualHardware, nodeRepoJsonModel);
+        String expectedJson = "{\"actualInterfaceSpeed\":100.0}";
         ObjectMapper om = new ObjectMapper();
-        String actualJson = om.writeValueAsString(yamasSpecReport);
+        String actualJson = om.writeValueAsString(verificationSpecReport);
         assertEquals(expectedJson, actualJson);
     }
 
     @Test
     public void getNodeRepositoryJSON_should_return_valid_nodeRepoJSONModel() throws Exception {
-        ArrayList<URL> nodeInfoUrls = new ArrayList(Arrays.asList(new URL(URL_RESOURCE_PATH + "/nodeRepo.json")));
+        nodeInfoUrls.add(new URL(URL_RESOURCE_PATH + "/nodeRepo.json"));
         NodeRepoJsonModel actualNodeRepoJsonModel = SpecVerifier.getNodeRepositoryJSON(nodeInfoUrls);
         double expectedMinCpuCores = 4D;
         double expectedMinMainMemoryAvailableGb = 4.04D;

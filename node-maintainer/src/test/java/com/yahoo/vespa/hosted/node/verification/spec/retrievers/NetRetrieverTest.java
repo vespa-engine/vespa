@@ -39,7 +39,7 @@ public class NetRetrieverTest {
     public void setup() {
         hardwareInfo = new HardwareInfo();
         commandExecutor = new MockCommandExecutor();
-        doReturn(true).when(verifierSettings).isIpv6();
+        doReturn(true).when(verifierSettings).isCheckIPv6();
         net = new NetRetriever(hardwareInfo, commandExecutor, verifierSettings);
         parseResults = new ArrayList<>();
     }

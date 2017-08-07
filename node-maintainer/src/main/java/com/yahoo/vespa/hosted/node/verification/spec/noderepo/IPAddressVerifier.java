@@ -1,6 +1,6 @@
 package com.yahoo.vespa.hosted.node.verification.spec.noderepo;
 
-import com.yahoo.vespa.hosted.node.verification.spec.yamasreport.YamasSpecReport;
+import com.yahoo.vespa.hosted.node.verification.spec.report.VerificationReport;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
@@ -23,10 +23,10 @@ public class IPAddressVerifier {
 
     private static final Logger logger = Logger.getLogger(IPAddressVerifier.class.getName());
 
-    public void reportFaultyIpAddresses(NodeRepoJsonModel nodeRepoJsonModel, YamasSpecReport yamasSpecReport) {
+    public void reportFaultyIpAddresses(NodeRepoJsonModel nodeRepoJsonModel, VerificationReport verificationReport) {
         String[] faultyIpAddresses = getFaultyIpAddresses(nodeRepoJsonModel);
         if (faultyIpAddresses.length > 0) {
-            yamasSpecReport.setFaultyIpAddresses(faultyIpAddresses);
+            verificationReport.setFaultyIpAddresses(faultyIpAddresses);
         }
     }
 

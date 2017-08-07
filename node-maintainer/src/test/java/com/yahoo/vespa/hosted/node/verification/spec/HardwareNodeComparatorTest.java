@@ -1,10 +1,12 @@
 package com.yahoo.vespa.hosted.node.verification.spec;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo.DiskType;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -31,23 +33,29 @@ public class HardwareNodeComparatorTest {
     }
 
     @Test
-    public void compare_should_be_equal() {
-        assertTrue(HardwareNodeComparator.compare(nodeInfo, actualHardware).getMetrics().isMatch());
+    public void compare_equal_hardware_should_create_emmpty_json() throws Exception {
+        String actualJson = new ObjectMapper().writeValueAsString(HardwareNodeComparator.compare(nodeInfo, actualHardware));
+        String expectedJson = "{}";
+        assertEquals(expectedJson, actualJson);
 
     }
 
     @Test
-    public void compare_different_amount_of_cores_should_be_false() {
+    public void compare_different_amount_of_cores_should_create_json_with_actual_core_amount() throws Exception {
         actualHardware.setMinCpuCores(4);
         nodeInfo.setMinCpuCores(1);
-        assertFalse(HardwareNodeComparator.compare(nodeInfo, actualHardware).getMetrics().isMatch());
+        String actualJson = new ObjectMapper().writeValueAsString(HardwareNodeComparator.compare(nodeInfo, actualHardware));
+        String expectedJson = "{\"actualcpuCores\":4}";
+        assertEquals(expectedJson, actualJson);
     }
 
     @Test
-    public void compare_different_disk_type_should_return_false() {
-        actualHardware.setDiskType(DiskType.UNKNOWN);
+    public void compare_different_disk_type_should_create_json_with_actual_disk_type() throws Exception {
+        actualHardware.setDiskType(DiskType.SLOW);
         nodeInfo.setDiskType(DiskType.FAST);
-        assertFalse(HardwareNodeComparator.compare(nodeInfo, actualHardware).getMetrics().isMatch());
+        String actualJson = new ObjectMapper().writeValueAsString(HardwareNodeComparator.compare(nodeInfo, actualHardware));
+        String expectedJson = "{\"actualDiskType\":\"SLOW\"}";
+        assertEquals(expectedJson, actualJson);
     }
 
 
