@@ -33,7 +33,8 @@ public class TokenizeExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        StringFieldValue output = ((StringFieldValue)context.getValue()).clone();
+        StringFieldValue input = (StringFieldValue)context.getValue();
+        StringFieldValue output = input.clone();
         context.setValue(output);
 
         AnnotatorConfig cfg = new AnnotatorConfig(config);
@@ -69,6 +70,9 @@ public class TokenizeExpression extends Expression {
         }
         if (config.getStemMode() != StemMode.NONE) {
             ret.append(" stem:\""+config.getStemMode()+"\"");
+        }
+        if (config.hasNonDefaultMaxTokenLength()) {
+            ret.append(" max-length:" + config.getMaxTokenizeLength());
         }
         return ret.toString();
     }

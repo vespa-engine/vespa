@@ -71,6 +71,9 @@ public class TextMatch extends Processor {
         }
         ret.setStemMode(activeStemming.toStemMode());
         ret.setRemoveAccents(field.getNormalizing().doRemoveAccents());
+        if ((field.getMatching() != null) && (field.getMatching().maxLength() != null)) {
+            ret.setMaxTokenLength(field.getMatching().maxLength());
+        }
         return ret;
     }
 
