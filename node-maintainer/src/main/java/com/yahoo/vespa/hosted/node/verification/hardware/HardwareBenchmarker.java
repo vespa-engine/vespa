@@ -7,7 +7,7 @@ import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.BenchmarkRes
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.CPUBenchmark;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.DiskBenchmark;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.MemoryBenchmark;
-import com.yahoo.vespa.hosted.node.verification.hardware.yamasreport.YamasHardwareReport;
+import com.yahoo.vespa.hosted.node.verification.hardware.report.BenchmarkReport;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,23 +26,21 @@ public class HardwareBenchmarker {
         for (Benchmark benchmark : benchmarks) {
             benchmark.doBenchmark();
         }
+        BenchmarkReport benchmarkReport = makeBenchmarkReport(benchmarkResults);
+        printBenchmarkResults(benchmarkReport);
 
-        YamasHardwareReport yamasHardwareReport = makeYamasHardwareReport(benchmarkResults);
-        printBenchmarkResults(yamasHardwareReport);
-        TerminationController.terminateIfInvalidBenchmarkResults(benchmarkResults);
         return true;
     }
 
-    protected static YamasHardwareReport makeYamasHardwareReport(BenchmarkResults benchmarkResults) {
-        YamasHardwareReport yamasHardwareReport = new YamasHardwareReport();
-        yamasHardwareReport.createReportFromBenchmarkResults(benchmarkResults);
-        return yamasHardwareReport;
+    protected static BenchmarkReport makeBenchmarkReport(BenchmarkResults benchmarkResults) {
+        BenchmarkReport benchmarkReport = BenchmarkResultInspector.isBenchmarkResultsValid(benchmarkResults);
+        return benchmarkReport;
     }
 
-    private static void printBenchmarkResults(YamasHardwareReport yamasHardwareReport) {
+    private static void printBenchmarkResults(BenchmarkReport benchmarkReport) {
         ObjectMapper om = new ObjectMapper();
         try {
-            System.out.println(om.writeValueAsString(yamasHardwareReport));
+            System.out.println(om.writeValueAsString(benchmarkReport));
         } catch (Exception e) {
             e.printStackTrace();
         }
