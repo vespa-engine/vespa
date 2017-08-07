@@ -597,7 +597,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
      * in config and not remove it again if they reduce the node count.
      */
     public int distributionBits() {
-        if (zone.environment() == Environment.prod) {
+        if (zone.environment() == Environment.prod && ! zone.equals(Zone.defaultZone())) {
             return 16;
         }
         else { // hosted test zone, or self-hosted system
@@ -605,10 +605,6 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
             // self hosted systems: should probably default to 16 bits, but the transition may cause problems
             return DistributionBitCalculator.getDistributionBits(getNodeCountPerGroup(), getDistributionMode());
         }
-    }
-
-    private Zone createZone(Environment environment, String region) {
-        return new Zone(environment, RegionName.from(region));
     }
 
     @Override
