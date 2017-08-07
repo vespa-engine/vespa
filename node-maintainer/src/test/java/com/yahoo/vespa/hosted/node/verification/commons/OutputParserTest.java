@@ -22,7 +22,6 @@ public class OutputParserTest {
     private static final String SEARCH_WORD_1 = "Parsing";
     private static final String SEARCH_WORD_2 = "this";
     private static final String REGEX_SEARCH_WORD = ".*S.*";
-    private static final String PARSE_OUTPUT_WITH_SKIPS_TEST_FILE = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/parseOutputWithSkipsTest";
     private ArrayList<String> commandOutput;
     private ArrayList<String> searchWords;
 
@@ -80,30 +79,6 @@ public class OutputParserTest {
         ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
         ParseResult expectedParseResult = new ParseResult("invalid", "invalid");
         assertEquals(expectedParseResult, parseResult);
-    }
-
-    @Test
-    public void parseOutputWithSkips_should_return_two_matches() throws IOException {
-        searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD_1));
-        ParseInstructions parseInstructions = new ParseInstructions(1, 7, " ", searchWords);
-        parseInstructions.setSkipWord("SkipFromKeyword");
-        parseInstructions.setSkipUntilKeyword("skipUntilKeyword");
-        ArrayList<String> commandSkipOutput = MockCommandExecutor.readFromFile(PARSE_OUTPUT_WITH_SKIPS_TEST_FILE);
-        ArrayList<ParseResult> parseResults = OutputParser.parseOutPutWithSkips(parseInstructions, commandSkipOutput);
-        ParseResult expectedParseResult = new ParseResult(SEARCH_WORD_1, RETURN_VALUE);
-        assertEquals(expectedParseResult, parseResults.get(0));
-        assertEquals(expectedParseResult, parseResults.get(1));
-    }
-
-    @Test
-    public void skipToIndex_should_return_correct_index() throws IOException {
-        searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD_1));
-        ParseInstructions parseInstructions = new ParseInstructions(0, 0, " ", searchWords);
-        parseInstructions.setSkipUntilKeyword("skipUntilKeyword");
-        ArrayList<String> commandSkipOutput = MockCommandExecutor.readFromFile(PARSE_OUTPUT_WITH_SKIPS_TEST_FILE);
-        int indexReturned = OutputParser.skipToIndex(3, parseInstructions, commandSkipOutput);
-        int expectedReturnIndex = 10;
-        assertEquals(expectedReturnIndex, indexReturned);
     }
 
 }

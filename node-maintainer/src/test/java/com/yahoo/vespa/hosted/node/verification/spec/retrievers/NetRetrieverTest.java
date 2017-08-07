@@ -24,7 +24,7 @@ public class NetRetrieverTest {
     private static final String NET_CHECK_INTERFACE_SPEED = RESOURCE_PATH + "eth0";
     private static String VALID_PING_RESPONSE = RESOURCE_PATH + "validpingresponse";
     private static String INVALID_PING_RESPONSE = RESOURCE_PATH + "invalidpingresponse";
-    private static String PING_SEARCH_WORD = "loss,";
+    private static String PING_SEARCH_WORD = "\\d+\\.?\\d*";
     private HardwareInfo hardwareInfo;
     private MockCommandExecutor commandExecutor;
     private NetRetriever net;
@@ -56,8 +56,8 @@ public class NetRetrieverTest {
     public void findInterface_valid_input() throws IOException {
         commandExecutor.addCommand("cat " + NET_FIND_INTERFACE);
         parseResults = net.findInterface();
-        ParseResult expectedParseResult = new ParseResult("eth0", "eth0");
-        assertEquals(expectedParseResult, parseResults.get(0));
+        ParseResult expectedParseResult = new ParseResult("interface name", "eth0");
+        assertEquals(expectedParseResult, parseResults.get(2));
     }
 
     @Test
@@ -84,8 +84,8 @@ public class NetRetrieverTest {
         ArrayList<String> mockOutput = MockCommandExecutor.readFromFile(NET_FIND_INTERFACE + "NoIpv6");
         parseResults = net.parseNetInterface(mockOutput);
         ArrayList<ParseResult> expextedParseResults = new ArrayList<>(Arrays.asList(
-                new ParseResult("eth0", "eth0"),
-                new ParseResult("inet", "inet")));
+                new ParseResult("inet", "inet"),
+                new ParseResult("interface name", "eth0")));
         assertEquals(expextedParseResults, parseResults);
     }
 
@@ -93,7 +93,7 @@ public class NetRetrieverTest {
     public void parseNetInterface_get_interfaceName_from_ifconfig_testFile() throws IOException {
         ArrayList<String> mockOutput = MockCommandExecutor.readFromFile(NET_FIND_INTERFACE);
         parseResults = net.parseNetInterface(mockOutput);
-        String interfaceName = net.findInterfaceName(parseResults);
+        String interfaceName = net.getInterfaceName(parseResults);
         String expectedInterfaceName = "eth0";
         assertEquals(expectedInterfaceName, interfaceName);
     }
@@ -108,21 +108,21 @@ public class NetRetrieverTest {
 
     @Test
     public void findInterfaceName_should_return_interface_name() {
-        parseResults.add(new ParseResult("eth0", "eth0"));
+        parseResults.add(new ParseResult("interface name", "eth0"));
         String expectedInterfaceName = "eth0";
-        assertEquals(expectedInterfaceName, net.findInterfaceName(parseResults));
+        assertEquals(expectedInterfaceName, net.getInterfaceName(parseResults));
     }
 
     @Test
     public void findInterfaceName_should_return_empty_interface_name() {
         parseResults.add(new ParseResult("et", "et0"));
         String expectedInterfaceName = "";
-        assertEquals(expectedInterfaceName, net.findInterfaceName(parseResults));
+        assertEquals(expectedInterfaceName, net.getInterfaceName(parseResults));
     }
 
     @Test
     public void updateHardwareinfoWithNet_valid_input() {
-        parseResults.add(new ParseResult("eth0", "eth0"));
+        parseResults.add(new ParseResult("interface name", "eth0"));
         parseResults.add(new ParseResult("inet", "inet"));
         parseResults.add(new ParseResult("inet6", "inet6"));
         parseResults.add(new ParseResult("Speed", "1000Mb/s"));
@@ -145,7 +145,7 @@ public class NetRetrieverTest {
     public void parsePingResponse_valid_ping_response_should_return_ipv6_connectivity() throws IOException {
         ArrayList<String> mockCommandOutput = MockCommandExecutor.readFromFile(VALID_PING_RESPONSE);
         ParseResult parseResult = net.parsePingResponse(mockCommandOutput);
-        String expectedPing = "0%";
+        String expectedPing = "0";
         assertEquals(expectedPing, parseResult.getValue());
     }
 
@@ -163,14 +163,14 @@ public class NetRetrieverTest {
 
     @Test
     public void setIpv6Connectivity_valid_ping_response_should_return_ipv6_connectivity() {
-        ParseResult parseResult = new ParseResult(PING_SEARCH_WORD, "0%");
+        ParseResult parseResult = new ParseResult(PING_SEARCH_WORD, "0");
         net.setIpv6Connectivity(parseResult);
         assertTrue(hardwareInfo.isIpv6Connection());
     }
 
     @Test
     public void setIpv6Connectivity_invalid_ping_response_should_return_no_ipv6_connectivity_1() {
-        ParseResult parseResult = new ParseResult(PING_SEARCH_WORD, "100%");
+        ParseResult parseResult = new ParseResult(PING_SEARCH_WORD, "100");
         net.setIpv6Connectivity(parseResult);
         assertFalse(hardwareInfo.isIpv6Connection());
     }
