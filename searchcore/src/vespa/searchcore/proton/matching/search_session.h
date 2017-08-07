@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/searchcore/proton/documentmetastore/i_document_meta_store_context.h>
 #include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <memory>
@@ -28,6 +29,7 @@ public:
         ISearchHandler::SP search_handler;
         std::unique_ptr<search::fef::Properties> feature_overrides;
         std::unique_ptr<MatchContext> context;
+        IDocumentMetaStoreContext::IReadGuard::UP readGuard;
     };
 private:
     typedef vespalib::string SessionId;
@@ -35,7 +37,7 @@ private:
     SessionId _session_id;
     fastos::TimeStamp _create_time;
     fastos::TimeStamp _time_of_doom;
-    OwnershipBundle _owned_objects;
+    OwnershipBundle   _owned_objects;
     std::unique_ptr<MatchToolsFactory> _match_tools_factory;
 
 public:
