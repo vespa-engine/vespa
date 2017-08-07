@@ -72,7 +72,7 @@ public class DiskBenchmark implements Benchmark {
                     diskSpeedMBs = convertToMBs(diskSpeed, convertGBsToMBs);
                     break;
                 default:
-                    throw new RuntimeException("Invalid ParseResult searchWord");
+                    throw new RuntimeException("Invalid ParseResult searchWord: " + parseResult.getSearchWord());
             }
         }
 
