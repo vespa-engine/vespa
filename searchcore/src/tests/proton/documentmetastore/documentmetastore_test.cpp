@@ -197,12 +197,13 @@ assertActiveLids(const BoolVector &exp, const SingleValueBitNumericAttribute &ac
 }
 
 bool
-assertBlackList(const SimpleResult &exp, Blueprint::UP blackListBlueprint, bool strict,
-                uint32_t docIdLimit = 8)
+assertBlackList(const SimpleResult &exp, Blueprint::UP blackListBlueprint, bool strict, uint32_t docIdLimit)
 {
     MatchDataLayout mdl;
     MatchData::UP md = mdl.createMatchData();
     blackListBlueprint->fetchPostings(strict);
+    blackListBlueprint->setDocIdLimit(docIdLimit);
+
     SearchIterator::UP sb = blackListBlueprint->createSearch(*md, strict);
     SimpleResult act;
     act.searchStrict(*sb, docIdLimit);
@@ -1057,12 +1058,12 @@ TEST("requireThatBlackListBlueprintIsCreated")
     f.addGlobalIds();
 
     f.dms.setBucketState(f.bid1, true);
-    EXPECT_TRUE(assertBlackList(SimpleResult().addHit(3).addHit(6).addHit(7),
-                                f.dms.createBlackListBlueprint(), true));
+    EXPECT_TRUE(assertBlackList(SimpleResult().addHit(3).addHit(6).addHit(7), f.dms.createBlackListBlueprint(),
+                                true, f.dms.getCommittedDocIdLimit()));
 
     f.dms.setBucketState(f.bid2, true);
-    EXPECT_TRUE(assertBlackList(SimpleResult(),
-                                f.dms.createBlackListBlueprint(), true));
+    EXPECT_TRUE(assertBlackList(SimpleResult(), f.dms.createBlackListBlueprint(),
+                                true,  f.dms.getCommittedDocIdLimit()));
 }
 
 TEST("requireThatDocumentAndMetaEntryCountIsUpdated")

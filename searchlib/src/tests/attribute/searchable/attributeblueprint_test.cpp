@@ -112,6 +112,8 @@ bool Test::search(const string &term, IAttributeManager &attribute_manager) {
     return ret;
 }
 
+constexpr uint32_t DOCID_LIMIT = 3;
+
 bool Test::search(const Node &node, IAttributeManager &attribute_manager) {
     AttributeContext ac(attribute_manager);
     FakeRequestContext requestContext(&ac);
@@ -122,6 +124,7 @@ bool Test::search(const Node &node, IAttributeManager &attribute_manager) {
     EXPECT_TRUE(!result->getState().estimate().empty);
     EXPECT_EQUAL(3u, result->getState().estimate().estHits);
     result->fetchPostings(true);
+    result->setDocIdLimit(DOCID_LIMIT);
     SearchIterator::UP iterator = result->createSearch(*md, true);
     ASSERT_TRUE((bool)iterator);
     iterator->initRange(1, 3);
@@ -149,7 +152,7 @@ MyAttributeManager fill(typename AT::Type * attr, T value) {
     attr->addDoc(docid);
     attr->addDoc(docid);
     attr->addDoc(docid);
-    assert(2u == docid);
+    assert(DOCID_LIMIT-1 == docid);
     AT::add(*attr, value);
     return MyAttributeManager(attr);
 }
