@@ -33,7 +33,8 @@ public class SpecVerifier {
             logger.log(Level.INFO, "Node is virtual machine - No need for verification");
             return true;
         }
-        HardwareInfo actualHardware = HardwareInfoRetriever.retrieve(commandExecutor);
+        VerifierSettings verifierSettings = new VerifierSettings(nodeRepoJsonModel);
+        HardwareInfo actualHardware = HardwareInfoRetriever.retrieve(commandExecutor, verifierSettings);
         YamasSpecReport yamasSpecReport = makeYamasSpecReport(actualHardware, nodeRepoJsonModel);
         printResults(yamasSpecReport);
         return yamasSpecReport.getMetrics().isMatch();

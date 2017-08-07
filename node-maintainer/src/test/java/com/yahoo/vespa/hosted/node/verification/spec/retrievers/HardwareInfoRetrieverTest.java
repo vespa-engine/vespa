@@ -2,8 +2,11 @@ package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
 
 
 import com.yahoo.vespa.hosted.node.verification.mock.MockCommandExecutor;
+import com.yahoo.vespa.hosted.node.verification.spec.VerifierSettings;
 import org.junit.Before;
 import org.junit.Test;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 
 import static org.junit.Assert.assertEquals;
 
@@ -19,6 +22,7 @@ public class HardwareInfoRetrieverTest {
     private static String PING_RESPONSE = RESOURCE_PATH + "invalidpingresponse";
     private MockCommandExecutor mockCommandExecutor;
     private HardwareInfo expectedHardwareInfo;
+    private VerifierSettings verifierSettings = spy(new VerifierSettings());
     private static final double DELTA = 0.1;
 
     @Before
@@ -45,7 +49,8 @@ public class HardwareInfoRetrieverTest {
 
     @Test
     public void retriever_should_return_valid_HardwareInfo() {
-        HardwareInfo actualHardwareInfo = HardwareInfoRetriever.retrieve(mockCommandExecutor);
+        doReturn(true).when(verifierSettings).isIpv6();
+        HardwareInfo actualHardwareInfo = HardwareInfoRetriever.retrieve(mockCommandExecutor, verifierSettings);
         assertEquals(expectedHardwareInfo.getMinDiskAvailableGb(), actualHardwareInfo.getMinDiskAvailableGb(), DELTA);
         assertEquals(expectedHardwareInfo.getMinMainMemoryAvailableGb(), actualHardwareInfo.getMinMainMemoryAvailableGb(), DELTA);
         assertEquals(expectedHardwareInfo.getMinCpuCores(), actualHardwareInfo.getMinCpuCores());

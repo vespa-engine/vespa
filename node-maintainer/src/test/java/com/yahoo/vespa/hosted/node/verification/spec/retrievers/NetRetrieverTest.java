@@ -2,6 +2,7 @@ package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
 
 import com.yahoo.vespa.hosted.node.verification.commons.ParseResult;
 import com.yahoo.vespa.hosted.node.verification.mock.MockCommandExecutor;
+import com.yahoo.vespa.hosted.node.verification.spec.VerifierSettings;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -13,6 +14,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 
 /**
  * Created by sgrostad on 07/07/2017.
@@ -29,13 +32,15 @@ public class NetRetrieverTest {
     private MockCommandExecutor commandExecutor;
     private NetRetriever net;
     private ArrayList<ParseResult> parseResults;
+    private VerifierSettings verifierSettings = spy(new VerifierSettings());
     private static final double DELTA = 0.1;
 
     @Before
     public void setup() {
         hardwareInfo = new HardwareInfo();
         commandExecutor = new MockCommandExecutor();
-        net = new NetRetriever(hardwareInfo, commandExecutor);
+        doReturn(true).when(verifierSettings).isIpv6();
+        net = new NetRetriever(hardwareInfo, commandExecutor, verifierSettings);
         parseResults = new ArrayList<>();
     }
 

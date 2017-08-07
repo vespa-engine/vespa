@@ -4,6 +4,7 @@ import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
 import com.yahoo.vespa.hosted.node.verification.commons.OutputParser;
 import com.yahoo.vespa.hosted.node.verification.commons.ParseInstructions;
 import com.yahoo.vespa.hosted.node.verification.commons.ParseResult;
+import com.yahoo.vespa.hosted.node.verification.spec.VerifierSettings;
 import org.apache.commons.exec.ExecuteException;
 
 import java.io.IOException;
@@ -36,17 +37,21 @@ public class NetRetriever implements HardwareRetriever {
     private static final Logger logger = Logger.getLogger(NetRetriever.class.getName());
     private final HardwareInfo hardwareInfo;
     private final CommandExecutor commandExecutor;
+    private final VerifierSettings verifierSettings;
 
 
-    public NetRetriever(HardwareInfo hardwareInfo, CommandExecutor commandExecutor) {
+    public NetRetriever(HardwareInfo hardwareInfo, CommandExecutor commandExecutor, VerifierSettings verifierSettings) {
         this.hardwareInfo = hardwareInfo;
         this.commandExecutor = commandExecutor;
+        this.verifierSettings = verifierSettings;
     }
 
     public void updateInfo() {
         ArrayList<ParseResult> parseResults = findInterface();
         findInterfaceSpeed(parseResults);
-        testPingResponse(parseResults);
+        if (verifierSettings.isIpv6()) {
+            testPingResponse(parseResults);
+        }
         updateHardwareInfoWithNet(parseResults);
     }
 
