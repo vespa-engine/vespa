@@ -8,6 +8,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -57,7 +58,7 @@ public class HostURLGeneratorTest {
     @Test
     public void generateNodeInfoUrl_retrieve_config_server_as_parameter_test_if_url_is_formatted_correctly() throws Exception {
         mockCommandExecutor.addCommand(CAT_NODE_HOST_NAME_PATH);
-        String configServerHostname = "cfg1.prod.region1";
+        String configServerHostname = "cfg1.prod.corp-us-east-1.vespahosted.corp.bf1.yahoo.com";
         ArrayList<URL> actualUrls = HostURLGenerator.generateNodeInfoUrl(mockCommandExecutor, configServerHostname);
         String expectedUrl = CONFIG_SERVER_HOSTNAME + NODE_HOSTNAME_PREFIX + EXPECTED_HOSTNAME;
         String actualUrl = actualUrls.get(0).toString();
