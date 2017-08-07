@@ -50,7 +50,7 @@ public class NetRetriever implements HardwareRetriever {
     public void updateInfo() {
         ArrayList<ParseResult> parseResults = findInterface();
         findInterfaceSpeed(parseResults);
-        if (verifierSettings.isCheckIPv6()) {
+        if (verifierSettings.isIpv6()) {
             testPingResponse(parseResults);
         }
         updateHardwareInfoWithNet(parseResults);

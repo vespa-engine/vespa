@@ -49,7 +49,7 @@ public class HardwareInfoRetrieverTest {
 
     @Test
     public void retriever_should_return_valid_HardwareInfo() {
-        doReturn(true).when(verifierSettings).isCheckIPv6();
+        doReturn(true).when(verifierSettings).isIpv6();
         HardwareInfo actualHardwareInfo = HardwareInfoRetriever.retrieve(mockCommandExecutor, verifierSettings);
         assertEquals(expectedHardwareInfo.getMinDiskAvailableGb(), actualHardwareInfo.getMinDiskAvailableGb(), DELTA);
         assertEquals(expectedHardwareInfo.getMinMainMemoryAvailableGb(), actualHardwareInfo.getMinMainMemoryAvailableGb(), DELTA);

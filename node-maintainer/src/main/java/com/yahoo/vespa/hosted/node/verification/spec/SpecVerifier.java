@@ -36,9 +36,9 @@ public class SpecVerifier {
         }
         VerifierSettings verifierSettings = new VerifierSettings(nodeRepoJsonModel);
         HardwareInfo actualHardware = HardwareInfoRetriever.retrieve(commandExecutor, verifierSettings);
-        VerificationReport verificationReport = makeVerificationReport(actualHardware, nodeRepoJsonModel);
-        printResults(verificationReport);
-        return isValidSpec(verificationReport);
+        YamasSpecReport yamasSpecReport = makeYamasSpecReport(actualHardware, nodeRepoJsonModel);
+        printResults(yamasSpecReport);
+        return yamasSpecReport.getMetrics().isMatch();
     }
 
     private static boolean isValidSpec(VerificationReport verificationReport) throws JsonProcessingException {
