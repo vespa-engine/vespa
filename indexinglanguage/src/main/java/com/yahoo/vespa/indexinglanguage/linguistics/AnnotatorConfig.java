@@ -14,14 +14,15 @@ public class AnnotatorConfig implements Cloneable {
     private StemMode stemMode;
     private boolean removeAccents;
     private int maxTermOccurences;
-    private int maxTokenizeLength = MAX_TOKENIZE_LENGTH;
+    private int maxTokenizeLength;
 
     public static final int DEFAULT_MAX_TERM_OCCURRENCES;
-    private static final int MAX_TOKENIZE_LENGTH = 1000000;
+    private static final int DEFAULT_MAX_TOKENIZE_LENGTH;
 
     static {
         IlscriptsConfig defaults = new IlscriptsConfig(new IlscriptsConfig.Builder());
         DEFAULT_MAX_TERM_OCCURRENCES = defaults.maxtermoccurrences();
+        DEFAULT_MAX_TOKENIZE_LENGTH = defaults.fieldmatchmaxlength();
     }
 
     public AnnotatorConfig() {
@@ -29,6 +30,7 @@ public class AnnotatorConfig implements Cloneable {
         stemMode = StemMode.NONE;
         removeAccents = false;
         maxTermOccurences = DEFAULT_MAX_TERM_OCCURRENCES;
+        maxTokenizeLength = DEFAULT_MAX_TOKENIZE_LENGTH;
     }
 
     public AnnotatorConfig(AnnotatorConfig rhs) {
@@ -90,7 +92,7 @@ public class AnnotatorConfig implements Cloneable {
     }
 
     public boolean hasNonDefaultMaxTokenLength() {
-        return maxTokenizeLength != MAX_TOKENIZE_LENGTH;
+        return maxTokenizeLength != DEFAULT_MAX_TOKENIZE_LENGTH;
     }
 
     @Override
