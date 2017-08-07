@@ -49,7 +49,7 @@ public class SpecVerifierTest {
 
     @Test
     public void verifySpec_equal_nodeRepoInfo_and_hardware_should_return_true() throws Exception {
-        nodeInfoUrls.add(new URL(URL_RESOURCE_PATH + "/nodeRepo.json"));
+        ArrayList<URL> nodeInfoUrls = new ArrayList(Arrays.asList(new URL(URL_RESOURCE_PATH + "/nodeRepo.json")));
         mockCommandExecutor.addCommand("cat " + CPU_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + MEMORY_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + FAST_DISK_TYPE_INFO_PATH);
@@ -62,13 +62,13 @@ public class SpecVerifierTest {
 
     @Test
     public void verifySpec_environment_is_virtual_machine_should_return_true() throws Exception {
-        nodeInfoUrls.add(new URL(URL_RESOURCE_PATH + "/nodeRepoVirtualMachine.json"));
+        ArrayList<URL> nodeInfoUrls = new ArrayList(Arrays.asList(new URL(URL_RESOURCE_PATH + "/nodeRepoVirtualMachine.json")));
         assertTrue(SpecVerifier.verifySpec(mockCommandExecutor, nodeInfoUrls));
     }
 
     @Test
     public void verifySpec_unequal_nodeRepoInfo_and_hardware_should_return_false() throws Exception {
-        nodeInfoUrls.add(new URL(URL_RESOURCE_PATH + "/nodeRepo.json"));
+        ArrayList<URL> nodeInfoUrls = new ArrayList(Arrays.asList(new URL(URL_RESOURCE_PATH + "/nodeRepo.json")));
         mockCommandExecutor.addCommand("cat " + CPU_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + MEMORY_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + NON_FAST_DISK_TYPE_INFO_PATH);
@@ -101,7 +101,7 @@ public class SpecVerifierTest {
 
     @Test
     public void getNodeRepositoryJSON_should_return_valid_nodeRepoJSONModel() throws Exception {
-        nodeInfoUrls.add(new URL(URL_RESOURCE_PATH + "/nodeRepo.json"));
+        ArrayList<URL> nodeInfoUrls = new ArrayList(Arrays.asList(new URL(URL_RESOURCE_PATH + "/nodeRepo.json")));
         NodeRepoJsonModel actualNodeRepoJsonModel = SpecVerifier.getNodeRepositoryJSON(nodeInfoUrls);
         double expectedMinCpuCores = 4D;
         double expectedMinMainMemoryAvailableGb = 4.04D;
