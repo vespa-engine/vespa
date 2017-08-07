@@ -85,10 +85,10 @@ public class HardwareNodeComparator {
     private static void setNetMetrics(HardwareInfo nodeRepoHardwareInfo, HardwareInfo actualHardware, SpecReportMetrics specReportMetrics) {
         double expectedInterfaceSpeed = nodeRepoHardwareInfo.getInterfaceSpeedMbs();
         double actualInterfaceSpeed = actualHardware.getInterfaceSpeedMbs();
-        //if (!insideThreshold(expectedInterfaceSpeed, actualInterfaceSpeed, PERCENTAGE_THRESHOLD)) {
+        if (nodeRepoHardwareInfo.getInterfaceSpeedMbs() > actualHardware.getInterfaceSpeedMbs()) {
             specReportMetrics.setExpectedInterfaceSpeed(expectedInterfaceSpeed);
             specReportMetrics.setActualInterfaceSpeed(actualInterfaceSpeed);
-        //} TODO uncomment this if wanted
+        }
 
         if (nodeRepoHardwareInfo.isIpv6Connection() != actualHardware.isIpv6Connection()) {
             specReportMetrics.setActualIpv6Connection(actualHardware.isIpv6Connection());
@@ -109,14 +109,14 @@ public class HardwareNodeComparator {
     }
 
     private static boolean compareNetInterface(HardwareInfo nodeRepoHardwareInfo, HardwareInfo actualHardware, SpecReportDimensions specReportDimensions) {
-        boolean equalNetInterfaceSpeed = insideThreshold(nodeRepoHardwareInfo.getInterfaceSpeedMbs(), actualHardware.getInterfaceSpeedMbs(), PERCENTAGE_THRESHOLD);
-        boolean equalIpv6Interface = nodeRepoHardwareInfo.getIpv6Interface() == actualHardware.getIpv6Interface();
-        boolean equalIpv4Interface = nodeRepoHardwareInfo.getIpv4Interface() == actualHardware.getIpv4Interface();
-        boolean equalIpv6Connection = nodeRepoHardwareInfo.isIpv6Connection() == actualHardware.isIpv6Connection();
+        boolean equalNetInterfaceSpeed = nodeRepoHardwareInfo.getInterfaceSpeedMbs() <= actualHardware.getInterfaceSpeedMbs();
+        boolean equalIpv6Interface = !nodeRepoHardwareInfo.getIpv6Interface() || actualHardware.getIpv6Interface();
+        boolean equalIpv4Interface = !nodeRepoHardwareInfo.getIpv4Interface() || actualHardware.getIpv4Interface();
+        boolean equalIpv6Connection = !nodeRepoHardwareInfo.isIpv6Connection() || actualHardware.isIpv6Connection();
         specReportDimensions.setNetInterfaceSpeedMatch(equalNetInterfaceSpeed);
         specReportDimensions.setIpv6Match(equalIpv6Interface);
         specReportDimensions.setIpv4Match(equalIpv4Interface);
-        return  equalIpv4Interface && equalIpv6Connection; // && equalNetInterfaceSpeed && equalIpv6Interface; TODO include these if wanted.
+        return  equalIpv4Interface && equalIpv6Connection && equalNetInterfaceSpeed && equalIpv6Interface;
     }
 
     private static boolean compareDisk(HardwareInfo nodeRepoHardwareInfo, HardwareInfo actualHardware, SpecReportDimensions specReportDimensions) {
