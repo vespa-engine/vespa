@@ -18,7 +18,7 @@ import java.util.Properties;
 @SuppressWarnings("rawtypes")
 public class VespaOutputFormat extends OutputFormat {
 
-    private final Properties configOverride;
+    final Properties configOverride;
 
     public VespaOutputFormat() {
         super();

@@ -50,10 +50,10 @@ public class VespaRecordWriter extends RecordWriter {
 
     private boolean initialized = false;
     private FeedClient feedClient;
-
     private final VespaCounters counters;
-    private final VespaConfiguration configuration;
     private final int progressInterval;
+
+    final VespaConfiguration configuration;
 
     VespaRecordWriter(VespaConfiguration configuration, VespaCounters counters) {
         this.counters = counters;
@@ -99,16 +99,7 @@ public class VespaRecordWriter extends RecordWriter {
         }
     }
 
-
-    private void initialize() {
-        if (!configuration.dryrun() && configuration.randomSartupSleepMs() > 0) {
-            int delay = new Random().nextInt(configuration.randomSartupSleepMs());
-            log.info("VespaStorage: Delaying startup by " + delay + " ms");
-            try {
-                Thread.sleep(delay);
-            } catch (Exception e) {}
-        }
-
+    protected ConnectionParams.Builder configureConnectionParams() {
         ConnectionParams.Builder connParamsBuilder = new ConnectionParams.Builder();
         connParamsBuilder.setDryRun(configuration.dryrun());
         connParamsBuilder.setUseCompression(configuration.useCompression());
@@ -121,20 +112,41 @@ public class VespaRecordWriter extends RecordWriter {
         if (configuration.proxyPort() >= 0) {
             connParamsBuilder.setProxyPort(configuration.proxyPort());
         }
+        return connParamsBuilder;
+    }
 
+    protected FeedParams.Builder configureFeedParams() {
         FeedParams.Builder feedParamsBuilder = new FeedParams.Builder();
         feedParamsBuilder.setDataFormat(configuration.dataFormat());
         feedParamsBuilder.setRoute(configuration.route());
         feedParamsBuilder.setMaxSleepTimeMs(configuration.maxSleepTimeMs());
         feedParamsBuilder.setMaxInFlightRequests(configuration.maxInFlightRequests());
         feedParamsBuilder.setLocalQueueTimeOut(3600*1000); //1 hour queue timeout
+        return feedParamsBuilder;
+    }
 
-        SessionParams.Builder sessionParams = new SessionParams.Builder();
-        sessionParams.setThrottlerMinSize(configuration.throttlerMinSize());
+    protected SessionParams.Builder configureSessionParams() {
+        SessionParams.Builder sessionParamsBuilder = new SessionParams.Builder();
+        sessionParamsBuilder.setThrottlerMinSize(configuration.throttlerMinSize());
+        sessionParamsBuilder.setClientQueueSize(configuration.maxInFlightRequests()*2);
+        return sessionParamsBuilder;
+    }
+    
+    private void initialize() {
+        if (!configuration.dryrun() && configuration.randomSartupSleepMs() > 0) {
+            int delay = new Random().nextInt(configuration.randomSartupSleepMs());
+            log.info("VespaStorage: Delaying startup by " + delay + " ms");
+            try {
+                Thread.sleep(delay);
+            } catch (Exception e) {}
+        }
+
+        ConnectionParams.Builder connParamsBuilder = configureConnectionParams();
+        FeedParams.Builder feedParamsBuilder = configureFeedParams();
+        SessionParams.Builder sessionParams = configureSessionParams();
+
         sessionParams.setConnectionParams(connParamsBuilder.build());
         sessionParams.setFeedParams(feedParamsBuilder.build());
-        sessionParams.setClientQueueSize(configuration.maxInFlightRequests()*2);
-
 
         String endpoints = configuration.endpoint();
         StringTokenizer tokenizer = new StringTokenizer(endpoints, ",");

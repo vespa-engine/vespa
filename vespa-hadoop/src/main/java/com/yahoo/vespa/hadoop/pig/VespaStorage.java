@@ -34,12 +34,13 @@ public class VespaStorage extends StoreFunc {
     private String signature = null;
     private RecordWriter recordWriter = null;
     private ResourceSchema resourceSchema = null;
-    private Properties properties = new Properties();
 
     private static final String PROPERTY_CREATE_DOC_OP = "create-document-operation";
     private static final String PROPERTY_ID_TEMPLATE = "docid";
     private static final String PROPERTY_OPERATION = "operation";
     private static final String PROPERTY_RESOURCE_SCHEMA = "resource_schema";
+
+    Properties properties = new Properties();
 
     public VespaStorage() {
         createDocOp = false;

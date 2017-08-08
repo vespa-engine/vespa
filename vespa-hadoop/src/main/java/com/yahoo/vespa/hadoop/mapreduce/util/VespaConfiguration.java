@@ -125,7 +125,7 @@ public class VespaConfiguration {
     }
 
 
-    private String getString(String name) {
+    public String getString(String name) {
         if (override != null && override.containsKey(name)) {
             return override.getProperty(name);
         }
@@ -133,7 +133,7 @@ public class VespaConfiguration {
     }
 
 
-    private int getInt(String name, int defaultValue) {
+    public int getInt(String name, int defaultValue) {
         if (override != null && override.containsKey(name)) {
             return Integer.parseInt(override.getProperty(name));
         }
@@ -141,7 +141,7 @@ public class VespaConfiguration {
     }
 
 
-    private boolean getBoolean(String name, boolean defaultValue) {
+    public boolean getBoolean(String name, boolean defaultValue) {
         if (override != null && override.containsKey(name)) {
             return Boolean.parseBoolean(override.getProperty(name));
         }
