@@ -18,10 +18,9 @@ import java.util.logging.Logger;
  */
 public class NetRetriever implements HardwareRetriever {
     private static final String NET_FIND_INTERFACE = "/sbin/ifconfig | awk 'BEGIN {RS=\"\\n\\n\"; } { if ( $1 != \"lo\") {print} }'";
-    private static final String NET_CHECK_INTERFACE_SPEED = "/sbin/ethtool";
+    private static final String NET_CHECK_INTERFACE_SPEED = "for i in $(/sbin/ifconfig | awk 'BEGIN {RS=\"\\n\\n\"; } { if ( $1 != \"lo\") {print $1} }'); do /sbin/ethtool $i; done;";
     private static final String SEARCH_WORD_INTERFACE_IP4 = "inet";
     private static final String SEARCH_WORD_INTERFACE_IPV6 = "inet6";
-    private static final String SEARCH_WORD_INTERFACE_NAME = "interface name";
     private static final String SEARCH_WORD_INTERFACE_SPEED = "Speed";
     private static final String INTERFACE_NAME_REGEX_SPLIT = "\\s+";
     private static final int INTERFACE_SEARCH_ELEMENT_INDEX = 0;
@@ -71,36 +70,17 @@ public class NetRetriever implements HardwareRetriever {
         ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD_INTERFACE_IP4, SEARCH_WORD_INTERFACE_IPV6));
         ParseInstructions parseInstructions = new ParseInstructions(INTERFACE_SEARCH_ELEMENT_INDEX, INTERFACE_RETURN_ELEMENT_INDEX, INTERFACE_NAME_REGEX_SPLIT, searchWords);
         ArrayList<ParseResult> parseResults = OutputParser.parseOutput(parseInstructions, commandOutput);
-        parseResults.add(findInterfaceName(commandOutput));
         return parseResults;
     }
 
     protected void findInterfaceSpeed(ArrayList<ParseResult> parseResults) {
         try {
-            String interfaceName = getInterfaceName(parseResults);
-            String command = NET_CHECK_INTERFACE_SPEED + " " + interfaceName;
-            ArrayList<String> commandOutput = commandExecutor.executeCommand(command);
+            ArrayList<String> commandOutput = commandExecutor.executeCommand(NET_CHECK_INTERFACE_SPEED);
             ParseResult parseResult = parseInterfaceSpeed(commandOutput);
             parseResults.add(parseResult);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to retrieve interface speed. ", e);
         }
-    }
-
-    protected ParseResult findInterfaceName(ArrayList<String> commandOutput) {
-        try {
-            return new ParseResult(SEARCH_WORD_INTERFACE_NAME, commandOutput.get(0).trim().split(" ")[0]);
-        } catch (NullPointerException e) {
-            return new ParseResult("invalid", "invalid");
-        }
-    }
-
-    protected String getInterfaceName(ArrayList<ParseResult> parseResults) {
-        for (ParseResult parseResult : parseResults) {
-            if (!parseResult.getSearchWord().matches(SEARCH_WORD_INTERFACE_NAME)) continue;
-            return parseResult.getValue();
-        }
-        return "";
     }
 
     protected ParseResult parseInterfaceSpeed(ArrayList<String> commandOutput) throws IOException {
@@ -153,7 +133,6 @@ public class NetRetriever implements HardwareRetriever {
                     setIpv6Connectivity(parseResult);
                     break;
                 default:
-                    if (parseResult.getSearchWord().matches(SEARCH_WORD_INTERFACE_NAME)) break;
                     throw new RuntimeException("Invalid ParseResult search word: " + parseResult.getSearchWord());
             }
         }

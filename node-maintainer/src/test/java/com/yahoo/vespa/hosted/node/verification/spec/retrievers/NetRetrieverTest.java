@@ -58,21 +58,13 @@ public class NetRetrieverTest {
     }
 
     @Test
-    public void findInterface_valid_input() throws IOException {
-        commandExecutor.addCommand("cat " + NET_FIND_INTERFACE);
-        parseResults = net.findInterface();
-        ParseResult expectedParseResult = new ParseResult("interface name", "eth0");
-        assertEquals(expectedParseResult, parseResults.get(2));
-    }
-
-    @Test
     public void findInterfaceSpeed_valid_input() throws IOException {
         commandExecutor.addCommand("cat " + NET_FIND_INTERFACE);
         commandExecutor.addCommand("cat " + NET_CHECK_INTERFACE_SPEED);
         parseResults = net.findInterface();
         net.findInterfaceSpeed(parseResults);
         ParseResult expectedParseResults = new ParseResult("Speed", "1000Mb/s");
-        assertEquals(expectedParseResults, parseResults.get(3));
+        assertEquals(expectedParseResults, parseResults.get(2));
     }
 
     @Test
@@ -89,18 +81,8 @@ public class NetRetrieverTest {
         ArrayList<String> mockOutput = MockCommandExecutor.readFromFile(NET_FIND_INTERFACE + "NoIpv6");
         parseResults = net.parseNetInterface(mockOutput);
         ArrayList<ParseResult> expextedParseResults = new ArrayList<>(Arrays.asList(
-                new ParseResult("inet", "inet"),
-                new ParseResult("interface name", "eth0")));
+                new ParseResult("inet", "inet")));
         assertEquals(expextedParseResults, parseResults);
-    }
-
-    @Test
-    public void parseNetInterface_get_interfaceName_from_ifconfig_testFile() throws IOException {
-        ArrayList<String> mockOutput = MockCommandExecutor.readFromFile(NET_FIND_INTERFACE);
-        parseResults = net.parseNetInterface(mockOutput);
-        String interfaceName = net.getInterfaceName(parseResults);
-        String expectedInterfaceName = "eth0";
-        assertEquals(expectedInterfaceName, interfaceName);
     }
 
     @Test
@@ -111,23 +93,9 @@ public class NetRetrieverTest {
         assertEquals(expectedParseResult, parseResult);
     }
 
-    @Test
-    public void findInterfaceName_should_return_interface_name() {
-        parseResults.add(new ParseResult("interface name", "eth0"));
-        String expectedInterfaceName = "eth0";
-        assertEquals(expectedInterfaceName, net.getInterfaceName(parseResults));
-    }
-
-    @Test
-    public void findInterfaceName_should_return_empty_interface_name() {
-        parseResults.add(new ParseResult("et", "et0"));
-        String expectedInterfaceName = "";
-        assertEquals(expectedInterfaceName, net.getInterfaceName(parseResults));
-    }
 
     @Test
     public void updateHardwareinfoWithNet_valid_input() {
-        parseResults.add(new ParseResult("interface name", "eth0"));
         parseResults.add(new ParseResult("inet", "inet"));
         parseResults.add(new ParseResult("inet6", "inet6"));
         parseResults.add(new ParseResult("Speed", "1000Mb/s"));
