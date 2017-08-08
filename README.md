@@ -4,8 +4,8 @@ It stores and indexes your data such that queries, selection and processing over
 data can be performed at serving time.
 
 This README describes how to build and develop the Vespa engine. To get started, read the
-[quick start](https://git.corp.yahoo.com/pages/vespa/documentation/documentation/vespa-quick-start.html), or find the full
-documentation at https://git.corp.yahoo.com/pages/vespa/documentation/.
+[quick start](https://github.com/pages/vespa-engine/documentation/documentation/vespa-quick-start.html), or find the full
+documentation at https://github.com/pages/vespa-engine/documentation/.
 
 Code licensed under the Apache 2.0 license. See [LICENSE](LICENSE) for terms.
 
@@ -54,7 +54,7 @@ Java modules can be built on any environment having Java and Maven:
 
 ## Run Vespa on a local machine
 A basic, single-node install is found in the 
-[quick start](https://git.corp.yahoo.com/pages/vespa/documentation/documentation/vespa-quick-start.html).
+[quick start](https://github.com/pages/vespa-engine/documentation/documentation/vespa-quick-start.html).
 For multi-node and using Node Admin, read [node-admin/README.md](node-admin/README.md).
 
 ## Write documentation
