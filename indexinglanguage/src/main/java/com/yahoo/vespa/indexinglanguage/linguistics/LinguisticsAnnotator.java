@@ -64,7 +64,10 @@ public class LinguisticsAnnotator {
         if (text.getSpanTree(SpanTrees.LINGUISTICS) != null) return true;  // Already annotated with LINGUISTICS.
 
         Tokenizer tokenizer = factory.getTokenizer();
-        Iterable<Token> tokens = tokenizer.tokenize(text.getString(), config.getLanguage(), config.getStemMode(),
+        String input = (text.getString().length() <=  config.getMaxTokenizeLength())
+                ? text.getString()
+                : text.getString().substring(0, config.getMaxTokenizeLength());
+        Iterable<Token> tokens = tokenizer.tokenize(input, config.getLanguage(), config.getStemMode(),
                                                     config.getRemoveAccents());
         TermOccurrences termOccurrences = new TermOccurrences(config.getMaxTermOccurrences());
         SpanTree tree = new SpanTree(SpanTrees.LINGUISTICS);
