@@ -4,13 +4,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
 import com.yahoo.vespa.hosted.node.verification.commons.HostURLGenerator;
-import com.yahoo.vespa.hosted.node.verification.spec.noderepo.IPAddressVerifier;
-import com.yahoo.vespa.hosted.node.verification.spec.noderepo.NodeJsonConverter;
-import com.yahoo.vespa.hosted.node.verification.spec.noderepo.NodeRepoInfoRetriever;
-import com.yahoo.vespa.hosted.node.verification.spec.noderepo.NodeRepoJsonModel;
+import com.yahoo.vespa.hosted.node.verification.commons.ReportSender;
+import com.yahoo.vespa.hosted.node.verification.commons.noderepo.IPAddressVerifier;
+import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeJsonConverter;
+import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoInfoRetriever;
+import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoJsonModel;
+import com.yahoo.vespa.hosted.node.verification.commons.report.SpecVerificationReport;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfoRetriever;
-import com.yahoo.vespa.hosted.node.verification.spec.report.VerificationReport;
 
 import java.io.IOException;
 import java.net.URL;
@@ -36,36 +37,28 @@ public class SpecVerifier {
         }
         VerifierSettings verifierSettings = new VerifierSettings(nodeRepoJsonModel);
         HardwareInfo actualHardware = HardwareInfoRetriever.retrieve(commandExecutor, verifierSettings);
-        VerificationReport verificationReport = makeVerificationReport(actualHardware, nodeRepoJsonModel);
-        printResults(verificationReport);
-        return isValidSpec(verificationReport);
+        SpecVerificationReport specVerificationReport = makeVerificationReport(actualHardware, nodeRepoJsonModel);
+        if (!isValidSpec(specVerificationReport)) {
+            ReportSender.reportSpecVerificationResults(specVerificationReport, nodeInfoUrls);
+        }
+        return isValidSpec(specVerificationReport);
     }
 
-    private static boolean isValidSpec(VerificationReport verificationReport) throws JsonProcessingException {
+    private static boolean isValidSpec(SpecVerificationReport specVerificationReport) throws JsonProcessingException {
         ObjectMapper om = new ObjectMapper();
-        return om.writeValueAsString(verificationReport).length() == 2;
+        return om.writeValueAsString(specVerificationReport).length() == 2;
     }
 
-    protected static VerificationReport makeVerificationReport(HardwareInfo actualHardware, NodeRepoJsonModel nodeRepoJsonModel) {
-        VerificationReport verificationReport = HardwareNodeComparator.compare(NodeJsonConverter.convertJsonModelToHardwareInfo(nodeRepoJsonModel), actualHardware);
+    protected static SpecVerificationReport makeVerificationReport(HardwareInfo actualHardware, NodeRepoJsonModel nodeRepoJsonModel) {
+        SpecVerificationReport specVerificationReport = HardwareNodeComparator.compare(NodeJsonConverter.convertJsonModelToHardwareInfo(nodeRepoJsonModel), actualHardware);
         IPAddressVerifier ipAddressVerifier = new IPAddressVerifier();
-        ipAddressVerifier.reportFaultyIpAddresses(nodeRepoJsonModel, verificationReport);
-        return verificationReport;
+        ipAddressVerifier.reportFaultyIpAddresses(nodeRepoJsonModel, specVerificationReport);
+        return specVerificationReport;
     }
 
     protected static NodeRepoJsonModel getNodeRepositoryJSON(ArrayList<URL> nodeInfoUrls) throws IOException {
         NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(nodeInfoUrls);
         return nodeRepoJsonModel;
-    }
-
-    private static void printResults(VerificationReport verificationReport) {
-        //TODO: Instead of println, report JSON to node repo
-        ObjectMapper om = new ObjectMapper();
-        try {
-            System.out.println(om.writeValueAsString(verificationReport));
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
     }
 
     public static void main(String[] args) throws IOException {

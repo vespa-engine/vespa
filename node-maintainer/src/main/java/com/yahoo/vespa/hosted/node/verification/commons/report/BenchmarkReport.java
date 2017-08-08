@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.node.verification.hardware.report;
+package com.yahoo.vespa.hosted.node.verification.commons.report;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;

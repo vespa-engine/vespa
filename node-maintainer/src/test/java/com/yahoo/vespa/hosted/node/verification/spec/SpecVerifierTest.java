@@ -2,10 +2,10 @@ package com.yahoo.vespa.hosted.node.verification.spec;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.hosted.node.verification.mock.MockCommandExecutor;
-import com.yahoo.vespa.hosted.node.verification.spec.noderepo.NodeRepoInfoRetriever;
-import com.yahoo.vespa.hosted.node.verification.spec.noderepo.NodeRepoJsonModel;
+import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoInfoRetriever;
+import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoJsonModel;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
-import com.yahoo.vespa.hosted.node.verification.spec.report.VerificationReport;
+import com.yahoo.vespa.hosted.node.verification.commons.report.SpecVerificationReport;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -14,7 +14,6 @@ import java.io.File;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -92,10 +91,10 @@ public class SpecVerifierTest {
         actualHardware.setDiskType(HardwareInfo.DiskType.SLOW);
         nodeInfoUrls.add(new File(NODE_REPO_PATH).toURI().toURL());
         NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(nodeInfoUrls);
-        VerificationReport verificationSpecReport = SpecVerifier.makeVerificationReport(actualHardware, nodeRepoJsonModel);
+        SpecVerificationReport verificationSpecVerificationReport = SpecVerifier.makeVerificationReport(actualHardware, nodeRepoJsonModel);
         String expectedJson = "{\"actualInterfaceSpeed\":100.0}";
         ObjectMapper om = new ObjectMapper();
-        String actualJson = om.writeValueAsString(verificationSpecReport);
+        String actualJson = om.writeValueAsString(verificationSpecVerificationReport);
         assertEquals(expectedJson, actualJson);
     }
 

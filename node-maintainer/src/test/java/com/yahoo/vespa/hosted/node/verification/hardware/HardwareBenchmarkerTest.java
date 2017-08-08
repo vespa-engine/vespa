@@ -4,6 +4,8 @@ import com.yahoo.vespa.hosted.node.verification.mock.MockCommandExecutor;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
+
 import static org.junit.Assert.assertTrue;
 
 public class HardwareBenchmarkerTest {
@@ -22,7 +24,7 @@ public class HardwareBenchmarkerTest {
     }
 
     @Test
-    public void hardwareBenchmarks_should_return_true() {
+    public void hardwareBenchmarks_should_return_true() throws Exception {
         mockCommandExecutor.addCommand("cat " + VALID_DISK_BENCHMARK_PATH);
         mockCommandExecutor.addCommand("cat " + VALID_CPU_BENCHMARK_PATH);
         mockCommandExecutor.addDummyCommand();
@@ -31,7 +33,7 @@ public class HardwareBenchmarkerTest {
         mockCommandExecutor.addCommand("cat " + VALID_MEMORY_READ_BENCHMARK_PATH);
         mockCommandExecutor.addDummyCommand();
         mockCommandExecutor.addDummyCommand();
-        assertTrue(HardwareBenchmarker.hardwareBenchmarks(mockCommandExecutor));
+        assertTrue(HardwareBenchmarker.hardwareBenchmarks(mockCommandExecutor, new ArrayList<>()));
     }
 
 

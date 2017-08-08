@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.node.verification.spec.report;
+package com.yahoo.vespa.hosted.node.verification.commons.report;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -11,7 +11,7 @@ import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
  * Attributes of equal value remain null.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class VerificationReport {
+public class SpecVerificationReport {
 
     @JsonProperty
     private Double actualMemoryAvailable;

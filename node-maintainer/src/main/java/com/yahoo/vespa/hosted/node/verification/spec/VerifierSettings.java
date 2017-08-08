@@ -1,6 +1,6 @@
 package com.yahoo.vespa.hosted.node.verification.spec;
 
-import com.yahoo.vespa.hosted.node.verification.spec.noderepo.NodeRepoJsonModel;
+import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoJsonModel;
 
 /**
  * Created by sgrostad on 07/08/2017.

@@ -1,7 +1,7 @@
 package com.yahoo.vespa.hosted.node.verification.hardware.report;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.BenchmarkResults;
+import com.yahoo.vespa.hosted.node.verification.commons.report.BenchmarkReport;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

@@ -1,7 +1,7 @@
 package com.yahoo.vespa.hosted.node.verification.hardware;
 
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.BenchmarkResults;
-import com.yahoo.vespa.hosted.node.verification.hardware.report.BenchmarkReport;
+import com.yahoo.vespa.hosted.node.verification.commons.report.BenchmarkReport;
 import org.junit.Before;
 import org.junit.Test;
 
