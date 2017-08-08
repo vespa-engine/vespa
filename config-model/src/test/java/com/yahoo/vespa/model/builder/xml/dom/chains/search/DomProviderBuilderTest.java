@@ -80,7 +80,7 @@ public class DomProviderBuilderTest extends DomBuilderTest {
 
         assertThat(providerConfig.yca().applicationId(), is("my-app"));
         assertThat(providerConfig.yca().useProxy(), is(true));
-        assertThat(providerConfig.yca().host(), is("yca-proxy.corp.yahoo.com"));  // default from def-file
+        assertThat(providerConfig.yca().host(), is("yca.host must be set explicitly"));  // default from def-file
         assertThat(providerConfig.yca().port(), is(3128));  // default from def-file
     }
 

@@ -22,7 +22,7 @@ connectionTimeout double default=-1.0
 ## in com.yahoo.search.federation.http.HTTPParameters.
 connectionPoolTimeout double default=-1.0
 ## Certificate store proxy host
-yca.host string default="yca-proxy.corp.yahoo.com"
+yca.host string default="yca.host must be set explicitly"
 ## Certificate store proxy port
 yca.port int default=3128
 ## Whether a proxy is needed (i.e. should the proxy settings be used)
