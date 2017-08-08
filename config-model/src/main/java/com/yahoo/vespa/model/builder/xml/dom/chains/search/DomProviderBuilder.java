@@ -34,6 +34,7 @@ import java.util.Map;
  * @author tonytv
  */
 public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
+
     /**
      * Retrieves all possible provider specific parameters
      */
@@ -47,10 +48,10 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
         final Double connectionPoolTimeout;
         final String clusterName;
         final List<HttpProviderSpec.Node> nodes;
-        final String ycaApplicationId;
-        final Integer ycaTtl;
-        final Integer ycaRetryWait;
-        final HttpProviderSpec.Node ycaProxy;  // Just re-using the Node class, as it matches our needs
+        final String certificateApplicationId;
+        final Integer certificateTtl;
+        final Integer certificateRetryWait;
+        final HttpProviderSpec.Node certificateProxy;  // Just re-using the Node class, as it matches our needs
         final Integer cacheSizeMB;
 
         ProviderReader(Element providerElement) {
@@ -64,10 +65,10 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
             connectionPoolTimeout = readConnectionPoolTimeout(providerElement);
             retries = readRetries(providerElement);
             nodes = readNodes(providerElement);
-            ycaApplicationId = readCertificateApplicationId(providerElement);
-            ycaTtl = readCertificateTtl(providerElement);
-            ycaRetryWait = readCertificateRetryWait(providerElement);
-            ycaProxy = readCertificateProxy(providerElement);
+            certificateApplicationId = readCertificateApplicationId(providerElement);
+            certificateTtl = readCertificateTtl(providerElement);
+            certificateRetryWait = readCertificateRetryWait(providerElement);
+            certificateProxy = readCertificateProxy(providerElement);
         }
 
 
@@ -174,7 +175,7 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
                                         ChainSpecification specWithoutInnerComponents) {
 
         ProviderReader providerReader = new ProviderReader(providerElement);
-        if (providerReader.ycaApplicationId == null && providerReader.ycaProxy != null) {
+        if (providerReader.certificateApplicationId == null && providerReader.certificateProxy != null) {
             throw new IllegalArgumentException(
                     "Provider '" + specWithoutInnerComponents.componentId +
                             "' must have a certificate application ID, since a certificate store proxy is given");
@@ -221,10 +222,10 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
 
     private Provider buildLocalProvider(ChainSpecification specWithoutInnerSearchers, ProviderReader providerReader, FederationOptions federationOptions) {
         try {
-            ensureEmpty(specWithoutInnerSearchers.componentId, providerReader.cacheWeight, providerReader.path,  providerReader.nodes,
-                    providerReader.readTimeout, providerReader.connectionTimeout, providerReader.connectionPoolTimeout,
-                    providerReader.retries, providerReader.ycaApplicationId, providerReader.ycaTtl,
-                    providerReader.ycaRetryWait, providerReader.ycaProxy);
+            ensureEmpty(specWithoutInnerSearchers.componentId, providerReader.cacheWeight, providerReader.path, providerReader.nodes,
+                        providerReader.readTimeout, providerReader.connectionTimeout, providerReader.connectionPoolTimeout,
+                        providerReader.retries, providerReader.certificateApplicationId, providerReader.certificateTtl,
+                        providerReader.certificateRetryWait, providerReader.certificateProxy);
 
             return new LocalProvider(specWithoutInnerSearchers,
                     federationOptions,
@@ -257,10 +258,10 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
                         providerReader.cacheWeight,
                         providerReader.path,
                         providerReader.nodes,
-                        providerReader.ycaApplicationId,
-                        providerReader.ycaTtl,
-                        providerReader.ycaRetryWait,
-                        providerReader.ycaProxy,
+                        providerReader.certificateApplicationId,
+                        providerReader.certificateTtl,
+                        providerReader.certificateRetryWait,
+                        providerReader.certificateProxy,
                         providerReader.cacheSizeMB,
                         connectionParameters(providerReader)));
     }
