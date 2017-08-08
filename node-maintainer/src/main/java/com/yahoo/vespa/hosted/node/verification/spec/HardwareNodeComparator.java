@@ -6,7 +6,7 @@ import com.yahoo.vespa.hosted.node.verification.spec.report.VerificationReport;
 
 /**
  * Created by olaa on 04/07/2017.
- * Compares two HardwareInfo objects
+ * Compares two HardwareInfo objects and stores divergent values in a VerificationReport
  */
 public class HardwareNodeComparator {
 
