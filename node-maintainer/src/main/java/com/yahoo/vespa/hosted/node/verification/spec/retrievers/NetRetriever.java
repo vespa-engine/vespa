@@ -17,8 +17,10 @@ import java.util.logging.Logger;
  * Created by olaa on 30/06/2017.
  */
 public class NetRetriever implements HardwareRetriever {
-    private static final String NET_FIND_INTERFACE = "/sbin/ifconfig | awk 'BEGIN {RS=\"\\n\\n\"; } { if ( $1 != \"lo\") {print} }'";
-    private static final String NET_CHECK_INTERFACE_SPEED = "for i in $(/sbin/ifconfig | awk 'BEGIN {RS=\"\\n\\n\"; } { if ( $1 != \"lo\") {print $1} }'); do /sbin/ethtool $i; done;";
+
+    // Interface commands ignores lo-, veth- and docker interfaces
+    private static final String NET_FIND_INTERFACE = "/sbin/ifconfig | awk 'BEGIN {RS=\"\\n\\n\"; } { if ( $1 != \"lo\" && !match($1, \"^veth\") && !match($1, \"^docker\")) {print} }'";
+    private static final String NET_CHECK_INTERFACE_SPEED = "for i in $(/sbin/ifconfig | awk 'BEGIN {RS=\"\\n\\n\"; } { if ( $1 != \"lo\" && !match($1, \"^veth\") && !match($1, \"^docker\")) {print $1} }'); do /sbin/ethtool $i; done;";
     private static final String SEARCH_WORD_INTERFACE_IP4 = "inet";
     private static final String SEARCH_WORD_INTERFACE_IPV6 = "inet6";
     private static final String SEARCH_WORD_INTERFACE_SPEED = "Speed";
