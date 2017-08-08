@@ -194,6 +194,7 @@ FileChunk::updateLidMap(const LockGuard &guard, ISetLid &ds, uint64_t serialNum,
                     } else {
                         throw SummaryException("Open for truncation failed.", toTruncate, VESPA_STRLOC);
                     }
+                    break;
                 }
             }
             if ( ! tempVector.empty()) {
