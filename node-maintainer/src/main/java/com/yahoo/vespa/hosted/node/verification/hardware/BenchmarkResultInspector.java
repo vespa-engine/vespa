@@ -3,9 +3,6 @@ package com.yahoo.vespa.hosted.node.verification.hardware;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.BenchmarkResults;
 import com.yahoo.vespa.hosted.node.verification.hardware.report.BenchmarkReport;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 public class BenchmarkResultInspector {
 
     private static final double CPU_FREQUENCY_LOWER_LIMIT = 0.5;
