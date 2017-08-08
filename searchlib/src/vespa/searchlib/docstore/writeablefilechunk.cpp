@@ -94,11 +94,11 @@ WriteableFileChunk(vespalib::ThreadExecutor &executor,
       _writeLock(),
       _flushLock(),
       _dataFile(_dataFileName.c_str()),
-      _idxFile(_idxFileName.c_str()),
       _chunkMap(),
       _pendingChunks(),
       _pendingIdx(0),
       _pendingDat(0),
+      _idxFileSize(0),
       _currentDiskFootprint(0),
       _nextChunkId(1),
       _active(new Chunk(0, Chunk::Config(config.getMaxChunkBytes()))),
@@ -116,7 +116,6 @@ WriteableFileChunk(vespalib::ThreadExecutor &executor,
     }
     if (tune._write.getWantSyncWrites()) {
         _dataFile.EnableSyncWrites();
-        _idxFile.EnableSyncWrites();
     }
     if (_dataFile.OpenReadWrite()) {
         readDataHeader();
@@ -130,16 +129,13 @@ WriteableFileChunk(vespalib::ThreadExecutor &executor,
                            _dataFile.GetFileName(), _dataFile.getLastErrorString().c_str());
             }
         }
-        if (_idxFile.OpenReadWrite()) {
-            readIdxHeader();
-            if (_idxHeaderLen == 0) {
-                _idxHeaderLen = writeIdxHeader(fileHeaderContext, _docIdLimit, _idxFile);
-            }
-            _idxFile.SetPosition(_idxFile.GetSize());
-        } else {
-            _dataFile.Close();
-            throw SummaryException("Failed opening idx file", _idxFile, VESPA_STRLOC);
+        auto idxFile = openIdx();
+        readIdxHeader(*idxFile);
+        if (_idxHeaderLen == 0) {
+            _idxHeaderLen = writeIdxHeader(fileHeaderContext, _docIdLimit, *idxFile);
         }
+        _idxFileSize = idxFile->GetSize();
+        idxFile->Sync();
     } else {
         throw SummaryException("Failed opening data file", _dataFile, VESPA_STRLOC);
     }
@@ -147,6 +143,17 @@ WriteableFileChunk(vespalib::ThreadExecutor &executor,
     updateCurrentDiskFootprint();
 }
 
+std::unique_ptr<FastOS_FileInterface>
+WriteableFileChunk::openIdx() {
+    auto file = std::make_unique<FastOS_File>(_idxFileName.c_str());
+    if (_dataFile.useSyncWrites()) {
+        file->EnableSyncWrites();
+    }
+    if ( ! file->OpenReadWrite() ) {
+        throw SummaryException("Failed opening idx file", *file, VESPA_STRLOC);
+    }
+    return file;
+}
 WriteableFileChunk::~WriteableFileChunk()
 {
     if (!frozen()) {
@@ -159,11 +166,6 @@ WriteableFileChunk::~WriteableFileChunk()
     // If it works it indicates something bad with the filesystem.
     if (_dataFile.IsOpened()) {
         if (! _dataFile.Sync()) {
-            assert(false);
-        }
-    }
-    if (_idxFile.IsOpened()) {
-        if (! _idxFile.Sync()) {
             assert(false);
         }
     }
@@ -461,7 +463,7 @@ WriteableFileChunk::writeData(const ProcessedChunkQ & chunks, size_t sz)
     if (wlen != static_cast<ssize_t>(buf.getDataLen())) {
         throw SummaryException(make_string("Failed writing %ld bytes to dat file. Only %ld written",
                                            buf.getDataLen(), wlen),
-                               _idxFile, VESPA_STRLOC);
+                               _dataFile, VESPA_STRLOC);
     }
     updateCurrentDiskFootprint();
 }
@@ -559,7 +561,6 @@ WriteableFileChunk::freeze()
             _frozen = true;
         }
         _dataFile.Close();
-        _idxFile.Close();
         _bucketMap = BucketDensityComputer(_bucketizer);
     }
 }
@@ -750,33 +751,32 @@ WriteableFileChunk::readDataHeader()
 
 
 void
-WriteableFileChunk::readIdxHeader()
+WriteableFileChunk::readIdxHeader(FastOS_FileInterface & idxFile)
 {
-    int64_t fSize(_idxFile.GetSize());
+    int64_t fSize(idxFile.GetSize());
     try {
         FileHeader h;
-        _idxHeaderLen = h.readFile(_idxFile);
-        _idxFile.SetPosition(_idxHeaderLen);
+        _idxHeaderLen = h.readFile(idxFile);
+        idxFile.SetPosition(_idxHeaderLen);
         _docIdLimit = readDocIdLimit(h);
     } catch (IllegalHeaderException &e) {
-        _idxFile.SetPosition(0);
+        idxFile.SetPosition(0);
         try {
-            FileHeader::FileReader fr(_idxFile);
+            FileHeader::FileReader fr(idxFile);
             uint32_t header2Len = FileHeader::readSize(fr);
-            if (header2Len <= fSize)
+            if (header2Len <= fSize) {
                 e.throwSelf(); // header not truncated
+            }
         } catch (IllegalHeaderException &e2) {
         }
         if (fSize > 0) {
             // Truncate file (dropping header) if cannot even read
             // header length, or if header has been truncated.
-            _idxFile.SetPosition(0);
-            _idxFile.SetSize(0);
-            assert(_idxFile.GetSize() == 0);
-            assert(_idxFile.GetPosition() == 0);
-            LOG(warning,
-                "Truncated file chunk index %s due to truncated file header",
-                _idxFile.GetFileName());
+            idxFile.SetPosition(0);
+            idxFile.SetSize(0);
+            assert(idxFile.GetSize() == 0);
+            assert(idxFile.GetPosition() == 0);
+            LOG(warning, "Truncated file chunk index %s due to truncated file header", idxFile.GetFileName());
         }
     }
 }
@@ -838,7 +838,7 @@ WriteableFileChunk::needFlushPendingChunks(const MonitorGuard & guard, uint64_t 
 
 void
 WriteableFileChunk::updateCurrentDiskFootprint() {
-    _currentDiskFootprint = _idxFile.getSize() + _dataFile.getSize();
+    _currentDiskFootprint = _idxFileSize + _dataFile.getSize();
 }
 
 /*
@@ -890,15 +890,18 @@ WriteableFileChunk::unconditionallyFlushPendingChunks(const vespalib::LockGuard 
         }
     }
     fastos::TimeStamp timeStamp(fastos::ClockSystem::now());
-    ssize_t wlen = _idxFile.Write2(os.c_str(), os.size());
+    auto idxFile = openIdx();
+    idxFile->SetPosition(idxFile->GetSize());
+    ssize_t wlen = idxFile->Write2(os.c_str(), os.size());
     updateCurrentDiskFootprint();
 
     if (wlen != static_cast<ssize_t>(os.size())) {
-        throw SummaryException(make_string("Failed writing %ld bytes to idx file. Only wrote %ld bytes ", os.size(), wlen), _idxFile, VESPA_STRLOC);
+        throw SummaryException(make_string("Failed writing %ld bytes to idx file. Only wrote %ld bytes ", os.size(), wlen), *idxFile, VESPA_STRLOC);
     }
-    if ( ! _idxFile.Sync()) {
-        throw SummaryException("Failed fsync of idx file", _idxFile, VESPA_STRLOC);
+    if ( ! idxFile->Sync()) {
+        throw SummaryException("Failed fsync of idx file", *idxFile, VESPA_STRLOC);
     }
+    _idxFileSize = idxFile->GetSize();
     if (_lastPersistedSerialNum < lastSerial) {
         _lastPersistedSerialNum = lastSerial;
     }

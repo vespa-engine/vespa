@@ -90,7 +90,7 @@ private:
     void restart(uint32_t nextChunkId);
     ProcessedChunkQ drainQ();
     void readDataHeader();
-    void readIdxHeader();
+    void readIdxHeader(FastOS_FileInterface & idxFile);
     void writeDataHeader(const common::FileHeaderContext &fileHeaderContext);
     bool needFlushPendingChunks(uint64_t serialNum, uint64_t datFileLen);
     bool needFlushPendingChunks(const vespalib::MonitorGuard & guard, uint64_t serialNum, uint64_t datFileLen);
@@ -105,6 +105,7 @@ private:
     void updateChunkInfo(const ProcessedChunkQ & chunks, const ChunkMetaV & cmetaV, size_t sz);
     void updateCurrentDiskFootprint();
     size_t getDiskFootprint(const vespalib::MonitorGuard & guard) const;
+    std::unique_ptr<FastOS_FileInterface> openIdx();
 
     Config            _config;
     SerialNum         _serialNum;
@@ -114,13 +115,13 @@ private:
     vespalib::Lock    _writeLock;
     vespalib::Lock    _flushLock;
     FastOS_File       _dataFile;
-    FastOS_File       _idxFile;
     using ChunkMap = std::map<uint32_t, Chunk::UP>;
     ChunkMap          _chunkMap;
     using PendingChunks = std::deque<std::shared_ptr<PendingChunk>>;
     PendingChunks     _pendingChunks;
     uint64_t          _pendingIdx;
     uint64_t          _pendingDat;
+    uint64_t          _idxFileSize;
     uint64_t          _currentDiskFootprint;
     uint32_t          _nextChunkId;
     Chunk::UP         _active;
