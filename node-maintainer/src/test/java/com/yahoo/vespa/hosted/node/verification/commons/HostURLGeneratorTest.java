@@ -1,13 +1,13 @@
-package com.yahoo.vespa.hosted.node.verification.spec;
+package com.yahoo.vespa.hosted.node.verification.commons;
 
 import com.yahoo.vespa.hosted.node.verification.mock.MockCommandExecutor;
+import com.yahoo.vespa.hosted.node.verification.commons.HostURLGenerator;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;

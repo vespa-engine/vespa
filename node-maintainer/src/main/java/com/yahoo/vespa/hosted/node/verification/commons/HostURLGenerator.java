@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.node.verification.spec;
+package com.yahoo.vespa.hosted.node.verification.commons;
 
 import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
 
