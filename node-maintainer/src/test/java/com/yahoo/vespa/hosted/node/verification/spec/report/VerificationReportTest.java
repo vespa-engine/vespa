@@ -25,6 +25,7 @@ public class VerificationReportTest {
         String actualJson = om.writeValueAsString(verificationReport);
         assertEquals(expectedJson, actualJson);
     }
+
     @Test
     public void Json_is_in_wanted_format_when_all_specs_are_wrong() throws Exception {
         verificationReport.setActualInterfaceSpeed(100D);
