@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.docker;
 
+import com.yahoo.collections.Pair;
+import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
@@ -11,10 +13,12 @@ import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.mockito.InOrder;
 
+import java.io.IOException;
 import java.util.Optional;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyVararg;
 import static org.mockito.Matchers.eq;
@@ -26,7 +30,8 @@ import static org.mockito.Mockito.when;
 public class DockerOperationsImplTest {
     private final Environment environment = new Environment.Builder().build();
     private final Docker docker = mock(Docker.class);
-    private final DockerOperationsImpl dockerOperations = new DockerOperationsImpl(docker, environment);
+    private final ProcessExecuter processExecuter = mock(ProcessExecuter.class);
+    private final DockerOperationsImpl dockerOperations = new DockerOperationsImpl(docker, environment, processExecuter);
 
     @Test
     public void processResultFromNodeProgramWhenSuccess() throws Exception {
@@ -100,11 +105,13 @@ public class DockerOperationsImplTest {
     @Test
     public void runsCommandInNetworkNamespace() {
         Container container = makeContainer("container-42", Container.State.RUNNING, 42);
-        DockerOperationsImpl dockerOperations = new DockerOperationsImpl(docker, environment);
 
-        when(docker.executeInContainerAsRoot(eq(new ContainerName("node-admin")), eq(60L),
-                eq("nsenter"), eq("--net=/host/proc/42/ns/net"), eq("--"), eq("iptables"), eq("-nvL")))
-                .thenReturn(new ProcessResult(0, "", ""));
+        try {
+            when(processExecuter.exec(aryEq(new String[]{"sudo", "nsenter", "--net=/host/proc/42/ns/net", "--", "iptables", "-nvL"})))
+                    .thenReturn(new Pair<>(0, ""));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         dockerOperations.executeCommandInNetworkNamespace(container.name, "iptables", "-nvL");
     }
