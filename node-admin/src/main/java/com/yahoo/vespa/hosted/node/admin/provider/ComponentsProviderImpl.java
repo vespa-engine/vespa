@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.node.admin.provider;
 import com.google.inject.Inject;
 import com.yahoo.net.HostName;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
+
+import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
@@ -60,7 +62,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
         ConfigServerHttpRequestExecutor requestExecutor = ConfigServerHttpRequestExecutor.create(configServerHosts);
         Orchestrator orchestrator = new OrchestratorImpl(requestExecutor);
         NodeRepository nodeRepository = new NodeRepositoryImpl(requestExecutor, WEB_SERVICE_PORT, baseHostName);
-        DockerOperations dockerOperations = new DockerOperationsImpl(docker, environment);
+        DockerOperations dockerOperations = new DockerOperationsImpl(docker, environment, new ProcessExecuter());
 
         Optional<StorageMaintainer> storageMaintainer = environment.isRunningLocally() ?
                 Optional.empty() : Optional.of(new StorageMaintainer(docker, metricReceiver, environment, clock));
