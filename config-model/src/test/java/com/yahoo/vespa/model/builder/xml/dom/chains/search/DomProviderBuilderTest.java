@@ -57,7 +57,7 @@ public class DomProviderBuilderTest extends DomBuilderTest {
     private Provider provider;
 
     @Test
-    public void testYcaConfig_noProxy() {
+    public void testCertificateConfig_noProxy() {
         provider = new DomProviderBuilder(new HashMap<String, ComponentsBuilder.ComponentType>()).doBuild(root, noProxy);
 
         ChainedComponent providerSearcher = provider.getInnerComponents().iterator().next();
@@ -71,7 +71,7 @@ public class DomProviderBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void testYcaConfig_defaultProxy() {
+    public void testCertificatewConfig_defaultProxy() {
         provider = new DomProviderBuilder(new HashMap<String, ComponentsBuilder.ComponentType>()).doBuild(root, defaultProxy);
 
         ProviderConfig.Builder providerBuilder = new ProviderConfig.Builder();
@@ -85,7 +85,7 @@ public class DomProviderBuilderTest extends DomBuilderTest {
     }
 
     @Test
-    public void testYcaConfig_proprietaryProxy() {
+    public void testCertificateConfig_proprietaryProxy() {
         provider = new DomProviderBuilder(new HashMap<String, ComponentsBuilder.ComponentType>()).doBuild(root, proprietaryProxy);
 
         ProviderConfig.Builder providerBuilder = new ProviderConfig.Builder();
@@ -104,7 +104,7 @@ public class DomProviderBuilderTest extends DomBuilderTest {
             provider = new DomProviderBuilder(new HashMap<String, ComponentsBuilder.ComponentType>()).doBuild(root, illegal_proxyWithoutId);
             fail("Expected exception upon illegal xml.");
         } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage(), is("Provider 'yca-provider' must have a YCA application ID, since a YCA proxy is given"));
+            assertThat(e.getMessage(), is("Provider 'yca-provider' must have a certificate application ID, since a certificate store proxy is given"));
         }
     }
 

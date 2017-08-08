@@ -64,10 +64,10 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
             connectionPoolTimeout = readConnectionPoolTimeout(providerElement);
             retries = readRetries(providerElement);
             nodes = readNodes(providerElement);
-            ycaApplicationId = readYcaApplicationId(providerElement);
-            ycaTtl = readYcaTtl(providerElement);
-            ycaRetryWait = readYcaRetryWait(providerElement);
-            ycaProxy = readYcaProxy(providerElement);
+            ycaApplicationId = readCertificateApplicationId(providerElement);
+            ycaTtl = readCertificateTtl(providerElement);
+            ycaRetryWait = readCertificateRetryWait(providerElement);
+            ycaProxy = readCertificateProxy(providerElement);
         }
 
 
@@ -114,29 +114,29 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
             return (timeoutString == null) ? null : TimeParser.seconds(timeoutString);
         }
 
-        private String readYcaApplicationId(Element providerElement) {
+        private String readCertificateApplicationId(Element providerElement) {
             return getAttributeOrNull(providerElement, "yca-application-id");
         }
 
-        private Integer readYcaTtl(Element providerElement) {
+        private Integer readCertificateTtl(Element providerElement) {
             String x = getAttributeOrNull(providerElement, "yca-cache-ttl");
             return (x == null) ? null : TimeParser.seconds(x).intValue();
         }
 
-        private Integer readYcaRetryWait(Element providerElement) {
+        private Integer readCertificateRetryWait(Element providerElement) {
             String x = getAttributeOrNull(providerElement, "yca-cache-retry-wait");
             return (x == null) ? null : TimeParser.seconds(x).intValue();
         }
 
-        private HttpProviderSpec.Node readYcaProxy(Element providerElement) {
-            Element ycaProxySpec = XML.getChild(providerElement, "yca-proxy");
-            if (ycaProxySpec == null) {
+        private HttpProviderSpec.Node readCertificateProxy(Element providerElement) {
+            Element certificateProxySpec = XML.getChild(providerElement, "yca-proxy");
+            if (certificateProxySpec == null) {
                 return null; // no proxy
             }
-            if(getAttributeOrNull(ycaProxySpec, "host") == null) {
+            if(getAttributeOrNull(certificateProxySpec, "host") == null) {
                 return new HttpProviderSpec.Node(null, 0); // default proxy
             }
-            return readNode(ycaProxySpec);
+            return readNode(certificateProxySpec);
         }
 
         private List<HttpProviderSpec.Node> readNodes(Element providerElement) {
@@ -177,7 +177,7 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
         if (providerReader.ycaApplicationId == null && providerReader.ycaProxy != null) {
             throw new IllegalArgumentException(
                     "Provider '" + specWithoutInnerComponents.componentId +
-                            "' must have a YCA application ID, since a YCA proxy is given");
+                            "' must have a certificate application ID, since a certificate store proxy is given");
         }
 
         FederationOptions federationOptions = readFederationOptions(providerElement);

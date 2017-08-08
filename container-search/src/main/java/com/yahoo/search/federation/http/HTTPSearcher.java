@@ -177,17 +177,17 @@ public abstract class HTTPSearcher extends ClusterSearcher<Connection> {
 
     private final CertificateStore certificateStore;
 
-    /** The (optional) YCA application ID. */
-    private String ycaApplicationId = null;
+    /** The (optional) certificate application ID. */
+    private String certificateApplicationId = null;
 
-    /** The (optional) YCA proxy */
-    protected HttpHost ycaProxy = null;
+    /** The (optional) certificate server proxy */
+    protected HttpHost certificateProxy = null;
 
-    /** YCA cache TTL in ms */
-    private long ycaTtl = 0L;
+    /** Certificate cache TTL in ms */
+    private long certificateTtl = 0L;
 
-    /** YCA retry rate in the cache if no cert is found, in ms */
-    private long ycaRetry = 0L;
+    /** Certificate server retry rate in the cache if no cert is found, in ms */
+    private long certificateRetry = 0L;
 
     /** Set at construction if this is using persistent connections */
     private ClientConnectionManager sharedConnectionManager = null;
@@ -275,15 +275,15 @@ public abstract class HTTPSearcher extends ClusterSearcher<Connection> {
             singleClientConnManagerThreadLocal =new ThreadLocal<>();
         }
 
-        initializeYCA(httpParameters, certificateStore);
+        initializeCertificate(httpParameters, certificateStore);
     }
 
     /**
-     * Initialize YCA certificate and proxy if they have been set to non-null,
-     * non-empty values. It will wrap thrown exceptions from the YCA layer into
+     * Initialize certificate store and proxy if they have been set to non-null,
+     * non-empty values. It will wrap thrown exceptions from the certificate store into
      * RuntimeException and propagate them.
      */
-    private void initializeYCA(HTTPParameters parameters, CertificateStore certificateStore) {
+    private void initializeCertificate(HTTPParameters parameters, CertificateStore certificateStore) {
         String applicationId = parameters.getYcaApplicationId();
         String proxy = parameters.getYcaProxy();
         int port = parameters.getYcaPort();
@@ -314,7 +314,7 @@ public abstract class HTTPSearcher extends ClusterSearcher<Connection> {
     }
 
     /**
-     * Initialize the YCA certificate.
+     * Initialize the certificate.
      * This will warn but not throw if certificates could not be loaded, as the certificates
      * are external state which can fail independently.
      */
@@ -328,9 +328,9 @@ public abstract class HTTPSearcher extends ClusterSearcher<Connection> {
             }
 
             this.useCertificate = true;
-            this.ycaApplicationId = applicationId;
-            this.ycaTtl = ttl;
-            this.ycaRetry = retry;
+            this.certificateApplicationId = applicationId;
+            this.certificateTtl = ttl;
+            this.certificateRetry = retry;
             getLogger().log(LogLevel.CONFIG, "Got certificate: " + certificate);
         }
         catch (Exception e) {
@@ -340,11 +340,11 @@ public abstract class HTTPSearcher extends ClusterSearcher<Connection> {
     }
 
     /**
-     * Initialize the YCA proxy setting.
+     * Initialize the certificate proxy setting.
      */
     private void initializeProxy(String host, int port) {
-        ycaProxy = new HttpHost(host, port);
-        getLogger().log(LogLevel.CONFIG,"Proxy is configured; will use proxy: " + ycaProxy);
+        certificateProxy = new HttpHost(host, port);
+        getLogger().log(LogLevel.CONFIG, "Proxy is configured; will use proxy: " + certificateProxy);
     }
 
     /**
@@ -644,8 +644,8 @@ public abstract class HTTPSearcher extends ClusterSearcher<Connection> {
 
     /**
      * Returns the set of headers to be passed in the http request to provider backend. The default
-     * implementation returns null, unless YCA is in use. If YCA is used, it will return a map
-     * only containing the needed YCA headers.
+     * implementation returns null, unless certificates are in use. If certificates are used, it will return a map
+     * only containing the needed certificate headers.
      */
     protected Map<String, String> getRequestHeaders(Query query, Hit requestMeta) {
         if (useCertificate) {
@@ -781,13 +781,13 @@ public abstract class HTTPSearcher extends ClusterSearcher<Connection> {
 
     /**
      * Creates a http client for one request. Override to customize the client
-     * to use, e.g for testing. This default implementation will add the YCA
+     * to use, e.g for testing. This default implementation will add a certificate store
      * proxy to params if is necessary, and then do
      * <code>return new SearcherHttpClient(getConnectionManager(params), params);</code>
      */
     protected HttpClient createClient(HttpParams params) {
-        if (ycaProxy != null) {
-            params.setParameter(ConnRoutePNames.DEFAULT_PROXY, ycaProxy);
+        if (certificateProxy != null) {
+            params.setParameter(ConnRoutePNames.DEFAULT_PROXY, certificateProxy);
         }
         return new SearcherHttpClient(getConnectionManager(params), params);
     }
@@ -830,7 +830,7 @@ public abstract class HTTPSearcher extends ClusterSearcher<Connection> {
 
     private Map<String, String> generateYCAHeaders() {
         Map<String, String> headers = new HashMap<>();
-        String certificate = certificateStore.getCertificate(ycaApplicationId, ycaTtl, ycaRetry);
+        String certificate = certificateStore.getCertificate(certificateApplicationId, certificateTtl, certificateRetry);
         headers.put(YCA_HTTP_HEADER, certificate);
         return headers;
     }
