@@ -21,7 +21,7 @@ import com.yahoo.jdisc.test.TestDriver;
 public class DiscFilterResponseTest {
 
     private static HttpRequest newRequest(URI uri, HttpRequest.Method method, HttpRequest.Version version) {
-        InetSocketAddress address = new InetSocketAddress("java.corp.yahoo.com", 69);
+        InetSocketAddress address = new InetSocketAddress("localhost", 69);
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         driver.activateContainer(driver.newContainerBuilder());
         HttpRequest request = HttpRequest.newServerRequest(driver, uri, method, version, address);
@@ -69,7 +69,7 @@ public class DiscFilterResponseTest {
 
     @Test
     public void testAddCookie() {
-        URI uri = URI.create("http://example.corp.yahoo.com/test");
+        URI uri = URI.create("http://example.com/test");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         HttpResponse httpResp = newResponse(httpReq, 200);
         DiscFilterResponse response = new JdiscFilterResponse(httpResp);
@@ -82,7 +82,7 @@ public class DiscFilterResponseTest {
 
     @Test
     public void testSetCookie() {
-        URI uri = URI.create("http://example.corp.yahoo.com/test");
+        URI uri = URI.create("http://example.com/test");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         HttpResponse httpResp = newResponse(httpReq, 200);
         DiscFilterResponse response = new JdiscFilterResponse(httpResp);
@@ -95,7 +95,7 @@ public class DiscFilterResponseTest {
 
     @Test
     public void testSetHeader() {
-        URI uri = URI.create("http://example.corp.yahoo.com/test");
+        URI uri = URI.create("http://example.com/test");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         HttpResponse httpResp = newResponse(httpReq, 200);
         DiscFilterResponse response = new JdiscFilterResponse(httpResp);
@@ -105,7 +105,7 @@ public class DiscFilterResponseTest {
 
     @Test
     public void testGetParentResponse() {
-        URI uri = URI.create("http://example.corp.yahoo.com/test");
+        URI uri = URI.create("http://example.com/test");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         HttpResponse httpResp = newResponse(httpReq, 200);
         DiscFilterResponse response = new JdiscFilterResponse(httpResp);

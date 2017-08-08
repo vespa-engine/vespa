@@ -1,1 +1,1 @@
-services.addr_configserver: cfg1.prod.corp-us-east-1.vespahosted.corp.bf1.yahoo.com,cfg2.prod.corp-us-east-1.vespahosted.corp.bf1.yahoo.com,cfg3.prod.corp-us-east-1.vespahosted.corp.bf1.yahoo.com
+services.addr_configserver: cfg1.prod.region1,cfg2.prod.region1,cfg3.prod.region1

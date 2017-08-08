@@ -1,9 +1,6 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 search newsindex {
 
-  #
-  # For any change, you should update the doc
-  #   https://docs.google.com/spreadsheets/d/1O54waD0Ci1KGoR6ntMFRPskLqB7gk6ta2pSNmPMzi-Y/edit#gid=1144220802
   document newsindex {
 
     #
@@ -209,8 +206,6 @@ search newsindex {
     #
     # Tracking Identity
     #
-    # Store the tracking id for media Content Asset Tracking system (CAT)
-    #
     field trail type string {
       indexing: summary | index
       normalizing: none
@@ -223,8 +218,6 @@ search newsindex {
     # use this field to filter properties we want in results.
     # filter internal content based on property and its language
     #
-    # For US News, we will need results from US news and US finance, but don't
-    # want US autos and others.
     # Ex.
     #   filter = +(pty_lang:news_US_en-US pty_lang:finance_US_en-US)
     #   filter = +(pty_lang:autos_TW_zh-Hant-TW pty_lang:news_TW_zh-Hant-TW)
@@ -246,9 +239,6 @@ search newsindex {
     # property + "_" + region + "_" + lang + "|" + property URL
     #
     # use this field to store the property URL for internal content.
-    # Ex.
-    #   news_US_en-US|http://news.yahoo.com/obama-presses-cubas-castro-human-rights-during-historic-001908918.html
-    #
     field pty_urls type array<string> {
       indexing: summary
       normalizing: none
@@ -283,7 +273,6 @@ search newsindex {
     }
 
     # source + provider for internal data
-    # this feature is mainly for TW / HK markets
     field nsite_sourceprovider type string {
       indexing: summary | index | attribute
       attribute {
@@ -380,8 +369,6 @@ search newsindex {
       }
     }
 
-    #### Sieve Classifier Scores
-    # https://git.corp.yahoo.com/sieve/docproc/blob/master/protobuf/src/main/resources/proto/classifierscores.proto
     #
     # newsyScore field
     #

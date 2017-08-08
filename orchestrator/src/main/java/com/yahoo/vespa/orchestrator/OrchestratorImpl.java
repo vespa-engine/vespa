@@ -232,7 +232,7 @@ public class OrchestratorImpl implements Orchestrator {
      *
      * SOLUTION
      * The solution we're using is to order the hostnames by the globally unique application instance ID,
-     * e.g. hosted-vespa:routing:dev:ci-corp-us-east-1:default. In the example above, it would guarantee
+     * e.g. hosted-vespa:routing:dev:some-region:default. In the example above, it would guarantee
      * Docker host 2 would ensure ask to suspend B2 before A2. We take care of that ordering here.
      *
      * NodeGroups complicate the above picture a little:  Each A1, A2, B1, and B2 is a NodeGroup that may
@@ -261,7 +261,7 @@ public class OrchestratorImpl implements Orchestrator {
         ApplicationInstanceReference leftApplicationReference = leftNodeGroup.getApplicationReference();
         ApplicationInstanceReference rightApplicationReference = rightNodeGroup.getApplicationReference();
 
-        // ApplicationInstanceReference.toString() is e.g. "hosted-vespa:routing:dev:ci-corp-us-east-1:default"
+        // ApplicationInstanceReference.toString() is e.g. "hosted-vespa:routing:dev:some-region:default"
         return leftApplicationReference.asString().compareTo(rightApplicationReference.asString());
     }
 

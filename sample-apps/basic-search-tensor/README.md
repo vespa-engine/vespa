@@ -8,8 +8,8 @@ Also includes the rank expression playground used to visualize rank operations. 
     http://<host>:8080/playground/index.html
 
 Please refer to the
-[tensor intro](https://git.corp.yahoo.com/pages/vespa/documentation/documentation/tensor-intro.html)
+[tensor intro](https://github.com/pages/vespa-engine/documentation/documentation/tensor-intro.html)
 and
-[tensor user guide](https://git.corp.yahoo.com/pages/vespa/documentation/documentation/tensor-user-guide.html)
+[tensor user guide](https://github.com/pages/vespa-engine/documentation/documentation/tensor-user-guide.html)
 for more information.
 

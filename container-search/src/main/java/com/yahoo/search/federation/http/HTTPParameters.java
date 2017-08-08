@@ -42,12 +42,12 @@ public final class HTTPParameters {
     private int configuredReadTimeout = -1;
     private int configuredConnectionTimeout = -1;
     private int connectionPoolTimeout = -1;
-    private String ycaProxy = null;
-    private int ycaPort = 0;
-    private String ycaApplicationId = null;
-    private boolean ycaUseProxy = false;
-    private long ycaTtl = 0L;
-    private long ycaRetry = 0L;
+    private String certificateProxy = null;
+    private int certificatePort = 0;
+    private String certificateApplicationId = null;
+    private boolean certificateUseProxy = false;
+    private long certificateTtl = 0L;
+    private long certificateRetry = 0L;
 
     private PingOption.Enum pingOption = PingOption.NORMAL;
 
@@ -66,14 +66,14 @@ public final class HTTPParameters {
         connectionPoolTimeout = (int) (providerConfig.connectionPoolTimeout() * 1000.0d);
         retries = providerConfig.retries();
         setPath(providerConfig.path());
-        ycaUseProxy = providerConfig.yca().useProxy();
-        if (ycaUseProxy) {
-            ycaProxy = providerConfig.yca().host();
-            ycaPort = providerConfig.yca().port();
+        certificateUseProxy = providerConfig.yca().useProxy();
+        if (certificateUseProxy) {
+            certificateProxy = providerConfig.yca().host();
+            certificatePort = providerConfig.yca().port();
         }
-        ycaApplicationId = providerConfig.yca().applicationId();
-        ycaTtl = providerConfig.yca().ttl() * 1000L;
-        ycaRetry = providerConfig.yca().retry() * 1000L;
+        certificateApplicationId = providerConfig.yca().applicationId();
+        certificateTtl = providerConfig.yca().ttl() * 1000L;
+        certificateRetry = providerConfig.yca().retry() * 1000L;
         followRedirects = providerConfig.followRedirects();
         pingOption = providerConfig.pingOption();
     }
@@ -289,27 +289,27 @@ public final class HTTPParameters {
     }
 
     public String getYcaProxy() {
-        return ycaProxy;
+        return certificateProxy;
     }
 
     public int getYcaPort() {
-        return ycaPort;
+        return certificatePort;
     }
 
     public String getYcaApplicationId() {
-        return ycaApplicationId;
+        return certificateApplicationId;
     }
 
     public boolean getYcaUseProxy() {
-        return ycaUseProxy;
+        return certificateUseProxy;
     }
 
     public long getYcaTtl() {
-        return ycaTtl;
+        return certificateTtl;
     }
 
     public long getYcaRetry() {
-        return ycaRetry;
+        return certificateRetry;
     }
 
 }

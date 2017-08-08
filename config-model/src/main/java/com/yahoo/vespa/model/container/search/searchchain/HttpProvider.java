@@ -66,24 +66,24 @@ public class HttpProvider extends Provider implements ProviderConfig.Producer,
         builder.node(getNodes(providerSpec.nodes));
 
         if (providerSpec.ycaApplicationId != null) {
-            builder.yca(getYca(providerSpec));
+            builder.yca(getCertificate(providerSpec));
         }
     }
 
-    private static Yca.Builder getYca(HttpProviderSpec providerSpec) {
-        Yca.Builder yca = new Yca.Builder()
+    private static Yca.Builder getCertificate(HttpProviderSpec providerSpec) {
+        Yca.Builder certificate = new Yca.Builder()
                 .applicationId(providerSpec.ycaApplicationId);
 
         if (providerSpec.ycaProxy != null) {
-            yca.useProxy(true);
+            certificate.useProxy(true);
             if (providerSpec.ycaProxy.host != null) {
-                yca.host(providerSpec.ycaProxy.host)
+                certificate.host(providerSpec.ycaProxy.host)
                         .port(providerSpec.ycaProxy.port);
             }
         }
-        if (providerSpec.ycaCertificateTtl != null) yca.ttl(providerSpec.ycaCertificateTtl);
-        if (providerSpec.ycaRetryWait != null) yca.ttl(providerSpec.ycaRetryWait);
-        return yca;
+        if (providerSpec.ycaCertificateTtl != null) certificate.ttl(providerSpec.ycaCertificateTtl);
+        if (providerSpec.ycaRetryWait != null) certificate.ttl(providerSpec.ycaRetryWait);
+        return certificate;
     }
 
     private static List<Node.Builder> getNodes(List<HttpProviderSpec.Node> nodeSpecs) {

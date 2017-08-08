@@ -8,11 +8,11 @@ This directory contains utility code for the blog-search and blog-recommendation
 
     $ python parse.py trainPosts.json > somefile.json
 
-Parses JSON from the file trainPosts.json downloaded from Kaggle during the [blog search tutorial](https://git.corp.yahoo.com/pages/vespa/documentation/documentation/tutorials/blog-search.html) and format it according to Vespa Document JSON format.
+Parses JSON from the file trainPosts.json downloaded from Kaggle during the [blog search tutorial](https://github.com/pages/vespa-engine/documentation/documentation/tutorials/blog-search.html) and format it according to Vespa Document JSON format.
 
     $ python parse.py -p trainPosts.json > somefile.json
 
-Give it the flag "-p" or "--popularity", and the script also calculates and adds the field `popularity`, as introduced [in the tutorial](https://git.corp.yahoo.com/pages/vespa/documentation/documentation/tutorials/blog-search.html#blog-popularity-signal).
+Give it the flag "-p" or "--popularity", and the script also calculates and adds the field `popularity`, as introduced [in the tutorial](https://github.com/pages/vespa-engine/documentation/documentation/tutorials/blog-search.html#blog-popularity-signal).
 
 ## Vespa Tutorial pt. 2
 

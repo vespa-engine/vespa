@@ -56,7 +56,7 @@ import static com.yahoo.document.json.JsonSerializationHelper.*;
 
 /**
  * The DocumentUpdateJsonSerializer utility class is used to serialize a DocumentUpdate instance using the JSON format described in
- * <a href="https://git.corp.yahoo.com/pages/vespa/documentation/documentation/reference/document-json-format.html#update">Document JSON Format: The Update Structure</a>
+ * <a href="https://github.com/pages/vespa-engine/documentation/documentation/reference/document-json-format.html#update">Document JSON Format: The Update Structure</a>
  *
  * @see #serialize(com.yahoo.document.DocumentUpdate)
  * @author Vegard Sjonfjell

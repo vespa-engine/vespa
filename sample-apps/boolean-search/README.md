@@ -2,7 +2,7 @@ Boolean Search
 ==================
 
 Boolean Search and how to feed and query is described in 
-[boolean search](https://git.corp.yahoo.com/pages/vespa/documentation/documentation/boolean-search.html).
+[boolean search](https://github.com/pages/vespa-engine/documentation/documentation/boolean-search.html).
 
 Adding boolean search to an application is easy. Just add a field of
 type predicate to the .sd-file. (Remember to set the arity parameter.)
