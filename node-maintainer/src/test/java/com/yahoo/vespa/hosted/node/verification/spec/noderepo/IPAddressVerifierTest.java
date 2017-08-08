@@ -37,7 +37,7 @@ public class IPAddressVerifierTest {
 
     @Test
     public void getFaultyIpAddresses_should_return_IP_address_when_different_hostname() throws Exception {
-        String realHostName = "zt74722.ostk.bm2.prod.gq1.yahoo.com";
+        String realHostName = "host.name";
         String wrongHostName = "www.yahoo.com";
         doReturn(realHostName).when(ipAddressVerifier).reverseLookUp(ipv4LookupFormat);
         doReturn(wrongHostName).when(ipAddressVerifier).reverseLookUp(ipv6LookupFormat);
@@ -48,7 +48,7 @@ public class IPAddressVerifierTest {
 
     @Test
     public void getFaultyIpAddresses_should_return_empty_array_when_all_addresses_point_to_correct_hostname() throws Exception {
-        String realHostName = "zt74722.ostk.bm2.prod.gq1.yahoo.com";
+        String realHostName = "host.name";
         doReturn(realHostName).when(ipAddressVerifier).reverseLookUp(ipv4LookupFormat);
         doReturn(realHostName).when(ipAddressVerifier).reverseLookUp(ipv6LookupFormat);
         String[] faultyIpAddresses = ipAddressVerifier.getFaultyIpAddresses(nodeRepoJsonModel);

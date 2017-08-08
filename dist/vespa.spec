@@ -12,7 +12,7 @@ Release:        1%{?dist}
 Summary:        Vespa - The open big data serving engine
 Group:          Applications/Databases
 License:        Commercial
-URL:            http://vespa.corp.yahoo.com
+URL:            http://vespa.ai
 Source0:        vespa-%{version}.tar.gz
 
 BuildRequires: epel-release 

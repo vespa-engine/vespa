@@ -1,6 +1,6 @@
 {
-  "url": "https://api.vespa.corp.yahoo.com:4443/zone/v2/prod/eu-west-1/nodes/v2/node/20004731.ostk.bm1.prod.ir2.yahoo.com",
-  "id": "20004731.ostk.bm1.prod.ir2.yahoo.com",
+  "url": "https://example.com:4443/zone/v2/prod/eu-west-1/nodes/v2/node/host.name",
+  "id": "host.name",
   "state": "ready",
   "type": "tenant",
   "hostname": "",
@@ -17,7 +17,7 @@
   "rebootGeneration": 10,
   "currentRebootGeneration": 10,
   "vespaVersion": "6.120.30",
-  "currentDockerImage": "docker-registry.ops.yahoo.com:4443/vespa/ci:6.120.30",
+  "currentDockerImage": "docker-registry:4443/vespa/ci:6.120.30",
   "hostedVersion": "6.120.30",
   "convergedStateVersion": "6.120.30",
   "failCount": 0,
