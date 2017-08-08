@@ -931,7 +931,6 @@
     </properties>
 
     <modules>
-        <module>annotations</module>
         <module>application</module>
         <module>application-deploy-plugin</module>
         <module>application-model</module>
