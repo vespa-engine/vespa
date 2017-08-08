@@ -118,7 +118,7 @@ public class NetRetriever implements HardwareRetriever {
             ArrayList<String> commandOutput = commandExecutor.executeCommand(PING_NET_COMMAND);
             parseResults.add(parsePingResponse(commandOutput));
         } catch (ExecuteException e) {
-            logger.log(Level.WARNING, "Failed to execute ping6");
+            logger.log(Level.WARNING, "Failed to execute ping6", e);
         } catch (IOException e) {
             logger.log(Level.WARNING, e.getMessage());
         }
