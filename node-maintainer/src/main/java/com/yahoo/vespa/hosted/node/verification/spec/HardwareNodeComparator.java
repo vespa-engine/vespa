@@ -32,7 +32,7 @@ public class HardwareNodeComparator {
     private static void setMemoryMetrics(HardwareInfo nodeRepoHardwareInfo, HardwareInfo actualHardware, VerificationReport verificationReport) {
         double expectedMemory = nodeRepoHardwareInfo.getMinMainMemoryAvailableGb();
         double actualMemory = actualHardware.getMinMainMemoryAvailableGb();
-        if (!insideThreshold(expectedMemory, actualMemory, PERCENTAGE_THRESHOLD)) {
+        if (outsideThreshold(expectedMemory, actualMemory, PERCENTAGE_THRESHOLD)) {
             verificationReport.setActualMemoryAvailable(actualMemory);
         }
     }
@@ -56,7 +56,7 @@ public class HardwareNodeComparator {
     private static void setDiskSpaceMetrics(HardwareInfo nodeRepoHardwareInfo, HardwareInfo actualHardware, VerificationReport verificationReport) {
         double expectedDiskSpace = nodeRepoHardwareInfo.getMinDiskAvailableGb();
         double actualDiskSpace = actualHardware.getMinDiskAvailableGb();
-        if (!insideThreshold(expectedDiskSpace, actualDiskSpace, PERCENTAGE_THRESHOLD)) {
+        if (outsideThreshold(expectedDiskSpace, actualDiskSpace, PERCENTAGE_THRESHOLD)) {
             verificationReport.setActualDiskSpaceAvailable(actualDiskSpace);
         }
     }
@@ -73,10 +73,10 @@ public class HardwareNodeComparator {
         }
     }
 
-    private static boolean insideThreshold(double value1, double value2 , double thresholdPercentage) {
+    private static boolean outsideThreshold(double value1, double value2 , double thresholdPercentage) {
         double lowerThresholdPercentage = 1 - thresholdPercentage;
         double upperThresholdPercentage = 1 + thresholdPercentage;
-        return value1 > lowerThresholdPercentage * value2 && value1 < upperThresholdPercentage * value2;
+        return value1 < lowerThresholdPercentage * value2 || value1 > upperThresholdPercentage * value2;
     }
 
 }

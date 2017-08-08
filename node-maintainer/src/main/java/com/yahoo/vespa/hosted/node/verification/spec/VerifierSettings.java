@@ -16,12 +16,7 @@ public class VerifierSettings {
     }
 
     public VerifierSettings(NodeRepoJsonModel nodeRepoJsonModel){
-        if (nodeRepoJsonModel.getIpv6Address() != null){
-            checkIPv6 = true;
-        }
-        else {
-            checkIPv6 = false;
-        }
+        checkIPv6 = nodeRepoJsonModel.getIpv6Address() != null;
     }
 
     public boolean isCheckIPv6() {

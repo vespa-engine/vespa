@@ -1,13 +1,7 @@
 package com.yahoo.vespa.hosted.node.verification.hardware.report;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.BenchmarkResults;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Created by sgrostad on 12/07/2017.

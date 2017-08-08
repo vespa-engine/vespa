@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.CPUBenchmark
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.DiskBenchmark;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.MemoryBenchmark;
 import com.yahoo.vespa.hosted.node.verification.hardware.report.BenchmarkReport;
-import com.yahoo.vespa.hosted.node.verification.spec.report.VerificationReport;
 
 import java.util.ArrayList;
 import java.util.Arrays;

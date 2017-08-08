@@ -28,16 +28,10 @@ public class NodeRepoJsonModel {
     private boolean fastDisk;
     @JsonProperty("ipAddresses")
     private String[] ipAddresses;
-    @JsonProperty("additionalIpAddresses")
-    private String[] additionalIpAddresses;
     @JsonProperty
     private String hostname;
     @JsonProperty
     private String environment;
-
-    public String[] getAdditionalIpAddresses() {
-        return additionalIpAddresses;
-    }
 
     public HardwareInfo copyToHardwareInfo() {
         HardwareInfo hardwareInfo = new HardwareInfo();
@@ -77,10 +71,6 @@ public class NodeRepoJsonModel {
 
     public boolean isFastDisk() {
         return fastDisk;
-    }
-
-    public String[] getIpAddresses() {
-        return ipAddresses;
     }
 
     public String getHostname() {
