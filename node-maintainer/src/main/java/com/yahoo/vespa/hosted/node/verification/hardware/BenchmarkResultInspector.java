@@ -13,7 +13,7 @@ public class BenchmarkResultInspector {
     private static final double MEMORY_READ_SPEED_LOWER_LIMIT = 1D;
     private static final double DISK_SPEED_LOWER_LIMIT = 50D;
 
-    public static BenchmarkReport isBenchmarkResultsValid(BenchmarkResults benchmarkResults) {
+    public static BenchmarkReport makeBenchmarkReport(BenchmarkResults benchmarkResults) {
         BenchmarkReport benchmarkReport = new BenchmarkReport();
         double cpuCyclesPerSec = benchmarkResults.getCpuCyclesPerSec();
         if ( cpuCyclesPerSec < CPU_FREQUENCY_LOWER_LIMIT) {

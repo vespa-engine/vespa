@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.CPUBenchmark
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.DiskBenchmark;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.MemoryBenchmark;
 import com.yahoo.vespa.hosted.node.verification.hardware.report.BenchmarkReport;
+import com.yahoo.vespa.hosted.node.verification.spec.report.VerificationReport;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,15 +28,20 @@ public class HardwareBenchmarker {
         for (Benchmark benchmark : benchmarks) {
             benchmark.doBenchmark();
         }
-        BenchmarkReport benchmarkReport = makeBenchmarkReport(benchmarkResults);
+        BenchmarkReport benchmarkReport = BenchmarkResultInspector.makeBenchmarkReport(benchmarkResults);
         printBenchmarkResults(benchmarkReport);
-
-        return true;
+        return isAllBenchmarksOK(benchmarkReport);
     }
 
-    protected static BenchmarkReport makeBenchmarkReport(BenchmarkResults benchmarkResults) {
-        BenchmarkReport benchmarkReport = BenchmarkResultInspector.isBenchmarkResultsValid(benchmarkResults);
-        return benchmarkReport;
+    private static boolean isAllBenchmarksOK(BenchmarkReport benchmarkReport) {
+        ObjectMapper om = new ObjectMapper();
+        try {
+            String jsonReport = om.writeValueAsString(benchmarkReport);
+            return jsonReport.length() == 2;
+        } catch (JsonProcessingException e){
+            e.printStackTrace();
+            return false;
+        }
     }
 
     private static void printBenchmarkResults(BenchmarkReport benchmarkReport) {

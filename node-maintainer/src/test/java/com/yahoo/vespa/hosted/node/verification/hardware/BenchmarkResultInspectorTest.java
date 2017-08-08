@@ -35,7 +35,7 @@ public class BenchmarkResultInspectorTest {
 
     @Test
     public void isBenchmarkResultsValid_should_return_BenchmarkReport_with_all_values_null() {
-        BenchmarkReport benchmarkReport = BenchmarkResultInspector.isBenchmarkResultsValid(benchmarkResults);
+        BenchmarkReport benchmarkReport = BenchmarkResultInspector.makeBenchmarkReport(benchmarkResults);
         assertNull(benchmarkReport.getCpuCyclesPerSec());
         assertNull(benchmarkReport.getDiskSpeedMbs());
         assertNull(benchmarkReport.getMemoryReadSpeedGBs());
@@ -45,7 +45,7 @@ public class BenchmarkResultInspectorTest {
     @Test
     public void isBenchmarkResultsValid_should_only_set_cpu_frequency() {
         benchmarkResults.setCpuCyclesPerSec(INVALID_CPU_FREQUENCY);
-        BenchmarkReport benchmarkReport = BenchmarkResultInspector.isBenchmarkResultsValid(benchmarkResults);
+        BenchmarkReport benchmarkReport = BenchmarkResultInspector.makeBenchmarkReport(benchmarkResults);
         assertNotNull(benchmarkReport.getCpuCyclesPerSec());
         assertNull(benchmarkReport.getDiskSpeedMbs());
         assertNull(benchmarkReport.getMemoryReadSpeedGBs());
@@ -55,7 +55,7 @@ public class BenchmarkResultInspectorTest {
     @Test
     public void isBenchmarkResultsValid_should_only_set_disk_speed() {
         benchmarkResults.setDiskSpeedMbs(INVALID_DISK_SPEED);
-        BenchmarkReport benchmarkReport = BenchmarkResultInspector.isBenchmarkResultsValid(benchmarkResults);
+        BenchmarkReport benchmarkReport = BenchmarkResultInspector.makeBenchmarkReport(benchmarkResults);
         assertNull(benchmarkReport.getCpuCyclesPerSec());
         assertNotNull(benchmarkReport.getDiskSpeedMbs());
         assertNull(benchmarkReport.getMemoryReadSpeedGBs());
@@ -65,7 +65,7 @@ public class BenchmarkResultInspectorTest {
     @Test
     public void isBenchmarkResultsValid_should_only_set_memory_read_speed() {
         benchmarkResults.setMemoryReadSpeedGBs(INVALID_MEMORY_READ_SPEED);
-        BenchmarkReport benchmarkReport = BenchmarkResultInspector.isBenchmarkResultsValid(benchmarkResults);
+        BenchmarkReport benchmarkReport = BenchmarkResultInspector.makeBenchmarkReport(benchmarkResults);
         assertNull(benchmarkReport.getCpuCyclesPerSec());
         assertNull(benchmarkReport.getDiskSpeedMbs());
         assertNotNull(benchmarkReport.getMemoryReadSpeedGBs());
@@ -75,7 +75,7 @@ public class BenchmarkResultInspectorTest {
     @Test
     public void isBenchmarkResultsValid_should_only_set_memory_write_speed() {
         benchmarkResults.setMemoryWriteSpeedGBs(INVALID_MEMORY_WRITE_SPEED);
-        BenchmarkReport benchmarkReport = BenchmarkResultInspector.isBenchmarkResultsValid(benchmarkResults);
+        BenchmarkReport benchmarkReport = BenchmarkResultInspector.makeBenchmarkReport(benchmarkResults);
         assertNull(benchmarkReport.getCpuCyclesPerSec());
         assertNull(benchmarkReport.getDiskSpeedMbs());
         assertNull(benchmarkReport.getMemoryReadSpeedGBs());
