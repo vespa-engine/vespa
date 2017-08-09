@@ -296,17 +296,21 @@ TEST("testTruncatedIdxFile"){
                                fileHeaderContext, tlSyncer, NULL);
         EXPECT_EQUAL(354ul, datastore.lastSyncToken());
     }
+    const char * magic = "mumbo jumbo";
     {
         LogDataStore datastore(executor, "bug-7257706-truncated", config,
                                GrowStrategy(), TuneFileSummary(),
                                fileHeaderContext, tlSyncer, NULL);
         EXPECT_EQUAL(331ul, datastore.lastSyncToken());
+        datastore.write(332, 7, magic, strlen(magic));
+        datastore.write(333, 8, magic, strlen(magic));
+        datastore.flush(datastore.initFlush(334));
     }
     {
         LogDataStore datastore(executor, "bug-7257706-truncated", config,
                                GrowStrategy(), TuneFileSummary(),
                                fileHeaderContext, tlSyncer, NULL);
-        EXPECT_EQUAL(331ul, datastore.lastSyncToken());
+        EXPECT_EQUAL(334ul, datastore.lastSyncToken());
     }
 }
 

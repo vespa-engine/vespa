@@ -514,6 +514,8 @@ public:
 
     virtual void EnableSyncWrites();
 
+    bool useSyncWrites() const { return _syncWritesEnabled; }
+
     /**
      * Set the write chunk size used in WriteBuf.
      */
