@@ -29,7 +29,8 @@ public class SpecVerifierTest {
     private static final String NODE_REPO_PATH = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/nodeInfoTest.json";
     private static final String CPU_INFO_PATH = RESOURCE_PATH + "/cpuinfoTest";
     private static final String MEMORY_INFO_PATH = RESOURCE_PATH + "/meminfoTest";
-    private static final String DISK_TYPE_INFO_PATH = RESOURCE_PATH + "/DiskTypeFastDisk";
+    private static final String FAST_DISK_TYPE_INFO_PATH = RESOURCE_PATH + "/DiskTypeFastDisk";
+    private static final String NON_FAST_DISK_TYPE_INFO_PATH = RESOURCE_PATH + "/DiskTypeNonFastDisk";
     private static final String DISK_SIZE_INFO_PATH = RESOURCE_PATH + "/filesize";
     private static final String NET_INTERFACE_INFO_PATH = RESOURCE_PATH + "/ifconfig";
     private static final String NET_INTERFACE_SPEED_INFO_PATH = RESOURCE_PATH + "/eth0";
@@ -47,12 +48,11 @@ public class SpecVerifierTest {
 
 
     @Test
-    @Ignore
     public void verifySpec_equal_nodeRepoInfo_and_hardware_should_return_true() throws Exception {
         nodeInfoUrls.add(new URL(URL_RESOURCE_PATH + "/nodeRepo.json"));
         mockCommandExecutor.addCommand("cat " + CPU_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + MEMORY_INFO_PATH);
-        mockCommandExecutor.addCommand("cat " + DISK_TYPE_INFO_PATH);
+        mockCommandExecutor.addCommand("cat " + FAST_DISK_TYPE_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + DISK_SIZE_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + NET_INTERFACE_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + NET_INTERFACE_SPEED_INFO_PATH);
@@ -71,7 +71,7 @@ public class SpecVerifierTest {
         nodeInfoUrls.add(new URL(URL_RESOURCE_PATH + "/nodeRepo.json"));
         mockCommandExecutor.addCommand("cat " + CPU_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + MEMORY_INFO_PATH);
-        mockCommandExecutor.addCommand("cat " + DISK_TYPE_INFO_PATH);
+        mockCommandExecutor.addCommand("cat " + NON_FAST_DISK_TYPE_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + DISK_SIZE_INFO_PATH);
         mockCommandExecutor.addCommand("cat " + NET_INTERFACE_INFO_PATH + "NoIpv6");
         mockCommandExecutor.addCommand("cat " + NET_INTERFACE_SPEED_INFO_PATH);
@@ -107,8 +107,6 @@ public class SpecVerifierTest {
         double expectedMinMainMemoryAvailableGb = 4.04D;
         double expectedMinDiskAvailableGb = 1759.84;
         boolean expectedFastDisk = true;
-        String expectedIpv6Address = "2001:4998:c:2940:0:0:0:111c";
-        assertEquals(expectedIpv6Address, actualNodeRepoJsonModel.getIpv6Address());
         assertEquals(expectedMinCpuCores, actualNodeRepoJsonModel.getMinCpuCores(), DELTA);
         assertEquals(expectedMinMainMemoryAvailableGb, actualNodeRepoJsonModel.getMinMainMemoryAvailableGb(), DELTA);
         assertEquals(expectedMinDiskAvailableGb, actualNodeRepoJsonModel.getMinDiskAvailableGb(), DELTA);

@@ -23,7 +23,7 @@ public class HostURLGeneratorTest {
     private static final String CAT_WRONG_HOSTNAME_PATH = "cat src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/hostURLGeneratorExceptionTest";
     private static final String CONFIG_SERVER_HOSTNAME = "http://cfg1.prod.region1:4080";
     private static final String NODE_HOSTNAME_PREFIX = "/nodes/v2/node/";
-    private static final String EXPECTED_HOSTNAME = "13305821.ostk.bm2.prod.gq1.yahoo.com";
+    private static final String EXPECTED_HOSTNAME = "expected.hostname";
 
     @Before
     public void setup() {
@@ -57,7 +57,7 @@ public class HostURLGeneratorTest {
     @Test
     public void generateNodeInfoUrl_retrieve_config_server_as_parameter_test_if_url_is_formatted_correctly() throws Exception {
         mockCommandExecutor.addCommand(CAT_NODE_HOST_NAME_PATH);
-        String configServerHostname = "cfg1.prod.corp-us-east-1.vespahosted.corp.bf1.yahoo.com";
+        String configServerHostname = "cfg1.prod.region1";
         ArrayList<URL> actualUrls = HostURLGenerator.generateNodeInfoUrl(mockCommandExecutor, configServerHostname);
         String expectedUrl = CONFIG_SERVER_HOSTNAME + NODE_HOSTNAME_PREFIX + EXPECTED_HOSTNAME;
         String actualUrl = actualUrls.get(0).toString();
