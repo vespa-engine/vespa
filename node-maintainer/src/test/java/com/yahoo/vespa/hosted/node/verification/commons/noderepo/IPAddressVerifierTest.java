@@ -27,12 +27,12 @@ public class IPAddressVerifierTest {
 
     @Before
     public void setup() throws Exception {
-        ipv4Address = "10.213.181.113";
-        ipv6Address = "2001:4998:c:2940:0:0:0:111c";
+        ipv4Address = "172.16.254.1";
+        ipv6Address = "2001:db8:0:1234:0:567:8:1";
         ArrayList<URL> nodeRepoUrl = new ArrayList<>(Arrays.asList(new URL(URL_RESOURCE_PATH)));
         nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(nodeRepoUrl);
-        ipv4LookupFormat = "113.181.213.10.in-addr.arpa";
-        ipv6LookupFormat = "c.1.1.1.0.0.0.0.0.0.0.0.0.0.0.0.0.4.9.2.c.0.0.0.8.9.9.4.1.0.0.2.ip6.arpa";
+        ipv4LookupFormat = "1.254.16.172.in-addr.arpa";
+        ipv6LookupFormat = "1.0.0.0.8.0.0.0.7.6.5.0.0.0.0.0.4.3.2.1.0.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa";
     }
 
     @Test

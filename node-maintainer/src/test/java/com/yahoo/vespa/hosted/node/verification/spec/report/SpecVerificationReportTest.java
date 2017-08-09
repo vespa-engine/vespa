@@ -34,7 +34,7 @@ public class SpecVerificationReportTest {
         specVerificationReport.setActualDiskType(HardwareInfo.DiskType.FAST);
         specVerificationReport.setActualMemoryAvailable(123D);
         specVerificationReport.setActualcpuCores(4);
-        specVerificationReport.setFaultyIpAddresses(new String[]{"2001:4998:44:505d:0:0:0:2618"});
+        specVerificationReport.setFaultyIpAddresses(new String[]{"2001:db8:0:1234:0:567:8:1"});
         String expectedJson = MockCommandExecutor.readFromFile(REPORT_PATH).get(0);
         ObjectMapper om = new ObjectMapper();
         String actualJson = om.writeValueAsString(specVerificationReport);
