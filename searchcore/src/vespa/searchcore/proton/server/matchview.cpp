@@ -69,13 +69,14 @@ MatchView::match(const ISearchHandler::SP &searchHandler, const SearchRequest &r
                  vespalib::ThreadBundle &threadBundle) const
 {
     Matcher::SP matcher = getMatcher(req.ranking);
-    IDocumentMetaStoreContext::IReadGuard::UP guard = _metaStore->getReadGuard();
     SearchSession::OwnershipBundle owned_objects;
     owned_objects.search_handler = searchHandler;
     owned_objects.context = createContext();
+    owned_objects.readGuard = _metaStore->getReadGuard();;
     MatchContext *ctx = owned_objects.context.get();
+    const search::IDocumentMetaStore & dms = owned_objects.readGuard->get();
     return matcher->match(req, threadBundle, ctx->getSearchContext(), ctx->getAttributeContext(),
-                          *_sessionMgr, guard->get(), std::move(owned_objects));
+                          *_sessionMgr, dms, std::move(owned_objects));
 }
 
 

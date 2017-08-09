@@ -178,6 +178,7 @@ class NodesResponse extends HttpResponse {
         toSlime(node.history(), object.setArray("history"));
         ipAddressesToSlime(node.ipAddresses(), object.setArray("ipAddresses"));
         ipAddressesToSlime(node.additionalIpAddresses(), object.setArray("additionalIpAddresses"));
+        node.status().hardwareDivergence().ifPresent(hardwareDivergence -> object.setString("hardwareDivergence", hardwareDivergence));
     }
 
     private String toString(NodeType type) {

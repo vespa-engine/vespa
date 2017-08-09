@@ -2,10 +2,12 @@
 package com.yahoo.vespa.hosted.node.admin.docker;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
+
+import com.yahoo.collections.Pair;
+import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
-import com.yahoo.vespa.hosted.dockerapi.DockerExecTimeoutException;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.DockerImpl;
 import com.yahoo.vespa.hosted.dockerapi.DockerNetworkCreator;
@@ -83,10 +85,12 @@ public class DockerOperationsImpl implements DockerOperations {
 
     private final Docker docker;
     private final Environment environment;
+    private final ProcessExecuter processExecuter;
 
-    public DockerOperationsImpl(Docker docker, Environment environment) {
+    public DockerOperationsImpl(Docker docker, Environment environment, ProcessExecuter processExecuter) {
         this.docker = docker;
         this.environment = environment;
+        this.processExecuter = processExecuter;
     }
 
     // Returns empty if vespa version cannot be parsed.
@@ -267,22 +271,23 @@ public class DockerOperationsImpl implements DockerOperations {
                         containerName.asString()));
 
         final String[] wrappedCommand = Stream.concat(
-                Stream.of("nsenter", String.format("--net=/host/proc/%d/ns/net", containerPid), "--"),
+                Stream.of("sudo", "nsenter", String.format("--net=/host/proc/%d/ns/net", containerPid), "--"),
                 Stream.of(command))
         .toArray(String[]::new);
 
         try {
-            ProcessResult result = docker.executeInContainerAsRoot(new ContainerName("node-admin"), 60L, wrappedCommand);
-            if (! result.isSuccess()) {
-                String msg = String.format("Failed to execute %s in network namespace for %s (PID = %d)",
-                        Arrays.toString(wrappedCommand), containerName.asString(), containerPid);
+            Pair<Integer, String> result = processExecuter.exec(wrappedCommand);
+            if (result.getFirst() != 0) {
+                String msg = String.format(
+                        "Failed to execute %s in network namespace for %s (PID = %d), exit code: %d, output: %s",
+                        Arrays.toString(wrappedCommand), containerName.asString(), containerPid, result.getFirst(), result.getSecond());
                 logger.error(msg);
                 throw new RuntimeException(msg);
             }
-        } catch (DockerExecTimeoutException e) {
-            logger.warning(String.format("Timed out while executing %s in network namespace for %s (PID = %d)",
-                    Arrays.toString(wrappedCommand), containerName.asString(), containerPid));
-            throw e;
+        } catch (IOException e) {
+            logger.warning(String.format("IOException while executing %s in network namespace for %s (PID = %d)",
+                    Arrays.toString(wrappedCommand), containerName.asString(), containerPid), e);
+            throw new RuntimeException(e);
         }
     }
 

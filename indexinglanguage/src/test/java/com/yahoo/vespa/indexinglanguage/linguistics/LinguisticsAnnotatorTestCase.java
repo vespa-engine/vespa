@@ -12,6 +12,7 @@ import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
 import com.yahoo.language.process.TokenType;
 import com.yahoo.language.process.Tokenizer;
+import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.language.simple.SimpleToken;
 
 import org.junit.Test;
@@ -164,6 +165,29 @@ public class LinguisticsAnnotatorTestCase {
 
         assertTrue(new LinguisticsAnnotator(linguistics, CONFIG).annotate(val));
         assertEquals(spanTree, val.getSpanTree(SpanTrees.LINGUISTICS));
+    }
+
+    @Test
+    public void requireThatTokenizeCappingWorks() {
+        String shortString = "short string";
+        SpanTree spanTree = new SpanTree(SpanTrees.LINGUISTICS);
+        spanTree.setStringFieldValue(new StringFieldValue(shortString));
+        spanTree.spanList().span(0, 5).annotate(new Annotation(AnnotationTypes.TERM));
+        spanTree.spanList().span(6, 6).annotate(new Annotation(AnnotationTypes.TERM));
+
+        StringFieldValue shortValue = new StringFieldValue(shortString);
+
+        Linguistics linguistics = new SimpleLinguistics();
+
+        LinguisticsAnnotator annotator = new LinguisticsAnnotator(linguistics, new AnnotatorConfig().setMaxTokenLength(12));
+
+        assertTrue(annotator.annotate(shortValue));
+        assertEquals(spanTree, shortValue.getSpanTree(SpanTrees.LINGUISTICS));
+        assertEquals(shortString, shortValue.getSpanTree(SpanTrees.LINGUISTICS).getStringFieldValue().getString());
+
+        StringFieldValue cappedValue = new StringFieldValue(shortString + " a longer string");
+        assertTrue(annotator.annotate(cappedValue));
+        assertEquals((shortString + " a longer string"), cappedValue.getSpanTree(SpanTrees.LINGUISTICS).getStringFieldValue().getString());
     }
 
     @Test

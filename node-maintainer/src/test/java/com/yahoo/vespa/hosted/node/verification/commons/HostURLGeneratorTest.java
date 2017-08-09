@@ -21,7 +21,7 @@ public class HostURLGeneratorTest {
     private static final String CAT_NODE_HOST_NAME_PATH = "cat src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/hostURLGeneratorTest";
     private static final String CAT_CONFIG_SERVER_HOST_NAME_PATH = "cat src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/nodeHostNameOutput";
     private static final String CAT_WRONG_HOSTNAME_PATH = "cat src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/hostURLGeneratorExceptionTest";
-    private static final String CONFIG_SERVER_HOSTNAME = "http://cfg1.prod.corp-us-east-1.vespahosted.corp.bf1.yahoo.com:4080";
+    private static final String CONFIG_SERVER_HOSTNAME = "http://cfg1.prod.region1:4080";
     private static final String NODE_HOSTNAME_PREFIX = "/nodes/v2/node/";
     private static final String EXPECTED_HOSTNAME = "13305821.ostk.bm2.prod.gq1.yahoo.com";
 

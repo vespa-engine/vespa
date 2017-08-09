@@ -4,6 +4,7 @@ package com.yahoo.vespa.curator;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.transaction.Mutex;
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.locks.InterProcessLock;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 
 import java.time.Duration;
@@ -16,12 +17,19 @@ import java.util.concurrent.TimeUnit;
  */
 public class Lock implements Mutex {
 
-    private final InterProcessMutex mutex;
+    private final InterProcessLock mutex;
     private final String lockPath;
 
+    /** @deprecated pass a Curator instance instead */
+    @Deprecated
     public Lock(String lockPath, CuratorFramework curator) {
         this.lockPath = lockPath;
         mutex = new InterProcessMutex(curator, lockPath);
+    }
+    
+    public Lock(String lockPath, Curator curator) {
+        this.lockPath = lockPath;
+        mutex = curator.createMutex(lockPath);
     }
 
     /** Take the lock with the given timeout. This may be called multiple times from the same thread - each matched by a close */

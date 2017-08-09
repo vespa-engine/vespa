@@ -12,7 +12,7 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author gjoranv
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class HttpParametersTest {
 

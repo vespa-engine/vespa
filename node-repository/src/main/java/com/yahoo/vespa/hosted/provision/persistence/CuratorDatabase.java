@@ -60,7 +60,7 @@ public class CuratorDatabase {
     /** Create a reentrant lock */
     // Locks are not cached in the in-memory state
     public Lock lock(Path path, Duration timeout) {
-        Lock lock = locks.computeIfAbsent(path, (pathArg) -> new Lock(pathArg.getAbsolute(), curator.framework()));
+        Lock lock = locks.computeIfAbsent(path, (pathArg) -> new Lock(pathArg.getAbsolute(), curator));
         lock.acquire(timeout);
         return lock;
     }

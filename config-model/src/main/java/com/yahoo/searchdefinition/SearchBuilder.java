@@ -124,6 +124,17 @@ public class SearchBuilder {
         return importString(str, null, new BaseDeployLogger());
     }
 
+    /**
+     * Import search definition.
+     *
+     * @param str the string to parse.
+     * @return the name of the imported object.
+     * @throws ParseException thrown if the file does not contain a valid search definition.
+     */
+    public String importString(String str, DeployLogger logger) throws ParseException {
+        return importString(str, null, logger);
+    }
+
     private String importString(String str, String searchDefDir, DeployLogger deployLogger) throws ParseException {
         Search search;
         SimpleCharStream stream = new SimpleCharStream(str);
@@ -203,6 +214,10 @@ public class SearchBuilder {
      */
     public void build() {
         build(new BaseDeployLogger(), new QueryProfiles());
+    }
+
+    public void build(DeployLogger logger) {
+        build(logger, new QueryProfiles());
     }
 
     /**

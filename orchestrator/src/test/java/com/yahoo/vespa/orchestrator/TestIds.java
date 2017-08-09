@@ -20,5 +20,5 @@ public class TestIds {
                     new TenantId("test-tenant2"),
                     new ApplicationInstanceId("test-application2:test-environment:test-region:test-instance-key"));
 
-    public static final HostName HOST_NAME1 = new HostName("host1.test.corp.yahoo.com");
+    public static final HostName HOST_NAME1 = new HostName("host1");
 }

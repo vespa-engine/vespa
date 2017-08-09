@@ -23,7 +23,7 @@ SearchSession::releaseEnumGuards() {
 
 SearchSession::~SearchSession() { }
 
-SearchSession::OwnershipBundle::OwnershipBundle() { }
+SearchSession::OwnershipBundle::OwnershipBundle() = default;
 SearchSession::OwnershipBundle::~OwnershipBundle() { }
 
 }

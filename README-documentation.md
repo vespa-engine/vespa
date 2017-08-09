@@ -10,8 +10,7 @@ Vespa documentation is served using straightforward
 with
 [Jekyll](https://help.github.com/categories/customizing-github-pages/).
 To edit documentation check out and work off the branch gh-pages from the
-[documentation repository for now](https://git.corp.yahoo.com/vespa/documentation).
-This branch contains documentation instead of the code.
+[documentation repository](https://gihub.com/vespa-engine/documentation).
 
 Documentation are written in straightforward HTML.
 We use a single Jekyll template (_layouts/default.html) to add header, footer and layout.

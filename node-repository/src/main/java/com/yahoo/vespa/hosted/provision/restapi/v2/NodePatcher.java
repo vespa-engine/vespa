@@ -124,6 +124,11 @@ public class NodePatcher {
                 return node.with(node.status().withWantToRetire(asBoolean(value)));
             case "wantToDeprovision" :
                 return node.with(node.status().withWantToDeprovision(asBoolean(value)));
+            case "hardwareDivergence" :
+                if (value.type().equals(Type.NIX)) {
+                    return node.with(node.status().withHardwareDivergence(Optional.empty()));
+                }
+                return node.with(node.status().withHardwareDivergence(Optional.of(asString(value))));
             default :
                 throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
         }

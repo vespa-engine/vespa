@@ -57,6 +57,7 @@ public class NodeSerializer {
     private static final String nodeTypeKey = "type";
     private static final String wantToRetireKey = "wantToRetire";
     private static final String wantToDeprovisionKey = "wantToDeprovision";
+    private static final String hardwareDivergenceKey = "hardwareDivergence";
 
     // Configuration fields
     private static final String flavorKey = "flavor";
@@ -111,6 +112,8 @@ public class NodeSerializer {
         node.allocation().ifPresent(allocation -> toSlime(allocation, object.setObject(instanceKey)));
         toSlime(node.history(), object.setArray(historyKey));
         object.setString(nodeTypeKey, toString(node.type()));
+        node.status().hardwareDivergence().ifPresent(hardwareDivergence -> object.setString(hardwareDivergenceKey,
+                                                                                            hardwareDivergence));
     }
 
     private void toSlime(Allocation allocation, Cursor object) {
@@ -167,7 +170,8 @@ public class NodeSerializer {
                           (int)object.field(failCountKey).asLong(),
                           hardwareFailureFromSlime(object.field(hardwareFailureKey)),
                           object.field(wantToRetireKey).asBool(),
-                          wantToDeprovision);
+                          wantToDeprovision,
+                          hardwareDivergenceFromSlime(object));
     }
 
     private Flavor flavorFromSlime(Inspector object) {
@@ -226,6 +230,13 @@ public class NodeSerializer {
             return Optional.of(object.field(parentHostnameKey).asString());
         else
             return Optional.empty();
+    }
+
+    private Optional<String> hardwareDivergenceFromSlime(Inspector object) {
+        if (object.field(hardwareDivergenceKey).valid()) {
+            return Optional.of(object.field(hardwareDivergenceKey).asString());
+        }
+        return Optional.empty();
     }
 
     private Set<String> ipAddressesFromSlime(Inspector object, String key) {

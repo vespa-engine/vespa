@@ -21,9 +21,9 @@ connectionTimeout double default=-1.0
 ## Unit is seconds, default value is
 ## in com.yahoo.search.federation.http.HTTPParameters.
 connectionPoolTimeout double default=-1.0
-## YCA proxy host
-yca.host string default="yca-proxy.corp.yahoo.com"
-## YCA proxy port
+## Certificate store proxy host
+yca.host string default="yca.host must be set explicitly"
+## Certificate store proxy port
 yca.port int default=3128
 ## Whether a proxy is needed (i.e. should the proxy settings be used)
 yca.useProxy bool default=false

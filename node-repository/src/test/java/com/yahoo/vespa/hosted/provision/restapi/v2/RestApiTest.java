@@ -471,6 +471,30 @@ public class RestApiTest {
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"), "node5-after-changes.json");
     }
 
+    @Test
+    public void test_hardware_divergence_patching() throws Exception {
+        // Add report
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com",
+                                   Utf8.toBytes("{\"hardwareDivergence\": \"{\\\"actualCpuCores\\\":2}\"}"),
+                                   Request.Method.PATCH),
+                       "{\"message\":\"Updated host6.yahoo.com\"}");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com"), "node6-after-changes.json");
+
+        // Empty report is rejected
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com",
+                                   Utf8.toBytes("{\"hardwareDivergence\": \"\"}"),
+                                   Request.Method.PATCH),
+                       400,
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'hardwareDivergence': Hardware divergence must be non-empty, but was ''\"}");
+
+        // Clear report
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com",
+                                   Utf8.toBytes("{\"hardwareDivergence\": null}"),
+                                   Request.Method.PATCH),
+                       "{\"message\":\"Updated host6.yahoo.com\"}");
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com"), "node6.json");
+    }
+
     /** Tests the rendering of each node separately to make it easier to find errors */
     @Test
     public void test_single_node_rendering() throws Exception {
