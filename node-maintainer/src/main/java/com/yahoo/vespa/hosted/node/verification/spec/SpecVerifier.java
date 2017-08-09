@@ -38,15 +38,8 @@ public class SpecVerifier {
         VerifierSettings verifierSettings = new VerifierSettings(nodeRepoJsonModel);
         HardwareInfo actualHardware = HardwareInfoRetriever.retrieve(commandExecutor, verifierSettings);
         SpecVerificationReport specVerificationReport = makeVerificationReport(actualHardware, nodeRepoJsonModel);
-        if (!isValidSpec(specVerificationReport)) {
-            ReportSender.reportSpecVerificationResults(specVerificationReport, nodeInfoUrls);
-        }
-        return isValidSpec(specVerificationReport);
-    }
-
-    private static boolean isValidSpec(SpecVerificationReport specVerificationReport) throws JsonProcessingException {
-        ObjectMapper om = new ObjectMapper();
-        return om.writeValueAsString(specVerificationReport).length() == 2;
+        ReportSender.reportSpecVerificationResults(specVerificationReport, nodeInfoUrls);
+        return specVerificationReport.isValidSpec();
     }
 
     protected static SpecVerificationReport makeVerificationReport(HardwareInfo actualHardware, NodeRepoJsonModel nodeRepoJsonModel) {

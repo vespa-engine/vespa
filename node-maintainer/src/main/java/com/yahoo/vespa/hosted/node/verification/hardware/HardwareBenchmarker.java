@@ -32,23 +32,8 @@ public class HardwareBenchmarker {
             benchmark.doBenchmark();
         }
         BenchmarkReport benchmarkReport = BenchmarkResultInspector.makeBenchmarkReport(benchmarkResults);
-        if (!isAllBenchmarksOK(benchmarkReport)) {
-            ReportSender.reportBenchmarkResults(benchmarkReport, nodeInfoUrls);
-        }
-        return isAllBenchmarksOK(benchmarkReport);
-    }
-
-
-
-    private static boolean isAllBenchmarksOK(BenchmarkReport benchmarkReport) {
-        ObjectMapper om = new ObjectMapper();
-        try {
-            String jsonReport = om.writeValueAsString(benchmarkReport);
-            return jsonReport.length() == 2;
-        } catch (JsonProcessingException e){
-            e.printStackTrace();
-            return false;
-        }
+        ReportSender.reportBenchmarkResults(benchmarkReport, nodeInfoUrls);
+        return benchmarkReport.isAllBenchmarksOK();
     }
 
     public static void main(String[] args) throws IOException {

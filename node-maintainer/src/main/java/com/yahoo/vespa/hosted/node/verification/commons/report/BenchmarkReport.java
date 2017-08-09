@@ -1,7 +1,10 @@
 package com.yahoo.vespa.hosted.node.verification.commons.report;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Created by sgrostad on 12/07/2017.
@@ -50,6 +53,18 @@ public class BenchmarkReport {
 
     public Double getMemoryReadSpeedGBs() {
         return memoryReadSpeedGBs;
+    }
+
+    @JsonIgnore
+    public boolean isAllBenchmarksOK() {
+        ObjectMapper om = new ObjectMapper();
+        try {
+            String jsonReport = om.writeValueAsString(this);
+            return jsonReport.length() == 2;
+        } catch (JsonProcessingException e){
+            e.printStackTrace();
+            return false;
+        }
     }
 
 }

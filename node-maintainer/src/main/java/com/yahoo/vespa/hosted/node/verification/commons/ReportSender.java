@@ -21,7 +21,13 @@ public class ReportSender {
 
     private static void updateNodeRepository(ArrayList<URL> nodeInfoUrls, HardwareDivergenceReport hardwareDivergenceReport) throws IOException {
         ObjectMapper om = new ObjectMapper();
-        String report = "{\"hardwareDivergence\": " + om.writeValueAsString(hardwareDivergenceReport) + "}";
+        String report;
+        if (hardwareDivergenceReport.isHardwareDivergenceReportEmpty()){
+            report = "{\"hardwareDivergence\": null}";
+        }
+        else {
+            report = "{\"hardwareDivergence\": " + om.writeValueAsString(hardwareDivergenceReport) + "}";
+        }
         System.out.println(report);
         /*
         //TODO: Update node repo
