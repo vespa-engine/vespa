@@ -57,7 +57,7 @@ public class HostURLGeneratorTest {
     @Test
     public void generateNodeInfoUrl_retrieve_config_server_as_parameter_test_if_url_is_formatted_correctly() throws Exception {
         mockCommandExecutor.addCommand(CAT_NODE_HOST_NAME_PATH);
-        String configServerHostname = "cfg1.prod.corp-us-east-1.vespahosted.corp.bf1.yahoo.com";
+        String configServerHostname = "cfg1.prod.region1";
         ArrayList<URL> actualUrls = HostURLGenerator.generateNodeInfoUrl(mockCommandExecutor, configServerHostname);
         String expectedUrl = CONFIG_SERVER_HOSTNAME + NODE_HOSTNAME_PREFIX + EXPECTED_HOSTNAME;
         String actualUrl = actualUrls.get(0).toString();
