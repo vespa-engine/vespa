@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  */
 public class CPUBenchmark implements Benchmark {
 
-    private static final String CPU_BENCHMARK_COMMAND = "perf stat -e cycles dd if=/dev/zero of=/dev/null count=100000 2>&1 | grep 'cycles\\|seconds'";
+    private static final String CPU_BENCHMARK_COMMAND = "perf stat -e cycles dd if=/dev/zero of=/dev/null count=2000000 2>&1 | grep 'cycles\\|seconds'";
     private static final String CYCLES_SEARCH_WORD = "cycles";
     private static final String SECONDS_SEARCH_WORD = "seconds";
     private static final String SPLIT_REGEX_STRING = "\\s+";
@@ -68,7 +68,7 @@ public class CPUBenchmark implements Benchmark {
                     seconds = makeSecondsDouble(parseResult.getValue());
                     break;
                 default:
-                    throw new RuntimeException("Invalid ParseResult searchWord");
+                    throw new RuntimeException("Invalid ParseResult searchWord: " + parseResult.getSearchWord());
             }
         }
         if (cycles > 0 && seconds > 0) {

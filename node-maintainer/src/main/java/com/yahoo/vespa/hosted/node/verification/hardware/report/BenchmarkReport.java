@@ -1,20 +1,23 @@
-package com.yahoo.vespa.hosted.node.verification.hardware.yamasreport;
+package com.yahoo.vespa.hosted.node.verification.hardware.report;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Created by sgrostad on 12/07/2017.
+ * JSON-mapped class for reporting benchmark results to node repo
  */
-public class HardwareReportMetrics {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class BenchmarkReport {
 
     @JsonProperty
-    private double cpuCyclesPerSec;
+    private Double cpuCyclesPerSec;
     @JsonProperty
-    private double diskSpeedMbs;
+    private Double diskSpeedMbs;
     @JsonProperty
-    private double memoryWriteSpeedGBs;
+    private Double memoryWriteSpeedGBs;
     @JsonProperty
-    private double memoryReadSpeedGBs;
+    private Double memoryReadSpeedGBs;
 
     public void setCpuCyclesPerSec(double cpuCyclesPerSec) {
         this.cpuCyclesPerSec = cpuCyclesPerSec;
@@ -37,15 +40,15 @@ public class HardwareReportMetrics {
         return cpuCyclesPerSec;
     }
 
-    public double getDiskSpeedMbs() {
+    public Double getDiskSpeedMbs() {
         return diskSpeedMbs;
     }
 
-    public double getMemoryWriteSpeedGBs() {
+    public Double getMemoryWriteSpeedGBs() {
         return memoryWriteSpeedGBs;
     }
 
-    public double getMemoryReadSpeedGBs() {
+    public Double getMemoryReadSpeedGBs() {
         return memoryReadSpeedGBs;
     }
 

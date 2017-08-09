@@ -1,6 +1,7 @@
-package com.yahoo.vespa.hosted.node.verification.spec;
+package com.yahoo.vespa.hosted.node.verification.commons;
 
 import com.yahoo.vespa.hosted.node.verification.mock.MockCommandExecutor;
+import com.yahoo.vespa.hosted.node.verification.commons.HostURLGenerator;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -22,7 +23,7 @@ public class HostURLGeneratorTest {
     private static final String CAT_WRONG_HOSTNAME_PATH = "cat src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/hostURLGeneratorExceptionTest";
     private static final String CONFIG_SERVER_HOSTNAME = "http://cfg1.prod.region1:4080";
     private static final String NODE_HOSTNAME_PREFIX = "/nodes/v2/node/";
-    private static final String EXPECTED_HOSTNAME = "13305821.ostk.bm2.prod.gq1.yahoo.com";
+    private static final String EXPECTED_HOSTNAME = "expected.hostname";
 
     @Before
     public void setup() {
@@ -30,7 +31,7 @@ public class HostURLGeneratorTest {
     }
 
     @Test
-    public void generateNodeInfoUrl_test_if_url_is_formatted_correctly() throws Exception {
+    public void generateNodeInfoUrl_find_config_server_test_if_url_is_formatted_correctly() throws Exception {
         mockCommandExecutor.addCommand(CAT_CONFIG_SERVER_HOST_NAME_PATH);
         mockCommandExecutor.addCommand(CAT_NODE_HOST_NAME_PATH);
         ArrayList<URL> url = HostURLGenerator.generateNodeInfoUrl(mockCommandExecutor);
@@ -51,6 +52,16 @@ public class HostURLGeneratorTest {
             String expectedExceptionMessage = "Unexpected output from \"hostname\" command.";
             assertEquals(expectedExceptionMessage, e.getMessage());
         }
+    }
+
+    @Test
+    public void generateNodeInfoUrl_retrieve_config_server_as_parameter_test_if_url_is_formatted_correctly() throws Exception {
+        mockCommandExecutor.addCommand(CAT_NODE_HOST_NAME_PATH);
+        String configServerHostname = "cfg1.prod.region1";
+        ArrayList<URL> actualUrls = HostURLGenerator.generateNodeInfoUrl(mockCommandExecutor, configServerHostname);
+        String expectedUrl = CONFIG_SERVER_HOSTNAME + NODE_HOSTNAME_PREFIX + EXPECTED_HOSTNAME;
+        String actualUrl = actualUrls.get(0).toString();
+        assertEquals(expectedUrl, actualUrl);
     }
 
     @Test

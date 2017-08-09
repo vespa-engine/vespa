@@ -1,5 +1,6 @@
 package com.yahoo.vespa.hosted.node.verification.hardware;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.Benchmark;
@@ -7,7 +8,7 @@ import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.BenchmarkRes
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.CPUBenchmark;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.DiskBenchmark;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.MemoryBenchmark;
-import com.yahoo.vespa.hosted.node.verification.hardware.yamasreport.YamasHardwareReport;
+import com.yahoo.vespa.hosted.node.verification.hardware.report.BenchmarkReport;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,23 +27,26 @@ public class HardwareBenchmarker {
         for (Benchmark benchmark : benchmarks) {
             benchmark.doBenchmark();
         }
-
-        YamasHardwareReport yamasHardwareReport = makeYamasHardwareReport(benchmarkResults);
-        printBenchmarkResults(yamasHardwareReport);
-        TerminationController.terminateIfInvalidBenchmarkResults(benchmarkResults);
-        return true;
+        BenchmarkReport benchmarkReport = BenchmarkResultInspector.makeBenchmarkReport(benchmarkResults);
+        printBenchmarkResults(benchmarkReport);
+        return isAllBenchmarksOK(benchmarkReport);
     }
 
-    protected static YamasHardwareReport makeYamasHardwareReport(BenchmarkResults benchmarkResults) {
-        YamasHardwareReport yamasHardwareReport = new YamasHardwareReport();
-        yamasHardwareReport.createReportFromBenchmarkResults(benchmarkResults);
-        return yamasHardwareReport;
-    }
-
-    private static void printBenchmarkResults(YamasHardwareReport yamasHardwareReport) {
+    private static boolean isAllBenchmarksOK(BenchmarkReport benchmarkReport) {
         ObjectMapper om = new ObjectMapper();
         try {
-            System.out.println(om.writeValueAsString(yamasHardwareReport));
+            String jsonReport = om.writeValueAsString(benchmarkReport);
+            return jsonReport.length() == 2;
+        } catch (JsonProcessingException e){
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private static void printBenchmarkResults(BenchmarkReport benchmarkReport) {
+        ObjectMapper om = new ObjectMapper();
+        try {
+            System.out.println(om.writeValueAsString(benchmarkReport));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -50,7 +54,9 @@ public class HardwareBenchmarker {
 
     public static void main(String[] args) {
         CommandExecutor commandExecutor = new CommandExecutor();
-        HardwareBenchmarker.hardwareBenchmarks(commandExecutor);
+        if (!HardwareBenchmarker.hardwareBenchmarks(commandExecutor)){
+            System.exit(2);
+        }
     }
 
 }

@@ -1,6 +1,6 @@
 package com.yahoo.vespa.hosted.node.verification.spec.noderepo;
 
-import com.yahoo.vespa.hosted.node.verification.spec.yamasreport.YamasSpecReport;
+import com.yahoo.vespa.hosted.node.verification.spec.report.VerificationReport;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
@@ -16,17 +16,17 @@ import java.util.logging.Logger;
 
 /**
  * Created by olaa on 14/07/2017.
- * Checks if all additional Ipv6 addresses has the same hostname as the main Ipv6 address.
+ * Verifies that the IP addresses of a node points to the correct hostname
  */
 
 public class IPAddressVerifier {
 
     private static final Logger logger = Logger.getLogger(IPAddressVerifier.class.getName());
 
-    public void reportFaultyIpAddresses(NodeRepoJsonModel nodeRepoJsonModel, YamasSpecReport yamasSpecReport) {
+    public void reportFaultyIpAddresses(NodeRepoJsonModel nodeRepoJsonModel, VerificationReport verificationReport) {
         String[] faultyIpAddresses = getFaultyIpAddresses(nodeRepoJsonModel);
         if (faultyIpAddresses.length > 0) {
-            yamasSpecReport.setFaultyIpAddresses(faultyIpAddresses);
+            verificationReport.setFaultyIpAddresses(faultyIpAddresses);
         }
     }
 
@@ -83,6 +83,7 @@ public class IPAddressVerifier {
             Enumeration<?> vals = attr.getAll();
             if (vals.hasMoreElements()) {
                 String hostname = vals.nextElement().toString();
+                ctx.close();
                 return hostname.substring(0, hostname.length() - 1);
             }
         }

@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.node.verification.spec;
+package com.yahoo.vespa.hosted.node.verification.commons;
 
 import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
 
@@ -25,6 +25,16 @@ public class HostURLGenerator {
         String[] configServerHostNames = getConfigServerHostNames(commandExecutor);
         String nodeHostName = generateNodeHostName(commandExecutor);
         ArrayList<URL> nodeInfoUrls = new ArrayList<>();
+        for (String configServerHostName : configServerHostNames) {
+            nodeInfoUrls.add(buildNodeInfoURL(configServerHostName, nodeHostName));
+        }
+        return nodeInfoUrls;
+    }
+
+    public static ArrayList<URL> generateNodeInfoUrl(CommandExecutor commandExecutor, String commaSeparatedUrls) throws IOException {
+        ArrayList<URL> nodeInfoUrls = new ArrayList<>();
+        String[] configServerHostNames = commaSeparatedUrls.split(PARSE_ALL_HOSTNAMES_REGEX);
+        String nodeHostName = generateNodeHostName(commandExecutor);
         for (String configServerHostName : configServerHostNames) {
             nodeInfoUrls.add(buildNodeInfoURL(configServerHostName, nodeHostName));
         }

@@ -1,6 +1,5 @@
 {
   "url": "https://example.com:4443/zone/v2/prod/us-west-1/nodes/v2/node/host.name",
-  "id": "zt74722.ostk.bm2.prod.gq1.yahoo.com",
   "state": "active",
   "type": "host",
   "hostname": "host.name",
@@ -73,8 +72,6 @@
     }
   ],
   "ipAddresses": [
-    "10.213.181.113",
-    "2001:4998:c:2940::111c"
   ],
   "additionalIpAddresses": [
   ]
