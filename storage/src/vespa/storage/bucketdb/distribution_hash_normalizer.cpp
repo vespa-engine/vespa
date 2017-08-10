@@ -51,7 +51,7 @@ BOOST_FUSION_ADAPT_STRUCT(
     ::Group,
     (uint16_t, index)
     (boost::optional<double>, capacity)
-    (::Children, children)
+    (Children, children)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(
