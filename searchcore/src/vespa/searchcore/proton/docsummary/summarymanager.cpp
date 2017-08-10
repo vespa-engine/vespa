@@ -213,9 +213,16 @@ SummaryManager::SummaryManager(vespalib::ThreadExecutor & executor,
 SummaryManager::~SummaryManager() {}
 
 void
-SummaryManager::putDocument(uint64_t syncToken, const Document & doc, search::DocumentIdT lid)
+SummaryManager::putDocument(uint64_t syncToken, search::DocumentIdT lid, const Document & doc)
 {
-    _docStore->write(syncToken, doc, lid);
+    _docStore->write(syncToken, lid, doc);
+    _currentSerial = syncToken;
+}
+
+void
+SummaryManager::putDocument(uint64_t syncToken, search::DocumentIdT lid, const vespalib::nbostream & doc)
+{
+    _docStore->write(syncToken, lid, doc);
     _currentSerial = syncToken;
 }
 

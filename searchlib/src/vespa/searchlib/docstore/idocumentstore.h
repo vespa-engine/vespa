@@ -6,6 +6,7 @@
 #include <vespa/searchlib/common/i_compactable_lid_space.h>
 #include <vespa/searchlib/docstore/idatastore.h>
 #include <vespa/searchlib/query/base.h>
+#include <future>
 
 namespace search {
 
@@ -54,8 +55,9 @@ public:
     /**
      * Convenience typedef for a shared pointer to this class.
      **/
-    typedef std::shared_ptr<IDocumentStore> SP;
-    typedef std::vector<uint32_t> LidVector;
+    using SP = std::shared_ptr<IDocumentStore>;
+    using LidVector = std::vector<uint32_t>;
+
 
     /**
      * Construct a document store.
@@ -80,7 +82,8 @@ public:
      * @param doc The document to store
      * @param lid The local ID associated with the document
      **/
-    virtual void write(uint64_t syncToken, const document::Document& doc, DocumentIdT lid) = 0;
+    virtual void write(uint64_t syncToken, DocumentIdT lid, const document::Document& doc) = 0;
+    virtual void write(uint64_t synkToken, DocumentIdT lid, const vespalib::nbostream & os) = 0;
 
     /**
      * Mark a document as removed. A later read() will return NULL for the given lid.

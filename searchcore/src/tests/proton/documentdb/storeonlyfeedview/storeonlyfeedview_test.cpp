@@ -52,9 +52,11 @@ public:
           _putCount(putCount),
           _heartbeatCount(heartbeatCount) {
     }
-    virtual void put(SerialNum, const Document &, DocumentIdT) override { ++ _putCount; }
-    virtual void remove(SerialNum, DocumentIdT) override { ++_rmCount; }
-    virtual void heartBeat(SerialNum) override { ++_heartbeatCount; }
+    void put(SerialNum, DocumentIdT, const Document &) override { ++ _putCount; }
+    void put(SerialNum, DocumentIdT, const vespalib::nbostream &) override { ++ _putCount; }
+
+    void remove(SerialNum, DocumentIdT) override { ++_rmCount; }
+    void heartBeat(SerialNum) override { ++_heartbeatCount; }
 };
 
 DocumentTypeRepo::SP myGetDocumentTypeRepo() {

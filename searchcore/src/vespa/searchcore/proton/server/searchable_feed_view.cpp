@@ -116,10 +116,10 @@ SearchableFeedView::performIndexPut(SerialNum serialNum, search::DocumentIdT lid
 }
 
 void
-SearchableFeedView::performIndexPut(SerialNum serialNum, search::DocumentIdT lid, const FutureDoc & futureDoc,
+SearchableFeedView::performIndexPut(SerialNum serialNum, search::DocumentIdT lid, FutureDoc futureDoc,
                                     bool immediateCommit, OnOperationDoneType onWriteDone)
 {
-    const Document::UP & doc = futureDoc.get();
+    Document::UP doc = std::move(futureDoc.get());
     if (doc) {
         performIndexPut(serialNum, lid, *doc, immediateCommit, onWriteDone);
     }
@@ -161,15 +161,16 @@ SearchableFeedView::getUpdateScope(const DocumentUpdate &upd)
 }
 
 void
-SearchableFeedView::updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const FutureDoc & futureDoc,
+SearchableFeedView::updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, FutureDoc futureDoc,
                                         bool immediateCommit, OnOperationDoneType onWriteDone)
 {
     if (shouldTrace(onWriteDone, 1)) {
         onWriteDone->getToken()->trace(1, "Then we can update the index.");
     }
     _writeService.index().execute(
-            makeLambdaTask([=]() {
-                performIndexPut(serialNum, lid, futureDoc, immediateCommit, onWriteDone);
+            makeLambdaTask([serialNum, lid, futureDoc = std::move(futureDoc),
+                            immediateCommit, onWriteDone = std::move(onWriteDone), this]() mutable {
+                performIndexPut(serialNum, lid, std::move(futureDoc), immediateCommit, std::move(onWriteDone));
             }));
 }
 

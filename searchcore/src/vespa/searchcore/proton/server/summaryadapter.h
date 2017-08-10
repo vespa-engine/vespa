@@ -1,46 +1,32 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchcore/proton/docsummary/summarymanager.h>
 #include "isummaryadapter.h"
 
 namespace proton {
 
+class SummaryManager;
+class ISummaryManager;
+
 class SummaryAdapter : public ISummaryAdapter {
 private:
-    SummaryManager::SP _mgr;
-    ISummaryManager::SP _imgr;
-    search::SerialNum _lastSerial;
+    std::shared_ptr<SummaryManager>  _mgr;
+    SerialNum                        _lastSerial;
 
     bool ignore(search::SerialNum serialNum) const;
+    ISummaryManager & imgr() const;
 
 public:
-    SummaryAdapter(const SummaryManager::SP &mgr);
+    SummaryAdapter(const std::shared_ptr<SummaryManager> &mgr);
+    ~SummaryAdapter();
 
-    /**
-     * Implements ISummaryAdapter.
-     */
-    virtual void put(search::SerialNum serialNum,
-                     const document::Document &doc,
-                     const search::DocumentIdT lid) override;
-    virtual void remove(search::SerialNum serialNum,
-                        const search::DocumentIdT lid) override;
-
-    virtual void heartBeat(search::SerialNum serialNum) override;
-
-    virtual const search::IDocumentStore &getDocumentStore() const override {
-        return _imgr->getBackingStore();
-    }
-
-    virtual std::unique_ptr<document::Document> get(const search::DocumentIdT lid,
-                                                    const document::DocumentTypeRepo &repo) override {
-        return _imgr->getBackingStore().read(lid, repo);
-    }
-
-    virtual void compactLidSpace(uint32_t wantedDocIdLimit) override {
-        _mgr->getBackingStore().compactLidSpace(wantedDocIdLimit);
-    }
+    void put(SerialNum serialNum, const DocumentIdT lid, const Document &doc) override;
+    void put(SerialNum serialNum, const DocumentIdT lid, const vespalib::nbostream &doc) override;
+    void remove(SerialNum serialNum, const DocumentIdT lid) override;
+    void heartBeat(SerialNum serialNum) override;
+    const search::IDocumentStore &getDocumentStore() const override;
+    std::unique_ptr<document::Document> get(const DocumentIdT lid, const DocumentTypeRepo &repo) override;
+    void compactLidSpace(uint32_t wantedDocIdLimit) override;
 };
 
 } // namespace proton
-

@@ -242,10 +242,14 @@ DocumentStore::read(DocumentIdT lid, const DocumentTypeRepo &repo) const
 }
 
 void
-DocumentStore::write(uint64_t syncToken, const document::Document& doc, DocumentIdT lid)
-{
+DocumentStore::write(uint64_t syncToken, DocumentIdT lid, const document::Document& doc) {
     nbostream stream(12345);
     doc.serialize(stream);
+    write(syncToken, lid, stream);
+}
+
+void
+DocumentStore::write(uint64_t syncToken, DocumentIdT lid, const vespalib::nbostream & stream) {
     _backingStore.write(syncToken, lid, stream.peek(), stream.size());
     if (useCache()) {
         _cache->invalidate(lid);
@@ -371,7 +375,7 @@ void
 DocumentStore::WrapVisitor<IDocumentStoreRewriteVisitor>::
 rewrite(uint32_t lid, const document::Document &doc)
 {
-    _ds.write(_syncToken, doc, lid);
+    _ds.write(_syncToken, lid, doc);
 }
 
 template <>

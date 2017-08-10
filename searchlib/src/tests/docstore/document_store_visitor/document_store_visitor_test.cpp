@@ -343,7 +343,7 @@ Fixture::put(const Document &doc, uint32_t lid)
 {
     ++_syncToken;
     assert(lid < _docIdLimit);
-    _store->write(_syncToken, doc, lid);
+    _store->write(_syncToken, lid, doc);
     _valid->slowSetBit(lid);
 }
 

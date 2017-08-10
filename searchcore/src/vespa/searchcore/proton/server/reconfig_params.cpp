@@ -55,15 +55,15 @@ ReconfigParams::shouldAttributeManagerChange() const
 bool
 ReconfigParams::shouldSummaryManagerChange() const
 {
-    return _res.summaryChanged || _res.summarymapChanged || _res.juniperrcChanged;
+    return  _res.summaryChanged || _res.summarymapChanged || _res.juniperrcChanged
+            || _res.documentTypeRepoChanged || _res.documenttypesChanged;
 }
 
 bool
 ReconfigParams::shouldSubDbsChange() const
 {
-    return shouldMatchersChange()
-           || shouldAttributeManagerChange()
-           || shouldSummaryManagerChange();
+    return shouldMatchersChange() || shouldAttributeManagerChange() || shouldSummaryManagerChange()
+           || _res.documentTypeRepoChanged || _res.documenttypesChanged;
 }
 
 bool

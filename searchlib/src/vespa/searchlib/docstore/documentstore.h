@@ -60,115 +60,45 @@ public:
     DocumentStore(const Config & config, IDataStore & store);
     ~DocumentStore();
 
-    /**
-     * Make a Document from a stored serialized data blob.
-     * @param lid The local ID associated with the document.
-     * @return NULL if there is no document associated with the lid.
-     **/
     document::Document::UP read(DocumentIdT lid, const document::DocumentTypeRepo &repo) const override;
     void visit(const LidVector & lids, const document::DocumentTypeRepo &repo, IDocumentVisitor & visitor) const override;
-
-    /**
-     * Serialize and store a document.
-     * @param doc The document to store
-     * @param lid The local ID associated with the document
-     **/
-    void write(uint64_t synkToken, const document::Document& doc, DocumentIdT lid) override;
-
-    /**
-     * Mark a document as removed. A later read() will return NULL for the given lid.
-     * @param lid The local ID associated with the document
-     **/
+    void write(uint64_t synkToken, DocumentIdT lid, const document::Document& doc) override;
+    void write(uint64_t synkToken, DocumentIdT lid, const vespalib::nbostream & os) override;
     void remove(uint64_t syncToken, DocumentIdT lid) override;
-
-    /**
-     * Flush all in-memory updates to disk.
-     **/
     void flush(uint64_t syncToken) override;
     uint64_t initFlush(uint64_t synctoken) override;
-
-
-    /**
-     * If possible compact the disk.
-     **/
     void compact(uint64_t syncToken) override;
-
-    /**
-     * The sync token used for the last successful flush() operation,
-     * or 0 if no flush() has been performed yet.
-     * @return Last flushed sync token.
-     **/
     uint64_t lastSyncToken() const override;
     uint64_t tentativeLastSyncToken() const override;
     fastos::TimeStamp getLastFlushTime() const override;
-
-    /**
-     * Get the number of entries (including removed IDs
-     * or gaps in the local ID sequence) in the document store.
-     */
     uint32_t getDocIdLimit() const override { return _backingStore.getDocIdLimit(); }
-
-    /**
-     * Calculate memory used by this instance.  During flush() actual
-     * memory usage may be approximately twice the reported amount.
-     * @return memory usage (in bytes)
-     **/
     size_t        memoryUsed() const override { return _backingStore.memoryUsed(); }
     size_t  getDiskFootprint() const override { return _backingStore.getDiskFootprint(); }
     size_t      getDiskBloat() const override { return _backingStore.getDiskBloat(); }
     size_t getMaxCompactGain() const override { return _backingStore.getMaxCompactGain(); }
-
     CacheStats getCacheStats() const override;
-
-    /**
-     * Calculates memory that is used for meta data by this instance. Calling
-     * flush() does not free this memory.
-     * @return memory usage (in bytes)
-     **/
     size_t memoryMeta() const override { return _backingStore.memoryMeta(); }
-
     const vespalib::string & getBaseDir() const override { return _backingStore.getBaseDir(); }
-
-    /**
-     * Visit all documents found in document store.
-     */
     void
     accept(IDocumentStoreReadVisitor &visitor,
            IDocumentStoreVisitorProgress &visitorProgress,
            const document::DocumentTypeRepo &repo) override;
-
-    /**
-     * Visit all documents found in document store.
-     */
     void
     accept(IDocumentStoreRewriteVisitor &visitor,
            IDocumentStoreVisitorProgress &visitorProgress,
            const document::DocumentTypeRepo &repo) override;
-
-    /**
-     * Return cost of visiting all documents found in document store.
-     */
     double getVisitCost() const override;
-
-    /*
-     * Return brief stats for data store.
-     */
     DataStoreStorageStats getStorageStats() const override;
-
     MemoryUsage getMemoryUsage() const override;
-
-    /*
-     * Return detailed stats about underlying files for data store.
-     */
     std::vector<DataStoreFileChunkStats> getFileChunkStats() const override;
 
     /**
      * Implements common::ICompactableLidSpace
      */
-    virtual void compactLidSpace(uint32_t wantedDocLidLimit) override;
-    virtual bool canShrinkLidSpace() const override;
-    virtual size_t getEstimatedShrinkLidSpaceGain() const override;
-    virtual void shrinkLidSpace() override;
+    void compactLidSpace(uint32_t wantedDocLidLimit) override;
+    bool canShrinkLidSpace() const override;
+    size_t getEstimatedShrinkLidSpaceGain() const override;
+    void shrinkLidSpace() override;
 
 private:
     bool useCache() const;

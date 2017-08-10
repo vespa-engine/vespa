@@ -19,4 +19,3 @@ void IDocumentStore::visit(const LidVector & lids, const document::DocumentTypeR
 }
 
 } // namespace search
-

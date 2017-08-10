@@ -114,7 +114,7 @@ public:
     endDocument(uint32_t docId)
     {
         Document::UP doc = _bld.endDocument();
-        _str.write(_serialNum++, *doc, docId);
+        _str.write(_serialNum++, docId, *doc);
     }
 
     FieldCacheRepo::UP createFieldCacheRepo(const ResultConfig &resConfig) const {
@@ -259,9 +259,8 @@ public:
         LOG_ASSERT(putRes.ok());
         uint64_t serialNum = _ddb->getFeedHandler().incSerialNum();
         _aw->put(serialNum, doc, lid, true, std::shared_ptr<IDestructorCallback>());
-        _ddb->getReadySubDB()->
-            getAttributeManager()->getAttributeFieldWriter().sync();
-        _sa->put(serialNum, doc, lid);
+        _ddb->getReadySubDB()->getAttributeManager()->getAttributeFieldWriter().sync();
+        _sa->put(serialNum, lid, doc);
         const GlobalId &gid = docId.getGlobalId();
         BucketId bucketId(gid.convertToBucketId());
         bucketId.setUsedBits(8);
@@ -269,9 +268,7 @@ public:
         DbDocumentId dbdId(lid);
         DbDocumentId prevDbdId(0);
         document::Document::SP xdoc(new document::Document(doc));
-        PutOperation op(bucketId,
-                        ts,
-                        xdoc);
+        PutOperation op(bucketId, ts, xdoc);
         op.setSerialNum(serialNum);
         op.setDbDocumentId(dbdId);
         op.setPrevDbDocumentId(prevDbdId);
@@ -601,7 +598,6 @@ GlobalId gid3 = DocumentId("doc::3").getGlobalId(); // lid 3
 GlobalId gid4 = DocumentId("doc::4").getGlobalId(); // lid 4
 GlobalId gid9 = DocumentId("doc::9").getGlobalId(); // not existing
 
-
 void
 Test::requireThatDocsumRequestIsProcessed()
 {
@@ -861,9 +857,8 @@ Test::requireThatSummaryAdapterHandlesPutAndRemove()
                        addStr("foo").
                        endField().
                        endDocument();
-    dc._sa->put(1, *exp, 1);
-    IDocumentStore & store =
-        dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
+    dc._sa->put(1, 1, *exp);
+    IDocumentStore & store = dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
     Document::UP act = store.read(1, *bc._repo);
     EXPECT_TRUE(act.get() != NULL);
     EXPECT_EQUAL(exp->getType(), act->getType());
@@ -915,10 +910,9 @@ Test::requireThatAnnotationsAreUsed()
                        setAutoAnnotate(true).
                        endField().
                        endDocument();
-    dc._sa->put(1, *exp, 1);
+    dc._sa->put(1, 1, *exp);
 
-    IDocumentStore & store =
-        dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
+    IDocumentStore & store = dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
     Document::UP act = store.read(1, *bc._repo);
     EXPECT_TRUE(act.get() != NULL);
     EXPECT_EQUAL(exp->getType(), act->getType());
@@ -1074,7 +1068,7 @@ Test::requireThatUrisAreUsed()
                        endElement().
                        endField().
                        endDocument();
-    dc._sa->put(1, *exp, 1);
+    dc._sa->put(1, 1, *exp);
 
     IDocumentStore & store =
         dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
@@ -1086,8 +1080,7 @@ Test::requireThatUrisAreUsed()
                              bc.createFieldCacheRepo(getResultConfig())->getFieldCache("class0"),
                              getMarkupFields());
 
-    EXPECT_TRUE(assertString("http://www.example.com:81/fluke?ab=2#4",
-                            "urisingle", dsa, 1));
+    EXPECT_TRUE(assertString("http://www.example.com:81/fluke?ab=2#4", "urisingle", dsa, 1));
     GeneralResultPtr res = getResult(dsa, 1);
     {
         vespalib::Slime slime;
@@ -1213,10 +1206,9 @@ Test::requireThatRawFieldsWorks()
                        endElement().
                        endField().
                        endDocument();
-    dc._sa->put(1, *exp, 1);
+    dc._sa->put(1, 1, *exp);
 
-    IDocumentStore & store =
-        dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
+    IDocumentStore & store = dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
     Document::UP act = store.read(1, *bc._repo);
     EXPECT_TRUE(act.get() != NULL);
     EXPECT_EQUAL(exp->getType(), act->getType());
