@@ -520,6 +520,7 @@ public class NodeAgentImpl implements NodeAgent {
         Docker.ContainerStats stats = containerStats.get();
         final String APP = MetricReceiverWrapper.APPLICATION_NODE;
         final long bytesInGB = 1 << 30;
+        final int totalNumCpuCores = ((List<Number>) ((Map) stats.getCpuStats().get("cpu_usage")).get("percpu_usage")).size();
         final long cpuContainerTotalTime = ((Number) ((Map) stats.getCpuStats().get("cpu_usage")).get("total_usage")).longValue();
         final long cpuSystemTotalTime = ((Number) stats.getCpuStats().get("system_cpu_usage")).longValue();
         final long memoryTotalBytes = ((Number) stats.getMemoryStats().get("limit")).longValue();
@@ -532,22 +533,21 @@ public class NodeAgentImpl implements NodeAgent {
         // CPU usage by a container as percentage of total host CPU, cpuPercentageOfHost, is given by dividing used
         // CPU time by the container with CPU time used by the entire system.
         // CPU usage by a container as percentage of total CPU allocated to it is given by dividing the
-        // cpuPercentageOfHost with the ratio of container resources over total host resources. This calculation
-        // assumes that the ratio between container and host resources for disk, memory, and cpu is roughly equal
-        // and therefore only calculates the ratio of container memory against host memory.
+        // cpuPercentageOfHost with the ratio of container minCpuCores by total number of CPU cores.
         double cpuPercentageOfHost = lastCpuMetric.getCpuUsagePercentage(cpuContainerTotalTime, cpuSystemTotalTime);
-        double cpuPercentageOfAllocated = getInverseContainerShareOfHost(nodeSpec) * cpuPercentageOfHost;
+        Optional<Double> cpuPercentageOfAllocated = nodeSpec.minCpuCores.map(containerNumCpuCores ->
+                totalNumCpuCores * cpuPercentageOfHost / containerNumCpuCores);
         long memoryTotalBytesUsed = memoryTotalBytesUsage - memoryTotalBytesCache;
         double memoryPercentUsed = 100.0 * memoryTotalBytesUsed / memoryTotalBytes;
         Optional<Double> diskPercentUsed = diskTotalBytes.flatMap(total -> diskTotalBytesUsed.map(used -> 100.0 * used / total));
 
         List<DimensionMetrics> metrics = new ArrayList<>();
         DimensionMetrics.Builder systemMetricsBuilder = new DimensionMetrics.Builder(APP, dimensions)
-                .withMetric("cpu.util", cpuPercentageOfAllocated)
                 .withMetric("mem.limit", memoryTotalBytes)
                 .withMetric("mem.used", memoryTotalBytesUsed)
                 .withMetric("mem.util", memoryPercentUsed);
 
+        cpuPercentageOfAllocated.ifPresent(cpuUtil -> systemMetricsBuilder.withMetric("cpu.util", cpuUtil));
         diskTotalBytes.ifPresent(diskLimit -> systemMetricsBuilder.withMetric("disk.limit", diskLimit));
         diskTotalBytesUsed.ifPresent(diskUsed -> systemMetricsBuilder.withMetric("disk.used", diskUsed));
         diskPercentUsed.ifPresent(diskUtil -> systemMetricsBuilder.withMetric("disk.util", diskUtil));
@@ -608,14 +608,6 @@ public class NodeAgentImpl implements NodeAgent {
         int temp = numberOfUnhandledException;
         numberOfUnhandledException = 0;
         return temp;
-    }
-
-    private double getInverseContainerShareOfHost(ContainerNodeSpec nodeSpec) {
-        return nodeSpec.minMainMemoryAvailableGb
-                .map(memory -> {
-                        double hostMemory = storageMaintainer.map(StorageMaintainer::getHostTotalMemoryGb).orElse(0d);
-                        return hostMemory / memory;
-                }).orElse(0d);
     }
 
     class CpuUsageReporter {

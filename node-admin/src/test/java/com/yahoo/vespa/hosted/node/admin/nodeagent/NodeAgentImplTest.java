@@ -525,7 +525,6 @@ public class NodeAgentImplTest {
 
         when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(nodeSpec));
         when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(42547019776L));
-        when(storageMaintainer.getHostTotalMemoryGb()).thenReturn(10d);
         when(dockerOperations.getContainerStats(eq(containerName)))
                 .thenReturn(Optional.of(stats1))
                 .thenReturn(Optional.of(stats2));
