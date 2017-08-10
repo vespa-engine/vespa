@@ -7,11 +7,27 @@
 namespace storage {
 namespace distributor {
 
+BucketDBMetricUpdater::Stats::Stats()
+    : _docCount(0),
+      _byteCount(0),
+      _tooFewCopies(0),
+      _tooManyCopies(0),
+      _noTrusted(0),
+      _totalBuckets(0)
+{
+}
+
+BucketDBMetricUpdater::Stats::Stats(const Stats &rhs) = default;
+
 BucketDBMetricUpdater::BucketDBMetricUpdater()
     : _workingStats(),
       _lastCompleteStats(),
       _replicaCountingMode(ReplicaCountingMode::TRUSTED),
       _hasCompleteStats(false)
+{
+}
+
+BucketDBMetricUpdater::~BucketDBMetricUpdater()
 {
 }
 
