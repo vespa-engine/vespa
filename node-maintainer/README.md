@@ -6,3 +6,15 @@ Node admin maintenance runs as a separate JVM from node-admin to make it possibl
 ## Node Verification
 Node verification for both hardware and spec. Hardware is verified by performing different benchmarking tasks, 
 while spec is verified by comparing information reported by the OS with the spec from node repository.
+
+### Execute examples
+Spec verification and hardware benchmarks can both be executed with and without config server host name as parameter 
+(if called without parameters it will use yinst to retrieve the host name):
+
+SpecVerifier:
+- java -cp node-maintainer-jar-with-dependencies.jar com.yahoo.vespa.hosted.node.verification.spec.SpecVerifier
+- java -cp node-maintainer-jar-with-dependencies.jar com.yahoo.vespa.hosted.node.verification.spec.SpecVerifier cfg.1.hostname,cfg.2.hostname,...
+
+HardwareBenchmarker:
+- java -cp node-maintainer-jar-with-dependencies.jar com.yahoo.vespa.hosted.node.verification.hardware.HardwareBenchmarker
+- java -cp node-maintainer-jar-with-dependencies.jar com.yahoo.vespa.hosted.node.verification.hardware.HardwareBenchmarker cfg.1.hostname,cfg.2.hostname,...
