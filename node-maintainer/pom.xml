@@ -33,11 +33,6 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>application</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
         </dependency>
