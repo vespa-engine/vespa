@@ -280,22 +280,21 @@ struct MySummaryAdapter : public test::MockSummaryAdapter
           _store(static_cast<MyDocumentStore &>(_sumMgr->getBackingStore())),
           _removes()
     {}
-    virtual void put(SerialNum serialNum, DocumentIdT lid, const document::Document &doc) override {
-        (void) serialNum;
+    virtual void put(SerialNum serialNum, DocumentIdT lid, const Document &doc) override {
         _store.write(serialNum, lid, doc);
     }
+    virtual void put(SerialNum serialNum, DocumentIdT lid, const vespalib::nbostream & os) override {
+        _store.write(serialNum, lid, os);
+    }
     virtual void remove(SerialNum serialNum, const DocumentIdT lid) override {
-        LOG(info,
-            "MySummaryAdapter::remove(): serialNum(%" PRIu64 "), docId(%u)",
-            serialNum, lid);
+        LOG(info, "MySummaryAdapter::remove(): serialNum(%" PRIu64 "), docId(%u)", serialNum, lid);
         _store.remove(serialNum, lid);
         _removes.push_back(lid);
     }
     virtual const search::IDocumentStore &getDocumentStore() const override {
         return _store;
     }
-    virtual std::unique_ptr<document::Document> get(const search::DocumentIdT lid,
-                                                    const document::DocumentTypeRepo &repo) override {
+    virtual std::unique_ptr<Document> get(const DocumentIdT lid, const DocumentTypeRepo &repo) override {
         return _store.read(lid, repo);
     }
     virtual void compactLidSpace(uint32_t wantedDocIdLimit) override {
