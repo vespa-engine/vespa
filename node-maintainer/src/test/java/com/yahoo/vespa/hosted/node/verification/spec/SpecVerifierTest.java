@@ -7,7 +7,6 @@ import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoJsonMod
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 import com.yahoo.vespa.hosted.node.verification.commons.report.SpecVerificationReport;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;

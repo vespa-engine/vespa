@@ -20,7 +20,7 @@ public class ReportSender {
         else {
             report = "{\"hardwareDivergence\": \"" + om.writeValueAsString(hardwareDivergenceReport) + "\"}";
         }
-        System.out.println(om.writeValueAsString(report));
+        System.out.print(report);
     }
 
     public static void reportBenchmarkResults(BenchmarkReport benchmarkReport, ArrayList<URL> nodeInfoUrls) throws IOException {
