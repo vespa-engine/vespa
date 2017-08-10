@@ -44,9 +44,7 @@ public class HardwareBenchmarker {
         } else {
             nodeInfoUrls = HostURLGenerator.generateNodeInfoUrl(commandExecutor, args[0]);
         }
-        if (!HardwareBenchmarker.hardwareBenchmarks(commandExecutor, nodeInfoUrls)){
-            System.exit(2);
-        }
+        HardwareBenchmarker.hardwareBenchmarks(commandExecutor, nodeInfoUrls);
     }
 
 }

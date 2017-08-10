@@ -62,11 +62,7 @@ public class SpecVerifier {
         } else {
             nodeInfoUrls = HostURLGenerator.generateNodeInfoUrl(commandExecutor, args[0]);
         }
-
-        if (!SpecVerifier.verifySpec(commandExecutor, nodeInfoUrls)) {
-            System.exit(2);
-        }
-
+        SpecVerifier.verifySpec(commandExecutor, nodeInfoUrls);
     }
 
 }
