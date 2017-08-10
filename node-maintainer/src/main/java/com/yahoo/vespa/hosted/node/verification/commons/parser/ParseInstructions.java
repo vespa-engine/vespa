@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.node.verification.commons;
+package com.yahoo.vespa.hosted.node.verification.commons.parser;
 
 import java.util.ArrayList;
 

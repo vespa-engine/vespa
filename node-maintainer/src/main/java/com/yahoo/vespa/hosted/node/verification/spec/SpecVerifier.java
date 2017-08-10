@@ -1,10 +1,8 @@
 package com.yahoo.vespa.hosted.node.verification.spec;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
 import com.yahoo.vespa.hosted.node.verification.commons.HostURLGenerator;
-import com.yahoo.vespa.hosted.node.verification.commons.ReportSender;
+import com.yahoo.vespa.hosted.node.verification.commons.report.ReportSender;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.IPAddressVerifier;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeJsonConverter;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoInfoRetriever;

@@ -1,9 +1,9 @@
 package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
 
 import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
-import com.yahoo.vespa.hosted.node.verification.commons.OutputParser;
-import com.yahoo.vespa.hosted.node.verification.commons.ParseInstructions;
-import com.yahoo.vespa.hosted.node.verification.commons.ParseResult;
+import com.yahoo.vespa.hosted.node.verification.commons.parser.OutputParser;
+import com.yahoo.vespa.hosted.node.verification.commons.parser.ParseInstructions;
+import com.yahoo.vespa.hosted.node.verification.commons.parser.ParseResult;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo.DiskType;
 
 import java.io.IOException;

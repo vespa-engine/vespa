@@ -1,23 +1,17 @@
-package com.yahoo.vespa.hosted.node.verification.commons;
+package com.yahoo.vespa.hosted.node.verification.commons.report;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoInfoRetriever;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoJsonModel;
-import com.yahoo.vespa.hosted.node.verification.commons.report.BenchmarkReport;
-import com.yahoo.vespa.hosted.node.verification.commons.report.HardwareDivergenceReport;
-import com.yahoo.vespa.hosted.node.verification.commons.report.SpecVerificationReport;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.logging.Logger;
 
 public class ReportSender {
 
-    private static final Logger logger = Logger.getLogger(ReportSender.class.getName());
-
-    private static void updateNodeRepository(ArrayList<URL> nodeInfoUrls, HardwareDivergenceReport hardwareDivergenceReport) throws IOException {
+    private static void printHardwareDivergenceReport(HardwareDivergenceReport hardwareDivergenceReport) throws IOException {
         ObjectMapper om = new ObjectMapper();
         String report;
         if (hardwareDivergenceReport.isHardwareDivergenceReportEmpty()){
@@ -32,13 +26,13 @@ public class ReportSender {
     public static void reportBenchmarkResults(BenchmarkReport benchmarkReport, ArrayList<URL> nodeInfoUrls) throws IOException {
         HardwareDivergenceReport hardwareDivergenceReport = generateHardwareDivergenceReport(nodeInfoUrls);
         hardwareDivergenceReport.setBenchmarkReport(benchmarkReport);
-        updateNodeRepository(nodeInfoUrls, hardwareDivergenceReport);
+        printHardwareDivergenceReport(hardwareDivergenceReport);
     }
 
     public static void reportSpecVerificationResults(SpecVerificationReport specVerificationReport, ArrayList<URL> nodeInfoUrls) throws IOException {
         HardwareDivergenceReport hardwareDivergenceReport = generateHardwareDivergenceReport(nodeInfoUrls);
         hardwareDivergenceReport.setSpecVerificationReport(specVerificationReport);
-        updateNodeRepository(nodeInfoUrls, hardwareDivergenceReport);
+        printHardwareDivergenceReport(hardwareDivergenceReport);
     }
 
     private static HardwareDivergenceReport generateHardwareDivergenceReport(ArrayList<URL> nodeInfoUrls) throws IOException {
