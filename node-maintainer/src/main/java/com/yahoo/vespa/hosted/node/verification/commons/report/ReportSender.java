@@ -18,7 +18,7 @@ public class ReportSender {
             report = "{\"hardwareDivergence\": null}";
         }
         else {
-            report = "{\"hardwareDivergence\": \"" + om.writeValueAsString(hardwareDivergenceReport) + "\"}";
+            report = "{\"hardwareDivergence\": " + om.writeValueAsString(hardwareDivergenceReport) + "}";
         }
         System.out.print(report);
     }

@@ -4,8 +4,7 @@ Verifies that the spec information in node repo coincides with what found on the
 ## Code "walkthrough"
 The main class SpecVerifier uses the "noderepo" package in "commons" to retrieve node spec from node repo. 
 
-It can be called with one parameter, the config server hostname, or with none (it will in this case use yinst to 
-retrieve config server host name). It finds hostname using "HostURLGenerator" in the "commons" package.
+It must be called with one parameter, the config server hostname. It finds hostname using "HostURLGenerator" in the "commons" package.
 
 It then retrieves all the hardware information at the node with the "retrievers" package and stores the values as a 
 "HardwareInfo" object. 

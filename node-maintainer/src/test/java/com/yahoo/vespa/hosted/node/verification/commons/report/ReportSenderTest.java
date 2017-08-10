@@ -12,7 +12,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class ReportSenderTest {
 
@@ -41,7 +41,7 @@ public class ReportSenderTest {
         double memoryReadSpeedGBs = 0.1;
         benchmarkReport.setCpuCyclesPerSec(cpuCyclesPerSec);
         benchmarkReport.setMemoryReadSpeedGBs(memoryReadSpeedGBs);
-        String expectedReport = "{\"hardwareDivergence\": \"{\"benchmarkReport\":{\"cpuCyclesPerSec\":0.3,\"memoryReadSpeedGBs\":0.1}}\"}";
+        String expectedReport = "{\"hardwareDivergence\": {\"benchmarkReport\":{\"cpuCyclesPerSec\":0.3,\"memoryReadSpeedGBs\":0.1}}}";
         ReportSender.reportBenchmarkResults(benchmarkReport,nodeInfoUrls);
         assertEquals(expectedReport, println.toString());
     }
@@ -61,7 +61,7 @@ public class ReportSenderTest {
         boolean actualIpv6Connection = false;
         specVerificationReport.setActualDiskSpaceAvailable(actualDiskSpaceAvailable);
         specVerificationReport.setActualIpv6Connection(actualIpv6Connection);
-        String expectedReport = "{\"hardwareDivergence\": \"{\"specVerificationReport\":{\"actualDiskSpaceAvailable\":150.0,\"actualIpv6Connection\":false},\"benchmarkReport\":{\"cpuCyclesPerSec\":0.5}}\"}";
+        String expectedReport = "{\"hardwareDivergence\": {\"specVerificationReport\":{\"actualDiskSpaceAvailable\":150.0,\"actualIpv6Connection\":false},\"benchmarkReport\":{\"cpuCyclesPerSec\":0.5}}}";
         ReportSender.reportSpecVerificationResults(specVerificationReport, nodeInfoUrls);
         assertEquals(expectedReport, println.toString());
     }

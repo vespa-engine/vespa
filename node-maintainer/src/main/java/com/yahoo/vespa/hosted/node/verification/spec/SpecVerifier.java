@@ -52,15 +52,18 @@ public class SpecVerifier {
         return nodeRepoJsonModel;
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args)  {
         CommandExecutor commandExecutor = new CommandExecutor();
         ArrayList<URL> nodeInfoUrls;
         if (args.length == 0) {
-            nodeInfoUrls = HostURLGenerator.generateNodeInfoUrl(commandExecutor);
-        } else {
-            nodeInfoUrls = HostURLGenerator.generateNodeInfoUrl(commandExecutor, args[0]);
+            throw new IllegalStateException("Expected config server URL as parameter");
         }
-        SpecVerifier.verifySpec(commandExecutor, nodeInfoUrls);
+        try {
+            nodeInfoUrls = HostURLGenerator.generateNodeInfoUrl(commandExecutor, args[0]);
+            SpecVerifier.verifySpec(commandExecutor, nodeInfoUrls);
+        } catch (IOException e) {
+            logger.log(Level.WARNING, e.getMessage());
+        }
     }
 
 }

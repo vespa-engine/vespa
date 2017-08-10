@@ -14,11 +14,15 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Benchmarks different hardware components and creates report
  */
 public class HardwareBenchmarker {
+
+    private static final Logger logger = Logger.getLogger(HardwareBenchmarker.class.getName());
 
     public static boolean hardwareBenchmarks(CommandExecutor commandExecutor, ArrayList<URL> nodeInfoUrls) throws IOException {
         BenchmarkResults benchmarkResults = new BenchmarkResults();
@@ -38,11 +42,15 @@ public class HardwareBenchmarker {
         CommandExecutor commandExecutor = new CommandExecutor();
         ArrayList<URL> nodeInfoUrls;
         if (args.length == 0) {
-            nodeInfoUrls = HostURLGenerator.generateNodeInfoUrl(commandExecutor);
-        } else {
-            nodeInfoUrls = HostURLGenerator.generateNodeInfoUrl(commandExecutor, args[0]);
+            throw new IllegalStateException("Expected config server URL as parameter");
         }
-        HardwareBenchmarker.hardwareBenchmarks(commandExecutor, nodeInfoUrls);
+        try {
+            nodeInfoUrls = HostURLGenerator.generateNodeInfoUrl(commandExecutor, args[0]);
+            HardwareBenchmarker.hardwareBenchmarks(commandExecutor, nodeInfoUrls);
+        } catch (IOException e) {
+            logger.log(Level.WARNING, e.getMessage());
+        }
+
     }
 
 }
