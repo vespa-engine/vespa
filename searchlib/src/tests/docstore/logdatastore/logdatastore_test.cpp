@@ -464,7 +464,7 @@ public:
         write(id, makeDoc(_repo, id, false));
     }
     void write(uint32_t id, Document::UP doc) {
-        getStore().write(_serial++, *doc, id);
+        getStore().write(_serial++, id, *doc);
         _inserted[id] = std::move(doc);
     }
     void remove(uint32_t id) {

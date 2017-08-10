@@ -3,31 +3,27 @@
 
 #include <vespa/searchcore/proton/server/isummaryadapter.h>
 
-namespace proton {
-
-namespace test {
+namespace proton::test {
 
 /**
  * Mock of the ISummaryAdapter interface used for unit testing.
  */
 struct MockSummaryAdapter : public ISummaryAdapter
 {
-    virtual void put(search::SerialNum, const document::Document &, const search::DocumentIdT) override {}
-    virtual void remove(search::SerialNum, const search::DocumentIdT) override {}
-    virtual void heartBeat(search::SerialNum) override {}
-    virtual const search::IDocumentStore &getDocumentStore() const override {
+    void put(SerialNum, DocumentIdT, const Document &) override {}
+    void put(SerialNum, DocumentIdT, const vespalib::nbostream &) override {}
+    void remove(SerialNum, DocumentIdT) override {}
+    void heartBeat(SerialNum) override {}
+    const search::IDocumentStore &getDocumentStore() const override {
         const search::IDocumentStore *store = NULL;
         return *store;
     }
-    virtual std::unique_ptr<document::Document> get(const search::DocumentIdT,
-                                                    const document::DocumentTypeRepo &) override {
+    std::unique_ptr<document::Document> get(DocumentIdT, const DocumentTypeRepo &) override {
         return std::unique_ptr<document::Document>();
     }
-    virtual void compactLidSpace(uint32_t wantedDocIdLimit) override {
+    void compactLidSpace(uint32_t wantedDocIdLimit) override {
         (void) wantedDocIdLimit;
     }
 };
 
-} // namespace test
-
-} // namespace proton
+}

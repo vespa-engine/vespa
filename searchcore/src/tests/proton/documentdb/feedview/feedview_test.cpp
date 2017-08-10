@@ -222,11 +222,13 @@ public:
 struct MyDocumentStore : public test::DummyDocumentStore
 {
     typedef std::map<DocumentIdT, document::Document::SP> DocMap;
+    const document::DocumentTypeRepo & _repo;
     DocMap           _docs;
     uint64_t         _lastSyncToken;
     uint32_t         _compactLidSpaceLidLimit;
-    MyDocumentStore()
+    MyDocumentStore(const document::DocumentTypeRepo & repo)
         : test::DummyDocumentStore("."),
+          _repo(repo),
           _docs(),
           _lastSyncToken(0),
           _compactLidSpaceLidLimit(0)
@@ -239,9 +241,13 @@ struct MyDocumentStore : public test::DummyDocumentStore
         }
         return Document::UP();
     }
-    virtual void write(uint64_t syncToken, const document::Document& doc, DocumentIdT lid) override {
+    virtual void write(uint64_t syncToken, DocumentIdT lid, const document::Document& doc) override {
         _lastSyncToken = syncToken;
         _docs[lid] = Document::SP(doc.clone());
+    }
+    virtual void write(uint64_t syncToken, DocumentIdT lid, const vespalib::nbostream & os) override {
+        _lastSyncToken = syncToken;
+        _docs[lid] = std::make_shared<Document>(_repo, const_cast<vespalib::nbostream &>(os));
     }
     virtual void remove(uint64_t syncToken, DocumentIdT lid) override {
         _lastSyncToken = syncToken;
@@ -259,7 +265,7 @@ struct MyDocumentStore : public test::DummyDocumentStore
 struct MySummaryManager : public test::DummySummaryManager
 {
     MyDocumentStore _store;
-    MySummaryManager() : _store() {}
+    MySummaryManager(const document::DocumentTypeRepo & repo) : _store(repo) {}
     virtual search::IDocumentStore &getBackingStore() override { return _store; }
 };
 
@@ -269,14 +275,14 @@ struct MySummaryAdapter : public test::MockSummaryAdapter
     MyDocumentStore    &_store;
     MyLidVector         _removes;
 
-    MySummaryAdapter()
-        : _sumMgr(new MySummaryManager()),
+    MySummaryAdapter(const document::DocumentTypeRepo & repo)
+        : _sumMgr(new MySummaryManager(repo)),
           _store(static_cast<MyDocumentStore &>(_sumMgr->getBackingStore())),
           _removes()
     {}
-    virtual void put(SerialNum serialNum, const document::Document &doc, const DocumentIdT lid) override {
+    virtual void put(SerialNum serialNum, DocumentIdT lid, const document::Document &doc) override {
         (void) serialNum;
-        _store.write(serialNum, doc, lid);
+        _store.write(serialNum, lid, doc);
     }
     virtual void remove(SerialNum serialNum, const DocumentIdT lid) override {
         LOG(info,
@@ -511,13 +517,13 @@ FeedTokenContext::~FeedTokenContext() {}
 struct FixtureBase
 {
     MyTracer             _tracer;
+    SchemaContext        sc;
     IIndexWriter::SP     iw;
     ISummaryAdapter::SP  sa;
     IAttributeWriter::SP aw;
     MyIndexWriter        &miw;
     MySummaryAdapter     &msa;
     MyAttributeWriter    &maw;
-    SchemaContext        sc;
     DocIdLimit           _docIdLimit;
     DocumentMetaStoreContext::SP _dmscReal;
     test::DocumentMetaStoreContextObserver::SP _dmsc;
@@ -699,13 +705,13 @@ struct FixtureBase
 
 FixtureBase::FixtureBase(TimeStamp visibilityDelay)
     : _tracer(),
+      sc(),
       iw(new MyIndexWriter(_tracer)),
-      sa(new MySummaryAdapter),
+      sa(new MySummaryAdapter(*sc._builder->getDocumentTypeRepo())),
       aw(new MyAttributeWriter(_tracer)),
       miw(static_cast<MyIndexWriter&>(*iw)),
       msa(static_cast<MySummaryAdapter&>(*sa)),
       maw(static_cast<MyAttributeWriter&>(*aw)),
-      sc(),
       _docIdLimit(0u),
       _dmscReal(new DocumentMetaStoreContext(std::make_shared<BucketDBOwner>())),
       _dmsc(new test::DocumentMetaStoreContextObserver(*_dmscReal)),

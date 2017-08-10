@@ -328,7 +328,7 @@ void
 StoreOnlyFeedView::updateAttributes(SerialNum, search::DocumentIdT, const DocumentUpdate &, bool, OnOperationDoneType) {}
 
 void
-StoreOnlyFeedView::updateIndexedFields(SerialNum, search::DocumentIdT, const FutureDoc &, bool, OnOperationDoneType)
+StoreOnlyFeedView::updateIndexedFields(SerialNum, search::DocumentIdT, FutureDoc, bool, OnOperationDoneType)
 {
     abort(); // Should never be called.
 }
@@ -351,19 +351,20 @@ StoreOnlyFeedView::handleUpdate(FeedToken *token, const UpdateOperation &updOp)
 }
 
 void StoreOnlyFeedView::putSummary(SerialNum serialNum,  search::DocumentIdT lid,
-                                   const FutureDoc & futureDoc, OnOperationDoneType onDone)
+                                   FutureStream futureStream, OnOperationDoneType onDone)
 {
     _pendingLidTracker.produce(lid);
     summaryExecutor().execute(
-            makeLambdaTask([serialNum, lid, futureDoc, onDone, this] {
+            makeLambdaTask([serialNum, lid, futureStream = std::move(futureStream), onDone, this] () mutable {
                 (void) onDone;
-                const Document::UP & doc = futureDoc.get();
-                if (doc) {
-                    _summaryAdapter->put(serialNum, *futureDoc.get(), lid);
+                vespalib::nbostream os = std::move(futureStream.get());
+                if (!os.empty()) {
+                    _summaryAdapter->put(serialNum, lid, os);
                 }
                 _pendingLidTracker.consume(lid);
             }));
 }
+
 void StoreOnlyFeedView::putSummary(SerialNum serialNum,  search::DocumentIdT lid,
                                    Document::SP doc, OnOperationDoneType onDone)
 {
@@ -371,7 +372,7 @@ void StoreOnlyFeedView::putSummary(SerialNum serialNum,  search::DocumentIdT lid
     summaryExecutor().execute(
             makeLambdaTask([serialNum, doc = std::move(doc), onDone, lid, this] {
                 (void) onDone;
-                _summaryAdapter->put(serialNum, *doc, lid);
+                _summaryAdapter->put(serialNum, lid, *doc);
                 _pendingLidTracker.consume(lid);
             }));
 }
@@ -424,26 +425,30 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
     auto onWriteDone = createUpdateDoneContext(token, updOp.getType(), _params._metrics, updOp.getUpdate());
     updateAttributes(serialNum, lid, upd, immediateCommit, onWriteDone);
 
-    PromisedDoc promisedDoc;
-    FutureDoc futureDoc = promisedDoc.get_future().share();
+
     UpdateScope updateScope(getUpdateScope(upd));
     if (updateScope.hasIndexOrNonAttributeFields()) {
+        PromisedDoc promisedDoc;
+        FutureDoc futureDoc = promisedDoc.get_future();
         _pendingLidTracker.waitForConsumedLid(lid);
         if (updateScope._indexedFields) {
-            updateIndexedFields(serialNum, lid, futureDoc, immediateCommit, onWriteDone);
+            updateIndexedFields(serialNum, lid, std::move(futureDoc), immediateCommit, onWriteDone);
         }
+        PromisedStream promisedStream;
+        FutureStream futureStream = promisedStream.get_future();
         if (useDocumentStore(serialNum)) {
-            putSummary(serialNum, lid, futureDoc, onWriteDone);
+            putSummary(serialNum, lid, std::move(futureStream), onWriteDone);
         }
 
         _writeService
                 .attributeFieldWriter()
                 .execute(serialNum,
                          [upd = updOp.getUpdate(), serialNum, prevDoc = _summaryAdapter->get(lid, *_repo), onWriteDone,
-                          promisedDoc = std::move(promisedDoc), this]() mutable
+                          promisedDoc = std::move(promisedDoc), promisedStream = std::move(promisedStream),
+                          this]() mutable
                          {
                              makeUpdatedDocument(serialNum, std::move(prevDoc), upd,
-                                                 onWriteDone, std::move(promisedDoc));
+                                                 onWriteDone, std::move(promisedDoc), std::move(promisedStream));
                          });
     }
     if (!updateScope._indexedFields && onWriteDone) {
@@ -455,10 +460,12 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
 
 void
 StoreOnlyFeedView::makeUpdatedDocument(SerialNum serialNum, Document::UP prevDoc, DocumentUpdate::SP update,
-                                       OnOperationDoneType onWriteDone, PromisedDoc promisedDoc)
+                                       OnOperationDoneType onWriteDone, PromisedDoc promisedDoc,
+                                       PromisedStream promisedStream)
 {
     const DocumentUpdate & upd = *update;
     Document::UP newDoc;
+    vespalib::nbostream newStream(12345);
     assert(onWriteDone->getToken() == NULL || useDocumentStore(serialNum));
     if (useDocumentStore(serialNum)) {
         assert(prevDoc.get() != NULL);
@@ -483,6 +490,8 @@ StoreOnlyFeedView::makeUpdatedDocument(SerialNum serialNum, Document::UP prevDoc
                 LOG(spam, "Update\n%s", upd.toXml().c_str());
                 upd.applyTo(*newDoc);
                 LOG(spam, "Updated document :\n%s", newDoc->toXml("  ").c_str());
+                newDoc->serialize(newStream);
+                LOG(spam, "Serialized new document to a buffer of %zd bytes", newStream.size());
                 if (shouldTrace(onWriteDone, 1)) {
                     onWriteDone->getToken()->trace(1, "Then we update summary.");
                 }
@@ -494,6 +503,7 @@ StoreOnlyFeedView::makeUpdatedDocument(SerialNum serialNum, Document::UP prevDoc
         }
     }
     promisedDoc.set_value(std::move(newDoc));
+    promisedStream.set_value(std::move(newStream));
 }
 
 bool

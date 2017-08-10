@@ -57,8 +57,10 @@ public:
     using OnPutDoneType = const std::shared_ptr<PutDoneContext> &;
     using OnRemoveDoneType = const std::shared_ptr<RemoveDoneContext> &;
     using FeedTokenUP = std::unique_ptr<FeedToken>;
-    using FutureDoc = std::shared_future<Document::UP>;
+    using FutureDoc = std::future<Document::UP>;
     using PromisedDoc = std::promise<Document::UP>;
+    using FutureStream = std::future<vespalib::nbostream>;
+    using PromisedStream = std::promise<vespalib::nbostream>;
 
     struct Context
     {
@@ -145,7 +147,7 @@ private:
     searchcorespi::index::IThreadService & summaryExecutor() {
         return _writeService.summary();
     }
-    void putSummary(SerialNum serialNum,  search::DocumentIdT lid, const FutureDoc & doc, OnOperationDoneType onDone);
+    void putSummary(SerialNum serialNum,  search::DocumentIdT lid, FutureStream doc, OnOperationDoneType onDone);
     void putSummary(SerialNum serialNum,  search::DocumentIdT lid, Document::SP doc, OnOperationDoneType onDone);
     void removeSummary(SerialNum serialNum,  search::DocumentIdT lid);
     void heartBeatSummary(SerialNum serialNum);
@@ -179,7 +181,7 @@ private:
     virtual void notifyGidToLidChange(const document::GlobalId &gid, uint32_t lid);
 
     void makeUpdatedDocument(SerialNum serialNum, Document::UP prevDoc, DocumentUpdate::SP upd,
-                             OnOperationDoneType onWriteDone, PromisedDoc promisedDoc);
+                             OnOperationDoneType onWriteDone, PromisedDoc promisedDoc, PromisedStream promisedStream);
 
 protected:
     virtual void internalDeleteBucket(const DeleteBucketOperation &delOp);
@@ -198,7 +200,7 @@ private:
     virtual void updateAttributes(SerialNum serialNum, search::DocumentIdT lid, const DocumentUpdate &upd,
                                   bool immediateCommit, OnOperationDoneType onWriteDone);
 
-    virtual void updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const FutureDoc & doc,
+    virtual void updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, FutureDoc doc,
                                      bool immediateCommit, OnOperationDoneType onWriteDone);
 
     virtual void removeAttributes(SerialNum serialNum, search::DocumentIdT lid,

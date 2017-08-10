@@ -85,8 +85,9 @@ public:
                    const std::shared_ptr<search::IBucketizer> & bucketizer);
     ~SummaryManager();
 
-    void putDocument(uint64_t syncToken, const document::Document & doc,
-                     search::DocumentIdT lid);
+    void putDocument(uint64_t syncToken, search::DocumentIdT lid, const document::Document & doc);
+    void putDocument(uint64_t syncToken, search::DocumentIdT lid, const vespalib::nbostream & doc);
+
     void removeDocument(uint64_t syncToken, search::DocumentIdT lid);
     searchcorespi::IFlushTarget::List getFlushTargets(searchcorespi::index::IThreadService & summaryService);
 

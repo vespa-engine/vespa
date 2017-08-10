@@ -21,7 +21,8 @@ struct DummyDocumentStore : public search::IDocumentStore
                                         const document::DocumentTypeRepo &) const override {
         return document::Document::UP();
     }
-    virtual void write(uint64_t, const document::Document &, search::DocumentIdT) override {}
+    virtual void write(uint64_t, search::DocumentIdT, const document::Document &) override {}
+    virtual void write(uint64_t, search::DocumentIdT, const vespalib::nbostream &) override {}
     virtual void remove(uint64_t, search::DocumentIdT) override {}
     virtual void flush(uint64_t) override {}
     virtual uint64_t initFlush(uint64_t) override { return 0; }
