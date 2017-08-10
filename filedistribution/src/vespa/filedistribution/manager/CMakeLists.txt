@@ -11,9 +11,9 @@ vespa_add_library(filedistribution_filedistributionmanager
     INSTALL lib64
     OUTPUT_NAME filedistributionmanager
     DEPENDS
-    boost_system${BOOST_LIB_SUFFIX}
-    boost_thread${BOOST_LIB_SUFFIX}
-    boost_filesystem${BOOST_LIB_SUFFIX}
+    boost_system${VESPA_BOOST_LIB_SUFFIX}
+    boost_thread${VESPA_BOOST_LIB_SUFFIX}
+    boost_filesystem${VESPA_BOOST_LIB_SUFFIX}
     zookeeper_mt
     ${JAVA_JVM_LIBRARY}
 )

@@ -11,5 +11,5 @@ vespa_add_library(vespaeval
     $<TARGET_OBJECTS:eval_tensor_serialization>
     INSTALL lib64
     DEPENDS
-    LLVM-${LLVM_VERSION}
+    LLVM-${VESPA_LLVM_VERSION}
 )

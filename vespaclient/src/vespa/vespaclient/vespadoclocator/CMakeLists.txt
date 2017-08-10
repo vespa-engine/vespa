@@ -8,4 +8,4 @@ vespa_add_executable(vespaclient_vespadoclocator_app
     INSTALL bin
     DEPENDS
 )
-vespa_add_target_system_dependency(vespaclient_vespadoclocator_app boost boost_program_options${BOOST_LIB_SUFFIX})
+vespa_add_target_system_dependency(vespaclient_vespadoclocator_app boost boost_program_options${VESPA_BOOST_LIB_SUFFIX})
