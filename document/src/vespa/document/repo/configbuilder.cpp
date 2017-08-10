@@ -28,5 +28,40 @@ void DatatypeConfig::addNestedType(const TypeOrId &t) {
     }
 }
 
+namespace {
+
+void addType(const DatatypeConfig &type,
+             DocumenttypesConfig::Documenttype &doc_type) {
+    doc_type.datatype.insert(doc_type.datatype.end(),
+                             type.nested_types.begin(),
+                             type.nested_types.end());
+    doc_type.datatype.push_back(type);
+}
+
+}
+
+DocTypeRep &
+DocTypeRep::annotationType(int32_t id, const vespalib::string &name, const DatatypeConfig &type) {
+    addType(type, doc_type);
+    return annotationType(id, name, type.id);
+}
+
+
+DocTypeRep
+DocumenttypesConfigBuilderHelper::document(int32_t id, const vespalib::string &name,
+                                           const DatatypeConfig &header,
+                                           const DatatypeConfig &body) {
+    assert(header.type == DatatypeConfig::STRUCT);
+    assert(body.type == DatatypeConfig::STRUCT);
+    _config.documenttype.resize(_config.documenttype.size() + 1);
+    _config.documenttype.back().id = id;
+    _config.documenttype.back().name = name;
+    _config.documenttype.back().headerstruct = header.id;
+    _config.documenttype.back().bodystruct = body.id;
+    addType(header, _config.documenttype.back());
+    addType(body, _config.documenttype.back());
+    return DocTypeRep(_config.documenttype.back());
+}
+
 }  // namespace config_builder
 }  // namespace document

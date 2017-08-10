@@ -19,12 +19,16 @@ class BucketDBMetricUpdater {
 public:
     /** Bucket statistics for a single database iteration */
     struct Stats {
-        uint64_t _docCount {0};
-        uint64_t _byteCount {0};
-        uint64_t _tooFewCopies {0};
-        uint64_t _tooManyCopies {0};
-        uint64_t _noTrusted {0};
-        uint64_t _totalBuckets {0};
+        uint64_t _docCount;
+        uint64_t _byteCount;
+        uint64_t _tooFewCopies;
+        uint64_t _tooManyCopies;
+        uint64_t _noTrusted;
+        uint64_t _totalBuckets;
+
+        Stats();
+        Stats(const Stats &rhs);
+        ~Stats() { }
 
         /**
          * For each node N, look at all the buckets that have or should have a
@@ -60,6 +64,8 @@ private:
 
 public:
     BucketDBMetricUpdater();
+
+    ~BucketDBMetricUpdater();
 
     void setMinimumReplicaCountingMode(ReplicaCountingMode mode) noexcept {
         _replicaCountingMode = mode;

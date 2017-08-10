@@ -100,14 +100,6 @@ struct AnnotationRef : DatatypeConfig {
     }
 };
 
-inline void addType(const DatatypeConfig &type,
-                    DocumenttypesConfig::Documenttype &doc_type) {
-    doc_type.datatype.insert(doc_type.datatype.end(),
-                             type.nested_types.begin(),
-                             type.nested_types.end());
-    doc_type.datatype.push_back(type);
-}
-
 struct DocTypeRep {
     DocumenttypesConfig::Documenttype &doc_type;
 
@@ -127,10 +119,8 @@ struct DocTypeRep {
         return *this;
     }
     DocTypeRep &annotationType(int32_t id, const vespalib::string &name,
-                               const DatatypeConfig &type) {
-        addType(type, doc_type);
-        return annotationType(id, name, type.id);
-    }
+                               const DatatypeConfig &type);
+
     DocTypeRep& referenceType(int32_t id, int32_t target_type_id) {
         doc_type.referencetype.resize(doc_type.referencetype.size() + 1);
         doc_type.referencetype.back().id = id;
@@ -149,18 +139,7 @@ public:
 
     DocTypeRep document(int32_t id, const vespalib::string &name,
                         const DatatypeConfig &header,
-                        const DatatypeConfig &body) {
-        assert(header.type == DatatypeConfig::STRUCT);
-        assert(body.type == DatatypeConfig::STRUCT);
-        _config.documenttype.resize(_config.documenttype.size() + 1);
-        _config.documenttype.back().id = id;
-        _config.documenttype.back().name = name;
-        _config.documenttype.back().headerstruct = header.id;
-        _config.documenttype.back().bodystruct = body.id;
-        addType(header, _config.documenttype.back());
-        addType(body, _config.documenttype.back());
-        return DocTypeRep(_config.documenttype.back());
-    }
+                        const DatatypeConfig &body);
 
     ::document::DocumenttypesConfigBuilder &config() { return _config; }
 };
