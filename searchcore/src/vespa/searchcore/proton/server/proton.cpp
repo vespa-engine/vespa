@@ -689,11 +689,10 @@ int countOpenFiles()
     int count = 0;
     DIR *dp = opendir(fd_dir_name);
     if (dp != NULL) {
-        struct dirent entry;
-        struct dirent *ptr = &entry;
-        while (readdir_r(dp, &entry, &ptr) == 0 && ptr != NULL) {
-            if (strcmp(".", entry.d_name) == 0) continue;
-            if (strcmp("..", entry.d_name) == 0) continue;
+        struct dirent *ptr;
+        while ((ptr = readdir(dp)) != nullptr) {
+            if (strcmp(".", ptr->d_name) == 0) continue;
+            if (strcmp("..", ptr->d_name) == 0) continue;
             ++count;
         }
         closedir(dp);
