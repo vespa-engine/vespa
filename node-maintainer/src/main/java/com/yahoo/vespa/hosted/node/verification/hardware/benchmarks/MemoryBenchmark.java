@@ -17,8 +17,8 @@ import java.util.logging.Logger;
 public class MemoryBenchmark implements Benchmark {
 
     private static final String MEM_BENCHMARK_CREATE_FOLDER = "mkdir -p RAM_test";
-    private static final String MEM_BENCHMARK_MOUNT_TMPFS = "sudo mount tmpfs -t tmpfs RAM_test/";
-    private static final String MEM_BENCHMARK_UNMOUNT_TMPFS = "sudo umount RAM_test";
+    private static final String MEM_BENCHMARK_MOUNT_TMPFS = "mount tmpfs -t tmpfs RAM_test/";
+    private static final String MEM_BENCHMARK_UNMOUNT_TMPFS = "umount RAM_test";
     private static final String MEM_BENCHMARK_DELETE_FOLDER = "rm -rf RAM_test";
     private static final String MEM_BENCHMARK_WRITE_SPEED = "dd if=/dev/zero of=RAM_test/data_tmp bs=1M count=512";
     private static final String MEM_BENCHMARK_READ_SPEED = "dd if=RAM_test/data_tmp of=/dev/null bs=1M count=512";

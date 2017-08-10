@@ -12,9 +12,11 @@ Spec verification and hardware benchmarks can both be executed with and without 
 (if called without parameters it will use yinst to retrieve the host name):
 
 SpecVerifier:
-- java -cp node-maintainer-jar-with-dependencies.jar com.yahoo.vespa.hosted.node.verification.spec.SpecVerifier
-- java -cp node-maintainer-jar-with-dependencies.jar com.yahoo.vespa.hosted.node.verification.spec.SpecVerifier cfg.1.hostname,cfg.2.hostname,...
+- sudo java -cp node-maintainer-jar-with-dependencies.jar com.yahoo.vespa.hosted.node.verification.spec.SpecVerifier
+- sudo java -cp node-maintainer-jar-with-dependencies.jar com.yahoo.vespa.hosted.node.verification.spec.SpecVerifier cfg.1.hostname,cfg.2.hostname,...
 
 HardwareBenchmarker:
-- java -cp node-maintainer-jar-with-dependencies.jar com.yahoo.vespa.hosted.node.verification.hardware.HardwareBenchmarker
-- java -cp node-maintainer-jar-with-dependencies.jar com.yahoo.vespa.hosted.node.verification.hardware.HardwareBenchmarker cfg.1.hostname,cfg.2.hostname,...
+- sudo java -cp node-maintainer-jar-with-dependencies.jar com.yahoo.vespa.hosted.node.verification.hardware.HardwareBenchmarker
+- sudo java -cp node-maintainer-jar-with-dependencies.jar com.yahoo.vespa.hosted.node.verification.hardware.HardwareBenchmarker cfg.1.hostname,cfg.2.hostname,...
+
+Both programs have README explaining closer what it does.

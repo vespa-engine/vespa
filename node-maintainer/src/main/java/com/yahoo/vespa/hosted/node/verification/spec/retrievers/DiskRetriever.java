@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  */
 public class DiskRetriever implements HardwareRetriever {
     private static final String DISK_CHECK_TYPE = "lsblk -d -o name,rota";
-    private static final String DISK_CHECK_SIZE = "sudo pvdisplay --units G | grep 'PV Size'";
+    private static final String DISK_CHECK_SIZE = "pvdisplay --units G | grep 'PV Size'";
     private static final String DISK_NAME = "sda";
     private static final String DISK_TYPE_REGEX_SPLIT = "\\s+";
     private static final int DISK_TYPE_SEARCH_ELEMENT_INDEX = 0;
