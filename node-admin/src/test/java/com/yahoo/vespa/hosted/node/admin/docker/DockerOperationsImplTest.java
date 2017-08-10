@@ -68,41 +68,6 @@ public class DockerOperationsImplTest {
     }
 
     @Test
-    public void vespaVersionIsParsed() {
-        assertThat(DockerOperationsImpl.parseVespaVersion("5.119.53"), CoreMatchers.is(Optional.of("5.119.53")));
-    }
-
-    @Test
-    public void vespaVersionIsParsedWithSpacesAndNewlines() {
-        assertThat(DockerOperationsImpl.parseVespaVersion("5.119.53\n"), CoreMatchers.is(Optional.of("5.119.53")));
-        assertThat(DockerOperationsImpl.parseVespaVersion(" 5.119.53 \n"), CoreMatchers.is(Optional.of("5.119.53")));
-        assertThat(DockerOperationsImpl.parseVespaVersion("\n 5.119.53 \n"), CoreMatchers.is(Optional.of("5.119.53")));
-    }
-
-    @Test
-    public void vespaVersionIsParsedWithIrregularVersionScheme() {
-        assertThat(DockerOperationsImpl.parseVespaVersion("7.2"), CoreMatchers.is(Optional.of("7.2")));
-        assertThat(DockerOperationsImpl.parseVespaVersion("8.0-beta"), CoreMatchers.is(Optional.of("8.0-beta")));
-        assertThat(DockerOperationsImpl.parseVespaVersion("foo"), CoreMatchers.is(Optional.of("foo")));
-        assertThat(DockerOperationsImpl.parseVespaVersion("119"), CoreMatchers.is(Optional.of("119")));
-    }
-
-    @Test
-    public void vespaVersionIsNotParsedFromNull() {
-        assertThat(DockerOperationsImpl.parseVespaVersion(null), CoreMatchers.is(Optional.empty()));
-    }
-
-    @Test
-    public void vespaVersionIsNotParsedFromEmptyString() {
-        assertThat(DockerOperationsImpl.parseVespaVersion(""), CoreMatchers.is(Optional.empty()));
-    }
-
-    @Test
-    public void vespaVersionIsNotParsedFromUnexpectedContent() {
-        assertThat(DockerOperationsImpl.parseVespaVersion("No such command 'vespanodectl'"), CoreMatchers.is(Optional.empty()));
-    }
-
-    @Test
     public void runsCommandInNetworkNamespace() {
         Container container = makeContainer("container-42", Container.State.RUNNING, 42);
 

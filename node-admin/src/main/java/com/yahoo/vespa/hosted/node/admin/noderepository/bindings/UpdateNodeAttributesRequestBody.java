@@ -21,6 +21,7 @@ public class UpdateNodeAttributesRequestBody {
     public Long currentRebootGeneration;
     public String currentDockerImage;
     public String currentVespaVersion;
+    public String hardwareDivergence;
 
     public UpdateNodeAttributesRequestBody(NodeAttributes nodeAttributes) {
         if (nodeAttributes.getDockerImage() != null) {
@@ -30,5 +31,6 @@ public class UpdateNodeAttributesRequestBody {
         this.currentRestartGeneration = nodeAttributes.getRestartGeneration();
         this.currentVespaVersion = nodeAttributes.getVespaVersion();
         this.currentRebootGeneration = nodeAttributes.getRebootGeneration();
+        this.hardwareDivergence = nodeAttributes.getHardwareDivergence();
     }
 }

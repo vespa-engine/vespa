@@ -93,14 +93,6 @@ public class DockerOperationsImpl implements DockerOperations {
         this.processExecuter = processExecuter;
     }
 
-    // Returns empty if vespa version cannot be parsed.
-    static Optional<String> parseVespaVersion(final String rawVespaVersion) {
-        if (rawVespaVersion == null) return Optional.empty();
-
-        final Matcher matcher = VESPA_VERSION_PATTERN.matcher(rawVespaVersion.trim());
-        return matcher.find() ? Optional.of(matcher.group(1)) : Optional.empty();
-    }
-
     @Override
     public void startContainer(ContainerName containerName, final ContainerNodeSpec nodeSpec) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
