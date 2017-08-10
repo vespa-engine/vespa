@@ -12,7 +12,7 @@ s:
         "mem.used": 1073741824,
         "disk.used": 42547019776,
         "disk.util": 15.85,
-        "cpu.util": 6.75,
+        "cpu.util": 5.4,
         "mem.util": 25.0,
         "disk.limit": 268435456000
     },

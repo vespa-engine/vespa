@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
-import java.util.Optional;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
@@ -100,11 +99,6 @@ public class StorageMaintainerTest {
     public void testMaintenanceThrottlingAfterFailedMaintenance() {
         String hostname = "node-123.us-north-3.test.yahoo.com";
         ContainerName containerName = ContainerName.fromHostname(hostname);
-        ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
-                .hostname(hostname)
-                .nodeState(Node.State.ready)
-                .nodeType("tenants")
-                .nodeFlavor("docker").build();
 
         when(docker.executeInContainerAsRoot(any(), anyVararg()))
                 .thenThrow(new RuntimeException("Something went wrong"))
@@ -118,18 +112,6 @@ public class StorageMaintainerTest {
         // Maintenance job failed, we should be able to immediately re-run it
         storageMaintainer.removeOldFilesFromNode(containerName);
         verify(docker, times(2)).executeInContainerAsRoot(any(), anyVararg());
-    }
-
-    @Test
-    public void testGetTotalMemory() {
-        StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
-        when(storageMaintainer.getHostTotalMemoryGb()).thenCallRealMethod();
-
-        when(storageMaintainer.readMeminfo()).thenReturn(Optional.empty());
-        assertEquals(0d, storageMaintainer.getHostTotalMemoryGb(), 0);
-
-        when(storageMaintainer.readMeminfo()).thenReturn(Optional.of("MemTotal:   1572864 kB\nMemUsed:   1000000 kB\n"));
-        assertEquals(1.5d, storageMaintainer.getHostTotalMemoryGb(), 0);
     }
 
     private static void writeNBytesToFile(File file, int nBytes) throws IOException {
