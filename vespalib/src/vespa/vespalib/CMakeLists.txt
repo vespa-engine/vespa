@@ -21,4 +21,5 @@ vespa_add_library(vespalib
     INSTALL lib64
     DEPENDS
     vespalib_vespalib_test
+    gcc
 )
