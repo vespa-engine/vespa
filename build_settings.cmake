@@ -87,8 +87,10 @@ endif()
 if(EXTRA_LINK_DIRECTORY)
     link_directories(${EXTRA_LINK_DIRECTORY})
 endif()
+if(CMAKE_BUILD_RPATH)
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-rpath,${CMAKE_BUILD_RPATH}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath,${CMAKE_BUILD_RPATH}")
+endif()
 
 # Don't allow unresolved symbols in executables or shared libraries
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
