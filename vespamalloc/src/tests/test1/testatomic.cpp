@@ -112,7 +112,11 @@ int Test::Main()
     {
         std::atomic<vespamalloc::TaggedPtr> taggedPtr;
         ASSERT_EQUAL(16u, sizeof(vespamalloc::TaggedPtr));
+#if __GNUC__ < 7
         ASSERT_TRUE(taggedPtr.is_lock_free());
+#else
+        ASSERT_FALSE(taggedPtr.is_lock_free());
+#endif
     }
 
     testSwap<uint32_t>(6);
