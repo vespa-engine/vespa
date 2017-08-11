@@ -930,8 +930,8 @@ DummyPersistence::acquireBucketWithLock(const Bucket& b) const
     // Atomic CAS might be a bit overkill, but since we "release" the bucket
     // outside of the mutex, we want to ensure the write is visible across all
     // threads.
-    bool my_true(true);
-    bool bucketNotInUse(it->second->_inUse.compare_exchange_strong(my_true, false));
+    bool my_false(false);
+    bool bucketNotInUse(it->second->_inUse.compare_exchange_strong(my_false, true));
     if (!bucketNotInUse) {
         LOG(error, "Attempted to acquire %s, but it was already marked as being in use!",
             b.toString().c_str());
@@ -944,8 +944,8 @@ DummyPersistence::acquireBucketWithLock(const Bucket& b) const
 void
 DummyPersistence::releaseBucketNoLock(const BucketContent& bc) const
 {
-    bool my_false(false);
-    bool bucketInUse(bc._inUse.compare_exchange_strong(my_false, true));
+    bool my_true(true);
+    bool bucketInUse(bc._inUse.compare_exchange_strong(my_true, false));
     assert(bucketInUse);
     (void) bucketInUse;
 }
