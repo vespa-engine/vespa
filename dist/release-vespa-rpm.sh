@@ -24,6 +24,9 @@ git checkout -b $RPM_BRANCH $VERSION
 # Tito expects spec file to be on root
 git mv $SPECFILE .
 
+# Hide pom.xml to avoid tito doing anything to our pom.xml files
+mv pom.xml pom.xml.hide
+
 # Run tito to update spec file and tag
 tito init
 tito tag --use-version=$VERSION --no-auto-changelog
@@ -31,5 +34,12 @@ tito tag --use-version=$VERSION --no-auto-changelog
 # Push changes and tag to branc
 git push -u origin --follow-tags $RPM_BRANCH
 
+# Trig the build on Copr
+curl -X POST \
+     -H "Content-type: application/json" \
+     -d '{ "ref_type": "tag", "repository": { "clone_url": "https://github.com/vespa-engine/vespa.git" } }' \
+     https://copr.fedorainfracloud.org/webhooks/github/8037/d1dd5867-b493-4647-a888-0c887e6087b3/
+
+git reset --hard HEAD
 git checkout $CURRENT_BRANCH
 
