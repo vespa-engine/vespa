@@ -21,7 +21,7 @@ namespace {
 
 std::string getVespaTempDir() {
     std::string tmp = getenv("ROOT");
-    tmp += "var/db/vespa/tmp";
+    tmp += "/var/db/vespa/tmp";
     return tmp;
 }
 
