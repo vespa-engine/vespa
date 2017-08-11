@@ -128,8 +128,9 @@ FRT_RPCRequest::Recycle()
 void
 FRT_RPCRequest::SubRef()
 {
-    assert(_refcnt > 0);
-    if (vespalib::Atomic::postDec(&_refcnt) == 1) {
+    int oldVal = _refcnt.fetch_sub(1);
+    assert(oldVal > 1);
+    if (oldVal == 1) {
         Reset();
         delete this;
     }
@@ -162,7 +163,7 @@ FRT_RPCRequest::CreateRequestPacket(bool wantReply)
         flags |= FLAG_FRT_RPC_LITTLE_ENDIAN;
 
     if (wantReply)
-        AddRef_NoLock();
+        AddRef();
     else
         flags |= FLAG_FRT_RPC_NOREPLY;
 

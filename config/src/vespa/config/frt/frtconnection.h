@@ -1,11 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <string>
-#include <vespa/vespalib/util/sync.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/config/common/timingvalues.h>
 #include "connection.h"
+#include <vespa/vespalib/util/sync.h>
+#include <vespa/config/common/timingvalues.h>
+#include <atomic>
 
 class FRT_Supervisor;
 class FRT_Target;
@@ -23,8 +22,8 @@ private:
     FRT_Target* _target;
     int64_t _suspendedUntil;
     int64_t _suspendWarned;
-    int _transientFailures;
-    int _fatalFailures;
+    std::atomic<int> _transientFailures;
+    std::atomic<int> _fatalFailures;
     int64_t _transientDelay;
     int64_t _fatalDelay;
 

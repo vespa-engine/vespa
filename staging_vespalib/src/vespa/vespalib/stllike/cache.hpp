@@ -106,7 +106,7 @@ cache<P>::read(const K & key)
         _sizeBytes += calcSize(key, value);
         _insert++;
     } else {
-        vespalib::Atomic::postInc(&_noneExisting);
+        _noneExisting.fetch_add(1);
     }
     return value;
 }

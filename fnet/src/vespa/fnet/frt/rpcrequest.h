@@ -5,8 +5,7 @@
 #include "values.h"
 #include "error.h"
 #include <vespa/fnet/context.h>
-
-#include <vespa/vespalib/util/atomic.h>
+#include <atomic>
 
 class FNETConnection;
 class FNET_Packet;
@@ -55,17 +54,17 @@ class FRT_RPCRequest
 {
 private:
     using Stash = vespalib::Stash;
-    Stash         _stash;
-    FNET_Context  _context;
-    FRT_Values    _params;
-    FRT_Values    _return;
-    int           _refcnt;
-    int           _completed;
-    uint32_t      _errorCode;
-    uint32_t      _errorMessageLen;
-    uint32_t      _methodNameLen;
-    char         *_errorMessage;
-    char         *_methodName;
+    Stash            _stash;
+    FNET_Context     _context;
+    FRT_Values       _params;
+    FRT_Values       _return;
+    std::atomic<int> _refcnt;
+    std::atomic<int> _completed;
+    uint32_t         _errorCode;
+    uint32_t         _errorMessageLen;
+    uint32_t         _methodNameLen;
+    char            *_errorMessage;
+    char            *_methodName;
 
     bool                *_detachedPT;
     FRT_IAbortHandler   *_abortHandler;
@@ -87,8 +86,7 @@ public:
         _return.DiscardBlobs();
     }
 
-    void AddRef_NoLock() { _refcnt++; }  // be very carefull
-    void AddRef() { vespalib::Atomic::postInc(&_refcnt); }
+    void AddRef() { _refcnt.fetch_add(1); }
     void SubRef();
 
     void SetContext(FNET_Context context) { _context = context; }
@@ -110,7 +108,7 @@ public:
         return (spec != nullptr) ? spec : "";
     }
 
-    bool GetCompletionToken() { return (vespalib::Atomic::postInc(&_completed) == 0); }
+    bool GetCompletionToken() { return (_completed.fetch_add(1) == 0); }
 
     void SetError(uint32_t errorCode, const char *errorMessage, uint32_t errorMessageLen);
     void SetError(uint32_t errorCode, const char *errorMessage);

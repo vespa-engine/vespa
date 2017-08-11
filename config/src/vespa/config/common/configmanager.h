@@ -34,7 +34,7 @@ public:
     void reload(int64_t generation) override;
 
 private:
-    SubscriptionId _idGenerator;
+    std::atomic<SubscriptionId> _idGenerator;
     SourceFactory::UP _sourceFactory;
     int64_t _generation;
 

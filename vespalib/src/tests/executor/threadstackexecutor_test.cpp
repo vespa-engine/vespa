@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/util/atomic.h>
 
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/backtrace.h>
+#include <atomic>
 
 using namespace vespalib;
 
@@ -13,24 +13,24 @@ typedef Executor::Task Task;
 struct MyTask : public Executor::Task {
     Gate &gate;
     CountDownLatch &latch;
-    static uint32_t runCnt;
-    static uint32_t deleteCnt;
+    static std::atomic<uint32_t> runCnt;
+    static std::atomic<uint32_t> deleteCnt;
     MyTask(Gate &g, CountDownLatch &l) : gate(g), latch(l) {}
     void run() override {
-        Atomic::postInc(&runCnt);
+        runCnt.fetch_add(1);
         latch.countDown();
         gate.await();
     }
     ~MyTask() {
-        Atomic::postInc(&deleteCnt);
+        deleteCnt.fetch_add(1);
     }
     static void resetStats() {
         runCnt = 0;
         deleteCnt = 0;
     }
 };
-uint32_t MyTask::runCnt = 0;
-uint32_t MyTask::deleteCnt = 0;
+std::atomic<uint32_t> MyTask::runCnt(0);
+std::atomic<uint32_t> MyTask::deleteCnt(0);
 
 struct MyState {
     Gate                gate;     // to block workers

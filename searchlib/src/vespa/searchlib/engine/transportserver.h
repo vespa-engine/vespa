@@ -4,7 +4,6 @@
 
 #include "transport_metrics.h"
 #include "source_description.h"
-#include <vespa/vespalib/util/atomic.h>
 #include <vespa/fnet/iserveradapter.h>
 #include <vespa/fnet/ipackethandler.h>
 #include <vespa/fnet/task.h>

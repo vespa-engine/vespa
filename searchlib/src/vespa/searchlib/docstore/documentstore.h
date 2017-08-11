@@ -110,8 +110,7 @@ private:
     std::unique_ptr<BackingStore>  _store;
     std::shared_ptr<Cache>         _cache;
     std::shared_ptr<VisitCache>    _visitCache;
-    mutable volatile uint64_t      _uncached_lookups;
+    mutable std::atomic<uint64_t>  _uncached_lookups;
 };
 
 } // namespace search
-

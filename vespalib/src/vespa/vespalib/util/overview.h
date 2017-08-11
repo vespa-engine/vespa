@@ -33,20 +33,17 @@
  * <BR> vespalib::RWLockReader	
  * <BR> vespalib::RWLockWriter	
  *
- * Reference counting and atomic operations
+ * Reference counting
  *
- * vespalib::Atomic	
  * <BR> vespalib::ReferenceCounter	
  *
  * Simple smart pointers (deprecated)
  *
- * \ref vespalib::SharedPtr&lt;T&gt;	
  * <BR> \ref vespalib::LinkedPtr&lt;T&gt;
  *
  * Advanced pointer utilities
  *
  * \ref vespalib::PtrHolder&lt;T&gt;	
- * <BR> \ref vespalib::WeakRef&lt;T&gt;	
  *
  * Simple hashmap
  *

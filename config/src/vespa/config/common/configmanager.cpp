@@ -2,7 +2,6 @@
 #include "configmanager.h"
 #include "exceptions.h"
 #include "configholder.h"
-#include <vespa/vespalib/util/atomic.h>
 #include <thread>
 #include <sstream>
 
@@ -30,7 +29,7 @@ ConfigManager::subscribe(const ConfigKey & key, uint64_t timeoutInMillis)
 {
     LOG(debug, "subscribing on def %s, configid %s", key.getDefName().c_str(), key.getConfigId().c_str());
 
-    SubscriptionId id(vespalib::Atomic::postInc(&_idGenerator));
+    SubscriptionId id(_idGenerator.fetch_add(1));
 
     IConfigHolder::SP holder(new ConfigHolder());
     Source::UP source = _sourceFactory->createSource(holder, key);
