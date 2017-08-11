@@ -17,12 +17,12 @@ struct MyTask : public Executor::Task {
     static std::atomic<uint32_t> deleteCnt;
     MyTask(Gate &g, CountDownLatch &l) : gate(g), latch(l) {}
     void run() override {
-        runCnt++;
+        runCnt.fetch_add(1);
         latch.countDown();
         gate.await();
     }
     ~MyTask() {
-        deleteCnt++;
+        deleteCnt.fetch_add(1);
     }
     static void resetStats() {
         runCnt = 0;

@@ -128,8 +128,9 @@ FRT_RPCRequest::Recycle()
 void
 FRT_RPCRequest::SubRef()
 {
-    assert(_refcnt > 0);
-    if (_refcnt.fetch_sub(1) == 1) {
+    int oldVal = _refcnt.fetch_sub(1);
+    assert(oldVal > 1);
+    if (oldVal == 1) {
         Reset();
         delete this;
     }

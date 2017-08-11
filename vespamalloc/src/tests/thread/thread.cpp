@@ -54,11 +54,11 @@ void * just_wait(void * arg)
 {
     wait_info * info = (wait_info *) arg;
     pthread_mutex_lock(&info->_mutex);
-    info->_count++;
+    info->_count.fetch_add(1);
     pthread_cond_wait(&info->_cond, &info->_mutex);
     pthread_mutex_unlock(&info->_mutex);
     pthread_cond_signal(&info->_cond);
-    info->_count--;
+    info->_count.fetch_sub(1);
     return arg;
 }
 

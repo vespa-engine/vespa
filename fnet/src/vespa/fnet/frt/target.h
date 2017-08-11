@@ -29,7 +29,7 @@ public:
 
     FNET_Connection *GetConnection() const { return _conn; }
 
-    void AddRef() { _refcnt++; }
+    void AddRef() { _refcnt.fetch_add(1); }
     void SubRef() {
         if (_refcnt.fetch_sub(1) == 1) {
             delete this;
