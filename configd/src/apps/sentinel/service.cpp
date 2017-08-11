@@ -21,7 +21,7 @@ namespace sentinel {
 namespace {
 
 std::string getTempDir() {
-    const char * configuredTmp = getenv("TMP");
+    const char * configuredTmp = getenv("TMPDIR");
     if (configuredTmp) {
         return configuredTmp;
     }
