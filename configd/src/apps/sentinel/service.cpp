@@ -18,6 +18,19 @@ extern sig_atomic_t stop;
 namespace config {
 namespace sentinel {
 
+namespace {
+
+std::string getTempDir() {
+    const char * configuredTmp = getenv("TMP");
+    if (configuredTmp) {
+        return configuredTmp;
+    }
+    std::string tmp = getenv("ROOT");
+    tmp += "/tmp";
+    return tmp;
+}
+
+}
 
 Service::Service(const SentinelConfig::Service& service, const SentinelConfig::Application& application,
                  std::list<OutputConnection *> &ocs, StartMetrics &metrics)
@@ -99,6 +112,13 @@ Service::terminate(bool catchable)
             return ret;
         } else {
             setState(KILLING);
+            char pstackCmd[256];
+            LOG(info, "%s:%d failed to stop. Will dump the stack",  name().c_str(), _pid);
+            snprintf(pstackCmd, sizeof(pstackCmd), "pstack %d > %s/%s.pstack.%d", _pid, getTempDir().c_str(), name().c_str(), _pid);
+            int pstackRet = system(pstackCmd);
+            if (pstackRet != 0) {
+                LOG(warning, "'%s' failed with return value %d", pstackCmd, pstackRet);
+            }
             kill(_pid, SIGCONT); // if it was stopped for some reason
             int ret = kill(_pid, SIGKILL);
             LOG(debug, "%s: kill -SIGKILL %d: %s", name().c_str(), (int)_pid,
