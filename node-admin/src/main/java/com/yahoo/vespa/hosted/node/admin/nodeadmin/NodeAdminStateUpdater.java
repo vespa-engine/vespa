@@ -76,17 +76,8 @@ public class NodeAdminStateUpdater extends AbstractComponent {
         this.dockerHostHostName = dockerHostHostName;
         this.lastTick = clock.instant();
 
-        storageMaintainer.ifPresent(maintainer -> specVerifierScheduler.scheduleWithFixedDelay(() -> {
-            if (currentState != RESUMED) return;
-
-            try {
-                String hardwareDivergence = maintainer.getHardwardDivergence();
-                NodeAttributes nodeAttributes = new NodeAttributes().withHardwareDivergence(hardwareDivergence);
-                nodeRepository.updateNodeAttributes(dockerHostHostName, nodeAttributes);
-            } catch (RuntimeException e) {
-                log.log(Level.WARNING, "Failed to report hardware divergence", e);
-            }
-        }, 5, 60, TimeUnit.MINUTES));
+        storageMaintainer.ifPresent(maintainer -> specVerifierScheduler.scheduleWithFixedDelay(() ->
+                updateHardwareDivergence(maintainer), 5, 60, TimeUnit.MINUTES));
     }
 
     private String objectToString() {
@@ -104,6 +95,18 @@ public class NodeAdminStateUpdater extends AbstractComponent {
             debug.put("Current State: ", currentState);
         }
         return debug;
+    }
+
+    private void updateHardwareDivergence(StorageMaintainer maintainer) {
+        if (currentState != RESUMED) return;
+
+        try {
+            String hardwareDivergence = maintainer.getHardwardDivergence();
+            NodeAttributes nodeAttributes = new NodeAttributes().withHardwareDivergence(hardwareDivergence);
+            nodeRepository.updateNodeAttributes(dockerHostHostName, nodeAttributes);
+        } catch (RuntimeException e) {
+            log.log(Level.WARNING, "Failed to report hardware divergence", e);
+        }
     }
 
     public boolean setResumeStateAndCheckIfResumed(State wantedState) {
