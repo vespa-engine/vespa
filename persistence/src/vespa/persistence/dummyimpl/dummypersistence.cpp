@@ -9,18 +9,15 @@
 #include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/log/log.h>
 
 using std::binary_search;
 using std::lower_bound;
 
+#include <vespa/log/log.h>
 LOG_SETUP(".dummypersistence");
 
-namespace storage {
-namespace spi {
-namespace dummy {
+namespace storage::spi::dummy {
 
 BucketContent::BucketContent()
     : _entries(),
@@ -933,7 +930,8 @@ DummyPersistence::acquireBucketWithLock(const Bucket& b) const
     // Atomic CAS might be a bit overkill, but since we "release" the bucket
     // outside of the mutex, we want to ensure the write is visible across all
     // threads.
-    bool bucketNotInUse(vespalib::Atomic::cmpSwap(&it->second->_inUse, 1, 0));
+    bool my_true(true);
+    bool bucketNotInUse(it->second->_inUse.compare_exchange_strong(my_true, false));
     if (!bucketNotInUse) {
         LOG(error, "Attempted to acquire %s, but it was already marked as being in use!",
             b.toString().c_str());
@@ -946,13 +944,12 @@ DummyPersistence::acquireBucketWithLock(const Bucket& b) const
 void
 DummyPersistence::releaseBucketNoLock(const BucketContent& bc) const
 {
-    bool bucketInUse(vespalib::Atomic::cmpSwap(&bc._inUse, 0, 1));
+    bool my_false(false);
+    bool bucketInUse(bc._inUse.compare_exchange_strong(my_false, true));
     assert(bucketInUse);
     (void) bucketInUse;
 }
 
-} // dummy
-} // spi
-} // storage
+}
 
 VESPALIB_HASH_MAP_INSTANTIATE_H(storage::spi::Bucket, std::shared_ptr<storage::spi::dummy::BucketContent>, document::BucketId::hash)

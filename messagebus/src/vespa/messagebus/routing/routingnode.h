@@ -1,21 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <map>
+#include "iroutingpolicy.h"
+#include "resender.h"
+#include "route.h"
+#include "routingcontext.h"
+#include "routingnodeiterator.h"
 #include <vespa/messagebus/idiscardhandler.h>
 #include <vespa/messagebus/ireplyhandler.h>
 #include <vespa/messagebus/message.h>
 #include <vespa/messagebus/messagebus.h>
 #include <vespa/messagebus/network/iserviceaddress.h>
 #include <vespa/messagebus/reply.h>
-#include <string>
-#include <vector>
 #include <vespa/vespalib/util/sync.h>
-#include "iroutingpolicy.h"
-#include "resender.h"
-#include "route.h"
-#include "routingcontext.h"
-#include "routingnodeiterator.h"
+#include <vector>
+#include <map>
 
 namespace mbus {
 
@@ -40,7 +39,7 @@ private:
     IReplyHandler            *_replyHandler;
     IDiscardHandler          *_discardHandler;
     Trace                     _trace;
-    volatile uint32_t         _pending;
+    std::atomic<uint32_t>     _pending;
     Message                  &_msg;
     Reply::UP                 _reply;
     Route                     _route;

@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/atomic.h>
 #include <vespa/fnet/connection.h>
+#include <atomic>
 
 class FNET_Scheduler;
 class FRT_RPCRequest;
@@ -12,7 +12,7 @@ class FRT_IRequestWait;
 class FRT_Target
 {
 private:
-    int              _refcnt;
+    std::atomic<int> _refcnt;
     FNET_Scheduler  *_scheduler;
     FNET_Connection *_conn;
 
@@ -29,17 +29,16 @@ public:
 
     FNET_Connection *GetConnection() const { return _conn; }
 
-    void AddRef() { vespalib::Atomic::postInc(&_refcnt); }
+    void AddRef() { _refcnt++; }
     void SubRef() {
-        if (vespalib::Atomic::postDec(&_refcnt) == 1) {
+        if (_refcnt.fetch_sub(1) == 1) {
             delete this;
         }
     }
 
     int GetRefCnt() const { return _refcnt; }
 
-    bool IsValid()
-    {
+    bool IsValid() {
         return ((_conn != nullptr) &&
                 (_conn->GetState() <= FNET_Connection::FNET_CONNECTED));
     }

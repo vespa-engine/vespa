@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <memory>
 #include <vespa/vespalib/util/sync.h>
-#include <vespa/vespalib/util/atomic.h>
 
 namespace vespalib {
 

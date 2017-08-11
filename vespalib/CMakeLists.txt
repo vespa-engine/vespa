@@ -16,7 +16,6 @@ vespa_define_module(
     src/tests/approx
     src/tests/array
     src/tests/arrayqueue
-    src/tests/atomic
     src/tests/barrier
     src/tests/benchmark_timer
     src/tests/box
@@ -98,7 +97,6 @@ vespa_define_module(
     src/tests/util/generationhandler
     src/tests/util/generationhandler_stress
     src/tests/valgrind
-    src/tests/weakref
     src/tests/websocket
     src/tests/zcurve
 

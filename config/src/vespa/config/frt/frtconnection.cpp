@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "frtconnection.h"
-#include <vespa/vespalib/util/atomic.h>
 #include <vespa/config/common/errorcode.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
@@ -88,7 +87,7 @@ void FRTConnection::calculateSuspension(ErrorType type)
     int64_t delay = 0;
     switch(type) {
     case TRANSIENT:
-        Atomic::postInc(&_transientFailures);
+        _transientFailures.fetch_add(1);
         delay = _transientFailures * getTransientDelay();
         if (delay > getMaxTransientDelay()) {
             delay = getMaxTransientDelay();
@@ -96,7 +95,7 @@ void FRTConnection::calculateSuspension(ErrorType type)
         LOG(warning, "Connection to %s failed or timed out", _address.c_str());
         break;
     case FATAL:
-        Atomic::postInc(&_fatalFailures);
+        _fatalFailures.fetch_add(1);
         delay = _fatalFailures * getFatalDelay();
         if (delay > getMaxFatalDelay()) {
             delay = getMaxFatalDelay();

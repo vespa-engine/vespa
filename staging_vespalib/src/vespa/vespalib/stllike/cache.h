@@ -3,7 +3,7 @@
 
 #include <vespa/vespalib/stllike/lrucache_map.h>
 #include <vespa/vespalib/util/sync.h>
-#include <vespa/vespalib/util/atomic.h>
+#include <atomic>
 
 namespace vespalib {
 
@@ -142,7 +142,7 @@ private:
     size_t              _sizeBytes;
     mutable size_t      _hit;
     mutable size_t      _miss;
-    mutable size_t      _noneExisting;
+    std::atomic<size_t> _noneExisting;
     mutable size_t      _race;
     mutable size_t      _insert;
     mutable size_t      _write;

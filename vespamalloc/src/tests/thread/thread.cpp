@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/atomic.h>
+#include <atomic>
 
 using namespace vespalib;
 
@@ -47,18 +47,18 @@ struct wait_info {
     }
     pthread_cond_t    _cond;
     pthread_mutex_t   _mutex;
-    volatile uint64_t _count;
+    std::atomic<uint64_t> _count;
 };
 
 void * just_wait(void * arg)
 {
     wait_info * info = (wait_info *) arg;
     pthread_mutex_lock(&info->_mutex);
-    vespalib::Atomic::postInc(&info->_count);
+    info->_count++;
     pthread_cond_wait(&info->_cond, &info->_mutex);
     pthread_mutex_unlock(&info->_mutex);
     pthread_cond_signal(&info->_cond);
-    vespalib::Atomic::postDec(&info->_count);
+    info->_count--;
     return arg;
 }
 

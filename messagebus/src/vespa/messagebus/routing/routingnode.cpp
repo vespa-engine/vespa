@@ -7,7 +7,6 @@
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/tracelevel.h>
-#include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/messagebus/network/inetwork.h>
 #include <stack>
@@ -268,7 +267,7 @@ RoutingNode::notifySender()
 void
 RoutingNode::notifyMerge()
 {
-    if (vespalib::Atomic::postDec(&_pending) > 1) {
+    if (_pending.fetch_sub(1) > 1) {
         return;
     }
 

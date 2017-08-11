@@ -232,7 +232,7 @@ DocumentStore::read(DocumentIdT lid, const DocumentTypeRepo &repo) const
     if (useCache()) {
         value = _cache->read(lid);
     } else {
-        vespalib::Atomic::add(&_uncached_lookups, 1UL);
+        _uncached_lookups.fetch_add(1);
         _store->read(lid, value);
     }
     if ( ! value.empty() ) {

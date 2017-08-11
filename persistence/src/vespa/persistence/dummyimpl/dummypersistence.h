@@ -14,17 +14,14 @@
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <atomic>
 
 namespace document {
     class FieldSet;
-    namespace select {
-        class Node;
-    }
+    namespace select { class Node; }
 }
 
-namespace storage {
-namespace spi {
-namespace dummy {
+namespace storage::spi::dummy {
 
 struct BucketEntry
 {
@@ -49,7 +46,7 @@ struct BucketContent {
     std::vector<BucketEntry> _entries;
     GidMapType _gidMap;
     mutable BucketInfo _info;
-    mutable uint32_t _inUse;
+    mutable std::atomic<bool> _inUse;
     mutable bool _outdatedInfo;
     bool _active;
 
@@ -234,6 +231,4 @@ private:
     mutable BucketIdListResult::List _modifiedBuckets;
 };
 
-} // dummy
-} // spi
-} // storage
+}

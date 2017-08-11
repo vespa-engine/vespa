@@ -3,7 +3,6 @@
 #pragma once
 
 #include <vespa/slobrok/sbregister.h>
-#include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/closure.h>
 #include <vespa/vespalib/stllike/string.h>

@@ -6,7 +6,6 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     alloc.cpp
     approx.cpp
     array.cpp
-    atomic.cpp
     backtrace.cpp
     barrier.cpp
     benchmark_timer.cpp

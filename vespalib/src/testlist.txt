@@ -6,7 +6,6 @@ tests/alloc
 tests/approx
 tests/array
 tests/arrayqueue
-tests/atomic
 tests/barrier
 tests/benchmark_timer
 tests/box

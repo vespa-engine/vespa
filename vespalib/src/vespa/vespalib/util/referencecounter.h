@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/atomic.h>
-#include <assert.h>
+#include <atomic>
+#include <cassert>
 
 namespace vespalib
 {
@@ -28,7 +28,7 @@ public:
     /**
      * @brief Constructor.  The object will initially have 1 reference.
      **/
-    ReferenceCounter() : _refs(1) {};
+    ReferenceCounter() : _refs(1) {}
 
     /**
      * @brief Add an owner of this object.
@@ -36,7 +36,7 @@ public:
      * When the owner is finished with the
      * object, call subRef().
      **/
-    void addRef() { vespalib::Atomic::postInc(&_refs); };
+    void addRef() { _refs.fetch_add(1); }
 
     /**
      * @brief Remove an owner of this object.
@@ -44,8 +44,7 @@ public:
      * If that was the last owner, delete the object.
      **/
     void subRef() {
-        unsigned oldVal = vespalib::Atomic::postDec(&_refs);
-        if (oldVal == 1) {
+        if (_refs.fetch_sub(1) == 1) {
             delete this;
         }
     }
@@ -56,7 +55,7 @@ protected:
      **/
     virtual ~ReferenceCounter() { assert (_refs == 0); };
 private:
-    volatile unsigned _refs;
+    std::atomic<unsigned> _refs;
 };
 
 } // namespace vespalib
