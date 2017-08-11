@@ -1,5 +1,6 @@
 package com.yahoo.vespa.hosted.node.verification.hardware;
 
+import com.yahoo.log.LogSetup;
 import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
 import com.yahoo.vespa.hosted.node.verification.commons.HostURLGenerator;
 import com.yahoo.vespa.hosted.node.verification.commons.report.ReportSender;
@@ -39,6 +40,7 @@ public class HardwareBenchmarker {
     }
 
     public static void main(String[] args) throws IOException {
+        LogSetup.initVespaLogging("hardware-benchmarker");
         CommandExecutor commandExecutor = new CommandExecutor();
         ArrayList<URL> nodeInfoUrls;
         if (args.length == 0) {
