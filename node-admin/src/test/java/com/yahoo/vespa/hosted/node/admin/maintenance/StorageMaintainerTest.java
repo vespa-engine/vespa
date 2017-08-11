@@ -1,11 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.system.ProcessExecuter;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
-import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
@@ -22,7 +23,6 @@ import java.time.Duration;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyVararg;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -36,7 +36,8 @@ public class StorageMaintainerTest {
     private final Environment environment = new Environment.Builder()
             .pathResolver(new PathResolver()).build();
     private final Docker docker = mock(Docker.class);
-    private final StorageMaintainer storageMaintainer = new StorageMaintainer(docker,
+    private final ProcessExecuter processExecuter = mock(ProcessExecuter.class);
+    private final StorageMaintainer storageMaintainer = new StorageMaintainer(docker, processExecuter,
             new MetricReceiverWrapper(MetricReceiver.nullImplementation), environment, clock);
 
     @Rule
@@ -62,37 +63,39 @@ public class StorageMaintainerTest {
                 .nodeType("tenants")
                 .nodeFlavor("docker").build();
 
-        when(docker.executeInContainerAsRoot(any(), anyVararg())).thenReturn(new ProcessResult(0, "", ""));
+        try {
+            when(processExecuter.exec(any(String[].class))).thenReturn(new Pair<>(0, ""));
+        } catch (IOException ignored) { }
         storageMaintainer.removeOldFilesFromNode(containerName);
-        verify(docker, times(1)).executeInContainerAsRoot(any(), anyVararg());
+        verifyProcessExecuterCalled(1);
         // Will not actually run maintenance job until an hour passes
         storageMaintainer.removeOldFilesFromNode(containerName);
-        verify(docker, times(1)).executeInContainerAsRoot(any(), anyVararg());
+        verifyProcessExecuterCalled(1);
 
         // Coredump handler has its own throttler
         storageMaintainer.handleCoreDumpsForContainer(containerName, nodeSpec, environment);
-        verify(docker, times(2)).executeInContainerAsRoot(any(), anyVararg());
+        verifyProcessExecuterCalled(2);
 
 
         clock.advance(Duration.ofMinutes(61));
         storageMaintainer.removeOldFilesFromNode(containerName);
-        verify(docker, times(3)).executeInContainerAsRoot(any(), anyVararg());
+        verifyProcessExecuterCalled(3);
 
         storageMaintainer.handleCoreDumpsForContainer(containerName, nodeSpec, environment);
-        verify(docker, times(4)).executeInContainerAsRoot(any(), anyVararg());
+        verifyProcessExecuterCalled(4);
 
         storageMaintainer.handleCoreDumpsForContainer(containerName, nodeSpec, environment);
-        verify(docker, times(4)).executeInContainerAsRoot(any(), anyVararg());
+        verifyProcessExecuterCalled(4);
 
 
         // archiveNodeData is unthrottled and it should reset previous times
         storageMaintainer.archiveNodeData(containerName);
-        verify(docker, times(5)).executeInContainerAsRoot(any(), anyVararg());
+        verifyProcessExecuterCalled(5);
         storageMaintainer.archiveNodeData(containerName);
-        verify(docker, times(6)).executeInContainerAsRoot(any(), anyVararg());
+        verifyProcessExecuterCalled(6);
 
         storageMaintainer.handleCoreDumpsForContainer(containerName, nodeSpec, environment);
-        verify(docker, times(7)).executeInContainerAsRoot(any(), anyVararg());
+        verifyProcessExecuterCalled(7);
     }
 
     @Test
@@ -100,21 +103,30 @@ public class StorageMaintainerTest {
         String hostname = "node-123.us-north-3.test.yahoo.com";
         ContainerName containerName = ContainerName.fromHostname(hostname);
 
-        when(docker.executeInContainerAsRoot(any(), anyVararg()))
-                .thenThrow(new RuntimeException("Something went wrong"))
-                .thenReturn(new ProcessResult(0, "", ""));
+        try {
+            when(processExecuter.exec(any(String[].class)))
+                    .thenThrow(new RuntimeException("Something went wrong"))
+                    .thenReturn(new Pair<>(0, ""));
+        } catch (IOException ignored) { }
+
         try {
             storageMaintainer.removeOldFilesFromNode(containerName);
             fail("Maintenance job should've failed!");
         } catch (RuntimeException ignored) { }
-        verify(docker, times(1)).executeInContainerAsRoot(any(), anyVararg());
+        verifyProcessExecuterCalled(1);
 
         // Maintenance job failed, we should be able to immediately re-run it
         storageMaintainer.removeOldFilesFromNode(containerName);
-        verify(docker, times(2)).executeInContainerAsRoot(any(), anyVararg());
+        verifyProcessExecuterCalled(2);
     }
 
     private static void writeNBytesToFile(File file, int nBytes) throws IOException {
         Files.write(file.toPath(), new byte[nBytes]);
+    }
+
+    private void verifyProcessExecuterCalled(int times) {
+        try {
+            verify(processExecuter, times(times)).exec(any(String[].class));
+        } catch (IOException ignored) { }
     }
 }
