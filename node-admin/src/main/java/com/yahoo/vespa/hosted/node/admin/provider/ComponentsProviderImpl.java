@@ -59,13 +59,14 @@ public class ComponentsProviderImpl implements ComponentsProvider {
         }
 
         Clock clock = Clock.systemUTC();
+        ProcessExecuter processExecuter = new ProcessExecuter();
         ConfigServerHttpRequestExecutor requestExecutor = ConfigServerHttpRequestExecutor.create(configServerHosts);
         Orchestrator orchestrator = new OrchestratorImpl(requestExecutor);
         NodeRepository nodeRepository = new NodeRepositoryImpl(requestExecutor, WEB_SERVICE_PORT, baseHostName);
-        DockerOperations dockerOperations = new DockerOperationsImpl(docker, environment, new ProcessExecuter());
+        DockerOperations dockerOperations = new DockerOperationsImpl(docker, environment, processExecuter);
 
         Optional<StorageMaintainer> storageMaintainer = environment.isRunningLocally() ?
-                Optional.empty() : Optional.of(new StorageMaintainer(docker, metricReceiver, environment, clock));
+                Optional.empty() : Optional.of(new StorageMaintainer(docker, processExecuter, metricReceiver, environment, clock));
         Optional<AclMaintainer> aclMaintainer = environment.isRunningLocally() ?
                 Optional.empty() : Optional.of(new AclMaintainer(dockerOperations, nodeRepository, baseHostName));
 

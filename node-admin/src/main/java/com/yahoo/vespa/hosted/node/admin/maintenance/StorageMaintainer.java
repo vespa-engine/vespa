@@ -6,12 +6,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.collections.Pair;
 import com.yahoo.io.IOUtils;
-import com.yahoo.log.LogLevel;
 import com.yahoo.net.HostName;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
-import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
@@ -30,6 +28,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
@@ -52,14 +52,16 @@ public class StorageMaintainer {
     private final Logger logger = Logger.getLogger(StorageMaintainer.class.getName());
     private final CounterWrapper numberOfNodeAdminMaintenanceFails;
     private final Docker docker;
+    private final ProcessExecuter processExecuter;
     private final Environment environment;
     private final Clock clock;
 
     private Map<ContainerName, MaintenanceThrottler> maintenanceThrottlerByContainerName = new ConcurrentHashMap<>();
 
 
-    public StorageMaintainer(Docker docker, MetricReceiverWrapper metricReceiver, Environment environment, Clock clock) {
+    public StorageMaintainer(Docker docker, ProcessExecuter processExecuter, MetricReceiverWrapper metricReceiver, Environment environment, Clock clock) {
         this.docker = docker;
+        this.processExecuter = processExecuter;
         this.environment = environment;
         this.clock = clock;
 
@@ -157,14 +159,6 @@ public class StorageMaintainer {
         return diskUsageKB * 1024;
     }
 
-    Optional<String> readMeminfo() {
-        try {
-            return Optional.of(new String(Files.readAllBytes(Paths.get("/proc/meminfo"))));
-        } catch (IOException e) {
-            logger.log(LogLevel.WARNING, "Failed to read meminfo", e);
-            return Optional.empty();
-        }
-    }
 
     /**
      * Deletes old log files for vespa, nginx, logstash, etc.
@@ -317,20 +311,33 @@ public class StorageMaintainer {
         return kernelVersion.orElse("unknown");
     }
 
+
+    private String executeMaintainer(String mainClass, String... args) {
+        String[] command = Stream.concat(
+                Stream.of("sudo", "-E", getDefaults().underVespaHome("libexec/vespa/node-admin/maintenance.sh"), mainClass),
+                Stream.of(args))
+                .toArray(String[]::new);
+
+        try {
+            Pair<Integer, String> result = processExecuter.exec(command);
+
+            if (result.getFirst() != 0) {
+                numberOfNodeAdminMaintenanceFails.add();
+                throw new RuntimeException(
+                        String.format("Maintainer failed to execute command: %s, Exit code: %d, Stdout/stderr: %s",
+                                Arrays.toString(command), result.getFirst(), result.getSecond()));
+            }
+            return result.getSecond();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to execute maintainer", e);
+        }
+    }
+
     /**
      * Wrapper for node-admin-maintenance, queues up maintenances jobs and sends a single request to maintenance JVM
      */
     private class MaintainerExecutor {
         private final List<MaintainerExecutorJob> jobs = new ArrayList<>();
-        private final ContainerName executeIn;
-
-        MaintainerExecutor(ContainerName executeIn) {
-            this.executeIn = executeIn;
-        }
-
-        MaintainerExecutor() {
-            this(NODE_ADMIN);
-        }
 
         MaintainerExecutorJob addJob(String jobName) {
             MaintainerExecutorJob job = new MaintainerExecutorJob(jobName);
@@ -346,16 +353,7 @@ public class StorageMaintainer {
                 throw new RuntimeException("Failed transform list of maintenance jobs to JSON");
             }
 
-            String[] command = {"java",
-                                "-cp", getDefaults().underVespaHome("lib/jars/node-maintainer-jar-with-dependencies.jar"),
-                    "-Dvespa.log.target=file:" + getDefaults().underVespaHome("logs/vespa/maintainer.log"),
-                    "com.yahoo.vespa.hosted.node.maintainer.Maintainer", args};
-            ProcessResult result = docker.executeInContainerAsRoot(executeIn, command);
-
-            if (! result.isSuccess()) {
-                numberOfNodeAdminMaintenanceFails.add();
-                throw new RuntimeException("Failed to run maintenance jobs: " + args + result);
-            }
+            executeMaintainer("com.yahoo.vespa.hosted.node.maintainer.Maintainer", args);
         }
     }
 
