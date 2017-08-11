@@ -3,8 +3,7 @@
 
 #include <sys/time.h>
 
-namespace config {
-namespace sentinel {
+namespace config::sentinel {
 
 struct StartMetrics {
     unsigned long currentlyRunningServices;
@@ -23,6 +22,5 @@ struct StartMetrics {
     void maybeLog();
 };
 
-} // end namespace config::sentinel
-} // end namespace config
+}
 

@@ -1,16 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fdispatch.h" 
-
-#include <vespa/searchcore/util/log.h>
-#include <vespa/searchcore/util/eventloop.h>
-#include <vespa/searchcore/fdispatch/search/querycacheutil.h>
-#include <vespa/searchcore/fdispatch/search/nodemanager.h>
-#include <vespa/vespalib/util/exceptions.h>
-#include <vespa/config/helper/configgetter.hpp>
 #include "engineadapter.h"
 #include "rpc.h"
-#include <thread>
+#include <vespa/searchcore/fdispatch/search/querycacheutil.h>
+#include <vespa/searchcore/fdispatch/search/nodemanager.h>
+#include <vespa/searchcore/util/eventloop.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/config/helper/configgetter.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".fdispatch");
@@ -259,9 +256,7 @@ void Fdispatch::configure(std::unique_ptr<FdispatchrcConfig> cfg)
 {
     if (cfg && _config) {
         if ( needRestart(*_config, *cfg) ) {
-            const int sleepMS = (0.100 + 2 * _rndGen.nextDouble()) * 1000;
-            LOG(warning, "Will restart by abort in %d ms.", sleepMS);
-            std::this_thread::sleep_for(std::chrono::milliseconds(sleepMS));
+            LOG(warning, "Will restart by abort now.");
             _needRestart.store(true);
         }
     }

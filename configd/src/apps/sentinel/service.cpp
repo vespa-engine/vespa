@@ -1,26 +1,28 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <sys/types.h>
+
+#include "service.h"
+#include "output-connection.h"
+#include <vespa/vespalib/util/stringfmt.h>
+
 #include <signal.h>
-#include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/wait.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".service", "$Id$");
+LOG_SETUP(".service");
 #include <vespa/log/llparser.h>
 
-#include "service.h"
-#include "output-connection.h"
-
 extern sig_atomic_t stop;
+
+using vespalib::make_string;
 
 namespace config::sentinel {
 
 namespace {
 
-std::string getVespaTempDir() {
-    std::string tmp = getenv("ROOT");
+vespalib::string getVespaTempDir() {
+    vespalib::string tmp = getenv("ROOT");
     tmp += "/var/db/vespa/tmp";
     return tmp;
 }
@@ -71,7 +73,7 @@ Service::reconfigure(const SentinelConfig::Service& config)
     if (config.id != _config->id) {
         LOG(warning, "%s: reconfigured config id '%s' -> '%s' - signaling service restart",
             name().c_str(), _config->id.c_str(), config.id.c_str());
-        terminate(true);
+        terminate();
     }
 
     delete _config;
@@ -88,12 +90,12 @@ Service::reconfigure(const SentinelConfig::Service& config)
 
 Service::~Service()
 {
-    terminate(false);
+    terminate(false, false);
     delete _config;
 }
 
 int
-Service::terminate(bool catchable)
+Service::terminate(bool catchable, bool dumpState)
 {
     if (isRunning()) {
         runPreShutdownCommand();
@@ -107,12 +109,14 @@ Service::terminate(bool catchable)
             return ret;
         } else {
             setState(KILLING);
-            char pstackCmd[256];
-            LOG(info, "%s:%d failed to stop. Will dump the stack",  name().c_str(), _pid);
-            snprintf(pstackCmd, sizeof(pstackCmd), "pstack %d > %s/%s.pstack.%d", _pid, getVespaTempDir().c_str(), name().c_str(), _pid);
-            int pstackRet = system(pstackCmd);
-            if (pstackRet != 0) {
-                LOG(warning, "'%s' failed with return value %d", pstackCmd, pstackRet);
+            if (dumpState) {
+                vespalib::string pstackCmd = make_string("pstack %d > %s/%s.pstack.%d",
+                                                         _pid, getVespaTempDir().c_str(), name().c_str(), _pid);
+                LOG(info, "%s:%d failed to stop. Stack dumped at %s", name().c_str(), _pid, pstackCmd.c_str());
+                int pstackRet = system(pstackCmd.c_str());
+                if (pstackRet != 0) {
+                    LOG(warning, "'%s' failed with return value %d", pstackCmd.c_str(), pstackRet);
+                }
             }
             kill(_pid, SIGCONT); // if it was stopped for some reason
             int ret = kill(_pid, SIGKILL);
@@ -443,4 +447,3 @@ Service::stateName(ServiceState state) const
 }
 
 }
-

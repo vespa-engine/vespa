@@ -5,8 +5,7 @@
 
 namespace ns_log { class LLParser; }
 
-namespace config {
-namespace sentinel {
+namespace config::sentinel {
 
 class OutputConnection {
 private:
@@ -27,6 +26,4 @@ public:
     int fd() const { return _fd; }
 };
 
-} // end namespace sentinel
-} // end namespace config
-
+}

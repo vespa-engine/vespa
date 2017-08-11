@@ -1,25 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "service.h"
+#include "metrics.h"
+#include "state-api.h"
+#include <vespa/config-sentinel.h>
+#include <vespa/config/config.h>
+#include <vespa/vespalib/util/hashmap.h>
 #include <sys/types.h>
 #include <sys/select.h>
 
 #include <list>
-#include <vespa/vespalib/util/hashmap.h>
-
-#include <vespa/config-sentinel.h>
-#include <vespa/config/config.h>
-
-#include "service.h"
-#include "metrics.h"
-#include "state-api.h"
 
 using cloud::config::SentinelConfig;
 using config::ConfigSubscriber;
 using config::ConfigHandle;
 
-namespace config {
-namespace sentinel {
+namespace config::sentinel {
 
 class CommandConnection;
 class OutputConnection;
@@ -77,7 +74,4 @@ public:
     void updateActiveFdset(fd_set *fds, int *maxNum);
 };
 
-
-} // end namespace config::sentinel
-} // end namespace config
-
+}
