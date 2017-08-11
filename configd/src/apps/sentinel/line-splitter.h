@@ -1,8 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-namespace config {
-namespace sentinel {
+namespace config::sentinel {
 
 class LineSplitter {
 private:
@@ -28,6 +27,5 @@ public:
     ~LineSplitter();
 };
 
-} // end namespace config::sentinel
-} // end namespace config
+}
 

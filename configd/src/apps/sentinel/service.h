@@ -1,16 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "metrics.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/config-sentinel.h>
 #include <list>
 
-#include "metrics.h"
-
 using cloud::config::SentinelConfig;
 
-namespace config {
-namespace sentinel {
+namespace config::sentinel {
 
 class OutputConnection;
 
@@ -49,11 +47,14 @@ public:
     ~Service();
     Service(const SentinelConfig::Service& config,
             const SentinelConfig::Application& application,
-	    std::list<OutputConnection *> &ocs,
-            StartMetrics &metrics);
+			std::list<OutputConnection *> &ocs,
+			StartMetrics &metrics);
     void reconfigure(const SentinelConfig::Service& config);
     int pid() const { return _pid; }
-    int terminate(bool catchable);
+    int terminate(bool catchable, bool dumpState);
+    int terminate() {
+        return terminate(true, false);
+    }
     int start();
     void youExited(int status); // Call this if waitpid says it exited
     const vespalib::string & name() const;
@@ -67,6 +68,4 @@ public:
     void incrementRestartPenalty();
 };
 
-} // end namespace sentinel
-} // end namespace config
-
+}

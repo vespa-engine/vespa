@@ -1,39 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/time.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <ctype.h>
-
-#include <list>
-#include <algorithm>
-
-
-#include <vespa/log/log.h>
-LOG_SETUP(".config-handler");
-LOG_RCSID("$Id$");
 
 #include "config-handler.h"
-#include "service.h"
 #include "command-connection.h"
 #include "output-connection.h"
 
 #include <vespa/vespalib/net/simple_metric_snapshot.h>
 #include <vespa/vespalib/net/socket_address.h>
 
-namespace config {
-namespace sentinel {
+#include <vespa/log/log.h>
+LOG_SETUP(".config-handler");
+
+namespace config::sentinel {
 
 int
 ConfigHandler::listen(int port) {
     auto handle = vespalib::SocketAddress::select_local(port).listen();
     if (!handle) {
-        LOG(error, "Fatal: listen on command control socket failed: %s",
-            strerror(errno));
+        LOG(error, "Fatal: listen on command control socket failed: %s", strerror(errno));
         EV_STOPPING("config-sentinel", "listen on command control socket failed");
         exit(EXIT_FAILURE);
     }
@@ -100,7 +83,7 @@ ConfigHandler::terminateServices(bool catchable, bool printDebug)
         if (printDebug && service->isRunning()) {
             LOG(info, "%s: killing", service->name().c_str());
         }
-        service->terminate(catchable);
+        service->terminate(catchable, printDebug);
     }
 }
 
@@ -538,7 +521,7 @@ ConfigHandler::doRestart(CommandConnection *c, char *args, bool force)
     }
     c->printf("terminating service %s pid %d, will be autorestarted\n",
               args, service->pid());
-    service->terminate(!force);
+    service->terminate(!force, false);
 }
 
 void
@@ -568,7 +551,7 @@ ConfigHandler::doStop(CommandConnection *c, char *args, bool force)
         return;
     }
     c->printf("Stopping %s.\n", args);
-    service->terminate(!force);
+    service->terminate(!force, false);
 }
 
 void
@@ -618,6 +601,4 @@ ConfigHandler::doManual(CommandConnection *c, char *args)
     }
 }
 
-
-} // end namespace config::sentinel
-} // end namespace config
+}

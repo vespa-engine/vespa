@@ -3,8 +3,7 @@
 
 #include "line-splitter.h"
 
-namespace config {
-namespace sentinel {
+namespace config::sentinel {
 
 class CommandConnection {
 private:
@@ -26,6 +25,4 @@ public:
     int fd() const { return _fd; }
 };
 
-} // end namespace sentinel
-} // end namespace config
-
+}
