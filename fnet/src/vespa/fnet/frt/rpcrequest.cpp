@@ -129,7 +129,7 @@ void
 FRT_RPCRequest::SubRef()
 {
     int oldVal = _refcnt.fetch_sub(1);
-    assert(oldVal > 1);
+    assert(oldVal > 0);
     if (oldVal == 1) {
         Reset();
         delete this;
