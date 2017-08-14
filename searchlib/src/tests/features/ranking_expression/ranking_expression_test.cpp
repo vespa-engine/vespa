@@ -9,11 +9,48 @@
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 
 using namespace search::features;
+using namespace search::features::rankingexpression;
 using namespace search::fef::test;
 using namespace search::fef;
 using namespace vespalib::eval;
 
 using TypeMap = std::map<vespalib::string,vespalib::string>;
+
+struct DummyExpression : IntrinsicExpression {
+    FeatureType type;
+    DummyExpression(const FeatureType &type_in) : type(type_in) {}
+    FeatureType result_type() const override { return type; }
+    FeatureExecutor &create_executor(const QueryEnv &, vespalib::Stash &) const override {
+        abort();
+    }
+};
+
+struct DummyReplacer : ExpressionReplacer {
+    vespalib::string trigger;
+    FeatureType type;
+    DummyReplacer(const vespalib::string trigger_in, const FeatureType &type_in)
+        : trigger(trigger_in),
+          type(type_in)
+    {}
+    IntrinsicExpression::UP maybe_replace(const vespalib::eval::Function &function,
+                                          const search::fef::IIndexEnvironment &) const override
+    {
+        for (size_t i = 0; i < function.num_params(); ++i) {
+            if (function.param_name(i) == trigger) {
+                return std::make_unique<DummyExpression>(type);
+            }
+        }
+        return IntrinsicExpression::UP(nullptr);
+    }
+};
+
+ExpressionReplacer::SP make_replacer() {
+    auto replacer = std::make_shared<ListExpressionReplacer>();
+    replacer->add(std::make_unique<NullExpressionReplacer>());
+    replacer->add(std::make_unique<DummyReplacer>("foo", FeatureType::number()));
+    replacer->add(std::make_unique<DummyReplacer>("bar", FeatureType::object(ValueType::from_spec("tensor(x[])"))));
+    return replacer;
+}
 
 struct SetupResult {
     IndexEnvironment index_env;
@@ -26,7 +63,7 @@ struct SetupResult {
 
 SetupResult::SetupResult(const TypeMap &object_inputs,
                          const vespalib::string &expression)
-    : index_env(), rank(), deps(rank), setup_ok(false)
+    : index_env(), rank(make_replacer()), deps(rank), setup_ok(false)
 {
     rank.setName("self");
     index_env.getProperties().add("self.rankingScript", expression);
@@ -60,6 +97,12 @@ void verify_setup_fail(const TypeMap &object_inputs,
     EXPECT_EQUAL(0u, result.deps.output.size());
 }
 
+void verify_input_count(const vespalib::string &expression, size_t expect) {
+    SetupResult result({}, expression);
+    EXPECT_TRUE(result.setup_ok);
+    EXPECT_EQUAL(result.deps.input.size(), expect);
+}
+
 TEST("require that expression with only number inputs produce number output (compiled)") {
     TEST_DO(verify_output_type({}, "a*b", FeatureType::number()));
 }
@@ -84,6 +127,24 @@ TEST("require that ranking expression can resolve to 'any' type") {
 
 TEST("require that setup fails for incompatible types") {
     TEST_DO(verify_setup_fail({{"a", "tensor(x{},y{})"}, {"b", "tensor(y[10],z{})"}}, "a*b"));
+}
+
+TEST("require that replaced expressions have no inputs") {
+    TEST_DO(verify_input_count("a*b*c", 3u));
+    TEST_DO(verify_input_count("foo*b*c", 0u));
+    TEST_DO(verify_input_count("a*b*bar", 0u));
+    TEST_DO(verify_input_count("foo*b*bar", 0u));
+}
+
+TEST("require that replaced expressions override result type") {
+    TEST_DO(verify_output_type({{"b", "tensor(z{})"}}, "a*b*c",
+                               FeatureType::object(ValueType::from_spec("tensor(z{})"))));
+    TEST_DO(verify_output_type({{"b", "tensor(z{})"}}, "foo*b*c",
+                               FeatureType::number()));
+    TEST_DO(verify_output_type({{"b", "tensor(z{})"}}, "a*b*bar",
+                               FeatureType::object(ValueType::from_spec("tensor(x[])"))));
+    TEST_DO(verify_output_type({{"b", "tensor(z{})"}}, "foo*b*bar",
+                               FeatureType::number()));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
