@@ -17,27 +17,3 @@ maxvisitorspernodeperclientvisitor int default=16
 # node. If min buckets were 20, only 2 visitors of 20 buckets each would be
 # sent.
 minbucketspervisitor int default=1
-
-# Deprecated - not in use
-storagenetworklatency int default=2
-
-# Deprecated - not in use
-maxbucketspervisitor int default=100
-
-# Deprecated - not in use
-minpendingperstoragevisitor int default=2
-
-# Deprecated - not in use
-minsuperbucketsactive int default=50
-
-# Deprecated - not in use
-minsubbucketsactive int default=10000
-
-# Deprecated - not in use
-progresstimeout int default=180000
-
-# Deprecated - not in use
-highprioritylimit int default=600000
-
-# Deprecated - not in use
-veryhighprioritylimit int default=60000

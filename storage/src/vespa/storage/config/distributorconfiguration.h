@@ -190,9 +190,6 @@ public:
     uint32_t getMinBucketsPerVisitor() const {
         return _minBucketsPerVisitor;
     }
-    int64_t  getMinTimeLeftToResend() const {
-        return _minTimeLeftToResend;
-    }
 
     void setMaxVisitorsPerNodePerClientVisitor(uint32_t n) {
         _maxVisitorsPerNodePerClientVisitor = n;
@@ -200,9 +197,7 @@ public:
     void setMinBucketsPerVisitor(uint32_t n) {
         _minBucketsPerVisitor = n;
     }
-    void setMinTimeLeftToResend(int64_t minTime) {
-        _minTimeLeftToResend = minTime;
-    }
+
     uint32_t getMaxNodesPerMerge() const {
         return _maxNodesPerMerge;
     }
@@ -265,7 +260,6 @@ private:
 
     uint32_t _maxVisitorsPerNodePerClientVisitor;
     uint32_t _minBucketsPerVisitor;
-    int64_t  _minTimeLeftToResend;
 
     MaintenancePriorities _maintenancePriorities;
     std::chrono::seconds _maxClusterClockSkew;

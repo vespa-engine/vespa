@@ -23,8 +23,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.manager");
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 ExternalOperationHandler::ExternalOperationHandler(
         Distributor& owner,
@@ -276,18 +275,10 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, GetBucketList)
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, CreateVisitor)
 {
     const DistributorConfiguration& config(getDistributor().getConfig());
-    VisitorOperation::Config visitorConfig(
-            framework::MilliSecTime(config.getMinTimeLeftToResend()),
-            config.getMinBucketsPerVisitor(),
-            config.getMaxVisitorsPerNodePerClientVisitor());
-    _op = Operation::SP(new VisitorOperation(
-                                *this,
-                                cmd,
-                                visitorConfig,
-                                getMetrics().visits[cmd->getLoadType()]));
+    VisitorOperation::Config visitorConfig(config.getMinBucketsPerVisitor(),
+                                           config.getMaxVisitorsPerNodePerClientVisitor());
+    _op = Operation::SP(new VisitorOperation(*this, cmd, visitorConfig, getMetrics().visits[cmd->getLoadType()]));
     return true;
 }
 
-} // distributor
-} // storage
-
+}

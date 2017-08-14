@@ -23,14 +23,11 @@ class VisitorOperation  : public Operation
 {
 public:
     struct Config {
-        Config(const framework::MilliSecTime& storageNetworkLatency_,
-               uint32_t minBucketsPerVisitor_,
+        Config(uint32_t minBucketsPerVisitor_,
                uint32_t maxVisitorsPerNodePerVisitor_)
-            : storageNetworkLatency(storageNetworkLatency_),
-              minBucketsPerVisitor(minBucketsPerVisitor_),
+            : minBucketsPerVisitor(minBucketsPerVisitor_),
               maxVisitorsPerNodePerVisitor(maxVisitorsPerNodePerVisitor_) {}
 
-        framework::MilliSecTime storageNetworkLatency;
         uint32_t minBucketsPerVisitor;
         uint32_t maxVisitorsPerNodePerVisitor;
     };
