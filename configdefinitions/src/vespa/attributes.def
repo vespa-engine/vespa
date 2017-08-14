@@ -26,3 +26,5 @@ attribute[].upperbound         long default=9223372036854775807
 attribute[].densepostinglistthreshold   double default=0.40
 # Specification of tensor type if this attribute is of type TENSOR.
 attribute[].tensortype         string default=""
+# Whether this is an imported attribute (from parent document db) or not.
+attribute[].imported           bool default=false
