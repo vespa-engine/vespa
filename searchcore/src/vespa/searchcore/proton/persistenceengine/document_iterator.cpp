@@ -80,10 +80,10 @@ DocumentIterator::DocumentIterator(const storage::spi::Bucket &bucket,
       _selection(selection),
       _versions(versions),
       _fields(fields.clone()),
-      _defaultSerializedSize(defaultSerializedSize),
+      _defaultSerializedSize((readConsistency == ReadConsistency::WEAK) ? defaultSerializedSize : -1),
       _readConsistency(readConsistency),
       _metaOnly(fields.getType() == document::FieldSet::NONE),
-      _ignoreMaxBytes(ignoreMaxBytes),
+      _ignoreMaxBytes((readConsistency == ReadConsistency::WEAK) && ignoreMaxBytes),
       _fetchedData(false),
       _sources(),
       _nextItem(0),
@@ -277,7 +277,7 @@ DocumentIterator::fetchCompleteSource(const IDocumentRetriever & source, Iterate
         }
     } else {
         MatchVisitor visitor(matcher, metaData, lidIndexMap, _fields.get(), list, _defaultSerializedSize);
-        visitor.allowVisitCaching(_readConsistency == ReadConsistency::WEAK);
+        visitor.allowVisitCaching(isWeakRead());
         source.visitDocuments(lidsToFetch, visitor, _readConsistency);
     }
 

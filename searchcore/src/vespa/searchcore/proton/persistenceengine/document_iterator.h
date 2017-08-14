@@ -36,6 +36,7 @@ private:
     bool checkDoc(const document::Document &doc) const;
     bool checkDoc(const SelectContext &sc) const;
     void fetchCompleteSource(const IDocumentRetriever & source, storage::spi::IterateResult::List & list);
+    bool isWeakRead() const { return _readConsistency == ReadConsistency::WEAK; }
 
 public:
     DocumentIterator(const storage::spi::Bucket &bucket,
