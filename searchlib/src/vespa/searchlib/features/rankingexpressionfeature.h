@@ -5,6 +5,8 @@
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
+#include <vespa/searchlib/features/rankingexpression/expression_replacer.h>
+#include <vespa/searchlib/features/rankingexpression/intrinsic_expression.h>
 
 namespace search {
 namespace features {
@@ -17,15 +19,15 @@ namespace features {
 class RankingExpressionBlueprint : public fef::Blueprint
 {
 private:
-    vespalib::eval::InterpretedFunction::UP _interpreted_function;
-    vespalib::eval::CompileCache::Token::UP _compile_token;
-    std::vector<char>                       _input_is_object;
+    rankingexpression::ExpressionReplacer::SP  _expression_replacer;
+    rankingexpression::IntrinsicExpression::UP _intrinsic_expression;
+    vespalib::eval::InterpretedFunction::UP    _interpreted_function;
+    vespalib::eval::CompileCache::Token::UP    _compile_token;
+    std::vector<char>                          _input_is_object;
 
 public:
-    /**
-     * Constructs a ranking expression blueprint.
-     */
     RankingExpressionBlueprint();
+    RankingExpressionBlueprint(rankingexpression::ExpressionReplacer::SP replacer);
     ~RankingExpressionBlueprint();
 
     void visitDumpFeatures(const fef::IIndexEnvironment &env, fef::IDumpFeatureVisitor &visitor) const override;
