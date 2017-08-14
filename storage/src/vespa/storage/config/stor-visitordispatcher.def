@@ -7,7 +7,7 @@ namespace=vespa.config.content.core
 # Having several visitor operations running concurrently increases the
 # potential data processing parallelism on the content nodes at the expense
 # of using additional resources.
-maxvisitorspernodeperclientvisitor int default=4
+maxvisitorspernodeperclientvisitor int default=16
 
 # Minimum number of buckets that have to be present on a given content node
 # before more than one visitor operation may be sent in parallel towards it.
@@ -16,7 +16,7 @@ maxvisitorspernodeperclientvisitor int default=4
 # a content node, a total of 4 visitors of 10 buckets each will be sent to the
 # node. If min buckets were 20, only 2 visitors of 20 buckets each would be
 # sent.
-minbucketspervisitor int default=5
+minbucketspervisitor int default=1
 
 # Deprecated - not in use
 storagenetworklatency int default=2
