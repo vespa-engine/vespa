@@ -214,6 +214,7 @@ summary.cache.compression.type enum {NONE, LZ4, ZSTD} default=LZ4 restart
 
 ## Control compression level of the summary while in cache.
 ## LZ4 has normal range 1..9 while ZSTD has range 1..19
+## 9 is a reasonable default for both
 summary.cache.compression.level int default=9 restart
 
 ## Control compression type of the summary while in memory during compaction
@@ -222,6 +223,7 @@ summary.log.compact.compression.type enum {NONE, LZ4, ZSTD} default=ZSTD restart
 
 ## Control compression level of the summary while in memory during compaction
 ## LZ4 has normal range 1..9 while ZSTD has range 1..19
+## 9 is a reasonable default for both
 summary.log.compact.compression.level int default=9 restart
 
 ## Control compression type of the summary
@@ -229,6 +231,8 @@ summary.log.chunk.compression.type enum {NONE, LZ4, ZSTD} default=ZSTD restart
 
 ## Control compression level of the summary
 ## LZ4 has normal range 1..9 while ZSTD has range 1..19
+## 9 is a reasonable default for both. Going above for ZSTD can give an improvement,
+## but is better done in conjunction with increasing chunk size.
 summary.log.chunk.compression.level int default=9 restart
 
 ## Max size in bytes per chunk.
