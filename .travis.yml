@@ -1,0 +1,26 @@
+# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+sudo: required
+
+services:
+   - docker
+
+env:
+  - PLATFORM_LANGUAGE=cpp
+  - PLATFORM_LANGUAGE=java
+
+cache:
+  timeout: 900
+  directories:
+  - $HOME/.m2
+  - $HOME/.ccache
+
+before_cache:
+  - rm -rf /root/.m2/repository/com/yahoo
+  - rm -rf /root/.m2/repository/simple/dummy-persistence
+
+install: true
+
+language: generic
+
+script: sh ./travis/travis.sh $PLATFORM_LANGUAGE
+
