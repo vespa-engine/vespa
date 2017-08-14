@@ -1,0 +1,16 @@
+sudo: required
+
+language: java
+jdk:
+  - oraclejdk8
+
+services:
+   - docker
+
+cache:
+  directories:
+    - $HOME/.m2
+
+install: true
+
+script: travis_wait 45 docker/vespa-ci.sh
