@@ -217,14 +217,14 @@ summary.cache.compression.level int default=9 restart
 
 ## Control compression type of the summary while in memory during compaction
 ## NB So far only stragey=LOG honours it.
-summary.log.compact.compression.type enum {NONE, LZ4, ZSTD} default=LZ4 restart
+summary.log.compact.compression.type enum {NONE, LZ4, ZSTD} default=ZSTD restart
 
 ## Control compression level of the summary while in memory during compaction
 summary.log.compact.compression.level int default=9 restart
 
 ## Control compression type of the summary
 ## NB So far only stragey=LOG honours it.
-summary.log.chunk.compression.type enum {NONE, LZ4, ZSTD} default=LZ4 restart
+summary.log.chunk.compression.type enum {NONE, LZ4, ZSTD} default=ZSTD restart
 
 ## Control compression level of the summary
 summary.log.chunk.compression.level int default=9 restart
