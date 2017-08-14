@@ -354,6 +354,8 @@ void StoreOnlyFeedView::putSummary(SerialNum serialNum,  search::DocumentIdT lid
                                    FutureStream futureStream, OnOperationDoneType onDone)
 {
     _pendingLidTracker.produce(lid);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Winline" // Avoid spurious inlining warning from GCC related to lambda destructor.
     summaryExecutor().execute(
             makeLambdaTask([serialNum, lid, futureStream = std::move(futureStream), onDone, this] () mutable {
                 (void) onDone;
@@ -363,18 +365,22 @@ void StoreOnlyFeedView::putSummary(SerialNum serialNum,  search::DocumentIdT lid
                 }
                 _pendingLidTracker.consume(lid);
             }));
+#pragma GCC diagnostic pop
 }
 
 void StoreOnlyFeedView::putSummary(SerialNum serialNum,  search::DocumentIdT lid,
                                    Document::SP doc, OnOperationDoneType onDone)
 {
     _pendingLidTracker.produce(lid);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Winline" // Avoid spurious inlining warning from GCC related to lambda destructor.
     summaryExecutor().execute(
             makeLambdaTask([serialNum, doc = std::move(doc), onDone, lid, this] {
                 (void) onDone;
                 _summaryAdapter->put(serialNum, lid, *doc);
                 _pendingLidTracker.consume(lid);
             }));
+#pragma GCC diagnostic pop
 }
 void StoreOnlyFeedView::removeSummary(SerialNum serialNum,  search::DocumentIdT lid) {
     _pendingLidTracker.produce(lid);
@@ -439,7 +445,8 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
         if (useDocumentStore(serialNum)) {
             putSummary(serialNum, lid, std::move(futureStream), onWriteDone);
         }
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Winline" // Avoid spurious inlining warning from GCC related to lambda destructor.
         _writeService
                 .attributeFieldWriter()
                 .execute(serialNum,
@@ -450,6 +457,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
                              makeUpdatedDocument(serialNum, std::move(prevDoc), upd,
                                                  onWriteDone, std::move(promisedDoc), std::move(promisedStream));
                          });
+#pragma GCC diagnostic pop
     }
     if (!updateScope._indexedFields && onWriteDone) {
         if (onWriteDone->shouldTrace(1)) {
