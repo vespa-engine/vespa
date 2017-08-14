@@ -2,7 +2,7 @@
 namespace=vespa.config.content.core
 
 ## Number of separate threads that runs visitors.
-visitorthreads int default=4 restart
+visitorthreads int default=16 restart
 
 ## Default timeout of visitors that loses contact with client (in seconds)
 disconnectedvisitortimeout int default=0 restart
@@ -24,10 +24,10 @@ defaultparalleliterators int default=8
 ## will be 16 requests to persistence layer, but only 8 will be able to execute
 ## at the same time, since only one operation can be executed at the same time
 ## for one bucket)
-iterators_per_bucket int default=3
+iterators_per_bucket int default=1
 
 ## Default number of maximum client replies pending.
-defaultpendingmessages int default=8
+defaultpendingmessages int default=32
 
 ## Default size of docblocks used to transfer visitor data.
 defaultdocblocksize int default=4190208
