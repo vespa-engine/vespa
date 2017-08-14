@@ -1,15 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.node.Allocation;
-import com.yahoo.vespa.hosted.provision.node.Generation;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -67,22 +63,11 @@ public class DockerHostCapacityTest {
     @Test
     public void compare_used_to_sort_in_decending_order() {
         assertEquals(host1, nodes.get(0)); //Make sure it is unsorted here
+
         Collections.sort(nodes, capacity::compare);
         assertEquals(host3, nodes.get(0));
         assertEquals(host1, nodes.get(1));
         assertEquals(host2, nodes.get(2));
-
-        // Replace a node for host 2 with a headroom node - host2 should then be prioritized
-        Allocation allocation = new Allocation(app(DockerHostCapacity.HEADROOM_TENANT), ClusterMembership.from("container/id1/3", new Version()), Generation.inital(), false);
-        Node nodeF = Node.create("nodeF", Collections.singleton("::6"), Collections.emptySet(), "nodeF", Optional.of("host2"), flavorDocker, NodeType.tenant);
-        Node nodeFWithAllocation = nodeF.with(allocation);
-        nodes.add(nodeFWithAllocation);
-        nodes.remove(nodeC);
-        capacity = new DockerHostCapacity(nodes);
-        Collections.sort(nodes, capacity::compare);
-        assertEquals(host3, nodes.get(0));
-        assertEquals(host2, nodes.get(1));
-        assertEquals(host1, nodes.get(2));
     }
 
     @Test
