@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
  * @author freva
  */
 public class FlavorSpareCount {
-
     private final Flavor flavor;
     private Set<FlavorSpareCount> possibleWantedFlavors;
     private Set<FlavorSpareCount> immediateReplacees;

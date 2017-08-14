@@ -117,7 +117,14 @@ public class AllocationSimulator {
         NodeSpec.CountNodeSpec nodeSpec = new NodeSpec.CountNodeSpec(count, flavor);
         NodeAllocation allocation = new NodeAllocation(app(id), cluster(), nodeSpec, new MutableInteger(0), Clock.systemUTC());
 
-        List<Node> accepted = new ArrayList<>(); //TODO adpot the new allocation algoritm
+        List<Node> accepted = DockerAllocator.allocateNewDockerNodes(allocation,
+                nodeSpec,
+                new ArrayList<>(nodes.asList()),
+                new ArrayList<>(nodes.asList()),
+                flavors,
+                flavor,
+                2,
+                (nodes, message)-> visualizer.addStep(nodes, id, message));
 
         accepted.addAll(nodes.asList());
         nodes = new NodeList(accepted);

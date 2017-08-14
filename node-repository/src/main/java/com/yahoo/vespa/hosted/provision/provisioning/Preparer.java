@@ -88,12 +88,7 @@ class Preparer {
             }
         }
     }
-
-    /**
-     * Nodes are immutable so when changing attributes to the node we create a new instance.
-     *
-     * This method is used to both add new nodes and replaces old node references with the new references.
-     */
+    
     private List<Node> replace(List<Node> list, List<Node> changed) {
         list.removeAll(changed);
         list.addAll(changed);
@@ -126,4 +121,5 @@ class Preparer {
         }
         return retired;
     }
+
 }
