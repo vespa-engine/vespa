@@ -47,13 +47,23 @@ void verify_dir() {
 
 //-----------------------------------------------------------------------------
 
+struct Attribute {
+    std::string dataType;
+    std::string collectionType;
+    std::string imported;
+    Attribute(const std::string &dataType_,
+              const std::string &collectionType_,
+              const std::string &imported_)
+        : dataType(dataType_), collectionType(collectionType_), imported(imported_)
+    {}
+};
+
 struct Model {
     std::map<std::string,std::pair<std::string,std::string> > indexes;
-    std::map<std::string,std::pair<std::string,std::string> > attributes;
+    std::map<std::string,Attribute>                           attributes;
     std::map<std::string,std::string>                         properties;
     std::map<std::string,std::string>                         constants;
     std::vector<bool>                                         extra_profiles;
-    std::vector<std::string>                                  imported_attributes;
     Model();
     ~Model();
     void index(const std::string &name, schema::DataType data_type,
@@ -63,10 +73,11 @@ struct Model {
         indexes[name].second = schema::getTypeName(collection_type);
     }
     void attribute(const std::string &name, schema::DataType data_type,
-                   schema::CollectionType collection_type)
+                   schema::CollectionType collection_type, bool imported = false)
     {
-        attributes[name].first = schema::getTypeName(data_type);
-        attributes[name].second = schema::getTypeName(collection_type);
+        attributes.emplace(name, Attribute(schema::getTypeName(data_type),
+                                           schema::getTypeName(collection_type),
+                                           (imported ? "true" : "false")));
     }
     void property(const std::string &name, const std::string &val) {
         properties[name] = val;
@@ -89,16 +100,14 @@ struct Model {
     void bad_profile() {
         extra_profiles.push_back(false);
     }
-    void imported_attribute(const std::string &name) {
-        imported_attributes.emplace_back(name);
-    }
     void write_attributes(const Writer &out) {
         out.fmt("attribute[%zu]\n", attributes.size());
-        std::map<std::string,std::pair<std::string,std::string> >::const_iterator pos = attributes.begin();
+        auto pos = attributes.begin();
         for (size_t i = 0; pos != attributes.end(); ++pos, ++i) {
             out.fmt("attribute[%zu].name \"%s\"\n", i, pos->first.c_str());
-            out.fmt("attribute[%zu].datatype %s\n", i, pos->second.first.c_str());
-            out.fmt("attribute[%zu].collectiontype %s\n", i, pos->second.second.c_str());
+            out.fmt("attribute[%zu].datatype %s\n", i, pos->second.dataType.c_str());
+            out.fmt("attribute[%zu].collectiontype %s\n", i, pos->second.collectionType.c_str());
+            out.fmt("attribute[%zu].imported %s\n", i, pos->second.imported.c_str());
         }
     }
     void write_indexschema(const Writer &out) {
@@ -134,21 +143,11 @@ struct Model {
             ++idx;
         }
     }
-    void write_imported_attributes(const Writer &out) {
-        size_t idx = 0;
-        for (const auto &attr : imported_attributes) {
-            out.fmt("attribute[%zu].name \"%s\"\n", idx, attr.c_str());
-            out.fmt("attribute[%zu].referencefield \"%s_ref\"\n", idx, attr.c_str());
-            out.fmt("attribute[%zu].targetfield \"%s_target\"\n", idx, attr.c_str());
-            ++idx;
-        }
-    }
     void generate() {
         write_attributes(Writer(gen_dir + "/attributes.cfg"));
         write_indexschema(Writer(gen_dir + "/indexschema.cfg"));
         write_rank_profiles(Writer(gen_dir + "/rank-profiles.cfg"));
         write_ranking_constants(Writer(gen_dir + "/ranking-constants.cfg"));
-        write_imported_attributes(Writer(gen_dir + "/imported-fields.cfg"));
     }
     bool verify() {
         generate();
@@ -192,7 +191,7 @@ struct SimpleModel : Model {
         index("list", DataType::STRING, CollectionType::ARRAY);
         index("keywords", DataType::STRING, CollectionType::WEIGHTEDSET);
         attribute("date", DataType::INT32, CollectionType::SINGLE);
-        imported_attribute("imported_attr");
+        attribute("imported_attr", DataType::INT32, CollectionType::SINGLE, true);
         constants["my_tensor"] = "tensor(x{},y{})";
     }
 };

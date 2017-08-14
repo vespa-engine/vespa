@@ -52,14 +52,12 @@ namespace {
 Schema::SP
 buildNewSchema(const AttributesConfig &newAttributesConfig,
                const SummaryConfig &newSummaryConfig,
-               const IndexschemaConfig &newIndexschemaConfig,
-               const ImportedFieldsConfig &newImportedFieldsConfig)
+               const IndexschemaConfig &newIndexschemaConfig)
 {
     Schema::SP schema = std::make_shared<Schema>();
     SchemaBuilder::build(newAttributesConfig, *schema);
     SchemaBuilder::build(newSummaryConfig, *schema);
     SchemaBuilder::build(newIndexschemaConfig, *schema);
-    SchemaBuilder::build(newImportedFieldsConfig, *schema);
     return schema;
 }
 
@@ -68,8 +66,7 @@ buildNewSchema(const AttributesConfig &newAttributesConfig,
 Schema::SP
 DocumentDBConfigManager::buildSchema(const AttributesConfig &newAttributesConfig,
                                      const SummaryConfig &newSummaryConfig,
-                                     const IndexschemaConfig &newIndexschemaConfig,
-                                     const ImportedFieldsConfig &newImportedFieldsConfig)
+                                     const IndexschemaConfig &newIndexschemaConfig)
 {
     // Called with lock held
     Schema::SP oldSchema;
@@ -77,16 +74,14 @@ DocumentDBConfigManager::buildSchema(const AttributesConfig &newAttributesConfig
         oldSchema = _pendingConfigSnapshot->getSchemaSP();
     }
     if (oldSchema.get() == NULL) {
-        return buildNewSchema(newAttributesConfig, newSummaryConfig,
-                              newIndexschemaConfig, newImportedFieldsConfig);
+        return buildNewSchema(newAttributesConfig, newSummaryConfig, newIndexschemaConfig);
     }
     const DocumentDBConfig &old = *_pendingConfigSnapshot;
     if (old.getAttributesConfig() != newAttributesConfig ||
         old.getSummaryConfig() != newSummaryConfig ||
         old.getIndexschemaConfig() != newIndexschemaConfig)
     {
-        Schema::SP schema(buildNewSchema(newAttributesConfig, newSummaryConfig,
-                                         newIndexschemaConfig, newImportedFieldsConfig));
+        Schema::SP schema(buildNewSchema(newAttributesConfig, newSummaryConfig, newIndexschemaConfig));
         return (*oldSchema == *schema) ? oldSchema : schema;
     }
     return oldSchema;
@@ -279,8 +274,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
 
     Schema::SP schema(buildSchema(*newAttributesConfig,
                                   *newSummaryConfig,
-                                  *newIndexschemaConfig,
-                                  *newImportedFieldsConfig));
+                                  *newIndexschemaConfig));
     newMaintenanceConfig = buildMaintenanceConfig(_bootstrapConfig,
                                                   _docTypeName);
     if (newMaintenanceConfig.get() != NULL &&

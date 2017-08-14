@@ -240,13 +240,12 @@ TEST_FF("require that documentdb config manager subscribes for config",
     ASSERT_TRUE(f1.configEqual("typea", getDocumentDBConfig(f1, f2)));
 }
 
-TEST_FF("require that documentdb config manager builds config with imported attribute fields",
+TEST_FF("require that documentdb config manager builds schema with imported attribute fields"
+        " and that they are filtered from resulting attribute config",
         ConfigTestFixture("search"),
         DocumentDBConfigManager(f1.configId + "/typea", "typea"))
 {
     auto *docType = f1.addDocType("typea");
-    docType->importedFieldsBuilder.attribute.resize(1);
-    docType->importedFieldsBuilder.attribute[0].name = "imported";
     docType->attributesBuilder.attribute.resize(2);
     docType->attributesBuilder.attribute[0].name = "imported";
     docType->attributesBuilder.attribute[0].imported = true;
@@ -255,6 +254,9 @@ TEST_FF("require that documentdb config manager builds config with imported attr
     const auto &schema = getDocumentDBConfig(f1, f2)->getSchemaSP();
     EXPECT_EQUAL(1u, schema->getNumImportedAttributeFields());
     EXPECT_EQUAL("imported", schema->getImportedAttributeFields()[0].getName());
+    EXPECT_EQUAL(1u, schema->getNumAttributeFields());
+    EXPECT_EQUAL("regular", schema->getAttributeFields()[0].getName());
+
     const auto &attrCfg = getDocumentDBConfig(f1, f2)->getAttributesConfig();
     EXPECT_EQUAL(1u, attrCfg.attribute.size());
     EXPECT_EQUAL("regular", attrCfg.attribute[0].name);

@@ -411,14 +411,19 @@ TEST("require that imported attribute fields are not saved to disk")
     }
 }
 
-TEST("require that schema can be built from imported-fields config")
+TEST("require that schema can be built with imported attribute fields")
 {
     Schema s;
     SchemaConfigurer configurer(s, "dir:" + TEST_PATH("imported-fields-cfg"));
+
     const auto &imported = s.getImportedAttributeFields();
     EXPECT_EQUAL(2u, imported.size());
     TEST_DO(assertField(SIAF("imported_a", DataType::INT32, CollectionType::SINGLE), imported[0]));
     TEST_DO(assertField(SIAF("imported_b", DataType::STRING, CollectionType::ARRAY), imported[1]));
+
+    const auto &regular = s.getAttributeFields();
+    EXPECT_EQUAL(1u, regular.size());
+    TEST_DO(assertField(SIAF("regular", DataType::INT32, CollectionType::SINGLE), regular[0]));
 }
 
 }  // namespace index

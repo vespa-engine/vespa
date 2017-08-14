@@ -57,7 +57,6 @@ struct DBConfigFixture {
         SchemaBuilder::build(_attributesBuilder, *schema);
         SchemaBuilder::build(_summaryBuilder, *schema);
         SchemaBuilder::build(_indexschemaBuilder, *schema);
-        SchemaBuilder::build(_importedFieldsBuilder, *schema);
         return schema;
     }
 

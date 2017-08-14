@@ -39,7 +39,6 @@ public:
      **/
     static void build(const vespa::config::search::SummaryConfig &cfg, Schema &schema);
 
-    static void build(const vespa::config::search::ImportedFieldsConfig &cfg, Schema &schema);
 };
 
 class SchemaConfigurer
@@ -49,7 +48,6 @@ private:
     void configure(const vespa::config::search::IndexschemaConfig & cfg);
     void configure(const vespa::config::search::AttributesConfig & cfg);
     void configure(const vespa::config::search::SummaryConfig & cfg);
-    void configure(const vespa::config::search::ImportedFieldsConfig &cfg);
 
 public:
     /**

@@ -31,8 +31,8 @@ private:
     search::index::Schema::SP
     buildSchema(const DocumentDBConfig::AttributesConfig & newAttributesConfig,
                 const DocumentDBConfig::SummaryConfig & newSummaryConfig,
-                const DocumentDBConfig::IndexschemaConfig & newIndexschemaConfig,
-                const DocumentDBConfig::ImportedFieldsConfig &newImportedFieldsConfig);
+                const DocumentDBConfig::IndexschemaConfig & newIndexschemaConfig);
+
 public:
     DocumentDBConfigManager(const vespalib::string &configId,
                             const vespalib::string &docTypeName);
