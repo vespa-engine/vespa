@@ -226,6 +226,10 @@ public class ProvisioningTester implements AutoCloseable {
     }
 
     public List<Node> makeReadyNodes(int n, String flavor, NodeType type, int additionalIps) {
+        return makeReadyNodes(n, UUID.randomUUID().toString(), flavor, type, additionalIps);
+    }
+
+    public List<Node> makeReadyNodes(int n, String prefix, String flavor, NodeType type, int additionalIps) {
         List<Node> nodes = new ArrayList<>(n);
         for (int i = 0; i < n; i++) {
             Set<String> ips = IntStream.range(additionalIps * i, additionalIps * (i+1))
@@ -233,7 +237,7 @@ public class ProvisioningTester implements AutoCloseable {
                     .collect(Collectors.toSet());
 
             nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(),
-                    UUID.randomUUID().toString(),
+                    prefix + i,
                     Collections.emptySet(),
                     ips,
                     Optional.empty(),

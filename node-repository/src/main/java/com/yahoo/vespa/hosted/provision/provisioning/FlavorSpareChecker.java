@@ -29,6 +29,7 @@ import java.util.Set;
  * @author freva
  */
 public class FlavorSpareChecker {
+
     private final SpareNodesPolicy spareNodesPolicy;
     private final Map<Flavor, FlavorSpareCount> spareCountByFlavor;
 
