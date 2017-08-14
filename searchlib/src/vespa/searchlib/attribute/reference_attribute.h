@@ -6,6 +6,7 @@
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/datastore/unique_store.h>
 #include <vespa/searchlib/common/rcuvector.h>
+#include "postingstore.h"
 
 namespace search {
 
@@ -29,16 +30,19 @@ public:
     using GlobalId = document::GlobalId;
     class Reference {
         GlobalId _gid;
-        mutable uint32_t _lid;
+        mutable uint32_t _lid;  // referenced lid
+        mutable EntryRef _pidx; // map from gid to lids referencing gid
     public:
         Reference()
             : _gid(),
-              _lid(0u)
+              _lid(0u),
+              _pidx()
         {
         }
         Reference(const GlobalId &gid_)
             : _gid(gid_),
-              _lid(0u)
+              _lid(0u),
+              _pidx()
         {
         }
         bool operator<(const Reference &rhs) const {
@@ -46,15 +50,30 @@ public:
         }
         const GlobalId &gid() const { return _gid; }
         uint32_t lid() const { return _lid; }
+        EntryRef pidx() const { return _pidx; }
         void setLid(uint32_t referencedLid) const { _lid = referencedLid; }
+        void setPidx(EntryRef newPidx) const { _pidx = newPidx; }
     };
-    using Store = datastore::UniqueStore<Reference>;
+    using ReferenceStore = datastore::UniqueStore<Reference>;
+    using ReferenceStoreIndices = RcuVectorBase<EntryRef>;
     using IndicesCopyVector = vespalib::Array<EntryRef>;
+    using ReverseMappingIndices = RcuVectorBase<EntryRef>;
+    using ReverseMapping = btree::BTreeStore<uint32_t, btree::BTreeNoLeafData,
+                                             btree::NoAggregated,
+                                             std::less<uint32_t>,
+                                             btree::BTreeDefaultTraits,
+                                             btree::NoAggrCalc>;
 private:
-    Store _store;
-    RcuVectorBase<EntryRef> _indices;
+    ReferenceStore _store;
+    ReferenceStoreIndices _indices;
     MemoryUsage _cachedUniqueStoreMemoryUsage;
     std::shared_ptr<IGidToLidMapperFactory> _gidToLidMapperFactory;
+    // Vector containing references to trees of lids referencing given
+    // referenced lid.
+    ReverseMappingIndices _reverseMappingIndices;
+    // Store of B-Trees, used to map from gid or referenced lid to
+    // referencing lids.
+    ReverseMapping _reverseMapping;
 
     virtual void onAddDocs(DocId docIdLimit) override;
     virtual void removeOldGenerations(generation_t firstUsed) override;
@@ -68,6 +87,11 @@ private:
     bool considerCompact(const CompactionStrategy &compactionStrategy);
     void compactWorst();
     IndicesCopyVector getIndicesCopy(uint32_t size) const;
+    void syncReverseMappingIndices(const Reference &entry);
+    void removeReverseMapping(EntryRef oldRef, uint32_t lid);
+    void addReverseMapping(EntryRef newRef, uint32_t lid);
+    void buildReverseMapping(EntryRef newRef, const std::vector<ReverseMapping::KeyDataType> &adds);
+    void buildReverseMapping();
 
 public:
     using SP = std::shared_ptr<ReferenceAttribute>;
@@ -86,7 +110,21 @@ public:
     void populateReferencedLids();
     virtual void clearDocs(DocId lidLow, DocId lidLimit) override;
     virtual void onShrinkLidSpace() override;
+
+    template <typename FunctionType>
+    void
+    foreach_lid(uint32_t referencedLid, FunctionType &&func) const;
 };
+
+template <typename FunctionType>
+void
+ReferenceAttribute::foreach_lid(uint32_t referencedLid, FunctionType &&func) const
+{
+    if (referencedLid < _reverseMappingIndices.size()) {
+        EntryRef pidx = _reverseMappingIndices[referencedLid];
+        _reverseMapping.foreach_frozen_key(pidx, func);
+    }
+}
 
 }
 }

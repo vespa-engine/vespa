@@ -43,6 +43,17 @@ struct MyGidToLidMapperFactory : public search::attribute::test::MockGidToLidMap
     }
 };
 
+class LidCollector
+{
+    std::vector<uint32_t> &_lids;
+public:
+    LidCollector(std::vector<uint32_t> &lids)
+        : _lids(lids)
+    {
+    }
+    void operator()(uint32_t lid) { _lids.push_back(lid); }
+};
+
 struct Fixture
 {
     std::shared_ptr<ReferenceAttribute> _attr;
@@ -121,6 +132,14 @@ struct Fixture
         auto ref = getRef(doc);
         EXPECT_TRUE(ref == nullptr);
         EXPECT_EQUAL(0u, _attr->getReferencedLid(doc));
+    }
+
+    void assertLids(uint32_t referencedLid, std::vector<uint32_t> expLids)
+    {
+        std::vector<uint32_t> lids;
+        LidCollector collector(lids);
+        _attr->foreach_lid(referencedLid, collector);
+        EXPECT_EQUAL(expLids, lids);
     }
 
     void save() {
@@ -287,7 +306,9 @@ TEST_F("require that notifyGidToLidChange() updates lid-2-lid mapping", Fixture)
     TEST_DO(f.assertRefLid(3, 10));
 }
 
-TEST_F("require that populateReferencedLids() uses gid-mapper to update lid-2-lid mapping", Fixture)
+namespace {
+
+void preparePopulateReferencedLids(Fixture &f)
 {
     f.ensureDocIdLimit(6);
     f.set(1, toGid(doc1));
@@ -300,6 +321,10 @@ TEST_F("require that populateReferencedLids() uses gid-mapper to update lid-2-li
     TEST_DO(f.assertRefLid(3, 0));
     TEST_DO(f.assertRefLid(4, 0));
     TEST_DO(f.assertNoRefLid(5));
+}
+
+void checkPopulateReferencedLids(Fixture &f)
+{
     std::shared_ptr<search::IGidToLidMapperFactory> factory = std::make_shared<MyGidToLidMapperFactory>();
     f._attr->setGidToLidMapperFactory(factory);
     f.populateReferencedLids();
@@ -308,6 +333,42 @@ TEST_F("require that populateReferencedLids() uses gid-mapper to update lid-2-li
     TEST_DO(f.assertRefLid(3, 10));
     TEST_DO(f.assertRefLid(4, 0));
     TEST_DO(f.assertNoRefLid(5));
+    TEST_DO(f.assertLids(0, { }));
+    TEST_DO(f.assertLids(10, { 1, 3}));
+    TEST_DO(f.assertLids(17, { 2 }));
+    TEST_DO(f.assertLids(18, { }));
+}
+
+}
+
+TEST_F("require that populateReferencedLids() uses gid-mapper to update lid-2-lid mapping", Fixture)
+{
+    TEST_DO(preparePopulateReferencedLids(f));
+    TEST_DO(checkPopulateReferencedLids(f));
+}
+
+TEST_F("require that populateReferencedLids() uses gid-mapper to update lid-2-lid mapping after load", Fixture)
+{
+    TEST_DO(preparePopulateReferencedLids(f));
+    f.save();
+    f.load();
+    TEST_DO(checkPopulateReferencedLids(f));
+}
+
+TEST_F("Require that notifyGidToLidChange changes reverse mapping", Fixture)
+{
+    TEST_DO(preparePopulateReferencedLids(f));
+    TEST_DO(f.assertLids(10, { }));
+    TEST_DO(f.assertLids(11, { }));
+    f.notifyGidToLidChange(toGid(doc1), 10);
+    TEST_DO(f.assertLids(10, { 1, 3}));
+    TEST_DO(f.assertLids(11, { }));
+    f.notifyGidToLidChange(toGid(doc1), 11);
+    TEST_DO(f.assertLids(10, { }));
+    TEST_DO(f.assertLids(11, { 1, 3}));
+    f.notifyGidToLidChange(toGid(doc1), 0);
+    TEST_DO(f.assertLids(10, { }));
+    TEST_DO(f.assertLids(11, { }));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -30,7 +30,7 @@ private:
     using EntryRef = search::datastore::EntryRef;
     using GlobalId = document::GlobalId;
     using IndicesCopyVector = ReferenceAttribute::IndicesCopyVector;
-    using Store = ReferenceAttribute::Store;
+    using Store = ReferenceAttribute::ReferenceStore;
     using Reference = ReferenceAttribute::Reference;
     using Saver = Store::Saver;
     IndicesCopyVector _indices;
