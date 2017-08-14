@@ -91,5 +91,4 @@ public class ResourceCapacity {
         b.addFlavor("spareflavor", cpu, memory, disk, Flavor.Type.DOCKER_CONTAINER).idealHeadroom(1);
         return new Flavor(b.build().flavor(0));
     }
-
 }

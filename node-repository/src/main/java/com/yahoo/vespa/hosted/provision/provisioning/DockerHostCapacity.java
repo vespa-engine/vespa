@@ -38,21 +38,9 @@ public class DockerHostCapacity {
      * Used in prioritizing hosts for allocation in <b>descending</b> order.
      */
     int compare(Node hostA, Node hostB) {
-        int comp = freeCapacityOf(hostB, false).compare(freeCapacityOf(hostA, false));
+        int comp = freeCapacityOf(hostB, true).compare(freeCapacityOf(hostA, true));
         if (comp == 0) {
             comp = freeCapacityOf(hostB, false).compare(freeCapacityOf(hostA, false));
-            if (comp == 0) {
-                // If resources are equal - we want to assign to the one with the most IPaddresses free
-                comp = freeIPs(hostB) - freeIPs(hostA);
-            }
-        }
-        return comp;
-    }
-
-    int compareWithoutInactive(Node hostA, Node hostB) {
-        int comp = freeCapacityOf(hostB,  true).compare(freeCapacityOf(hostA, true));
-        if (comp == 0) {
-            comp = freeCapacityOf(hostB, true).compare(freeCapacityOf(hostA, true));
             if (comp == 0) {
                 // If resources are equal - we want to assign to the one with the most IPaddresses free
                 comp = freeIPs(hostB) - freeIPs(hostA);
@@ -66,10 +54,6 @@ public class DockerHostCapacity {
      * if we could allocate a flavor on the docker host.
      */
     boolean hasCapacity(Node dockerHost, Flavor flavor) {
-        return freeCapacityOf(dockerHost, false).hasCapacityFor(flavor) && freeIPs(dockerHost) > 0;
-    }
-
-    boolean hasCapacityWhenRetiredAndInactiveNodesAreGone(Node dockerHost, Flavor flavor) {
         return freeCapacityOf(dockerHost, true).hasCapacityFor(flavor) && freeIPs(dockerHost) > 0;
     }
 
@@ -117,32 +101,18 @@ public class DockerHostCapacity {
 
     /**
      * Calculate the remaining capacity for the dockerHost.
-     * @param dockerHost The host to find free capacity of.
-     *
-     * @return A default (empty) capacity if not a docker host, otherwise the free/unallocated/rest capacity
      */
-    public ResourceCapacity freeCapacityOf(Node dockerHost, boolean treatInactiveOrRetiredAsUnusedCapacity) {
+    private ResourceCapacity freeCapacityOf(Node dockerHost, boolean includeHeadroom) {
         // Only hosts have free capacity
         if (!dockerHost.type().equals(NodeType.host)) return new ResourceCapacity();
 
         ResourceCapacity hostCapacity = new ResourceCapacity(dockerHost);
         for (Node container : allNodes.childNodes(dockerHost).asList()) {
-            boolean isUsedCapacity = !(treatInactiveOrRetiredAsUnusedCapacity && isInactiveOrRetired(container));
-            if (isUsedCapacity) {
+            if (includeHeadroom || !(container.allocation().isPresent() && container.allocation().get().owner().tenant().value().equals(HEADROOM_TENANT))) {
                 hostCapacity.subtract(container);
             }
         }
         return hostCapacity;
-    }
-
-    private boolean isInactiveOrRetired(Node node) {
-        boolean isInactive = node.state().equals(Node.State.inactive);
-        boolean isRetired = false;
-        if (node.allocation().isPresent()) {
-            isRetired = node.allocation().get().membership().retired();
-        }
-
-        return isInactive || isRetired;
     }
 
     /**
