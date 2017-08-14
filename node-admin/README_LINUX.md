@@ -36,26 +36,6 @@ Finally, start docker:
 sudo systemctl start docker
 ```
 
-## Set up yahoo user
-
-The Vespa docker containers will run images that need to access the host file
-system as the user `yahoo` with UID 1000, e.g. the Node Admin runs as this
-user. If this UID is not already taken, you can create a `yahoo` user as follows:
-
-```
-sudo useradd -u 1000 -g 100 -s /dev/null yahoo
-```
-
-If the UID is already in use you should move the user to a new UID first.
-Alternatively, it might be possible to reuse that user, but this is confusing
-and may lead to errors later on (and has not been tested). In the following
-example we move the `landesk` user from UID 1000 to 1010, keeping its GID 1001.
-
-```
-sudo usermod -u 1010 landesk
-sudo find / -user 1000 -exec chown -h 1010 {} \;
-```
-
 
 
 ## Other
