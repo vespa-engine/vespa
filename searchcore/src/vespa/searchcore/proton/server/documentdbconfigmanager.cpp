@@ -138,6 +138,26 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
                     proton.maintenancejobs.maxoutstandingmoveops));
 }
 
+namespace {
+
+using AttributesConfigSP = DocumentDBConfig::AttributesConfigSP;
+using AttributesConfigBuilder = vespa::config::search::AttributesConfigBuilder;
+using AttributesConfigBuilderSP = std::shared_ptr<AttributesConfigBuilder>;
+
+AttributesConfigSP
+filterImportedAttributes(const AttributesConfigSP &attrCfg)
+{
+    AttributesConfigBuilderSP result = std::make_shared<AttributesConfigBuilder>();
+    result->attribute.reserve(attrCfg->attribute.size());
+    for (const auto &attr : attrCfg->attribute) {
+        if (!attr.imported) {
+            result->attribute.push_back(attr);
+        }
+    }
+    return result;
+}
+
+}
 
 void
 DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
@@ -274,7 +294,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
                                  newRankProfilesConfig,
                                  newRankingConstants,
                                  newIndexschemaConfig,
-                                 newAttributesConfig,
+                                 filterImportedAttributes(newAttributesConfig),
                                  newSummaryConfig,
                                  newSummarymapConfig,
                                  newJuniperrcConfig,
