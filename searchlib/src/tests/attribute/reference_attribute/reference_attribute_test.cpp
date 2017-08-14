@@ -41,6 +41,17 @@ struct MyGidToLidMapperFactory : public search::attribute::test::MockGidToLidMap
         _map.insert({toGid(doc1), 10});
         _map.insert({toGid(doc2), 17});
     }
+
+    void add(vespalib::stringref docId, uint32_t lid) {
+        auto insres = _map.insert({ toGid(docId), lid });
+        if (!insres.second) {
+            insres.first->second = lid;
+        }
+    }
+
+    void remove(vespalib::stringref docId) {
+        _map.erase(toGid(docId));
+    }
 };
 
 class LidCollector
@@ -369,6 +380,35 @@ TEST_F("Require that notifyGidToLidChange changes reverse mapping", Fixture)
     f.notifyGidToLidChange(toGid(doc1), 0);
     TEST_DO(f.assertLids(10, { }));
     TEST_DO(f.assertLids(11, { }));
+}
+
+TEST_F("Require that reverse mapping recovers from temporary out of order glitch", Fixture)
+{
+    auto factory = std::make_shared<MyGidToLidMapperFactory>();
+    f._attr->setGidToLidMapperFactory(factory);
+    f.ensureDocIdLimit(4);
+    f.set(1, toGid(doc1));
+    f.set(2, toGid(doc2));
+    /*
+     * Changes in gid to lid mapping can be visible via gid to lid
+     * mapper before notifications arrive.  If a lid is reused in the
+     * referenced document meta store then multiple entries in
+     * reference store might temporarily map to the same referenced
+     * lid.
+     */
+    factory->remove(doc1);   // remove referenced document
+    factory->add(doc3, 10);  // reuse lid for new referenced document
+    f.set(3, toGid(doc3));
+    TEST_DO(f.assertRefLid(1, 10));
+    TEST_DO(f.assertRefLid(2, 17));
+    TEST_DO(f.assertRefLid(3, 10));
+    // Notify reference attribute about gid to lid mapping changes
+    f.notifyGidToLidChange(toGid(doc1), 0);
+    f.notifyGidToLidChange(toGid(doc3), 10);
+    TEST_DO(f.assertRefLid(1, 0));
+    TEST_DO(f.assertRefLid(2, 17));
+    TEST_DO(f.assertRefLid(3, 10));
+    TEST_DO(f.assertLids(10, { 3 }));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

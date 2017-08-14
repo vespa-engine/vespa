@@ -366,8 +366,8 @@ ReferenceAttribute::notifyGidToLidChange(const GlobalId &gid, DocId referencedLi
                 _reverseMappingIndices[oldReferencedLid] = EntryRef();
             }
             entry.setLid(referencedLid);
-            syncReverseMappingIndices(entry);
         }
+        syncReverseMappingIndices(entry);
         commit();
     }
 }
