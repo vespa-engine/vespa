@@ -202,7 +202,7 @@ summary.cache.maxbytes long default=0 restart
 
 ## Include visits in the cache, if the visitoperation allows it.
 ## This will enable another separate cache of summary.cache.maxbytes size.
-summary.cache.allowvisitcaching bool default=false restart
+summary.cache.allowvisitcaching bool default=true restart
 
 ## Control number of cache entries preallocated.
 ## Default is no preallocation
@@ -366,12 +366,10 @@ maxvisibilitydelay double default=1.0
 ## You can set this to a number above zero for visit to shortcut expensive serialize size computation.
 ## This value will be provided instead.
 ## negative number will compute it accurately.
-## Default will be flipped shortly. (Once image personal index has gone live.)
-visit.defaultserializedsize long default=-1
+visit.defaultserializedsize long default=1
 
 ## This will ignore the maxbytes limit advised from above.
-## default will be flipped shortly. (Once image personal index has gone live.)
-visit.ignoremaxbytes bool default=false
+visit.ignoremaxbytes bool default=true
 
 ## Number of initializer threads used for loading structures from disk at proton startup.
 ## The threads are shared between document databases when value is larger than 0.
