@@ -202,7 +202,7 @@ summary.cache.maxbytes long default=0 restart
 
 ## Include visits in the cache, if the visitoperation allows it.
 ## This will enable another separate cache of summary.cache.maxbytes size.
-summary.cache.allowvisitcaching bool default=false restart
+summary.cache.allowvisitcaching bool default=true restart
 
 ## Control number of cache entries preallocated.
 ## Default is no preallocation
@@ -213,20 +213,26 @@ summary.cache.initialentries long default=0 restart
 summary.cache.compression.type enum {NONE, LZ4, ZSTD} default=LZ4 restart
 
 ## Control compression level of the summary while in cache.
+## LZ4 has normal range 1..9 while ZSTD has range 1..19
+## 9 is a reasonable default for both
 summary.cache.compression.level int default=9 restart
 
 ## Control compression type of the summary while in memory during compaction
 ## NB So far only stragey=LOG honours it.
-summary.log.compact.compression.type enum {NONE, LZ4, ZSTD} default=LZ4 restart
+summary.log.compact.compression.type enum {NONE, LZ4, ZSTD} default=ZSTD restart
 
 ## Control compression level of the summary while in memory during compaction
+## LZ4 has normal range 1..9 while ZSTD has range 1..19
+## 9 is a reasonable default for both
 summary.log.compact.compression.level int default=9 restart
 
 ## Control compression type of the summary
-## NB So far only stragey=LOG honours it.
-summary.log.chunk.compression.type enum {NONE, LZ4, ZSTD} default=LZ4 restart
+summary.log.chunk.compression.type enum {NONE, LZ4, ZSTD} default=ZSTD restart
 
 ## Control compression level of the summary
+## LZ4 has normal range 1..9 while ZSTD has range 1..19
+## 9 is a reasonable default for both. Going above for ZSTD can give an improvement,
+## but is better done in conjunction with increasing chunk size.
 summary.log.chunk.compression.level int default=9 restart
 
 ## Max size in bytes per chunk.
@@ -366,12 +372,12 @@ maxvisibilitydelay double default=1.0
 ## You can set this to a number above zero for visit to shortcut expensive serialize size computation.
 ## This value will be provided instead.
 ## negative number will compute it accurately.
-## Default will be flipped shortly. (Once image personal index has gone live.)
-visit.defaultserializedsize long default=-1
+## This is only used for weakly consistent visiting, like streaming search.
+visit.defaultserializedsize long default=1
 
 ## This will ignore the maxbytes limit advised from above.
-## default will be flipped shortly. (Once image personal index has gone live.)
-visit.ignoremaxbytes bool default=false
+## This is only used for weakly consistent visiting, like streaming search.
+visit.ignoremaxbytes bool default=true
 
 ## Number of initializer threads used for loading structures from disk at proton startup.
 ## The threads are shared between document databases when value is larger than 0.
