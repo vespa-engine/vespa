@@ -38,6 +38,8 @@ BuildRequires: vespa-libtorrent-devel >= 1.0.11-6
 BuildRequires: vespa-zookeeper-c-client-devel >= 3.4.9-6
 BuildRequires: systemd
 Requires: epel-release 
+Requires: which
+Requires: valgrind
 Requires: Judy
 Requires: lz4
 Requires: libzstd
