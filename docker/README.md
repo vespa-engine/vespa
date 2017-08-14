@@ -33,7 +33,7 @@ Vespa will be started inside the container.
 ## Building Vespa inside a Docker container
 Execute ```./enter-build-container.sh``` to enter the Vespa build environment inside a Docker container.
 
-The container is entered at the root of the Vespa source repository. Follow the build sections in [README.md](https://github.com/yahoo/vespa/blob/master/README.md) to build and test.
+The container is entered at the root of the Vespa source repository. Follow the build sections in [README.md](https://github.com/vespa-engine/vespa/blob/master/README.md) to build and test.
 
 
 ## Troubleshooting
