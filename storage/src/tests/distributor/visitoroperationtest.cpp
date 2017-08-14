@@ -115,9 +115,7 @@ protected:
     void statistical_metrics_not_updated_on_wrong_distribution();
 public:
     VisitorOperationTest()
-        : defaultConfig(framework::MilliSecTime(0),
-                        100,
-                        100)
+        : defaultConfig(100, 100)
     {}
 
     void setUp() override {
@@ -870,7 +868,7 @@ VisitorOperationTest::testParallelVisitorsToOneStorageNode()
 
     auto op = createOpWithConfig(
             createVisitorCommand("multiplebuckets", id, nullId, 31),
-            VisitorOperation::Config(framework::MilliSecTime(0), 1, 4));
+            VisitorOperation::Config(1, 4));
 
     op->start(_sender, framework::MilliSecTime(0));
 
@@ -921,14 +919,8 @@ VisitorOperationTest::testParallelVisitorsToOneStorageNode()
     uint32_t minBucketsPerVisitor = 1;
     uint32_t maxVisitorsPerNode = 4;
     auto op2 = createOpWithConfig(
-            createVisitorCommand("multiplebuckets",
-                id,
-                document::BucketId(0x54000000000f0001),
-                31),
-            VisitorOperation::Config(
-                framework::MilliSecTime(0),
-                minBucketsPerVisitor,
-                maxVisitorsPerNode));
+            createVisitorCommand("multiplebuckets", id, document::BucketId(0x54000000000f0001), 31),
+            VisitorOperation::Config(minBucketsPerVisitor, maxVisitorsPerNode));
 
     op2->start(_sender, framework::MilliSecTime(0));
 
@@ -960,10 +952,7 @@ VisitorOperationTest::testParallelVisitorsResendOnlyFailing()
     uint32_t maxVisitorsPerNode = 4;
     auto op = createOpWithConfig(
             createVisitorCommand("multiplebuckets", id, nullId, 31),
-            VisitorOperation::Config(
-                framework::MilliSecTime(0),
-                minBucketsPerVisitor,
-                maxVisitorsPerNode));
+            VisitorOperation::Config(minBucketsPerVisitor, maxVisitorsPerNode));
 
     op->start(_sender, framework::MilliSecTime(0));
 
@@ -1005,7 +994,7 @@ VisitorOperationTest::testParallelVisitorsToOneStorageNodeOneSuperBucket()
 
     auto op = createOpWithConfig(
             createVisitorCommand("multiplebucketsonesuper", id, nullId),
-            VisitorOperation::Config(framework::MilliSecTime(0), 5, 4));
+            VisitorOperation::Config(5, 4));
 
     op->start(_sender, framework::MilliSecTime(0));
 
@@ -1080,13 +1069,8 @@ VisitorOperationTest::testInconsistencyHandling()
     _sender.clear();
 
     auto op = createOpWithConfig(
-            createVisitorCommand("multiplebucketsonesuper",
-                id,
-                nullId,
-                8,
-                500,
-                true),
-            VisitorOperation::Config(framework::MilliSecTime(0), 5, 4));
+            createVisitorCommand("multiplebucketsonesuper", id, nullId, 8, 500, true),
+            VisitorOperation::Config(5, 4));
 
     op->start(_sender, framework::MilliSecTime(0));
 
