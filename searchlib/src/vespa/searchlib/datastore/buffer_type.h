@@ -6,8 +6,7 @@
 #include <cstdint>
 #include <sys/types.h>
 
-namespace search {
-namespace datastore {
+namespace search::datastore {
 
 /**
  * Class used manage allocation and de-allocation of a specific data type in
@@ -163,6 +162,4 @@ BufferType<EntryType>::cleanHold(void *buffer, uint64_t offset, uint64_t len, Cl
     }
 }
 
-} // namespace search::datastore
-} // namespace search
-
+}

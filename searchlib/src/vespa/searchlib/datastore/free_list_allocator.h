@@ -4,8 +4,7 @@
 
 #include "allocator.h"
 
-namespace search {
-namespace datastore {
+namespace search::datastore {
 
 /**
  * Allocator used to allocate entries of a specific type in an underlying data store
@@ -33,5 +32,4 @@ public:
     HandleType allocArray(size_t size);
 };
 
-}
 }

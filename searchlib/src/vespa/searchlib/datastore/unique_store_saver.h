@@ -4,8 +4,7 @@
 
 #include "unique_store.h"
 
-namespace search {
-namespace datastore {
+namespace search::datastore {
 
 /**
  * Saver for related UniqueStore class.
@@ -49,5 +48,4 @@ public:
     }
 };
 
-}
 }

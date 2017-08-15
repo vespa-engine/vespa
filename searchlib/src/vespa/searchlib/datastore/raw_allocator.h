@@ -6,8 +6,7 @@
 #include "entryref.h"
 #include "handle.h"
 
-namespace search {
-namespace datastore {
+namespace search::datastore {
 
 /**
  * Allocator used to allocate raw buffers (EntryT *) in an underlying data store
@@ -32,5 +31,4 @@ public:
     HandleType alloc(size_t numElems, size_t extraElems);
 };
 
-}
 }

@@ -7,11 +7,9 @@
 #include <vespa/searchlib/datastore/unique_store.h>
 #include <vespa/searchlib/common/rcuvector.h>
 
-namespace search {
+namespace search { class IGidToLidMapperFactory; }
 
-class IGidToLidMapperFactory;
-
-namespace attribute {
+namespace search::attribute {
 
 /*
  * Attribute vector which maintains a lid-2-lid mapping from local document ids to global ids (referencing external documents)
@@ -88,5 +86,4 @@ public:
     virtual void onShrinkLidSpace() override;
 };
 
-}
 }

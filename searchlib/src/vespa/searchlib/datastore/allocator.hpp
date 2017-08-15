@@ -5,8 +5,7 @@
 #include "allocator.h"
 #include "bufferstate.h"
 
-namespace search {
-namespace datastore {
+namespace search::datastore {
 
 template <typename EntryT, typename RefT>
 Allocator<EntryT, RefT>::Allocator(DataStoreBase &store, uint32_t typeId)
@@ -70,4 +69,4 @@ Allocator<EntryT, RefT>::allocArray(size_t size)
 }
 
 }
-}
+

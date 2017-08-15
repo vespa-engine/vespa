@@ -7,8 +7,7 @@
 #include "free_list_allocator.h"
 #include "raw_allocator.h"
 
-namespace search {
-namespace btree {
+namespace search::btree {
 
 template<typename EntryType>
 struct DefaultReclaimer {
@@ -17,9 +16,9 @@ struct DefaultReclaimer {
     }
 };
 
-} // namespace btree
+}
 
-namespace datastore {
+namespace search::datastore {
 
 template <typename RefT = EntryRefT<22> >
 class DataStoreT : public DataStoreBase
@@ -108,6 +107,4 @@ public:
 
 extern template class DataStoreT<EntryRefT<22> >;
 
-} // namespace search::datastore
-} // namespace search
-
+}

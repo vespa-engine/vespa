@@ -9,8 +9,7 @@
 #include <vector>
 #include <deque>
 
-namespace search {
-namespace datastore {
+namespace search::datastore {
 
 class DataStoreBase
 {
@@ -345,6 +344,4 @@ public:
 };
 
 
-} // namespace datastore
-} // namespace search
-
+}

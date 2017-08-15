@@ -15,8 +15,7 @@
 #include "unique_store_saver.hpp"
 #include <atomic>
 
-namespace search {
-namespace datastore {
+namespace search::datastore {
 
 constexpr size_t NUMCLUSTERS_FOR_NEW_UNIQUESTORE_BUFFER = 1024u;
 
@@ -251,5 +250,4 @@ UniqueStore<EntryT, RefT>::getNumUniques() const
     return _dict.getFrozenView().size();
 }
 
-}
 }

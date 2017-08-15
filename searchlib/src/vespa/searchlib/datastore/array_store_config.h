@@ -5,8 +5,7 @@
 #include <cstddef>
 #include <vector>
 
-namespace search {
-namespace datastore {
+namespace search::datastore {
 
 /**
  * Config specifying layout and buffer allocation strategy for an array store.
@@ -65,5 +64,4 @@ public:
                                                 size_t minNumArraysForNewBuffer);
 };
 
-}
 }

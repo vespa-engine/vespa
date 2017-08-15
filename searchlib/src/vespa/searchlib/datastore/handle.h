@@ -4,8 +4,7 @@
 
 #include "entryref.h"
 
-namespace search {
-namespace datastore {
+namespace search::datastore {
 
 /**
  * Handle to data allocated in a data store and a EntryRef used for read-only access to data later.
@@ -19,5 +18,4 @@ struct Handle
     Handle() : ref(), data() {}
 };
 
-}
 }

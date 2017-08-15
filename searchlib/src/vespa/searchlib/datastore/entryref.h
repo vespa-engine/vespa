@@ -2,10 +2,9 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
-namespace search {
-namespace datastore {
+namespace search::datastore {
 
 class EntryRef {
 protected:
@@ -59,6 +58,4 @@ public:
     static uint64_t pad(uint64_t val) { return (-val & PadConstant); }
 };
 
-} // namespace search::datastore
-} // namespace search
-
+}
