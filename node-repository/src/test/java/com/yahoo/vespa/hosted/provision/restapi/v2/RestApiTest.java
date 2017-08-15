@@ -190,7 +190,7 @@ public class RestApiTest {
                         Utf8.toBytes("{\"convergedStateVersion\": \"5.104.142-2.1.2408\"}"), Request.Method.PATCH),
                 "{\"message\":\"Updated host4.yahoo.com\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
-                                   Utf8.toBytes("{\"hardwareFailureType\": \"memory_mcelog\"}"), Request.Method.PATCH),
+                                   Utf8.toBytes("{\"hardwareFailureDescription\": \"memory_mcelog\"}"), Request.Method.PATCH),
                        "{\"message\":\"Updated host4.yahoo.com\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                                    Utf8.toBytes("{\"parentHostname\": \"parent.yahoo.com\"}"), Request.Method.PATCH),
@@ -263,7 +263,7 @@ public class RestApiTest {
                         Request.Method.POST),
                 "{\"message\":\"Added 1 nodes to the provisioned state\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host12.yahoo.com",
-                        Utf8.toBytes("{\"hardwareFailureType\": \"memory_mcelog\"}"),
+                        Utf8.toBytes("{\"hardwareFailureDescription\": \"memory_mcelog\"}"),
                         Request.Method.PATCH),
                 "{\"message\":\"Updated host12.yahoo.com\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/host12.yahoo.com",
@@ -426,7 +426,7 @@ public class RestApiTest {
                                            "\"flavor\": \"medium-disk\"," +
                                            "\"currentVespaVersion\": \"5.104.142\"," +
                                            "\"currentHostedVersion\": \"2.1.2408\"," +
-                                           "\"hardwareFailureType\": \"memory_mcelog\"," +
+                                           "\"hardwareFailureDescription\": \"memory_mcelog\"," +
                                            "\"failCount\": 0," +
                                            "\"parentHostname\": \"parent.yahoo.com\"" +
                                        "}"
@@ -442,6 +442,24 @@ public class RestApiTest {
 
     @Test
     public void test_hardware_patching_of_docker_host() throws Exception {
+        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"), Optional.of(false));
+        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/parent1.yahoo.com"), Optional.of(false));
+
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/parent1.yahoo.com",
+                        Utf8.toBytes("{" +
+                                "\"hardwareFailureDescription\": \"memory_mcelog\"" +
+                                "}"
+                        ),
+                        Request.Method.PATCH),
+                "{\"message\":\"Updated parent1.yahoo.com\"}");
+
+        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"), Optional.of(true));
+        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/parent1.yahoo.com"), Optional.of(true));
+    }
+
+    // TODO: Remove when all clients have switched to hardwareFailureDescription
+    @Test
+    public void test_hardware_patching_of_docker_host_using_old_field() throws Exception {
         assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"), Optional.of(false));
         assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/parent1.yahoo.com"), Optional.of(false));
 

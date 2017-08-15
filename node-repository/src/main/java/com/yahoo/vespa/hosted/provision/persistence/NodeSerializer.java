@@ -106,7 +106,7 @@ public class NodeSerializer {
         object.setLong(currentRebootGenerationKey, node.status().reboot().current());
         node.status().vespaVersion().ifPresent(version -> object.setString(vespaVersionKey, version.toString()));
         object.setLong(failCountKey, node.status().failCount());
-        node.status().hardwareFailure().ifPresent(failure -> object.setString(hardwareFailureKey, toString(failure)));
+        node.status().hardwareFailureDescription().ifPresent(failure -> object.setString(hardwareFailureKey, failure));
         object.setBool(wantToRetireKey, node.status().wantToRetire());
         object.setBool(wantToDeprovisionKey, node.status().wantToDeprovision());
         node.allocation().ifPresent(allocation -> toSlime(allocation, object.setObject(instanceKey)));
@@ -168,7 +168,7 @@ public class NodeSerializer {
         return new Status(generationFromSlime(object, rebootGenerationKey, currentRebootGenerationKey),
                           versionFromSlime(object.field(vespaVersionKey)),
                           (int)object.field(failCountKey).asLong(),
-                          hardwareFailureFromSlime(object.field(hardwareFailureKey)),
+                          hardwareFailureDescriptionFromSlime(object),
                           object.field(wantToRetireKey).asBool(),
                           wantToDeprovision,
                           hardwareDivergenceFromSlime(object));
@@ -245,9 +245,11 @@ public class NodeSerializer {
         return ipAddresses.build();
     }
 
-    private Optional<Status.HardwareFailureType> hardwareFailureFromSlime(Inspector object) {
-        if ( ! object.valid()) return Optional.empty();
-        return Optional.of(hardwareFailureFromString(object.asString()));
+    private Optional<String> hardwareFailureDescriptionFromSlime(Inspector object) {
+        if (object.field(hardwareFailureKey).valid()) {
+            return Optional.of(object.field(hardwareFailureKey).asString());
+        }
+        return Optional.empty();
     }
 
     // Enum <-> string mappings
@@ -322,23 +324,6 @@ public class NodeSerializer {
             case proxy: return "proxy";
         }
         throw new IllegalArgumentException("Serialized form of '" + type + "' not defined");
-    }
-
-    private Status.HardwareFailureType hardwareFailureFromString(String hardwareFailureString) {
-        switch (hardwareFailureString) {
-            case "memory_mcelog" : return Status.HardwareFailureType.memory_mcelog;
-            case "disk_smart" : return Status.HardwareFailureType.disk_smart;
-            case "disk_kernel" : return Status.HardwareFailureType.disk_kernel;
-            default : throw new IllegalArgumentException("Unknown hardware failure '" + hardwareFailureString + "'");
-        }
-    }
-    private String toString(Status.HardwareFailureType type) {
-        switch (type) {
-            case memory_mcelog: return "memory_mcelog";
-            case disk_smart: return "disk_smart";
-            case disk_kernel: return "disk_kernel";
-            default : throw new IllegalArgumentException("Serialized form of '" + type + " not defined");
-        }
     }
 
 }

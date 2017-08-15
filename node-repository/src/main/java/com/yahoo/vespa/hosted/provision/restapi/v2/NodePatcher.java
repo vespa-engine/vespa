@@ -12,7 +12,6 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
-import com.yahoo.vespa.hosted.provision.node.Status;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,6 +31,7 @@ import java.util.stream.Collectors;
 public class NodePatcher {
 
     public static final String HARDWARE_FAILURE_TYPE = "hardwareFailureType";
+    public static final String HARDWARE_FAILURE_DESCRIPTION = "hardwareFailureDescription";
     private final NodeFlavors nodeFlavors;
     private final Inspector inspector;
     private final NodeRepository nodeRepository;
@@ -79,10 +79,18 @@ public class NodePatcher {
         List<Node> children = nodeRepository.getChildNodes(node.hostname());
         boolean modified = false;
 
+        // TODO: Remove when all clients have switched to hardwareFailureDescription
         if (inspector.field(HARDWARE_FAILURE_TYPE).valid()) {
+            Optional<String> hardwareFailure = asOptionalString(inspector.field(HARDWARE_FAILURE_TYPE));
             modified = true;
             children = children.stream()
-                    .map(node -> node.with(node.status().withHardwareFailure(toHardwareFailureType(asString(inspector.field(HARDWARE_FAILURE_TYPE))))))
+                    .map(node -> node.with(node.status().withHardwareFailureDescription(hardwareFailure)))
+                    .collect(Collectors.toList());
+        } else if (inspector.field(HARDWARE_FAILURE_DESCRIPTION).valid()) {
+            Optional<String> hardwareFailure = asOptionalString(inspector.field(HARDWARE_FAILURE_DESCRIPTION));
+            modified = true;
+            children = children.stream()
+                    .map(node -> node.with(node.status().withHardwareFailureDescription(hardwareFailure)))
                     .collect(Collectors.toList());
         }
 
@@ -112,8 +120,9 @@ public class NodePatcher {
                 return node.with(node.status().setFailCount(asLong(value).intValue()));
             case "flavor" :
                 return node.with(nodeFlavors.getFlavorOrThrow(asString(value)));
+            case HARDWARE_FAILURE_DESCRIPTION:
             case HARDWARE_FAILURE_TYPE:
-                return node.with(node.status().withHardwareFailure(toHardwareFailureType(asString(value))));
+                return node.with(node.status().withHardwareFailureDescription(asOptionalString(value)));
             case "parentHostname" :
                 return node.withParentHostname(asString(value));
             case "ipAddresses" :
@@ -125,10 +134,7 @@ public class NodePatcher {
             case "wantToDeprovision" :
                 return node.with(node.status().withWantToDeprovision(asBoolean(value)));
             case "hardwareDivergence" :
-                if (value.type().equals(Type.NIX)) {
-                    return node.with(node.status().withHardwareDivergence(Optional.empty()));
-                }
-                return node.with(node.status().withHardwareDivergence(Optional.of(asString(value))));
+                return node.with(node.status().withHardwareDivergence(asOptionalString(value)));
             default :
                 throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
         }
@@ -169,20 +175,14 @@ public class NodePatcher {
         return field.asString();
     }
 
+    private Optional<String> asOptionalString(Inspector field) {
+        return field.type().equals(Type.NIX) ? Optional.empty() : Optional.of(asString(field));
+    }
+
     private boolean asBoolean(Inspector field) {
         if ( ! field.type().equals(Type.BOOL))
             throw new IllegalArgumentException("Expected a BOOL value, got a " + field.type());
         return field.asBool();
-    }
-
-    private Optional<Status.HardwareFailureType> toHardwareFailureType(String failureType) {
-        switch (failureType) {
-            case "memory_mcelog" : return Optional.of(Status.HardwareFailureType.memory_mcelog);
-            case "disk_smart" : return Optional.of(Status.HardwareFailureType.disk_smart);
-            case "disk_kernel" : return Optional.of(Status.HardwareFailureType.disk_kernel);
-            case "unknown" : throw new IllegalArgumentException("An actual hardware failure type must be provided, not 'unknown'");
-            default : throw new IllegalArgumentException("Unknown hardware failure '" + failureType + "'");
-        }
     }
 
 }
