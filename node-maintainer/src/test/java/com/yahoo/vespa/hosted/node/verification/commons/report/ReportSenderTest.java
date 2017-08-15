@@ -41,7 +41,7 @@ public class ReportSenderTest {
         double memoryReadSpeedGBs = 0.1;
         benchmarkReport.setCpuCyclesPerSec(cpuCyclesPerSec);
         benchmarkReport.setMemoryReadSpeedGBs(memoryReadSpeedGBs);
-        String expectedReport = "{\"hardwareDivergence\": {\"benchmarkReport\":{\"cpuCyclesPerSec\":0.3,\"memoryReadSpeedGBs\":0.1}}}";
+        String expectedReport = "{\"benchmarkReport\":{\"cpuCyclesPerSec\":0.3,\"memoryReadSpeedGBs\":0.1}}";
         ReportSender.reportBenchmarkResults(benchmarkReport,nodeInfoUrls);
         assertEquals(expectedReport, println.toString());
     }
@@ -49,7 +49,7 @@ public class ReportSenderTest {
     @Test
     public void reportBenchmarkResults_should_should_update_already_existing_hardwareDivergence_prints_null_when_empty_benchmarkReport() throws Exception {
         BenchmarkReport benchmarkReport = new BenchmarkReport();
-        String expectedReport = "{\"hardwareDivergence\": null}";
+        String expectedReport = "null";
         ReportSender.reportBenchmarkResults(benchmarkReport, nodeInfoUrls);
         assertEquals(expectedReport, println.toString());
     }
@@ -61,7 +61,7 @@ public class ReportSenderTest {
         boolean actualIpv6Connection = false;
         specVerificationReport.setActualDiskSpaceAvailable(actualDiskSpaceAvailable);
         specVerificationReport.setActualIpv6Connection(actualIpv6Connection);
-        String expectedReport = "{\"hardwareDivergence\": {\"specVerificationReport\":{\"actualDiskSpaceAvailable\":150.0,\"actualIpv6Connection\":false},\"benchmarkReport\":{\"cpuCyclesPerSec\":0.5}}}";
+        String expectedReport = "{\"specVerificationReport\":{\"actualDiskSpaceAvailable\":150.0,\"actualIpv6Connection\":false},\"benchmarkReport\":{\"cpuCyclesPerSec\":0.5}}";
         ReportSender.reportSpecVerificationResults(specVerificationReport, nodeInfoUrls);
         assertEquals(expectedReport, println.toString());
     }
