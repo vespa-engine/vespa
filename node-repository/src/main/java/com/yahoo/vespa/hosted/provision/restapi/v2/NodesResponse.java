@@ -12,7 +12,6 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.History;
-import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 
 import java.io.IOException;
@@ -171,8 +170,8 @@ class NodesResponse extends HttpResponse {
                     object.setString("convergedStateVersion", version.toFullString());
                 });
         object.setLong("failCount", node.status().failCount());
-        object.setBool("hardwareFailure", node.status().hardwareFailure().isPresent());
-        node.status().hardwareFailure().ifPresent(failure -> object.setString("hardwareFailureType", failure));
+        object.setBool("hardwareFailure", node.status().hardwareFailureDescription().isPresent());
+        node.status().hardwareFailureDescription().ifPresent(failure -> object.setString("hardwareFailureDescription", failure));
         object.setBool("wantToRetire", node.status().wantToRetire());
         object.setBool("wantToDeprovision", node.status().wantToDeprovision());
         toSlime(node.history(), object.setArray("history"));

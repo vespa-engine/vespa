@@ -29,7 +29,7 @@ import java.util.List;
  * to failed due to some undetected hardware failure will end up being failed again.
  * When that has happened enough they will not be recycled.
  * <p>
- * The Chef recipe running locally on the node may set the hardwareFailure flag to avoid the node
+ * The Chef recipe running locally on the node may set the hardwareFailureDescription to avoid the node
  * being automatically recycled in cases where an error has been positively detected.
  *
  * @author bratseth
@@ -50,7 +50,7 @@ public class FailedExpirer extends Expirer {
     protected void expire(List<Node> expired) {
         List<Node> nodesToRecycle = new ArrayList<>();
         for (Node recycleCandidate : expired) {
-            if (recycleCandidate.status().hardwareFailure().isPresent()) continue;
+            if (recycleCandidate.status().hardwareFailureDescription().isPresent()) continue;
             if (failCountIndicatesHwFail(zone, recycleCandidate) && recycleCandidate.status().failCount() >= 5) continue;
             nodesToRecycle.add(recycleCandidate);
         }

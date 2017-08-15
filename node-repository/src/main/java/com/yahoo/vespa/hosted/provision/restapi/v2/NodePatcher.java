@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
  */
 public class NodePatcher {
 
-    public static final String HARDWARE_FAILURE_TYPE = "hardwareFailureType";
+    public static final String HARDWARE_FAILURE_TYPE = "hardwareFailureDescription";
     private final NodeFlavors nodeFlavors;
     private final Inspector inspector;
     private final NodeRepository nodeRepository;
@@ -83,7 +83,7 @@ public class NodePatcher {
                     Optional.empty() : Optional.of(inspector.field(HARDWARE_FAILURE_TYPE).asString());
             modified = true;
             children = children.stream()
-                    .map(node -> node.with(node.status().withHardwareFailure(hardwareFailure)))
+                    .map(node -> node.with(node.status().withHardwareFailureDescription(hardwareFailure)))
                     .collect(Collectors.toList());
         }
 
@@ -114,9 +114,7 @@ public class NodePatcher {
             case "flavor" :
                 return node.with(nodeFlavors.getFlavorOrThrow(asString(value)));
             case HARDWARE_FAILURE_TYPE:
-                Optional<String> hardwareFailure = value.type().equals(Type.NIX) ?
-                        Optional.empty() : Optional.of(asString(value));
-                return node.with(node.status().withHardwareFailure(hardwareFailure));
+                return node.with(node.status().withHardwareFailureDescription(asOptionalString(value)));
             case "parentHostname" :
                 return node.withParentHostname(asString(value));
             case "ipAddresses" :
@@ -128,9 +126,7 @@ public class NodePatcher {
             case "wantToDeprovision" :
                 return node.with(node.status().withWantToDeprovision(asBoolean(value)));
             case "hardwareDivergence" :
-                Optional<String> hardwareDivergence = value.type().equals(Type.NIX) ?
-                        Optional.empty() : Optional.of(asString(value));
-                return node.with(node.status().withHardwareDivergence(hardwareDivergence));
+                return node.with(node.status().withHardwareDivergence(asOptionalString(value)));
             default :
                 throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
         }
@@ -169,6 +165,10 @@ public class NodePatcher {
         if ( ! field.type().equals(Type.STRING))
             throw new IllegalArgumentException("Expected a STRING value, got a " + field.type());
         return field.asString();
+    }
+
+    private Optional<String> asOptionalString(Inspector field) {
+        return field.type().equals(Type.NIX) ? Optional.empty() : Optional.of(asString(field));
     }
 
     private boolean asBoolean(Inspector field) {

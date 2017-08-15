@@ -38,7 +38,7 @@
   "convergedStateVersion": "6.43.0",
   "failCount": 0,
   "hardwareFailure": true,
-  "hardwareFailureType": "memory_mcelog",
+  "hardwareFailureDescription": "memory_mcelog",
   "wantToRetire" : true,
   "wantToDeprovision" : true,
   "history": [

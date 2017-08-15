@@ -106,7 +106,7 @@ public class NodeSerializer {
         object.setLong(currentRebootGenerationKey, node.status().reboot().current());
         node.status().vespaVersion().ifPresent(version -> object.setString(vespaVersionKey, version.toString()));
         object.setLong(failCountKey, node.status().failCount());
-        node.status().hardwareFailure().ifPresent(failure -> object.setString(hardwareFailureKey, failure));
+        node.status().hardwareFailureDescription().ifPresent(failure -> object.setString(hardwareFailureKey, failure));
         object.setBool(wantToRetireKey, node.status().wantToRetire());
         object.setBool(wantToDeprovisionKey, node.status().wantToDeprovision());
         node.allocation().ifPresent(allocation -> toSlime(allocation, object.setObject(instanceKey)));
@@ -168,7 +168,7 @@ public class NodeSerializer {
         return new Status(generationFromSlime(object, rebootGenerationKey, currentRebootGenerationKey),
                           versionFromSlime(object.field(vespaVersionKey)),
                           (int)object.field(failCountKey).asLong(),
-                          hardwareFailureFromSlime(object),
+                          hardwareFailureDescriptionFromSlime(object),
                           object.field(wantToRetireKey).asBool(),
                           wantToDeprovision,
                           hardwareDivergenceFromSlime(object));
@@ -245,7 +245,7 @@ public class NodeSerializer {
         return ipAddresses.build();
     }
 
-    private Optional<String> hardwareFailureFromSlime(Inspector object) {
+    private Optional<String> hardwareFailureDescriptionFromSlime(Inspector object) {
         if (object.field(hardwareFailureKey).valid()) {
             return Optional.of(object.field(hardwareFailureKey).asString());
         }
