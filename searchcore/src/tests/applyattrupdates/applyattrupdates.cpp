@@ -27,6 +27,7 @@ using namespace document;
 using search::attribute::BasicType;
 using search::attribute::Config;
 using search::attribute::CollectionType;
+using search::attribute::Reference;
 using search::attribute::ReferenceAttribute;
 
 namespace search {
@@ -162,7 +163,6 @@ void assertNoRef(AttributeVector &vec, uint32_t doc)
 }
 
 void assertRef(AttributeVector &vec, vespalib::stringref str, uint32_t doc) {
-    using Reference = ReferenceAttribute::Reference;
     const Reference *ref = asReferenceAttribute(vec).getReference(doc);
     EXPECT_TRUE(ref != nullptr);
     const GlobalId &gid = ref->gid();

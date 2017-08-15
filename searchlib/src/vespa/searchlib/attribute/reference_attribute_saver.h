@@ -8,6 +8,7 @@
 #include <vespa/searchlib/datastore/unique_store_saver.h>
 #include <vespa/searchlib/common/rcuvector.h>
 #include "reference_attribute.h"
+#include "reference.h"
 
 namespace search {
 namespace attribute {
@@ -31,7 +32,6 @@ private:
     using GlobalId = document::GlobalId;
     using IndicesCopyVector = ReferenceAttribute::IndicesCopyVector;
     using Store = ReferenceAttribute::ReferenceStore;
-    using Reference = ReferenceAttribute::Reference;
     using Saver = Store::Saver;
     IndicesCopyVector _indices;
     const Store &_store;

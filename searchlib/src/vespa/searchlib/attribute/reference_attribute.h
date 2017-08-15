@@ -3,10 +3,10 @@
 #pragma once
 
 #include "not_implemented_attribute.h"
-#include <vespa/document/base/globalid.h>
+#include "reference_mappings.h"
+#include "reference.h"
 #include <vespa/searchlib/datastore/unique_store.h>
 #include <vespa/searchlib/common/rcuvector.h>
-#include "postingstore.h"
 
 namespace search {
 
@@ -28,32 +28,6 @@ class ReferenceAttribute : public NotImplementedAttribute
 public:
     using EntryRef = search::datastore::EntryRef;
     using GlobalId = document::GlobalId;
-    class Reference {
-        GlobalId _gid;
-        mutable uint32_t _lid;  // referenced lid
-        mutable EntryRef _revMapIdx; // map from gid to lids referencing gid
-    public:
-        Reference()
-            : _gid(),
-              _lid(0u),
-              _revMapIdx()
-        {
-        }
-        Reference(const GlobalId &gid_)
-            : _gid(gid_),
-              _lid(0u),
-              _revMapIdx()
-        {
-        }
-        bool operator<(const Reference &rhs) const {
-            return _gid < rhs._gid;
-        }
-        const GlobalId &gid() const { return _gid; }
-        uint32_t lid() const { return _lid; }
-        EntryRef revMapIdx() const { return _revMapIdx; }
-        void setLid(uint32_t referencedLid) const { _lid = referencedLid; }
-        void setRevMapIdx(EntryRef newRevMapIdx) const { _revMapIdx = newRevMapIdx; }
-    };
     using ReferenceStore = datastore::UniqueStore<Reference>;
     using ReferenceStoreIndices = RcuVectorBase<EntryRef>;
     using IndicesCopyVector = vespalib::Array<EntryRef>;
@@ -68,12 +42,7 @@ private:
     ReferenceStoreIndices _indices;
     MemoryUsage _cachedUniqueStoreMemoryUsage;
     std::shared_ptr<IGidToLidMapperFactory> _gidToLidMapperFactory;
-    // Vector containing references to trees of lids referencing given
-    // referenced lid.
-    ReverseMappingIndices _reverseMappingIndices;
-    // Store of B-Trees, used to map from gid or referenced lid to
-    // referencing lids.
-    ReverseMapping _reverseMapping;
+    ReferenceMappings _referenceMappings;
 
     virtual void onAddDocs(DocId docIdLimit) override;
     virtual void removeOldGenerations(generation_t firstUsed) override;
@@ -87,7 +56,6 @@ private:
     bool considerCompact(const CompactionStrategy &compactionStrategy);
     void compactWorst();
     IndicesCopyVector getIndicesCopy(uint32_t size) const;
-    void syncReverseMappingIndices(const Reference &entry);
     void removeReverseMapping(EntryRef oldRef, uint32_t lid);
     void addReverseMapping(EntryRef newRef, uint32_t lid);
     void buildReverseMapping(EntryRef newRef, const std::vector<ReverseMapping::KeyDataType> &adds);
@@ -113,18 +81,10 @@ public:
 
     template <typename FunctionType>
     void
-    foreach_lid(uint32_t referencedLid, FunctionType &&func) const;
-};
-
-template <typename FunctionType>
-void
-ReferenceAttribute::foreach_lid(uint32_t referencedLid, FunctionType &&func) const
-{
-    if (referencedLid < _reverseMappingIndices.size()) {
-        EntryRef revMapIdx = _reverseMappingIndices[referencedLid];
-        _reverseMapping.foreach_frozen_key(revMapIdx, func);
+    foreach_lid(uint32_t referencedLid, FunctionType &&func) const {
+        _referenceMappings.foreach_lid(referencedLid, std::forward<FunctionType>(func));
     }
-}
+};
 
 }
 }

@@ -17,6 +17,7 @@ using document::DocumentId;
 using vespalib::GenerationHandler;
 using search::attribute::Config;
 using search::attribute::BasicType;
+using search::attribute::Reference;
 using search::attribute::ReferenceAttribute;
 
 namespace proton {
@@ -97,7 +98,7 @@ struct Fixture
 
     void commit() { _attr->commit(); }
 
-    const ReferenceAttribute::Reference *getRef(uint32_t doc) {
+    const Reference *getRef(uint32_t doc) {
         return _attr->getReference(doc);
     }
 

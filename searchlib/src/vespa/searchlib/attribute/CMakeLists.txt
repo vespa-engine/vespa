@@ -79,6 +79,7 @@ vespa_add_library(searchlib_attribute OBJECT
     readerbase.cpp
     reference_attribute.cpp
     reference_attribute_saver.cpp
+    reference_mappings.cpp
     singleenumattribute.cpp
     singleenumattributesaver.cpp
     singlenumericattribute.cpp

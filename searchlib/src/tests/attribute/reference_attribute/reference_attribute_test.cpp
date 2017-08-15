@@ -15,6 +15,7 @@ LOG_SETUP("reference_attribute_test");
 using search::MemoryUsage;
 using vespalib::ArrayRef;
 using generation_t = vespalib::GenerationHandler::generation_t;
+using search::attribute::Reference;
 using search::attribute::ReferenceAttribute;
 using search::attribute::Config;
 using search::attribute::BasicType;
@@ -99,7 +100,7 @@ struct Fixture
     }
 
     const GlobalId *get(uint32_t doc) {
-        const ReferenceAttribute::Reference *ref = _attr->getReference(doc);
+        const Reference *ref = _attr->getReference(doc);
         if (ref != nullptr) {
             return &ref->gid();
         } else {
@@ -107,7 +108,7 @@ struct Fixture
         }
     }
 
-    const ReferenceAttribute::Reference *getRef(uint32_t doc) {
+    const Reference *getRef(uint32_t doc) {
         return _attr->getReference(doc);
     }
 
