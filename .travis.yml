@@ -19,8 +19,8 @@ branches:
   - master
 
 before_cache:
-  - rm -rf /root/.m2/repository/com/yahoo
-  - rm -rf /root/.m2/repository/simple/dummy-persistence
+  - rm -rf $HOME/.m2/repository/com/yahoo
+  - rm -rf $HOME/.m2/repository/simple/dummy-persistence
 
 install: true
 
