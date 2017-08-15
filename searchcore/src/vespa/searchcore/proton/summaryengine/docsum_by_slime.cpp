@@ -63,7 +63,7 @@ DocsumBySlime::slimeToRequest(const Inspector & request)
     DocsumRequest::UP docsumRequest(std::make_unique<DocsumRequest>(true));
 
     docsumRequest->resultClassName = request[SUMMARYCLASS].asString().make_string();
-    Memory m = request[SESSIONID].asString();
+    Memory m = request[SESSIONID].asData();
     if (m.size > 0) {
         docsumRequest->sessionId.resize(m.size);
         memcpy(&docsumRequest->sessionId[0], m.data, m.size);

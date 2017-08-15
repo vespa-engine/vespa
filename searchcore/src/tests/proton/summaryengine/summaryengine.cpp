@@ -226,7 +226,7 @@ createSlimeRequestLarger(size_t num, const vespalib::string & sessionId = vespal
     Cursor &root = r.setObject();
     root.setString("class", "your-summary");
     if ( ! sessionId.empty()) {
-        root.setString("sessionid", sessionId);
+        root.setData("sessionid", sessionId);
     }
     Cursor &array = root.setArray("gids");
     for (size_t i(0); i < num; i++) {
