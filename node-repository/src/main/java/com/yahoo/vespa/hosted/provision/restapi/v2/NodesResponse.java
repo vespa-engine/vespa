@@ -172,7 +172,7 @@ class NodesResponse extends HttpResponse {
                 });
         object.setLong("failCount", node.status().failCount());
         object.setBool("hardwareFailure", node.status().hardwareFailure().isPresent());
-        node.status().hardwareFailure().ifPresent(failure -> object.setString("hardwareFailureType", toString(failure)));
+        node.status().hardwareFailure().ifPresent(failure -> object.setString("hardwareFailureType", failure));
         object.setBool("wantToRetire", node.status().wantToRetire());
         object.setBool("wantToDeprovision", node.status().wantToDeprovision());
         toSlime(node.history(), object.setArray("history"));
@@ -229,15 +229,6 @@ class NodesResponse extends HttpResponse {
     private static Node.State stateFromString(String stateString) {
         return NodeStateSerializer.fromWireName(stateString)
                 .orElseThrow(() -> new RuntimeException("Node state '" + stateString + "' is not known"));
-    }
-
-    private String toString(Status.HardwareFailureType type) {
-        switch (type) {
-            case memory_mcelog: return "memory_mcelog";
-            case disk_smart: return "disk_smart";
-            case disk_kernel: return "disk_kernel";
-            default : throw new IllegalArgumentException("Serialized form of '" + type + " not defined");
-        }
     }
 
 }

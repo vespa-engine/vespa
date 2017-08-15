@@ -12,7 +12,6 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
-import com.yahoo.vespa.hosted.provision.node.Status;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -80,9 +79,11 @@ public class NodePatcher {
         boolean modified = false;
 
         if (inspector.field(HARDWARE_FAILURE_TYPE).valid()) {
+            Optional<String> hardwareFailure = inspector.type().equals(Type.NIX) ?
+                    Optional.empty() : Optional.of(inspector.field(HARDWARE_FAILURE_TYPE).asString());
             modified = true;
             children = children.stream()
-                    .map(node -> node.with(node.status().withHardwareFailure(toHardwareFailureType(asString(inspector.field(HARDWARE_FAILURE_TYPE))))))
+                    .map(node -> node.with(node.status().withHardwareFailure(hardwareFailure)))
                     .collect(Collectors.toList());
         }
 
@@ -113,7 +114,9 @@ public class NodePatcher {
             case "flavor" :
                 return node.with(nodeFlavors.getFlavorOrThrow(asString(value)));
             case HARDWARE_FAILURE_TYPE:
-                return node.with(node.status().withHardwareFailure(toHardwareFailureType(asString(value))));
+                Optional<String> hardwareFailure = value.type().equals(Type.NIX) ?
+                        Optional.empty() : Optional.of(asString(value));
+                return node.with(node.status().withHardwareFailure(hardwareFailure));
             case "parentHostname" :
                 return node.withParentHostname(asString(value));
             case "ipAddresses" :
@@ -125,10 +128,9 @@ public class NodePatcher {
             case "wantToDeprovision" :
                 return node.with(node.status().withWantToDeprovision(asBoolean(value)));
             case "hardwareDivergence" :
-                if (value.type().equals(Type.NIX)) {
-                    return node.with(node.status().withHardwareDivergence(Optional.empty()));
-                }
-                return node.with(node.status().withHardwareDivergence(Optional.of(asString(value))));
+                Optional<String> hardwareDivergence = value.type().equals(Type.NIX) ?
+                        Optional.empty() : Optional.of(asString(value));
+                return node.with(node.status().withHardwareDivergence(hardwareDivergence));
             default :
                 throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
         }
@@ -173,16 +175,6 @@ public class NodePatcher {
         if ( ! field.type().equals(Type.BOOL))
             throw new IllegalArgumentException("Expected a BOOL value, got a " + field.type());
         return field.asBool();
-    }
-
-    private Optional<Status.HardwareFailureType> toHardwareFailureType(String failureType) {
-        switch (failureType) {
-            case "memory_mcelog" : return Optional.of(Status.HardwareFailureType.memory_mcelog);
-            case "disk_smart" : return Optional.of(Status.HardwareFailureType.disk_smart);
-            case "disk_kernel" : return Optional.of(Status.HardwareFailureType.disk_kernel);
-            case "unknown" : throw new IllegalArgumentException("An actual hardware failure type must be provided, not 'unknown'");
-            default : throw new IllegalArgumentException("Unknown hardware failure '" + failureType + "'");
-        }
     }
 
 }

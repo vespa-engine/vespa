@@ -18,26 +18,15 @@ public class Status {
     private final Generation reboot;
     private final Optional<Version> vespaVersion;
     private final int failCount;
-    private final Optional<HardwareFailureType> hardwareFailure;
+    private final Optional<String> hardwareFailure;
     private final boolean wantToRetire;
     private final boolean wantToDeprovision;
     private final Optional<String> hardwareDivergence;
-    
-    public enum HardwareFailureType {
-        
-        /** There are mce log error messages */
-        memory_mcelog,
-        /** There are smart log error messages */
-        disk_smart,
-        /** There are kernel log error messages */
-        disk_kernel
-        
-    }
 
     public Status(Generation generation,
                   Optional<Version> vespaVersion,
                   int failCount,
-                  Optional<HardwareFailureType> hardwareFailure,
+                  Optional<String> hardwareFailure,
                   boolean wantToRetire,
                   boolean wantToDeprovision,
                   Optional<String> hardwareDivergence) {
@@ -76,10 +65,10 @@ public class Status {
     /** Returns how many times this node has been moved to the failed state. */
     public int failCount() { return failCount; }
 
-    public Status withHardwareFailure(Optional<HardwareFailureType> hardwareFailure) { return new Status(reboot, vespaVersion, failCount, hardwareFailure, wantToRetire, wantToDeprovision, hardwareDivergence); }
+    public Status withHardwareFailure(Optional<String> hardwareFailure) { return new Status(reboot, vespaVersion, failCount, hardwareFailure, wantToRetire, wantToDeprovision, hardwareDivergence); }
 
     /** Returns the type of the last hardware failure detected on this node, or empty if none */
-    public Optional<HardwareFailureType> hardwareFailure() { return hardwareFailure; }
+    public Optional<String> hardwareFailure() { return hardwareFailure; }
 
     /** Returns a copy of this with the want to retire flag changed */
     public Status withWantToRetire(boolean wantToRetire) {

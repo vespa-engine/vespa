@@ -18,7 +18,6 @@ import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
-import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import org.junit.Test;
 
@@ -74,7 +73,7 @@ public class SerializationTest {
         node = node.with(FlavorConfigBuilder.createDummies("large").getFlavorOrThrow("large"));
         node = node.with(node.status().withVespaVersion(Version.fromString("1.2.3")));
         node = node.with(node.status().withIncreasedFailCount().withIncreasedFailCount());
-        node = node.with(node.status().withHardwareFailure(Optional.of(Status.HardwareFailureType.memory_mcelog)));
+        node = node.with(node.status().withHardwareFailure(Optional.of("memory_mcelog")));
         node = node.with(NodeType.tenant);
         Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
 
@@ -88,7 +87,7 @@ public class SerializationTest {
         assertEquals("large", copy.flavor().name());
         assertEquals("1.2.3", copy.status().vespaVersion().get().toString());
         assertEquals(2, copy.status().failCount());
-        assertEquals(Status.HardwareFailureType.memory_mcelog, copy.status().hardwareFailure().get());
+        assertEquals("memory_mcelog", copy.status().hardwareFailure().get());
         assertEquals(node.allocation().get().owner(), copy.allocation().get().owner());
         assertEquals(node.allocation().get().membership(), copy.allocation().get().membership());
         assertEquals(node.allocation().get().isRemovable(), copy.allocation().get().isRemovable());
