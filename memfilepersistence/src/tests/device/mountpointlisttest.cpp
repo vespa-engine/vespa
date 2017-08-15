@@ -59,8 +59,7 @@ void MountPointList_Test::init()
     run("mkdir -p "+_prefix+"/disks");
 
     run("mkdir "+_prefix+"/disks/d0");    // Regular dir
-    run("mkdir "+_prefix+"/disks/d1");    // Inaccessible dir
-    run("chmod 000 "+_prefix+"/disks/d1");
+    // disks/d1 intentionally missing
     run("mkdir "+_prefix+"/disks/D2");    // Wrongly named dir
     run("mkdir "+_prefix+"/disks/d3");    // Regular non-empty dir
     run("touch "+_prefix+"/disks/d3/foo");
@@ -69,16 +68,7 @@ void MountPointList_Test::init()
     run("ln -s d4 "+_prefix+"/disks/d6"); // Symlink to file
 }
 
-void MountPointList_Test::tearDown()
-{
-    try{
-        if (fileExists(_prefix+"/disks/d1")) {
-            run("chmod 755 "+_prefix+"/disks/d1");
-        }
-    } catch (std::exception& e) {
-        std::cerr << "Failed to clean up: " << e.what() << "\n";
-    }
-}
+void MountPointList_Test::tearDown() {}
 
 void MountPointList_Test::testScanning()
 {
@@ -104,7 +94,7 @@ void MountPointList_Test::testScanning()
     // disks. Thus it should not know that d1 is inaccessible, or that d6
     // is actually a symlink to a file
     CPPUNIT_ASSERT_EQUAL(Device::OK,           list[0].getState());
-    CPPUNIT_ASSERT_EQUAL(Device::OK,           list[1].getState());
+    CPPUNIT_ASSERT_EQUAL(Device::NOT_FOUND,           list[1].getState());
     CPPUNIT_ASSERT_EQUAL(Device::NOT_FOUND,    list[2].getState());
     CPPUNIT_ASSERT_EQUAL(Device::OK,           list[3].getState());
     CPPUNIT_ASSERT_EQUAL(Device::PATH_FAILURE, list[4].getState());
@@ -113,7 +103,7 @@ void MountPointList_Test::testScanning()
 
     list.verifyHealthyDisks(-1);
     CPPUNIT_ASSERT_EQUAL(Device::OK,               list[0].getState());
-    CPPUNIT_ASSERT_EQUAL(Device::NO_PERMISSION,    list[1].getState());
+    CPPUNIT_ASSERT_EQUAL(Device::NOT_FOUND,        list[1].getState());
     CPPUNIT_ASSERT_EQUAL(Device::NOT_FOUND,        list[2].getState());
     CPPUNIT_ASSERT_EQUAL(Device::INTERNAL_FAILURE, list[3].getState());
     CPPUNIT_ASSERT_EQUAL(Device::PATH_FAILURE,     list[4].getState());
@@ -156,9 +146,8 @@ void MountPointList_Test::testStatusFile()
         CPPUNIT_ASSERT(std::getline(in, line));
 
         CPPUNIT_ASSERT_PREFIX(
-                std::string(_prefix + "/disks/d1 3 5678 IoException: NO PERMISSION: "
-                            "open(./vdsroot/disks/d1/chunkinfo, 0x1): Failed, "
-                            "errno(13): Permission denied"),
+                std::string(_prefix + "/disks/d1 1 5678 Disk not found "
+                            "during scanning of disks directory"),
                 line);
         CPPUNIT_ASSERT(std::getline(in, line));
         CPPUNIT_ASSERT_PREFIX(
@@ -204,7 +193,7 @@ void MountPointList_Test::testStatusFile()
         // Note.. scanForDisks() should not under any circumstance access the
         // disks. Thus it should not know that d1 is inaccessible.
         CPPUNIT_ASSERT_EQUAL(Device::OK,            list[0].getState());
-        CPPUNIT_ASSERT_EQUAL(Device::NO_PERMISSION, list[1].getState());
+        CPPUNIT_ASSERT_EQUAL(Device::NOT_FOUND,     list[1].getState());
         CPPUNIT_ASSERT_EQUAL(Device::NOT_FOUND,     list[2].getState());
         CPPUNIT_ASSERT_EQUAL(Device::INTERNAL_FAILURE, list[3].getState());
         CPPUNIT_ASSERT_EQUAL(Device::PATH_FAILURE,  list[4].getState());
@@ -250,3 +239,4 @@ void MountPointList_Test::testInitDisks()
 } // memfile
 
 } // storage
+
