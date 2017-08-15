@@ -30,10 +30,6 @@ public class SpecVerifier {
 
     public static boolean verifySpec(CommandExecutor commandExecutor, ArrayList<URL> nodeInfoUrls) throws IOException {
         NodeRepoJsonModel nodeRepoJsonModel = getNodeRepositoryJSON(nodeInfoUrls);
-        if (nodeRepoJsonModel.getEnvironment().equals(VIRTUAL_ENVIRONMENT)) {
-            logger.log(Level.INFO, "Node is virtual machine - No need for verification");
-            return true;
-        }
         VerifierSettings verifierSettings = new VerifierSettings(nodeRepoJsonModel);
         HardwareInfo actualHardware = HardwareInfoRetriever.retrieve(commandExecutor, verifierSettings);
         SpecVerificationReport specVerificationReport = makeVerificationReport(actualHardware, nodeRepoJsonModel);

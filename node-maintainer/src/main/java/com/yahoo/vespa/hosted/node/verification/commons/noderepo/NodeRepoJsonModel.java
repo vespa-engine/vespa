@@ -31,8 +31,6 @@ public class NodeRepoJsonModel {
     @JsonProperty
     private String hostname;
     @JsonProperty
-    private String environment;
-    @JsonProperty
     private String hardwareDivergence;
     private String nodeRepoUrl;
 
@@ -80,11 +78,8 @@ public class NodeRepoJsonModel {
         return hostname;
     }
 
-    public String getEnvironment() {
-        return environment;
-    }
-
     public String getHardwareDivergence() {
         return hardwareDivergence;
     }
+
 }

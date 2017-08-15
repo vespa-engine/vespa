@@ -59,12 +59,6 @@ public class SpecVerifierTest {
     }
 
     @Test
-    public void verifySpec_environment_is_virtual_machine_should_return_true() throws Exception {
-        nodeInfoUrls.add(new URL(URL_RESOURCE_PATH + "/nodeRepoVirtualMachine.json"));
-        assertTrue(SpecVerifier.verifySpec(mockCommandExecutor, nodeInfoUrls));
-    }
-
-    @Test
     public void verifySpec_unequal_nodeRepoInfo_and_hardware_should_return_false() throws Exception {
         nodeInfoUrls.add(new URL(URL_RESOURCE_PATH + "/nodeRepo.json"));
         mockCommandExecutor.addCommand("cat " + CPU_INFO_PATH);
