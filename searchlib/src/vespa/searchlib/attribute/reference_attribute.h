@@ -31,18 +31,18 @@ public:
     class Reference {
         GlobalId _gid;
         mutable uint32_t _lid;  // referenced lid
-        mutable EntryRef _pidx; // map from gid to lids referencing gid
+        mutable EntryRef _revMapIdx; // map from gid to lids referencing gid
     public:
         Reference()
             : _gid(),
               _lid(0u),
-              _pidx()
+              _revMapIdx()
         {
         }
         Reference(const GlobalId &gid_)
             : _gid(gid_),
               _lid(0u),
-              _pidx()
+              _revMapIdx()
         {
         }
         bool operator<(const Reference &rhs) const {
@@ -50,9 +50,9 @@ public:
         }
         const GlobalId &gid() const { return _gid; }
         uint32_t lid() const { return _lid; }
-        EntryRef pidx() const { return _pidx; }
+        EntryRef revMapIdx() const { return _revMapIdx; }
         void setLid(uint32_t referencedLid) const { _lid = referencedLid; }
-        void setPidx(EntryRef newPidx) const { _pidx = newPidx; }
+        void setRevMapIdx(EntryRef newRevMapIdx) const { _revMapIdx = newRevMapIdx; }
     };
     using ReferenceStore = datastore::UniqueStore<Reference>;
     using ReferenceStoreIndices = RcuVectorBase<EntryRef>;
@@ -121,8 +121,8 @@ void
 ReferenceAttribute::foreach_lid(uint32_t referencedLid, FunctionType &&func) const
 {
     if (referencedLid < _reverseMappingIndices.size()) {
-        EntryRef pidx = _reverseMappingIndices[referencedLid];
-        _reverseMapping.foreach_frozen_key(pidx, func);
+        EntryRef revMapIdx = _reverseMappingIndices[referencedLid];
+        _reverseMapping.foreach_frozen_key(revMapIdx, func);
     }
 }
 

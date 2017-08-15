@@ -364,6 +364,8 @@ TEST_F("require that populateReferencedLids() uses gid-mapper to update lid-2-li
     f.save();
     f.load();
     TEST_DO(checkPopulateReferencedLids(f));
+    EXPECT_TRUE(vespalib::unlink("test.dat"));
+    EXPECT_TRUE(vespalib::unlink("test.udat"));
 }
 
 TEST_F("Require that notifyGidToLidChange changes reverse mapping", Fixture)

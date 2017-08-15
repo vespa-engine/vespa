@@ -52,9 +52,9 @@ ReferenceAttribute::~ReferenceAttribute()
     const auto saver = _store.getSaver();
     saver.foreach_key([&store,this](EntryRef ref)
                       {   const Reference &entry = store.get(ref);
-                          EntryRef pidx = entry.pidx();
-                          if (pidx.valid()) {
-                              _reverseMapping.clear(pidx);
+                          EntryRef revMapIdx = entry.revMapIdx();
+                          if (revMapIdx.valid()) {
+                              _reverseMapping.clear(revMapIdx);
                           }
                       });
     incGeneration(); // Force freeze
@@ -88,7 +88,7 @@ ReferenceAttribute::syncReverseMappingIndices(const Reference &entry)
     uint32_t referencedLid = entry.lid();
     if (referencedLid != 0u) {
         _reverseMappingIndices.ensure_size(referencedLid + 1);
-        _reverseMappingIndices[referencedLid] = entry.pidx();
+        _reverseMappingIndices[referencedLid] = entry.revMapIdx();
     }
 }
 
@@ -96,10 +96,10 @@ void
 ReferenceAttribute::removeReverseMapping(EntryRef oldRef, uint32_t lid)
 {
     const auto &entry = _store.get(oldRef);
-    EntryRef pidx = entry.pidx();
-    _reverseMapping.apply(pidx, nullptr, nullptr, &lid, &lid + 1);
+    EntryRef revMapIdx = entry.revMapIdx();
+    _reverseMapping.apply(revMapIdx, nullptr, nullptr, &lid, &lid + 1);
     std::atomic_thread_fence(std::memory_order_release);
-    entry.setPidx(pidx);
+    entry.setRevMapIdx(revMapIdx);
     syncReverseMappingIndices(entry);
 }
 
@@ -107,11 +107,11 @@ void
 ReferenceAttribute::addReverseMapping(EntryRef newRef, uint32_t lid)
 {
     const auto &entry = _store.get(newRef);
-    EntryRef pidx = entry.pidx();
+    EntryRef revMapIdx = entry.revMapIdx();
     ReverseMapping::KeyDataType add(lid, btree::BTreeNoLeafData());
-    _reverseMapping.apply(pidx, &add, &add + 1, nullptr, nullptr);
+    _reverseMapping.apply(revMapIdx, &add, &add + 1, nullptr, nullptr);
     std::atomic_thread_fence(std::memory_order_release);
-    entry.setPidx(pidx);
+    entry.setRevMapIdx(revMapIdx);
     syncReverseMappingIndices(entry);
 }
 
@@ -119,10 +119,10 @@ void
 ReferenceAttribute::buildReverseMapping(EntryRef newRef, const std::vector<ReverseMapping::KeyDataType> &adds)
 {
     const auto &entry = _store.get(newRef);
-    EntryRef pidx = entry.pidx();
-    assert(!pidx.valid());
-    _reverseMapping.apply(pidx, &adds[0], &adds[adds.size()], nullptr, nullptr);
-    entry.setPidx(pidx);
+    EntryRef revMapIdx = entry.revMapIdx();
+    assert(!revMapIdx.valid());
+    _reverseMapping.apply(revMapIdx, &adds[0], &adds[adds.size()], nullptr, nullptr);
+    entry.setRevMapIdx(revMapIdx);
 }
 
 void
@@ -140,15 +140,15 @@ ReferenceAttribute::buildReverseMapping()
     std::sort(indices.begin(), indices.end());
     EntryRef prevRef;
     std::vector<ReverseMapping::KeyDataType> adds;
-    for (const auto & p : indices) {
-        if (p.first != prevRef) {
+    for (const auto & elem : indices) {
+        if (elem.first != prevRef) {
             if (prevRef.valid()) {
                 buildReverseMapping(prevRef, adds);
                 adds.clear();
             }
-            prevRef = p.first;
+            prevRef = elem.first;
         }
-        adds.emplace_back(p.second, btree::BTreeNoLeafData());
+        adds.emplace_back(elem.second, btree::BTreeNoLeafData());
     }
     if (prevRef.valid()) {
         buildReverseMapping(prevRef, adds);
