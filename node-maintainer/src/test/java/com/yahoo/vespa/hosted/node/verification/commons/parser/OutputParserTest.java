@@ -1,10 +1,11 @@
-package com.yahoo.vespa.hosted.node.verification.commons;
+package com.yahoo.vespa.hosted.node.verification.commons.parser;
 
-import com.yahoo.vespa.hosted.node.verification.mock.MockCommandExecutor;
+import com.yahoo.vespa.hosted.node.verification.commons.parser.OutputParser;
+import com.yahoo.vespa.hosted.node.verification.commons.parser.ParseInstructions;
+import com.yahoo.vespa.hosted.node.verification.commons.parser.ParseResult;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 

@@ -1,7 +1,10 @@
-package com.yahoo.vespa.hosted.node.verification.spec.report;
+package com.yahoo.vespa.hosted.node.verification.commons.report;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 
 
@@ -11,7 +14,7 @@ import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
  * Attributes of equal value remain null.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class VerificationReport {
+public class SpecVerificationReport {
 
     @JsonProperty
     private Double actualMemoryAvailable;
@@ -55,4 +58,18 @@ public class VerificationReport {
     public void setFaultyIpAddresses(String[] faultyIpAddresses) {
         this.faultyIpAddresses = faultyIpAddresses;
     }
+
+    @JsonIgnore
+    public boolean isValidSpec() {
+        ObjectMapper om = new ObjectMapper();
+        try {
+            String jsonReport = om.writeValueAsString(this);
+            return jsonReport.length() == 2;
+        }
+        catch (JsonProcessingException e){
+            e.printStackTrace();
+            return false;
+        }
+    }
+
 }

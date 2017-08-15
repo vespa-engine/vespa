@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.node.verification.spec.noderepo;
+package com.yahoo.vespa.hosted.node.verification.commons.noderepo;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -31,7 +31,8 @@ public class NodeRepoJsonModel {
     @JsonProperty
     private String hostname;
     @JsonProperty
-    private String environment;
+    private String hardwareDivergence;
+    private String nodeRepoUrl;
 
     public HardwareInfo copyToHardwareInfo() {
         HardwareInfo hardwareInfo = new HardwareInfo();
@@ -77,8 +78,8 @@ public class NodeRepoJsonModel {
         return hostname;
     }
 
-    public String getEnvironment() {
-        return environment;
+    public String getHardwareDivergence() {
+        return hardwareDivergence;
     }
 
 }

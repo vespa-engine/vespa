@@ -1,24 +1,31 @@
 package com.yahoo.vespa.hosted.node.verification.hardware;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.log.LogSetup;
 import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
+import com.yahoo.vespa.hosted.node.verification.commons.HostURLGenerator;
+import com.yahoo.vespa.hosted.node.verification.commons.report.ReportSender;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.Benchmark;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.BenchmarkResults;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.CPUBenchmark;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.DiskBenchmark;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.MemoryBenchmark;
-import com.yahoo.vespa.hosted.node.verification.hardware.report.BenchmarkReport;
+import com.yahoo.vespa.hosted.node.verification.commons.report.BenchmarkReport;
 
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Benchmarks different hardware components and creates report
  */
 public class HardwareBenchmarker {
 
-    public static boolean hardwareBenchmarks(CommandExecutor commandExecutor) {
+    private static final Logger logger = Logger.getLogger(HardwareBenchmarker.class.getName());
+
+    public static boolean hardwareBenchmarks(CommandExecutor commandExecutor, ArrayList<URL> nodeInfoUrls) throws IOException {
         BenchmarkResults benchmarkResults = new BenchmarkResults();
         ArrayList<Benchmark> benchmarks = new ArrayList<>(Arrays.asList(
                 new DiskBenchmark(benchmarkResults, commandExecutor),
@@ -28,35 +35,24 @@ public class HardwareBenchmarker {
             benchmark.doBenchmark();
         }
         BenchmarkReport benchmarkReport = BenchmarkResultInspector.makeBenchmarkReport(benchmarkResults);
-        printBenchmarkResults(benchmarkReport);
-        return isAllBenchmarksOK(benchmarkReport);
+        ReportSender.reportBenchmarkResults(benchmarkReport, nodeInfoUrls);
+        return benchmarkReport.isAllBenchmarksOK();
     }
 
-    private static boolean isAllBenchmarksOK(BenchmarkReport benchmarkReport) {
-        ObjectMapper om = new ObjectMapper();
-        try {
-            String jsonReport = om.writeValueAsString(benchmarkReport);
-            return jsonReport.length() == 2;
-        } catch (JsonProcessingException e){
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    private static void printBenchmarkResults(BenchmarkReport benchmarkReport) {
-        ObjectMapper om = new ObjectMapper();
-        try {
-            System.out.println(om.writeValueAsString(benchmarkReport));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
+        LogSetup.initVespaLogging("hardware-benchmarker");
         CommandExecutor commandExecutor = new CommandExecutor();
-        if (!HardwareBenchmarker.hardwareBenchmarks(commandExecutor)){
-            System.exit(2);
+        ArrayList<URL> nodeInfoUrls;
+        if (args.length == 0) {
+            throw new IllegalStateException("Expected config server URL as parameter");
         }
+        try {
+            nodeInfoUrls = HostURLGenerator.generateNodeInfoUrl(commandExecutor, args[0]);
+            HardwareBenchmarker.hardwareBenchmarks(commandExecutor, nodeInfoUrls);
+        } catch (IOException e) {
+            logger.log(Level.WARNING, e.getMessage());
+        }
+
     }
 
 }

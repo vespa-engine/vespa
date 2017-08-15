@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.node.verification.spec.noderepo;
+package com.yahoo.vespa.hosted.node.verification.commons.noderepo;
 
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 

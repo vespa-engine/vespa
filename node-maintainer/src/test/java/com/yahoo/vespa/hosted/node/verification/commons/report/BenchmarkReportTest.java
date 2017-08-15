@@ -1,7 +1,6 @@
-package com.yahoo.vespa.hosted.node.verification.hardware.report;
+package com.yahoo.vespa.hosted.node.verification.commons.report;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.BenchmarkResults;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -11,7 +10,7 @@ public class BenchmarkReportTest {
     private BenchmarkReport benchmarkReport = new BenchmarkReport();
 
     @Test
-    public void createFromHardwareResults_should_create_correct_report() throws Exception {
+    public void create_report_from_BenchmarkResults_should_create_correct_report() throws Exception {
         double expectedCpuCyclesPerSec = 4;
         double expectedDiskSpeedMbps = 120;
         double expectedMemoryReadSpeedGBs = 7.1;

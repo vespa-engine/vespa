@@ -1,1 +1,0 @@
-{"timeStamp":1501504035,"dimensions":{"memoryMatch":true,"cpuCoresMatch":true,"diskTypeMatch":true,"netInterfaceSpeedMatch":true,"diskAvailableMatch":true,"ipv4Match":true,"ipv6Match":true},"metrics":{"match":true,"actualIpv6Connection":true,"expectedIpv6Connection":false},"routing":{"yamas":{"namespace":["Vespa"]}}}

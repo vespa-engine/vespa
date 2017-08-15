@@ -1,1 +1,0 @@
-services.addr_configserver: cfg1.prod.region1,cfg2.prod.region1,cfg3.prod.region1

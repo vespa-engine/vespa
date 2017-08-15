@@ -1,75 +1,75 @@
 package com.yahoo.vespa.hosted.node.verification.spec;
 
+import com.yahoo.vespa.hosted.node.verification.commons.report.SpecVerificationReport;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo.DiskType;
-import com.yahoo.vespa.hosted.node.verification.spec.report.VerificationReport;
 
 /**
  * Created by olaa on 04/07/2017.
- * Compares two HardwareInfo objects and stores divergent values in a VerificationReport
+ * Compares two HardwareInfo objects and stores divergent values in a SpecVerificationReport
  */
 public class HardwareNodeComparator {
 
     private static final double PERCENTAGE_THRESHOLD = 0.05;
 
-    public static VerificationReport compare(HardwareInfo nodeRepoHardwareInfo, HardwareInfo actualHardware) {
-        VerificationReport verificationReport = new VerificationReport();
+    public static SpecVerificationReport compare(HardwareInfo nodeRepoHardwareInfo, HardwareInfo actualHardware) {
+        SpecVerificationReport specVerificationReport = new SpecVerificationReport();
         if (nodeRepoHardwareInfo == null || actualHardware == null) {
-            return verificationReport;
+            return specVerificationReport;
         }
-        setReportMetrics(nodeRepoHardwareInfo, actualHardware, verificationReport);
-        return verificationReport;
+        setReportMetrics(nodeRepoHardwareInfo, actualHardware, specVerificationReport);
+        return specVerificationReport;
     }
 
-    private static void setReportMetrics(HardwareInfo nodeRepoHardwareInfo, HardwareInfo actualHardware, VerificationReport verificationReport) {
-        setMemoryMetrics(nodeRepoHardwareInfo, actualHardware, verificationReport);
-        setCpuMetrics(nodeRepoHardwareInfo, actualHardware, verificationReport);
-        setDiskTypeMetrics(nodeRepoHardwareInfo, actualHardware, verificationReport);
-        setDiskSpaceMetrics(nodeRepoHardwareInfo, actualHardware, verificationReport);
-        setNetMetrics(nodeRepoHardwareInfo, actualHardware, verificationReport);
+    private static void setReportMetrics(HardwareInfo nodeRepoHardwareInfo, HardwareInfo actualHardware, SpecVerificationReport specVerificationReport) {
+        setMemoryMetrics(nodeRepoHardwareInfo, actualHardware, specVerificationReport);
+        setCpuMetrics(nodeRepoHardwareInfo, actualHardware, specVerificationReport);
+        setDiskTypeMetrics(nodeRepoHardwareInfo, actualHardware, specVerificationReport);
+        setDiskSpaceMetrics(nodeRepoHardwareInfo, actualHardware, specVerificationReport);
+        setNetMetrics(nodeRepoHardwareInfo, actualHardware, specVerificationReport);
     }
 
-    private static void setMemoryMetrics(HardwareInfo nodeRepoHardwareInfo, HardwareInfo actualHardware, VerificationReport verificationReport) {
+    private static void setMemoryMetrics(HardwareInfo nodeRepoHardwareInfo, HardwareInfo actualHardware, SpecVerificationReport specVerificationReport) {
         double expectedMemory = nodeRepoHardwareInfo.getMinMainMemoryAvailableGb();
         double actualMemory = actualHardware.getMinMainMemoryAvailableGb();
         if (outsideThreshold(expectedMemory, actualMemory, PERCENTAGE_THRESHOLD)) {
-            verificationReport.setActualMemoryAvailable(actualMemory);
+            specVerificationReport.setActualMemoryAvailable(actualMemory);
         }
     }
 
-    private static void setCpuMetrics(HardwareInfo nodeRepoHardwareInfo, HardwareInfo actualHardware, VerificationReport verificationReport) {
+    private static void setCpuMetrics(HardwareInfo nodeRepoHardwareInfo, HardwareInfo actualHardware, SpecVerificationReport specVerificationReport) {
         int expectedCpuCores = nodeRepoHardwareInfo.getMinCpuCores();
         int actualCpuCores = actualHardware.getMinCpuCores();
         if (expectedCpuCores != actualCpuCores) {
-            verificationReport.setActualcpuCores(actualCpuCores);
+            specVerificationReport.setActualcpuCores(actualCpuCores);
         }
     }
 
-    private static void setDiskTypeMetrics(HardwareInfo nodeRepoHardwareInfo, HardwareInfo actualHardware, VerificationReport verificationReport) {
+    private static void setDiskTypeMetrics(HardwareInfo nodeRepoHardwareInfo, HardwareInfo actualHardware, SpecVerificationReport specVerificationReport) {
         DiskType expectedFastDisk = nodeRepoHardwareInfo.getDiskType();
         DiskType actualFastDisk = actualHardware.getDiskType();
         if (expectedFastDisk != null && actualFastDisk != null && expectedFastDisk != actualFastDisk) {
-            verificationReport.setActualDiskType(actualFastDisk);
+            specVerificationReport.setActualDiskType(actualFastDisk);
         }
     }
 
-    private static void setDiskSpaceMetrics(HardwareInfo nodeRepoHardwareInfo, HardwareInfo actualHardware, VerificationReport verificationReport) {
+    private static void setDiskSpaceMetrics(HardwareInfo nodeRepoHardwareInfo, HardwareInfo actualHardware, SpecVerificationReport specVerificationReport) {
         double expectedDiskSpace = nodeRepoHardwareInfo.getMinDiskAvailableGb();
         double actualDiskSpace = actualHardware.getMinDiskAvailableGb();
         if (outsideThreshold(expectedDiskSpace, actualDiskSpace, PERCENTAGE_THRESHOLD)) {
-            verificationReport.setActualDiskSpaceAvailable(actualDiskSpace);
+            specVerificationReport.setActualDiskSpaceAvailable(actualDiskSpace);
         }
     }
 
-    private static void setNetMetrics(HardwareInfo nodeRepoHardwareInfo, HardwareInfo actualHardware, VerificationReport verificationReport) {
+    private static void setNetMetrics(HardwareInfo nodeRepoHardwareInfo, HardwareInfo actualHardware, SpecVerificationReport specVerificationReport) {
         double expectedInterfaceSpeed = nodeRepoHardwareInfo.getInterfaceSpeedMbs();
         double actualInterfaceSpeed = actualHardware.getInterfaceSpeedMbs();
         if (expectedInterfaceSpeed > actualInterfaceSpeed) {
-            verificationReport.setActualInterfaceSpeed(actualInterfaceSpeed);
+            specVerificationReport.setActualInterfaceSpeed(actualInterfaceSpeed);
         }
 
         if (nodeRepoHardwareInfo.isIpv6Connection() && !actualHardware.isIpv6Connection()) {
-            verificationReport.setActualIpv6Connection(actualHardware.isIpv6Connection());
+            specVerificationReport.setActualIpv6Connection(actualHardware.isIpv6Connection());
         }
     }
 

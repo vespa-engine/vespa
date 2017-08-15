@@ -2,19 +2,17 @@ package com.yahoo.vespa.hosted.node.verification.spec;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.hosted.node.verification.mock.MockCommandExecutor;
-import com.yahoo.vespa.hosted.node.verification.spec.noderepo.NodeRepoInfoRetriever;
-import com.yahoo.vespa.hosted.node.verification.spec.noderepo.NodeRepoJsonModel;
+import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoInfoRetriever;
+import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoJsonModel;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
-import com.yahoo.vespa.hosted.node.verification.spec.report.VerificationReport;
+import com.yahoo.vespa.hosted.node.verification.commons.report.SpecVerificationReport;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -61,12 +59,6 @@ public class SpecVerifierTest {
     }
 
     @Test
-    public void verifySpec_environment_is_virtual_machine_should_return_true() throws Exception {
-        nodeInfoUrls.add(new URL(URL_RESOURCE_PATH + "/nodeRepoVirtualMachine.json"));
-        assertTrue(SpecVerifier.verifySpec(mockCommandExecutor, nodeInfoUrls));
-    }
-
-    @Test
     public void verifySpec_unequal_nodeRepoInfo_and_hardware_should_return_false() throws Exception {
         nodeInfoUrls.add(new URL(URL_RESOURCE_PATH + "/nodeRepo.json"));
         mockCommandExecutor.addCommand("cat " + CPU_INFO_PATH);
@@ -92,10 +84,10 @@ public class SpecVerifierTest {
         actualHardware.setDiskType(HardwareInfo.DiskType.SLOW);
         nodeInfoUrls.add(new File(NODE_REPO_PATH).toURI().toURL());
         NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(nodeInfoUrls);
-        VerificationReport verificationSpecReport = SpecVerifier.makeVerificationReport(actualHardware, nodeRepoJsonModel);
+        SpecVerificationReport verificationSpecVerificationReport = SpecVerifier.makeVerificationReport(actualHardware, nodeRepoJsonModel);
         String expectedJson = "{\"actualInterfaceSpeed\":100.0}";
         ObjectMapper om = new ObjectMapper();
-        String actualJson = om.writeValueAsString(verificationSpecReport);
+        String actualJson = om.writeValueAsString(verificationSpecVerificationReport);
         assertEquals(expectedJson, actualJson);
     }
 

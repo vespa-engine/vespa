@@ -1,9 +1,9 @@
 package com.yahoo.vespa.hosted.node.verification.hardware.benchmarks;
 
 import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
-import com.yahoo.vespa.hosted.node.verification.commons.OutputParser;
-import com.yahoo.vespa.hosted.node.verification.commons.ParseInstructions;
-import com.yahoo.vespa.hosted.node.verification.commons.ParseResult;
+import com.yahoo.vespa.hosted.node.verification.commons.parser.OutputParser;
+import com.yahoo.vespa.hosted.node.verification.commons.parser.ParseInstructions;
+import com.yahoo.vespa.hosted.node.verification.commons.parser.ParseResult;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,8 +17,8 @@ import java.util.logging.Logger;
 public class MemoryBenchmark implements Benchmark {
 
     private static final String MEM_BENCHMARK_CREATE_FOLDER = "mkdir -p RAM_test";
-    private static final String MEM_BENCHMARK_MOUNT_TMPFS = "sudo mount tmpfs -t tmpfs RAM_test/";
-    private static final String MEM_BENCHMARK_UNMOUNT_TMPFS = "sudo umount RAM_test";
+    private static final String MEM_BENCHMARK_MOUNT_TMPFS = "mount tmpfs -t tmpfs RAM_test/";
+    private static final String MEM_BENCHMARK_UNMOUNT_TMPFS = "umount RAM_test";
     private static final String MEM_BENCHMARK_DELETE_FOLDER = "rm -rf RAM_test";
     private static final String MEM_BENCHMARK_WRITE_SPEED = "dd if=/dev/zero of=RAM_test/data_tmp bs=1M count=512";
     private static final String MEM_BENCHMARK_READ_SPEED = "dd if=RAM_test/data_tmp of=/dev/null bs=1M count=512";
