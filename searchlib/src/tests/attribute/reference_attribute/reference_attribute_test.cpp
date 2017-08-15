@@ -41,6 +41,28 @@ struct MyGidToLidMapperFactory : public search::attribute::test::MockGidToLidMap
         _map.insert({toGid(doc1), 10});
         _map.insert({toGid(doc2), 17});
     }
+
+    void add(vespalib::stringref docId, uint32_t lid) {
+        auto insres = _map.insert({ toGid(docId), lid });
+        if (!insres.second) {
+            insres.first->second = lid;
+        }
+    }
+
+    void remove(vespalib::stringref docId) {
+        _map.erase(toGid(docId));
+    }
+};
+
+class LidCollector
+{
+    std::vector<uint32_t> &_lids;
+public:
+    LidCollector(std::vector<uint32_t> &lids)
+        : _lids(lids)
+    {
+    }
+    void operator()(uint32_t lid) { _lids.push_back(lid); }
 };
 
 struct Fixture
@@ -121,6 +143,14 @@ struct Fixture
         auto ref = getRef(doc);
         EXPECT_TRUE(ref == nullptr);
         EXPECT_EQUAL(0u, _attr->getReferencedLid(doc));
+    }
+
+    void assertLids(uint32_t referencedLid, std::vector<uint32_t> expLids)
+    {
+        std::vector<uint32_t> lids;
+        LidCollector collector(lids);
+        _attr->foreach_lid(referencedLid, collector);
+        EXPECT_EQUAL(expLids, lids);
     }
 
     void save() {
@@ -287,7 +317,9 @@ TEST_F("require that notifyGidToLidChange() updates lid-2-lid mapping", Fixture)
     TEST_DO(f.assertRefLid(3, 10));
 }
 
-TEST_F("require that populateReferencedLids() uses gid-mapper to update lid-2-lid mapping", Fixture)
+namespace {
+
+void preparePopulateReferencedLids(Fixture &f)
 {
     f.ensureDocIdLimit(6);
     f.set(1, toGid(doc1));
@@ -300,6 +332,10 @@ TEST_F("require that populateReferencedLids() uses gid-mapper to update lid-2-li
     TEST_DO(f.assertRefLid(3, 0));
     TEST_DO(f.assertRefLid(4, 0));
     TEST_DO(f.assertNoRefLid(5));
+}
+
+void checkPopulateReferencedLids(Fixture &f)
+{
     std::shared_ptr<search::IGidToLidMapperFactory> factory = std::make_shared<MyGidToLidMapperFactory>();
     f._attr->setGidToLidMapperFactory(factory);
     f.populateReferencedLids();
@@ -308,6 +344,73 @@ TEST_F("require that populateReferencedLids() uses gid-mapper to update lid-2-li
     TEST_DO(f.assertRefLid(3, 10));
     TEST_DO(f.assertRefLid(4, 0));
     TEST_DO(f.assertNoRefLid(5));
+    TEST_DO(f.assertLids(0, { }));
+    TEST_DO(f.assertLids(10, { 1, 3}));
+    TEST_DO(f.assertLids(17, { 2 }));
+    TEST_DO(f.assertLids(18, { }));
+}
+
+}
+
+TEST_F("require that populateReferencedLids() uses gid-mapper to update lid-2-lid mapping", Fixture)
+{
+    TEST_DO(preparePopulateReferencedLids(f));
+    TEST_DO(checkPopulateReferencedLids(f));
+}
+
+TEST_F("require that populateReferencedLids() uses gid-mapper to update lid-2-lid mapping after load", Fixture)
+{
+    TEST_DO(preparePopulateReferencedLids(f));
+    f.save();
+    f.load();
+    TEST_DO(checkPopulateReferencedLids(f));
+    EXPECT_TRUE(vespalib::unlink("test.dat"));
+    EXPECT_TRUE(vespalib::unlink("test.udat"));
+}
+
+TEST_F("Require that notifyGidToLidChange changes reverse mapping", Fixture)
+{
+    TEST_DO(preparePopulateReferencedLids(f));
+    TEST_DO(f.assertLids(10, { }));
+    TEST_DO(f.assertLids(11, { }));
+    f.notifyGidToLidChange(toGid(doc1), 10);
+    TEST_DO(f.assertLids(10, { 1, 3}));
+    TEST_DO(f.assertLids(11, { }));
+    f.notifyGidToLidChange(toGid(doc1), 11);
+    TEST_DO(f.assertLids(10, { }));
+    TEST_DO(f.assertLids(11, { 1, 3}));
+    f.notifyGidToLidChange(toGid(doc1), 0);
+    TEST_DO(f.assertLids(10, { }));
+    TEST_DO(f.assertLids(11, { }));
+}
+
+TEST_F("Require that reverse mapping recovers from temporary out of order glitch", Fixture)
+{
+    auto factory = std::make_shared<MyGidToLidMapperFactory>();
+    f._attr->setGidToLidMapperFactory(factory);
+    f.ensureDocIdLimit(4);
+    f.set(1, toGid(doc1));
+    f.set(2, toGid(doc2));
+    /*
+     * Changes in gid to lid mapping can be visible via gid to lid
+     * mapper before notifications arrive.  If a lid is reused in the
+     * referenced document meta store then multiple entries in
+     * reference store might temporarily map to the same referenced
+     * lid.
+     */
+    factory->remove(doc1);   // remove referenced document
+    factory->add(doc3, 10);  // reuse lid for new referenced document
+    f.set(3, toGid(doc3));
+    TEST_DO(f.assertRefLid(1, 10));
+    TEST_DO(f.assertRefLid(2, 17));
+    TEST_DO(f.assertRefLid(3, 10));
+    // Notify reference attribute about gid to lid mapping changes
+    f.notifyGidToLidChange(toGid(doc1), 0);
+    f.notifyGidToLidChange(toGid(doc3), 10);
+    TEST_DO(f.assertRefLid(1, 0));
+    TEST_DO(f.assertRefLid(2, 17));
+    TEST_DO(f.assertRefLid(3, 10));
+    TEST_DO(f.assertLids(10, { 3 }));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
