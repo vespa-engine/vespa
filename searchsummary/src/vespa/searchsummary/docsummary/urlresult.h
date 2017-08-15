@@ -1,14 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 2001-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
 #pragma once
 
-#include <vespa/searchsummary/docsummary/resultclass.h>
-#include <vespa/searchsummary/docsummary/docsumstorevalue.h>
+#include "resultclass.h"
+#include "docsumstorevalue.h"
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 class urlresult
 {
@@ -85,6 +82,3 @@ public:
 };
 
 }
-}
-
-

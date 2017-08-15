@@ -7,8 +7,7 @@
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/searchlib/util/rawbuf.h>
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 class IDocsumEnvironment;
 
@@ -140,5 +139,3 @@ public:
 };
 
 }
-}
-
