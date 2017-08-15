@@ -22,7 +22,7 @@ public class ApplicationPackageXmlFilesValidator {
 
     private final AppSubDirs appDirs;
     
-    /** The Vespa version this package tshould be validated against */
+    /** The Vespa version this package should be validated against */
     private final Version vespaVersion;
 
     private static final FilenameFilter xmlFilter = (dir, name) -> name.endsWith(".xml");
@@ -43,9 +43,10 @@ public class ApplicationPackageXmlFilesValidator {
 
     @SuppressWarnings("deprecation")
     public void checkApplication() throws IOException {
-        validateHostsFile(SchemaValidator.hostsXmlSchemaName);
-        validateServicesFile(SchemaValidator.servicesXmlSchemaName);
-        validateDeploymentFile(SchemaValidator.deploymentXmlSchemaName);
+        validate(SchemaValidator.servicesXmlSchemaName, servicesFileName());
+        validateOptional(SchemaValidator.hostsXmlSchemaName, FilesApplicationPackage.HOSTS);
+        validateOptional(SchemaValidator.deploymentXmlSchemaName, FilesApplicationPackage.DEPLOYMENT_FILE.getName());
+        validateOptional(SchemaValidator.validationOverridesXmlSchemaName, FilesApplicationPackage.VALIDATION_OVERRIDES.getName());
 
         if (appDirs.searchdefinitions().exists()) {
             if (FilesApplicationPackage.getSearchDefinitionFiles(appDirs.root()).isEmpty()) {
@@ -67,32 +68,19 @@ public class ApplicationPackageXmlFilesValidator {
         }
     }
 
-    @SuppressWarnings("deprecation")
-    private void validateHostsFile(String hostsXmlSchemaName) throws IOException {
-        if (appDirs.file(FilesApplicationPackage.HOSTS).exists()) {
-            validate(hostsXmlSchemaName, FilesApplicationPackage.HOSTS);
-        }
+    private void validateOptional(String schema, String file) throws IOException {
+        if ( ! appDirs.file(file).exists()) return;
+        validate(schema, file);
     }
 
-    private void validateServicesFile(String servicesXmlSchemaName) throws IOException {
-        // vespa-services.xml or services.xml. Fallback to vespa-services.xml
-        validate(servicesXmlSchemaName, servicesFileName());
-    }
-
-    private void validateDeploymentFile(String deploymentXmlSchemaName) throws IOException {
-        if (appDirs.file(FilesApplicationPackage.DEPLOYMENT_FILE.getName()).exists()) {
-            validate(deploymentXmlSchemaName, FilesApplicationPackage.DEPLOYMENT_FILE.getName());
-        }
-    }
-
-    private void validate(String schemaName, String xmlFileName) throws IOException {
-        createSchemaValidator(schemaName, vespaVersion).validate(appDirs.file(xmlFileName));
+    private void validate(String schema, String file) throws IOException {
+        createSchemaValidator(schema, vespaVersion).validate(appDirs.file(file));
     }
 
     @SuppressWarnings("deprecation")
     private String servicesFileName() {
         String servicesFile = FilesApplicationPackage.SERVICES;
-        if (!appDirs.file(servicesFile).exists()) {
+        if ( ! appDirs.file(servicesFile).exists()) {
             throw new IllegalArgumentException("Application package in " + appDirs.root() +
                                                " must contain " + FilesApplicationPackage.SERVICES);
         }

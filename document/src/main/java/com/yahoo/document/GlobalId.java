@@ -3,21 +3,16 @@ package com.yahoo.document;
 
 import com.yahoo.collections.MD5;
 import com.yahoo.document.idstring.IdString;
-import com.yahoo.text.Utf8;
-import com.yahoo.text.Utf8String;
 import com.yahoo.vespa.objects.Deserializer;
 import com.yahoo.vespa.objects.Serializer;
 
-import java.nio.ByteBuffer;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 /**
  * Implements an incredibly light-weight version of the document global id. There is a lot of functionality in the C++
  * version of this that is missing. However, this should be sufficient for now.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public class GlobalId implements Comparable {
 

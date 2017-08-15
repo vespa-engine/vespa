@@ -6,7 +6,6 @@ package com.yahoo.document;
  */
 public class BucketId implements Comparable<BucketId> {
     public static final int COUNT_BITS = 6;
-    private static final long STRIP_MASK = 0xFC000000FFFFFFFFl;
     private long id = 0;
     private static long[] usedMask;
 

@@ -1,0 +1,4 @@
+<validation-overrides>
+    <allow until="2017-01-01" comment="Some change">field-type-change</allow>
+    <allow until="2017-02-01">cluster-size-reduction</allow>
+</validation-overrides>
