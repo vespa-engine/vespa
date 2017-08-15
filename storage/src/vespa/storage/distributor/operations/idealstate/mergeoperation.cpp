@@ -214,13 +214,6 @@ MergeOperation::deleteSourceOnlyNodes(
         if (!copy) {
             continue; // No point in deleting what's not even there now.
         }
-        if (copy->active()) {
-            LOG(spam,
-                "Not deleting copy on node %u for %s as it is marked active",
-                nodeIndex,
-                getBucketId().toString().c_str());
-            continue;
-        }
         if (_mnodes[i].sourceOnly) {
             sourceOnlyNodes.push_back(nodeIndex);
         }
