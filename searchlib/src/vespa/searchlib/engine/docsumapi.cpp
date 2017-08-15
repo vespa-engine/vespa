@@ -2,8 +2,7 @@
 #include "docsumapi.h"
 #include <cassert>
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 DocsumReply::UP
 DocsumServer::getDocsums(DocsumRequest::UP request)
@@ -13,5 +12,4 @@ DocsumServer::getDocsums(DocsumRequest::UP request)
     return DocsumReply::UP();
 }
 
-}
 }

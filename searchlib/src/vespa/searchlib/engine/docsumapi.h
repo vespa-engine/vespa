@@ -5,8 +5,7 @@
 #include "docsumrequest.h"
 #include "docsumreply.h"
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 /**
  * A docsum client is the object being notified of the completion of
@@ -69,6 +68,4 @@ public:
     virtual ~DocsumServer() {}
 };
 
-} // namespace engine
-} // namespace search
-
+}

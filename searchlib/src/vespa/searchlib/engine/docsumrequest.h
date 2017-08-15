@@ -8,9 +8,9 @@
 #include "request.h"
 #include "source_description.h"
 
-namespace search {
-namespace fs4transport { class FS4Packet_GETDOCSUMSX; }
-namespace engine {
+namespace search::fs4transport { class FS4Packet_GETDOCSUMSX; }
+
+namespace search::engine {
 
 class DocsumRequest : public Request
 {
@@ -91,6 +91,4 @@ public:
     bool useRootSlime() const { return _useRootSlime; }
 };
 
-} // namespace engine
-} // namespace search
-
+}
