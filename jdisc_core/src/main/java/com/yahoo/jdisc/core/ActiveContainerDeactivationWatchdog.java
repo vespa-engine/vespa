@@ -31,7 +31,7 @@ import static java.util.stream.Collectors.toList;
  */
 class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, AutoCloseable {
     static final Duration WATCHDOG_FREQUENCY = Duration.ofMinutes(20);
-    static final Duration ACTIVE_CONTAINER_GRACE_PERIOD = Duration.ofHours(1);
+    static final Duration ACTIVE_CONTAINER_GRACE_PERIOD = Duration.ofHours(4);
     static final Duration GC_TRIGGER_FREQUENCY = ACTIVE_CONTAINER_GRACE_PERIOD.minusMinutes(5);
     static final Duration ENFORCE_DESTRUCTION_GCED_CONTAINERS_FREQUENCY = Duration.ofMinutes(5);
 
@@ -126,6 +126,7 @@ class ActiveContainerDeactivationWatchdog implements ActiveContainerMetrics, Aut
     private static void triggerGc() {
         log.log(Level.FINE, "Triggering GC");
         System.gc();
+        System.runFinalization();
     }
 
     private void enforceDestructionOfGarbageCollectedContainers() {
