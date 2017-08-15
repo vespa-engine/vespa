@@ -8,7 +8,7 @@
     <version>6-SNAPSHOT</version>
     <name>parent</name>
     <description>Parent artifact for all Vespa maven projects.</description>
-    <url>http://yahoo.github.io/vespa</url>
+    <url>https://github.com/vespa-engine</url>
 
     <licenses>
         <license>
@@ -20,7 +20,7 @@
     <developers>
         <developer>
             <name>Vespa</name>
-            <url>https://github.com/yahoo</url>
+            <url>https://github.com/vespa-engine</url>
         </developer>
     </developers>
 
@@ -32,9 +32,9 @@
     </distributionManagement>
 
     <scm>
-        <connection>scm:git:git@github.com:yahoo/vespa.git</connection>
-        <developerConnection>scm:git:git@github.com:yahoo/vespa.git</developerConnection>
-        <url>git@github.com:yahoo/vespa.git</url>
+        <connection>scm:git:git@github.com:vespa-engine/vespa.git</connection>
+        <developerConnection>scm:git:git@github.com:vespa-engine/vespa.git</developerConnection>
+        <url>git@github.com:vespa-engine/vespa.git</url>
     </scm>
 
     <build>
