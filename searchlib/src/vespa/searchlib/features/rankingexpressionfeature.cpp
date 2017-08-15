@@ -168,9 +168,15 @@ InterpretedRankingExpressionExecutor::execute(uint32_t)
 //-----------------------------------------------------------------------------
 
 RankingExpressionBlueprint::RankingExpressionBlueprint()
+    : RankingExpressionBlueprint(std::make_shared<rankingexpression::NullExpressionReplacer>()) {}
+
+RankingExpressionBlueprint::RankingExpressionBlueprint(rankingexpression::ExpressionReplacer::SP replacer)
     : fef::Blueprint("rankingExpression"),
+      _expression_replacer(std::move(replacer)),
+      _intrinsic_expression(),
       _interpreted_function(),
-      _compile_token()
+      _compile_token(),
+      _input_is_object()
 {
 }
 
@@ -207,6 +213,11 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
     if (rank_function.has_error()) {
         LOG(error, "Failed to parse expression '%s': %s", script.c_str(), rank_function.get_error().c_str());
         return false;
+    }
+    _intrinsic_expression = _expression_replacer->maybe_replace(rank_function, env);
+    if (_intrinsic_expression) {
+        describeOutput("out", "result of intrinsic expression", _intrinsic_expression->result_type());
+        return true;
     }
     bool do_compile = true;
     std::vector<ValueType> input_types;
@@ -268,12 +279,15 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
 fef::Blueprint::UP
 RankingExpressionBlueprint::createInstance() const
 {
-    return fef::Blueprint::UP(new RankingExpressionBlueprint());
+    return std::make_unique<RankingExpressionBlueprint>(_expression_replacer);
 }
 
 fef::FeatureExecutor &
-RankingExpressionBlueprint::createExecutor(const fef::IQueryEnvironment &, vespalib::Stash &stash) const
+RankingExpressionBlueprint::createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
+    if (_intrinsic_expression) {
+        return _intrinsic_expression->create_executor(env, stash);
+    }
     if (_interpreted_function) {
         ConstArrayRef<char> input_is_object = stash.copy_array<char>(_input_is_object);
         return stash.create<InterpretedRankingExpressionExecutor>(*_interpreted_function, input_is_object);
