@@ -27,6 +27,7 @@ using document::CompressionConfig;
 
 namespace {
 
+Memory SESSIONID("sessionid");
 Memory SUMMARYCLASS("class");
 Memory GIDS("gids");
 Memory DOCSUM("docsum");
@@ -62,6 +63,13 @@ DocsumBySlime::slimeToRequest(const Inspector & request)
     DocsumRequest::UP docsumRequest(std::make_unique<DocsumRequest>(true));
 
     docsumRequest->resultClassName = request[SUMMARYCLASS].asString().make_string();
+    Memory m = request[SESSIONID].asString();
+    if (m.size > 0) {
+        docsumRequest->sessionId.resize(m.size);
+        memcpy(&docsumRequest->sessionId[0], m.data, m.size);
+        docsumRequest->propertiesMap.cacheProperties().add("query", "true");
+    }
+
     Inspector & gids = request[GIDS];
     docsumRequest->hits.reserve(gids.entries());
     GidTraverser gidFiller(docsumRequest->hits);
