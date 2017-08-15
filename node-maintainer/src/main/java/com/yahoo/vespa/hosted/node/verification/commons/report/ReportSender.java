@@ -19,10 +19,10 @@ public class ReportSender {
         ObjectMapper om = new ObjectMapper();
         String report;
         if (hardwareDivergenceReport.isHardwareDivergenceReportEmpty()){
-            report = "{\"hardwareDivergence\": null}";
+            report = "null";
         }
         else {
-            report = "{\"hardwareDivergence\": " + om.writeValueAsString(hardwareDivergenceReport) + "}";
+            report = om.writeValueAsString(hardwareDivergenceReport);
         }
         System.out.print(report);
     }
@@ -42,7 +42,7 @@ public class ReportSender {
     private static HardwareDivergenceReport generateHardwareDivergenceReport(ArrayList<URL> nodeInfoUrls) throws IOException {
         NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(nodeInfoUrls);
         ObjectMapper om = new ObjectMapper();
-        if (nodeRepoJsonModel.getHardwareDivergence() == null) {
+        if (nodeRepoJsonModel.getHardwareDivergence() == null || nodeRepoJsonModel.getHardwareDivergence().equals("null")) {
             return new HardwareDivergenceReport();
         }
         try {
