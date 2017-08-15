@@ -19,6 +19,7 @@ import com.yahoo.jdisc.test.TestDriver;
 import com.yahoo.metrics.MetricsPresentationConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.InputStreamReader;
@@ -42,12 +43,13 @@ public class StateHandlerTest {
 
     private final static long SNAPSHOT_INTERVAL = TimeUnit.SECONDS.toMillis(300);
     private final static long META_GENERATION = 69;
-    private final TestDriver driver;
-    private final StateMonitor monitor;
-    private final Metric metric;
+    private TestDriver driver;
+    private StateMonitor monitor;
+    private Metric metric;
     private volatile long currentTimeMillis = 0;
 
-    public StateHandlerTest() {
+    @Before
+    public void startTestDriver() {
         driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi(new AbstractModule() {
 
             @Override
@@ -90,7 +92,7 @@ public class StateHandlerTest {
     }
 
     @After
-    public void closeTestDriver() {
+    public void stopTestDriver() {
         assertTrue(driver.close());
     }
 
