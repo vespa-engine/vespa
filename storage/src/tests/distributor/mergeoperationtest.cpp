@@ -24,7 +24,7 @@ class MergeOperationTest : public CppUnit::TestFixture,
     CPPUNIT_TEST(testFailIfSourceOnlyCopiesChanged);
     CPPUNIT_TEST(testGenerateNodeList);
     CPPUNIT_TEST(doNotRemoveCopiesWithPendingMessages);
-    CPPUNIT_TEST(testDoNotRemoveActiveSourceOnlyCopies);
+    CPPUNIT_TEST(allow_deleting_active_source_only_replica);
     CPPUNIT_TEST(testMarkRedundantTrustedCopiesAsSourceOnly);
     CPPUNIT_TEST(onlyMarkRedundantRetiredReplicasAsSourceOnly);
     CPPUNIT_TEST(mark_post_merge_redundant_replicas_source_only);
@@ -37,7 +37,7 @@ protected:
     void testFailIfSourceOnlyCopiesChanged();
     void testGenerateNodeList();
     void doNotRemoveCopiesWithPendingMessages();
-    void testDoNotRemoveActiveSourceOnlyCopies();
+    void allow_deleting_active_source_only_replica();
     void testMarkRedundantTrustedCopiesAsSourceOnly();
     void onlyMarkRedundantRetiredReplicasAsSourceOnly();
     void mark_post_merge_redundant_replicas_source_only();
@@ -293,8 +293,7 @@ MergeOperationTest::testGenerateNodeList()
 }
 
 void
-MergeOperationTest::doNotRemoveCopiesWithPendingMessages()
-{
+MergeOperationTest::doNotRemoveCopiesWithPendingMessages() {
     document::BucketId bucket(16, 1);
 
     getClock().setAbsoluteTimeInSeconds(10);
@@ -322,7 +321,6 @@ MergeOperationTest::doNotRemoveCopiesWithPendingMessages()
             new api::SetBucketStateCommand(bucket, api::SetBucketStateCommand::ACTIVE));
     msg->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 1));
     _pendingTracker->insert(msg);
-                                                            
 
     sendReply(op);
     // Should not be a remove here!
@@ -330,8 +328,33 @@ MergeOperationTest::doNotRemoveCopiesWithPendingMessages()
     CPPUNIT_ASSERT(!op.ok());
 }
 
+/*
+ * We allow active source-only replicas to be deleted to prevent
+ * "deadlocks" between the merge and bucket activation state checkers.
+ *
+ * Example deadlock scenario with explanations:
+ * If the only trusted replica is in a non-ideal location, it will
+ * be marked as active if it is also in ready state. The bucket activation
+ * state checker prefers activating trusted ready replicas, so it
+ * will not automatically activate an untrusted ideal location replica, even
+ * if it's marked as ready. Trusted status of the ideal replicas will not
+ * change even after a successful merge since the checksums between
+ * regular and source-only replicas will usually not converge to the
+ * same value. Consequently, we won't get rid of the non-ideal replica
+ * unless either its content node or the distributor is restarted.
+ *
+ * Such a situation could arise if the ideal replicas are transiently
+ * partitioned away and a new replica is created from feed load before
+ * they return. The new replica would be marked as trusted & active, as the
+ * distributor has lost all prior knowledge of the partitioned replicas.
+ *
+ * Deleting an active replica will lead to a transient loss of coverage
+ * for the bucket (until an ideal replica can be activated), but this
+ * should be an uncommon edge case and it's arguably better than to never
+ * activate the ideal replicas at all.
+ */
 void
-MergeOperationTest::testDoNotRemoveActiveSourceOnlyCopies()
+MergeOperationTest::allow_deleting_active_source_only_replica()
 {
     getClock().setAbsoluteTimeInSeconds(10);
 
@@ -354,8 +377,10 @@ MergeOperationTest::testDoNotRemoveActiveSourceOnlyCopies()
     CPPUNIT_ASSERT_EQUAL(merge, _sender.getLastCommand(true));
 
     sendReply(op);
-    // No DeleteBucket shall have been sent
-    CPPUNIT_ASSERT_EQUAL(merge, _sender.getLastCommand(true));
+    CPPUNIT_ASSERT_EQUAL(
+            std::string("DeleteBucketCommand(BucketId(0x4000000000000001)) "
+                        "Reasons to start:  => 1"),
+            _sender.getLastCommand(true));
 }
 
 void
