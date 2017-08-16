@@ -52,14 +52,12 @@ namespace {
 Schema::SP
 buildNewSchema(const AttributesConfig &newAttributesConfig,
                const SummaryConfig &newSummaryConfig,
-               const IndexschemaConfig &newIndexschemaConfig,
-               const ImportedFieldsConfig &newImportedFieldsConfig)
+               const IndexschemaConfig &newIndexschemaConfig)
 {
     Schema::SP schema = std::make_shared<Schema>();
     SchemaBuilder::build(newAttributesConfig, *schema);
     SchemaBuilder::build(newSummaryConfig, *schema);
     SchemaBuilder::build(newIndexschemaConfig, *schema);
-    SchemaBuilder::build(newImportedFieldsConfig, *schema);
     return schema;
 }
 
@@ -68,8 +66,7 @@ buildNewSchema(const AttributesConfig &newAttributesConfig,
 Schema::SP
 DocumentDBConfigManager::buildSchema(const AttributesConfig &newAttributesConfig,
                                      const SummaryConfig &newSummaryConfig,
-                                     const IndexschemaConfig &newIndexschemaConfig,
-                                     const ImportedFieldsConfig &newImportedFieldsConfig)
+                                     const IndexschemaConfig &newIndexschemaConfig)
 {
     // Called with lock held
     Schema::SP oldSchema;
@@ -77,16 +74,14 @@ DocumentDBConfigManager::buildSchema(const AttributesConfig &newAttributesConfig
         oldSchema = _pendingConfigSnapshot->getSchemaSP();
     }
     if (oldSchema.get() == NULL) {
-        return buildNewSchema(newAttributesConfig, newSummaryConfig,
-                              newIndexschemaConfig, newImportedFieldsConfig);
+        return buildNewSchema(newAttributesConfig, newSummaryConfig, newIndexschemaConfig);
     }
     const DocumentDBConfig &old = *_pendingConfigSnapshot;
     if (old.getAttributesConfig() != newAttributesConfig ||
         old.getSummaryConfig() != newSummaryConfig ||
         old.getIndexschemaConfig() != newIndexschemaConfig)
     {
-        Schema::SP schema(buildNewSchema(newAttributesConfig, newSummaryConfig,
-                                         newIndexschemaConfig, newImportedFieldsConfig));
+        Schema::SP schema(buildNewSchema(newAttributesConfig, newSummaryConfig, newIndexschemaConfig));
         return (*oldSchema == *schema) ? oldSchema : schema;
     }
     return oldSchema;
@@ -138,6 +133,26 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
                     proton.maintenancejobs.maxoutstandingmoveops));
 }
 
+namespace {
+
+using AttributesConfigSP = DocumentDBConfig::AttributesConfigSP;
+using AttributesConfigBuilder = vespa::config::search::AttributesConfigBuilder;
+using AttributesConfigBuilderSP = std::shared_ptr<AttributesConfigBuilder>;
+
+AttributesConfigSP
+filterImportedAttributes(const AttributesConfigSP &attrCfg)
+{
+    AttributesConfigBuilderSP result = std::make_shared<AttributesConfigBuilder>();
+    result->attribute.reserve(attrCfg->attribute.size());
+    for (const auto &attr : attrCfg->attribute) {
+        if (!attr.imported) {
+            result->attribute.push_back(attr);
+        }
+    }
+    return result;
+}
+
+}
 
 void
 DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
@@ -259,8 +274,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
 
     Schema::SP schema(buildSchema(*newAttributesConfig,
                                   *newSummaryConfig,
-                                  *newIndexschemaConfig,
-                                  *newImportedFieldsConfig));
+                                  *newIndexschemaConfig));
     newMaintenanceConfig = buildMaintenanceConfig(_bootstrapConfig,
                                                   _docTypeName);
     if (newMaintenanceConfig.get() != NULL &&
@@ -274,7 +288,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
                                  newRankProfilesConfig,
                                  newRankingConstants,
                                  newIndexschemaConfig,
-                                 newAttributesConfig,
+                                 filterImportedAttributes(newAttributesConfig),
                                  newSummaryConfig,
                                  newSummarymapConfig,
                                  newJuniperrcConfig,

@@ -29,6 +29,7 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
     public enum FieldSet {ALL, FAST_ACCESS}
 
     private Map<String, Attribute> attributes = new java.util.LinkedHashMap<>();
+    private Map<String, Attribute> importedAttributes = new java.util.LinkedHashMap<>();
 
     /**
      * Flag indicating if a position-attribute has been found
@@ -51,9 +52,10 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
             return; // Ignore struct fields for indexed search (only implemented for streaming search)
         }
         if (field.isImportedField()) {
-            return; // Ignore imported fields
+            deriveImportedAttributes(field);
+        } else {
+            deriveAttributes(field);
         }
-        deriveAttributes(field);
     }
 
     /**
@@ -67,18 +69,6 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         return getAttribute(attributeName) != null;
     }
 
-    private void deriveAttribute(ImmutableSDField field, Attribute fieldAttribute) {
-        Attribute attribute = getAttribute(fieldAttribute.getName());
-        if (attribute == null) {
-            attributes.put(fieldAttribute.getName(), fieldAttribute);
-            attribute = getAttribute(fieldAttribute.getName());
-        }
-        Ranking ranking = field.getRanking();
-        if (ranking != null && ranking.isFilter()) {
-            attribute.setEnableBitVectors(true);
-            attribute.setEnableOnlyBitVector(true);
-        }
-    }
     /**
      * Derives one attribute. TODO: Support non-default named attributes
      */
@@ -93,6 +83,27 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
                 throw new IllegalArgumentException("Can not specify more than one set of position attributes per field: " + field.getName());
             }
             hasPosition = true;
+        }
+    }
+
+    private void deriveAttribute(ImmutableSDField field, Attribute fieldAttribute) {
+        Attribute attribute = getAttribute(fieldAttribute.getName());
+        if (attribute == null) {
+            attributes.put(fieldAttribute.getName(), fieldAttribute);
+            attribute = getAttribute(fieldAttribute.getName());
+        }
+        Ranking ranking = field.getRanking();
+        if (ranking != null && ranking.isFilter()) {
+            attribute.setEnableBitVectors(true);
+            attribute.setEnableOnlyBitVector(true);
+        }
+    }
+
+    private void deriveImportedAttributes(ImmutableSDField field) {
+        for (Attribute attribute : field.getAttributes().values()) {
+            if (!importedAttributes.containsKey(field.getName())) {
+                importedAttributes.put(field.getName(), attribute);
+            }
         }
     }
 
@@ -133,7 +144,7 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         return (fs == FieldSet.ALL) || ((fs == FieldSet.FAST_ACCESS) && attribute.isFastAccess());
     }
 
-    private AttributesConfig.Attribute.Builder getConfig(Attribute attribute) {
+    private AttributesConfig.Attribute.Builder getConfig(Attribute attribute, boolean imported) {
         AttributesConfig.Attribute.Builder aaB = new AttributesConfig.Attribute.Builder()
                 .name(attribute.getName())
                 .datatype(AttributesConfig.Attribute.Datatype.Enum.valueOf(attribute.getType().getExportAttributeTypeName()))
@@ -174,13 +185,19 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         if (attribute.tensorType().isPresent()) {
             aaB.tensortype(attribute.tensorType().get().toString());
         }
+        aaB.imported(imported);
         return aaB;
     }
 
     public void getConfig(AttributesConfig.Builder builder, FieldSet fs) {
         for (Attribute attribute : attributes.values()) {
             if (isAttributeInFieldSet(attribute, fs)) {
-                builder.attribute(getConfig(attribute));
+                builder.attribute(getConfig(attribute, false));
+            }
+        }
+        if (fs == FieldSet.ALL) {
+            for (Attribute attribute : importedAttributes.values()) {
+                builder.attribute(getConfig(attribute, true));
             }
         }
     }
