@@ -119,6 +119,7 @@ ReferenceMappings::onLoad(uint32_t docIdLimit)
 {
     _referencedLids.clear();
     _referencedLids.unsafe_reserve(docIdLimit);
+    _referencedLids.ensure_size(docIdLimit);
 }
 
 void
