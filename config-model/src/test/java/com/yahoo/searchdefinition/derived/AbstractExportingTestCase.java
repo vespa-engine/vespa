@@ -42,8 +42,6 @@ public abstract class AbstractExportingTestCase extends SearchDefinitionTestCase
         //System.setProperty("sd.updatetestfile", "index-info");
         //System.setProperty("sd.updatetestfile", "indexschema");
         //System.setProperty("sd.updatetestfile", "juniperrc");
-        //System.setProperty("sd.updatetestfile", "pan-rtx");
-        //System.setProperty("sd.updatetestfile", "pan-rtx-rtlogic");
         //System.setProperty("sd.updatetestfile", "partitions");
         //System.setProperty("sd.updatetestfile", "qr-logging");
         //System.setProperty("sd.updatetestfile", "qr-searchers");
