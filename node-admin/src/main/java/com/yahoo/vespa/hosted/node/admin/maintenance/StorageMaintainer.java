@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
@@ -294,6 +295,17 @@ public class StorageMaintainer {
 
         maintainerExecutor.execute();
         getMaintenanceThrottlerFor(containerName).reset();
+    }
+
+    /**
+     * Runs node-maintainer's SpecVerifier and returns its output
+     * @throws RuntimeException if exit code != 0
+     */
+    public String getHardwardDivergence() {
+        String configServers = environment.getConfigServerHosts().stream()
+                .map(configServer -> "http://" +  configServer + ":" + 4080)
+                .collect(Collectors.joining(","));
+        return executeMaintainer("com.yahoo.vespa.hosted.node.verification.spec.SpecVerifier", configServers);
     }
 
 

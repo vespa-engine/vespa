@@ -2,8 +2,11 @@
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
@@ -17,7 +20,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -40,6 +48,8 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     private final Object monitor = new Object();
 
     private final Logger log = Logger.getLogger(NodeAdminStateUpdater.class.getName());
+    private final ScheduledExecutorService specVerifierScheduler =
+            Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("specverifier"));
     private Thread loopThread;
 
     private final NodeRepository nodeRepository;
@@ -54,6 +64,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     public NodeAdminStateUpdater(
             final NodeRepository nodeRepository,
             final NodeAdmin nodeAdmin,
+            Optional<StorageMaintainer> storageMaintainer,
             Clock clock,
             Orchestrator orchestrator,
             String dockerHostHostName) {
@@ -64,6 +75,9 @@ public class NodeAdminStateUpdater extends AbstractComponent {
         this.orchestrator = orchestrator;
         this.dockerHostHostName = dockerHostHostName;
         this.lastTick = clock.instant();
+
+        storageMaintainer.ifPresent(maintainer -> specVerifierScheduler.scheduleWithFixedDelay(() ->
+                updateHardwareDivergence(maintainer), 5, 60, TimeUnit.MINUTES));
     }
 
     private String objectToString() {
@@ -81,6 +95,18 @@ public class NodeAdminStateUpdater extends AbstractComponent {
             debug.put("Current State: ", currentState);
         }
         return debug;
+    }
+
+    private void updateHardwareDivergence(StorageMaintainer maintainer) {
+        if (currentState != RESUMED) return;
+
+        try {
+            String hardwareDivergence = maintainer.getHardwardDivergence();
+            NodeAttributes nodeAttributes = new NodeAttributes().withHardwareDivergence(hardwareDivergence);
+            nodeRepository.updateNodeAttributes(dockerHostHostName, nodeAttributes);
+        } catch (RuntimeException e) {
+            log.log(Level.WARNING, "Failed to report hardware divergence", e);
+        }
     }
 
     public boolean setResumeStateAndCheckIfResumed(State wantedState) {

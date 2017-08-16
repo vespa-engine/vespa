@@ -36,7 +36,7 @@ public class ComponentsProviderWithMocks implements ComponentsProvider {
             (hostName) -> new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock,
                     dockerOperationsMock, Optional.empty(), environment, Clock.systemUTC(), Optional.empty());
     private final NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperationsMock, nodeAgentFactory, Optional.empty(), 100, mr, Optional.empty(), Clock.systemUTC());
-    private final NodeAdminStateUpdater nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, Clock.systemUTC(), orchestratorMock, "localhost.test.yahoo.com");
+    private final NodeAdminStateUpdater nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, Optional.empty(), Clock.systemUTC(), orchestratorMock, "localhost.test.yahoo.com");
 
     public ComponentsProviderWithMocks() {
         nodeAdminStateUpdater.start(10);

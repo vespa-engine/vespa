@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -41,7 +42,7 @@ public class NodeAdminStateUpdaterTest {
     private final NodeAdmin nodeAdmin = mock(NodeAdmin.class);
     private final Orchestrator orchestrator = mock(Orchestrator.class);
     private final NodeAdminStateUpdater refresher = spy(new NodeAdminStateUpdater(
-            nodeRepository, nodeAdmin, clock, orchestrator, parentHostname));
+            nodeRepository, nodeAdmin, Optional.empty(), clock, orchestrator, parentHostname));
 
 
     @Test
