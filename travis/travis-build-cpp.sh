@@ -7,7 +7,8 @@ BUILD_DIR=~/build
 
 mkdir "${BUILD_DIR}"
 
-ccache -M 5G
+export CCACHE_SIZE="4G"
+export CCACHE_COMPRESS="1"
 NUM_THREADS=4
 source /opt/rh/devtoolset-6/enable || true
 cd "${SOURCE_DIR}"
@@ -24,4 +25,3 @@ cmake3 \
     "${SOURCE_DIR}"
 make -j ${NUM_THREADS}
 ctest3 --output-on-failure -j ${NUM_THREADS}
-
