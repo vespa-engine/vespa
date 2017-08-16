@@ -20,9 +20,6 @@ import java.util.Set;
  */
 public class DockerHostCapacity {
 
-    /** Tenant name for headroom nodes - only used internally */
-    public static final String HEADROOM_TENANT = "-__!@#$$%THISisHEADroom";
-
     /**
      * An immutable list of nodes
      */
@@ -37,7 +34,7 @@ public class DockerHostCapacity {
      * <p>
      * Used in prioritizing hosts for allocation in <b>descending</b> order.
      */
-    int compare(Node hostA, Node hostB) {
+    public int compare(Node hostA, Node hostB) {
         int comp = freeCapacityOf(hostB, true).compare(freeCapacityOf(hostA, true));
         if (comp == 0) {
             comp = freeCapacityOf(hostB, false).compare(freeCapacityOf(hostA, false));
@@ -102,13 +99,14 @@ public class DockerHostCapacity {
     /**
      * Calculate the remaining capacity for the dockerHost.
      */
-    private ResourceCapacity freeCapacityOf(Node dockerHost, boolean includeHeadroom) {
+    public ResourceCapacity freeCapacityOf(Node dockerHost, boolean includeHeadroom) {
         // Only hosts have free capacity
         if (!dockerHost.type().equals(NodeType.host)) return new ResourceCapacity();
 
         ResourceCapacity hostCapacity = new ResourceCapacity(dockerHost);
         for (Node container : allNodes.childNodes(dockerHost).asList()) {
-            if (includeHeadroom || !(container.allocation().isPresent() && container.allocation().get().owner().tenant().value().equals(HEADROOM_TENANT))) {
+            if (includeHeadroom || !(container.allocation().isPresent() &&
+                    container.allocation().get().owner().tenant().value().equals(DockerCapacityConstraints.HEADROOM_TENANT))) {
                 hostCapacity.subtract(container);
             }
         }

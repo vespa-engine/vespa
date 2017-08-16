@@ -120,6 +120,16 @@ public class ProvisioningTester implements AutoCloseable {
         return allocationSnapshots;
     }
 
+    /**
+     * This is to add intermediate or final allocation snapshots to the debug array.
+     *
+     * This is typically used to visualize the end state of the node repo after an allocation.
+     * @param message
+     */
+    public void addAllocationSnapshot(String message) {
+        allocationSnapshots.add(new AllocationSnapshot(new NodeList(nodeRepository().getNodes()), "Provision tester", message));
+    }
+
     public void advanceTime(TemporalAmount duration) { clock.advance(duration); }
     public NodeRepository nodeRepository() { return nodeRepository; }
     public ManualClock clock() { return clock; }
@@ -226,10 +236,11 @@ public class ProvisioningTester implements AutoCloseable {
     }
 
     public List<Node> makeReadyNodes(int n, String flavor, NodeType type, int additionalIps) {
+        int nofIPsInNodeRepo = nofIPAddressesInNodeRepo();
         List<Node> nodes = new ArrayList<>(n);
         for (int i = 0; i < n; i++) {
             Set<String> ips = IntStream.range(additionalIps * i, additionalIps * (i+1))
-                    .mapToObj(j -> String.format("127.0.0.%d", j))
+                    .mapToObj(j -> String.format("127.0.0.%d", j + nofIPsInNodeRepo))
                     .collect(Collectors.toSet());
 
             nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(),
@@ -243,6 +254,15 @@ public class ProvisioningTester implements AutoCloseable {
         nodes = nodeRepository.addNodes(nodes);
         nodes = nodeRepository.setDirty(nodes);
         return nodeRepository.setReady(nodes);
+    }
+
+    private int nofIPAddressesInNodeRepo() {
+        Set<String> ips = new HashSet<>();
+        for (Node node : nodeRepository().getNodes()) {
+            ips.addAll(node.ipAddresses());
+            ips.addAll(node.additionalIpAddresses());
+        }
+        return ips.size();
     }
 
     /** Creates a set of virtual docker nodes on a single docker host */
