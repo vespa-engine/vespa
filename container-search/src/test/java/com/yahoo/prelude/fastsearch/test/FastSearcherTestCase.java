@@ -103,6 +103,41 @@ public class FastSearcherTestCase {
     }
 
     @Test
+    public void testDispatchDotSummaries() {
+        Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
+        DocumentdbInfoConfig documentdbConfigWithOneDb =
+                new DocumentdbInfoConfig(new DocumentdbInfoConfig.Builder().documentdb(new DocumentdbInfoConfig.Documentdb.Builder()
+                        .name("testDb")
+                        .summaryclass(new DocumentdbInfoConfig.Documentdb.Summaryclass.Builder().name("simple").id(7))
+                        .rankprofile(new DocumentdbInfoConfig.Documentdb.Rankprofile.Builder()
+                                .name("simpler").hasRankFeatures(false).hasSummaryFeatures(false))));
+        FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
+                new FS4ResourcePool(1),
+                new MockDispatcher(Collections.emptyList()),
+                new SummaryParameters(null),
+                new ClusterParams("testhittype"),
+                new CacheParams(100, 1e64),
+                documentdbConfigWithOneDb);
+
+        String query = "?query=sddocname:a&dispatch.summaries";
+        Result result = doSearch(fastSearcher,new Query(query), 0, 10);
+        ErrorMessage message = result.hits().getError();
+
+        assertNotNull("Got error", message);
+        assertEquals("Invalid query parameter", message.getMessage());
+        assertEquals("When using dispatch.summaries and your summary/rankprofile require the query,  you need to enable ranking.queryCache.", message.getDetailedMessage());
+        assertEquals(Error.INVALID_QUERY_PARAMETER.code, message.getCode());
+
+        query = "?query=sddocname:a&dispatch.summaries&ranking.queryCache";
+        result = doSearch(fastSearcher,new Query(query), 0, 10);
+        assertNull(result.hits().getError());
+
+        query = "?query=sddocname:a&dispatch.summaries&summary=simple&ranking=simpler";
+        result = doSearch(fastSearcher,new Query(query), 0, 10);
+        assertNull(result.hits().getError());
+    }
+
+    @Test
     public void testQueryWithRestrict() {
         mockBackend = new MockBackend();
         DocumentdbInfoConfig documentdbConfigWithOneDb =

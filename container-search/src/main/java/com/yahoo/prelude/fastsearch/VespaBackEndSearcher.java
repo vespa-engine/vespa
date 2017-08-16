@@ -55,6 +55,9 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
 
     private static final CompoundName grouping=new CompoundName("grouping");
     private static final CompoundName combinerows=new CompoundName("combinerows");
+    /** If this is turned on this will fill summaries by dispatching directly to search nodes over RPC */
+    private final static CompoundName dispatchSummaries = new CompoundName("dispatch.summaries");
+
     protected static final CompoundName PACKET_COMPRESSION_LIMIT = new CompoundName("packetcompressionlimit");
     protected static final CompoundName PACKET_COMPRESSION_TYPE = new CompoundName("packetcompressiontype");
     protected static final CompoundName TRACE_DISABLE = new CompoundName("trace.disable");
@@ -108,6 +111,35 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
     protected abstract Result doSearch2(Query query, QueryPacket queryPacket, CacheKey cacheKey, Execution execution);
 
     protected abstract void doPartialFill(Result result, String summaryClass);
+
+    protected static boolean wantsRPCSummarFill(Query query) {
+        return query.properties().getBoolean(dispatchSummaries);
+    }
+
+    /**
+     * Returns whether we need to send the query when fetching summaries.
+     * This is necessary if the query requests summary features or dynamic snippeting
+     */
+    protected boolean summaryNeedsQuery(Query query) {
+        if (query.getRanking().getQueryCache()) return false;  // Query is cached in backend
+
+        DocumentDatabase documentDb = getDocumentDatabase(query);
+
+        // Needed to generate a dynamic summary?
+        DocsumDefinition docsumDefinition = documentDb.getDocsumDefinitionSet().getDocsumDefinition(query.getPresentation().getSummary());
+        if (docsumDefinition == null) return true; // stay safe
+        if (docsumDefinition.isDynamic()) return true;
+
+        // Needed to generate ranking features?
+        RankProfile rankProfile = documentDb.rankProfiles().get(query.getRanking().getProfile());
+        if (rankProfile == null) return true; // stay safe
+        if (rankProfile.hasSummaryFeatures()) return true;
+        if (query.getRanking().getListFeatures()) return true;
+
+        // (Don't just add other checks here as there is a return false above)
+
+        return false;
+    }
 
     private Result cacheLookupFirstPhase(CacheKey key, QueryPacketData queryPacketData, Query query, int offset, int hits, String summaryClass) throws IOException {
         PacketWrapper packetWrapper = cacheControl.lookup(key, query);
@@ -184,6 +216,12 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         Item root = query.getModel().getQueryTree().getRoot();
         if (root == null || root instanceof NullItem) {
             return new Result(query, ErrorMessage.createNullQuery(query.getHttpRequest().getUri().toString()));
+        }
+
+        if (wantsRPCSummarFill(query) && summaryNeedsQuery(query)) {
+            return new Result(query, ErrorMessage.createInvalidQueryParameter(
+                    "When using dispatch.summaries and your summary/rankprofile require the query, " +
+                    " you need to enable ranking.queryCache."));
         }
 
         QueryRewrite.optimizeByRestrict(query);
