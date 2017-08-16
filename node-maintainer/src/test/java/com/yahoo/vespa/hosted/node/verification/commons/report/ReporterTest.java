@@ -14,7 +14,7 @@ import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 
-public class ReportSenderTest {
+public class ReporterTest {
 
     private final ByteArrayOutputStream println = new ByteArrayOutputStream();
     private static final String ABSOLUTE_PATH = Paths.get(".").toAbsolutePath().normalize().toString();
@@ -52,7 +52,7 @@ public class ReportSenderTest {
         benchmarkReport.setCpuCyclesPerSec(cpuCyclesPerSec);
         benchmarkReport.setMemoryReadSpeedGBs(memoryReadSpeedGBs);
         String expectedReport = "{\"benchmarkReport\":{\"cpuCyclesPerSec\":0.3,\"memoryReadSpeedGBs\":0.1}}";
-        ReportSender.reportBenchmarkResults(benchmarkReport, nodeInfoUrlsToValidHardwareDivergence);
+        Reporter.reportBenchmarkResults(benchmarkReport, nodeInfoUrlsToValidHardwareDivergence);
         assertEquals(expectedReport, println.toString());
     }
 
@@ -60,7 +60,7 @@ public class ReportSenderTest {
     public void reportBenchmarkResults_should_should_update_already_existing_hardwareDivergence_prints_null_when_empty_benchmarkReport() throws Exception {
         BenchmarkReport benchmarkReport = new BenchmarkReport();
         String expectedReport = "null";
-        ReportSender.reportBenchmarkResults(benchmarkReport, nodeInfoUrlsToValidHardwareDivergence);
+        Reporter.reportBenchmarkResults(benchmarkReport, nodeInfoUrlsToValidHardwareDivergence);
         assertEquals(expectedReport, println.toString());
     }
 
@@ -72,7 +72,7 @@ public class ReportSenderTest {
         specVerificationReport.setActualDiskSpaceAvailable(actualDiskSpaceAvailable);
         specVerificationReport.setActualIpv6Connection(actualIpv6Connection);
         String expectedReport = "{\"specVerificationReport\":{\"actualDiskSpaceAvailable\":150.0,\"actualIpv6Connection\":false},\"benchmarkReport\":{\"cpuCyclesPerSec\":0.5}}";
-        ReportSender.reportSpecVerificationResults(specVerificationReport, nodeInfoUrlsToValidHardwareDivergence);
+        Reporter.reportSpecVerificationResults(specVerificationReport, nodeInfoUrlsToValidHardwareDivergence);
         assertEquals(expectedReport, println.toString());
     }
 
@@ -82,7 +82,7 @@ public class ReportSenderTest {
         double actualDiskSpaceAvailable = 150D;
         specVerificationReport.setActualDiskSpaceAvailable(actualDiskSpaceAvailable);
         String expectedReport = "{\"specVerificationReport\":{\"actualDiskSpaceAvailable\":150.0}}";
-        ReportSender.reportSpecVerificationResults(specVerificationReport, nodeInfoUrlsToNOTValidHardwareDivergence);
+        Reporter.reportSpecVerificationResults(specVerificationReport, nodeInfoUrlsToNOTValidHardwareDivergence);
         assertEquals(expectedReport, println.toString());
     }
 
@@ -90,7 +90,7 @@ public class ReportSenderTest {
     public void reportSpecVerificationResults_make_new_empty_hardwareDivergence_because_there_is_no_old() throws Exception {
         SpecVerificationReport specVerificationReport = new SpecVerificationReport();
         String expectedReport = "null";
-        ReportSender.reportSpecVerificationResults(specVerificationReport, nodeInfoUrlsWithNoHardwareDivergence);
+        Reporter.reportSpecVerificationResults(specVerificationReport, nodeInfoUrlsWithNoHardwareDivergence);
         assertEquals(expectedReport, println.toString());
     }
 

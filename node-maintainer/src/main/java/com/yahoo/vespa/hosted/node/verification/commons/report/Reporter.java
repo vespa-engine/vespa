@@ -11,9 +11,9 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ReportSender {
+public class Reporter {
 
-    private static final Logger logger = Logger.getLogger(ReportSender.class.getName());
+    private static final Logger logger = Logger.getLogger(Reporter.class.getName());
 
     private static void printHardwareDivergenceReport(HardwareDivergenceReport hardwareDivergenceReport) throws IOException {
         ObjectMapper om = new ObjectMapper();

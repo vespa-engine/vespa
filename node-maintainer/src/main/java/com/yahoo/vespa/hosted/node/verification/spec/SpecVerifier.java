@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.verification.spec;
 import com.yahoo.log.LogSetup;
 import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
 import com.yahoo.vespa.hosted.node.verification.commons.HostURLGenerator;
-import com.yahoo.vespa.hosted.node.verification.commons.report.ReportSender;
+import com.yahoo.vespa.hosted.node.verification.commons.report.Reporter;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.IPAddressVerifier;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeJsonConverter;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoInfoRetriever;
@@ -33,7 +33,7 @@ public class SpecVerifier {
         VerifierSettings verifierSettings = new VerifierSettings(nodeRepoJsonModel);
         HardwareInfo actualHardware = HardwareInfoRetriever.retrieve(commandExecutor, verifierSettings);
         SpecVerificationReport specVerificationReport = makeVerificationReport(actualHardware, nodeRepoJsonModel);
-        ReportSender.reportSpecVerificationResults(specVerificationReport, nodeInfoUrls);
+        Reporter.reportSpecVerificationResults(specVerificationReport, nodeInfoUrls);
         return specVerificationReport.isValidSpec();
     }
 
