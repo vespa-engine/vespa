@@ -33,9 +33,9 @@ class MySearchHandler : public ISearchHandler {
     std::string _name;
     stringref _reply;
 public:
-    MySearchHandler(const std::string &name = "my",
-                    const stringref &reply = MYREPLY) :
-            _name(name), _reply(reply) {}
+    MySearchHandler(const std::string &name = "my", const stringref &reply = MYREPLY)
+        : _name(name), _reply(reply)
+    {}
 
     virtual DocsumReply::UP getDocsums(const DocsumRequest &request) override {
         return (request.useRootSlime())
@@ -300,8 +300,8 @@ createSummary(search::RawBuf &buf) {
 
 class BaseServer {
 protected:
-    BaseServer() :
-            buf(100) {
+    BaseServer() : buf(100)
+    {
         createSummary(buf);
     }
 
@@ -312,7 +312,6 @@ protected:
 class Server : public BaseServer {
 public:
     Server();
-
     ~Server();
 
 private:
@@ -324,11 +323,12 @@ public:
 };
 
 Server::Server()
-        : BaseServer(),
-          engine(2),
-          handler(new MySearchHandler("slime", stringref(buf.GetDrainPos(), buf.GetUsedLen()))),
-          docsumBySlime(engine),
-          docsumByRPC(docsumBySlime) {
+    : BaseServer(),
+      engine(2),
+      handler(new MySearchHandler("slime", stringref(buf.GetDrainPos(), buf.GetUsedLen()))),
+      docsumBySlime(engine),
+      docsumByRPC(docsumBySlime)
+{
     DocTypeName dtnvfoo("foo");
     engine.putSearchHandler(dtnvfoo, handler);
 }
@@ -337,24 +337,21 @@ Server::~Server() {}
 
 vespalib::string
 getAnswer(size_t num) {
-    vespalib::string s =
-            "{"
-                    "    docsums: [";
+    vespalib::string s;
+    s += "{    docsums: [";
     for (size_t i(1); i < num * 2; i++) {
-        s +=
-                "        {"
-                        "            docsum: {"
-                        "                long: 982"
-                        "            }"
-                        "        },";
+        s += "        {"
+             "            docsum: {"
+             "                long: 982"
+             "            }"
+             "        },";
     }
-    s +=
-            "        {"
-                    "            docsum: {"
-                    "                long: 982"
-                    "            }"
-                    "        }"
-                    "    ]";
+    s += "        {"
+         "            docsum: {"
+         "                long: 982"
+         "            }"
+         "        }"
+         "    ]";
     s += "}";
     return s;
 }
@@ -364,19 +361,19 @@ TEST("requireThatSlimeInterfaceWorksFine") {
     vespalib::Slime slimeRequest = createSlimeRequest();
     vespalib::Slime::UP response = server.docsumBySlime.getDocsums(slimeRequest.get());
     TEST_DO(verify("{"
-                           "    docsums: ["
-                           "        {"
-                           "            docsum: {"
-                           "                long: 982"
-                           "            }"
-                           "        },"
-                           "        {"
-                           "            docsum: {"
-                           "                long: 982"
-                           "            }"
-                           "        }"
-                           "    ]"
-                           "}", *response));
+                   "    docsums: ["
+                   "        {"
+                   "            docsum: {"
+                   "                long: 982"
+                   "            }"
+                   "        },"
+                   "        {"
+                   "            docsum: {"
+                   "                long: 982"
+                   "            }"
+                   "        }"
+                   "    ]"
+                   "}", *response));
 }
 
 void
