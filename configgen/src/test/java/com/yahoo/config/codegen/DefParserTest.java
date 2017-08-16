@@ -82,16 +82,8 @@ public class DefParserTest {
 
     @Test
     public void testInvalidType() {
-        Class<?> exceptionClass = DefParser.DefParserException.class;
-        try {
-            createParser("version=1\n" +
-                    "# comment\n" +
-                    "a sting").getTree();
-            fail("Didn't find expected exception of type " + exceptionClass);
-        } catch (Exception e) {
-            assertExceptionAndMessage((Exception) e.getCause(), exceptionClass,
-                    "Error when parsing line 3: a sting", false);
-        }
+        String line = "a sting";
+        assertLineFails(line, "Could not create sting a");
     }
 
     @Test
@@ -115,7 +107,7 @@ public class DefParserTest {
     }
 
     @Test
-    public void testMissingVersion() {
+    public void version_is_not_mandatory() {
         try {
             createParser("a string\n").parse();
         } catch (Exception e) {
@@ -147,31 +139,8 @@ public class DefParserTest {
 
     @Test
     public void verify_fail_on_default_for_file() {
-        Class<?> exceptionClass = DefParser.DefParserException.class;
-        DefParser parser = createParser("version=1\nf file default=\"file1.txt\"\n");
-        try {
-            parser.getTree();
-            fail("Didn't find expected exception of type " + exceptionClass);
-        } catch (Exception e) {
-            assertExceptionAndMessage((Exception) e.getCause(), exceptionClass,
-                    "Error when parsing line 2: f file default=\"file1.txt\"\n" +
-                            "Invalid default value", false);
-        }
-    }
-
-    // Helper method for checking correct exception class and message
-    static void assertExceptionAndMessage(Exception e, Class<?> exceptionClass, String message) {
-        assertExceptionAndMessage(e, exceptionClass, message, true);
-    }
-
-    // Helper method for checking correct exception class and message
-    static void assertExceptionAndMessage(Exception e, Class<?> exceptionClass, String message, boolean exact) {
-        if (exact) {
-            assertEquals(message, e.getMessage());
-        } else {
-            assertTrue(e.getMessage().startsWith(message));
-        }
-        assertEquals(exceptionClass.getName(), e.getClass().getName());
+        assertLineFails("f file default=\"file1.txt\"",
+                        "Invalid default value");
     }
 
     @Test(expected = CodegenRuntimeException.class)
@@ -229,172 +198,74 @@ public class DefParserTest {
     }
 
     @Test
-    public void testInvalidLine() {
+    public void duplicate_parameter_is_illegal() {
         Class<?> exceptionClass = DefParser.DefParserException.class;
         StringBuilder sb = createDefTemplate();
-        String invalidLine = "a inta\n";
-        sb.append(invalidLine);
+        String duplicateLine = "b int\n";
+        sb.append(duplicateLine);
+        sb.append(duplicateLine);
         try {
             createParser(sb.toString()).parse();
             fail("Didn't find expected exception of type " + exceptionClass);
         } catch (Exception e) {
             assertExceptionAndMessage(e, exceptionClass,
-                    "Error when parsing line 3: " + invalidLine + "Could not create inta a");
-        }
-    }
-
-    @Test
-    public void testDuplicateDefinition() {
-        Class<?> exceptionClass = DefParser.DefParserException.class;
-        StringBuilder sb = createDefTemplate();
-        String invalidLine = "b int\n";
-        sb.append(invalidLine);
-        // Add a duplicate line, which should be illegal
-        sb.append(invalidLine);
-        try {
-            createParser(sb.toString()).parse();
-            fail("Didn't find expected exception of type " + exceptionClass);
-        } catch (Exception e) {
-            assertExceptionAndMessage(e, exceptionClass,
-                    "Error when parsing line 4: " + invalidLine + "b is already defined");
+                    "Error when parsing line 4: " + duplicateLine + "b is already defined");
         }
     }
 
     @Test
     public void testIllegalCharacterInName() {
-        Class<?> exceptionClass = DefParser.DefParserException.class;
-        StringBuilder sb = createDefTemplate();
-        String invalidLine = "a-b int\n";
-        sb.append(invalidLine);
-        try {
-            createParser(sb.toString()).parse();
-            fail("Didn't find expected exception of type " + exceptionClass);
-        } catch (Exception e) {
-            assertExceptionAndMessage(e, exceptionClass,
-                    "Error when parsing line 3: " + invalidLine + "a-b contains unexpected character");
-        }
+       assertLineFails("a-b int",
+                       "a-b contains unexpected character");
     }
 
     @Test
     public void parameter_name_starting_with_digit_is_illegal() {
-        Class<?> exceptionClass = DefParser.DefParserException.class;
-        StringBuilder sb = createDefTemplate();
-        String invalidLine = "1a int\n";
-        sb.append(invalidLine);
-        try {
-            createParser(sb.toString()).parse();
-            fail("Didn't find expected exception of type " + exceptionClass);
-        } catch (Exception e) {
-            assertExceptionAndMessage(e, exceptionClass,
-                    "Error when parsing line 3: " + invalidLine + "1a must start with a non-digit character");
-        }
+        assertLineFails("1a int",
+                        "1a must start with a non-digit character");
     }
 
     @Test
     public void parameter_name_starting_with_uppercase_is_illegal() {
-        Class<?> exceptionClass = DefParser.DefParserException.class;
-        StringBuilder sb = createDefTemplate();
-        String invalidLine = "SomeInt int\n";
-        sb.append(invalidLine);
-        try {
-            createParser(sb.toString()).parse();
-            fail("Didn't find expected exception of type " + exceptionClass);
-        } catch (Exception e) {
-            assertExceptionAndMessage(e, exceptionClass,
-                    "Error when parsing line 3: " + invalidLine + "'SomeInt' cannot start with an uppercase letter");
-        }
+        assertLineFails("SomeInt int",
+                        "'SomeInt' cannot start with an uppercase letter");
     }
 
     @Test
     public void parameter_name_starting_with_the_internal_prefix_is_illegal() {
         String internalPrefix = ReservedWords.INTERNAL_PREFIX;
-        Class<?> exceptionClass = DefParser.DefParserException.class;
-        StringBuilder sb = createDefTemplate();
-        String invalidLine = internalPrefix + "i int\n";
-        sb.append(invalidLine);
-        try {
-            createParser(sb.toString()).parse();
-            fail("Didn't find expected exception of type " + exceptionClass);
-        } catch (Exception e) {
-            assertExceptionAndMessage(e, exceptionClass,
-                    "Error when parsing line 3: " + invalidLine +
-                            "'" + internalPrefix + "i' cannot start with '" + internalPrefix + "'");
-        }
+        assertLineFails(internalPrefix + "i int",
+                        "'" + internalPrefix + "i' cannot start with '" + internalPrefix + "'");
     }
 
     @Test
     public void testIllegalArray() {
-        Class<?> exceptionClass = DefParser.DefParserException.class;
-        StringBuilder sb = createDefTemplate();
-        String invalidLine = "intArr[ int\n";
-        sb.append(invalidLine);
-        try {
-            createParser(sb.toString()).parse();
-            fail("Didn't find expected exception of type " + exceptionClass);
-        } catch (Exception e) {
-            assertExceptionAndMessage(e, exceptionClass,
-                    "Error when parsing line 3: " + invalidLine + "intArr[ Expected ] to terminate array definition");
-        }
+        assertLineFails("intArr[ int",
+                        "intArr[ Expected ] to terminate array definition");
     }
 
     @Test
     public void testIllegalDefault() {
-        Class<?> exceptionClass = DefParser.DefParserException.class;
-        StringBuilder sb = createDefTemplate();
-        String invalidLine = "a int deflt 10\n";
-        sb.append(invalidLine);
-        try {
-            createParser(sb.toString()).parse();
-            fail("Didn't find expected exception of type " + exceptionClass);
-        } catch (Exception e) {
-            assertExceptionAndMessage(e, exceptionClass,
-                    "Error when parsing line 3: " + invalidLine + " deflt 10");
-        }
+        assertLineFails("a int deflt 10",
+                        " deflt 10");
     }
 
     @Test
     public void testReservedWordInC() {
-        Class<?> exceptionClass = DefParser.DefParserException.class;
-        StringBuilder sb = createDefTemplate();
-        String invalidLine = "auto int\n";
-        sb.append(invalidLine);
-        try {
-            createParser(sb.toString()).parse();
-            fail("Didn't find expected exception of type " + exceptionClass);
-        } catch (Exception e) {
-            assertExceptionAndMessage(e, exceptionClass,
-                    "Error when parsing line 3: " + invalidLine + "auto is a reserved word in C");
-        }
+        assertLineFails("auto int",
+                        "auto is a reserved word in C");
     }
 
     @Test
     public void testReservedWordInJava() {
-        Class<?> exceptionClass = DefParser.DefParserException.class;
-        StringBuilder sb = createDefTemplate();
-        String invalidLine = "abstract int\n";
-        sb.append(invalidLine);
-        try {
-            createParser(sb.toString()).parse();
-            fail("Didn't find expected exception of type " + exceptionClass);
-        } catch (Exception e) {
-            assertExceptionAndMessage(e, exceptionClass,
-                    "Error when parsing line 3: " + invalidLine + "abstract is a reserved word in Java");
-        }
+        assertLineFails("abstract int",
+                        "abstract is a reserved word in Java");
     }
 
     @Test
     public void testReservedWordInCAndJava() {
-        Class<?> exceptionClass = DefParser.DefParserException.class;
-        StringBuilder sb = createDefTemplate();
-        String invalidLine = "continue int\n";
-        sb.append(invalidLine);
-        try {
-            createParser(sb.toString()).parse();
-            fail("Didn't find expected exception of type " + exceptionClass);
-        } catch (Exception e) {
-            assertExceptionAndMessage(e, exceptionClass,
-                    "Error when parsing line 3: " + invalidLine + "continue is a reserved word in C and Java");
-        }
+        assertLineFails("continue int",
+                        "continue is a reserved word in C and Java");
     }
 
     static StringBuilder createDefTemplate() {
@@ -405,4 +276,37 @@ public class DefParserTest {
 
         return sb;
     }
+
+    static void assertLineFails(String line) {
+        assertLineFails(line, line);
+    }
+
+    static void assertLineFails(String line, String message) {
+        StringBuilder sb = createDefTemplate();
+        sb.append(line).append("\n");
+        Class<?> exceptionClass = DefParser.DefParserException.class;
+        try {
+            createParser(sb.toString()).parse();
+            fail("Didn't find expected exception of type " + exceptionClass);
+        } catch (Exception e) {
+            assertExceptionAndMessage(e, exceptionClass,
+                                      "Error when parsing line 3: " + line + "\n" + message);
+        }
+    }
+
+    // Helper method for checking correct exception class and message
+    private static void assertExceptionAndMessage(Exception e, Class<?> exceptionClass, String message) {
+        assertExceptionAndMessage(e, exceptionClass, message, true);
+    }
+
+    // Helper method for checking correct exception class and message
+    private static void assertExceptionAndMessage(Exception e, Class<?> exceptionClass, String message, boolean exact) {
+        if (exact) {
+            assertEquals(message, e.getMessage());
+        } else {
+            assertTrue(e.getMessage().startsWith(message));
+        }
+        assertEquals(exceptionClass.getName(), e.getClass().getName());
+    }
+
 }

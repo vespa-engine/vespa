@@ -4,13 +4,12 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-import static com.yahoo.config.codegen.DefParserTest.assertExceptionAndMessage;
+import static com.yahoo.config.codegen.DefParserTest.assertLineFails;
 import static com.yahoo.config.codegen.DefParserTest.createDefTemplate;
 import static com.yahoo.config.codegen.DefParserTest.createParser;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 
 /**
  * @author gjoranv
@@ -46,32 +45,12 @@ public class DefParserNamespaceTest {
 
     @Test
     public void empty_namespace_is_not_allowed() {
-        // invalid
-        DefParser parser = createParser("version=1\nnamespace \na string\n");
-        try {
-            parser.getTree();
-            fail();
-        } catch (Exception e) {
-            //e.printStackTrace();
-            assertExceptionAndMessage(e, CodegenRuntimeException.class,
-                                      "Error parsing or reading config definition.Error when parsing line 2: namespace \n" +
-                                              "namespace");
-        }
+        assertLineFails("namespace");
     }
 
     @Test
     public void consecutive_dots_are_not_allowed() {
-        // invalid
-        DefParser parser = createParser("version=1\nnamespace=a..b\na string\n");
-        try {
-            parser.getTree();
-            fail();
-        } catch (Exception e) {
-            //e.printStackTrace();
-            assertExceptionAndMessage(e, CodegenRuntimeException.class,
-                                      "Error parsing or reading config definition.Error when parsing line 2: namespace=a..b\n" +
-                                              "namespace=a..b");
-        }
+        assertLineFails("namespace=a..b");
     }
 
     @Test
@@ -96,33 +75,12 @@ public class DefParserNamespaceTest {
 
     @Test
     public void number_is_not_allowed_as_namespace_start_char() throws IOException, DefParser.DefParserException {
-        StringBuilder sb = createDefTemplate();
-        String line = "namespace=2.a.b";
-        sb.append(line).append("\n");
-        Class<?>  exceptionClass = DefParser.DefParserException.class;
-        try {
-            createParser(sb.toString()).parse();
-            fail("Didn't find expected exception of type " + exceptionClass);
-        } catch (Exception e) {
-            assertExceptionAndMessage(e, exceptionClass,
-                                      "Error when parsing line 3: " + line + "\n" + line);
-        }
+        assertLineFails("namespace=2.a.b");
     }
 
     @Test
     public void number_is_not_allowed_as_leading_char_in_namespace_token() throws IOException, DefParser.DefParserException {
-        StringBuilder sb = createDefTemplate();
-        String line = "namespace=a.b.2c";
-        sb.append(line).append("\n");
-        Class<?> exceptionClass = DefParser.DefParserException.class;
-        try {
-            createParser(sb.toString()).parse();
-            fail("Didn't find expected exception of type " + exceptionClass);
-        } catch (Exception e) {
-            assertExceptionAndMessage(e, exceptionClass,
-                                      "Error when parsing line 3: " + line + "\n" + line);
-        }
-
+        assertLineFails("namespace=a.b.2c");
     }
 
     @Test
