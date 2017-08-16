@@ -85,24 +85,24 @@ public class NodeRepositoryImplTest {
     @Test
     public void testGetContainersToRunApi() throws IOException, InterruptedException {
         waitForJdiscContainerToServe();
-        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor, port, "dockerhost4");
+        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor, port, "dockerhost1.yahoo.com");
         final List<ContainerNodeSpec> containersToRun = nodeRepositoryApi.getContainersToRun();
         assertThat(containersToRun.size(), is(1));
         final ContainerNodeSpec nodeSpec = containersToRun.get(0);
         assertThat(nodeSpec.hostname, is("host4.yahoo.com"));
         assertThat(nodeSpec.wantedDockerImage.get(), is(new DockerImage("docker-registry.domain.tld:8080/dist/vespa:6.42.0")));
-        assertThat(nodeSpec.nodeState, is(Node.State.reserved));
+        assertThat(nodeSpec.nodeState, is(Node.State.active));
         assertThat(nodeSpec.wantedRestartGeneration.get(), is(0L));
         assertThat(nodeSpec.currentRestartGeneration.get(), is(0L));
-        assertThat(nodeSpec.minCpuCores.get(), is(2.0));
-        assertThat(nodeSpec.minMainMemoryAvailableGb.get(), is(16.0));
-        assertThat(nodeSpec.minDiskAvailableGb.get(), is(400.0));
+        assertThat(nodeSpec.minCpuCores.get(), is(0.2));
+        assertThat(nodeSpec.minMainMemoryAvailableGb.get(), is(0.5));
+        assertThat(nodeSpec.minDiskAvailableGb.get(), is(100.0));
     }
 
     @Test
     public void testGetContainer() throws InterruptedException, IOException {
         waitForJdiscContainerToServe();
-        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor, port, "dockerhost4");
+        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor, port, "dockerhost1.yahoo.com");
         String hostname = "host4.yahoo.com";
         Optional<ContainerNodeSpec> nodeSpec = nodeRepositoryApi.getContainerNodeSpec(hostname);
         assertThat(nodeSpec.isPresent(), is(true));
@@ -112,7 +112,7 @@ public class NodeRepositoryImplTest {
     @Test
     public void testGetContainerForNonExistingNode() throws InterruptedException, IOException {
         waitForJdiscContainerToServe();
-        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor, port, "dockerhost4");
+        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor, port, "dockerhost1.yahoo.com");
         String hostname = "host-that-does-not-exist";
         Optional<ContainerNodeSpec> nodeSpec = nodeRepositoryApi.getContainerNodeSpec(hostname);
         assertFalse(nodeSpec.isPresent());
@@ -121,7 +121,7 @@ public class NodeRepositoryImplTest {
     @Test
     public void testUpdateNodeAttributes() throws InterruptedException, IOException {
         waitForJdiscContainerToServe();
-        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor, port, "dockerhost4");
+        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor, port, "dockerhost1.yahoo.com");
         String hostname = "host4.yahoo.com";
         nodeRepositoryApi.updateNodeAttributes(
                 hostname,
@@ -134,7 +134,7 @@ public class NodeRepositoryImplTest {
     @Test(expected = RuntimeException.class)
     public void testUpdateNodeAttributesWithBadValue() throws InterruptedException, IOException {
         waitForJdiscContainerToServe();
-        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor, port, "dockerhost4");
+        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor, port, "dockerhost1.yahoo.com");
         String hostname = "host4.yahoo.com";
         nodeRepositoryApi.updateNodeAttributes(
                 hostname,
@@ -146,14 +146,14 @@ public class NodeRepositoryImplTest {
 
     @Test
     public void testMarkAsReady() throws InterruptedException, IOException {
-        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor, port, "dockerhost4");
+        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(requestExecutor, port, "dockerhost1.yahoo.com");
         waitForJdiscContainerToServe();
 
-        nodeRepositoryApi.markNodeAvailableForNewAllocation("host55.yahoo.com");
+        nodeRepositoryApi.markNodeAvailableForNewAllocation("host5.yahoo.com");
 
         try {
-            nodeRepositoryApi.markNodeAvailableForNewAllocation("host1.yahoo.com");
-            fail("Expected failure because host1 is not registered as provisioned, dirty, failed or parked");
+            nodeRepositoryApi.markNodeAvailableForNewAllocation("host4.yahoo.com");
+            fail("Should not be allowed to be marked ready as it is not registered as provisioned, dirty, failed or parked");
         } catch (RuntimeException ignored) {
             // expected
         }
