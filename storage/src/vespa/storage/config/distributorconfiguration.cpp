@@ -26,7 +26,6 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _maxPendingMaintenanceOps(1000),
       _maxVisitorsPerNodePerClientVisitor(4),
       _minBucketsPerVisitor(5),
-      _minTimeLeftToResend(20),
       _maxClusterClockSkew(0),
       _doInlineSplit(true),
       _enableJoinForSiblingLessBuckets(false),
@@ -172,7 +171,6 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
 void 
 DistributorConfiguration::configure(const vespa::config::content::core::StorVisitordispatcherConfig& config)
 {
-    _minTimeLeftToResend = config.storagenetworklatency;
     _minBucketsPerVisitor = config.minbucketspervisitor;
     _maxVisitorsPerNodePerClientVisitor = config.maxvisitorspernodeperclientvisitor;
 }
