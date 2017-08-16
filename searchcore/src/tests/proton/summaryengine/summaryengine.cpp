@@ -221,12 +221,17 @@ verify(vespalib::stringref exp, const Slime &slime) {
 }
 
 Slime
-createSlimeRequestLarger(size_t num, const vespalib::string & sessionId = vespalib::string()) {
+createSlimeRequestLarger(size_t num,
+                         const vespalib::string & sessionId = vespalib::string(),
+                         const vespalib::string & ranking = vespalib::string()) {
     Slime r;
     Cursor &root = r.setObject();
     root.setString("class", "your-summary");
     if ( ! sessionId.empty()) {
         root.setData("sessionid", sessionId);
+    }
+    if (!ranking.empty()) {
+        root.setString("ranking", ranking);
     }
     Cursor &array = root.setArray("gids");
     for (size_t i(0); i < num; i++) {
@@ -237,8 +242,9 @@ createSlimeRequestLarger(size_t num, const vespalib::string & sessionId = vespal
 }
 
 Slime
-createSlimeRequest(const vespalib::string & sessionId = vespalib::string()) {
-    return createSlimeRequestLarger(1, sessionId);
+createSlimeRequest(const vespalib::string & sessionId = vespalib::string(),
+                   const vespalib::string & ranking = vespalib::string()) {
+    return createSlimeRequestLarger(1, sessionId, ranking);
 }
 
 TEST("requireThatSlimeRequestIsConvertedCorrectly") {
@@ -254,16 +260,18 @@ TEST("requireThatSlimeRequestIsConvertedCorrectly") {
     EXPECT_EQUAL("your-summary", r->resultClassName);
     EXPECT_FALSE(r->propertiesMap.cacheProperties().lookup("query").found());
     EXPECT_TRUE(r->sessionId.empty());
+    EXPECT_TRUE(r->ranking.empty());
     EXPECT_EQUAL(2u, r->hits.size());
     EXPECT_EQUAL(GlobalId(GID1), r->hits[0].gid);
     EXPECT_EQUAL(GlobalId(GID2), r->hits[1].gid);
 }
 
 TEST("require that presence of sessionid affect both request.sessionid and enables cache") {
-    vespalib::Slime slimeRequest = createSlimeRequest("1.some.key.7");
+    vespalib::Slime slimeRequest = createSlimeRequest("1.some.key.7", "my-rank-profile");
     TEST_DO(verify("{"
                    "    class: 'your-summary',"
-                   "    sessionid: '1.some.key.7',"
+                   "    sessionid: '0x312E736F6D652E6B65792E37',"
+                   "    ranking: 'my-rank-profile',"
                    "    gids: ["
                    "        '0x6162636465666768696A6B6C',"
                    "        '0x62636465666768696A6B6C6D'"
@@ -271,6 +279,8 @@ TEST("require that presence of sessionid affect both request.sessionid and enabl
                    "}", slimeRequest));
     DocsumRequest::UP r = DocsumBySlime::slimeToRequest(slimeRequest.get());
     EXPECT_EQUAL("your-summary", r->resultClassName);
+    EXPECT_EQUAL("my-rank-profile", r->ranking);
+
     EXPECT_EQUAL(0, strncmp("1.some.key.7", &r->sessionId[0],r->sessionId.size()));
     EXPECT_TRUE(r->propertiesMap.cacheProperties().lookup("query").found());
     EXPECT_EQUAL(2u, r->hits.size());

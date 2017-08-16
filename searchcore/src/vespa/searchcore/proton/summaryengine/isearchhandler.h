@@ -3,13 +3,11 @@
 
 #include <vespa/vespalib/util/thread_bundle.h>
 
-namespace search {
-namespace engine {
+namespace search::engine {
     class SearchRequest;
     class SearchReply;
     class DocsumRequest;
     class DocsumReply;
-}
 }
 
 namespace proton {

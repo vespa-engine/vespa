@@ -28,6 +28,7 @@ using document::CompressionConfig;
 namespace {
 
 Memory SESSIONID("sessionid");
+Memory RANKING("ranking");
 Memory SUMMARYCLASS("class");
 Memory GIDS("gids");
 Memory DOCSUM("docsum");
@@ -69,7 +70,7 @@ DocsumBySlime::slimeToRequest(const Inspector & request)
         memcpy(&docsumRequest->sessionId[0], m.data, m.size);
         docsumRequest->propertiesMap.cacheProperties().add("query", "true");
     }
-
+    docsumRequest->ranking = request[RANKING].asString().make_string();
     Inspector & gids = request[GIDS];
     docsumRequest->hits.reserve(gids.entries());
     GidTraverser gidFiller(docsumRequest->hits);
