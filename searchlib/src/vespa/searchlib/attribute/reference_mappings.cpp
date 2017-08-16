@@ -9,7 +9,8 @@ namespace search::attribute {
 
 ReferenceMappings::ReferenceMappings(GenerationHolder &genHolder)
     : _reverseMappingIndices(genHolder),
-      _reverseMapping()
+      _reverseMapping(),
+      _referencedLids(genHolder)
 {
 }
 
@@ -27,6 +28,18 @@ ReferenceMappings::clearMapping(const Reference &entry)
 }
 
 void
+ReferenceMappings::syncForwardMapping(const Reference &entry)
+{
+    uint32_t referencedLid = entry.lid();
+    EntryRef revMapIdx = entry.revMapIdx();
+    auto &referencedLids = _referencedLids;
+    _reverseMapping.foreach_unfrozen_key(revMapIdx,
+                                         [&referencedLids, referencedLid](uint32_t lid)
+                                         { referencedLids[lid] = referencedLid; });
+}
+
+
+void
 ReferenceMappings::syncReverseMappingIndices(const Reference &entry)
 {
     uint32_t referencedLid = entry.lid();
@@ -37,6 +50,13 @@ ReferenceMappings::syncReverseMappingIndices(const Reference &entry)
 }
 
 void
+ReferenceMappings::syncMappings(const Reference &entry)
+{
+    syncReverseMappingIndices(entry);
+    syncForwardMapping(entry);
+}
+
+void
 ReferenceMappings::removeReverseMapping(const Reference &entry, uint32_t lid)
 {
     EntryRef revMapIdx = entry.revMapIdx();
@@ -44,6 +64,7 @@ ReferenceMappings::removeReverseMapping(const Reference &entry, uint32_t lid)
     std::atomic_thread_fence(std::memory_order_release);
     entry.setRevMapIdx(revMapIdx);
     syncReverseMappingIndices(entry);
+    _referencedLids[lid] = 0; // forward mapping
 }
 
 void
@@ -55,6 +76,7 @@ ReferenceMappings::addReverseMapping(const Reference &entry, uint32_t lid)
     std::atomic_thread_fence(std::memory_order_release);
     entry.setRevMapIdx(revMapIdx);
     syncReverseMappingIndices(entry);
+    _referencedLids[lid] = entry.lid(); // forward mapping
 }
 
 void
@@ -77,6 +99,32 @@ ReferenceMappings::notifyGidToLidChange(const Reference &entry, uint32_t referen
         entry.setLid(referencedLid);
     }
     syncReverseMappingIndices(entry);
+    syncForwardMapping(entry);
+}
+
+void
+ReferenceMappings::onAddDocs(uint32_t docIdLimit)
+{
+    _referencedLids.reserve(docIdLimit);
+}
+
+void
+ReferenceMappings::addDoc()
+{
+    _referencedLids.push_back(0);
+}
+
+void
+ReferenceMappings::onLoad(uint32_t docIdLimit)
+{
+    _referencedLids.clear();
+    _referencedLids.unsafe_reserve(docIdLimit);
+}
+
+void
+ReferenceMappings::shrink(uint32_t docIdLimit)
+{
+    _referencedLids.shrink(docIdLimit);
 }
 
 }

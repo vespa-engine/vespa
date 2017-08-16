@@ -30,9 +30,15 @@ class ReferenceMappings
     // Store of B-Trees, used to map from gid or referenced lid to
     // referencing lids.
     ReverseMapping _reverseMapping;
+    // vector containing referenced lid given referencing lid
+    RcuVectorBase<uint32_t> _referencedLids;
 
+    void syncForwardMapping(const Reference &entry);
+    void syncReverseMappingIndices(const Reference &entry);
 
 public:
+    using ReferencedLids = vespalib::ConstArrayRef<uint32_t>;
+
     ReferenceMappings(GenerationHolder &genHolder);
 
     ~ReferenceMappings();
@@ -48,9 +54,15 @@ public:
 
     // Handle mapping changes
     void notifyGidToLidChange(const Reference &entry, uint32_t referencedLid);
-    void syncReverseMappingIndices(const Reference &entry);
     void removeReverseMapping(const Reference &entry, uint32_t lid);
     void addReverseMapping(const Reference &entry, uint32_t lid);
+    void syncMappings(const Reference &entry);
+
+    // Maintain size of mapping from lid to referenced lid
+    void onAddDocs(uint32_t docIdLimit);
+    void addDoc();
+    void onLoad(uint32_t docIdLimit);
+    void shrink(uint32_t docIdLimit);
 
     // Setup mapping after load
     void buildReverseMapping(const Reference &entry, const std::vector<ReverseMapping::KeyDataType> &adds);
@@ -59,6 +71,9 @@ public:
     template <typename FunctionType>
     void
     foreach_lid(uint32_t referencedLid, FunctionType &&func) const;
+
+    ReferencedLids getReferencedLids() const { return ReferencedLids(&_referencedLids[0], _referencedLids.size()); }
+    uint32_t getReferencedLid(uint32_t doc) const { return _referencedLids[doc]; }
 };
 
 template <typename FunctionType>

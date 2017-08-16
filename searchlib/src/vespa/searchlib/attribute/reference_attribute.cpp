@@ -58,6 +58,7 @@ void
 ReferenceAttribute::onAddDocs(DocId limit)
 {
     _indices.reserve(limit);
+    _referenceMappings.onAddDocs(limit);
 }
 
 bool
@@ -66,6 +67,7 @@ ReferenceAttribute::addDoc(DocId &doc)
     bool incGen = _indices.isFull();
     doc = _indices.size();
     _indices.push_back(EntryRef());
+    _referenceMappings.addDoc();
     incNumDocs();
     updateUncommittedDocIdLimit(doc);
     if (incGen) {
@@ -221,6 +223,7 @@ ReferenceAttribute::onLoad()
         builder.add(value);
     }
     builder.setupRefCounts();
+    _referenceMappings.onLoad(numDocs);
     _indices.clear();
     _indices.unsafe_reserve(numDocs);
     for (uint32_t doc = 0; doc < numDocs; ++doc) {
@@ -314,18 +317,6 @@ ReferenceAttribute::setGidToLidMapperFactory(std::shared_ptr<IGidToLidMapperFact
     _gidToLidMapperFactory = std::move(gidToLidMapperFactory);
 }
 
-ReferenceAttribute::DocId
-ReferenceAttribute::getReferencedLid(DocId doc) const
-{
-    assert(doc < _indices.size());
-    EntryRef ref = _indices[doc];
-    if (!ref.valid()) {
-        return 0;
-    } else {
-        return _store.get(ref).lid();
-    }
-}
-
 void
 ReferenceAttribute::notifyGidToLidChange(const GlobalId &gid, DocId referencedLid)
 {
@@ -348,7 +339,8 @@ ReferenceAttribute::populateReferencedLids()
         saver.foreach_key([&store,&mapper,this](EntryRef ref)
                           {   const Reference &entry = store.get(ref);
                               entry.setLid(mapper.mapGidToLid(entry.gid()));
-                              _referenceMappings.syncReverseMappingIndices(entry); });
+                              _referenceMappings.syncMappings(entry);
+                          });
     }
     commit();
 }
@@ -375,6 +367,7 @@ ReferenceAttribute::onShrinkLidSpace()
     uint32_t committedDocIdLimit = getCommittedDocIdLimit();
     assert(_indices.size() >= committedDocIdLimit);
     _indices.shrink(committedDocIdLimit);
+    _referenceMappings.shrink(committedDocIdLimit);
     setNumDocs(committedDocIdLimit);
 }
 

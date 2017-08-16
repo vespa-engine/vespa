@@ -18,7 +18,8 @@ ImportedSearchContext::ImportedSearchContext(
     : _imported_attribute(imported_attribute),
       _reference_attribute(*_imported_attribute.getReferenceAttribute()),
       _target_attribute(*_imported_attribute.getTargetAttribute()),
-      _target_search_context(_target_attribute.getSearch(std::move(term), params))
+      _target_search_context(_target_attribute.getSearch(std::move(term), params)),
+      _referencedLids(_reference_attribute.getReferencedLids())
 {
 }
 
@@ -60,11 +61,11 @@ const vespalib::string& ImportedSearchContext::attributeName() const {
 }
 
 bool ImportedSearchContext::cmp(DocId docId, int32_t& weight) const {
-    return _target_search_context->cmp(_reference_attribute.getReferencedLid(docId), weight);
+    return _target_search_context->cmp(_referencedLids[docId], weight);
 }
 
 bool ImportedSearchContext::cmp(DocId docId) const {
-    return _target_search_context->cmp(_reference_attribute.getReferencedLid(docId));
+    return _target_search_context->cmp(_referencedLids[docId]);
 }
 
 } // attribute
