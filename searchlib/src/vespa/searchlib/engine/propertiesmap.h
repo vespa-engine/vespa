@@ -113,9 +113,6 @@ public:
     const Props &cacheProperties() const {
         return lookup(MapNames::CACHES);
     }
-    Props &cacheProperties() {
-        return lookupCreate(MapNames::CACHES);
-    }
 
     /**
      * Obtain model overrides

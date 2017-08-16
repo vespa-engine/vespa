@@ -68,7 +68,7 @@ DocsumBySlime::slimeToRequest(const Inspector & request)
     if (m.size > 0) {
         docsumRequest->sessionId.resize(m.size);
         memcpy(&docsumRequest->sessionId[0], m.data, m.size);
-        docsumRequest->propertiesMap.cacheProperties().add("query", "true");
+        docsumRequest->propertiesMap.lookupCreate(search::MapNames::CACHES).add("query", "true");
     }
     docsumRequest->ranking = request[RANKING].asString().make_string();
     Inspector & gids = request[GIDS];
