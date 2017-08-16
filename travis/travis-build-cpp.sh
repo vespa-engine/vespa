@@ -23,5 +23,5 @@ cmake3 \
     -DVALGRIND_UNIT_TESTS=no \
     "${SOURCE_DIR}"
 make -j ${NUM_THREADS}
-ctest3 -j ${NUM_THREADS}
+ctest3 --output-on-failure -j ${NUM_THREADS}
 
