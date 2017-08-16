@@ -7,7 +7,7 @@ BUILD_DIR=~/build
 
 mkdir "${BUILD_DIR}"
 
-ccache -M 20G
+ccache -M 5G
 NUM_THREADS=4
 source /opt/rh/devtoolset-6/enable || true
 cd "${SOURCE_DIR}"
