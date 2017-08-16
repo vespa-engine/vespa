@@ -49,17 +49,16 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         Optional<NodesSpecification> requestedLogservers = 
                 NodesSpecification.optionalDedicatedFromParent(adminElement.getChild("logservers"), version);
 
-        int minSlobroksPerCluster = getMinSlobroksPerContainerCluster(adminElement);
-        assignSlobroks(requestedSlobroks.orElse(NodesSpecification.nonDedicated(3, version)), admin, minSlobroksPerCluster);
+        assignSlobroks(requestedSlobroks.orElse(NodesSpecification.nonDedicated(3, version)), admin);
         assignLogserver(requestedLogservers.orElse(NodesSpecification.nonDedicated(1, version)), admin);
     }
 
-    private void assignSlobroks(NodesSpecification nodesSpecification, Admin admin, int minSlobroksPerContainerCluster) {
+    private void assignSlobroks(NodesSpecification nodesSpecification, Admin admin) {
         if (nodesSpecification.isDedicated()) {
             createSlobroks(admin, allocateHosts(admin.getHostSystem(), "slobroks", nodesSpecification));
         }
         else {
-            createSlobroks(admin, pickContainerHosts(nodesSpecification.count(), minSlobroksPerContainerCluster));
+            createSlobroks(admin, pickContainerHosts(nodesSpecification.count(), 2));
         }
     }
 
@@ -143,13 +142,6 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
             slobrok.initService();
         }
         admin.addSlobroks(slobroks);
-    }
-
-    private int getMinSlobroksPerContainerCluster(ModelElement adminElement) {
-        ModelElement minNodes = adminElement.getChild("minSlobroksPerCluster");
-        if (minNodes == null) return 1; //default
-
-        return (int) minNodes.asLong();
     }
 
 }
