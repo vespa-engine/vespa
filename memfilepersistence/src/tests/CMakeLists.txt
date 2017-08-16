@@ -13,5 +13,5 @@ vespa_add_executable(memfilepersistence_testrunner_app TEST
 # TODO: Test with a larger chunk size to parallelize test suite runs 
 vespa_add_test(
     NAME memfilepersistence_testrunner_app
-    COMMAND emfilepersistence_testrunner_app
+    COMMAND memfilepersistence_testrunner_app
 )
