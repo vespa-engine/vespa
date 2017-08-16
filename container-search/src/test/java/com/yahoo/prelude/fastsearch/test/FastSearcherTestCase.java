@@ -262,7 +262,7 @@ public class FastSearcherTestCase {
         buf.get(actual);
 
         byte IGNORE = 69;
-        byte[] expected = new byte[] { 0, 0, 0, -85, 0, 0, 0, -37, 0, 0, 48, 17, 0, 0, 0, 0,
+        byte[] expected = new byte[] { 0, 0, 0, -77, 0, 0, 0, -37, 0, 0, 48, 17, 0, 0, 0, 0,
                 // query timeout
                 IGNORE, IGNORE, IGNORE, IGNORE,
                 // "default" - rank profile
@@ -270,8 +270,8 @@ public class FastSearcherTestCase {
                 // 3 property entries (rank, match, caches)
                 0, 0, 0, 3,
                 // rank: sessionId => qrserver.0.XXXXXXXXXXXXX.0
-                0, 0, 0, 4, 'r', 'a', 'n', 'k', 0, 0, 0, 1, 0, 0, 0, 9, 's', 'e', 's', 's', 'i', 'o', 'n', 'I', 'd', 0, 0, 0, 26, 'q', 'r', 's', 'e', 'r', 'v', 'e', 'r', '.',
-                IGNORE, '.', IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, '.', IGNORE,
+                0, 0, 0, 4, 'r', 'a', 'n', 'k', 0, 0, 0, 1, 0, 0, 0, 9, 's', 'e', 's', 's', 'i', 'o', 'n', 'I', 'd', 0, 0, 0, 34, 'q', 'r', 's', 'e', 'r', 'v', 'e', 'r', '.',
+                IGNORE, '.', IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, '.', IGNORE, '.','d', 'e', 'f', 'a', 'u', 'l', 't',
                 // match: documentdb.searchdoctype => test
                 0, 0, 0, 5, 'm', 'a', 't', 'c', 'h', 0, 0, 0, 1, 0, 0, 0, 24, 'd', 'o', 'c', 'u', 'm', 'e', 'n', 't', 'd', 'b', '.', 's', 'e', 'a', 'r', 'c', 'h', 'd', 'o', 'c', 't', 'y', 'p', 'e', 0, 0, 0, 4, 't', 'e', 's', 't',
                 // sessionId => qrserver.0.XXXXXXXXXXXXX.0

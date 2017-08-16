@@ -2,8 +2,6 @@
 package com.yahoo.search.query;
 
 import com.yahoo.container.Server;
-import com.yahoo.text.Utf8String;
-
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -17,13 +15,13 @@ public class SessionId {
     private static final String serverId = Server.get().getServerDiscriminator();
     private static final AtomicLong sequenceCounter = new AtomicLong();
 
-    private final Utf8String id;
+    private final String id;
 
     private SessionId(String serverId, long timestamp, long sequence) {
-        this.id = new Utf8String(serverId + "." + timestamp + "." + sequence);
+        this.id = serverId + "." + timestamp + "." + sequence;
     }
 
-    public Utf8String asUtf8String() { return id; }
+    public String toString() { return id; }
 
     /**
      * Creates a session id which is unique across the cluster this runtime is a member of each time this is called.

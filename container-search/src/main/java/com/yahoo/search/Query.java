@@ -30,6 +30,7 @@ import com.yahoo.search.query.properties.DefaultProperties;
 import com.yahoo.search.query.properties.QueryProperties;
 import com.yahoo.search.query.properties.QueryPropertyAliases;
 import com.yahoo.search.query.properties.RequestContextProperties;
+import com.yahoo.text.Utf8String;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.federation.FederationSearcher;
 import com.yahoo.search.query.Properties;
@@ -970,10 +971,12 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * @param create if true this is created if not already set
      * @return the session id of this query, or null if not set and create is false
      */
-    public SessionId getSessionId(boolean create) {
+    public Utf8String getSessionId(String rankProfile, boolean create) {
         if (sessionId == null && create)
             this.sessionId = SessionId.next();
-        return sessionId;
+        return sessionId != null
+                ? new Utf8String(sessionId.toString() + "." + ((rankProfile != null) ? rankProfile : ""))
+                : null;
     }
 
     public boolean hasEncodableProperties() {
