@@ -454,19 +454,19 @@ public class RestApiTest {
                                 "}"
                         ),
                         Request.Method.PATCH),
-                "{\"message\":\"Updated parent1.yahoo.com\"}");
+                "{\"message\":\"Updated dockerhost2.yahoo.com\"}");
 
         assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"), Optional.of(true));
-        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/parent1.yahoo.com"), Optional.of(true));
+        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com"), Optional.of(true));
     }
 
     // TODO: Remove when all clients have switched to hardwareFailureDescription
     @Test
     public void test_hardware_patching_of_docker_host_using_old_field() throws Exception {
         assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"), Optional.of(false));
-        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/parent1.yahoo.com"), Optional.of(false));
+        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com"), Optional.of(false));
 
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/parent1.yahoo.com",
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com",
                         Utf8.toBytes("{" +
                                 "\"hardwareFailureType\": \"memory_mcelog\"" +
                                 "}"
