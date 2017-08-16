@@ -1,15 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "rankfeaturesdfw.h"
-#include "docsumformat.h"
 #include "docsumstate.h"
-#include <vespa/searchlib/common/feature.h>
-#include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 RankFeaturesDFW::RankFeaturesDFW() :
     _env(NULL)
@@ -24,11 +20,8 @@ RankFeaturesDFW::init(IDocsumEnvironment * env)
 }
 
 void
-RankFeaturesDFW::insertField(uint32_t docid,
-                             GeneralResult *,
-                             GetDocsumsState *state,
-                             ResType type,
-                             vespalib::slime::Inserter &target)
+RankFeaturesDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState *state,
+                             ResType type, vespalib::slime::Inserter &target)
 {
     if (state->_rankFeatures.get() == NULL) {
         state->_callback.FillRankFeatures(state, _env);
@@ -66,5 +59,4 @@ RankFeaturesDFW::insertField(uint32_t docid,
     }
 }
 
-}
 }

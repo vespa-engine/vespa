@@ -1,23 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
 #pragma once
 
+#include "juniperproperties.h"
+#include "urlresult.h"
+#include "resultconfig.h"
+#include "docsumstore.h"
+#include "keywordextractor.h"
+#include "docsumfieldwriter.h"
 #include <vespa/searchlib/util/rawbuf.h>
-#include <vespa/searchsummary/docsummary/urlresult.h>
-#include <vespa/searchsummary/docsummary/resultconfig.h>
-#include <vespa/searchsummary/docsummary/docsumstore.h>
-#include <vespa/searchsummary/docsummary/keywordextractor.h>
-#include <vespa/searchsummary/docsummary/docsumfieldwriter.h>
 #include <vespa/fastlib/text/unicodeutil.h>
 #include <vespa/fastlib/text/wordfolder.h>
-#include "juniperproperties.h"
 
 using search::IAttributeManager;
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 class IDocsumWriter
 {
@@ -112,5 +109,3 @@ public:
 };
 
 }
-}
-

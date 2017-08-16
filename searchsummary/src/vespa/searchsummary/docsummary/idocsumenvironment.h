@@ -5,8 +5,7 @@
 #include <vespa/searchlib/attribute/iattributemanager.h>
 
 namespace juniper { class Juniper; }
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 /**
  * Abstract view of information available to rewriters for generating docsum fields.
@@ -20,5 +19,3 @@ public:
 };
 
 }
-}
-

@@ -14,6 +14,7 @@ import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.TimeoutException;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.query.SessionId;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.slime.BinaryFormat;
@@ -115,18 +116,25 @@ public class Dispatcher extends AbstractComponent {
             return;
         }
 
-        byte[] serializedSlime = BinaryFormat.encode(toSlime(summaryClass, hits));
-        double timeoutSeconds = ((double)result.getQuery().getTimeLeft()-3.0)/1000.0;
+        Query query = result.getQuery();
+        byte[] serializedSlime = BinaryFormat.encode(toSlime(query.getRanking().getProfile(), summaryClass, query.getSessionId(false), hits));
+        double timeoutSeconds = ((double)query.getTimeLeft()-3.0)/1000.0;
         Compressor.Compression compressionResult = compressor.compress(compression, serializedSlime);
         client.getDocsums(hits, node, compressionResult.type(),
                           serializedSlime.length, compressionResult.data(), responseReceiver, timeoutSeconds);
     }
 
-    public Slime toSlime(String summaryClass, List<FastHit> hits) {
+    static private Slime toSlime(String rankProfile, String summaryClass, SessionId sessionId, List<FastHit> hits) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         if (summaryClass != null) {
             root.setString("class", summaryClass);
+        }
+        if (sessionId != null) {
+            root.setData("sessionid", sessionId.asUtf8String().getBytes());
+        }
+        if (rankProfile != null) {
+            root.setString("ranking", rankProfile);
         }
         Cursor gids = root.setArray("gids");
         for (FastHit hit : hits) {

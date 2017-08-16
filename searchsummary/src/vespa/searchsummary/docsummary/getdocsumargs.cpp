@@ -3,8 +3,7 @@
 #include "getdocsumargs.h"
 #include "resultconfig.h"
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 GetDocsumArgs::GetDocsumArgs()
     : _ranking(),
@@ -86,5 +85,4 @@ GetDocsumArgs::SetStackDump(uint32_t stackItems, uint32_t stackDumpLen, const ch
     memcpy(&_stackDump[0], stackDump, _stackDump.size());
 }
 
-}
 }

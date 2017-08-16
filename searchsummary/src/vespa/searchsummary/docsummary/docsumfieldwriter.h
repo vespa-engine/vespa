@@ -2,16 +2,14 @@
 
 #pragma once
 
+#include "urlresult.h"
+#include "resultconfig.h"
 #include <vespa/searchlib/util/rawbuf.h>
-#include <vespa/searchsummary/docsummary/urlresult.h>
-#include <vespa/searchsummary/docsummary/resultconfig.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 
-namespace search {
+namespace search { class IAttributeManager; }
 
-class IAttributeManager;
-
-namespace docsummary {
+namespace search::docsummary {
 
 class GetDocsumsState;
 
@@ -94,6 +92,4 @@ public:
     static IDocsumFieldWriter *create(IAttributeManager & vecMan, const char *vecName);
 };
 
-}  // namespace docsummary
-}  // namespace search
-
+}

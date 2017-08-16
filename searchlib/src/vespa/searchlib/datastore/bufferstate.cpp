@@ -5,8 +5,7 @@
 
 using vespalib::alloc::Alloc;
 
-namespace search {
-namespace datastore {
+namespace search::datastore {
 
 BufferState::FreeListList::~FreeListList()
 {
@@ -251,6 +250,5 @@ BufferState::fallbackResize(uint32_t bufferId,
     std::atomic_thread_fence(std::memory_order_release);
 }
 
-} // namespace datastore
-} // namespace search
+}
 

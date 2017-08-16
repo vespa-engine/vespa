@@ -5,8 +5,7 @@
 
 using vespalib::GenerationHeldBase;
 
-namespace search {
-namespace datastore {
+namespace search::datastore {
 
 namespace {
 
@@ -517,5 +516,5 @@ DataStoreBase::startCompactWorstBuffers(bool compactMemory, bool compactAddressS
     return result;
 }
 
-} // namespace datastore
-} // namespace search
+}
+

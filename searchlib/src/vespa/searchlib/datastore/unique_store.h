@@ -10,8 +10,7 @@
 #include <vespa/vespalib/util/array.h>
 #include <vespa/searchlib/btree/btree.h>
 
-namespace search {
-namespace datastore {
+namespace search::datastore {
 
 template <typename EntryT, typename RefT>
 class UniqueStoreBuilder;
@@ -116,5 +115,4 @@ public:
     const BufferState &bufferState(EntryRef ref) const;
 };
 
-}
 }

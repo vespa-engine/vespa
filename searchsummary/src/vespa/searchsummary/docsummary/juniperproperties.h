@@ -1,13 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/juniper/IJuniperProperties.h>
 #include <map>
-#include <vespa/searchsummary/config/config-juniperrc.h>
-#include <string>
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 class JuniperProperties : public IJuniperProperties {
 private:
@@ -54,17 +52,6 @@ public:
 
     // Inherit doc from IJuniperProperties.
     const char *GetProperty(const char *name, const char *def = NULL) override;
-
-    /**
-     * Sets the value of a given named property. If the property already exists, it is overwritten. If it does not
-     * exist, it is added.
-     *
-     * @param key The name of the property to set.
-     * @param val The value to set for the property.
-     */
-    void SetProperty(const vespalib::string &key, const vespalib::string &val);
 };
 
-} // namespace docsummary
-} // namespace search
-
+}

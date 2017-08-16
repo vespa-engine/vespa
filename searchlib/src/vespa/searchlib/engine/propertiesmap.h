@@ -5,8 +5,7 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/common/mapnames.h>
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 /**
  * A simple wrapper class used to hold multiple named collections of
@@ -15,8 +14,8 @@ namespace engine {
 class PropertiesMap
 {
 private:
-    typedef search::fef::Properties     Props;
-    typedef vespalib::hash_map<vespalib::string, Props> PropsMap;
+    using Props = search::fef::Properties;
+    using PropsMap = vespalib::hash_map<vespalib::string, Props>;
 
     static Props _emptyProperties;
     PropsMap     _propertiesMap;
@@ -29,7 +28,7 @@ private:
      * @param name name of properties
      * @return the properties
      **/
-    const search::fef::Properties &lookup(const vespalib::stringref &name) const;
+    const Props &lookup(const vespalib::stringref &name) const;
 
 public:
     typedef PropsMap::const_iterator ITR;
@@ -44,7 +43,7 @@ public:
      * @param name name of properties
      * @return the properties
      **/
-    search::fef::Properties &lookupCreate(const vespalib::stringref &name);
+    Props &lookupCreate(const vespalib::stringref &name);
 
     /**
      * Obtain the number of named collection of properties held by
@@ -73,7 +72,7 @@ public:
      *
      * @return rank properties
      **/
-    const search::fef::Properties &rankProperties() const {
+    const Props &rankProperties() const {
         return lookup(MapNames::RANK);
     }
 
@@ -83,7 +82,7 @@ public:
      *
      * @return feature overrides
      **/
-    const search::fef::Properties &featureOverrides() const {
+    const Props &featureOverrides() const {
         return lookup(MapNames::FEATURE);
     }
 
@@ -93,7 +92,7 @@ public:
      *
      * @return highlight terms properties
      **/
-    const search::fef::Properties &highlightTerms() const {
+    const Props &highlightTerms() const {
         return lookup(MapNames::HIGHLIGHTTERMS);
     }
 
@@ -102,7 +101,7 @@ public:
      *
      * @return match properties
      **/
-    const search::fef::Properties &matchProperties() const {
+    const Props &matchProperties() const {
         return lookup(MapNames::MATCH);
     }
 
@@ -111,7 +110,7 @@ public:
      *
      * @return cache properties
      **/
-    const search::fef::Properties &cacheProperties() const {
+    const Props &cacheProperties() const {
         return lookup(MapNames::CACHES);
     }
 
@@ -120,12 +119,10 @@ public:
      *
      * @return model properties
      **/
-    const search::fef::Properties &modelOverrides() const {
+    const Props &modelOverrides() const {
         return lookup(MapNames::MODEL);
     }
 
 };
 
-} // namespace engine
-} // namespace search
-
+}

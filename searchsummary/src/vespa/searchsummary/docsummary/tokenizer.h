@@ -2,11 +2,10 @@
 
 #pragma once
 
-#include <vespa/fastlib/text/unicodeutil.h>
 #include "itokenizer.h"
+#include <vespa/fastlib/text/unicodeutil.h>
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 /**
  * This class is used to tokenize an utf-8 text buffer into tokens of type
@@ -43,5 +42,3 @@ public:
 };
 
 }
-}
-

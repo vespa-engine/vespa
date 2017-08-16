@@ -4,8 +4,7 @@
 
 #include "unique_store_saver.h"
 
-namespace search {
-namespace datastore {
+namespace search::datastore {
 
 template <typename EntryT, typename RefT>
 UniqueStoreSaver<EntryT, RefT>::UniqueStoreSaver(const Dictionary &dict, const DataStoreBase &store)
@@ -45,5 +44,4 @@ UniqueStoreSaver<EntryT, RefT>::enumerateValues()
     }
 }
 
-}
 }

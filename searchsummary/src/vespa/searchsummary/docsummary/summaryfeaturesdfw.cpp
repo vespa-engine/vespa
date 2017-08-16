@@ -1,18 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "docsumformat.h"
 #include "summaryfeaturesdfw.h"
 #include "docsumstate.h"
-#include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/vespalib/data/slime/cursor.h>
-#include <cmath>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.summaryfeaturesdfw");
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 
 SummaryFeaturesDFW::SummaryFeaturesDFW() :
@@ -34,15 +30,12 @@ static vespalib::string _G_cached("vespa.summaryFeatures.cached");
 static vespalib::Memory _M_cached("vespa.summaryFeatures.cached");
 
 void
-SummaryFeaturesDFW::insertField(uint32_t docid,
-                                GeneralResult *,
-                                GetDocsumsState *state,
-                                ResType type,
-                                vespalib::slime::Inserter &target)
+SummaryFeaturesDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState *state,
+                                ResType type, vespalib::slime::Inserter &target)
 {
-    if (state->_summaryFeatures.get() == 0) {
+    if ( ! state->_summaryFeatures) {
         state->_callback.FillSummaryFeatures(state, _env);
-        if (state->_summaryFeatures.get() == 0) { // still no summary features to write
+        if ( !state->_summaryFeatures) { // still no summary features to write
             return;
         }
     }
@@ -75,8 +68,7 @@ SummaryFeaturesDFW::insertField(uint32_t docid,
             json.appendDouble(0.0);
         }
         json.endObject();
-        vespalib::Memory value(json.toString().c_str(),
-                                      json.toString().size());
+        vespalib::Memory value(json.toString().c_str(), json.toString().size());
         if (type == RES_STRING || type == RES_LONG_STRING) {
             target.insertString(value);
         }
@@ -97,23 +89,4 @@ void FeaturesDFW::featureDump(vespalib::JSONStringer & json, const vespalib::str
     }
 }
 
-
-uint32_t
-SummaryFeaturesDFW::writeString(const vespalib::stringref & str, ResType type, search::RawBuf * target)
-{
-    switch (type) {
-    case RES_STRING:
-    case RES_DATA:
-        return DocsumFormat::addShortData(*target, str.c_str(), str.size());
-    case RES_FEATUREDATA:
-    case RES_LONG_STRING:
-    case RES_LONG_DATA:
-        return DocsumFormat::addLongData(*target, str.c_str(), str.size());
-    default:
-        LOG(error, "unhandled type %u in writeString()", type);
-        return DocsumFormat::addEmpty(type, *target);
-    }
-}
-
-}
 }

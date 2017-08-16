@@ -2,12 +2,10 @@
 
 #pragma once
 
-#include <vespa/fastos/timestamp.h>
-#include <vespa/vespalib/stllike/string.h>
 #include "propertiesmap.h"
+#include <vespa/fastos/timestamp.h>
 
-namespace search {
-namespace engine {
+namespace search::engine {
 
 class Request
 {
@@ -39,6 +37,4 @@ public:
     std::vector<char>  stackDump;
 };
 
-} // namespace engine
-} // namespace search
-
+}

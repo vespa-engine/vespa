@@ -6,9 +6,7 @@
 
 #include "docsumstorevalue.h"
 
-namespace search {
-namespace docsummary {
-
+namespace search::docsummary {
 
 /**
  * Interface for object able to fetch docsum blobs based on local
@@ -49,5 +47,3 @@ public:
 };
 
 }
-}
-

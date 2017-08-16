@@ -4,8 +4,7 @@
 
 #include <vespa/vespalib/util/array.h>
 
-namespace search {
-namespace datastore {
+namespace search::datastore {
 
 /**
  * A compaction context is used when performing a compaction of data buffers in a data store.
@@ -19,5 +18,4 @@ struct ICompactionContext {
     virtual void compact(vespalib::ArrayRef<EntryRef> refs) = 0;
 };
 
-}
 }

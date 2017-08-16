@@ -4,12 +4,10 @@
 
 #include <vespa/document/datatype/datatype.h>
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 struct SearchDataType {
     static const document::DataType *URI;
 };
 
-}  // namespace search::docsummary
-}  // namespace search
+}

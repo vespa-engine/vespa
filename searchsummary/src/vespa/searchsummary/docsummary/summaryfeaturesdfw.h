@@ -2,13 +2,11 @@
 
 #pragma once
 
-#include <map>
-#include <string>
-#include <vespa/searchsummary/docsummary/docsumfieldwriter.h>
-#include <vespa/vespalib/util/jsonwriter.h>
+#include "docsumfieldwriter.h"
 
-namespace search {
-namespace docsummary {
+namespace vespalib { class JSONStringer; }
+
+namespace search::docsummary {
 
 class IDocsumEnvironment;
 
@@ -28,18 +26,11 @@ private:
 
 public:
     SummaryFeaturesDFW();
-    virtual ~SummaryFeaturesDFW();
+    ~SummaryFeaturesDFW();
     void init(IDocsumEnvironment * env);
-    virtual bool IsGenerated() const override { return true; }
-    virtual void insertField(uint32_t docid,
-                             GeneralResult *gres,
-                             GetDocsumsState *state,
-                             ResType type,
-                             vespalib::slime::Inserter &target) override;
-
-    static uint32_t writeString(const vespalib::stringref & str, ResType type, search::RawBuf * target);
+    bool IsGenerated() const override { return true; }
+    void insertField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state,
+                     ResType type, vespalib::slime::Inserter &target) override;
 };
 
 }
-}
-

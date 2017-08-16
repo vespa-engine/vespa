@@ -4,8 +4,7 @@
 #include <cstdint>
 #include <utility>
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 /**
  * Simple wrapper class containing the location and size of a docsum
@@ -59,5 +58,3 @@ public:
 };
 
 }
-}
-

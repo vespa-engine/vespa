@@ -5,8 +5,7 @@
 #include <cassert>
 #include <zlib.h>
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 ResultClass::ResultClass(const char *name, uint32_t id, util::StringEnum & fieldEnum)
     : _name(name),
@@ -100,5 +99,4 @@ ResEntry::_extract_field(search::RawBuf *target) const
     return rc;
 }
 
-}
 }

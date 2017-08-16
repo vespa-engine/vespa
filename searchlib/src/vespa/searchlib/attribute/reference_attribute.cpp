@@ -11,8 +11,7 @@
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
 #include <vespa/vespalib/data/fileheader.h>
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 namespace {
 
@@ -383,7 +382,7 @@ IMPLEMENT_IDENTIFIABLE_ABSTRACT(ReferenceAttribute, AttributeVector);
 
 }
 
-namespace datastore {
+namespace search::datastore {
 
 using Reference = attribute::Reference;
 
@@ -391,5 +390,4 @@ template class UniqueStore<Reference, EntryRefT<22>>;
 template class UniqueStoreBuilder<Reference, EntryRefT<22>>;
 template class UniqueStoreSaver<Reference, EntryRefT<22>>;
 
-}
 }

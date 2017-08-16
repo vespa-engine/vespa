@@ -8,8 +8,7 @@
 #include <vespa/searchlib/engine/docsumrequest.h>
 #include <vespa/searchlib/engine/propertiesmap.h>
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 class GetDocsumArgs
 {
@@ -86,5 +85,3 @@ public:
 };
 
 }
-}
-

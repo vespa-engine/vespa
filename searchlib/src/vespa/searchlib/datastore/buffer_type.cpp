@@ -3,8 +3,7 @@
 #include "buffer_type.h"
 #include <algorithm>
 
-namespace search {
-namespace datastore {
+namespace search::datastore {
 
 BufferTypeBase::BufferTypeBase(uint32_t clusterSize,
                                uint32_t minClusters,
@@ -123,6 +122,5 @@ BufferTypeBase::calcClustersToAlloc(uint32_t bufferId, size_t sizeNeeded, bool r
     return wantClusters;
 }
 
-} // namespace datastore
-} // namespace search
+}
 

@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "searchdatatype.h"
-#include <vespa/document/base/field.h>
 #include <vespa/document/datatype/primitivedatatype.h>
 #include <vespa/document/datatype/structdatatype.h>
 
@@ -10,8 +9,7 @@ using document::Field;
 using document::PrimitiveDataType;
 using document::StructDataType;
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 namespace {
 
@@ -32,5 +30,4 @@ const StructDataType *setUpUriType() {
 
 const DataType *SearchDataType::URI(setUpUriType());
 
-}  // namespace search::docsummary
-}  // namespace search
+}

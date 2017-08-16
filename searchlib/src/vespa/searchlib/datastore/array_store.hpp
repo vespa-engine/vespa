@@ -6,8 +6,7 @@
 #include "datastore.hpp"
 #include <atomic>
 
-namespace search {
-namespace datastore {
+namespace search::datastore {
 
 constexpr size_t MIN_BUFFER_CLUSTERS = 8192;
 
@@ -199,4 +198,4 @@ ArrayStore<EntryT, RefT>::optimizedConfigForHugePage(size_t maxSmallArraySize,
 }
 
 }
-}
+

@@ -8,8 +8,7 @@
 #include "raw_allocator.hpp"
 #include <vespa/vespalib/util/array.hpp>
 
-namespace search {
-namespace datastore {
+namespace search::datastore {
 
 template <typename RefT>
 DataStoreT<RefT>::DataStoreT()
@@ -193,6 +192,5 @@ DataStore<EntryType, RefT>::getEntry(EntryRef ref) const
 
 extern template class DataStoreT<EntryRefT<22> >;
 
-} // namespace search::datastore
-} // namespace search
+}
 

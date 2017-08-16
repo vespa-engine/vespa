@@ -7,8 +7,7 @@
 using vespa::config::search::summary::JuniperrcConfig;
 using vespalib::make_string;
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 JuniperProperties::JuniperProperties() :
     _properties()
@@ -102,12 +101,4 @@ JuniperProperties::GetProperty(const char *name, const char *def)
     return it != _properties.end() ? it->second.c_str() : def;
 }
 
-void
-JuniperProperties::SetProperty(const vespalib::string &key, const vespalib::string &val)
-{
-    _properties[key] = val;
 }
-
-} // namespace docsummary
-} // namespace search
-

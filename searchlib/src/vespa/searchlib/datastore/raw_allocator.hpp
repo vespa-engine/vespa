@@ -5,8 +5,7 @@
 #include "raw_allocator.h"
 #include "bufferstate.h"
 
-namespace search {
-namespace datastore {
+namespace search::datastore {
 
 template <typename EntryT, typename RefT>
 RawAllocator<EntryT, RefT>::RawAllocator(DataStoreBase &store, uint32_t typeId)
@@ -30,4 +29,4 @@ RawAllocator<EntryT, RefT>::alloc(size_t numElems, size_t extraElems)
 }
 
 }
-}
+

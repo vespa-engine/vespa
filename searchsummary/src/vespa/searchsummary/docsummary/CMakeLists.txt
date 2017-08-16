@@ -17,7 +17,6 @@ vespa_add_library(searchsummary_docsummary OBJECT
     summaryfeaturesdfw.cpp
     juniperproperties.cpp
     textextractordfw.cpp
-    docsumformat.cpp
     geoposdfw.cpp
     tokenizer.cpp
     positionsdfw.cpp

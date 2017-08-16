@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "linguisticsannotation.h"
-#include <vespa/document/datatype/datatype.h>
 #include <vespa/document/datatype/primitivedatatype.h>
 
 using document::AnnotationType;
@@ -9,8 +8,7 @@ using document::DataType;
 using document::PrimitiveDataType;
 using vespalib::string;
 
-namespace search {
-namespace linguistics {
+namespace search::linguistics {
 
 namespace {
 AnnotationType makeType(int id, string name, const DataType &type) {
@@ -26,5 +24,4 @@ AnnotationType TERM_OBJ(makeType(1, "term", STRING_OBJ));
 const string SPANTREE_NAME("linguistics");
 const AnnotationType *const TERM(&TERM_OBJ);
 
-}  // namespace search::linguistics
-}  // namespace search
+}

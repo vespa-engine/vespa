@@ -3,8 +3,7 @@
 #include "tokenizer.h"
 #include <cassert>
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 Tokenizer::Token::Type
 Tokenizer::getTokenType(ucs4_t ch) const
@@ -106,5 +105,4 @@ Tokenizer::getNextToken()
     return Token(textBegin, _pos, _type); // return the last token
 }
 
-}
 }

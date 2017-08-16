@@ -2,11 +2,9 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcore/proton/summaryengine/summaryengine.h>
 #include <vespa/searchcore/proton/summaryengine/docsum_by_slime.h>
-#include <vespa/searchlib/engine/docsumapi.h>
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
-#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/document/util/compressor.h>
 #include <vespa/searchlib/common/transport.h>
@@ -35,30 +33,33 @@ class MySearchHandler : public ISearchHandler {
     std::string _name;
     stringref _reply;
 public:
-    MySearchHandler(const std::string & name = "my",
-                    const stringref & reply = MYREPLY) :
-        _name(name), _reply(reply) {}
-    virtual DocsumReply::UP getDocsums(const DocsumRequest & request) override {
+    MySearchHandler(const std::string &name = "my", const stringref &reply = MYREPLY)
+        : _name(name), _reply(reply)
+    {}
+
+    virtual DocsumReply::UP getDocsums(const DocsumRequest &request) override {
         return (request.useRootSlime())
-            ? std::make_unique<DocsumReply>(createSlimeReply(request.hits.size()))
-            : createOldDocSum(request);
+               ? std::make_unique<DocsumReply>(createSlimeReply(request.hits.size()))
+               : createOldDocSum(request);
     }
-    vespalib::Slime::UP createSlimeReply(size_t count) { 
+
+    vespalib::Slime::UP createSlimeReply(size_t count) {
         vespalib::Slime::UP response(std::make_unique<vespalib::Slime>());
-        Cursor & root = response->setObject();
-        Cursor & array = root.setArray(DOCSUMS);
+        Cursor &root = response->setObject();
+        Cursor &array = root.setArray(DOCSUMS);
         const Symbol docsumSym = response->insert(DOCSUM);
-        for (size_t i=0; i < count; i++) {
-            Cursor & docSumC = array.addObject();
+        for (size_t i = 0; i < count; i++) {
+            Cursor &docSumC = array.addObject();
             ObjectSymbolInserter inserter(docSumC, docsumSym);
             inserter.insertObject().setLong("long", 982);
         }
         return response;
     }
-    DocsumReply::UP createOldDocSum(const DocsumRequest & request) { 
+
+    DocsumReply::UP createOldDocSum(const DocsumRequest &request) {
         DocsumReply::UP retval(new DocsumReply());
-        for (size_t i=0; i < request.hits.size(); i++) {
-            const DocsumRequest::Hit & h = request.hits[i];
+        for (size_t i = 0; i < request.hits.size(); i++) {
+            const DocsumRequest::Hit &h = request.hits[i];
             DocsumReply::Docsum docsum;
             docsum.docid = 10 + i;
             docsum.gid = h.gid;
@@ -79,11 +80,13 @@ public:
 class MyDocsumClient : public DocsumClient {
 private:
     vespalib::Monitor _monitor;
-    DocsumReply::UP   _reply;
+    DocsumReply::UP _reply;
 
 public:
     MyDocsumClient();
+
     ~MyDocsumClient();
+
     void getDocsumsDone(DocsumReply::UP reply) override {
         vespalib::MonitorGuard guard(_monitor);
         _reply = std::move(reply);
@@ -101,42 +104,24 @@ public:
 };
 
 MyDocsumClient::MyDocsumClient() {}
+
 MyDocsumClient::~MyDocsumClient() {}
 
-class Test : public vespalib::TestApp {
-private:
-    bool assertDocsumReply(SummaryEngine & engine,
-                           const std::string & searchDocType,
-                           const stringref & expReply);
-
-    void requireThatGetDocsumsExecute();
-    void requireThatHandlersAreStored();
-    void requireThatCorrectHandlerIsUsed();
-    void requireThatSlimeRequestIsConvertedCorrectly();
-    void requireThatSlimeInterfaceWorksFine();
-    void requireThatRPCInterfaceWorks();
-public:
-    int Main() override;
-};
-
 DocsumRequest::UP
-createRequest(size_t num=1)
-{
+createRequest(size_t num = 1) {
     DocsumRequest::UP r(new DocsumRequest());
     if (num == 1) {
         r->hits.emplace_back(GlobalId("aaaaaaaaaaaa"));
     } else {
-        for (size_t i=0; i < num; i++) {
-            vespalib::string s = vespalib::make_string("aaaaaaaaaaa%c", char('a' + i%26));
+        for (size_t i = 0; i < num; i++) {
+            vespalib::string s = vespalib::make_string("aaaaaaaaaaa%c", char('a' + i % 26));
             r->hits.push_back(GlobalId(s.c_str()));
         }
     }
     return r;
 }
 
-void
-Test::requireThatGetDocsumsExecute()
-{
+TEST("requireThatGetDocsumsExecute") {
     int numSummaryThreads = 2;
     SummaryEngine engine(numSummaryThreads);
     ISearchHandler::SP handler(new MySearchHandler);
@@ -163,9 +148,7 @@ Test::requireThatGetDocsumsExecute()
     }
 }
 
-void
-Test::requireThatHandlersAreStored()
-{
+TEST("requireThatHandlersAreStored") {
     DocTypeName dtnvfoo("foo");
     DocTypeName dtnvbar("bar");
     int numSummaryThreads = 2;
@@ -190,19 +173,17 @@ Test::requireThatHandlersAreStored()
 }
 
 bool
-Test::assertDocsumReply(SummaryEngine & engine, const std::string & searchDocType, const stringref & expReply)
-{
+assertDocsumReply(SummaryEngine &engine, const std::string &searchDocType, const stringref &expReply) {
     DocsumRequest::UP request(createRequest());
     request->propertiesMap.lookupCreate(search::MapNames::MATCH).add("documentdb.searchdoctype", searchDocType);
     MyDocsumClient client;
     engine.getDocsums(DocsumRequest::Source(std::move(request)), client);
     DocsumReply::UP reply = client.getReply(10000);
-    return EXPECT_EQUAL(vespalib::stringref(expReply), vespalib::stringref(reply->docsums[0].data.c_str(), reply->docsums[0].data.size()));
+    return EXPECT_EQUAL(vespalib::stringref(expReply),
+                        vespalib::stringref(reply->docsums[0].data.c_str(), reply->docsums[0].data.size()));
 }
 
-void
-Test::requireThatCorrectHandlerIsUsed()
-{
+TEST("requireThatCorrectHandlerIsUsed") {
     DocTypeName dtnvfoo("foo");
     DocTypeName dtnvbar("bar");
     DocTypeName dtnvbaz("baz");
@@ -226,8 +207,7 @@ const char *GID1 = "abcdefghijkl";
 const char *GID2 = "bcdefghijklm";
 
 void
-verify(vespalib::stringref exp, const Slime & slime)
-{
+verify(vespalib::stringref exp, const Slime &slime) {
     Memory expMemory(exp);
     vespalib::Slime expSlime;
     size_t used = vespalib::slime::JsonFormat::decode(expMemory, expSlime);
@@ -241,12 +221,19 @@ verify(vespalib::stringref exp, const Slime & slime)
 }
 
 Slime
-createSlimeRequestLarger(size_t num)
-{
+createSlimeRequestLarger(size_t num,
+                         const vespalib::string & sessionId = vespalib::string(),
+                         const vespalib::string & ranking = vespalib::string()) {
     Slime r;
-    Cursor & root = r.setObject();
+    Cursor &root = r.setObject();
     root.setString("class", "your-summary");
-    Cursor & array = root.setArray("gids");
+    if ( ! sessionId.empty()) {
+        root.setData("sessionid", sessionId);
+    }
+    if (!ranking.empty()) {
+        root.setString("ranking", ranking);
+    }
+    Cursor &array = root.setArray("gids");
     for (size_t i(0); i < num; i++) {
         array.addData(Memory(GID1, 12));
         array.addData(Memory(GID2, 12));
@@ -255,14 +242,12 @@ createSlimeRequestLarger(size_t num)
 }
 
 Slime
-createSlimeRequest()
-{
-    return createSlimeRequestLarger(1);
+createSlimeRequest(const vespalib::string & sessionId = vespalib::string(),
+                   const vespalib::string & ranking = vespalib::string()) {
+    return createSlimeRequestLarger(1, sessionId, ranking);
 }
 
-void
-Test::requireThatSlimeRequestIsConvertedCorrectly()
-{
+TEST("requireThatSlimeRequestIsConvertedCorrectly") {
     vespalib::Slime slimeRequest = createSlimeRequest();
     TEST_DO(verify("{"
                    "    class: 'your-summary',"
@@ -273,14 +258,38 @@ Test::requireThatSlimeRequestIsConvertedCorrectly()
                    "}", slimeRequest));
     DocsumRequest::UP r = DocsumBySlime::slimeToRequest(slimeRequest.get());
     EXPECT_EQUAL("your-summary", r->resultClassName);
+    EXPECT_FALSE(r->propertiesMap.cacheProperties().lookup("query").found());
+    EXPECT_TRUE(r->sessionId.empty());
+    EXPECT_TRUE(r->ranking.empty());
+    EXPECT_EQUAL(2u, r->hits.size());
+    EXPECT_EQUAL(GlobalId(GID1), r->hits[0].gid);
+    EXPECT_EQUAL(GlobalId(GID2), r->hits[1].gid);
+}
+
+TEST("require that presence of sessionid affect both request.sessionid and enables cache") {
+    vespalib::Slime slimeRequest = createSlimeRequest("1.some.key.7", "my-rank-profile");
+    TEST_DO(verify("{"
+                   "    class: 'your-summary',"
+                   "    sessionid: '0x312E736F6D652E6B65792E37',"
+                   "    ranking: 'my-rank-profile',"
+                   "    gids: ["
+                   "        '0x6162636465666768696A6B6C',"
+                   "        '0x62636465666768696A6B6C6D'"
+                   "    ]"
+                   "}", slimeRequest));
+    DocsumRequest::UP r = DocsumBySlime::slimeToRequest(slimeRequest.get());
+    EXPECT_EQUAL("your-summary", r->resultClassName);
+    EXPECT_EQUAL("my-rank-profile", r->ranking);
+
+    EXPECT_EQUAL(0, strncmp("1.some.key.7", &r->sessionId[0],r->sessionId.size()));
+    EXPECT_TRUE(r->propertiesMap.cacheProperties().lookup("query").found());
     EXPECT_EQUAL(2u, r->hits.size());
     EXPECT_EQUAL(GlobalId(GID1), r->hits[0].gid);
     EXPECT_EQUAL(GlobalId(GID2), r->hits[1].gid);
 }
 
 void
-createSummary(search::RawBuf & buf)
-{
+createSummary(search::RawBuf &buf) {
     vespalib::Slime summary;
     summary.setObject().setLong("long", 982);
     uint32_t magic = search::fs4transport::SLIME_MAGIC_ID;
@@ -289,27 +298,28 @@ createSummary(search::RawBuf & buf)
     BinaryFormat::encode(summary, adapter);
 }
 
-class BaseServer
-{
+class BaseServer {
 protected:
-    BaseServer() :
-        buf(100)
+    BaseServer() : buf(100)
     {
         createSummary(buf);
     }
+
 protected:
-    search::RawBuf      buf;
+    search::RawBuf buf;
 };
+
 class Server : public BaseServer {
 public:
     Server();
     ~Server();
+
 private:
-    SummaryEngine       engine;
-    ISearchHandler::SP  handler;
+    SummaryEngine engine;
+    ISearchHandler::SP handler;
 public:
-    DocsumBySlime       docsumBySlime;
-    DocsumByRPC         docsumByRPC;
+    DocsumBySlime docsumBySlime;
+    DocsumByRPC docsumByRPC;
 };
 
 Server::Server()
@@ -322,36 +332,31 @@ Server::Server()
     DocTypeName dtnvfoo("foo");
     engine.putSearchHandler(dtnvfoo, handler);
 }
+
 Server::~Server() {}
 
 vespalib::string
-getAnswer(size_t num)
-{
-    vespalib::string s =
-           "{"
-           "    docsums: [";
-    for (size_t i(1); i < num*2; i++) {
-        s +=
-           "        {"
-           "            docsum: {"
-           "                long: 982"
-           "            }"
-           "        },";
+getAnswer(size_t num) {
+    vespalib::string s;
+    s += "{    docsums: [";
+    for (size_t i(1); i < num * 2; i++) {
+        s += "        {"
+             "            docsum: {"
+             "                long: 982"
+             "            }"
+             "        },";
     }
-    s +=
-           "        {"
-           "            docsum: {"
-           "                long: 982"
-           "            }"
-           "        }"
-           "    ]";
-    s +=   "}";
+    s += "        {"
+         "            docsum: {"
+         "                long: 982"
+         "            }"
+         "        }"
+         "    ]";
+    s += "}";
     return s;
 }
 
-void
-Test::requireThatSlimeInterfaceWorksFine()
-{
+TEST("requireThatSlimeInterfaceWorksFine") {
     Server server;
     vespalib::Slime slimeRequest = createSlimeRequest();
     vespalib::Slime::UP response = server.docsumBySlime.getDocsums(slimeRequest.get());
@@ -372,8 +377,8 @@ Test::requireThatSlimeInterfaceWorksFine()
 }
 
 void
-verifyReply(size_t count, document::CompressionConfig::Type encoding, size_t orgSize, size_t compressedSize, FRT_RPCRequest * request)
-{
+verifyReply(size_t count, document::CompressionConfig::Type encoding, size_t orgSize, size_t compressedSize,
+            FRT_RPCRequest *request) {
     FRT_Values &ret = *request->GetReturn();
     EXPECT_EQUAL(encoding, ret[0]._intval8);
     EXPECT_EQUAL(orgSize, ret[1]._intval32);
@@ -392,20 +397,20 @@ verifyReply(size_t count, document::CompressionConfig::Type encoding, size_t org
 void
 verifyRPC(size_t count,
           document::CompressionConfig::Type requestCompression, size_t requestSize, size_t requestBlobSize,
-          document::CompressionConfig::Type replyCompression, size_t replySize, size_t replyBlobSize)
-{
+          document::CompressionConfig::Type replyCompression, size_t replySize, size_t replyBlobSize) {
     Server server;
     vespalib::Slime slimeRequest = createSlimeRequestLarger(count);
-    vespalib::SimpleBuffer buf; 
+    vespalib::SimpleBuffer buf;
     BinaryFormat::encode(slimeRequest, buf);
     EXPECT_EQUAL(requestSize, buf.get().size);
 
     CompressionConfig config(requestCompression, 9, 100);
     DataBuffer compressed(const_cast<char *>(buf.get().data), buf.get().size);
-    CompressionConfig::Type type = compression::compress(config, ConstBufferRef(buf.get().data, buf.get().size), compressed, true);
+    CompressionConfig::Type type = compression::compress(config, ConstBufferRef(buf.get().data, buf.get().size),
+                                                         compressed, true);
     EXPECT_EQUAL(type, requestCompression);
 
-    FRT_RPCRequest * request = new FRT_RPCRequest();
+    FRT_RPCRequest *request = new FRT_RPCRequest();
     FRT_Values &arg = *request->GetParams();
     arg.AddInt8(type);
     arg.AddInt32(buf.get().size);
@@ -418,30 +423,12 @@ verifyRPC(size_t count,
     request->SubRef();
 }
 
-void
-Test::requireThatRPCInterfaceWorks()
-{
+TEST("requireThatRPCInterfaceWorks") {
     verifyRPC(1, document::CompressionConfig::NONE, 55, 55, document::CompressionConfig::NONE, 38, 38);
     verifyRPC(100, document::CompressionConfig::NONE, 2631, 2631, document::CompressionConfig::LZ4, 1426, 46);
     verifyRPC(100, document::CompressionConfig::LZ4, 2631, 69, document::CompressionConfig::LZ4, 1426, 46);
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("summaryengine_test");
-
-    requireThatGetDocsumsExecute();
-    requireThatHandlersAreStored();
-    requireThatCorrectHandlerIsUsed();
-    requireThatSlimeRequestIsConvertedCorrectly();
-    requireThatSlimeInterfaceWorksFine();
-    requireThatRPCInterfaceWorks();
-
-    TEST_DONE();
 }
 
-}
-
-TEST_APPHOOK(proton::Test);
-
+TEST_MAIN() { TEST_RUN_ALL(); }

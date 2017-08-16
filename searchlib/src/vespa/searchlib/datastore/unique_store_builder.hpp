@@ -11,8 +11,7 @@
 #include <vespa/searchlib/btree/btreeiterator.hpp>
 #include <vespa/searchlib/btree/btreenode.hpp>
 
-namespace search {
-namespace datastore {
+namespace search::datastore {
 
 template <typename EntryT, typename RefT>
 UniqueStoreBuilder<EntryT, RefT>::UniqueStoreBuilder(DataStoreType &store, uint32_t typeId, Dictionary &dict, uint32_t uniqueValuesHint)
@@ -57,4 +56,4 @@ UniqueStoreBuilder<EntryT, RefT>::makeDictionary()
 }
 
 }
-}
+

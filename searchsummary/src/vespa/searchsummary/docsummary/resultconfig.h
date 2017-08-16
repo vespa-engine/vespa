@@ -1,17 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 2001-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
 #pragma once
 
+#include "resultclass.h"
+#include "urlresult.h"
 #include <vespa/config-summary.h>
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/searchlib/util/stringenum.h>
-#include <vespa/searchsummary/docsummary/resultclass.h>
-#include <vespa/searchsummary/docsummary/urlresult.h>
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 /**
  * This class represents the overall result configuration. A result
@@ -298,5 +295,3 @@ public:
 };
 
 }
-}
-

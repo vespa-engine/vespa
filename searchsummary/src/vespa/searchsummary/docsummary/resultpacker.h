@@ -4,10 +4,9 @@
 
 #pragma once
 
-#include <vespa/searchsummary/docsummary/resultconfig.h>
+#include "resultconfig.h"
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 /**
  * An Object of this class may be used to create docsum blobs. A
  * single blob is created by first indicating what result class the
@@ -252,10 +251,6 @@ public:
      **/
     bool GetDocsumBlob(const char **buf, uint32_t *buflen);
 
-    void GetDocsumBlobForce(const char **buf, uint32_t *buflen);
 };
 
 }
-}
-
-
