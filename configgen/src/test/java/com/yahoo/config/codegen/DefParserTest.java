@@ -337,7 +337,7 @@ public class DefParserTest {
     }
 
     @Test
-    public void require_that_parameter_name_starting_with_digit_is_illegal() {
+    public void parameter_name_starting_with_digit_is_illegal() {
         Class<?> exceptionClass = DefParser.DefParserException.class;
         StringBuilder sb = createDefTemplate();
         String invalidLine = "1a int\n";
@@ -352,7 +352,7 @@ public class DefParserTest {
     }
 
     @Test
-    public void require_that_parameter_name_starting_with_uppercase_is_illegal() {
+    public void parameter_name_starting_with_uppercase_is_illegal() {
         Class<?> exceptionClass = DefParser.DefParserException.class;
         StringBuilder sb = createDefTemplate();
         String invalidLine = "SomeInt int\n";
@@ -367,7 +367,7 @@ public class DefParserTest {
     }
 
     @Test
-    public void require_that_parameter_name_starting_with_the_internal_prefix_is_illegal() {
+    public void parameter_name_starting_with_the_internal_prefix_is_illegal() {
         String internalPrefix = ReservedWords.INTERNAL_PREFIX;
         Class<?> exceptionClass = DefParser.DefParserException.class;
         StringBuilder sb = createDefTemplate();
