@@ -498,7 +498,7 @@ public class DefParserTest {
     }
 
     @Test
-    public void testUnderscoreInNamespace() throws IOException, DefParser.DefParserException {
+    public void underscore_in_namespace_is_allowed() throws IOException, DefParser.DefParserException {
         StringBuilder sb = createDefTemplate();
         String line = "namespace=a_b.c\nfoo int\n";
         sb.append(line);
