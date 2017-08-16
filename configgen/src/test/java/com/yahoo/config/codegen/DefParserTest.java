@@ -16,7 +16,7 @@ import java.io.*;
  * Unit tests for DefParser.
  *
  * @author hmusum
- * @author <a href="gv@yahoo-inc.com">G. Voldengen</a>
+ * @author gjoranv
  */
 public class DefParserTest {
 
@@ -221,12 +221,12 @@ public class DefParserTest {
     }
 
     // Helper method for checking correct exception class and message
-    void assertExceptionAndMessage(Exception e, Class<?> exceptionClass, String message) {
+    private void assertExceptionAndMessage(Exception e, Class<?> exceptionClass, String message) {
         assertExceptionAndMessage(e, exceptionClass, message, true);
     }
 
     // Helper method for checking correct exception class and message
-    void assertExceptionAndMessage(Exception e, Class<?> exceptionClass, String message, boolean exact) {
+    private void assertExceptionAndMessage(Exception e, Class<?> exceptionClass, String message, boolean exact) {
         if (exact) {
             assertEquals(message, e.getMessage());
         } else {
