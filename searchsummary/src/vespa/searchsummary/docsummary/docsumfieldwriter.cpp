@@ -3,7 +3,6 @@
 #include "docsumfieldwriter.h"
 #include "idocsumenvironment.h"
 #include "docsumstate.h"
-#include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/documentlocations.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
@@ -136,8 +135,7 @@ CopyDFW::insertField(uint32_t /*docid*/,
             uint32_t    len;
             const char *spt;
             // resolve field
-            entry->_resolve_field(&spt, &len,
-                                  &state->_docSumFieldSpace);
+            entry->_resolve_field(&spt, &len, &state->_docSumFieldSpace);
             vespalib::Memory value(spt, len);
             target.insertString(value);
             break; }
@@ -148,8 +146,7 @@ CopyDFW::insertField(uint32_t /*docid*/,
             uint32_t    len;
             const char *dpt;
             // resolve field
-            entry->_resolve_field(&dpt, &len,
-                                  &state->_docSumFieldSpace);
+            entry->_resolve_field(&dpt, &len, &state->_docSumFieldSpace);
             vespalib::Memory value(dpt, len);
             target.insertData(value);
             break; }

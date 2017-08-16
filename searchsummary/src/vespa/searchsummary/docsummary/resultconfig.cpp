@@ -7,8 +7,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.resultconfig");
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 void
 ResultConfig::Clean()
@@ -242,5 +241,4 @@ ResultConfig::Unpack(uint32_t partition,
     return (ret != NULL) ? ret : new badurlresult(partition, docid, metric);
 }
 
-} // namespace docsummary
-} // namespace search
+}

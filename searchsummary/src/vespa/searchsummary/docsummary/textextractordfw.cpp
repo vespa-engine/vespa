@@ -1,14 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "tokenizer.h"
 #include "textextractordfw.h"
+#include "tokenizer.h"
 #include "docsumstate.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.textextractordfw");
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 TextExtractorDFW::TextExtractorDFW() :
     _inputFieldEnum(-1)
@@ -53,5 +52,3 @@ TextExtractorDFW::insertField(uint32_t,
 }
 
 }
-}
-

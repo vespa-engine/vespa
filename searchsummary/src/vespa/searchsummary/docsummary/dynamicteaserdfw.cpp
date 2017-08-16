@@ -4,9 +4,7 @@
 #include "docsumwriter.h"
 #include "docsumstate.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
-#include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/searchlib/queryeval/split_float.h>
-#include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/objects/hexdump.h>
 #include <vespa/juniper/config.h>
 #include <sstream>
@@ -15,7 +13,6 @@
 LOG_SETUP(".searchlib.docsummary.dynamicteaserdfw");
 
 namespace juniper {
-
 
 struct ExplicitItemData
 {

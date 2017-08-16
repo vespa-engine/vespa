@@ -52,15 +52,6 @@ public:
 
     // Inherit doc from IJuniperProperties.
     const char *GetProperty(const char *name, const char *def = NULL) override;
-
-    /**
-     * Sets the value of a given named property. If the property already exists, it is overwritten. If it does not
-     * exist, it is added.
-     *
-     * @param key The name of the property to set.
-     * @param val The value to set for the property.
-     */
-    void SetProperty(const vespalib::string &key, const vespalib::string &val);
 };
 
 }

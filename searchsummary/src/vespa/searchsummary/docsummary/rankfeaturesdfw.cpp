@@ -2,8 +2,6 @@
 
 #include "rankfeaturesdfw.h"
 #include "docsumstate.h"
-#include <vespa/searchlib/common/feature.h>
-#include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 

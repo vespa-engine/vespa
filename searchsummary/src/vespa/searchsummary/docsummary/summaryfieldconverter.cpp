@@ -5,20 +5,13 @@
 #include "searchdatatype.h"
 #include <vespa/document/annotation/alternatespanlist.h>
 #include <vespa/document/annotation/annotation.h>
-#include <vespa/document/annotation/span.h>
-#include <vespa/document/annotation/spanlist.h>
-#include <vespa/document/annotation/spannode.h>
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/document/annotation/spantreevisitor.h>
-#include <vespa/document/datatype/arraydatatype.h>
-#include <vespa/document/datatype/datatype.h>
 #include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/bytefieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/doublefieldvalue.h>
-#include <vespa/document/fieldvalue/fieldvaluevisitor.h>
 #include <vespa/document/fieldvalue/floatfieldvalue.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/longfieldvalue.h>
@@ -35,11 +28,8 @@
 #include <vespa/vespalib/encoding/base64.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/data/slime/convenience.h>
-#include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/eval/tensor/serialization/slime_binary_format.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -90,8 +80,7 @@ using vespalib::make_string;
 using vespalib::string;
 using vespalib::stringref;
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 namespace {
 string getSpanString(const string &s, const Span &span) {
@@ -522,5 +511,4 @@ SummaryFieldConverter::convertSummaryField(bool markup,
 }
 
 
-}  // namespace search::docsummary
-}  // namespace search
+}

@@ -6,8 +6,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.resultpacker");
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 void
 ResultPacker::WarnType(ResType type) const
@@ -282,12 +281,4 @@ ResultPacker::GetDocsumBlob(const char **buf, uint32_t *buflen)
     }
 }
 
-void
-ResultPacker::GetDocsumBlobForce(const char **buf, uint32_t *buflen)
-{
-    *buf    = _buf.GetDrainPos();
-    *buflen = _buf.GetUsedLen();
-}
-
-}
 }
