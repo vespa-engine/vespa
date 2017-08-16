@@ -82,66 +82,6 @@ public class DefParserTest {
     }
 
     @Test
-    public void testExplicitNamespace() {
-        DefParser parser = createParser("version=1\nnamespace=myproject.config\na string\n");
-        CNode root = parser.getTree();
-        assertThat(root.getNamespace(), is("myproject.config"));
-
-        // with spaces
-        parser = createParser("version=1\nnamespace =  myproject.config\na string\n");
-        root = parser.getTree();
-        assertThat(root.getNamespace(), is("myproject.config"));
-
-        // invalid
-        parser = createParser("version=1\nnamespace \na string\n");
-        try {
-            parser.getTree();
-            fail();
-        } catch (Exception e) {
-            //e.printStackTrace();
-            assertExceptionAndMessage(e, CodegenRuntimeException.class,
-                    "Error parsing or reading config definition.Error when parsing line 2: namespace \n" +
-                            "namespace");
-        }
-
-        // invalid
-        parser = createParser("version=1\nnamespace=a..b\na string\n");
-        try {
-            parser.getTree();
-            fail();
-        } catch (Exception e) {
-            //e.printStackTrace();
-            assertExceptionAndMessage(e, CodegenRuntimeException.class,
-                    "Error parsing or reading config definition.Error when parsing line 2: namespace=a..b\n" +
-                            "namespace=a..b");
-        }
-    }
-
-    @Test
-    public void verifyThatExplicitNamespaceAltersDefMd5() {
-        DefParser parser = createParser("version=1\na string\n");
-        CNode root = parser.getTree();
-
-        parser = createParser("version=1\nnamespace=myproject.config\na string\n");
-        CNode namespaceRoot = parser.getTree();
-
-        assertThat(root.defMd5, not(namespaceRoot.defMd5));
-    }
-
-
-    @Test(expected = CodegenRuntimeException.class)
-    public void verify_fail_on_illegal_char_in_namespace() {
-        createParser("version=1\nnamespace=Foo\na string\n").getTree();
-    }
-
-    @Test(expected = CodegenRuntimeException.class)
-    public void verify_fail_on_com_yahoo_in_explicit_namespace() {
-        createParser("version=1\n" +
-                "namespace=com.yahoo.myproject.config\n" +
-                "a string\n").getTree();
-    }
-
-    @Test
     public void testInvalidType() {
         Class<?> exceptionClass = DefParser.DefParserException.class;
         try {
@@ -184,7 +124,7 @@ public class DefParserTest {
         }
     }
 
-    private DefParser createParser(String def) {
+    static DefParser createParser(String def) {
         return new DefParser("test", new StringReader(def));
     }
 
@@ -221,12 +161,12 @@ public class DefParserTest {
     }
 
     // Helper method for checking correct exception class and message
-    private void assertExceptionAndMessage(Exception e, Class<?> exceptionClass, String message) {
+    static void assertExceptionAndMessage(Exception e, Class<?> exceptionClass, String message) {
         assertExceptionAndMessage(e, exceptionClass, message, true);
     }
 
     // Helper method for checking correct exception class and message
-    private void assertExceptionAndMessage(Exception e, Class<?> exceptionClass, String message, boolean exact) {
+    static void assertExceptionAndMessage(Exception e, Class<?> exceptionClass, String message, boolean exact) {
         if (exact) {
             assertEquals(message, e.getMessage());
         } else {
@@ -458,59 +398,7 @@ public class DefParserTest {
         }
     }
 
-    @Test
-    public void number_is_allowed_as_non_leading_char_in_namespace() throws IOException, DefParser.DefParserException {
-        StringBuilder sb = createDefTemplate();
-        String line = "namespace=a.b.c2\nfoo int\n";
-        sb.append(line);
-        createParser(sb.toString()).parse();
-    }
-
-    @Test
-    public void number_is_not_allowed_as_namespace_start_char() throws IOException, DefParser.DefParserException {
-        StringBuilder sb = createDefTemplate();
-        String line = "namespace=2.a.b";
-        sb.append(line).append("\n");
-        Class<?>  exceptionClass = DefParser.DefParserException.class;
-        try {
-            createParser(sb.toString()).parse();
-            fail("Didn't find expected exception of type " + exceptionClass);
-        } catch (Exception e) {
-            assertExceptionAndMessage(e, exceptionClass,
-                                      "Error when parsing line 3: " + line + "\n" + line);
-        }
-    }
-
-    @Test
-    public void number_is_not_allowed_as_leading_char_in_namespace_token() throws IOException, DefParser.DefParserException {
-        StringBuilder sb = createDefTemplate();
-        String line = "namespace=a.b.2c";
-        sb.append(line).append("\n");
-        Class<?> exceptionClass = DefParser.DefParserException.class;
-        try {
-            createParser(sb.toString()).parse();
-            fail("Didn't find expected exception of type " + exceptionClass);
-        } catch (Exception e) {
-            assertExceptionAndMessage(e, exceptionClass,
-                                      "Error when parsing line 3: " + line + "\n" + line);
-        }
-
-    }
-
-    @Test
-    public void underscore_in_namespace_is_allowed() throws IOException, DefParser.DefParserException {
-        StringBuilder sb = createDefTemplate();
-        String line = "namespace=a_b.c\nfoo int\n";
-        sb.append(line);
-        createParser(sb.toString()).parse();
-
-        sb = createDefTemplate();
-        line = "namespace=a_b.c_d\nfoo int\n";
-        sb.append(line);
-        createParser(sb.toString()).parse();
-    }
-
-    private StringBuilder createDefTemplate() {
+    static StringBuilder createDefTemplate() {
         StringBuilder sb = new StringBuilder();
         sb.append("version=8\n");
         // Add a comment line to check that we get correct line number with comments
