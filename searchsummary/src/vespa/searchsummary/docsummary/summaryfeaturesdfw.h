@@ -2,13 +2,11 @@
 
 #pragma once
 
-#include <map>
-#include <string>
-#include <vespa/searchsummary/docsummary/docsumfieldwriter.h>
-#include <vespa/vespalib/util/jsonwriter.h>
+#include "docsumfieldwriter.h"
 
-namespace search {
-namespace docsummary {
+namespace vespalib { class JSONStringer; }
+
+namespace search::docsummary {
 
 class IDocsumEnvironment;
 
@@ -41,5 +39,3 @@ public:
 };
 
 }
-}
-

@@ -3,16 +3,13 @@
 #include "docsumformat.h"
 #include "summaryfeaturesdfw.h"
 #include "docsumstate.h"
-#include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/vespalib/data/slime/cursor.h>
-#include <cmath>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.summaryfeaturesdfw");
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 
 SummaryFeaturesDFW::SummaryFeaturesDFW() :
@@ -40,9 +37,9 @@ SummaryFeaturesDFW::insertField(uint32_t docid,
                                 ResType type,
                                 vespalib::slime::Inserter &target)
 {
-    if (state->_summaryFeatures.get() == 0) {
+    if ( ! state->_summaryFeatures) {
         state->_callback.FillSummaryFeatures(state, _env);
-        if (state->_summaryFeatures.get() == 0) { // still no summary features to write
+        if ( !state->_summaryFeatures) { // still no summary features to write
             return;
         }
     }
@@ -115,5 +112,4 @@ SummaryFeaturesDFW::writeString(const vespalib::stringref & str, ResType type, s
     }
 }
 
-}
 }
