@@ -4,6 +4,7 @@ package com.yahoo.config.codegen
 import java.io.{File, FileNotFoundException, FileOutputStream, PrintStream}
 
 import com.yahoo.config.codegen.ConfigGenerator.{createClassName, indentCode}
+import com.yahoo.config.codegen.DefParser.DEFAULT_PACKAGE_PREFIX
 
 import scala.collection.JavaConverters._
 import scala.util.Random
@@ -22,7 +23,7 @@ class JavaClassBuilder(
 {
   import JavaClassBuilder._
 
-  val packagePrefix = if (rawPackagePrefix != null) rawPackagePrefix else "com.yahoo."
+  val packagePrefix = if (rawPackagePrefix != null) rawPackagePrefix else DEFAULT_PACKAGE_PREFIX
   val javaPackage = packagePrefix + root.getNamespace
   val className = createClassName(root.getName)
 

@@ -14,6 +14,8 @@ import java.util.regex.Pattern;
  * @author hmusum
  */
 public class DefParser {
+    public static final String DEFAULT_PACKAGE_PREFIX = "com.yahoo.";
+
     static final Pattern commentPattern = Pattern.compile("^\\s*#+\\s*(.*?)\\s*$");
     public static final Pattern versionPattern = Pattern.compile("^(version\\s*=\\s*)([0-9][0-9-]*)$");
     // Namespace must start with a letter, since Java (Java language Spec, section  3.8) and C++ identifiers cannot start with a digit
@@ -148,9 +150,8 @@ public class DefParser {
     }
 
     private void parseNamespaceLine(String namespace) {
-        if (namespace.startsWith("com.yahoo."))
-            throw new IllegalArgumentException("Remove 'com.yahoo.' from the namespace '" + namespace +
-                    "' - it will be automatically added to the java package name.");
+        if (namespace.startsWith(DEFAULT_PACKAGE_PREFIX))
+            throw new IllegalArgumentException("Please use 'package' instead of 'namespace'.");
         root.setNamespace(namespace);
         root.setComment(comment);
         comment = "";

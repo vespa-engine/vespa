@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa;
 
+import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.codegen.MakeConfig;
 import com.yahoo.config.codegen.MakeConfigProperties;
 import com.yahoo.config.codegen.PropertyException;
@@ -18,6 +19,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
+import static com.yahoo.config.codegen.DefParser.DEFAULT_PACKAGE_PREFIX;
 
 
 /**
@@ -58,7 +61,7 @@ public class ConfigGenMojo extends AbstractMojo {
     /**
      * Package prefix of generated configs. The resulting package name will be packagePrefix.namespace if specified.
      */
-    @Parameter(property = "plugin.configuration.packagePrefix", defaultValue = "com.yahoo.")
+    @Parameter(property = "plugin.configuration.packagePrefix", defaultValue = DEFAULT_PACKAGE_PREFIX)
     private String packagePrefix;
 
     /**
