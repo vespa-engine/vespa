@@ -3,7 +3,7 @@ vespa_add_library(vespamalloc
     SOURCES
     $<TARGET_OBJECTS:vespamalloc_malloc>
     $<TARGET_OBJECTS:vespamalloc_util>
-    INSTALL lib64
+    INSTALL lib64/vespa/malloc
     DEPENDS
     dl
 )
@@ -11,7 +11,7 @@ vespa_add_library(vespamalloc_vespamallocd
     SOURCES
     $<TARGET_OBJECTS:vespamalloc_mallocd>
     $<TARGET_OBJECTS:vespamalloc_util>
-    INSTALL lib64
+    INSTALL lib64/vespa/malloc
     DEPENDS
     dl
 )
@@ -19,7 +19,7 @@ vespa_add_library(vespamalloc_vespamallocdst16
     SOURCES
     $<TARGET_OBJECTS:vespamalloc_mallocdst16>
     $<TARGET_OBJECTS:vespamalloc_util>
-    INSTALL lib64
+    INSTALL lib64/vespa/malloc
     DEPENDS
     dl
 )
@@ -27,13 +27,13 @@ vespa_add_library(vespamalloc_vespamallocdst16_nl
     SOURCES
     $<TARGET_OBJECTS:vespamalloc_mallocdst16_nl>
     $<TARGET_OBJECTS:vespamalloc_util>
-    INSTALL lib64
+    INSTALL lib64/vespa/malloc
     DEPENDS
     dl
 )
 vespa_add_library(vespamalloc_vespammap
     SOURCES
     $<TARGET_OBJECTS:vespamalloc_mmap>
-    INSTALL lib64
+    INSTALL lib64/vespa/malloc
     DEPENDS
 )
