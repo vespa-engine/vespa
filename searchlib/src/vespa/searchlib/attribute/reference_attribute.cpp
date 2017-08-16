@@ -7,7 +7,6 @@
 #include <vespa/searchlib/datastore/unique_store_builder.h>
 #include <vespa/searchlib/datastore/datastore.hpp>
 #include <vespa/searchlib/datastore/unique_store.hpp>
-#include <vespa/searchlib/btree/btreestore.hpp>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
 #include <vespa/vespalib/data/fileheader.h>
@@ -37,8 +36,7 @@ ReferenceAttribute::ReferenceAttribute(const vespalib::stringref baseFileName,
       _indices(getGenerationHolder()),
       _cachedUniqueStoreMemoryUsage(),
       _gidToLidMapperFactory(),
-      _reverseMappingIndices(getGenerationHolder()),
-      _reverseMapping()
+      _referenceMappings(getGenerationHolder())
 {
     setEnum(true);
     enableEnumeratedSave(true);
@@ -46,16 +44,13 @@ ReferenceAttribute::ReferenceAttribute(const vespalib::stringref baseFileName,
 
 ReferenceAttribute::~ReferenceAttribute()
 {
-    _reverseMapping.clearBuilder();
+    _referenceMappings.clearBuilder();
     incGeneration(); // Force freeze
     const auto &store = _store;
     const auto saver = _store.getSaver();
     saver.foreach_key([&store,this](EntryRef ref)
                       {   const Reference &entry = store.get(ref);
-                          EntryRef revMapIdx = entry.revMapIdx();
-                          if (revMapIdx.valid()) {
-                              _reverseMapping.clear(revMapIdx);
-                          }
+                          _referenceMappings.clearMapping(entry);
                       });
     incGeneration(); // Force freeze
 }
@@ -83,46 +78,24 @@ ReferenceAttribute::addDoc(DocId &doc)
 }
 
 void
-ReferenceAttribute::syncReverseMappingIndices(const Reference &entry)
-{
-    uint32_t referencedLid = entry.lid();
-    if (referencedLid != 0u) {
-        _reverseMappingIndices.ensure_size(referencedLid + 1);
-        _reverseMappingIndices[referencedLid] = entry.revMapIdx();
-    }
-}
-
-void
 ReferenceAttribute::removeReverseMapping(EntryRef oldRef, uint32_t lid)
 {
     const auto &entry = _store.get(oldRef);
-    EntryRef revMapIdx = entry.revMapIdx();
-    _reverseMapping.apply(revMapIdx, nullptr, nullptr, &lid, &lid + 1);
-    std::atomic_thread_fence(std::memory_order_release);
-    entry.setRevMapIdx(revMapIdx);
-    syncReverseMappingIndices(entry);
+    _referenceMappings.removeReverseMapping(entry, lid);
 }
 
 void
 ReferenceAttribute::addReverseMapping(EntryRef newRef, uint32_t lid)
 {
     const auto &entry = _store.get(newRef);
-    EntryRef revMapIdx = entry.revMapIdx();
-    ReverseMapping::KeyDataType add(lid, btree::BTreeNoLeafData());
-    _reverseMapping.apply(revMapIdx, &add, &add + 1, nullptr, nullptr);
-    std::atomic_thread_fence(std::memory_order_release);
-    entry.setRevMapIdx(revMapIdx);
-    syncReverseMappingIndices(entry);
+    _referenceMappings.addReverseMapping(entry, lid);
 }
 
 void
 ReferenceAttribute::buildReverseMapping(EntryRef newRef, const std::vector<ReverseMapping::KeyDataType> &adds)
 {
     const auto &entry = _store.get(newRef);
-    EntryRef revMapIdx = entry.revMapIdx();
-    assert(!revMapIdx.valid());
-    _reverseMapping.apply(revMapIdx, &adds[0], &adds[adds.size()], nullptr, nullptr);
-    entry.setRevMapIdx(revMapIdx);
+    _referenceMappings.buildReverseMapping(entry, adds);
 }
 
 void
@@ -174,7 +147,7 @@ ReferenceAttribute::clearDoc(DocId doc)
 void
 ReferenceAttribute::removeOldGenerations(generation_t firstUsed)
 {
-    _reverseMapping.trimHoldLists(firstUsed);
+    _referenceMappings.trimHoldLists(firstUsed);
     _store.trimHoldLists(firstUsed);
     getGenerationHolder().trimHoldLists(firstUsed);
 }
@@ -182,9 +155,9 @@ ReferenceAttribute::removeOldGenerations(generation_t firstUsed)
 void
 ReferenceAttribute::onGenerationChange(generation_t generation)
 {
-    _reverseMapping.freeze();
+    _referenceMappings.freeze();
     _store.freeze();
-    _reverseMapping.transferHoldLists(generation - 1);
+    _referenceMappings.transferHoldLists(generation - 1);
     _store.transferHoldLists(generation - 1);
     getGenerationHolder().transferHoldLists(generation - 1);
 }
@@ -287,7 +260,7 @@ ReferenceAttribute::update(DocId doc, const GlobalId &gid)
     }
 }
 
-const ReferenceAttribute::Reference *
+const Reference *
 ReferenceAttribute::getReference(DocId doc)
 {
     assert(doc < _indices.size());
@@ -360,14 +333,7 @@ ReferenceAttribute::notifyGidToLidChange(const GlobalId &gid, DocId referencedLi
     EntryRef ref = _store.find(gid);
     if (ref.valid()) {
         const auto &entry = _store.get(ref);
-        uint32_t oldReferencedLid = entry.lid();
-        if (oldReferencedLid != referencedLid) {
-            if (oldReferencedLid != 0u && oldReferencedLid < _reverseMappingIndices.size()) {
-                _reverseMappingIndices[oldReferencedLid] = EntryRef();
-            }
-            entry.setLid(referencedLid);
-        }
-        syncReverseMappingIndices(entry);
+        _referenceMappings.notifyGidToLidChange(entry, referencedLid);
         commit();
     }
 }
@@ -383,7 +349,7 @@ ReferenceAttribute::populateReferencedLids()
         saver.foreach_key([&store,&mapper,this](EntryRef ref)
                           {   const Reference &entry = store.get(ref);
                               entry.setLid(mapper.mapGidToLid(entry.gid()));
-                              syncReverseMappingIndices(entry); });
+                              _referenceMappings.syncReverseMappingIndices(entry); });
     }
     commit();
 }
@@ -419,7 +385,7 @@ IMPLEMENT_IDENTIFIABLE_ABSTRACT(ReferenceAttribute, AttributeVector);
 
 namespace datastore {
 
-using Reference = attribute::ReferenceAttribute::Reference;
+using Reference = attribute::Reference;
 
 template class UniqueStore<Reference, EntryRefT<22>>;
 template class UniqueStoreBuilder<Reference, EntryRefT<22>>;
