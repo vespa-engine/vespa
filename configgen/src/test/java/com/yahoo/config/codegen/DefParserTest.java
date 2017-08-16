@@ -459,35 +459,42 @@ public class DefParserTest {
     }
 
     @Test
-    public void testNumberInNamespace() throws IOException, DefParser.DefParserException {
+    public void number_is_allowed_as_non_leading_char_in_namespace() throws IOException, DefParser.DefParserException {
         StringBuilder sb = createDefTemplate();
         String line = "namespace=a.b.c2\nfoo int\n";
         sb.append(line);
         createParser(sb.toString()).parse();
+    }
 
-        sb = createDefTemplate();
-        line = "namespace=2.a.b\n";
-        sb.append(line);
+    @Test
+    public void number_is_not_allowed_as_namespace_start_char() throws IOException, DefParser.DefParserException {
+        StringBuilder sb = createDefTemplate();
+        String line = "namespace=2.a.b";
+        sb.append(line).append("\n");
+        Class<?>  exceptionClass = DefParser.DefParserException.class;
+        try {
+            createParser(sb.toString()).parse();
+            fail("Didn't find expected exception of type " + exceptionClass);
+        } catch (Exception e) {
+            assertExceptionAndMessage(e, exceptionClass,
+                                      "Error when parsing line 3: " + line + "\n" + line);
+        }
+    }
+
+    @Test
+    public void number_is_not_allowed_as_leading_char_in_namespace_token() throws IOException, DefParser.DefParserException {
+        StringBuilder sb = createDefTemplate();
+        String line = "namespace=a.b.2c";
+        sb.append(line).append("\n");
         Class<?> exceptionClass = DefParser.DefParserException.class;
         try {
             createParser(sb.toString()).parse();
             fail("Didn't find expected exception of type " + exceptionClass);
         } catch (Exception e) {
             assertExceptionAndMessage(e, exceptionClass,
-                    "Error when parsing line 3: " + line + "namespace=2.a.b");
+                                      "Error when parsing line 3: " + line + "\n" + line);
         }
 
-        sb = createDefTemplate();
-        line = "namespace=a.b.2c\n";
-        sb.append(line);
-        exceptionClass = DefParser.DefParserException.class;
-        try {
-            createParser(sb.toString()).parse();
-            fail("Didn't find expected exception of type " + exceptionClass);
-        } catch (Exception e) {
-            assertExceptionAndMessage(e, exceptionClass,
-                    "Error when parsing line 3: " + line + "namespace=a.b.2c");
-        }
     }
 
     @Test
