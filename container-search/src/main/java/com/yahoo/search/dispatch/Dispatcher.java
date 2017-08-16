@@ -117,14 +117,14 @@ public class Dispatcher extends AbstractComponent {
         }
 
         Query query = result.getQuery();
-        byte[] serializedSlime = BinaryFormat.encode(toSlime(summaryClass, query.getSessionId(false), hits));
+        byte[] serializedSlime = BinaryFormat.encode(toSlime(query.getRanking().getProfile(), summaryClass, query.getSessionId(false), hits));
         double timeoutSeconds = ((double)query.getTimeLeft()-3.0)/1000.0;
         Compressor.Compression compressionResult = compressor.compress(compression, serializedSlime);
         client.getDocsums(hits, node, compressionResult.type(),
                           serializedSlime.length, compressionResult.data(), responseReceiver, timeoutSeconds);
     }
 
-    static private Slime toSlime(String summaryClass, SessionId sessionId, List<FastHit> hits) {
+    static private Slime toSlime(String rankProfile, String summaryClass, SessionId sessionId, List<FastHit> hits) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         if (summaryClass != null) {
@@ -132,6 +132,9 @@ public class Dispatcher extends AbstractComponent {
         }
         if (sessionId != null) {
             root.setData("sessionid", sessionId.asUtf8String().getBytes());
+        }
+        if (rankProfile != null) {
+            root.setString("ranking", rankProfile);
         }
         Cursor gids = root.setArray("gids");
         for (FastHit hit : hits) {
