@@ -67,6 +67,8 @@ public:
     // Setup mapping after load
     void buildReverseMapping(const Reference &entry, const std::vector<ReverseMapping::KeyDataType> &adds);
 
+    MemoryUsage getMemoryUsage();
+
     // Reader API, reader must hold generation guard
     template <typename FunctionType>
     void

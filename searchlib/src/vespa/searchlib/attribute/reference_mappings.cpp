@@ -127,4 +127,13 @@ ReferenceMappings::shrink(uint32_t docIdLimit)
     _referencedLids.shrink(docIdLimit);
 }
 
+MemoryUsage
+ReferenceMappings::getMemoryUsage()
+{
+    MemoryUsage usage = _reverseMapping.getMemoryUsage();
+    usage.merge(_reverseMappingIndices.getMemoryUsage());
+    usage.merge(_referencedLids.getMemoryUsage());
+    return usage;
+}
+
 }

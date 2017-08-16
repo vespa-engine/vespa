@@ -179,7 +179,9 @@ ReferenceAttribute::onUpdateStat()
 {
     MemoryUsage total = _store.getMemoryUsage();
     _cachedUniqueStoreMemoryUsage = total;
+    total.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
     total.merge(_indices.getMemoryUsage());
+    total.merge(_referenceMappings.getMemoryUsage());
     updateStatistics(getTotalValueCount(), getUniqueValueCount(),
                      total.allocatedBytes(),
                      total.usedBytes(), total.deadBytes(), total.allocatedBytesOnHold());
