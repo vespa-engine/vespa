@@ -340,8 +340,7 @@ ReferenceAttribute::populateReferencedLids()
         saver.foreach_key([&store,&mapper,this](EntryRef ref)
                           {   const Reference &entry = store.get(ref);
                               entry.setLid(mapper.mapGidToLid(entry.gid()));
-                              _referenceMappings.syncReverseMappingIndices(entry);
-                              _referenceMappings.syncForwardMapping(entry);
+                              _referenceMappings.syncMappings(entry);
                           });
     }
     commit();

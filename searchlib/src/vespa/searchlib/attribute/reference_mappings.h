@@ -33,6 +33,9 @@ class ReferenceMappings
     // vector containing referenced lid given referencing lid
     RcuVectorBase<uint32_t> _referencedLids;
 
+    void syncForwardMapping(const Reference &entry);
+    void syncReverseMappingIndices(const Reference &entry);
+
 public:
     using ReferencedLids = vespalib::ConstArrayRef<uint32_t>;
 
@@ -51,17 +54,15 @@ public:
 
     // Handle mapping changes
     void notifyGidToLidChange(const Reference &entry, uint32_t referencedLid);
-    void syncReverseMappingIndices(const Reference &entry);
     void removeReverseMapping(const Reference &entry, uint32_t lid);
     void addReverseMapping(const Reference &entry, uint32_t lid);
+    void syncMappings(const Reference &entry);
 
     // Maintain size of mapping from lid to referenced lid
-    void onAddDocs(uint32_t limit);
+    void onAddDocs(uint32_t docIdLimit);
     void addDoc();
-    void onLoad(uint32_t numDocs);
-    void shrink(uint32_t limit);
-
-    void syncForwardMapping(const Reference &entry);
+    void onLoad(uint32_t docIdLimit);
+    void shrink(uint32_t docIdLimit);
 
     // Setup mapping after load
     void buildReverseMapping(const Reference &entry, const std::vector<ReverseMapping::KeyDataType> &adds);

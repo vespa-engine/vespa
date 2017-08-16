@@ -50,6 +50,13 @@ ReferenceMappings::syncReverseMappingIndices(const Reference &entry)
 }
 
 void
+ReferenceMappings::syncMappings(const Reference &entry)
+{
+    syncReverseMappingIndices(entry);
+    syncForwardMapping(entry);
+}
+
+void
 ReferenceMappings::removeReverseMapping(const Reference &entry, uint32_t lid)
 {
     EntryRef revMapIdx = entry.revMapIdx();
@@ -96,9 +103,9 @@ ReferenceMappings::notifyGidToLidChange(const Reference &entry, uint32_t referen
 }
 
 void
-ReferenceMappings::onAddDocs(uint32_t limit)
+ReferenceMappings::onAddDocs(uint32_t docIdLimit)
 {
-    _referencedLids.reserve(limit);
+    _referencedLids.reserve(docIdLimit);
 }
 
 void
@@ -108,16 +115,16 @@ ReferenceMappings::addDoc()
 }
 
 void
-ReferenceMappings::onLoad(uint32_t numDocs)
+ReferenceMappings::onLoad(uint32_t docIdLimit)
 {
     _referencedLids.clear();
-    _referencedLids.unsafe_reserve(numDocs);
+    _referencedLids.unsafe_reserve(docIdLimit);
 }
 
 void
-ReferenceMappings::shrink(uint32_t limit)
+ReferenceMappings::shrink(uint32_t docIdLimit)
 {
-    _referencedLids.shrink(limit);
+    _referencedLids.shrink(docIdLimit);
 }
 
 }
