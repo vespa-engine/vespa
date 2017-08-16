@@ -6,7 +6,7 @@
 #include <vespa/searchlib/fef/blueprintfactory.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
-#include <vespa/searchlib/fef/test/plugin/sum.h>
+#include <vespa/searchlib/fef/test/plugin/unbox.h>
 #include <vespa/searchlib/fef/rank_program.h>
 #include <vespa/searchlib/fef/verify_feature.h>
 #include <vespa/eval/eval/value_type.h>
@@ -73,11 +73,11 @@ struct Fixture {
     IndexEnvironment indexEnv;
 
     explicit Fixture() {
-        factory.addPrototype(Blueprint::SP(new ValueBlueprint()));
-        factory.addPrototype(Blueprint::SP(new ProxyBlueprint("box",         Blueprint::AcceptInput::NUMBER, true)));
-        factory.addPrototype(Blueprint::SP(new ProxyBlueprint("maybe_box",   Blueprint::AcceptInput::ANY,    true)));
-        factory.addPrototype(Blueprint::SP(new ProxyBlueprint("unbox",       Blueprint::AcceptInput::OBJECT, false)));
-        factory.addPrototype(Blueprint::SP(new ProxyBlueprint("maybe_unbox", Blueprint::AcceptInput::ANY,    false)));
+        factory.addPrototype(std::make_shared<ValueBlueprint>());
+        factory.addPrototype(std::make_shared<UnboxBlueprint>());
+        factory.addPrototype(std::make_shared<ProxyBlueprint>("box",         Blueprint::AcceptInput::NUMBER, true));
+        factory.addPrototype(std::make_shared<ProxyBlueprint>("maybe_box",   Blueprint::AcceptInput::ANY,    true));
+        factory.addPrototype(std::make_shared<ProxyBlueprint>("maybe_unbox", Blueprint::AcceptInput::ANY,    false));
     }
 
     double eval(const vespalib::string &feature) {
@@ -106,7 +106,7 @@ TEST_F("require that values can be boxed and unboxed", Fixture()) {
     EXPECT_EQUAL(3.0, f1.eval("box(value(3))"));
     EXPECT_EQUAL(0.0, f1.eval("box(value(3)).was_object"));
     EXPECT_EQUAL(3.0, f1.eval("unbox(box(value(3)))"));
-    EXPECT_EQUAL(1.0, f1.eval("unbox(box(value(3))).was_object"));
+    EXPECT_EQUAL(1.0, f1.eval("maybe_unbox(box(value(3))).was_object"));
     EXPECT_EQUAL(3.0, f1.eval("box(unbox(box(value(3))))"));
     EXPECT_EQUAL(0.0, f1.eval("box(unbox(box(value(3)))).was_object"));
 }

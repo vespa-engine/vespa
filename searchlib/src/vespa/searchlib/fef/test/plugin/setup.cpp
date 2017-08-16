@@ -7,23 +7,20 @@
 #include "setup.h"
 #include "staticrank.h"
 #include "sum.h"
-#include <vespa/searchlib/fef/blueprint.h>
+#include "unbox.h"
 
-namespace search {
-namespace fef {
-namespace test {
+namespace search::fef::test {
 
 void setup_fef_test_plugin(IBlueprintRegistry & registry)
 {
     // register blueprints
-    registry.addPrototype(Blueprint::SP(new DoubleBlueprint()));
-    registry.addPrototype(Blueprint::SP(new SumBlueprint()));
-    registry.addPrototype(Blueprint::SP(new StaticRankBlueprint()));
-    registry.addPrototype(Blueprint::SP(new ChainBlueprint()));
-    registry.addPrototype(Blueprint::SP(new CfgValueBlueprint()));
-    registry.addPrototype(Blueprint::SP(new QueryBlueprint()));
+    registry.addPrototype(std::make_shared<DoubleBlueprint>());
+    registry.addPrototype(std::make_shared<SumBlueprint>());
+    registry.addPrototype(std::make_shared<StaticRankBlueprint>());
+    registry.addPrototype(std::make_shared<ChainBlueprint>());
+    registry.addPrototype(std::make_shared<CfgValueBlueprint>());
+    registry.addPrototype(std::make_shared<QueryBlueprint>());
+    registry.addPrototype(std::make_shared<UnboxBlueprint>());
 }
 
-} // namespace test
-} // namespace fef
-} // namespace search
+} // namespace search::fef::test
