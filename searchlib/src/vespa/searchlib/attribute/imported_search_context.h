@@ -4,6 +4,7 @@
 
 #include "attributevector.h"
 #include <vespa/searchcommon/attribute/i_search_context.h>
+#include <vespa/vespalib/util/arrayref.h>
 #include <memory>
 
 namespace search {
@@ -27,10 +28,12 @@ class SearchContextParams;
  * considered a match.
  */
 class ImportedSearchContext : public ISearchContext {
+    using ReferencedLids = vespalib::ConstArrayRef<uint32_t>;
     const ImportedAttributeVector&                  _imported_attribute;
     const ReferenceAttribute&                       _reference_attribute;
     const AttributeVector&                          _target_attribute;
     std::unique_ptr<AttributeVector::SearchContext> _target_search_context;
+    ReferencedLids                                  _referencedLids;
 public:
     ImportedSearchContext(std::unique_ptr<QueryTermSimple> term,
                           const SearchContextParams& params,

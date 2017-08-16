@@ -37,6 +37,7 @@ public:
                                              std::less<uint32_t>,
                                              btree::BTreeDefaultTraits,
                                              btree::NoAggrCalc>;
+    using ReferencedLids = ReferenceMappings::ReferencedLids;
 private:
     ReferenceStore _store;
     ReferenceStoreIndices _indices;
@@ -73,7 +74,8 @@ public:
     const Reference *getReference(DocId doc);
     void setGidToLidMapperFactory(std::shared_ptr<IGidToLidMapperFactory> gidToLidMapperFactory);
     std::shared_ptr<IGidToLidMapperFactory> getGidToLidMapperFactory() const { return _gidToLidMapperFactory; }
-    DocId getReferencedLid(DocId doc) const;
+    ReferencedLids getReferencedLids() const { return _referenceMappings.getReferencedLids(); }
+    DocId getReferencedLid(DocId doc) const { return _referenceMappings.getReferencedLid(doc); }
     void notifyGidToLidChange(const GlobalId &gid, DocId referencedLid);
     void populateReferencedLids();
     virtual void clearDocs(DocId lidLow, DocId lidLimit) override;
