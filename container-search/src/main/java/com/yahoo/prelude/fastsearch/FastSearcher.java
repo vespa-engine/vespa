@@ -56,9 +56,6 @@ public class FastSearcher extends VespaBackEndSearcher {
     /** If this is turned on this will make search queries directly to the local search node when possible */
     private final static CompoundName dispatchDirect = new CompoundName("dispatch.direct");
 
-    /** If this is turned on this will fill summaries by dispatching directly to search nodes over RPC */
-    private final static CompoundName dispatchSummaries = new CompoundName("dispatch.summaries");
-
     /** The compression method which will be used with rpc dispatch. "lz4" (default) and "none" is supported. */
     private final static CompoundName dispatchCompression = new CompoundName("dispatch.compression");
 
@@ -265,7 +262,7 @@ public class FastSearcher extends VespaBackEndSearcher {
         Query query = result.getQuery();
         traceQuery(getName(), "fill", query, query.getOffset(), query.getHits(), 2, quotedSummaryClass(summaryClass));
 
-        if (query.properties().getBoolean(dispatchSummaries)) {
+        if (wantsRPCSummarFill(query)) {
             CompressionType compression =
                 CompressionType.valueOf(query.properties().getString(dispatchCompression, "LZ4").toUpperCase());
             fillSDDocName(result);
@@ -481,31 +478,6 @@ public class FastSearcher extends VespaBackEndSearcher {
             getLogger().finest("got " + receivedPackets.length + "docsumPackets");
 
         return convertBasicPackets(receivedPackets);
-    }
-
-    /**
-     * Returns whether we need to send the query when fetching summaries.
-     * This is necessary if the query requests summary features or dynamic snippeting
-     */
-    private boolean summaryNeedsQuery(Query query) {
-        if (query.getRanking().getQueryCache()) return false;  // Query is cached in backend
-
-        DocumentDatabase documentDb = getDocumentDatabase(query);
-
-        // Needed to generate a dynamic summary?
-        DocsumDefinition docsumDefinition = documentDb.getDocsumDefinitionSet().getDocsumDefinition(query.getPresentation().getSummary());
-        if (docsumDefinition == null) return true; // stay safe
-        if (docsumDefinition.isDynamic()) return true;
-
-        // Needed to generate ranking features?
-        RankProfile rankProfile = documentDb.rankProfiles().get(query.getRanking().getProfile());
-        if (rankProfile == null) return true; // stay safe
-        if (rankProfile.hasSummaryFeatures()) return true;
-        if (query.getRanking().getListFeatures()) return true;
-
-        // (Don't just add other checks here as there is a return false above)
-
-        return false;
     }
 
     public String toString() {
