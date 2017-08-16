@@ -18,8 +18,13 @@ public class DefParser {
 
     static final Pattern commentPattern = Pattern.compile("^\\s*#+\\s*(.*?)\\s*$");
     public static final Pattern versionPattern = Pattern.compile("^(version\\s*=\\s*)([0-9][0-9-]*)$");
-    // Namespace must start with a letter, since Java (Java language Spec, section  3.8) and C++ identifiers cannot start with a digit
-    public static final Pattern namespacePattern = Pattern.compile("^(namespace\\s*=\\s*)(([a-z][a-z0-9_]*)+([.][a-z][a-z0-9_]*)*)$");
+    // Namespace/package must start with a letter, since Java (Java language Spec, section  3.8) and C++ identifiers cannot start with a digit
+    public static final Pattern namespacePattern = getNamespacePattern("namespace");
+    public static final Pattern packagePattern = getNamespacePattern("package");
+
+    private static Pattern getNamespacePattern(String directive) {
+        return Pattern.compile("^(" + directive + "\\s*=\\s*)(([a-z][a-z0-9_]*)+([.][a-z][a-z0-9_]*)*)$");
+    }
 
     private final BufferedReader reader;
     private final String name;
@@ -129,6 +134,12 @@ public class DefParser {
             nd.addNormalizedLine(line);
             return;
         }
+        Matcher packageMatcher = packagePattern.matcher(line);
+        if (packageMatcher.matches()) {
+            parsePackageLine(packageMatcher.group(2));
+            nd.addNormalizedLine(line);
+            return;
+        }
         // Only add lines that are not version, namespace or comment lines
         nd.addNormalizedLine(line);
         DefLine defLine = new DefLine(line);
@@ -153,6 +164,12 @@ public class DefParser {
         if (namespace.startsWith(DEFAULT_PACKAGE_PREFIX))
             throw new IllegalArgumentException("Please use 'package' instead of 'namespace'.");
         root.setNamespace(namespace);
+        root.setComment(comment);
+        comment = "";
+    }
+
+    private void parsePackageLine(String defPackage) {
+        root.setPackage(defPackage);
         root.setComment(comment);
         comment = "";
     }

@@ -24,6 +24,14 @@ public class DefParserNamespaceTest {
         assertThat(root.getNamespace(), is("myproject.config"));
     }
 
+    @Test
+    public void package_is_used_as_namespace_when_no_namespace_is_given() {
+        String PACKAGE = "com.github.myproject";
+        DefParser parser = createParser("package=" + PACKAGE + "\n");
+        CNode root = parser.getTree();
+        assertThat(root.getNamespace(), is(PACKAGE));
+    }
+
     @Test(expected = CodegenRuntimeException.class)
     public void uppercase_chars_are_not_allowed() {
         createParser("version=1\nnamespace=Foo\na string\n").getTree();

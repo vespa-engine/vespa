@@ -3,10 +3,12 @@ package com.yahoo.config.codegen;
 
 import java.util.StringTokenizer;
 
+import static com.yahoo.config.codegen.DefParser.DEFAULT_PACKAGE_PREFIX;
+
 /**
  * Abstract superclass for all nodes representing a definition file.
  *
- * @author <a href="gv@yahoo-inc.com">G. Voldengen</a>
+ * @author gjoranv
  */
 public abstract class CNode {
 
@@ -20,8 +22,10 @@ public abstract class CNode {
 
     // TODO: remove! Only set for the root node, and root.getName() returns the same thing!
     String defName = null;
+
     String defVersion = "";
     String defNamespace = null;
+    String defPackage = null;
     String defMd5 = "MISSING MD5";
     String comment = "";
 
@@ -78,12 +82,20 @@ public abstract class CNode {
     }
 
     public String getNamespace() {
-        return defNamespace;
+        if (defNamespace != null) return defNamespace;
+        if (defPackage != null) return defPackage;
+        return null;
     }
 
     void setNamespace(String namespace) {
         defNamespace = namespace;
     }
+
+    public String getPackage() {
+        return defPackage;
+    }
+
+    void setPackage(String defPackage) { this.defPackage = defPackage; }
 
     public String getComment() {
         return comment;
@@ -155,7 +167,11 @@ public abstract class CNode {
 
     @Override
     public String toString() {
-        return getNamespace()+"."+getName()+","+getVersion();
+        return "CNode{" +
+                "namespace='" + defNamespace + '\'' +
+                ", package='" + defPackage + '\'' +
+                ", name='" + name + '\'' +
+                ", version='" + defVersion + '\'' +
+                '}';
     }
-
 }

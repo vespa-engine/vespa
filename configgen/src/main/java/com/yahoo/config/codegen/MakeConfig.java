@@ -18,11 +18,11 @@ public class MakeConfig {
         classBuilder = createClassBuilder(root, nd, properties);
     }
 
-    public static ClassBuilder createClassBuilder(InnerCNode root, NormalizedDefinition nd, MakeConfigProperties prop) {
-        if (prop.language.equals("cppng") || prop.language.equals("cpp"))
-            return new CppClassBuilder(root, nd, prop.destDir, prop.dirInRoot);
+    public static ClassBuilder createClassBuilder(InnerCNode root, NormalizedDefinition nd, MakeConfigProperties properties) {
+        if (isCpp(properties))
+            return new CppClassBuilder(root, nd, properties.destDir, properties.dirInRoot);
         else
-            return new JavaClassBuilder(root, nd, prop.destDir, prop.javaPackagePrefix);
+            return new JavaClassBuilder(root, nd, properties.destDir, properties.javaPackagePrefix);
     }
 
     public static boolean makeConfig(MakeConfigProperties properties) throws FileNotFoundException {
@@ -31,7 +31,7 @@ public class MakeConfig {
             if (name.endsWith(".def")) name = name.substring(0, name.length() - 4);
             DefParser parser = new DefParser(name, new FileReader(specFile));
             InnerCNode configRoot = parser.getTree();
-            checkNamespace(name, configRoot);
+            checkNamespaceAndPacakge(name, configRoot, isCpp(properties));
             if (configRoot != null) {
                 MakeConfig mc = new MakeConfig(configRoot, parser.getNormalizedDefinition(), properties);
                 mc.buildClasses();
@@ -73,9 +73,15 @@ public class MakeConfig {
         }
     }
 
-    private static void checkNamespace(String name, InnerCNode configRoot) {
-        if (configRoot.defNamespace == null)
+   private static void checkNamespaceAndPacakge(String name, InnerCNode configRoot, boolean isCpp) {
+        if (isCpp && configRoot.defNamespace == null)
             throw new IllegalArgumentException("In config definition '" + name + "': A namespace is required");
+       if (configRoot.defNamespace == null && configRoot.defPackage == null)
+           throw new IllegalArgumentException("In config definition '" + name + "': A package (or namespace) is required");
+    }
+
+    private static boolean isCpp(MakeConfigProperties properties) {
+        return (properties.language.equals("cppng") || properties.language.equals("cpp"));
     }
 
     // The Exceptions class below is copied from vespajlib/com.yahoo.protect.Exceptions

@@ -24,12 +24,12 @@ class JavaClassBuilder(
   import JavaClassBuilder._
 
   val packagePrefix = if (rawPackagePrefix != null) rawPackagePrefix else DEFAULT_PACKAGE_PREFIX
-  val javaPackage = packagePrefix + root.getNamespace
+  val javaPackage = if (root.getPackage != null) root.getPackage else packagePrefix + root.getNamespace
   val className = createClassName(root.getName)
 
   override def createConfigClasses() {
     try {
-      val outFile = new File(getDestPath(destDir, root.getNamespace), className + ".java")
+      val outFile = new File(getDestPath(destDir, javaPackage), className + ".java")
       var out: PrintStream = null
       try {
         out = new PrintStream(new FileOutputStream(outFile))
@@ -127,12 +127,12 @@ class JavaClassBuilder(
 
   /**
     * @param rootDir  The root directory for the destination path.
-    * @param namespace  The namespace from the def file
+    * @param javaPackage  The java package
     * @return the destination path for the generated config file, including the given rootDir.
     */
-  private def getDestPath(rootDir: File, namespace: String): File = {
+  private def getDestPath(rootDir: File, javaPackage: String): File = {
     var dir: File = rootDir
-    val subDirs: Array[String] = (packagePrefix + namespace).split("""\.""")
+    val subDirs: Array[String] = javaPackage.split("""\.""")
     for (subDir <- subDirs) {
       dir = new File(dir, subDir)
       this.synchronized {
