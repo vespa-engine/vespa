@@ -144,9 +144,9 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         return (fs == FieldSet.ALL) || ((fs == FieldSet.FAST_ACCESS) && attribute.isFastAccess());
     }
 
-    private AttributesConfig.Attribute.Builder getConfig(Attribute attribute, boolean imported) {
+    private AttributesConfig.Attribute.Builder getConfig(String attrName, Attribute attribute, boolean imported) {
         AttributesConfig.Attribute.Builder aaB = new AttributesConfig.Attribute.Builder()
-                .name(attribute.getName())
+                .name(attrName)
                 .datatype(AttributesConfig.Attribute.Datatype.Enum.valueOf(attribute.getType().getExportAttributeTypeName()))
                 .collectiontype(AttributesConfig.Attribute.Collectiontype.Enum.valueOf(attribute.getCollectionType().getName()));
         if (attribute.isRemoveIfZero()) {
@@ -192,12 +192,12 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
     public void getConfig(AttributesConfig.Builder builder, FieldSet fs) {
         for (Attribute attribute : attributes.values()) {
             if (isAttributeInFieldSet(attribute, fs)) {
-                builder.attribute(getConfig(attribute, false));
+                builder.attribute(getConfig(attribute.getName(), attribute, false));
             }
         }
         if (fs == FieldSet.ALL) {
-            for (Attribute attribute : importedAttributes.values()) {
-                builder.attribute(getConfig(attribute, true));
+            for (Map.Entry<String, Attribute> entry : importedAttributes.entrySet()) {
+                builder.attribute(getConfig(entry.getKey(), entry.getValue(), true));
             }
         }
     }
