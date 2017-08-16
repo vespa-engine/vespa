@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "docsumformat.h"
 #include "summaryfeaturesdfw.h"
 #include "docsumstate.h"
 #include <vespa/searchlib/common/packets.h>
@@ -31,11 +30,8 @@ static vespalib::string _G_cached("vespa.summaryFeatures.cached");
 static vespalib::Memory _M_cached("vespa.summaryFeatures.cached");
 
 void
-SummaryFeaturesDFW::insertField(uint32_t docid,
-                                GeneralResult *,
-                                GetDocsumsState *state,
-                                ResType type,
-                                vespalib::slime::Inserter &target)
+SummaryFeaturesDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState *state,
+                                ResType type, vespalib::slime::Inserter &target)
 {
     if ( ! state->_summaryFeatures) {
         state->_callback.FillSummaryFeatures(state, _env);
@@ -91,24 +87,6 @@ void FeaturesDFW::featureDump(vespalib::JSONStringer & json, const vespalib::str
         json.appendNull();
     } else {
         json.appendDouble(feature);
-    }
-}
-
-
-uint32_t
-SummaryFeaturesDFW::writeString(const vespalib::stringref & str, ResType type, search::RawBuf * target)
-{
-    switch (type) {
-    case RES_STRING:
-    case RES_DATA:
-        return DocsumFormat::addShortData(*target, str.c_str(), str.size());
-    case RES_FEATUREDATA:
-    case RES_LONG_STRING:
-    case RES_LONG_DATA:
-        return DocsumFormat::addLongData(*target, str.c_str(), str.size());
-    default:
-        LOG(error, "unhandled type %u in writeString()", type);
-        return DocsumFormat::addEmpty(type, *target);
     }
 }
 

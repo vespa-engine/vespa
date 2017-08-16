@@ -2,7 +2,6 @@
 
 #include "docsumfieldwriter.h"
 #include "idocsumenvironment.h"
-#include "docsumformat.h"
 #include "docsumstate.h"
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/documentlocations.h>
@@ -12,8 +11,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.docsumfieldwriter");
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
@@ -159,7 +157,4 @@ CopyDFW::insertField(uint32_t /*docid*/,
     }
 }
 
-//--------------------------------------------------------------------------
-
-}  // namespace docsummary
-}  // namespace search
+}

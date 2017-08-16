@@ -1,21 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "docsumwriter.h"
-#include "docsumformat.h"
 #include "docsumstate.h"
 #include <vespa/searchlib/common/transport.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/fastlib/text/normwordfolder.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.docsumwriter");
 
 using namespace vespalib::slime::convenience;
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 uint32_t
 IDocsumWriter::slime2RawBuf(const Slime & slime, RawBuf & buf)
@@ -316,6 +313,4 @@ DynamicDocsumWriter::WriteDocsum(uint32_t docid,
     return slime2RawBuf(slime, *target);
 }
 
-
-} // namespace search::docsummary
-} // namespace search
+}

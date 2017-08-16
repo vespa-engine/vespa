@@ -2,12 +2,9 @@
 
 #pragma once
 
-#include <map>
-#include <string>
-#include <vespa/searchsummary/docsummary/summaryfeaturesdfw.h>
+#include "summaryfeaturesdfw.h"
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 class RankFeaturesDFW : public FeaturesDFW
 {
@@ -19,16 +16,11 @@ private:
 
 public:
     RankFeaturesDFW();
-    virtual ~RankFeaturesDFW();
+    ~RankFeaturesDFW();
     void init(IDocsumEnvironment * env);
-    virtual bool IsGenerated() const override { return true; }
-    virtual void insertField(uint32_t docid,
-                             GeneralResult *gres,
-                             GetDocsumsState *state,
-                             ResType type,
-                             vespalib::slime::Inserter &target) override;
+    bool IsGenerated() const override { return true; }
+    void insertField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state,
+                     ResType type, vespalib::slime::Inserter &target) override;
 };
 
 }
-}
-
