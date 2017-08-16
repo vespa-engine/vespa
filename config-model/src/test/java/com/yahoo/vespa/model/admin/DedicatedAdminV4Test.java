@@ -82,7 +82,7 @@ public class DedicatedAdminV4Test {
     }
 
     @Test
-    public void testModelBuildingWithConfiguredMinSlobrokCountPerCluster() throws IOException, SAXException {
+    public void testThatThereAre2SlobroksPerContainerCluster() throws IOException, SAXException {
         String hosts = "<hosts>"
                 + "  <host name=\"myhost0\">"
                 + "    <alias>node0</alias>"
@@ -98,56 +98,36 @@ public class DedicatedAdminV4Test {
                 + "  </host>"
                 + "</hosts>";
 
-        {
-            VespaModel model = createModel(hosts, servicesWithMinSlobroksPerCluster(1));
-            assertEquals(4, model.getHosts().size());
+        String servicesWith3JdiscClusters = "<services>" +
+                    "  <admin version='4.0'>" +
+                    "    <nodes count='1' dedicated='true' />" +
+                    "  </admin>" +
+                    "  <jdisc id='a' version='1.0'>" +
+                    "    <search />" +
+                    "    <nodes count='2' dedicated='true' />" +
+                    "  </jdisc>" +
+                    "  <jdisc id='b' version='1.0'>" +
+                    "    <search />" +
+                    "    <nodes count='1' dedicated='true' />" +
+                    "  </jdisc>" +
+                    "  <jdisc id='c' version='1.0'>" +
+                    "    <search />" +
+                    "    <nodes count='1' dedicated='true' />" +
+                    "  </jdisc>" +
+                    "</services>";
 
-            // 3 slobroks, 1 per cluster
-            assertHostContainsServices(model, "hosts/myhost0",
-                                       "slobrok", "logd", "filedistributorservice", "logserver", "qrserver");
-            assertHostContainsServices(model, "hosts/myhost1",
-                                       "logd", "filedistributorservice", "qrserver");
-            assertHostContainsServices(model, "hosts/myhost2",
-                                       "slobrok", "logd", "filedistributorservice", "qrserver");
-            assertHostContainsServices(model, "hosts/myhost3",
-                                       "slobrok", "logd", "filedistributorservice", "qrserver");
-        }
+        VespaModel model = createModel(hosts, servicesWith3JdiscClusters);
+        assertEquals(4, model.getHosts().size());
 
-        {
-            VespaModel model = createModel(hosts, servicesWithMinSlobroksPerCluster(2));
-            assertEquals(4, model.getHosts().size());
-
-            // 4 slobroks, 2 per cluster where possible
-            assertHostContainsServices(model, "hosts/myhost0",
-                                       "slobrok", "logd", "filedistributorservice", "logserver", "qrserver");
-            assertHostContainsServices(model, "hosts/myhost1",
-                                       "slobrok", "logd", "filedistributorservice", "qrserver");
-            assertHostContainsServices(model, "hosts/myhost2",
-                                       "slobrok", "logd", "filedistributorservice", "qrserver");
-            assertHostContainsServices(model, "hosts/myhost3",
-                                       "slobrok", "logd", "filedistributorservice", "qrserver");
-        }
-    }
-
-    private String servicesWithMinSlobroksPerCluster(int count) {
-        return "<services>" +
-                "  <admin version='4.0'>" +
-                "    <minSlobroksPerCluster>" + count + "</minSlobroksPerCluster>" +
-                "    <nodes count='1' dedicated='true' />" +
-                "  </admin>" +
-                "  <jdisc id='a' version='1.0'>" +
-                "    <search />" +
-                "    <nodes count='2' dedicated='true' />" +
-                "  </jdisc>" +
-                "  <jdisc id='b' version='1.0'>" +
-                "    <search />" +
-                "    <nodes count='1' dedicated='true' />" +
-                "  </jdisc>" +
-                "  <jdisc id='c' version='1.0'>" +
-                "    <search />" +
-                "    <nodes count='1' dedicated='true' />" +
-                "  </jdisc>" +
-                "</services>";
+        // 4 slobroks, 2 per cluster where possible
+        assertHostContainsServices(model, "hosts/myhost0",
+                                   "slobrok", "logd", "filedistributorservice", "logserver", "qrserver");
+        assertHostContainsServices(model, "hosts/myhost1",
+                                   "slobrok", "logd", "filedistributorservice", "qrserver");
+        assertHostContainsServices(model, "hosts/myhost2",
+                                   "slobrok", "logd", "filedistributorservice", "qrserver");
+        assertHostContainsServices(model, "hosts/myhost3",
+                                   "slobrok", "logd", "filedistributorservice", "qrserver");
     }
 
     private Set<String> serviceNames(VespaModel model, String hostname) {
