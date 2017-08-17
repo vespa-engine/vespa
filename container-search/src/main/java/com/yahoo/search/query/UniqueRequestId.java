@@ -4,6 +4,12 @@ import com.yahoo.container.Server;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * A query id which is unique across this cluster - consisting of
+ * container runtime id + timestamp + serial.
+ *
+ * @author bratseth
+ */
 public class UniqueRequestId {
 
     private static final String serverId = Server.get().getServerDiscriminator();

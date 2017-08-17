@@ -3,13 +3,10 @@ package com.yahoo.search.query;
 
 import com.yahoo.text.Utf8String;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 /**
- * A query id which is unique across this cluster - consisting of
- * container runtime id + timestamp + serial.
+ * A id which is unique across this cluster + the extra differentiator.
  *
- * @author bratseth
+ * @author baldersheim
  */
 public class SessionId {
 
