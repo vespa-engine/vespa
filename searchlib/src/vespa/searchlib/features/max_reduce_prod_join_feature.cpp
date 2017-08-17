@@ -49,6 +49,20 @@ RawExecutor<BaseType>::RawExecutor(const IAttributeVector *attribute,
     _queryVector.syncMap();
 }
 
+template <typename A, typename V>
+feature_t maxProduct(const A& array, size_t count, const V& query)
+{
+    feature_t val = -DBL_MAX;
+    for (size_t i = 0; i < count; ++i) {
+        typename IntegerVector::HashMap::const_iterator itr = query.getDimMap().find(array[i].value());
+        if (itr != query.getDimMap().end()) {
+            feature_t v = itr->second; // weight from attribute is assumed to be 1.0
+            if (v > val) val = v;
+        }
+    }
+    return val == -DBL_MAX ? 0.0 : val;
+}
+
 template <typename BaseType>
 void
 RawExecutor<BaseType>::execute(uint32_t docId)
@@ -56,18 +70,7 @@ RawExecutor<BaseType>::execute(uint32_t docId)
     const AT *values(nullptr);
     const A *iattr = dynamic_cast<const A *>(_attribute);
     size_t count = iattr->getRawValues(docId, values);
-
-    feature_t val = -DBL_MAX;
-    if (!_queryVector.getDimMap().empty()) {
-        for (size_t i = 0; i < count; ++i) {
-            typename IntegerVector::HashMap::const_iterator itr = _queryVector.getDimMap().find(values[i].value());
-            if (itr != _queryVector.getDimMap().end()) {
-                feature_t v = itr->second; // weight from attribute is assumed to be 1.0
-                if (v > val) val = v;
-            }
-        }
-    }
-    outputs().set_number(0, val == -DBL_MAX ? 0.0 : val);
+    outputs().set_number(0, maxProduct(values, count, _queryVector));
 }
 
 /**
@@ -76,7 +79,7 @@ RawExecutor<BaseType>::execute(uint32_t docId)
 template <typename BaseType>
 class BufferedExecutor : public RawExecutor<BaseType> {
 private:
-    IntegerContent _buffer;
+    WeightedIntegerContent _buffer;
 
 public:
     BufferedExecutor(const IAttributeVector * attribute, const IntegerVector & queryVector);
@@ -90,20 +93,14 @@ BufferedExecutor<BaseType>::BufferedExecutor(const IAttributeVector *attribute, 
 {
 }
 
+
 template <typename BaseType>
 void
 BufferedExecutor<BaseType>::execute(uint32_t docId)
 {
-    feature_t val = -DBL_MAX;
     _buffer.fill(*RawExecutor<BaseType>::_attribute, docId);
-    for (size_t i = 0; i < _buffer.size(); ++i) {
-        typename IntegerVector::HashMap::const_iterator itr = RawExecutor<BaseType>::_queryVector.getDimMap().find(_buffer[i]);
-        if (itr != RawExecutor<BaseType>::_queryVector.getDimMap().end()) {
-            feature_t v = itr->second; // weight from attribute is assumed to be 1.0
-            if (v > val) val = v;
-        }
-    }
-    RawExecutor<BaseType>::outputs().set_number(0, val == -DBL_MAX ? 0.0 : val);
+    feature_t val = maxProduct(_buffer, _buffer.size(), RawExecutor<BaseType>::_queryVector);
+    RawExecutor<BaseType>::outputs().set_number(0, val);
 }
 
 /**
