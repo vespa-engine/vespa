@@ -23,7 +23,6 @@ branches:
 
 before_cache:
   - sudo rm -rf $HOME/.m2/repository/com/yahoo
-  - sudo rm -rf $HOME/.m2/repository/simple/dummy-persistence
   - du --summarize --human-readable $HOME/.m2/repository
   - ccache --show-stats
 
