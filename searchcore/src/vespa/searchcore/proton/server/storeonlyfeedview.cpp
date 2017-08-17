@@ -13,8 +13,6 @@
 #include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
 #include <vespa/searchcore/proton/metrics/feed_metrics.h>
 #include <vespa/searchlib/common/scheduletaskcallback.h>
-#include <vespa/vespalib/text/stringtokenizer.h>
-#include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
@@ -242,10 +240,10 @@ StoreOnlyFeedView::considerEarlyAck(FeedToken::UP &token, FeedOperation::Type op
 }
 
 void
-StoreOnlyFeedView::putAttributes(SerialNum, search::DocumentIdT, const Document &, bool, OnPutDoneType) {}
+StoreOnlyFeedView::putAttributes(SerialNum, Lid, const Document &, bool, OnPutDoneType) {}
 
 void
-StoreOnlyFeedView::putIndexedFields(SerialNum, search::DocumentIdT, const Document::SP &, bool, OnOperationDoneType) {}
+StoreOnlyFeedView::putIndexedFields(SerialNum, Lid, const Document::SP &, bool, OnOperationDoneType) {}
 
 void
 StoreOnlyFeedView::preparePut(PutOperation &putOp)
@@ -325,10 +323,10 @@ StoreOnlyFeedView::getUpdateScope(const DocumentUpdate &upd)
 
 
 void
-StoreOnlyFeedView::updateAttributes(SerialNum, search::DocumentIdT, const DocumentUpdate &, bool, OnOperationDoneType) {}
+StoreOnlyFeedView::updateAttributes(SerialNum, Lid, const DocumentUpdate &, bool, OnOperationDoneType) {}
 
 void
-StoreOnlyFeedView::updateIndexedFields(SerialNum, search::DocumentIdT, FutureDoc, bool, OnOperationDoneType)
+StoreOnlyFeedView::updateIndexedFields(SerialNum, Lid, FutureDoc, bool, OnOperationDoneType)
 {
     abort(); // Should never be called.
 }
@@ -350,7 +348,7 @@ StoreOnlyFeedView::handleUpdate(FeedToken *token, const UpdateOperation &updOp)
     internalUpdate(dupFeedToken(token), updOp);
 }
 
-void StoreOnlyFeedView::putSummary(SerialNum serialNum,  search::DocumentIdT lid,
+void StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid,
                                    FutureStream futureStream, OnOperationDoneType onDone)
 {
     _pendingLidTracker.produce(lid);
@@ -368,8 +366,7 @@ void StoreOnlyFeedView::putSummary(SerialNum serialNum,  search::DocumentIdT lid
 #pragma GCC diagnostic pop
 }
 
-void StoreOnlyFeedView::putSummary(SerialNum serialNum,  search::DocumentIdT lid,
-                                   Document::SP doc, OnOperationDoneType onDone)
+void StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid, Document::SP doc, OnOperationDoneType onDone)
 {
     _pendingLidTracker.produce(lid);
 #pragma GCC diagnostic push
@@ -382,7 +379,7 @@ void StoreOnlyFeedView::putSummary(SerialNum serialNum,  search::DocumentIdT lid
             }));
 #pragma GCC diagnostic pop
 }
-void StoreOnlyFeedView::removeSummary(SerialNum serialNum,  search::DocumentIdT lid) {
+void StoreOnlyFeedView::removeSummary(SerialNum serialNum, Lid lid) {
     _pendingLidTracker.produce(lid);
     summaryExecutor().execute(
             makeLambdaTask([serialNum, lid, this] {
@@ -408,14 +405,14 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
     const SerialNum serialNum = updOp.getSerialNum();
     const DocumentUpdate &upd = *updOp.getUpdate();
     const DocumentId &docId = upd.getId();
-    const search::DocumentIdT lid = updOp.getLid();
+    const Lid lid = updOp.getLid();
     VLOG(getDebugLevel(lid, upd.getId()),
          "database(%s): internalUpdate: serialNum(%lu), docId(%s), lid(%d)",
          _params._docTypeName.toString().c_str(), serialNum,
          upd.getId().toString().c_str(), lid);
 
     if (useDocumentMetaStore(serialNum)) {
-        search::DocumentIdT storedLid;
+        Lid storedLid;
         bool lookupOk = lookupDocId(docId, storedLid);
         assert(lookupOk);
         (void) lookupOk;
@@ -450,12 +447,11 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
         _writeService
                 .attributeFieldWriter()
                 .execute(serialNum,
-                         [upd = updOp.getUpdate(), serialNum, prevDoc = _summaryAdapter->get(lid, *_repo), onWriteDone,
-                          promisedDoc = std::move(promisedDoc), promisedStream = std::move(promisedStream),
-                          this]() mutable
+                         [upd = updOp.getUpdate(), serialNum, lid, onWriteDone, promisedDoc = std::move(promisedDoc),
+                          promisedStream = std::move(promisedStream), this]() mutable
                          {
-                             makeUpdatedDocument(serialNum, std::move(prevDoc), upd,
-                                                 onWriteDone, std::move(promisedDoc), std::move(promisedStream));
+                             makeUpdatedDocument(serialNum, lid, upd, onWriteDone,
+                                                 std::move(promisedDoc), std::move(promisedStream));
                          });
 #pragma GCC diagnostic pop
     }
@@ -467,10 +463,11 @@ StoreOnlyFeedView::internalUpdate(FeedToken::UP token, const UpdateOperation &up
 }
 
 void
-StoreOnlyFeedView::makeUpdatedDocument(SerialNum serialNum, Document::UP prevDoc, DocumentUpdate::SP update,
+StoreOnlyFeedView::makeUpdatedDocument(SerialNum serialNum, Lid lid, DocumentUpdate::SP update,
                                        OnOperationDoneType onWriteDone, PromisedDoc promisedDoc,
                                        PromisedStream promisedStream)
 {
+    Document::UP prevDoc = _summaryAdapter->get(lid, *_repo);
     const DocumentUpdate & upd = *update;
     Document::UP newDoc;
     vespalib::nbostream newStream(12345);
@@ -515,8 +512,7 @@ StoreOnlyFeedView::makeUpdatedDocument(SerialNum serialNum, Document::UP prevDoc
 }
 
 bool
-StoreOnlyFeedView::lookupDocId(const DocumentId &docId,
-                               search::DocumentIdT &lid) const
+StoreOnlyFeedView::lookupDocId(const DocumentId &docId, Lid &lid) const
 {
     // This function should only be called by the updater thread.
     // Readers need to take a guard on the document meta store
@@ -530,10 +526,10 @@ StoreOnlyFeedView::lookupDocId(const DocumentId &docId,
 }
 
 void
-StoreOnlyFeedView::removeAttributes(SerialNum, search::DocumentIdT, bool, OnRemoveDoneType) {}
+StoreOnlyFeedView::removeAttributes(SerialNum, Lid, bool, OnRemoveDoneType) {}
 
 void
-StoreOnlyFeedView::removeIndexedFields(SerialNum, search::DocumentIdT, bool, OnRemoveDoneType) {}
+StoreOnlyFeedView::removeIndexedFields(SerialNum, Lid, bool, OnRemoveDoneType) {}
 
 void
 StoreOnlyFeedView::prepareRemove(RemoveOperation &rmOp)
@@ -586,7 +582,7 @@ StoreOnlyFeedView::internalRemove(FeedToken::UP token, const RemoveOperation &rm
 }
 
 void
-StoreOnlyFeedView::internalRemove(FeedToken::UP token, SerialNum serialNum, search::DocumentIdT lid,
+StoreOnlyFeedView::internalRemove(FeedToken::UP token, SerialNum serialNum, Lid lid,
                                   FeedOperation::Type opType, IDestructorCallback::SP moveDoneCtx)
 {
     removeSummary(serialNum, lid);
