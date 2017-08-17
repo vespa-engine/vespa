@@ -8,9 +8,9 @@
 # Possible improvements:
 #
 #   - Depending on config Rest API and config server might be better than
-#     depending on getvespaconfig tool and config format.
+#     depending on vespa-get-config tool and config format.
 #   - Support direct communication with config server if config proxy is not
-#     running (unless getvespaconfig does that for us)
+#     running (unless vespa-get-config does that for us)
 #   - Support specifying config server, to be able to run tool external from the
 #     vespa system to talk to.
 #   - Return a list of all matching sockets instead of first found.
@@ -162,7 +162,7 @@ sub setModelRetrievalFunction { # (Function)
 }
 sub retrieveModelConfigDefault { # ()
     my $VESPA_HOME= $ENV{'VESPA_HOME'};
-    my $cmd = ${VESPA_HOME} . '/bin/getvespaconfig -n cloud.config.model -i admin/model';
+    my $cmd = ${VESPA_HOME} . '/bin/vespa-get-config -n cloud.config.model -i admin/model';
 
     if (defined $CONFIG_REQUEST_TIMEOUT) {
         $cmd .= " -w $CONFIG_REQUEST_TIMEOUT";
