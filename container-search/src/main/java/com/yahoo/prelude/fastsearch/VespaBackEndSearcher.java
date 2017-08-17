@@ -112,7 +112,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
 
     protected abstract void doPartialFill(Result result, String summaryClass);
 
-    protected static boolean wantsRPCSummarFill(Query query) {
+    protected static boolean wantsRPCSummaryFill(Query query) {
         return query.properties().getBoolean(dispatchSummaries);
     }
 
@@ -218,7 +218,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
             return new Result(query, ErrorMessage.createNullQuery(query.getHttpRequest().getUri().toString()));
         }
 
-        if (wantsRPCSummarFill(query) && summaryNeedsQuery(query)) {
+        if (wantsRPCSummaryFill(query) && summaryNeedsQuery(query)) {
             return new Result(query, ErrorMessage.createInvalidQueryParameter(
                     "When using dispatch.summaries and your summary/rankprofile require the query, " +
                     " you need to enable ranking.queryCache."));

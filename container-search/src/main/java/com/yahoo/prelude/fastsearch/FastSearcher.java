@@ -262,7 +262,7 @@ public class FastSearcher extends VespaBackEndSearcher {
         Query query = result.getQuery();
         traceQuery(getName(), "fill", query, query.getOffset(), query.getHits(), 2, quotedSummaryClass(summaryClass));
 
-        if (wantsRPCSummarFill(query)) {
+        if (wantsRPCSummaryFill(query)) {
             CompressionType compression =
                 CompressionType.valueOf(query.properties().getString(dispatchCompression, "LZ4").toUpperCase());
             fillSDDocName(result);
