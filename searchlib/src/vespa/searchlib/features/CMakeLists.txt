@@ -62,5 +62,6 @@ vespa_add_library(searchlib_features OBJECT
     utils.cpp
     valuefeature.cpp
     weighted_set_parser.cpp
+    max_reduce_prod_join_feature.cpp
     DEPENDS
 )
