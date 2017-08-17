@@ -21,6 +21,7 @@ import com.yahoo.slime.BinaryFormat;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.data.access.Inspector;
+import com.yahoo.text.Utf8String;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
 import java.util.Iterator;
@@ -117,7 +118,8 @@ public class Dispatcher extends AbstractComponent {
         }
 
         Query query = result.getQuery();
-        byte[] serializedSlime = BinaryFormat.encode(toSlime(query.getRanking().getProfile(), summaryClass, query.getSessionId(false), hits));
+        String rankProfile = query.getRanking().getProfile();
+        byte[] serializedSlime = BinaryFormat.encode(toSlime(rankProfile, summaryClass, query.getSessionId(false), hits));
         double timeoutSeconds = ((double)query.getTimeLeft()-3.0)/1000.0;
         Compressor.Compression compressionResult = compressor.compress(compression, serializedSlime);
         client.getDocsums(hits, node, compressionResult.type(),

@@ -9,10 +9,10 @@ import com.yahoo.search.grouping.vespa.GroupingExecutor;
 import com.yahoo.search.query.Ranking;
 import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.text.Utf8;
+import com.yahoo.text.Utf8String;
 import com.yahoo.vespa.objects.BufferSerializer;
 
 import java.nio.ByteBuffer;
-import java.util.Collections;
 import java.util.List;
 
 
@@ -148,8 +148,9 @@ public class QueryPacket extends Packet {
         }
 
         if (sendSessionKey) {
-            buffer.putInt(query.getSessionId(true).asUtf8String().getByteLength());
-            buffer.put(query.getSessionId(true).asUtf8String().getBytes());
+            Utf8String key = query.getSessionId(true).asUtf8String();
+            buffer.putInt(key.getByteLength());
+            buffer.put(key.getBytes());
         }
 
         if ((featureFlag & QF_LOCATION) != 0) {

@@ -12,15 +12,9 @@ import com.yahoo.prelude.query.Highlight;
 import com.yahoo.prelude.query.QueryException;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
 import com.yahoo.processing.request.CompoundName;
+import com.yahoo.search.query.*;
 import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.properties.PropertyMap;
-import com.yahoo.search.query.Model;
-import com.yahoo.search.query.ParameterParser;
-import com.yahoo.search.query.Presentation;
-import com.yahoo.search.query.QueryTree;
-import com.yahoo.search.query.Ranking;
-import com.yahoo.search.query.SessionId;
-import com.yahoo.search.query.Sorting;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileFieldType;
@@ -32,7 +26,6 @@ import com.yahoo.search.query.properties.QueryPropertyAliases;
 import com.yahoo.search.query.properties.RequestContextProperties;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.federation.FederationSearcher;
-import com.yahoo.search.query.Properties;
 import com.yahoo.search.query.Sorting.AttributeSorter;
 import com.yahoo.search.query.Sorting.FieldOrder;
 import com.yahoo.search.query.Sorting.Order;
@@ -40,7 +33,6 @@ import com.yahoo.search.query.context.QueryContext;
 import com.yahoo.search.query.profile.ModelObjectMap;
 import com.yahoo.search.query.profile.QueryProfileProperties;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
-import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.yql.NullItemException;
 import com.yahoo.search.yql.VespaSerializer;
 import com.yahoo.search.yql.YqlParser;
@@ -48,13 +40,12 @@ import com.yahoo.search.yql.YqlParser;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 /**
@@ -162,7 +153,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     private QueryContext context = null;
 
     /** Used for downstream session caches */
-    private SessionId sessionId = null;
+    private final AtomicReference<UniqueRequestId> sessionId = new AtomicReference<>();
 
     //--------------- Owned sub-objects containing query properties ----------------
 
@@ -971,9 +962,18 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * @return the session id of this query, or null if not set and create is false
      */
     public SessionId getSessionId(boolean create) {
-        if (sessionId == null && create)
-            this.sessionId = SessionId.next();
-        return sessionId;
+        UniqueRequestId uniqId = sessionId.get();
+        if (uniqId == null && ! create) return null;
+
+        if (uniqId == null && create) {
+            uniqId = UniqueRequestId.next();
+            sessionId.compareAndSet(null, uniqId);
+            uniqId = sessionId.get();
+        }
+
+        String rankProfile = getRanking().getProfile();
+
+        return new SessionId(uniqId, rankProfile);
     }
 
     public boolean hasEncodableProperties() {

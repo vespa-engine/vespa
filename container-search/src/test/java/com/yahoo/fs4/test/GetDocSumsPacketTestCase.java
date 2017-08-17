@@ -10,7 +10,6 @@ import com.yahoo.search.result.Hit;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -69,7 +68,7 @@ public class GetDocSumsPacketTestCase {
         result.getQuery().getRanking().setQueryCache(true);
         FastHit hit = new FastHit();
         result.hits().add(hit);
-        assertPacket(false, result, new byte[] { 0, 0, 0, -123, 0, 0, 0, -37, 0, 0, 56, 17, 0, 0, 0, 0,
+        assertPacket(false, result, new byte[] { 0, 0, 0, -115, 0, 0, 0, -37, 0, 0, 56, 17, 0, 0, 0, 0,
                 // query timeout
                 IGNORE, IGNORE, IGNORE, IGNORE,
                 // "default" - rank profile
@@ -79,8 +78,8 @@ public class GetDocSumsPacketTestCase {
                 // 2 property entries
                 0, 0, 0, 2,
                 // rank: sessionId => qrserver.0.XXXXXXXXXXXXX.0
-                0, 0, 0, 4, 'r', 'a', 'n', 'k', 0, 0, 0, 1, 0, 0, 0, 9, 's', 'e', 's', 's', 'i', 'o', 'n', 'I', 'd', 0, 0, 0, 26, 'q', 'r', 's', 'e', 'r', 'v', 'e', 'r', '.',
-                IGNORE, '.', IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, '.', IGNORE,
+                0, 0, 0, 4, 'r', 'a', 'n', 'k', 0, 0, 0, 1, 0, 0, 0, 9, 's', 'e', 's', 's', 'i', 'o', 'n', 'I', 'd', 0, 0, 0, 34, 'q', 'r', 's', 'e', 'r', 'v', 'e', 'r', '.',
+                IGNORE, '.', IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, IGNORE, '.', IGNORE, '.','d', 'e', 'f', 'a', 'u', 'l', 't',
                 // caches: features => true
                 0, 0, 0, 6, 'c', 'a', 'c', 'h', 'e', 's', 0, 0, 0, 1, 0, 0, 0, 5, 'q', 'u', 'e', 'r', 'y', 0, 0, 0, 4, 't', 'r', 'u', 'e',
                 // flags
