@@ -8,20 +8,10 @@ BUILD_DIR=~/build
 mkdir "${BUILD_DIR}"
 
 export CCACHE_SIZE="4G"
-export CCACHE_COMPRESS="1"
+export CCACHE_COMPRESS=1
 NUM_THREADS=4
-source /opt/rh/devtoolset-6/enable || true
-cd "${SOURCE_DIR}"
-sh ./bootstrap.sh full
-cd "${BUILD_DIR}"
-cmake3 \
-    -DCMAKE_INSTALL_PREFIX=/opt/vespa \
-    -DJAVA_HOME=/usr/lib/jvm/java-openjdk \
-    -DEXTRA_LINK_DIRECTORY="/opt/vespa-boost/lib;/opt/vespa-libtorrent/lib;/opt/vespa-zookeeper-c-client/lib;/opt/vespa-cppunit/lib;/usr/lib64/llvm3.9/lib" \
-    -DEXTRA_INCLUDE_DIRECTORY="/opt/vespa-boost/include;/opt/vespa-libtorrent/include;/opt/vespa-zookeeper-c-client/include;/opt/vespa-cppunit/include;/usr/include/llvm3.9" \
-    -DCMAKE_INSTALL_RPATH="/opt/vespa/lib64;/opt/vespa-boost/lib;/opt/vespa-libtorrent/lib;/opt/vespa-zookeeper-c-client/lib;/opt/vespa-cppunit/lib;/usr/lib/jvm/java-1.8.0/jre/lib/amd64/server;/usr/include/llvm3.9" \
-    -DCMAKE_BUILD_RPATH=/opt/vespa/lib64 \
-    -DVALGRIND_UNIT_TESTS=no \
-    "${SOURCE_DIR}"
+
+cd ${BUILD_DIR}
+bash ${SOURCE_DIR}/bootstrap-cpp.sh ${SOURCE_DIR} ${BUILD_DIR}
 make -j ${NUM_THREADS}
 ctest3 --output-on-failure -j ${NUM_THREADS}
