@@ -61,6 +61,7 @@ public:
     using PromisedDoc = std::promise<Document::UP>;
     using FutureStream = std::future<vespalib::nbostream>;
     using PromisedStream = std::promise<vespalib::nbostream>;
+    using Lid = search::DocumentIdT;
 
     struct Context
     {
@@ -147,9 +148,9 @@ private:
     searchcorespi::index::IThreadService & summaryExecutor() {
         return _writeService.summary();
     }
-    void putSummary(SerialNum serialNum,  search::DocumentIdT lid, FutureStream doc, OnOperationDoneType onDone);
-    void putSummary(SerialNum serialNum,  search::DocumentIdT lid, Document::SP doc, OnOperationDoneType onDone);
-    void removeSummary(SerialNum serialNum,  search::DocumentIdT lid);
+    void putSummary(SerialNum serialNum,  Lid lid, FutureStream doc, OnOperationDoneType onDone);
+    void putSummary(SerialNum serialNum,  Lid lid, Document::SP doc, OnOperationDoneType onDone);
+    void removeSummary(SerialNum serialNum,  Lid lid);
     void heartBeatSummary(SerialNum serialNum);
 
 
@@ -164,7 +165,7 @@ private:
     void internalPut(FeedTokenUP token, const PutOperation &putOp);
     void internalUpdate(FeedTokenUP token, const UpdateOperation &updOp);
 
-    bool lookupDocId(const document::DocumentId &gid, search::DocumentIdT & lid) const;
+    bool lookupDocId(const document::DocumentId &gid, Lid & lid) const;
     void internalRemove(FeedTokenUP token, const RemoveOperation &rmOp);
 
     // Removes documents from meta store and document store.
@@ -172,7 +173,7 @@ private:
     size_t removeDocuments(const RemoveDocumentsOperation &op, bool remove_index_and_attribute_fields,
                            bool immediateCommit);
 
-    void internalRemove(FeedTokenUP token, SerialNum serialNum, search::DocumentIdT lid,
+    void internalRemove(FeedTokenUP token, SerialNum serialNum, Lid lid,
                         FeedOperation::Type opType, std::shared_ptr<search::IDestructorCallback> moveDoneCtx);
 
     // Ack token early if visibility delay is nonzero
@@ -180,8 +181,8 @@ private:
 
     virtual void notifyGidToLidChange(const document::GlobalId &gid, uint32_t lid);
 
-    void makeUpdatedDocument(SerialNum serialNum, Document::UP prevDoc, DocumentUpdate::SP upd,
-                             OnOperationDoneType onWriteDone, PromisedDoc promisedDoc, PromisedStream promisedStream);
+    void makeUpdatedDocument(SerialNum serialNum, Lid lid, DocumentUpdate::SP upd,
+            OnOperationDoneType onWriteDone,PromisedDoc promisedDoc, PromisedStream promisedStream);
 
 protected:
     virtual void internalDeleteBucket(const DeleteBucketOperation &delOp);
@@ -189,25 +190,22 @@ protected:
     virtual void heartBeatAttributes(SerialNum serialNum);
 
 private:
-    virtual void putAttributes(SerialNum serialNum, search::DocumentIdT lid, const Document &doc,
+    virtual void putAttributes(SerialNum serialNum, Lid lid, const Document &doc,
                                bool immediateCommit, OnPutDoneType onWriteDone);
 
-    virtual void putIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const Document::SP &newDoc,
+    virtual void putIndexedFields(SerialNum serialNum, Lid lid, const Document::SP &newDoc,
                                   bool immediateCommit, OnOperationDoneType onWriteDone);
 
     virtual UpdateScope getUpdateScope(const DocumentUpdate &upd);
 
-    virtual void updateAttributes(SerialNum serialNum, search::DocumentIdT lid, const DocumentUpdate &upd,
+    virtual void updateAttributes(SerialNum serialNum, Lid lid, const DocumentUpdate &upd,
                                   bool immediateCommit, OnOperationDoneType onWriteDone);
 
-    virtual void updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, FutureDoc doc,
+    virtual void updateIndexedFields(SerialNum serialNum, Lid lid, FutureDoc doc,
                                      bool immediateCommit, OnOperationDoneType onWriteDone);
 
-    virtual void removeAttributes(SerialNum serialNum, search::DocumentIdT lid,
-                                  bool immediateCommit, OnRemoveDoneType onWriteDone);
-
-    virtual void removeIndexedFields(SerialNum serialNum, search::DocumentIdT lid,
-                                     bool immediateCommit, OnRemoveDoneType onWriteDone);
+    virtual void removeAttributes(SerialNum serialNum, Lid lid, bool immediateCommit, OnRemoveDoneType onWriteDone);
+    virtual void removeIndexedFields(SerialNum serialNum, Lid lid, bool immediateCommit, OnRemoveDoneType onWriteDone);
 
 protected:
     virtual void removeAttributes(SerialNum serialNum, const LidVector &lidsToRemove,
