@@ -76,7 +76,7 @@ RawExecutor<BaseType>::execute(uint32_t docId)
 template <typename BaseType>
 class BufferedExecutor : public RawExecutor<BaseType> {
 private:
-    WeightedIntegerContent _buffer;
+    IntegerContent _buffer;
 
 public:
     BufferedExecutor(const IAttributeVector * attribute, const IntegerVector & queryVector);
@@ -97,7 +97,7 @@ BufferedExecutor<BaseType>::execute(uint32_t docId)
     feature_t val = -DBL_MAX;
     _buffer.fill(*RawExecutor<BaseType>::_attribute, docId);
     for (size_t i = 0; i < _buffer.size(); ++i) {
-        typename IntegerVector::HashMap::const_iterator itr = RawExecutor<BaseType>::_queryVector.getDimMap().find(_buffer[i].getValue());
+        typename IntegerVector::HashMap::const_iterator itr = RawExecutor<BaseType>::_queryVector.getDimMap().find(_buffer[i]);
         if (itr != RawExecutor<BaseType>::_queryVector.getDimMap().end()) {
             feature_t v = itr->second; // weight from attribute is assumed to be 1.0
             if (v > val) val = v;
