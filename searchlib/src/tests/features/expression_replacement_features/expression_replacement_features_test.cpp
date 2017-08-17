@@ -107,8 +107,8 @@ struct ExecFixture
         test.getQueryEnv().getProperties().add("query(array)", "[1111,2222]");
     }
 
-    bool evaluatesTo(feature_t expected) {
-        return test.execute(expected);
+    bool evaluatesTo(feature_t expectedValue) {
+        return test.execute(expectedValue);
     }
 
 };
@@ -116,6 +116,7 @@ struct ExecFixture
 TEST_F("require that executor returns correct result for long array",
        ExecFixture("internalMaxReduceProdJoin(attribute(longarray),query(wset))"))
 {
+    EXPECT_FALSE(f.evaluatesTo(1234));
     EXPECT_TRUE(f.evaluatesTo(2245));
 }
 
@@ -123,6 +124,7 @@ TEST_F("require that executor returns correct result for int array",
        ExecFixture("internalMaxReduceProdJoin(attribute(intarray),query(wset))"))
 {
     EXPECT_TRUE(f.evaluatesTo(1234));
+    EXPECT_FALSE(f.evaluatesTo(2245));
 }
 
 TEST_F("require that executor returns 0 if no items match",
