@@ -61,11 +61,9 @@ struct ExecFixture
 {
     BlueprintFactory factory;
     FtFeatureTest test;
-    vespalib::string feature;
-    ExecFixture(const vespalib::string &f)
+    ExecFixture(const vespalib::string &feature)
             : factory(),
-              test(factory, f),
-              feature(f)
+              test(factory, feature)
     {
         factory.addPrototype(std::make_shared<InternalMaxReduceProdJoinBlueprint>());
         setupAttributeVectors();
