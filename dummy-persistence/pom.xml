@@ -8,7 +8,7 @@
         <artifactId>parent</artifactId>
         <version>6-SNAPSHOT</version>
     </parent>
-    <groupId>simple</groupId>
+    <groupId>com.yahoo.vespa</groupId>
     <artifactId>dummy-persistence</artifactId> <!-- Also used as Bundle-SymbolicName -->
     <version>6-SNAPSHOT</version> <!-- Also used as the Bundle-Version -->
     <packaging>container-plugin</packaging>
