@@ -16,4 +16,5 @@ SpecVerifier:
 HardwareBenchmarker:
 - sudo java -cp node-maintainer-jar-with-dependencies.jar com.yahoo.vespa.hosted.node.verification.hardware.HardwareBenchmarker cfg.1.hostname,cfg.2.hostname,...
 
-Both programs have README explaining closer what it does.
+In "verification" you can find a TODO file where we have listed things we did not have time to implement.
+Both programs have README explaining closer what it does. 
