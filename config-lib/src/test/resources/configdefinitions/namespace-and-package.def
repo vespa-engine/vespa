@@ -2,4 +2,6 @@
 
 namespace=my.namespace
 
+package=com.github.myproject
+
 a int
