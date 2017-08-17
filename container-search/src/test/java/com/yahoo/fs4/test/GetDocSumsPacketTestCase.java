@@ -10,7 +10,6 @@ import com.yahoo.search.result.Hit;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;

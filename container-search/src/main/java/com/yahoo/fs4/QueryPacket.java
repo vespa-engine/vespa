@@ -13,7 +13,6 @@ import com.yahoo.text.Utf8String;
 import com.yahoo.vespa.objects.BufferSerializer;
 
 import java.nio.ByteBuffer;
-import java.util.Collections;
 import java.util.List;
 
 
