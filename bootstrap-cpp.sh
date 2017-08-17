@@ -6,8 +6,8 @@ usage() {
 }
 
 if [ $# -eq 2 ]; then
-    SOURCE_DIR=$1
-    BUILD_DIR=$2
+    SOURCE_DIR=$(realpath $1)
+    BUILD_DIR=$(realpath $2)
 elif [[ $# -eq 1 && ( "$1" = "-h" || "$1" = "--help" )]]; then
     usage
     exit 0
