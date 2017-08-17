@@ -6,7 +6,6 @@ SOURCE_DIR=/source
 NUM_THREADS=4
 
 cd "${SOURCE_DIR}"
-source /opt/rh/devtoolset-6/enable || true
 export MAVEN_OPTS="-Xms128m -Xmx512m"
 sh ./bootstrap.sh java
 mvn install -nsu -B -T ${NUM_THREADS} -V # Should ideally split out test phase, but some unit tests fails on 'mvn test'
