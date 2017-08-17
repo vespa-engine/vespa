@@ -56,7 +56,10 @@ struct Attribute {
               const std::string &imported_)
         : dataType(dataType_), collectionType(collectionType_), imported(imported_)
     {}
+    ~Attribute();
 };
+
+Attribute::~Attribute() {}
 
 struct Model {
     std::map<std::string,std::pair<std::string,std::string> > indexes;
