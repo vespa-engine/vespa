@@ -12,15 +12,9 @@ import com.yahoo.prelude.query.Highlight;
 import com.yahoo.prelude.query.QueryException;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
 import com.yahoo.processing.request.CompoundName;
+import com.yahoo.search.query.*;
 import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.properties.PropertyMap;
-import com.yahoo.search.query.Model;
-import com.yahoo.search.query.ParameterParser;
-import com.yahoo.search.query.Presentation;
-import com.yahoo.search.query.QueryTree;
-import com.yahoo.search.query.Ranking;
-import com.yahoo.search.query.SessionId;
-import com.yahoo.search.query.Sorting;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileFieldType;
@@ -33,7 +27,6 @@ import com.yahoo.search.query.properties.RequestContextProperties;
 import com.yahoo.text.Utf8String;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.federation.FederationSearcher;
-import com.yahoo.search.query.Properties;
 import com.yahoo.search.query.Sorting.AttributeSorter;
 import com.yahoo.search.query.Sorting.FieldOrder;
 import com.yahoo.search.query.Sorting.Order;
@@ -56,6 +49,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 /**
@@ -163,7 +157,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     private QueryContext context = null;
 
     /** Used for downstream session caches */
-    private SessionId sessionId = null;
+    private final AtomicReference<UniqueRequestId> sessionId = new AtomicReference<>();
 
     //--------------- Owned sub-objects containing query properties ----------------
 
@@ -971,12 +965,19 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * @param create if true this is created if not already set
      * @return the session id of this query, or null if not set and create is false
      */
-    public Utf8String getSessionId(String rankProfile, boolean create) {
-        if (sessionId == null && create)
-            this.sessionId = SessionId.next();
-        return sessionId != null
-                ? new Utf8String(sessionId.toString() + "." + ((rankProfile != null) ? rankProfile : ""))
-                : null;
+    public SessionId getSessionId(boolean create) {
+        UniqueRequestId uniqId = sessionId.get();
+        if (uniqId == null && ! create) return null;
+
+        if (uniqId == null && create) {
+            uniqId = UniqueRequestId.next();
+            sessionId.compareAndSet(null, uniqId);
+            uniqId = sessionId.get();
+        }
+
+        String rankProfile = getRanking().getProfile();
+
+        return new SessionId(uniqId, rankProfile);
     }
 
     public boolean hasEncodableProperties() {

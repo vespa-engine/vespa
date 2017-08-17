@@ -149,7 +149,7 @@ public class QueryPacket extends Packet {
         }
 
         if (sendSessionKey) {
-            Utf8String key = query.getSessionId(query.getRanking().getProfile(), true);
+            Utf8String key = query.getSessionId(true).asUtf8String();
             buffer.putInt(key.getByteLength());
             buffer.put(key.getBytes());
         }
