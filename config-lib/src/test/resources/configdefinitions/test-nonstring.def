@@ -1,9 +1,0 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-namespace=test
-
-# Test non-string config vars with defaults
-
-i int default=0
-b bool default=false
-d double default=0.0
-e enum { AA, BB, CC } default=AA
