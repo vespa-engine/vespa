@@ -4,7 +4,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <signal.h>
+#include <csignal>
 
 int main(int argc, char *argv[])
 {

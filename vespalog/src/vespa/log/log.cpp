@@ -16,6 +16,7 @@ LOG_SETUP_INDIRECT(".log", "$Id$");
 #include <cassert>
 #include <cstdarg>
 #include <unistd.h>
+#include <sys/time.h>
 
 namespace ns_log {
 

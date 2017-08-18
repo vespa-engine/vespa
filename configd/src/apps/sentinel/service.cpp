@@ -4,7 +4,7 @@
 #include "output-connection.h"
 #include <vespa/vespalib/util/stringfmt.h>
 
-#include <signal.h>
+#include <csignal>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/wait.h>

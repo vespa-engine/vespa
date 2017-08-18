@@ -7,6 +7,7 @@
 #include "fbench.h"
 #include <cstring>
 #include <cmath>
+#include <csignal>
 
 sig_atomic_t exitSignal = 0;
 

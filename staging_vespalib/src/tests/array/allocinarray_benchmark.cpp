@@ -4,6 +4,8 @@
 #include <vespa/vespalib/util/optimized.h>
 #include <vespa/vespalib/util/allocinarray.h>
 #include <vespa/vespalib/util/array.hpp>
+#include <csignal>
+
 #include <vespa/log/log.h>
 LOG_SETUP("allocinarray_benchmark");
 

@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-
 #include <vespa/document/util/stringutil.h>
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/memfilepersistence/device/mountpointlist.h>
@@ -9,15 +8,15 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <sstream>
+#include <csignal>
+#include <dirent.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vdsdiskapp");
 
 using std::vector;
 
-namespace storage {
-namespace memfile {
+namespace storage::memfile {
 
 using vespalib::getLastErrorString;
 
@@ -516,5 +515,4 @@ VdsDiskTool::run(int argc, const char * const * argv,
     return 0;
 }
 
-} // memfile
-} // storage
+}

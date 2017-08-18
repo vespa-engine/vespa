@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/timestamp.h>
-#include <vespa/fastos/mutex.h>
+#include "timestamp.h"
 #include <cmath>
+#include <sys/time.h>
 
 namespace fastos {
 

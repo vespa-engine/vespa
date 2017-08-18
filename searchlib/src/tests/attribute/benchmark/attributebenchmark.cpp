@@ -8,13 +8,12 @@
 #include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/attribute/multistringattribute.h>
 #include <vespa/searchlib/attribute/attrvector.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/fastos/app.h>
 #include <iostream>
 #include <fstream>
 #include "../attributesearcher.h"
 #include "../attributeupdater.h"
-#include "../runnable.h"
+#include <sys/resource.h>
 
 #include <vespa/log/log.h>
 

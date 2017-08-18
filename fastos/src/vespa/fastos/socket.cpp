@@ -5,6 +5,8 @@
 #include <cassert>
 #include <cstring>
 #include <netinet/tcp.h>
+#include <netinet/in.h>
+#include <netdb.h>
 
 FastOS_SocketInterface::FastOS_SocketInterface()
     : _readEventEnabled(false),
@@ -262,6 +264,19 @@ int FastOS_SocketInterface::GetLocalPort ()
         }
     }
     return result;
+}
+
+unsigned short
+FastOS_SocketInterface::GetPort () const
+{
+    switch (_address.ss_family) {
+        case AF_INET:
+            return reinterpret_cast<const sockaddr_in &>(_address).sin_port;
+        case AF_INET6:
+            return reinterpret_cast<const sockaddr_in6 &>(_address).sin6_port;
+        default:
+            return 0;
+    }
 }
 
 std::string

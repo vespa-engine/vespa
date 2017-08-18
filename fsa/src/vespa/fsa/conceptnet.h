@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include <assert.h>
+#include <cassert>
 #include <stdlib.h>
 #include "file.h" // for FileAccessMethod
 #include "fsa.h"

@@ -2,7 +2,7 @@
 
 #include "address_space.h"
 #include <ostream>
-#include <assert.h>
+#include <cassert>
 
 namespace search {
 

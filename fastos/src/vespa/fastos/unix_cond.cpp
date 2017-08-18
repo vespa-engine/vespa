@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/cond.h>
+#include "cond.h"
+#include <sys/time.h>
+#include <cstdint>
 
 FastOS_UNIX_Cond::FastOS_UNIX_Cond(void)
     : FastOS_CondInterface(),
@@ -23,6 +25,7 @@ FastOS_UNIX_Cond::Wait(void)
 bool
 FastOS_UNIX_Cond::TimedWait(int milliseconds)
 {
+
     struct timeval currentTime;
     struct timespec absTime;
     int error;

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/fastos/socket.h>
+#include "socket.h"
 
 class FastOS_UNIX_Socket : public FastOS_SocketInterface
 {
@@ -26,8 +26,8 @@ public:
         ERR_INPROGRESS = EINPROGRESS,
         ERR_WOULDBLOCK = EWOULDBLOCK,
         ERR_ADDRNOTAVAIL = EADDRNOTAVAIL,
-        ERR_MFILE = FASTOS_EMFILE_VERIFIED,
-        ERR_NFILE = FASTOS_ENFILE_VERIFIED,
+        ERR_MFILE = EMFILE,
+        ERR_NFILE = ENFILE,
         ERR_CONNRESET = ECONNRESET,
 
         ERR_EAGAIN = EAGAIN,                  // Old style error codes
@@ -36,8 +36,8 @@ public:
         ERR_EINPROGRESS = EINPROGRESS,
         ERR_EWOULDBLOCK = EWOULDBLOCK,
         ERR_EADDRNOTAVAIL = EADDRNOTAVAIL,
-        ERR_EMFILE = FASTOS_EMFILE_VERIFIED,
-        ERR_ENFILE = FASTOS_ENFILE_VERIFIED
+        ERR_EMFILE = EMFILE,
+        ERR_ENFILE = ENFILE
     };
 };
 

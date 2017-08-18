@@ -13,6 +13,7 @@
 #include <vespa/vespalib/text/lowercase.h>
 #include <regex>
 #include <iomanip>
+#include <sys/time.h>
 
 
 #include <vespa/log/log.h>

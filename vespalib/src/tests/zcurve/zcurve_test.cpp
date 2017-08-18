@@ -1,12 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP("zcurve_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <algorithm>
 #include <limits>
 #include <map>
+#include <sys/time.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("zcurve_test");
 
 namespace vespalib {
 
@@ -20,34 +22,26 @@ public:
     {
     }
 
-    void
-    testEncoding(void);
+    void testEncoding();
 
-    void
-    testDecoding(void);
+    void testDecoding();
 
-    double
-    ftime(void);
+    double ftime();
 
-    static inline int64_t
-    encodexy3(int32_t x, int32_t y);
+    static inline int64_t encodexy3(int32_t x, int32_t y);
 
 #define BMLIMIT 0x1000000
 
     template <bool decode>
-    int64_t
-    bm(void);
+    int64_t bm();
 
     template <bool decode>
-    int64_t
-    bm2(void);
+    int64_t bm2();
 
     template <bool decode>
-    int64_t
-    bm3(void);
+    int64_t bm3();
 
-    int64_t
-    bmcheck();
+    int64_t bmcheck();
 
     int Main() override;
 };
@@ -140,7 +134,7 @@ ZCurveTest::testDecoding(void)
 
 
 double
-ZCurveTest::ftime(void)
+ZCurveTest::ftime()
 {
     struct timeval tv;
     gettimeofday(&tv, NULL);
@@ -183,7 +177,7 @@ ZCurveTest::encodexy3(int32_t x, int32_t y)
 
 template <bool decode>
 int64_t
-ZCurveTest::bm(void)
+ZCurveTest::bm()
 {
     int64_t res = 0;
     double before = ftime();
@@ -265,7 +259,7 @@ ZCurveTest::bm2(void)
 
 template <bool decode>
 int64_t
-ZCurveTest::bm3(void)
+ZCurveTest::bm3()
 {
     int64_t res = 0;
     double before = ftime();
@@ -305,7 +299,7 @@ ZCurveTest::bm3(void)
 
 
 int64_t
-ZCurveTest::bmcheck(void)
+ZCurveTest::bmcheck()
 {
     int64_t res = 0;
     double before = ftime();
@@ -348,7 +342,7 @@ ZCurveTest::bmcheck(void)
 
 
 int
-ZCurveTest::Main(void)
+ZCurveTest::Main()
 {
     TEST_INIT("zcurve_test");
 

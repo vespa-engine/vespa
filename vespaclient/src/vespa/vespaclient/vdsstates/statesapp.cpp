@@ -13,6 +13,7 @@
 #include <vespa/fastos/app.h>
 #include <sstream>
 #include <iostream>
+#include <sys/time.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vdsstatetool");

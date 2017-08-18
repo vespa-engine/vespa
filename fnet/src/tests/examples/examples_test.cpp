@@ -4,6 +4,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/thread.h>
 #include <atomic>
+#include <csignal>
 
 // reserved in vespa/factory/doc/port-ranges.txt
 static const int PORT0 = 18570;

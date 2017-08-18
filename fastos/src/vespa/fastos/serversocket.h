@@ -10,7 +10,7 @@
 #pragma once
 
 
-#include <vespa/fastos/socket.h>
+#include "socket.h"
 
 
 /**

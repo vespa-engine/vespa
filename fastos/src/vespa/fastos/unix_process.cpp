@@ -7,6 +7,7 @@
 #include <cstring>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/socket.h>
 #include <sys/wait.h>
 
 #ifndef AF_LOCAL

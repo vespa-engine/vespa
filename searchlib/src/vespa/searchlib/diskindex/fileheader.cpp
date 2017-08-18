@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/fastos/file.h>
+#include <arpa/inet.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.fileheader");
@@ -25,19 +26,7 @@ FileHeader::FileHeader()
 {
 }
 
-
-FileHeader::~FileHeader()
-{
-}
-
-
-static inline uint32_t
-bswap(uint32_t val)
-{
-    __asm__("bswap %0" : "=r" (val) : "0" (val));
-    return val;
-}
-
+FileHeader::~FileHeader() {}
 
 bool
 FileHeader::taste(const vespalib::string &name,
@@ -62,10 +51,8 @@ FileHeader::taste(const vespalib::string &name,
     } catch (vespalib::IllegalHeaderException &e) {
         if (e.getMessage() != "Failed to read header info." &&
             e.getMessage() != "Failed to verify magic bits.") {
-            LOG(error,
-                "FileHeader::tastGeneric(\"%s\") exception: %s",
-                name.c_str(),
-                e.getMessage().c_str());
+            LOG(error, "FileHeader::tastGeneric(\"%s\") exception: %s",
+                name.c_str(), e.getMessage().c_str());
         }
         file.Close();
         return false;
@@ -82,9 +69,7 @@ FileHeader::taste(const vespalib::string &name,
         } else if (endian == "little") {
             _bigEndian = false;
         } else {
-            LOG(error,
-                "Bad endian: %s",
-                endian.c_str());
+            LOG(error, "Bad endian: %s", endian.c_str());
             return false;
         }
     }
@@ -92,33 +77,23 @@ FileHeader::taste(const vespalib::string &name,
     if (header.hasTag("frozen")) {
         _completed = header.getTag("frozen").asInteger() != 0;
     } else {
-        LOG(error,
-            "FileHeader::taste(\"%s\"): Missing frozen tag",
-            name.c_str());
+        LOG(error, "FileHeader::taste(\"%s\"): Missing frozen tag", name.c_str());
         return false;
     }
     if (header.hasTag("fileBitSize")) {
         _fileBitSize = header.getTag("fileBitSize").asInteger();
         if (_completed && _fileBitSize < 8 * _headerLen) {
-            LOG(error,
-                "FileHeader::taste(\"%s\"): "
-                "fleBitSize(%" PRIu64 ") < 8 * headerLen(%u)",
-                name.c_str(),
-                _fileBitSize, _headerLen);
+            LOG(error, "FileHeader::taste(\"%s\"): fleBitSize(%" PRIu64 ") < 8 * headerLen(%u)",
+                name.c_str(), _fileBitSize, _headerLen);
             return false;
         }
         if (_completed && _fileBitSize > 8 * fileSize) {
-            LOG(error,
-                "FileHeader::taste(\"%s\"): "
-                "fleBitSize(%" PRIu64 ") > 8 * fileSize(%" PRIu64 ")",
-                name.c_str(),
-                _fileBitSize, fileSize);
+            LOG(error, "FileHeader::taste(\"%s\"): fleBitSize(%" PRIu64 ") > 8 * fileSize(%" PRIu64 ")",
+                name.c_str(), _fileBitSize, fileSize);
             abort();
         }
     } else if (!_allowNoFileBitSize) {
-        LOG(error,
-            "FileHeader::taste(\"%s\"): Missing fileBitSize tag",
-            name.c_str());
+        LOG(error, "FileHeader::taste(\"%s\"): Missing fileBitSize tag", name.c_str());
         return false;
     }
     for (uint32_t i = 0; ;++i) {
@@ -132,10 +107,8 @@ FileHeader::taste(const vespalib::string &name,
     return true;
 }
 
-
 bool
-FileHeader::taste(const vespalib::string &name,
-                  const TuneFileSeqWrite &tuneFileWrite)
+FileHeader::taste(const vespalib::string &name, const TuneFileSeqWrite &tuneFileWrite)
 {
     TuneFileSeqRead tuneFileRead;
     if (tuneFileWrite.getWantDirectIO())
@@ -143,10 +116,8 @@ FileHeader::taste(const vespalib::string &name,
     return taste(name, tuneFileRead);
 }
 
-
 bool
-FileHeader::taste(const vespalib::string &name,
-                  const TuneFileRandRead &tuneFileSearch)
+FileHeader::taste(const vespalib::string &name, const TuneFileRandRead &tuneFileSearch)
 {
     TuneFileSeqRead tuneFileRead;
     if (tuneFileSearch.getWantDirectIO())

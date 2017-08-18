@@ -3,6 +3,7 @@
 #include "taskscheduler.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <sys/time.h>
 
 namespace vdslib {
 

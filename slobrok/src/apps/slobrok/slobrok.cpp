@@ -4,6 +4,7 @@
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/fastos/app.h>
+#include <csignal>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-slobrok");

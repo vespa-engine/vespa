@@ -6,9 +6,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <netinet/tcp.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 
-namespace vespalib {
-namespace test {
+namespace vespalib::test {
 
 namespace {
 
@@ -59,5 +60,4 @@ struct SocketOptionsVerifier {
     }
 };
 
-} // namespace vespalib::test
-} // namespace vespalib
+}

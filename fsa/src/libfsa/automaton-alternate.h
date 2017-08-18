@@ -13,7 +13,7 @@
 #include <list>
 #include <string>
 #include <vector>
-#include <assert.h>
+#include <cassert>
 #include <sys/mman.h> // for mmap() etc
 
 #include "blob.h"

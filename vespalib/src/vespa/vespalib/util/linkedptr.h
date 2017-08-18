@@ -5,7 +5,7 @@
 
 #include <algorithm>
 #include <memory>
-#include <assert.h>
+#include <cassert>
 
 namespace vespalib {
 

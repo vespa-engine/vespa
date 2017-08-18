@@ -12,6 +12,7 @@
 #include "process.h"
 #include "unix_ipc.h"
 #include <unistd.h>
+#include <csignal>
 #include <getopt.h>
 
 

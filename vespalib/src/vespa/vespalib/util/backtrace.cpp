@@ -7,7 +7,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/fastos/backtrace.h>
 #include <execinfo.h>
-#include <signal.h>
+#include <csignal>
 
 namespace {
 

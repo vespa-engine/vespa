@@ -4,7 +4,7 @@
 
 #include "config_hash.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <assert.h>
+#include <cassert>
 
 namespace proton {
 

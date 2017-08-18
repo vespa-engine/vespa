@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/fastos/thread.h>
+#include <cstdint>
 
 namespace vespalib {
 
@@ -14,15 +15,6 @@ namespace vespalib {
  **/
 class ShutdownGuard : public FastOS_Runnable
 {
-    enum { STACK_SIZE = (1u << 16) };
-
-    static uint64_t getTimeInMillis() {
-        struct timeval mytime;
-        gettimeofday(&mytime, 0);
-        uint64_t mult = 1000;
-        return (mytime.tv_sec * mult) + (mytime.tv_usec / mult);
-    }
-
     FastOS_ThreadPool _pool;
     volatile uint64_t _dieAtTime;
 

@@ -1,15 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/slobrok/sbmirror.h>
-#include <vespa/config-slobroks.h>
 #include <vespa/config/common/configsystem.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fastos/app.h>
-#include <algorithm>
-#include <string>
+#include <sys/time.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-proton-cmd");

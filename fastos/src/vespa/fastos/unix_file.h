@@ -94,8 +94,7 @@ public:
     static int64_t GetFreeDiskSpace (const char *path);
 };
 
-
-
+#include <dirent.h>
 /**
  * This is the generic UNIX implementation of @ref FastOS_DirectoryScan.
  */

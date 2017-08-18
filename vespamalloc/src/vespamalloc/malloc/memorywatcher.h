@@ -2,7 +2,7 @@
 #pragma once
 
 #include <stdio.h>
-#include <signal.h>
+#include <csignal>
 #include <limits.h>
 #include <sys/stat.h>
 #include <ctype.h>

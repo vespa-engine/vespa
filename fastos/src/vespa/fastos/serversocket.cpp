@@ -1,12 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-//************************************************************************
-/**
- * Implementation of FastOS_ServerSocket methods.
- *
- * @author  Div, Oivind H. Danielsen
- */
 
 #include "serversocket.h"
+#include <netinet/in.h>
 #include <cstring>
 
 
@@ -23,75 +18,57 @@ void FastOS_ServerSocket::SetSocketFactory(FastOS_SocketFactory *socketFactory)
 
 FastOS_SocketInterface *FastOS_ServerSocket::CreateHandlerSocket(void)
 {
-    FastOS_SocketInterface *newSocket = NULL;
 
-    if (_socketFactory != NULL)
-    {
-        newSocket = _socketFactory->CreateSocket();
-    }
-    else
-    {
-        newSocket = new FastOS_Socket();
-    }
-
-    return newSocket;
+    return (_socketFactory != nullptr)
+           ? _socketFactory->CreateSocket()
+           : (FastOS_SocketInterface *)new FastOS_Socket();
 }
 
 
 FastOS_SocketInterface *FastOS_ServerSocket::Accept()
 {
-    FastOS_SocketInterface  *handlerSocket = NULL;
-    int                      handlerSocketHandle;
     struct sockaddr_storage  clientAddress;
 
     socklen_t clientAddressLength = sizeof(clientAddress);
 
     memset(&clientAddress, 0, sizeof(clientAddress));
 
-    handlerSocketHandle = accept(_socketHandle,
-                                 reinterpret_cast<struct sockaddr *>(&clientAddress),
-                                 &clientAddressLength);
+    int handlerSocketHandle = accept(_socketHandle, reinterpret_cast<struct sockaddr *>(&clientAddress),
+                                     &clientAddressLength);
 
-    if (handlerSocketHandle >= 0)
-    {
-        handlerSocket = CreateHandlerSocket();
+    if (handlerSocketHandle >= 0) {
+        FastOS_SocketInterface *handlerSocket = CreateHandlerSocket();
 
-        if (handlerSocket != NULL)
-        {
-            handlerSocket->SetUp(handlerSocketHandle,
-                                 reinterpret_cast<struct sockaddr *>(&clientAddress));
+        if (handlerSocket != nullptr) {
+            handlerSocket->SetUp(handlerSocketHandle, reinterpret_cast<struct sockaddr *>(&clientAddress));
         }
+        return handlerSocket;
     }
 
-    return handlerSocket;
+    return nullptr;
 }
 
 FastOS_Socket *FastOS_ServerSocket::AcceptPlain()
 {
-    FastOS_Socket      *handlerSocket = NULL;
-    int                 handlerSocketHandle;
     struct sockaddr_storage clientAddress;
 
     socklen_t clientAddressLength = sizeof(clientAddress);
 
     memset(&clientAddress, 0, sizeof(clientAddress));
 
-    handlerSocketHandle = accept(_socketHandle,
-                                 reinterpret_cast<struct sockaddr *>(&clientAddress),
-                                 &clientAddressLength);
+    int handlerSocketHandle = accept(_socketHandle, reinterpret_cast<struct sockaddr *>(&clientAddress),
+                                     &clientAddressLength);
 
-    if (handlerSocketHandle >= 0)
-    {
-        handlerSocket = new FastOS_Socket();
+    if (handlerSocketHandle >= 0) {
+        FastOS_Socket *handlerSocket = new FastOS_Socket();
 
-        if (handlerSocket != NULL)
-        {
-            handlerSocket->SetUp(handlerSocketHandle,
-                                 reinterpret_cast<struct sockaddr *>(&clientAddress));
+        if (handlerSocket != nullptr) {
+            handlerSocket->SetUp(handlerSocketHandle, reinterpret_cast<struct sockaddr *>(&clientAddress));
         }
+        return handlerSocket;
     }
 
-    return handlerSocket;
+    return nullptr;
 }
 
 FastOS_ServerSocket::FastOS_ServerSocket(int socketHandle, FastOS_SocketFactory *socketFactory)
@@ -117,8 +94,7 @@ bool FastOS_ServerSocket::Listen ()
             (_address.ss_family == AF_INET6 &&
              reinterpret_cast<const sockaddr_in6 &>(_address).sin6_port != 0))
             reuseAddr = true;
-        if (SetSoReuseAddr(reuseAddr))
-        {
+        if (SetSoReuseAddr(reuseAddr)) {
             size_t socketAddrLen;
             switch (_address.ss_family)
             {
@@ -135,11 +111,8 @@ bool FastOS_ServerSocket::Listen ()
             default:
                 socketAddrLen = sizeof(sockaddr_storage);
             }
-            if(bind(_socketHandle, reinterpret_cast<struct sockaddr *>(&_address),
-                    socketAddrLen) >= 0)
-            {
-                if(listen(_socketHandle, _backLog) >= 0)
-                {
+            if(bind(_socketHandle, reinterpret_cast<struct sockaddr *>(&_address), socketAddrLen) >= 0) {
+                if(listen(_socketHandle, _backLog) >= 0) {
                     rc = true;
                 }
             }

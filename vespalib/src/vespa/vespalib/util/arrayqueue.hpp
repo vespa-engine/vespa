@@ -5,7 +5,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include <assert.h>
+#include <cassert>
 #include <algorithm>
 #include "traits.h"
 

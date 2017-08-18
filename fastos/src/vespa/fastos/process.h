@@ -11,6 +11,7 @@
 #pragma once
 
 #include "types.h"
+#include <cstddef>
 
 /**
  * This class serves as a sink for redirected (piped) output from

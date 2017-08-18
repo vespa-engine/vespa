@@ -3,7 +3,7 @@
 #include "socket_handle.h"
 #include <sys/socket.h>
 #include <errno.h>
-#include <assert.h>
+#include <cassert>
 
 namespace vespalib {
 

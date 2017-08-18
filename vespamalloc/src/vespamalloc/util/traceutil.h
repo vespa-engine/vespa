@@ -2,9 +2,9 @@
 #pragma once
 
 #include <dlfcn.h>
-#include <signal.h>
+#include <csignal>
 #include <stdlib.h>
-#include <assert.h>
+#include <cassert>
 #include <vector>
 #include <vespamalloc/util/index.h>
 #include <vespamalloc/util/callstack.h>

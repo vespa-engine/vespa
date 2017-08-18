@@ -2,7 +2,7 @@
 #include <util/filereader.h>
 #include <iostream>
 #include <string.h>
-#include <assert.h>
+#include <cassert>
 
 /**
  * Extract query urls from web logs. The filterfile application reads

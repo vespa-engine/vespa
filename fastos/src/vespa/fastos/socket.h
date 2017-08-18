@@ -3,9 +3,8 @@
 #pragma once
 
 #include <vespa/fastos/types.h>
-
 #include <string>
-#include <vector>
+#include <sys/socket.h>
 
 class FastOS_SocketInterface;
 class FastOS_ServerSocket;
@@ -64,7 +63,7 @@ public:
      * Convenience method. Does GetErrorString(GetLastError())
      * @return Error string
      */
-    static std::string getLastErrorString(void);
+    static std::string getLastErrorString();
 
     static const char *InitializeServices ();
     static void CleanupServices ();
@@ -282,17 +281,7 @@ public:
     /**
      * Return socket port.
      */
-    unsigned short GetPort () const
-    {
-        switch (_address.ss_family) {
-        case AF_INET:
-            return reinterpret_cast<const sockaddr_in &>(_address).sin_port;
-        case AF_INET6:
-            return reinterpret_cast<const sockaddr_in6 &>(_address).sin6_port;
-        default:
-            return 0;
-        }
-    }
+    unsigned short GetPort () const;
 
     /**
      * Tune the socket for transport use.

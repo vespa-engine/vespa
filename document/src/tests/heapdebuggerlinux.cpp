@@ -22,7 +22,7 @@
 
 #include <iostream>
 #include <pthread.h>
-#include <signal.h>
+#include <csignal>
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>

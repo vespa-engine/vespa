@@ -13,6 +13,7 @@
 #include <cstring>
 #include <unistd.h>
 #include <fcntl.h>
+#include <dirent.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <sys/vfs.h>
@@ -388,10 +389,10 @@ FastOS_UNIX_File::TranslateError (const int osError)
     case ENXIO:      return ERR_NXIO;       // Device not configured
     }
 
-    if (osError == FASTOS_ENFILE_VERIFIED)
+    if (osError == ENFILE)
         return ERR_NFILE;
 
-    if (osError == FASTOS_EMFILE_VERIFIED)
+    if (osError == EMFILE)
         return ERR_MFILE;
 
     return ERR_UNKNOWN;

@@ -47,8 +47,8 @@ public:
     static FastOS_SocketEventObjects *_objects;
     static FastOS_SocketEventObjects *ObtainObject (FastOS_SocketEvent *event);
     static void ReleaseObject (FastOS_SocketEventObjects *node);
-    static void ClassCleanup(void);
-    static void InitializeClass(void);
+    static void ClassCleanup();
+    static void InitializeClass();
 };
 
 

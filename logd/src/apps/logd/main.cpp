@@ -1,16 +1,4 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <unistd.h>
-#include <time.h>
-#include <sys/stat.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP("logdemon");
-LOG_RCSID("$Id$");
 
 #include <logd/errhandle.h>
 #include <logd/sigterm.h>
@@ -18,8 +6,14 @@ LOG_RCSID("$Id$");
 #include <logd/forward.h>
 #include <logd/conf.h>
 #include <logd/watch.h>
-#include <logd/conn.h>
 #include <vespa/config/common/exceptions.h>
+#include <csignal>
+#include <unistd.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("logdemon");
+
+
 
 using namespace logdemon;
 using config::FileSpec;

@@ -5,7 +5,7 @@
 
 #include "unicode.h"
 
-#include <assert.h>
+#include <cassert>
 #include <cstdlib>
 
 namespace fsa {

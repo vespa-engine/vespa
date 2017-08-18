@@ -15,7 +15,7 @@
 #ifndef DISABLE_THREADS
 #include <pthread.h>
 #include <sched.h>
-#include <assert.h>
+#include <cassert>
 #endif
 
 #include "mutex.h"
