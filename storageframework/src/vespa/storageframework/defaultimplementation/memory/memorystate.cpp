@@ -84,8 +84,8 @@ MemoryState::addToEntry(const MemoryAllocationType& type, uint64_t memory,
                         AllocationResult result, bool forcedAllocation,
                         uint64_t allocationCounts)
 {
-    LOG(spam, "Allocating memory %s - %" PRIu64 " bytes at priority %u. "
-              "Count %" PRIu64 ".",
+    LOG(spam, "Allocating memory %s - %lu bytes at priority %u. "
+              "Count %lu.",
         type.getName().c_str(), memory, priority, allocationCounts);
     PriorityMap& map(_current._allocations[&type]);
     Entry& e(map[priority]);
@@ -110,7 +110,7 @@ MemoryState::addToEntry(const MemoryAllocationType& type, uint64_t memory,
     if (_current._usedWithoutCache
                 > _max._usedWithoutCache + _minJumpToUpdateMax)
     {
-        LOG(spam, "Updating max to current %" PRIu64 " bytes of memory used",
+        LOG(spam, "Updating max to current %lu bytes of memory used",
             _current._usedWithoutCache);
         _max = _current;
         _max._timeTaken = _clock->getTimeInSeconds();
@@ -122,8 +122,8 @@ MemoryState::removeFromEntry(const MemoryAllocationType& type, uint64_t memory,
                              uint8_t priority,
                              uint64_t allocationCounts)
 {
-    LOG(spam, "Freeing memory %s - %" PRIu64 " bytes at priority %u. "
-              "Count %" PRIu64 ".",
+    LOG(spam, "Freeing memory %s - %lu bytes at priority %u. "
+              "Count %lu.",
         type.getName().c_str(), memory, priority, allocationCounts);
     PriorityMap& map(_current._allocations[&type]);
     Entry& e(map[priority]);

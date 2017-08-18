@@ -1,17 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/config/frt/protocol.h>
+#include <vespa/config/configgen/configpayload.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
 #include <memory>
-#include <vespa/config/frt/protocol.h>
-#include <vespa/config/configgen/configpayload.h>
+#include <climits>
 
-namespace vespalib {
-    namespace slime {
-        class Cursor;
-    }
-}
+namespace vespalib::slime { class Cursor; }
 
 namespace config {
 

@@ -115,13 +115,6 @@ public:
     int getFAdviseOptions()                     const { return _fAdviseOptions; }
     void setFAdviseOptions(int options)               { _fAdviseOptions = options; }
 
-    char *ToString () {
-        const char dummy[]="FastOS_File::ToString() deprecated";
-        char *str = new char [strlen(dummy) + 1];
-        strcpy(str, dummy);
-        return str;
-    }
-
     /**
      * Initialize the file class. This is invoked by
      * @ref FastOS_Application::Init().
@@ -752,20 +745,14 @@ public:
      * @param path     Path of the directory to be scanned. The path string
      *                 is copied internally.
      */
-    FastOS_DirectoryScanInterface(const char *path)
-        : _searchPath(strdup(path))
-    {
-    }
+    FastOS_DirectoryScanInterface(const char *path);
 
     /**
      * Destructor.
      *
      * Frees operating system resources related to the directory scan.
      */
-    virtual ~FastOS_DirectoryScanInterface()
-    {
-        free(_searchPath);
-    }
+    virtual ~FastOS_DirectoryScanInterface();
 
     /**
      * Get search path.

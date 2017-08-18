@@ -1,8 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("signalhandler_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/signalhandler.h>
+#include <unistd.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("signalhandler_test");
 
 using namespace vespalib;
 

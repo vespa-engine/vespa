@@ -1,8 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include "client.h"
 #include <util/timer.h>
+#include <util/clientstatus.h>
 #include <httpclient/httpclient.h>
 #include <util/filereader.h>
-#include "client.h"
+#include <cassert>
+#include <cstring>
 
 Client::Client(ClientArguments *args)
     : _args(args),

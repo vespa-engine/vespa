@@ -11,9 +11,9 @@
 #pragma once
 
 
-#include <vespa/fastos/types.h>
-#include <vespa/fastos/mutex.h>
-#include <vespa/fastos/cond.h>
+#include "types.h"
+#include "mutex.h"
+#include "cond.h"
 
 typedef pthread_t FastOS_ThreadId;
 

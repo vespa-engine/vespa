@@ -43,7 +43,7 @@ public:
 
     static std::string getCurrentDirectory();
 
-    static bool SetCurrentDirectory (const char *pathName) { return (chdir(pathName) == 0); }
+    static bool SetCurrentDirectory (const char *pathName);
     static int GetMaximumFilenameLength (const char *pathName);
     static int GetMaximumPathLength (const char *pathName);
 
@@ -56,7 +56,6 @@ public:
           _mmapEnabled(false)
     { }
 
-    char *ToString();
     bool Open(unsigned int openFlags, const char *filename) override;
     bool Close() override;
     bool IsOpened() const override { return _filedes >= 0; }

@@ -2,6 +2,7 @@
 
 #include "process.h"
 #include <vespa/storage/storageserver/storagenode.h>
+#include <vespa/storage/storageserver/storagenodecontext.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
@@ -19,11 +20,9 @@ Process::setupConfig(uint64_t subscribeTimeout)
 {
     _documentHandler = _configSubscriber.subscribe<document::DocumenttypesConfig>(_configUri.getConfigId(), subscribeTimeout);
     if (!_configSubscriber.nextConfig()) {
-        throw vespalib::TimeoutException(
-                "Could not subscribe to document config within timeout");
+        throw vespalib::TimeoutException("Could not subscribe to document config within timeout");
     }
-    _repos.push_back(document::DocumentTypeRepo::SP(
-            new document::DocumentTypeRepo(*_documentHandler->getConfig())));
+    _repos.push_back(std::make_shared<document::DocumentTypeRepo>(*_documentHandler->getConfig()));
     getContext().getComponentRegister().setDocumentTypeRepo(_repos.back());
 }
 
@@ -42,9 +41,7 @@ void
 Process::updateConfig()
 {
     if (_documentHandler->isChanged()) {
-        _repos.push_back(document::DocumentTypeRepo::SP(
-                new document::DocumentTypeRepo(
-                    *_documentHandler->getConfig())));
+        _repos.push_back(std::make_shared<document::DocumentTypeRepo>(*_documentHandler->getConfig()));
         getNode().setNewDocumentRepo(_repos.back());
     }
 }

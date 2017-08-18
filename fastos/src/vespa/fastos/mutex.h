@@ -9,8 +9,7 @@
 
 #pragma once
 
-#include <vespa/fastos/types.h>
-
+#include "types.h"
 
 /**
  * This class defines a mutual-exclusion object.
@@ -31,7 +30,7 @@ public:
     /**
      * Destructor
      */
-    virtual ~FastOS_MutexInterface () {};
+    virtual ~FastOS_MutexInterface () {}
 
     /**
      * Obtain an exclusive lock on the mutex. The result of a recursive lock
@@ -42,7 +41,7 @@ public:
      *
      * Use @ref Unlock() to unlock the mutex when done.
      */
-    virtual void Lock (void)=0;
+    virtual void Lock ()=0;
 
     /**
      * Try to obtain an exclusive lock on the mutex. If a lock cannot be
@@ -51,15 +50,15 @@ public:
      * the mutex was locked in the attempt, true is returned.
      * @return              Boolean success/failure
      */
-    virtual bool TryLock (void)=0;
+    virtual bool TryLock ()=0;
 
     /**
      * Unlock a locked mutex. The result of unlocking a mutex not already
      * locked by the calling thread is undefined.
      */
-    virtual void Unlock (void)=0;
+    virtual void Unlock ()=0;
 };
 
-#include <vespa/fastos/unix_mutex.h>
+#include "unix_mutex.h"
 typedef FastOS_UNIX_Mutex FASTOS_PREFIX(Mutex);
 

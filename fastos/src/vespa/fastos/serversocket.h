@@ -118,17 +118,7 @@ public:
      * @param socketHandle   OS handle of supplied socket.
      * @param socketFactory  See @ref SetSocketFactory().
      */
-    FastOS_ServerSocket(int socketHandle,
-                        FastOS_SocketFactory *socketFactory)
-        : _portNumber(-1),
-          _backLog(-1),
-          _socketFactory(socketFactory),
-          _validAddress(false)
-    {
-        _socketHandle = socketHandle;
-        memset(&_address, 0, sizeof(_address));
-        _validAddress = true;
-    }
+    FastOS_ServerSocket(int socketHandle, FastOS_SocketFactory *socketFactory);
 
     /**
      * Create a listening socket. This involves creating an OS

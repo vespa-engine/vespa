@@ -2,6 +2,7 @@
 
 #include "bucketmanagermetrics.h"
 #include <vespa/vespalib/util/exceptions.h>
+#include <cassert>
 
 namespace storage {
 

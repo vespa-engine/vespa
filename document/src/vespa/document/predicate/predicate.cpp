@@ -3,6 +3,7 @@
 #include "predicate.h"
 #include <vespa/vespalib/data/slime/slime.h>
 #include <set>
+#include <climits>
 
 using std::mismatch;
 using std::pair;

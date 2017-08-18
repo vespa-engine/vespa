@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <ostream>
+#include <cassert>
 
 namespace metrics {
 

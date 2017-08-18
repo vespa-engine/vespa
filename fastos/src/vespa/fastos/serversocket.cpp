@@ -6,7 +6,8 @@
  * @author  Div, Oivind H. Danielsen
  */
 
-#include <vespa/fastos/serversocket.h>
+#include "serversocket.h"
+#include <cstring>
 
 
 /**
@@ -93,6 +94,16 @@ FastOS_Socket *FastOS_ServerSocket::AcceptPlain()
     return handlerSocket;
 }
 
+FastOS_ServerSocket::FastOS_ServerSocket(int socketHandle, FastOS_SocketFactory *socketFactory)
+    : _portNumber(-1),
+      _backLog(-1),
+      _socketFactory(socketFactory),
+      _validAddress(false)
+{
+    _socketHandle = socketHandle;
+    memset(&_address, 0, sizeof(_address));
+    _validAddress = true;
+}
 
 bool FastOS_ServerSocket::Listen ()
 {

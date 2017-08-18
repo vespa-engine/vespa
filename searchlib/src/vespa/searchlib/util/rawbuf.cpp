@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/fastos/file.h>
 #include <cassert>
+#include <cstring>
 
 namespace search {
 

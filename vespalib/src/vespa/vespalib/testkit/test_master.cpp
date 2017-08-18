@@ -2,6 +2,7 @@
 
 #include "test_master.h"
 #include <vespa/vespalib/util/barrier.h>
+#include <cstring>
 
 namespace vespalib {
 

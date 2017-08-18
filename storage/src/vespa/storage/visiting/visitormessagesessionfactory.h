@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/storage/visiting/visitormessagesession.h>
+#include "visitormessagesession.h"
 
 namespace storage {
 

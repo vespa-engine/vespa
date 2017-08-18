@@ -3,6 +3,7 @@
 #include <vespa/fastlib/text/unicodeutil.h>
 #include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/fastos/mutex.h>
+#include <cstring>
 
 bool Fast_NormalizeWordFolder::_isInitialized = false;
 FastOS_Mutex _initMutex;

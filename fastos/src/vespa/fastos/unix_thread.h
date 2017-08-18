@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include <vespa/fastos/thread.h>
+#include "thread.h"
 
 class FastOS_UNIX_Thread : public FastOS_ThreadInterface
 {
@@ -36,21 +36,9 @@ public:
 
     ~FastOS_UNIX_Thread();
 
-    static bool Sleep (int ms)
-    {
-        bool rc=false;
-
-        if (ms > 0) {
-            usleep(ms*1000);
-            rc = true;
-        }
-
-        return rc;
-    }
-
+    static bool Sleep (int ms);
     FastOS_ThreadId GetThreadId () override;
-    static bool CompareThreadIds (FastOS_ThreadId a,
-                                  FastOS_ThreadId b);
+    static bool CompareThreadIds (FastOS_ThreadId a, FastOS_ThreadId b);
     static FastOS_ThreadId GetCurrentThreadId ();
 };
 

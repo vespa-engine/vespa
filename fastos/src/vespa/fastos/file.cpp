@@ -6,9 +6,10 @@
  * @author  Div, Oivind H. Danielsen
  */
 
-#include <vespa/fastos/file.h>
+#include "file.h"
 #include <sstream>
-
+#include <cstring>
+#include <fcntl.h>
 
 DirectIOException::DirectIOException(const char * fileName, const void * buffer, size_t length, int64_t offset) :
     std::exception(),
@@ -494,4 +495,19 @@ bool FastOS_FileInterface::Rename (const char *newFileName)
 
 void FastOS_FileInterface::dropFromCache() const
 {
+}
+
+FastOS_DirectoryScanInterface::FastOS_DirectoryScanInterface(const char *path)
+    : _searchPath(strdup(path))
+{
+}
+
+/**
+ * Destructor.
+ *
+ * Frees operating system resources related to the directory scan.
+ */
+FastOS_DirectoryScanInterface::~FastOS_DirectoryScanInterface()
+{
+    free(_searchPath);
 }

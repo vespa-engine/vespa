@@ -4,9 +4,9 @@
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
+#include <climits>
 
 #include <vespa/log/bufferedlogger.h>
-
 LOG_SETUP(".distributor.operation.idealstate.split");
 
 using namespace storage::distributor;

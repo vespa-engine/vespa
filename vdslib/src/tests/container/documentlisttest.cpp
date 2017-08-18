@@ -9,6 +9,8 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <cppunit/extensions/HelperMacros.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 using document::DocumentTypeRepo;
 using document::readDocumenttypesConfig;

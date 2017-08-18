@@ -1,7 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/socket.h>
+#include "socket.h"
 #include <sstream>
+#include <cassert>
+#include <cstring>
+#include <netinet/tcp.h>
 
 FastOS_SocketInterface::FastOS_SocketInterface()
     : _readEventEnabled(false),

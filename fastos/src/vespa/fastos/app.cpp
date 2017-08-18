@@ -6,12 +6,14 @@
  * @author  Div, Oivind H. Danielsen
  */
 
-#include <vespa/fastos/app.h>
-#include <vespa/fastos/socket.h>
-#include <vespa/fastos/file.h>
+#include "app.h"
+#include "socket.h"
+#include "file.h"
 
-#include <vespa/fastos/process.h>
-#include <vespa/fastos/thread.h>
+#include "process.h"
+#include "thread.h"
+#include <cstring>
+#include <fcntl.h>
 
 FastOS_ApplicationInterface *FastOS_ProcessInterface::_app;
 FastOS_ThreadPool *FastOS_ProcessInterface::GetThreadPool ()

@@ -13,6 +13,7 @@
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <climits>
 
 using document::DataType;
 using document::DocIdString;

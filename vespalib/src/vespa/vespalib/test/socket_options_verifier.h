@@ -3,6 +3,9 @@
 #pragma once
 
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <netinet/tcp.h>
 
 namespace vespalib {
 namespace test {

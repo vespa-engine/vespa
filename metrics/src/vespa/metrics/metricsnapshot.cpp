@@ -113,8 +113,8 @@ MetricSnapshotSet::timeForAnotherSnapshot(time_t currentTime) {
         if (currentTime >= lastTime + 2 * getPeriod()) {
             LOG(warning, "Metric snapshot set %s was asked if it was time for "
                          "another snapshot, a whole period beyond when it "
-                         "should have been done (Last update was at time %"
-                         PRIu64 ", current time is %" PRIu64 " and period is %u). "
+                         "should have been done (Last update was at time %lu"
+                         ", current time is %lu and period is %u). "
                          "Clearing data and updating time to current time.",
                 getName().c_str(), lastTime, currentTime, getPeriod());
             reset(currentTime);

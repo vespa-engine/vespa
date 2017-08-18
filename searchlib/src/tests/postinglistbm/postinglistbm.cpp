@@ -13,6 +13,8 @@
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/fastos/app.h>
 
+#include <vespa/log/log.h>
+
 using search::ResultSet;
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataArray;

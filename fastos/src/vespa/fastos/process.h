@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include <vespa/fastos/types.h>
+#include "types.h"
 
 /**
  * This class serves as a sink for redirected (piped) output from
@@ -112,27 +112,13 @@ public:
                              bool pipeStdin = false,
                              FastOS_ProcessRedirectListener *stdoutListener = NULL,
                              FastOS_ProcessRedirectListener *stderrListener = NULL,
-                             int bufferSize = 65535) :
-        _extradoublehackforalignment(0.0),
-        _cmdLine(NULL),
-        _pipeStdin(pipeStdin),
-        _stdoutListener(stdoutListener),
-        _stderrListener(stderrListener),
-        _bufferSize(bufferSize),
-        _next(NULL),
-        _prev(NULL)
-    {
-        _cmdLine = strdup(cmdLine);
-    }
+                             int bufferSize = 65535);
 
     /**
      * Destructor.
      * If @ref Wait has not been called yet, it is called here.
      */
-    virtual ~FastOS_ProcessInterface ()
-    {
-        free (_cmdLine);
-    };
+    virtual ~FastOS_ProcessInterface ();
 
     /**
      * Create and start the process. If your command line includes

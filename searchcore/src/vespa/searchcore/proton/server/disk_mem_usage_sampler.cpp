@@ -3,7 +3,7 @@
 #include "disk_mem_usage_sampler.h"
 #include <vespa/vespalib/util/timer.h>
 #include <vespa/searchlib/common/lambdatask.h>
-#include <cstdlib>
+#include <unistd.h>
 
 using search::makeLambdaTask;
 

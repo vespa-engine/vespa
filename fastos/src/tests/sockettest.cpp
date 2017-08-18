@@ -3,7 +3,7 @@
 #include "tests.h"
 #include <vespa/fastos/file.h>
 #include <vespa/fastos/serversocket.h>
-
+#include <cassert>
 
 #define MAZE_FILE_OFFSET   1078
 

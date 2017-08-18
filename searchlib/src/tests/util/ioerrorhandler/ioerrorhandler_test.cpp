@@ -13,6 +13,7 @@
 #include <string>
 #include <setjmp.h>
 #include <dlfcn.h>
+#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("ioerrorhandler_test");

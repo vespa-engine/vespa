@@ -3,7 +3,7 @@
 
 #include "environment.h"
 #include <vespa/vespalib/util/random.h>
-#include <vespa/vespalib/util/vstringfmt.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -85,12 +85,12 @@ Environment::calculatePathInDir(const Types::BucketId& id, Directory& dir)
     vespalib::RandomGen randomizer(static_cast<uint32_t>(seed) ^ 0xba5eba11);
 
     for (uint32_t i = 1; i <= (uint32_t)_config->dirLevels; ++i) {
-        os << vespalib::make_vespa_string(
+        os << vespalib::make_string(
                 "%.4x/",
                 randomizer.nextUint32() % _config->dirSpread);
     }
 
-    os << vespalib::make_vespa_string("%.8" PRIx64 ".0", id.getId());
+    os << vespalib::make_string("%.8" PRIx64 ".0", id.getId());
     return os.str();
 }
 

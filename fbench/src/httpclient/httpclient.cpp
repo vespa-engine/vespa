@@ -1,5 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "httpclient.h"
+#include <cassert>
+#include <cstring>
 
 #define FETCH_BUFLEN 5120
 #define FIXED_REQ_MAX 256

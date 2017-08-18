@@ -12,34 +12,22 @@
 
 #pragma once
 
-#include "storagemetricsset.h"
-#include "storagenodecontext.h"
-#include "applicationgenerationfetcher.h"
-#include <vespa/document/bucket/bucketidfactory.h>
-#include <vespa/storage/config/config-stor-server.h>
-
-#include <vespa/config/helper/legacysubscriber.h>
-#include <vespa/document/bucket/bucketid.h>
-#include <vespa/document/config/config-documenttypes.h>
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
-#include <vespa/metrics/metrics.h>
-#include <vespa/storage/bucketdb/storbucketdb.h>
-#include <vespa/storage/common/doneinitializehandler.h>
-#include <vespa/storage/common/storagelink.h>
-#include <vespa/storage/common/visitorfactory.h>
-#include <vespa/storage/config/config-stor-prioritymapping.h>
-#include <vespa/storageframework/defaultimplementation/clock/realclock.h>
-#include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
-#include <vespa/storage/frameworkimpl/status/statuswebserver.h>
-#include <vespa/storage/frameworkimpl/thread/deadlockdetector.h>
-#include <vespa/storageframework/defaultimplementation/memory/memorymanager.h>
-#include <vespa/storageframework/defaultimplementation/thread/threadpoolimpl.h>
-#include <vespa/storage/frameworkimpl/memory/memorystatusviewer.h>
-#include <vespa/storageframework/generic/metric/metricupdatehook.h>
-#include <vespa/storage/visiting/visitormessagesessionfactory.h>
 #include <vespa/storage/storageutil/resumeguard.h>
+#include <vespa/storage/common/doneinitializehandler.h>
+#include <vespa/storageframework/generic/metric/metricupdatehook.h>
+#include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
+
+#include <vespa/config/subscription/configuri.h>
+#include <vespa/config/helper/ifetchercallback.h>
+#include <vespa/config/helper/configfetcher.h>
+
+#include <vespa/storage/config/config-stor-prioritymapping.h>
+#include <vespa/storage/config/config-stor-server.h>
+#include <vespa/document/config/config-documenttypes.h>
 #include <vespa/config-upgrading.h>
 #include <vespa/config-stor-distribution.h>
+
+namespace document { class DocumentTypeRepo; }
 
 namespace storage {
 
@@ -49,6 +37,17 @@ class CommunicationManager;
 class FileStorManager;
 class HostInfo;
 class StateManager;
+class MemoryStatusViewer;
+class StatusWebServer;
+class StorageLink;
+class DeadLockDetector;
+class StorageMetricSet;
+class StorageNodeContext;
+class ApplicationGenerationFetcher;
+class StorageComponent;
+
+namespace lib { class NodeType; }
+
 
 class StorageNode : private config::IFetcherCallback<vespa::config::content::core::StorServerConfig>,
                     private config::IFetcherCallback<vespa::config::content::StorDistributionConfig>,
@@ -82,7 +81,7 @@ public:
     void updateMetrics(const MetricLockGuard & guard) override;
 
     /** Updates the document type repo. */
-    void setNewDocumentRepo(const document::DocumentTypeRepo::SP& repo);
+    void setNewDocumentRepo(const std::shared_ptr<document::DocumentTypeRepo>& repo);
 
     /**
      * Pauses the persistence processing. While the returned ResumeGuard
@@ -154,7 +153,7 @@ protected:
     std::unique_ptr<vespa::config::content::StorDistributionConfig> _newDistributionConfig;
     std::unique_ptr<vespa::config::content::core::StorPrioritymappingConfig> _newPriorityConfig;
     std::unique_ptr<document::DocumenttypesConfig> _newDoctypesConfig;
-    StorageComponent::UP _component;
+    std::unique_ptr<StorageComponent> _component;
     config::ConfigUri _configUri;
     CommunicationManager* _communicationManager;
 
@@ -170,7 +169,7 @@ protected:
     void initialize();
     virtual void subscribeToConfigs();
     virtual void initializeNodeSpecific() = 0;
-    virtual StorageLink::UP createChain() = 0;
+    virtual std::unique_ptr<StorageLink> createChain() = 0;
     virtual void handleLiveConfigUpdate();
     void shutdown();
     virtual void removeConfigSubscriptions();

@@ -3,6 +3,7 @@
 #pragma once
 
 #include <memory>
+#include <cstring>
 #include "test_macros.h"
 #include "test_comparators.h"
 #include "test_master.h"

@@ -28,29 +28,16 @@
   #define __STDC_FORMAT_MACROS
 #endif
 
-#include <assert.h>
-
-#include <pthread.h>
-#include <sys/mman.h>
-
 #ifdef __TYPES_H_PTHREAD_U98
 #undef __USE_UNIX98
 #endif
 
-#include <sys/types.h>
-#include <sys/uio.h>
-#include <sys/param.h>
-#include <sys/wait.h>
-#include <sys/utsname.h>
-#include <rpc/types.h>
-#include <stdarg.h>
-#include <ctype.h>
+
 
 #ifndef __USE_UNIX98
 #define __TYPES_H_UNISTD_U98
 #define __USE_UNIX98
 #endif
-#include <unistd.h>
 #ifdef __TYPES_H_UNISTD_U98
 #undef __USE_UNIX98
 #endif
@@ -74,23 +61,10 @@
 #define __TYPES_H_DIRECTIO_GNU
 #endif
 
-#include <fcntl.h>
 
 #ifdef __TYPES_H_DIRECTIO_GNU
 #undef __USE_GNU  /* for O_DIRECT define */
 #endif
-
-#include <stdio.h>
-#include <stdlib.h>
-
-#include <string.h>
-#include <errno.h>
-#include <sys/stat.h>
-#include <limits.h>
-#include <float.h>
-#include <netinet/tcp.h>
-#include <inttypes.h>
-#include <getopt.h>
 
 #if (__WORDSIZE == 64)
 

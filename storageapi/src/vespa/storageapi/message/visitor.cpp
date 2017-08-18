@@ -2,9 +2,9 @@
 
 #include "visitor.h"
 #include <vespa/vespalib/util/array.hpp>
+#include <climits>
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 IMPLEMENT_COMMAND(CreateVisitorCommand, CreateVisitorReply)
 IMPLEMENT_REPLY(CreateVisitorReply)
@@ -230,5 +230,4 @@ operator<<(std::ostream& out, const VisitorInfoCommand::BucketTimestampPair& pai
     return out << pair.bucketId << " - " << pair.timestamp;
 }
 
-} // api
-} // storage
+}

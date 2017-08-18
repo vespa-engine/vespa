@@ -1,7 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/socketevent.h>
-#include <vespa/fastos/socket.h>
+#include "socketevent.h"
+#include "socket.h"
+#include <cassert>
+#include <unistd.h>
+
 
 FastOS_SocketEventObjects *FastOS_SocketEventObjects::_objects = NULL;
 FastOS_Mutex FastOS_SocketEventObjects::_listMutex;

@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/fastos/types.h>
-#include <vespa/fastos/mutex.h>
+#include "types.h"
+#include "mutex.h"
 #include <poll.h>
 
 #include <sys/epoll.h>

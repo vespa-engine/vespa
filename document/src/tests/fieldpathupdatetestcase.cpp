@@ -13,7 +13,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
-
+#include <fcntl.h>
 
 using vespalib::Identifiable;
 using namespace document::config_builder;

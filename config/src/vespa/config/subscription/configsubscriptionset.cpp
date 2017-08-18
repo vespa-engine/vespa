@@ -67,7 +67,7 @@ ConfigSubscriptionSet::acquireSnapshot(uint64_t timeoutInMillis, bool ignoreChan
             } else {
                 LOG(spam, "Config subscription did not change, id(%s), defname(%s)", key.getConfigId().c_str(), key.getDefName().c_str());
             }
-            LOG(spam, "Previous generation is %" PRId64 ", updates is %" PRId64, generation, subscription->getGeneration());
+            LOG(spam, "Previous generation is %ld, updates is %ld", generation, subscription->getGeneration());
             if (isGenerationNewer(subscription->getGeneration(), _currentGeneration)) {
                 numGenerationChanged++;
             }
@@ -88,7 +88,7 @@ ConfigSubscriptionSet::acquireSnapshot(uint64_t timeoutInMillis, bool ignoreChan
 
     bool updated = inSync && isGenerationNewer(lastGeneration, _currentGeneration);
     if (updated) {
-        LOG(spam, "Config was updated from %" PRId64 " to %" PRId64, _currentGeneration, lastGeneration);
+        LOG(spam, "Config was updated from %ld to %ld", _currentGeneration, lastGeneration);
         _currentGeneration = lastGeneration;
         _state = CONFIGURED;
         for (SubscriptionList::iterator it(_subscriptionList.begin()), mt(_subscriptionList.end());

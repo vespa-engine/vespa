@@ -4,6 +4,7 @@
 
 #include "resultset.h"
 #include "bitvector.h"
+#include <cstring>
 
 using vespalib::alloc::Alloc;
 

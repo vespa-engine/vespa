@@ -5,6 +5,7 @@
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/base/documentid.h>
 #include <sstream>
+#include <cassert>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".persistence.split.bitdetector");

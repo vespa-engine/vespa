@@ -3,6 +3,7 @@
 #include "packetqueue.h"
 #include "packet.h"
 #include <vespa/fastos/time.h>
+#include <cassert>
 
 void
 FNET_PacketQueue_NoLock::ExpandBuf(uint32_t needentries)

@@ -9,13 +9,12 @@
 #include <vespa/searchlib/diskindex/docidmapper.h>
 #include <vespa/searchlib/diskindex/wordnummapper.h>
 #include <vespa/searchlib/diskindex/fieldreader.h>
-#include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/fastos/app.h>
 #include <iostream>
+#include <getopt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-index-inspect");

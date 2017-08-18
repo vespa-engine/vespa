@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <limits>
 #include <stdexcept>
+#include <cassert>
 
 namespace vespalib {
 

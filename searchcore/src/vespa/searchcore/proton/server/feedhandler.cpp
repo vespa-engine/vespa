@@ -20,6 +20,7 @@
 #include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.feedhandler");

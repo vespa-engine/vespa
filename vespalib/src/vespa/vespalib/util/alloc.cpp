@@ -9,6 +9,7 @@
 #include <atomic>
 #include <unordered_map>
 #include <vespa/fastos/file.h>
+#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.alloc");

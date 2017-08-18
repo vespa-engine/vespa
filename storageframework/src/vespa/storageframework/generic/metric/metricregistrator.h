@@ -10,22 +10,24 @@
  */
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <vespa/storageframework/generic/clock/time.h>
 #include <vespa/vespalib/util/sync.h>
 
-namespace storage {
-namespace framework {
+namespace metrics {
+    class Metric;
+}
+
+namespace storage::framework {
+
+class MetricUpdateHook;
 
 struct MetricRegistrator {
     virtual ~MetricRegistrator() {}
 
     virtual void registerMetric(metrics::Metric&) = 0;
-    virtual void registerUpdateHook(vespalib::stringref name,
-                                    MetricUpdateHook& hook,
-                                    SecondTime period) = 0;
+    virtual void registerUpdateHook(vespalib::stringref name, MetricUpdateHook& hook, SecondTime period) = 0;
     virtual vespalib::MonitorGuard getMetricManagerLock() = 0;
 };
 
-} // framework
-} // storage
+}
 

@@ -4,6 +4,9 @@
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/log/log.h>
+#include <fcntl.h>
+#include <unistd.h>
+
 LOG_SETUP(".testbase");
 
 using document::DocumentTypeRepo;

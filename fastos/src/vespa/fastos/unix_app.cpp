@@ -7,10 +7,12 @@
 * Implementation of FastOS_UNIX_Application methods.
 *****************************************************************************/
 
-#include <vespa/fastos/app.h>
-#include <vespa/fastos/time.h>
-#include <vespa/fastos/process.h>
-#include <vespa/fastos/unix_ipc.h>
+#include "app.h"
+#include "time.h"
+#include "process.h"
+#include "unix_ipc.h"
+#include <unistd.h>
+#include <getopt.h>
 
 
 FastOS_UNIX_Application::FastOS_UNIX_Application ()
@@ -33,6 +35,36 @@ unsigned int FastOS_UNIX_Application::GetCurrentProcessId ()
     return static_cast<unsigned int>(getpid());
 }
 
+int
+FastOS_UNIX_Application::GetOpt (const char *optionsString,
+            const char* &optionArgument,
+            int &optionIndex)
+{
+    optind = optionIndex;
+
+    int rc = getopt(_argc, _argv, optionsString);
+    optionArgument = optarg;
+    optionIndex = optind;
+    return rc;
+}
+
+int
+FastOS_UNIX_Application::GetOptLong(const char *optionsString,
+               const char* &optionArgument,
+               int &optionIndex,
+               const struct option *longopts,
+               int *longindex)
+{
+    optind = optionIndex;
+
+    int rc = getopt_long(_argc, _argv, optionsString,
+                         longopts,
+                         longindex);
+
+    optionArgument = optarg;
+    optionIndex = optind;
+    return rc;
+}
 
 bool FastOS_UNIX_Application::
 SendIPCMessage (FastOS_UNIX_Process *xproc, const void *buffer,

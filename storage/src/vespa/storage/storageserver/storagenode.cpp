@@ -1,37 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "storagenode.h"
-#include "bouncer.h"
-#include "bucketintegritychecker.h"
 #include "communicationmanager.h"
-#include "mergethrottler.h"
-#include "opslogger.h"
 #include "statemanager.h"
 #include "statereporter.h"
 #include "storagemetricsset.h"
+#include "storagenodecontext.h"
 
-#include <vespa/storage/bucketdb/bucketmanager.h>
-#include <vespa/storage/bucketdb/storagebucketdbinitializer.h>
-#include <vespa/storage/bucketmover/bucketmover.h>
-#include <vespa/storageframework/storageframework.h>
-#include <vespa/storageframework/defaultimplementation/memory/prioritymemorylogic.h>
+#include <vespa/storage/frameworkimpl/memory/memorystatusviewer.h>
+#include <vespa/storage/frameworkimpl/status/statuswebserver.h>
+#include <vespa/storage/frameworkimpl/thread/deadlockdetector.h>
 #include <vespa/storage/common/statusmetricconsumer.h>
-#include <vespa/storage/common/hostreporter/hostinfo.h>
-#include <vespa/storage/distributor/bucketdbupdater.h>
-#include <vespa/storage/distributor/distributor.h>
-#include <vespa/storage/distributor/pendingmessagetracker.h>
-#include <vespa/storage/persistence/filestorage/filestormanager.h>
-#include <vespa/storage/storageutil/functor.h>
-#include <vespa/storage/storageutil/log.h>
-#include <vespa/storage/visiting/visitormanager.h>
-#include <vespa/storage/visiting/messagebusvisitormessagesession.h>
-#include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/metrics/metricmanager.h>
-#include <fstream>
-#include <sstream>
+#include <fcntl.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".node.server");
 
 namespace storage {

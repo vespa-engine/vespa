@@ -3,12 +3,9 @@
 #pragma once
 
 #include <vespa/fastos/dynamiclibrary.h>
+#include <cstring>
 
-namespace vespalib {
-
-namespace hwaccelrated {
-
-namespace avx {
+namespace vespalib::hwaccelrated::avx {
 
 namespace {
 
@@ -79,6 +76,4 @@ T dotProductSelectAlignment(const T * af, const T * bf, size_t sz)
     }
 }
 
-}
-}
 }

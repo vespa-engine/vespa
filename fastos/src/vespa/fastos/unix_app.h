@@ -9,8 +9,8 @@
 #pragma once
 
 
-#include <vespa/fastos/types.h>
-#include <vespa/fastos/app.h>
+#include "types.h"
+#include "app.h"
 
 class FastOS_UNIX_ProcessStarter;
 class FastOS_UNIX_IPCHelper;
@@ -34,34 +34,10 @@ public:
     FastOS_UNIX_Application ();
     virtual ~FastOS_UNIX_Application();
 
-    int GetOpt (const char *optionsString,
-                const char* &optionArgument,
-                int &optionIndex)
-    {
-        optind = optionIndex;
+    int GetOpt (const char *optionsString, const char* &optionArgument, int &optionIndex);
 
-        int rc = getopt(_argc, _argv, optionsString);
-        optionArgument = optarg;
-        optionIndex = optind;
-        return rc;
-    }
-
-    int GetOptLong(const char *optionsString,
-                   const char* &optionArgument,
-                   int &optionIndex,
-                   const struct option *longopts,
-                   int *longindex)
-    {
-        optind = optionIndex;
-
-        int rc = getopt_long(_argc, _argv, optionsString,
-                             longopts,
-                             longindex);
-
-        optionArgument = optarg;
-        optionIndex = optind;
-        return rc;
-    }
+    int GetOptLong(const char *optionsString, const char* &optionArgument, int &optionIndex,
+                   const struct option *longopts, int *longindex);
 
     static unsigned int GetCurrentProcessId ();
 

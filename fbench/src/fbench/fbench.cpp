@@ -2,10 +2,10 @@
 #include <util/timer.h>
 #include <httpclient/httpclient.h>
 #include <util/filereader.h>
+#include <util/clientstatus.h>
 #include "client.h"
 #include "fbench.h"
-#include <thread>
-
+#include <cstring>
 #include <cmath>
 
 sig_atomic_t exitSignal = 0;
@@ -161,7 +161,7 @@ FBench::PrintSummary()
 
     if (_keepAlive) {
         printf("*** HTTP keep-alive statistics ***\n");
-        printf("connection reuse count -- %" PRId64 "\n", status._reuseCnt);
+        printf("connection reuse count -- %zu\n", status._reuseCnt);
     }
     printf("***************** Benchmark Summary *****************\n");
     printf("clients:                %8ld\n", _clients.size());

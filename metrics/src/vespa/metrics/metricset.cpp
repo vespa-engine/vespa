@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <list>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".metrics.metricsset");
@@ -71,6 +72,15 @@ MetricSet::getMetricInternal(const String& name) const
             return metric;
         }
     }
+    return 0;
+}
+
+int64_t MetricSet::getLongValue(const stringref &) const {
+    assert(false);
+    return 0;
+}
+double MetricSet::getDoubleValue(const stringref &) const {
+    assert(false);
     return 0;
 }
 

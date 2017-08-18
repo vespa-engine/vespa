@@ -4,6 +4,9 @@
 #include <vespa/vespalib/util/process_memory_stats.h>
 #include <iostream>
 #include <fstream>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 
 using namespace vespalib;

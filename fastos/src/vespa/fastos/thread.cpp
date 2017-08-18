@@ -6,7 +6,9 @@
  * @author  Oivind H. Danielsen
  */
 
-#include <vespa/fastos/thread.h>
+#include "thread.h"
+#include <cstdio>
+#include <cassert>
 
 // ----------------------------------------------------------------------
 // FastOS_ThreadPool

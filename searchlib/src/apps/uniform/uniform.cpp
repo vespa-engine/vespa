@@ -2,6 +2,7 @@
 
 #include <vespa/fastos/app.h>
 #include <vespa/searchlib/bitcompression/compression.h>
+#include <vespa/log/log.h>
 
 
 static uint64_t

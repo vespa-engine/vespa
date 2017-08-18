@@ -1,17 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("foregroundtaskexecutor_test");
+
 #include <vespa/searchlib/common/foregroundtaskexecutor.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <mutex>
 #include <condition_variable>
+#include <unistd.h>
 
-namespace search
-{
+#include <vespa/log/log.h>
+LOG_SETUP("foregroundtaskexecutor_test");
 
-namespace common
-{
+namespace search::common {
 
 
 class Fixture
@@ -117,7 +116,6 @@ TEST_F("require that task with different ids are serialized", Fixture)
 }
 
 
-}  // namespace common
-}  // namespace search
+}
 
 TEST_MAIN() { TEST_RUN_ALL(); }

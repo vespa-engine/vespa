@@ -10,6 +10,7 @@
 #include <vespa/fastlib/util/base64.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fastos/file.h>
+#include <cassert>
 
 /**
  * Helper class for hiding the details of HTTP entity encodings and

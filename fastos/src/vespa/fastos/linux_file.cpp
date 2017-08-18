@@ -7,9 +7,10 @@
 * Implementation of FastOS_Linux_File methods.
 *****************************************************************************/
 
-#include <vespa/fastos/file.h>
+#include "file.h"
 #include <sstream>
-#include <stdexcept>
+#include <unistd.h>
+#include <fcntl.h>
 
 const size_t FastOS_Linux_File::_directIOFileAlign = 4096;
 const size_t FastOS_Linux_File::_directIOMemAlign = 4096;

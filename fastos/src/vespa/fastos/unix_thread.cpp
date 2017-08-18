@@ -1,7 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/thread.h>
+#include "thread.h"
 #include <atomic>
 #include <thread>
+#include <unistd.h>
 
 namespace {
    std::atomic_size_t _G_nextCpuId(0);
@@ -69,7 +70,7 @@ void FastOS_UNIX_Thread::PreEntry ()
 {
 }
 
-FastOS_UNIX_Thread::~FastOS_UNIX_Thread(void)
+FastOS_UNIX_Thread::~FastOS_UNIX_Thread()
 {
     void *value;
 
@@ -78,6 +79,18 @@ FastOS_UNIX_Thread::~FastOS_UNIX_Thread(void)
         value = NULL;
         pthread_join(_handle, &value);
     }
+}
+
+bool FastOS_UNIX_Thread::Sleep (int ms)
+{
+    bool rc=false;
+
+    if (ms > 0) {
+        usleep(ms*1000);
+        rc = true;
+    }
+
+    return rc;
 }
 
 FastOS_ThreadId FastOS_UNIX_Thread::GetThreadId ()
@@ -90,8 +103,7 @@ FastOS_ThreadId FastOS_UNIX_Thread::GetCurrentThreadId ()
     return pthread_self();
 }
 
-bool FastOS_UNIX_Thread::CompareThreadIds (FastOS_ThreadId a,
-        FastOS_ThreadId b)
+bool FastOS_UNIX_Thread::CompareThreadIds (FastOS_ThreadId a, FastOS_ThreadId b)
 {
     return (pthread_equal(a, b) != 0);
 }

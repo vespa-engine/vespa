@@ -56,7 +56,7 @@ FastOS_UNIX_DynamicLibrary::Close()
     bool retcode = true;
 
     if (IsOpen()) {
-        retcode = (dlclose(_handle) == TRUE);
+        retcode = (dlclose(_handle) == 0);
         if (retcode)
             _handle = NULL;
     }

@@ -3,6 +3,7 @@
 #include <vespa/config/configgen/value_converter.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <climits>
 
 using namespace config;
 using namespace config::internal;

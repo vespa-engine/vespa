@@ -13,6 +13,9 @@ LOG_SETUP_INDIRECT(".log", "$Id$");
 #include "bufferedlogger.h"
 
 #include <vespa/fastos/thread.h>
+#include <cassert>
+#include <cstdarg>
+#include <unistd.h>
 
 namespace ns_log {
 

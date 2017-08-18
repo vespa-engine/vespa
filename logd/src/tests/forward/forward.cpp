@@ -3,6 +3,8 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <logd/forward.h>
 #include <sstream>
+#include <fcntl.h>
+#include <unistd.h>
 
 using ns_log::Logger;
 using namespace logdemon;

@@ -1,11 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/unix_ipc.h>
-
-#include <vespa/fastos/ringbuffer.h>
+#include "unix_ipc.h"
+#include "ringbuffer.h"
+#include <cassert>
+#include <cstring>
+#include <unistd.h>
+#include <fcntl.h>
 
 FastOS_UNIX_IPCHelper::
-FastOS_UNIX_IPCHelper (FastOS_ApplicationInterface *app,
-                       int descriptor)
+FastOS_UNIX_IPCHelper (FastOS_ApplicationInterface *app, int descriptor)
     : _lock(),
       _exitFlag(false),
       _app(app),

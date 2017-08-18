@@ -5,6 +5,7 @@ vespa_add_library(fastos_objects OBJECT
     backtrace.c
     file.cpp
     linux_file.cpp
+    process.cpp
     serversocket.cpp
     socket.cpp
     socketevent.cpp

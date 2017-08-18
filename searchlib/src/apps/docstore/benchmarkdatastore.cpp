@@ -8,6 +8,7 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/fastos/app.h>
+#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("documentstore.benchmark");

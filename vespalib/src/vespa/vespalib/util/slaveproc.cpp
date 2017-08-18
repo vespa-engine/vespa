@@ -3,6 +3,7 @@
 #include <vespa/fastos/time.h>
 #include "guard.h"
 #include "slaveproc.h"
+#include <cstring>
 
 #ifndef FASTOS_NO_THREADS
 

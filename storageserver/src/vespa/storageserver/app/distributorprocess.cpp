@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/storageserver/app/distributorprocess.h>
+#include "distributorprocess.h"
+#include <vespa/storage/common/storagelink.h>
 #include <vespa/config/helper/configgetter.hpp>
 
 #include <vespa/log/log.h>
@@ -49,12 +50,10 @@ DistributorProcess::updateConfig()
 {
     Process::updateConfig();
     if (_distributorConfigHandler->isChanged()) {
-        _node->handleConfigChange(
-                *_distributorConfigHandler->getConfig());
+        _node->handleConfigChange(*_distributorConfigHandler->getConfig());
     }
     if (_visitDispatcherConfigHandler->isChanged()) {
-        _node->handleConfigChange(
-                *_visitDispatcherConfigHandler->getConfig());
+        _node->handleConfigChange(*_visitDispatcherConfigHandler->getConfig());
     }
 }
 
@@ -76,11 +75,9 @@ DistributorProcess::configUpdated()
 void
 DistributorProcess::createNode()
 {
-    _node.reset(new DistributorNode(_configUri, _context, *this, _activeFlag));
-    _node->handleConfigChange(
-            *_distributorConfigHandler->getConfig());
-    _node->handleConfigChange(
-            *_visitDispatcherConfigHandler->getConfig());
+    _node.reset(new DistributorNode(_configUri, _context, *this, _activeFlag, StorageLink::UP()));
+    _node->handleConfigChange(*_distributorConfigHandler->getConfig());
+    _node->handleConfigChange(*_visitDispatcherConfigHandler->getConfig());
 }
 
 } // storage

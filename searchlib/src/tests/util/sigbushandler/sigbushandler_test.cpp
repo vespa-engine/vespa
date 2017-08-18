@@ -1,16 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("sigbushandler_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchlib/util/statefile.h>
 #include <vespa/searchlib/util/sigbushandler.h>
-#include <atomic>
 #include <iostream>
 #include <fstream>
-#include <string>
 #include <vespa/searchlib/test/statefile.h>
 #include <vespa/searchlib/test/statestring.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/mman.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("sigbushandler_test");
 
 using namespace search::test::statefile;
 using namespace search::test::statestring;

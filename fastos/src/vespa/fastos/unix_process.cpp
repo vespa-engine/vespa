@@ -1,9 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/process.h>
-#include <vespa/fastos/app.h>
-#include <vespa/fastos/unix_ipc.h>
-#include <vespa/fastos/time.h>
+#include "process.h"
+#include "unix_ipc.h"
+#include "time.h"
+#include "ringbuffer.h"
 #include <vector>
+#include <cstring>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/wait.h>
 
 #ifndef AF_LOCAL
 #define AF_LOCAL        AF_UNIX
@@ -1408,6 +1412,29 @@ bool FastOS_UNIX_ProcessStarter::CreateSocketPairs ()
     return rc;
 }
 
+FastOS_UNIX_ProcessStarter::FastOS_UNIX_ProcessStarter (FastOS_ApplicationInterface *app)
+    : _app(app),
+      _processList(NULL),
+      _pid(-1),
+      _starterSocket(-1),
+      _mainSocket(-1),
+      _starterSocketDescr(-1),
+      _mainSocketDescr(-1),
+      _hasProxiedChildren(false),
+      _closedProxyProcessFiles(false),
+      _hasDetachedProcess(false),
+      _hasDirectChildren(false)
+{
+}
+
+FastOS_UNIX_ProcessStarter::~FastOS_UNIX_ProcessStarter ()
+{
+    if(_starterSocket != -1)
+        close(_starterSocket);
+    if(_mainSocket != -1)
+        close(_mainSocket);
+}
+
 bool FastOS_UNIX_ProcessStarter::Start ()
 {
     bool rc = false;
@@ -1978,4 +2005,42 @@ bool FastOS_UNIX_ProcessStarter::Detach(FastOS_UNIX_Process *process)
     }
     process->_app->ProcessUnlock();
     return rc;
+}
+
+FastOS_UNIX_Process::DescriptorHandle::DescriptorHandle()
+    : _fd(-1),
+      _wantRead(false),
+      _wantWrite(false),
+      _canRead(false),
+      _canWrite(false),
+      _pollIdx(-1),
+      _readBuffer(),
+      _writeBuffer()
+{
+}
+FastOS_UNIX_Process::DescriptorHandle::~DescriptorHandle() { }
+void
+FastOS_UNIX_Process::DescriptorHandle::CloseHandle()
+{
+    _wantRead = false;
+    _wantWrite = false;
+    _canRead = false;
+    _canWrite = false;
+    _pollIdx = -1;
+    if (_fd != -1) {
+        close(_fd);
+        _fd = -1;
+    }
+    if (_readBuffer.get() != NULL)
+        _readBuffer->Close();
+    if (_writeBuffer.get() != NULL)
+        _writeBuffer->Close();
+}
+void
+FastOS_UNIX_Process::DescriptorHandle::CloseHandleDirectChild()
+{
+    if (_fd != -1) {
+        close(_fd);
+        _fd = -1;
+    }
 }

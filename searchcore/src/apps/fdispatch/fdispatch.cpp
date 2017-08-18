@@ -10,6 +10,7 @@
 #include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/fastos/app.h>
 #include <thread>
+#include <getopt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("fdispatch");

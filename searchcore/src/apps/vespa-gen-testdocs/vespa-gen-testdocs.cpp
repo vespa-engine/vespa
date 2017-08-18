@@ -7,9 +7,10 @@
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/fastos/app.h>
 #include <iostream>
-#include <algorithm>
 #include <sstream>
 #include <openssl/sha.h>
+#include <cassert>
+#include <getopt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-gen-testdocs");

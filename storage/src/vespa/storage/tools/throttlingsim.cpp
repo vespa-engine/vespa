@@ -3,6 +3,7 @@
 #include "throttlingsim.h"
 #include <algorithm>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <unistd.h>
 
 bool Receiver::enqueue(const Message& msg) {
     vespalib::MonitorGuard lock(sync);

@@ -4,8 +4,7 @@
 #include "simple_index.h"
 #include <vespa/searchlib/common/rcuvector.hpp>
 
-namespace search {
-namespace predicate {
+namespace search::predicate {
 
 namespace simpleindex {
     bool log_enabled();
@@ -219,7 +218,7 @@ void SimpleIndex<Posting, Key, DocId>::logVector(
     if (!simpleindex::log_enabled()) return;
     auto msg = vespalib::make_string(
             "%s vector for key '%016" PRIx64 "' with length %zu. Contains %zu documents "
-                    "(doc id limit %" PRIu32", committed doc id limit %" PRIu32 ", ratio %f, "
+                    "(doc id limit %u, committed doc id limit %u, ratio %f, "
                     "vector count %zu)",
             action, key, vector_length, document_count, _limit_provider.getDocIdLimit(),
             _limit_provider.getCommittedDocIdLimit(), ratio, _vector_posting_lists.size());
@@ -312,5 +311,4 @@ MemoryUsage SimpleIndex<Posting, Key, DocId>::getMemoryUsage() const {
     return combined;
 };
 
-}  // namespace predicate
-} // namespace search
+}

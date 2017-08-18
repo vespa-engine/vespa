@@ -6,7 +6,7 @@
 class Messages50Test : public TestBase {
 protected:
     const vespalib::Version getVersion() const override { return vespalib::Version(5, 0); }
-    bool shouldTestCoverage() const override { return FALSE; }
+    bool shouldTestCoverage() const override { return false; }
     bool tryDocumentReply(const string &filename, uint32_t type);
     bool tryVisitorReply(const string &filename, uint32_t type);
 

@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "metricpersistenceprovider.h"
+#include <cassert>
 
 #include <vespa/log/log.h>
-
 LOG_SETUP(".persistence.spi.metrics");
 
 #define PRE_PROCESS(opIndex) \

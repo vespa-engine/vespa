@@ -25,6 +25,8 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exception.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 using namespace document::config_builder;
 using vespalib::tensor::Tensor;

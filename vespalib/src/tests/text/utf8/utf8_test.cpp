@@ -1,10 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("utf8_test");
+
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/text/utf8.h>
+#include <fcntl.h>
+#include <unistd.h>
 
+
+#include <vespa/log/log.h>
+LOG_SETUP("utf8_test");
 #if 0
 #include <vespa/fastlib/text/unicodeutil.h>
 #endif

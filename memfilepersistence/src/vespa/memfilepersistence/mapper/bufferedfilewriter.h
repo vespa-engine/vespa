@@ -16,16 +16,15 @@
 
 #pragma once
 
-#include <vespa/fastos/types.h>
 #include <vector>
+#include <cstring>
+#include <cstdint>
 
 namespace vespalib {
     class File;
 }
 
-namespace storage {
-
-namespace memfile {
+namespace storage::memfile {
 
 class BufferedFileWriter {
 public:
@@ -115,6 +114,3 @@ private:
 };
 
 }
-
-}
-

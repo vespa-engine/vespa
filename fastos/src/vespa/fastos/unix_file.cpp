@@ -7,9 +7,15 @@
 * Implementation of FastOS_UNIX_File methods.
 *****************************************************************************/
 
-#include <vespa/fastos/file.h>
-#include <sys/vfs.h>
+#include "file.h"
 #include <sstream>
+#include <cassert>
+#include <cstring>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <sys/vfs.h>
 
 bool
 FastOS_UNIX_File::SetPosition(int64_t desiredPosition)
@@ -58,6 +64,8 @@ FastOS_UNIX_File::Stat(const char *filename, FastOS_StatInfo *statInfo)
 
     return rc;
 }
+
+bool FastOS_UNIX_File::SetCurrentDirectory (const char *pathName) { return (chdir(pathName) == 0); }
 
 
 int FastOS_UNIX_File::GetMaximumFilenameLength (const char *pathName)

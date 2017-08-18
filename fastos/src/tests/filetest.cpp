@@ -3,6 +3,8 @@
 #include "tests.h"
 #include <vespa/fastos/file.h>
 #include <memory>
+#include <cassert>
+#include <sys/mman.h>
 
 namespace {
 

@@ -6,6 +6,7 @@
 #include <thread>
 #include <functional>
 #include <chrono>
+#include <fcntl.h>
 
 using namespace vespalib;
 
