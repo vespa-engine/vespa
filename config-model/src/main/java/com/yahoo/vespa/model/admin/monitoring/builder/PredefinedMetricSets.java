@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static com.yahoo.vespa.model.admin.monitoring.NetworkMetrics.networkMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.SystemMetrics.systemMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultVespaMetrics.defaultVespaMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.VespaMetricSet.vespaMetricSet;
@@ -21,7 +22,8 @@ public class PredefinedMetricSets {
     public static final Map<String, MetricSet> predefinedMetricSets = toMapById(
             defaultVespaMetricSet,
             vespaMetricSet,
-            systemMetricSet
+            systemMetricSet,
+            networkMetricSet
     );
 
     private static Map<String, MetricSet> toMapById(MetricSet... metricSets) {
