@@ -79,6 +79,10 @@ public class EvaluationTestCase {
         tester.assertEvaluates(0, "sin(0)");
         tester.assertEvaluates(1, "cos(0)");
         tester.assertEvaluates(8, "pow(4/2,min(cos(0)*3,5))");
+        
+        // Random feature (which is also a tensor function) (We expect to be able to parse it and look up a zero)
+        tester.assertEvaluates(0, "random(1)");
+        tester.assertEvaluates(0, "random(foo)");
 
         // Combined
         tester.assertEvaluates(1.25, "5*if(1>=1.1, one_half, if(min(1,2)<max(1,2),if (\"foo\" in [\"foo\",\"bar\"],a_quarter,3000), 0.57345347))");

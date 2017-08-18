@@ -16,11 +16,10 @@ import static org.junit.Assert.assertEquals;
  */
 public class EvaluationTester {
 
-    private double tolerance = 0.000001;
     private MapContext defaultContext;
 
     public EvaluationTester() {
-        Map<String, Value> bindings = new HashMap<String, Value>();
+        Map<String, Value> bindings = new HashMap<>();
         bindings.put("zero", DoubleValue.frozen(0d));
         bindings.put("one", DoubleValue.frozen(1d));
         bindings.put("one_half", DoubleValue.frozen(0.5d));
