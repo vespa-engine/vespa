@@ -9,11 +9,15 @@ import com.yahoo.vespa.hosted.node.verification.commons.parser.ParseResult;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created by olaa on 30/06/2017.
+ * Retrieves number of CPU cores, and stores the result in a HardwareInfo instance
+ *
+ * @author olaaun
+ * @author sgrostad
  */
 public class CPURetriever implements HardwareRetriever {
 
@@ -31,28 +35,29 @@ public class CPURetriever implements HardwareRetriever {
         this.commandExecutor = commandExecutor;
     }
 
+    @Override
     public void updateInfo() {
         try {
-            ArrayList<String> commandOutput = commandExecutor.executeCommand(CPU_INFO_COMMAND);
-            ArrayList<ParseResult> parseResults = parseCPUInfoFile(commandOutput);
+            List<String> commandOutput = commandExecutor.executeCommand(CPU_INFO_COMMAND);
+            List<ParseResult> parseResults = parseCPUInfoFile(commandOutput);
             setCpuCores(parseResults);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to retrieve CPU info", e);
         }
     }
 
-    protected ArrayList<ParseResult> parseCPUInfoFile(ArrayList<String> commandOutput) {
-        ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD));
+    protected List<ParseResult> parseCPUInfoFile(List<String> commandOutput) {
+        List<String> searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD));
         ParseInstructions parseInstructions = new ParseInstructions(SEARCH_ELEMENT_INDEX, RETURN_ELEMENT_INDEX, REGEX_SPLIT, searchWords);
-        ArrayList<ParseResult> parseResults = OutputParser.parseOutput(parseInstructions, commandOutput);
+        List<ParseResult> parseResults = OutputParser.parseOutput(parseInstructions, commandOutput);
         return parseResults;
     }
 
-    protected void setCpuCores(ArrayList<ParseResult> parseResults) {
+    protected void setCpuCores(List<ParseResult> parseResults) {
         hardwareInfo.setMinCpuCores(countCpuCores(parseResults));
     }
 
-    protected int countCpuCores(ArrayList<ParseResult> parseResults) {
+    protected int countCpuCores(List<ParseResult> parseResults) {
         return parseResults.size();
     }
 

@@ -14,6 +14,11 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
+/**
+ * @author sgrostad
+ * @author olaaun
+ */
+
 public class IPAddressVerifierTest {
 
     private IPAddressVerifier ipAddressVerifier = spy(new IPAddressVerifier());

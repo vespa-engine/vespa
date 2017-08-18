@@ -8,8 +8,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Created by sgrostad on 12/07/2017.
  * JSON-mapped class for reporting benchmark results to node repo
+ * 
+ * @author sgrostad
+ * @author olaaun
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class BenchmarkReport {
@@ -62,7 +64,7 @@ public class BenchmarkReport {
         try {
             String jsonReport = om.writeValueAsString(this);
             return jsonReport.length() == 2;
-        } catch (JsonProcessingException e){
+        } catch (JsonProcessingException e) {
             e.printStackTrace();
             return false;
         }

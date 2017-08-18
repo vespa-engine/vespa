@@ -10,6 +10,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -19,8 +20,10 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
 /**
- * Created by sgrostad on 07/07/2017.
+ * @author sgrostad
+ * @author olaaun
  */
+
 public class NetRetrieverTest {
 
     private static final String RESOURCE_PATH = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/";
@@ -32,7 +35,7 @@ public class NetRetrieverTest {
     private HardwareInfo hardwareInfo;
     private MockCommandExecutor commandExecutor;
     private NetRetriever net;
-    private ArrayList<ParseResult> parseResults;
+    private List<ParseResult> parseResults;
     private VerifierSettings verifierSettings = spy(new VerifierSettings());
     private static final double DELTA = 0.1;
 
@@ -70,7 +73,7 @@ public class NetRetrieverTest {
 
     @Test
     public void parseNetInterface_get_ipv_from_ifconfig_testFile() throws IOException {
-        ArrayList<String> mockOutput = MockCommandExecutor.readFromFile(NET_FIND_INTERFACE);
+        List<String> mockOutput = MockCommandExecutor.readFromFile(NET_FIND_INTERFACE);
         parseResults = net.parseNetInterface(mockOutput);
         net.updateHardwareInfoWithNet(parseResults);
         assertTrue(hardwareInfo.getIpv4Interface());
@@ -79,7 +82,7 @@ public class NetRetrieverTest {
 
     @Test
     public void parseNetInterface_get_ipv_from_ifconfigNotIpv6_testFile() throws IOException {
-        ArrayList<String> mockOutput = MockCommandExecutor.readFromFile(NET_FIND_INTERFACE + "NoIpv6");
+        List<String> mockOutput = MockCommandExecutor.readFromFile(NET_FIND_INTERFACE + "NoIpv6");
         parseResults = net.parseNetInterface(mockOutput);
         ArrayList<ParseResult> expextedParseResults = new ArrayList<>(Arrays.asList(
                 new ParseResult("inet", "inet")));
@@ -88,7 +91,7 @@ public class NetRetrieverTest {
 
     @Test
     public void parseInterfaceSpeed_get_interfaceSpeed_from_eth0_testFile() throws IOException {
-        ArrayList<String> mockOutput = MockCommandExecutor.readFromFile("src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/eth0");
+        List<String> mockOutput = MockCommandExecutor.readFromFile("src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/eth0");
         ParseResult parseResult = net.parseInterfaceSpeed(mockOutput);
         ParseResult expectedParseResult = new ParseResult("Speed", "1000Mb/s");
         assertEquals(expectedParseResult, parseResult);
@@ -117,7 +120,7 @@ public class NetRetrieverTest {
 
     @Test
     public void parsePingResponse_valid_ping_response_should_return_ipv6_connectivity() throws IOException {
-        ArrayList<String> mockCommandOutput = MockCommandExecutor.readFromFile(VALID_PING_RESPONSE);
+        List<String> mockCommandOutput = MockCommandExecutor.readFromFile(VALID_PING_RESPONSE);
         ParseResult parseResult = net.parsePingResponse(mockCommandOutput);
         String expectedPing = "0";
         assertEquals(expectedPing, parseResult.getValue());
@@ -125,7 +128,7 @@ public class NetRetrieverTest {
 
     @Test
     public void parsePingResponse_invalid_ping_response_should_throw_IOException() throws IOException {
-        ArrayList<String> mockCommandOutput = MockCommandExecutor.readFromFile(INVALID_PING_RESPONSE);
+        List<String> mockCommandOutput = MockCommandExecutor.readFromFile(INVALID_PING_RESPONSE);
         try {
             ParseResult parseResult = net.parsePingResponse(mockCommandOutput);
             fail("Expected an IOException to be thrown");

@@ -1,16 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.verification.commons;
 
-import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
-
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Created by olaa on 14/07/2017.
  * Makes the URL used to retrieve the JSON from the node repository with information about the node's spec.
+ *
+ * @author olaaun
+ * @author sgrostad
  */
 public class HostURLGenerator {
 
@@ -20,8 +21,8 @@ public class HostURLGenerator {
     private static final String PARSE_ALL_HOSTNAMES_REGEX = ",";
     private static final String PROTOCOL_REGEX = "^(https?|file)://.*$";
 
-    public static ArrayList<URL> generateNodeInfoUrl(CommandExecutor commandExecutor, String commaSeparatedUrls) throws IOException {
-        ArrayList<URL> nodeInfoUrls = new ArrayList<>();
+    public static List<URL> generateNodeInfoUrl(CommandExecutor commandExecutor, String commaSeparatedUrls) throws IOException {
+        List<URL> nodeInfoUrls = new ArrayList<>();
         String[] configServerHostNames = commaSeparatedUrls.split(PARSE_ALL_HOSTNAMES_REGEX);
         String nodeHostName = generateNodeHostName(commandExecutor);
         for (String configServerHostName : configServerHostNames) {
@@ -36,7 +37,7 @@ public class HostURLGenerator {
     }
 
     protected static String getEnvironmentVariable(CommandExecutor commandExecutor) throws IOException {
-        ArrayList<String> output = commandExecutor.executeCommand("hostname");
+        List<String> output = commandExecutor.executeCommand("hostname");
         if (output.size() == 1) {
             return output.get(0);
         }

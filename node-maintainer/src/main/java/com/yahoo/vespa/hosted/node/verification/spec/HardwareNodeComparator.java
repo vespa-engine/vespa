@@ -6,8 +6,10 @@ import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo.DiskType;
 
 /**
- * Created by olaa on 04/07/2017.
  * Compares two HardwareInfo objects and stores divergent values in a SpecVerificationReport
+ *
+ * @author olaaun
+ * @author sgrostad
  */
 public class HardwareNodeComparator {
 
@@ -74,7 +76,7 @@ public class HardwareNodeComparator {
         }
     }
 
-    private static boolean outsideThreshold(double value1, double value2 , double thresholdPercentage) {
+    private static boolean outsideThreshold(double value1, double value2, double thresholdPercentage) {
         double lowerThresholdPercentage = 1 - thresholdPercentage;
         double upperThresholdPercentage = 1 + thresholdPercentage;
         return value1 < lowerThresholdPercentage * value2 || value1 > upperThresholdPercentage * value2;

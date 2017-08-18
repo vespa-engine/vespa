@@ -7,15 +7,17 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.stream.Collectors;
+import java.util.List;
+
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
- * Created by olaa on 14/07/2017.
+ * @author sgrostad
+ * @author olaaun
  */
+
 public class HostURLGeneratorTest {
 
     private MockCommandExecutor mockCommandExecutor;
@@ -35,7 +37,7 @@ public class HostURLGeneratorTest {
     @Test
     public void generateNodeInfoUrl_find_config_server_test_if_url_is_formatted_correctly() throws Exception {
         mockCommandExecutor.addCommand(CAT_NODE_HOST_NAME_PATH);
-        ArrayList<URL> urls = HostURLGenerator.generateNodeInfoUrl(mockCommandExecutor, CONFIG_SERVER_HOSTNAME_1 + "," + CONFIG_SERVER_HOSTNAME_2);
+        List<URL> urls = HostURLGenerator.generateNodeInfoUrl(mockCommandExecutor, CONFIG_SERVER_HOSTNAME_1 + "," + CONFIG_SERVER_HOSTNAME_2);
         String expectedUrl1 = CONFIG_SERVER_HOSTNAME_1 + NODE_HOSTNAME_PREFIX + EXPECTED_HOSTNAME;
         String expectedUrl2 = CONFIG_SERVER_HOSTNAME_2 + NODE_HOSTNAME_PREFIX + EXPECTED_HOSTNAME;
         assertEquals(expectedUrl1, urls.get(0).toString());
@@ -58,7 +60,7 @@ public class HostURLGeneratorTest {
     public void generateNodeInfoUrl_retrieve_config_server_as_parameter_test_if_url_is_formatted_correctly() throws Exception {
         mockCommandExecutor.addCommand(CAT_NODE_HOST_NAME_PATH);
         String configServerHostname = "cfg1.prod.region1";
-        ArrayList<URL> actualUrls = HostURLGenerator.generateNodeInfoUrl(mockCommandExecutor, configServerHostname);
+        List<URL> actualUrls = HostURLGenerator.generateNodeInfoUrl(mockCommandExecutor, configServerHostname);
         String expectedUrl = CONFIG_SERVER_HOSTNAME_1 + NODE_HOSTNAME_PREFIX + EXPECTED_HOSTNAME;
         String actualUrl = actualUrls.get(0).toString();
         assertEquals(expectedUrl, actualUrl);

@@ -1,9 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.verification.hardware;
 
-import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.BenchmarkResults;
 import com.yahoo.vespa.hosted.node.verification.commons.report.BenchmarkReport;
+import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.BenchmarkResults;
 
+/**
+ * Responsible for checking the benchmarks results, and adding unreasonable results to BenchmarkReport
+ *
+ * @author sgrostad
+ * @author olaaun
+ */
 public class BenchmarkResultInspector {
 
     private static final double CPU_FREQUENCY_LOWER_LIMIT = 0.5;

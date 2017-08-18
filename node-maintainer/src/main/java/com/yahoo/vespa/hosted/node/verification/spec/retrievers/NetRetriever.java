@@ -11,11 +11,16 @@ import org.apache.commons.exec.ExecuteException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created by olaa on 30/06/2017.
+ * Retrieves IPv4/IPv6 interface, and checks interface speed. If node should have IPv6, tries to ping6.
+ * The results are stored in a HardwareInfo instance
+ *
+ * @author olaaun
+ * @author sgrostad
  */
 public class NetRetriever implements HardwareRetriever {
 
@@ -48,8 +53,9 @@ public class NetRetriever implements HardwareRetriever {
         this.verifierSettings = verifierSettings;
     }
 
+    @Override
     public void updateInfo() {
-        ArrayList<ParseResult> parseResults = findInterface();
+        List<ParseResult> parseResults = findInterface();
         findInterfaceSpeed(parseResults);
         if (verifierSettings.isCheckIPv6()) {
             testPingResponse(parseResults);
@@ -57,10 +63,10 @@ public class NetRetriever implements HardwareRetriever {
         updateHardwareInfoWithNet(parseResults);
     }
 
-    protected ArrayList<ParseResult> findInterface() {
-        ArrayList<ParseResult> parseResults = new ArrayList<>();
+    protected List<ParseResult> findInterface() {
+        List<ParseResult> parseResults = new ArrayList<>();
         try {
-            ArrayList<String> commandOutput = commandExecutor.executeCommand(NET_FIND_INTERFACE);
+            List<String> commandOutput = commandExecutor.executeCommand(NET_FIND_INTERFACE);
             parseResults = parseNetInterface(commandOutput);
 
         } catch (IOException e) {
@@ -69,16 +75,16 @@ public class NetRetriever implements HardwareRetriever {
         return parseResults;
     }
 
-    protected ArrayList<ParseResult> parseNetInterface(ArrayList<String> commandOutput) {
-        ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD_INTERFACE_IP4, SEARCH_WORD_INTERFACE_IPV6));
+    protected List<ParseResult> parseNetInterface(List<String> commandOutput) {
+        List<String> searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD_INTERFACE_IP4, SEARCH_WORD_INTERFACE_IPV6));
         ParseInstructions parseInstructions = new ParseInstructions(INTERFACE_SEARCH_ELEMENT_INDEX, INTERFACE_RETURN_ELEMENT_INDEX, INTERFACE_NAME_REGEX_SPLIT, searchWords);
-        ArrayList<ParseResult> parseResults = OutputParser.parseOutput(parseInstructions, commandOutput);
+        List<ParseResult> parseResults = OutputParser.parseOutput(parseInstructions, commandOutput);
         return parseResults;
     }
 
-    protected void findInterfaceSpeed(ArrayList<ParseResult> parseResults) {
+    protected void findInterfaceSpeed(List<ParseResult> parseResults) {
         try {
-            ArrayList<String> commandOutput = commandExecutor.executeCommand(NET_CHECK_INTERFACE_SPEED);
+            List<String> commandOutput = commandExecutor.executeCommand(NET_CHECK_INTERFACE_SPEED);
             ParseResult parseResult = parseInterfaceSpeed(commandOutput);
             parseResults.add(parseResult);
         } catch (IOException e) {
@@ -86,8 +92,8 @@ public class NetRetriever implements HardwareRetriever {
         }
     }
 
-    protected ParseResult parseInterfaceSpeed(ArrayList<String> commandOutput) throws IOException {
-        ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD_INTERFACE_SPEED));
+    protected ParseResult parseInterfaceSpeed(List<String> commandOutput) throws IOException {
+        List<String> searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD_INTERFACE_SPEED));
         ParseInstructions parseInstructions = new ParseInstructions(INTERFACE_SPEED_SEARCH_ELEMENT_INDEX, INTERFACE_SPEED_RETURN_ELEMENT_INDEX, INTERFACE_SPEED_REGEX_SPLIT, searchWords);
         ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
         if (!parseResult.getSearchWord().matches(SEARCH_WORD_INTERFACE_SPEED)) {
@@ -96,9 +102,9 @@ public class NetRetriever implements HardwareRetriever {
         return parseResult;
     }
 
-    protected void testPingResponse(ArrayList<ParseResult> parseResults) {
+    protected void testPingResponse(List<ParseResult> parseResults) {
         try {
-            ArrayList<String> commandOutput = commandExecutor.executeCommand(PING_NET_COMMAND);
+            List<String> commandOutput = commandExecutor.executeCommand(PING_NET_COMMAND);
             parseResults.add(parsePingResponse(commandOutput));
         } catch (ExecuteException e) {
             logger.log(Level.WARNING, "Failed to execute ping6", e);
@@ -107,8 +113,8 @@ public class NetRetriever implements HardwareRetriever {
         }
     }
 
-    protected ParseResult parsePingResponse(ArrayList<String> commandOutput) throws IOException {
-        ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(PING_SEARCH_WORD));
+    protected ParseResult parsePingResponse(List<String> commandOutput) throws IOException {
+        List<String> searchWords = new ArrayList<>(Arrays.asList(PING_SEARCH_WORD));
         ParseInstructions parseInstructions = new ParseInstructions(PING_SEARCH_ELEMENT_INDEX, PING_RETURN_ELEMENT_INDEX, PING_SPLIT_REGEX_STRING, searchWords);
         ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
         if (!parseResult.getSearchWord().matches(PING_SEARCH_WORD)) {
@@ -117,7 +123,7 @@ public class NetRetriever implements HardwareRetriever {
         return new ParseResult(PING_SEARCH_WORD, parseResult.getValue());
     }
 
-    protected void updateHardwareInfoWithNet(ArrayList<ParseResult> parseResults) {
+    protected void updateHardwareInfoWithNet(List<ParseResult> parseResults) {
         hardwareInfo.setIpv6Interface(false);
         hardwareInfo.setIpv4Interface(false);
         for (ParseResult parseResult : parseResults) {

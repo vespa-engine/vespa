@@ -6,15 +6,17 @@ import com.yahoo.vespa.hosted.node.verification.mock.MockCommandExecutor;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Created by olaa on 14/07/2017.
+ * @author sgrostad
+ * @author olaaun
  */
+
 public class MemoryBenchmarkTest {
 
     private MemoryBenchmark memoryBenchmark;
@@ -48,7 +50,7 @@ public class MemoryBenchmarkTest {
     public void parseMemorySpeed_valid_output() throws Exception {
         Double expectedSpeed = 12.1;
         String mockOutput = "This is a test \n the memory speed to be found is " + expectedSpeed + " GB/s";
-        ArrayList<String> mockCommandOutput = commandExecutor.outputFromString(mockOutput);
+        List<String> mockCommandOutput = commandExecutor.outputFromString(mockOutput);
         ParseResult parseResult = memoryBenchmark.parseMemorySpeed(mockCommandOutput);
         ParseResult expectedParseResult = new ParseResult("GB/s", expectedSpeed.toString());
         assertEquals(expectedParseResult, parseResult);
@@ -56,7 +58,7 @@ public class MemoryBenchmarkTest {
 
     @Test
     public void parseMemorySpeed_invalid_output() throws Exception {
-        ArrayList<String> mockCommandOutput = commandExecutor.outputFromString("");
+        List<String> mockCommandOutput = commandExecutor.outputFromString("");
         ParseResult parseResult = memoryBenchmark.parseMemorySpeed(mockCommandOutput);
         ParseResult expectedParseResult = new ParseResult("invalid", "invalid");
         assertEquals(expectedParseResult, parseResult);

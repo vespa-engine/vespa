@@ -8,21 +8,24 @@ import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Created by olaa on 07/07/2017.
+ * @author sgrostad
+ * @author olaaun
  */
+
 public class NodeJsonConverterTest {
 
     private static final double DELTA = 0.1;
 
     @Test
     public void convertJsonModel_should_return_correct_HardwareInfo() throws Exception {
-        ArrayList<URL> urls = new ArrayList<>(Arrays.asList(new File("src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/nodeInfoTest.json").toURI().toURL()));
+        List<URL> urls = new ArrayList<>(Arrays.asList(new File("src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/nodeInfoTest.json").toURI().toURL()));
         NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(urls);
         HardwareInfo hardwareInfo = NodeJsonConverter.convertJsonModelToHardwareInfo(nodeRepoJsonModel);
         double expectedMinDiskAvailable = 500.0;

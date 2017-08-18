@@ -6,10 +6,15 @@ import com.yahoo.vespa.hosted.node.verification.mock.MockCommandExecutor;
 import com.yahoo.vespa.hosted.node.verification.spec.VerifierSettings;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
-import static org.junit.Assert.assertEquals;
+/**
+ * @author sgrostad
+ * @author olaaun
+ */
 
 public class HardwareInfoRetrieverTest {
 

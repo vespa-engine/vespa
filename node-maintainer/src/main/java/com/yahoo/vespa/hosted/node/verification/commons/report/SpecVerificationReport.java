@@ -13,6 +13,9 @@ import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
  * Stores results of caomparing node repo spec and actual hardware info.
  * In case of divergent values, set the corresponding attribute to the actual hardware info value.
  * Attributes of equal value remain null.
+ *
+ * @author sgrostad
+ * @author olaaun
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SpecVerificationReport {
@@ -66,8 +69,7 @@ public class SpecVerificationReport {
         try {
             String jsonReport = om.writeValueAsString(this);
             return jsonReport.length() == 2;
-        }
-        catch (JsonProcessingException e){
+        } catch (JsonProcessingException e) {
             e.printStackTrace();
             return false;
         }

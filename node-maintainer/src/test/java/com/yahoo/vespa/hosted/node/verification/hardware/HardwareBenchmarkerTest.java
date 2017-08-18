@@ -12,6 +12,11 @@ import java.util.Arrays;
 
 import static org.junit.Assert.assertTrue;
 
+/**
+ * @author sgrostad
+ * @author olaaun
+ */
+
 public class HardwareBenchmarkerTest {
 
     private MockCommandExecutor mockCommandExecutor;

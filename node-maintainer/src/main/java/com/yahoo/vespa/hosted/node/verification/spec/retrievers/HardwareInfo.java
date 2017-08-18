@@ -2,10 +2,12 @@
 package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
 
 /**
- * Created by olaa on 04/07/2017.
  * All information the different retrievers retrieve is stored as a HardwareInfo object.
+ *
+ * @author olaaun
+ * @author sgrostad
  */
-
+// TODO: This should be immutable
 public class HardwareInfo {
 
     private double minDiskAvailableGb;
@@ -16,7 +18,6 @@ public class HardwareInfo {
     private boolean ipv6Connection;
     private double interfaceSpeedMbs;
     private DiskType diskType;
-
 
     public double getInterfaceSpeedMbs() {
         return interfaceSpeedMbs;

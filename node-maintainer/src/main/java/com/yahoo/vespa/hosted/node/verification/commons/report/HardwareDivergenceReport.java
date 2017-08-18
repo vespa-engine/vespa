@@ -5,6 +5,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * JSON-wrapped report for node repo
+ *
+ * @author sgrostad
+ * @author olaaun
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class HardwareDivergenceReport {
 
@@ -15,10 +21,9 @@ public class HardwareDivergenceReport {
     BenchmarkReport benchmarkReport;
 
     public void setSpecVerificationReport(SpecVerificationReport specVerificationReport) {
-        if (specVerificationReport.isValidSpec()){
+        if (specVerificationReport.isValidSpec()) {
             this.specVerificationReport = null;
-        }
-        else {
+        } else {
             this.specVerificationReport = specVerificationReport;
         }
     }
@@ -26,15 +31,14 @@ public class HardwareDivergenceReport {
     public void setBenchmarkReport(BenchmarkReport benchmarkReport) {
         if (benchmarkReport.isAllBenchmarksOK()) {
             this.benchmarkReport = null;
-        }
-        else {
+        } else {
             this.benchmarkReport = benchmarkReport;
         }
     }
 
     @JsonIgnore
-    public boolean isHardwareDivergenceReportEmpty(){
-        if (specVerificationReport == null && benchmarkReport == null){
+    public boolean isHardwareDivergenceReportEmpty() {
+        if (specVerificationReport == null && benchmarkReport == null) {
             return true;
         }
         return false;
