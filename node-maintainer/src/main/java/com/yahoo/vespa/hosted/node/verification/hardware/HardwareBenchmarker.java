@@ -4,13 +4,13 @@ package com.yahoo.vespa.hosted.node.verification.hardware;
 import com.yahoo.log.LogSetup;
 import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
 import com.yahoo.vespa.hosted.node.verification.commons.HostURLGenerator;
+import com.yahoo.vespa.hosted.node.verification.commons.report.BenchmarkReport;
 import com.yahoo.vespa.hosted.node.verification.commons.report.Reporter;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.Benchmark;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.BenchmarkResults;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.CPUBenchmark;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.DiskBenchmark;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.MemoryBenchmark;
-import com.yahoo.vespa.hosted.node.verification.commons.report.BenchmarkReport;
 
 import java.io.IOException;
 import java.net.URL;

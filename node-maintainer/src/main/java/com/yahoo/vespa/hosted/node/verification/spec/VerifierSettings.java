@@ -12,11 +12,11 @@ public class VerifierSettings {
 
     private final boolean checkIPv6;
 
-    public VerifierSettings(){
+    public VerifierSettings() {
         this.checkIPv6 = true;
     }
 
-    public VerifierSettings(NodeRepoJsonModel nodeRepoJsonModel){
+    public VerifierSettings(NodeRepoJsonModel nodeRepoJsonModel) {
         checkIPv6 = nodeRepoJsonModel.getIpv6Address() != null;
     }
 

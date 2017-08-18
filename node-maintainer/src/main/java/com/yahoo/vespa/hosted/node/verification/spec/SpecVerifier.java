@@ -4,11 +4,11 @@ package com.yahoo.vespa.hosted.node.verification.spec;
 import com.yahoo.log.LogSetup;
 import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
 import com.yahoo.vespa.hosted.node.verification.commons.HostURLGenerator;
-import com.yahoo.vespa.hosted.node.verification.commons.report.Reporter;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.IPAddressVerifier;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeJsonConverter;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoInfoRetriever;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoJsonModel;
+import com.yahoo.vespa.hosted.node.verification.commons.report.Reporter;
 import com.yahoo.vespa.hosted.node.verification.commons.report.SpecVerificationReport;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfoRetriever;
@@ -50,7 +50,7 @@ public class SpecVerifier {
         return nodeRepoJsonModel;
     }
 
-    public static void main(String[] args)  {
+    public static void main(String[] args) {
         LogSetup.initVespaLogging("spec-verifier");
         CommandExecutor commandExecutor = new CommandExecutor();
         ArrayList<URL> nodeInfoUrls;

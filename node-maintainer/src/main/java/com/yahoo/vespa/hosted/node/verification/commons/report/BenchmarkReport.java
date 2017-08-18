@@ -62,7 +62,7 @@ public class BenchmarkReport {
         try {
             String jsonReport = om.writeValueAsString(this);
             return jsonReport.length() == 2;
-        } catch (JsonProcessingException e){
+        } catch (JsonProcessingException e) {
             e.printStackTrace();
             return false;
         }

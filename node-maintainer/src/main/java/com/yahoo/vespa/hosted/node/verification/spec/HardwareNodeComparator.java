@@ -74,7 +74,7 @@ public class HardwareNodeComparator {
         }
     }
 
-    private static boolean outsideThreshold(double value1, double value2 , double thresholdPercentage) {
+    private static boolean outsideThreshold(double value1, double value2, double thresholdPercentage) {
         double lowerThresholdPercentage = 1 - thresholdPercentage;
         double upperThresholdPercentage = 1 + thresholdPercentage;
         return value1 < lowerThresholdPercentage * value2 || value1 > upperThresholdPercentage * value2;

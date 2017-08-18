@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.verification.commons.report;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoInfoRetriever;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoJsonModel;
 
@@ -19,10 +18,9 @@ public class Reporter {
     private static void printHardwareDivergenceReport(HardwareDivergenceReport hardwareDivergenceReport) throws IOException {
         ObjectMapper om = new ObjectMapper();
         String report;
-        if (hardwareDivergenceReport.isHardwareDivergenceReportEmpty()){
+        if (hardwareDivergenceReport.isHardwareDivergenceReportEmpty()) {
             report = "null";
-        }
-        else {
+        } else {
             report = om.writeValueAsString(hardwareDivergenceReport);
         }
         System.out.print(report);
@@ -49,8 +47,7 @@ public class Reporter {
         try {
             HardwareDivergenceReport hardwareDivergenceReport = om.readValue(nodeRepoJsonModel.getHardwareDivergence(), HardwareDivergenceReport.class);
             return hardwareDivergenceReport;
-        }
-        catch (IOException e){
+        } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to parse hardware divergence report from node repo. Report:\n" + nodeRepoJsonModel.getHardwareDivergence(), e.getMessage());
             return new HardwareDivergenceReport();
         }

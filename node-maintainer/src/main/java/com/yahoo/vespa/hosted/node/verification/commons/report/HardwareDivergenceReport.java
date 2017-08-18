@@ -15,10 +15,9 @@ public class HardwareDivergenceReport {
     BenchmarkReport benchmarkReport;
 
     public void setSpecVerificationReport(SpecVerificationReport specVerificationReport) {
-        if (specVerificationReport.isValidSpec()){
+        if (specVerificationReport.isValidSpec()) {
             this.specVerificationReport = null;
-        }
-        else {
+        } else {
             this.specVerificationReport = specVerificationReport;
         }
     }
@@ -26,15 +25,14 @@ public class HardwareDivergenceReport {
     public void setBenchmarkReport(BenchmarkReport benchmarkReport) {
         if (benchmarkReport.isAllBenchmarksOK()) {
             this.benchmarkReport = null;
-        }
-        else {
+        } else {
             this.benchmarkReport = benchmarkReport;
         }
     }
 
     @JsonIgnore
-    public boolean isHardwareDivergenceReportEmpty(){
-        if (specVerificationReport == null && benchmarkReport == null){
+    public boolean isHardwareDivergenceReportEmpty() {
+        if (specVerificationReport == null && benchmarkReport == null) {
             return true;
         }
         return false;
