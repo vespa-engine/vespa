@@ -2,12 +2,11 @@
 
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/executor.h>
-#include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/locale/c.h>
-#include <cmath>
 
 using namespace vespalib;
+using namespace std::literals;
 
 uint32_t doStuff(uint32_t input) {
     char buf[128];
@@ -131,7 +130,7 @@ Test::Main()
                 Executor::Task::UP t(new CPUTask(taskSize, result));
                 t = executor.execute(std::move(t));
                 while (t.get() != 0) {
-                    FastOS_Thread::Sleep(10);
+                    std::this_thread::sleep_for(10ms);
                     t = executor.execute(std::move(t));
                 }
             }

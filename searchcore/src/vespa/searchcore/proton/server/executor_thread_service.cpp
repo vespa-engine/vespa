@@ -2,8 +2,7 @@
 
 #include "executor_thread_service.h"
 #include <vespa/vespalib/util/closuretask.h>
-#include <vespa/vespalib/util/executor.h>
-#include <vespa/vespalib/util/sync.h>
+#include <vespa/fastos/thread.h>
 
 using vespalib::makeClosure;
 using vespalib::makeTask;
@@ -14,6 +13,13 @@ using vespalib::ThreadStackExecutorBase;
 
 namespace proton {
 
+namespace internal {
+
+struct ThreadId {
+    FastOS_ThreadId _id;
+};
+}
+
 namespace {
 
 void
@@ -22,11 +28,11 @@ sampleThreadId(FastOS_ThreadId *threadId)
     *threadId = FastOS_Thread::GetCurrentThreadId();
 }
 
-FastOS_ThreadId
+std::unique_ptr<internal::ThreadId>
 getThreadId(ThreadStackExecutorBase &executor)
 {
-    FastOS_ThreadId id;
-    executor.execute(makeTask(makeClosure(&sampleThreadId, &id)));
+    std::unique_ptr<internal::ThreadId> id = std::make_unique<internal::ThreadId>();
+    executor.execute(makeTask(makeClosure(&sampleThreadId, &id->_id)));
     executor.sync();
     return id;
 }
@@ -46,6 +52,8 @@ ExecutorThreadService::ExecutorThreadService(ThreadStackExecutorBase &executor)
 {
 }
 
+ExecutorThreadService::~ExecutorThreadService() {}
+
 void
 ExecutorThreadService::run(Runnable &runnable)
 {
@@ -62,7 +70,7 @@ bool
 ExecutorThreadService::isCurrentThread() const
 {
     FastOS_ThreadId currentThreadId = FastOS_Thread::GetCurrentThreadId();
-    return FastOS_Thread::CompareThreadIds(_threadId, currentThreadId);
+    return FastOS_Thread::CompareThreadIds(_threadId->_id, currentThreadId);
 }
 
 } // namespace proton

@@ -6,6 +6,7 @@
 
 namespace proton {
 
+namespace internal { class ThreadId; }
 /**
  * Implementation of IThreadService using an underlying thread stack executor
  * with a single thread.
@@ -14,10 +15,11 @@ class ExecutorThreadService : public searchcorespi::index::IThreadService
 {
 private:
     vespalib::ThreadStackExecutorBase &_executor;
-    FastOS_ThreadId                    _threadId;
+    std::unique_ptr<internal::ThreadId>   _threadId;
 
 public:
     ExecutorThreadService(vespalib::ThreadStackExecutorBase &executor);
+    ~ExecutorThreadService();
 
     /**
      * Implements IThreadService

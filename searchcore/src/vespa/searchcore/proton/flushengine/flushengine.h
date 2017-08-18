@@ -7,6 +7,7 @@
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/fastos/thread.h>
 #include <set>
 
 namespace proton {

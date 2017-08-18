@@ -1,13 +1,27 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "threadstackexecutorbase.h"
+#include <vespa/fastos/thread.h>
 
 namespace vespalib {
 
+namespace thread {
+
+struct ThreadInit : public FastOS_Runnable {
+    Runnable &worker;
+    ThreadStackExecutorBase::init_fun_t init_fun;
+
+    explicit ThreadInit(Runnable &worker_in, ThreadStackExecutorBase::init_fun_t init_fun_in)
+            : worker(worker_in), init_fun(std::move(init_fun_in)) {}
+
+    void Run(FastOS_ThreadInterface *, void *) override;
+};
+
 void
-ThreadStackExecutorBase::ThreadInit::Run(FastOS_ThreadInterface *, void *)
-{
+ThreadInit::Run(FastOS_ThreadInterface *, void *) {
     init_fun(worker);
+}
+
 }
 
 void
@@ -115,7 +129,7 @@ ThreadStackExecutorBase::run()
 ThreadStackExecutorBase::ThreadStackExecutorBase(uint32_t stackSize,
                                                  uint32_t taskLimit,
                                                  init_fun_t init_fun)
-    : _pool(stackSize),
+    : _pool(std::make_unique<FastOS_ThreadPool>(stackSize)),
       _monitor(),
       _stats(),
       _executorCompletion(),
@@ -125,7 +139,7 @@ ThreadStackExecutorBase::ThreadStackExecutorBase(uint32_t stackSize,
       _taskCount(0),
       _taskLimit(taskLimit),
       _closed(false),
-      _thread_init(std::make_unique<ThreadInit>(*this, std::move(init_fun)))
+      _thread_init(std::make_unique<thread::ThreadInit>(*this, std::move(init_fun)))
 {
     assert(taskLimit > 0);
 }
@@ -135,7 +149,7 @@ ThreadStackExecutorBase::start(uint32_t threads)
 {
     assert(threads > 0);
     for (uint32_t i = 0; i < threads; ++i) {
-        FastOS_ThreadInterface *thread = _pool.NewThread(_thread_init.get());
+        FastOS_ThreadInterface *thread = _pool->NewThread(_thread_init.get());
         assert(thread != 0);
         (void)thread;
     }
@@ -236,12 +250,12 @@ ThreadStackExecutorBase::cleanup()
 {
     shutdown().sync();
     _executorCompletion.countDown();
-    _pool.Close();
+    _pool->Close();
 }
 
 ThreadStackExecutorBase::~ThreadStackExecutorBase()
 {
-    assert(_pool.isClosed());
+    assert(_pool->isClosed());
     assert(_taskCount == 0);
     assert(_blocked.empty());
 }
