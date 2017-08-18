@@ -1,13 +1,14 @@
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.verification.spec;
 
 import com.yahoo.log.LogSetup;
 import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
 import com.yahoo.vespa.hosted.node.verification.commons.HostURLGenerator;
-import com.yahoo.vespa.hosted.node.verification.commons.report.ReportSender;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.IPAddressVerifier;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeJsonConverter;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoInfoRetriever;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoJsonModel;
+import com.yahoo.vespa.hosted.node.verification.commons.report.Reporter;
 import com.yahoo.vespa.hosted.node.verification.commons.report.SpecVerificationReport;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfoRetriever;
@@ -34,7 +35,7 @@ public class SpecVerifier {
         VerifierSettings verifierSettings = new VerifierSettings(nodeRepoJsonModel);
         HardwareInfo actualHardware = HardwareInfoRetriever.retrieve(commandExecutor, verifierSettings);
         SpecVerificationReport specVerificationReport = makeVerificationReport(actualHardware, nodeRepoJsonModel);
-        ReportSender.reportSpecVerificationResults(specVerificationReport, nodeInfoUrls);
+        Reporter.reportSpecVerificationResults(specVerificationReport, nodeInfoUrls);
         return specVerificationReport.isValidSpec();
     }
 
@@ -50,7 +51,7 @@ public class SpecVerifier {
         return nodeRepoJsonModel;
     }
 
-    public static void main(String[] args)  {
+    public static void main(String[] args) {
         LogSetup.initVespaLogging("spec-verifier");
         CommandExecutor commandExecutor = new CommandExecutor();
         List<URL> nodeInfoUrls;

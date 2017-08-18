@@ -1,3 +1,4 @@
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.verification.commons.report;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -62,7 +63,7 @@ public class BenchmarkReport {
         try {
             String jsonReport = om.writeValueAsString(this);
             return jsonReport.length() == 2;
-        } catch (JsonProcessingException e){
+        } catch (JsonProcessingException e) {
             e.printStackTrace();
             return false;
         }

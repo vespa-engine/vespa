@@ -1,15 +1,16 @@
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.verification.hardware;
 
 import com.yahoo.log.LogSetup;
 import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
 import com.yahoo.vespa.hosted.node.verification.commons.HostURLGenerator;
-import com.yahoo.vespa.hosted.node.verification.commons.report.ReportSender;
+import com.yahoo.vespa.hosted.node.verification.commons.report.BenchmarkReport;
+import com.yahoo.vespa.hosted.node.verification.commons.report.Reporter;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.Benchmark;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.BenchmarkResults;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.CPUBenchmark;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.DiskBenchmark;
 import com.yahoo.vespa.hosted.node.verification.hardware.benchmarks.MemoryBenchmark;
-import com.yahoo.vespa.hosted.node.verification.commons.report.BenchmarkReport;
 
 import java.io.IOException;
 import java.net.URL;
@@ -36,7 +37,7 @@ public class HardwareBenchmarker {
             benchmark.doBenchmark();
         }
         BenchmarkReport benchmarkReport = BenchmarkResultInspector.makeBenchmarkReport(benchmarkResults);
-        ReportSender.reportBenchmarkResults(benchmarkReport, nodeInfoUrls);
+        Reporter.reportBenchmarkResults(benchmarkReport, nodeInfoUrls);
         return benchmarkReport.isAllBenchmarksOK();
     }
 

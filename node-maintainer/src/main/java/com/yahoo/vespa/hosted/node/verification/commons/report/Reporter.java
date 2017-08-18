@@ -1,7 +1,7 @@
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.verification.commons.report;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoInfoRetriever;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoJsonModel;
 
@@ -12,17 +12,16 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ReportSender {
+public class Reporter {
 
-    private static final Logger logger = Logger.getLogger(ReportSender.class.getName());
+    private static final Logger logger = Logger.getLogger(Reporter.class.getName());
 
     private static void printHardwareDivergenceReport(HardwareDivergenceReport hardwareDivergenceReport) throws IOException {
         ObjectMapper om = new ObjectMapper();
         String report;
-        if (hardwareDivergenceReport.isHardwareDivergenceReportEmpty()){
+        if (hardwareDivergenceReport.isHardwareDivergenceReportEmpty()) {
             report = "null";
-        }
-        else {
+        } else {
             report = om.writeValueAsString(hardwareDivergenceReport);
         }
         System.out.print(report);
@@ -49,8 +48,7 @@ public class ReportSender {
         try {
             HardwareDivergenceReport hardwareDivergenceReport = om.readValue(nodeRepoJsonModel.getHardwareDivergence(), HardwareDivergenceReport.class);
             return hardwareDivergenceReport;
-        }
-        catch (IOException e){
+        } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to parse hardware divergence report from node repo. Report:\n" + nodeRepoJsonModel.getHardwareDivergence(), e.getMessage());
             return new HardwareDivergenceReport();
         }

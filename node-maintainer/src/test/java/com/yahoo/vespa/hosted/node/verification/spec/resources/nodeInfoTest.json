@@ -45,6 +45,5 @@
     "10.200.66.16"
   ],
   "additionalIpAddresses": [],
-
   "hardwareDivergence": "{\"benchmarkReport\": {\"cpuCyclesPerSec\": 0.5}}"
 }
