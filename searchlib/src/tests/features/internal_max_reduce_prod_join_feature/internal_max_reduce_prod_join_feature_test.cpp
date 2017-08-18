@@ -31,7 +31,7 @@ struct SetupFixture
         : blueprint(),
           indexEnv()
     {
-        addAttribute("double", CollectionType::SINGLE, DataType::DOUBLE);
+        addAttribute("long", CollectionType::SINGLE, DataType::INT64);
         addAttribute("longarray", CollectionType::ARRAY, DataType::INT64);
         addAttribute("intarray", CollectionType::ARRAY, DataType::INT32);
         addAttribute("doublearray", CollectionType::ARRAY, DataType::DOUBLE);
@@ -56,7 +56,7 @@ TEST_F("require that setup fails if attribute does not exist", SetupFixture())
 
 TEST_F("require that setup fails if attribute is of wrong type", SetupFixture())
 {
-    FTA::FT_SETUP_FAIL(f.blueprint, f.indexEnv, StringList().add("double").add("bar"));
+    FTA::FT_SETUP_FAIL(f.blueprint, f.indexEnv, StringList().add("long").add("bar"));
 }
 
 TEST_F("require that setup fails if attribute is of wrong array type", SetupFixture())
