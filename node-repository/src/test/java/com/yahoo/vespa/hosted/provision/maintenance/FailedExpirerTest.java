@@ -32,8 +32,11 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 
@@ -43,50 +46,103 @@ import static org.junit.Assert.assertEquals;
 public class FailedExpirerTest {
 
     private final Curator curator = new MockCurator();
+    private final ManualClock clock = new ManualClock();
+    private FailedExpirer failedExpirer;
 
     @Test
     public void ensure_failed_nodes_are_deallocated_in_prod() throws InterruptedException {
-        NodeRepository nodeRepository = failureScenarioIn(SystemName.main, Environment.prod, "default");
+        failureScenarioIn(SystemName.main, Environment.prod, "default");
+        clock.advance(Duration.ofDays(5));
+        failedExpirer.run();
 
-        assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
-        assertEquals(1, nodeRepository.getNodes(NodeType.tenant, Node.State.dirty).size());
-        assertEquals("node3", nodeRepository.getNodes(NodeType.tenant, Node.State.dirty).get(0).hostname());
+        assertNodeHostnames(Node.State.failed, "node1");
+        assertNodeHostnames(Node.State.parked, "node2");
+        assertNodeHostnames(Node.State.dirty, "node3");
     }
 
     @Test
     public void ensure_failed_nodes_are_deallocated_in_dev() throws InterruptedException {
-        NodeRepository nodeRepository = failureScenarioIn(SystemName.main, Environment.dev, "default");
+        failureScenarioIn(SystemName.main, Environment.dev, "default");
+        clock.advance(Duration.ofDays(5));
+        failedExpirer.run();
 
-        assertEquals(1, nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
-        assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.dirty).size());
-        assertEquals("node2", nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname());
+        assertNodeHostnames(Node.State.parked, "node2");
+        assertNodeHostnames(Node.State.dirty, "node1", "node3");
     }
 
     @Test
     public void ensure_failed_nodes_are_deallocated_in_cd() throws InterruptedException {
-        NodeRepository nodeRepository = failureScenarioIn(SystemName.cd, Environment.prod, "default");
+        failureScenarioIn(SystemName.cd, Environment.prod, "default");
+        clock.advance(Duration.ofDays(5));
+        failedExpirer.run();
 
-        assertEquals(1, nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
-        assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.dirty).size());
-        assertEquals("node2", nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname());
+        assertNodeHostnames(Node.State.parked, "node2");
+        assertNodeHostnames(Node.State.dirty, "node1", "node3");
     }
 
     @Test
     public void ensure_failed_docker_nodes_are_deallocated() throws InterruptedException {
-        NodeRepository nodeRepository = failureScenarioIn(SystemName.main, Environment.prod, "docker");
+        failureScenarioIn(SystemName.main, Environment.prod, "docker");
+        clock.advance(Duration.ofDays(5));
+        failedExpirer.run();
 
-        assertEquals(1, nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
-        assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.dirty).size());
-        assertEquals("node2", nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname());
+        assertNodeHostnames(Node.State.parked, "node2");
+        assertNodeHostnames(Node.State.dirty, "node1", "node3");
     }
 
-    private NodeRepository failureScenarioIn(SystemName system, Environment environment, String flavorName) {
-        ManualClock clock = new ManualClock();
+    @Test
+    public void ensure_failed_docker_host_is_parked() throws InterruptedException {
+        failureScenarioIn(SystemName.main, Environment.prod, "docker");
+
+        failNode("parent2");
+        setHWFailureForNode("parent2");
+
+        clock.advance(Duration.ofDays(5));
+        failedExpirer.run(); // Run twice because parent can only be parked after the child
+        failedExpirer.run();
+
+        assertNodeHostnames(Node.State.parked, "parent2", "node2");
+    }
+
+    @Test
+    public void ensure_failed_docker_host_is_not_parked_unless_all_children_are() throws InterruptedException {
+        failureScenarioIn(SystemName.main, Environment.prod, "docker");
+
+        failNode("parent1");
+        setHWFailureForNode("parent1");
+        clock.advance(Duration.ofDays(2));
+        failNode("node4");
+        failNode("node5");
+        clock.advance(Duration.ofDays(3));
+
+        failedExpirer.run(); // Run twice because parent can only be parked after the child
+        failedExpirer.run();
+
+        assertNodeHostnames(Node.State.failed, "parent1", "node4", "node5");
+    }
+
+    private void assertNodeHostnames(Node.State state, String... hostnames) {
+        assertEquals(Stream.of(hostnames).collect(Collectors.toSet()),
+                failedExpirer.nodeRepository().getNodes(state).stream().map(Node::hostname).collect(Collectors.toSet()));
+    }
+
+    private void setHWFailureForNode(String hostname) {
+        Node node2 = failedExpirer.nodeRepository().getNode(hostname).get();
+        node2 = node2.with(node2.status().withHardwareFailureDescription(Optional.of("memory_mcelog")));
+        failedExpirer.nodeRepository().write(node2);
+    }
+
+    private void failNode(String hostname) {
+        failedExpirer.nodeRepository().fail(hostname, Agent.system, "Failing to unit test");
+    }
+
+    private void failureScenarioIn(SystemName system, Environment environment, String flavorName) {
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default", flavorName);
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, Zone.defaultZone(),
                                                            new MockNameResolver().mockAnyLookup(),
                                                            new DockerImage("docker-registry.domain.tld:8080/dist/vespa"));
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, Zone.defaultZone(), clock, (x,y) -> {});
+        failedExpirer = new FailedExpirer(nodeRepository, new Zone(system, environment, RegionName.from("us-west-1")), clock, Duration.ofDays(4), new JobControl(nodeRepository.database()));
 
         Flavor defaultFlavor = nodeFlavors.getFlavorOrThrow("default");
         List<Node> hostNodes = new ArrayList<>(3);
@@ -114,13 +170,15 @@ public class FailedExpirerTest {
         nodeRepository.write(node1);
 
         // Set node2 to have a detected hardware failure
-        Node node2 = nodeRepository.getNode("node2").get();
-        node2 = node2.with(node2.status().withHardwareFailureDescription(Optional.of("memory_mcelog")));
-        nodeRepository.write(node2);
+        setHWFailureForNode("node2");
 
         // Allocate the nodes
         List<Node> provisioned = nodeRepository.getNodes(NodeType.tenant, Node.State.provisioned);
         nodeRepository.setReady(nodeRepository.setDirty(provisioned));
+        nodeRepository.addNodes(Arrays.asList(
+                nodeRepository.createNode("node4", "node4", parentHost1, flavor, NodeType.tenant),
+                nodeRepository.createNode("node5", "node5", parentHost1, flavor, NodeType.tenant)));
+
         ApplicationId applicationId = ApplicationId.from(TenantName.from("foo"), ApplicationName.from("bar"), InstanceName.from("fuz"));
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"));
         provisioner.prepare(applicationId, cluster, Capacity.fromNodeCount(3, flavorName), 1, null);
@@ -130,15 +188,7 @@ public class FailedExpirerTest {
         assertEquals(3, nodeRepository.getNodes(NodeType.tenant, Node.State.active).size());
 
         // Fail the nodes
-        nodeRepository.fail("node1", Agent.system, "Failing to unit test");
-        nodeRepository.fail("node2", Agent.system, "Failing to unit test");
-        nodeRepository.fail("node3", Agent.system, "Failing to unit test");
+        nodes.forEach(node -> failNode(node.hostname()));
         assertEquals(3, nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
-
-        // Failure times out
-        clock.advance(Duration.ofDays(5));
-        new FailedExpirer(nodeRepository, new Zone(system, environment, RegionName.from("us-west-1")), clock, Duration.ofDays(4), new JobControl(nodeRepository.database())).run();
-
-        return nodeRepository;
     }
 }
