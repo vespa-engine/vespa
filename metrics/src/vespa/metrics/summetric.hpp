@@ -8,6 +8,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <ostream>
 #include <cassert>
+#include <algorithm>
 
 namespace metrics {
 
@@ -217,8 +218,7 @@ template<typename AddendMetric>
 void
 SumMetric<AddendMetric>::removeMetricFromSum(const AddendMetric &metric)
 {
-    _metricsToSum.erase(remove(_metricsToSum.begin(), _metricsToSum.end(),
-                        &metric));
+    _metricsToSum.erase(std::remove(_metricsToSum.begin(), _metricsToSum.end(), &metric));
 }
 
 template<typename AddendMetric>

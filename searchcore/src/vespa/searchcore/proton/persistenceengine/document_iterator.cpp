@@ -5,6 +5,7 @@
 #include <vespa/document/select/node.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.persistenceengine.document_iterator");

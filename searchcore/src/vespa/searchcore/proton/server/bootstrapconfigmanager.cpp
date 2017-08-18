@@ -2,6 +2,7 @@
 
 #include "bootstrapconfigmanager.h"
 #include "bootstrapconfig.h"
+#include <vespa/searchlib/common/tunefileinfo.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.bootstrapconfigmanager");
@@ -14,8 +15,7 @@ using vespa::config::search::core::ProtonConfig;
 using cloud::config::filedistribution::FiledistributorrpcConfig;
 using document::DocumenttypesConfig;
 
-namespace proton
-{
+namespace proton {
 
 BootstrapConfigManager::BootstrapConfigManager(const vespalib::string & configId)
     : _pendingConfigSnapshot(),

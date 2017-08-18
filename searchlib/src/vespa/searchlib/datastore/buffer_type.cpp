@@ -2,9 +2,15 @@
 
 #include "buffer_type.h"
 #include <algorithm>
+#include <cassert>
 
 namespace search::datastore {
 
+void
+BufferTypeBase::CleanContext::extraBytesCleaned(uint64_t value) {
+    assert(_extraBytes >= value);
+    _extraBytes -= value;
+}
 BufferTypeBase::BufferTypeBase(uint32_t clusterSize,
                                uint32_t minClusters,
                                uint32_t maxClusters,

@@ -5,6 +5,7 @@
 #include <vespa/document/util/compressor.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/data/databuffer.h>
+#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".document.serializable-array");

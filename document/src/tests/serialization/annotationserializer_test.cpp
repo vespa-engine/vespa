@@ -13,6 +13,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/fastos/file.h>
 #include <fstream>
+#include <algorithm>
 
 
 using document::DocumenttypesConfig;

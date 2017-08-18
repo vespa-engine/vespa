@@ -3,10 +3,9 @@
 
 #include "document.h"
 #include <cassert>
+#include <algorithm>
 
-namespace proton {
-
-namespace test {
+namespace proton::test {
 
 /**
  * Collection of documents contained in the same bucket.
@@ -40,8 +39,4 @@ public:
     }
 };
 
-
-} // namespace test
-
-} // namespace proton
-
+}

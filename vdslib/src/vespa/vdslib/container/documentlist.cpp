@@ -6,6 +6,7 @@
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vdslib.container.documentlist");

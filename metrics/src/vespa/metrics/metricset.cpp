@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <list>
 #include <cassert>
+#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".metrics.metricsset");

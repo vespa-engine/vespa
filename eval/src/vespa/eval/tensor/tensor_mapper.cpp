@@ -3,18 +3,17 @@
 #include "tensor_mapper.h"
 #include "tensor.h"
 #include "tensor_visitor.h"
-#include <vespa/eval/tensor/sparse/direct_sparse_tensor_builder.h>
-#include <vespa/eval/tensor/dense/dense_tensor.h>
-#include <vespa/eval/eval/simple_tensor.h>
 #include "tensor_address_element_iterator.h"
 #include "default_tensor.h"
 #include "wrapped_simple_tensor.h"
+#include <vespa/eval/tensor/sparse/direct_sparse_tensor_builder.h>
+#include <vespa/eval/tensor/dense/dense_tensor.h>
+#include <limits>
 
 using vespalib::eval::ValueType;
 using vespalib::eval::TensorSpec;
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 namespace {
 
@@ -422,5 +421,4 @@ std::unique_ptr<Tensor>
 TensorMapper::mapToSparse<SparseTensor>(const Tensor &tensor,
                                            const ValueType &type);
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

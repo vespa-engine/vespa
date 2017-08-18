@@ -8,6 +8,7 @@
 #include <vespa/vespalib/util/xmlstream.h>
 #include <vespa/vespalib/stllike/hash_set.hpp>
 #include <cassert>
+#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".document.fieldvalue.map");

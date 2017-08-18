@@ -3,9 +3,9 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/truesearch.h>
+#include <algorithm>
 
-namespace search {
-namespace test {
+namespace search::test {
 
 using namespace search::queryeval;
 using std::make_unique;
@@ -183,5 +183,4 @@ InitRangeVerifier::searchStrict(SearchIterator & it, Range range)
     return result;
 }
 
-}
 }

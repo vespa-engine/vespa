@@ -1,14 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <sys/types.h>
-#include <algorithm>
 #include <vespa/vespalib/util/optimized.h>
 #include <memory>
 
-namespace vespalib {
-
-namespace alloc {
+namespace vespalib::alloc {
 
 class MemoryAllocator {
 public:
@@ -115,6 +111,8 @@ private:
 };
 
 }
+
+namespace vespalib {
 
 inline size_t roundUp2inN(size_t minimum) {
     return 2ul << Optimized::msbIdx(minimum - 1);

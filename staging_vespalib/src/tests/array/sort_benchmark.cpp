@@ -3,6 +3,7 @@
 #include <vespa/vespalib/util/rusage.h>
 #include <vespa/vespalib/util/array.hpp>
 #include <csignal>
+#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP("sort_benchmark");

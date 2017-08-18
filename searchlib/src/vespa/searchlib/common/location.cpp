@@ -3,6 +3,7 @@
 // Copyright (C) 2003 Overture Services Norway AS
 
 #include "location.h"
+#include <limits>
 
 namespace search::common {
 

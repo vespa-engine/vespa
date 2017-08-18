@@ -3,12 +3,12 @@
 #include "memfilecompactor.h"
 #include "memfile.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/log/log.h>
+#include <algorithm>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".persistence.memfile.compactor");
 
-namespace storage {
-namespace memfile {
+namespace storage::memfile {
 
 struct DocumentVersionInfo {
     document::DocumentId _id;
@@ -71,8 +71,7 @@ struct CompactSlotInfo : private Types {
         auto matchesId = [&](const DocumentVersionInfo& doc) {
             return (id == doc._id);
         };
-        auto existing = std::find_if(
-                gidDocs.begin(), gidDocs.end(), matchesId);
+        auto existing = std::find_if(gidDocs.begin(), gidDocs.end(), matchesId);
 
         if (existing == gidDocs.end()) { // (Very) common case
             gidDocs.emplace_back(id, isTombstone(slot));
@@ -202,6 +201,4 @@ MemFileCompactor::alwaysCompact(const MemSlot& slot,
     slotsToRemove.push_back(&slot);
 }
 
-
-} // memfile
-} // storage
+}

@@ -3,6 +3,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/documentapi/messagebus/priority.h>
 #include <fstream>
+#include <algorithm>
 
 using namespace documentapi;
 

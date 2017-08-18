@@ -14,6 +14,7 @@
 #include <vespa/config/helper/configgetter.hpp>
 #include <fstream>
 #include <sstream>
+#include <fcntl.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.fileconfigmanager");
@@ -60,15 +61,11 @@ fsyncFile(const vespalib::string &fileName)
     FastOS_File f;
     f.OpenReadWrite(fileName.c_str());
     if (!f.IsOpened()) {
-        LOG(error,
-            "Could not open file '%s' for fsync",
-            fileName.c_str());
+        LOG(error, "Could not open file '%s' for fsync", fileName.c_str());
         return;
     }
     if (!f.Sync()) {
-        LOG(error,
-            "Could not fsync file '%s'",
-            fileName.c_str());
+        LOG(error, "Could not fsync file '%s'", fileName.c_str());
     }
     f.Close();
 }

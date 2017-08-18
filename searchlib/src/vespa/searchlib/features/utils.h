@@ -9,6 +9,7 @@
 #include <vespa/searchlib/fef/itermfielddata.h>
 #include <vespa/searchlib/common/feature.h>
 #include <vespa/vespalib/util/string_hash.h>
+#include <limits>
 
 namespace search::features::util {
 

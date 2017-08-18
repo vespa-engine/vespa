@@ -2,9 +2,9 @@
 #include "bucketdatabasetest.h"
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <iomanip>
+#include <algorithm>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 using document::BucketId;
 
@@ -544,4 +544,3 @@ BucketDatabaseTest::testChildCount()
 }
 
 }
-} // storage

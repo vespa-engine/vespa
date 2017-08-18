@@ -2,13 +2,9 @@
 
 #pragma once
 
-#include <sys/types.h>
+#include <cstddef>
 
-namespace search
-{
-
-namespace btree
-{
+namespace search::btree {
 
 template <size_t LS, size_t IS, size_t PS, bool BS>
 struct BTreeTraits {
@@ -20,6 +16,4 @@ struct BTreeTraits {
 
 typedef BTreeTraits<16, 16, 10, true> BTreeDefaultTraits;
 
-} // namespace search::btree
-} // namespace search
-
+}

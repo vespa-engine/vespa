@@ -6,10 +6,9 @@
 #include <vespa/storage/bucketdb/mapbucketdatabase.h>
 #include <tests/distributor/maintenancemocks.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <algorithm>
 
-namespace storage {
-
-namespace distributor {
+namespace storage::distributor {
 
 using document::BucketId;
 typedef MaintenancePriority Priority;
@@ -210,5 +209,4 @@ SimpleMaintenanceScannerTest::perNodeMaintenanceStatsAreTracked()
     }
 }
 
-}
 }

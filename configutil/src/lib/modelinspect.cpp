@@ -5,6 +5,7 @@
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/config/common/exceptions.h>
 #include <iostream>
+#include <algorithm>
 
 using configdefinitions::tagsContain;
 using configdefinitions::upcase;

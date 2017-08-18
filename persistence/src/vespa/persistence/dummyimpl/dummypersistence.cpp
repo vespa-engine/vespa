@@ -10,6 +10,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <algorithm>
 
 using std::binary_search;
 using std::lower_bound;

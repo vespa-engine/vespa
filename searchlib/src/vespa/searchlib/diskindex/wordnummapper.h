@@ -4,6 +4,7 @@
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <limits>
 
 namespace search::diskindex {
 

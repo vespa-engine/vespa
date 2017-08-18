@@ -12,6 +12,7 @@
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/util/xmlstream.h>
+#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".document.structfieldvalue");

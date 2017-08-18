@@ -3,6 +3,7 @@
 #include "batch.h"
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <ostream>
+#include <algorithm>
 
 using namespace storage::api;
 

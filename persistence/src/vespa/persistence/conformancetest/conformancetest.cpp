@@ -12,11 +12,12 @@
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/config-stor-distribution.h>
+#include <algorithm>
+#include <limits>
 
 using document::BucketId;
 
-namespace storage {
-namespace spi {
+namespace storage::spi {
 
 namespace {
 
@@ -2306,6 +2307,4 @@ void ConformanceTest::detectAndTestOptionalBehavior() {
 }
 
 
-} // spi
-} // storage
-
+}

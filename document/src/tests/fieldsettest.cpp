@@ -2,17 +2,13 @@
 
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
-#include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 
-#include <vespa/document/annotation/spantree.h>
-#include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/datatype/annotationreferencedatatype.h>
 #include <vespa/document/repo/configbuilder.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <fstream>
+#include <algorithm>
 
 using vespalib::nbostream;
 

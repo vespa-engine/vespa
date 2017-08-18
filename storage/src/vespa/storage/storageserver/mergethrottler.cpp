@@ -7,9 +7,9 @@
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <algorithm>
 
 #include <vespa/log/log.h>
-
 LOG_SETUP(".mergethrottler");
 
 namespace storage {

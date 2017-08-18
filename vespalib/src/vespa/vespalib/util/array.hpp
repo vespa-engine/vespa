@@ -2,8 +2,9 @@
 #pragma once
 
 #include "array.h"
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
+#include <tr1/type_traits>
 
 namespace vespalib {
 

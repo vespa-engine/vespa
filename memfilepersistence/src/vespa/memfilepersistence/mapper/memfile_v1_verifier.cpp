@@ -7,6 +7,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_set.hpp>
 #include <sstream>
+#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.memfilev1.verifier");

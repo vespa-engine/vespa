@@ -2,9 +2,9 @@
 
 #include "value_type.h"
 #include "value_type_spec.h"
+#include <algorithm>
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 namespace {
 
@@ -270,5 +270,4 @@ operator<<(std::ostream &os, const ValueType &type) {
     return os << type.to_spec();
 }
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}

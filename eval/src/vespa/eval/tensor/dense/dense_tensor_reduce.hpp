@@ -2,10 +2,9 @@
 
 #include "dense_tensor_reduce.h"
 #include <cassert>
+#include <algorithm>
 
-namespace vespalib {
-namespace tensor {
-namespace dense {
+namespace vespalib::tensor::dense {
 
 using Cells = DenseTensorView::Cells;
 using CellsRef = DenseTensorView::CellsRef;
@@ -120,6 +119,4 @@ reduce(const DenseTensorView &tensor, const std::vector<vespalib::string> &dimen
     }
 }
 
-} // namespace dense
-} // namespace tensor
-} // namespace vespalib
+}

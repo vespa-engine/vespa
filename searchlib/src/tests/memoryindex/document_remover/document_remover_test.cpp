@@ -1,14 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP("document_remover_test");
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/searchlib/memoryindex/document_remover.h>
 #include <vespa/searchlib/memoryindex/wordstore.h>
 #include <vespa/searchlib/memoryindex/i_document_remove_listener.h>
 #include <vespa/vespalib/test/insertion_operators.h>
-#include <map>
+#include <algorithm>
+
+#include <vespa/log/log.h>
+LOG_SETUP("document_remover_test");
 
 using namespace search;
 using namespace search::memoryindex;

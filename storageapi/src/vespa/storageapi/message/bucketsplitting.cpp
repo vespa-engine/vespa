@@ -2,9 +2,9 @@
 
 #include "bucketsplitting.h"
 #include <ostream>
+#include <limits>
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 IMPLEMENT_COMMAND(SplitBucketCommand, SplitBucketReply)
 IMPLEMENT_REPLY(SplitBucketReply)
@@ -131,6 +131,4 @@ JoinBucketsReply::print(std::ostream& out, bool verbose,
     }
 }
 
-} // api
-} // storage
-
+}

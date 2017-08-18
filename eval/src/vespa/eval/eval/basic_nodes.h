@@ -9,9 +9,9 @@
 #include <map>
 #include <vector>
 #include <cassert>
+#include <limits>
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 namespace nodes { class Node; }
 
@@ -24,6 +24,7 @@ struct NodeVisitor;
  **/
 struct NodeHandler {
     virtual void handle(std::unique_ptr<nodes::Node> node) = 0;
+
     virtual ~NodeHandler() {}
 };
 
@@ -35,9 +36,10 @@ namespace nodes {
  **/
 struct DumpContext {
     const std::vector<vespalib::string> &param_names;
-    std::vector<vespalib::string>        let_names;
+    std::vector<vespalib::string> let_names;
+
     DumpContext(const std::vector<vespalib::string> &param_names_in)
-        : param_names(param_names_in), let_names() {}
+            : param_names(param_names_in), let_names() {}
 };
 
 /**
@@ -46,19 +48,32 @@ struct DumpContext {
  **/
 struct Node {
     virtual bool is_forest() const { return false; }
+
     virtual bool is_tree() const { return false; }
+
     virtual bool is_const() const { return false; }
+
     virtual bool is_param() const { return false; }
+
     virtual double get_const_value() const;
+
     void traverse(NodeTraverser &traverser) const;
+
     virtual vespalib::string dump(DumpContext &ctx) const = 0;
+
     virtual void accept(NodeVisitor &visitor) const = 0;
+
     virtual size_t num_children() const = 0;
+
     virtual const Node &get_child(size_t idx) const = 0;
+
     virtual void detach_children(NodeHandler &handler) = 0;
+
     bool is_leaf() const { return (num_children() == 0); }
+
     virtual ~Node() {}
 };
+
 typedef std::unique_ptr<Node> Node_UP;
 
 /**
@@ -70,7 +85,7 @@ typedef std::unique_ptr<Node> Node_UP;
  *   } 
  * </pre>
  **/
-template <typename T>
+template<typename T>
 const T *as(const Node &node) { return dynamic_cast<const T *>(&node); }
 
 /**
@@ -79,9 +94,11 @@ const T *as(const Node &node) { return dynamic_cast<const T *>(&node); }
  **/
 struct Leaf : public Node {
     size_t num_children() const override { return 0; }
+
     const Node &get_child(size_t) const override {
         abort();
     }
+
     void detach_children(NodeHandler &) override {}
 };
 
@@ -91,7 +108,9 @@ struct Leaf : public Node {
  **/
 struct CommaTracker {
     bool first;
+
     CommaTracker() : first(true) {}
+
     void maybe_comma(vespalib::string &dst) {
         if (first) {
             first = false;
@@ -106,12 +125,17 @@ private:
     double _value;
 public:
     Number(double value_in) : _value(value_in) {}
+
     virtual bool is_const() const override { return true; }
+
     virtual double get_const_value() const override { return value(); }
+
     double value() const { return _value; }
+
     vespalib::string dump(DumpContext &) const override {
         return make_string("%g", _value);
     }
+
     void accept(NodeVisitor &visitor) const override;
 };
 
@@ -120,11 +144,15 @@ private:
     int _id;
 public:
     static const int UNDEF = std::numeric_limits<int>::max();
+
     explicit Symbol(int id_in) : _id(id_in) {}
+
     int id() const { return _id; }
+
     bool is_param() const override {
         return (_id >= 0);
     }
+
     vespalib::string dump(DumpContext &ctx) const override {
         if (_id >= 0) { // param value
             assert(size_t(_id) < ctx.param_names.size());
@@ -135,6 +163,7 @@ public:
             return ctx.let_names[let_offset];
         }
     }
+
     void accept(NodeVisitor &visitor) const override;
 };
 
@@ -143,11 +172,17 @@ private:
     vespalib::string _value;
 public:
     String(const vespalib::string &value_in) : _value(value_in) {}
+
     bool is_const() const override { return true; }
+
     double get_const_value() const override { return hash(); }
+
     const vespalib::string value() const { return _value; }
+
     uint32_t hash() const { return hash_code(_value.data(), _value.size()); }
+
     vespalib::string dump(DumpContext &ctx) const override;
+
     void accept(NodeVisitor &visitor) const override;
 };
 
@@ -157,17 +192,24 @@ private:
     bool _is_const;
 public:
     Array() : _nodes(), _is_const(false) {}
+
     bool is_const() const override { return _is_const; }
+
     size_t size() const { return _nodes.size(); }
+
     const Node &get(size_t i) const { return *_nodes[i]; }
+
     size_t num_children() const override { return size(); }
+
     const Node &get_child(size_t idx) const override { return get(idx); }
+
     void detach_children(NodeHandler &handler) override {
         for (size_t i = 0; i < _nodes.size(); ++i) {
             handler.handle(std::move(_nodes[i]));
         }
         _nodes.clear();
     }
+
     void add(Node_UP node) {
         if (_nodes.empty()) {
             _is_const = node->is_const();
@@ -176,6 +218,7 @@ public:
         }
         _nodes.push_back(std::move(node));
     }
+
     vespalib::string dump(DumpContext &ctx) const override {
         vespalib::string str;
         str += "[";
@@ -187,6 +230,7 @@ public:
         str += "]";
         return str;
     }
+
     void accept(NodeVisitor &visitor) const override;
 };
 
@@ -196,17 +240,23 @@ private:
     bool _is_const;
 public:
     Neg(Node_UP child_in) : _child(std::move(child_in)), _is_const(_child->is_const()) {}
+
     bool is_const() const override { return _is_const; }
+
     const Node &child() const { return *_child; }
+
     size_t num_children() const override { return _child ? 1 : 0; }
+
     const Node &get_child(size_t idx) const override {
         (void) idx;
         assert(idx == 0);
         return child();
     }
+
     void detach_children(NodeHandler &handler) override {
         handler.handle(std::move(_child));
     }
+
     vespalib::string dump(DumpContext &ctx) const override {
         vespalib::string str;
         str += "(-";
@@ -214,6 +264,7 @@ public:
         str += ")";
         return str;
     }
+
     void accept(NodeVisitor &visitor) const override;
 };
 
@@ -223,17 +274,23 @@ private:
     bool _is_const;
 public:
     Not(Node_UP child_in) : _child(std::move(child_in)), _is_const(_child->is_const()) {}
+
     bool is_const() const override { return _is_const; }
+
     const Node &child() const { return *_child; }
+
     size_t num_children() const override { return _child ? 1 : 0; }
+
     const Node &get_child(size_t idx) const override {
         (void) idx;
         assert(idx == 0);
         return child();
     }
+
     void detach_children(NodeHandler &handler) override {
         handler.handle(std::move(_child));
     }
+
     vespalib::string dump(DumpContext &ctx) const override {
         vespalib::string str;
         str += "(!";
@@ -241,6 +298,7 @@ public:
         str += ")";
         return str;
     }
+
     void accept(NodeVisitor &visitor) const override;
 };
 
@@ -249,18 +307,25 @@ private:
     Node_UP _cond;
     Node_UP _true_expr;
     Node_UP _false_expr;
-    double  _p_true;
-    bool    _is_tree;
+    double _p_true;
+    bool _is_tree;
 public:
     If(Node_UP cond_in, Node_UP true_expr_in, Node_UP false_expr_in, double p_true_in);
+
     const Node &cond() const { return *_cond; }
+
     const Node &true_expr() const { return *_true_expr; }
+
     const Node &false_expr() const { return *_false_expr; }
+
     double p_true() const { return _p_true; }
+
     bool is_tree() const override { return _is_tree; }
+
     size_t num_children() const override {
         return (_cond && _true_expr && _false_expr) ? 3 : 0;
     }
+
     const Node &get_child(size_t idx) const override {
         assert(idx < 3);
         if (idx == 0) {
@@ -271,11 +336,13 @@ public:
             return false_expr();
         }
     }
+
     void detach_children(NodeHandler &handler) override {
         handler.handle(std::move(_cond));
         handler.handle(std::move(_true_expr));
         handler.handle(std::move(_false_expr));
     }
+
     vespalib::string dump(DumpContext &ctx) const override {
         vespalib::string str;
         str += "if(";
@@ -290,29 +357,37 @@ public:
         str += ")";
         return str;
     }
+
     void accept(NodeVisitor &visitor) const override;
 };
 
 class Let : public Node {
 private:
     vespalib::string _name;
-    Node_UP          _value;
-    Node_UP          _expr;
+    Node_UP _value;
+    Node_UP _expr;
 public:
     Let(const vespalib::string &name_in, Node_UP value_in, Node_UP expr_in)
-        : _name(name_in), _value(std::move(value_in)), _expr(std::move(expr_in)) {}
+            : _name(name_in), _value(std::move(value_in)), _expr(std::move(expr_in)) {}
+
     const vespalib::string &name() const { return _name; }
+
     const Node &value() const { return *_value; }
+
     const Node &expr() const { return *_expr; }
+
     size_t num_children() const override { return (_value && _expr) ? 2 : 0; }
+
     const Node &get_child(size_t idx) const override {
         assert(idx < 2);
         return (idx == 0) ? value() : expr();
     }
+
     void detach_children(NodeHandler &handler) override {
         handler.handle(std::move(_value));
         handler.handle(std::move(_expr));
     }
+
     vespalib::string dump(DumpContext &ctx) const override {
         vespalib::string str;
         str += "let(";
@@ -326,6 +401,7 @@ public:
         str += ")";
         return str;
     }
+
     void accept(NodeVisitor &visitor) const override;
 };
 
@@ -334,11 +410,13 @@ private:
     vespalib::string _message;
 public:
     Error(const vespalib::string &message_in) : _message(message_in) {}
+
     const vespalib::string &message() const { return _message; }
+
     vespalib::string dump(DumpContext &) const override { return _message; }
+
     void accept(NodeVisitor &visitor) const override;
 };
 
-} // namespace vespalib::eval::nodes
-} // namespace vespalib::eval
-} // namespace vespalib
+}
+}

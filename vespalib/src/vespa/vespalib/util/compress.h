@@ -2,12 +2,10 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <sys/types.h>
+#include <cstdint>
+#include <cstddef>
 
-namespace vespalib {
-
-namespace compress {
+namespace vespalib::compress {
 
 class Integer {
 public:
@@ -87,6 +85,3 @@ public:
 };
 
 }
-
-} // namespace vespalib
-

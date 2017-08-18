@@ -5,6 +5,7 @@
 #include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <sstream>
+#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".routablerepository");

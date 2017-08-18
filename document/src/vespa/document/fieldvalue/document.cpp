@@ -12,6 +12,7 @@
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <sstream>
+#include <limits>
 
 using vespalib::nbostream;
 using vespalib::make_string;

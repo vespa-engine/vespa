@@ -3,6 +3,7 @@
 #include "rank_program.h"
 #include "featureoverrider.h"
 #include <vespa/vespalib/locale/c.h>
+#include <algorithm>
 
 using vespalib::Stash;
 

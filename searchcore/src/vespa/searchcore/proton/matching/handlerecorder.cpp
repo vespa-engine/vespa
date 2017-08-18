@@ -3,12 +3,11 @@
 #include "handlerecorder.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <cassert>
-
+#include <algorithm>
 
 using search::fef::TermFieldHandle;
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 #ifdef __PIC__
     #define TLS_LINKAGE __attribute__((visibility("hidden"), tls_model("initial-exec")))
@@ -79,5 +78,4 @@ void HandleRecorder::registerHandle(TermFieldHandle handle)
     }
 }
 
-}  // namespace matching
-}  // namespace proton
+}

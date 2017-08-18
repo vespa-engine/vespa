@@ -7,9 +7,9 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vector>
+#include <algorithm>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 template <typename OutputType>
 void
@@ -92,5 +92,4 @@ ArrayParser::parsePartial(const vespalib::string &input, OutputType &output)
 template void
 ArrayParser::parse(const vespalib::string &input, std::vector<int> &);
 
-} // namespace features
-} // namespace search
+}

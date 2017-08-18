@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-
 #include "memfilemapper.h"
 #include "memfile_v1_serializer.h"
 #include <vespa/memfilepersistence/spi/memfilepersistenceprovidermetrics.h>
@@ -8,6 +7,7 @@
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/storageframework/generic/clock/timer.h>
 #include <sstream>
+#include <algorithm>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".persistence.memfile.mapper");
