@@ -12,21 +12,32 @@ import com.yahoo.documentapi.Response;
 import com.yahoo.documentapi.Result;
 import com.yahoo.documentapi.SyncParameters;
 import com.yahoo.documentapi.SyncSession;
-import com.yahoo.documentapi.messagebus.protocol.*;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
+import com.yahoo.documentapi.messagebus.protocol.GetDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.GetDocumentReply;
+import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentReply;
+import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentReply;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.MessageBus;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.ReplyHandler;
 
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAmount;
+
 /**
  * An implementation of the SyncSession interface running over message bus.
  *
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author bjorncs
  */
 public class MessageBusSyncSession implements MessageBusSession, SyncSession, ReplyHandler {
 
-    private MessageBusAsyncSession session;
+    private final MessageBusAsyncSession session;
+    private final TemporalAmount defaultTimeout;
 
     /**
      * Creates a new sync session running on message bus logic.
@@ -37,6 +48,7 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
      */
     MessageBusSyncSession(SyncParameters syncParams, MessageBus bus, MessageBusParams mbusParams) {
         session = new MessageBusAsyncSession(new AsyncParameters(), bus, mbusParams, this);
+        defaultTimeout = syncParams.defaultTimeout().orElse(null);
     }
 
     @Override
@@ -72,6 +84,13 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
      * @return The reply received.
      */
     public Reply syncSend(Message msg) {
+        return syncSend(msg, defaultTimeout);
+    }
+
+    private Reply syncSend(Message msg, TemporalAmount timeout) {
+        if (timeout != null) {
+            msg.setTimeRemaining(timeout.get(ChronoUnit.MILLIS));
+        }
         try {
             RequestMonitor monitor = new RequestMonitor();
             msg.setContext(monitor);
@@ -107,15 +126,26 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
 
     @Override
     public Document get(DocumentId id) {
-        return get(id, "[all]", DocumentProtocol.Priority.NORMAL_1);
+        return get(id, null);
     }
 
     @Override
     public Document get(DocumentId id, String fieldSet, DocumentProtocol.Priority pri) {
+        return get(id, fieldSet, pri, null);
+    }
+
+    @Override
+    public Document get(DocumentId id, TemporalAmount timeout) {
+        return get(id, "[all]", DocumentProtocol.Priority.NORMAL_1, timeout);
+    }
+
+    @Override
+    public Document get(DocumentId id, String fieldSet, DocumentProtocol.Priority pri,
+                        TemporalAmount timeout) {
         GetDocumentMessage msg = new GetDocumentMessage(id, fieldSet);
         msg.setPriority(pri);
 
-        Reply reply = syncSend(msg);
+        Reply reply = syncSend(msg, timeout != null ? timeout : defaultTimeout);
         if (reply.hasErrors()) {
             throw new DocumentAccessException(MessageBusAsyncSession.getErrorMessage(reply));
         }
