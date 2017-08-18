@@ -70,7 +70,7 @@ public:
                 const GroupingLevel & gl = gll[_level];
                 const ExpressionNode * en = gl.getExpression().getRoot();
                 const AttributeNode & an = static_cast<const AttributeNode &>(*en);
-                StringResultNode srn((static_cast<const StringAttribute *>(an.getAttribute()))->getFromEnum(er.getEnum()));
+                StringResultNode srn(an.getAttribute()->getStringFromEnum(er.getEnum()));
                 group.setId(srn);
             }
             tmplevel++;

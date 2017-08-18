@@ -52,6 +52,9 @@ public:
     const char * get(DocId doc) const override {
         return this->_enumStore.getValue(this->_enumIndices[doc]);
     }
+    const char * getStringFromEnum(EnumHandle e) const override {
+        return this->_enumStore.getValue(e);
+    }
     uint32_t get(DocId doc, vespalib::string * v, uint32_t sz) const override {
         if (sz > 0) {
             v[0] = get(doc);

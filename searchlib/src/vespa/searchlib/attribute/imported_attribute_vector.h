@@ -50,6 +50,7 @@ public:
     uint32_t get(DocId docId, WeightedConstChar * buffer, uint32_t sz) const override;
     uint32_t get(DocId docId, WeightedEnum * buffer, uint32_t sz) const override;
     bool findEnum(const char * value, EnumHandle & e) const override;
+    const char * getStringFromEnum(EnumHandle e) const override;
     std::unique_ptr<ISearchContext> createSearchContext(std::unique_ptr<QueryTermSimple> term,
                                                         const SearchContextParams &params) const override;
     const IDocumentWeightAttribute *asDocumentWeightAttribute() const override;

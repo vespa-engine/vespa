@@ -147,6 +147,7 @@ private:
     void onSave(IAttributeSaveTarget & saveTarget) override;
     bool onLoad() override;
     const char * getFromEnum(EnumHandle e) const override { return &_buffer[e]; }
+    const char * getStringFromEnum(EnumHandle e) const override { return &_buffer[e]; }
 protected:
     StringDirectAttribute(const vespalib::string & baseFileName, const Config & c);
     ~StringDirectAttribute();

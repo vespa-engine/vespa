@@ -299,6 +299,20 @@ TEST_F("findEnum() returns target vector enum via reference", SingleStringAttrFi
     EXPECT_EQUAL(expected_handle, actual_handle);
 }
 
+// Note: assumes that fixture has set up a string enum of value "foo" in target attribute
+template <typename FixtureType>
+void verify_get_string_from_enum_is_mapped(FixtureType& f) {
+    EnumHandle handle{};
+    ASSERT_TRUE(f.target_attr->findEnum("foo", handle));
+    const char* from_enum = f.imported_attr->getStringFromEnum(handle);
+    ASSERT_TRUE(from_enum != nullptr);
+    EXPECT_EQUAL(vespalib::string("foo"), vespalib::string(from_enum));
+}
+
+TEST_F("Single-value getStringFromEnum() returns string enum is mapped to", SingleStringAttrFixture) {
+    verify_get_string_from_enum_is_mapped(f);
+}
+
 TEST_F("hasEnum() is true for enum target attribute vector", SingleStringAttrFixture) {
     EXPECT_TRUE(f.imported_attr->hasEnum());
 }
@@ -353,6 +367,10 @@ TEST_F("Multi-valued enum attribute values can be retrieved via reference", Mult
     assert_multi_value_matches<EnumHandle>(f, DocId(2), as_vector(expected));
 }
 
+TEST_F("Multi-value getStringFromEnum() returns string enum is mapped to", MultiStringAttrFixture) {
+    verify_get_string_from_enum_is_mapped(f);
+}
+
 TEST_F("getValueCount() is equal to stored values for mapped multi value attribute", MultiStringAttrFixture) {
     EXPECT_EQUAL(f.doc7_values.size(), f.imported_attr->getValueCount(DocId(4)));
 }
@@ -400,6 +418,10 @@ TEST_F("Weighted const char attribute values can be retrieved via reference", We
     expected.fill(*f.target_attr, DocId(7));
 
     assert_multi_value_matches<WeightedConstChar>(f, DocId(3), as_vector(expected), weighted_string_eq);
+}
+
+TEST_F("Weighted set getStringFromEnum() returns string enum is mapped to", WeightedMultiStringAttrFixture) {
+    verify_get_string_from_enum_is_mapped(f);
 }
 
 // Poor man's function call mock matching
