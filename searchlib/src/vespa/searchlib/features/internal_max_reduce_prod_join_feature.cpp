@@ -11,6 +11,7 @@
 #include <vespa/searchlib/features/dotproductfeature.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
+#include <vespa/searchcommon/common/datatype.h>
 
 LOG_SETUP(".features.internalmaxreduceprodjoin");
 
@@ -27,9 +28,6 @@ namespace features {
  */
 template <typename BaseType>
 class RawExecutor : public FeatureExecutor {
-public:
-    using A = IntegerAttributeTemplate<BaseType>;
-    using AT = multivalue::Value<BaseType>;
 protected:
     const IAttributeVector * _attribute;
     IntegerVector _queryVector;
@@ -67,6 +65,9 @@ template <typename BaseType>
 void
 RawExecutor<BaseType>::execute(uint32_t docId)
 {
+    using A = IntegerAttributeTemplate<BaseType>;
+    using AT = multivalue::Value<BaseType>;
+
     const AT *values(nullptr);
     const A *iattr = dynamic_cast<const A *>(_attribute);
     size_t count = iattr->getRawValues(docId, values);
@@ -136,6 +137,17 @@ InternalMaxReduceProdJoinBlueprint::getDescriptions() const
 bool
 InternalMaxReduceProdJoinBlueprint::setup(const IIndexEnvironment &env, const ParameterList &params)
 {
+    const FieldInfo* attributeInfo = params[0].asField();
+    if (attributeInfo == nullptr) {
+        return false;
+    }
+    if (attributeInfo->collection() != FieldInfo::CollectionType::ARRAY) {
+        return false;
+    }
+    if (attributeInfo->get_data_type() != FieldInfo::DataType::INT32 && attributeInfo->get_data_type() != FieldInfo::DataType::INT64) {
+        return false;
+    }
+
     _attribute = params[0].getValue();
     _query = params[1].getValue();
     describeOutput("scalar", "Internal executor for optimized execution of reduce(join(A,Q,f(x,y)(x*y)),max)");

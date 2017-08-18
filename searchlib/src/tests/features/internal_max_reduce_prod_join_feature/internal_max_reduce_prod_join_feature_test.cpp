@@ -14,6 +14,7 @@ using namespace search::features;
 using search::AttributeFactory;
 using search::IntegerAttribute;
 using CollectionType = FieldInfo::CollectionType;
+using DataType = FieldInfo::DataType;
 
 typedef search::attribute::Config AVC;
 typedef search::attribute::BasicType AVBT;
@@ -25,12 +26,13 @@ struct SetupFixture
 {
     InternalMaxReduceProdJoinBlueprint blueprint;
     IndexEnvironment indexEnv;
-    SetupFixture(const vespalib::string &attr)
+    SetupFixture(const vespalib::string &attrName)
         : blueprint(),
           indexEnv()
     {
-        FieldInfo attr_info(FieldType::ATTRIBUTE, CollectionType::ARRAY, attr, 0);
-        indexEnv.getFields().push_back(attr_info);
+        FieldInfo attrInfo(FieldType::ATTRIBUTE, CollectionType::ARRAY, attrName, 0);
+        attrInfo.set_data_type(DataType::INT64);
+        indexEnv.getFields().push_back(attrInfo);
     }
 };
 
@@ -70,8 +72,8 @@ struct ExecFixture
         vespalib::string attrIntArray = "intarray";
         vespalib::string attrLongArray = "longarray";
 
-        test.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, attrLongArray);
-        test.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, attrIntArray);
+        test.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, DataType::INT64, attrLongArray);
+        test.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, DataType::INT32, attrIntArray);
 
         std::vector<AttributePtr> attrs;
         attrs.push_back(AttributeFactory::createAttribute(attrLongArray, AVC(AVBT::INT64,  AVCT::ARRAY)));

@@ -30,6 +30,19 @@ public:
                                       const FieldInfo::CollectionType &coll,
                                       const vespalib::string &name);
 
+    /**
+     * Add a field to the index environment with specified data type.
+     *
+     * @param type The type of field to add.
+     * @param coll collection type
+     * @param coll collection base data type
+     * @param name The name of the field.
+     */
+    IndexEnvironmentBuilder &addField(const FieldType &type,
+                                      const FieldInfo::CollectionType &coll,
+                                      const FieldInfo::DataType &dataType,
+                                      const vespalib::string &name);
+
     /** Returns a reference to the index environment of this. */
     IndexEnvironment &getIndexEnv() { return _env; }
 
