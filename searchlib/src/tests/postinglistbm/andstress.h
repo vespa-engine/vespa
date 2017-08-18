@@ -1,23 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-
 #include <vector>
-namespace search
-{
+#include <string>
+
+namespace search {
 class Rand48;
 
-namespace fakedata
-{
-
-class FakeWordSet;
+namespace fakedata { class FakeWordSet; }
 
 }
 
-}
-
-namespace postinglistbm
-{
+namespace postinglistbm {
 
 class AndStress
 {
@@ -39,5 +33,4 @@ public:
         bool unpack);
 };
 
-} // namespace postinglistbm
-
+}
