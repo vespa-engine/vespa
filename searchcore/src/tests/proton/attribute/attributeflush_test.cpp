@@ -30,6 +30,7 @@ typedef search::attribute::BasicType AVBasicType;
 typedef search::attribute::CollectionType AVCollectionType;
 using searchcorespi::IFlushTarget;
 using searchcorespi::FlushStats;
+using namespace std::literals;
 
 typedef std::shared_ptr<Gate> GateSP;
 
@@ -165,7 +166,7 @@ UpdaterTask::run()
             slowedDown = false;
         }
         if (needFlushToken > flushedToken + slowdownUpdateLim) {
-            FastOS_Thread::Sleep(100);
+            std::this_thread::sleep_for(100ms);
             if (!slowedDown) {
                 LOG(warning,
                     "Slowing down updates due to slow flushing (slow disk ?)");
@@ -511,7 +512,7 @@ Test::requireThatLastFlushTimeIsReported()
         IFlushTarget::SP ft = am.getFlushable("a9");
         EXPECT_EQUAL(stat._modifiedTime, ft->getLastFlushTime().time());
         { // updated flush time after nothing to flush
-            FastOS_Thread::Sleep(8000);
+            std::this_thread::sleep_for(8000ms);
             fastos::TimeStamp now = fastos::ClockSystem::now();
             Executor::Task::UP task = ft->initFlush(200);
             EXPECT_TRUE(task.get() == NULL);
