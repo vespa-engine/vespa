@@ -6,7 +6,7 @@ import java.nio.file.Files
 import org.junit.Assert.{assertTrue, assertThat, fail}
 import org.junit.Test
 import com.yahoo.io.IOUtils
-import org.junit.matchers.JUnitMatchers.containsString
+import org.hamcrest.CoreMatchers.containsString
 
 /**
  * @author tonytv
