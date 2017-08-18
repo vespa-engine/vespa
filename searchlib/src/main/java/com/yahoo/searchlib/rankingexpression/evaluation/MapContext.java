@@ -46,8 +46,8 @@ public class MapContext extends Context {
      */
     @Override
     public Value get(String key) {
-        Value value=bindings.get(key);
-        if (value==null) return DoubleValue.zero;
+        Value value = bindings.get(key);
+        if (value == null) return DoubleValue.zero;
         return value;
     }
 

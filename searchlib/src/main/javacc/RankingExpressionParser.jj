@@ -227,7 +227,7 @@ ExpressionNode value() :
     ( [ LOOKAHEAD(2) <SUB>                                  { neg = true;     }   ]
       (            ret = constantPrimitive()                                      |
                    LOOKAHEAD(2) ret = ifExpression()                              |
-                   LOOKAHEAD(2) ret = function()                                  |
+                   LOOKAHEAD(4) ret = function()                                  |
                    ret = feature()                                                |
                    ret = queryFeature()                                           |
         ( <LBRACE> ret = expression() <RBRACE> { ret = new EmbracedNode(ret); } ) ) )

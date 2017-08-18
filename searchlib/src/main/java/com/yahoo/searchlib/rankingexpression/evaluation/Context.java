@@ -2,12 +2,14 @@
 package com.yahoo.searchlib.rankingexpression.evaluation;
 
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
+import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
- * <p>The context providing value bindings for an expression evaluation.</p>
+ * The context providing value bindings for an expression evaluation.
  *
  * @author bratseth
  */
@@ -26,14 +28,12 @@ public abstract class Context implements EvaluationContext {
      * <code>name(argument*)(.output)?</code>, where <i>argument</i> is any
      * string.  This may be used to implement more advanced variables whose
      * values are calculated at runtime from arguments.  Supporting this in a
-     * context is optional. Implementations may choose to throw
-     * UnsupportedOperationException or always return null, or to handle outputs
-     * but not arguments.</p>
-     *
-     * <p>This default implementation does the latter - if arguments is non-null
-     * and non-empty an UnsupportedOperationException is thrown, otherwise
-     * get(name + "." + output) is called (or just get(name)) if output is also
-     * null.</p>
+     * context is optional. 
+     * 
+     * <p>This default implementation generates a name on the form
+     * <code>name(argument1, argument2, ...argumentN).output</code>.
+     * If there are no arguments the parenthesis are omitted.
+     * If there is no output, the dot is omitted.</p>
      *
      * @param name      The name of this variable.
      * @param arguments The parsed arguments as given in the textual expression.
@@ -41,13 +41,12 @@ public abstract class Context implements EvaluationContext {
      *                  calculation to output several), or null to output the
      *                  "main" (or only) value.
      */
-    public Value get(String name, Arguments arguments,String output) {
-        if (arguments!=null && arguments.expressions().size() > 0)
-            throw new UnsupportedOperationException(this + " does not support structured ranking expression variables, attempted to reference '" +
-                                                    name + arguments + "'");
-        if (output==null)
-            return get(name);
-        return get(name + "." + output);
+    public Value get(String name, Arguments arguments, String output) {
+        if (arguments != null && arguments.expressions().size() > 0)
+            name = name + "(" + arguments.expressions().stream().map(ExpressionNode::toString).collect(Collectors.joining(",")) + ")";
+        if (output !=null)
+            name = name + "." + output;
+        return get(name);
     }
 
     /**
