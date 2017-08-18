@@ -13,6 +13,7 @@ using namespace search::fef::test;
 using namespace search::features;
 using search::AttributeFactory;
 using search::IntegerAttribute;
+using search::FloatingPointAttribute;
 using CollectionType = FieldInfo::CollectionType;
 using DataType = FieldInfo::DataType;
 
@@ -26,32 +27,63 @@ struct SetupFixture
 {
     InternalMaxReduceProdJoinBlueprint blueprint;
     IndexEnvironment indexEnv;
-    SetupFixture(const vespalib::string &attrName)
+    SetupFixture()
         : blueprint(),
           indexEnv()
     {
-        FieldInfo attrInfo(FieldType::ATTRIBUTE, CollectionType::ARRAY, attrName, 0);
-        attrInfo.set_data_type(DataType::INT64);
+        addAttribute("double", DataType::DOUBLE);
+        addArrayAttribute("longarray", DataType::INT64);
+        addArrayAttribute("intarray", DataType::INT32);
+        addArrayAttribute("doublearray", DataType::DOUBLE);
+    }
+
+    void addArrayAttribute(const vespalib::string& name, const DataType& dataType) {
+        FieldInfo attrInfo(FieldType::ATTRIBUTE, CollectionType::ARRAY, name, 0);
+        attrInfo.set_data_type(dataType);
+        indexEnv.getFields().push_back(attrInfo);
+    }
+
+    void addAttribute(const vespalib::string& name, const DataType& dataType) {
+        FieldInfo attrInfo(FieldType::ATTRIBUTE, CollectionType::SINGLE, name, 0);
+        attrInfo.set_data_type(dataType);
         indexEnv.getFields().push_back(attrInfo);
     }
 };
 
-TEST_F("require that blueprint can be created", SetupFixture("attr"))
+TEST_F("require that blueprint can be created", SetupFixture())
 {
     EXPECT_TRUE(FTA::assertCreateInstance(f.blueprint, "internalMaxReduceProdJoin"));
 }
 
-TEST_F("require that setup fails if attribute does not exist", SetupFixture("attr"))
+TEST_F("require that setup fails if attribute does not exist", SetupFixture())
 {
     FTA::FT_SETUP_FAIL(f.blueprint, f.indexEnv, StringList().add("foo").add("bar"));
 }
 
-TEST_F("require that setup succeeds with attribute and query parameters", SetupFixture("attr"))
+TEST_F("require that setup fails if attribute is of wrong type", SetupFixture())
+{
+    FTA::FT_SETUP_FAIL(f.blueprint, f.indexEnv, StringList().add("double").add("bar"));
+}
+
+TEST_F("require that setup fails if attribute is of wrong array type", SetupFixture())
+{
+    FTA::FT_SETUP_FAIL(f.blueprint, f.indexEnv, StringList().add("doublearray").add("bar"));
+}
+
+TEST_F("require that setup succeeds with long array attribute", SetupFixture())
 {
     FTA::FT_SETUP_OK(f.blueprint, f.indexEnv,
-                    StringList().add("attr").add("query"),
+                    StringList().add("longarray").add("query"),
                     StringList(),
                     StringList().add("scalar"));
+}
+
+TEST_F("require that setup succeeds with int array attribute", SetupFixture())
+{
+    FTA::FT_SETUP_OK(f.blueprint, f.indexEnv,
+                     StringList().add("intarray").add("query"),
+                     StringList(),
+                     StringList().add("scalar"));
 }
 
 struct ExecFixture
