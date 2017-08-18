@@ -13,22 +13,19 @@ Code licensed under the Apache 2.0 license. See [LICENSE](LICENSE) for terms.
 
 ## Get started developing
 
-### Set up build environment
+### Setup build environment
 C++ building is supported on CentOS 7.
+We recommend using the following environment: [Create C++ dev environment on CentOS using VirtualBox and Vagrant](vagrant/README.md).
+You can also setup CentOS 7 natively and install the following build dependencies:
 
-#### Install required build dependencies
-    sudo yum -y install epel-release centos-release-scl yum-utils
     sudo yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo
-    sudo yum -y --enablerepo=epel-testing install devtoolset-6-gcc-c++ devtoolset-6-libatomic-devel devtoolset-6-binutils \
-        Judy-devel cmake3 ccache lz4-devel zlib-devel maven libicu-devel llvm3.9-devel \
-        llvm3.9-static java-1.8.0-openjdk-devel openssl-devel rpm-build make \
-        vespa-boost-devel vespa-libtorrent-devel vespa-zookeeper-c-client-devel vespa-cppunit-devel
-or use the prebuilt docker image
-
-    # TODO: Add docker command
+    sudo yum -y install epel-release centos-release-scl yum-utils
+    sudo yum -y install ccache \
+        rpm-build
+    yum-builddep -y <vespa-source>/dist/vespa.spec
 
 ### Build Java modules
-Java modules can be built on any environment having Java and Maven:
+Java modules can be built on any environment having Java 8 and Maven:
 
     sh bootstrap.sh
     mvn install

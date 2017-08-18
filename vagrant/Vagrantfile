@@ -1,0 +1,38 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# For a complete reference, please see the online documentation at https://docs.vagrantup.com.
+Vagrant.configure("2") do |config|
+
+  config.vm.box = "boxcutter/centos73-desktop"
+
+  config.ssh.forward_agent = true
+
+  config.vm.synced_folder "../dist", "/vagrant/dist"
+
+  config.vm.provider "virtualbox" do |vb|
+    # Display the VirtualBox GUI when booting the machine
+    vb.gui = true
+
+    vb.memory = "8192"
+    vb.cpus = 8
+  end
+  
+  # Install required and nice-to-have packages
+  config.vm.provision "shell", inline: <<-SHELL
+    yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo
+    yum -y install epel-release
+    yum -y install centos-release-scl
+    yum -y install yum-utils
+    yum -y install git \
+        ccache \
+        rpm-build \
+        valgrind \
+        sudo \
+        firefox \
+        vim
+    yum-builddep -y /vagrant/dist/vespa.spec
+    echo -e "* soft nproc 409600\n* hard nproc 409600" > /etc/security/limits.d/99-nproc.conf
+    echo -e "* soft nofile 262144\n* hard nofile 262144" > /etc/security/limits.d/99-nofile.conf
+  SHELL
+end
