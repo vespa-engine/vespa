@@ -33,10 +33,10 @@ public:
     /**
      * Add a field to the index environment with specified data type.
      *
-     * @param type The type of field to add.
-     * @param coll collection type
-     * @param coll collection base data type
-     * @param name The name of the field.
+     * @param type      The type of field to add.
+     * @param coll      Collection type
+     * @param dataType  Collection base data type
+     * @param name      The name of the field.
      */
     IndexEnvironmentBuilder &addField(const FieldType &type,
                                       const FieldInfo::CollectionType &coll,
