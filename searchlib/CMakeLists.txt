@@ -131,6 +131,7 @@ vespa_define_module(
     src/tests/features/element_similarity_feature
     src/tests/features/euclidean_distance
     src/tests/features/imported_dot_product
+    src/tests/features/internal_max_reduce_prod_join_feature
     src/tests/features/item_raw_score
     src/tests/features/native_dot_product
     src/tests/features/ranking_expression
@@ -140,7 +141,6 @@ vespa_define_module(
     src/tests/features/tensor_from_labels
     src/tests/features/tensor_from_weighted_set
     src/tests/features/text_similarity_feature
-    src/tests/features/expression_replacement_features
     src/tests/features/util
     src/tests/fef
     src/tests/fef/attributecontent

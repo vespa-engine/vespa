@@ -1,8 +1,8 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_add_executable(searchlib_expression_replacement_features_test_app TEST
+vespa_add_executable(searchlib_internal_max_reduce_prod_join_feature_test_app TEST
     SOURCES
-        expression_replacement_features_test.cpp
+	internal_max_reduce_prod_join_feature_test.cpp
     DEPENDS
         searchlib
 )
-vespa_add_test(NAME searchlib_expression_replacement_features_test_app COMMAND searchlib_expression_replacement_features_test_app)
+vespa_add_test(NAME searchlib_internal_max_reduce_prod_join_feature_test_app COMMAND searchlib_internal_max_reduce_prod_join_feature_test_app)
