@@ -1,3 +1,4 @@
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
 
 
@@ -5,10 +6,10 @@ import com.yahoo.vespa.hosted.node.verification.mock.MockCommandExecutor;
 import com.yahoo.vespa.hosted.node.verification.spec.VerifierSettings;
 import org.junit.Before;
 import org.junit.Test;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.spy;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 
 public class HardwareInfoRetrieverTest {
 

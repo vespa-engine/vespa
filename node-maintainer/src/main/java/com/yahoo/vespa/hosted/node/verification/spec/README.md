@@ -10,5 +10,5 @@ It then retrieves all the hardware information at the node with the "retrievers"
 "HardwareInfo" object. 
 
 SpecVerifier then uses HardwareNodeComparator to compare spec from node repo and the node itself. It generates a 
-SpecVerificationReport and uses ReportSender in "commons" to generate a full json report that can update node repo
-with the new results.
+SpecVerificationReport and uses Reporter in "commons" to retrieve the old HardwareDivergence report from node repo and update it. Reporter then prints the new
+updated HardwareDivergence report such that it can be updated in node repo by chef or other.

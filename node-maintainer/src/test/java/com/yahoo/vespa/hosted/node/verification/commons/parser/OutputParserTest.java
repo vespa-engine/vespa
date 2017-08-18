@@ -1,8 +1,6 @@
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.verification.commons.parser;
 
-import com.yahoo.vespa.hosted.node.verification.commons.parser.OutputParser;
-import com.yahoo.vespa.hosted.node.verification.commons.parser.ParseInstructions;
-import com.yahoo.vespa.hosted.node.verification.commons.parser.ParseResult;
 import org.junit.Before;
 import org.junit.Test;
 

@@ -1,3 +1,4 @@
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.verification.spec;
 
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoJsonModel;
@@ -11,11 +12,11 @@ public class VerifierSettings {
 
     private final boolean checkIPv6;
 
-    public VerifierSettings(){
+    public VerifierSettings() {
         this.checkIPv6 = true;
     }
 
-    public VerifierSettings(NodeRepoJsonModel nodeRepoJsonModel){
+    public VerifierSettings(NodeRepoJsonModel nodeRepoJsonModel) {
         checkIPv6 = nodeRepoJsonModel.getIpv6Address() != null;
     }
 

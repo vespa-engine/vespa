@@ -1,3 +1,4 @@
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.verification.commons.report;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -14,10 +15,9 @@ public class HardwareDivergenceReport {
     BenchmarkReport benchmarkReport;
 
     public void setSpecVerificationReport(SpecVerificationReport specVerificationReport) {
-        if (specVerificationReport.isValidSpec()){
+        if (specVerificationReport.isValidSpec()) {
             this.specVerificationReport = null;
-        }
-        else {
+        } else {
             this.specVerificationReport = specVerificationReport;
         }
     }
@@ -25,15 +25,14 @@ public class HardwareDivergenceReport {
     public void setBenchmarkReport(BenchmarkReport benchmarkReport) {
         if (benchmarkReport.isAllBenchmarksOK()) {
             this.benchmarkReport = null;
-        }
-        else {
+        } else {
             this.benchmarkReport = benchmarkReport;
         }
     }
 
     @JsonIgnore
-    public boolean isHardwareDivergenceReportEmpty(){
-        if (specVerificationReport == null && benchmarkReport == null){
+    public boolean isHardwareDivergenceReportEmpty() {
+        if (specVerificationReport == null && benchmarkReport == null) {
             return true;
         }
         return false;
