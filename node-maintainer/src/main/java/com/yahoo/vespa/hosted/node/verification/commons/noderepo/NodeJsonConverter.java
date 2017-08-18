@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
  * Converts a NodeRepoJsonModel object to a HardwareInfo object.
  * 
  * @author olaaun
+ * @author sgrostad
  */
 public class NodeJsonConverter {
 

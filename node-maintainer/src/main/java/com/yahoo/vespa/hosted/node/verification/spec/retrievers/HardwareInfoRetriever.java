@@ -11,6 +11,7 @@ import java.util.List;
  * Makes a HardwareInfo object and calls all the retrievers for this object.
  *
  * @author olaaun
+ * @author sgrostad
  */
 public class HardwareInfoRetriever {
 

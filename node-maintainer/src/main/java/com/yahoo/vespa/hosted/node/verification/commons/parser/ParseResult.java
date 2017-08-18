@@ -4,7 +4,10 @@ package com.yahoo.vespa.hosted.node.verification.commons.parser;
 import java.util.Objects;
 
 /**
+ * Contains the results from parsing a command line output
+ *
  * @author sgrostad
+ * @author olaaun
  */
 public class ParseResult {
 

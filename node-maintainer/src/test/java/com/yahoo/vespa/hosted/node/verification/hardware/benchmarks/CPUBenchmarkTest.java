@@ -17,7 +17,9 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author sgrostad
+ * @author olaaun
  */
+
 public class CPUBenchmarkTest {
 
     private static final String cpuEuropeanDelimiters = "src/test/java/com/yahoo/vespa/hosted/node/verification/hardware/resources/cpuCyclesWithDotsTimeWithCommaTest.txt";

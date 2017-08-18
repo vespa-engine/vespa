@@ -15,7 +15,10 @@ import java.util.logging.Logger;
 
 
 /**
+ * Responsible for benchmarking disk write speed, and storing the result in a BenchmarkResults instance
+ *
  * @author olaaun
+ * @author sgrostad
  */
 public class DiskBenchmark implements Benchmark {
 

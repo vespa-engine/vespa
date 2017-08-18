@@ -16,6 +16,7 @@ import java.util.List;
  * Wrapper for executing terminal commands
  *
  * @author olaaun
+ * @author sgrostad
  */
 public class CommandExecutor {
 

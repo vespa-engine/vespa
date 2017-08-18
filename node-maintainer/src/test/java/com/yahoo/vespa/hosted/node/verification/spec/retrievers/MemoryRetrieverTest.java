@@ -13,7 +13,9 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * @author sgrostad
+ * @author olaaun
  */
+
 public class MemoryRetrieverTest {
 
     private static final String FILENAME = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/meminfoTest";

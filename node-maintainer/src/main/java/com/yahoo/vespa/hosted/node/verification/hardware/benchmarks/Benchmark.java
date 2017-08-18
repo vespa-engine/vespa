@@ -3,10 +3,13 @@ package com.yahoo.vespa.hosted.node.verification.hardware.benchmarks;
 
 /**
  * @author sgrostad
+ * @author olaaun
  */
 public interface Benchmark {
 
-    // TODO: Javadoc
+    /**
+     * Should perform benchmark for some part of the hardware, and store the result in BenchmarkResults instance passed to class
+     */
     void doBenchmark();
 
 }

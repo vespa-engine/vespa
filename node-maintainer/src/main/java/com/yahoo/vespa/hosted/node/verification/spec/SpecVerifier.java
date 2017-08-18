@@ -25,6 +25,7 @@ import java.util.logging.Logger;
  * Compares the objects and returns the result.
  *
  * @author olaaun
+ * @author sgrostad
  */
 public class SpecVerifier {
 

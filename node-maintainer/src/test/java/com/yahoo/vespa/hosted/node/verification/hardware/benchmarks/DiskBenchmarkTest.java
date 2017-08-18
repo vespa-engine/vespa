@@ -15,7 +15,9 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author sgrostad
+ * @author olaaun
  */
+
 public class DiskBenchmarkTest {
 
     private DiskBenchmark diskBenchmark;

@@ -14,7 +14,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Responsible for benchmarking CPU clock frequency, and storing the result in a BenchmarkResults instance
+ *
  * @author sgrostad
+ * @author olaaun
  */
 public class CPUBenchmark implements Benchmark {
 

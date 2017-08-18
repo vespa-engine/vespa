@@ -5,6 +5,7 @@ package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
  * All information the different retrievers retrieve is stored as a HardwareInfo object.
  *
  * @author olaaun
+ * @author sgrostad
  */
 // TODO: This should be immutable
 public class HardwareInfo {

@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoJsonMod
  * Contains information on what spec should be verified or not.
  * 
  * @author sgrostad
+ * @author olaaun
  */
 public class VerifierSettings {
 

@@ -5,6 +5,7 @@ package com.yahoo.vespa.hosted.node.verification.hardware.benchmarks;
  * Stores results from benchmarks
  * 
  * @author sgrostad
+ * @author olaaun
  */
 // TODO: This should be immutable
 public class BenchmarkResults {

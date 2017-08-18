@@ -16,6 +16,7 @@ import java.util.stream.Stream;
  * Object with the information node repositories has about the node.
  *
  * @author olaaun
+ * @author sgrostad
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class NodeRepoJsonModel {

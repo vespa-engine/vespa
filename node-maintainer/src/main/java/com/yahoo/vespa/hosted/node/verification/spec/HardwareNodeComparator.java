@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo.Dis
  * Compares two HardwareInfo objects and stores divergent values in a SpecVerificationReport
  *
  * @author olaaun
+ * @author sgrostad
  */
 public class HardwareNodeComparator {
 

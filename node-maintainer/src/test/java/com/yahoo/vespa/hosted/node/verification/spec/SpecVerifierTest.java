@@ -20,6 +20,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * @author sgrostad
+ * @author olaaun
+ */
+
 public class SpecVerifierTest {
 
     private MockCommandExecutor mockCommandExecutor;

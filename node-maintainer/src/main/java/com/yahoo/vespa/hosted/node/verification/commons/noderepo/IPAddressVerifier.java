@@ -21,6 +21,7 @@ import java.util.logging.Logger;
  * Verifies that the IP addresses of a node points to the correct hostname
  * 
  * @author olaaun
+ * @author sgrostad
  */
 public class IPAddressVerifier {
 

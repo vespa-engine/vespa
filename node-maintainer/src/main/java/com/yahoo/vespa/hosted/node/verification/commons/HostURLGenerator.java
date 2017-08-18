@@ -11,6 +11,7 @@ import java.util.List;
  * Makes the URL used to retrieve the JSON from the node repository with information about the node's spec.
  *
  * @author olaaun
+ * @author sgrostad
  */
 public class HostURLGenerator {
 

@@ -11,8 +11,10 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
+ * @author sgrostad
  * @author olaaun
  */
+
 public class MockCommandExecutor extends CommandExecutor {
 
     private ArrayList<String> mockCommands;

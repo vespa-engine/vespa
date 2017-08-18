@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
  * Parses terminal command output, and returns results based on ParseInstructions
  *
  * @author sgrostad
+ * @author olaaaun
  */
 public class OutputParser {
 

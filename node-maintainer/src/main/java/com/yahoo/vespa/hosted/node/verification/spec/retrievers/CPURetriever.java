@@ -14,7 +14,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Retrieves number of CPU cores, and stores the result in a HardwareInfo instance
+ *
  * @author olaaun
+ * @author sgrostad
  */
 public class CPURetriever implements HardwareRetriever {
 

@@ -16,6 +16,11 @@ import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * @author sgrostad
+ * @author olaaun
+ */
+
 public class ReporterTest {
 
     private final ByteArrayOutputStream println = new ByteArrayOutputStream();

@@ -1,11 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.verification.commons.parser;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * Contains instructions of how a command line output should be parsed
+ *
  * @author sgrostad
+ * @author olaaaun
  */
 public class ParseInstructions {
 

@@ -16,7 +16,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Retrieves IPv4/IPv6 interface, and checks interface speed. If node should have IPv6, tries to ping6.
+ * The results are stored in a HardwareInfo instance
+ *
  * @author olaaun
+ * @author sgrostad
  */
 public class NetRetriever implements HardwareRetriever {
 

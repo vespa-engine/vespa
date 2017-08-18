@@ -14,7 +14,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Retrieves memory size, and stores the result in a HardwareInfo instance
+ *
  * @author olaaun
+ * @author sgrostad
  */
 public class MemoryRetriever implements HardwareRetriever {
 

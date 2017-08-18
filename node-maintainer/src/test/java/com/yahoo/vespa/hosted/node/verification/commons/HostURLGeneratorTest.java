@@ -14,8 +14,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
+ * @author sgrostad
  * @author olaaun
  */
+
 public class HostURLGeneratorTest {
 
     private MockCommandExecutor mockCommandExecutor;

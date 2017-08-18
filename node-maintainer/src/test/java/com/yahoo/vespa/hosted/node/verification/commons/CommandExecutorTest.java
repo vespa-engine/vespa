@@ -12,7 +12,9 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * @author sgrostad
+ * @author olaaun
  */
+
 public class CommandExecutorTest {
 
     private CommandExecutor commandExecutor;

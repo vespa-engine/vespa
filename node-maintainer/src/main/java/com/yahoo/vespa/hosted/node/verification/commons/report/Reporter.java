@@ -12,6 +12,12 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Responsible for printing hardware divergence report to standard out
+ *
+ * @author sgrostad
+ * @author olaaun
+ */
 public class Reporter {
 
     private static final Logger logger = Logger.getLogger(Reporter.class.getName());
@@ -53,4 +59,5 @@ public class Reporter {
             return new HardwareDivergenceReport();
         }
     }
+
 }

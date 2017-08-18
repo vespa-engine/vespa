@@ -21,7 +21,9 @@ import static org.mockito.Mockito.spy;
 
 /**
  * @author sgrostad
+ * @author olaaun
  */
+
 public class NetRetrieverTest {
 
     private static final String RESOURCE_PATH = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/";

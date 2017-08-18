@@ -14,6 +14,7 @@ import java.util.logging.Logger;
  * Parse JSON from node repository and stores information as a NodeRepoJsonModel object.
  *
  * @author olaaun
+ * @author sgrostad
  */
 public class NodeRepoInfoRetriever {
 

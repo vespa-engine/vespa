@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * JSON-mapped class for reporting benchmark results to node repo
  * 
  * @author sgrostad
+ * @author olaaun
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class BenchmarkReport {

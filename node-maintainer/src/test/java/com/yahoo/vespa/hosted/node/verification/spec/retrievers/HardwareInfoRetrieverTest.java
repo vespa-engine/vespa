@@ -11,6 +11,11 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
+/**
+ * @author sgrostad
+ * @author olaaun
+ */
+
 public class HardwareInfoRetrieverTest {
 
     private static final String RESOURCE_PATH = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/";
