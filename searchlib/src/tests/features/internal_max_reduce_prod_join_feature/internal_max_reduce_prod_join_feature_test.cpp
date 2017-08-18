@@ -31,20 +31,14 @@ struct SetupFixture
         : blueprint(),
           indexEnv()
     {
-        addAttribute("double", DataType::DOUBLE);
-        addArrayAttribute("longarray", DataType::INT64);
-        addArrayAttribute("intarray", DataType::INT32);
-        addArrayAttribute("doublearray", DataType::DOUBLE);
+        addAttribute("double", CollectionType::SINGLE, DataType::DOUBLE);
+        addAttribute("longarray", CollectionType::ARRAY, DataType::INT64);
+        addAttribute("intarray", CollectionType::ARRAY, DataType::INT32);
+        addAttribute("doublearray", CollectionType::ARRAY, DataType::DOUBLE);
     }
 
-    void addArrayAttribute(const vespalib::string& name, const DataType& dataType) {
-        FieldInfo attrInfo(FieldType::ATTRIBUTE, CollectionType::ARRAY, name, 0);
-        attrInfo.set_data_type(dataType);
-        indexEnv.getFields().push_back(attrInfo);
-    }
-
-    void addAttribute(const vespalib::string& name, const DataType& dataType) {
-        FieldInfo attrInfo(FieldType::ATTRIBUTE, CollectionType::SINGLE, name, 0);
+    void addAttribute(const vespalib::string& name, const CollectionType& collType, const DataType& dataType) {
+        FieldInfo attrInfo(FieldType::ATTRIBUTE, collType, name, 0);
         attrInfo.set_data_type(dataType);
         indexEnv.getFields().push_back(attrInfo);
     }
