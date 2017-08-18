@@ -150,7 +150,7 @@ public:
    BaseTest *_app;
 
    MazeServer(BaseTest *app)
-     : _serverSocket(NULL),
+     : _serverSocket(nullptr),
        _app(app)
    {
    }
@@ -185,7 +185,7 @@ public:
             {
                int serverPort = 18334;
                _serverSocket = new FastOS_ServerSocket(serverPort);
-               _app->Progress(_serverSocket != NULL,
+               _app->Progress(_serverSocket != nullptr,
                               "Creating ServerSocket instance");
 
                _app->Progress(_serverSocket->SetSoBlocking(false),
@@ -224,12 +224,12 @@ public:
                {
                   FastOS_Socket *connSocket = _serverSocket->AcceptPlain();
 
-                  _app->Progress(connSocket != NULL, "Accepting socket (%p)",
+                  _app->Progress(connSocket != nullptr, "Accepting socket (%p)",
                                  connSocket);
 
                   for(i=0; i<MAX_CONNECTIONS; i++)
                   {
-                     if(connections[i] == NULL)
+                     if(connections[i] == nullptr)
                      {
                         // Found a free positions for the new connection
                         break;
@@ -237,11 +237,11 @@ public:
                   }
                   if(i < MAX_CONNECTIONS)
                   {
-                     if(connSocket != NULL)
+                     if(connSocket != nullptr)
                      {
                         connections[i] = new MazeServerConnection(this, connSocket);
 
-                        assert(connections[i] != NULL);
+                        assert(connections[i] != nullptr);
 
                         connSocket->SetSocketEvent(&socketEvent);
                         connSocket->EnableReadEvent(true);
@@ -256,7 +256,7 @@ public:
 
                for(i=0; i<MAX_CONNECTIONS; i++)
                {
-                  if((conn = connections[i]) != NULL)
+                  if((conn = connections[i]) != nullptr)
                   {
                      if(socketEvent.QueryReadEvent(conn->_socket))
                      {
@@ -273,7 +273,7 @@ public:
                      if(conn->_shouldFree)
                      {
                         delete(conn);
-                        connections[i] = NULL;
+                        connections[i] = nullptr;
                      }
                   }
                }
@@ -438,7 +438,7 @@ public:
 #if 0
    void PrintOut()
    {
-      if(_server != NULL)
+      if(_server != nullptr)
       {
          for(int y=0; y<MAZE_HEIGHT; y++)
          {
@@ -460,7 +460,7 @@ public:
 #if 0
    void MarkPath (int x, int y, int direction, int length)
    {
-      if(_server != NULL)
+      if(_server != nullptr)
       {
          int dx, dy;
          SetDirection(dx, dy, direction);
@@ -657,9 +657,9 @@ public:
       std::string strictBindHost("localhost");
 
       FastOS_ServerSocket *serverSocket =
-         new FastOS_ServerSocket(18333, 5, NULL, strictBindHost.c_str());
+         new FastOS_ServerSocket(18333, 5, nullptr, strictBindHost.c_str());
 
-      Progress(serverSocket != NULL, "Allocating serversocket instance");
+      Progress(serverSocket != nullptr, "Allocating serversocket instance");
 
       rc = serverSocket->GetValidAddressFlag();
       Progress(rc, "Address Valid Flag check");
@@ -684,7 +684,7 @@ public:
       TestHeader("HTTP Client Test");
 
       FastOS_Socket *sock = new FastOS_Socket();
-      Progress(sock != NULL, "Allocating socket instance");
+      Progress(sock != nullptr, "Allocating socket instance");
 
       char hostAddress[] = "www.vg.no";
 
@@ -714,7 +714,7 @@ public:
             int readLength = strlen(expectedResult);
             char *readBuffer = new char[readLength+1];
 
-            if(readBuffer != NULL)
+            if(readBuffer != nullptr)
             {
                memset(readBuffer, 0, readLength+1);
 
@@ -756,7 +756,7 @@ public:
       TestHeader("Client/Server Test");
 
       FastOS_ServerSocket *serverSocket = new FastOS_ServerSocket(18333);
-      Progress(serverSocket != NULL, "Allocating serversocket instance");
+      Progress(serverSocket != nullptr, "Allocating serversocket instance");
 
       Progress(rc = serverSocket->Listen(), "Bind socket to port %d. Listen for incoming connections.", 18333);
       assert(rc);
@@ -775,7 +775,7 @@ public:
       bool rc;
       FastOS_Socket *sock = new FastOS_Socket();
 
-      Progress(rc = (sock != NULL), "Allocating socket instance");
+      Progress(rc = (sock != nullptr), "Allocating socket instance");
       if(rc)
       {
          sock->SetAddress(8001, serverAddress);
@@ -786,7 +786,7 @@ public:
          {
             MazeClient *client = new MazeClient(this, sock);
 
-            Progress(rc = (client != NULL), "Allocating MazeClient instance");
+            Progress(rc = (client != nullptr), "Allocating MazeClient instance");
             if(rc)
             {
                client->Run();
@@ -818,7 +818,7 @@ public:
 #if DO_MAZE_SERVER
       DoMazeServer();
 #else
-      char *mazeServerAddress = NULL;
+      char *mazeServerAddress = nullptr;
 
       if(_argc == 3)
       {
@@ -832,7 +832,7 @@ public:
       ClientServerTest();
       StrictBindTest();
 
-      if(mazeServerAddress != NULL)
+      if(mazeServerAddress != nullptr)
          MazeTest(mazeServerAddress);
 #endif
 
@@ -850,6 +850,6 @@ int main (int argc, char **argv)
 {
    SocketTest app;
 
-   setvbuf(stdout, NULL, _IOLBF, 8192);
+   setvbuf(stdout, nullptr, _IOLBF, 8192);
    return app.Entry(argc, argv);
 }

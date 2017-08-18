@@ -181,7 +181,7 @@ public:
      * @param  keepFile a 'const char *' value. If supplied, leave files with
      *                  this name alone.
      */
-    static void EmptyDirectory( const char *dir, const char *keepFile = NULL);
+    static void EmptyDirectory( const char *dir, const char *keepFile = nullptr);
 
     /**
      * Make a directory (special compatibility version)
@@ -205,7 +205,7 @@ public:
      * later using @ref SetFileName() or @ref Open().
      * @param filename  a filename (optional)
      */
-    FastOS_FileInterface(const char *filename=NULL);
+    FastOS_FileInterface(const char *filename=nullptr);
 
     /**
      * Destructor. If the current file is open, the destructor will close
@@ -243,7 +243,7 @@ public:
      *                     @ref Open().
      * @return Boolean success/failure
      */
-    virtual bool Open(unsigned int openFlags, const char *filename=NULL) = 0;
+    virtual bool Open(unsigned int openFlags, const char *filename=nullptr) = 0;
 
     /**
      * Open a file for read/write access. The file will be created if it does
@@ -254,7 +254,7 @@ public:
      *                       @ref SetFileName() or a previous call to @ref Open().
      * @return Boolean success/failure
      */
-    bool OpenReadWrite(const char *filename=NULL);
+    bool OpenReadWrite(const char *filename=nullptr);
 
     /**
      * Open a file for read/write access. This method fails if the file does
@@ -267,7 +267,7 @@ public:
      *                         @ref Open().
      * @return Boolean success/failure
      */
-    bool OpenExisting(bool abortIfNotExist=false, const char *filename=NULL);
+    bool OpenExisting(bool abortIfNotExist=false, const char *filename=nullptr);
 
     /**
      * Open a file for read access. This method fails if the file does
@@ -280,7 +280,7 @@ public:
      *                         @ref Open().
      * @return Boolean success/failure
      */
-    bool OpenReadOnlyExisting (bool abortIfNotExist=false, const char *filename=NULL);
+    bool OpenReadOnlyExisting (bool abortIfNotExist=false, const char *filename=nullptr);
 
     /**
      * Open a file for write access. If the file does not exist, it is created.
@@ -292,7 +292,7 @@ public:
      *                         @ref Open().
      * @return Boolean success/failure
      */
-    bool OpenWriteOnlyTruncate(const char *filename=NULL);
+    bool OpenWriteOnlyTruncate(const char *filename=nullptr);
 
     /**
      * Open a file for write access. This method fails if the file does
@@ -305,7 +305,7 @@ public:
      *                         @ref Open().
      * @return Boolean success/failure
      */
-    bool OpenWriteOnlyExisting (bool abortIfNotExist=false, const char *filename=NULL);
+    bool OpenWriteOnlyExisting (bool abortIfNotExist=false, const char *filename=nullptr);
 
     /**
      * Open a file for read-access only. This method fails if the file does
@@ -316,7 +316,7 @@ public:
      *                       @ref SetFileName() or a previous call to @ref Open().
      * @return Boolean success/failure
      */
-    bool OpenReadOnly(const char *filename=NULL);
+    bool OpenReadOnly(const char *filename=nullptr);
 
     /**
      * Open a file for write-access only.  The file will be created if it does
@@ -327,7 +327,7 @@ public:
      *                       @ref SetFileName() or a previous call to @ref Open().
      * @return Boolean success/failure
      */
-    bool OpenWriteOnly(const char *filename=NULL);
+    bool OpenWriteOnly(const char *filename=nullptr);
 
     bool OpenStdin();
 
@@ -567,7 +567,7 @@ public:
      *                           from malloc will be saved.  Use free() with
      *                           this pointer to deallocate the buffer.
      *                           This value is always set.
-     * @return Alligned pointer value or NULL if out of memory
+     * @return Alligned pointer value or nullptr if out of memory
      */
     virtual void *AllocateDirectIOBuffer(size_t byteSize, void *&realPtr);
 
@@ -581,7 +581,7 @@ public:
     /**
      * Inquiry about where in memory file data is located.
      * @return location of file data in memory.  If the file is not mapped,
-     * NULL is returned.
+     * nullptr is returned.
      */
     virtual void *MemoryMapPtr(int64_t position) const;
 

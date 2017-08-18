@@ -99,6 +99,6 @@ FastOS_UNIX_Time::SetSecs(double secs)
 }
 
 void FastOS_UNIX_Time::SetNow() {
-    gettimeofday(&_time, NULL);
+    gettimeofday(&_time, nullptr);
 }
 

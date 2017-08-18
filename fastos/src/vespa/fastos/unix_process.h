@@ -86,32 +86,32 @@ public:
         else if(type == TYPE_STDERR)
             return _stderrListener;
 
-        return NULL;
+        return nullptr;
     }
 
     void CloseListener (DescriptorType type)
     {
         if(type == TYPE_STDOUT)
         {
-            if(_stdoutListener != NULL)
+            if(_stdoutListener != nullptr)
             {
-                _stdoutListener->OnReceiveData(NULL, 0);
-                _stdoutListener = NULL;
+                _stdoutListener->OnReceiveData(nullptr, 0);
+                _stdoutListener = nullptr;
             }
         }
         else if(type == TYPE_STDERR)
         {
-            if(_stderrListener != NULL)
+            if(_stderrListener != nullptr)
             {
-                _stderrListener->OnReceiveData(NULL, 0);
-                _stderrListener = NULL;
+                _stderrListener->OnReceiveData(nullptr, 0);
+                _stderrListener = nullptr;
             }
         }
     }
 
     FastOS_UNIX_Process (const char *cmdLine, bool pipeStdin = false,
-                         FastOS_ProcessRedirectListener *stdoutListener = NULL,
-                         FastOS_ProcessRedirectListener *stderrListener = NULL,
+                         FastOS_ProcessRedirectListener *stdoutListener = nullptr,
+                         FastOS_ProcessRedirectListener *stderrListener = nullptr,
                          int bufferSize = 65535);
     ~FastOS_UNIX_Process ();
     bool CreateInternal (bool useShell);

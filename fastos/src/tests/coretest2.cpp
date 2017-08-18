@@ -8,7 +8,7 @@ bomb(void)
 {
     char *p;
 
-    p = NULL;
+    p = nullptr;
     *p = 4;
 }
 
@@ -16,7 +16,7 @@ void *BomberRun(void *arg)
 {
     (void) arg;
     bomb();
-    return NULL;
+    return nullptr;
 };
 
 static int
@@ -25,8 +25,8 @@ bombMain(void)
     pthread_t thread;
     void *ret;
 
-    (void) pthread_create(&thread, NULL, BomberRun, NULL);
-    ret = NULL;
+    (void) pthread_create(&thread, nullptr, BomberRun, nullptr);
+    ret = nullptr;
     (void) pthread_join(thread, &ret);
     return (0);
 }

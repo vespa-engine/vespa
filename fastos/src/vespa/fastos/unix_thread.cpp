@@ -11,11 +11,11 @@ namespace {
 
 bool FastOS_UNIX_Thread::InitializeClass ()
 {
-    if (getenv("VESPA_PIN_THREAD_TO_CORE") != NULL) {
+    if (getenv("VESPA_PIN_THREAD_TO_CORE") != nullptr) {
         _G_maxNumCpus = std::thread::hardware_concurrency();
         fprintf(stderr, "Will pin threads to CPU. Using %ld cores\n", _G_maxNumCpus);
-        if (getenv("VESPA_MAX_CORES") != NULL) {
-            size_t maxCores = strtoul(getenv("VESPA_MAX_CORES"), NULL, 0);
+        if (getenv("VESPA_MAX_CORES") != nullptr) {
+            size_t maxCores = strtoul(getenv("VESPA_MAX_CORES"), nullptr, 0);
             fprintf(stderr, "Will limit to %ld", maxCores);
             if (maxCores < _G_maxNumCpus) {
                 _G_maxNumCpus = maxCores;
@@ -76,7 +76,7 @@ FastOS_UNIX_Thread::~FastOS_UNIX_Thread()
 
     // Wait for thread library cleanup to complete.
     if (_handleValid) {
-        value = NULL;
+        value = nullptr;
         pthread_join(_handle, &value);
     }
 }

@@ -51,7 +51,7 @@ public:
 
 int main (int argc, char **argv)
 {
-   setvbuf(stdout, NULL, _IOLBF, 8192);
+   setvbuf(stdout, nullptr, _IOLBF, 8192);
    TypeTest app;
    return app.Entry(argc, argv);
 }

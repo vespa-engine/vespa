@@ -158,9 +158,9 @@ public:
      * @param owner     Instance to be invoked by new thread.
      * @param arg       Arguments to be passed to new thread.
      *
-     * @return          Pointer to newly created thread or NULL on failure.
+     * @return          Pointer to newly created thread or nullptr on failure.
      */
-    FastOS_ThreadInterface *NewThread (FastOS_Runnable *owner, void *arg=NULL);
+    FastOS_ThreadInterface *NewThread (FastOS_Runnable *owner, void *arg=nullptr);
 
     /**
      * Get the stack size used for threads in this pool.
@@ -285,7 +285,7 @@ protected:
      * Create an operating system thread. In most cases you would want
      * to create threads using @ref FastOS_ThreadPool::NewThread() instead.
      * @param pool  The threadpool which is about to contain the new thread.
-     * @return      A new @ref FastOS_Thread or NULL on failure.
+     * @return      A new @ref FastOS_Thread or nullptr on failure.
      */
     static FastOS_ThreadInterface *CreateThread(FastOS_ThreadPool *pool);
 
@@ -325,11 +325,11 @@ public:
      */
     FastOS_ThreadInterface (FastOS_ThreadPool *pool)
         : _dispatched(),
-          _next(NULL),
-          _prev(NULL),
-          _owner(NULL),
+          _next(nullptr),
+          _prev(nullptr),
+          _owner(nullptr),
           _pool(pool),
-          _startArg(NULL),
+          _startArg(nullptr),
           _breakFlag(false),
           _active(false),
           _runningCond()
@@ -492,7 +492,7 @@ public:
 
     FastOS_ThreadInterface *GetThread(void)             { return _thread; }
     const FastOS_ThreadInterface *GetThread(void) const { return _thread; }
-    bool HasThread(void)                          const { return _thread != NULL; }
+    bool HasThread(void)                          const { return _thread != nullptr; }
     void Detach(void);
 };
 

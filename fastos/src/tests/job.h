@@ -42,17 +42,17 @@ public:
 
    Job()
      : code(NOP),
-       message(NULL),
-       mutex(NULL),
-       condition(NULL),
-       boolcondition(NULL),
-       otherThread(NULL),
-       ownThread(NULL),
-       timebuf(NULL),
+       message(nullptr),
+       mutex(nullptr),
+       condition(nullptr),
+       boolcondition(nullptr),
+       otherThread(nullptr),
+       ownThread(nullptr),
+       timebuf(nullptr),
        average(0.0),
        result(-1),
        _threadId(),
-       otherjob(NULL),
+       otherjob(nullptr),
        bouncewakeupcnt(0),
        bouncewakeup(false)
    {
@@ -60,7 +60,7 @@ public:
 
    ~Job()
    {
-      if(message != NULL)
+      if(message != nullptr)
          free(message);
    }
 };

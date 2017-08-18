@@ -14,8 +14,8 @@ FastOS_SocketInterface::FastOS_SocketInterface()
       _readPossible(false),
       _writePossible(false),
       _epolled(false),
-      _socketEvent(NULL),
-      _eventAttribute(NULL),
+      _socketEvent(nullptr),
+      _eventAttribute(nullptr),
       _socketEventArrayPos(-1),
       _address(),
       _socketHandle(-1),
@@ -30,8 +30,8 @@ FastOS_SocketInterface::FastOS_SocketInterface(int socketHandle, struct sockaddr
       _readPossible(false),
       _writePossible(false),
       _epolled(false),
-      _socketEvent(NULL),
-      _eventAttribute(NULL),
+      _socketEvent(nullptr),
+      _eventAttribute(nullptr),
       _socketEventArrayPos(-1),
       _address(),
       _socketHandle(-1),
@@ -145,10 +145,10 @@ void FastOS_SocketInterface::ConstructorWork ()
 {
     _socketHandle = -1;
     _epolled = false;
-    _socketEvent = NULL;
+    _socketEvent = nullptr;
     _readEventEnabled = false;
     _writeEventEnabled = false;
-    _eventAttribute = NULL;
+    _eventAttribute = nullptr;
     _socketEventArrayPos = -1;
 }
 
@@ -234,10 +234,10 @@ bool FastOS_SocketInterface::GetSoIntOpt(int option, int &value)
 
 void FastOS_SocketInterface::CleanupEvents ()
 {
-    if (_socketEvent != NULL) {
+    if (_socketEvent != nullptr) {
         _socketEvent->Detach(this);
         assert(!_epolled);
-        _socketEvent = NULL;
+        _socketEvent = nullptr;
     }
 }
 
@@ -287,7 +287,7 @@ FastOS_SocketInterface::getLastErrorString(void) {
 const char *
 FastOS_SocketInterface::InitializeServices(void) {
     FastOS_SocketEventObjects::InitializeClass();
-    return NULL;
+    return nullptr;
 }
 
 void FastOS_SocketInterface::CleanupServices () {
@@ -301,14 +301,14 @@ bool FastOS_SocketInterface::SetSocketEvent (FastOS_SocketEvent *event, void *at
 
     if (CreateIfNoSocketYet()) {
         if (_socketEvent != event) {
-            if (_socketEvent != NULL) {
+            if (_socketEvent != nullptr) {
                 // Disable events for this socket on the old SocketEvent
                 _socketEvent->Detach(this);
                 assert(!_epolled);
-                _socketEvent = NULL;
+                _socketEvent = nullptr;
             }
 
-            if (event != NULL) {
+            if (event != nullptr) {
                 event->Attach(this, _readEventEnabled, _writeEventEnabled);
                 _socketEvent = event;
             }
@@ -322,7 +322,7 @@ bool FastOS_SocketInterface::SetSocketEvent (FastOS_SocketEvent *event, void *at
 void FastOS_SocketInterface::EnableReadEvent (bool enabled) {
     if (_readEventEnabled == enabled) { return; }
     _readEventEnabled = enabled;
-    if (_socketEvent != NULL) {
+    if (_socketEvent != nullptr) {
         _socketEvent->EnableEvent(this, _readEventEnabled, _writeEventEnabled);
     }
 }
@@ -337,7 +337,7 @@ void FastOS_SocketInterface::EnableReadEvent (bool enabled) {
 void FastOS_SocketInterface::EnableWriteEvent (bool enabled) {
     if (_writeEventEnabled == enabled) { return; }
     _writeEventEnabled = enabled;
-    if (_socketEvent != NULL) {
+    if (_socketEvent != nullptr) {
         _socketEvent->EnableEvent(this, _readEventEnabled, _writeEventEnabled);
     }
 }

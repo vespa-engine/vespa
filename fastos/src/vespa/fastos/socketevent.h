@@ -87,7 +87,7 @@ public:
  *       FastOS_SocketEvent socketEvent;
  *
  *       // Walk through single-linked list of connections
- *       for(conn=connections; conn!=NULL; conn = conn->_next)
+ *       for(conn=connections; conn!=nullptr; conn = conn->_next)
  *       {
  *          // Associate each socket with socketEvent
  *          conn->_socket->SetSocketEvent(&socketEvent);
@@ -105,7 +105,7 @@ public:
  *          if(socketEvent.Wait(200))
  *          {
  *             // Walk through list of connections
- *             for(conn=connections; conn!=NULL; conn = conn->_next)
+ *             for(conn=connections; conn!=nullptr; conn = conn->_next)
  *             {
  *                // For each socket, check for read event
  *                if(socketEvent.QueryReadEvent(conn->_socket))
@@ -172,7 +172,7 @@ public:
         if (_epollfd == -1) {
             return false;
         }
-        return (_objs != NULL) ? _objs->_initOk : false;
+        return (_objs != nullptr) ? _objs->_initOk : false;
     }
 
     /**

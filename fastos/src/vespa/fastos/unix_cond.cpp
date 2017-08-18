@@ -8,7 +8,7 @@ FastOS_UNIX_Cond::FastOS_UNIX_Cond(void)
     : FastOS_CondInterface(),
       _cond()
 {
-    pthread_cond_init(&_cond, NULL);
+    pthread_cond_init(&_cond, nullptr);
 }
 
 FastOS_UNIX_Cond::~FastOS_UNIX_Cond(void)
@@ -30,7 +30,7 @@ FastOS_UNIX_Cond::TimedWait(int milliseconds)
     struct timespec absTime;
     int error;
 
-    gettimeofday(&currentTime, NULL);
+    gettimeofday(&currentTime, nullptr);
 
     int64_t ns = (static_cast<int64_t>(currentTime.tv_sec) *
                   static_cast<int64_t>(1000 * 1000 * 1000) +

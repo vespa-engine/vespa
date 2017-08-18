@@ -131,6 +131,6 @@ int Thread_Stats_Test::Main ()
 int main (int argc, char **argv)
 {
    Thread_Stats_Test app;
-   setvbuf(stdout, NULL, _IOLBF, 8192);
+   setvbuf(stdout, nullptr, _IOLBF, 8192);
    return app.Entry(argc, argv);
 }

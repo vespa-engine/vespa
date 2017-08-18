@@ -21,11 +21,11 @@ class Thread_Mutex_Test : public ThreadTestBase
 
       FastOS_ThreadPool *pool = new FastOS_ThreadPool(128*1024, MAX_THREADS);
 
-      if(Progress(pool != NULL, "Allocating ThreadPool"))
+      if(Progress(pool != nullptr, "Allocating ThreadPool"))
       {
          int i;
          Job jobs[MUTEX_TEST_THREADS];
-         FastOS_Mutex *myMutex=NULL;
+         FastOS_Mutex *myMutex=nullptr;
 
          if(usingMutex)
             myMutex = new FastOS_Mutex();
@@ -40,7 +40,7 @@ class Thread_Mutex_Test : public ThreadTestBase
 
          for(i=0; i<MUTEX_TEST_THREADS; i++)
          {
-            bool rc = (NULL != pool->NewThread(this,
+            bool rc = (nullptr != pool->NewThread(this,
                                static_cast<void *>(&jobs[i])));
             Progress(rc, "Creating Thread with%s mutex", (usingMutex ? "" : "out"));
          };
@@ -99,7 +99,7 @@ class Thread_Mutex_Test : public ThreadTestBase
             }
          }
 
-         if(myMutex != NULL)
+         if(myMutex != nullptr)
             delete(myMutex);
 
          Progress(true, "Closing threadpool...");
@@ -125,9 +125,9 @@ class Thread_Mutex_Test : public ThreadTestBase
       job.ownThread = pool.NewThread(this,
                                      static_cast<void *>(&job));
 
-      Progress(job.ownThread !=NULL, "Creating thread");
+      Progress(job.ownThread !=nullptr, "Creating thread");
 
-      if(job.ownThread != NULL)
+      if(job.ownThread != nullptr)
       {
          bool lockrc;
 
@@ -188,6 +188,6 @@ int Thread_Mutex_Test::Main ()
 int main (int argc, char **argv)
 {
    Thread_Mutex_Test app;
-   setvbuf(stdout, NULL, _IOLBF, 8192);
+   setvbuf(stdout, nullptr, _IOLBF, 8192);
    return app.Entry(argc, argv);
 }

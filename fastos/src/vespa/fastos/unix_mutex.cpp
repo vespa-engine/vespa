@@ -7,7 +7,7 @@ FastOS_UNIX_Mutex::FastOS_UNIX_Mutex(void)
     : FastOS_MutexInterface(),
       _mutex()
 {
-    int error = pthread_mutex_init(&_mutex, NULL);
+    int error = pthread_mutex_init(&_mutex, nullptr);
     assert(error == 0);
     (void) error;
 }

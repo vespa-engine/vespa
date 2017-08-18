@@ -244,11 +244,11 @@ public:
      * @param  attribute   Event attribute pointer
      * @return Boolean success/failure.
      */
-    bool SetSocketEvent (FastOS_SocketEvent *event, void *attribute=NULL);
+    bool SetSocketEvent (FastOS_SocketEvent *event, void *attribute=nullptr);
 
     /**
      * Get socket event object
-     * @return             Associated socket event object or NULL
+     * @return             Associated socket event object or nullptr
      */
     FastOS_SocketEvent *GetSocketEvent () { return _socketEvent; }
 

@@ -9,13 +9,13 @@ FastOS_ProcessInterface::FastOS_ProcessInterface (const char *cmdLine,
                          FastOS_ProcessRedirectListener *stderrListener,
                          int bufferSize) :
     _extradoublehackforalignment(0.0),
-    _cmdLine(NULL),
+    _cmdLine(nullptr),
     _pipeStdin(pipeStdin),
     _stdoutListener(stdoutListener),
     _stderrListener(stderrListener),
     _bufferSize(bufferSize),
-    _next(NULL),
-    _prev(NULL)
+    _next(nullptr),
+    _prev(nullptr)
 {
     _cmdLine = strdup(cmdLine);
 }

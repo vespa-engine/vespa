@@ -57,7 +57,7 @@ public:
 
 void ThreadTestBase::Run (FastOS_ThreadInterface *thread, void *arg)
 {
-   if(arg == NULL)
+   if(arg == nullptr)
       return;
 
    Job *job = static_cast<Job *>(arg);
@@ -93,7 +93,7 @@ void ThreadTestBase::Run (FastOS_ThreadInterface *thread, void *arg)
       {
          int result;
 
-         if(job->mutex != NULL)
+         if(job->mutex != nullptr)
             job->mutex->Lock();
 
          result = static_cast<int>(number);
@@ -107,7 +107,7 @@ void ThreadTestBase::Run (FastOS_ThreadInterface *thread, void *arg)
                FastOS_Thread::Sleep(1000);
          }
 
-         if(job->mutex != NULL)
+         if(job->mutex != nullptr)
             job->mutex->Unlock();
 
          job->result = result;  // This marks the end of the thread
@@ -135,7 +135,7 @@ void ThreadTestBase::Run (FastOS_ThreadInterface *thread, void *arg)
          if(job->mutex)
             job->mutex->Lock();
 
-         if(job->otherThread != NULL)
+         if(job->otherThread != nullptr)
             job->otherThread->Join();
 
          if(job->mutex)

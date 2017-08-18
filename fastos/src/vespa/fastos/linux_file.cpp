@@ -32,7 +32,7 @@ ssize_t
 FastOS_Linux_File::readInternal(int fh, void *buffer, size_t length, int64_t readOffset)
 {
     ssize_t readResult = ::pread(fh, buffer, length, readOffset);
-    if (readResult < 0 && _failedHandler != NULL) {
+    if (readResult < 0 && _failedHandler != nullptr) {
         int error = errno;
         const char *fileName = GetFileName();
         _failedHandler("read", fileName, error, readOffset, length, readResult);
@@ -46,7 +46,7 @@ ssize_t
 FastOS_Linux_File::readInternal(int fh, void *buffer, size_t length)
 {
     ssize_t readResult = ::read(fh, buffer, length);
-    if (readResult < 0 && _failedHandler != NULL) {
+    if (readResult < 0 && _failedHandler != nullptr) {
         int error = errno;
         int64_t readOffset = GetPosition();
         const char *fileName = GetFileName();
@@ -61,7 +61,7 @@ ssize_t
 FastOS_Linux_File::writeInternal(int fh, const void *buffer, size_t length, int64_t writeOffset)
 {
     ssize_t writeRes = ::pwrite(fh, buffer, length, writeOffset);
-    if (writeRes < 0 && _failedHandler != NULL) {
+    if (writeRes < 0 && _failedHandler != nullptr) {
         int error = errno;
         const char *fileName = GetFileName();
         _failedHandler("write", fileName, error, writeOffset, length, writeRes);
@@ -74,7 +74,7 @@ ssize_t
 FastOS_Linux_File::writeInternal(int fh, const void *buffer, size_t length)
 {
     ssize_t writeRes = ::write(fh, buffer, length);
-    if (writeRes < 0 && _failedHandler != NULL) {
+    if (writeRes < 0 && _failedHandler != nullptr) {
         int error = errno;
         int64_t writeOffset = GetPosition();
         const char *fileName = GetFileName();

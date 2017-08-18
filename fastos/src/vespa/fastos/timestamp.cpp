@@ -32,7 +32,7 @@ TimeStamp::asString(double timeInSeconds)
 int64_t ClockSystem::now()
 {
     struct timeval timeNow;
-    gettimeofday(&timeNow, NULL);
+    gettimeofday(&timeNow, nullptr);
     int64_t ns = timeNow.tv_sec;
     ns *= TimeStamp::NANO;
     ns += timeNow.tv_usec*1000;

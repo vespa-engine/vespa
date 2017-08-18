@@ -17,8 +17,8 @@
 
 
 FastOS_UNIX_Application::FastOS_UNIX_Application ()
-    : _processStarter(NULL),
-      _ipcHelper(NULL)
+    : _processStarter(nullptr),
+      _ipcHelper(nullptr)
 {
 }
 
@@ -71,7 +71,7 @@ bool FastOS_UNIX_Application::
 SendIPCMessage (FastOS_UNIX_Process *xproc, const void *buffer,
                 int length)
 {
-    if(_ipcHelper == NULL)
+    if(_ipcHelper == nullptr)
         return false;
     return _ipcHelper->SendMessage(xproc, buffer, length);
 }
@@ -80,9 +80,9 @@ SendIPCMessage (FastOS_UNIX_Process *xproc, const void *buffer,
 bool FastOS_UNIX_Application::
 SendParentIPCMessage (const void *data, size_t length)
 {
-    if(_ipcHelper == NULL)
+    if(_ipcHelper == nullptr)
         return false;
-    return _ipcHelper->SendMessage(NULL, data, length);
+    return _ipcHelper->SendMessage(nullptr, data, length);
 }
 
 
@@ -95,7 +95,7 @@ bool FastOS_UNIX_Application::PreThreadInit ()
         act.sa_handler = SIG_IGN;
         sigemptyset(&act.sa_mask);
         act.sa_flags = 0;
-        sigaction(SIGPIPE, &act, NULL);
+        sigaction(SIGPIPE, &act, nullptr);
 
         if (useProcessStarter()) {
             _processStarter = new FastOS_UNIX_ProcessStarter(this);
@@ -120,7 +120,7 @@ bool FastOS_UNIX_Application::Init ()
         int ipcDescriptor = -1;
 
         char *env = getenv("FASTOS_IPC_PARENT");
-        if(env != NULL)
+        if(env != nullptr)
         {
             int commaCount=0;
             int notDigitCount=0;
@@ -158,15 +158,15 @@ bool FastOS_UNIX_Application::Init ()
 
 void FastOS_UNIX_Application::Cleanup ()
 {
-    if(_ipcHelper != NULL)
+    if(_ipcHelper != nullptr)
         _ipcHelper->Exit();
 
-    if (_processStarter != NULL) {
+    if (_processStarter != nullptr) {
         if (_processListMutex) ProcessLock();
         _processStarter->Stop();
         if (_processListMutex) ProcessUnlock();
         delete _processStarter;
-        _processStarter = NULL;
+        _processStarter = nullptr;
     }
 
     FastOS_ApplicationInterface::Cleanup();
@@ -181,13 +181,13 @@ FastOS_UNIX_Application::GetProcessStarter ()
 void FastOS_UNIX_Application::
 AddToIPCComm (FastOS_UNIX_Process *process)
 {
-    if(_ipcHelper != NULL)
+    if(_ipcHelper != nullptr)
         _ipcHelper->AddProcess(process);
 }
 
 void FastOS_UNIX_Application::
 RemoveFromIPCComm (FastOS_UNIX_Process *process)
 {
-    if(_ipcHelper != NULL)
+    if(_ipcHelper != nullptr)
         _ipcHelper->RemoveProcess(process);
 }

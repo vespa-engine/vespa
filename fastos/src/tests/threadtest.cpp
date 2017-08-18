@@ -54,7 +54,7 @@ class ThreadTest : public ThreadTestBase
 
       FastOS_ThreadPool *pool = new FastOS_ThreadPool(128*1024, MAX_THREADS);
 
-      if(Progress(pool != NULL, "Allocating ThreadPool"))
+      if(Progress(pool != nullptr, "Allocating ThreadPool"))
       {
          int i;
          Job jobs[MAX_THREADS];
@@ -70,13 +70,13 @@ class ThreadTest : public ThreadTestBase
          {
             if(i==MAX_THREADS)
             {
-               bool rc = (NULL == pool->NewThread(this,
+               bool rc = (nullptr == pool->NewThread(this,
                                   static_cast<void *>(&jobs[0])));
                Progress(rc, "Creating too many threads should fail.");
             }
             else
             {
-               bool rc = (NULL != pool->NewThread(this,
+               bool rc = (nullptr != pool->NewThread(this,
                                   static_cast<void *>(&jobs[i])));
                Progress(rc, "Creating Thread");
             }
@@ -110,7 +110,7 @@ class ThreadTest : public ThreadTestBase
 
       FastOS_ThreadPool *pool = new FastOS_ThreadPool(128*1024, HOW_MAX_THREADS);
 
-      if(Progress(pool != NULL, "Allocating ThreadPool"))
+      if(Progress(pool != nullptr, "Allocating ThreadPool"))
       {
          int i;
          Job jobs[HOW_MAX_THREADS];
@@ -126,13 +126,13 @@ class ThreadTest : public ThreadTestBase
          {
             if(i==HOW_MAX_THREADS)
             {
-               bool rc = (NULL == pool->NewThread(this,
+               bool rc = (nullptr == pool->NewThread(this,
                                   static_cast<void *>(&jobs[0])));
                Progress(rc, "Creating too many threads should fail.");
             }
             else
             {
-               bool rc = (NULL != pool->NewThread(this,
+               bool rc = (nullptr != pool->NewThread(this,
                                   static_cast<void *>(&jobs[i])));
                Progress(rc, "Creating Thread");
             }
@@ -164,14 +164,14 @@ class ThreadTest : public ThreadTestBase
 
       FastOS_ThreadPool *pool = new FastOS_ThreadPool(128*1024);
 
-      if(Progress(pool != NULL, "Allocating ThreadPool"))
+      if(Progress(pool != nullptr, "Allocating ThreadPool"))
       {
          Job job;
 
          job.code = NOP;
          job.result = -1;
 
-         bool rc = (NULL != pool->NewThread(this, &job));
+         bool rc = (nullptr != pool->NewThread(this, &job));
          Progress(rc, "Creating Thread");
 
          WaitForThreadsToFinish(&job, 1);
@@ -201,8 +201,8 @@ class ThreadTest : public ThreadTestBase
     FastOS_ThreadPool *pool = new FastOS_ThreadPool(128 * 1024);
 
     if (!silent)
-      Progress(pool != NULL, "Allocating ThreadPool");
-    if (pool != NULL) {
+      Progress(pool != nullptr, "Allocating ThreadPool");
+    if (pool != nullptr) {
       Job *jobs = new Job[count];
 
       threadsok = 0;
@@ -210,23 +210,23 @@ class ThreadTest : public ThreadTestBase
       for (i = 0; i < count; i++) {
         jobs[i].code = SILENTNOP;
         jobs[i].ownThread = pool->NewThread(this, &jobs[i]);
-        rc = (jobs[i].ownThread != NULL);
+        rc = (jobs[i].ownThread != nullptr);
         if (rc)
           threadsok++;
       }
 
       for (j = 0; j < outercount; j++) {
         for (i = 0; i < count; i++) {
-          if (jobs[i].ownThread != NULL)
+          if (jobs[i].ownThread != nullptr)
             jobs[i].ownThread->Join();
           jobs[i].ownThread = pool->NewThread(this, &jobs[i]);
-          rc = (jobs[i].ownThread != NULL);
+          rc = (jobs[i].ownThread != nullptr);
           if (rc)
             threadsok++;
         }
       }
       for (i = 0; i < count; i++) {
-        if (jobs[i].ownThread != NULL)
+        if (jobs[i].ownThread != nullptr)
           jobs[i].ownThread->Join();
       }
       endtime.SetNow();
@@ -286,7 +286,7 @@ class ThreadTest : public ThreadTestBase
       {
          jobs[i].code = INCREASE_NUMBER;
 
-         bool rc = (NULL != pool.NewThread(this,
+         bool rc = (nullptr != pool.NewThread(this,
                             static_cast<void *>(&jobs[i])));
          Progress(rc, "Creating Thread %d", i+1);
       }
@@ -311,7 +311,7 @@ class ThreadTest : public ThreadTestBase
       {
          jobs[i].code = WAIT_FOR_BREAK_FLAG;
 
-         bool rc = (NULL != pool.NewThread(this,
+         bool rc = (nullptr != pool.NewThread(this,
                             static_cast<void *>(&jobs[i])));
          Progress(rc, "Creating Thread %d", i+1);
       }
@@ -333,7 +333,7 @@ class ThreadTest : public ThreadTestBase
          jobs[i].ownThread = pool->NewThread(this,
                  static_cast<void *>(&jobs[i]));
 
-         bool rc=(jobs[i].ownThread != NULL);
+         bool rc=(jobs[i].ownThread != nullptr);
          Progress(rc, "CreatingThread %d", i+1);
       }
 
@@ -412,7 +412,7 @@ class ThreadTest : public ThreadTestBase
          jobs[i].mutex = &slowStartMutex;
          jobs[i].ownThread = pool.NewThread(this,
                  static_cast<void *>(&jobs[i]));
-         bool rc=(jobs[i].ownThread != NULL);
+         bool rc=(jobs[i].ownThread != nullptr);
          if(rc)
             jobs[i]._threadId = jobs[i].ownThread->GetThreadId();
          Progress(rc, "CreatingThread %d id:%lu", i+1,
@@ -457,9 +457,9 @@ class ThreadTest : public ThreadTestBase
       job.ownThread = pool.NewThread(this,
                                      static_cast<void *>(&job));
 
-      Progress(job.ownThread !=NULL, "Creating thread");
+      Progress(job.ownThread !=nullptr, "Creating thread");
 
-      if(job.ownThread != NULL)
+      if(job.ownThread != nullptr)
       {
          condition.Lock();
          bool gotCond = condition.TimedWait(500);
@@ -597,6 +597,6 @@ int ThreadTest::Main ()
 int main (int argc, char **argv)
 {
    ThreadTest app;
-   setvbuf(stdout, NULL, _IOLBF, 8192);
+   setvbuf(stdout, nullptr, _IOLBF, 8192);
    return app.Entry(argc, argv);
 }

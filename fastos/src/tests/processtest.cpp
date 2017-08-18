@@ -47,7 +47,7 @@ public:
    void OnReceiveData (const void *data, size_t length) override
    {
       _receivedBytes += length;
-      if(data != NULL)
+      if(data != nullptr)
       {
 #if 0
          printf("[%s] received %u bytes of data:\n%s\n",
@@ -62,7 +62,7 @@ public:
 int MyListener::_allocCount = 0;
 int MyListener::_successCount = 0;
 int MyListener::_failCount = 0;
-FastOS_Mutex *MyListener::_counterLock = NULL;
+FastOS_Mutex *MyListener::_counterLock = nullptr;
 
 
 class ThreadRunJob : public FastOS_Runnable
@@ -128,7 +128,7 @@ public:
    ProcessTest ()
      : _gotMessage(false),
        _receivedMessages(0),
-       _counterLock(NULL),
+       _counterLock(nullptr),
        _isChild(true)
    {
    }
@@ -154,7 +154,7 @@ public:
       _gotMessage = true;
 
       // We only have the counter lock if we are the parent process.
-      if(_counterLock != NULL)
+      if(_counterLock != nullptr)
       {
          _counterLock->Lock();
          _receivedMessages++;
@@ -197,7 +197,7 @@ public:
             if(i == 5)
             {
                // Make sort quit
-               xproc->WriteStdin(NULL, 0);
+               xproc->WriteStdin(nullptr, 0);
             }
 
             FastOS_Thread::Sleep(1000);
@@ -257,7 +257,7 @@ public:
                if(!waitKill && stdinPre)
                {
                   xproc->WriteStdin(str, strlen(str));
-                  xproc->WriteStdin(NULL, 0);
+                  xproc->WriteStdin(nullptr, 0);
                }
 
                if(doKill)
@@ -269,7 +269,7 @@ public:
                if(!waitKill && !stdinPre)
                {
                   xproc->WriteStdin(str, strlen(str));
-                  xproc->WriteStdin(NULL, 0);
+                  xproc->WriteStdin(nullptr, 0);
                }
             }
             else
@@ -277,7 +277,7 @@ public:
                Progress(false, "Process.CreateWithShell failure %d",
                         GetLastError());
                delete xproc;
-               xproc = NULL;
+               xproc = nullptr;
             }
             procs[j] = xproc;
          }
@@ -285,7 +285,7 @@ public:
          for(j=0; j<numEachTime; j++)
          {
             FastOS_ProcessInterface *xproc = procs[j];
-            if(xproc == NULL)
+            if(xproc == nullptr)
                continue;
 
             int timeOut = -1;
@@ -347,7 +347,7 @@ public:
       }
 
       delete MyListener::_counterLock;
-      MyListener::_counterLock = NULL;
+      MyListener::_counterLock = nullptr;
 
       PrintSeparator();
    }
@@ -412,7 +412,7 @@ public:
                "Received %d messages", _receivedMessages);
 
       delete _counterLock;
-      _counterLock = NULL;
+      _counterLock = nullptr;
 
       PrintSeparator();
    }
@@ -427,8 +427,8 @@ public:
       void *inheritData = FastOS_Process::PrefopenNoInherit();
       FILE *fp = fopen(filename, "w");
       int numProc = FastOS_Process::PostfopenNoInherit(inheritData);
-      Progress(fp != NULL, "Open file");
-      if(fp != NULL)
+      Progress(fp != nullptr, "Open file");
+      if(fp != nullptr)
       {
          Progress(numProc > 0, "Number of files processed = %d\n",
                   numProc);
@@ -469,6 +469,6 @@ public:
 int main (int argc, char **argv)
 {
    ProcessTest app;
-   setvbuf(stdout, NULL, _IOLBF, 8192);
+   setvbuf(stdout, nullptr, _IOLBF, 8192);
    return app.Entry(argc, argv);
 }

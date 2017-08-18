@@ -24,7 +24,7 @@ protected:
     int64_t _filePointer;   // Only maintained/used in directio mode
 
 public:
-    FastOS_Linux_File (const char *filename = NULL);
+    FastOS_Linux_File (const char *filename = nullptr);
     ~FastOS_Linux_File () {
         Close();
     }

@@ -116,7 +116,7 @@ int main (int argc, char **argv)
 {
     BackTraceTest app;
 
-    setvbuf(stdout, NULL, _IOLBF, 8192);
+    setvbuf(stdout, nullptr, _IOLBF, 8192);
     return app.Entry(argc, argv);
 }
 

@@ -29,7 +29,7 @@ bool FastOS_UNIX_Socket::Shutdown()
     bool rc=true;
 
     if (ValidHandle()) {
-        if(_socketEvent != NULL) {
+        if(_socketEvent != nullptr) {
             EnableWriteEvent(false);
         }
         rc = (0 == shutdown(_socketHandle, SHUT_WR));
@@ -43,7 +43,7 @@ bool FastOS_UNIX_Socket::SetSoBlocking (bool blockingEnabled)
     bool rc=false;
 
     if (CreateIfNoSocketYet()) {
-        int flags = fcntl(_socketHandle, F_GETFL, NULL);
+        int flags = fcntl(_socketHandle, F_GETFL, nullptr);
 
         if (flags >= 0) {
             if (blockingEnabled) {
