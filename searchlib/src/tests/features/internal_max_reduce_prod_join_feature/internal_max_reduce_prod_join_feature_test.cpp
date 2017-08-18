@@ -37,7 +37,7 @@ struct SetupFixture
         addAttribute("doublearray", CollectionType::ARRAY, DataType::DOUBLE);
     }
 
-    void addAttribute(const vespalib::string& name, const CollectionType& collType, const DataType& dataType) {
+    void addAttribute(const vespalib::string &name, const CollectionType &collType, const DataType &dataType) {
         FieldInfo attrInfo(FieldType::ATTRIBUTE, collType, name, 0);
         attrInfo.set_data_type(dataType);
         indexEnv.getFields().push_back(attrInfo);

@@ -29,11 +29,11 @@ namespace features {
 template <typename BaseType>
 class RawExecutor : public FeatureExecutor {
 protected:
-    const IAttributeVector * _attribute;
+    const IAttributeVector *_attribute;
     IntegerVector _queryVector;
 
 public:
-    RawExecutor(const IAttributeVector * attribute, const IntegerVector & queryVector);
+    RawExecutor(const IAttributeVector *attribute, const IntegerVector &queryVector);
     void execute(uint32_t docId) override;
 };
 
@@ -48,7 +48,7 @@ RawExecutor<BaseType>::RawExecutor(const IAttributeVector *attribute,
 }
 
 template <typename A, typename V>
-feature_t maxProduct(const A& array, size_t count, const V& query)
+feature_t maxProduct(const A &array, size_t count, const V &query)
 {
     feature_t val = -std::numeric_limits<double>::max();
     for (size_t i = 0; i < count; ++i) {
@@ -83,7 +83,7 @@ private:
     WeightedIntegerContent _buffer;
 
 public:
-    BufferedExecutor(const IAttributeVector * attribute, const IntegerVector & queryVector);
+    BufferedExecutor(const IAttributeVector *attribute, const IntegerVector &queryVector);
     void execute(uint32_t docId) override;
 };
 
@@ -136,7 +136,7 @@ InternalMaxReduceProdJoinBlueprint::getDescriptions() const
 bool
 InternalMaxReduceProdJoinBlueprint::setup(const IIndexEnvironment &env, const ParameterList &params)
 {
-    const FieldInfo* attributeInfo = params[0].asField();
+    const FieldInfo *attributeInfo = params[0].asField();
     if (attributeInfo == nullptr) {
         return false;
     }
@@ -154,7 +154,7 @@ InternalMaxReduceProdJoinBlueprint::setup(const IIndexEnvironment &env, const Pa
     return true;
 }
 
-bool isImportedAttribute(const IAttributeVector& attribute) noexcept {
+bool isImportedAttribute(const IAttributeVector &attribute) noexcept {
     return dynamic_cast<const ImportedAttributeVector*>(&attribute) != nullptr;
 }
 
@@ -172,7 +172,7 @@ bool supportsGetRawValues(const A &attr) noexcept {
 
 template <typename BaseType>
 FeatureExecutor &
-selectTypedExecutor(const IAttributeVector* attribute, const IntegerVector& vector, vespalib::Stash &stash)
+selectTypedExecutor(const IAttributeVector *attribute, const IntegerVector &vector, vespalib::Stash &stash)
 {
     if (!isImportedAttribute(*attribute)) {
         using A = IntegerAttributeTemplate<BaseType>;
@@ -191,7 +191,7 @@ selectTypedExecutor(const IAttributeVector* attribute, const IntegerVector& vect
 }
 
 FeatureExecutor &
-selectExecutor(const IAttributeVector* attribute, const IntegerVector& vector, vespalib::Stash &stash)
+selectExecutor(const IAttributeVector *attribute, const IntegerVector &vector, vespalib::Stash &stash)
 {
     if (attribute->getCollectionType() == CollectionType::ARRAY) {
         switch (attribute->getBasicType()) {
