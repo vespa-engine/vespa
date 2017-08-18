@@ -6,18 +6,21 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created by olaa on 04/07/2017.
  * Parse JSON from node repository and stores information as a NodeRepoJsonModel object.
+ *
+ * @author olaaun
+ * @author sgrostad
  */
 public class NodeRepoInfoRetriever {
 
     private static final Logger logger = Logger.getLogger(NodeRepoInfoRetriever.class.getName());
 
-    public static NodeRepoJsonModel retrieve(ArrayList<URL> nodeInfoUrls) throws IOException {
+    public static NodeRepoJsonModel retrieve(List<URL> nodeInfoUrls) throws IOException {
         NodeRepoJsonModel nodeRepoJsonModel;
         ObjectMapper objectMapper = new ObjectMapper();
         for (URL nodeInfoURL : nodeInfoUrls) {

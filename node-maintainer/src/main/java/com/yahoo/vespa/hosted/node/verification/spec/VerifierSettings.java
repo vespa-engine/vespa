@@ -4,10 +4,11 @@ package com.yahoo.vespa.hosted.node.verification.spec;
 import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoJsonModel;
 
 /**
- * Created by sgrostad on 07/08/2017.
  * Contains information on what spec should be verified or not.
+ * 
+ * @author sgrostad
+ * @author olaaun
  */
-
 public class VerifierSettings {
 
     private final boolean checkIPv6;

@@ -10,10 +10,16 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URL;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
+
+/**
+ * @author sgrostad
+ * @author olaaun
+ */
 
 public class ReporterTest {
 
@@ -25,9 +31,9 @@ public class ReporterTest {
     private static final String URL_VALID_RESOURCE_PATH = "file://" + ABSOLUTE_PATH + "/" + RESOURCE_PATH_TO_VALID_HARDWARE_DIVERGENCE;
     private static final String URL_INVALID_RESOURCE_PATH = "file://" + ABSOLUTE_PATH + "/" + RESOURCE_PATH_TO_INVALID_HARDWARE_DIVERGENCE;
     private static final String URL_EMPTY_RESOURCE_PATH = "file://" + ABSOLUTE_PATH + "/" + RESOURCE_PATH_TO_EMPTY_HARDWARE_DIVERGENCE;
-    private static ArrayList<URL> nodeInfoUrlsToValidHardwareDivergence;
-    private static ArrayList<URL> nodeInfoUrlsToNOTValidHardwareDivergence;
-    private static ArrayList<URL> nodeInfoUrlsWithNoHardwareDivergence;
+    private static List<URL> nodeInfoUrlsToValidHardwareDivergence;
+    private static List<URL> nodeInfoUrlsToNOTValidHardwareDivergence;
+    private static List<URL> nodeInfoUrlsWithNoHardwareDivergence;
 
     @Before
     public void setup() throws IOException {

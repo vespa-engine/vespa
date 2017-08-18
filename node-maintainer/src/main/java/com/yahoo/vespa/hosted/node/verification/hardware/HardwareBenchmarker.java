@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,9 +27,9 @@ public class HardwareBenchmarker {
 
     private static final Logger logger = Logger.getLogger(HardwareBenchmarker.class.getName());
 
-    public static boolean hardwareBenchmarks(CommandExecutor commandExecutor, ArrayList<URL> nodeInfoUrls) throws IOException {
+    public static boolean hardwareBenchmarks(CommandExecutor commandExecutor, List<URL> nodeInfoUrls) throws IOException {
         BenchmarkResults benchmarkResults = new BenchmarkResults();
-        ArrayList<Benchmark> benchmarks = new ArrayList<>(Arrays.asList(
+        List<Benchmark> benchmarks = new ArrayList<>(Arrays.asList(
                 new DiskBenchmark(benchmarkResults, commandExecutor),
                 new CPUBenchmark(benchmarkResults, commandExecutor),
                 new MemoryBenchmark(benchmarkResults, commandExecutor)));
@@ -43,7 +44,7 @@ public class HardwareBenchmarker {
     public static void main(String[] args) throws IOException {
         LogSetup.initVespaLogging("hardware-benchmarker");
         CommandExecutor commandExecutor = new CommandExecutor();
-        ArrayList<URL> nodeInfoUrls;
+        List<URL> nodeInfoUrls;
         if (args.length == 0) {
             throw new IllegalStateException("Expected config server URL as parameter");
         }

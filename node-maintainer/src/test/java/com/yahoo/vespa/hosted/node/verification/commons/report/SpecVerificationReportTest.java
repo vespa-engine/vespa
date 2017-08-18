@@ -9,6 +9,11 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * @author sgrostad
+ * @author olaaun
+ */
+
 public class SpecVerificationReportTest {
 
     private SpecVerificationReport specVerificationReport;

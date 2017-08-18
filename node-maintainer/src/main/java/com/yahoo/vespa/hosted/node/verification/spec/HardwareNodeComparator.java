@@ -6,8 +6,10 @@ import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo.DiskType;
 
 /**
- * Created by olaa on 04/07/2017.
  * Compares two HardwareInfo objects and stores divergent values in a SpecVerificationReport
+ *
+ * @author olaaun
+ * @author sgrostad
  */
 public class HardwareNodeComparator {
 

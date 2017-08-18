@@ -9,14 +9,20 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+/**
+ * @author sgrostad
+ * @author olaaun
+ */
+
 public class NodeRepoInfoRetrieverTest {
 
     private NodeRepoInfoRetriever nodeRepoInfoRetriever;
-    private ArrayList<URL> urls;
+    private List<URL> urls;
     private static final double DELTA = 0.1;
     private static final String ABSOLUTE_PATH = Paths.get(".").toAbsolutePath().normalize().toString();
     private static final String RESOURCE_PATH = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources";

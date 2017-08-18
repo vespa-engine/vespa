@@ -14,10 +14,16 @@ import java.io.File;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
+/**
+ * @author sgrostad
+ * @author olaaun
+ */
 
 public class SpecVerifierTest {
 
@@ -36,7 +42,7 @@ public class SpecVerifierTest {
     private static final String PING_RESPONSE = RESOURCE_PATH + "/validpingresponse";
     private static final String INVALID_PING_RESPONSE = RESOURCE_PATH + "/pingresponse-all-packets-lost";
     private static final double DELTA = 0.1;
-    ArrayList<URL> nodeInfoUrls;
+    List<URL> nodeInfoUrls;
 
     @Before
     public void setup() {

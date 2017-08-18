@@ -9,12 +9,16 @@ import com.yahoo.vespa.hosted.node.verification.commons.parser.ParseResult;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
 /**
- * Created by olaa on 10/07/2017.
+ * Responsible for benchmarking disk write speed, and storing the result in a BenchmarkResults instance
+ *
+ * @author olaaun
+ * @author sgrostad
  */
 public class DiskBenchmark implements Benchmark {
 
@@ -34,9 +38,10 @@ public class DiskBenchmark implements Benchmark {
         this.commandExecutor = commandExecutor;
     }
 
+    @Override
     public void doBenchmark() {
         try {
-            ArrayList<String> commandOutput = commandExecutor.executeCommand(DISK_BENCHMARK_COMMAND);
+            List<String> commandOutput = commandExecutor.executeCommand(DISK_BENCHMARK_COMMAND);
             ParseResult parseResult = parseDiskSpeed(commandOutput);
             setDiskSpeed(parseResult);
         } catch (IOException e) {
@@ -44,8 +49,8 @@ public class DiskBenchmark implements Benchmark {
         }
     }
 
-    protected ParseResult parseDiskSpeed(ArrayList<String> commandOutput) {
-        ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(KILO_BYTE_SEARCH_WORD, MEGA_BYTE_SEARCH_WORD, GIGA_BYTE_SEARCH_WORD));
+    protected ParseResult parseDiskSpeed(List<String> commandOutput) {
+        List<String> searchWords = new ArrayList<>(Arrays.asList(KILO_BYTE_SEARCH_WORD, MEGA_BYTE_SEARCH_WORD, GIGA_BYTE_SEARCH_WORD));
         ParseInstructions parseInstructions = new ParseInstructions(SEARCH_ELEMENT_INDEX, RETURN_ELEMENT_INDEX, SPLIT_REGEX_STRING, searchWords);
         return OutputParser.parseSingleOutput(parseInstructions, commandOutput);
     }

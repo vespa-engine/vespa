@@ -8,9 +8,16 @@ import com.yahoo.vespa.hosted.node.verification.commons.noderepo.NodeRepoJsonMod
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Responsible for printing hardware divergence report to standard out
+ *
+ * @author sgrostad
+ * @author olaaun
+ */
 public class Reporter {
 
     private static final Logger logger = Logger.getLogger(Reporter.class.getName());
@@ -26,19 +33,19 @@ public class Reporter {
         System.out.print(report);
     }
 
-    public static void reportBenchmarkResults(BenchmarkReport benchmarkReport, ArrayList<URL> nodeInfoUrls) throws IOException {
+    public static void reportBenchmarkResults(BenchmarkReport benchmarkReport, List<URL> nodeInfoUrls) throws IOException {
         HardwareDivergenceReport hardwareDivergenceReport = generateHardwareDivergenceReport(nodeInfoUrls);
         hardwareDivergenceReport.setBenchmarkReport(benchmarkReport);
         printHardwareDivergenceReport(hardwareDivergenceReport);
     }
 
-    public static void reportSpecVerificationResults(SpecVerificationReport specVerificationReport, ArrayList<URL> nodeInfoUrls) throws IOException {
+    public static void reportSpecVerificationResults(SpecVerificationReport specVerificationReport, List<URL> nodeInfoUrls) throws IOException {
         HardwareDivergenceReport hardwareDivergenceReport = generateHardwareDivergenceReport(nodeInfoUrls);
         hardwareDivergenceReport.setSpecVerificationReport(specVerificationReport);
         printHardwareDivergenceReport(hardwareDivergenceReport);
     }
 
-    private static HardwareDivergenceReport generateHardwareDivergenceReport(ArrayList<URL> nodeInfoUrls) throws IOException {
+    private static HardwareDivergenceReport generateHardwareDivergenceReport(List<URL> nodeInfoUrls) throws IOException {
         NodeRepoJsonModel nodeRepoJsonModel = NodeRepoInfoRetriever.retrieve(nodeInfoUrls);
         ObjectMapper om = new ObjectMapper();
         if (nodeRepoJsonModel.getHardwareDivergence() == null || nodeRepoJsonModel.getHardwareDivergence().equals("null")) {
@@ -52,4 +59,5 @@ public class Reporter {
             return new HardwareDivergenceReport();
         }
     }
+
 }

@@ -8,14 +8,16 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
- * Created by olaa on 06/07/2017.
+ * @author sgrostad
+ * @author olaaun
  */
+
 public class DiskRetrieverTest {
 
     private MockCommandExecutor commandExecutor;
@@ -59,7 +61,7 @@ public class DiskRetrieverTest {
     @Test
     public void parseDiskType_should_find_fast_disk() throws Exception {
         diskRetriever = new DiskRetriever(hardwareInfo, commandExecutor);
-        ArrayList<String> mockOutput = commandExecutor.outputFromString("Name  Rota \nsda 0");
+        List<String> mockOutput = commandExecutor.outputFromString("Name  Rota \nsda 0");
         ParseResult parseResult = diskRetriever.parseDiskType(mockOutput);
         ParseResult expectedParseResult = new ParseResult("sda", "0");
         assertEquals(expectedParseResult, parseResult);
@@ -67,7 +69,7 @@ public class DiskRetrieverTest {
 
     @Test
     public void parseDiskType_should_not_find_fast_disk() throws Exception {
-        ArrayList<String> mockOutput = commandExecutor.outputFromString("Name  Rota \nsda 1");
+        List<String> mockOutput = commandExecutor.outputFromString("Name  Rota \nsda 1");
         ParseResult parseResult = diskRetriever.parseDiskType(mockOutput);
         ParseResult expectedParseResult = new ParseResult("sda", "1");
         assertEquals(expectedParseResult, parseResult);
@@ -75,7 +77,7 @@ public class DiskRetrieverTest {
 
     @Test
     public void parseDiskType_with_invalid_outputstream_does_not_contain_searchword_should_throw_exception() throws Exception {
-        ArrayList<String> mockOutput = commandExecutor.outputFromString("Name  Rota");
+        List<String> mockOutput = commandExecutor.outputFromString("Name  Rota");
         try {
             ParseResult parseResult = diskRetriever.parseDiskType(mockOutput);
             fail("Should have thrown IOException when outputstream doesn't contain search word");
@@ -89,8 +91,8 @@ public class DiskRetrieverTest {
     @Test
     public void parseDiskSize_should_find_size_from_file_and_insert_into_parseResult() throws Exception {
         String filepath = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/filesize";
-        ArrayList<String> mockOutput = MockCommandExecutor.readFromFile(filepath);
-        ArrayList<ParseResult> parseResults = diskRetriever.parseDiskSize(mockOutput);
+        List<String> mockOutput = MockCommandExecutor.readFromFile(filepath);
+        List<ParseResult> parseResults = diskRetriever.parseDiskSize(mockOutput);
         ParseResult expectedParseResult1 = new ParseResult("Size", "799.65");
         assertEquals(expectedParseResult1, parseResults.get(0));
         ParseResult expectedParseResult2 = new ParseResult("Size", "960.19");

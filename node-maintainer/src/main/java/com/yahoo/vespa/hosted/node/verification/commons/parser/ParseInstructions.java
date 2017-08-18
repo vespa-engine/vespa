@@ -1,19 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.verification.commons.parser;
 
-import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Created by sgrostad on 17/07/2017.
+ * Contains instructions of how a command line output should be parsed
+ *
+ * @author sgrostad
+ * @author olaaaun
  */
 public class ParseInstructions {
 
     private final int searchElementIndex;
     private final int valueElementIndex;
     private final String splitRegex;
-    private final ArrayList<String> searchWords;
+    private final List<String> searchWords;
 
-    public ParseInstructions(int searchElementIndex, int returnElementNum, String splitRegex, ArrayList<String> searchWords) {
+    public ParseInstructions(int searchElementIndex, int returnElementNum, String splitRegex, List<String> searchWords) {
         this.searchElementIndex = searchElementIndex;
         this.valueElementIndex = returnElementNum;
         this.splitRegex = splitRegex;
@@ -32,7 +35,7 @@ public class ParseInstructions {
         return splitRegex;
     }
 
-    public ArrayList<String> getSearchWords() {
+    public List<String> getSearchWords() {
         return searchWords;
     }
 

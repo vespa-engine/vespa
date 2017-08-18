@@ -7,14 +7,17 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Created by sgrostad on 12/07/2017.
+ * @author sgrostad
+ * @author olaaun
  */
+
 public class DiskBenchmarkTest {
 
     private DiskBenchmark diskBenchmark;
@@ -54,7 +57,7 @@ public class DiskBenchmarkTest {
 
     @Test
     public void parseDiskSpeed_valid_input() throws Exception {
-        ArrayList<String> mockCommandOutput = MockCommandExecutor.readFromFile(VALID_OUTPUT_FILE);
+        List<String> mockCommandOutput = MockCommandExecutor.readFromFile(VALID_OUTPUT_FILE);
         ParseResult parseResult = diskBenchmark.parseDiskSpeed(mockCommandOutput);
         ParseResult expectedParseResult = new ParseResult("MB/s", "243");
         assertEquals(expectedParseResult, parseResult);
@@ -62,7 +65,7 @@ public class DiskBenchmarkTest {
 
     @Test
     public void parseDiskSpeed_invalid_input() throws Exception {
-        ArrayList<String> mockCommandOutput = MockCommandExecutor.readFromFile(INVALID_OUTPUT_FILE);
+        List<String> mockCommandOutput = MockCommandExecutor.readFromFile(INVALID_OUTPUT_FILE);
         ParseResult parseResult = diskBenchmark.parseDiskSpeed(mockCommandOutput);
         ParseResult expectedParseResult = new ParseResult("invalid", "invalid");
         assertEquals(expectedParseResult, parseResult);

@@ -10,8 +10,10 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Created by olaa on 07/07/2017.
+ * @author sgrostad
+ * @author olaaun
  */
+
 public class HardwareNodeComparatorTest {
 
     private HardwareInfo actualHardware;

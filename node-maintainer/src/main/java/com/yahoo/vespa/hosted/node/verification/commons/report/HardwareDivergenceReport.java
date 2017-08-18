@@ -5,6 +5,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * JSON-wrapped report for node repo
+ *
+ * @author sgrostad
+ * @author olaaun
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class HardwareDivergenceReport {
 

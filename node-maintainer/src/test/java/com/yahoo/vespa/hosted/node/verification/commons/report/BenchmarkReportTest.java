@@ -6,6 +6,11 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * @author sgrostad
+ * @author olaaun
+ */
+
 public class BenchmarkReportTest {
 
     private BenchmarkReport benchmarkReport = new BenchmarkReport();

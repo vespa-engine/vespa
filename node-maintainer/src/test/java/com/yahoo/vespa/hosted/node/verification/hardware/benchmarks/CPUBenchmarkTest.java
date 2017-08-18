@@ -9,14 +9,17 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Created by sgrostad on 11/07/2017.
+ * @author sgrostad
+ * @author olaaun
  */
+
 public class CPUBenchmarkTest {
 
     private static final String cpuEuropeanDelimiters = "src/test/java/com/yahoo/vespa/hosted/node/verification/hardware/resources/cpuCyclesWithDotsTimeWithCommaTest.txt";
@@ -56,8 +59,8 @@ public class CPUBenchmarkTest {
 
     @Test
     public void parseCpuCyclesPerSec_return_correct_ArrayList() throws IOException {
-        ArrayList<String> mockCommandOutput = MockCommandExecutor.readFromFile(cpuEuropeanDelimiters);
-        ArrayList<ParseResult> parseResults = cpu.parseCpuCyclesPerSec(mockCommandOutput);
+        List<String> mockCommandOutput = MockCommandExecutor.readFromFile(cpuEuropeanDelimiters);
+        List<ParseResult> parseResults = cpu.parseCpuCyclesPerSec(mockCommandOutput);
         ParseResult expectedParseCyclesResult = new ParseResult("cycles", "2.066.201.729");
         ParseResult expectedParseSecondsResult = new ParseResult("seconds", "0,957617512");
         assertEquals(expectedParseCyclesResult, parseResults.get(0));
@@ -66,7 +69,7 @@ public class CPUBenchmarkTest {
 
     @Test
     public void test_if_setCpuCyclesPerSec_reads_output_correctly() throws IOException {
-        ArrayList<ParseResult> parseResults = new ArrayList<>();
+        List<ParseResult> parseResults = new ArrayList<>();
         parseResults.add(new ParseResult("cycles", "2.066.201.729"));
         parseResults.add(new ParseResult("seconds", "0,957617512"));
         cpu.setCpuCyclesPerSec(parseResults);
