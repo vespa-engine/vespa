@@ -50,15 +50,17 @@ RawExecutor<BaseType>::RawExecutor(const IAttributeVector *attribute,
 template <typename A, typename V>
 feature_t maxProduct(const A& array, size_t count, const V& query)
 {
-    feature_t val = -DBL_MAX;
+    feature_t val = -std::numeric_limits<double>::max();
     for (size_t i = 0; i < count; ++i) {
-        typename IntegerVector::HashMap::const_iterator itr = query.getDimMap().find(array[i].value());
+        auto itr = query.getDimMap().find(array[i].value());
         if (itr != query.getDimMap().end()) {
             feature_t v = itr->second; // weight from attribute is assumed to be 1.0
-            if (v > val) val = v;
+            if (v > val) {
+                val = v;
+            }
         }
     }
-    return val == -DBL_MAX ? 0.0 : val;
+    return val == -std::numeric_limits<double>::max() ? 0.0 : val;
 }
 
 template <typename BaseType>
