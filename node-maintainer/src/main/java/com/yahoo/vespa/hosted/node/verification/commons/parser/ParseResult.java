@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.verification.commons.parser;
 import java.util.Objects;
 
 /**
- * Created by sgrostad on 17/07/2017.
+ * @author sgrostad
  */
 public class ParseResult {
 

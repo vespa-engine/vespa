@@ -9,13 +9,15 @@ import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo.Dis
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created by olaa on 30/06/2017.
+ * @author olaaun
  */
 public class DiskRetriever implements HardwareRetriever {
+
     private static final String DISK_CHECK_TYPE = "lsblk -d -o name,rota";
     private static final String DISK_CHECK_SIZE = "pvdisplay --units G | grep 'PV Size'";
     private static final String DISK_NAME = "sda";
@@ -36,6 +38,7 @@ public class DiskRetriever implements HardwareRetriever {
         this.commandExecutor = commandExecutor;
     }
 
+    @Override
     public void updateInfo() {
         updateDiskType();
         updateDiskSize();
@@ -43,7 +46,7 @@ public class DiskRetriever implements HardwareRetriever {
 
     protected void updateDiskType() {
         try {
-            ArrayList<String> commandOutput = commandExecutor.executeCommand(DISK_CHECK_TYPE);
+            List<String> commandOutput = commandExecutor.executeCommand(DISK_CHECK_TYPE);
             ParseResult parseResult = parseDiskType(commandOutput);
             setDiskType(parseResult);
         } catch (IOException e) {
@@ -53,16 +56,16 @@ public class DiskRetriever implements HardwareRetriever {
 
     protected void updateDiskSize() {
         try {
-            ArrayList<String> commandOutput = commandExecutor.executeCommand(DISK_CHECK_SIZE);
-            ArrayList<ParseResult> parseResult = parseDiskSize(commandOutput);
+            List<String> commandOutput = commandExecutor.executeCommand(DISK_CHECK_SIZE);
+            List<ParseResult> parseResult = parseDiskSize(commandOutput);
             setDiskSize(parseResult);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to retrieve disk size", e);
         }
     }
 
-    protected ParseResult parseDiskType(ArrayList<String> commandOutput) throws IOException {
-        ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(DISK_NAME));
+    protected ParseResult parseDiskType(List<String> commandOutput) throws IOException {
+        List<String> searchWords = new ArrayList<>(Arrays.asList(DISK_NAME));
         ParseInstructions parseInstructions = new ParseInstructions(DISK_TYPE_SEARCH_ELEMENT_INDEX, DISK_TYPE_RETURN_ELEMENT_INDEX, DISK_TYPE_REGEX_SPLIT, searchWords);
         ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
         if (!parseResult.getSearchWord().equals(DISK_NAME)) {
@@ -82,13 +85,13 @@ public class DiskRetriever implements HardwareRetriever {
         }
     }
 
-    protected ArrayList<ParseResult> parseDiskSize(ArrayList<String> commandOutput) {
-        ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(DISK_SIZE_SEARCH_WORD));
+    protected List<ParseResult> parseDiskSize(List<String> commandOutput) {
+        List<String> searchWords = new ArrayList<>(Arrays.asList(DISK_SIZE_SEARCH_WORD));
         ParseInstructions parseInstructions = new ParseInstructions(DISK_SIZE_SEARCH_ELEMENT_INDEX, DISK_SIZE_RETURN_ELEMENT_INDEX, DISK_SIZE_REGEX_SPLIT, searchWords);
         return OutputParser.parseOutput(parseInstructions, commandOutput);
     }
 
-    protected void setDiskSize(ArrayList<ParseResult> parseResults) {
+    protected void setDiskSize(List<ParseResult> parseResults) {
         double diskSize = 0;
         try {
             for (ParseResult parseResult : parseResults) {

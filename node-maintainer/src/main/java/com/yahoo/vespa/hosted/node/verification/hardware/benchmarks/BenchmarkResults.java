@@ -1,16 +1,17 @@
 package com.yahoo.vespa.hosted.node.verification.hardware.benchmarks;
 
 /**
- * Created by sgrostad on 11/07/2017.
  * Stores results from benchmarks
+ * 
+ * @author sgrostad
  */
+// TODO: This should be immutable
 public class BenchmarkResults {
 
     private double cpuCyclesPerSec;
     private double diskSpeedMbs;
     private double memoryWriteSpeedGBs;
     private double memoryReadSpeedGBs;
-
 
     public double getMemoryWriteSpeedGBs() {
         return memoryWriteSpeedGBs;

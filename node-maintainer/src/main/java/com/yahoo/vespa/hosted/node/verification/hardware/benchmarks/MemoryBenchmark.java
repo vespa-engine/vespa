@@ -8,11 +8,12 @@ import com.yahoo.vespa.hosted.node.verification.commons.parser.ParseResult;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created by sgrostad on 11/07/2017.
+ * @author sgrostad
  */
 public class MemoryBenchmark implements Benchmark {
 
@@ -35,10 +36,11 @@ public class MemoryBenchmark implements Benchmark {
         this.commandExecutor = commandExecutor;
     }
 
+    @Override
     public void doBenchmark() {
         try {
             setupMountPoint();
-            ArrayList<String> commandOutput = commandExecutor.executeCommand(MEM_BENCHMARK_WRITE_SPEED);
+            List<String> commandOutput = commandExecutor.executeCommand(MEM_BENCHMARK_WRITE_SPEED);
             ParseResult parseResult = parseMemorySpeed(commandOutput);
             updateMemoryWriteSpeed(parseResult.getValue());
             commandOutput = commandExecutor.executeCommand(MEM_BENCHMARK_READ_SPEED);
@@ -69,8 +71,8 @@ public class MemoryBenchmark implements Benchmark {
         }
     }
 
-    protected ParseResult parseMemorySpeed(ArrayList<String> commandOutput) {
-        ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(READ_AND_WRITE_SEARCH_WORD));
+    protected ParseResult parseMemorySpeed(List<String> commandOutput) {
+        List<String> searchWords = new ArrayList<>(Arrays.asList(READ_AND_WRITE_SEARCH_WORD));
         ParseInstructions parseInstructions = new ParseInstructions(SEARCH_ELEMENT_INDEX, RETURN_ELEMENT_INDEX, SPLIT_REGEX_STRING, searchWords);
         return OutputParser.parseSingleOutput(parseInstructions, commandOutput);
     }

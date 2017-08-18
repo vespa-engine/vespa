@@ -7,9 +7,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
- * Created by olaa on 17/07/2017.
+ * @author olaaun
  */
 public class MockCommandExecutor extends CommandExecutor {
 
@@ -23,7 +24,7 @@ public class MockCommandExecutor extends CommandExecutor {
     }
 
     @Override
-    public ArrayList<String> executeCommand(String command) throws IOException {
+    public List<String> executeCommand(String command) throws IOException {
         String mockCommand = mockCommands.get(counter++);
         if (mockCommand.equals(DUMMY_COMMAND)) return null;
         return super.executeCommand(mockCommand);
@@ -37,11 +38,11 @@ public class MockCommandExecutor extends CommandExecutor {
         mockCommands.add(DUMMY_COMMAND);
     }
 
-    public static ArrayList<String> readFromFile(String filepath) throws IOException {
+    public static List<String> readFromFile(String filepath) throws IOException {
         return new ArrayList<>(Arrays.asList(new String(Files.readAllBytes(Paths.get(filepath))).split("\n")));
     }
 
-    public ArrayList<String> outputFromString(String output) {
+    public List<String> outputFromString(String output) {
         return new ArrayList<>(Arrays.asList(output.split("\n")));
     }
 

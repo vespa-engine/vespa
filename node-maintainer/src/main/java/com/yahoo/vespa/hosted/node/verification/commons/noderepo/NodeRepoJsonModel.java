@@ -12,12 +12,13 @@ import java.net.InetAddress;
 import java.util.stream.Stream;
 
 /**
- * Created by olaa on 05/07/2017.
  * Object with the information node repositories has about the node.
+ *
+ * @author olaaun
  */
-
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class NodeRepoJsonModel {
+
     @JsonProperty("minDiskAvailableGb")
     private double minDiskAvailableGb;
     @JsonProperty("minMainMemoryAvailableGb")

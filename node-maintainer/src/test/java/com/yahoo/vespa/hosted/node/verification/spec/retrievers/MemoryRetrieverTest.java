@@ -6,12 +6,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
 /**
- * Created by sgrostad on 06/07/2017.
+ * @author sgrostad
  */
 public class MemoryRetrieverTest {
 
@@ -38,7 +38,7 @@ public class MemoryRetrieverTest {
 
     @Test
     public void parseMemInfoFile_should_return_valid_parseResult() throws IOException {
-        ArrayList<String> commandOutput = MockCommandExecutor.readFromFile(FILENAME);
+        List<String> commandOutput = MockCommandExecutor.readFromFile(FILENAME);
         ParseResult parseResult = memory.parseMemInfoFile(commandOutput);
         ParseResult expectedParseResult = new ParseResult("MemTotal", "4042128 kB");
         assertEquals(expectedParseResult, parseResult);

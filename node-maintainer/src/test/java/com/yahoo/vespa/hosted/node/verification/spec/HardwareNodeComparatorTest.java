@@ -11,7 +11,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Created by olaa on 07/07/2017.
+ * @author olaaun
  */
 public class HardwareNodeComparatorTest {
 

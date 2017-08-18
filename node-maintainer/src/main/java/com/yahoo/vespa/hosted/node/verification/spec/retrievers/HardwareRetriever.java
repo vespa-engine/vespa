@@ -1,10 +1,11 @@
 package com.yahoo.vespa.hosted.node.verification.spec.retrievers;
 
 /**
- * Created by olaa on 30/06/2017.
+ * @author olaaun
  */
 public interface HardwareRetriever {
 
+    // TODO: Javadoc
     void updateInfo();
 
 }

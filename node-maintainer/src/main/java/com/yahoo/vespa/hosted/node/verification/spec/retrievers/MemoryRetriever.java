@@ -8,11 +8,12 @@ import com.yahoo.vespa.hosted.node.verification.commons.parser.ParseResult;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created by olaa on 30/06/2017.
+ * @author olaaun
  */
 public class MemoryRetriever implements HardwareRetriever {
 
@@ -30,10 +31,10 @@ public class MemoryRetriever implements HardwareRetriever {
         this.commandExecutor = commandExecutor;
     }
 
-
+    @Override
     public void updateInfo() {
         try {
-            ArrayList<String> commandOutput = commandExecutor.executeCommand(MEMORY_INFO_COMMAND);
+            List<String> commandOutput = commandExecutor.executeCommand(MEMORY_INFO_COMMAND);
             ParseResult parseResult = parseMemInfoFile(commandOutput);
             updateMemoryInfo(parseResult);
         } catch (IOException e) {
@@ -41,8 +42,8 @@ public class MemoryRetriever implements HardwareRetriever {
         }
     }
 
-    protected ParseResult parseMemInfoFile(ArrayList<String> commandOutput) throws IOException {
-        ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD));
+    protected ParseResult parseMemInfoFile(List<String> commandOutput) throws IOException {
+        List<String> searchWords = new ArrayList<>(Arrays.asList(SEARCH_WORD));
         ParseInstructions parseInstructions = new ParseInstructions(SEARCH_ELEMENT_INDEX, RETURN_ELEMENT_INDEX, REGEX_SPLIT, searchWords);
         ParseResult parseResult = OutputParser.parseSingleOutput(parseInstructions, commandOutput);
         if (!parseResult.getSearchWord().matches(SEARCH_WORD)) {

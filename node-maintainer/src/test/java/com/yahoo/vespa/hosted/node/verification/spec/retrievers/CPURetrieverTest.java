@@ -7,11 +7,12 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
 /**
- * Created by olaa on 03/07/2017.
+ * @author olaaun
  */
 public class CPURetrieverTest {
 
@@ -38,8 +39,8 @@ public class CPURetrieverTest {
 
     @Test
     public void parseCPUInfoFile_should_return_valid_ArrayList() throws IOException {
-        ArrayList<String> commandOutput = MockCommandExecutor.readFromFile(FILENAME);
-        ArrayList<ParseResult> ParseResults = cpu.parseCPUInfoFile(commandOutput);
+        List<String> commandOutput = MockCommandExecutor.readFromFile(FILENAME);
+        List<ParseResult> ParseResults = cpu.parseCPUInfoFile(commandOutput);
         String expectedSearchWord = "cpu MHz";
         String expectedValue = "2493.821";
 
@@ -58,7 +59,7 @@ public class CPURetrieverTest {
 
     @Test
     public void setCpuCores_counts_cores_correctly() {
-        ArrayList<ParseResult> parseResults = new ArrayList<>();
+        List<ParseResult> parseResults = new ArrayList<>();
         parseResults.add(new ParseResult("cpu MHz", "2000"));
         parseResults.add(new ParseResult("cpu MHz", "2000"));
         parseResults.add(new ParseResult("cpu MHz", "2000"));

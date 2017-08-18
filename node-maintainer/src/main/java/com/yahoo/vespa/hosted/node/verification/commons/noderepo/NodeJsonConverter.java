@@ -3,8 +3,9 @@ package com.yahoo.vespa.hosted.node.verification.commons.noderepo;
 import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
 
 /**
- * Created by olaa on 07/07/2017.
  * Converts a NodeRepoJsonModel object to a HardwareInfo object.
+ * 
+ * @author olaaun
  */
 public class NodeJsonConverter {
 

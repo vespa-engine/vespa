@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
 /**
  * @author freva
  */
-
 public class FileHelper {
     private static final Logger logger = Logger.getLogger(FileHelper.class.getSimpleName());
 

@@ -4,16 +4,18 @@ import com.yahoo.vespa.hosted.node.verification.commons.CommandExecutor;
 import com.yahoo.vespa.hosted.node.verification.spec.VerifierSettings;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Created by olaa on 30/06/2017.
  * Makes a HardwareInfo object and calls all the retrievers for this object.
+ *
+ * @author olaaun
  */
 public class HardwareInfoRetriever {
 
     public static HardwareInfo retrieve(CommandExecutor commandExecutor, VerifierSettings verifierSettings) {
         HardwareInfo hardwareInfo = new HardwareInfo();
-        ArrayList<HardwareRetriever> infoList = new ArrayList<>();
+        List<HardwareRetriever> infoList = new ArrayList<>();
         infoList.add(new CPURetriever(hardwareInfo, commandExecutor));
         infoList.add(new MemoryRetriever(hardwareInfo, commandExecutor));
         infoList.add(new DiskRetriever(hardwareInfo, commandExecutor));

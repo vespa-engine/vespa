@@ -1,18 +1,19 @@
 package com.yahoo.vespa.hosted.node.verification.commons.parser;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Created by sgrostad on 17/07/2017.
+ * @author sgrostad
  */
 public class ParseInstructions {
 
     private final int searchElementIndex;
     private final int valueElementIndex;
     private final String splitRegex;
-    private final ArrayList<String> searchWords;
+    private final List<String> searchWords;
 
-    public ParseInstructions(int searchElementIndex, int returnElementNum, String splitRegex, ArrayList<String> searchWords) {
+    public ParseInstructions(int searchElementIndex, int returnElementNum, String splitRegex, List<String> searchWords) {
         this.searchElementIndex = searchElementIndex;
         this.valueElementIndex = returnElementNum;
         this.splitRegex = splitRegex;
@@ -31,7 +32,7 @@ public class ParseInstructions {
         return splitRegex;
     }
 
-    public ArrayList<String> getSearchWords() {
+    public List<String> getSearchWords() {
         return searchWords;
     }
 

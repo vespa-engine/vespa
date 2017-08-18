@@ -11,6 +11,7 @@ import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -20,7 +21,7 @@ public class ReportSenderTest {
     private static final String ABSOLUTE_PATH = Paths.get(".").toAbsolutePath().normalize().toString();
     private static final String RESOURCE_PATH = "src/test/java/com/yahoo/vespa/hosted/node/verification/spec/resources/nodeInfoTest.json";
     private static final String URL_RESOURCE_PATH = "file://" + ABSOLUTE_PATH + "/" + RESOURCE_PATH;
-    private static ArrayList<URL> nodeInfoUrls;
+    private static List<URL> nodeInfoUrls;
 
     @Before
     public void setup() throws IOException {

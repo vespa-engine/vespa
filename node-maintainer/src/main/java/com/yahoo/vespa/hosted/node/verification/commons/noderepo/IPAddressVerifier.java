@@ -11,14 +11,16 @@ import javax.naming.directory.InitialDirContext;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Created by olaa on 14/07/2017.
  * Verifies that the IP addresses of a node points to the correct hostname
+ * 
+ * @author olaaun
  */
-
 public class IPAddressVerifier {
 
     private static final Logger logger = Logger.getLogger(IPAddressVerifier.class.getName());
@@ -32,7 +34,7 @@ public class IPAddressVerifier {
 
     public String[] getFaultyIpAddresses(NodeRepoJsonModel jsonModel) {
         String expectedHostname = jsonModel.getHostname();
-        ArrayList<String> faultyIpAddresses = new ArrayList<>();
+        List<String> faultyIpAddresses = new ArrayList<>();
         if (expectedHostname == null || expectedHostname.equals(""))
             return new String[0];
         if (!isValidIpv4(jsonModel.getIpv4Address(), expectedHostname)) {

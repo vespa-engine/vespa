@@ -8,11 +8,12 @@ import com.yahoo.vespa.hosted.node.verification.commons.parser.ParseResult;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created by sgrostad on 11/07/2017.
+ * @author sgrostad
  */
 public class CPUBenchmark implements Benchmark {
 
@@ -32,31 +33,32 @@ public class CPUBenchmark implements Benchmark {
         this.commandExecutor = commandExecutor;
     }
 
+    @Override
     public void doBenchmark() {
         try {
-            ArrayList<String> commandOutput = commandExecutor.executeCommand(CPU_BENCHMARK_COMMAND);
-            ArrayList<ParseResult> parseResults = parseCpuCyclesPerSec(commandOutput);
+            List<String> commandOutput = commandExecutor.executeCommand(CPU_BENCHMARK_COMMAND);
+            List<ParseResult> parseResults = parseCpuCyclesPerSec(commandOutput);
             setCpuCyclesPerSec(parseResults);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Failed to perform CPU benchmark", e);
         }
     }
 
-    protected ArrayList<ParseResult> parseCpuCyclesPerSec(ArrayList<String> commandOutput) {
-        ArrayList<String> searchWords = new ArrayList<>(Arrays.asList(CYCLES_SEARCH_WORD, SECONDS_SEARCH_WORD));
+    protected List<ParseResult> parseCpuCyclesPerSec(List<String> commandOutput) {
+        List<String> searchWords = new ArrayList<>(Arrays.asList(CYCLES_SEARCH_WORD, SECONDS_SEARCH_WORD));
         ParseInstructions parseInstructions = new ParseInstructions(SEARCH_ELEMENT_INDEX, RETURN_ELEMENT_INDEX, SPLIT_REGEX_STRING, searchWords);
         return OutputParser.parseOutput(parseInstructions, commandOutput);
     }
 
 
-    protected void setCpuCyclesPerSec(ArrayList<ParseResult> parseResults) {
+    protected void setCpuCyclesPerSec(List<ParseResult> parseResults) {
         double cpuCyclesPerSec = getCyclesPerSecond(parseResults);
         if (cpuCyclesPerSec > 0) {
             benchmarkResults.setCpuCyclesPerSec(cpuCyclesPerSec);
         }
     }
 
-    protected double getCyclesPerSecond(ArrayList<ParseResult> parseResults) {
+    protected double getCyclesPerSecond(List<ParseResult> parseResults) {
         double cycles = -1;
         double seconds = -1;
         for (ParseResult parseResult : parseResults) {
