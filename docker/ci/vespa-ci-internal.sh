@@ -26,5 +26,5 @@ git -c advice.detachedHead=false checkout ${GIT_COMMIT}
 NUM_THREADS=$(($(nproc --all) * 2))
 bash "${MAPPED_DIR}/docker/ci/build-and-test.sh" "${SOURCE_DIR}" "${BUILD_DIR}" "${LOG_DIR}" ${NUM_THREADS}
 
-sudo cp "${LOG_DIR}/java.log" "${MAPPED_DIR}/docker/logs/${LOG_PREFIX}-java.log"
-sudo cp "${LOG_DIR}/cpp.log" "${MAPPED_DIR}/docker/logs/${LOG_PREFIX}-cpp.log"
+cp "${LOG_DIR}/java.log" "${MAPPED_DIR}/docker/logs/${LOG_PREFIX}-java.log"
+cp "${LOG_DIR}/cpp.log" "${MAPPED_DIR}/docker/logs/${LOG_PREFIX}-cpp.log"
