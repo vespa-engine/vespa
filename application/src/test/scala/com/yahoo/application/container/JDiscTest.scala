@@ -8,14 +8,13 @@ import scala.language.implicitConversions
 import handler.Request
 import org.junit.{Ignore, Test}
 import org.junit.Assert.{assertThat, assertNotNull, fail}
-import org.hamcrest.CoreMatchers.is
+import org.hamcrest.CoreMatchers.{is, containsString, hasItem}
 import java.nio.file.FileSystems
 import com.yahoo.search.Query
 import com.yahoo.component.ComponentSpecification
 import handlers.TestHandler
 import xml.{Node, Elem}
 import JDiscTest._
-import org.junit.matchers.JUnitMatchers.{containsString, hasItem}
 import com.yahoo.application.{Networking, ApplicationBuilder}
 
 import scala.collection.convert.wrapAsScala._
