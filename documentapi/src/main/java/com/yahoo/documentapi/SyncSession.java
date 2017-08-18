@@ -5,16 +5,17 @@ import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentRemove;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
-import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
+
+import java.time.temporal.TemporalAmount;
 
 /**
  * <p>A session for synchronous access to a document repository. This class
  * provides simple document access where throughput is not a concern.</p>
  *
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author bjorncs
  */
 public interface SyncSession extends Session {
 
@@ -58,6 +59,41 @@ public interface SyncSession extends Session {
      *                                       support retrieving.
      */
     Document get(DocumentId id, String fieldSet, DocumentProtocol.Priority priority);
+
+    /**
+     * <p>Gets a document with timeout.</p>
+     *
+     * @param id The id of the document to get.
+     * @param timeout Timeout. If timeout is null, an unspecified default will be used.
+     * @return The known document having this id, or null if there is no
+     *         document having this id.
+     * @throws UnsupportedOperationException Thrown if this access does not
+     *                                       support retrieving.
+     * @throws RuntimeException If operation times out.
+     */
+    // TODO Vespa 7: Remove default implementation. Consider removing get() overloads without timeout.
+    default Document get(DocumentId id, TemporalAmount timeout) {
+        return get(id);
+    }
+
+    /**
+     * <p>Gets a document with timeout. </p>
+     *
+     * @param id       The id of the document to get.
+     * @param fieldSet A comma-separated list of fields to retrieve
+     * @param priority The priority with which to perform this operation.
+     * @param timeout Timeout. If timeout is null, an unspecified default will be used.
+     * @return The known document having this id, or null if there is no
+     *         document having this id.
+     * @throws UnsupportedOperationException Thrown if this access does not
+     *                                       support retrieving.
+     * * @throws RuntimeException If operation times out.
+     */
+    // TODO Vespa 7: Remove default implementation. Consider removing get() overloads without timeout.
+    default Document get(DocumentId id, String fieldSet, DocumentProtocol.Priority priority,
+                         TemporalAmount timeout) {
+        return get(id, fieldSet, priority);
+    }
 
     /**
      * <p>Removes a document if it is present and condition is fulfilled.</p>
