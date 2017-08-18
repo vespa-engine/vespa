@@ -1,11 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/bucket/bucketidfactory.h>
-
-#include <vespa/document/bucket/bucketid.h>
+#include "bucketidfactory.h"
+#include "bucketid.h"
 #include <vespa/document/base/documentid.h>
 #include <ostream>
 #include <cassert>
+#include <limits>
 
 namespace document {
 

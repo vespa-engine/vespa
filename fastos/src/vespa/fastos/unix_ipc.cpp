@@ -1,11 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/unix_ipc.h>
-
-#include <vespa/fastos/ringbuffer.h>
+#include "unix_ipc.h"
+#include "ringbuffer.h"
+#include <cassert>
+#include <cstring>
+#include <unistd.h>
+#include <fcntl.h>
 
 FastOS_UNIX_IPCHelper::
-FastOS_UNIX_IPCHelper (FastOS_ApplicationInterface *app,
-                       int descriptor)
+FastOS_UNIX_IPCHelper (FastOS_ApplicationInterface *app, int descriptor)
     : _lock(),
       _exitFlag(false),
       _app(app),
@@ -116,7 +118,7 @@ SetBlocking (int fileDescriptor, bool doBlock)
 {
     bool rc=false;
 
-    int flags = fcntl(fileDescriptor, F_GETFL, NULL);
+    int flags = fcntl(fileDescriptor, F_GETFL, nullptr);
     if (flags != -1)
     {
         if(doBlock)
@@ -132,7 +134,7 @@ void FastOS_UNIX_IPCHelper::
 BuildPollCheck(bool isRead, int filedes,
                FastOS_RingBuffer *buffer, bool *check)
 {
-    if(buffer == NULL ||
+    if(buffer == nullptr ||
        filedes < 0 ||
        buffer->GetCloseFlag()) {
         *check = false;
@@ -152,7 +154,7 @@ void FastOS_UNIX_IPCHelper::
 PerformAsyncIO(void)
 {
     FastOS_ProcessInterface *node;
-    for(node = _app->GetProcessList(); node != NULL; node = node->_next)
+    for(node = _app->GetProcessList(); node != nullptr; node = node->_next)
     {
         FastOS_UNIX_Process *xproc = static_cast<FastOS_UNIX_Process *>(node);
 
@@ -185,7 +187,7 @@ void FastOS_UNIX_IPCHelper::
 BuildPollChecks(void)
 {
     FastOS_ProcessInterface *node;
-    for(node = _app->GetProcessList(); node != NULL; node = node->_next)
+    for(node = _app->GetProcessList(); node != nullptr; node = node->_next)
     {
         FastOS_UNIX_Process *xproc = static_cast<FastOS_UNIX_Process *>(node);
 
@@ -200,11 +202,11 @@ BuildPollChecks(void)
         }
     }
 
-    if(_appParentIPCDescriptor._writeBuffer.get() != NULL)
+    if(_appParentIPCDescriptor._writeBuffer.get() != nullptr)
         BuildPollCheck(false, _appParentIPCDescriptor._fd,
                        _appParentIPCDescriptor._writeBuffer.get(),
                        &_appParentIPCDescriptor._wantWrite);
-    if(_appParentIPCDescriptor._readBuffer.get() != NULL)
+    if(_appParentIPCDescriptor._readBuffer.get() != nullptr)
         BuildPollCheck(true, _appParentIPCDescriptor._fd,
                        _appParentIPCDescriptor._readBuffer.get(),
                        &_appParentIPCDescriptor._wantRead);
@@ -223,12 +225,12 @@ ResizePollArray(pollfd **fds, unsigned int *allocnfds)
     else
         newallocnfds = *allocnfds * 2;
     newfds = static_cast<pollfd *>(malloc(newallocnfds * sizeof(pollfd)));
-    assert(newfds != NULL);
+    assert(newfds != nullptr);
 
     if (*allocnfds > 0)
         memcpy(newfds, *fds, sizeof(pollfd) * *allocnfds);
 
-    if (*fds != NULL)
+    if (*fds != nullptr)
         free(*fds);
 
     *fds = newfds;
@@ -259,7 +261,7 @@ BuildPollArray(pollfd **fds, unsigned int *nfds, unsigned int *allocnfds)
     rfds->revents = 0;
     rfds++;
     pollIdx = 1;
-    for(node = _app->GetProcessList(); node != NULL; node = node->_next)
+    for(node = _app->GetProcessList(); node != nullptr; node = node->_next)
     {
         FastOS_UNIX_Process *xproc = static_cast<FastOS_UNIX_Process *>(node);
 
@@ -329,7 +331,7 @@ SavePollArray(pollfd *fds, unsigned int nfds)
 {
     FastOS_ProcessInterface *node;
 
-    for(node = _app->GetProcessList(); node != NULL; node = node->_next)
+    for(node = _app->GetProcessList(); node != nullptr; node = node->_next)
     {
         FastOS_UNIX_Process *xproc = static_cast<FastOS_UNIX_Process *>(node);
 
@@ -394,7 +396,7 @@ RemoveClosingProcesses(void)
 
     FastOS_ProcessInterface *node, *next;
 
-    for(node = _app->GetProcessList(); node != NULL; node = next)
+    for(node = _app->GetProcessList(); node != nullptr; node = next)
     {
         int type;
 
@@ -428,7 +430,7 @@ RemoveClosingProcesses(void)
 
         if(!stillBusy)
         {
-            if(xproc->_closing != NULL)
+            if(xproc->_closing != nullptr)
             {
                 // We already have the process lock at this point,
                 // so modifying the list is safe.
@@ -466,14 +468,14 @@ Run(FastOS_ThreadInterface *thisThread, void *arg)
     unsigned int nfds;
     unsigned int allocnfds;
 
-    fds = NULL;
+    fds = nullptr;
     nfds = 0;
     allocnfds = 0;
     for(;;)
     {
         // Deliver messages to from child processes and parent.
         _app->ProcessLock();
-        for(node = _app->GetProcessList(); node != NULL; node = node->_next)
+        for(node = _app->GetProcessList(); node != nullptr; node = node->_next)
         {
             FastOS_UNIX_Process *xproc = static_cast<FastOS_UNIX_Process *>(node);
             FastOS_UNIX_Process::DescriptorHandle &desc =
@@ -576,12 +578,12 @@ SendMessage (FastOS_UNIX_Process *xproc, const void *buffer,
     FastOS_RingBuffer *ipcBuffer;
 
     FastOS_UNIX_Process::DescriptorHandle &desc =
-        xproc != NULL ?
+        xproc != nullptr ?
         xproc->GetDescriptorHandle(FastOS_UNIX_Process::TYPE_IPC) :
         _appParentIPCDescriptor;
     ipcBuffer = desc._writeBuffer.get();
 
-    if(ipcBuffer != NULL) {
+    if(ipcBuffer != nullptr) {
         ipcBuffer->Lock();
 
         if(ipcBuffer->GetWriteSpace() >= int((length + sizeof(int)))) {
@@ -651,7 +653,7 @@ void FastOS_UNIX_IPCHelper::RemoveProcess (FastOS_UNIX_Process *xproc)
 
 void FastOS_UNIX_IPCHelper::DeliverMessages (FastOS_RingBuffer *buffer)
 {
-    if(buffer == NULL)
+    if(buffer == nullptr)
         return;
 
     buffer->Lock();
@@ -681,11 +683,11 @@ PipeData (FastOS_UNIX_Process *process,
 {
     FastOS_UNIX_Process::DescriptorHandle &desc = process->GetDescriptorHandle(type);
     FastOS_RingBuffer *buffer = desc._readBuffer.get();
-    if(buffer == NULL)
+    if(buffer == nullptr)
         return;
 
     FastOS_ProcessRedirectListener *listener = process->GetListener(type);
-    if(listener == NULL)
+    if(listener == nullptr)
         return;
 
     buffer->Lock();

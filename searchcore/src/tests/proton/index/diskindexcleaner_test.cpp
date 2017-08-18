@@ -5,8 +5,7 @@
 #include <vespa/searchcorespi/index/diskindexcleaner.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/fastos/file.h>
-#include <string>
-#include <vector>
+#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP("diskindexcleaner_test");

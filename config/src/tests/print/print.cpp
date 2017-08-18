@@ -8,6 +8,7 @@
 #include <vespa/config/helper/configgetter.hpp>
 #include "config-my.h"
 #include "config-motd.h"
+#include <sys/stat.h>
 
 using namespace config;
 

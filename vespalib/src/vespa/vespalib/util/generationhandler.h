@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 #include <atomic>
-#include <assert.h>
+#include <cassert>
 
 namespace vespalib {
 

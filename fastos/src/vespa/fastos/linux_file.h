@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include <vespa/fastos/unix_file.h>
+#include "unix_file.h"
 
 /**
  * This is the Linux implementation of @ref FastOS_File. Most
@@ -24,7 +24,7 @@ protected:
     int64_t _filePointer;   // Only maintained/used in directio mode
 
 public:
-    FastOS_Linux_File (const char *filename = NULL);
+    FastOS_Linux_File (const char *filename = nullptr);
     ~FastOS_Linux_File () {
         Close();
     }
@@ -57,5 +57,4 @@ private:
 
     static const size_t _directIOFileAlign;
     static const size_t _directIOMemAlign;
-    static const size_t _pageSize;
 };

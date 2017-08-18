@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <set>
 #include <vector>
+#include <limits>
 
 namespace vespalib {
     class asciistream;

@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/backtrace.h>
-#include <assert.h>
+#include <cassert>
 #include <string.h>
 
 #include "tests.h"
@@ -116,7 +116,7 @@ int main (int argc, char **argv)
 {
     BackTraceTest app;
 
-    setvbuf(stdout, NULL, _IOLBF, 8192);
+    setvbuf(stdout, nullptr, _IOLBF, 8192);
     return app.Entry(argc, argv);
 }
 

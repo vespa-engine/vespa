@@ -2,7 +2,7 @@
 #pragma once
 
 #include <stdio.h>
-#include <assert.h>
+#include <cassert>
 
 // Simple default order that everybody has - pointer order:
 template <typename T>

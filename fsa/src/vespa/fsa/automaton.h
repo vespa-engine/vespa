@@ -13,7 +13,7 @@
 #include <map>
 #include <list>
 #include <string>
-#include <assert.h>
+#include <cassert>
 
 #include "blob.h"
 #include "fsa.h"

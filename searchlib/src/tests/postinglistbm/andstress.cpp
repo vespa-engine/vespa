@@ -1,7 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP(".andstress");
 #include "andstress.h"
 #include <vector>
 
@@ -14,14 +12,17 @@ LOG_SETUP(".andstress");
 #include <vespa/searchlib/test/fakedata/fakezcfilterocc.h>
 #include <vespa/searchlib/test/fakedata/fakezcbfilterocc.h>
 #include <vespa/searchlib/test/fakedata/fpfactory.h>
+#include <vespa/fastos/thread.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".andstress");
 
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataArray;
 using search::queryeval::SearchIterator;
 using namespace search::fakedata;
 
-namespace postinglistbm
-{
+namespace postinglistbm {
 
 class AndStressWorker;
 

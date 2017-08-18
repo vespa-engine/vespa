@@ -5,8 +5,8 @@
 #pragma once
 
 #include "hitrank.h"
-#include <sys/types.h>
-#include <stdint.h>
+#include <cstdint>
+#include <cstddef>
 
 namespace search {
 

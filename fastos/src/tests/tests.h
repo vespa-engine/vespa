@@ -3,6 +3,7 @@
 #include <vespa/fastos/app.h>
 #include <vespa/fastos/socket.h>
 #include <vespa/fastos/thread.h>
+#include <cstring>
 
 class BaseTest : public FastOS_Application
 {

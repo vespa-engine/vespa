@@ -34,7 +34,7 @@ public:
      * @param libname the name of the library to open
      * @return Boolean success/failure
      */
-    virtual bool Open(const char *libname = NULL) = 0;
+    virtual bool Open(const char *libname = nullptr) = 0;
 
     /**
      * Close (unload) the library.
@@ -45,7 +45,7 @@ public:
     /**
      * Find the address of a symbol in the library.
      * @param symbol Name of symbol to find
-     * @return Address of the symbol, or NULL if an error has occurred
+     * @return Address of the symbol, or nullptr if an error has occurred
      */
     virtual void * GetSymbol(const char *symbol) const = 0;
 

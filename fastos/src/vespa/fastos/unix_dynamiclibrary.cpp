@@ -20,7 +20,7 @@ bool hasValidSuffix(const std::string & s)
 void
 FastOS_UNIX_DynamicLibrary::SetLibName(const char *libname)
 {
-    if (libname != NULL) {
+    if (libname != nullptr) {
         _libname = libname;
         if ( ! hasValidSuffix(_libname)) {
             _libname.append(FASTOS_DYNLIB_SUFFIX);
@@ -56,16 +56,16 @@ FastOS_UNIX_DynamicLibrary::Close()
     bool retcode = true;
 
     if (IsOpen()) {
-        retcode = (dlclose(_handle) == TRUE);
+        retcode = (dlclose(_handle) == 0);
         if (retcode)
-            _handle = NULL;
+            _handle = nullptr;
     }
 
     return retcode;
 }
 
 FastOS_UNIX_DynamicLibrary::FastOS_UNIX_DynamicLibrary(const char *libname) :
-    _handle(NULL),
+    _handle(nullptr),
     _libname("")
 {
     SetLibName(libname);
@@ -81,13 +81,13 @@ FastOS_UNIX_DynamicLibrary::Open(const char *libname)
 {
     if (! Close())
         return false;
-    if (libname != NULL) {
+    if (libname != nullptr) {
         SetLibName(libname);
     }
 
     _handle = dlopen(_libname.c_str(), RTLD_NOW);
 
-    if (_handle == NULL) {
+    if (_handle == nullptr) {
         // Prepend "lib" if neccessary...
         if (NormalizeLibName()) {
             // ...try to open again if a change was made.
@@ -95,7 +95,7 @@ FastOS_UNIX_DynamicLibrary::Open(const char *libname)
         }
     }
 
-    return (_handle != NULL);
+    return (_handle != nullptr);
 }
 
 void *
@@ -109,7 +109,7 @@ FastOS_UNIX_DynamicLibrary::GetLastErrorString() const
 {
     const char *errorString = dlerror();
     std::string e;
-    if (errorString != NULL) {
+    if (errorString != nullptr) {
         e = errorString;
     }
 

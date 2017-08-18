@@ -10,7 +10,7 @@
 #pragma once
 
 
-#include <vespa/fastos/socket.h>
+#include "socket.h"
 
 
 /**
@@ -74,14 +74,14 @@ protected:
 
     /**
      * The socket factory to use for incoming connections.
-     * If this is NULL, the default action is to create an
+     * If this is nullptr, the default action is to create an
      * instance of the regular @ref FastOS_Socket.
      */
     FastOS_SocketFactory *_socketFactory;
 
     /**
      * Create socket for handling an incoming connection
-     * @return    Returns pointer to newly created socket, or NULL on
+     * @return    Returns pointer to newly created socket, or nullptr on
      *            failure.
      */
     FastOS_SocketInterface *CreateHandlerSocket();
@@ -98,8 +98,8 @@ public:
      * @param strictBindHostName   IP address or hostname for strict binding
      */
     FastOS_ServerSocket (int portnum, int backLog=5,
-                         FastOS_SocketFactory *socketFactory=NULL,
-                         const char *strictBindHostName=NULL)
+                         FastOS_SocketFactory *socketFactory=nullptr,
+                         const char *strictBindHostName=nullptr)
         : _portNumber(portnum),
           _backLog(backLog),
           _socketFactory(socketFactory),
@@ -118,17 +118,7 @@ public:
      * @param socketHandle   OS handle of supplied socket.
      * @param socketFactory  See @ref SetSocketFactory().
      */
-    FastOS_ServerSocket(int socketHandle,
-                        FastOS_SocketFactory *socketFactory)
-        : _portNumber(-1),
-          _backLog(-1),
-          _socketFactory(socketFactory),
-          _validAddress(false)
-    {
-        _socketHandle = socketHandle;
-        memset(&_address, 0, sizeof(_address));
-        _validAddress = true;
-    }
+    FastOS_ServerSocket(int socketHandle, FastOS_SocketFactory *socketFactory);
 
     /**
      * Create a listening socket. This involves creating an OS
@@ -136,7 +126,7 @@ public:
      * start to listen for incoming connections. You should
      * call @ref Listen() if you have supplied a pre-created listening
      * socket handle trough the constructor
-     * @ref FastOS_ServerSocket(int listenSocketHandle, FastOS_SocketFactory *socketFactory=NULL).
+     * @ref FastOS_ServerSocket(int listenSocketHandle, FastOS_SocketFactory *socketFactory=nullptr).
      * @return    Boolean success/failure
      */
     bool Listen ();
@@ -147,7 +137,7 @@ public:
      * Make sure you have a listening socket (see @ref Listen()) before
      * calling @ref Accept().
      * @return   Returns pointer to newly created socket object for the
-     *           connection that was accepted, or NULL on failure.
+     *           connection that was accepted, or nullptr on failure.
      */
     FastOS_SocketInterface *Accept ();
 
@@ -157,7 +147,7 @@ public:
      * Make sure you have a listening socket (see @ref Listen()) before
      * calling @ref AcceptPlain().
      * @return   Returns pointer to newly created socket object for the
-     *           connection that was accepted, or NULL on failure.
+     *           connection that was accepted, or nullptr on failure.
      */
     FastOS_Socket *AcceptPlain ();
 
@@ -167,7 +157,7 @@ public:
      * factory will be called to create a new socket object for the
      * connection.
      *
-     * SetSocketFactory(NULL) will enable the default socket factory
+     * SetSocketFactory(nullptr) will enable the default socket factory
      * mechanism which will create regular @ref FastOS_Socket instances
      * on accepted connections.
      */

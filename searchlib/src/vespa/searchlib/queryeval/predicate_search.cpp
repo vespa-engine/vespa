@@ -3,6 +3,7 @@
 #include "predicate_search.h"
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
+#include <algorithm>
 
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataArray;

@@ -8,8 +8,9 @@
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/log/log.h>
+#include <algorithm>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".persistence.mergehandler");
 
 namespace storage {

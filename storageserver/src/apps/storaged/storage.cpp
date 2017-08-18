@@ -11,7 +11,7 @@
  * application, but as little as possible else.
  */
 
-#include <signal.h>
+#include <csignal>
 #include <vespa/persistence/spi/exceptions.h>
 #include <vespa/storage/storageutil/utils.h>
 #include <vespa/storageserver/app/distributorprocess.h>

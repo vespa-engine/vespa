@@ -1,12 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <cstdint>
-#include <sys/types.h>
-#include <algorithm>
-#include <vespa/vespalib/util/alloc.h>
-#include <vespa/vespalib/util/optimized.h>
-#include <tr1/type_traits>
+#include "alloc.h"
 
 namespace vespalib {
 

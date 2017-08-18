@@ -300,3 +300,9 @@ extern void log_abort(const char *message,
 #else
 #define LOG_ASSERT(expr)
 #endif // #ifndef NDEBUG
+
+#ifndef PRId64
+    #define PRId64 "ld"
+    #define PRIu64 "lu"
+    #define PRIx64 "lx"
+#endif

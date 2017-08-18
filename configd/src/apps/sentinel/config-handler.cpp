@@ -6,6 +6,8 @@
 
 #include <vespa/vespalib/net/simple_metric_snapshot.h>
 #include <vespa/vespalib/net/socket_address.h>
+#include <fcntl.h>
+#include <sys/wait.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".config-handler");

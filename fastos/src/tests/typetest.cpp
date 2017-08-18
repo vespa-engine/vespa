@@ -2,6 +2,7 @@
 
 #include "tests.h"
 #include <vespa/fastos/file.h>
+#include <vespa/fastos/time.h>
 #include <vespa/fastos/serversocket.h>
 
 #include <cstdlib>
@@ -9,40 +10,6 @@
 class TypeTest : public BaseTest
 {
 private:
-   void PrintfSpecifiersTest ()
-   {
-      char testBuf[200];
-      const char *correct;
-
-      TestHeader("64-bit printf-specifiers test");
-
-      sprintf(testBuf, "%" PRId64, int64_t(-1000)*1000*1000*1000*1000);
-      correct = "-1000000000000000";
-      Progress(strcmp(testBuf, correct) == 0,
-               "Generated=[%s], Correct=[%s]", testBuf, correct);
-
-      sprintf(testBuf, "%" PRIu64, uint64_t(1000)*1000*1000*1000*1000);
-      correct = "1000000000000000";
-      Progress(strcmp(testBuf, correct) == 0,
-               "Generated=[%s], Correct=[%s]", testBuf, correct);
-
-      sprintf(testBuf, "%" PRIo64, uint64_t(1000)*1000*1000*1000*1000);
-      correct = "34327724461500000";
-      Progress(strcmp(testBuf, correct) == 0,
-               "Generated=[%s], Correct=[%s]", testBuf, correct);
-
-      sprintf(testBuf, "%" PRIx64, uint64_t(1000)*1000*1000*1000*1000);
-      correct = "38d7ea4c68000";
-      Progress(strcmp(testBuf, correct) == 0,
-               "Generated=[%s], Correct=[%s]", testBuf, correct);
-
-      sprintf(testBuf, "%" PRIX64, uint64_t(1000)*1000*1000*1000*1000);
-      correct = "38D7EA4C68000";
-      Progress(strcmp(testBuf, correct) == 0,
-               "Generated=[%s], Correct=[%s]", testBuf, correct);
-
-      PrintSeparator();
-   }
 
    void ObjectSizeTest ()
    {
@@ -73,7 +40,6 @@ public:
    {
       printf("grep for the string '%s' to detect failures.\n\n", failString);
 
-      PrintfSpecifiersTest();
       ObjectSizeTest();
 
       PrintSeparator();
@@ -86,7 +52,7 @@ public:
 
 int main (int argc, char **argv)
 {
-   setvbuf(stdout, NULL, _IOLBF, 8192);
+   setvbuf(stdout, nullptr, _IOLBF, 8192);
    TypeTest app;
    return app.Entry(argc, argv);
 }

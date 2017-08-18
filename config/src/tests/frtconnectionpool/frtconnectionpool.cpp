@@ -5,6 +5,7 @@
 #include <vespa/fnet/frt/error.h>
 #include <sstream>
 #include <set>
+#include <unistd.h>
 
 using namespace config;
 

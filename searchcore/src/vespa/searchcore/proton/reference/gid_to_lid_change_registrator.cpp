@@ -2,7 +2,7 @@
 
 #include "gid_to_lid_change_registrator.h"
 #include "i_gid_to_lid_change_listener.h"
-#include <assert.h>
+#include <cassert>
 
 namespace proton {
 

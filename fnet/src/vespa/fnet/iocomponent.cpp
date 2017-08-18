@@ -2,7 +2,8 @@
 
 #include "iocomponent.h"
 #include "transport_thread.h"
-
+#include <cassert>
+#include <cstring>
 
 FNET_IOComponent::FNET_IOComponent(FNET_TransportThread *owner,
                                    int socket_fd,

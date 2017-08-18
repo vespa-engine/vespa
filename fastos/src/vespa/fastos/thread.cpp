@@ -6,7 +6,9 @@
  * @author  Oivind H. Danielsen
  */
 
-#include <vespa/fastos/thread.h>
+#include "thread.h"
+#include <cstdio>
+#include <cassert>
 
 // ----------------------------------------------------------------------
 // FastOS_ThreadPool
@@ -19,8 +21,8 @@ FastOS_ThreadPool::FastOS_ThreadPool(int stackSize, int maxThreads)
       _closeCalledFlag(false),
       _freeMutex(),
       _liveCond(),
-      _freeThreads(NULL),
-      _activeThreads(NULL),
+      _freeThreads(nullptr),
+      _activeThreads(nullptr),
       _numFree(0),
       _numActive(0),
       _numTerminated(0),
@@ -69,9 +71,9 @@ void FastOS_ThreadPool::FreeThread (FastOS_ThreadInterface *thread)
 
 void FastOS_ThreadPool::LinkOutThread (FastOS_ThreadInterface *thread, FastOS_ThreadInterface **listHead)
 {
-    if (thread->_prev != NULL)
+    if (thread->_prev != nullptr)
         thread->_prev->_next = thread->_next;
-    if (thread->_next != NULL)
+    if (thread->_next != nullptr)
         thread->_next->_prev = thread->_prev;
 
     if (thread == *listHead)
@@ -80,10 +82,10 @@ void FastOS_ThreadPool::LinkOutThread (FastOS_ThreadInterface *thread, FastOS_Th
 
 void FastOS_ThreadPool::LinkInThread (FastOS_ThreadInterface *thread, FastOS_ThreadInterface **listHead)
 {
-    thread->_prev = NULL;
+    thread->_prev = nullptr;
     thread->_next = *listHead;
 
-    if (*listHead != NULL)
+    if (*listHead != nullptr)
         (*listHead)->_prev = thread;
 
     *listHead  = thread;
@@ -106,12 +108,12 @@ void FastOS_ThreadPool::ActivateThread (FastOS_ThreadInterface *thread)
 // make this thread call parameter fcn when it becomes active.
 FastOS_ThreadInterface *FastOS_ThreadPool::NewThread (FastOS_Runnable *owner, void *arg)
 {
-    FastOS_ThreadInterface *thread=NULL;
+    FastOS_ThreadInterface *thread=nullptr;
 
     _freeMutex.Lock();
 
     if (!isClosed()) {
-        if ((thread = _freeThreads) != NULL) {
+        if ((thread = _freeThreads) != nullptr) {
             // Reusing thread entry
             _freeThreads = thread->_next;
             _numFree--;
@@ -132,7 +134,7 @@ FastOS_ThreadInterface *FastOS_ThreadPool::NewThread (FastOS_Runnable *owner, vo
 
                 thread = FastOS_Thread::CreateThread(this);
 
-                if (thread == NULL) {
+                if (thread == nullptr) {
                     _liveCond.Lock();
                     _numLive--;
                     if (_numLive == 0) {
@@ -143,14 +145,14 @@ FastOS_ThreadInterface *FastOS_ThreadPool::NewThread (FastOS_Runnable *owner, vo
 
                 _freeMutex.Lock();
 
-                if(thread != NULL)
+                if(thread != nullptr)
                     ActivateThread(thread);
             }
         }
     }
 
     _freeMutex.Unlock();
-    if(thread != NULL) {
+    if(thread != nullptr) {
         _liveCond.Lock();
         thread->Dispatch(owner, arg);
         _liveCond.Unlock();
@@ -167,12 +169,12 @@ void FastOS_ThreadPool::BreakThreads ()
     _freeMutex.Lock();
 
     // Notice all active threads that they should quit
-    for(thread=_activeThreads; thread != NULL; thread=thread->_next) {
+    for(thread=_activeThreads; thread != nullptr; thread=thread->_next) {
         thread->SetBreakFlag();
     }
 
     // Notice all free threads that they should quit
-    for(thread=_freeThreads; thread != NULL; thread=thread->_next) {
+    for(thread=_freeThreads; thread != nullptr; thread=thread->_next) {
         thread->SetBreakFlag();
     }
 
@@ -199,7 +201,7 @@ void FastOS_ThreadPool::DeleteThreads ()
     assert(_numActive == 0);
     assert(_numLive == 0);
 
-    while((thread = _freeThreads) != NULL) {
+    while((thread = _freeThreads) != nullptr) {
         LinkOutThread(thread, &_freeThreads);
         _numFree--;
         //      printf("deleting thread %p\n", thread);
@@ -241,7 +243,7 @@ void *FastOS_ThreadHook (void *arg)
     FastOS_ThreadInterface *thread = static_cast<FastOS_ThreadInterface *>(arg);
     thread->Hook();
 
-    return NULL;
+    return nullptr;
 }
 };
 
@@ -262,7 +264,7 @@ void FastOS_ThreadInterface::Hook ()
 
         _dispatched.Lock();             // BEGIN lock
 
-        while (_owner == NULL && !(finished = _pool->isClosed())) {
+        while (_owner == nullptr && !(finished = _pool->isClosed())) {
             _dispatched.Wait();
         }
 
@@ -278,8 +280,8 @@ void FastOS_ThreadInterface::Hook ()
             if (deleteOnCompletion) {
                 delete _owner;
             }
-            _owner = NULL;
-            _startArg = NULL;
+            _owner = nullptr;
+            _startArg = nullptr;
             _breakFlag = false;
             finished = _pool->isClosed();
 
@@ -341,7 +343,7 @@ FastOS_ThreadInterface *FastOS_ThreadInterface::CreateThread(FastOS_ThreadPool *
 
     if(!thread->Initialize(pool->GetStackSize(), pool->GetStackGuardSize())) {
         delete(thread);
-        thread = NULL;
+        thread = nullptr;
     }
 
     return thread;
@@ -358,16 +360,16 @@ void FastOS_ThreadInterface::Join ()
 // ----------------------------------------------------------------------
 
 FastOS_Runnable::FastOS_Runnable(void)
-    : _thread(NULL)
+    : _thread(nullptr)
 {
 }
 
 FastOS_Runnable::~FastOS_Runnable(void)
 {
-    //      assert(_thread == NULL);
+    //      assert(_thread == nullptr);
 }
 
 void FastOS_Runnable::Detach(void)
 {
-    _thread = NULL;
+    _thread = nullptr;
 }

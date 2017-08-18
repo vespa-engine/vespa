@@ -5,6 +5,7 @@
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/util/bytebuffer.h>
+#include <limits>
 
 using vespalib::nbostream;
 

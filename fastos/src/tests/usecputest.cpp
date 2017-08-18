@@ -63,7 +63,7 @@ void UseSomeCpu (int i, ThreadRunJob *threadRunJob)
 int main (int argc, char **argv)
 {
    UseCpuTest app;
-   setvbuf(stdout, NULL, _IOLBF, 8192);
+   setvbuf(stdout, nullptr, _IOLBF, 8192);
    return app.Entry(argc, argv);
 }
 

@@ -8,6 +8,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <iomanip>
 #include <iostream>
+#include <algorithm>
 #include <vespa/config-stor-distribution.h>
 
 namespace storage {

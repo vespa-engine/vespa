@@ -2,9 +2,9 @@
 
 #include "request.h"
 #include <cassert>
+#include <algorithm>
 
-namespace vespalib {
-namespace ws {
+namespace vespalib::ws {
 
 namespace {
 
@@ -139,5 +139,4 @@ Request::is_ws_upgrade() const
             has_connection_token("upgrade"));
 }
 
-} // namespace vespalib::ws
-} // namespace vespalib
+}

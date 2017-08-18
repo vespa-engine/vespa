@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/common/bitvector.h>
+#include "bitvector.h"
 
 namespace search {
 

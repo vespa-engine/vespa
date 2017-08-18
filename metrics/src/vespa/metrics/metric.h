@@ -4,7 +4,6 @@
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/regexp.h>
-#include <assert.h>
 
 namespace metrics {
 

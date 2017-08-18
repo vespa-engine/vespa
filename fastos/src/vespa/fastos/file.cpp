@@ -6,9 +6,10 @@
  * @author  Div, Oivind H. Danielsen
  */
 
-#include <vespa/fastos/file.h>
+#include "file.h"
 #include <sstream>
-
+#include <cstring>
+#include <fcntl.h>
 
 DirectIOException::DirectIOException(const char * fileName, const void * buffer, size_t length, int64_t offset) :
     std::exception(),
@@ -26,7 +27,7 @@ DirectIOException::DirectIOException(const char * fileName, const void * buffer,
 
 DirectIOException::~DirectIOException() {}
 
-FastOS_FileInterface::FailedHandler FastOS_FileInterface::_failedHandler = NULL;
+FastOS_FileInterface::FailedHandler FastOS_FileInterface::_failedHandler = nullptr;
 int FastOS_FileInterface::_defaultFAdviseOptions = POSIX_FADV_NORMAL;
 
 static const size_t MAX_WRITE_CHUNK_SIZE = 0x4000000; // 64 MB
@@ -34,12 +35,12 @@ static const size_t MAX_WRITE_CHUNK_SIZE = 0x4000000; // 64 MB
 FastOS_FileInterface::FastOS_FileInterface(const char *filename)
     : _fAdviseOptions(_defaultFAdviseOptions),
       _writeChunkSize(MAX_WRITE_CHUNK_SIZE),
-      _filename(NULL),
+      _filename(nullptr),
       _openFlags(0),
       _directIOEnabled(false),
       _syncWritesEnabled(false)
 {
-    if (filename != NULL)
+    if (filename != nullptr)
         SetFileName(filename);
 }
 
@@ -199,7 +200,7 @@ FastOS_FileInterface::MemoryMapPtr(int64_t position) const
 {
     // Only subclases with support for memory mapping do something here.
     (void) position;
-    return NULL;
+    return nullptr;
 }
 
 
@@ -217,8 +218,8 @@ FastOS_FileInterface::CopyFile( const char *src, const char *dst )
     FastOS_StatInfo statInfo;
     bool success = false;
 
-    if ( src != NULL &&
-        dst != NULL &&
+    if ( src != nullptr &&
+        dst != nullptr &&
         strcmp(src, dst) != 0 &&
         FastOS_File::Stat( src, &statInfo )) {
 
@@ -232,7 +233,7 @@ FastOS_FileInterface::CopyFile( const char *src, const char *dst )
                 bufSize = static_cast<unsigned int>(bufSizeBound);
             char *tmpBuf = new char[ bufSize ];
 
-            if ( tmpBuf != NULL ) {
+            if ( tmpBuf != nullptr ) {
                 int64_t copied = 0;
                 success = true;
                 do {
@@ -277,7 +278,7 @@ FastOS_FileInterface::MoveFile(const char* src, const char* dst)
 
 void
 FastOS_FileInterface::EmptyDirectory( const char *dir,
-                                     const char *keepFile /* = NULL */ )
+                                     const char *keepFile /* = nullptr */ )
 {
     FastOS_StatInfo statInfo;
     if (!FastOS_File::Stat(dir, &statInfo))
@@ -287,7 +288,7 @@ FastOS_FileInterface::EmptyDirectory( const char *dir,
     while (dirScan.ReadNext()) {
         if (strcmp(dirScan.GetName(), ".") != 0 &&
             strcmp(dirScan.GetName(), "..") != 0 &&
-            (keepFile == NULL || strcmp(dirScan.GetName(), keepFile) != 0))
+            (keepFile == nullptr || strcmp(dirScan.GetName(), keepFile) != 0))
         {
             std::string name = dir;
             name += GetPathSeparator();
@@ -346,7 +347,7 @@ FastOS_FileInterface::MakeDirIfNotPresentOrExit(const char *name)
 void
 FastOS_FileInterface::SetFileName(const char *filename)
 {
-    if (_filename != NULL) {
+    if (_filename != nullptr) {
         free(_filename);
     }
 
@@ -357,7 +358,7 @@ FastOS_FileInterface::SetFileName(const char *filename)
 const char *
 FastOS_FileInterface::GetFileName() const
 {
-    return (_filename != NULL) ? _filename : "";
+    return (_filename != nullptr) ? _filename : "";
 }
 
 
@@ -461,13 +462,6 @@ FastOS_FileInterface::OpenWriteOnly(const char *filename)
     return Open(FASTOS_FILE_OPEN_WRITE, filename);
 }
 
-
-bool
-FastOS_FileInterface::OpenStdin()
-{
-    return Open(FASTOS_FILE_OPEN_STDIN);
-}
-
 FastOS_File::Error
 FastOS_FileInterface::GetLastError()
 {
@@ -494,4 +488,14 @@ bool FastOS_FileInterface::Rename (const char *newFileName)
 
 void FastOS_FileInterface::dropFromCache() const
 {
+}
+
+FastOS_DirectoryScanInterface::FastOS_DirectoryScanInterface(const char *path)
+    : _searchPath(strdup(path))
+{
+}
+
+FastOS_DirectoryScanInterface::~FastOS_DirectoryScanInterface()
+{
+    free(_searchPath);
 }

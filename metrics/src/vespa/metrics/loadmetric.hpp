@@ -4,6 +4,7 @@
 #include "loadmetric.h"
 #include "memoryconsumption.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <cassert>
 
 namespace metrics {
 

@@ -1,6 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/socket.h>
+#include "socket.h"
+#include <cassert>
+#include <cstring>
+#include <unistd.h>
+#include <fcntl.h>
 
 FastOS_UNIX_Socket::~FastOS_UNIX_Socket()
 {
@@ -25,7 +29,7 @@ bool FastOS_UNIX_Socket::Shutdown()
     bool rc=true;
 
     if (ValidHandle()) {
-        if(_socketEvent != NULL) {
+        if(_socketEvent != nullptr) {
             EnableWriteEvent(false);
         }
         rc = (0 == shutdown(_socketHandle, SHUT_WR));
@@ -39,7 +43,7 @@ bool FastOS_UNIX_Socket::SetSoBlocking (bool blockingEnabled)
     bool rc=false;
 
     if (CreateIfNoSocketYet()) {
-        int flags = fcntl(_socketHandle, F_GETFL, NULL);
+        int flags = fcntl(_socketHandle, F_GETFL, nullptr);
 
         if (flags >= 0) {
             if (blockingEnabled) {

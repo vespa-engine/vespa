@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <util/clientstatus.h>
 #include <fstream>
 #include <atomic>
 #include <thread>
@@ -150,6 +149,11 @@ private:
     ClientArguments &operator=(const ClientArguments &);
 };
 
+
+class Timer;
+class HTTPClient;
+class FileReader;
+class ClientStatus;
 /**
  * This class implements a single test client. The clients are run in
  * separate threads to simulate several simultanious users. The
@@ -161,9 +165,9 @@ class Client
 private:
     std::unique_ptr<ClientArguments> _args;
     std::unique_ptr<ClientStatus>    _status;
-    Timer::UP                        _reqTimer;
-    Timer::UP                        _cycleTimer;
-    Timer::UP                        _masterTimer;
+    std::unique_ptr<Timer>           _reqTimer;
+    std::unique_ptr<Timer>           _cycleTimer;
+    std::unique_ptr<Timer>           _masterTimer;
     std::unique_ptr<HTTPClient>      _http;
     std::unique_ptr<FileReader>      _reader;
     std::unique_ptr<std::ofstream>   _output;

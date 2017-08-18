@@ -6,6 +6,8 @@
 #include <vespa/fastos/mutex.h>
 #include <vespa/fastos/cond.h>
 #include <vespa/fastos/time.h>
+#include <cassert>
+
 
 namespace vespalib {
 

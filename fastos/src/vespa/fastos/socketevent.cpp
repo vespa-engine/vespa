@@ -1,9 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/socketevent.h>
-#include <vespa/fastos/socket.h>
+#include "socketevent.h"
+#include "socket.h"
+#include <cassert>
+#include <unistd.h>
 
-FastOS_SocketEventObjects *FastOS_SocketEventObjects::_objects = NULL;
+
+FastOS_SocketEventObjects *FastOS_SocketEventObjects::_objects = nullptr;
 FastOS_Mutex FastOS_SocketEventObjects::_listMutex;
 int FastOS_SocketEventObjects::_objectCount = 0;
 bool FastOS_SocketEventObjects::_initialized = false;
@@ -14,12 +17,12 @@ FastOS_SocketEvent::FastOS_SocketEvent () :
     _socketsInArray(0),
     _getEventsIndex(0),
     _wokeUp(false),
-    _objs(NULL)
+    _objs(nullptr)
 {
 
     _objs = FastOS_SocketEventObjects::ObtainObject(this);
 
-    if(_objs != NULL) {
+    if(_objs != nullptr) {
         if(_objs->_initOk) {
         }
     }
@@ -54,19 +57,19 @@ FastOS_SocketEventObjects *FastOS_SocketEventObjects::ObtainObject (FastOS_Socke
     FastOS_SocketEventObjects *node;
     _listMutex.Lock();
 
-    if(_objects == NULL)
+    if(_objects == nullptr)
     {
         _objectCount++;
         _listMutex.Unlock();
 
         node = new FastOS_SocketEventObjects(event);
-        node->_next = NULL;
+        node->_next = nullptr;
     }
     else
     {
         node = _objects;
         _objects = node->_next;
-        node->_next = NULL;
+        node->_next = nullptr;
 
         _listMutex.Unlock();
     }
@@ -76,7 +79,7 @@ FastOS_SocketEventObjects *FastOS_SocketEventObjects::ObtainObject (FastOS_Socke
 
 void FastOS_SocketEventObjects::ReleaseObject (FastOS_SocketEventObjects *node)
 {
-    if (node != NULL)
+    if (node != nullptr)
         node->ReleasedCleanup();
     _listMutex.Lock();
 
@@ -96,7 +99,7 @@ bool
 FastOS_SocketEvent::epollInit()
 {
     _epollfd = epoll_create(4093);
-    if (_epollfd != -1 && _objs != NULL && _objs->_initOk) {
+    if (_epollfd != -1 && _objs != nullptr && _objs->_initOk) {
         epoll_event evt;
         evt.events = EPOLLIN;
         evt.data.ptr = 0;
@@ -150,7 +153,7 @@ FastOS_SocketEvent::epollWait(bool &error, int msTimeout)
     for (int i = 0; i < res; ++i) {
         const epoll_event &evt = _epollEvents[i];
         FastOS_SocketInterface *sock = (FastOS_SocketInterface *) evt.data.ptr;
-        if (sock == NULL) {
+        if (sock == nullptr) {
             HandleWakeUp();
         } else {
             sock->_readPossible  = sock->_readEventEnabled &&
@@ -179,7 +182,7 @@ FastOS_SocketEvent::epollGetEvents(bool *wakeUp, int msTimeout,
         const epoll_event &evt = _epollEvents[i];
         FastOS_IOEvent &appEvt = events[idx];
         FastOS_SocketInterface *sock = (FastOS_SocketInterface *) evt.data.ptr;
-        if (sock == NULL) {
+        if (sock == nullptr) {
             HandleWakeUp(); // sets _wokeUp
         } else {
             appEvt._readOccurred = sock->_readEventEnabled &&
@@ -224,7 +227,7 @@ void FastOS_SocketEventObjects::ClassCleanup(void)
     {
         FastOS_SocketEventObjects *node = _objects;
 
-        if(node == NULL)
+        if(node == nullptr)
             break;
         else
         {
@@ -238,11 +241,11 @@ void FastOS_SocketEventObjects::ClassCleanup(void)
 
 
 FastOS_SocketEventObjects::FastOS_SocketEventObjects(FastOS_SocketEvent *event)
-    : _next(NULL),
+    : _next(nullptr),
       _initOk(false),
-      _socketArray(NULL),
+      _socketArray(nullptr),
       _socketArrayAllocSize(0u),
-      _pollfds(NULL),
+      _pollfds(nullptr),
       _pollfdsAllocSize(0)
 {
     // Connect ourselves to the socketevent object.
@@ -256,12 +259,12 @@ FastOS_SocketEventObjects::ReleasedCleanup(void)
 {
     if (_socketArrayAllocSize > 16) {
         delete [] _socketArray;
-        _socketArray = NULL;
+        _socketArray = nullptr;
         _socketArrayAllocSize = 0;
     }
     if (_pollfdsAllocSize > 16) {
         free(_pollfds);
-        _pollfds = NULL;
+        _pollfds = nullptr;
         _pollfdsAllocSize = 0;
     }
 }

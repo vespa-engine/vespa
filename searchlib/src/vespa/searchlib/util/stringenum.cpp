@@ -4,6 +4,7 @@
 
 #include "stringenum.h"
 #include <vespa/fastlib/io/bufferedfile.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".seachlib.util.stringenum");

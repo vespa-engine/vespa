@@ -4,14 +4,14 @@
 #include "ibucketfreezelistener.h"
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/vespalib/util/closuretask.h>
+#include <algorithm>
 
 using document::BucketId;
 using vespalib::makeClosure;
 using vespalib::makeTask;
 using vespalib::MonitorGuard;
 
-namespace proton
-{
+namespace proton {
 
 FrozenBucketsMap::FrozenBucketsMap() :
     _lock(),

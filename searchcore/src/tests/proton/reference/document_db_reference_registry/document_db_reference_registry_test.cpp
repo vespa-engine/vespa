@@ -4,14 +4,14 @@
 #include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
 #include <vespa/searchcore/proton/test/mock_document_db_reference.h>
 #include <thread>
+#include <unistd.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP("document_db_reference_registry_test");
 
-namespace proton
-{
+namespace proton {
 
-namespace
-{
+namespace {
 
 
 std::mutex lock;

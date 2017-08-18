@@ -7,13 +7,13 @@
 * Implementation of FastOS_Linux_File methods.
 *****************************************************************************/
 
-#include <vespa/fastos/file.h>
+#include "file.h"
 #include <sstream>
-#include <stdexcept>
+#include <unistd.h>
+#include <fcntl.h>
 
 const size_t FastOS_Linux_File::_directIOFileAlign = 4096;
 const size_t FastOS_Linux_File::_directIOMemAlign = 4096;
-const size_t FastOS_Linux_File::_pageSize = 4096;
 
 FastOS_Linux_File::FastOS_Linux_File(const char *filename)
     : FastOS_UNIX_File(filename),
@@ -31,7 +31,7 @@ ssize_t
 FastOS_Linux_File::readInternal(int fh, void *buffer, size_t length, int64_t readOffset)
 {
     ssize_t readResult = ::pread(fh, buffer, length, readOffset);
-    if (readResult < 0 && _failedHandler != NULL) {
+    if (readResult < 0 && _failedHandler != nullptr) {
         int error = errno;
         const char *fileName = GetFileName();
         _failedHandler("read", fileName, error, readOffset, length, readResult);
@@ -45,7 +45,7 @@ ssize_t
 FastOS_Linux_File::readInternal(int fh, void *buffer, size_t length)
 {
     ssize_t readResult = ::read(fh, buffer, length);
-    if (readResult < 0 && _failedHandler != NULL) {
+    if (readResult < 0 && _failedHandler != nullptr) {
         int error = errno;
         int64_t readOffset = GetPosition();
         const char *fileName = GetFileName();
@@ -60,7 +60,7 @@ ssize_t
 FastOS_Linux_File::writeInternal(int fh, const void *buffer, size_t length, int64_t writeOffset)
 {
     ssize_t writeRes = ::pwrite(fh, buffer, length, writeOffset);
-    if (writeRes < 0 && _failedHandler != NULL) {
+    if (writeRes < 0 && _failedHandler != nullptr) {
         int error = errno;
         const char *fileName = GetFileName();
         _failedHandler("write", fileName, error, writeOffset, length, writeRes);
@@ -73,7 +73,7 @@ ssize_t
 FastOS_Linux_File::writeInternal(int fh, const void *buffer, size_t length)
 {
     ssize_t writeRes = ::write(fh, buffer, length);
-    if (writeRes < 0 && _failedHandler != NULL) {
+    if (writeRes < 0 && _failedHandler != nullptr) {
         int error = errno;
         int64_t writeOffset = GetPosition();
         const char *fileName = GetFileName();

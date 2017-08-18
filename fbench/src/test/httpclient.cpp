@@ -49,6 +49,6 @@ main(int argc, char **argv)
   } else {
       printf("ERROR: could not fetch URL content.\n");
   }
-  printf("REUSE COUNT: %" PRIu64 "\n", client->GetReuseCount());
+  printf("REUSE COUNT: %zu\n", client->GetReuseCount());
   return 0;
 }

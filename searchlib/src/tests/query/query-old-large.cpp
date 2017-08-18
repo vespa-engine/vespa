@@ -4,7 +4,7 @@
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <limits>
+#include <sys/resource.h>
 
 using namespace search;
 using namespace search::query;

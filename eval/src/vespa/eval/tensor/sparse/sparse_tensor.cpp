@@ -13,11 +13,11 @@
 #include <vespa/vespalib/stllike/hash_map_equal.hpp>
 #include <vespa/vespalib/util/array_equal.hpp>
 #include <sstream>
+#include <algorithm>
 
 using vespalib::eval::TensorSpec;
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 namespace {
 
@@ -307,8 +307,6 @@ SparseTensor::reduce(const eval::BinaryOperation &op,
                           { return op.eval(lhsValue, rhsValue); });
 }
 
-} // namespace vespalib::tensor
-
-} // namespace vespalib
+}
 
 VESPALIB_HASH_MAP_INSTANTIATE(vespalib::tensor::SparseTensorAddressRef, double);

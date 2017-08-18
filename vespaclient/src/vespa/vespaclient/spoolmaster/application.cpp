@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <dirent.h>
 #include <unistd.h>
+#include <cstring>
+#include <sys/stat.h>
 
 #include "application.h"
 

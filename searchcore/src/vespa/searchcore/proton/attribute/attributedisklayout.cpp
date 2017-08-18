@@ -4,6 +4,7 @@
 #include "attribute_directory.h"
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/fastos/file.h>
+#include <cassert>
 
 namespace proton {
 

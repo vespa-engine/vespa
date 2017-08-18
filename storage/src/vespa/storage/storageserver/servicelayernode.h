@@ -11,6 +11,8 @@
 #include "applicationgenerationfetcher.h"
 #include "servicelayernodecontext.h"
 #include "storagenode.h"
+#include <vespa/storage/visiting/visitormessagesessionfactory.h>
+#include <vespa/storage/common/visitorfactory.h>
 #include <vespa/storage/bucketdb/minimumusedbitstracker.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/config-stor-devices.h>
@@ -65,7 +67,7 @@ private:
     void configure(std::unique_ptr<vespa::config::storage::StorDevicesConfig> config) override;
     VisitorMessageSession::UP createSession(Visitor&, VisitorThread&) override;
     documentapi::Priority::Value toDocumentPriority(uint8_t storagePriority) const override;
-    StorageLink::UP createChain() override;
+    std::unique_ptr<StorageLink> createChain() override;
     void removeConfigSubscriptions() override;
 };
 

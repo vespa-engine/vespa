@@ -6,12 +6,14 @@
  * @author  Div, Oivind H. Danielsen
  */
 
-#include <vespa/fastos/app.h>
-#include <vespa/fastos/socket.h>
-#include <vespa/fastos/file.h>
+#include "app.h"
+#include "socket.h"
+#include "file.h"
 
-#include <vespa/fastos/process.h>
-#include <vespa/fastos/thread.h>
+#include "process.h"
+#include "thread.h"
+#include <cstring>
+#include <fcntl.h>
 
 FastOS_ApplicationInterface *FastOS_ProcessInterface::_app;
 FastOS_ThreadPool *FastOS_ProcessInterface::GetThreadPool ()
@@ -25,16 +27,16 @@ FastOS_ThreadPool *FastOS_ApplicationInterface::GetThreadPool ()
 }
 
 FastOS_ApplicationInterface::FastOS_ApplicationInterface() :
-    _threadPool(NULL),
-    _processList(NULL),
-    _processListMutex(NULL),
+    _threadPool(nullptr),
+    _processList(nullptr),
+    _processListMutex(nullptr),
     _disableLeakReporting(false),
     _argc(0),
-    _argv(NULL)
+    _argv(nullptr)
 {
     FastOS_ProcessInterface::_app = this;
     char * fadvise = getenv("VESPA_FADVISE_OPTIONS");
-    if (fadvise != NULL) {
+    if (fadvise != nullptr) {
         int fadviseOptions(0);
         if (strstr(fadvise, "SEQUENTIAL")) { fadviseOptions |= POSIX_FADV_SEQUENTIAL; }
         if (strstr(fadvise, "RANDOM"))     { fadviseOptions |= POSIX_FADV_RANDOM; }
@@ -61,7 +63,7 @@ bool FastOS_ApplicationInterface::Init ()
             {
                 const char *errorMsg = FastOS_Socket::InitializeServices();
 
-                if(errorMsg == NULL)
+                if(errorMsg == nullptr)
                 {
                     _processListMutex = new FastOS_Mutex();
                     _threadPool = new FastOS_ThreadPool(128 * 1024);
@@ -89,19 +91,19 @@ bool FastOS_ApplicationInterface::Init ()
 
 void FastOS_ApplicationInterface::Cleanup ()
 {
-    if(_threadPool != NULL)
+    if(_threadPool != nullptr)
     {
         //      printf("Closing threadpool...\n");
         _threadPool->Close();
         //      printf("Deleting threadpool...\n");
         delete _threadPool;
-        _threadPool = NULL;
+        _threadPool = nullptr;
     }
 
-    if(_processListMutex != NULL)
+    if(_processListMutex != nullptr)
     {
         delete _processListMutex;
-        _processListMutex = NULL;
+        _processListMutex = nullptr;
     }
 
     FastOS_Socket::CleanupServices();
@@ -137,10 +139,10 @@ OnReceivedIPCMessage (const void *data, size_t length)
 void FastOS_ApplicationInterface::
 AddChildProcess (FastOS_ProcessInterface *node)
 {
-    node->_prev = NULL;
+    node->_prev = nullptr;
     node->_next = _processList;
 
-    if(_processList != NULL)
+    if(_processList != nullptr)
         _processList->_prev = node;
 
     _processList = node;
@@ -157,11 +159,11 @@ RemoveChildProcess (FastOS_ProcessInterface *node)
     if(node->_next)
     {
         node->_next->_prev = node->_prev;
-        node->_next = NULL;
+        node->_next = nullptr;
     }
 
-    if(node->_prev != NULL)
-        node->_prev = NULL;
+    if(node->_prev != nullptr)
+        node->_prev = nullptr;
 }
 
 bool

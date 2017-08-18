@@ -35,7 +35,7 @@ public:
       size = 32;
       size *= 1024*1024/sizeof(*a);
 
-      if ((a = static_cast<int *>(calloc(size, sizeof(*a)))) != NULL)
+      if ((a = static_cast<int *>(calloc(size, sizeof(*a)))) != nullptr)
       {
          // Standard loop
          start.SetNow();
@@ -155,6 +155,6 @@ public:
 int main (int argc, char **argv)
 {
    PrefetchTestApp app;
-   setvbuf(stdout, NULL, _IOLBF, 8192);
+   setvbuf(stdout, nullptr, _IOLBF, 8192);
    return app.Entry(argc, argv);
 }

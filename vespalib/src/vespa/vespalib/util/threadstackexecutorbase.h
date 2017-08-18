@@ -11,9 +11,12 @@
 #include <memory>
 #include <vector>
 #include <functional>
-#include <vespa/fastos/thread.h>
+
+class FastOS_ThreadPool;
 
 namespace vespalib {
+
+namespace thread { class ThreadInit; }
 
 // Convenience macro used to create a function that can be used as an
 // init function when creating an executor to inject a frame with the
@@ -46,13 +49,6 @@ public:
     using init_fun_t = std::function<int(Runnable&)>;
 
 private:
-    struct ThreadInit : public FastOS_Runnable {
-        Runnable &worker;
-        init_fun_t init_fun;
-        explicit ThreadInit(Runnable &worker_in, init_fun_t init_fun_in)
-            : worker(worker_in), init_fun(std::move(init_fun_in)) {}
-        void Run(FastOS_ThreadInterface *, void *) override;
-    };
 
     struct TaggedTask {
         Task::UP task;
@@ -102,18 +98,18 @@ private:
         void unblock();
     };
 
-    FastOS_ThreadPool               _pool;
-    Monitor                         _monitor;
-    Stats                           _stats;
-    Gate                            _executorCompletion;
-    ArrayQueue<TaggedTask>          _tasks;
-    ArrayQueue<Worker*>             _workers;
-    std::vector<BlockedThread*>     _blocked;
-    EventBarrier<BarrierCompletion> _barrier;
-    uint32_t                        _taskCount;
-    uint32_t                        _taskLimit;
-    bool                            _closed;
-    std::unique_ptr<ThreadInit>     _thread_init;
+    std::unique_ptr<FastOS_ThreadPool>  _pool;
+    Monitor                              _monitor;
+    Stats                                _stats;
+    Gate                                 _executorCompletion;
+    ArrayQueue<TaggedTask>               _tasks;
+    ArrayQueue<Worker*>                  _workers;
+    std::vector<BlockedThread*>          _blocked;
+    EventBarrier<BarrierCompletion>      _barrier;
+    uint32_t                             _taskCount;
+    uint32_t                             _taskLimit;
+    bool                                 _closed;
+    std::unique_ptr<thread::ThreadInit>  _thread_init;
 
     void block_thread(const LockGuard &, BlockedThread &blocked_thread);
     void unblock_threads(const MonitorGuard &);

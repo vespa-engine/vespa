@@ -4,9 +4,9 @@
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/data/databuffer.h>
+#include <algorithm>
 
-namespace search {
-namespace docstore {
+namespace search::docstore {
 
 using document::BucketId;
 using vespalib::makeTask;
@@ -84,5 +84,4 @@ StoreByBucket::drain(IWrite & drainer)
     }
 }
 
-}
 }

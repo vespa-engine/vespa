@@ -4,9 +4,9 @@
 #include "sparse_tensor_address_builder.h"
 #include <vespa/eval/eval/value_type.h>
 #include <cassert>
+#include <algorithm>
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 SparseTensorUnsortedAddressBuilder::SparseTensorUnsortedAddressBuilder()
     : _elementStrings(),
@@ -46,6 +46,4 @@ SparseTensorUnsortedAddressBuilder::buildTo(SparseTensorAddressBuilder &
     }
 }
 
-
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

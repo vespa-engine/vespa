@@ -2,9 +2,9 @@
 
 #include "locationreadplanner.h"
 #include <vespa/memfilepersistence/memfile/memfileiointerface.h>
+#include <algorithm>
 
-namespace storage {
-namespace memfile {
+namespace storage::memfile {
 
 LocationDiskIoPlanner::LocationDiskIoPlanner(
         const MemFileIOInterface& io,
@@ -97,5 +97,4 @@ LocationDiskIoPlanner::print(std::ostream& out, bool verbose,
     }
 }
 
-} // memfile
-} // storage
+}

@@ -3,6 +3,7 @@
 #include "wordnummapper.h"
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/fastlib/io/bufferedfile.h>
+#include <cassert>
 
 namespace search::diskindex {
 

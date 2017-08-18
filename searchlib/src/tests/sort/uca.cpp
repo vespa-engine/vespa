@@ -1,17 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/common/sort.h>
 #include <vespa/searchlib/common/sortspec.h>
-#include <vespa/searchlib/common/converters.h>
 #include <vespa/vespalib/util/array.h>
-#include <memory>
-#include <string>
-#include <vector>
-#include <stdexcept>
 #include <unicode/ustring.h>
 #include <unicode/coll.h>
+#include <fcntl.h>
+#include <unistd.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP("uca_stress");
 
 using icu::Collator;

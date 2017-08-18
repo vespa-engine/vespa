@@ -10,6 +10,7 @@
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/net/server_socket.h>
+#include <csignal>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".fnet");

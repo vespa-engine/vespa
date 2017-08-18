@@ -3,6 +3,7 @@
 #include "indexproperties.h"
 #include "properties.h"
 #include <vespa/vespalib/locale/c.h>
+#include <limits>
 
 namespace search::fef::indexproperties {
 

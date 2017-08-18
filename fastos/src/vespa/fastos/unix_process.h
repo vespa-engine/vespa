@@ -8,15 +8,14 @@
 
 #pragma once
 
-#include <vespa/fastos/process.h>
-#include <vespa/fastos/app.h>
+#include "process.h"
+#include "app.h"
 #include <string>
 #include <memory>
 
 class FastOS_BoolCond;
 class FastOS_UNIX_RealProcess;
-
-#include <vespa/fastos/ringbuffer.h>
+class FastOS_RingBuffer;
 
 class FastOS_UNIX_Process : public FastOS_ProcessInterface
 {
@@ -45,41 +44,10 @@ public:
         int _pollIdx;
         std::unique_ptr<FastOS_RingBuffer> _readBuffer;
         std::unique_ptr<FastOS_RingBuffer> _writeBuffer;
-        DescriptorHandle(void)
-            : _fd(-1),
-              _wantRead(false),
-              _wantWrite(false),
-              _canRead(false),
-              _canWrite(false),
-              _pollIdx(-1),
-              _readBuffer(),
-              _writeBuffer()
-        {
-        }
-        ~DescriptorHandle() { }
-        void CloseHandle(void)
-        {
-            _wantRead = false;
-            _wantWrite = false;
-            _canRead = false;
-            _canWrite = false;
-            _pollIdx = -1;
-            if (_fd != -1) {
-                close(_fd);
-                _fd = -1;
-            }
-            if (_readBuffer.get() != NULL)
-                _readBuffer->Close();
-            if (_writeBuffer.get() != NULL)
-                _writeBuffer->Close();
-        }
-        void CloseHandleDirectChild(void)
-        {
-            if (_fd != -1) {
-                close(_fd);
-                _fd = -1;
-            }
-        }
+        DescriptorHandle();
+        ~DescriptorHandle();
+        void CloseHandle();
+        void CloseHandleDirectChild();
     };
 private:
     DescriptorHandle _descriptor[4];
@@ -95,8 +63,7 @@ private:
             GetProcessStarter();
     }
 
-    bool InternalWait (int *returnCode, int timeOutSeconds,
-                       bool *pollStillRunning);
+    bool InternalWait (int *returnCode, int timeOutSeconds, bool *pollStillRunning);
 public:
     enum DescriptorType
     {
@@ -119,32 +86,32 @@ public:
         else if(type == TYPE_STDERR)
             return _stderrListener;
 
-        return NULL;
+        return nullptr;
     }
 
     void CloseListener (DescriptorType type)
     {
         if(type == TYPE_STDOUT)
         {
-            if(_stdoutListener != NULL)
+            if(_stdoutListener != nullptr)
             {
-                _stdoutListener->OnReceiveData(NULL, 0);
-                _stdoutListener = NULL;
+                _stdoutListener->OnReceiveData(nullptr, 0);
+                _stdoutListener = nullptr;
             }
         }
         else if(type == TYPE_STDERR)
         {
-            if(_stderrListener != NULL)
+            if(_stderrListener != nullptr)
             {
-                _stderrListener->OnReceiveData(NULL, 0);
-                _stderrListener = NULL;
+                _stderrListener->OnReceiveData(nullptr, 0);
+                _stderrListener = nullptr;
             }
         }
     }
 
     FastOS_UNIX_Process (const char *cmdLine, bool pipeStdin = false,
-                         FastOS_ProcessRedirectListener *stdoutListener = NULL,
-                         FastOS_ProcessRedirectListener *stderrListener = NULL,
+                         FastOS_ProcessRedirectListener *stdoutListener = nullptr,
+                         FastOS_ProcessRedirectListener *stderrListener = nullptr,
                          int bufferSize = 65535);
     ~FastOS_UNIX_Process ();
     bool CreateInternal (bool useShell);
@@ -298,28 +265,8 @@ protected:
     void PollReapDirectChildren(void);
 
 public:
-    FastOS_UNIX_ProcessStarter (FastOS_ApplicationInterface *app)
-        : _app(app),
-          _processList(NULL),
-          _pid(-1),
-          _starterSocket(-1),
-          _mainSocket(-1),
-          _starterSocketDescr(-1),
-          _mainSocketDescr(-1),
-          _hasProxiedChildren(false),
-          _closedProxyProcessFiles(false),
-          _hasDetachedProcess(false),
-          _hasDirectChildren(false)
-    {
-    }
-
-    ~FastOS_UNIX_ProcessStarter ()
-    {
-        if(_starterSocket != -1)
-            close(_starterSocket);
-        if(_mainSocket != -1)
-            close(_mainSocket);
-    }
+    FastOS_UNIX_ProcessStarter (FastOS_ApplicationInterface *app);
+    ~FastOS_UNIX_ProcessStarter ();
 
     bool Start ();
     void Stop ();

@@ -239,7 +239,7 @@ GetConfig::Main()
             printf("configID   %s\n", rKey.getConfigId().c_str());
             printf("configMD5  %s\n", rState.md5.c_str());
 
-            printf("generation  %" PRId64 "\n", rState.generation);
+            printf("generation  %ld\n", rState.generation);
             printf("trace       %s\n", response->getTrace().toString().c_str());
         } else if (traceLevel > 0) {
             printf("trace       %s\n", response->getTrace().toString().c_str());

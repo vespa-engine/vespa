@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <sys/stat.h>
-#include <assert.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 #include <vespa/log/control-file.h>

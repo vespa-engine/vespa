@@ -2,10 +2,8 @@
 
 #include "fakeegcompr64filterocc.h"
 #include "fpfactory.h"
-#include <vespa/searchlib/bitcompression/compression.h>
-#include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/queryeval/iterators.h>
-#include <vespa/searchlib/fef/termfieldmatchdataarray.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataPosition;

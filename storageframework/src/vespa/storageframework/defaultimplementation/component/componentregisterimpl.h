@@ -31,9 +31,8 @@ namespace metrics {
 
 }
 
-namespace storage {
-namespace framework {
-namespace defaultimplementation {
+
+namespace storage::framework::defaultimplementation {
 
 struct ShutdownListener {
     virtual ~ShutdownListener() {}
@@ -89,8 +88,4 @@ public:
 
 };
 
-} // defaultimplementation
-} // framework
-} // storage
-
-
+}

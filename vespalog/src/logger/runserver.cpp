@@ -6,7 +6,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <time.h>
-#include <signal.h>
+#include <csignal>
 
 #include <sys/select.h>
 #include <sys/types.h>

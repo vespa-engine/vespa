@@ -6,8 +6,6 @@
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
-#include <vespa/searchlib/queryeval/blueprint.h>
-#include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
@@ -45,11 +43,11 @@ using storage::spi::Timestamp;
 using vespalib::GenerationHandler;
 using vespalib::GenerationHolder;
 using searchcorespi::IFlushTarget;
+using namespace std::literals;
 
 namespace proton {
 
-namespace
-{
+namespace {
 
 static constexpr uint32_t numBucketBits = UINT32_C(20);
 static constexpr uint64_t timestampBias = UINT64_C(2000000000000);
@@ -666,7 +664,7 @@ TEST("requireThatStatsAreUpdated")
     EXPECT_GREATER(lastAllocated, perGidUsed);
     EXPECT_GREATER(lastUsed, perGidUsed);
 
-    FastOS_Thread::Sleep(2200);
+    std::this_thread::sleep_for(2200ms);
     addGid(dms, gid1, bucketId1, time1);
     EXPECT_EQUAL(2u, dms.getStatus().getNumDocs());
     EXPECT_EQUAL(2u, dms.getStatus().getNumValues());

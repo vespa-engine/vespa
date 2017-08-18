@@ -2,14 +2,15 @@
 
 #include "dense_tensor_builder.h"
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <cassert>
+#include <limits>
+#include <algorithm>
+
 
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;
 
-namespace vespalib {
-namespace tensor {
+namespace vespalib::tensor {
 
 namespace {
 
@@ -169,5 +170,4 @@ DenseTensorBuilder::build()
     return result;
 }
 
-} // namespace vespalib::tensor
-} // namespace vespalib
+}

@@ -1010,8 +1010,8 @@ TEST_F("requireThatInversionIsWorking", DictionaryFixture<Fixture>)
     LOG(info,
         "Before feature compaction: allocElems=%" PRIu64 ", usedElems=%" PRIu64
         ", deadElems=%" PRIu64 ", holdElems=%" PRIu64
-        ", freeBuffers=%" PRIu32 ", activeBuffers=%" PRIu32
-        ", holdBuffers=%" PRIu32,
+        ", freeBuffers=%u, activeBuffers=%u"
+        ", holdBuffers=%u",
         beforeStats._allocElems,
         beforeStats._usedElems,
         beforeStats._deadElems,
@@ -1030,8 +1030,8 @@ TEST_F("requireThatInversionIsWorking", DictionaryFixture<Fixture>)
     LOG(info,
         "During feature compaction: allocElems=%" PRIu64 ", usedElems=%" PRIu64
         ", deadElems=%" PRIu64 ", holdElems=%" PRIu64
-        ", freeBuffers=%" PRIu32 ", activeBuffers=%" PRIu32
-        ", holdBuffers=%" PRIu32,
+        ", freeBuffers=%u, activeBuffers=%u"
+        ", holdBuffers=%u",
         duringStats._allocElems,
         duringStats._usedElems,
         duringStats._deadElems,
@@ -1045,8 +1045,8 @@ TEST_F("requireThatInversionIsWorking", DictionaryFixture<Fixture>)
     LOG(info,
         "After feature compaction: allocElems=%" PRIu64 ", usedElems=%" PRIu64
         ", deadElems=%" PRIu64 ", holdElems=%" PRIu64
-        ", freeBuffers=%" PRIu32 ", activeBuffers=%" PRIu32
-        ", holdBuffers=%" PRIu32,
+        ", freeBuffers=%u, activeBuffers=%u"
+        ", holdBuffers=%u",
         afterStats._allocElems,
         afterStats._usedElems,
         afterStats._deadElems,
@@ -1059,14 +1059,12 @@ TEST_F("requireThatInversionIsWorking", DictionaryFixture<Fixture>)
     TermFieldMatchDataArray matchData;
     matchData.add(&tfmd);
     {
-        PostingIterator itr(f._d.findFrozen("not", 0), featureStoreRef(f._d, 0),
-                            0, matchData);
+        PostingIterator itr(f._d.findFrozen("not", 0), featureStoreRef(f._d, 0), 0, matchData);
         itr.initFullRange();
         EXPECT_TRUE(itr.isAtEnd());
     }
     {
-        PostingIterator itr(f._d.findFrozen("a", 0), featureStoreRef(f._d, 0),
-                            0, matchData);
+        PostingIterator itr(f._d.findFrozen("a", 0), featureStoreRef(f._d, 0), 0, matchData);
         itr.initFullRange();
         EXPECT_EQUAL(10u, itr.getDocId());
         itr.unpack(10);
@@ -1083,33 +1081,27 @@ TEST_F("requireThatInversionIsWorking", DictionaryFixture<Fixture>)
         EXPECT_TRUE(itr.isAtEnd());
     }
     {
-        PostingIterator itr(f._d.findFrozen("x", 0), featureStoreRef(f._d, 0),
-                            0, matchData);
+        PostingIterator itr(f._d.findFrozen("x", 0), featureStoreRef(f._d, 0), 0, matchData);
         itr.initFullRange();
         EXPECT_TRUE(itr.isAtEnd());
     }
     {
-        PostingIterator itr(f._d.findFrozen("x", 1), featureStoreRef(f._d, 1),
-                            1, matchData);
+        PostingIterator itr(f._d.findFrozen("x", 1), featureStoreRef(f._d, 1), 1, matchData);
         itr.initFullRange();
         EXPECT_EQUAL(30u, itr.getDocId());
         itr.unpack(30);
-        EXPECT_EQUAL("{6:2[e=0,w=1,l=6]}",
-                   toString(tfmd.getIterator(), true, true));
+        EXPECT_EQUAL("{6:2[e=0,w=1,l=6]}", toString(tfmd.getIterator(), true, true));
     }
     {
-        PostingIterator itr(f._d.findFrozen("x", 2), featureStoreRef(f._d, 2),
-                            2, matchData);
+        PostingIterator itr(f._d.findFrozen("x", 2), featureStoreRef(f._d, 2), 2, matchData);
         itr.initFullRange();
         EXPECT_EQUAL(30u, itr.getDocId());
         itr.unpack(30);
         // weight is hardcoded to 1 for new style il doc array field
-        EXPECT_EQUAL("{2:1[e=0,w=1,l=2]}",
-                   toString(tfmd.getIterator(), true, true));
+        EXPECT_EQUAL("{2:1[e=0,w=1,l=2]}", toString(tfmd.getIterator(), true, true));
     }
     {
-        PostingIterator itr(f._d.findFrozen("x", 3), featureStoreRef(f._d, 3),
-                            3, matchData);
+        PostingIterator itr(f._d.findFrozen("x", 3), featureStoreRef(f._d, 3), 3, matchData);
         itr.initFullRange();
         EXPECT_EQUAL(30u, itr.getDocId());
         itr.unpack(30);

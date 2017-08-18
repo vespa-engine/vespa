@@ -12,8 +12,8 @@
 #pragma once
 
 
-#include <vespa/fastos/mutex.h>
-
+#include "mutex.h"
+#include <pthread.h>
 
 class FastOS_UNIX_Mutex : public FastOS_MutexInterface
 {

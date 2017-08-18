@@ -5,6 +5,7 @@
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/vespalib/util/xmlstream.hpp>
+#include <climits>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".pendingclusterstate");

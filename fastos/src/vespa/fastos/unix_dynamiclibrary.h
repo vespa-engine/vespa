@@ -24,17 +24,17 @@ private:
     std::string  _libname;
 
 public:
-    FastOS_UNIX_DynamicLibrary(const char *libname = NULL);
+    FastOS_UNIX_DynamicLibrary(const char *libname = nullptr);
     ~FastOS_UNIX_DynamicLibrary();
 
     void SetLibName(const char *libname);
     bool NormalizeLibName(void);
     bool Close() override;
-    bool Open(const char *libname = NULL) override;
+    bool Open(const char *libname = nullptr) override;
     void * GetSymbol(const char *symbol) const override;
     std::string GetLastErrorString() const;
     const char * GetLibName() const { return _libname.c_str(); }
-    bool IsOpen()             const override { return (_handle != NULL); }
+    bool IsOpen()             const override { return (_handle != nullptr); }
 };
 
 

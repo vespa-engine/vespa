@@ -10,6 +10,8 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <iterator>
+#include <cassert>
+#include <algorithm>
 
 namespace metrics {
 

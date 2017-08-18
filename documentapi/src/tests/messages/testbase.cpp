@@ -3,6 +3,10 @@
 #include "testbase.h"
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/vespalib/util/exception.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <algorithm>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".testbase");
 

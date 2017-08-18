@@ -7,6 +7,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <ostream>
 #include <cassert>
+#include <algorithm>
 
 namespace storage::lib {
 

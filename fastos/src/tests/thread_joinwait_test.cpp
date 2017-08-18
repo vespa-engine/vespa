@@ -38,7 +38,7 @@ class Thread_JoinWait_Test : public ThreadTestBase
          jobs[i].ownThread = pool.NewThread(this,
                  static_cast<void *>(&jobs[i]));
 
-         rc = (jobs[i].ownThread != NULL);
+         rc = (jobs[i].ownThread != nullptr);
          Progress(rc, "Creating Thread %d", i+1);
 
          if(!rc)
@@ -56,7 +56,7 @@ class Thread_JoinWait_Test : public ThreadTestBase
                                      static_cast<void *>
                                      (&jobs[lastThreadNum]));
 
-         rc = (lastThread != NULL);
+         rc = (lastThread != nullptr);
          Progress(rc, "Creating last thread");
 
          if(rc)
@@ -115,6 +115,6 @@ int Thread_JoinWait_Test::Main ()
 int main (int argc, char **argv)
 {
    Thread_JoinWait_Test app;
-   setvbuf(stdout, NULL, _IOLBF, 8192);
+   setvbuf(stdout, nullptr, _IOLBF, 8192);
    return app.Entry(argc, argv);
 }

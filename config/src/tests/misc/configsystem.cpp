@@ -3,6 +3,7 @@
 #include <vespa/config/common/configsystem.h>
 #include <vespa/defaults.h>
 #include <vespa/fastos/file.h>
+#include <unistd.h>
 
 using namespace config;
 

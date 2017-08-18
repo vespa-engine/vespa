@@ -6,6 +6,9 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fastos/file.h>
 #include <ostream>
+#include <cassert>
+#include <unistd.h>
+#include <fcntl.h>
 #include <sys/stat.h>
 
 #include <vespa/log/log.h>

@@ -1,10 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP("expglomb_test");
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vector>
+#include <algorithm>
+
+#include <vespa/log/log.h>
+LOG_SETUP("expglomb_test");
 
 using search::bitcompression::DecodeContext64;
 using search::bitcompression::DecodeContext64Base;

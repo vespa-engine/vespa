@@ -14,9 +14,9 @@ class Thread_Sleep_Test : public ThreadTestBase
 
       FastOS_ThreadPool *pool = new FastOS_ThreadPool(128*1024);
 
-      if(Progress(pool != NULL, "Allocating ThreadPool"))
+      if(Progress(pool != nullptr, "Allocating ThreadPool"))
       {
-         bool rc = (NULL != pool->NewThread(this, NULL));
+         bool rc = (nullptr != pool->NewThread(this, nullptr));
          Progress(rc, "Creating Thread");
 
          Progress(true, "Sleeping 3 seconds");
@@ -47,6 +47,6 @@ int Thread_Sleep_Test::Main ()
 int main (int argc, char **argv)
 {
    Thread_Sleep_Test app;
-   setvbuf(stdout, NULL, _IOLBF, 8192);
+   setvbuf(stdout, nullptr, _IOLBF, 8192);
    return app.Entry(argc, argv);
 }

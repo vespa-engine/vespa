@@ -5,6 +5,7 @@
 #include "array_store.h"
 #include "datastore.hpp"
 #include <atomic>
+#include <algorithm>
 
 namespace search::datastore {
 

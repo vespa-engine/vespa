@@ -3,6 +3,8 @@
 #include "tests.h"
 #include <vespa/fastos/file.h>
 #include <memory>
+#include <cassert>
+#include <sys/mman.h>
 
 namespace {
 
@@ -276,7 +278,7 @@ public:
             Progress(rc, "Opening file 'generated/memorymaptest' read-only");
             if (rc) {
                 bool mmapEnabled;
-                char *mmapBuffer = NULL;
+                char *mmapBuffer = nullptr;
 
                 mmapEnabled = file.IsMemoryMapped();
                 mmapBuffer = static_cast<char *>(file.MemoryMapPtr(0));
@@ -830,6 +832,6 @@ int main (int argc, char **argv)
 {
     FileTest app;
 
-    setvbuf(stdout, NULL, _IOLBF, 8192);
+    setvbuf(stdout, nullptr, _IOLBF, 8192);
     return app.Entry(argc, argv);
 }

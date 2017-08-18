@@ -3,7 +3,7 @@
 #include "strfmt.h"
 #include <stdarg.h>
 #include <stdio.h>
-#include <assert.h>
+#include <cassert>
 
 namespace vespalib {
 namespace slime {

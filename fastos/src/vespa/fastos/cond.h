@@ -9,9 +9,7 @@
 
 #pragma once
 
-
-#include <vespa/fastos/types.h>
-#include <vespa/fastos/mutex.h>
+#include "mutex.h"
 
 
 /**

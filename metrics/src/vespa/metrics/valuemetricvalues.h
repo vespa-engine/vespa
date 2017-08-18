@@ -14,6 +14,7 @@
 #pragma once
 
 #include "metricvalueset.h"
+#include <limits>
 
 namespace metrics {
 

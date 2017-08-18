@@ -13,6 +13,8 @@
 #include <vespa/vespalib/objects/objectpredicate.h>
 #include <vespa/vespalib/objects/objectoperation.h>
 #include <vespa/vespalib/util/rusage.h>
+#include <csignal>
+
 #include <vespa/log/log.h>
 LOG_SETUP("grouping_benchmark");
 

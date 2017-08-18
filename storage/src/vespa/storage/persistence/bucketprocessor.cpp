@@ -3,6 +3,7 @@
 #include "bucketprocessor.h"
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <cassert>
 
 namespace storage {
 

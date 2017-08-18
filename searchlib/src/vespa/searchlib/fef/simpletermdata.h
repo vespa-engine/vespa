@@ -7,7 +7,7 @@
 #include "simpletermfielddata.h"
 #include <vespa/searchlib/query/weight.h>
 #include <vector>
-#include <assert.h>
+#include <cassert>
 
 namespace search {
 namespace fef {

@@ -2,6 +2,7 @@
 
 #include "bucketdb.h"
 #include <cassert>
+#include <algorithm>
 
 using document::GlobalId;
 using storage::spi::BucketChecksum;

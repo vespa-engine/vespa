@@ -3,6 +3,7 @@
 #include "hitcollector.h"
 #include <vespa/searchlib/fef/feature_resolver.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchvisitor.hitcollector");

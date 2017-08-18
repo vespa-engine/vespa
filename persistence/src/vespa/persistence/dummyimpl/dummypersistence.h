@@ -15,6 +15,7 @@
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <atomic>
+#include <map>
 
 namespace document {
     class FieldSet;

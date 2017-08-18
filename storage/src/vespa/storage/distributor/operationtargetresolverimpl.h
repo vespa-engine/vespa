@@ -5,9 +5,9 @@
 #include "operationtargetresolver.h"
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/vdslib/distribution/idealnodecalculator.h>
+#include <algorithm>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 struct BucketInstance : public vespalib::AsciiPrintable {
     document::BucketId _bucket;
@@ -106,5 +106,4 @@ public:
     }
 };
 
-} // distributor
-} // storage
+}

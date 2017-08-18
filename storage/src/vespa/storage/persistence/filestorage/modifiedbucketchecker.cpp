@@ -3,6 +3,7 @@
 #include "modifiedbucketchecker.h"
 #include "filestormanager.h"
 #include <vespa/config/common/exceptions.h>
+#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.filestor.modifiedbucketchecker");

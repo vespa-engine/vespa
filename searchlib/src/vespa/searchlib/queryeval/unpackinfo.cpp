@@ -3,9 +3,9 @@
 #include "unpackinfo.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <cassert>
+#include <algorithm>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 UnpackInfo::UnpackInfo()
     : _size(0)
@@ -101,5 +101,4 @@ UnpackInfo::toString() const
     return os.str();
 }
 
-} // namespace queryeval
-} // namespace search
+}

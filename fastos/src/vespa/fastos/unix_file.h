@@ -43,20 +43,19 @@ public:
 
     static std::string getCurrentDirectory();
 
-    static bool SetCurrentDirectory (const char *pathName) { return (chdir(pathName) == 0); }
+    static bool SetCurrentDirectory (const char *pathName);
     static int GetMaximumFilenameLength (const char *pathName);
     static int GetMaximumPathLength (const char *pathName);
 
-    FastOS_UNIX_File(const char *filename=NULL)
+    FastOS_UNIX_File(const char *filename=nullptr)
         : FastOS_FileInterface(filename),
-          _mmapbase(NULL),
+          _mmapbase(nullptr),
           _mmaplen(0),
           _filedes(-1),
           _mmapFlags(0),
           _mmapEnabled(false)
     { }
 
-    char *ToString();
     bool Open(unsigned int openFlags, const char *filename) override;
     bool Close() override;
     bool IsOpened() const override { return _filedes >= 0; }
@@ -67,18 +66,18 @@ public:
     }
 
     void *MemoryMapPtr(int64_t position) const override {
-        if (_mmapbase != NULL) {
+        if (_mmapbase != nullptr) {
             if (position < int64_t(_mmaplen)) {
                 return static_cast<void *>(static_cast<char *>(_mmapbase) + position);
             } else {  // This is an indication that the file size has changed and a remap/reopen must be done.
-                return NULL;
+                return nullptr;
             }
         } else {
-            return NULL;
+            return nullptr;
         }
     }
 
-    bool IsMemoryMapped() const override { return _mmapbase != NULL; }
+    bool IsMemoryMapped() const override { return _mmapbase != nullptr; }
     bool SetPosition(int64_t desiredPosition) override;
     int64_t GetPosition() override;
     int64_t GetSize() override;
@@ -95,8 +94,7 @@ public:
     static int64_t GetFreeDiskSpace (const char *path);
 };
 
-
-
+#include <dirent.h>
 /**
  * This is the generic UNIX implementation of @ref FastOS_DirectoryScan.
  */

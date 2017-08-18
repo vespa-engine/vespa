@@ -10,6 +10,8 @@
 #include <thread>
 #include <functional>
 #include <chrono>
+#include <unistd.h>
+#include <sys/stat.h>
 
 using namespace vespalib;
 

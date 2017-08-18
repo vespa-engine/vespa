@@ -7,9 +7,16 @@
 * Implementation of FastOS_UNIX_File methods.
 *****************************************************************************/
 
-#include <vespa/fastos/file.h>
-#include <sys/vfs.h>
+#include "file.h"
 #include <sstream>
+#include <cassert>
+#include <cstring>
+#include <unistd.h>
+#include <fcntl.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <sys/vfs.h>
 
 bool
 FastOS_UNIX_File::SetPosition(int64_t desiredPosition)
@@ -58,6 +65,8 @@ FastOS_UNIX_File::Stat(const char *filename, FastOS_StatInfo *statInfo)
 
     return rc;
 }
+
+bool FastOS_UNIX_File::SetCurrentDirectory (const char *pathName) { return (chdir(pathName) == 0); }
 
 
 int FastOS_UNIX_File::GetMaximumFilenameLength (const char *pathName)
@@ -164,10 +173,6 @@ FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
         FILE *file;
 
         switch(openFlags & FASTOS_FILE_OPEN_STDFLAGS) {
-        case FASTOS_FILE_OPEN_STDIN:
-            file = stdin;
-            SetFileName("stdin");
-            break;
 
         case FASTOS_FILE_OPEN_STDOUT:
             file = stdout;
@@ -380,10 +385,10 @@ FastOS_UNIX_File::TranslateError (const int osError)
     case ENXIO:      return ERR_NXIO;       // Device not configured
     }
 
-    if (osError == FASTOS_ENFILE_VERIFIED)
+    if (osError == ENFILE)
         return ERR_NFILE;
 
-    if (osError == FASTOS_EMFILE_VERIFIED)
+    if (osError == EMFILE)
         return ERR_MFILE;
 
     return ERR_UNKNOWN;

@@ -2,7 +2,7 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <signal.h>
+#include <csignal>
 
 #include <vespa/log/log.h>
 

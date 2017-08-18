@@ -12,14 +12,14 @@ int main (int argc, char **argv)
 
    void (*test)(char *buffer) = PerformanceTest;
 
-   test(NULL);
+   test(nullptr);
    return 0;
 }
 
 void PerformanceTest (char *buffer)
 {
    // Cause exception
-   *static_cast<char *>(NULL) = 'e';
+   *static_cast<char *>(nullptr) = 'e';
 
 #if 1
    FastOS_File file("test.txt");

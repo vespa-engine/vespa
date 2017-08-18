@@ -3,6 +3,7 @@
 #include "comprbuffer.h"
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/fastos/file.h>
+#include <cassert>
 
 namespace search {
 

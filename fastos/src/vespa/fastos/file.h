@@ -10,12 +10,7 @@
 
 #pragma once
 
-#include <vespa/fastos/types.h>
-#include <vespa/fastos/mutex.h>
-#include <vespa/fastos/time.h>
-
-#include <vespa/fastos/thread.h>
-
+#include "types.h"
 #include <string>
 
 const int FASTOS_FILE_OPEN_READ      = (1<<0);
@@ -23,12 +18,10 @@ const int FASTOS_FILE_OPEN_WRITE     = (1<<1);
 const int FASTOS_FILE_OPEN_EXISTING  = (1<<2);
 const int FASTOS_FILE_OPEN_CREATE    = (1<<3);
 const int FASTOS_FILE_OPEN_TRUNCATE  = (1<<4);
-const int FASTOS_FILE_OPEN_STDIN     = (1<<5);   // Use 2 bits here
 const int FASTOS_FILE_OPEN_STDOUT    = (2<<5);
 const int FASTOS_FILE_OPEN_STDERR    = (3<<5);
 const int FASTOS_FILE_OPEN_STDFLAGS  = (3<<5);
 const int FASTOS_FILE_OPEN_DIRECTIO  = (1<<7);
-const int FASTOS_FILE_OPEN_SHAREREAD = (1<<8);
 const int FASTOS_FILE_OPEN_SYNCWRITES = (1<<9); // synchronous writes
 
 /**
@@ -115,13 +108,6 @@ public:
     int getFAdviseOptions()                     const { return _fAdviseOptions; }
     void setFAdviseOptions(int options)               { _fAdviseOptions = options; }
 
-    char *ToString () {
-        const char dummy[]="FastOS_File::ToString() deprecated";
-        char *str = new char [strlen(dummy) + 1];
-        strcpy(str, dummy);
-        return str;
-    }
-
     /**
      * Initialize the file class. This is invoked by
      * @ref FastOS_Application::Init().
@@ -188,7 +174,7 @@ public:
      * @param  keepFile a 'const char *' value. If supplied, leave files with
      *                  this name alone.
      */
-    static void EmptyDirectory( const char *dir, const char *keepFile = NULL);
+    static void EmptyDirectory( const char *dir, const char *keepFile = nullptr);
 
     /**
      * Make a directory (special compatibility version)
@@ -212,7 +198,7 @@ public:
      * later using @ref SetFileName() or @ref Open().
      * @param filename  a filename (optional)
      */
-    FastOS_FileInterface(const char *filename=NULL);
+    FastOS_FileInterface(const char *filename=nullptr);
 
     /**
      * Destructor. If the current file is open, the destructor will close
@@ -250,7 +236,7 @@ public:
      *                     @ref Open().
      * @return Boolean success/failure
      */
-    virtual bool Open(unsigned int openFlags, const char *filename=NULL) = 0;
+    virtual bool Open(unsigned int openFlags, const char *filename=nullptr) = 0;
 
     /**
      * Open a file for read/write access. The file will be created if it does
@@ -261,7 +247,7 @@ public:
      *                       @ref SetFileName() or a previous call to @ref Open().
      * @return Boolean success/failure
      */
-    bool OpenReadWrite(const char *filename=NULL);
+    bool OpenReadWrite(const char *filename=nullptr);
 
     /**
      * Open a file for read/write access. This method fails if the file does
@@ -274,7 +260,7 @@ public:
      *                         @ref Open().
      * @return Boolean success/failure
      */
-    bool OpenExisting(bool abortIfNotExist=false, const char *filename=NULL);
+    bool OpenExisting(bool abortIfNotExist=false, const char *filename=nullptr);
 
     /**
      * Open a file for read access. This method fails if the file does
@@ -287,7 +273,7 @@ public:
      *                         @ref Open().
      * @return Boolean success/failure
      */
-    bool OpenReadOnlyExisting (bool abortIfNotExist=false, const char *filename=NULL);
+    bool OpenReadOnlyExisting (bool abortIfNotExist=false, const char *filename=nullptr);
 
     /**
      * Open a file for write access. If the file does not exist, it is created.
@@ -299,7 +285,7 @@ public:
      *                         @ref Open().
      * @return Boolean success/failure
      */
-    bool OpenWriteOnlyTruncate(const char *filename=NULL);
+    bool OpenWriteOnlyTruncate(const char *filename=nullptr);
 
     /**
      * Open a file for write access. This method fails if the file does
@@ -312,7 +298,7 @@ public:
      *                         @ref Open().
      * @return Boolean success/failure
      */
-    bool OpenWriteOnlyExisting (bool abortIfNotExist=false, const char *filename=NULL);
+    bool OpenWriteOnlyExisting (bool abortIfNotExist=false, const char *filename=nullptr);
 
     /**
      * Open a file for read-access only. This method fails if the file does
@@ -323,7 +309,7 @@ public:
      *                       @ref SetFileName() or a previous call to @ref Open().
      * @return Boolean success/failure
      */
-    bool OpenReadOnly(const char *filename=NULL);
+    bool OpenReadOnly(const char *filename=nullptr);
 
     /**
      * Open a file for write-access only.  The file will be created if it does
@@ -334,9 +320,7 @@ public:
      *                       @ref SetFileName() or a previous call to @ref Open().
      * @return Boolean success/failure
      */
-    bool OpenWriteOnly(const char *filename=NULL);
-
-    bool OpenStdin();
+    bool OpenWriteOnly(const char *filename=nullptr);
 
     /**
      * Close the file. The call will successfully do nothing if the file
@@ -574,7 +558,7 @@ public:
      *                           from malloc will be saved.  Use free() with
      *                           this pointer to deallocate the buffer.
      *                           This value is always set.
-     * @return Alligned pointer value or NULL if out of memory
+     * @return Alligned pointer value or nullptr if out of memory
      */
     virtual void *AllocateDirectIOBuffer(size_t byteSize, void *&realPtr);
 
@@ -588,7 +572,7 @@ public:
     /**
      * Inquiry about where in memory file data is located.
      * @return location of file data in memory.  If the file is not mapped,
-     * NULL is returned.
+     * nullptr is returned.
      */
     virtual void *MemoryMapPtr(int64_t position) const;
 
@@ -752,20 +736,14 @@ public:
      * @param path     Path of the directory to be scanned. The path string
      *                 is copied internally.
      */
-    FastOS_DirectoryScanInterface(const char *path)
-        : _searchPath(strdup(path))
-    {
-    }
+    FastOS_DirectoryScanInterface(const char *path);
 
     /**
      * Destructor.
      *
      * Frees operating system resources related to the directory scan.
      */
-    virtual ~FastOS_DirectoryScanInterface()
-    {
-        free(_searchPath);
-    }
+    virtual ~FastOS_DirectoryScanInterface();
 
     /**
      * Get search path.

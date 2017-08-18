@@ -2,7 +2,7 @@
 
 #include "joinoperation.h"
 #include <vespa/storageapi/message/bucketsplitting.h>
-
+#include <climits>
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".distributor.operation.idealstate.join");
 

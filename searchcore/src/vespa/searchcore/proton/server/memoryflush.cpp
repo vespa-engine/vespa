@@ -4,6 +4,7 @@
 #include <vespa/searchcore/proton/flushengine/tls_stats_map.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.memoryflush");

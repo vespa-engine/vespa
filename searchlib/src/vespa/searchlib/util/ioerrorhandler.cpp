@@ -4,6 +4,7 @@
 #include "statebuf.h"
 #include "statefile.h"
 #include <vespa/fastos/file.h>
+#include <unistd.h>
 
 namespace search {
 

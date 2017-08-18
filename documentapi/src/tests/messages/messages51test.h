@@ -6,7 +6,7 @@
 class Messages51Test : public Messages50Test {
 protected:
     const vespalib::Version getVersion() const override { return vespalib::Version(5, 1); }
-    bool shouldTestCoverage() const override { return TRUE; }
+    bool shouldTestCoverage() const override { return true; }
 
 public:
     Messages51Test();

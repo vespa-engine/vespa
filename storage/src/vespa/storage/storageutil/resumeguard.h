@@ -13,7 +13,7 @@ public:
     };
 
     ResumeGuard()
-        : _cb(NULL)
+        : _cb(nullptr)
     {}
 
     ResumeGuard(Callback& cb)
@@ -21,7 +21,7 @@ public:
 
     ResumeGuard(const ResumeGuard& other) {
         _cb = other._cb;
-        const_cast<ResumeGuard&>(other)._cb = NULL;
+        const_cast<ResumeGuard&>(other)._cb = nullptr;
     }
 
     ~ResumeGuard() {

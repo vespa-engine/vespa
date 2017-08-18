@@ -2,10 +2,9 @@
 #include "device.h"
 #include "ioevent.h"
 #include <sstream>
+#include <algorithm>
 
-namespace storage {
-
-namespace memfile {
+namespace storage::memfile {
 
 Device::Device(DeviceManager& manager)
     : _manager(manager)
@@ -54,6 +53,4 @@ Device::clearEvents()
     _events.clear();
 }
 
-} // memfile
-
-} // storage
+}

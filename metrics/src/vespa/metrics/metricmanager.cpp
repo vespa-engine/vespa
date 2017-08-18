@@ -14,6 +14,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <sstream>
+#include <algorithm>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".metrics.manager");

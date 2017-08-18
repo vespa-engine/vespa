@@ -1,13 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/metrics/jsonwriter.h>
+#include "jsonwriter.h"
 
-#include <vespa/metrics/countmetric.h>
-#include <vespa/metrics/valuemetric.h>
-#include <vespa/metrics/metricsnapshot.h>
-#include <vespa/vespalib/util/jsonstream.h>
+#include "countmetric.h"
+#include "valuemetric.h"
+#include "metricsnapshot.h"
 
-#include <algorithm>
 #include <iterator>
+#include <cassert>
 
 namespace metrics {
 

@@ -2,9 +2,8 @@
 
 #pragma once
 
-#include <cassert>
 #include <cstdint>
-#include <sys/types.h>
+#include <cstddef>
 
 namespace search::datastore {
 
@@ -33,10 +32,7 @@ public:
         uint64_t &_extraBytes;
     public:
         CleanContext(uint64_t &extraBytes) : _extraBytes(extraBytes) {}
-        void extraBytesCleaned(uint64_t value) {
-            assert(_extraBytes >= value);
-            _extraBytes -= value;
-        }
+        void extraBytesCleaned(uint64_t value);
     };
     
     BufferTypeBase(const BufferTypeBase &rhs) = delete;

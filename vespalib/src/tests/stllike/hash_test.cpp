@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/hash_map_equal.hpp>
 #include <cstddef>
+#include <algorithm>
 
 using namespace vespalib;
 using std::make_pair;

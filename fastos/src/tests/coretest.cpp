@@ -8,7 +8,7 @@ bomb(void)
 {
     char *p;
 
-    p = NULL;
+    p = nullptr;
     *p = 4;
 }
 
@@ -29,8 +29,8 @@ bombMain(void)
     FastS_Bomber bomber;
     FastOS_ThreadInterface *thread;
 
-    thread =  pool->NewThread(&bomber, NULL);
-    if (thread != NULL)
+    thread =  pool->NewThread(&bomber, nullptr);
+    if (thread != nullptr)
         thread->Join();
 
     pool->Close();
@@ -60,7 +60,7 @@ int
 main(int argc, char **argv)
 {
   FastS_CoreTestApp app;
-  setvbuf(stdout, NULL, _IOLBF, 8192);
+  setvbuf(stdout, nullptr, _IOLBF, 8192);
   if (argc == 1)
       return app.Entry(argc, argv);
   else

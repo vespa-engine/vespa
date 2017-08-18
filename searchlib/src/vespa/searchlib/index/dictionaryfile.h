@@ -5,6 +5,7 @@
 #include "postinglisthandle.h"
 #include "postinglistcountfile.h"
 #include <vespa/searchlib/common/tunefileinfo.h>
+#include <limits>
 
 class FastOS_FileInterface;
 

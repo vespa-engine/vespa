@@ -3,7 +3,7 @@
 #include "inspector.h"
 #include "object_traverser.h"
 #include "array_traverser.h"
-#include <assert.h>
+#include <cassert>
 
 namespace vespalib {
 namespace slime {

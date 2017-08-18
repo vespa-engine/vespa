@@ -5,14 +5,12 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".memory.logic.priority");
 
-namespace storage {
-namespace framework {
-namespace defaultimplementation {
+namespace storage::framework::defaultimplementation {
 
 PriorityMemoryLogic::PriorityMemoryLogic(Clock& c, uint64_t maxMem)
     : SimpleMemoryLogic(c, maxMem)
 {
-    LOG(debug, "Setup priority memory logic with max memory of %" PRIu64 " bytes", maxMem);
+    LOG(debug, "Setup priority memory logic with max memory of %lu bytes", maxMem);
 }
 
 float
@@ -29,6 +27,4 @@ PriorityMemoryLogic::print(std::ostream& out, bool verbose,
     SimpleMemoryLogic::print(out, verbose, indent);
 }
 
-} // defaultimplementation
-} // framework
-} // storage
+}

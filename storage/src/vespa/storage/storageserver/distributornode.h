@@ -24,7 +24,7 @@ class DistributorNode
     uint64_t _lastUniqueTimestampRequested;
     uint32_t _uniqueTimestampCounter;
     bool _manageActiveBucketCopies;
-    StorageLink::UP _retrievedCommunicationManager;
+    std::unique_ptr<StorageLink> _retrievedCommunicationManager;
 
 public:
     typedef std::unique_ptr<DistributorNode> UP;
@@ -38,7 +38,7 @@ public:
                     DistributorNodeContext&,
                     ApplicationGenerationFetcher& generationFetcher,
                     NeedActiveState,
-                    StorageLink::UP communicationManager = StorageLink::UP());
+                    std::unique_ptr<StorageLink> communicationManager);
     ~DistributorNode();
 
     const lib::NodeType& getNodeType() const override { return lib::NodeType::DISTRIBUTOR; }
@@ -49,7 +49,7 @@ public:
 
 private:
     void initializeNodeSpecific() override;
-    StorageLink::UP createChain() override;
+    std::unique_ptr<StorageLink> createChain() override;
     api::Timestamp getUniqueTimestamp() override;
 
     /**

@@ -4,10 +4,9 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/string_hash.h>
 #include <cmath>
+#include <limits>
 
-namespace vespalib {
-namespace eval {
-namespace test {
+namespace vespalib::eval::test {
 
 constexpr double my_nan = std::numeric_limits<double>::quiet_NaN();
 constexpr double my_inf = std::numeric_limits<double>::infinity();
@@ -414,6 +413,4 @@ EvalSpec::add_complex_cases() {
                    [](double a)->double{ return -double(!bool(a)); });
 }
 
-} // namespace vespalib::eval::test
-} // namespace vespalib::eval
-} // namespace vespalib
+}

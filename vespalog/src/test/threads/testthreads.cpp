@@ -4,6 +4,9 @@
 #include <vespa/fastos/thread.h>
 #include <vespa/log/bufferedlogger.h>
 #include <iostream>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/stat.h>
 
 using std::string;
 

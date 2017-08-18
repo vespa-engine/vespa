@@ -2,8 +2,9 @@
 
 #pragma once
 
-namespace search {
-namespace attribute {
+#include <limits>
+
+namespace search::attribute {
 
 /*
  * Persistent parameters for predicate attributes.
@@ -33,5 +34,4 @@ public:
     }
 };
 
-}  // namespace attribute
-}  // namespace search
+}

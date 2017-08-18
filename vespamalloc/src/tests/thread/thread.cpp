@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/testkit/testapp.h>
 #include <atomic>
+#include <unistd.h>
 
 using namespace vespalib;
 

@@ -5,6 +5,7 @@
 #include "dirtraverse.h"
 #include <vespa/fastos/file.h>
 #include <cassert>
+#include <cstring>
 
 namespace search {
 

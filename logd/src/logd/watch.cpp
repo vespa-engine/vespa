@@ -9,9 +9,12 @@
 #include "perform.h"
 #include "cmdbuf.h"
 #include <glob.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/time.h>
 
 LOG_SETUP("");
-LOG_RCSID("$Id$");
 
 namespace logdemon {
 namespace {
@@ -283,7 +286,7 @@ Watcher::watchfile()
             {
                 removeOldLogs(filename);
                 if (sb.st_size != offset) {
-                    LOG(warning, "logfile rotation incomplete after %d s (dropping %" PRIu64 " bytes)",
+                    LOG(warning, "logfile rotation incomplete after %d s (dropping %lu bytes)",
                         rotTime, sb.st_size - offset);
                 } else {
                     LOG(debug, "logfile rotation complete after %d s", rotTime);
@@ -412,7 +415,7 @@ Watcher::removeOldLogs(const char *prefix)
                 if (totalsize > (_confsubscriber.getRemoveMegabytes()
                                  * 1048576LL))
                 {
-                    LOG(info, "removing %s, total size (%" PRId64 ") too big",
+                    LOG(info, "removing %s, total size (%ld) too big",
                         fname, static_cast<int64_t>(totalsize));
                     if (unlink(fname) != 0) {
                         LOG(warning, "cannot remove %s: %s",

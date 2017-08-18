@@ -6,7 +6,7 @@
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/base/testdocrepo.h>
-#include <memory>
+#include <algorithm>
 
 using document::select::Node;
 using document::select::Parser;

@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("statefile_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchlib/util/statefile.h>
@@ -9,15 +8,18 @@ LOG_SETUP("statefile_test");
 #include <fstream>
 #include <string>
 #include <vespa/searchlib/test/statefile.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("statefile_test");
 
 using namespace search::test::statefile;
 
-namespace search
-{
+namespace search {
 
-namespace
-{
+namespace {
 
 bool
 hasFile(const char *name)

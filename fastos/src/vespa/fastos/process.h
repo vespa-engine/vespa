@@ -10,7 +10,8 @@
 
 #pragma once
 
-#include <vespa/fastos/types.h>
+#include "types.h"
+#include <cstddef>
 
 /**
  * This class serves as a sink for redirected (piped) output from
@@ -25,7 +26,7 @@ public:
      * You should assume that any thread can invoke this method.
      * For convenience the data buffer is always zero- terminated
      * (static_cast<uint8_t>(data[length]) = '\\0').
-     * When the pipe closes, the method is invoked with data = NULL
+     * When the pipe closes, the method is invoked with data = nullptr
      * and length = 0.
      * @param  data              Pointer to data
      * @param  length            Length of data block in bytes
@@ -75,7 +76,7 @@ public:
      * of PrefopenNoInherit.
      * @return              Internal data needed to cancel object inheritance.
      */
-    static void *PrefopenNoInherit (void) {return NULL;}
+    static void *PrefopenNoInherit (void) {return nullptr;}
 
     /**
      * Call this after opening files with fopen to avoid having
@@ -104,35 +105,21 @@ public:
      * @ref CreateWithShell to actually start the process.
      * @param  cmdLine           Command line
      * @param  pipeStdin         set to true in order to redirect stdin
-     * @param  stdoutListener    non-NULL to redirect stdout
-     * @param  stderrListener    non-NULL to redirect stderr
+     * @param  stdoutListener    non-nullptr to redirect stdout
+     * @param  stderrListener    non-nullptr to redirect stderr
      * @param  bufferSize        Size of redirect buffers
      */
     FastOS_ProcessInterface (const char *cmdLine,
                              bool pipeStdin = false,
-                             FastOS_ProcessRedirectListener *stdoutListener = NULL,
-                             FastOS_ProcessRedirectListener *stderrListener = NULL,
-                             int bufferSize = 65535) :
-        _extradoublehackforalignment(0.0),
-        _cmdLine(NULL),
-        _pipeStdin(pipeStdin),
-        _stdoutListener(stdoutListener),
-        _stderrListener(stderrListener),
-        _bufferSize(bufferSize),
-        _next(NULL),
-        _prev(NULL)
-    {
-        _cmdLine = strdup(cmdLine);
-    }
+                             FastOS_ProcessRedirectListener *stdoutListener = nullptr,
+                             FastOS_ProcessRedirectListener *stderrListener = nullptr,
+                             int bufferSize = 65535);
 
     /**
      * Destructor.
      * If @ref Wait has not been called yet, it is called here.
      */
-    virtual ~FastOS_ProcessInterface ()
-    {
-        free (_cmdLine);
-    };
+    virtual ~FastOS_ProcessInterface ();
 
     /**
      * Create and start the process. If your command line includes
@@ -167,7 +154,7 @@ public:
     /**
      * If you are redirecting the standard input stream of the process,
      * use this method to write data. To close the input stream,
-     * invoke @ref WriteStdin with data=NULL. If the input stream
+     * invoke @ref WriteStdin with data=nullptr. If the input stream
      * is not redirected, @ref WriteStdin will fail.
      * @param  data              Pointer to data
      * @param  length            Length of data block in bytes

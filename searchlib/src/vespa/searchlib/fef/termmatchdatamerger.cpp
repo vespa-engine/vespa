@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "termmatchdatamerger.h"
+#include <algorithm>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 TermMatchDataMerger::TermMatchDataMerger(const Inputs &allinputs,
                                          const TermFieldMatchDataArray &outputs)
@@ -70,5 +70,4 @@ TermMatchDataMerger::merge(uint32_t docid,
     }
 }
 
-} // namespace fef
-} // namespace search
+}

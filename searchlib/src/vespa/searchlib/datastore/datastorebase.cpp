@@ -2,6 +2,7 @@
 
 #include "datastore.h"
 #include <vespa/vespalib/util/array.hpp>
+#include <limits>
 
 using vespalib::GenerationHeldBase;
 

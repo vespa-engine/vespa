@@ -3,6 +3,7 @@
 #include <vespa/fastos/file.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/fastlib/util/base64.h>
+#include <cassert>
 
 class Base64Test : public FastOS_Application {
 public:

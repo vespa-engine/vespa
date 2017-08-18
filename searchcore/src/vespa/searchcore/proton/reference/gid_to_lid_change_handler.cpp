@@ -5,7 +5,7 @@
 #include <vespa/searchlib/common/lambdatask.h>
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/document/base/globalid.h>
-#include <assert.h>
+#include <cassert>
 
 using search::makeLambdaTask;
 
