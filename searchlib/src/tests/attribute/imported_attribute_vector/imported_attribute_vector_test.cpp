@@ -7,7 +7,26 @@
 namespace search {
 namespace attribute {
 
-using Fixture = ImportedAttributeFixture;
+
+template <bool useReadGuard = false>
+struct FixtureBase : public ImportedAttributeFixture
+{
+    FixtureBase()
+        : ImportedAttributeFixture()
+    {
+    }
+
+    std::shared_ptr<ImportedAttributeVector> get_imported_attr() {
+        if (useReadGuard) {
+            return imported_attr->makeReadGuard(false);
+        } else {
+            return imported_attr;
+        }
+    }
+};
+
+using Fixture = FixtureBase<false>;
+using ReadGuardFixture = FixtureBase<true>;
 
 TEST_F("Accessors return expected attributes", Fixture) {
     EXPECT_EQUAL(f.imported_attr->getReferenceAttribute().get(),
@@ -43,12 +62,12 @@ TEST_F("getBasicType() returns target vector basic type", Fixture) {
     EXPECT_EQUAL(BasicType::DOUBLE, f.imported_attr->getBasicType());
 }
 
-TEST_F("acquireGuard() acquires guards on both target and reference attributes", Fixture) {
+TEST_F("makeReadGuard(false) acquires guards on both target and reference attributes", Fixture) {
     add_n_docs_with_undefined_values(*f.reference_attr, 2);
     add_n_docs_with_undefined_values(*f.target_attr, 2);
     // Now at generation 1 in both attributes.
     {
-        auto guard = f.imported_attr->acquireGuard();
+        auto guard = f.imported_attr->makeReadGuard(false);
         add_n_docs_with_undefined_values(*f.reference_attr, 1);
         add_n_docs_with_undefined_values(*f.target_attr, 1);
         
@@ -65,12 +84,12 @@ TEST_F("acquireGuard() acquires guards on both target and reference attributes",
     EXPECT_EQUAL(3u, f.reference_attr->getFirstUsedGeneration());
 }
 
-TEST_F("acquireEnumGuard() acquires enum guard on target and regular guard on reference attribute", Fixture) {
+TEST_F("makeReadGuard(true) acquires enum guard on target and regular guard on reference attribute", Fixture) {
     f.reset_with_new_target_attr(create_single_attribute<StringAttribute>(BasicType::STRING));
     add_n_docs_with_undefined_values(*f.reference_attr, 2);
     add_n_docs_with_undefined_values(*f.target_attr, 2);
     {
-        auto guard = f.imported_attr->acquireEnumGuard();
+        auto guard = f.imported_attr->makeReadGuard(true);
         add_n_docs_with_undefined_values(*f.target_attr, 1);
         add_n_docs_with_undefined_values(*f.reference_attr, 1);
 
@@ -89,25 +108,52 @@ TEST_F("acquireEnumGuard() acquires enum guard on target and regular guard on re
     EXPECT_FALSE(has_active_enum_guards(*f.target_attr));
 }
 
-TEST_F("Single-valued integer attribute values can be retrieved via reference", Fixture) {
+template <typename Fixture>
+void
+checkSingleInt()
+{
+    Fixture f;
     reset_with_single_value_reference_mappings<IntegerAttribute, int32_t>(
             f, BasicType::INT32,
             {{DocId(1), dummy_gid(3), DocId(3), 1234},
              {DocId(3), dummy_gid(7), DocId(7), 5678}});
 
-    EXPECT_EQUAL(1234, f.imported_attr->getInt(DocId(1)));
-    EXPECT_EQUAL(5678, f.imported_attr->getInt(DocId(3)));
+    EXPECT_EQUAL(1234, f.get_imported_attr()->getInt(DocId(1)));
+    EXPECT_EQUAL(5678, f.get_imported_attr()->getInt(DocId(3)));
 }
 
-TEST_F("getValueCount() is 1 for mapped single value attribute", Fixture) {
+TEST("Single-valued integer attribute values can be retrieved via reference") {
+    TEST_DO(checkSingleInt<Fixture>());
+    TEST_DO(checkSingleInt<ReadGuardFixture>());
+}
+
+template <typename Fixture>
+void
+checkSingleMappedValueCount()
+{
+    Fixture f;
     reset_with_single_value_reference_mappings<IntegerAttribute, int32_t>(
             f, BasicType::INT32, {{DocId(1), dummy_gid(3), DocId(3), 1234}});
-    EXPECT_EQUAL(1u, f.imported_attr->getValueCount(DocId(1)));
+    EXPECT_EQUAL(1u, f.get_imported_attr()->getValueCount(DocId(1)));
 }
 
-TEST_F("getValueCount() is 0 for non-mapped single value attribute", Fixture) {
+TEST("getValueCount() is 1 for mapped single value attribute") {
+    TEST_DO(checkSingleMappedValueCount<Fixture>());
+    TEST_DO(checkSingleMappedValueCount<ReadGuardFixture>());
+}
+
+template <typename Fixture>
+void
+checkSingleNonMappedValueCount()
+{
+    Fixture f;
     add_n_docs_with_undefined_values(*f.reference_attr, 3);
-    EXPECT_EQUAL(0u, f.imported_attr->getValueCount(DocId(2)));
+    EXPECT_EQUAL(0u, f.get_imported_attr()->getValueCount(DocId(2)));
+}
+
+TEST("getValueCount() is 0 for non-mapped single value attribute") {
+    TEST_DO(checkSingleNonMappedValueCount<Fixture>());
+    TEST_DO(checkSingleNonMappedValueCount<ReadGuardFixture>());
 }
 
 TEST_F("getMaxValueCount() is 1 for single value attribute vectors", Fixture) {
@@ -148,11 +194,20 @@ TEST_F("Weighted integer attribute values can be retrieved via reference", Fixtu
     assert_multi_value_matches<WeightedInt>(f, DocId(3), doc7_values);
 }
 
-TEST_F("LID with not present GID reference mapping returns default value", Fixture) {
+template <class Fixture>
+void
+checkLidWithNotPresentGid()
+{
+    Fixture f;
     f.target_attr->addReservedDoc();
     add_n_docs_with_undefined_values(*f.reference_attr, 2);
     EXPECT_EQUAL(f.target_attr->getInt(DocId(0)), // Implicit default undefined value
-                 f.imported_attr->getInt(DocId(1)));
+                 f.get_imported_attr()->getInt(DocId(1)));
+}
+
+TEST("LID with not present GID reference mapping returns default value") {
+    TEST_DO(checkLidWithNotPresentGid<Fixture>());
+    TEST_DO(checkLidWithNotPresentGid<ReadGuardFixture>());
 }
 
 TEST_F("Singled-valued floating point attribute values can be retrieved via reference", Fixture) {
@@ -187,30 +242,53 @@ TEST_F("Weighted floating point attribute values can be retrieved via reference"
     assert_multi_value_matches<WeightedFloat>(f, DocId(3), doc7_values);
 }
 
-struct SingleStringAttrFixture : Fixture {
-    SingleStringAttrFixture() : Fixture() {
+template <bool useReadGuard = false>
+struct SingleStringAttrFixtureBase : FixtureBase<useReadGuard> {
+    SingleStringAttrFixtureBase() : FixtureBase<useReadGuard>() {
         setup();
     }
 
     void setup() {
-        reset_with_single_value_reference_mappings<StringAttribute, const char*>(
+        this->template reset_with_single_value_reference_mappings<StringAttribute, const char*>(
                 BasicType::STRING,
                 {{DocId(2), dummy_gid(3), DocId(3), "foo"},
                  {DocId(4), dummy_gid(7), DocId(7), "bar"}});
     }
 };
 
-TEST_F("Single-valued string attribute values can be retrieved via reference", SingleStringAttrFixture) {
+using SingleStringAttrFixture = SingleStringAttrFixtureBase<false>;
+using ReadGuardSingleStringAttrFixture = SingleStringAttrFixtureBase<true>;
+
+template <class Fixture>
+void
+checkSingleString()
+{
+    Fixture f;
     char buf[64];
-    EXPECT_EQUAL(vespalib::string("foo"), f.imported_attr->getString(DocId(2), buf, sizeof(buf)));
-    EXPECT_EQUAL(vespalib::string("bar"), f.imported_attr->getString(DocId(4), buf, sizeof(buf)));
+    EXPECT_EQUAL(vespalib::string("foo"), f.get_imported_attr()->getString(DocId(2), buf, sizeof(buf)));
+    EXPECT_EQUAL(vespalib::string("bar"), f.get_imported_attr()->getString(DocId(4), buf, sizeof(buf)));
 }
 
-TEST_F("getEnum() returns target vector enum via reference", SingleStringAttrFixture) {
+
+TEST("Single-valued string attribute values can be retrieved via reference") {
+    TEST_DO(checkSingleString<SingleStringAttrFixture>());
+    TEST_DO(checkSingleString<ReadGuardSingleStringAttrFixture>());
+}
+
+template <class Fixture>
+void
+checkSingleStringEnum()
+{
+    Fixture f;
     EXPECT_EQUAL(f.target_attr->getEnum(DocId(3)),
-                 f.imported_attr->getEnum(DocId(2)));
+                 f.get_imported_attr()->getEnum(DocId(2)));
     EXPECT_EQUAL(f.target_attr->getEnum(DocId(7)),
-                 f.imported_attr->getEnum(DocId(4)));
+                 f.get_imported_attr()->getEnum(DocId(4)));
+}
+
+TEST("getEnum() returns target vector enum via reference") {
+    TEST_DO(checkSingleStringEnum<SingleStringAttrFixture>());
+    TEST_DO(checkSingleStringEnum<ReadGuardSingleStringAttrFixture>());
 }
 
 TEST_F("findEnum() returns target vector enum via reference", SingleStringAttrFixture) {

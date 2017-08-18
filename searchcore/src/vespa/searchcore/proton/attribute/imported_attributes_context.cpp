@@ -12,23 +12,6 @@ using LockGuard = std::lock_guard<std::mutex>;
 
 namespace proton {
 
-ImportedAttributesContext::GuardedAttribute::GuardedAttribute(ImportedAttributeVector::SP attr,
-                                                              bool stableEnumGuard)
-    : _attr(std::move(attr)),
-      _guard(stableEnumGuard ? _attr->acquireEnumGuard() : _attr->acquireGuard())
-{
-}
-
-ImportedAttributesContext::GuardedAttribute::~GuardedAttribute()
-{
-}
-
-const IAttributeVector *
-ImportedAttributesContext::GuardedAttribute::get() const
-{
-    return _attr.get();
-}
-
 const IAttributeVector *
 ImportedAttributesContext::getOrCacheAttribute(const vespalib::string &name,
                                                AttributeCache &attributes,
@@ -41,8 +24,8 @@ ImportedAttributesContext::getOrCacheAttribute(const vespalib::string &name,
     }
     ImportedAttributeVector::SP result = _repo.get(name);
     if (result.get() != nullptr) {
-        attributes.emplace(name, GuardedAttribute(result, stableEnumGuard));
-        return result.get();
+        auto insRes = attributes.emplace(name, result->makeReadGuard(stableEnumGuard));
+        return insRes.first->second.get();
     } else {
         return nullptr;
     }
