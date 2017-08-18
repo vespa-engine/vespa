@@ -6,8 +6,6 @@
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
-#include <vespa/searchlib/queryeval/blueprint.h>
-#include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
