@@ -196,7 +196,7 @@ public class FileHelperTest {
         // also older than maxAge inside the sub directory, create some files which are newer than maxAge.
         // deleteDirectories() should NOT delete folder3
         File subFolder3 = folder.newFolder("test_folder3");
-        File subSubFolder3 = folder.newFolder("test_folder3/subSubFolder3");
+        File subSubFolder3 = folder.newFolder("test_folder3", "subSubFolder3");
 
         for (int j=0; j<11; j++) {
             File.createTempFile("test_", ".json", subSubFolder3);
@@ -274,7 +274,7 @@ public class FileHelperTest {
     private void initSubDirectories() throws IOException {
         File subFolder1 = folder.newFolder("test_folder1");
         File subFolder2 = folder.newFolder("test_folder2");
-        File subSubFolder2 = folder.newFolder("test_folder2/subSubFolder2");
+        File subSubFolder2 = folder.newFolder("test_folder2", "subSubFolder2");
 
         for (int j=0; j<6; j++) {
             File temp = File.createTempFile("test_", ".json", subFolder1);
