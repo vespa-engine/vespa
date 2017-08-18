@@ -173,10 +173,6 @@ FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
         FILE *file;
 
         switch(openFlags & FASTOS_FILE_OPEN_STDFLAGS) {
-        case FASTOS_FILE_OPEN_STDIN:
-            file = stdin;
-            SetFileName("stdin");
-            break;
 
         case FASTOS_FILE_OPEN_STDOUT:
             file = stdout;

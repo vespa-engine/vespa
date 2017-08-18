@@ -14,7 +14,6 @@
 
 const size_t FastOS_Linux_File::_directIOFileAlign = 4096;
 const size_t FastOS_Linux_File::_directIOMemAlign = 4096;
-const size_t FastOS_Linux_File::_pageSize = 4096;
 
 FastOS_Linux_File::FastOS_Linux_File(const char *filename)
     : FastOS_UNIX_File(filename),

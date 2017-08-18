@@ -10,12 +10,7 @@
 
 #pragma once
 
-#include <vespa/fastos/types.h>
-#include <vespa/fastos/mutex.h>
-#include <vespa/fastos/time.h>
-
-#include <vespa/fastos/thread.h>
-
+#include "types.h"
 #include <string>
 
 const int FASTOS_FILE_OPEN_READ      = (1<<0);
@@ -23,12 +18,10 @@ const int FASTOS_FILE_OPEN_WRITE     = (1<<1);
 const int FASTOS_FILE_OPEN_EXISTING  = (1<<2);
 const int FASTOS_FILE_OPEN_CREATE    = (1<<3);
 const int FASTOS_FILE_OPEN_TRUNCATE  = (1<<4);
-const int FASTOS_FILE_OPEN_STDIN     = (1<<5);   // Use 2 bits here
 const int FASTOS_FILE_OPEN_STDOUT    = (2<<5);
 const int FASTOS_FILE_OPEN_STDERR    = (3<<5);
 const int FASTOS_FILE_OPEN_STDFLAGS  = (3<<5);
 const int FASTOS_FILE_OPEN_DIRECTIO  = (1<<7);
-const int FASTOS_FILE_OPEN_SHAREREAD = (1<<8);
 const int FASTOS_FILE_OPEN_SYNCWRITES = (1<<9); // synchronous writes
 
 /**
@@ -328,8 +321,6 @@ public:
      * @return Boolean success/failure
      */
     bool OpenWriteOnly(const char *filename=nullptr);
-
-    bool OpenStdin();
 
     /**
      * Close the file. The call will successfully do nothing if the file

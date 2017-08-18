@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include <vespa/fastos/unix_file.h>
+#include "unix_file.h"
 
 /**
  * This is the Linux implementation of @ref FastOS_File. Most
@@ -57,5 +57,4 @@ private:
 
     static const size_t _directIOFileAlign;
     static const size_t _directIOMemAlign;
-    static const size_t _pageSize;
 };

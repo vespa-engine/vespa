@@ -462,13 +462,6 @@ FastOS_FileInterface::OpenWriteOnly(const char *filename)
     return Open(FASTOS_FILE_OPEN_WRITE, filename);
 }
 
-
-bool
-FastOS_FileInterface::OpenStdin()
-{
-    return Open(FASTOS_FILE_OPEN_STDIN);
-}
-
 FastOS_File::Error
 FastOS_FileInterface::GetLastError()
 {

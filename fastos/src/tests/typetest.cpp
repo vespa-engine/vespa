@@ -2,6 +2,7 @@
 
 #include "tests.h"
 #include <vespa/fastos/file.h>
+#include <vespa/fastos/time.h>
 #include <vespa/fastos/serversocket.h>
 
 #include <cstdlib>
