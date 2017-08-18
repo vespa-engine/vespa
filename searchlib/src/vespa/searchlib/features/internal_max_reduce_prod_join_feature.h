@@ -10,7 +10,14 @@ namespace features {
 /**
  * Feature for the specific replacement of the expression:
  *
- *      reduce(join(tensorFromLabels(A),tensorFromWeightedset(Q),f(x,y)(x*y)),max)
+ *      reduce(
+ *          join(
+ *              tensorFromLabels(attribute(A)),
+ *              tensorFromWeightedset(query(Q)),
+ *              f(x,y)(x*y)
+ *          ),
+ *          max
+ *      )
  *
  * where A is an array attribute of int or long type and Q is a query that parses as
  * a weighted set. This expression is replaced with this feature to avoid incurring

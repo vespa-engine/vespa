@@ -130,7 +130,7 @@ InternalMaxReduceProdJoinBlueprint::createInstance() const
 ParameterDescriptions
 InternalMaxReduceProdJoinBlueprint::getDescriptions() const
 {
-    return ParameterDescriptions().desc().attribute(ParameterCollection::ANY).string();
+    return ParameterDescriptions().desc().attribute(ParameterCollection::ARRAY).string();
 }
 
 bool
