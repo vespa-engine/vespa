@@ -11,7 +11,7 @@ namespace vespalib {
 namespace {
 enum { STACK_SIZE = (1u << 16) };
 
-static uint64_t getTimeInMillis() {
+uint64_t getTimeInMillis() {
     struct timeval mytime;
     gettimeofday(&mytime, 0);
     uint64_t mult = 1000;

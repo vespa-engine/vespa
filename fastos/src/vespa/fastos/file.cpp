@@ -502,11 +502,6 @@ FastOS_DirectoryScanInterface::FastOS_DirectoryScanInterface(const char *path)
 {
 }
 
-/**
- * Destructor.
- *
- * Frees operating system resources related to the directory scan.
- */
 FastOS_DirectoryScanInterface::~FastOS_DirectoryScanInterface()
 {
     free(_searchPath);
