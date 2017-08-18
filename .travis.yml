@@ -14,9 +14,6 @@ cache:
   - $HOME/.m2
   - $HOME/.ccache
 
-git:
-  depth: 1
-
 branches:
   only:
   - master
