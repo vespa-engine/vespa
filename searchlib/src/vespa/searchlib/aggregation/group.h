@@ -8,8 +8,7 @@
 #include <vespa/fastos/dynamiclibrary.h>
 #include <vector>
 
-namespace search {
-namespace aggregation {
+namespace search::aggregation {
 
 class GroupingLevel;
 class Grouping;
@@ -274,5 +273,4 @@ public:
     }
 };
 
-}
 }

@@ -1,13 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("blueprint_test");
+#include "mysearch.h"
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/vespalib/objects/objectdumper.h>
 #include <vespa/vespalib/objects/visit.h>
+#include <algorithm>
 
-#include "mysearch.h"
+#include <vespa/log/log.h>
+LOG_SETUP("blueprint_test");
 
 using namespace search::queryeval;
 using namespace search::fef;

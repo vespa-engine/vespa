@@ -4,8 +4,7 @@
 #include <vespa/vespalib/objects/objectoperation.h>
 #include <vespa/vespalib/objects/objectpredicate.h>
 
-namespace search {
-namespace aggregation {
+namespace search::aggregation {
 
 class Attribute2DocumentAccessor : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
 {
@@ -15,5 +14,3 @@ private:
 };
 
 }
-}
-

@@ -5,8 +5,7 @@
 #include <vespa/vespalib/objects/serializer.hpp>
 #include <vespa/vespalib/objects/deserializer.hpp>
 
-namespace search {
-namespace aggregation {
+namespace search::aggregation {
 
 using vespalib::FieldBase;
 using vespalib::Serializer;
@@ -42,7 +41,6 @@ VdsHit::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, _G_summaryField.getName(), _summary);
 }
 
-}
 }
 
 // this function was added by ../../forcelink.sh

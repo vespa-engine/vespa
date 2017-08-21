@@ -35,21 +35,7 @@ void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, const st
 }
 
 template<typename T>
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, const vespalib::LinkedPtr<T> &ptr) {
-    if (ptr.get()) {
-        visit(self, name, *ptr);
-    } else {
-        self.visitNull(name);
-    }
-}
-
-template<typename T>
 void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, const vespalib::IdentifiablePtr<T> &ptr) {
-    visit(self, name, ptr.get());
-}
-
-template<typename T>
-void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, const vespalib::IdentifiableLinkedPtr<T> &ptr) {
     visit(self, name, ptr.get());
 }
 

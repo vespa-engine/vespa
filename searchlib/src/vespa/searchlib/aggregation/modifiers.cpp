@@ -8,8 +8,7 @@
 
 using namespace search::expression;
 
-namespace search {
-namespace aggregation {
+namespace search::aggregation {
 
 bool Attribute2DocumentAccessor::check(const vespalib::Identifiable &obj) const
 {
@@ -49,7 +48,6 @@ void Attribute2DocumentAccessor::execute(vespalib::Identifiable &obj)
     }
 }
 
-}
 }
 
 // this function was added by ../../forcelink.sh

@@ -2,6 +2,7 @@
 
 #include "hitsaggregationresult.h"
 #include <vespa/document/fieldvalue/document.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.aggregation.hitsaggregationresult");

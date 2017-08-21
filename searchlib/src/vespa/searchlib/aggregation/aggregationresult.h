@@ -4,8 +4,7 @@
 #include <vespa/searchlib/expression/expressiontree.h>
 #include <vespa/searchlib/expression/resultnode.h>
 
-namespace search {
-namespace aggregation {
+namespace search::aggregation {
 
 using search::expression::DocId;
 
@@ -91,9 +90,8 @@ private:
         (void) rank;
         onAggregate(result);
     }
-    vespalib::LinkedPtr<expression::ExpressionTree> _expressionTree;
+    std::shared_ptr<expression::ExpressionTree> _expressionTree;
     uint32_t _tag;
 };
 
-}
 }

@@ -4,6 +4,7 @@
 #include <vespa/searchlib/expression/nullresultnode.h>
 #include <vespa/searchlib/common/sort.h>
 #include <vespa/vespalib/stllike/hash_set.hpp>
+#include <cassert>
 
 namespace search {
 

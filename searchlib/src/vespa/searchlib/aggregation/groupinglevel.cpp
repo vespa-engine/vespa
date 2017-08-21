@@ -4,8 +4,7 @@
 #include "grouping.h"
 #include <vespa/searchlib/expression/resultvector.h>
 
-namespace search {
-namespace aggregation {
+namespace search::aggregation {
 
 using expression::ResultNodeVector;
 using vespalib::FieldBase;
@@ -108,7 +107,6 @@ void GroupingLevel::prepare(const Grouping * grouping, uint32_t level, bool isOr
 // template<> void GroupingLevel::MultiValueGrouper::groupDoc(Group & g, const ResultNode::CP & result, const document::Document & doc, HitRank rank, bool isOrdered) const;
 // template<> void GroupingLevel::MultiValueGrouper::groupDoc(Group & g, const ResultNode::CP & result, DocId doc, HitRank rank, bool isOrdered) const;
 
-}
 }
 
 // this function was added by ../../forcelink.sh

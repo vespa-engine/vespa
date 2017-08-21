@@ -37,10 +37,6 @@
  *
  * <BR> vespalib::ReferenceCounter	
  *
- * Simple smart pointers (deprecated)
- *
- * <BR> \ref vespalib::LinkedPtr&lt;T&gt;
- *
  * Advanced pointer utilities
  *
  * \ref vespalib::PtrHolder&lt;T&gt;	

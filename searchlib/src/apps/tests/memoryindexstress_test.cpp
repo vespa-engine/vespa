@@ -93,7 +93,7 @@ bool isWordChar(char c) {
 void
 tokenizeStringFieldValue(const document::FixedTypeRepo & repo, StringFieldValue &field)
 {
-    document::SpanTree::UP spanTree; // Note: Not thread safe, is linkedptr
+    document::SpanTree::UP spanTree;
     SpanList::UP spanList(std::make_unique<SpanList>());
     SpanList *spans = spanList.get();
     spanTree.reset(new document::SpanTree(SPANTREE_NAME, std::move(spanList)));

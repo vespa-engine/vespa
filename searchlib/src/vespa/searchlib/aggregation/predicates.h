@@ -5,8 +5,7 @@
 #include <vespa/vespalib/objects/objectpredicate.h>
 #include <vespa/vespalib/objects/objectoperation.h>
 
-namespace search {
-namespace aggregation {
+namespace search::aggregation {
 
 class CountFS4Hits : public vespalib::ObjectPredicate,
                      public vespalib::ObjectOperation
@@ -43,5 +42,3 @@ public:
 };
 
 }
-}
-

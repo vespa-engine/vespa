@@ -7,11 +7,9 @@
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/xxhash/xxhash.h>
 
-namespace search {
+using namespace search::expression;
 
-using namespace expression;
-
-namespace aggregation {
+namespace search::aggregation {
 
 namespace {
 
@@ -578,8 +576,7 @@ void StandardDeviationAggregationResult::visitMembers(vespalib::ObjectVisitor &v
     visit(visitor, "sumOfSquared", _sumOfSquared);
 }
 
-}  // namespace aggregation
-}  // namespace search
+}
 
 // this function was added by ../../forcelink.sh
 void forcelink_file_searchlib_aggregation_aggregation() {}

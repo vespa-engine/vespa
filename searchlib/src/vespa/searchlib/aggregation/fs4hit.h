@@ -6,8 +6,7 @@
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/common/docstamp.h>
 
-namespace search {
-namespace aggregation {
+namespace search::aggregation {
 
 class FS4Hit : public Hit
 {
@@ -35,5 +34,3 @@ public:
 };
 
 }
-}
-
