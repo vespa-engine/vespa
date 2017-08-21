@@ -23,7 +23,7 @@ struct IntrinsicExpression {
     using FeatureExecutor = search::fef::FeatureExecutor;
     using QueryEnv = search::fef::IQueryEnvironment;
     using UP = std::unique_ptr<IntrinsicExpression>;
-    virtual FeatureType result_type() const = 0;
+    virtual const FeatureType &result_type() const = 0;
     virtual FeatureExecutor &create_executor(const QueryEnv &queryEnv,
                                              vespalib::Stash &stash) const = 0;
     virtual ~IntrinsicExpression();

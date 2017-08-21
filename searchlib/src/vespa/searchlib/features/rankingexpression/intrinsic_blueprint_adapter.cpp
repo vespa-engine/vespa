@@ -27,7 +27,7 @@ struct IntrinsicBlueprint : IntrinsicExpression {
     FeatureType type;
     IntrinsicBlueprint(Blueprint::UP blueprint_in, const FeatureType &type_in)
         : blueprint(std::move(blueprint_in)), type(type_in) {}
-    FeatureType result_type() const override { return type; }
+    const FeatureType &result_type() const override { return type; }
     FeatureExecutor &create_executor(const QueryEnv &queryEnv, vespalib::Stash &stash) const override {
         return blueprint->createExecutor(queryEnv, stash);
     }
