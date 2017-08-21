@@ -81,14 +81,6 @@ getAttributesToPopulate(const ARIConfig &newCfg,
     return IReprocessingReader::SP();
 }
 
-Schema::AttributeField
-getAttributeField(const Schema &schema, const vespalib::string &name)
-{
-    uint32_t attrFieldId = schema.getAttributeFieldId(name);
-    assert(attrFieldId != Schema::UNKNOWN_FIELD_ID);
-    return schema.getAttributeField(attrFieldId);
-}
-
 std::vector<IReprocessingRewriter::SP>
 getFieldsToPopulate(const ARIConfig &newCfg,
                     const ARIConfig &oldCfg,
@@ -101,7 +93,6 @@ getFieldsToPopulate(const ARIConfig &newCfg,
     oldCfg.getAttrMgr()->getAttributeList(attrList);
     for (const auto &guard : attrList) {
         const vespalib::string &name = guard->getName();
-        Schema::AttributeField attrField = getAttributeField(oldCfg.getSchema(), name);
         BasicType attrType(guard->getConfig().basicType());
         bool inNewAttrMgr = newCfg.getAttrMgr()->getAttribute(name)->valid();
         bool unchangedField = inspector.hasUnchangedField(name);
