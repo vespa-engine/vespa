@@ -3,11 +3,21 @@ package com.yahoo.documentapi.local;
 
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
-import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentUpdate;
-import com.yahoo.documentapi.*;
+import com.yahoo.documentapi.AsyncParameters;
+import com.yahoo.documentapi.AsyncSession;
+import com.yahoo.documentapi.DocumentIdResponse;
+import com.yahoo.documentapi.DocumentResponse;
+import com.yahoo.documentapi.DocumentUpdateResponse;
+import com.yahoo.documentapi.RemoveResponse;
+import com.yahoo.documentapi.Response;
+import com.yahoo.documentapi.ResponseHandler;
+import com.yahoo.documentapi.Result;
+import com.yahoo.documentapi.SyncParameters;
+import com.yahoo.documentapi.SyncSession;
+import com.yahoo.documentapi.UpdateResponse;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 
 import java.util.LinkedList;
@@ -35,7 +45,7 @@ public class LocalAsyncSession implements AsyncSession {
         this.access = access;
         this.handler = params.getResponseHandler();
         random.setSeed(System.currentTimeMillis());
-        syncSession = access.createSyncSession(new SyncParameters());
+        syncSession = access.createSyncSession(new SyncParameters.Builder().build());
     }
 
     @Override

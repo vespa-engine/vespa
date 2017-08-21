@@ -60,7 +60,7 @@ public class OperationHandlerImpl implements OperationHandler {
         }
         @Override
         public SyncSession create() {
-            return documentAccess.createSyncSession(new SyncParameters());
+            return documentAccess.createSyncSession(new SyncParameters.Builder().build());
         }
     }
 

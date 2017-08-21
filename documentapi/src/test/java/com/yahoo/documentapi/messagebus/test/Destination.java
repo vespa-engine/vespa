@@ -32,7 +32,7 @@ public class Destination implements MessageHandler {
         DocumentAccessParams params = new DocumentAccessParams();
         params.setDocumentManagerConfigId(documentManagerConfigId);
         access = new LocalDocumentAccess(params);
-        local = access.createSyncSession(new SyncParameters());
+        local = access.createSyncSession(new SyncParameters.Builder().build());
         bus = new RPCMessageBus(Arrays.asList((Protocol)new DocumentProtocol(access.getDocumentTypeManager())),
                                 new RPCNetworkParams()
                                         .setIdentity(new Identity("test/destination"))

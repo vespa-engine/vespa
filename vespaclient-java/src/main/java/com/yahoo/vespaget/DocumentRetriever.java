@@ -71,7 +71,7 @@ public class DocumentRetriever {
 
         MessageBusParams messageBusParams = createMessageBusParams(params.configId, params.timeout, route);
         documentAccess = documentAccessFactory.createDocumentAccess(messageBusParams);
-        session = documentAccess.createSyncSession(new SyncParameters());
+        session = documentAccess.createSyncSession(new SyncParameters.Builder().build());
         int trace = params.traceLevel;
         if (trace > 0) {
             session.setTraceLevel(trace);

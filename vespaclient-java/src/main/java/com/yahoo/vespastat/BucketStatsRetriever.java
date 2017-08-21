@@ -41,7 +41,7 @@ public class BucketStatsRetriever {
             ShutdownHookRegistrar registrar) {
         registerShutdownHook(registrar);
         this.documentAccess = documentAccessFactory.createDocumentAccess();
-        this.session = documentAccess.createSyncSession(new SyncParameters());
+        this.session = documentAccess.createSyncSession(new SyncParameters.Builder().build());
         this.route = route;
     }
 
