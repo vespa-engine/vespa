@@ -81,7 +81,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     }
 
     private String objectToString() {
-        return this.getClass().getName() + "@" + System.identityHashCode(this);
+        return this.getClass().getSimpleName() + "@" + Integer.toString(System.identityHashCode(this));
     }
 
     public enum State { RESUMED, SUSPENDED_NODE_ADMIN, SUSPENDED}
