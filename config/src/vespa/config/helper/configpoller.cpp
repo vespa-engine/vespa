@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "configpoller.h"
+#include <vespa/config/common/exceptions.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".config.helper.configpoller");
@@ -21,8 +22,13 @@ ConfigPoller::~ConfigPoller() { }
 void
 ConfigPoller::run()
 {
-    while (!_subscriber.isClosed()) {
-        poll();
+    try {
+        while (!_subscriber.isClosed()) {
+            poll();
+        }
+    } catch (config::InvalidConfigException & e) {
+        LOG(fatal, "Got exception, will just exit quickly : %s", e.what());
+        std::quick_exit(17);
     }
 }
 
