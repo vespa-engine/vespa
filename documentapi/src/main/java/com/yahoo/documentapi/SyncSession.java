@@ -68,7 +68,7 @@ public interface SyncSession extends Session {
      * @return The known document having this id, or null if there is no
      *         document having this id.
      * @throws UnsupportedOperationException Thrown if this access does not support retrieving.
-     * @throws DocumentAccessException with error code {@link com.yahoo.messagebus.ErrorCode#TIMEOUT} on timeout.
+     * @throws DocumentAccessException on any messagebus error, including timeout ({@link com.yahoo.messagebus.ErrorCode#TIMEOUT}).
      */
     // TODO Vespa 7: Remove default implementation. Consider removing get() overloads without timeout.
     default Document get(DocumentId id, TemporalAmount timeout) {
@@ -85,7 +85,7 @@ public interface SyncSession extends Session {
      * @return The known document having this id, or null if there is no
      *         document having this id.
      * @throws UnsupportedOperationException Thrown if this access does not support retrieving.
-     * @throws DocumentAccessException with error code {@link com.yahoo.messagebus.ErrorCode#TIMEOUT} on timeout.
+     * @throws DocumentAccessException on any messagebus error, including timeout ({@link com.yahoo.messagebus.ErrorCode#TIMEOUT}).
      */
     // TODO Vespa 7: Remove default implementation. Consider removing get() overloads without timeout.
     default Document get(DocumentId id, String fieldSet, DocumentProtocol.Priority priority,
