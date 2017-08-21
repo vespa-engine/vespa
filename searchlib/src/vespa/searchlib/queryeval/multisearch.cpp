@@ -2,9 +2,9 @@
 
 #include "multisearch.h"
 #include <vespa/vespalib/objects/visit.hpp>
+#include <cassert>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 void
 MultiSearch::insert(size_t index, SearchIterator::UP search)
@@ -80,6 +80,4 @@ MultiSearch::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "children", _children);
 }
 
-
-} // namespace queryeval
-} // namespace search
+}

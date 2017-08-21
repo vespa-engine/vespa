@@ -4,8 +4,7 @@
 #include "aggregationresult.h"
 #include <vespa/searchlib/expression/integerresultnode.h>
 
-namespace search {
-namespace aggregation {
+namespace search::aggregation {
 
 class CountAggregationResult : public AggregationResult
 {
@@ -24,5 +23,4 @@ private:
     expression::Int64ResultNode _count;
 };
 
-}
 }

@@ -5,8 +5,7 @@
 #include "searchiterator.h"
 #include <vector>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 /**
  * A virtual intermediate class that serves as the basis for combining searches
@@ -53,6 +52,4 @@ private:
     Children _children;
 };
 
-} // namespace queryeval
-} // namespace search
-
+}

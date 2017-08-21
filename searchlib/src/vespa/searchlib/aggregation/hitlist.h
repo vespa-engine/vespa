@@ -5,8 +5,7 @@
 #include "vdshit.h"
 #include <vespa/searchlib/common/identifiable.h>
 
-namespace search {
-namespace aggregation {
+namespace search::aggregation {
 
 
 class HitList : public expression::ResultNode
@@ -71,5 +70,3 @@ public:
 };
 
 }
-}
-

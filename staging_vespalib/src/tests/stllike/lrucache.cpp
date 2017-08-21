@@ -3,7 +3,6 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/lrucache_map.hpp>
-#include <vespa/vespalib/util/linkedptr.h>
 
 using namespace vespalib;
 
@@ -103,8 +102,8 @@ struct SharedHash {
 
 
 TEST("testCacheInsertOverResize") {
-    typedef vespalib::LinkedPtr<std::string> LS;
-    typedef lrucache_map< LruParam<int, LS> > Cache;
+    using LS = std::shared_ptr<std::string>;
+    using Cache = lrucache_map< LruParam<int, LS> >;
 
     Cache cache(100);
     size_t sum(0);

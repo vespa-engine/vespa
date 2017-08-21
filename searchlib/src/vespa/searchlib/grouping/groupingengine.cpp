@@ -2,6 +2,7 @@
 
 #include "groupingengine.h"
 #include "groupandcollectengine.h"
+#include <cassert>
 
 namespace search {
 

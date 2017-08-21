@@ -9,9 +9,10 @@
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/stllike/hash_set.hpp>
 #include <cmath>
+#include <cassert>
+#include <algorithm>
 
-namespace search {
-namespace aggregation {
+namespace search::aggregation {
 
 using search::expression::AggregationRefNode;
 using search::expression::ExpressionTree;
@@ -756,7 +757,6 @@ Group::Value::setupAggregationReferences()
     select(exprRefSetup, exprRefSetup);
 }
 
-}
 }
 
 // this function was added by ../../forcelink.sh

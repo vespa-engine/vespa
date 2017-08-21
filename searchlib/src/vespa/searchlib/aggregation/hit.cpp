@@ -2,8 +2,7 @@
 #include "hit.h"
 #include <vespa/vespalib/objects/visit.h>
 
-namespace search {
-namespace aggregation {
+namespace search::aggregation {
 
 using vespalib::FieldBase;
 using vespalib::Serializer;
@@ -38,7 +37,6 @@ Hit::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, _G_rankField.getName(), _rank);
 }
 
-}
 }
 
 // this function was added by ../../forcelink.sh

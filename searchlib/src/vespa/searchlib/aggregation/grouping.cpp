@@ -21,8 +21,7 @@ using vespalib::FieldBase;
 using vespalib::Serializer;
 using vespalib::Deserializer;
 
-namespace search {
-namespace aggregation {
+namespace search::aggregation {
 
 namespace {
 
@@ -361,7 +360,6 @@ Grouping::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "root",       _root);
 }
 
-}
 }
 
 // this function was added by ../../forcelink.sh

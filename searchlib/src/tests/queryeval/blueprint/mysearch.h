@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/searchlib/queryeval/blueprint.h>
+#include <vespa/searchlib/queryeval/multisearch.h>
 #include <vespa/vespalib/objects/visit.hpp>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 //-----------------------------------------------------------------------------
 
@@ -26,8 +26,8 @@ private:
     std::vector<uint32_t> _handles;
 
 protected:
-    virtual void doSeek(uint32_t) override {}
-    virtual void doUnpack(uint32_t) override {}
+    void doSeek(uint32_t) override {}
+    void doUnpack(uint32_t) override {}
 
 public:
     MySearch(const std::string &tag, bool leaf, bool strict)
@@ -151,5 +151,4 @@ public:
 
 //-----------------------------------------------------------------------------
 
-} // namespace queryeval
-} // namespace search
+}

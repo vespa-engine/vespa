@@ -2,8 +2,7 @@
 #include "fs4hit.h"
 #include <vespa/vespalib/objects/visit.h>
 
-namespace search {
-namespace aggregation {
+namespace search::aggregation {
 
 using vespalib::FieldBase;
 using vespalib::Serializer;
@@ -53,7 +52,6 @@ FS4Hit::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, _G_distributionKeyField.getName(), _distributionKey);
 }
 
-}
 }
 
 // this function was added by ../../forcelink.sh

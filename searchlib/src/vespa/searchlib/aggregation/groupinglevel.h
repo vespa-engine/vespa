@@ -4,8 +4,7 @@
 #include "group.h"
 #include <vespa/searchlib/expression/aggregationrefnode.h>
 
-namespace search {
-namespace aggregation {
+namespace search::aggregation {
 
 class Grouping;
 
@@ -126,5 +125,3 @@ public:
 };
 
 }
-}
-

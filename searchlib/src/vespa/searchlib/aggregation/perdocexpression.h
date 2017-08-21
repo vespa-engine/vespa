@@ -38,9 +38,6 @@
 #include <vespa/searchlib/expression/debugwaitfunctionnode.h>
 #include <vespa/searchlib/expression/aggregationrefnode.h>
 
-namespace search {
-namespace aggregation {
+namespace search::aggregation {
 
 }
-}
-

@@ -2,6 +2,7 @@
 
 #include "collect.h"
 #include <vespa/vespalib/util/array.hpp>
+#include <cassert>
 
 namespace search {
 

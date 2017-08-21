@@ -17,7 +17,6 @@
  */
 
 #include "identifiable.h"
-#include <vespa/vespalib/util/linkedptr.h>
 
 namespace vespalib {
 
@@ -119,43 +118,6 @@ public:
     }
     friend Serializer & operator << (Serializer & os, const IdentifiableSharedPtr<T> & agg) { return agg.serialize(os); }
     friend Deserializer & operator >> (Deserializer & is, IdentifiableSharedPtr<T> & agg)   { return agg.deserialize(is); }
-};
-
-template <typename T>
-class IdentifiableLinkedPtr : public LinkedPtr<T>
-{
-public:
-    IdentifiableLinkedPtr(const T &t) : LinkedPtr<T>(t.clone()) {}
-    IdentifiableLinkedPtr(T * p=NULL) : LinkedPtr<T>(p) { }
-    int cmp(const IdentifiableLinkedPtr<T> &rhs) const {
-        const T *a = this->get();
-        const T *b = rhs.get();
-        if (a == 0) {
-            return (b == 0) ? 0 : -1;
-        }
-        return (b == 0) ? 1 : a->cmp(*b);
-    }
-    bool operator < (const IdentifiableLinkedPtr<T> &rhs) const {
-        return (cmp(rhs) < 0);
-    }
-    Serializer & serialize(Serializer & os) const {
-        if (this->get()) {
-            os.put(Identifiable::hasObjectField, uint8_t(1)) << *this->get();
-        } else {
-            os.put(Identifiable::hasObjectField, uint8_t(0));
-        }
-        return os;
-    }
-    Deserializer & deserialize(Deserializer & is) {
-        uint8_t hasObject;
-        is.get(Identifiable::hasObjectField, hasObject);
-        if (hasObject) {
-            this->reset(static_cast<T *>(Identifiable::create(is).release()));
-        }
-        return is;
-    }
-    friend Serializer & operator << (Serializer & os, const IdentifiableLinkedPtr<T> & agg) { return agg.serialize(os); }
-    friend Deserializer & operator >> (Deserializer & is, IdentifiableLinkedPtr<T> & agg)   { return agg.deserialize(is); }
 };
 
 }

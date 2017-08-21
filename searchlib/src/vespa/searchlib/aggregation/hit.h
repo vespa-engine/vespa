@@ -5,8 +5,7 @@
 #include <vespa/searchlib/common/identifiable.h>
 #include <vespa/searchlib/common/hitrank.h>
 
-namespace search {
-namespace aggregation {
+namespace search::aggregation {
 
 class Hit : public vespalib::Identifiable
 {
@@ -27,5 +26,3 @@ public:
 };
 
 }
-}
-

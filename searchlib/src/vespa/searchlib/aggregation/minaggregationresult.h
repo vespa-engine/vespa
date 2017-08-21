@@ -4,8 +4,7 @@
 #include "aggregationresult.h"
 #include <vespa/searchlib/expression/singleresultnode.h>
 
-namespace search {
-namespace aggregation {
+namespace search::aggregation {
 
 class MinAggregationResult : public AggregationResult
 {
@@ -23,5 +22,4 @@ private:
     SingleResultNode::CP _min;
 };
 
-}
 }

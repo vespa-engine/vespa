@@ -5,8 +5,7 @@
 #include "aggregationresult.h"
 #include <vespa/vespalib/util/array.h>
 
-namespace search {
-namespace aggregation {
+namespace search::aggregation {
 
 class VdsHit : public Hit
 {
@@ -37,5 +36,3 @@ private:
 };
 
 }
-}
-

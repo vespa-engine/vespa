@@ -6,8 +6,7 @@
 #include <vespa/searchlib/grouping/hyperloglog.h>
 #include <vespa/searchlib/expression/integerresultnode.h>
 
-namespace search {
-namespace aggregation {
+namespace search::aggregation {
 
 /**
  * Estimates the number of unique values of an expression that has
@@ -32,6 +31,4 @@ public:
     const Sketch<PRECISION, uint32_t> &getSketch() const { return _hll.getSketch(); }
 };
 
-}  // namespace aggregation
-}  // namespace search
-
+}

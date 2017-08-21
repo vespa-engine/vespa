@@ -2,9 +2,9 @@
 
 #include "hitlist.h"
 #include <vespa/vespalib/objects/visit.hpp>
+#include <algorithm>
 
-namespace search {
-namespace aggregation {
+namespace search::aggregation {
 
 using vespalib::FieldBase;
 using vespalib::Serializer;
@@ -140,7 +140,6 @@ HitList::set(const ResultNode & rhs)
     throw std::runtime_error("HitList::set(const ResultNode & rhs) not implemented.");
 }
 
-}
 }
 
 // this function was added by ../../forcelink.sh

@@ -4,8 +4,7 @@
 #include "aggregationresult.h"
 #include <vespa/searchlib/expression/numericresultnode.h>
 
-namespace search {
-namespace aggregation {
+namespace search::aggregation {
 
 class AverageAggregationResult : public AggregationResult
 {
@@ -26,5 +25,4 @@ private:
     mutable NumericResultNode::CP _averageScratchPad;
 };
 
-}
 }
