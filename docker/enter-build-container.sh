@@ -12,5 +12,6 @@ cd $DIR
 
 DOCKER_IMAGE="vespaengine/vespa-dev:latest"
 
+docker pull ${DOCKER_IMAGE}
 docker run -ti --rm -v $(pwd)/..:/vespa --entrypoint /vespa/docker/build/enter-build-container-internal.sh "$DOCKER_IMAGE"
 
