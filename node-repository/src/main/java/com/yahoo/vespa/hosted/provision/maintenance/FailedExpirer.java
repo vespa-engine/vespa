@@ -14,7 +14,10 @@ import com.yahoo.vespa.hosted.provision.node.History;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * This moves expired failed nodes:
@@ -40,6 +43,7 @@ import java.util.List;
  */
 public class FailedExpirer extends Expirer {
 
+    private static final Logger log = Logger.getLogger(NodeRetirer.class.getName());
     private final NodeRepository nodeRepository;
     private final Zone zone;
 
@@ -55,12 +59,18 @@ public class FailedExpirer extends Expirer {
         List<Node> nodesToRecycle = new ArrayList<>();
         for (Node recycleCandidate : expired) {
             if (recycleCandidate.status().hardwareFailureDescription().isPresent()) {
-                boolean shouldBeParked = recycleCandidate.type() != NodeType.host ||
+                List<String> nonParkedChildren = recycleCandidate.type() != NodeType.host ? Collections.emptyList() :
                         nodeRepository.getChildNodes(recycleCandidate.hostname()).stream()
-                                .allMatch(node -> node.state() == Node.State.parked);
+                                .filter(node -> node.state() != Node.State.parked)
+                                .map(Node::hostname)
+                                .collect(Collectors.toList());
 
-                if (shouldBeParked) nodeRepository.park(
-                        recycleCandidate.hostname(), Agent.system, "Parked by FailedExpirer due to HW failure on node");
+                if (nonParkedChildren.isEmpty()) {
+                    nodeRepository.park(recycleCandidate.hostname(), Agent.system, "Parked by FailedExpirer due to HW failure on node");
+                } else {
+                    log.info(String.format("Expired failed node %s with HW fail is not parked because some of its children" +
+                            " (%s) are not yet parked", recycleCandidate.hostname(), String.join(", ", nonParkedChildren)));
+                }
             } else if (! failCountIndicatesHwFail(zone, recycleCandidate) || recycleCandidate.status().failCount() < 5) {
                 nodesToRecycle.add(recycleCandidate);
             }
