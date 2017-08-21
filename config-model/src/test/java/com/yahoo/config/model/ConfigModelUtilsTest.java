@@ -24,21 +24,37 @@ public class ConfigModelUtilsTest {
     public void all_def_files_in_correct_directory_are_handled_and_files_outside_are_ignored() {
         List<Bundle> bundles = Bundle.getBundles(new File(VALID_TEST_BUNDLE));
         assertThat(bundles.size(), is(1));
-        assertThat(bundles.get(0).getDefEntries().size(), is(2));
+        assertThat(bundles.get(0).getDefEntries().size(), is(5));
     }
 
     @Test
     public void def_file_with_namespace_is_handled() {
-        Bundle.DefEntry defEntry = getDefEntry("test1");
-        assertThat(defEntry.defName, is("test1"));
+        Bundle.DefEntry defEntry = getDefEntry("test-namespace");
         assertThat(defEntry.defNamespace, is("config"));
     }
 
     @Test
     public void def_file_with_namespace_and_namespace_in_filename_is_handled() {
-        Bundle.DefEntry defEntry = getDefEntry("test2");
-        assertThat(defEntry.defName, is("test2"));
+        Bundle.DefEntry defEntry = getDefEntry("namespace-in-filename");
         assertThat(defEntry.defNamespace, is("a.b"));
+    }
+
+    @Test
+    public void def_file_with_package_is_handled() {
+        Bundle.DefEntry defEntry = getDefEntry("test-package");
+        assertThat(defEntry.defNamespace, is("com.mydomain.mypackage"));
+    }
+
+    @Test
+    public void def_file_with_package_and_pacakage_in_filename_is_handled() {
+        Bundle.DefEntry defEntry = getDefEntry("package-in-filename");
+        assertThat(defEntry.defNamespace, is("com.mydomain.mypackage"));
+    }
+
+    @Test
+    public void def_file_with_both_package_and_namespace_gets_package_as_namespace() {
+        Bundle.DefEntry defEntry = getDefEntry("namespace-and-package");
+        assertThat(defEntry.defNamespace, is("com.mydomain.mypackage"));
     }
 
     private static Bundle.DefEntry getDefEntry(String defName) {

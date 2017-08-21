@@ -208,14 +208,18 @@ public class ConfigUtils {
     }
 
     /**
-     * Finds the def namespace from a reader for a def-file. Returns "" (empty string)
-     * if no namespace was found.
+     * Finds the def package or namespace from a reader for a def-file. Returns "" (empty string)
+     * if no package or namespace was found. If both package and namespace are declared in the def
+     * file, the package is returned.
      *
      * @param in A reader to a def-file
      * @return namespace of the def-file, or "" (empty string) if no namespace was found
      */
     public static String getDefNamespace(Reader in) {
-        return getDefKeyword(in, "namespace");
+        List<String> defLines = getDefLines(in);
+        String defPackage = getDefKeyword(defLines, "package");
+        if (! defPackage.isEmpty()) return defPackage;
+        return getDefKeyword(defLines, "namespace");
     }
 
     /**
@@ -226,9 +230,24 @@ public class ConfigUtils {
      * @return value of keyword, or "" (empty string) if no line matching keyword was found
      */
     public static String getDefKeyword(Reader in, String keyword) {
+        return getDefKeyword(getDefLines(in), keyword);
+    }
+
+    private static String getDefKeyword(List<String> defLines, String keyword) {
+        for (String line : defLines) {
+            if (line.startsWith(keyword)) {
+                String[] v = line.split("=");
+                return v[1].trim();
+            }
+        }
+        return "";
+    }
+
+    private static List<String> getDefLines(Reader in) {
         if (null == in) {
             throw new IllegalArgumentException("Null reader.");
         }
+        List<String> defLines = new ArrayList<>();
         LineNumberReader reader;
         try {
             if (in instanceof LineNumberReader) {
@@ -240,17 +259,14 @@ public class ConfigUtils {
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
                 if (!line.startsWith("#") && !line.equals("")) {
-                    if (line.startsWith(keyword)) {
-                        String[] v = line.split("=");
-                        return v[1].trim();
-                    }
+                    defLines.add(line);
                 }
             }
             reader.close();
         } catch (IOException e) {
             throw new RuntimeException("IOException", e);
         }
-        return "";
+        return defLines;
     }
 
     /**

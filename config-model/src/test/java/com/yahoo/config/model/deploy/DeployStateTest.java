@@ -81,12 +81,12 @@ public class DeployStateTest {
         Map<ConfigDefinitionKey, com.yahoo.vespa.config.buildergen.ConfigDefinition> defs = new LinkedHashMap<>();
         defs.put(new ConfigDefinitionKey("foo", "bar"), new com.yahoo.vespa.config.buildergen.ConfigDefinition("foo", new String[]{"namespace=bar", "foo int default=0"}));
         defs.put(new ConfigDefinitionKey("test2", "a.b"),
-                 new com.yahoo.vespa.config.buildergen.ConfigDefinition("test2", new String[]{"namespace=a.b", "doubleVal double default=1.0"}));
+                 new com.yahoo.vespa.config.buildergen.ConfigDefinition("namespace-in-filename", new String[]{"namespace=a.b", "doubleVal double default=1.0"}));
         ApplicationPackage app = FilesApplicationPackage.fromFile(new File("src/test/cfg//application/app1"));
         DeployState state = createDeployState(app, defs);
 
         assertNotNull(state.getConfigDefinition(new ConfigDefinitionKey("foo", "bar")));
-        ConfigDefinition overridden = state.getConfigDefinition(new ConfigDefinitionKey("test2", "a.b")).get();
+        ConfigDefinition overridden = state.getConfigDefinition(new ConfigDefinitionKey("namespace-in-filename", "a.b")).get();
         assertNotNull(overridden);
         Double defaultValue = overridden.getDoubleDefs().get("doubleVal").getDefVal();
         assertNotNull(defaultValue);
