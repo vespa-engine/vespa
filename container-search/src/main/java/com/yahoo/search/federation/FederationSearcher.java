@@ -251,6 +251,8 @@ public class FederationSearcher extends ForkingSearcher {
 
     private FutureResult searchAsynchronously(Query query, Execution execution, Window window, Target target) {
         long timeout = target.federationOptions().getSearchChainExecutionTimeoutInMilliseconds(query.getTimeLeft());
+        if (timeout <= 0)
+            return new FutureResult(() -> new Result(query, ErrorMessage.createTimeout("Timed out before federation")), execution, query);
         Query clonedQuery = cloneFederationQuery(query, window, timeout, target);
         return new AsyncExecution(target.getChain(), execution).search(clonedQuery);
     }
