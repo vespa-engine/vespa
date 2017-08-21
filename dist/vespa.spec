@@ -39,6 +39,7 @@ BuildRequires: vespa-zookeeper-c-client-devel >= 3.4.9-6
 BuildRequires: systemd
 Requires: epel-release 
 Requires: which
+Requires: initscripts
 Requires: valgrind
 Requires: Judy
 Requires: lz4
