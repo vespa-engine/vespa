@@ -3,24 +3,31 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
- * This moves nodes from failed back to dirty if
+ * This moves expired failed nodes:
  * <ul>
- *     <li>No hardware failure is known to be detected on the node
- *     <li>The node has failed less than 5 times OR the environment is dev, test or perf OR system is CI or CD,
+ *     <li>To parked: If the node has known hardware failure, docker hosts are moved to parked only when all its
+ *     children are already in parked
+ *     <li>To dirty: If the node has failed less than 5 times OR the environment is dev, test or perf OR system is CD,
  *     as those environments have no protection against users running bogus applications, so
  *     we cannot use the node failure count to conclude the node has a failure.
+ *     <li>Otherwise the node will remain in failed
  * </ul>
  * Failed nodes are typically given a long expiry time to enable us to manually moved them back to
  * active to recover data in cases where the node was failed accidentally.
@@ -36,6 +43,7 @@ import java.util.List;
  */
 public class FailedExpirer extends Expirer {
 
+    private static final Logger log = Logger.getLogger(NodeRetirer.class.getName());
     private final NodeRepository nodeRepository;
     private final Zone zone;
 
@@ -50,9 +58,22 @@ public class FailedExpirer extends Expirer {
     protected void expire(List<Node> expired) {
         List<Node> nodesToRecycle = new ArrayList<>();
         for (Node recycleCandidate : expired) {
-            if (recycleCandidate.status().hardwareFailureDescription().isPresent()) continue;
-            if (failCountIndicatesHwFail(zone, recycleCandidate) && recycleCandidate.status().failCount() >= 5) continue;
-            nodesToRecycle.add(recycleCandidate);
+            if (recycleCandidate.status().hardwareFailureDescription().isPresent()) {
+                List<String> nonParkedChildren = recycleCandidate.type() != NodeType.host ? Collections.emptyList() :
+                        nodeRepository.getChildNodes(recycleCandidate.hostname()).stream()
+                                .filter(node -> node.state() != Node.State.parked)
+                                .map(Node::hostname)
+                                .collect(Collectors.toList());
+
+                if (nonParkedChildren.isEmpty()) {
+                    nodeRepository.park(recycleCandidate.hostname(), Agent.system, "Parked by FailedExpirer due to HW failure on node");
+                } else {
+                    log.info(String.format("Expired failed node %s with HW fail is not parked because some of its children" +
+                            " (%s) are not yet parked", recycleCandidate.hostname(), String.join(", ", nonParkedChildren)));
+                }
+            } else if (! failCountIndicatesHwFail(zone, recycleCandidate) || recycleCandidate.status().failCount() < 5) {
+                nodesToRecycle.add(recycleCandidate);
+            }
         }
         nodeRepository.setDirty(nodesToRecycle);
     }
