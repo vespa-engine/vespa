@@ -3,6 +3,7 @@ search child {
   document child {
     field a_ref type reference<parent_a> { indexing: attribute }
     field b_ref type reference<parent_b> { indexing: attribute }
+    field b_ref_with_summary type reference<parent_b> { indexing: attribute | summary }
   }
   import field a_ref.int_field as my_int_field {}
   import field b_ref.string_field as my_string_field {}
@@ -15,6 +16,7 @@ search child {
 
   document-summary mysummary {
     summary a_ref type reference<parent_a> {}
+    summary b_ref_with_summary type reference<parent_b> {}
     summary my_int_field type int {}
     summary my_string_field type string {}
     summary my_int_array_field type array<int> {}

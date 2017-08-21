@@ -29,6 +29,19 @@ public class ReferenceFieldsProcessor extends Processor {
 
     @Override
     public void process() {
+        clearSummaryAttributeAspectForConcreteFields();
+        clearSummaryAttributeAspectForExplicitSummaryFields();
+    }
+
+    private void clearSummaryAttributeAspectForExplicitSummaryFields() {
+        for (DocumentSummary docSum : search.getSummaries().values()) {
+            docSum.getSummaryFields().stream()
+                    .filter(summaryField  -> summaryField.getDataType() instanceof ReferenceDataType)
+                    .forEach(summaryField -> summaryField.setTransform(SummaryTransform.NONE));
+        }
+    }
+
+    private void clearSummaryAttributeAspectForConcreteFields() {
         for (SDField field : search.allConcreteFields()) {
             if (field.getDataType() instanceof ReferenceDataType) {
                 removeFromAttributePrefetchSummaryClass(field);
