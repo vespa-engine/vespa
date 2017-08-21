@@ -29,7 +29,7 @@ public class FutureResult extends FutureTask<Result> {
 
     private final static Logger log = Logger.getLogger(FutureResult.class.getName());
 
-    protected FutureResult(Callable<Result> callable, Execution execution, Query query) {
+    public FutureResult(Callable<Result> callable, Execution execution, Query query) {
         super(callable);
         this.query = query;
         this.execution = execution;
