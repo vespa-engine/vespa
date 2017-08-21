@@ -54,8 +54,6 @@ public class FailedExpirer extends Expirer {
     protected void expire(List<Node> expired) {
         List<Node> nodesToRecycle = new ArrayList<>();
         for (Node recycleCandidate : expired) {
-            if (failCountIndicatesHwFail(zone, recycleCandidate) && recycleCandidate.status().failCount() >= 5) continue;
-
             if (recycleCandidate.status().hardwareFailureDescription().isPresent()) {
                 boolean shouldBeParked = recycleCandidate.type() != NodeType.host ||
                         nodeRepository.getChildNodes(recycleCandidate.hostname()).stream()
@@ -63,7 +61,7 @@ public class FailedExpirer extends Expirer {
 
                 if (shouldBeParked) nodeRepository.park(
                         recycleCandidate.hostname(), Agent.system, "Parked by FailedExpirer due to HW failure on node");
-            } else {
+            } else if (! failCountIndicatesHwFail(zone, recycleCandidate) || recycleCandidate.status().failCount() < 5) {
                 nodesToRecycle.add(recycleCandidate);
             }
         }

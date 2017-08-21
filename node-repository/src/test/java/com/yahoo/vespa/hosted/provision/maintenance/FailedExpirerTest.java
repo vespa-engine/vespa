@@ -56,8 +56,7 @@ public class FailedExpirerTest {
         failedExpirer.run();
 
         assertNodeHostnames(Node.State.failed, "node1");
-        assertNodeHostnames(Node.State.parked, "node2");
-        assertNodeHostnames(Node.State.dirty, "node3");
+        assertNodeHostnames(Node.State.parked, "node2", "node3");
     }
 
     @Test
@@ -66,8 +65,8 @@ public class FailedExpirerTest {
         clock.advance(Duration.ofDays(5));
         failedExpirer.run();
 
-        assertNodeHostnames(Node.State.parked, "node2");
-        assertNodeHostnames(Node.State.dirty, "node1", "node3");
+        assertNodeHostnames(Node.State.parked, "node2", "node3");
+        assertNodeHostnames(Node.State.dirty, "node1");
     }
 
     @Test
@@ -76,8 +75,8 @@ public class FailedExpirerTest {
         clock.advance(Duration.ofDays(5));
         failedExpirer.run();
 
-        assertNodeHostnames(Node.State.parked, "node2");
-        assertNodeHostnames(Node.State.dirty, "node1", "node3");
+        assertNodeHostnames(Node.State.parked, "node2", "node3");
+        assertNodeHostnames(Node.State.dirty, "node1");
     }
 
     @Test
@@ -86,12 +85,12 @@ public class FailedExpirerTest {
         clock.advance(Duration.ofDays(5));
         failedExpirer.run();
 
-        assertNodeHostnames(Node.State.parked, "node2");
-        assertNodeHostnames(Node.State.dirty, "node1", "node3");
+        assertNodeHostnames(Node.State.parked, "node2", "node3");
+        assertNodeHostnames(Node.State.dirty, "node1");
     }
 
     @Test
-    public void ensure_failed_docker_host_is_parked() throws InterruptedException {
+    public void ensure_parked_docker_host() throws InterruptedException {
         failureScenarioIn(SystemName.main, Environment.prod, "docker");
 
         failNode("parent2");
@@ -101,12 +100,12 @@ public class FailedExpirerTest {
         failedExpirer.run(); // Run twice because parent can only be parked after the child
         failedExpirer.run();
 
-        assertNodeHostnames(Node.State.parked, "parent2", "node2");
+        assertNodeHostnames(Node.State.parked, "parent2", "node2", "node3");
     }
 
     @Test
     public void ensure_failed_docker_host_is_not_parked_unless_all_children_are() throws InterruptedException {
-        failureScenarioIn(SystemName.main, Environment.prod, "docker");
+        failureScenarioIn(SystemName.cd, Environment.prod, "docker");
 
         failNode("parent1");
         setHWFailureForNode("parent1");
@@ -163,14 +162,17 @@ public class FailedExpirerTest {
 
         // Set node1 to have failed 4 times before
         Node node1 = nodeRepository.getNode("node1").get();
-        node1 = node1.with(node1.status().withIncreasedFailCount());
-        node1 = node1.with(node1.status().withIncreasedFailCount());
-        node1 = node1.with(node1.status().withIncreasedFailCount());
-        node1 = node1.with(node1.status().withIncreasedFailCount());
+        node1 = node1.with(node1.status().setFailCount(4));
         nodeRepository.write(node1);
 
         // Set node2 to have a detected hardware failure
         setHWFailureForNode("node2");
+
+        // Set node3 to have failed 8 times before and have a HW failure
+        Node node3 = nodeRepository.getNode("node3").get();
+        node3 = node1.with(node3.status().setFailCount(8));
+        nodeRepository.write(node3);
+        setHWFailureForNode("node3");
 
         // Allocate the nodes
         List<Node> provisioned = nodeRepository.getNodes(NodeType.tenant, Node.State.provisioned);
