@@ -1,0 +1,84 @@
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include "imported_attribute_vector_read_guard.h"
+
+namespace search {
+namespace attribute {
+
+ImportedAttributeVectorReadGuard::ImportedAttributeVectorReadGuard(
+        vespalib::stringref name,
+        std::shared_ptr<ReferenceAttribute> reference_attribute,
+        std::shared_ptr<AttributeVector> target_attribute,
+        bool stableEnumGuard)
+    : ImportedAttributeVector(name, std::move(reference_attribute), std::move(target_attribute)),
+      _referencedLids(),
+      _referencedLidLimit(0u),
+      _reference_attribute_guard(_reference_attribute),
+      _target_attribute_guard(stableEnumGuard ? std::shared_ptr<AttributeVector>() : _target_attribute),
+      _target_attribute_enum_guard(stableEnumGuard ? _target_attribute : std::shared_ptr<AttributeVector>())
+{
+    _referencedLids = _reference_attribute->getReferencedLids();
+    _referencedLidLimit = _target_attribute->getCommittedDocIdLimit();
+}
+
+ImportedAttributeVectorReadGuard::~ImportedAttributeVectorReadGuard() {
+}
+
+uint32_t ImportedAttributeVectorReadGuard::getValueCount(uint32_t doc) const {
+    return _target_attribute->getValueCount(getReferencedLid(doc));
+}
+
+IAttributeVector::largeint_t ImportedAttributeVectorReadGuard::getInt(DocId doc) const {
+    return _target_attribute->getInt(getReferencedLid(doc));
+}
+
+double ImportedAttributeVectorReadGuard::getFloat(DocId doc) const {
+    return _target_attribute->getFloat(getReferencedLid(doc));
+}
+
+const char *ImportedAttributeVectorReadGuard::getString(DocId doc, char *buffer, size_t sz) const {
+    return _target_attribute->getString(getReferencedLid(doc), buffer, sz);
+}
+
+IAttributeVector::EnumHandle ImportedAttributeVectorReadGuard::getEnum(DocId doc) const {
+    return _target_attribute->getEnum(getReferencedLid(doc));
+}
+
+uint32_t ImportedAttributeVectorReadGuard::get(DocId docId, largeint_t *buffer, uint32_t sz) const {
+    return _target_attribute->get(getReferencedLid(docId), buffer, sz);
+}
+
+uint32_t ImportedAttributeVectorReadGuard::get(DocId docId, double *buffer, uint32_t sz) const {
+    return _target_attribute->get(getReferencedLid(docId), buffer, sz);
+}
+
+uint32_t ImportedAttributeVectorReadGuard::get(DocId docId, const char **buffer, uint32_t sz) const {
+    return _target_attribute->get(getReferencedLid(docId), buffer, sz);
+}
+
+uint32_t ImportedAttributeVectorReadGuard::get(DocId docId, EnumHandle *buffer, uint32_t sz) const {
+    return _target_attribute->get(getReferencedLid(docId), buffer, sz);
+}
+
+uint32_t ImportedAttributeVectorReadGuard::get(DocId docId, WeightedInt *buffer, uint32_t sz) const {
+    return _target_attribute->get(getReferencedLid(docId), buffer, sz);
+}
+
+uint32_t ImportedAttributeVectorReadGuard::get(DocId docId, WeightedFloat *buffer, uint32_t sz) const {
+    return _target_attribute->get(getReferencedLid(docId), buffer, sz);
+}
+
+uint32_t ImportedAttributeVectorReadGuard::get(DocId docId, WeightedString *buffer, uint32_t sz) const {
+    return _target_attribute->get(getReferencedLid(docId), buffer, sz);
+}
+
+uint32_t ImportedAttributeVectorReadGuard::get(DocId docId, WeightedConstChar *buffer, uint32_t sz) const {
+    return _target_attribute->get(getReferencedLid(docId), buffer, sz);
+}
+
+uint32_t ImportedAttributeVectorReadGuard::get(DocId docId, WeightedEnum *buffer, uint32_t sz) const {
+    return _target_attribute->get(getReferencedLid(docId), buffer, sz);
+}
+
+}
+}

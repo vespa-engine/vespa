@@ -29,20 +29,7 @@ private:
     using IAttributeVector = search::attribute::IAttributeVector;
     using ImportedAttributeVector = search::attribute::ImportedAttributeVector;
 
-    class GuardedAttribute {
-    private:
-        std::shared_ptr<ImportedAttributeVector> _attr;
-        std::unique_ptr<AttributeGuard> _guard;
-
-    public:
-        GuardedAttribute(std::shared_ptr<ImportedAttributeVector> attr, bool stableEnumGuard);
-        ~GuardedAttribute();
-        GuardedAttribute(GuardedAttribute &&rhs) = default;
-        GuardedAttribute &operator=(GuardedAttribute &&rhs) = default;
-        const IAttributeVector *get() const;
-    };
-
-    using AttributeCache = std::unordered_map<vespalib::string, GuardedAttribute, vespalib::hash<vespalib::string>>;
+    using AttributeCache = std::unordered_map<vespalib::string, std::unique_ptr<ImportedAttributeVector>, vespalib::hash<vespalib::string>>;
     using LockGuard = std::lock_guard<std::mutex>;
 
     const ImportedAttributesRepo &_repo;

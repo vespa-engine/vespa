@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "imported_attribute_vector.h"
+#include "imported_attribute_vector_read_guard.h"
 #include "imported_search_context.h"
 #include "attributeguard.h"
 #include <vespa/searchlib/query/queryterm.h>
@@ -20,6 +21,13 @@ ImportedAttributeVector::ImportedAttributeVector(
 }
 
 ImportedAttributeVector::~ImportedAttributeVector() {
+}
+
+std::unique_ptr<ImportedAttributeVector>
+ImportedAttributeVector::makeReadGuard(bool stableEnumGuard) const
+{
+    return std::make_unique<ImportedAttributeVectorReadGuard>
+        (getName(), getReferenceAttribute(), getTargetAttribute(), stableEnumGuard);
 }
 
 const vespalib::string& search::attribute::ImportedAttributeVector::getName() const {
