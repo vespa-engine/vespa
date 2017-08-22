@@ -64,7 +64,7 @@ public:
         size_t operator() (const ResultNode & arg) const { return arg.hash(); }
     };
 
-    typedef std::vector<GroupingLevel>         GroupingLevelList;
+    using GroupingLevelList = std::vector<GroupingLevel>;
 
 private:
 
