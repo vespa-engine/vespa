@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -46,7 +47,7 @@ import static org.junit.Assert.fail;
 public class DynamicDockerProvisioningTest {
 
     /**
-     * Test reloaction of nodes that violates headroom.
+     * Test relocation of nodes that violate headroom.
      *
      * Setup 4 docker hosts and allocate one container on each (from two different applications)
      * No spares - only headroom (4xd-2)
@@ -319,6 +320,20 @@ public class DynamicDockerProvisioningTest {
 
         List<Node> initialSpareCapacity = findSpareCapacity(tester);
         assertThat(initialSpareCapacity.size(), is(0));
+    }
+
+    @Test(expected = OutOfCapacityException.class)
+    public void allocation_should_fail_when_host_is_not_active() {
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")), flavorsConfig());
+        enableDynamicAllocation(tester);
+
+        tester.makeProvisionedNodes(3, UUID.randomUUID().toString(), "host-small", NodeType.host, 32);
+        deployZoneApp(tester);
+
+        ApplicationId application = tester.makeApplicationId();
+        Flavor flavor = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("d-3");
+        tester.prepare(application, ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100")),
+                       1, 1, flavor.canonicalName());
     }
 
     private ApplicationId makeApplicationId(String tenant, String appName) {
