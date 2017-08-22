@@ -19,7 +19,7 @@ import scala.concurrent.{Await, Future, TimeoutException}
 import scala.language.postfixOps
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  */
 class ComponentNode(componentId: ComponentId,

@@ -10,7 +10,7 @@ import com.yahoo.container.QrSearchersConfig;
 /**
  * API for programmatically removing the container from VIP rotation.
  *
- * @author steinar
+ * @author Steinar Knutsen
  */
 public class VipStatus {
 

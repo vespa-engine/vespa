@@ -15,7 +15,7 @@ import scala.language.existentials
 
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 
 class CloudSubscriberFactory(configSource: ConfigSource) extends SubscriberFactory

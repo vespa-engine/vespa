@@ -3,10 +3,11 @@ package com.yahoo.container.di.config;
 
 /**
  * @author gjoranv
- * @since 5.17
  */
 public class ResolveDependencyException extends RuntimeException {
+
     public ResolveDependencyException(String message) {
         super(message);
     }
+
 }

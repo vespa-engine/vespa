@@ -7,10 +7,8 @@ import com.yahoo.container.di.componentgraph.Provider
 import com.google.inject.Key
 import Node._
 
-
-
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  */
 abstract class Node(val componentId: ComponentId) {

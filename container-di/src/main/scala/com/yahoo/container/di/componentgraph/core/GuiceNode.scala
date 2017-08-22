@@ -7,7 +7,7 @@ import Node.syntheticComponentId
 import GuiceNode._
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  */
 final class GuiceNode(myInstance: AnyRef,

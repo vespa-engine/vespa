@@ -33,7 +33,7 @@ import static java.util.stream.Collectors.toSet;
 /**
  * Creates JDisc request/response filter chains.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  * @author bjorncs
  */
 public class FilterChainRepository extends AbstractComponent {

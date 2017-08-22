@@ -8,7 +8,7 @@ import java.io.OutputStream;
  * Placeholder response when no content, only headers and status is to be
  * returned.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class EmptyResponse extends HttpResponse {
 

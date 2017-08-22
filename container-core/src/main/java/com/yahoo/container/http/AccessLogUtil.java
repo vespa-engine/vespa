@@ -11,6 +11,7 @@ import java.util.List;
  * @author bakksjo
  */
 public class AccessLogUtil {
+
     public static String getHttpMethod(final HttpRequest httpRequest) {
         return httpRequest.getMethod().toString();
     }
@@ -40,4 +41,5 @@ public class AccessLogUtil {
         final List<String> headerValues = httpRequest.headers().get(headerName);
         return (headerValues == null || headerValues.isEmpty()) ? "" : headerValues.get(0);
     }
+
 }

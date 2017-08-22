@@ -12,7 +12,7 @@ import com.yahoo.jdisc.handler.ContentChannel;
  * HTTP response which supports async response rendering.
  *
  * @author bratseth
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public abstract class AsyncHttpResponse extends HttpResponse {
 

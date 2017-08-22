@@ -26,7 +26,7 @@ import scala.math.max
 /**
  *
  * @author gjoranv
- * @author tonytv
+ * @author Tony Vaagenes
  */
 class Container(
                  subscriberFactory: SubscriberFactory,

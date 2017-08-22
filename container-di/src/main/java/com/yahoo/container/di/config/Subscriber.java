@@ -7,10 +7,11 @@ import com.yahoo.vespa.config.ConfigKey;
 import java.util.Map;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  */
 public interface Subscriber {
+
     long waitNextGeneration();
     long generation();
 
@@ -18,4 +19,5 @@ public interface Subscriber {
     Map<ConfigKey<ConfigInstance>, ConfigInstance> config();
 
     void close();
+
 }

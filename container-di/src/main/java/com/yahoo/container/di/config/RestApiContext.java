@@ -20,7 +20,6 @@ import java.util.Set;
  * Only for internal JDisc use.
  *
  * @author gjoranv
- * @since 5.11
  */
 public class RestApiContext {
 

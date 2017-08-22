@@ -13,7 +13,7 @@ package com.yahoo.container.handler;
  * <p>If you do not understand the fields, just avoid creating this object
  * in you handler.</p>
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class Timing {
 

@@ -10,7 +10,7 @@ import com.yahoo.container.core.DiagnosticsConfig;
 /**
  * Runs and initializes a {@link Watchdog} instance.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  * @deprecated this is not in use and will be removed in the next major release
  */
 @Deprecated

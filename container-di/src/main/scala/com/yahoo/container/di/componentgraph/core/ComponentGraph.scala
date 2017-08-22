@@ -28,7 +28,7 @@ import scala.Some
 import scala.language.existentials
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  */
 @NotThreadSafe

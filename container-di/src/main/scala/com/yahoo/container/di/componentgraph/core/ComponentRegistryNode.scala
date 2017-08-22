@@ -9,7 +9,7 @@ import com.google.inject.util.Types
 import Node.syntheticComponentId
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  */
 class ComponentRegistryNode(val componentClass : Class[AnyRef])

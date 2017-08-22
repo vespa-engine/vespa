@@ -14,7 +14,7 @@ import com.yahoo.jdisc.handler.ContentChannel;
  * An HTTP response supporting async rendering and extended information for
  * logging.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public abstract class ExtendedResponse extends AsyncHttpResponse {
 

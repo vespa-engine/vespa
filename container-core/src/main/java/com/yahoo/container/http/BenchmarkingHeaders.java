@@ -4,7 +4,7 @@ package com.yahoo.container.http;
 /**
  * Class containing the names of all benchmarking getHeaders in request and response
  *
- * @author <a href="mailto:mathiasm@yahoo-inc.com">Mathias Mølster Lidal</a>
+ * @author Mathias Mølster Lidal
  */
 public class BenchmarkingHeaders {
 
