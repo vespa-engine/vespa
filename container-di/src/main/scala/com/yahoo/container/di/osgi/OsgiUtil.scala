@@ -19,7 +19,7 @@ import scala.collection.JavaConverters._
 
 /**
  * Tested by com.yahoo.application.container.jersey.JerseyTest
- * @author tonytv
+ * @author Tony Vaagenes
  */
 object OsgiUtil {
   private val log = Logger.getLogger(getClass.getName)

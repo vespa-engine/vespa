@@ -29,9 +29,9 @@ import com.yahoo.processing.request.ErrorMessage;
  * Static helper methods which implement the mapping between the ErrorMessage
  * API and HTTP headers and return codes.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Einar M R Rosenvinge
+ * @author Steinar Knutsen
+ * @author Simon Thoresen
  * @author bratseth
  */
 public final class VespaHeaders {

@@ -62,7 +62,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
@@ -552,10 +552,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private List<Container> createNodesFromNodeList(ContainerCluster cluster, Element nodesElement) {
         List<Container> nodes = new ArrayList<>();
-        int nodeCount = 0;
+        int nodeIndex = 0;
         for (Element nodeElem: XML.getChildren(nodesElement, "node")) {
-            nodes.add(new ContainerServiceBuilder("container." + nodeCount, nodeCount).build(cluster, nodeElem));
-            nodeCount++;
+            nodes.add(new ContainerServiceBuilder("container." + nodeIndex, nodeIndex).build(cluster, nodeElem));
+            nodeIndex++;
         }
         return nodes;
     }

@@ -4,7 +4,7 @@ package com.yahoo.container.protect;
 /**
  * Error codes to use in ErrorMessage instances for container applications.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public enum Error {
 

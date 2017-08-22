@@ -42,7 +42,7 @@ import static com.yahoo.container.util.Util.quote;
 /**
  * For internal use only.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  */
 //TODO: rename
@@ -84,12 +84,7 @@ public class HandlersConfigurerDi {
         this.vespaContainer = vespaContainer;
         osgiWrapper = new OsgiWrapper(osgiFramework, vespaContainer.getBundleLoader());
 
-        container = new Container(
-                subscriberFactory,
-                configId,
-                deconstructor,
-                osgiWrapper
-        );
+        container = new Container(subscriberFactory, configId, deconstructor, osgiWrapper);
         try {
             runOnceAndEnsureRegistryHackRun(discInjector);
         } catch (InterruptedException e) {

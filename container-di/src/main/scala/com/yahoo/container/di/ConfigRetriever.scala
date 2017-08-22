@@ -14,7 +14,7 @@ import scala.collection.JavaConverters._
 import scala.language.postfixOps
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  */
 final class ConfigRetriever(bootstrapKeys: Set[ConfigKeyT],

@@ -13,9 +13,7 @@ import MockBundle._
 import org.osgi.resource.{Capability, Wire, Requirement}
 
 /**
- *
  * @author gjoranv
- * @since 5.15
  */
 class MockBundle extends Bundle with BundleWiring {
 

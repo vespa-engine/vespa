@@ -7,9 +7,10 @@ import com.yahoo.jdisc.application.MetricConsumer;
  * <p>This is the interface to implement if one wishes to configure a non-default <tt>MetricConsumer</tt>. Simply
  * add the implementing class as a component in your services.xml file.</p>
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public interface MetricConsumerFactory {
 
-    public MetricConsumer newInstance();
+    MetricConsumer newInstance();
+
 }

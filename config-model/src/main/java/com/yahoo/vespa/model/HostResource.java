@@ -22,8 +22,7 @@ import java.util.stream.Collectors;
  * TODO: Merge with {@link Host}
  * Host resources are ordered by their host order.
  *
- * @author lulf
- * @since 5.12
+ * @author Ulf Lillengen
  */
 public class HostResource implements Comparable<HostResource> {
 
@@ -31,8 +30,9 @@ public class HostResource implements Comparable<HostResource> {
     final static int MAX_PORTS = 799;
     private final Host host;
 
-    // Map from "sentinel name" to service
+    /** Map from "sentinel name" to service */
     private final Map<String, Service> services = new LinkedHashMap<>();
+
     private final Map<Integer, Service> portDB = new LinkedHashMap<>();
 
     private int allocatedPorts = 0;
@@ -74,9 +74,7 @@ public class HostResource implements Comparable<HostResource> {
             }
             range++;
         }
-        return range == numPorts ?
-                port - range :
-                0;
+        return range == numPorts ? port - range : 0;
     }
 
     /**

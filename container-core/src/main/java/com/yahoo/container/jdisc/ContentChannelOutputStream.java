@@ -18,7 +18,7 @@ import java.util.logging.Logger;
 /**
  * A buffered stream wrapping a ContentChannel.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class ContentChannelOutputStream extends OutputStream implements WritableByteTransmitter {
 

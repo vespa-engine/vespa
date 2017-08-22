@@ -25,7 +25,7 @@ import static com.yahoo.container.core.BundleLoaderProperties.DISK_BUNDLE_PREFIX
 /**
  * Manages the set of installed 3rd-party component bundles.
  *
- * @author  tonytv
+ * @author Tony Vaagenes
  */
 public class BundleLoader {
 

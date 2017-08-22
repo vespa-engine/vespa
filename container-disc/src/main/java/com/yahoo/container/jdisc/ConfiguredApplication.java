@@ -48,7 +48,7 @@ import java.util.logging.Logger;
 import static com.yahoo.collections.CollectionUtil.first;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public final class ConfiguredApplication implements Application {
 

@@ -51,6 +51,7 @@ public class Container extends AbstractService implements
         ContainerHttpConfig.Producer,
         ContainerMbusConfig.Producer,
         ClusterMemberInfoConfig.Producer {
+
     public static final int BASEPORT = Defaults.getDefaults().vespaWebServicePort();
     public static final String SINGLENODE_CONTAINER_SERVICESPEC = "default_singlenode_container";
 

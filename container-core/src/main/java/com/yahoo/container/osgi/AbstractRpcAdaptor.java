@@ -6,7 +6,7 @@ import com.yahoo.jrt.Supervisor;
 /**
  * Helper class for optional RPC adaptors in the Container.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public abstract class AbstractRpcAdaptor {
 

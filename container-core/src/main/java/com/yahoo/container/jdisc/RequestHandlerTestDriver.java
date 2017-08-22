@@ -24,7 +24,6 @@ import java.util.concurrent.TimeUnit;
  * A helper for making tests creating jDisc requests and checking their responses.
  *
  * @author bratseth
- * @since 5.21
  */
 @Beta
 public class RequestHandlerTestDriver implements AutoCloseable {

@@ -8,11 +8,13 @@ import com.yahoo.vespa.config.ConfigKey;
 import java.util.Set;
 
 /**
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  */
 @ProvidedBy(CloudSubscriberFactory.Provider.class)
 public interface SubscriberFactory {
+
     Subscriber getSubscriber(Set<? extends ConfigKey<?>> configKeys);
     void reloadActiveSubscribers(long generation);
+
 }

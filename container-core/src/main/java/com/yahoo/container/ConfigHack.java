@@ -11,7 +11,7 @@ import com.yahoo.container.config.StatisticsEmitter;
  * <p>
  * This class should not reach a final release.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public final class ConfigHack {
 

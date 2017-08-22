@@ -14,7 +14,7 @@ package com.yahoo.container.di.componentgraph;
  *     does not provide a component instance.</li>
  * </ul>
  *
- * @author tonytv
+ * @author Tony Vaagenes
  * @author gjoranv
  */
 public interface Provider<T> {

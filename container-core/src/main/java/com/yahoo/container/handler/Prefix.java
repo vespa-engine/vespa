@@ -4,7 +4,7 @@ package com.yahoo.container.handler;
 /**
  * Wrapper to maintain indirections between prefixes and Handler instances.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public final class Prefix implements Comparable<Prefix> {
 

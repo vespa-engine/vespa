@@ -10,7 +10,7 @@ import com.yahoo.component.ComponentSpecification
 /**
  *
  * @author gjoranv
- * @author tonytv
+ * @author Tony Vaagenes
  */
 trait Osgi {
 

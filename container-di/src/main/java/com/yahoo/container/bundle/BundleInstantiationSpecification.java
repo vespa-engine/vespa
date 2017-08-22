@@ -9,7 +9,7 @@ import net.jcip.annotations.Immutable;
 /**
  * Specifies how a component should be instantiated from a bundle.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @Immutable
 public final class BundleInstantiationSpecification {

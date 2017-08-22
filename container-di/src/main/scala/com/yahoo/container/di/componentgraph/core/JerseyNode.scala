@@ -18,8 +18,7 @@ import scala.collection.JavaConverters._
  * Represents an instance of RestApiContext
  *
  * @author gjoranv
- * @author tonytv
- * @since 5.15
+ * @author Tony Vaagenes
  */
 class JerseyNode(componentId: ComponentId,
                  override val configId: String,

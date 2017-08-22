@@ -7,14 +7,16 @@ import com.yahoo.jdisc.handler.CompletionHandler;
  * A completion handler which does access logging.
  *
  * @see ThreadedHttpRequestHandler#createLoggingCompletionHandler(long, long, HttpResponse, HttpRequest, ContentChannelOutputStream)
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public interface LoggingCompletionHandler extends CompletionHandler {
+
     /**
      * Set the commit start time to the current time. Commit start is only well
      * defined for synchronous renderers, it is the point in time when rendering
      * has finished, but there may still be I/O operations to transfer the data
      * to the client pending.
      */
-    public void markCommitStart();
+    void markCommitStart();
+
 }

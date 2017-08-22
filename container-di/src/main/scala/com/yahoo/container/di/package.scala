@@ -12,7 +12,7 @@ import scala.language.implicitConversions
 /**
  *
  * @author gjoranv
- * @author tonytv
+ * @author Tony Vaagenes
  */
 package object di {
   type ConfigKeyT = ConfigKey[_ <: ConfigInstance]
