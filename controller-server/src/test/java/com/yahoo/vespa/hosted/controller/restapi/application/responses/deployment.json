@@ -1,0 +1,57 @@
+{
+  "serviceUrls": [
+    "qrs-endpoint","feeding-endpoint","global-endpoint","alias-endpoint"
+  ],
+  "nodes": "http://localhost:8080/zone/v2/prod/corp-us-east-1/nodes/v2/node/%3F&recursive=true&application=tenant1.application1.default",
+  "elkUrl": "http://log.prod.corp-us-east-1.test/#/discover?_g=()&_a=(columns:!(_source),index:'logstash-*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:'HV-tenant:%22tenant1%22%20AND%20HV-application:%22application1%22%20AND%20HV-region:%22corp-us-east-1%22%20AND%20HV-instance:%22default%22%20AND%20HV-environment:%22prod%22')),sort:!('@timestamp',desc))",
+  "yamasUrl": "http://monitoring-system.test/?environment=prod&region=corp-us-east-1&application=tenant1.application1",
+  "version": "(ignore)",
+  "revision": "(ignore)",
+  "deployTimeEpochMs": "(ignore)",
+  "screwdriverId":"123",
+  "gitRepository":"repository1",
+  "gitBranch":"master",
+  "gitCommit":"commit1",
+  "cost": {
+    "zone": "prod.us-west-1",
+    "tenant": "tenant1",
+    "app": "application1.default",
+    "tco": 37,
+    "utilization": 1.0,
+    "waste": 0.0,
+    "cluster": {
+      "cluster1": {
+        "count": 2,
+        "resource": "cpu",
+        "utilization": 1.0,
+        "tco": 25,
+        "flavor": "flavor1",
+        "waste": 10,
+        "type": "content",
+        "util": {
+          "cpu": 0.0,
+          "mem": 0.0,
+          "disk": 0.0,
+          "diskBusy": 0.0
+        },
+        "usage": {
+          "cpu": 0.0,
+          "mem": 0.0,
+          "disk": 0.0,
+          "diskBusy": 0.0
+        },
+        "hostnames": [
+          "host1",
+          "host2"
+        ]
+      }
+    }
+  },
+  "metrics": {
+    "queriesPerSecond":1.0,
+    "writesPerSecond":2.0,
+    "documentCount":3.0,
+    "queryLatencyMillis":4.0,
+    "writeLatencyMillis":5.0
+  }
+}

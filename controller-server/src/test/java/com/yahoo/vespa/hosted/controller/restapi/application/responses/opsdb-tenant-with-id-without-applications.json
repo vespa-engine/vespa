@@ -1,0 +1,9 @@
+{
+  "type": "OPSDB",
+  "property": "property1",
+  "propertyId": "1234",
+  "userGroup": "group1",
+  "applications": [
+
+  ]
+}

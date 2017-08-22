@@ -1,0 +1,50 @@
+{
+  "versions":[
+    {
+      "version":"(ignore)",
+      "confidence":"normal",
+      "commit":"(ignore)",
+      "date":0,
+      "controllerVersion":false,
+      "systemVersion":true,
+      "configServers":[
+        {
+          "hostname":"config1.test"
+        },
+        {
+          "hostname":"config2.test"
+        }
+      ],
+      "failingApplications":[
+        {
+          "tenant":"tenant1",
+          "application":"application1",
+          "instance":"default",
+          "url":"http://localhost:8080/application/v4/tenant/tenant1/application/application1",
+          "failingSince": "(ignore)"
+        }
+      ],
+      "productionApplications":[
+
+      ]
+    },
+    {
+      "version":"(ignore)",
+      "confidence":"normal",
+      "commit":"(ignore)",
+      "date":0,
+      "controllerVersion":true,
+      "systemVersion":false,
+      "configServers":[
+
+      ],
+      "failingApplications":[
+
+      ],
+      "productionApplications":[
+
+      ]
+    }
+  ]
+}
+
