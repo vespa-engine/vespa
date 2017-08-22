@@ -93,15 +93,17 @@ public class ApplicationDeployTest {
 
         List<FilesApplicationPackage.Component> components = app.getComponents();
         assertEquals(1, components.size());
-        Map<String, Bundle.DefEntry> defEntries =
+        Map<String, Bundle.DefEntry> defEntriesByName =
                 defEntries2map(components.get(0).getDefEntries());
-        assertEquals(2, defEntries.size());
-        System.out.println(defEntries);
-        Bundle.DefEntry def1 = defEntries.get("test1");
-        Bundle.DefEntry def2 = defEntries.get("test2");
+        assertEquals(5, defEntriesByName.size());
+        System.out.println(defEntriesByName);
+
+        Bundle.DefEntry def1 = defEntriesByName.get("test-namespace");
         assertNotNull(def1);
-        assertNotNull(def2);
         assertEquals("namespace=config\nintVal int default=0", def1.contents);
+
+        Bundle.DefEntry def2 = defEntriesByName.get("namespace-in-filename");
+        assertNotNull(def2);
         assertEquals("namespace=a.b\n\ndoubleVal double default=0.0", def2.contents);
 
         // Check that getFilename works
@@ -280,7 +282,7 @@ public class ApplicationDeployTest {
         String appName = "src/test/cfg//application/app1";
         FilesApplicationPackage app = FilesApplicationPackage.fromFile(new File(appName), false);
         Map<ConfigDefinitionKey, UnparsedConfigDefinition> defs = app.getAllExistingConfigDefs();
-        assertThat(defs.size(), is(2));
+        assertThat(defs.size(), is(5));
     }
 
     @Test

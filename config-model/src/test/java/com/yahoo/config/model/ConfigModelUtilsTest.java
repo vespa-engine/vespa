@@ -17,40 +17,60 @@ import static org.junit.Assert.assertThat;
  */
 public class ConfigModelUtilsTest {
 
-    /**
-     * Tests that a def file both with and without namespace in file name are handled, and that
-     * def files in other directories than 'configdefinitions/' within the jar file are ignored.
-     */
+    public static final String VALID_TEST_BUNDLE = "src/test/cfg/application/app1/components/";
+    public static final String INVALID_TEST_BUNDLE = "src/test/cfg/application/validation/invalidjar_app/components";
+
     @Test
-    public void testDefFilesInBundle() {
-        List<Bundle> bundles = Bundle.getBundles(new File("src/test/cfg/application/app1/components/"));
+    public void all_def_files_in_correct_directory_are_handled_and_files_outside_are_ignored() {
+        List<Bundle> bundles = Bundle.getBundles(new File(VALID_TEST_BUNDLE));
         assertThat(bundles.size(), is(1));
-        Bundle bundle = bundles.get(0);
-        assertThat(bundle.getDefEntries().size(), is(2));
-
-        Bundle.DefEntry defEntry1 = bundle.getDefEntries().get(0);
-        Bundle.DefEntry defEntry2;
-        List<Bundle.DefEntry> defEntries = bundle.getDefEntries();
-        if (defEntry1.defName.equals("test1")) {
-            defEntry2 = defEntries.get(1);
-        } else {
-            defEntry1 = defEntries.get(1);
-            defEntry2 = defEntries.get(0);
-        }
-        assertThat(defEntry1.defName, is("test1"));
-        assertThat(defEntry1.defNamespace, is("config"));
-
-        assertThat(defEntry2.defName, is("test2"));
-        assertThat(defEntry2.defNamespace, is("a.b"));
+        assertThat(bundles.get(0).getDefEntries().size(), is(5));
     }
 
-    /**
-     * Tests that an invalid jar is identified as not being a jar file
-     */
     @Test
-    public void testInvalidJar() {
+    public void def_file_with_namespace_is_handled() {
+        Bundle.DefEntry defEntry = getDefEntry("test-namespace");
+        assertThat(defEntry.defNamespace, is("config"));
+    }
+
+    @Test
+    public void def_file_with_namespace_and_namespace_in_filename_is_handled() {
+        Bundle.DefEntry defEntry = getDefEntry("namespace-in-filename");
+        assertThat(defEntry.defNamespace, is("a.b"));
+    }
+
+    @Test
+    public void def_file_with_package_is_handled() {
+        Bundle.DefEntry defEntry = getDefEntry("test-package");
+        assertThat(defEntry.defNamespace, is("com.mydomain.mypackage"));
+    }
+
+    @Test
+    public void def_file_with_package_and_pacakage_in_filename_is_handled() {
+        Bundle.DefEntry defEntry = getDefEntry("package-in-filename");
+        assertThat(defEntry.defNamespace, is("com.mydomain.mypackage"));
+    }
+
+    @Test
+    public void def_file_with_both_package_and_namespace_gets_package_as_namespace() {
+        Bundle.DefEntry defEntry = getDefEntry("namespace-and-package");
+        assertThat(defEntry.defNamespace, is("com.mydomain.mypackage"));
+    }
+
+    private static Bundle.DefEntry getDefEntry(String defName) {
+        Bundle bundle = Bundle.getBundles(new File(VALID_TEST_BUNDLE)).get(0);
+
+        for (Bundle.DefEntry defEntry : bundle.getDefEntries()) {
+            if (defEntry.defName.equals(defName))
+                return defEntry;
+        }
+        throw new IllegalArgumentException("No def file with name '" + defName + "' found in the test bundle.");
+    }
+
+    @Test
+    public void invalid_jar_file_fails_to_load() {
         try {
-            Bundle.getBundles(new File("src/test/cfg/application/validation/invalidjar_app/components"));
+            Bundle.getBundles(new File(INVALID_TEST_BUNDLE));
             fail();
         } catch (IllegalArgumentException e) {
             assertThat(e.getMessage(), is("Error opening jar file 'invalid.jar'. Please check that this is a valid jar file"));
