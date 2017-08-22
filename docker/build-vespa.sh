@@ -11,8 +11,8 @@ DIR=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
 cd $DIR
 
 VESPA_VERSION=$1
-DOCKER_IMAGE="vespabuild"
+DOCKER_IMAGE="vespaengine/vespa-dev:latest"
 
-docker build -t "$DOCKER_IMAGE" -f build/Dockerfile .
+docker pull ${DOCKER_IMAGE}
 docker run --rm -v $(pwd)/..:/vespa --entrypoint /vespa/docker/build/build-vespa-internal.sh "$DOCKER_IMAGE" "$VESPA_VERSION" "$(id -u)" "$(id -g)"
 

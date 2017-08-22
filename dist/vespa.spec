@@ -68,8 +68,8 @@ Vespa - The open big data serving engine
 
 %build
 source /opt/rh/devtoolset-6/enable || true
-sh bootstrap.sh
-mvn install -DskipTests -Dmaven.javadoc.skip=true
+sh bootstrap.sh java
+mvn -nsu -T %{_smp_mflags} install -DskipTests -Dmaven.javadoc.skip=true
 cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        -DJAVA_HOME=/usr/lib/jvm/java-openjdk \
        -DEXTRA_LINK_DIRECTORY="/usr/lib64/llvm3.9/lib;/opt/vespa-boost/lib;/opt/vespa-libtorrent/lib;/opt/vespa-zookeeper-c-client/lib;/opt/vespa-cppunit/lib" \
