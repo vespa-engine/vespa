@@ -499,6 +499,7 @@ public:
 
     // Implements IAttributeVector
     bool findEnum(const char *value, EnumHandle &e) const override;
+    const char * getStringFromEnum(EnumHandle e) const override;
 
 ///// Modify API
     virtual void onCommit() = 0;

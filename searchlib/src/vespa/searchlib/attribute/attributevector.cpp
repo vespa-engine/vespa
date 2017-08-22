@@ -542,7 +542,7 @@ int32_t AttributeVector::getWeight(DocId, uint32_t) const { return 1; }
 
 bool AttributeVector::findEnum(const char *, EnumHandle &) const { return false; }
 
-
+const char * AttributeVector::getStringFromEnum(EnumHandle) const { return nullptr; }
 
 AttributeVector::SearchContext::SearchContext(const AttributeVector &attr) :
     _attr(attr),

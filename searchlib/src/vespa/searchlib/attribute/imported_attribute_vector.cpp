@@ -102,6 +102,10 @@ bool ImportedAttributeVector::findEnum(const char *value, EnumHandle &e) const {
     return _target_attribute->findEnum(value, e);
 }
 
+const char * ImportedAttributeVector::getStringFromEnum(EnumHandle e) const {
+    return _target_attribute->getStringFromEnum(e);
+}
+
 std::unique_ptr<ISearchContext> ImportedAttributeVector::createSearchContext(std::unique_ptr<QueryTermSimple> term,
                                                                              const SearchContextParams &params) const {
     return std::make_unique<ImportedSearchContext>(std::move(term), params, *this);

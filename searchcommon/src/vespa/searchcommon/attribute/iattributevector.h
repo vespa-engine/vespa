@@ -241,6 +241,18 @@ public:
      **/
     virtual bool findEnum(const char * value, EnumHandle & e) const = 0;
 
+    /**
+     * Given an enum handle, returns the string it refers to.
+     * This method will only have effect if @ref getBasicType() returns BasicType::STRING and
+     * @ref hasEnum() returns true.
+     *
+     * Effectively functions as the inverse of @ref findEnum(value, handle)
+     *
+     * @param e a valid enum handle
+     * @return enum string value, or nullptr if attribute type does
+     *         not support enum handle lookups.
+     */
+    virtual const char * getStringFromEnum(EnumHandle e) const = 0;
 
     /**
      * Creates a context for searching this attribute with the given term.

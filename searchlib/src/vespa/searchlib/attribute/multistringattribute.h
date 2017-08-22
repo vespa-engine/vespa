@@ -71,6 +71,9 @@ public:
             return this->_enumStore.getValue(indices[0].value());
         }
     }
+    const char * getStringFromEnum(EnumHandle e) const override {
+        return this->_enumStore.getValue(e);
+    }
     template <typename BufferType>
     uint32_t getHelper(DocId doc, BufferType * buffer, uint32_t sz) const {
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
