@@ -1,18 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "groupingmanager.h"
+#include "groupingsession.h"
+#include "groupingcontext.h"
 #include <vespa/searchlib/aggregation/fs4hit.h>
 #include <vespa/searchlib/expression/attributenode.h>
-#include <vespa/searchcore/grouping/groupingsession.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".groupingmanager");
 
-namespace search {
-namespace grouping {
+namespace search::grouping {
 
-using search::aggregation::Grouping;
-using search::attribute::IAttributeContext;
+using aggregation::Grouping;
+using attribute::IAttributeContext;
 
 //-----------------------------------------------------------------------------
 
@@ -30,6 +30,10 @@ using search::expression::AttributeNode;
 using search::expression::ConfigureStaticParams;
 using search::aggregation::Grouping;
 using search::aggregation::GroupingLevel;
+
+bool GroupingManager::empty() const {
+    return _groupingContext.getGroupingList().empty();
+}
 
 void
 GroupingManager::init(const IAttributeContext &attrCtx)
@@ -126,5 +130,4 @@ GroupingManager::convertToGlobalId(const search::IDocumentMetaStore &metaStore)
     }
 }
 
-} // namespace search::grouping
-} // namespace search
+}

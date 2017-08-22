@@ -6,9 +6,7 @@
 #include <vector>
 #include <memory>
 
-namespace search {
-
-namespace grouping {
+namespace search::grouping {
 
 /**
  * A Grouping Context contains all grouping expressions that should be evaluated
@@ -115,6 +113,4 @@ public:
     bool needRanking() const;
 };
 
-} // namespace search::grouping
-} // namespace search
-
+}

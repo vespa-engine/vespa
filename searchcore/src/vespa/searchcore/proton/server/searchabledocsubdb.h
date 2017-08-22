@@ -126,7 +126,7 @@ public:
 
     void
     initViews(const DocumentDBConfig &configSnapshot,
-              const matching::SessionManager::SP &sessionManager)  override;
+              const SessionManagerSP &sessionManager)  override;
 
     IReprocessingTask::List
     applyConfig(const DocumentDBConfig &newConfigSnapshot,
