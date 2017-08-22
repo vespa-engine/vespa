@@ -551,6 +551,6 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
 
     @Override
     public String toString() {
-        return getServiceName() + " on " + getHost().toString();
+        return getServiceName() + " on " + (getHost() == null ? "no host" : getHost().toString());
     }
 }
