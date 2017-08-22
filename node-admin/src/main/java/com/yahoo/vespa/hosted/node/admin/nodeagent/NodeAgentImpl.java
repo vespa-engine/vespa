@@ -216,7 +216,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    private void runLocalResumeScriptIfNeeded(final ContainerNodeSpec nodeSpec) {
+    private void runLocalResumeScriptIfNeeded() {
         if (! resumeScriptRun) {
             addDebugMessage("Starting optional node program resume command");
             dockerOperations.resumeNode(containerName);
@@ -466,7 +466,7 @@ public class NodeAgentImpl implements NodeAgent {
                     startContainer(nodeSpec);
                 }
 
-                runLocalResumeScriptIfNeeded(nodeSpec);
+                runLocalResumeScriptIfNeeded();
                 // Because it's more important to stop a bad release from rolling out in prod,
                 // we put the resume call last. So if we fail after updating the node repo attributes
                 // but before resume, the app may go through the tenant pipeline but will halt in prod.
