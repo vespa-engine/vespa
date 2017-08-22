@@ -61,7 +61,11 @@ public class StorageMaintainerTest {
                 .hostname(hostname)
                 .nodeState(Node.State.ready)
                 .nodeType("tenants")
-                .nodeFlavor("docker").build();
+                .nodeFlavor("docker")
+                .minCpuCores(1)
+                .minMainMemoryAvailableGb(1)
+                .minDiskAvailableGb(1)
+                .build();
 
         try {
             when(processExecuter.exec(any(String[].class))).thenReturn(new Pair<>(0, ""));

@@ -127,22 +127,15 @@ public class DockerOperationsImpl implements DockerOperations {
             }
 
             // TODO: Enforce disk constraints
-            // TODO: Consider if CPU shares or quota should be set. For now we are just assuming they are
-            // nicely controlled by docker.
-            if (nodeSpec.minMainMemoryAvailableGb.isPresent()) {
-                long minMainMemoryAvailableMb = (long) (nodeSpec.minMainMemoryAvailableGb.get() * 1024);
-                if (minMainMemoryAvailableMb > 0) {
-                    command.withMemoryInMb(minMainMemoryAvailableMb);
-                    // VESPA_TOTAL_MEMORY_MB is used to make any jdisc container think the machine
-                    // only has this much physical memory (overrides total memory reported by `free -m`).
-                    command.withEnvironment("VESPA_TOTAL_MEMORY_MB", Long.toString(minMainMemoryAvailableMb));
-
-                    // TODO: Remove once the lowest version in prod is 6.95
-                    command.withEnvironment("TOTAL_MEMORY_MB", Long.toString(minMainMemoryAvailableMb));
-                }
+            long minMainMemoryAvailableMb = (long) (nodeSpec.minMainMemoryAvailableGb * 1024);
+            if (minMainMemoryAvailableMb > 0) {
+                command.withMemoryInMb(minMainMemoryAvailableMb);
+                // VESPA_TOTAL_MEMORY_MB is used to make any jdisc container think the machine
+                // only has this much physical memory (overrides total memory reported by `free -m`).
+                command.withEnvironment("VESPA_TOTAL_MEMORY_MB", Long.toString(minMainMemoryAvailableMb));
             }
 
-            nodeSpec.minCpuCores.ifPresent(cpuShares -> command.withCpuShares((int) Math.round(10 * cpuShares)));
+            command.withCpuShares((int) Math.round(10 * nodeSpec.minCpuCores));
 
             logger.info("Starting new container with args: " + command);
             command.create();

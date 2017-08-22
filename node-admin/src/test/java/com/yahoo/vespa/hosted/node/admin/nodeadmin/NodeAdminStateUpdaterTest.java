@@ -55,6 +55,9 @@ public class NodeAdminStateUpdaterTest {
                             .nodeState(i % 3 == 0 ? Node.State.active : Node.State.ready)
                             .nodeType("tenant")
                             .nodeFlavor("docker")
+                            .minCpuCores(1)
+                            .minMainMemoryAvailableGb(1)
+                            .minDiskAvailableGb(1)
                             .build());
         }
         List<String> activeHostnames = Arrays.asList(
