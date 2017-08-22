@@ -58,6 +58,9 @@ public class FilebeatConfigProviderTest {
                 .nodeState(Node.State.active)
                 .nodeType("type")
                 .hostname("hostname")
+                .minCpuCores(1)
+                .minMainMemoryAvailableGb(1)
+                .minDiskAvailableGb(1)
                 .build();
         Optional<String> config = filebeatConfigProvider.getConfig(nodeSpec);
         assertFalse(config.isPresent());
@@ -113,6 +116,9 @@ public class FilebeatConfigProviderTest {
                 .nodeState(Node.State.active)
                 .nodeType("type")
                 .hostname("hostname")
+                .minCpuCores(1)
+                .minMainMemoryAvailableGb(1)
+                .minDiskAvailableGb(1)
                 .build();
     }
 

@@ -216,7 +216,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    private void runLocalResumeScriptIfNeeded(final ContainerNodeSpec nodeSpec) {
+    private void runLocalResumeScriptIfNeeded() {
         if (! resumeScriptRun) {
             addDebugMessage("Starting optional node program resume command");
             dockerOperations.resumeNode(containerName);
@@ -466,7 +466,7 @@ public class NodeAgentImpl implements NodeAgent {
                     startContainer(nodeSpec);
                 }
 
-                runLocalResumeScriptIfNeeded(nodeSpec);
+                runLocalResumeScriptIfNeeded();
                 // Because it's more important to stop a bad release from rolling out in prod,
                 // we put the resume call last. So if we fail after updating the node repo attributes
                 // but before resume, the app may go through the tenant pipeline but will halt in prod.
@@ -526,7 +526,7 @@ public class NodeAgentImpl implements NodeAgent {
         final long memoryTotalBytes = ((Number) stats.getMemoryStats().get("limit")).longValue();
         final long memoryTotalBytesUsage = ((Number) stats.getMemoryStats().get("usage")).longValue();
         final long memoryTotalBytesCache = ((Number) ((Map) stats.getMemoryStats().get("stats")).get("cache")).longValue();
-        final Optional<Long> diskTotalBytes = nodeSpec.minDiskAvailableGb.map(size -> (long) (size * bytesInGB));
+        final long diskTotalBytes = (long) (nodeSpec.minDiskAvailableGb * bytesInGB);
         final Optional<Long> diskTotalBytesUsed = storageMaintainer.flatMap(maintainer -> maintainer
                         .getDiskUsageFor(containerName));
 
@@ -535,20 +535,19 @@ public class NodeAgentImpl implements NodeAgent {
         // CPU usage by a container as percentage of total CPU allocated to it is given by dividing the
         // cpuPercentageOfHost with the ratio of container minCpuCores by total number of CPU cores.
         double cpuPercentageOfHost = lastCpuMetric.getCpuUsagePercentage(cpuContainerTotalTime, cpuSystemTotalTime);
-        Optional<Double> cpuPercentageOfAllocated = nodeSpec.minCpuCores.map(containerNumCpuCores ->
-                totalNumCpuCores * cpuPercentageOfHost / containerNumCpuCores);
+        double cpuPercentageOfAllocated = totalNumCpuCores * cpuPercentageOfHost / nodeSpec.minCpuCores;
         long memoryTotalBytesUsed = memoryTotalBytesUsage - memoryTotalBytesCache;
         double memoryPercentUsed = 100.0 * memoryTotalBytesUsed / memoryTotalBytes;
-        Optional<Double> diskPercentUsed = diskTotalBytes.flatMap(total -> diskTotalBytesUsed.map(used -> 100.0 * used / total));
+        Optional<Double> diskPercentUsed = diskTotalBytesUsed.map(used -> 100.0 * used / diskTotalBytes);
 
         List<DimensionMetrics> metrics = new ArrayList<>();
         DimensionMetrics.Builder systemMetricsBuilder = new DimensionMetrics.Builder(APP, dimensions)
                 .withMetric("mem.limit", memoryTotalBytes)
                 .withMetric("mem.used", memoryTotalBytesUsed)
-                .withMetric("mem.util", memoryPercentUsed);
+                .withMetric("mem.util", memoryPercentUsed)
+                .withMetric("cpu.util", cpuPercentageOfAllocated)
+                .withMetric("disk.limit", diskTotalBytes);
 
-        cpuPercentageOfAllocated.ifPresent(cpuUtil -> systemMetricsBuilder.withMetric("cpu.util", cpuUtil));
-        diskTotalBytes.ifPresent(diskLimit -> systemMetricsBuilder.withMetric("disk.limit", diskLimit));
         diskTotalBytesUsed.ifPresent(diskUsed -> systemMetricsBuilder.withMetric("disk.used", diskUsed));
         diskPercentUsed.ifPresent(diskUtil -> systemMetricsBuilder.withMetric("disk.util", diskUtil));
         metrics.add(systemMetricsBuilder.build());

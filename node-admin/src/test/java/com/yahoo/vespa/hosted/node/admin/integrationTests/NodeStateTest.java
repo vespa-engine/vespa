@@ -23,6 +23,9 @@ public class NodeStateTest {
             .nodeFlavor("docker")
             .wantedRestartGeneration(1L)
             .currentRestartGeneration(1L)
+            .minCpuCores(1)
+            .minMainMemoryAvailableGb(1)
+            .minDiskAvailableGb(1)
             .build();
 
     private void setup(DockerTester tester) throws InterruptedException {
@@ -46,6 +49,9 @@ public class NodeStateTest {
             // Change node state to dirty
             dockerTester.addContainerNodeSpec(new ContainerNodeSpec.Builder(initialContainerNodeSpec)
                     .nodeState(Node.State.dirty)
+                    .minCpuCores(1)
+                    .minMainMemoryAvailableGb(1)
+                    .minDiskAvailableGb(1)
                     .build());
 
             // Wait until it is marked ready
@@ -73,6 +79,9 @@ public class NodeStateTest {
             dockerTester.addContainerNodeSpec(new ContainerNodeSpec.Builder(initialContainerNodeSpec)
                     .wantedDockerImage(newDockerImage)
                     .nodeState(Node.State.inactive)
+                    .minCpuCores(1)
+                    .minMainMemoryAvailableGb(1)
+                    .minDiskAvailableGb(1)
                     .build());
 
             dockerTester.callOrderVerifier.assertInOrderWithAssertMessage(
@@ -85,6 +94,9 @@ public class NodeStateTest {
             dockerTester.addContainerNodeSpec(new ContainerNodeSpec.Builder(initialContainerNodeSpec)
                     .wantedDockerImage(newDockerImage)
                     .nodeState(Node.State.active)
+                    .minCpuCores(1)
+                    .minMainMemoryAvailableGb(1)
+                    .minDiskAvailableGb(1)
                     .build());
 
             // Check that the container is started again after the delete call

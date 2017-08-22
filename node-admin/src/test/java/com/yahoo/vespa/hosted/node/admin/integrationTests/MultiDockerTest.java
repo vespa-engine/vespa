@@ -25,6 +25,9 @@ public class MultiDockerTest {
             dockerTester.addContainerNodeSpec(
                     new ContainerNodeSpec.Builder(containerNodeSpec2)
                             .nodeState(Node.State.dirty)
+                            .minCpuCores(1)
+                            .minMainMemoryAvailableGb(1)
+                            .minDiskAvailableGb(1)
                             .build());
 
             // Wait until it is marked ready
@@ -71,6 +74,9 @@ public class MultiDockerTest {
                 .nodeFlavor("docker")
                 .wantedRestartGeneration(1L)
                 .currentRestartGeneration(1L)
+                .minCpuCores(1)
+                .minMainMemoryAvailableGb(1)
+                .minDiskAvailableGb(1)
                 .build();
 
         tester.addContainerNodeSpec(containerNodeSpec);

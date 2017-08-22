@@ -136,9 +136,9 @@ public class NodeRepositoryImpl implements NodeRepository {
                 Optional.ofNullable(node.currentRestartGeneration),
                 Optional.ofNullable(node.wantedRebootGeneration),
                 Optional.ofNullable(node.currentRestartGeneration),
-                Optional.ofNullable(node.minCpuCores),
-                Optional.ofNullable(node.minMainMemoryAvailableGb),
-                Optional.ofNullable(node.minDiskAvailableGb));
+                node.minCpuCores,
+                node.minMainMemoryAvailableGb,
+                node.minDiskAvailableGb);
     }
 
     @Override

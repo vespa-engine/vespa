@@ -24,6 +24,9 @@ public class DockerFailTest {
                     .nodeFlavor("docker")
                     .wantedRestartGeneration(1L)
                     .currentRestartGeneration(1L)
+                    .minCpuCores(1)
+                    .minMainMemoryAvailableGb(1)
+                    .minDiskAvailableGb(1)
                     .build();
             dockerTester.addContainerNodeSpec(containerNodeSpec);
 

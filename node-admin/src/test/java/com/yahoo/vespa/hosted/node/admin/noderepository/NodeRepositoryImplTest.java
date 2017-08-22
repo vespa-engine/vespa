@@ -94,9 +94,9 @@ public class NodeRepositoryImplTest {
         assertThat(nodeSpec.nodeState, is(Node.State.active));
         assertThat(nodeSpec.wantedRestartGeneration.get(), is(0L));
         assertThat(nodeSpec.currentRestartGeneration.get(), is(0L));
-        assertThat(nodeSpec.minCpuCores.get(), is(0.2));
-        assertThat(nodeSpec.minMainMemoryAvailableGb.get(), is(0.5));
-        assertThat(nodeSpec.minDiskAvailableGb.get(), is(100.0));
+        assertThat(nodeSpec.minCpuCores, is(0.2));
+        assertThat(nodeSpec.minMainMemoryAvailableGb, is(0.5));
+        assertThat(nodeSpec.minDiskAvailableGb, is(100.0));
     }
 
     @Test

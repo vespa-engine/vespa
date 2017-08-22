@@ -138,14 +138,11 @@ class NodesResponse extends HttpResponse {
         object.setString("openStackId", node.openStackId());
         object.setString("flavor", node.flavor().name());
         object.setString("canonicalFlavor", node.flavor().canonicalName());
-        if (node.flavor().getMinDiskAvailableGb() > 0)
-            object.setDouble("minDiskAvailableGb", node.flavor().getMinDiskAvailableGb());
-        if (node.flavor().getMinMainMemoryAvailableGb() > 0)
-            object.setDouble("minMainMemoryAvailableGb", node.flavor().getMinMainMemoryAvailableGb());
+        object.setDouble("minDiskAvailableGb", node.flavor().getMinDiskAvailableGb());
+        object.setDouble("minMainMemoryAvailableGb", node.flavor().getMinMainMemoryAvailableGb());
         if (node.flavor().getDescription() != null && ! node.flavor().getDescription().isEmpty())
             object.setString("description", node.flavor().getDescription());
-        if (node.flavor().getMinCpuCores() > 0)
-            object.setDouble("minCpuCores", node.flavor().getMinCpuCores());
+        object.setDouble("minCpuCores", node.flavor().getMinCpuCores());
         if (node.flavor().cost() > 0)
             object.setLong("cost", node.flavor().cost());
         object.setBool("fastDisk", node.flavor().hasFastDisk());

@@ -54,6 +54,9 @@ public class RestartTest {
                 .nodeFlavor("docker")
                 .wantedRestartGeneration(wantedRestartGeneration)
                 .currentRestartGeneration(currentRestartGeneration)
+                .minCpuCores(1)
+                .minMainMemoryAvailableGb(1)
+                .minDiskAvailableGb(1)
                 .build();
     }
 }

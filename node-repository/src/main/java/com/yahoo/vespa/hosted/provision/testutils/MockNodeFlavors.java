@@ -25,7 +25,7 @@ public class MockNodeFlavors extends NodeFlavors {
         b.addFlavor("v-4-8-100", 4.0, 8.0, 100, Flavor.Type.VIRTUAL_MACHINE);
         FlavorsConfig.Flavor.Builder largeVariant = b.addFlavor("large-variant", 64, 128, 2000, Flavor.Type.BARE_METAL);
         b.addReplaces("large", largeVariant);
-        FlavorsConfig.Flavor.Builder expensiveFlavor = b.addFlavor("expensive", 0, 0, 0, Flavor.Type.BARE_METAL);
+        FlavorsConfig.Flavor.Builder expensiveFlavor = b.addFlavor("expensive", 6, 12, 500, Flavor.Type.BARE_METAL);
         b.addReplaces("default", expensiveFlavor);
         b.addCost(200, expensiveFlavor);
 

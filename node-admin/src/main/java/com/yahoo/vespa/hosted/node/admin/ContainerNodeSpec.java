@@ -27,9 +27,9 @@ public class ContainerNodeSpec {
     public final Optional<Long> currentRestartGeneration;
     public final Optional<Long> wantedRebootGeneration;
     public final Optional<Long> currentRebootGeneration;
-    public final Optional<Double> minCpuCores;
-    public final Optional<Double> minMainMemoryAvailableGb;
-    public final Optional<Double> minDiskAvailableGb;
+    public final Double minCpuCores;
+    public final Double minMainMemoryAvailableGb;
+    public final Double minDiskAvailableGb;
 
     public ContainerNodeSpec(
             final String hostname,
@@ -47,13 +47,16 @@ public class ContainerNodeSpec {
             final Optional<Long> currentRestartGeneration,
             final Optional<Long> wantedRebootGeneration,
             final Optional<Long> currentRebootGeneration,
-            final Optional<Double> minCpuCores,
-            final Optional<Double> minMainMemoryAvailableGb,
-            final Optional<Double> minDiskAvailableGb) {
+            final Double minCpuCores,
+            final Double minMainMemoryAvailableGb,
+            final Double minDiskAvailableGb) {
         Objects.requireNonNull(hostname);
         Objects.requireNonNull(nodeState);
         Objects.requireNonNull(nodeType);
         Objects.requireNonNull(nodeFlavor);
+        Objects.requireNonNull(minCpuCores);
+        Objects.requireNonNull(minMainMemoryAvailableGb);
+        Objects.requireNonNull(minDiskAvailableGb);
 
         this.hostname = hostname;
         this.wantedDockerImage = wantedDockerImage;
@@ -258,9 +261,9 @@ public class ContainerNodeSpec {
         private Optional<Long> currentRestartGeneration = Optional.empty();
         private Optional<Long> wantedRebootGeneration = Optional.empty();
         private Optional<Long> currentRebootGeneration = Optional.empty();
-        private Optional<Double> minCpuCores = Optional.of(1d);
-        private Optional<Double> minMainMemoryAvailableGb = Optional.of(1d);
-        private Optional<Double> minDiskAvailableGb = Optional.of(1d);
+        private Double minCpuCores;
+        private Double minMainMemoryAvailableGb;
+        private Double minDiskAvailableGb;
 
         public Builder() {}
 
@@ -270,6 +273,9 @@ public class ContainerNodeSpec {
             nodeType(nodeSpec.nodeType);
             nodeFlavor(nodeSpec.nodeFlavor);
             nodeCanonicalFlavor(nodeSpec.nodeCanonicalFlavor);
+            minCpuCores(nodeSpec.minCpuCores);
+            minMainMemoryAvailableGb(nodeSpec.minMainMemoryAvailableGb);
+            minDiskAvailableGb(nodeSpec.minDiskAvailableGb);
 
             nodeSpec.wantedDockerImage.ifPresent(this::wantedDockerImage);
             nodeSpec.currentDockerImage.ifPresent(this::currentDockerImage);
@@ -281,9 +287,6 @@ public class ContainerNodeSpec {
             nodeSpec.currentRestartGeneration.ifPresent(this::currentRestartGeneration);
             nodeSpec.wantedRebootGeneration.ifPresent(this::wantedRebootGeneration);
             nodeSpec.currentRebootGeneration.ifPresent(this::currentRebootGeneration);
-            nodeSpec.minCpuCores.ifPresent(this::minCpuCores);
-            nodeSpec.minMainMemoryAvailableGb.ifPresent(this::minMainMemoryAvailableGb);
-            nodeSpec.minDiskAvailableGb.ifPresent(this::minDiskAvailableGb);
         }
 
         public Builder hostname(String hostname) {
@@ -361,17 +364,17 @@ public class ContainerNodeSpec {
         }
 
         public Builder minCpuCores(double minCpuCores) {
-            this.minCpuCores = Optional.of(minCpuCores);
+            this.minCpuCores = minCpuCores;
             return this;
         }
 
         public Builder minMainMemoryAvailableGb(double minMainMemoryAvailableGb) {
-            this.minMainMemoryAvailableGb = Optional.of(minMainMemoryAvailableGb);
+            this.minMainMemoryAvailableGb = minMainMemoryAvailableGb;
             return this;
         }
 
         public Builder minDiskAvailableGb(double minDiskAvailableGb) {
-            this.minDiskAvailableGb = Optional.of(minDiskAvailableGb);
+            this.minDiskAvailableGb = minDiskAvailableGb;
             return this;
         }
 
