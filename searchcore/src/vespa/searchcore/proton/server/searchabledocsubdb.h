@@ -21,8 +21,6 @@
 #include <vespa/searchcorespi/index/iindexmanager.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/varholder.h>
-#include <memory>
-#include <vector>
 
 namespace proton {
 

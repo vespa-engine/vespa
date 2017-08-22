@@ -27,7 +27,6 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
 
 using namespace config;
 using namespace document;
