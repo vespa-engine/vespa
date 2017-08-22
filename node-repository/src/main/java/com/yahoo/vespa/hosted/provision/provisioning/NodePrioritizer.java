@@ -185,7 +185,7 @@ public class NodePrioritizer {
         DockerHostCapacity capacity = new DockerHostCapacity(allNodes);
 
         for (Node node : allNodes) {
-            if (node.type() == NodeType.host) {
+            if (node.type() == NodeType.host && node.state() == Node.State.active) {
                 boolean conflictingCluster = false;
                 NodeList list = new NodeList(allNodes);
                 NodeList childrenWithSameApp = list.childNodes(node).owner(appId);
