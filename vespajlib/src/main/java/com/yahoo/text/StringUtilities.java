@@ -16,6 +16,7 @@ import java.util.Set;
  *
  * @author Haakon Humberset
  */
+// TODO: Text utilities should which are still needed should move to Text. This should be deprecated.
 public class StringUtilities {
 
     private static Charset UTF8 = Charset.forName("utf8");

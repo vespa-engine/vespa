@@ -11,6 +11,7 @@ import com.yahoo.document.serialization.FieldReader;
 import com.yahoo.document.serialization.FieldWriter;
 import com.yahoo.document.serialization.XmlSerializationHelper;
 import com.yahoo.document.serialization.XmlStream;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.objects.Ids;
 
 import java.util.Collection;
@@ -20,6 +21,8 @@ import java.util.Map;
 /**
  * A StringFieldValue is a wrapper class that holds a String in {@link com.yahoo.document.Document}s and
  * other {@link com.yahoo.document.datatypes.FieldValue}s.
+ * 
+ * String fields can only contain text characters, as defined by {@link Text#isTextCharacter(int)}
  *
  * @author Einar M R Rosenvinge
  */
@@ -34,32 +37,6 @@ public class StringFieldValue extends FieldValue {
     public static final int classId = registerClass(Ids.document + 15, StringFieldValue.class);
     private String value;
     private Map<String, SpanTree> spanTrees = null;
-    private static final boolean[] allowedAsciiChars = new boolean[0x80];
-
-    static {
-        allowedAsciiChars[0x0] = false;
-        allowedAsciiChars[0x1] = false;
-        allowedAsciiChars[0x2] = false;
-        allowedAsciiChars[0x3] = false;
-        allowedAsciiChars[0x4] = false;
-        allowedAsciiChars[0x5] = false;
-        allowedAsciiChars[0x6] = false;
-        allowedAsciiChars[0x7] = false;
-        allowedAsciiChars[0x8] = false;
-        allowedAsciiChars[0x9] = true;  //tab
-        allowedAsciiChars[0xA] = true;  //nl
-        allowedAsciiChars[0xB] = false;
-        allowedAsciiChars[0xC] = false;
-        allowedAsciiChars[0xD] = true;  //cr
-        for (int i = 0xE; i < 0x20; i++) {
-            allowedAsciiChars[i] = false;
-        }
-        for (int i = 0x20; i < 0x7F; i++) {
-            allowedAsciiChars[i] = true;  //printable ascii chars
-        }
-        allowedAsciiChars[0x7F] = true;  //del - discouraged, but allowed
-    }
-
 
     /** Creates a new StringFieldValue holding an empty String. */
     public StringFieldValue() {
@@ -70,6 +47,8 @@ public class StringFieldValue extends FieldValue {
      * Creates a new StringFieldValue with the given value.
      *
      * @param value the value to wrap.
+     * @throws IllegalArgumentException if the string contains non-text characters as defined by 
+     *                                  {@link Text#isTextCharacter(int)}
      */
     public StringFieldValue(String value) {
         if (value==null) throw new IllegalArgumentException("Value cannot be null");
@@ -85,122 +64,9 @@ public class StringFieldValue extends FieldValue {
                 ++i;
             }
 
-            //See http://www.w3.org/TR/2006/REC-xml11-20060816/#charsets
-
-            if (codePoint < 0x80) {  //ascii
-                if (allowedAsciiChars[codePoint]) {
-                    continue;
-                } else {
-                    throw new IllegalArgumentException("StringFieldValue cannot contain code point 0x" + Integer.toHexString(codePoint).toUpperCase());
-                }
-            }
-
-            //source cited above notes that 0x7F-0x84 and 0x86-0x9F are discouraged, but they are still allowed.
-            //see http://www.w3.org/International/questions/qa-controls
-
-            if (codePoint < 0xFDD0) {
-                continue;
-            }
-            if (codePoint <= 0xFDDF) {
-                throw new IllegalArgumentException("StringFieldValue cannot contain code point 0x" + Integer.toHexString(codePoint).toUpperCase());
-            }
-
-            if (codePoint < 0x1FFFE) {
-                continue;
-            }
-            if (codePoint <= 0x1FFFF) {
-                throw new IllegalArgumentException("StringFieldValue cannot contain code point 0x" + Integer.toHexString(codePoint).toUpperCase());
-            }
-            if (codePoint < 0x2FFFE) {
-                continue;
-            }
-            if (codePoint <= 0x2FFFF) {
-                throw new IllegalArgumentException("StringFieldValue cannot contain code point 0x" + Integer.toHexString(codePoint).toUpperCase());
-            }
-            if (codePoint < 0x3FFFE) {
-                continue;
-            }
-            if (codePoint <= 0x3FFFF) {
-                throw new IllegalArgumentException("StringFieldValue cannot contain code point 0x" + Integer.toHexString(codePoint).toUpperCase());
-            }
-            if (codePoint < 0x4FFFE) {
-                continue;
-            }
-            if (codePoint <= 0x4FFFF) {
-                throw new IllegalArgumentException("StringFieldValue cannot contain code point 0x" + Integer.toHexString(codePoint).toUpperCase());
-            }
-            if (codePoint < 0x5FFFE) {
-                continue;
-            }
-            if (codePoint <= 0x5FFFF) {
-                throw new IllegalArgumentException("StringFieldValue cannot contain code point 0x" + Integer.toHexString(codePoint).toUpperCase());
-            }
-            if (codePoint < 0x6FFFE) {
-                continue;
-            }
-            if (codePoint <= 0x6FFFF) {
-                throw new IllegalArgumentException("StringFieldValue cannot contain code point 0x" + Integer.toHexString(codePoint).toUpperCase());
-            }
-            if (codePoint < 0x7FFFE) {
-                continue;
-            }
-            if (codePoint <= 0x7FFFF) {
-                throw new IllegalArgumentException("StringFieldValue cannot contain code point 0x" + Integer.toHexString(codePoint).toUpperCase());
-            }
-            if (codePoint < 0x8FFFE) {
-                continue;
-            }
-            if (codePoint <= 0x8FFFF) {
-                throw new IllegalArgumentException("StringFieldValue cannot contain code point 0x" + Integer.toHexString(codePoint).toUpperCase());
-            }
-            if (codePoint < 0x9FFFE) {
-                continue;
-            }
-            if (codePoint <= 0x9FFFF) {
-                throw new IllegalArgumentException("StringFieldValue cannot contain code point 0x" + Integer.toHexString(codePoint).toUpperCase());
-            }
-            if (codePoint < 0xAFFFE) {
-                continue;
-            }
-            if (codePoint <= 0xAFFFF) {
-                throw new IllegalArgumentException("StringFieldValue cannot contain code point 0x" + Integer.toHexString(codePoint).toUpperCase());
-            }
-            if (codePoint < 0xBFFFE) {
-                continue;
-            }
-            if (codePoint <= 0xBFFFF) {
-                throw new IllegalArgumentException("StringFieldValue cannot contain code point 0x" + Integer.toHexString(codePoint).toUpperCase());
-            }
-            if (codePoint < 0xCFFFE) {
-                continue;
-            }
-            if (codePoint <= 0xCFFFF) {
-                throw new IllegalArgumentException("StringFieldValue cannot contain code point 0x" + Integer.toHexString(codePoint).toUpperCase());
-            }
-            if (codePoint < 0xDFFFE) {
-                continue;
-            }
-            if (codePoint <= 0xDFFFF) {
-                throw new IllegalArgumentException("StringFieldValue cannot contain code point 0x" + Integer.toHexString(codePoint).toUpperCase());
-            }
-            if (codePoint < 0xEFFFE) {
-                continue;
-            }
-            if (codePoint <= 0xEFFFF) {
-                throw new IllegalArgumentException("StringFieldValue cannot contain code point 0x" + Integer.toHexString(codePoint).toUpperCase());
-            }
-            if (codePoint < 0xFFFFE) {
-                continue;
-            }
-            if (codePoint <= 0xFFFFF) {
-                throw new IllegalArgumentException("StringFieldValue cannot contain code point 0x" + Integer.toHexString(codePoint).toUpperCase());
-            }
-            if (codePoint < 0x10FFFE) {
-                continue;
-            }
-            if (codePoint <= 0x10FFFF) {
-                throw new IllegalArgumentException("StringFieldValue cannot contain code point 0x" + Integer.toHexString(codePoint).toUpperCase());
-            }
+            if ( ! Text.isTextCharacter(codePoint))
+                throw new IllegalArgumentException("A string field value cannot contain code point 0x" + 
+                                                   Integer.toHexString(codePoint).toUpperCase());
         }
         this.value = value;
     }
@@ -248,6 +114,8 @@ public class StringFieldValue extends FieldValue {
      * since they most certainly will not make sense for a new string value.
      *
      * @param o the new String to assign to this. An argument of null is equal to calling clear().
+     * @throws IllegalArgumentException if the given argument is a string containing non-text characters as defined by 
+     *                                  {@link Text#isTextCharacter(int)}
      */
     @Override
     public void assign(Object o) {
@@ -313,7 +181,7 @@ public class StringFieldValue extends FieldValue {
      */
     public SpanTree setSpanTree(SpanTree spanTree) {
         if (spanTrees == null) {
-            spanTrees = new HashMap(1);
+            spanTrees = new HashMap<>(1);
         }
         if (spanTrees.containsKey(spanTree.getName())) {
             throw new IllegalArgumentException("Span tree " + spanTree.getName() + " already exists.");
