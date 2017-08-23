@@ -241,7 +241,7 @@ public class StorageMaintainer {
             attributes.put("kernel_version", "unknown");
         }
 
-        nodeSpec.wantedDockerImage.ifPresent(image -> attributes.put("docker_image", image.asString()));
+        nodeSpec.currentDockerImage.ifPresent(image -> attributes.put("docker_image", image.asString()));
         nodeSpec.vespaVersion.ifPresent(version -> attributes.put("vespa_version", version));
         nodeSpec.owner.ifPresent(owner -> {
             attributes.put("tenant", owner.tenant);
