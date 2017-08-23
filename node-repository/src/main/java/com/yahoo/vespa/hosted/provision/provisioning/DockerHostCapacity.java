@@ -65,12 +65,12 @@ public class DockerHostCapacity {
      * Checks the node capacity and free ip addresses to see
      * if we could allocate a flavor on the docker host.
      */
-    boolean hasCapacity(Node dockerHost, Flavor flavor) {
-        return freeCapacityOf(dockerHost, false).hasCapacityFor(flavor) && freeIPs(dockerHost) > 0;
+    boolean hasCapacity(Node dockerHost, ResourceCapacity requestedCapacity) {
+        return freeCapacityOf(dockerHost, false).hasCapacityFor(requestedCapacity) && freeIPs(dockerHost) > 0;
     }
 
-    boolean hasCapacityWhenRetiredAndInactiveNodesAreGone(Node dockerHost, Flavor flavor) {
-        return freeCapacityOf(dockerHost, true).hasCapacityFor(flavor) && freeIPs(dockerHost) > 0;
+    boolean hasCapacityWhenRetiredAndInactiveNodesAreGone(Node dockerHost, ResourceCapacity requestedCapacity) {
+        return freeCapacityOf(dockerHost, true).hasCapacityFor(requestedCapacity) && freeIPs(dockerHost) > 0;
     }
 
     /**
@@ -105,7 +105,7 @@ public class DockerHostCapacity {
     public long getNofHostsAvailableFor(Flavor flavor) {
         return allNodes.asList().stream()
                 .filter(n -> n.type().equals(NodeType.host))
-                .filter(n -> hasCapacity(n, flavor))
+                .filter(n -> hasCapacity(n, ResourceCapacity.of(flavor)))
                 .count();
     }
 

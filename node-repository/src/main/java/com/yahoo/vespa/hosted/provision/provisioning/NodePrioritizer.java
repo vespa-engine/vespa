@@ -39,10 +39,10 @@ public class NodePrioritizer {
     private final ApplicationId appId;
     private final ClusterSpec clusterSpec;
 
+    private final boolean isDocker;
     private final boolean isAllocatingForReplacement;
     private final Set<Node> spareHosts;
-    private final Map<Node, Boolean> headroomHosts;
-    private final boolean isDocker;
+    private final Map<Node, ResourceCapacity> headroomHosts;
 
     NodePrioritizer(List<Node> allNodes, ApplicationId appId, ClusterSpec clusterSpec, NodeSpec nodeSpec, NodeFlavors nodeFlavors, int spares) {
         this.allNodes = Collections.unmodifiableList(allNodes);
@@ -104,14 +104,14 @@ public class NodePrioritizer {
     }
 
     /**
-     * Headroom are the nodes with the least but sufficient space for the requested headroom.
+     * Headroom hosts are the host with the least but sufficient capacity for the requested headroom.
      *
-     * If not enough headroom - the headroom violating hosts are the once that are closest to fulfull
+     * If not enough headroom - the headroom violating hosts are the once that are closest to fulfill
      * a headroom request.
      */
-    private static Map<Node, Boolean> findHeadroomHosts(List<Node> nodes, Set<Node> spareNodes, NodeFlavors flavors) {
+    private static Map<Node, ResourceCapacity> findHeadroomHosts(List<Node> nodes, Set<Node> spareNodes, NodeFlavors flavors) {
         DockerHostCapacity capacity = new DockerHostCapacity(nodes);
-        Map<Node, Boolean> headroomNodesToViolation = new HashMap<>();
+        Map<Node, ResourceCapacity> headroomHosts = new HashMap<>();
 
         List<Node> hostsSortedOnLeastCapacity = nodes.stream()
                 .filter(n -> !spareNodes.contains(n))
@@ -121,20 +121,25 @@ public class NodePrioritizer {
                 .sorted((a, b) -> capacity.compareWithoutInactive(b, a))
                 .collect(Collectors.toList());
 
+        // For all flavors with ideal headroom - find which hosts this headroom should be allocated to
         for (Flavor flavor : flavors.getFlavors().stream().filter(f -> f.getIdealHeadroom() > 0).collect(Collectors.toList())) {
             Set<Node> tempHeadroom = new HashSet<>();
             Set<Node> notEnoughCapacity = new HashSet<>();
+
+            ResourceCapacity headroomCapacity = ResourceCapacity.of(flavor);
+
+            // Select hosts that has available capacity for both headroom and for new allocations
             for (Node host : hostsSortedOnLeastCapacity) {
-                if (headroomNodesToViolation.containsKey(host)) continue;
-                if (capacity.hasCapacityWhenRetiredAndInactiveNodesAreGone(host, flavor)) {
-                    headroomNodesToViolation.put(host, false);
+                if (headroomHosts.containsKey(host)) continue;
+                if (capacity.hasCapacityWhenRetiredAndInactiveNodesAreGone(host, headroomCapacity)) {
+                    headroomHosts.put(host, headroomCapacity);
                     tempHeadroom.add(host);
                 } else {
                     notEnoughCapacity.add(host);
                 }
 
                 if (tempHeadroom.size() == flavor.getIdealHeadroom()) {
-                    continue;
+                    break;
                 }
             }
 
@@ -145,14 +150,13 @@ public class NodePrioritizer {
                         .limit(flavor.getIdealHeadroom() - tempHeadroom.size())
                         .collect(Collectors.toList());
 
-                for (Node nodeViolatingHeadrom : violations) {
-                    headroomNodesToViolation.put(nodeViolatingHeadrom, true);
+                for (Node hostViolatingHeadrom : violations) {
+                    headroomHosts.put(hostViolatingHeadrom, headroomCapacity);
                 }
-
             }
         }
 
-        return headroomNodesToViolation;
+        return headroomHosts;
     }
 
     /**
@@ -197,14 +201,14 @@ public class NodePrioritizer {
                     }
                 }
 
-                if (!conflictingCluster && capacity.hasCapacity(node, getFlavor())) {
+                if (!conflictingCluster && capacity.hasCapacity(node, ResourceCapacity.of(getFlavor(requestedNodes)))) {
                     Set<String> ipAddresses = DockerHostCapacity.findFreeIps(node, allNodes);
                     if (ipAddresses.isEmpty()) continue;
                     String ipAddress = ipAddresses.stream().findFirst().get();
                     String hostname = lookupHostname(ipAddress);
                     if (hostname == null) continue;
                     Node newNode = Node.createDockerNode("fake-" + hostname, Collections.singleton(ipAddress),
-                            Collections.emptySet(), hostname, Optional.of(node.hostname()), getFlavor(), NodeType.tenant);
+                            Collections.emptySet(), hostname, Optional.of(node.hostname()), getFlavor(requestedNodes), NodeType.tenant);
                     PrioritizableNode nodePri = toNodePriority(newNode, false, true);
                     if (!nodePri.violatesSpares || isAllocatingForReplacement) {
                         nodes.put(newNode, nodePri);
@@ -249,7 +253,7 @@ public class NodePrioritizer {
         pri.node = node;
         pri.isSurplusNode = isSurplusNode;
         pri.isNewNode = isNewNode;
-        pri.preferredOnFlavor = requestedNodes.specifiesNonStockFlavor() && node.flavor().equals(getFlavor());
+        pri.preferredOnFlavor = requestedNodes.specifiesNonStockFlavor() && node.flavor().equals(getFlavor(requestedNodes));
         pri.parent = findParentNode(node);
 
         if (pri.parent.isPresent()) {
@@ -261,7 +265,13 @@ public class NodePrioritizer {
             }
 
             if (headroomHosts.containsKey(parent)) {
-                pri.violatesHeadroom = headroomHosts.get(parent);
+                ResourceCapacity neededCapacity = headroomHosts.get(parent);
+
+                // If the node is new then we need to check the headroom requirement after it has been added
+                if (isNewNode) {
+                    neededCapacity = ResourceCapacity.composite(neededCapacity, new ResourceCapacity(node));
+                }
+                pri.violatesHeadroom = !capacity.hasCapacity(parent, neededCapacity);
             }
         }
 
@@ -280,7 +290,7 @@ public class NodePrioritizer {
         return (wantedCount > nofNodesInCluster - nodeFailedNodes);
     }
 
-    private Flavor getFlavor() {
+    private static Flavor getFlavor(NodeSpec requestedNodes) {
         if (requestedNodes instanceof NodeSpec.CountNodeSpec) {
             NodeSpec.CountNodeSpec countSpec = (NodeSpec.CountNodeSpec) requestedNodes;
             return countSpec.getFlavor();
@@ -289,7 +299,7 @@ public class NodePrioritizer {
     }
 
     private boolean isDocker() {
-        Flavor flavor = getFlavor();
+        Flavor flavor = getFlavor(requestedNodes);
         return (flavor != null) && flavor.getType().equals(Flavor.Type.DOCKER_CONTAINER);
     }
 

@@ -28,6 +28,14 @@ public class ResourceCapacity {
         disk = node.flavor().getMinDiskAvailableGb();
     }
 
+    static ResourceCapacity of(Flavor flavor) {
+        ResourceCapacity capacity = new ResourceCapacity();
+        capacity.memory = flavor.getMinMainMemoryAvailableGb();
+        capacity.cpu = flavor.getMinCpuCores();
+        capacity.disk = flavor.getMinDiskAvailableGb();
+        return capacity;
+    }
+
     public double getMemory() {
         return memory;
     }
@@ -38,6 +46,15 @@ public class ResourceCapacity {
 
     public double getDisk() {
         return disk;
+    }
+
+    static ResourceCapacity composite(ResourceCapacity a, ResourceCapacity b) {
+        ResourceCapacity composite = new ResourceCapacity();
+        composite.memory = a.memory + b.memory;
+        composite.cpu -= a.cpu + b.cpu;
+        composite.disk -=  a.disk + b.disk;
+
+        return composite;
     }
 
     void subtract(Node node) {
@@ -54,14 +71,18 @@ public class ResourceCapacity {
         return result;
     }
 
+    boolean hasCapacityFor(ResourceCapacity capacity) {
+        return memory >= capacity.memory &&
+                cpu >= capacity.cpu &&
+                disk >= capacity.disk;
+    }
+
     boolean hasCapacityFor(Flavor flavor) {
-        return memory >= flavor.getMinMainMemoryAvailableGb() &&
-                cpu >= flavor.getMinCpuCores() &&
-                disk >= flavor.getMinDiskAvailableGb();
+        return hasCapacityFor(ResourceCapacity.of(flavor));
     }
 
     int freeCapacityInFlavorEquivalence(Flavor flavor) {
-        if (!hasCapacityFor(flavor)) return 0;
+        if (!hasCapacityFor(ResourceCapacity.of(flavor))) return 0;
 
         double memoryFactor = Math.floor(memory/flavor.getMinMainMemoryAvailableGb());
         double cpuFactor = Math.floor(cpu/flavor.getMinCpuCores());
@@ -85,11 +106,4 @@ public class ResourceCapacity {
         if (cpu < that.cpu) return -1;
         return 0;
     }
-
-    Flavor asFlavor() {
-        FlavorConfigBuilder b = new FlavorConfigBuilder();
-        b.addFlavor("spareflavor", cpu, memory, disk, Flavor.Type.DOCKER_CONTAINER).idealHeadroom(1);
-        return new Flavor(b.build().flavor(0));
-    }
-
 }
