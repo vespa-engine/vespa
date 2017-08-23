@@ -72,6 +72,7 @@ vespa_add_library(searchlib_attribute OBJECT
     not_implemented_attribute.cpp
     numericbase.cpp
     postingchange.cpp
+    posting_list_merger.cpp
     postinglistattribute.cpp
     postinglistsearchcontext.cpp
     postinglisttraits.cpp
