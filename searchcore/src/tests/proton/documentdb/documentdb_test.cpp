@@ -27,6 +27,8 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/fastos/file.h>
+
 
 using document::DocumentType;
 using document::DocumentTypeRepo;

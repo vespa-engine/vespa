@@ -26,6 +26,7 @@
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/random.h>
+#include <dirent.h>
 
 #include <vespa/searchlib/aggregation/forcelink.hpp>
 #include <vespa/searchlib/expression/forcelink.hpp>
