@@ -136,7 +136,7 @@ TEST_F("Merge many arrays", WeightedFixture)
     TEST_DO(f.assertArray(res));
 }
 
-TEST_F("Merge single array into bitvector", WeightedFixture)
+TEST_F("Merge single posting list into bitvector", WeightedFixture)
 {
     f._merger.allocBitVector();
     f._merger.addToBitVector(WeightedPostingList({{ 2, 102}, {3, 103}, { 5, 105}, {9, 109}}));
@@ -144,7 +144,7 @@ TEST_F("Merge single array into bitvector", WeightedFixture)
     TEST_DO(f.assertBitVector({2, 3, 5, 9}));
 }
 
-TEST_F("Merge multiple arrays into bitvector", WeightedFixture)
+TEST_F("Merge multiple posting lists into bitvector", WeightedFixture)
 {
     f._merger.allocBitVector();
     f._merger.addToBitVector(WeightedPostingList({{ 2, 102}, {3, 103}, { 5, 105}, {9, 109}}));
