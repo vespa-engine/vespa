@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.docker;
 
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
-
 import com.yahoo.collections.Pair;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.Container;
@@ -27,6 +25,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 /**
  * Class that wraps the Docker class and have some tools related to running programs in docker.
@@ -80,6 +80,7 @@ public class DockerOperationsImpl implements DockerOperations {
         DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/yca"), true);
         DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/ycore++"), false);
         DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/zookeeper"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("tmp"), false);
     }
 
     private final Docker docker;
