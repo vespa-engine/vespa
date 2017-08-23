@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
  *
  * @author smorgrav
  */
-public class NodePrioritizer {
+class NodePrioritizer {
 
     private final Map<Node, PrioritizableNode> nodes = new HashMap<>();
     private final List<Node> allNodes;
@@ -50,8 +50,8 @@ public class NodePrioritizer {
         this.clusterSpec = clusterSpec;
         this.appId = appId;
 
-        spareHosts = findSpareHosts(allNodes, spares);
-        headroomHosts = findHeadroomHosts(allNodes, spareHosts, nodeFlavors);
+        this.spareHosts = findSpareHosts(allNodes, spares);
+        this.headroomHosts = findHeadroomHosts(allNodes, spareHosts, nodeFlavors);
 
         this.capacity = new DockerHostCapacity(allNodes);
 
@@ -68,14 +68,14 @@ public class NodePrioritizer {
                 .filter(node -> node.allocation().get().membership().cluster().id().equals(clusterSpec.id()))
                 .count();
 
-        isAllocatingForReplacement = isReplacement(nofNodesInCluster, nofFailedNodes);
-        isDocker = isDocker();
+        this.isAllocatingForReplacement = isReplacement(nofNodesInCluster, nofFailedNodes);
+        this.isDocker = isDocker();
     }
 
     /**
      * From ipAddress - get hostname
      *
-     * @return hostname or null if not able to do the loopup
+     * @return hostname or null if not able to do the lookup
      */
     private static String lookupHostname(String ipAddress) {
         try {
@@ -264,7 +264,7 @@ public class NodePrioritizer {
                 pri.violatesSpares = true;
             }
 
-            if (headroomHosts.containsKey(parent)) {
+            if (headroomHosts.containsKey(parent) && isSmallestNodeOnParent(node, parent)) {
                 ResourceCapacity neededCapacity = headroomHosts.get(parent);
 
                 // If the node is new then we need to check the headroom requirement after it has been added
@@ -276,6 +276,17 @@ public class NodePrioritizer {
         }
 
         return pri;
+    }
+
+    private boolean isSmallestNodeOnParent(Node node, Node parent) {
+        NodeList list = new NodeList(allNodes);
+        ResourceCapacity nodeSize = new ResourceCapacity(node);
+        for (Node child : list.childNodes(parent).asList()) {
+            if (new ResourceCapacity(child).compare(nodeSize) < 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean isReplacement(long nofNodesInCluster, long nodeFailedNodes) {
