@@ -101,7 +101,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
         if (currentState != RESUMED) return;
 
         try {
-            String hardwareDivergence = maintainer.getHardwardDivergence();
+            String hardwareDivergence = maintainer.getHardwareDivergence();
             NodeAttributes nodeAttributes = new NodeAttributes().withHardwareDivergence(hardwareDivergence);
             nodeRepository.updateNodeAttributes(dockerHostHostName, nodeAttributes);
         } catch (RuntimeException e) {

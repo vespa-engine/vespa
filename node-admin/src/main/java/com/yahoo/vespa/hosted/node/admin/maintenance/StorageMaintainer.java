@@ -318,7 +318,7 @@ public class StorageMaintainer {
      * Runs node-maintainer's SpecVerifier and returns its output
      * @throws RuntimeException if exit code != 0
      */
-    public String getHardwardDivergence() {
+    public String getHardwareDivergence() {
         String configServers = environment.getConfigServerHosts().stream()
                 .map(configServer -> "http://" +  configServer + ":" + 4080)
                 .collect(Collectors.joining(","));
