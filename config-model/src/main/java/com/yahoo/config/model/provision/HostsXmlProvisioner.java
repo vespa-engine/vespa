@@ -14,7 +14,6 @@ import java.util.List;
  * application if one exists. Pre-condition: A valid hosts file.
  *
  * @author hmusum
- * @since 5.11
  */
 public class HostsXmlProvisioner implements HostProvisioner {
 

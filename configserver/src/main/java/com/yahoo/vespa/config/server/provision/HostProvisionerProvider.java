@@ -15,7 +15,6 @@ import java.util.logging.Logger;
  * a component registry here, which then enables us to check whether or not we have a provisioner available.
  *
  * @author lulf
- * @since 5.15
  */
 public class HostProvisionerProvider {
 

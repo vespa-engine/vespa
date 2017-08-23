@@ -17,7 +17,6 @@ import java.util.*;
  * {@link Provisioner}.
  *
  * @author lulf
- * @since 5.11
  */
 public class ProvisionerAdapter implements HostProvisioner {
 
