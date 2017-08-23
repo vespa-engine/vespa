@@ -5,8 +5,7 @@
 #include "translogserver.h"
 #include <vespa/vespalib/net/state_explorer.h>
 
-namespace search {
-namespace transactionlog {
+namespace search::transactionlog {
 
 /**
  * Class used to explore the state of a transaction log server.
@@ -23,5 +22,4 @@ public:
     virtual std::unique_ptr<StateExplorer> get_child(vespalib::stringref name) const override;
 };
 
-} // namespace search::transactionlog
-} // namespace search
+}

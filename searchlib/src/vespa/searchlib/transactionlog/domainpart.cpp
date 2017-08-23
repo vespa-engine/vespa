@@ -7,8 +7,8 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/fastlib/io/bufferedfile.h>
-#include <vespa/log/log.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".transactionlog.domainpart");
 
 using vespalib::make_string;
@@ -23,12 +23,9 @@ using vespalib::alloc::Alloc;
 using search::common::FileHeaderContext;
 using std::runtime_error;
 
-namespace search {
-
-namespace transactionlog {
+namespace search::transactionlog {
 
 namespace {
-
 
 void
 handleSync(FastOS_FileInterface &file) __attribute__ ((noinline));
@@ -186,7 +183,7 @@ DomainPart::buildPacketMapping(bool allowTruncate)
 {
     Fast_BufferedFile transLog;
     transLog.EnableDirectIO();
-    if ( ! transLog.OpenReadOnly(_transLog.GetFileName())) {
+    if ( ! transLog.OpenReadOnly(_transLog->GetFileName())) {
         throw runtime_error(make_string("Failed opening '%s' for buffered readinf with direct io.", transLog.GetFileName()));
     }
     int64_t fSize(transLog.GetSize());
@@ -284,20 +281,20 @@ DomainPart::DomainPart(const string & name,
     _byteSize(0),
     _packets(),
     _fileName(make_string("%s/%s-%016" PRIu64, baseDir.c_str(), name.c_str(), s)),
-    _transLog(_fileName.c_str()),
+    _transLog(std::make_unique<FastOS_File>(_fileName.c_str())),
     _skipList(),
     _headerLen(0),
     _writeLock(),
     _writtenSerial(0),
     _syncedSerial(0)
 {
-    if (_transLog.OpenReadOnly()) {
+    if (_transLog->OpenReadOnly()) {
         int64_t currPos = buildPacketMapping(allowTruncate);
-        if ( ! _transLog.Close() ) {
-            throw runtime_error(make_string("Failed closing file '%s' after reading.", _transLog.GetFileName()));
+        if ( ! _transLog->Close() ) {
+            throw runtime_error(make_string("Failed closing file '%s' after reading.", _transLog->GetFileName()));
         }
-        if ( ! _transLog.OpenWriteOnlyExisting() ) {
-            string e(make_string("Failed opening existing file '%s' for writing: %s", _transLog.GetFileName(), getLastErrorString().c_str()));
+        if ( ! _transLog->OpenWriteOnlyExisting() ) {
+            string e(make_string("Failed opening existing file '%s' for writing: %s", _transLog->GetFileName(), getLastErrorString().c_str()));
             LOG(error, "%s", e.c_str());
             throw runtime_error(e);
         }
@@ -308,8 +305,8 @@ DomainPart::DomainPart(const string & name,
         }
         _byteSize = currPos;
     } else {
-        if ( ! _transLog.OpenWriteOnly()) {
-            string e(make_string("Failed opening new file '%s' for writing: '%s'", _transLog.GetFileName(), getLastErrorString().c_str()));
+        if ( ! _transLog->OpenWriteOnly()) {
+            string e(make_string("Failed opening new file '%s' for writing: '%s'", _transLog->GetFileName(), getLastErrorString().c_str()));
 
             LOG(error, "%s", e.c_str());
             throw runtime_error(e);
@@ -317,11 +314,11 @@ DomainPart::DomainPart(const string & name,
         writeHeader(fileHeaderContext);
         _byteSize = _headerLen;
     }
-    if ( ! _transLog.SetPosition(_transLog.GetSize()) ) {
+    if ( ! _transLog->SetPosition(_transLog->GetSize()) ) {
         throw runtime_error(make_string("Failed moving write pointer to the end of the file %s(%" PRIu64 ").",
-                                        _transLog.GetFileName(), _transLog.GetSize()));
+                                        _transLog->GetFileName(), _transLog->GetSize()));
     }
-    handleSync(_transLog);
+    handleSync(*_transLog);
     _writtenSerial = _range.to();
     _syncedSerial = _writtenSerial;
 }
@@ -336,12 +333,12 @@ DomainPart::writeHeader(const FileHeaderContext &fileHeaderContext)
 {
     typedef vespalib::GenericHeader::Tag Tag;
     FileHeader header;
-    assert(_transLog.IsOpened());
-    assert(_transLog.IsWriteMode());
-    assert(_transLog.GetPosition() == 0);
-    fileHeaderContext.addTags(header, _transLog.GetFileName());
+    assert(_transLog->IsOpened());
+    assert(_transLog->IsWriteMode());
+    assert(_transLog->GetPosition() == 0);
+    fileHeaderContext.addTags(header, _transLog->GetFileName());
     header.putTag(Tag("desc", "Transaction log domain part file"));
-    _headerLen = header.writeFile(_transLog);
+    _headerLen = header.writeFile(*_transLog);
 }
 
 bool
@@ -355,15 +352,15 @@ DomainPart::close()
          * hole.  XXX: Feed latency spike due to lack of delayed open
          * for new domainpart.
          */
-        handleSync(_transLog);
-        _transLog.dropFromCache();
-        retval = _transLog.Close();
+        handleSync(*_transLog);
+        _transLog->dropFromCache();
+        retval = _transLog->Close();
         LockGuard wguard(_writeLock);
         _syncedSerial = _writtenSerial;
     }
     if ( ! retval ) {
         throw runtime_error(make_string("Failed closing file '%s' of size %" PRId64 ".",
-                                        _transLog.GetFileName(), _transLog.GetSize()));
+                                        _transLog->GetFileName(), _transLog->GetSize()));
     }
     {
         LockGuard guard(_lock);
@@ -373,9 +370,14 @@ DomainPart::close()
 }
 
 bool
+DomainPart::isClosed() const {
+    return ! _transLog->IsOpened();
+}
+
+bool
 DomainPart::openAndFind(FastOS_FileInterface &file, const SerialNum &from)
 {
-    bool retval(file.OpenReadOnly(_transLog.GetFileName()));
+    bool retval(file.OpenReadOnly(_transLog->GetFileName()));
     if (retval) {
         int64_t pos(_headerLen);
         LockGuard guard(_lock);
@@ -396,7 +398,7 @@ DomainPart::erase(SerialNum to)
     bool retval(true);
     if (to > _range.to()) {
         close();
-        _transLog.Delete();
+        _transLog->Delete();
     } else {
         _range.from(std::max(to, _range.from()));
     }
@@ -406,7 +408,7 @@ DomainPart::erase(SerialNum to)
 void
 DomainPart::commit(SerialNum firstSerial, const Packet &packet)
 {
-    int64_t firstPos(_transLog.GetPosition());
+    int64_t firstPos(_transLog->GetPosition());
     nbostream_longlivedbuf h(packet.getHandle().c_str(), packet.getHandle().size());
     if (_range.from() == 0) {
         _range.from(firstSerial);
@@ -418,7 +420,7 @@ DomainPart::commit(SerialNum firstSerial, const Packet &packet)
         Packet::Entry entry;
         entry.deserialize(h);
         if (_range.to() < entry.serial()) {
-            write(_transLog, entry);
+            write(*_transLog, entry);
             _sz++;
             _range.to(entry.serial());
         } else {
@@ -456,7 +458,7 @@ void DomainPart::sync()
         syncSerial = _writtenSerial;
     }
     LockGuard guard(_fileLock);
-    handleSync(_transLog);
+    handleSync(*_transLog);
     LockGuard wguard(_writeLock);
     if (_syncedSerial < syncSerial) {
         _syncedSerial = syncSerial;
@@ -673,5 +675,4 @@ int32_t DomainPart::calcCrc(Crc version, const void * buf, size_t sz)
     }
 }
 
-}
 }

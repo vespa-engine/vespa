@@ -1,14 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "trans_log_server_explorer.h"
-#include "domain.h"
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/fastos/file.h>
+
 
 using vespalib::slime::Inserter;
 using vespalib::slime::Cursor;
 
-namespace search {
-namespace transactionlog {
+namespace search::transactionlog {
 
 namespace {
 
@@ -66,5 +66,4 @@ TransLogServerExplorer::get_child(vespalib::stringref name) const
     return std::unique_ptr<vespalib::StateExplorer>(new DomainExplorer(std::move(domain)));
 }
 
-} // namespace search::transactionlog
-} // namespace search
+}

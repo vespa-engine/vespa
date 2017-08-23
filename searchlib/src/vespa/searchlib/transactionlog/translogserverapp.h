@@ -7,12 +7,9 @@
 #include <vespa/vespalib/util/ptrholder.h>
 
 namespace config { class ConfigUri; }
+namespace search::common { class FileHeaderContext; }
 
-namespace search {
-
-namespace common { class FileHeaderContext; }
-
-namespace transactionlog {
+namespace search::transactionlog {
 
 class TransLogServerApp : public config::IFetcherCallback<searchlib::TranslogserverConfig>
 {
@@ -36,5 +33,4 @@ public:
     void start();
 };
 
-} // namespace transactionlog
-} // namespace search
+}

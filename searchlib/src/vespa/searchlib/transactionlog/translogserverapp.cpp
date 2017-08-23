@@ -8,8 +8,7 @@ LOG_SETUP(".translogserverapp");
 
 using search::common::FileHeaderContext;
 
-namespace search { 
-namespace transactionlog {
+namespace search::transactionlog {
 
 TransLogServerApp::TransLogServerApp(const config::ConfigUri & tlsConfigUri,
                                      const FileHeaderContext & fileHeaderContext)
@@ -40,14 +39,8 @@ DomainPart::Crc getCrc(searchlib::TranslogserverConfig::Crcmethod crcType)
 void TransLogServerApp::start()
 {
     std::shared_ptr<searchlib::TranslogserverConfig> c = _tlsConfig.get();
-    _tls.reset(new TransLogServer(c->servername,
-                                  c->listenport,
-                                  c->basedir,
-                                  _fileHeaderContext,
-                                  c->filesizemax,
-                                  c->usefsync,
-                                  c->maxthreads,
-                                  getCrc(c->crcmethod)));
+    _tls.reset(new TransLogServer(c->servername, c->listenport, c->basedir, _fileHeaderContext,
+                                  c->filesizemax, c->usefsync, c->maxthreads, getCrc(c->crcmethod)));
 }
 
 TransLogServerApp::~TransLogServerApp()
@@ -62,5 +55,4 @@ void TransLogServerApp::configure(std::unique_ptr<searchlib::TranslogserverConfi
     _tlsConfig.latch();
 }
 
-}
 }

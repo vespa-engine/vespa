@@ -2,18 +2,16 @@
 #pragma once
 
 #include "common.h"
+#include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/util/memory.h>
 #include <map>
 #include <vector>
 #include <atomic>
-#include <vespa/vespalib/util/sync.h>
-#include <vespa/vespalib/util/memory.h>
-#include <vespa/fastos/file.h>
 
-namespace search {
+class FastOS_FileInterface;
 
-namespace common { class FileHeaderContext; }
-
-namespace transactionlog {
+namespace search::common { class FileHeaderContext; }
+namespace search::transactionlog {
 
 class DomainPart {
 private:
@@ -54,7 +52,7 @@ public:
     size_t      byteSize() const {
         return _byteSize.load(std::memory_order_acquire);
     }
-    bool        isClosed() const { return ! _transLog.IsOpened(); }
+    bool        isClosed() const;
 private:
     bool openAndFind(FastOS_FileInterface &file, const SerialNum &from);
     int64_t buildPacketMapping(bool allowTruncate);
@@ -101,7 +99,7 @@ private:
     std::atomic<uint64_t> _byteSize;
     PacketList     _packets;
     vespalib::string _fileName;
-    FastOS_File    _transLog;
+    std::unique_ptr<FastOS_FileInterface> _transLog;
     SkipList       _skipList;
     uint32_t       _headerLen;
     vespalib::Lock _writeLock;
@@ -111,5 +109,3 @@ private:
 };
 
 }
-}
-

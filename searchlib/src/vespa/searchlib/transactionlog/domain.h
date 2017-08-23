@@ -5,8 +5,7 @@
 #include <vespa/searchlib/transactionlog/session.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
-namespace search {
-namespace transactionlog {
+namespace search::transactionlog {
 
 struct PartInfo {
     SerialNumRange range;
@@ -122,5 +121,3 @@ private:
 };
 
 }
-}
-

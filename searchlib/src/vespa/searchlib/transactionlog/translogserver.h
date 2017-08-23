@@ -7,11 +7,9 @@
 #include <vespa/fnet/frt/invokable.h>
 #include <mutex>
 
-namespace search {
+namespace search::common { class FileHeaderContext; }
 
-namespace common { class FileHeaderContext; }
-
-namespace transactionlog {
+namespace search::transactionlog {
 
 class TransLogServerExplorer;
 
@@ -100,5 +98,3 @@ private:
 };
 
 }
-}
-
