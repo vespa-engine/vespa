@@ -9,6 +9,7 @@
 #include <vespa/searchcommon/attribute/search_context_params.h>
 #include <vespa/searchcommon/common/range.h>
 #include <vespa/vespalib/util/regexp.h>
+#include "posting_list_merger.h"
 
 namespace search::attribute {
 
@@ -101,10 +102,8 @@ protected:
     /*
      * Synthetic posting lists for range search, in array or bitvector form
      */
-    PostingVector  _array;
-    std::unique_ptr<BitVector>  _bitVector;
+    PostingListMerger<DataT> _merger;
     bool           _fetchPostingsDone;
-    bool           _arrayValid;
 
     static const long MIN_UNIQUE_VALUES_BEFORE_APPROXIMATION = 100;
     static const long MIN_UNIQUE_VALUES_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION = 20;
@@ -117,11 +116,8 @@ protected:
 
     void lookupSingle();
     size_t countHits() const;
-    void fillArray(size_t numDocs);
+    void fillArray();
     void fillBitVector();
-
-    PostingVector &
-    merge(PostingVector &v, PostingVector &temp, const std::vector<size_t> & startPos) __attribute__((noinline));
 
     void fetchPostings(bool strict) override;
     // this will be called instead of the fetchPostings function in some cases
