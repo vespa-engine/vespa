@@ -25,6 +25,7 @@ class PostingListMerger
     uint32_t       _docIdLimit;
     bool           _arrayValid;
 
+    PostingVector &merge(PostingVector &v, PostingVector &temp, const StartVector &startPos) __attribute__((noinline));
 public:
     PostingListMerger(uint32_t docIdLimit);
 
@@ -33,7 +34,6 @@ public:
     void reserveArray(uint32_t postingsCount, size_t postingsSize);
     void allocBitVector();
     void merge();
-    PostingVector &merge(PostingVector &v, PostingVector &temp, const StartVector &startPos) __attribute__((noinline));
     bool hasArray() const { return _arrayValid; }
     bool hasBitVector() const { return static_cast<bool>(_bitVector); }
     bool emptyArray() const { return _array.empty(); }

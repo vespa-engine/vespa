@@ -55,94 +55,7 @@ public:
     }
 };
 
-class SimplePostingList
-{
-    std::vector<uint32_t> _entries;
-public:
-    SimplePostingList(std::vector<uint32_t> entries)
-        : _entries(std::move(entries))
-    {
-    }
-    ~SimplePostingList() { }
-
-    template <typename Func>
-    void foreach(Func func) const {
-        for (const auto &posting : _entries) {
-            func(posting, BTreeNoLeafData::_instance);
-        }
-    }
-
-    template <typename Func>
-    void foreach_key(Func func) const {
-        for (const auto &posting : _entries) {
-            func(posting);
-        }
-    }
-};
-
-class AddWeightPostingList : public SimplePostingList
-{
-    int32_t _weight;
-public:
-    AddWeightPostingList(std::vector<uint32_t> entries, int32_t weight)
-        : SimplePostingList(std::move(entries)),
-          _weight(weight)
-    {
-    }
-    ~AddWeightPostingList() { }
-    template <typename Func>
-    void foreach(Func func) const {
-        int32_t weight = _weight;
-        foreach_key([func, weight](uint32_t lid) { func(lid, weight); });
-    }
-};
-
 constexpr uint32_t docIdLimit = 16384;
-
-struct SimpleFixture
-{
-    PostingListMerger<BTreeNoLeafData> _merger;
-
-    SimpleFixture()
-        : _merger(docIdLimit)
-    {
-    }
-
-    ~SimpleFixture() { }
-
-    void reserveArray(uint32_t postingsCount, size_t postingsSize) { _merger.reserveArray(postingsCount, postingsSize); }
-
-    std::vector<uint32_t> asArray() {
-        const auto &llArray = _merger.getArray();
-        std::vector<uint32_t> result;
-        result.reserve(llArray.size());
-        for (auto &entry : llArray) {
-            result.emplace_back(entry._key);
-        }
-        return result;
-    }
-
-    std::vector<uint32_t> bvAsArray() {
-        const auto &bv = *_merger.getBitVector();
-        std::vector<uint32_t> result;
-        uint32_t lid = bv.getNextTrueBit(0);
-        while (lid + 1 < docIdLimit) {
-            result.emplace_back(lid);
-            lid = bv.getNextTrueBit(lid + 1);
-        }
-        return result;
-    }
-
-    void assertArray(std::vector<uint32_t> exp)
-    {
-        EXPECT_EQUAL(exp, asArray());
-    }
-
-    void assertBitVector(std::vector<uint32_t> exp)
-    {
-        EXPECT_EQUAL(exp, bvAsArray());
-    }
-};
 
 struct WeightedFixture
 {
@@ -189,28 +102,12 @@ struct WeightedFixture
     }
 };
 
-TEST_F("Single simple array", SimpleFixture)
-{
-    f._merger.reserveArray(1, 4);
-    f._merger.addToArray(SimplePostingList({2, 3, 5, 9}));
-    f._merger.merge();
-    TEST_DO(f.assertArray({2, 3, 5, 9}));
-}
-
 TEST_F("Single weighted array", WeightedFixture)
 {
     f._merger.reserveArray(1, 4);
     f._merger.addToArray(WeightedPostingList({{ 2, 102}, {3, 103}, { 5, 105}, {9, 109}}));
     f._merger.merge();
     TEST_DO(f.assertArray({{2, 102}, {3, 103}, {5, 105}, {9, 109}}));
-}
-
-TEST_F("Single weighted array with fixed weight", WeightedFixture)
-{
-    f._merger.reserveArray(1, 4);
-    f._merger.addToArray(AddWeightPostingList({2, 3, 5, 9}, 114));
-    f._merger.merge();
-    TEST_DO(f.assertArray({{2, 114}, {3, 114}, {5, 114}, {9, 114}}));
 }
 
 TEST_F("Merge array", WeightedFixture)
@@ -239,16 +136,7 @@ TEST_F("Merge many arrays", WeightedFixture)
     TEST_DO(f.assertArray(res));
 }
 
-TEST_F("Single simple bitvector", SimpleFixture)
-{
-    f._merger.allocBitVector();
-    f._merger.addToBitVector(SimplePostingList({2, 3, 5, 9}));
-    f._merger.merge();
-    TEST_DO(f.assertBitVector({2, 3, 5, 9}));
-}
-
-
-TEST_F("Single weighted bitvector", WeightedFixture)
+TEST_F("Merge single array into bitvector", WeightedFixture)
 {
     f._merger.allocBitVector();
     f._merger.addToBitVector(WeightedPostingList({{ 2, 102}, {3, 103}, { 5, 105}, {9, 109}}));
@@ -256,12 +144,13 @@ TEST_F("Single weighted bitvector", WeightedFixture)
     TEST_DO(f.assertBitVector({2, 3, 5, 9}));
 }
 
-TEST_F("Single weighted bitvector with fixed weight", WeightedFixture)
+TEST_F("Merge multiple arrays into bitvector", WeightedFixture)
 {
     f._merger.allocBitVector();
-    f._merger.addToBitVector(AddWeightPostingList({2, 3, 5, 9}, 114));
+    f._merger.addToBitVector(WeightedPostingList({{ 2, 102}, {3, 103}, { 5, 105}, {9, 109}}));
+    f._merger.addToBitVector(WeightedPostingList({{ 6, 106}, {8, 108}, { 14, 114}, {17, 117}}));
     f._merger.merge();
-    TEST_DO(f.assertBitVector({2, 3, 5, 9}));
+    TEST_DO(f.assertBitVector({2, 3, 5, 6, 8, 9, 14, 17}));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

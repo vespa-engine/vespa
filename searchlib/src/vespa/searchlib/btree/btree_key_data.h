@@ -9,9 +9,7 @@ namespace search::btree {
 /**
  * Empty class to use as DataT template parameter for BTree classes to
  * indicate that leaf nodes have no data (similar to std::set having less
- * information than std::map).  Use of this class triggers the below
- * partial specialization of BTreeNodeDataWrap to prevent unneeded
- * storage overhead.
+ * information than std::map).
  */
 class BTreeNoLeafData
 {

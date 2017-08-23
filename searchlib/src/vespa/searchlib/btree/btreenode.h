@@ -77,6 +77,11 @@ public:
 };
 
 
+/**
+ * Use of BTreeNoLeafData class triggers the below partial
+ * specialization of BTreeNodeDataWrap to prevent unneeded storage
+ * overhead.
+ */
 template <class DataT, uint32_t NumSlots>
 class BTreeNodeDataWrap
 {
