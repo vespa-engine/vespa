@@ -279,15 +279,19 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         for (NewDocumentType type : documentDefinitions.values()) {
             ProtonConfig.Documentdb.Builder ddbB = new ProtonConfig.Documentdb.Builder();
             String docTypeName = type.getFullName().getName();
+            boolean globalDocType = isGloballyDistributed(type);
             ddbB.inputdoctypename(docTypeName)
                 .configid(getConfigId())
                 .visibilitydelay(visibilityDelay)
-                .global(isGloballyDistributed(type));
+                .global(globalDocType);
             Optional<StreamingSearchCluster> ssc = findStreamingCluster(docTypeName);
             if (ssc.isPresent()) {
                 ddbB.inputdoctypename(type.getFullName().getName()).configid(ssc.get().getDocumentDBConfigId());
             } else if (hasIndexedCluster()) {
                 getIndexed().fillDocumentDBConfig(type.getFullName().getName(), ddbB);
+            }
+            if (globalDocType) {
+                ddbB.visibilitydelay(0.0);
             }
             builder.documentdb(ddbB);
         }

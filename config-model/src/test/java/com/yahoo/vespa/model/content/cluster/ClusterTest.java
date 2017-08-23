@@ -36,9 +36,7 @@ public class ClusterTest {
         assertNotNull(searchCluster);
         assertEquals(1.1, searchCluster.getQueryTimeout(), 1E-6);
         assertEquals(2.3, searchCluster.getVisibilityDelay(), 1E-6);
-        ProtonConfig.Builder builder = new ProtonConfig.Builder();
-        cluster.getSearch().getConfig(builder);
-        ProtonConfig proton = new ProtonConfig(builder);
+        ProtonConfig proton = getProtonConfig(cluster);
         assertEquals(searchCluster.getVisibilityDelay(), proton.documentdb(0).visibilitydelay(), 1E-6);
     }
 
@@ -61,7 +59,20 @@ public class ClusterTest {
         }
     }
 
+    @Test
+    public void requireThatVisibilityDelayIsZeroForGlobalDocumentType() throws ParseException {
+        ContentCluster cluster = newContentCluster(joinLines("<search>",
+                "  <visibility-delay>2.3</visibility-delay>",
+                "</search>"), true);
+        ProtonConfig proton = getProtonConfig(cluster);
+        assertEquals(0.0, proton.documentdb(0).visibilitydelay(), 1E-6);
+    }
+
     private static ContentCluster newContentCluster(String contentSearchXml) throws ParseException {
+        return newContentCluster(contentSearchXml, false);
+    }
+
+    private static ContentCluster newContentCluster(String contentSearchXml, boolean globalDocType) throws ParseException {
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withHosts(joinLines("<hosts>",
                                 "  <host name='localhost'><alias>my_host</alias></host>",
@@ -72,7 +83,7 @@ public class ClusterTest {
                                 "  </admin>",
                                 "  <content version='1.0'>",
                                 "    <documents>",
-                                "      <document mode='index' type='my_document' />",
+                                "    " + getDocumentXml(globalDocType),
                                 "    </documents>",
                                 "    <engine><proton /></engine>",
                                 "    <group>",
@@ -88,10 +99,21 @@ public class ClusterTest {
         return contents.get(0).getCluster();
     }
 
+    private static String getDocumentXml(boolean globalDocType) {
+        return "<document mode='index' type='my_document' " + (globalDocType ? "global='true' " : "") + "/>";
+    }
+
     private static SearchDefinition newSearchDefinition(String name) throws ParseException {
         SearchBuilder builder = new SearchBuilder();
         builder.importString("search " + name + " { document " + name + " { } }");
         builder.build();
         return new SearchDefinition(name, builder.getSearch(name));
     }
+
+    private static ProtonConfig getProtonConfig(ContentCluster cluster) {
+        ProtonConfig.Builder builder = new ProtonConfig.Builder();
+        cluster.getSearch().getConfig(builder);
+        return new ProtonConfig(builder);
+    }
+
 }
