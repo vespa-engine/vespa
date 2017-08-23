@@ -17,7 +17,6 @@
 #include <vespa/messagebus/routing/routingspec.h>
 #include <vespa/messagebus/network/rpcservice.h>
 #include <vespa/messagebus/sourcesessionparams.h>
-#include <vespa/vespalib/util/vstringfmt.h>
 
 using namespace mbus;
 

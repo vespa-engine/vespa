@@ -271,7 +271,7 @@ FileStorManager::handlePersistenceMessage(
 
         LOG_BUCKET_OPERATION_NO_LOCK(
                 getStorageMessageBucketId(*msg),
-                vespalib::make_vespa_string("Attempting to queue %s to disk %u",
+                vespalib::make_string("Attempting to queue %s to disk %u",
                                             msg->toString().c_str(), disk));
 
 

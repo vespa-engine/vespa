@@ -2,25 +2,17 @@
 
 #include <vespa/messagebus/destinationsession.h>
 #include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/error.h>
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/intermediatesession.h>
 #include <vespa/messagebus/messagebus.h>
 #include <vespa/messagebus/routablequeue.h>
-#include <vespa/messagebus/routing/route.h>
 #include <vespa/messagebus/routing/routingcontext.h>
-#include <vespa/messagebus/routing/routingnodeiterator.h>
-#include <vespa/messagebus/routing/routingspec.h>
-#include <vespa/messagebus/sourcesession.h>
-#include <vespa/messagebus/sourcesessionparams.h>
-#include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/simpleprotocol.h>
-#include <vespa/messagebus/testlib/simplereply.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/vstringfmt.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using namespace mbus;
 
@@ -377,7 +369,7 @@ Test::testDirectHop()
             // Send using name.
             ASSERT_TRUE(client->session->send(
                             Message::UP(new SimpleMessage("empty")),
-                            Route().addHop(vespalib::make_vespa_string("search/r.%d/c.%d/session", row, col)))
+                            Route().addHop(vespalib::make_string("search/r.%d/c.%d/session", row, col)))
                         .isAccepted());
             assertDst(*dst);
             assertSrc(*client);

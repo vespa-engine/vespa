@@ -693,7 +693,7 @@ BucketDBUpdater::NodeRemover::setCopiesInEntry(
     LOG(debug, "Changed %s", e->toString().c_str());
     LOG_BUCKET_OPERATION_NO_LOCK(
             e.getBucketId(),
-            vespalib::make_vespa_string("updated bucketdb entry to %s",
+            vespalib::make_string("updated bucketdb entry to %s",
                                         e->toString().c_str()));
 }
 

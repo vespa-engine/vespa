@@ -8,14 +8,14 @@
  *               ALL RIGHTS RESERVED
  */
 #include "simplequerystack.h"
-#include <vespa/vespalib/util/vstringfmt.h>
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/vespalib/objects/nbo.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".search.simplequerystack");
 
-using vespalib::make_vespa_string;
+using vespalib::make_string;
 
 namespace search {
 
@@ -174,24 +174,24 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
             int64_t tmpLong(0);
             p += vespalib::compress::Integer::decompress(tmpLong, p);
             metaStr.append("(w:");
-            metaStr.append(make_vespa_string("%ld", tmpLong));
+            metaStr.append(make_string("%ld", tmpLong));
             metaStr.append(")");
         }
         if (search::ParseItem::getFeature_UniqueId(rawtype)) {
             p += vespalib::compress::Integer::decompressPositive(tmp, p);
             metaStr.append("(u:");
-            metaStr.append(make_vespa_string("%ld", tmp));
+            metaStr.append(make_string("%ld", tmp));
             metaStr.append(")");
         }
         if (search::ParseItem::getFeature_Flags(rawtype)) {
             flags = *p++;
             metaStr.append("(f:");
-            metaStr.append(make_vespa_string("%d", flags));
+            metaStr.append(make_string("%d", flags));
             metaStr.append(")");
         }
         if (search::ParseItem::GetCreator(flags) != search::ParseItem::CREA_ORIG) {
             metaStr.append("(c:");
-            metaStr.append(make_vespa_string("%d", search::ParseItem::GetCreator(flags)));
+            metaStr.append(make_string("%d", search::ParseItem::GetCreator(flags)));
             metaStr.append(")");
         }
 
@@ -207,7 +207,7 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
         case search::ParseItem::ITEM_ANY:
             p += vespalib::compress::Integer::decompressPositive(tmp, p);
             arity = tmp;
-            result.append(make_vespa_string("%c/%d~", _G_ItemName[type], arity));
+            result.append(make_string("%c/%d~", _G_ItemName[type], arity));
             break;
         case search::ParseItem::ITEM_WEAK_AND:
         case search::ParseItem::ITEM_NEAR:
@@ -221,9 +221,9 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
                 idxRefLen = tmp;
                 idxRef = p;
                 p += idxRefLen;
-                result.append(make_vespa_string("%c/%d/%d/%d:%.*s~", _G_ItemName[type], arity, arg1, idxRefLen, idxRefLen, idxRef));
+                result.append(make_string("%c/%d/%d/%d:%.*s~", _G_ItemName[type], arity, arg1, idxRefLen, idxRefLen, idxRef));
             } else {
-                result.append(make_vespa_string("%c/%d/%d~", _G_ItemName[type], arity, arg1));
+                result.append(make_string("%c/%d/%d~", _G_ItemName[type], arity, arg1));
             }
             break;
 
@@ -242,7 +242,7 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
             termRefLen = tmp;
             termRef = p;
             p += termRefLen;
-            result.append(make_vespa_string("%c/%d:%.*s/%d:%.*s~", _G_ItemName[type],
+            result.append(make_string("%c/%d:%.*s/%d:%.*s~", _G_ItemName[type],
                                             idxRefLen, idxRefLen, idxRef,
                                             termRefLen, termRefLen, termRef));
             break;
@@ -251,14 +251,14 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
             termRefLen = tmp;
             termRef = p;
             p += termRefLen;
-            result.append(make_vespa_string("%c/%d:%.*s~", _G_ItemName[type],
+            result.append(make_string("%c/%d:%.*s~", _G_ItemName[type],
                                             termRefLen, termRefLen, termRef));
             break;
 
         case search::ParseItem::ITEM_PURE_WEIGHTED_LONG:
             tmp = vespalib::nbo::n2h(*reinterpret_cast<const uint64_t *>(p));
             p += sizeof(uint64_t);
-            result.append(make_vespa_string("%c/%lu", _G_ItemName[type], tmp));
+            result.append(make_string("%c/%lu", _G_ItemName[type], tmp));
             break;
 
         case search::ParseItem::ITEM_PHRASE:
@@ -278,10 +278,10 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
                 p += sizeof(double);
                 double thresholdBoostFactor = vespalib::nbo::n2h(*reinterpret_cast<const double *>(p)); // thresholdBoostFactor
                 p += sizeof(double);
-                result.append(make_vespa_string("%c/%d/%d:%.*s(%u,%f,%f)~", _G_ItemName[type], arity, idxRefLen,
+                result.append(make_string("%c/%d/%d:%.*s(%u,%f,%f)~", _G_ItemName[type], arity, idxRefLen,
                                                 idxRefLen, idxRef, targetNumHits, scoreThreshold, thresholdBoostFactor));
             } else {
-                result.append(make_vespa_string("%c/%d/%d:%.*s~", _G_ItemName[type], arity, idxRefLen,
+                result.append(make_string("%c/%d/%d:%.*s~", _G_ItemName[type], arity, idxRefLen,
                                                 idxRefLen, idxRef));
             }
             break;
@@ -292,25 +292,25 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
             idxRef = p;
             p += idxRefLen;
             size_t feature_count = ReadCompressedPositiveInt(p);
-            result.append(make_vespa_string(
+            result.append(make_string(
                     "%c/%d:%.*s/%zu(", _G_ItemName[type], idxRefLen, idxRefLen, idxRef, feature_count));
             for (size_t i = 0; i < feature_count; ++i) {
                 vespalib::string key = ReadString(p);
                 vespalib::string value = ReadString(p);
                 uint64_t sub_queries = ReadUint64(p);
-                result.append(make_vespa_string("%s:%s:%lx", key.c_str(), value.c_str(), sub_queries));
+                result.append(make_string("%s:%s:%lx", key.c_str(), value.c_str(), sub_queries));
                 if (i < feature_count - 1) {
                     result.append(',');
                 }
             }
 
             size_t range_feature_count = ReadCompressedPositiveInt(p);
-            result.append(make_vespa_string(")/%zu(", range_feature_count));
+            result.append(make_string(")/%zu(", range_feature_count));
             for (size_t i = 0; i < range_feature_count; ++i) {
                 vespalib::string key = ReadString(p);
                 uint64_t value = ReadUint64(p);
                 uint64_t sub_queries = ReadUint64(p);
-                result.append(make_vespa_string("%s:%zu:%lx", key.c_str(), value, sub_queries));
+                result.append(make_string("%s:%zu:%lx", key.c_str(), value, sub_queries));
                 if (i < range_feature_count - 1) {
                     result.append(',');
                 }

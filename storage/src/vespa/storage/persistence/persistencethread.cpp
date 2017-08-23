@@ -567,7 +567,7 @@ PersistenceThread::handleSplitBucket(api::SplitBucketCommand& cmd)
 #ifdef ENABLE_BUCKET_OPERATION_LOGGING
     {
         vespalib::string desc(
-                vespalib::make_vespa_string(
+                vespalib::make_string(
                         "split(%s -> %s, %s)",
                         cmd.getBucketId().toString().c_str(),
                         target1.toString().c_str(),
@@ -743,7 +743,7 @@ PersistenceThread::handleJoinBuckets(api::JoinBucketsCommand& cmd)
 #ifdef ENABLE_BUCKET_OPERATION_LOGGING
     {
         vespalib::string desc(
-                vespalib::make_vespa_string(
+                vespalib::make_string(
                         "join(%s, %s -> %s)",
                         firstBucket.toString().c_str(),
                         secondBucket.toString().c_str(),
@@ -1149,7 +1149,7 @@ PersistenceThread::flushAllReplies(
             }
             LOG_BUCKET_OPERATION(
                     bucketId,
-                    vespalib::make_vespa_string(
+                    vespalib::make_string(
                             "flushing %zu operations (%zu puts, %zu removes, "
                             "%zu other)",
                             replies.size(), nputs, nremoves, nother));

@@ -10,7 +10,8 @@
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/vstringfmt.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
 
 using namespace mbus;
 
@@ -20,7 +21,7 @@ using namespace mbus;
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-using vespalib::make_vespa_string;
+using vespalib::make_string;
 
 static const double TIMEOUT = 120;
 
@@ -74,32 +75,32 @@ CustomPolicy::select(RoutingContext &ctx)
 
     const std::vector<Route> &all = ctx.getAllRecipients();
     if (_factory._expectedAll.size() == all.size()) {
-        ctx.trace(1, make_vespa_string("Got %d expected recipients.", (uint32_t)all.size()));
+        ctx.trace(1, make_string("Got %d expected recipients.", (uint32_t)all.size()));
         for (std::vector<Route>::const_iterator it = all.begin();
              it != all.end(); ++it)
         {
             if (find(_factory._expectedAll.begin(), _factory._expectedAll.end(), it->toString()) != _factory._expectedAll.end()) {
-                ctx.trace(1, make_vespa_string("Got expected recipient '%s'.", it->toString().c_str()));
+                ctx.trace(1, make_string("Got expected recipient '%s'.", it->toString().c_str()));
             } else {
                 reply->addError(Error(ErrorCode::APP_FATAL_ERROR,
-                                      make_vespa_string("Matched recipient '%s' not expected.",
-                                                        it->toString().c_str())));
+                                      make_string("Matched recipient '%s' not expected.",
+                                                  it->toString().c_str())));
             }
         }
     } else {
         reply->addError(Error(ErrorCode::APP_FATAL_ERROR,
-                              make_vespa_string("Expected %d recipients, got %d.",
-                                                (uint32_t)_factory._expectedAll.size(),
-                                                (uint32_t)all.size())));
+                              make_string("Expected %d recipients, got %d.",
+                                          (uint32_t)_factory._expectedAll.size(),
+                                          (uint32_t)all.size())));
     }
 
     if (ctx.getNumRecipients() == all.size()) {
         for (uint32_t i = 0; i < all.size(); ++i) {
             if (all[i].toString() == ctx.getRecipient(i).toString()) {
-                ctx.trace(1, make_vespa_string("getRecipient(%d) matches getAllRecipients()[%d]", i, i));
+                ctx.trace(1, make_string("getRecipient(%d) matches getAllRecipients()[%d]", i, i));
             } else {
                 reply->addError(Error(ErrorCode::APP_FATAL_ERROR,
-                                      make_vespa_string("getRecipient(%d) differs from getAllRecipients()[%d]", i, i)));
+                                      make_string("getRecipient(%d) differs from getAllRecipients()[%d]", i, i)));
             }
         }
     } else {
@@ -110,23 +111,23 @@ CustomPolicy::select(RoutingContext &ctx)
     std::vector<Route> matched;
     ctx.getMatchedRecipients(matched);
     if (_factory._expectedMatched.size() == matched.size()) {
-        ctx.trace(1, make_vespa_string("Got %d expected recipients.", (uint32_t)matched.size()));
+        ctx.trace(1, make_string("Got %d expected recipients.", (uint32_t)matched.size()));
         for (std::vector<Route>::iterator it = matched.begin();
              it != matched.end(); ++it)
         {
             if (find(_factory._expectedMatched.begin(), _factory._expectedMatched.end(), it->toString()) != _factory._expectedMatched.end()) {
-                ctx.trace(1, make_vespa_string("Got matched recipient '%s'.", it->toString().c_str()));
+                ctx.trace(1, make_string("Got matched recipient '%s'.", it->toString().c_str()));
             } else {
                 reply->addError(Error(ErrorCode::APP_FATAL_ERROR,
-                                      make_vespa_string("Matched recipient '%s' not expected.",
-                                                        it->toString().c_str())));
+                                      make_string("Matched recipient '%s' not expected.",
+                                                  it->toString().c_str())));
             }
         }
     } else {
         reply->addError(Error(ErrorCode::APP_FATAL_ERROR,
-                              make_vespa_string("Expected %d matched recipients, got %d.",
-                                                (uint32_t)_factory._expectedMatched.size(),
-                                                (uint32_t)matched.size())));
+                              make_string("Expected %d matched recipients, got %d.",
+                                          (uint32_t)_factory._expectedMatched.size(),
+                                          (uint32_t)matched.size())));
     }
 
     if (!reply->hasErrors() && _factory._forward) {

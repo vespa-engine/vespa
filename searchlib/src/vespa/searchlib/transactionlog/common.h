@@ -5,8 +5,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/buffer.h>
 
-namespace search {
-namespace transactionlog {
+namespace search::transactionlog {
 
 /// This represents a type of the entry. Fx update,remove
 typedef uint32_t Type;
@@ -96,5 +95,3 @@ public:
 };
 
 }
-}
-
