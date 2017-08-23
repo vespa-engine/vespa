@@ -48,18 +48,17 @@ public class DynamicDockerProvisioningTest {
 
     /**
      * Test relocation of nodes that violate headroom.
-     *
+     * <p>
      * Setup 4 docker hosts and allocate one container on each (from two different applications)
      * No spares - only headroom (4xd-2)
-     *
+     * <p>
      * One application is now violating headroom and need relocation
-     *
-     *  Initial allocation of app 1 and 2 --> final allocation (headroom marked as H):
-     *
+     * <p>
+     * Initial allocation of app 1 and 2 --> final allocation (headroom marked as H):
+     * <p>
      * | H  |  H  | H   | H   |        |    |    |    |    |
      * | H  |  H  | H1a | H1b |   -->  |    |    |    |    |
      * |    |     | 2a  | 2b  |        | 1a | 1b | 2a | 2b |
-     *
      */
     @Test
     public void relocate_nodes_from_headroom_hosts() {
@@ -97,18 +96,17 @@ public class DynamicDockerProvisioningTest {
 
     /**
      * Test relocation of nodes from spare hosts.
-     *
+     * <p>
      * Setup 4 docker hosts and allocate one container on each (from two different applications)
      * No headroom defined - only 2 spares.
-     *
+     * <p>
      * Check that it relocates containers away from the 2 spares
-     *
-     *  Initial allocation of app 1 and 2 --> final allocation:
-     *
+     * <p>
+     * Initial allocation of app 1 and 2 --> final allocation:
+     * <p>
      * |    |    |    |    |        |    |    |    |    |
      * |    |    |    |    |   -->  | 2a | 2b |    |    |
      * | 1a | 1b | 2a | 2b |        | 1a | 1b |    |    |
-     *
      */
     @Test
     public void relocate_nodes_from_spare_hosts() {
@@ -146,8 +144,136 @@ public class DynamicDockerProvisioningTest {
     }
 
     /**
-     * Test an allocation workflow:
+     * Test that new docker nodes that will result in headroom violations are
+     * correctly marked as this.
+     * <p>
+     * When redeploying app1 - should not do anything (as moving app1 to host 0 and 1 would violate headroom).
+     * Then redeploy app 2 - should cause a relocation.
+     * <p>
+     * | H  |  H  | H2a  | H2b  |         | H  |  H  |  H    |  H    |
+     * | H  |  H  | H1a  | H1b  |  -->    | H  |  H  |  H1a  |  H1b  |
+     * |    |     |  1a  |  1b  |         | 2a | 2b  |  1a   |  1b   |
+     */
+    @Test
+    public void new_docker_nodes_are_marked_as_headroom_violations() {
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.perf, RegionName.from("us-east")), flavorsConfig(true));
+        enableDynamicAllocation(tester);
+        tester.makeReadyNodes(4, "host", "host-small", NodeType.host, 32);
+        deployZoneApp(tester);
+        List<Node> dockerHosts = tester.nodeRepository().getNodes(NodeType.host, Node.State.active);
+        Flavor flavorD2 = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("d-2");
+        Flavor flavorD1 = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("d-1");
+
+        // Application 1
+        ApplicationId application1 = makeApplicationId("t1", "1");
+        ClusterSpec clusterSpec1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"));
+        String hostParent2 = dockerHosts.get(2).hostname();
+        String hostParent3 = dockerHosts.get(3).hostname();
+        addAndAssignNode(application1, "1a", hostParent2, flavorD2, 0, tester);
+        addAndAssignNode(application1, "1b", hostParent3, flavorD2, 1, tester);
+
+        // Application 2
+        ApplicationId application2 = makeApplicationId("t2", "2");
+        ClusterSpec clusterSpec2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"));
+        addAndAssignNode(application2, "2a", hostParent2, flavorD1, 0, tester);
+        addAndAssignNode(application2, "2b", hostParent3, flavorD1, 1, tester);
+
+        // Assert allocation placement - prior to re-deployment
+        assertApplicationHosts(tester.nodeRepository().getNodes(application1), hostParent2, hostParent3);
+        assertApplicationHosts(tester.nodeRepository().getNodes(application2), hostParent2, hostParent3);
+
+        // Redeploy application 1
+        deployapp(application1, clusterSpec1, flavorD2, tester, 2);
+
+        // Re-assert allocation placement
+        assertApplicationHosts(tester.nodeRepository().getNodes(application1), hostParent2, hostParent3);
+        assertApplicationHosts(tester.nodeRepository().getNodes(application2), hostParent2, hostParent3);
+
+        // Redeploy application 2
+        deployapp(application2, clusterSpec2, flavorD1, tester, 2);
+
+        // Now app2 should have re-located
+        assertApplicationHosts(tester.nodeRepository().getNodes(application1), hostParent2, hostParent3);
+        assertApplicationHosts(tester.nodeRepository().getNodes(application2), dockerHosts.get(0).hostname(), dockerHosts.get(1).hostname());
+    }
+
+    /**
+     * Test that we only relocate the smallest nodes from a host to free up headroom.
+     * <p>
+     * The reason we want to do this is that it is an cheap approximation for the optimal solution as we
+     * pick headroom to be on the hosts were we are closest to fulfill the headroom requirement.
      *
+     * Both applications could be moved here to free up headroom - but we want app2 (which is smallest) to be moved.
+     * <p>
+     * | H  |  H  | H2a  | H2b  |         | H  |  H  |  H    |  H    |
+     * | H  |  H  | H1a  | H1b  |  -->    | H  |  H  |  H    |  H    |
+     * |    |     |  1a  |  1b  |         | 2a | 2b  |  1a   |  1b   |
+     * |    |     |      |      |         |    |     |  1a   |  1b   |
+     */
+    @Test
+    public void only_smallest_container_is_moved_from_hosts_with_headroom_violations() {
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.perf, RegionName.from("us-east")), flavorsConfig(true));
+        enableDynamicAllocation(tester);
+        tester.makeReadyNodes(4, "host", "host-medium", NodeType.host, 32);
+        deployZoneApp(tester);
+        List<Node> dockerHosts = tester.nodeRepository().getNodes(NodeType.host, Node.State.active);
+        Flavor flavorD2 = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("d-2");
+        Flavor flavorD1 = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("d-1");
+
+        // Application 1
+        ApplicationId application1 = makeApplicationId("t1", "1");
+        ClusterSpec clusterSpec1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"));
+        String hostParent2 = dockerHosts.get(2).hostname();
+        String hostParent3 = dockerHosts.get(3).hostname();
+        addAndAssignNode(application1, "1a", hostParent2, flavorD2, 0, tester);
+        addAndAssignNode(application1, "1b", hostParent3, flavorD2, 1, tester);
+
+        // Application 2
+        ApplicationId application2 = makeApplicationId("t2", "2");
+        ClusterSpec clusterSpec2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100"));
+        addAndAssignNode(application2, "2a", hostParent2, flavorD1, 0, tester);
+        addAndAssignNode(application2, "2b", hostParent3, flavorD1, 1, tester);
+
+        // Assert allocation placement - prior to re-deployment
+        assertApplicationHosts(tester.nodeRepository().getNodes(application1), hostParent2, hostParent3);
+        assertApplicationHosts(tester.nodeRepository().getNodes(application2), hostParent2, hostParent3);
+
+        // Redeploy application 1
+        deployapp(application1, clusterSpec1, flavorD2, tester, 2);
+
+        // Re-assert allocation placement
+        assertApplicationHosts(tester.nodeRepository().getNodes(application1), hostParent2, hostParent3);
+        assertApplicationHosts(tester.nodeRepository().getNodes(application2), hostParent2, hostParent3);
+
+        // Redeploy application 2
+        deployapp(application2, clusterSpec2, flavorD1, tester, 2);
+
+        // Now app2 should have re-located
+        assertApplicationHosts(tester.nodeRepository().getNodes(application1), hostParent2, hostParent3);
+        assertApplicationHosts(tester.nodeRepository().getNodes(application2), dockerHosts.get(0).hostname(), dockerHosts.get(1).hostname());
+    }
+
+    private void assertApplicationHosts(List<Node> nodes, String... parents) {
+        for (Node node : nodes) {
+            // Ignore retired and non-active nodes
+            if (!node.state().equals(Node.State.active) ||
+                    node.allocation().get().membership().retired()) {
+                continue;
+            }
+            boolean found = false;
+            for (String parent : parents) {
+                if (node.parentHostname().get().equals(parent)) {
+                    found = true;
+                    break;
+                }
+            }
+            Assert.assertTrue(found);
+        }
+    }
+
+    /**
+     * Test an allocation workflow:
+     * <p>
      * 5 Hosts of capacity 3 (2 spares)
      * - Allocate app with 3 nodes
      * - Allocate app with 2 nodes
@@ -195,23 +321,22 @@ public class DynamicDockerProvisioningTest {
             numberOfChildrenStat.put(nofChildren, numberOfChildrenStat.get(nofChildren) + 1);
         }
 
-        assertEquals(3l, (long)numberOfChildrenStat.get(3));
-        assertEquals(1l, (long)numberOfChildrenStat.get(0));
-        assertEquals(1l, (long)numberOfChildrenStat.get(1));
+        assertEquals(3l, (long) numberOfChildrenStat.get(3));
+        assertEquals(1l, (long) numberOfChildrenStat.get(0));
+        assertEquals(1l, (long) numberOfChildrenStat.get(1));
     }
 
     /**
      * Test redeployment of nodes that violates spare headroom - but without alternatives
-     *
+     * <p>
      * Setup 2 docker hosts and allocate one app with a container on each
      * No headroom defined - only 2 spares.
-     *
+     * <p>
      * Initial allocation of app 1 --> final allocation:
-     *
+     * <p>
      * |    |    |        |    |    |
      * |    |    |   -->  |    |    |
      * | 1a | 1b |        | 1a | 1b |
-     *
      */
     @Test
     public void do_not_relocate_nodes_from_spare_if_no_where_to_reloacte_them() {
@@ -341,15 +466,15 @@ public class DynamicDockerProvisioningTest {
     }
 
     private void deployapp(ApplicationId id, ClusterSpec spec, Flavor flavor, ProvisioningTester tester, int nodecount) {
-        List<HostSpec> hostSpec = tester.prepare(id, spec, nodecount,1, flavor.canonicalName());
+        List<HostSpec> hostSpec = tester.prepare(id, spec, nodecount, 1, flavor.canonicalName());
         tester.activate(id, new HashSet<>(hostSpec));
     }
 
     private Node addAndAssignNode(ApplicationId id, String hostname, String parentHostname, Flavor flavor, int index, ProvisioningTester tester) {
         Node node1a = Node.create("open1", Collections.singleton("127.0.0.100"), new HashSet<>(), hostname, Optional.of(parentHostname), flavor, NodeType.tenant);
         ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.100")).changeGroup(Optional.of(ClusterSpec.Group.from(0)));
-        ClusterMembership clusterMembership1 = ClusterMembership.from(clusterSpec,index);
-        Node node1aAllocation = node1a.allocate(id,clusterMembership1, Instant.now());
+        ClusterMembership clusterMembership1 = ClusterMembership.from(clusterSpec, index);
+        Node node1aAllocation = node1a.allocate(id, clusterMembership1, Instant.now());
 
         tester.nodeRepository().addNodes(Collections.singletonList(node1aAllocation));
         NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(tester.getCurator()));
@@ -372,6 +497,7 @@ public class DynamicDockerProvisioningTest {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
         b.addFlavor("host-large", 6., 6., 6, Flavor.Type.BARE_METAL);
         b.addFlavor("host-small", 3., 3., 3, Flavor.Type.BARE_METAL);
+        b.addFlavor("host-medium", 4., 4., 4, Flavor.Type.BARE_METAL);
         b.addFlavor("d-1", 1, 1., 1, Flavor.Type.DOCKER_CONTAINER);
         b.addFlavor("d-2", 2, 2., 2, Flavor.Type.DOCKER_CONTAINER);
         if (includeHeadroom) {
