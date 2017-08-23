@@ -9,6 +9,7 @@
 #include <cassert>
 #include <utility>
 #include <cstddef>
+#include "btree_key_data.h"
 
 namespace search {
 namespace datastore {
@@ -99,20 +100,6 @@ public:
 };
 
 
-/**
- * Empty class to use as DataT template parameter for BTree classes to
- * indicate that leaf nodes have no data (similar to std::set having less
- * information than std::map).  Use of this class triggers the below
- * partial specialization of BTreeNodeDataWrap to prevent unneeded
- * storage overhead.
- */
-class BTreeNoLeafData
-{
-public:
-    static BTreeNoLeafData _instance;
-};
-
-
 template <uint32_t NumSlots>
 class BTreeNodeDataWrap<BTreeNoLeafData, NumSlots>
 {
@@ -135,69 +122,6 @@ public:
     }
 
     static bool hasData() { return false; }
-};
-
-
-template <typename KeyT, typename DataT>
-class BTreeKeyData
-{
-public:
-    typedef KeyT KeyType;
-    typedef DataT DataType;
-
-    KeyT _key;
-    DataT _data;
-
-    BTreeKeyData()
-        : _key(),
-          _data()
-    {}
-
-    BTreeKeyData(const KeyT &key, const DataT &data)
-        : _key(key),
-          _data(data)
-    {}
-
-    void setData(const DataT &data) { _data = data; }
-    const DataT &getData() const { return _data; }
-
-    /**
-     * This operator only works when using direct keys.  References to
-     * externally stored keys will not be properly sorted.
-     */
-    bool operator<(const BTreeKeyData &rhs) const {
-        return _key < rhs._key;
-    }
-};
-
-
-template <typename KeyT>
-class BTreeKeyData<KeyT, BTreeNoLeafData>
-{
-public:
-    typedef KeyT KeyType;
-    typedef BTreeNoLeafData DataType;
-
-    KeyT _key;
-
-    BTreeKeyData() : _key() {}
-
-    BTreeKeyData(const KeyT &key, const BTreeNoLeafData &data)
-        : _key(key)
-    {
-        (void) data;
-    }
-
-    void setData(const BTreeNoLeafData &data) { (void) data; }
-    const BTreeNoLeafData &getData() const { return BTreeNoLeafData::_instance; }
-
-    /**
-     * This operator only works when using direct keys.  References to
-     * externally stored keys will not be properly sorted.
-     */
-    bool operator<(const BTreeKeyData &rhs) const {
-        return _key < rhs._key;
-    }
 };
 
 
@@ -560,8 +484,6 @@ public:
 
 extern template class BTreeNodeDataWrap<uint32_t, 16>;
 extern template class BTreeNodeDataWrap<BTreeNoLeafData, 16>;
-extern template class BTreeKeyData<uint32_t, uint32_t>;
-extern template class BTreeKeyData<uint32_t, int32_t>;
 extern template class BTreeNodeT<uint32_t, 16>;
 extern template class BTreeNodeTT<uint32_t, uint32_t, NoAggregated, 16>;
 extern template class BTreeNodeTT<uint32_t, BTreeNoLeafData, NoAggregated, 16>;
