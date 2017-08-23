@@ -215,9 +215,11 @@ public class StorageMaintainer {
 
     /**
      * Checks if container has any new coredumps, reports and archives them if so
+     *
+     * @param force Set to true to bypass throttling
      */
-    public void handleCoreDumpsForContainer(ContainerName containerName, ContainerNodeSpec nodeSpec, Environment environment) {
-        if (! getMaintenanceThrottlerFor(containerName).shouldHandleCoredumpsNow()) return;
+    public void handleCoreDumpsForContainer(ContainerName containerName, ContainerNodeSpec nodeSpec, boolean force) {
+        if (! getMaintenanceThrottlerFor(containerName).shouldHandleCoredumpsNow() && !force) return;
 
         MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
         addHandleCoredumpsCommand(maintainerExecutor, containerName, nodeSpec);
@@ -289,10 +291,13 @@ public class StorageMaintainer {
     }
 
     /**
-     * Archives container data, runs when container enters state "dirty"
+     * Prepares the container-storage for the next container by deleting/archiving all the data of the current container.
+     * Removes old files, reports coredumps and archives container data, runs when container enters state "dirty"
      */
-    public void archiveNodeData(ContainerName containerName) {
+    public void cleanupNodeStorage(ContainerName containerName, ContainerNodeSpec nodeSpec) {
         MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
+        addRemoveOldFilesCommand(maintainerExecutor, containerName);
+        addHandleCoredumpsCommand(maintainerExecutor, containerName, nodeSpec);
         addArchiveNodeData(maintainerExecutor, containerName);
 
         maintainerExecutor.execute();

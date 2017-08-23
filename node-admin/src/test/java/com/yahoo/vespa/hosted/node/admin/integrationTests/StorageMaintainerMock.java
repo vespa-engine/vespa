@@ -30,7 +30,7 @@ public class StorageMaintainerMock extends StorageMaintainer {
     }
 
     @Override
-    public void handleCoreDumpsForContainer(ContainerName containerName, ContainerNodeSpec nodeSpec, Environment environment) {
+    public void handleCoreDumpsForContainer(ContainerName containerName, ContainerNodeSpec nodeSpec, boolean force) {
     }
 
     @Override
@@ -42,7 +42,7 @@ public class StorageMaintainerMock extends StorageMaintainer {
     }
 
     @Override
-    public void archiveNodeData(ContainerName containerName) {
+    public void cleanupNodeStorage(ContainerName containerName, ContainerNodeSpec nodeSpec) {
         callOrderVerifier.add("DeleteContainerStorage with " + containerName);
     }
 }

@@ -454,7 +454,7 @@ public class NodeAgentImpl implements NodeAgent {
             case active:
                 storageMaintainer.ifPresent(maintainer -> {
                     maintainer.removeOldFilesFromNode(containerName);
-                    maintainer.handleCoreDumpsForContainer(containerName, nodeSpec, environment);
+                    maintainer.handleCoreDumpsForContainer(containerName, nodeSpec, false);
                 });
                 scheduleDownLoadIfNeeded(nodeSpec);
                 if (isDownloadingImage()) {
@@ -463,6 +463,7 @@ public class NodeAgentImpl implements NodeAgent {
                 }
                 container = removeContainerIfNeededUpdateContainerState(nodeSpec, container);
                 if (! container.isPresent()) {
+                    storageMaintainer.ifPresent(maintainer -> maintainer.handleCoreDumpsForContainer(containerName, nodeSpec, false));
                     startContainer(nodeSpec);
                 }
 
@@ -490,10 +491,9 @@ public class NodeAgentImpl implements NodeAgent {
                 nodeRepository.markAsDirty(hostname);
                 break;
             case dirty:
-                storageMaintainer.ifPresent(maintainer -> maintainer.removeOldFilesFromNode(containerName));
                 removeContainerIfNeededUpdateContainerState(nodeSpec, container);
                 logger.info("State is " + nodeSpec.nodeState + ", will delete application storage and mark node as ready");
-                storageMaintainer.ifPresent(maintainer -> maintainer.archiveNodeData(containerName));
+                storageMaintainer.ifPresent(maintainer -> maintainer.cleanupNodeStorage(containerName, nodeSpec));
                 updateNodeRepoWithCurrentAttributes(nodeSpec);
                 nodeRepository.markNodeAvailableForNewAllocation(hostname);
                 break;
