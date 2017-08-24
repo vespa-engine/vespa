@@ -348,6 +348,7 @@ public:
      * @return The message being routed.
      */
     Message &getMessage() { return _msg; }
+    const Message & getMessage() const { return _msg; }
 
     /**
      * Returns the trace object for this node. Each node has a separate trace
@@ -356,6 +357,7 @@ public:
      * @return The trace object.
      */
     Trace &getTrace() { return _trace; }
+    const Trace &getTrace() const { return _trace; }
 
     /**
      * Returns the route object as it exists at this point of the tree.
@@ -429,6 +431,7 @@ public:
      * @return The recipient address.
      */
     IServiceAddress &getServiceAddress() { return *_serviceAddress; }
+    const IServiceAddress &getServiceAddress() const { return *_serviceAddress; }
 
     /**
      * Sets the service address of this node. This is called by the network

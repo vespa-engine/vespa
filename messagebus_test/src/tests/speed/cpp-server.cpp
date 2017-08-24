@@ -5,6 +5,7 @@
 #include <vespa/messagebus/testlib/simplereply.h>
 #include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/rpcmessagebus.h>
+#include <vespa/messagebus/network/rpcnetworkparams.h>
 #include <vespa/fastos/app.h>
 
 using namespace mbus;

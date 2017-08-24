@@ -5,7 +5,7 @@
 
 namespace mbus {
 
-class RPCSendV1 : public RPCSend {
+class RPCSendV2 : public RPCSend {
 public:
     static bool isCompatible(vespalib::stringref method, vespalib::stringref request, vespalib::stringref respons);
 private:

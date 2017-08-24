@@ -2,10 +2,10 @@
 
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/messagebus/testlib/slobrok.h>
-#include <string>
-#include <sstream>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/messagebus/network/rpcnetwork.h>
+#include <vespa/messagebus/network/rpcnetworkparams.h>
+
 #include <vespa/vespalib/util/host_name.h>
 
 using slobrok::api::IMirrorAPI;
