@@ -297,7 +297,7 @@ PersistenceMessageTrackerImpl::handleCreateBucketReply(
         _manager.removeNodeFromDB(reply.getBucketId(), node);
         LOG_BUCKET_OPERATION_NO_LOCK(
                 reply.getBucketId(),
-                vespalib::make_vespa_string(
+                vespalib::make_string(
                     "Deleted bucket on node %u due to failing create bucket %s",
                     node, reply.getResult().toString().c_str()));
     }

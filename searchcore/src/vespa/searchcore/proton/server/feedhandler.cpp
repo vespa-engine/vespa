@@ -5,7 +5,6 @@
 #include "feedstates.h"
 #include "i_feed_handler_owner.h"
 #include "ifeedview.h"
-#include "replaypacketdispatcher.h"
 #include "tlcproxy.h"
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>

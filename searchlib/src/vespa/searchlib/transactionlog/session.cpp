@@ -10,8 +10,7 @@ LOG_SETUP(".transactionlog.session");
 
 using vespalib::LockGuard;
 
-namespace search {
-namespace transactionlog {
+namespace search::transactionlog {
 
 namespace {
     const double NEVER(-1.0);
@@ -280,5 +279,4 @@ Session::sendDone()
     return retval;
 }
 
-}
 }

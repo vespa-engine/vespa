@@ -4,8 +4,7 @@
 
 #include "syncproxy.h"
 
-namespace search {
-namespace transactionlog {
+namespace search::transactionlog {
 
 class NoSyncProxy : public SyncProxy
 {
@@ -15,5 +14,4 @@ public:
     void sync(SerialNum syncTo) override;
 };
 
-}
 }

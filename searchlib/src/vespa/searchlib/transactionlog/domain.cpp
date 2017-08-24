@@ -1,17 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "domain.h"
-#include <limits>
-#include <vespa/vespalib/util/vstringfmt.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/closuretask.h>
+#include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".transactionlog.domain");
 
 using vespalib::string;
 using vespalib::make_string;
-using vespalib::make_vespa_string;
 using vespalib::LockGuard;
 using vespalib::makeTask;
 using vespalib::makeClosure;
@@ -20,11 +18,7 @@ using vespalib::MonitorGuard;
 using search::common::FileHeaderContext;
 using std::runtime_error;
 
-namespace search
-{
-
-namespace transactionlog
-{
+namespace search::transactionlog {
 
 Domain::Domain(const string &domainName,
                const string & baseDir,
@@ -419,5 +413,4 @@ Domain::scanDir()
     return res;
 }
 
-}
 }

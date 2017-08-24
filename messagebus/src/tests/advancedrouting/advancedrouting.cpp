@@ -11,7 +11,7 @@
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/vstringfmt.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using namespace mbus;
 
@@ -126,7 +126,7 @@ Test::testAdvanced(TestData &data)
                                                            .addHop(HopSpec("bar", "dst/bar"))
                                                            .addHop(HopSpec("baz", "dst/baz"))
                                                            .addRoute(RouteSpec("baz").addHop("baz"))));
-    string route = vespalib::make_vespa_string("[Custom:%s,bar,route:baz,dst/cox,?dst/unknown]",
+    string route = vespalib::make_string("[Custom:%s,bar,route:baz,dst/cox,?dst/unknown]",
                                               data._fooSession->getConnectionSpec().c_str());
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse(route)).isAccepted());
 

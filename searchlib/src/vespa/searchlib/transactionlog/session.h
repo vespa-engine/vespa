@@ -9,8 +9,7 @@
 
 class FastOS_FileInterface;
 
-namespace search {
-namespace transactionlog {
+namespace search::transactionlog {
 
 class Domain;
 class DomainPart;
@@ -94,5 +93,3 @@ private:
 };
 
 }
-}
-

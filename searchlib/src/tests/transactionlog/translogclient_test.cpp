@@ -4,8 +4,10 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/log/log.h>
+#include <vespa/fastos/file.h>
 #include <map>
+
+#include <vespa/log/log.h>
 LOG_SETUP("translogclient_test");
 
 using namespace search;

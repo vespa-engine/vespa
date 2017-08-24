@@ -4,18 +4,16 @@
 #include "valuefeature.h"
 #include "utils.h"
 
-#include <boost/algorithm/string/replace.hpp>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/vstringfmt.h>
+#include <boost/algorithm/string/replace.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.foreachfeature");
 
 using namespace search::fef;
 
-namespace search {
-namespace features {
+namespace search::features {
 
 template <typename CO, typename OP>
 ForeachExecutor<CO, OP>::ForeachExecutor(const CO & condition, uint32_t numInputs) :
@@ -149,7 +147,7 @@ ForeachBlueprint::setup(const IIndexEnvironment & env,
     if (_dimension == TERMS) {
         uint32_t maxTerms = util::strToNum<uint32_t>(env.getProperties().lookup(getBaseName(), "maxTerms").get("16"));
         for (uint32_t i = 0; i < maxTerms; ++i) {
-            defineInput(boost::algorithm::replace_all_copy(feature, variable, vespalib::make_vespa_string("%u", i)));
+            defineInput(boost::algorithm::replace_all_copy(feature, variable, vespalib::make_string("%u", i)));
             ++_num_inputs;
         }
     } else {
@@ -186,5 +184,4 @@ ForeachBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &sta
 }
 
 
-} // namespace features
-} // namespace search
+}

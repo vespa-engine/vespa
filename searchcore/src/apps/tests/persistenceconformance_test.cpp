@@ -1,7 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP("persistenceconformance_test");
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/config-imported-fields.h>
@@ -27,7 +25,10 @@ LOG_SETUP("persistenceconformance_test");
 #include <tests/proton/common/dummydbowner.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/fastos/file.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("persistenceconformance_test");
 
 using namespace config;
 using namespace proton;
