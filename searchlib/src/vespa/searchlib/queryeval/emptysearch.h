@@ -16,6 +16,7 @@ protected:
         SearchIterator::initRange(begin, end);
         setAtEnd();
     }
+    virtual Trinary is_strict() const override;
 
 public:
     EmptySearch();
