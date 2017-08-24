@@ -48,6 +48,11 @@ public:
     virtual uint32_t get(DocId docId, WeightedString *buffer, uint32_t sz) const override;
     virtual uint32_t get(DocId docId, WeightedConstChar *buffer, uint32_t sz) const override;
     virtual uint32_t get(DocId docId, WeightedEnum *buffer, uint32_t sz) const override;
+protected:
+    virtual long onSerializeForAscendingSort(DocId doc, void * serTo, long available,
+                                             const common::BlobConverter * bc) const override;
+    virtual long onSerializeForDescendingSort(DocId doc, void * serTo, long available,
+                                              const common::BlobConverter * bc) const override;
 };
 
 }
