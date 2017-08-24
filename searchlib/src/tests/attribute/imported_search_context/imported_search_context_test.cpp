@@ -197,6 +197,7 @@ TEST_F("Non-strict iterator unpacks target match data for weighted set hit", Wse
 
 TEST_F("Strict iterator is marked as strict", Fixture) {
     auto ctx = f.create_context(word_term("5678"));
+    ctx->fetchPostings(true);
     TermFieldMatchData match;
     auto iter = f.create_strict_iterator(*ctx, match);
 
@@ -218,11 +219,12 @@ struct SingleValueFixture : Fixture {
 
 TEST_F("Strict iterator seeks to first available hit LID", SingleValueFixture) {
     auto ctx = f.create_context(word_term("5678"));
+    ctx->fetchPostings(true);
     TermFieldMatchData match;
     auto iter = f.create_strict_iterator(*ctx, match);
 
     EXPECT_FALSE(iter->isAtEnd());
-    EXPECT_EQUAL(iter->beginId(), iter->getDocId());
+    EXPECT_EQUAL(DocId(3), iter->getDocId());
 
     EXPECT_FALSE(iter->seek(DocId(1)));
     EXPECT_FALSE(iter->isAtEnd());
@@ -243,6 +245,7 @@ TEST_F("Strict iterator seeks to first available hit LID", SingleValueFixture) {
 
 TEST_F("Strict iterator unpacks target match data for single value hit", SingleValueFixture) {
     auto ctx = f.create_context(word_term("5678"));
+    ctx->fetchPostings(true);
     TermFieldMatchData match;
     auto iter = f.create_strict_iterator(*ctx, match);
 
@@ -254,6 +257,7 @@ TEST_F("Strict iterator unpacks target match data for single value hit", SingleV
 
 TEST_F("Strict iterator unpacks target match data for array hit", ArrayValueFixture) {
     auto ctx = f.create_context(word_term("1234"));
+    ctx->fetchPostings(true);
     TermFieldMatchData match;
     auto iter = f.create_strict_iterator(*ctx, match);
 
@@ -265,6 +269,7 @@ TEST_F("Strict iterator unpacks target match data for array hit", ArrayValueFixt
 
 TEST_F("Strict iterator unpacks target match data for weighted set hit", WsetValueFixture) {
     auto ctx = f.create_context(word_term("foo"));
+    ctx->fetchPostings(true);
     TermFieldMatchData match;
     auto iter = f.create_strict_iterator(*ctx, match);
 
@@ -275,6 +280,7 @@ TEST_F("Strict iterator unpacks target match data for weighted set hit", WsetVal
 
 TEST_F("Strict iterator handles seek outside of LID space", ArrayValueFixture) {
     auto ctx = f.create_context(word_term("1234"));
+    ctx->fetchPostings(true);
     TermFieldMatchData match;
     auto iter = f.create_strict_iterator(*ctx, match);
 
@@ -306,6 +312,7 @@ TEST_F("cmp(weight) performs GID mapping and forwards to target attribute", Wset
 
 TEST_F("Multiple iterators can be created from the same context", SingleValueFixture) {
     auto ctx = f.create_context(word_term("5678"));
+    ctx->fetchPostings(true);
 
     TermFieldMatchData match1;
     auto iter1 = f.create_strict_iterator(*ctx, match1);

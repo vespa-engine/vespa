@@ -15,6 +15,12 @@ EmptySearch::doUnpack(uint32_t)
 {
 }
 
+EmptySearch::Trinary
+EmptySearch::is_strict() const
+{
+    return Trinary::True;
+}
+
 EmptySearch::EmptySearch()
     : SearchIterator()
 {
