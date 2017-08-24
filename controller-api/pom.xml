@@ -150,6 +150,9 @@
                 <groupId>com.yahoo.vespa</groupId>
                 <artifactId>bundle-plugin</artifactId>
                 <extensions>true</extensions>
+                <configuration>
+                    <useCommonAssemblyIds>false</useCommonAssemblyIds>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
