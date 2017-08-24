@@ -24,6 +24,7 @@ struct DummyExecutor : FeatureExecutor {
 struct DummyExpression : IntrinsicExpression {
     FeatureType type;
     DummyExpression(const FeatureType &type_in) : type(type_in) {}
+    vespalib::string describe_self() const override { return "dummy"; }
     const FeatureType &result_type() const override { return type; }
     FeatureExecutor &create_executor(const QueryEnv &, vespalib::Stash &stash) const override {
         return stash.create<DummyExecutor>();
