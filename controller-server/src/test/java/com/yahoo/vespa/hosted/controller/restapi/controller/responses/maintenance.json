@@ -1,0 +1,31 @@
+{
+  "jobs":[
+    {
+      "name":"DelayedDeployer"
+    },
+    {
+      "name":"Upgrader"
+    },
+    {
+      "name":"FailureRedeployer"
+    },
+    {
+      "name":"DeploymentExpirer"
+    },
+    {
+      "name":"MetricsReporter"
+    },
+    {
+      "name":"VersionStatusUpdater"
+    },
+    {
+      "name":"DeploymentIssueReporter"
+    },
+    {
+      "name":"OutstandingChangeDeployer"
+    }
+  ],
+  "inactive":[
+    "DeploymentExpirer"
+  ]
+}

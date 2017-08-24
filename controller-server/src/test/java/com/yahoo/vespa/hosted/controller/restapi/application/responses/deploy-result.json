@@ -1,0 +1,9 @@
+{
+  "revisionId":"(ignore)",
+  "applicationZipSize":412,
+  "prepareMessages":[],
+  "configChangeActions":{
+    "restart":[],
+    "refeed":[]
+  }
+}
