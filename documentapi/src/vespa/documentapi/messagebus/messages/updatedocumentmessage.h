@@ -42,8 +42,8 @@ public:
      *
      * @return The update.
      */
-    const DocumentUpdateSP & getDocumentUpdate() const { return _documentUpdate; }
-
+    const DocumentUpdateSP & getDocumentUpdateSP() const { return _documentUpdate; }
+    const document::DocumentUpdate & getDocumentUpdate() const { return *_documentUpdate; }
     /**
      * Sets the document update to perform.
      *

@@ -567,13 +567,16 @@ RoutableFactories50::GetDocumentReplyFactory::doDecode(document::ByteBuffer &buf
     GetDocumentReply &reply = static_cast<GetDocumentReply&>(*ret);
 
     bool hasDocument = decodeBoolean(buf);
+    document::Document * document = nullptr;
     if (hasDocument) {
-        reply.setDocument(std::make_shared<document::Document>(_repo, buf));
+        auto doc = std::make_shared<document::Document>(_repo, buf);
+        document = doc.get();
+        reply.setDocument(std::move(doc));
     }
     int64_t lastModified = decodeLong(buf);
     reply.setLastModified(lastModified);
-    if (reply.getDocument()) {
-        reply.getDocument()->setLastModified(lastModified);
+    if (hasDocument) {
+        document->setLastModified(lastModified);
     }
 
     return ret;
@@ -584,10 +587,10 @@ RoutableFactories50::GetDocumentReplyFactory::doEncode(const DocumentReply &obj,
 {
     const GetDocumentReply &reply = static_cast<const GetDocumentReply&>(obj);
 
-    buf.putByte(reply.getDocument().get() == NULL ? 0 : 1);
-    if (reply.getDocument().get() != NULL) {
+    buf.putByte(reply.hasDocument() ? 1 : 0);
+    if (reply.hasDocument()) {
         nbostream stream;
-        reply.getDocument()->serialize(stream);
+        reply.getDocument().serialize(stream);
         buf.putBytes(stream.peek(), stream.size());
     }
     buf.putLong(reply.getLastModified());
@@ -691,7 +694,7 @@ RoutableFactories50::PutDocumentMessageFactory::doEncode(const DocumentMessage &
     auto & msg = static_cast<const PutDocumentMessage &>(obj);
     nbostream stream;
 
-    msg.getDocument()->serialize(stream);
+    msg.getDocument().serialize(stream);
     buf.putBytes(stream.peek(), stream.size());
     buf.putLong(static_cast<int64_t>(msg.getTimestamp()));
 
@@ -948,7 +951,7 @@ RoutableFactories50::UpdateDocumentMessageFactory::doEncode(const DocumentMessag
     const UpdateDocumentMessage &msg = static_cast<const UpdateDocumentMessage&>(obj);
 
     vespalib::nbostream stream;
-    msg.getDocumentUpdate()->serializeHEAD(stream);
+    msg.getDocumentUpdate().serializeHEAD(stream);
     buf.putBytes(stream.peek(), stream.size());
     buf.putLong((int64_t)msg.getOldTimestamp());
     buf.putLong((int64_t)msg.getNewTimestamp());

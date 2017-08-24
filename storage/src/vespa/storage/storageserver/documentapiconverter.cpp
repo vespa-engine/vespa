@@ -36,7 +36,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg,
     case DocumentProtocol::MESSAGE_PUTDOCUMENT:
     {
         documentapi::PutDocumentMessage& from(static_cast<documentapi::PutDocumentMessage&>(fromMsg));
-        api::PutCommand::UP to(new api::PutCommand(document::BucketId(0), from.getDocument(), from.getTimestamp()));
+        api::PutCommand::UP to(new api::PutCommand(document::BucketId(0), from.getDocumentSP(), from.getTimestamp()));
         to->setCondition(from.getCondition());
         toMsg = std::move(to);
         break;
@@ -44,7 +44,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg,
     case DocumentProtocol::MESSAGE_UPDATEDOCUMENT:
     {
         documentapi::UpdateDocumentMessage& from(static_cast<documentapi::UpdateDocumentMessage&>(fromMsg));
-        api::UpdateCommand::UP to(new api::UpdateCommand(document::BucketId(0), from.getDocumentUpdate(),
+        api::UpdateCommand::UP to(new api::UpdateCommand(document::BucketId(0), from.getDocumentUpdateSP(),
                                                          from.getNewTimestamp()));
         to->setOldTimestamp(from.getOldTimestamp());
         to->setCondition(from.getCondition());

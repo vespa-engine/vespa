@@ -38,7 +38,8 @@ public:
      *
      * @return The document.
      */
-    const DocumentSP & getDocument() const { return _document; }
+    const document::Document & getDocument() const { return *_document; }
+    bool hasDocument() const { return _document.get() != nullptr; }
 
     /**
      * Sets the document retrieved.

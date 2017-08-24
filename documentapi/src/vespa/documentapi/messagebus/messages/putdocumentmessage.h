@@ -13,15 +13,11 @@ private:
     uint64_t   _time;
 
 protected:
-    // Implements DocumentMessage.
     DocumentReply::UP doCreateReply() const override;
 
 public:
-    /**
-     * Convenience typedef.
-     */
-    typedef std::unique_ptr<PutDocumentMessage> UP;
-    typedef std::shared_ptr<PutDocumentMessage> SP;
+    using UP = std::unique_ptr<PutDocumentMessage>;
+    using SP = std::shared_ptr<PutDocumentMessage>;
 
     /**
      * Constructs a new document message for deserialization.
@@ -41,7 +37,8 @@ public:
      *
      * @return The document.
      */
-    const DocumentSP & getDocument() const { return _document; }
+    const DocumentSP & getDocumentSP() const { return _document; }
+    const document::Document & getDocument() const { return *_document; }
 
     /**
      * Sets the document to put.
@@ -63,13 +60,9 @@ public:
      * @param time The timestamp to set.
      */
     void setTimestamp(uint64_t time) { _time = time; }
-
     bool hasSequenceId() const override;
-
     uint64_t getSequenceId() const override;
-
     uint32_t getType() const override;
-
     string toString() const override { return "putdocumentmessage"; }
 };
 
