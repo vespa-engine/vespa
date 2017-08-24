@@ -81,6 +81,8 @@ vespa_define_module(
     src/tests/attribute/enumstore
     src/tests/attribute/extendattributes
     src/tests/attribute/guard
+    src/tests/attribute/imported_attribute_vector
+    src/tests/attribute/imported_search_context
     src/tests/attribute/multi_value_mapping
     src/tests/attribute/posting_list_merger
     src/tests/attribute/postinglist
@@ -91,8 +93,6 @@ vespa_define_module(
     src/tests/attribute/sourceselector
     src/tests/attribute/stringattribute
     src/tests/attribute/tensorattribute
-    src/tests/attribute/imported_attribute_vector
-    src/tests/attribute/imported_search_context
     src/tests/bitcompression/expgolomb
     src/tests/bitvector
     src/tests/btree
@@ -134,6 +134,7 @@ vespa_define_module(
     src/tests/features/imported_dot_product
     src/tests/features/internal_max_reduce_prod_join_feature
     src/tests/features/item_raw_score
+    src/tests/features/max_reduce_prod_join_replacer
     src/tests/features/native_dot_product
     src/tests/features/ranking_expression
     src/tests/features/raw_score
