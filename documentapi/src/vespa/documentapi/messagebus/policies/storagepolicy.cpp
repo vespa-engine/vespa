@@ -119,7 +119,7 @@ StoragePolicy::doSelect(mbus::RoutingContext &context)
         document::BucketId id;
         switch(msg.getType()) {
         case DocumentProtocol::MESSAGE_PUTDOCUMENT:
-            id = _bucketIdFactory.getBucketId(static_cast<const PutDocumentMessage&>(msg).getDocument()->getId());
+            id = _bucketIdFactory.getBucketId(static_cast<const PutDocumentMessage&>(msg).getDocument().getId());
             break;
 
         case DocumentProtocol::MESSAGE_GETDOCUMENT:
@@ -131,7 +131,7 @@ StoragePolicy::doSelect(mbus::RoutingContext &context)
             break;
 
         case DocumentProtocol::MESSAGE_UPDATEDOCUMENT:
-            id = _bucketIdFactory.getBucketId(static_cast<const UpdateDocumentMessage&>(msg).getDocumentUpdate()->getId());
+            id = _bucketIdFactory.getBucketId(static_cast<const UpdateDocumentMessage&>(msg).getDocumentUpdate().getId());
             break;
 
         case DocumentProtocol::MESSAGE_MULTIOPERATION:

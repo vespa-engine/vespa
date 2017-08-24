@@ -333,26 +333,22 @@ VisitorTest::getMessagesAndReply(
         {
             vespalib::MonitorGuard guard(session.getMonitor());
             CPPUNIT_ASSERT(!session.sentMessages.empty());
-            std::unique_ptr<documentapi::DocumentMessage> msg(
-                    std::move(session.sentMessages.front()));
+            std::unique_ptr<documentapi::DocumentMessage> msg(std::move(session.sentMessages.front()));
             session.sentMessages.pop_front();
             CPPUNIT_ASSERT(msg->getPriority() < 16);
 
             switch (msg->getType()) {
             case documentapi::DocumentProtocol::MESSAGE_PUTDOCUMENT:
                 docs.push_back(
-                        static_cast<documentapi::PutDocumentMessage&>(*msg)
-                            .getDocument());
+                        static_cast<documentapi::PutDocumentMessage&>(*msg).getDocumentSP());
                 break;
             case documentapi::DocumentProtocol::MESSAGE_REMOVEDOCUMENT:
                 docIds.push_back(
-                        static_cast<documentapi::RemoveDocumentMessage&>(*msg)
-                            .getDocumentId());
+                        static_cast<documentapi::RemoveDocumentMessage&>(*msg).getDocumentId());
                 break;
             case documentapi::DocumentProtocol::MESSAGE_VISITORINFO:
                 infoMessages.push_back(
-                        static_cast<documentapi::VisitorInfoMessage&>(*msg)
-                            .getErrorMessage());
+                        static_cast<documentapi::VisitorInfoMessage&>(*msg).getErrorMessage());
                 break;
             default:
                 break;
