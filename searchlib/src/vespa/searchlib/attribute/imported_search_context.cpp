@@ -68,18 +68,15 @@ ImportedSearchContext::createIterator(fef::TermFieldMatchData* matchData, bool s
 
 namespace {
 
-class WeightedRef {
-    EntryRef _revMapIdx;
-    int32_t  _weight;
+struct WeightedRef {
+    EntryRef revMapIdx;
+    int32_t  weight;
 
-public:
-    WeightedRef(EntryRef revMapIdx, int32_t weight)
-        : _revMapIdx(revMapIdx),
-          _weight(weight)
+    WeightedRef(EntryRef revMapIdx_, int32_t weight_)
+        : revMapIdx(revMapIdx_),
+          weight(weight_)
     {
     }
-    EntryRef getRevMapIdx() const { return _revMapIdx; }
-    int32_t getWeight() const { return _weight; }
 };
 
 struct TargetResult {
@@ -156,7 +153,7 @@ void ImportedSearchContext::makeMergedPostings()
     _merger.reserveArray(targetResult.weightedRefs.size(), targetResult.sizeSum);
     const auto &reverseMapping = _reference_attribute.getReverseMapping();
     for (const auto &weightedRef : targetResult.weightedRefs) {
-        _merger.addToArray(ReverseMappingPostingList(reverseMapping, weightedRef.getRevMapIdx(), weightedRef.getWeight()));
+        _merger.addToArray(ReverseMappingPostingList(reverseMapping, weightedRef.revMapIdx, weightedRef.weight));
     }
     _merger.merge();
 }
