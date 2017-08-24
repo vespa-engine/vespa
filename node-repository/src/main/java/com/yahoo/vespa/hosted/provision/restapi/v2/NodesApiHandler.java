@@ -196,13 +196,8 @@ public class NodesApiHandler extends LoggingRequestHandler {
     }
 
     private Node nodeFromRequest(HttpRequest request) {
-        // TODO: The next 4 lines can be a oneliner when updateNodeAttribute is removed (as we won't allow path suffixes)
         String path = request.getUri().getPath();
-        String prefixString = "/nodes/v2/node/";
-        int beginIndex = path.indexOf(prefixString) + prefixString.length();
-        int endIndex = path.indexOf("/", beginIndex);
-        if (endIndex < 0) endIndex = path.length(); // path ends by ip
-        String hostname = path.substring(beginIndex, endIndex);
+        String hostname = path.substring(path.lastIndexOf("/"));
 
         return nodeRepository.getNode(hostname).orElseThrow(() ->
                 new NotFoundException("No node found with hostname " + hostname));
