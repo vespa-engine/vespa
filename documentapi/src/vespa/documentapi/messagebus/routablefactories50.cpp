@@ -567,15 +567,13 @@ RoutableFactories50::GetDocumentReplyFactory::doDecode(document::ByteBuffer &buf
     GetDocumentReply &reply = static_cast<GetDocumentReply&>(*ret);
 
     bool hasDocument = decodeBoolean(buf);
-    document::Document::SP document;
     if (hasDocument) {
-        document.reset(new document::Document(_repo, buf));
-        reply.setDocument(document);
+        reply.setDocument(std::make_shared<document::Document>(_repo, buf));
     }
     int64_t lastModified = decodeLong(buf);
     reply.setLastModified(lastModified);
-    if (document.get()) {
-        document->setLastModified(lastModified);
+    if (reply.getDocument()) {
+        reply.getDocument()->setLastModified(lastModified);
     }
 
     return ret;

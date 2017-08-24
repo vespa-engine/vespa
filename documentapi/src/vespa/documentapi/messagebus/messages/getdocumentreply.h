@@ -2,14 +2,16 @@
 #pragma once
 
 #include "documentacceptedreply.h"
-#include <vespa/document/fieldvalue/document.h>
+
+namespace document { class Document; }
 
 namespace documentapi {
 
 class GetDocumentReply : public DocumentAcceptedReply {
 private:
-    document::Document::SP _document;
-    uint64_t               _lastModified;
+    using DocumentSP = std::shared_ptr<document::Document>;
+    DocumentSP _document;
+    uint64_t   _lastModified;
 
 public:
     /**
@@ -29,28 +31,21 @@ public:
      *
      * @param document The document requested.
      */
-    GetDocumentReply(document::Document::SP document);
+    GetDocumentReply(DocumentSP document);
 
     /**
      * Returns the document retrieved.
      *
      * @return The document.
      */
-    document::Document::SP getDocument();
-
-    /**
-     * Returns the document retrieved.
-     *
-     * @return The document.
-     */
-    std::shared_ptr<const document::Document> getDocument() const;
+    const DocumentSP & getDocument() const { return _document; }
 
     /**
      * Sets the document retrieved.
      *
      * @param document The document.
      */
-    void setDocument(document::Document::SP document);
+    void setDocument(DocumentSP document);
 
     /**
      * Returns the date the document was last modified.
@@ -64,7 +59,7 @@ public:
      *
      * @param lastModified The date.
      */
-    void setLastModified(uint64_t lastModified);
+    void setLastModified(uint64_t lastModified) { _lastModified = lastModified; }
 
     string toString() const override { return "getdocumentreply"; }
 };

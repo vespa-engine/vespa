@@ -2,14 +2,15 @@
 #pragma once
 
 #include "testandsetmessage.h"
-#include <vespa/document/fieldvalue/document.h>
 
+namespace document { class Document; }
 namespace documentapi {
 
 class PutDocumentMessage : public TestAndSetMessage {
 private:
-    document::Document::SP _document;
-    uint64_t _time;
+    using DocumentSP = std::shared_ptr<document::Document>;
+    DocumentSP _document;
+    uint64_t   _time;
 
 protected:
     // Implements DocumentMessage.
@@ -32,7 +33,7 @@ public:
      *
      * @param document The document to put.
      */
-    PutDocumentMessage(document::Document::SP document);
+    PutDocumentMessage(DocumentSP document);
     ~PutDocumentMessage();
 
     /**
@@ -40,21 +41,14 @@ public:
      *
      * @return The document.
      */
-    document::Document::SP getDocument();
-
-    /**
-     * Returns the document to put.
-     *
-     * @return The document.
-     */
-    std::shared_ptr<const document::Document> getDocument() const;
+    const DocumentSP & getDocument() const { return _document; }
 
     /**
      * Sets the document to put.
      *
      * @param document The document to set.
      */
-    void setDocument(document::Document::SP document);
+    void setDocument(DocumentSP document);
 
     /**
      * Returns the timestamp of the document to put.

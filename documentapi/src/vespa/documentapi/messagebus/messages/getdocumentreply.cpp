@@ -2,6 +2,7 @@
 
 #include "getdocumentreply.h"
 #include <vespa/documentapi/messagebus/documentprotocol.h>
+#include <vespa/document/fieldvalue/document.h>
 
 namespace documentapi {
 
@@ -15,41 +16,23 @@ GetDocumentReply::~GetDocumentReply() {}
 
 GetDocumentReply::GetDocumentReply(document::Document::SP document) :
     DocumentAcceptedReply(DocumentProtocol::REPLY_GETDOCUMENT),
-    _document(document),
+    _document(std::move(document)),
     _lastModified(0)
 {
-    if (_document.get()) {
+    if (_document) {
         _lastModified = _document->getLastModified();
     }
-}
-
-document::Document::SP
-GetDocumentReply::getDocument()
-{
-    return _document;
-}
-
-std::shared_ptr<const document::Document>
-GetDocumentReply::getDocument() const
-{
-    return _document;
 }
 
 void
 GetDocumentReply::setDocument(document::Document::SP document)
 {
-    _document = document;
+    _document = std::move(document);
     if (document.get()) {
         _lastModified = document->getLastModified();
     } else {
         _lastModified = 0u;
     }
-}
-
-void
-GetDocumentReply::setLastModified(uint64_t lastModified)
-{
-    _lastModified = lastModified;
 }
 
 }

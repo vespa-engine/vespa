@@ -2,6 +2,7 @@
 #include "putdocumentmessage.h"
 #include "writedocumentreply.h"
 #include <vespa/documentapi/messagebus/documentprotocol.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 namespace documentapi {
@@ -17,7 +18,7 @@ PutDocumentMessage::PutDocumentMessage(document::Document::SP document) :
     _document(),
     _time(0)
 {
-    setDocument(document);
+    setDocument(std::move(document));
 }
 
 PutDocumentMessage::~PutDocumentMessage() {}
@@ -46,25 +47,13 @@ PutDocumentMessage::getType() const
     return DocumentProtocol::MESSAGE_PUTDOCUMENT;
 }
 
-document::Document::SP
-PutDocumentMessage::getDocument()
-{
-    return _document;
-}
-
-std::shared_ptr<const document::Document>
-PutDocumentMessage::getDocument() const
-{
-    return _document;
-}
-
 void
 PutDocumentMessage::setDocument(document::Document::SP document)
 {
-    if (document.get() == NULL) {
+    if ( ! document ) {
         throw vespalib::IllegalArgumentException("Document can not be null.", VESPA_STRLOC);
     }
-    _document = document;
+    _document = std::move(document);
 }
 
 }
