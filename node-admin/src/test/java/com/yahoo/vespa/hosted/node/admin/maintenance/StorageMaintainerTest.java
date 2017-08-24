@@ -77,7 +77,7 @@ public class StorageMaintainerTest {
         verifyProcessExecuterCalled(1);
 
         // Coredump handler has its own throttler
-        storageMaintainer.handleCoreDumpsForContainer(containerName, nodeSpec, environment);
+        storageMaintainer.handleCoreDumpsForContainer(containerName, nodeSpec, false);
         verifyProcessExecuterCalled(2);
 
 
@@ -85,21 +85,30 @@ public class StorageMaintainerTest {
         storageMaintainer.removeOldFilesFromNode(containerName);
         verifyProcessExecuterCalled(3);
 
-        storageMaintainer.handleCoreDumpsForContainer(containerName, nodeSpec, environment);
+        storageMaintainer.handleCoreDumpsForContainer(containerName, nodeSpec, false);
         verifyProcessExecuterCalled(4);
 
-        storageMaintainer.handleCoreDumpsForContainer(containerName, nodeSpec, environment);
+        storageMaintainer.handleCoreDumpsForContainer(containerName, nodeSpec, false);
         verifyProcessExecuterCalled(4);
 
-
-        // archiveNodeData is unthrottled and it should reset previous times
-        storageMaintainer.archiveNodeData(containerName);
+        storageMaintainer.handleCoreDumpsForContainer(containerName, nodeSpec, true);
         verifyProcessExecuterCalled(5);
-        storageMaintainer.archiveNodeData(containerName);
+
+        storageMaintainer.handleCoreDumpsForContainer(containerName, nodeSpec, true);
         verifyProcessExecuterCalled(6);
 
-        storageMaintainer.handleCoreDumpsForContainer(containerName, nodeSpec, environment);
+        storageMaintainer.handleCoreDumpsForContainer(containerName, nodeSpec, false);
+        verifyProcessExecuterCalled(6);
+
+
+        // cleanupNodeStorage is unthrottled and it should reset previous times
+        storageMaintainer.cleanupNodeStorage(containerName, nodeSpec);
         verifyProcessExecuterCalled(7);
+        storageMaintainer.cleanupNodeStorage(containerName, nodeSpec);
+        verifyProcessExecuterCalled(8);
+
+        storageMaintainer.handleCoreDumpsForContainer(containerName, nodeSpec, false);
+        verifyProcessExecuterCalled(9);
     }
 
     @Test

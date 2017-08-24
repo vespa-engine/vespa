@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -50,7 +49,6 @@ public class StorageMaintainer {
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static Optional<String> kernelVersion = Optional.empty();
 
-    private final Logger logger = Logger.getLogger(StorageMaintainer.class.getName());
     private final CounterWrapper numberOfNodeAdminMaintenanceFails;
     private final Docker docker;
     private final ProcessExecuter processExecuter;
@@ -168,12 +166,19 @@ public class StorageMaintainer {
         if (! getMaintenanceThrottlerFor(containerName).shouldRemoveOldFilesNow()) return;
 
         MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
+        addRemoveOldFilesCommand(maintainerExecutor, containerName);
+
+        maintainerExecutor.execute();
+        getMaintenanceThrottlerFor(containerName).updateNextRemoveOldFilesTime();
+    }
+
+    private void addRemoveOldFilesCommand(MaintainerExecutor maintainerExecutor, ContainerName containerName) {
         String[] pathsToClean = {
-            getDefaults().underVespaHome("logs/elasticsearch2"),
-            getDefaults().underVespaHome("logs/logstash2"),
-            getDefaults().underVespaHome("logs/daemontools_y"),
-            getDefaults().underVespaHome("logs/nginx"),
-            getDefaults().underVespaHome("logs/vespa")
+                getDefaults().underVespaHome("logs/elasticsearch2"),
+                getDefaults().underVespaHome("logs/logstash2"),
+                getDefaults().underVespaHome("logs/daemontools_y"),
+                getDefaults().underVespaHome("logs/nginx"),
+                getDefaults().underVespaHome("logs/vespa")
         };
 
         for (String pathToClean : pathsToClean) {
@@ -193,30 +198,37 @@ public class StorageMaintainer {
             }
         }
 
-        Path logArchiveDir = environment.pathInNodeAdminFromPathInNode(containerName,
-                                                                       getDefaults().underVespaHome("logs/vespa/logarchive"));
+        Path logArchiveDir = environment.pathInNodeAdminFromPathInNode(
+                containerName, getDefaults().underVespaHome("logs/vespa/logarchive"));
         maintainerExecutor.addJob("delete-files")
                 .withArgument("basePath", logArchiveDir)
                 .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
                 .withArgument("recursive", false);
 
-        Path fileDistrDir = environment.pathInNodeAdminFromPathInNode(containerName,
-                                                                      getDefaults().underVespaHome("var/db/vespa/filedistribution"));
+        Path fileDistrDir = environment.pathInNodeAdminFromPathInNode(
+                containerName, getDefaults().underVespaHome("var/db/vespa/filedistribution"));
         maintainerExecutor.addJob("delete-files")
                 .withArgument("basePath", fileDistrDir)
                 .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
                 .withArgument("recursive", true);
-
-        maintainerExecutor.execute();
-        getMaintenanceThrottlerFor(containerName).updateNextRemoveOldFilesTime();
     }
 
     /**
      * Checks if container has any new coredumps, reports and archives them if so
+     *
+     * @param force Set to true to bypass throttling
      */
-    public void handleCoreDumpsForContainer(ContainerName containerName, ContainerNodeSpec nodeSpec, Environment environment) {
-        if (! getMaintenanceThrottlerFor(containerName).shouldHandleCoredumpsNow()) return;
+    public void handleCoreDumpsForContainer(ContainerName containerName, ContainerNodeSpec nodeSpec, boolean force) {
+        if (! getMaintenanceThrottlerFor(containerName).shouldHandleCoredumpsNow() && !force) return;
 
+        MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
+        addHandleCoredumpsCommand(maintainerExecutor, containerName, nodeSpec);
+
+        maintainerExecutor.execute();
+        getMaintenanceThrottlerFor(containerName).updateNextHandleCoredumpsTime();
+    }
+
+    private void addHandleCoredumpsCommand(MaintainerExecutor maintainerExecutor, ContainerName containerName, ContainerNodeSpec nodeSpec) {
         Map<String, Object> attributes = new HashMap<>();
         attributes.put("hostname", nodeSpec.hostname);
         attributes.put("parent_hostname", HostName.getLocalhost());
@@ -229,7 +241,7 @@ public class StorageMaintainer {
             attributes.put("kernel_version", "unknown");
         }
 
-        nodeSpec.wantedDockerImage.ifPresent(image -> attributes.put("docker_image", image.asString()));
+        nodeSpec.currentDockerImage.ifPresent(image -> attributes.put("docker_image", image.asString()));
         nodeSpec.vespaVersion.ifPresent(version -> attributes.put("vespa_version", version));
         nodeSpec.owner.ifPresent(owner -> {
             attributes.put("tenant", owner.tenant);
@@ -237,17 +249,12 @@ public class StorageMaintainer {
             attributes.put("instance", owner.instance);
         });
 
-        MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
         maintainerExecutor.addJob("handle-core-dumps")
                 .withArgument("doneCoredumpsPath", environment.pathInNodeAdminToDoneCoredumps())
-                .withArgument("coredumpsPath",
-                              environment.pathInNodeAdminFromPathInNode(containerName,
-                                      getDefaults().underVespaHome("var/crash")))
+                .withArgument("coredumpsPath", environment.pathInNodeAdminFromPathInNode(
+                        containerName, getDefaults().underVespaHome("var/crash")))
                 .withArgument("feedEndpoint", environment.getCoredumpFeedEndpoint())
                 .withArgument("attributes", attributes);
-
-        maintainerExecutor.execute();
-        getMaintenanceThrottlerFor(containerName).updateNextHandleCoredumpsTime();
     }
 
     /**
@@ -265,13 +272,15 @@ public class StorageMaintainer {
                 .withArgument("maxAgeSeconds", Duration.ofDays(7).getSeconds())
                 .withArgument("dirNameRegex", "^" + Pattern.quote(Environment.APPLICATION_STORAGE_CLEANUP_PATH_PREFIX));
 
-        Path nodeAdminJDiskLogsPath = environment.pathInNodeAdminFromPathInNode(NODE_ADMIN, getDefaults().underVespaHome("logs/vespa/"));
+        Path nodeAdminJDiskLogsPath = environment.pathInNodeAdminFromPathInNode(
+                NODE_ADMIN, getDefaults().underVespaHome("logs/vespa/"));
         maintainerExecutor.addJob("delete-files")
                 .withArgument("basePath", nodeAdminJDiskLogsPath)
                 .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
                 .withArgument("recursive", false);
 
-        Path fileDistrDir = environment.pathInNodeAdminFromPathInNode(NODE_ADMIN, getDefaults().underVespaHome("var/db/vespa/filedistribution"));
+        Path fileDistrDir = environment.pathInNodeAdminFromPathInNode(
+                NODE_ADMIN, getDefaults().underVespaHome("var/db/vespa/filedistribution"));
         maintainerExecutor.addJob("delete-files")
                 .withArgument("basePath", fileDistrDir)
                 .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
@@ -282,26 +291,34 @@ public class StorageMaintainer {
     }
 
     /**
-     * Archives container data, runs when container enters state "dirty"
+     * Prepares the container-storage for the next container by deleting/archiving all the data of the current container.
+     * Removes old files, reports coredumps and archives container data, runs when container enters state "dirty"
      */
-    public void archiveNodeData(ContainerName containerName) {
+    public void cleanupNodeStorage(ContainerName containerName, ContainerNodeSpec nodeSpec) {
         MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
+        addRemoveOldFilesCommand(maintainerExecutor, containerName);
+        addHandleCoredumpsCommand(maintainerExecutor, containerName, nodeSpec);
+        addArchiveNodeData(maintainerExecutor, containerName);
+
+        maintainerExecutor.execute();
+        getMaintenanceThrottlerFor(containerName).reset();
+    }
+
+    private void addArchiveNodeData(MaintainerExecutor maintainerExecutor, ContainerName containerName) {
         maintainerExecutor.addJob("recursive-delete")
-            .withArgument("path", environment.pathInNodeAdminFromPathInNode(containerName, getDefaults().underVespaHome("var")));
+                .withArgument("path", environment.pathInNodeAdminFromPathInNode(
+                        containerName, getDefaults().underVespaHome("var")));
 
         maintainerExecutor.addJob("move-files")
                 .withArgument("from", environment.pathInNodeAdminFromPathInNode(containerName, "/"))
                 .withArgument("to", environment.pathInNodeAdminToNodeCleanup(containerName));
-
-        maintainerExecutor.execute();
-        getMaintenanceThrottlerFor(containerName).reset();
     }
 
     /**
      * Runs node-maintainer's SpecVerifier and returns its output
      * @throws RuntimeException if exit code != 0
      */
-    public String getHardwardDivergence() {
+    public String getHardwareDivergence() {
         String configServers = environment.getConfigServerHosts().stream()
                 .map(configServer -> "http://" +  configServer + ":" + 4080)
                 .collect(Collectors.joining(","));
@@ -388,20 +405,13 @@ public class StorageMaintainer {
     }
 
     private MaintenanceThrottler getMaintenanceThrottlerFor(ContainerName containerName) {
-        if (! maintenanceThrottlerByContainerName.containsKey(containerName)) {
-            maintenanceThrottlerByContainerName.put(containerName, new MaintenanceThrottler());
-        }
-
+        maintenanceThrottlerByContainerName.putIfAbsent(containerName, new MaintenanceThrottler());
         return maintenanceThrottlerByContainerName.get(containerName);
     }
 
     private class MaintenanceThrottler {
-        private Instant nextRemoveOldFilesAt;
-        private Instant nextHandleOldCoredumpsAt;
-
-        MaintenanceThrottler() {
-            reset();
-        }
+        private Instant nextRemoveOldFilesAt = Instant.EPOCH;
+        private Instant nextHandleOldCoredumpsAt = Instant.EPOCH;
 
         void updateNextRemoveOldFilesTime() {
             nextRemoveOldFilesAt = clock.instant().plus(Duration.ofHours(1));
