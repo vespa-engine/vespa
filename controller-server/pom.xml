@@ -160,6 +160,7 @@
                 <groupId>com.yahoo.vespa</groupId>
                 <artifactId>bundle-plugin</artifactId>
                 <configuration>
+                    <useCommonAssemblyIds>false</useCommonAssemblyIds>
                     <WebInfUrl>/WEB-INF/web.xml</WebInfUrl>
                 </configuration>
                 <extensions>true</extensions>
