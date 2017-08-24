@@ -38,6 +38,7 @@ public:
      * @return The document.
      */
     const DocumentSP & getDocumentSP() const { return _document; }
+    DocumentSP stealDocument() { return std::move(_document); }
     const document::Document & getDocument() const { return *_document; }
 
     /**

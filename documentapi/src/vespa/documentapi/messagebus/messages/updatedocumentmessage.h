@@ -21,8 +21,8 @@ public:
     /**
      * Convenience typedef.
      */
-    typedef std::unique_ptr<UpdateDocumentMessage> UP;
-    typedef std::shared_ptr<UpdateDocumentMessage> SP;
+    using UP = std::unique_ptr<UpdateDocumentMessage>;
+    using SP = std::shared_ptr<UpdateDocumentMessage>;
 
     /**
      * Constructs a new document message for deserialization.
@@ -42,7 +42,7 @@ public:
      *
      * @return The update.
      */
-    const DocumentUpdateSP & getDocumentUpdateSP() const { return _documentUpdate; }
+    DocumentUpdateSP stealDocumentUpdate() const { return std::move(_documentUpdate); }
     const document::DocumentUpdate & getDocumentUpdate() const { return *_documentUpdate; }
     /**
      * Sets the document update to perform.

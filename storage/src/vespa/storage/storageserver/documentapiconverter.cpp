@@ -36,7 +36,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg,
     case DocumentProtocol::MESSAGE_PUTDOCUMENT:
     {
         documentapi::PutDocumentMessage& from(static_cast<documentapi::PutDocumentMessage&>(fromMsg));
-        api::PutCommand::UP to(new api::PutCommand(document::BucketId(0), from.getDocumentSP(), from.getTimestamp()));
+        auto to = std::make_unique<api::PutCommand>(document::BucketId(0), from.stealDocument(), from.getTimestamp());
         to->setCondition(from.getCondition());
         toMsg = std::move(to);
         break;
@@ -44,8 +44,8 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg,
     case DocumentProtocol::MESSAGE_UPDATEDOCUMENT:
     {
         documentapi::UpdateDocumentMessage& from(static_cast<documentapi::UpdateDocumentMessage&>(fromMsg));
-        api::UpdateCommand::UP to(new api::UpdateCommand(document::BucketId(0), from.getDocumentUpdateSP(),
-                                                         from.getNewTimestamp()));
+        auto to = std::make_unique<api::UpdateCommand>(document::BucketId(0), from.stealDocumentUpdate(),
+                                                       from.getNewTimestamp());
         to->setOldTimestamp(from.getOldTimestamp());
         to->setCondition(from.getCondition());
         toMsg = std::move(to);
@@ -54,7 +54,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg,
     case DocumentProtocol::MESSAGE_REMOVEDOCUMENT:
     {
         documentapi::RemoveDocumentMessage& from(static_cast<documentapi::RemoveDocumentMessage&>(fromMsg));
-        api::RemoveCommand::UP to(new api::RemoveCommand(document::BucketId(0), from.getDocumentId(), 0));
+        auto to = std::make_unique<api::RemoveCommand>(document::BucketId(0), from.getDocumentId(), 0);
         to->setCondition(from.getCondition());
         toMsg = std::move(to);
         break;
@@ -62,15 +62,15 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg,
     case DocumentProtocol::MESSAGE_GETDOCUMENT:
     {
         documentapi::GetDocumentMessage& from(static_cast<documentapi::GetDocumentMessage&>(fromMsg));
-        api::GetCommand::UP to(new api::GetCommand(document::BucketId(0), from.getDocumentId(), from.getFieldSet()));
+        auto to = std::make_unique<api::GetCommand>(document::BucketId(0), from.getDocumentId(), from.getFieldSet());
         toMsg.reset(to.release());
         break;
     }
     case DocumentProtocol::MESSAGE_CREATEVISITOR:
     {
         documentapi::CreateVisitorMessage& from(static_cast<documentapi::CreateVisitorMessage&>(fromMsg));
-        api::CreateVisitorCommand::UP to(new api::CreateVisitorCommand(from.getLibraryName(), from.getInstanceId(),
-                                                                       from.getDocumentSelection()));
+        auto to = std::make_unique<api::CreateVisitorCommand>(from.getLibraryName(), from.getInstanceId(),
+                                                              from.getDocumentSelection());
 
         to->setControlDestination(from.getControlDestination());
         to->setDataDestination(from.getDataDestination());
