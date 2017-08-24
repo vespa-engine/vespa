@@ -5,6 +5,7 @@
 #include "attributevector.h"
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/vespalib/util/arrayref.h>
+#include <vespa/searchlib/attribute/posting_list_merger.h>
 #include <memory>
 
 namespace search {
@@ -34,6 +35,10 @@ class ImportedSearchContext : public ISearchContext {
     const AttributeVector&                          _target_attribute;
     std::unique_ptr<AttributeVector::SearchContext> _target_search_context;
     ReferencedLids                                  _referencedLids;
+    PostingListMerger<int32_t>                      _merger;
+    bool                                            _fetchPostingsDone;
+
+    void makeMergedPostings();
 public:
     ImportedSearchContext(std::unique_ptr<QueryTermSimple> term,
                           const SearchContextParams& params,

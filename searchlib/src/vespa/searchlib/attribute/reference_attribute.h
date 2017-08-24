@@ -36,6 +36,7 @@ public:
                                              btree::BTreeDefaultTraits,
                                              btree::NoAggrCalc>;
     using ReferencedLids = ReferenceMappings::ReferencedLids;
+    using ReverseMappingRefs = ReferenceMappings::ReverseMappingRefs;
 private:
     ReferenceStore _store;
     ReferenceStoreIndices _indices;
@@ -74,6 +75,9 @@ public:
     std::shared_ptr<IGidToLidMapperFactory> getGidToLidMapperFactory() const { return _gidToLidMapperFactory; }
     ReferencedLids getReferencedLids() const { return _referenceMappings.getReferencedLids(); }
     DocId getReferencedLid(DocId doc) const { return _referenceMappings.getReferencedLid(doc); }
+    ReverseMappingRefs getReverseMappingRefs() const { return _referenceMappings.getReverseMappingRefs(); }
+    const ReverseMapping &getReverseMapping() const { return _referenceMappings.getReverseMapping(); }
+
     void notifyGidToLidChange(const GlobalId &gid, DocId referencedLid);
     void populateReferencedLids();
     virtual void clearDocs(DocId lidLow, DocId lidLimit) override;

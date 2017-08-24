@@ -38,6 +38,7 @@ class ReferenceMappings
 
 public:
     using ReferencedLids = vespalib::ConstArrayRef<uint32_t>;
+    using ReverseMappingRefs = vespalib::ConstArrayRef<EntryRef>;
 
     ReferenceMappings(GenerationHolder &genHolder);
 
@@ -76,6 +77,8 @@ public:
 
     ReferencedLids getReferencedLids() const { return ReferencedLids(&_referencedLids[0], _referencedLids.size()); }
     uint32_t getReferencedLid(uint32_t doc) const { return _referencedLids[doc]; }
+    ReverseMappingRefs getReverseMappingRefs() const { return ReverseMappingRefs(&_reverseMappingIndices[0], _reverseMappingIndices.size()); }
+    const ReverseMapping &getReverseMapping() const { return _reverseMapping; }
 };
 
 template <typename FunctionType>
