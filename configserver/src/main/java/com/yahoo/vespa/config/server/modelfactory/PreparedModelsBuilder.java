@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.modelfactory;
 
-import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigChangeAction;
@@ -82,7 +81,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                                     ApplicationId applicationId, 
                                                     com.yahoo.component.Version wantedNodeVespaVersion, Instant now) {
         Version modelVersion = modelFactory.getVersion();
-        log.log(LogLevel.DEBUG, "Start building model for Vespa version " + modelVersion);
+        log.log(LogLevel.DEBUG, "Building model " + modelVersion + " for " + applicationId);
         FileDistributionProvider fileDistributionProvider = fileDistributionFactory.createProvider(
                 context.getServerDBSessionDir(),
                 applicationId);
@@ -103,10 +102,10 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 new com.yahoo.component.Version(modelVersion.toString()),
                 wantedNodeVespaVersion);
 
-        log.log(LogLevel.DEBUG, "Running createAndValidateModel for Vespa version " + modelVersion);
+        log.log(LogLevel.DEBUG, "Create and validate model " + modelVersion + " for " + applicationId);
         ModelCreateResult result =  modelFactory.createAndValidateModel(modelContext, params.ignoreValidationErrors());
         validateModelHosts(context.getHostValidator(), applicationId, result.getModel());
-        log.log(LogLevel.DEBUG, "Done building model for Vespa version " + modelVersion);
+        log.log(LogLevel.DEBUG, "Done building model " + modelVersion + " for " + applicationId);
         return new PreparedModelsBuilder.PreparedModelResult(modelVersion, result.getModel(), fileDistributionProvider, result.getConfigChangeActions());
     }
 
