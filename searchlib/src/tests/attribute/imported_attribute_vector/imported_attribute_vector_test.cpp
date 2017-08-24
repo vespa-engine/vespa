@@ -482,7 +482,7 @@ struct SerializeFixture : BaseFixture {
 
     SerializeFixture() : mock_target(std::make_shared<MockAttributeVector>()) {
         this->reset_with_new_target_attr(mock_target);
-        this->mock_target->setCommittedDocIdLimit(8); // Target LID of 7 is highest used by ref attribute. Limit is +1.
+        mock_target->setCommittedDocIdLimit(8); // Target LID of 7 is highest used by ref attribute. Limit is +1.
     }
     ~SerializeFixture() override;
 };
