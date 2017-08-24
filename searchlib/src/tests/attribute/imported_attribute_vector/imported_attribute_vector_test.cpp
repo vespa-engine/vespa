@@ -304,7 +304,7 @@ template <typename FixtureType>
 void verify_get_string_from_enum_is_mapped(FixtureType& f) {
     EnumHandle handle{};
     ASSERT_TRUE(f.target_attr->findEnum("foo", handle));
-    const char* from_enum = f.imported_attr->getStringFromEnum(handle);
+    const char* from_enum = f.get_imported_attr()->getStringFromEnum(handle);
     ASSERT_TRUE(from_enum != nullptr);
     EXPECT_EQUAL(vespalib::string("foo"), vespalib::string(from_enum));
 }
@@ -438,7 +438,7 @@ struct MockAttributeVector : NotImplementedAttribute {
     long _return_value{1234};
 
     MockAttributeVector()
-            : NotImplementedAttribute("mock", Config(BasicType::INT32)) {
+            : NotImplementedAttribute("mock", Config(BasicType::STRING)) {
     }
 
     void set_received_args(DocId doc_id, void* ser_to,
@@ -475,42 +475,63 @@ struct MockBlobConverter : common::BlobConverter {
     }
 };
 
-struct SerializeFixture : Fixture {
+template <typename BaseFixture>
+struct SerializeFixture : BaseFixture {
     std::shared_ptr<MockAttributeVector> mock_target;
     MockBlobConverter mock_converter;
 
-    SerializeFixture()
-            : Fixture(),
-              mock_target(std::make_shared<MockAttributeVector>())
-    {
-        reset_with_new_target_attr(mock_target);
+    SerializeFixture() : mock_target(std::make_shared<MockAttributeVector>()) {
+        this->reset_with_new_target_attr(mock_target);
+        this->mock_target->setCommittedDocIdLimit(8); // Target LID of 7 is highest used by ref attribute. Limit is +1.
     }
+    ~SerializeFixture() override;
 };
 
-TEST_F("onSerializeForAscendingSort() is forwarded to target vector", SerializeFixture) {
+template <typename BaseFixture>
+SerializeFixture<BaseFixture>::~SerializeFixture() {}
+
+template <typename FixtureT>
+void check_onSerializeForAscendingSort_is_forwarded_with_remapped_lid() {
+    FixtureT f;
     int dummy_tag;
     void* ser_to = &dummy_tag;
     EXPECT_EQUAL(f.mock_target->_return_value,
-                 f.imported_attr->serializeForAscendingSort(
-                         DocId(10), ser_to, 777, &f.mock_converter));
+                 f.get_imported_attr()->serializeForAscendingSort(
+                         DocId(4), ser_to, 777, &f.mock_converter)); // child lid 4 -> parent lid 7
     EXPECT_TRUE(f.mock_target->_ascending_called);
-    EXPECT_EQUAL(DocId(10), f.mock_target->_doc_id);
+    EXPECT_EQUAL(DocId(7), f.mock_target->_doc_id);
     EXPECT_EQUAL(ser_to, f.mock_target->_ser_to);
     EXPECT_EQUAL(777, f.mock_target->_available);
     EXPECT_EQUAL(&f.mock_converter, f.mock_target->_bc);
 }
 
-TEST_F("onSerializeForDescendingSort() is forwarded to target vector", SerializeFixture) {
+TEST("onSerializeForAscendingSort() is forwarded with remapped LID to target vector") {
+    TEST_DO(check_onSerializeForAscendingSort_is_forwarded_with_remapped_lid<
+                    SerializeFixture<SingleStringAttrFixture>>());
+    TEST_DO(check_onSerializeForAscendingSort_is_forwarded_with_remapped_lid<
+                    SerializeFixture<ReadGuardSingleStringAttrFixture>>());
+}
+
+template <typename FixtureT>
+void check_onSerializeForDescendingSort_is_forwarded_with_remapped_lid() {
+    FixtureT f;
     int dummy_tag;
     void* ser_to = &dummy_tag;
     EXPECT_EQUAL(f.mock_target->_return_value,
-                 f.imported_attr->serializeForDescendingSort(
-                         DocId(20), ser_to, 555, &f.mock_converter));
+                 f.get_imported_attr()->serializeForDescendingSort(
+                         DocId(2), ser_to, 555, &f.mock_converter)); // child lid 2 -> parent lid 3
     EXPECT_TRUE(f.mock_target->_descending_called);
-    EXPECT_EQUAL(DocId(20), f.mock_target->_doc_id);
+    EXPECT_EQUAL(DocId(3), f.mock_target->_doc_id);
     EXPECT_EQUAL(ser_to, f.mock_target->_ser_to);
     EXPECT_EQUAL(555, f.mock_target->_available);
     EXPECT_EQUAL(&f.mock_converter, f.mock_target->_bc);
+}
+
+TEST("onSerializeForDescendingSort() is forwarded with remapped LID to target vector") {
+    TEST_DO(check_onSerializeForDescendingSort_is_forwarded_with_remapped_lid<
+                    SerializeFixture<SingleStringAttrFixture>>());
+    TEST_DO(check_onSerializeForDescendingSort_is_forwarded_with_remapped_lid<
+                    SerializeFixture<ReadGuardSingleStringAttrFixture>>());
 }
 
 } // attribute
