@@ -216,6 +216,7 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
     }
     _intrinsic_expression = _expression_replacer->maybe_replace(rank_function, env);
     if (_intrinsic_expression) {
+        LOG(info, "%s replaced with %s", getName().c_str(), _intrinsic_expression->describe_self().c_str());
         describeOutput("out", "result of intrinsic expression", _intrinsic_expression->result_type());
         return true;
     }
