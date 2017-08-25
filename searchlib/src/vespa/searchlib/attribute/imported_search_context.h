@@ -70,7 +70,7 @@ public:
 
     bool cmp(DocId docId, int32_t& weight) const {
         return _target_search_context->cmp(getReferencedLid(docId), weight);
-}
+    }
 
     bool cmp(DocId docId) const {
         return _target_search_context->cmp(getReferencedLid(docId));
