@@ -16,8 +16,7 @@ namespace search {
     class IDocumentMetaStore;
 }
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 class SessionManager;
 class PartialResult;
@@ -107,6 +106,4 @@ public:
     std::unique_ptr<Result> makeReply(PartialResultUP full_result);
 };
 
-} // namespace proton::matching
-} // namespace proton
-
+}

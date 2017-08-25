@@ -3,6 +3,8 @@
 #include "result_processor.h"
 #include "partial_result.h"
 #include "sessionmanager.h"
+#include <vespa/searchcore/grouping/groupingmanager.h>
+#include <vespa/searchcore/grouping/groupingcontext.h>
 #include <vespa/searchlib/common/docstamp.h>
 #include <vespa/searchlib/uca/ucaconverter.h>
 #include <vespa/searchlib/engine/searchreply.h>
@@ -15,8 +17,7 @@ using search::grouping::GroupingSession;
 using search::grouping::GroupingContext;
 using search::grouping::SessionId;
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 ResultProcessor::Result::Result(std::unique_ptr<search::engine::SearchReply> reply, size_t numFs4Hits)
     : _reply(std::move(reply)),
@@ -158,5 +159,4 @@ ResultProcessor::makeReply(PartialResultUP full_result)
     return Result::UP(new Result(std::move(reply), numFs4Hits));
 }
 
-} // namespace proton::matching
-} // namespace proton
+}
