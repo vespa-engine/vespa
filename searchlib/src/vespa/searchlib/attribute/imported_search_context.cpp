@@ -33,6 +33,7 @@ ImportedSearchContext::ImportedSearchContext(
       _target_attribute(*_imported_attribute.getTargetAttribute()),
       _target_search_context(_target_attribute.getSearch(std::move(term), params)),
       _referencedLids(_reference_attribute.getReferencedLids()),
+      _referencedLidLimit(_target_attribute.getCommittedDocIdLimit()),
       _merger(_reference_attribute.getCommittedDocIdLimit()),
       _fetchPostingsDone(false)
 {
@@ -188,14 +189,6 @@ const QueryTermBase& ImportedSearchContext::queryTerm() const {
 
 const vespalib::string& ImportedSearchContext::attributeName() const {
     return _imported_attribute.getName();
-}
-
-bool ImportedSearchContext::cmp(DocId docId, int32_t& weight) const {
-    return _target_search_context->cmp(_referencedLids[docId], weight);
-}
-
-bool ImportedSearchContext::cmp(DocId docId) const {
-    return _target_search_context->cmp(_referencedLids[docId]);
 }
 
 } // attribute

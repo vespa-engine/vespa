@@ -35,8 +35,14 @@ class ImportedSearchContext : public ISearchContext {
     const AttributeVector&                          _target_attribute;
     std::unique_ptr<AttributeVector::SearchContext> _target_search_context;
     ReferencedLids                                  _referencedLids;
+    uint32_t                                        _referencedLidLimit;
     PostingListMerger<int32_t>                      _merger;
     bool                                            _fetchPostingsDone;
+
+    uint32_t getReferencedLid(uint32_t lid) const {
+        uint32_t referencedLid = _referencedLids[lid];
+        return ((referencedLid >= _referencedLidLimit) ? 0u : referencedLid);
+    }
 
     void makeMergedPostings();
 public:
@@ -62,8 +68,13 @@ public:
 
     using DocId = IAttributeVector::DocId;
 
-    bool cmp(DocId docId, int32_t& weight) const;
-    bool cmp(DocId docId) const;
+    bool cmp(DocId docId, int32_t& weight) const {
+        return _target_search_context->cmp(getReferencedLid(docId), weight);
+}
+
+    bool cmp(DocId docId) const {
+        return _target_search_context->cmp(getReferencedLid(docId));
+    }
 
     const ReferenceAttribute& attribute() const noexcept { return _reference_attribute; }
 
@@ -74,6 +85,3 @@ public:
 
 } // attribute
 } // search
-
-
-
