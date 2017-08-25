@@ -93,12 +93,16 @@ struct TargetResult {
 TargetResult
 getTargetResult(ReverseMappingRefs reverseMappingRefs,
                 const ReverseMapping &reverseMapping,
-                SearchContext &target_search_context)
+                SearchContext &target_search_context,
+                uint32_t committedDocIdLimit)
 {
     TargetResult targetResult;
     fef::TermFieldMatchData matchData;
     auto targetItr = target_search_context.createIterator(&matchData, true);
     uint32_t docIdLimit = reverseMappingRefs.size();
+    if (docIdLimit > committedDocIdLimit) {
+        docIdLimit = committedDocIdLimit;
+    }
     uint32_t lid = 1;
     targetItr->initRange(1, docIdLimit);
     while (lid < docIdLimit) {
@@ -147,9 +151,12 @@ public:
 
 void ImportedSearchContext::makeMergedPostings()
 {
+    uint32_t committedTargetDocIdLimit = _target_attribute.getCommittedDocIdLimit();
+    std::atomic_thread_fence(std::memory_order_acquire);
     TargetResult targetResult(getTargetResult(_reference_attribute.getReverseMappingRefs(),
                                               _reference_attribute.getReverseMapping(),
-                                              *_target_search_context));
+                                              *_target_search_context,
+                                              committedTargetDocIdLimit));
     _merger.reserveArray(targetResult.weightedRefs.size(), targetResult.sizeSum);
     const auto &reverseMapping = _reference_attribute.getReverseMapping();
     for (const auto &weightedRef : targetResult.weightedRefs) {
