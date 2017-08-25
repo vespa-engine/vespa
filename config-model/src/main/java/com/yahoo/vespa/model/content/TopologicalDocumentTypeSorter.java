@@ -23,8 +23,8 @@ public class TopologicalDocumentTypeSorter {
     private final Map<String, NewDocumentType> sortedTypes = new LinkedHashMap<>();
 
     private TopologicalDocumentTypeSorter(Collection<NewDocumentType> documentTypes) {
-        documentTypes.stream().forEach(docType -> unsortedTypes.put(docType.getName(), docType));
-        unsortedTypes.values().stream().forEach(docType -> depthFirstTraverse(docType));
+        documentTypes.forEach(docType -> unsortedTypes.put(docType.getName(), docType));
+        unsortedTypes.values().forEach(docType -> depthFirstTraverse(docType));
     }
 
     private void depthFirstTraverse(NewDocumentType docType) {
