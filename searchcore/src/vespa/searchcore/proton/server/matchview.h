@@ -8,20 +8,17 @@
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
 #include <vespa/searchcore/proton/matching/match_context.h>
 #include <vespa/searchcore/proton/matching/matcher.h>
+#include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcorespi/index/indexsearchable.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 
 namespace proton {
 
-namespace matching {
-    class SessionManager;
-}
 class MatchView {
-    using SessionManagerSP = std::shared_ptr<matching::SessionManager>;
     Matchers::SP                         _matchers;
     searchcorespi::IndexSearchable::SP   _indexSearchable;
     IAttributeManager::SP                _attrMgr;
-    SessionManagerSP                     _sessionMgr;
+    matching::SessionManager::SP         _sessionMgr;
     IDocumentMetaStoreContext::SP        _metaStore;
     DocIdLimit                          &_docIdLimit;
 
@@ -37,15 +34,14 @@ public:
     MatchView(const Matchers::SP &matchers,
               const searchcorespi::IndexSearchable::SP &indexSearchable,
               const IAttributeManager::SP &attrMgr,
-              const SessionManagerSP &sessionMgr,
+              const matching::SessionManager::SP &sessionMgr,
               const IDocumentMetaStoreContext::SP &metaStore,
               DocIdLimit &docIdLimit);
-    ~MatchView();
 
     const Matchers::SP & getMatchers() const { return _matchers; }
     const searchcorespi::IndexSearchable::SP & getIndexSearchable() const { return _indexSearchable; }
     const IAttributeManager::SP & getAttributeManager() const { return _attrMgr; }
-    const SessionManagerSP & getSessionManager() const { return _sessionMgr; }
+    const matching::SessionManager::SP & getSessionManager() const { return _sessionMgr; }
     const IDocumentMetaStoreContext::SP & getDocumentMetaStore() const { return _metaStore; }
     DocIdLimit & getDocIdLimit() const { return _docIdLimit; }
 
@@ -66,3 +62,4 @@ public:
 };
 
 } // namespace proton
+

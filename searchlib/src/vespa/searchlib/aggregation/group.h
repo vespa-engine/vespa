@@ -64,7 +64,7 @@ public:
         size_t operator() (const ResultNode & arg) const { return arg.hash(); }
     };
 
-    using GroupingLevelList = std::vector<GroupingLevel>;
+    typedef std::vector<GroupingLevel>         GroupingLevelList;
 
 private:
 
@@ -102,7 +102,7 @@ private:
         void merge(const GroupingLevelList & levels, uint32_t firstLevel, uint32_t currentLevel, const Value & rhs);
         void prune(const Value & b, uint32_t lastLevel, uint32_t currentLevel);
         void postMerge(const std::vector<GroupingLevel> &levels, uint32_t firstLevel, uint32_t currentLevel);
-        void partialMove(Value &rhs);
+        void partialCopy(const Value & rhs);
         VESPA_DLL_LOCAL Group * groupSingle(const ResultNode & selectResult, HitRank rank, const GroupingLevel & level);
 
         GroupList groups() const { return _children; }
@@ -167,7 +167,7 @@ private:
     RawRank          _rank;                 // The default rank taken from the highest hit relevance.
     Value            _aggr;
 
-    Group & partialMove(Group &rhs);
+    Group & partialCopy(const Group & rhs);
 
     template <typename Doc>
     VESPA_DLL_LOCAL void groupNext(const GroupingLevel & level, const Doc & docId, HitRank rank);

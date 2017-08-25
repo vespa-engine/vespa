@@ -206,10 +206,10 @@ Group & Group::operator = (const Group & rhs) = default;
 Group::~Group() { }
 
 Group &
-Group::partialMove(Group &rhs) {
+Group::partialCopy(const Group & rhs) {
     setId(*rhs._id);
     _rank = rhs._rank;
-    _aggr.partialMove(rhs._aggr);
+    _aggr.partialCopy(rhs._aggr);
     return *this;
 }
 
@@ -373,7 +373,7 @@ void
 Group::Value::mergeLevel(const Group & protoType, const Value & b) {
     for (ChildP *it(b._children), *mt(b._children + b.getChildrenSize()); it != mt; ++it) {
         ChildP g(new Group(protoType));
-        g->partialMove(**it);
+        g->partialCopy(**it);
         addChild(g);
     }
 }
@@ -735,10 +735,10 @@ Group::Value::swap(Value & rhs)
 
 
 void
-Group::Value::partialMove(Value &rhs) {
+Group::Value::partialCopy(const Value & rhs) {
     uint32_t totalAggrSize = getAggrSize() + getExprSize();
     for(size_t i(0), m(totalAggrSize); i < m; i++) {
-        _aggregationResults[i] = std::move(rhs._aggregationResults[i]);
+        _aggregationResults[i] = rhs._aggregationResults[i];
     }
     for(size_t i(0), m(getAggrSize()); i < m; i++) {
         getAggr(i)->reset();

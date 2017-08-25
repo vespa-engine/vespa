@@ -33,7 +33,7 @@ using matching::SessionManager;
 MatchView::MatchView(const Matchers::SP &matchers,
                      const IndexSearchable::SP &indexSearchable,
                      const IAttributeManager::SP &attrMgr,
-                     const SessionManagerSP &sessionMgr,
+                     const SessionManager::SP &sessionMgr,
                      const IDocumentMetaStoreContext::SP &metaStore,
                      DocIdLimit &docIdLimit)
     : _matchers(matchers),
@@ -44,7 +44,6 @@ MatchView::MatchView(const Matchers::SP &matchers,
       _docIdLimit(docIdLimit)
 { }
 
-MatchView::~MatchView() { }
 
 Matcher::SP
 MatchView::getMatcher(const vespalib::string & rankProfile) const
