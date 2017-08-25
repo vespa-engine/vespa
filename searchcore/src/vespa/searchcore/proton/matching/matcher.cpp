@@ -7,7 +7,6 @@
 #include "match_params.h"
 #include "matcher.h"
 #include "sessionmanager.h"
-#include <vespa/searchcore/grouping/groupingcontext.h>
 #include <vespa/searchlib/engine/errorcodes.h>
 #include <vespa/searchlib/engine/docsumrequest.h>
 #include <vespa/searchlib/engine/searchrequest.h>

@@ -2,16 +2,12 @@
 #pragma once
 
 #include <vespa/searchlib/common/idocumentmetastore.h>
-#include <vespa/searchcommon/attribute/iattributecontext.h>
+#include <vespa/searchlib/aggregation/grouping.h>
+#include <vespa/searchcore/grouping/groupingcontext.h>
 
 namespace search {
-    class RankedHit;
-    class BitVector;
-}
 
-namespace search::grouping {
-
-class GroupingContext;
+namespace grouping {
 
 /**
  * Wrapper class used to handle actual grouping. All input data is
@@ -41,14 +37,14 @@ public:
     /**
      * @return true if this manager is holding an empty grouping request.
      **/
-    bool empty() const;
+    bool empty() const { return _groupingContext.getGroupingList().empty(); }
 
     /**
      * Initialize underlying context with attribute bindings.
      *
      * @param attrCtx attribute context
      **/
-    void init(const attribute::IAttributeContext &attrCtx);
+    void init(const search::attribute::IAttributeContext &attrCtx);
 
     /**
      * Perform actual grouping on the given results.
@@ -69,7 +65,7 @@ public:
      * @param binSize size of search result array
      * @param overflow The unranked hits.
      **/
-    void groupUnordered(const RankedHit *searchResults, uint32_t binSize, const BitVector * overflow);
+    void groupUnordered(const RankedHit *searchResults, uint32_t binSize, const search::BitVector * overflow);
 
     /**
      * Merge another grouping context into the underlying context of
@@ -93,7 +89,9 @@ public:
      *
      * @param metaStore the attribute used to map from lid to gid.
      **/
-    void convertToGlobalId(const IDocumentMetaStore &metaStore);
+    void convertToGlobalId(const search::IDocumentMetaStore &metaStore);
 };
 
-}
+} // namespace search::grouping
+} // namespace search
+

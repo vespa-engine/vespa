@@ -1,17 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "groupingmanager.h"
+#include "groupingcontext.h"
 #include "sessionid.h"
-#include <vespa/searchlib/attribute/iattributemanager.h>
-#include <vespa/fastos/timestamp.h>
-#include <vector>
+#include <vespa/searchlib/aggregation/grouping.h>
 #include <map>
 
-namespace search::aggregation { class Grouping; }
-namespace search::grouping {
 
-class GroupingContext;
-class GroupingManager;
+namespace search {
+
+namespace grouping {
 
 /**
  * A grouping session represents the execution of a grouping expression with one
@@ -22,15 +21,15 @@ class GroupingManager;
 class GroupingSession
 {
 private:
-    using GroupingPtr = std::shared_ptr<aggregation::Grouping>;
-    using GroupingMap = std::map<uint32_t, GroupingPtr>;
-    using GroupingList = std::vector<GroupingPtr>;
+    typedef std::shared_ptr<search::aggregation::Grouping> GroupingPtr;
+    typedef std::map<uint32_t, GroupingPtr>                    GroupingMap;
+    typedef std::vector<GroupingPtr>                           GroupingList;
 
-    SessionId                        _sessionId;
-    std::unique_ptr<GroupingContext> _mgrContext;
-    std::unique_ptr<GroupingManager> _groupingManager;
-    GroupingMap                      _groupingMap;
-    fastos::TimeStamp                _timeOfDoom;
+    SessionId       _sessionId;
+    GroupingContext _mgrContext;
+    GroupingManager _groupingManager;
+    GroupingMap     _groupingMap;
+    fastos::TimeStamp _timeOfDoom;
 
 public:
     typedef std::unique_ptr<GroupingSession> UP;
@@ -44,7 +43,7 @@ public:
      **/
     GroupingSession(const SessionId & sessionId,
                     GroupingContext & groupingContext,
-                    const attribute::IAttributeContext &attrCtx);
+                    const search::attribute::IAttributeContext &attrCtx);
     GroupingSession(const GroupingSession &) = delete;
     GroupingSession &operator=(const GroupingSession &) = delete;
 
@@ -63,7 +62,8 @@ public:
      * @param groupingContext The current grouping context.
      * @param attrCtx attribute context.
      **/
-    void init(GroupingContext & groupingContext, const attribute::IAttributeContext &attrCtx);
+    void init(GroupingContext & groupingContext,
+              const search::attribute::IAttributeContext &attrCtx);
 
     /**
      * This function is called to prepare for creation of individual
@@ -85,12 +85,13 @@ public:
      * @param thread_id thread id
      * @param attrCtx attribute context.
      **/
-    std::unique_ptr<GroupingContext> createThreadContext(size_t thread_id, const attribute::IAttributeContext &attrCtx);
+    GroupingContext::UP createThreadContext(size_t thread_id,
+                                            const search::attribute::IAttributeContext &attrCtx);
 
     /**
      * Return the GroupingManager to use when performing grouping.
      **/
-    GroupingManager & getGroupingManager() { return *_groupingManager; }
+    GroupingManager & getGroupingManager() { return _groupingManager; }
 
     /**
      * Continue excuting a query given a context.
@@ -111,4 +112,6 @@ public:
     fastos::TimeStamp getTimeOfDoom() const { return _timeOfDoom; }
 };
 
-}
+} // namespace search::grouping
+} // namespace search
+

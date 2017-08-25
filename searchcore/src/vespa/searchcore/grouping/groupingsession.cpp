@@ -1,13 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "groupingsession.h"
-#include "groupingmanager.h"
-#include "groupingcontext.h"
-
 #include <vespa/log/log.h>
 LOG_SETUP(".groupingsession");
 
-namespace search::grouping {
+namespace search {
+namespace grouping {
 
 using search::aggregation::Group;
 using search::aggregation::Grouping;
@@ -18,8 +16,8 @@ GroupingSession::GroupingSession(const SessionId &sessionId,
                                  GroupingContext & groupingContext,
                                  const IAttributeContext &attrCtx)
     : _sessionId(sessionId),
-      _mgrContext(std::make_unique<GroupingContext>(groupingContext)),
-      _groupingManager(std::make_unique<GroupingManager>(*_mgrContext)),
+      _mgrContext(groupingContext),
+      _groupingManager(_mgrContext),
       _timeOfDoom(groupingContext.getTimeOfDoom())
 {
     init(groupingContext, attrCtx);
@@ -48,30 +46,31 @@ GroupingSession::init(GroupingContext & groupingContext, const IAttributeContext
             _groupingMap[gp->getId()] = gp;
             g = gp;
         }
-        _mgrContext->addGrouping(g);
+        _mgrContext.addGrouping(g);
     }
-    _groupingManager->init(attrCtx);
+    _groupingManager.init(attrCtx);
 }
 
 void
 GroupingSession::prepareThreadContextCreation(size_t num_threads)
 {
     if (num_threads > 1) {
-        _mgrContext->serialize(); // need copy of internal modified request
+        _mgrContext.serialize(); // need copy of internal modified request
     }
 }
 
 GroupingContext::UP
 GroupingSession::createThreadContext(size_t thread_id, const IAttributeContext &attrCtx)
 {
-    GroupingContext::UP ctx(new GroupingContext(*_mgrContext));
+    GroupingContext::UP ctx(new GroupingContext(_mgrContext));
     if (thread_id == 0) {
-        GroupingContext::GroupingList &groupingList = _mgrContext->getGroupingList();
+        GroupingContext::GroupingList &groupingList = _mgrContext.getGroupingList();
         for (size_t i = 0; i < groupingList.size(); ++i) {
             ctx->addGrouping(groupingList[i]);
         }
     } else {
-        ctx->deserialize(_mgrContext->getResult().peek(), _mgrContext->getResult().size());
+        ctx->deserialize(_mgrContext.getResult().peek(),
+                         _mgrContext.getResult().size());
         GroupingManager man(*ctx);
         man.init(attrCtx);
     }
@@ -98,4 +97,5 @@ GroupingSession::continueExecution(GroupingContext & groupingContext)
     groupingContext.serialize();
 }
 
-}
+} // namespace search::grouping
+} // namespace search

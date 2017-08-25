@@ -21,6 +21,8 @@
 #include <vespa/searchcorespi/index/iindexmanager.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/varholder.h>
+#include <memory>
+#include <vector>
 
 namespace proton {
 
@@ -124,7 +126,7 @@ public:
 
     void
     initViews(const DocumentDBConfig &configSnapshot,
-              const SessionManagerSP &sessionManager)  override;
+              const matching::SessionManager::SP &sessionManager)  override;
 
     IReprocessingTask::List
     applyConfig(const DocumentDBConfig &newConfigSnapshot,

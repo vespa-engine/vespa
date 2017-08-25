@@ -21,6 +21,7 @@
 
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/monitored_refcount.h>
+#include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/metrics/documentdb_job_trackers.h>
 #include <vespa/searchcore/proton/metrics/documentdb_metrics_collection.h>
 #include <vespa/searchcore/proton/persistenceengine/bucket_guard.h>
@@ -42,8 +43,6 @@ namespace proton {
 class IDocumentDBOwner;
 class MetricsWireService;
 class StatusReport;
-
-namespace matching { class SessionManager; }
 
 /**
  * The document database contains all the necessary structures required per
@@ -111,7 +110,7 @@ private:
     ProtonConfig::Summary         _protonSummaryCfg;
     ProtonConfig::Index           _protonIndexCfg;
     ConfigStore::UP               _config_store;
-    std::shared_ptr<matching::SessionManager>  _sessionManager; // TODO: This should not have to be a shared pointer.
+    matching::SessionManager::SP  _sessionManager; // TODO: This should not have to be a shared pointer.
     MetricsWireService             &_metricsWireService;
     MetricsUpdateHook             _metricsHook;
     vespalib::VarHolder<IFeedView::SP>      _feedView;

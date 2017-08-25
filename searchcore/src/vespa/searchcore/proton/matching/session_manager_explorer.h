@@ -2,11 +2,11 @@
 
 #pragma once
 
+#include "sessionmanager.h"
 #include <vespa/vespalib/net/state_explorer.h>
 
-namespace proton::matching {
-
-class SessionManager;
+namespace proton {
+namespace matching {
 
 /**
  * Class used to explore the state of a session manager
@@ -20,7 +20,8 @@ public:
     SessionManagerExplorer(const SessionManager &manager) : _manager(manager) {}
     virtual void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
     virtual std::vector<vespalib::string> get_children_names() const override;
-    virtual std::unique_ptr<vespalib::StateExplorer> get_child(vespalib::stringref name) const override;
+    virtual std::unique_ptr<StateExplorer> get_child(vespalib::stringref name) const override;
 };
 
-}
+}  // namespace proton::matching
+}  // namespace proton
