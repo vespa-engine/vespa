@@ -9,6 +9,7 @@ namespace search::attribute {
 
 ReferenceMappings::ReferenceMappings(GenerationHolder &genHolder)
     : _reverseMappingIndices(genHolder),
+      _referencedLidLimit(0),
       _reverseMapping(),
       _referencedLids(genHolder)
 {
@@ -38,7 +39,6 @@ ReferenceMappings::syncForwardMapping(const Reference &entry)
                                          { referencedLids[lid] = referencedLid; });
 }
 
-
 void
 ReferenceMappings::syncReverseMappingIndices(const Reference &entry)
 {
@@ -46,6 +46,10 @@ ReferenceMappings::syncReverseMappingIndices(const Reference &entry)
     if (referencedLid != 0u) {
         _reverseMappingIndices.ensure_size(referencedLid + 1);
         _reverseMappingIndices[referencedLid] = entry.revMapIdx();
+        if (referencedLid >= _referencedLidLimit) {
+            std::atomic_thread_fence(std::memory_order_release);
+            _referencedLidLimit = referencedLid + 1;
+        }
     }
 }
 
