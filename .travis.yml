@@ -22,7 +22,6 @@ before_cache:
   - sudo rm -rf $HOME/.m2/repository/com/yahoo
   - du --summarize --human-readable $HOME/.m2/repository
   - du --summarize --human-readable $HOME/.ccache
-  - ccache --show-stats
 
 install: true
 
