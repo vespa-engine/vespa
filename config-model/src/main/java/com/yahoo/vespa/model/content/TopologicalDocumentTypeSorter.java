@@ -2,11 +2,11 @@ package com.yahoo.vespa.model.content;
 
 import com.yahoo.documentmodel.NewDocumentType;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Class that sorts a list of document types in topological order
@@ -42,6 +42,6 @@ public class TopologicalDocumentTypeSorter {
 
     public static List<NewDocumentType> sort(Collection<NewDocumentType> documentTypes) {
         TopologicalDocumentTypeSorter sorter = new TopologicalDocumentTypeSorter(documentTypes);
-        return sorter.sortedTypes.values().stream().collect(Collectors.toList());
+        return new ArrayList<>(sorter.sortedTypes.values());
     }
 }
