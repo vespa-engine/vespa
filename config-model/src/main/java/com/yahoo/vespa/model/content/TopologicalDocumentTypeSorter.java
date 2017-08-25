@@ -34,7 +34,6 @@ public class TopologicalDocumentTypeSorter {
         }
         for (NewDocumentType.Name referenceDocTypeName : docType.getDocumentReferences()) {
             NewDocumentType referenceDocType = unsortedTypes.get(referenceDocTypeName.getName());
-            assert (referenceDocType != null);
             depthFirstTraverse(referenceDocType);
         }
         sortedTypes.put(docType.getName(), docType);
