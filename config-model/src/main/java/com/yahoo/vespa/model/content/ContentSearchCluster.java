@@ -276,7 +276,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
     @Override
     public void getConfig(ProtonConfig.Builder builder) {
         double visibilityDelay = hasIndexedCluster() ? getIndexed().getVisibilityDelay() : 0.0;
-        for (NewDocumentType type : documentDefinitions.values()) {
+        for (NewDocumentType type : TopologicalDocumentTypeSorter.sort(documentDefinitions.values())) {
             ProtonConfig.Documentdb.Builder ddbB = new ProtonConfig.Documentdb.Builder();
             String docTypeName = type.getFullName().getName();
             boolean globalDocType = isGloballyDistributed(type);
