@@ -124,12 +124,10 @@ DocumentRouteSelectorPolicy::select(mbus::RoutingContext &context, const vespali
     const mbus::Message &msg = context.getMessage();
     switch(msg.getType()) {
     case DocumentProtocol::MESSAGE_PUTDOCUMENT:
-        return it->second->contains(*static_cast<const PutDocumentMessage&>(msg).getDocument()) == 
-               Result::True;
+        return it->second->contains(static_cast<const PutDocumentMessage&>(msg).getDocument()) == Result::True;
 
     case DocumentProtocol::MESSAGE_UPDATEDOCUMENT:
-        return it->second->contains(*static_cast<const UpdateDocumentMessage&>(msg).getDocumentUpdate()) !=
-               Result::False;
+        return it->second->contains(static_cast<const UpdateDocumentMessage&>(msg).getDocumentUpdate()) != Result::False;
 
     case DocumentProtocol::MESSAGE_MULTIOPERATION:
     {

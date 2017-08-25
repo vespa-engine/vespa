@@ -1,0 +1,9 @@
+{
+  "duration": 1200000,
+  "causes": [
+    {
+      "upstreamBuild": 231,
+      "upstreamProject": "3-v3-job-grandparent"
+    }
+  ]
+}

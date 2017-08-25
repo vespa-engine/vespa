@@ -15,8 +15,7 @@
 #include <vespa/searchlib/common/sortresults.h>
 #include <vespa/searchlib/queryeval/hitcollector.h>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 /**
  * Runs a single match thread and keeps track of local state.
@@ -111,5 +110,4 @@ public:
     PartialResult::UP extract_result() { return std::move(resultContext->result); }
 };
 
-} // namespace proton::matching
-} // namespace proton
+}

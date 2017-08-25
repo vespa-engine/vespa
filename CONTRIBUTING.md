@@ -34,7 +34,7 @@ refer to the [APIs](http://docs.vespa.ai/documentation/api.html).
 
 ## Where to start contributing
 Most features plug into the [Vespa Container](docs.vespa.ai/documentation/jdisc/index.html) -
-this is the most likely pleace to write enhancements.
+this is the most likely place to write enhancements.
 Discuss with the community if others have similar feature requests - make the feature generic.
 
 ### Getting started

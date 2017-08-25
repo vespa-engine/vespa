@@ -117,6 +117,10 @@ public class SerializationTest {
                 "   \"flavor\" : \"large\",\n" +
                 "   \"history\" : [\n" +
                 "      {\n" +
+                "         \"type\" : \"provisioned\",\n" +
+                "         \"at\" : 1444391401389\n" +
+                "      },\n" +
+                "      {\n" +
                 "         \"type\" : \"reserved\",\n" +
                 "         \"at\" : 1444391402611\n" +
                 "      }\n" +
@@ -143,6 +147,8 @@ public class SerializationTest {
         assertEquals(2, node.status().reboot().current());
         assertEquals(3, node.allocation().get().restartGeneration().wanted());
         assertEquals(4, node.allocation().get().restartGeneration().current());
+        assertEquals(Arrays.asList(History.Event.Type.provisioned, History.Event.Type.reserved),
+                node.history().events().stream().map(History.Event::type).collect(Collectors.toList()));
         assertTrue(node.allocation().get().isRemovable());
         assertEquals(NodeType.tenant, node.type());
     }

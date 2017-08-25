@@ -298,7 +298,7 @@ VisitorManagerTest::getMessagesAndReply(
             switch (session.sentMessages[i]->getType()) {
             case documentapi::DocumentProtocol::MESSAGE_PUTDOCUMENT:
                 docs.push_back(static_cast<documentapi::PutDocumentMessage&>(
-                                       *session.sentMessages[i]).getDocument());
+                                       *session.sentMessages[i]).getDocumentSP());
                 break;
             case documentapi::DocumentProtocol::MESSAGE_REMOVEDOCUMENT:
                 docIds.push_back(static_cast<documentapi::RemoveDocumentMessage&>(

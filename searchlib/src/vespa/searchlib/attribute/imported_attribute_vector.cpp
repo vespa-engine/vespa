@@ -135,14 +135,16 @@ long ImportedAttributeVector::onSerializeForAscendingSort(DocId doc,
                                                           void *serTo,
                                                           long available,
                                                           const common::BlobConverter *bc) const {
-    return _target_attribute->serializeForAscendingSort(doc, serTo, available, bc);
+    return _target_attribute->serializeForAscendingSort(
+            _reference_attribute->getReferencedLid(doc), serTo, available, bc);
 }
 
 long ImportedAttributeVector::onSerializeForDescendingSort(DocId doc,
                                                            void *serTo,
                                                            long available,
                                                            const common::BlobConverter *bc) const {
-    return _target_attribute->serializeForDescendingSort(doc, serTo, available, bc);
+    return _target_attribute->serializeForDescendingSort(
+            _reference_attribute->getReferencedLid(doc), serTo, available, bc);
 }
 
 namespace {

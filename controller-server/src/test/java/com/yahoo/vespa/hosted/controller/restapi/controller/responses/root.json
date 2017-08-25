@@ -1,0 +1,7 @@
+{
+  "resources":[
+    {
+      "url":"http://localhost:8080/controller/v1/maintenance/"
+    }
+  ]
+}

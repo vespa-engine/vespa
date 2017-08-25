@@ -81,7 +81,7 @@ void Test::testMessage() {
                     new document::DocumentUpdate(*testdoc_type,
                             document::DocumentId(document::DocIdString(
                                             "testdoc", "testme2")))));
-    EXPECT_TRUE(!(upd1.getDocumentUpdate()->getId() == upd2.getDocumentUpdate()->getId()));
+    EXPECT_TRUE(!(upd1.getDocumentUpdate().getId() == upd2.getDocumentUpdate().getId()));
 
     DocumentMessage& msg2 = static_cast<DocumentMessage&>(upd2);
     EXPECT_TRUE(msg2.getType() == DocumentProtocol::MESSAGE_UPDATEDOCUMENT);

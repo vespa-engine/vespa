@@ -7,7 +7,7 @@ BUILD_DIR=~/build
 
 mkdir "${BUILD_DIR}"
 
-export CCACHE_SIZE="4G"
+export CCACHE_SIZE="1G"
 export CCACHE_COMPRESS=1
 NUM_THREADS=4
 

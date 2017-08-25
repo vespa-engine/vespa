@@ -4,13 +4,9 @@
 #include <vespa/config/print/fileconfigwriter.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/document.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/messagebus/destinationsession.h>
-#include <vespa/messagebus/imessagehandler.h>
-#include <vespa/messagebus/iprotocol.h>
-#include <vespa/messagebus/message.h>
 #include <vespa/messagebus/protocolset.h>
 #include <vespa/messagebus/rpcmessagebus.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -56,7 +52,7 @@ private:
     OutputFile                  &_dat;
     size_t                       _numDocs;
 
-    void handleDocumentPut(document::Document::SP doc);
+    void handleDocumentPut(const document::Document::SP & doc);
     virtual void handleMessage(mbus::Message::UP message) override;
 
 public:
@@ -66,9 +62,9 @@ public:
 };
 
 void
-FeedHandler::handleDocumentPut(document::Document::SP doc)
+FeedHandler::handleDocumentPut(const document::Document::SP & doc)
 {
-    if (doc.get() != 0) {
+    if (doc) {
         vespalib::nbostream datStream(12345);
         vespalib::nbostream idxStream(12);
         doc->serialize(datStream);
@@ -86,7 +82,7 @@ FeedHandler::handleMessage(mbus::Message::UP message)
     documentapi::DocumentMessage::UP msg((documentapi::DocumentMessage*)message.release());
     switch (msg->getType()) {
     case documentapi::DocumentProtocol::MESSAGE_PUTDOCUMENT:
- 	handleDocumentPut(((documentapi::PutDocumentMessage&)(*msg)).getDocument());
+ 	handleDocumentPut(((documentapi::PutDocumentMessage&)(*msg)).getDocumentSP());
  	break;
     default:
  	break;

@@ -444,8 +444,8 @@ Messages50Test::testPutDocumentMessage()
         mbus::Routable::UP obj = deserialize("PutDocumentMessage", DocumentProtocol::MESSAGE_PUTDOCUMENT, lang);
         if (EXPECT_TRUE(obj.get() != NULL)) {
             PutDocumentMessage &ref = static_cast<PutDocumentMessage&>(*obj);
-            EXPECT_TRUE(ref.getDocument()->getType().getName() == "testdoc");
-            EXPECT_TRUE(ref.getDocument()->getId().toString() == "doc:scheme:");
+            EXPECT_TRUE(ref.getDocument().getType().getName() == "testdoc");
+            EXPECT_TRUE(ref.getDocument().getId().toString() == "doc:scheme:");
             EXPECT_EQUAL(666u, ref.getTimestamp());
             EXPECT_EQUAL(37u, ref.getApproxSize());
         }
@@ -737,7 +737,7 @@ Messages50Test::testUpdateDocumentMessage()
         mbus::Routable::UP obj = deserialize("UpdateDocumentMessage", DocumentProtocol::MESSAGE_UPDATEDOCUMENT, lang);
         if (EXPECT_TRUE(obj.get() != NULL)) {
             UpdateDocumentMessage &ref = static_cast<UpdateDocumentMessage&>(*obj);
-            EXPECT_EQUAL(*upd, *ref.getDocumentUpdate());
+            EXPECT_EQUAL(*upd, ref.getDocumentUpdate());
             EXPECT_EQUAL(666u, ref.getOldTimestamp());
             EXPECT_EQUAL(777u, ref.getNewTimestamp());
             EXPECT_EQUAL(85u, ref.getApproxSize());
@@ -1047,8 +1047,8 @@ Messages50Test::testGetDocumentReply()
         if (EXPECT_TRUE(obj.get() != NULL)) {
             GetDocumentReply &ref = static_cast<GetDocumentReply&>(*obj);
 
-            EXPECT_EQUAL(string("testdoc"), ref.getDocument()->getType().getName());
-            EXPECT_EQUAL(string("doc:scheme:"), ref.getDocument()->getId().toString());
+            EXPECT_EQUAL(string("testdoc"), ref.getDocument().getType().getName());
+            EXPECT_EQUAL(string("doc:scheme:"), ref.getDocument().getId().toString());
         }
     }
     return true;

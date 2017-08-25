@@ -738,7 +738,7 @@ Test::multipleGetRepliesAreMergedToFoundDocument()
             doc.reset(new Document(*_docType, DocumentId("doc:scheme:yarn")));
             doc->setLastModified(123456ULL);
         }
-        mbus::Reply::UP reply(new GetDocumentReply(doc));
+        mbus::Reply::UP reply(new GetDocumentReply(std::move(doc)));
         selected[i]->handleReply(std::move(reply));
     }
     mbus::Reply::UP reply = frame.getReceptor().getReply(600);
