@@ -1,14 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "session_manager_explorer.h"
+#include "sessionmanager.h"
 #include <vespa/vespalib/data/slime/slime.h>
 
 using vespalib::slime::Inserter;
 using vespalib::slime::Cursor;
 using vespalib::StateExplorer;
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 namespace {
 
@@ -59,5 +59,4 @@ SessionManagerExplorer::get_child(vespalib::stringref name) const
     return std::unique_ptr<StateExplorer>(nullptr);
 }
 
-} // namespace proton::matching
-} // namespace proton
+}

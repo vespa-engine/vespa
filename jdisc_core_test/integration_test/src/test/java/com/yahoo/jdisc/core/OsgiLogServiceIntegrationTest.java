@@ -8,7 +8,9 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.service.log.LogEntry;
 import org.osgi.service.log.LogReaderService;
 
-import java.util.Enumeration;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author bjorncs
  */
 public class OsgiLogServiceIntegrationTest {
 
@@ -35,28 +38,26 @@ public class OsgiLogServiceIntegrationTest {
         BundleContext ctx = driver.osgiFramework().bundleContext();
         ServiceReference<?> ref = ctx.getServiceReference(LogReaderService.class.getName());
         LogReaderService reader = (LogReaderService)ctx.getService(ref);
-        Enumeration<LogEntry> log = (Enumeration<LogEntry>)reader.getLog();
+        ArrayList<LogEntry> logEntries = Collections.list(reader.getLog());
+        assertTrue(logEntries.size() >= 4);
 
-        assertEntry(Level.INFO, "[jdk14] hello world", null, now, log);
-        assertEntry(Level.INFO, "[slf4j] hello world", null, now, log);
-        assertEntry(Level.INFO, "[log4j] hello world", null, now, log);
-        assertEntry(Level.INFO, "[jcl] hello world", null, now, log);
+        assertLogContainsEntry("[jdk14] hello world", logEntries, now);
+        assertLogContainsEntry("[slf4j] hello world", logEntries, now);
+        assertLogContainsEntry("[log4j] hello world", logEntries, now);
+        assertLogContainsEntry("[jcl] hello world", logEntries, now);
 
         assertTrue(driver.close());
     }
 
-    private static void assertEntry(Level expectedLevel, String expectedMessage, Throwable expectedException,
-                                    long expectedTimeGE, Enumeration<LogEntry> log)
+    private static void assertLogContainsEntry(String expectedMessage, List<LogEntry> logEntries, long expectedTimeGE)
     {
-        assertTrue(log.hasMoreElements());
-        LogEntry entry = log.nextElement();
-        assertNotNull(entry);
-        System.err.println("log entry: "+entry.getMessage()+" bundle="+entry.getBundle());
-        assertEquals(expectedMessage, entry.getMessage());
+        LogEntry entry = logEntries.stream().filter(e -> e.getMessage().equals(expectedMessage)).findFirst()
+                .orElseThrow(() -> new AssertionError("Could not find log entry with messsage: " + expectedMessage));
+
         assertNull(entry.getBundle());
         assertNotNull(entry.getServiceReference());
-        assertEquals(OsgiLogHandler.toServiceLevel(expectedLevel), entry.getLevel());
-        assertEquals(expectedException, entry.getException());
+        assertEquals(OsgiLogHandler.toServiceLevel(Level.INFO), entry.getLevel());
+        assertNull(entry.getException());
         assertTrue(expectedTimeGE <= entry.getTime());
     }
 }

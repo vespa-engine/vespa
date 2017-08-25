@@ -112,7 +112,7 @@ public class History {
 
         public enum Type { 
             // State move events
-            readied, reserved, activated, deactivated, deallocated, parked,
+            provisioned(false), readied, reserved, activated, deactivated, deallocated, parked,
             // The active node was retired
             retired,
             // The active node went down according to the service monitor

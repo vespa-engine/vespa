@@ -4,10 +4,14 @@ package com.yahoo.vespa.model.content;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.utils.ContentClusterBuilder;
+import com.yahoo.vespa.model.content.utils.SearchDefinitionBuilder;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
+import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.vespa.model.content.utils.ContentClusterUtils.createCluster;
 import static com.yahoo.vespa.model.content.utils.SearchDefinitionBuilder.createSearchDefinitions;
 import static junit.framework.TestCase.assertEquals;
@@ -84,6 +88,30 @@ public class ContentSearchClusterTest {
     private static void assertDocumentDb(String expName, boolean expGlobal, ProtonConfig.Documentdb db) {
         assertEquals(expName, db.inputdoctypename());
         assertEquals(expGlobal, db.global());
+    }
+
+    @Test
+    public void require_that_document_types_with_references_are_topologically_sorted() throws Exception {
+        ProtonConfig cfg = getProtonConfig(createClusterWithThreeDocumentTypes());
+        assertEquals(3, cfg.documentdb().size());
+        assertDocumentDb("c", true, cfg.documentdb(0));
+        assertDocumentDb("b", true, cfg.documentdb(1));
+        assertDocumentDb("a", false, cfg.documentdb(2));
+    }
+
+    private static ContentCluster createClusterWithThreeDocumentTypes() throws Exception {
+        List<String> searchDefinitions = new ArrayList<>();
+        searchDefinitions.add(new SearchDefinitionBuilder().name("a")
+                .content(joinLines("field ref_to_b type reference<b> { indexing: attribute }",
+                                   "field ref_to_c type reference<c> { indexing: attribute }")).build());
+        searchDefinitions.add(new SearchDefinitionBuilder().name("b")
+                .content("field ref_to_c type reference<c> { indexing: attribute }").build());
+        searchDefinitions.add(new SearchDefinitionBuilder().name("c").build());
+        return createCluster(new ContentClusterBuilder().docTypes(Arrays.asList(
+                new ContentClusterBuilder.DocType("a"),
+                new ContentClusterBuilder.DocType("b", true),
+                new ContentClusterBuilder.DocType("c", true))).getXml(),
+                searchDefinitions);
     }
 
 }

@@ -4,6 +4,7 @@
 
 #include <vespa/searchlib/btree/btreestore.h>
 #include <vespa/searchlib/common/rcuvector.h>
+#include <atomic>
 
 namespace search::attribute {
 
@@ -27,6 +28,8 @@ class ReferenceMappings
     // Vector containing references to trees of lids referencing given
     // referenced lid.
     ReverseMappingIndices _reverseMappingIndices;
+    // limit for referenced lid when accessing _reverseMappingIndices
+    uint32_t              _referencedLidLimit;
     // Store of B-Trees, used to map from gid or referenced lid to
     // referencing lids.
     ReverseMapping _reverseMapping;
@@ -77,7 +80,11 @@ public:
 
     ReferencedLids getReferencedLids() const { return ReferencedLids(&_referencedLids[0], _referencedLids.size()); }
     uint32_t getReferencedLid(uint32_t doc) const { return _referencedLids[doc]; }
-    ReverseMappingRefs getReverseMappingRefs() const { return ReverseMappingRefs(&_reverseMappingIndices[0], _reverseMappingIndices.size()); }
+    ReverseMappingRefs getReverseMappingRefs() const {
+        uint32_t referencedLidLimit = _referencedLidLimit;
+        std::atomic_thread_fence(std::memory_order_acquire);
+        return ReverseMappingRefs(&_reverseMappingIndices[0], referencedLidLimit);
+    }
     const ReverseMapping &getReverseMapping() const { return _reverseMapping; }
 };
 
