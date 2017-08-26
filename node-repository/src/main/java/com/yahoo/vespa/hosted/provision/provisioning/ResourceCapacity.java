@@ -36,6 +36,10 @@ public class ResourceCapacity {
         return capacity;
     }
 
+    static ResourceCapacity of(Node node) {
+        return new ResourceCapacity(node);
+    }
+
     public double getMemory() {
         return memory;
     }

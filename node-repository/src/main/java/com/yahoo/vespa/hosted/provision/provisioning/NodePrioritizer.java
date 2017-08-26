@@ -264,7 +264,7 @@ class NodePrioritizer {
                 pri.violatesSpares = true;
             }
 
-            if (headroomHosts.containsKey(parent) && isSmallestNodeOnParent(node, parent)) {
+            if (headroomHosts.containsKey(parent) && isPreferredNodeToBeReloacted(allNodes, node, parent)) {
                 ResourceCapacity neededCapacity = headroomHosts.get(parent);
 
                 // If the node is new then we need to check the headroom requirement after it has been added
@@ -278,15 +278,13 @@ class NodePrioritizer {
         return pri;
     }
 
-    private boolean isSmallestNodeOnParent(Node node, Node parent) {
-        NodeList list = new NodeList(allNodes);
-        ResourceCapacity nodeSize = new ResourceCapacity(node);
-        for (Node child : list.childNodes(parent).asList()) {
-            if (new ResourceCapacity(child).compare(nodeSize) < 0) {
-                return false;
-            }
-        }
-        return true;
+    static boolean isPreferredNodeToBeReloacted(List<Node> nodes, Node node, Node parent) {
+        NodeList list = new NodeList(nodes);
+        return list.childNodes(parent).asList().stream()
+                .sorted(NodePrioritizer::compareForRelocation)
+                .findFirst()
+                .filter(n -> n.equals(node))
+                .isPresent();
     }
 
     private boolean isReplacement(long nofNodesInCluster, long nodeFailedNodes) {
@@ -319,5 +317,28 @@ class NodePrioritizer {
         return allNodes.stream()
                 .filter(n -> n.hostname().equals(node.parentHostname().orElse(" NOT A NODE")))
                 .findAny();
+    }
+
+    private static int compareForRelocation(Node a, Node b) {
+        // Choose smallest node
+        int capacity = ResourceCapacity.of(a).compare(ResourceCapacity.of(b));
+        if (capacity != 0) return capacity;
+
+        // Choose unallocated over allocated (this case is when we have ready docker nodes)
+        if (!a.allocation().isPresent() && b.allocation().isPresent()) return -1;
+        if (a.allocation().isPresent() && !b.allocation().isPresent()) return 1;
+
+        // Choose container over content nodes
+        if (a.allocation().isPresent() && a.allocation().isPresent()) {
+            if (a.allocation().get().membership().cluster().type().equals(ClusterSpec.Type.container) &&
+                    !b.allocation().get().membership().cluster().type().equals(ClusterSpec.Type.container))
+                return -1;
+            if (!a.allocation().get().membership().cluster().type().equals(ClusterSpec.Type.container) &&
+                    b.allocation().get().membership().cluster().type().equals(ClusterSpec.Type.container))
+                return 1;
+        }
+
+        // To get a stable algorithm - choose lexicographical from hostname
+        return a.hostname().compareTo(b.hostname());
     }
 }

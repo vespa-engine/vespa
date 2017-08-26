@@ -211,7 +211,7 @@ public class DynamicDockerProvisioningTest {
      * |    |     |      |      |         |    |     |  1a   |  1b   |
      */
     @Test
-    public void only_smallest_container_is_moved_from_hosts_with_headroom_violations() {
+    public void only_preferred_container_is_moved_from_hosts_with_headroom_violations() {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.perf, RegionName.from("us-east")), flavorsConfig(true));
         enableDynamicAllocation(tester);
         tester.makeReadyNodes(4, "host", "host-medium", NodeType.host, 32);
