@@ -1284,18 +1284,18 @@ FS4Packet_QUERYX::Encode(FNET_DataBuffer *dst)
 
 void FS4Packet::throwPropertieDecodeError(size_t i)
 {
-    throw vespalib::IllegalArgumentException(vespalib::make_string("Failed decoding properties[%ld]", i));
+    throw vespalib::IllegalArgumentException(make_string("Failed decoding properties[%ld]", i));
 }
 
 void FS4Packet::throwUnsupportedFeatures(uint32_t features, uint32_t set)
 {
-    throw vespalib::UnderflowException(vespalib::make_string("Unsupported features(%x), supported set(%x)", features, set));
+    throw vespalib::UnderflowException(make_string("Unsupported features(%x), supported set(%x)", features, set));
 }
 
 void FS4Packet::throwNotEnoughData(FNET_DataBuffer & buf, uint32_t left, uint32_t needed, const char * text)
 {
     (void) buf;
-    throw vespalib::UnderflowException(vespalib::make_string("Failed decoding packet of type %d. Only %d bytes left, needed %d from '%s'", GetPCODE(), left, needed, text));
+    throw vespalib::UnderflowException(make_string("Failed decoding packet of type %d. Only %d bytes left, needed %d from '%s'", GetPCODE(), left, needed, text));
 }
 
 #define VERIFY_LEN(needed, text) \
@@ -1435,7 +1435,7 @@ FS4Packet_QUERYX::toString(uint32_t indent) const
     }
     s += make_string("%*s  sortspec    : %s\n", indent, "", _sortSpec.c_str());
     s += make_string("%*s  groupspec   : (%d bytes)\n", indent, "", (int)_groupSpec.size());
-    s += make_string("%*s  sessionId   : (%d bytes)\n", indent, "", (int)_sessionId.size());
+    s += make_string("%*s  sessionId   : (%d bytes) %s\n", indent, "", (int)_sessionId.size(), _sessionId.c_str());
     s += make_string("%*s  location    : %s\n", indent, "", _location.c_str());
     s += make_string("%*s  timeout     : %d\n", indent, "", _timeout);
     s += make_string("%*s  stackitems  : %d\n", indent, "", _numStackItems);
