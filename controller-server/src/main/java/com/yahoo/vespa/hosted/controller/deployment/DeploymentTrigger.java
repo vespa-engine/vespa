@@ -230,15 +230,9 @@ public class DeploymentTrigger {
         return application.deploymentSpec()
                 .zones()
                 .stream()
-                .filter(z -> {
-                    if (jobType.isProduction()) {
-                        return z.matches(jobType.environment(),
-                                         Optional.ofNullable(jobType.region(controller.system())));
-                    } else {
-                        // Ignore region for test environments as it's not specified in deployment spec
-                        return z.environment() == jobType.environment();
-                    }
-                })
+                .filter(zone -> zone.deploysTo(
+                        jobType.environment(),
+                        jobType.isProduction() ? jobType.region(controller.system()) : Optional.empty()))
                 .findFirst();
     }
 
