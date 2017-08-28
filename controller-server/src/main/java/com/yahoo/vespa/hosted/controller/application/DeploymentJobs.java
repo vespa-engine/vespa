@@ -210,8 +210,8 @@ public class DeploymentJobs {
         }
 
         /** Returns the region of this job type, or null if it does not have a region */
-        public RegionName region(SystemName system) {
-            return zone(system).map(Zone::region).orElse(null);
+        public Optional<RegionName> region(SystemName system) {
+            return zone(system).map(Zone::region);
         }
 
         public static JobType fromId(String id) {

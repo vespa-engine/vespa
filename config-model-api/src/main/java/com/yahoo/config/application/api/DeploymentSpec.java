@@ -346,11 +346,6 @@ public class DeploymentSpec {
             return true;
         }
 
-        // TODO: Remove when no version older than 6.111 is deployed anywhere
-        public boolean matches(Environment environment, Optional<RegionName> region) {
-            return deploysTo(environment, region);
-        }
-
         @Override
         public int hashCode() {
             return Objects.hash(environment, region);

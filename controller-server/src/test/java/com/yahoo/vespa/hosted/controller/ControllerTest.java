@@ -11,6 +11,9 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.slime.Slime;
+import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
@@ -28,16 +31,14 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.NToken;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
-import com.yahoo.vespa.hosted.controller.application.Change;
+import com.yahoo.vespa.hosted.controller.application.*;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
-import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildSystem;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;
 import com.yahoo.vespa.hosted.controller.versions.DeploymentStatistics;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -46,6 +47,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.athens.mock.NTokenMock;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -53,6 +56,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.component;
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType.productionCorpUsEast1;
@@ -598,4 +604,69 @@ public class ControllerTest {
                 new DeployOptions(Optional.of(new ScrewdriverBuildJob(app1ScrewdriverId, app1RevisionId)), version, false, deployCurrentVersion));
 
     }
+
+    @Test
+    public void testCleanupOfStaleDeploymentData() throws IOException {
+        DeploymentTester tester = new DeploymentTester();
+        tester.controllerTester().getZoneRegistryMock().setSystem(SystemName.cd);
+
+        Supplier<Map<JobType, JobStatus>> statuses = () ->
+                tester.application(ApplicationId.from("vespa", "canary", "default")).deploymentJobs().jobStatus();
+
+        // Current system version, matches version in test data
+        Version version = Version.fromString("6.141.117");
+        Version oldVersion = Version.fromString("6.98.12");
+        tester.configServerClientMock().setDefaultConfigServerVersion(version);
+        tester.updateVersionStatus(version);
+        assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
+
+        // Load test data data
+        ApplicationSerializer serializer = new ApplicationSerializer();
+        byte[] json = Files.readAllBytes(Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/maintenance/testdata/canary-with-stale-data.json"));
+        Slime slime = SlimeUtils.jsonToSlime(json);
+        Application application = serializer.fromSlime(slime);
+        try (Lock lock = tester.controller().applications().lock(application.id())) {
+            tester.controller().applications().store(application, lock);
+        }
+
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .upgradePolicy("canary")
+                .region("cd-us-central-1")
+                .build();
+
+        long cdJobsCount = statuses.get().keySet().stream()
+                        .filter(type -> type.zone(SystemName.cd).isPresent())
+                        .count();
+
+        long mainJobsCount = statuses.get().keySet().stream()
+                .filter(type -> type.zone(SystemName.main).isPresent() && ! type.zone(SystemName.cd).isPresent())
+                .count();
+
+        assertEquals("Irrelevant (main) data is present.", 8, mainJobsCount);
+
+        // New version is released
+        version = Version.fromString("6.142.1");
+        tester.configServerClientMock().setDefaultConfigServerVersion(version);
+        tester.updateVersionStatus(version);
+        assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
+        tester.upgrader().maintain();
+
+        // Test environments pass
+        tester.deploy(DeploymentJobs.JobType.systemTest, application, applicationPackage);
+        tester.buildSystem().takeJobsToRun();
+        tester.clock().advance(Duration.ofMinutes(10));
+        tester.notifyJobCompletion(DeploymentJobs.JobType.systemTest, application, true);
+
+        long newCdJobsCount = statuses.get().keySet().stream()
+                .filter(type -> type.zone(SystemName.cd).isPresent())
+                .count();
+
+        long newMainJobsCount = statuses.get().keySet().stream()
+                .filter(type -> type.zone(SystemName.main).isPresent() && ! type.zone(SystemName.cd).isPresent())
+                .count();
+
+        assertEquals("Irrelevant (main) job data is removed.", 0, newMainJobsCount);
+        assertEquals("Relevant (cd) data is not removed.", cdJobsCount, newCdJobsCount);
+    }
+
 }
