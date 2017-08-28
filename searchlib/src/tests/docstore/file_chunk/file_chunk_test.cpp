@@ -113,6 +113,7 @@ struct ReadFixture : public FixtureBase {
 
 struct WriteFixture : public FixtureBase {
     WriteableFileChunk chunk;
+    using CompressionConfig = vespalib::compression::CompressionConfig;
 
     WriteFixture(const vespalib::string &baseName,
                  uint32_t docIdLimit,
@@ -124,7 +125,7 @@ struct WriteFixture : public FixtureBase {
                 baseName,
                 serialNum,
                 docIdLimit,
-                WriteableFileChunk::Config(document::CompressionConfig(), 0x1000),
+                WriteableFileChunk::Config(CompressionConfig(), 0x1000),
                 tuneFile,
                 fileHeaderCtx,
                 &bucketizer,

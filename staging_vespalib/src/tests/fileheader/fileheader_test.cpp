@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/data/fileheader.h>
+#include <vespa/vespalib/data/databuffer.h>
 #include <vespa/fastos/file.h>
 #include <iostream>
 

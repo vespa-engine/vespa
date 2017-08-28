@@ -6,12 +6,12 @@
 #include "ibucketizer.h"
 #include <vespa/vespalib/stllike/cache.hpp>
 #include <vespa/vespalib/data/databuffer.h>
-#include <vespa/document/util/compressor.h>
+#include <vespa/vespalib/util/compressor.h>
 
 using document::DocumentTypeRepo;
-using document::CompressionConfig;
-using document::compression::compress;
-using document::compression::decompress;
+using vespalib::compression::CompressionConfig;
+using vespalib::compression::compress;
+using vespalib::compression::decompress;
 
 namespace search {
 

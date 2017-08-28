@@ -2,11 +2,11 @@
 #pragma once
 
 #include "compressionconfig.h"
-#include <vespa/vespalib/util/buffer.h>
+#include "buffer.h"
 
 namespace vespalib { class DataBuffer; }
 
-namespace document {
+namespace vespalib::compression {
 
 class ICompressor
 {
@@ -16,8 +16,6 @@ public:
     virtual bool unprocess(const void * input, size_t inputLen, void * output, size_t & outputLen) = 0;
     virtual size_t adjustProcessLen(uint16_t options, size_t len)   const = 0;
 };
-
-namespace compression {
 
 /**
  * Will try to compress a buffer according to the config. If the criteria can not
@@ -43,9 +41,6 @@ CompressionConfig::Type compress(const CompressionConfig & compression, const ve
  */
 void decompress(const CompressionConfig::Type & compression, size_t uncompressedLen, const vespalib::ConstBufferRef & org, vespalib::DataBuffer & dest, bool allowSwap);
 
-
 size_t computeMaxCompressedsize(CompressionConfig::Type type, size_t uncompressedSize);
-
-}
 
 }

@@ -12,7 +12,7 @@
 LOG_SETUP("chunk_test");
 
 using namespace search;
-using document::CompressionConfig;
+using vespalib::compression::CompressionConfig;
 
 TEST("require that Chunk obey limits")
 {

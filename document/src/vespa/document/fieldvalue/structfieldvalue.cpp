@@ -21,6 +21,7 @@ using std::vector;
 using vespalib::nbostream;
 using vespalib::nbostream_longlivedbuf;
 using vespalib::make_string;
+using vespalib::compression::CompressionConfig;
 using namespace vespalib::xml;
 
 namespace document {

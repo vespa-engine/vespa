@@ -6,7 +6,7 @@
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/vespalib/data/databuffer.h>
-#include <vespa/document/util/compressor.h>
+#include <vespa/vespalib/util/compressor.h>
 #include <vespa/searchlib/common/transport.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/log/log.h>
@@ -20,6 +20,8 @@ using vespalib::stringref;
 using vespalib::ConstBufferRef;
 using vespalib::DataBuffer;
 using vespalib::Memory;
+using vespalib::compression::CompressionConfig;
+
 
 namespace proton {
 
@@ -377,7 +379,7 @@ TEST("requireThatSlimeInterfaceWorksFine") {
 }
 
 void
-verifyReply(size_t count, document::CompressionConfig::Type encoding, size_t orgSize, size_t compressedSize,
+verifyReply(size_t count, CompressionConfig::Type encoding, size_t orgSize, size_t compressedSize,
             FRT_RPCRequest *request) {
     FRT_Values &ret = *request->GetReturn();
     EXPECT_EQUAL(encoding, ret[0]._intval8);
@@ -386,7 +388,8 @@ verifyReply(size_t count, document::CompressionConfig::Type encoding, size_t org
 
     DataBuffer uncompressed;
     ConstBufferRef blob(ret[2]._data._buf, ret[2]._data._len);
-    compression::decompress(CompressionConfig::toType(ret[0]._intval8), ret[1]._intval32, blob, uncompressed, false);
+    vespalib::compression::decompress(CompressionConfig::toType(ret[0]._intval8), ret[1]._intval32,
+                                      blob, uncompressed, false);
     EXPECT_EQUAL(orgSize, uncompressed.getDataLen());
 
     vespalib::Slime summaries;
@@ -396,8 +399,8 @@ verifyReply(size_t count, document::CompressionConfig::Type encoding, size_t org
 
 void
 verifyRPC(size_t count,
-          document::CompressionConfig::Type requestCompression, size_t requestSize, size_t requestBlobSize,
-          document::CompressionConfig::Type replyCompression, size_t replySize, size_t replyBlobSize) {
+          CompressionConfig::Type requestCompression, size_t requestSize, size_t requestBlobSize,
+          CompressionConfig::Type replyCompression, size_t replySize, size_t replyBlobSize) {
     Server server;
     vespalib::Slime slimeRequest = createSlimeRequestLarger(count);
     vespalib::SimpleBuffer buf;
@@ -406,8 +409,9 @@ verifyRPC(size_t count,
 
     CompressionConfig config(requestCompression, 9, 100);
     DataBuffer compressed(const_cast<char *>(buf.get().data), buf.get().size);
-    CompressionConfig::Type type = compression::compress(config, ConstBufferRef(buf.get().data, buf.get().size),
-                                                         compressed, true);
+    CompressionConfig::Type type = vespalib::compression::compress(config,
+                                                                   ConstBufferRef(buf.get().data, buf.get().size),
+                                                                   compressed, true);
     EXPECT_EQUAL(type, requestCompression);
 
     FRT_RPCRequest *request = new FRT_RPCRequest();
@@ -424,9 +428,9 @@ verifyRPC(size_t count,
 }
 
 TEST("requireThatRPCInterfaceWorks") {
-    verifyRPC(1, document::CompressionConfig::NONE, 55, 55, document::CompressionConfig::NONE, 38, 38);
-    verifyRPC(100, document::CompressionConfig::NONE, 2631, 2631, document::CompressionConfig::LZ4, 1426, 46);
-    verifyRPC(100, document::CompressionConfig::LZ4, 2631, 69, document::CompressionConfig::LZ4, 1426, 46);
+    verifyRPC(1, CompressionConfig::NONE, 55, 55, CompressionConfig::NONE, 38, 38);
+    verifyRPC(100, CompressionConfig::NONE, 2631, 2631, CompressionConfig::LZ4, 1426, 46);
+    verifyRPC(100, CompressionConfig::LZ4, 2631, 69, CompressionConfig::LZ4, 1426, 46);
 }
 
 }

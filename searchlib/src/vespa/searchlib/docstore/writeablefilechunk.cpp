@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/data/fileheader.h>
+#include <vespa/vespalib/data/databuffer.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/objects/nbostream.h>

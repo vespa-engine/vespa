@@ -38,6 +38,7 @@ using vespalib::asciistream;
 using vespalib::nbostream;
 using vespalib::Memory;
 using vespalib::stringref;
+using vespalib::compression::CompressionConfig;
 
 namespace document {
 

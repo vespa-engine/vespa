@@ -13,7 +13,6 @@
 #include <vespa/searchsummary/docsummary/docsumconfig.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <sstream>
-#include <future>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.docsummary.summarymanager");
@@ -26,6 +25,8 @@ using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
 using vespalib::make_string;
 using vespalib::IllegalArgumentException;
+using vespalib::compression::CompressionConfig;
+
 using search::DocumentStore;
 using search::IDocumentStore;
 using search::LogDocumentStore;
@@ -160,13 +161,13 @@ SummaryManager::createSummarySetup(const SummaryConfig & summaryCfg,
 namespace {
 
 template<typename T>
-document::CompressionConfig
+CompressionConfig
 deriveCompression(const T & config) {
-    document::CompressionConfig compression;
+    CompressionConfig compression;
     if (config.type == T::LZ4) {
-        compression.type = document::CompressionConfig::LZ4;
+        compression.type = CompressionConfig::LZ4;
     } else if (config.type == T::ZSTD) {
-        compression.type = document::CompressionConfig::ZSTD;
+        compression.type = CompressionConfig::ZSTD;
     }
     compression.compressionLevel = config.level;
     return compression;

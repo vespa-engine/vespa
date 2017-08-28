@@ -8,10 +8,6 @@ vespa_define_module(
     config_cloudconfig
     vespaeval
 
-    EXTERNAL_DEPENDS
-    lz4
-    zstd
-
     LIBS
     src/vespa/document
     src/vespa/document/annotation

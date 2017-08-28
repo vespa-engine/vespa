@@ -4,7 +4,7 @@
 #include "packets.h"
 #include "sortdata.h"
 #include <vespa/searchlib/util/rawbuf.h>
-#include <vespa/document/util/compressor.h>
+#include <vespa/vespalib/util/compressor.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/databuffer.h>
@@ -12,7 +12,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.common.fs4packets");
 
-using document::CompressionConfig;
 using vespalib::ConstBufferRef;
 using vespalib::make_string;
 using vespalib::stringref;
@@ -151,7 +150,7 @@ FS4PersistentPacketStreamer::Decode(FNET_DataBuffer *src, uint32_t plen, uint32_
             uint32_t uncompressed_size = src->ReadInt32();
             ConstBufferRef org(src->GetData(), plen - sizeof(uint32_t));
             vespalib::DataBuffer uncompressed(uncompressed_size);
-            document::compression::decompress(compressionType, uncompressed_size, org, uncompressed, false);
+            vespalib::compression::decompress(compressionType, uncompressed_size, org, uncompressed, false);
             FNET_DataBuffer buf(uncompressed.getData(), uncompressed.getDataLen());
             decodePacket(packet, buf, uncompressed_size, pcode);
             src->DataToDead(plen - sizeof(uint32_t));
@@ -192,7 +191,7 @@ FS4PersistentPacketStreamer::Encode(FNET_Packet *packet, uint32_t chid, FNET_Dat
         CompressionConfig config(_compressionType, _compressionLevel, 90);
         ConstBufferRef org(dst->GetData() + packet_start + header_len, body_len);
         vespalib::DataBuffer compressed(org.size());
-        CompressionConfig::Type r = document::compression::compress(config, org, compressed, false);
+        CompressionConfig::Type r = vespalib::compression::compress(config, org, compressed, false);
         if (r != CompressionConfig::NONE) {
             dst->DataToFree(body_len + header_len);
             // sizeof(data + header + uncompressed_size) - sizeof(uint32_t)
@@ -455,7 +454,7 @@ FS4Packet_PreSerialized::FS4Packet_PreSerialized(FNET_Packet & packet)
                                  90);
         ConstBufferRef org(tmp.GetData(), tmp.GetDataLen());
         vespalib::DataBuffer compressed(org.size());
-        _compressionType = document::compression::compress(config, org, compressed, false);
+        _compressionType = vespalib::compression::compress(config, org, compressed, false);
         if (_compressionType != CompressionConfig::NONE) {
             _data.WriteInt32Fast(body_len);
             _data.WriteBytes(compressed.getData(), compressed.getDataLen());
@@ -1285,18 +1284,18 @@ FS4Packet_QUERYX::Encode(FNET_DataBuffer *dst)
 
 void FS4Packet::throwPropertieDecodeError(size_t i)
 {
-    throw vespalib::IllegalArgumentException(vespalib::make_string("Failed decoding properties[%ld]", i));
+    throw vespalib::IllegalArgumentException(make_string("Failed decoding properties[%ld]", i));
 }
 
 void FS4Packet::throwUnsupportedFeatures(uint32_t features, uint32_t set)
 {
-    throw vespalib::UnderflowException(vespalib::make_string("Unsupported features(%x), supported set(%x)", features, set));
+    throw vespalib::UnderflowException(make_string("Unsupported features(%x), supported set(%x)", features, set));
 }
 
 void FS4Packet::throwNotEnoughData(FNET_DataBuffer & buf, uint32_t left, uint32_t needed, const char * text)
 {
     (void) buf;
-    throw vespalib::UnderflowException(vespalib::make_string("Failed decoding packet of type %d. Only %d bytes left, needed %d from '%s'", GetPCODE(), left, needed, text));
+    throw vespalib::UnderflowException(make_string("Failed decoding packet of type %d. Only %d bytes left, needed %d from '%s'", GetPCODE(), left, needed, text));
 }
 
 #define VERIFY_LEN(needed, text) \
@@ -1436,7 +1435,7 @@ FS4Packet_QUERYX::toString(uint32_t indent) const
     }
     s += make_string("%*s  sortspec    : %s\n", indent, "", _sortSpec.c_str());
     s += make_string("%*s  groupspec   : (%d bytes)\n", indent, "", (int)_groupSpec.size());
-    s += make_string("%*s  sessionId   : (%d bytes)\n", indent, "", (int)_sessionId.size());
+    s += make_string("%*s  sessionId   : (%d bytes) %s\n", indent, "", (int)_sessionId.size(), _sessionId.c_str());
     s += make_string("%*s  location    : %s\n", indent, "", _location.c_str());
     s += make_string("%*s  timeout     : %d\n", indent, "", _timeout);
     s += make_string("%*s  stackitems  : %d\n", indent, "", _numStackItems);

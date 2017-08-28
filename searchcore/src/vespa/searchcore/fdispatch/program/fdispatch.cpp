@@ -19,7 +19,7 @@ LOG_SETUP(".fdispatch");
 using search::fs4transport::FS4PersistentPacketStreamer;
 using vespa::config::search::core::FdispatchrcConfig;
 using vespa::config::search::core::internal::InternalFdispatchrcType;
-using document::CompressionConfig;
+using vespalib::compression::CompressionConfig;
 
 char FastS_VersionTag[] = V_TAG;
 

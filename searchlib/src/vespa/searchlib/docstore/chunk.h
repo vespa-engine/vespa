@@ -4,7 +4,7 @@
 
 #include <vespa/searchlib/util/memoryusage.h>
 #include <vespa/vespalib/util/buffer.h>
-#include <vespa/document/util/compressionconfig.h>
+#include <vespa/vespalib/util/compressionconfig.h>
 #include <memory>
 #include <vector>
 
@@ -60,7 +60,8 @@ private:
 
 class Chunk {
 public:
-    typedef std::unique_ptr<Chunk> UP;
+    using UP = std::unique_ptr<Chunk>;
+    using CompressionConfig = vespalib::compression::CompressionConfig;
     class Config {
     public:
         Config(size_t maxBytes) : _maxBytes(maxBytes) { }
@@ -93,8 +94,8 @@ public:
     size_t size() const;
     const LidList & getLids() const { return _lids; }
     LidList getUniqueLids() const;
-    size_t getMaxPackSize(const document::CompressionConfig & compression) const;
-    void pack(uint64_t lastSerial, vespalib::DataBuffer & buffer, const document::CompressionConfig & compression);
+    size_t getMaxPackSize(const CompressionConfig & compression) const;
+    void pack(uint64_t lastSerial, vespalib::DataBuffer & buffer, const CompressionConfig & compression);
     uint64_t getLastSerial() const { return _lastSerial; }
     uint32_t getId() const { return _id; }
     bool validSerial() const { return getLastSerial() != static_cast<uint64_t>(-1l); }

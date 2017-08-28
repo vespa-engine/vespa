@@ -4,6 +4,7 @@
 #include "filesizecalculator.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/guard.h>
+#include <cassert>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -18,7 +19,6 @@ using vespalib::FileDescriptor;
 using vespalib::getLastErrorString;
 
 namespace search {
-
 namespace fileutil {
 
 LoadedMmap::LoadedMmap(const vespalib::string &fileName)
@@ -177,4 +177,5 @@ FileWriterBase::write(const void *buf, size_t sz) {
     }
     return numWritten;
 }
+
 }

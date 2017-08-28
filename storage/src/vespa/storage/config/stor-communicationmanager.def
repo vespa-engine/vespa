@@ -17,3 +17,11 @@ mbus_content_node_max_pending_count int default=0
 mbus_distributor_node_max_pending_size int default=0
 mbus_content_node_max_pending_size int default=0
 
+# Minimum size of packets to compress (0 means no compression)
+mbus.compress.limit int default=1024
+
+## Compression level for packets
+mbus.compress.level int default=3
+
+## Compression type for packets.
+mbus.compress.type enum {NONE, LZ4, ZSTD} default=LZ4

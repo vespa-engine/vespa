@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include <vespa/document/util/compressionconfig.h>
+#include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/vespalib/objects/cloneable.h>
 #include <vespa/vespalib/util/buffer.h>
 #include <vespa/vespalib/util/memory.h>
@@ -107,6 +107,8 @@ public:
     using CP = vespalib::CloneablePtr<SerializableArray>;
     using UP = std::unique_ptr<SerializableArray>;
     using ByteBufferUP = std::unique_ptr<ByteBuffer>;
+    using CompressionConfig = vespalib::compression::CompressionConfig;
+    using CompressionInfo = vespalib::compression::CompressionInfo;
 
     SerializableArray();
     virtual ~SerializableArray();

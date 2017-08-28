@@ -43,12 +43,12 @@ Chunk::hasRoom(size_t len) const
 }
 
 size_t
-Chunk::getMaxPackSize(const document::CompressionConfig & compression) const {
+Chunk::getMaxPackSize(const CompressionConfig & compression) const {
     return _format->getMaxPackSize(compression);
 }
 
 void
-Chunk::pack(uint64_t lastSerial, vespalib::DataBuffer & compressed, const document::CompressionConfig & compression)
+Chunk::pack(uint64_t lastSerial, vespalib::DataBuffer & compressed, const CompressionConfig & compression)
 {
     _lastSerial = lastSerial;
     _format->pack(_lastSerial, compressed, compression);

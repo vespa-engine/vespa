@@ -5,6 +5,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 
 using namespace search;
+using CompressionConfig = vespalib::compression::CompressionConfig;
 
 document::DocumentTypeRepo repo;
 
@@ -43,7 +44,7 @@ struct NullDataStore : IDataStore {
 };
 
 TEST_FFF("require that uncache docstore lookups are counted",
-         DocumentStore::Config(document::CompressionConfig::NONE, 0, 0),
+         DocumentStore::Config(CompressionConfig::NONE, 0, 0),
          NullDataStore(), DocumentStore(f1, f2))
 {
     EXPECT_EQUAL(0u, f3.getCacheStats().misses);
@@ -52,7 +53,7 @@ TEST_FFF("require that uncache docstore lookups are counted",
 }
 
 TEST_FFF("require that cached docstore lookups are counted",
-         DocumentStore::Config(document::CompressionConfig::NONE, 100000, 100),
+         DocumentStore::Config(CompressionConfig::NONE, 100000, 100),
          NullDataStore(), DocumentStore(f1, f2))
 {
     EXPECT_EQUAL(0u, f3.getCacheStats().misses);

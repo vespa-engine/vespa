@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "fileheader.h"
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/data/databuffer.h>
 #include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>

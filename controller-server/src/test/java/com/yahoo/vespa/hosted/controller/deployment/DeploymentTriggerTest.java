@@ -34,14 +34,14 @@ public class DeploymentTriggerTest {
         tester.buildSystem().takeJobsToRun();
         assertEquals("Job removed", 0, tester.buildSystem().jobs().size());        
         tester.clock().advance(Duration.ofHours(2));
-        tester.deploymentTrigger().triggerFailing(app1.id());
+        tester.deploymentTrigger().triggerFailing(app1.id(), "unit test");
         assertEquals("Retried job", 1, tester.buildSystem().jobs().size());
         assertEquals(JobType.stagingTest.id(), tester.buildSystem().jobs().get(0).jobName());
 
         tester.buildSystem().takeJobsToRun();
         assertEquals("Job removed", 0, tester.buildSystem().jobs().size());
         tester.clock().advance(Duration.ofHours(7));
-        tester.deploymentTrigger().triggerFailing(app1.id());
+        tester.deploymentTrigger().triggerFailing(app1.id(), "unit test");
         assertEquals("Retried from the beginning", 1, tester.buildSystem().jobs().size());
         assertEquals(JobType.component.id(), tester.buildSystem().jobs().get(0).jobName());
     }
