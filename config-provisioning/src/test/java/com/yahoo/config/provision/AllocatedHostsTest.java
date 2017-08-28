@@ -21,24 +21,25 @@ public class AllocatedHostsTest {
     private final HostSpec h3 = new HostSpec("host3", Optional.of(ClusterMembership.from("container/test/0", com.yahoo.component.Version.fromString("6.73.1"))));
 
     @Test
-    public void testProvisionInfoSerialization() throws IOException {
+    public void testAllocatedHostsSerialization() throws IOException {
         Set<HostSpec> hosts = new LinkedHashSet<>();
         hosts.add(h1);
         hosts.add(h2);
         hosts.add(h3);
         AllocatedHosts info = AllocatedHosts.withHosts(hosts);
-        assertProvisionInfo(info);
+        assertAllocatedHosts(info);
     }
 
-    private void assertProvisionInfo(AllocatedHosts info) throws IOException {
-        AllocatedHosts serializedInfo = AllocatedHosts.fromJson(info.toJson(), Optional.empty());
-        assertEquals(info.getHosts().size(), serializedInfo.getHosts().size());
-        assertTrue(serializedInfo.getHosts().contains(h1));
-        assertTrue(serializedInfo.getHosts().contains(h2));
-        assertTrue(serializedInfo.getHosts().contains(h3));
-        assertTrue(!getHost(h1.hostname(), serializedInfo.getHosts()).membership().isPresent());
-        assertEquals("container/test/0", getHost(h3.hostname(), serializedInfo.getHosts()).membership().get().stringValue());
-        assertEquals(h3.membership().get().cluster().vespaVersion(), getHost(h3.hostname(), serializedInfo.getHosts()).membership().get().cluster().vespaVersion());
+    private void assertAllocatedHosts(AllocatedHosts info) throws IOException {
+        AllocatedHosts serializedAllocatedHosts = AllocatedHosts.fromJson(info.toJson(), Optional.empty());
+        assertEquals(info.getHosts().size(), serializedAllocatedHosts.getHosts().size());
+        assertTrue(serializedAllocatedHosts.getHosts().contains(h1));
+        assertTrue(serializedAllocatedHosts.getHosts().contains(h2));
+        assertTrue(serializedAllocatedHosts.getHosts().contains(h3));
+        assertTrue(!getHost(h1.hostname(), serializedAllocatedHosts.getHosts()).membership().isPresent());
+        assertEquals("container/test/0", getHost(h3.hostname(), serializedAllocatedHosts.getHosts()).membership().get().stringValue());
+        assertEquals(h3.membership().get().cluster().vespaVersion(), getHost(h3.hostname(), 
+                                                                             serializedAllocatedHosts.getHosts()).membership().get().cluster().vespaVersion());
     }
 
     private HostSpec getHost(String hostname, Set<HostSpec> hosts) {

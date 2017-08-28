@@ -110,17 +110,17 @@ public class HostedDeployTest {
         final String vespaVersion = "6.51.1";
         DeployTester tester = new DeployTester("src/test/apps/hosted/", createConfigserverConfig());
         ApplicationId applicationId = tester.deployApp("myApp", vespaVersion, Instant.now());
-        assertProvisionInfo(vespaVersion, tester, applicationId);
+        assertAllocatedHosts(vespaVersion, tester, applicationId);
 
         System.out.println("Redeploy");
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive();
         assertTrue(deployment.isPresent());
         deployment.get().prepare();
         deployment.get().activate();
-        //assertProvisionInfo(vespaVersion, tester, applicationId);
+        //assertAllocatedHosts(vespaVersion, tester, applicationId);
     }
 
-    private void assertProvisionInfo(String vespaVersion, DeployTester tester, ApplicationId applicationId) {
+    private void assertAllocatedHosts(String vespaVersion, DeployTester tester, ApplicationId applicationId) {
         tester.getAllocatedHostsOf(applicationId).getHosts().stream()
               .forEach(h -> assertEquals(vespaVersion, h.membership().get().cluster().vespaVersion()));
     }

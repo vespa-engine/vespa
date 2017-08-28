@@ -47,8 +47,8 @@ public class ZooKeeperClientTest extends TestWithCurator {
         Map<Version, FileRegistry> fileRegistries = createFileRegistries();
         app.writeMetaData();
         zkc.setupZooKeeper();
-        zkc.feedZooKeeper(app);
-        zkc.feedZKFileRegistries(fileRegistries);
+        zkc.write(app);
+        zkc.write(fileRegistries);
     }
 
     private Map<Version, FileRegistry> createFileRegistries() {
@@ -178,7 +178,7 @@ public class ZooKeeperClientTest extends TestWithCurator {
         HostSpec host1 = new HostSpec("host1.yahoo.com", Collections.emptyList());
         HostSpec host2 = new HostSpec("host2.yahoo.com", Collections.emptyList());
         ImmutableSet<HostSpec> hosts = ImmutableSet.of(host1, host2);
-        zooKeeperClient.feedProvisionInfo(AllocatedHosts.withHosts(hosts));
+        zooKeeperClient.write(AllocatedHosts.withHosts(hosts));
         Path hostsPath = app.append(ZKApplicationPackage.allocatedHostsNode);
         assertTrue(zk.exists(hostsPath.getAbsolute()));
         

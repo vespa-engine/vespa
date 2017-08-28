@@ -63,15 +63,16 @@ public class ZKApplicationPackage implements ApplicationPackage {
         if ( ! liveApp.exists(allocatedHostsPath)) return Optional.empty();
         Optional<AllocatedHosts> allocatedHosts = readAllocatedHosts(allocatedHostsPath, nodeFlavors);
         if ( ! allocatedHosts.isPresent()) { // Read from legacy location. TODO: Remove when 6.143 is in production everywhere
-            List<String> provisionInfoByVersionNodes = liveApp.getChildren(allocatedHostsPath);
-            allocatedHosts = merge(readAllocatedHostsByVersion(provisionInfoByVersionNodes, nodeFlavors));
+            List<String> allocatedHostsByVersionNodes = liveApp.getChildren(allocatedHostsPath);
+            allocatedHosts = merge(readAllocatedHostsByVersion(allocatedHostsByVersionNodes, nodeFlavors));
         }
         return allocatedHosts;
     }
     
-    private Map<Version, AllocatedHosts> readAllocatedHostsByVersion(List<String> provisionInfoByVersionNodes, Optional<NodeFlavors> nodeFlavors) {
+    private Map<Version, AllocatedHosts> readAllocatedHostsByVersion(List<String> allocatedHostsByVersionNodes, 
+                                                                     Optional<NodeFlavors> nodeFlavors) {
         Map<Version, AllocatedHosts> allocatedHostsByVersion = new HashMap<>();
-        provisionInfoByVersionNodes.stream()
+        allocatedHostsByVersionNodes.stream()
                 .forEach(versionStr -> {
                     Version version = Version.fromString(versionStr);
                     Optional<AllocatedHosts> allocatedHosts = readAllocatedHosts(Joiner.on("/").join(allocatedHostsNode, versionStr),
@@ -81,12 +82,12 @@ public class ZKApplicationPackage implements ApplicationPackage {
         return allocatedHostsByVersion;
     }
 
-    private Optional<AllocatedHosts> merge(Map<Version, AllocatedHosts> provisionInfoMap) {
-        // Merge the provision infos in any order. This is wrong but preserves current behavior (modulo order differences)
-        if (provisionInfoMap.isEmpty()) return Optional.empty();
+    private Optional<AllocatedHosts> merge(Map<Version, AllocatedHosts> allocatedHostsByVersion) {
+        // Merge the allocated hosts in any order. This is wrong but preserves current behavior (modulo order differences)
+        if (allocatedHostsByVersion.isEmpty()) return Optional.empty();
         
         Map<String, HostSpec> merged = new HashMap<>();
-        for (Map.Entry<Version, AllocatedHosts> entry : provisionInfoMap.entrySet()) {
+        for (Map.Entry<Version, AllocatedHosts> entry : allocatedHostsByVersion.entrySet()) {
             for (HostSpec host : entry.getValue().getHosts())
                 merged.put(host.hostname(), host);
         }

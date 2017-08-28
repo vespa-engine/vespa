@@ -34,9 +34,9 @@ public class ZooKeeperDeployer {
     public void deploy(ApplicationPackage applicationPackage, Map<Version, FileRegistry> fileRegistryMap, 
                        AllocatedHosts allocatedHosts) throws IOException {
         zooKeeperClient.setupZooKeeper();
-        zooKeeperClient.feedZooKeeper(applicationPackage);
-        zooKeeperClient.feedZKFileRegistries(fileRegistryMap);
-        zooKeeperClient.feedProvisionInfo(allocatedHosts);
+        zooKeeperClient.write(applicationPackage);
+        zooKeeperClient.write(fileRegistryMap);
+        zooKeeperClient.write(allocatedHosts);
     }
 
     public void cleanup() {
