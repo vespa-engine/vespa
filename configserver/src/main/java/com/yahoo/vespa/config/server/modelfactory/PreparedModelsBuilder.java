@@ -115,7 +115,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     }
 
     // This method is an excellent demonstration of what happens when one is too liberal with Optional   
-    // -bratseth, who had to write this  :-/
+    // -bratseth, who had to write the below  :-\
     private Optional<HostProvisioner> createHostProvisioner(Optional<AllocatedHosts> allocatedHosts) {
         Optional<HostProvisioner> nodeRepositoryProvisioner = createNodeRepositoryProvisioner(properties);
         if ( ! allocatedHosts.isPresent()) return nodeRepositoryProvisioner;

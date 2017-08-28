@@ -120,7 +120,7 @@ public class LocalSessionTest {
 
     @Test(expected = IllegalStateException.class)
     public void require_that_no_provision_info_throws_exception() throws Exception {
-        createSession(TenantName.defaultName(), 3).getProvisionInfo();
+        createSession(TenantName.defaultName(), 3).getAllocatedHosts();
     }
 
     @Test
@@ -132,7 +132,7 @@ public class LocalSessionTest {
                                .tenant("tenant")
                                .applicationName("foo").instanceName("quux").build();
         doPrepare(session, new PrepareParams.Builder().applicationId(origId).build(), Instant.now());
-        AllocatedHosts info = session.getProvisionInfo();
+        AllocatedHosts info = session.getAllocatedHosts();
         assertNotNull(info);
         assertThat(info.getHosts().size(), is(1));
         assertTrue(info.getHosts().contains(new HostSpec("myhost", Collections.emptyList())));

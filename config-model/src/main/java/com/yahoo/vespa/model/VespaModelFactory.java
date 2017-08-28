@@ -42,9 +42,17 @@ public class VespaModelFactory implements ModelFactory {
     private final ConfigModelRegistry configModelRegistry;
     private final Zone zone;
     private final Clock clock;
+    private final Version version;
 
+    /** Creates a factory for vespa models for this version of the source */
     @Inject
     public VespaModelFactory(ComponentRegistry<ConfigModelPlugin> pluginRegistry, Zone zone) {
+        this(Version.fromIntValues(VespaVersion.major, VespaVersion.minor, VespaVersion.micro), pluginRegistry, zone);
+    }
+
+    /** Creates a factory for vespa models of a particular version */
+    public VespaModelFactory(Version version, ComponentRegistry<ConfigModelPlugin> pluginRegistry, Zone zone) {
+        this.version = version;
         List<ConfigModelBuilder> modelBuilders = new ArrayList<>();
         for (ConfigModelPlugin plugin : pluginRegistry.allComponents()) {
             if (plugin instanceof ConfigModelBuilder) {
@@ -55,11 +63,15 @@ public class VespaModelFactory implements ModelFactory {
         this.zone = zone;
         this.clock = Clock.systemUTC();
     }
-
+    
     public VespaModelFactory(ConfigModelRegistry configModelRegistry) {
         this(configModelRegistry, Clock.systemUTC());
     }
     public VespaModelFactory(ConfigModelRegistry configModelRegistry, Clock clock) {
+        this(Version.fromIntValues(VespaVersion.major, VespaVersion.minor, VespaVersion.micro), configModelRegistry, clock);
+    }
+    public VespaModelFactory(Version version, ConfigModelRegistry configModelRegistry, Clock clock) {
+        this.version = version;
         if (configModelRegistry == null) {
             this.configModelRegistry = new NullConfigModelRegistry();
             log.info("Will not load config models from plugins, as no registry is available");
@@ -72,9 +84,7 @@ public class VespaModelFactory implements ModelFactory {
 
     /** Returns the version this model is build for */
     @Override
-    public Version getVersion() {
-        return Version.fromIntValues(VespaVersion.major, VespaVersion.minor, VespaVersion.micro);
-    }
+    public Version getVersion() { return version; }
 
     @Override
     public Model createModel(ModelContext modelContext) {

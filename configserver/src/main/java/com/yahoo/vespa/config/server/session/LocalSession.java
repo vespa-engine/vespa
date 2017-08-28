@@ -33,7 +33,7 @@ import java.util.Optional;
  * @author Ulf Lilleengen
  */
 // This is really the store of an application, whether it is active or in an edit session
-// TODO: Separate the "application store" and "session" aspects - the latter belongs in the HTTP layer
+// TODO: Separate the "application store" and "session" aspects - the latter belongs in the HTTP layer   -bratseth
 public class LocalSession extends Session implements Comparable<LocalSession> {
 
     private final ApplicationPackage applicationPackage;
@@ -171,8 +171,8 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
 
     public Version getVespaVersion() { return zooKeeperClient.readVespaVersion(); }
 
-    public AllocatedHosts getProvisionInfo() {
-        return zooKeeperClient.getProvisionInfo();
+    public AllocatedHosts getAllocatedHosts() {
+        return zooKeeperClient.getAllocatedHosts();
     }
 
     @Override

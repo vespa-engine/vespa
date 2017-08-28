@@ -48,7 +48,7 @@ public class MockSessionZKClient extends SessionZooKeeperClient {
     }
 
     @Override
-    AllocatedHosts getProvisionInfo() {
+    AllocatedHosts getAllocatedHosts() {
         return info.orElseThrow(() -> new IllegalStateException("Could not find allocated hosts"));
     }
 

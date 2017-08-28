@@ -69,7 +69,7 @@ public class DeployTester {
     private ApplicationId id;
 
     public DeployTester(String appPath) {
-        this(appPath, Collections.singletonList(createDefaultModelFactory(Clock.systemUTC())));
+        this(appPath, Collections.singletonList(createModelFactory(Clock.systemUTC())));
     }
 
     public DeployTester(String appPath, List<ModelFactory> modelFactories) {
@@ -80,7 +80,7 @@ public class DeployTester {
 
     public DeployTester(String appPath, ConfigserverConfig configserverConfig) {
         this(appPath,
-             Collections.singletonList(createDefaultModelFactory(Clock.systemUTC())),
+             Collections.singletonList(createModelFactory(Clock.systemUTC())),
              configserverConfig);
     }
 
@@ -99,9 +99,16 @@ public class DeployTester {
 
     public Tenant tenant() { return tenants.defaultTenant(); }
     
-    /** Create the model factory which will be used in production */
-    public static ModelFactory createDefaultModelFactory(Clock clock) { return new VespaModelFactory(new NullConfigModelRegistry(), clock); }
-    
+    /** Create a model factory for the version of this source*/
+    public static ModelFactory createModelFactory(Clock clock) { 
+        return new VespaModelFactory(new NullConfigModelRegistry(), clock);
+    }
+
+    /** Create a model factory for a particular version */
+    public static ModelFactory createModelFactory(Version version, Clock clock) { 
+        return new VespaModelFactory(version, new NullConfigModelRegistry(), clock); 
+    }
+
     /** Create a model factory which always fails validation */
     public static ModelFactory createFailingModelFactory(Version version) { return new FailingModelFactory(version); }
     
@@ -109,20 +116,19 @@ public class DeployTester {
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
     public ApplicationId deployApp(String appName, Instant now) {
-        return deployApp(appName, Optional.empty(), now);
+        return deployApp(appName, null, now);
     }
 
     /**
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
-    public ApplicationId deployApp(String appName, Optional<String> vespaVersion, Instant now)  {
+    public ApplicationId deployApp(String appName, String vespaVersion, Instant now)  {
         Tenant tenant = tenant();
         LocalSession session = tenant.getSessionFactory().createSession(testApp, appName, new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(60)));
         ApplicationId id = ApplicationId.from(tenant.getName(), ApplicationName.from(appName), InstanceName.defaultName());
-        PrepareParams.Builder paramsBuilder = new PrepareParams.Builder()
-                .applicationId(id);
-        if (vespaVersion.isPresent())
-            paramsBuilder.vespaVersion(vespaVersion.get());
+        PrepareParams.Builder paramsBuilder = new PrepareParams.Builder().applicationId(id);
+        if (vespaVersion != null)
+            paramsBuilder.vespaVersion(vespaVersion);
         session.prepare(new SilentDeployLogger(),
                         paramsBuilder.build(),
                         Optional.empty(),
@@ -134,11 +140,11 @@ public class DeployTester {
         return id;
     }
 
-    public AllocatedHosts getProvisionInfoFromDeployedApp(ApplicationId applicationId) {
+    public AllocatedHosts getAllocatedHostsOf(ApplicationId applicationId) {
         Tenant tenant = tenant();
         LocalSession session = tenant.getLocalSessionRepo().getSession(tenant.getApplicationRepo()
                                                                              .getSessionIdForApplication(applicationId));
-        return session.getProvisionInfo();
+        return session.getAllocatedHosts();
     }
 
     public ApplicationId applicationId() { return id; }

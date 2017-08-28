@@ -30,8 +30,7 @@ import java.util.concurrent.TimeUnit;
  * Zookeeper client for a specific session. Can be used to read and write session status
  * and create and get prepare and active barrier.
  * 
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class SessionZooKeeperClient {
 
@@ -188,7 +187,7 @@ public class SessionZooKeeperClient {
         return rootPath.append(CREATE_TIME_PATH).getAbsolute();
     }
 
-    AllocatedHosts getProvisionInfo() {
+    AllocatedHosts getAllocatedHosts() {
         return loadApplicationPackage().getAllocatedHosts()
                                        .orElseThrow(() -> new IllegalStateException("Allocated hosts does not exists"));
     }
