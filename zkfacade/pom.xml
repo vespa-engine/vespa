@@ -65,11 +65,6 @@
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
-    <!-- Needed to get org.jboss.netty.bootstrap, which zookeeper requires -->
-    <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty</artifactId>
-    </dependency>
   </dependencies>
   <build>
     <plugins>
