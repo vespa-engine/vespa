@@ -13,7 +13,6 @@ vespa_define_module(
     src/tests/bits
     src/tests/clock
     src/tests/crc
-    src/tests/databuffer
     src/tests/directio
     src/tests/encoding/base64
     src/tests/fileheader

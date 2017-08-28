@@ -7,6 +7,7 @@
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/testlib/simplereply.h>
+#include <vespa/messagebus/network/rpcnetworkparams.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".testframe");

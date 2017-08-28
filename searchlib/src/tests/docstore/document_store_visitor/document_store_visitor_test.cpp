@@ -24,7 +24,7 @@ using document::Document;
 using document::DocumentId;
 using document::DocumentType;
 using document::DocumentTypeRepo;
-using document::CompressionConfig;
+using vespalib::compression::CompressionConfig;
 using vespalib::asciistream;
 using index::DummyFileHeaderContext;
 

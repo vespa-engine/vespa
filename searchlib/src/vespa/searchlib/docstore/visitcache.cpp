@@ -5,7 +5,7 @@
 #include <vespa/vespalib/stllike/cache.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/data/databuffer.h>
-#include <vespa/document/util/compressor.h>
+#include <vespa/vespalib/util/compressor.h>
 #include <algorithm>
 
 namespace search::docstore {
@@ -74,7 +74,7 @@ BlobSet::get(uint32_t lid) const
 }
 
 CompressedBlobSet::CompressedBlobSet() :
-    _compression(document::CompressionConfig::Type::LZ4),
+    _compression(CompressionConfig::Type::LZ4),
     _positions(),
     _buffer()
 {
@@ -83,7 +83,7 @@ CompressedBlobSet::CompressedBlobSet() :
 CompressedBlobSet::~CompressedBlobSet() { }
 
 
-CompressedBlobSet::CompressedBlobSet(const document::CompressionConfig &compression, const BlobSet & uncompressed) :
+CompressedBlobSet::CompressedBlobSet(const CompressionConfig &compression, const BlobSet & uncompressed) :
     _compression(compression.type),
     _positions(uncompressed.getPositions()),
     _buffer()
@@ -91,7 +91,7 @@ CompressedBlobSet::CompressedBlobSet(const document::CompressionConfig &compress
     if ( ! _positions.empty() ) {
         DataBuffer compressed;
         ConstBufferRef org = uncompressed.getBuffer();
-        _compression = document::compression::compress(compression, org, compressed, false);
+        _compression = vespalib::compression::compress(compression, org, compressed, false);
         _buffer.resize(compressed.getDataLen());
         memcpy(_buffer, compressed.getData(), compressed.getDataLen());
     }
@@ -100,7 +100,7 @@ CompressedBlobSet::CompressedBlobSet(const document::CompressionConfig &compress
 BlobSet
 CompressedBlobSet::getBlobSet() const
 {
-    using document::compression::decompress;
+    using vespalib::compression::decompress;
     // These are frequent lage allocations that are to expensive to mmap.
     DataBuffer uncompressed(0, 1, Alloc::alloc(0, 16 * MemoryAllocator::HUGEPAGE_SIZE));
     if ( ! _positions.empty() ) {
@@ -145,7 +145,7 @@ VisitCache::BackingStore::read(const KeySet &key, CompressedBlobSet &blobs) cons
     return ! blobs.empty();
 }
 
-VisitCache::VisitCache(IDataStore &store, size_t cacheSize, const document::CompressionConfig &compression) :
+VisitCache::VisitCache(IDataStore &store, size_t cacheSize, const CompressionConfig &compression) :
     _store(store, compression),
     _cache(std::make_unique<Cache>(_store, cacheSize))
 {

@@ -30,6 +30,7 @@ using vespalib::hash_map;
 using vespalib::make_string;
 using vespalib::string;
 using vespalib::stringref;
+using vespalib::compression::CompressionConfig;
 
 namespace document {
 

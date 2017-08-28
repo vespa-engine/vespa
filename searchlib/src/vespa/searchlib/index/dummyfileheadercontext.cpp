@@ -4,6 +4,7 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/searchlib/util/fileheadertk.h>
 #include <vespa/vespalib/util/host_name.h>
+#include <cassert>
 #include <unistd.h>
 
 namespace search::index {

@@ -5,6 +5,7 @@
 #include "summaryexceptions.h"
 #include "randreaders.h"
 #include <vespa/vespalib/data/fileheader.h>
+#include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>

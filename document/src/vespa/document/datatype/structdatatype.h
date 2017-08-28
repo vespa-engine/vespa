@@ -11,15 +11,16 @@
 
 #include <vespa/document/datatype/structureddatatype.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/document/util/compressionconfig.h>
+#include <vespa/vespalib/util/compressionconfig.h>
 #include <memory>
 
 namespace document {
 
 class StructDataType final : public StructuredDataType {
 public:
-    typedef std::unique_ptr<StructDataType> UP;
-    typedef std::shared_ptr<StructDataType> SP;
+    using UP = std::unique_ptr<StructDataType>;
+    using SP = std::shared_ptr<StructDataType>;
+    using CompressionConfig = vespalib::compression::CompressionConfig;
 
     StructDataType();
     StructDataType(const vespalib::stringref &name);

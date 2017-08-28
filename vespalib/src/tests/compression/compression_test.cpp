@@ -2,15 +2,14 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/document/util/compressor.h>
+#include <vespa/vespalib/util/compressor.h>
 #include <vespa/vespalib/data/databuffer.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("compression_test");
 
-using namespace document;
-using namespace document::compression;
 using namespace vespalib;
+using namespace vespalib::compression;
 
 static vespalib::string _G_compressableText("AAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCDDDDDDDDDDDDDDDDDDDDDDDDDEEEEEEEEEEEEEEE"
                                             "AAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCDDDDDDDDDDDDDDDDDDDDDDDDDEEEEEEEEEEEEEEE"

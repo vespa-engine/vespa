@@ -1,17 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "chunkformats.h"
-#include <vespa/document/util/compressor.h>
+#include <vespa/vespalib/util/compressor.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 namespace search {
 
 using vespalib::make_string;
 using vespalib::Exception;
-using document::compression::compress;
-using document::compression::decompress;
-using document::compression::computeMaxCompressedsize;
-using document::CompressionConfig;
+using vespalib::compression::compress;
+using vespalib::compression::decompress;
+using vespalib::compression::computeMaxCompressedsize;
+using vespalib::compression::CompressionConfig;
 
 ChunkException::ChunkException(const vespalib::stringref & msg, const vespalib::stringref & location) :
     Exception(make_string("Illegal chunk: %s", msg.c_str()), location)

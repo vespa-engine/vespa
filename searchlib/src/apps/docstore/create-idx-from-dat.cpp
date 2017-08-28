@@ -39,7 +39,7 @@ bool tryDecode(size_t chunks, size_t offset, const char * p, size_t sz, size_t n
 }
 
 bool validUncompressed(const char * n, size_t offset) {
-    return (n[1] == document::CompressionConfig::NONE) &&
+    return (n[1] == vespalib::compression::CompressionConfig::NONE) &&
            (n[2] == 0) &&
            (n[3] == 0) &&
            (n[4] == 0) &&

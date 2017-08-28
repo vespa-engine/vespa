@@ -5,7 +5,7 @@
 #include "idatastore.h"
 #include "lid_info.h"
 #include "writeablefilechunk.h"
-#include <vespa/document/util/compressionconfig.h>
+#include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/searchlib/common/rcuvector.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
@@ -33,7 +33,7 @@ private:
 public:
     using NameIdSet = std::set<NameId>;
     using LockGuard = vespalib::LockGuard;
-    using CompressionConfig = document::CompressionConfig;
+    using CompressionConfig = vespalib::compression::CompressionConfig;
     class Config {
     public:
         Config()

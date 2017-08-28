@@ -3,9 +3,9 @@
 
 #include "compressor.h"
 
-namespace document {
+namespace vespalib::compression {
 
-class ZStdCompressor : public ICompressor
+class LZ4Compressor : public ICompressor
 {
 public:
     bool process(const CompressionConfig& config, const void * input, size_t inputLen, void * output, size_t & outputLen) override;
