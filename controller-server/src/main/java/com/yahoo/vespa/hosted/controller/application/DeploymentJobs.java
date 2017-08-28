@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -118,11 +117,6 @@ public class DeploymentJobs {
         return status.values().stream().anyMatch(JobStatus::inProgress);
     }
 
-    /** Returns whether any job is failing for the given change */
-    public boolean failingOn(Change change) {
-        return status.values().stream().anyMatch(jobStatus -> !jobStatus.isSuccess() && jobStatus.lastCompletedFor(change));
-    }
-
     /** Returns whether change can be deployed to the given environment */
     public boolean isDeployableTo(Environment environment, Optional<Change> change) {
         if (environment == null || !change.isPresent()) {
@@ -145,15 +139,6 @@ public class DeploymentJobs {
                 failingSince = jobStatus.firstFailing().get().at();
         }
         return failingSince;
-    }
-
-    /** Returns the time at which the oldest running job started */
-    public Optional<Instant> runningSince() {
-        return jobStatus().values().stream()
-                .filter(JobStatus::inProgress)
-                .sorted(Comparator.comparing(jobStatus -> jobStatus.lastTriggered().get().at()))
-                .map(jobStatus -> jobStatus.lastTriggered().get().at())
-                .findFirst();
     }
 
     /**
