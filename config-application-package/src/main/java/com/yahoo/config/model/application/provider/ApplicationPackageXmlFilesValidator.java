@@ -11,7 +11,6 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Validation of xml files in application package against RELAX NG schemas.
@@ -22,15 +21,14 @@ public class ApplicationPackageXmlFilesValidator {
 
     private final AppSubDirs appDirs;
     
-    /** The Vespa version this package should be validated against */
-    private final Version vespaVersion;
+    private final SchemaValidators validators;
 
     private static final FilenameFilter xmlFilter = (dir, name) -> name.endsWith(".xml");
 
 
     public ApplicationPackageXmlFilesValidator(AppSubDirs appDirs, Version vespaVersion) {
         this.appDirs = appDirs;
-        this.vespaVersion = vespaVersion;
+        this.validators = new SchemaValidators(vespaVersion, new BaseDeployLogger());
     }
 
     public static ApplicationPackageXmlFilesValidator createDefaultXMLValidator(File appDir, Version vespaVersion) {
@@ -43,10 +41,10 @@ public class ApplicationPackageXmlFilesValidator {
 
     @SuppressWarnings("deprecation")
     public void checkApplication() throws IOException {
-        validate(SchemaValidator.servicesXmlSchemaName, servicesFileName());
-        validateOptional(SchemaValidator.hostsXmlSchemaName, FilesApplicationPackage.HOSTS);
-        validateOptional(SchemaValidator.deploymentXmlSchemaName, FilesApplicationPackage.DEPLOYMENT_FILE.getName());
-        validateOptional(SchemaValidator.validationOverridesXmlSchemaName, FilesApplicationPackage.VALIDATION_OVERRIDES.getName());
+        validate(validators.servicesXmlValidator(), servicesFileName());
+        validateOptional(validators.hostsXmlValidator(), FilesApplicationPackage.HOSTS);
+        validateOptional(validators.deploymentXmlValidator(), FilesApplicationPackage.DEPLOYMENT_FILE.getName());
+        validateOptional(validators.validationOverridesXmlValidator(), FilesApplicationPackage.VALIDATION_OVERRIDES.getName());
 
         if (appDirs.searchdefinitions().exists()) {
             if (FilesApplicationPackage.getSearchDefinitionFiles(appDirs.root()).isEmpty()) {
@@ -55,26 +53,26 @@ public class ApplicationPackageXmlFilesValidator {
             }
         }
 
-        validate(appDirs.routingtables, "routing-standalone.rnc");
+        validateRouting(appDirs.routingtables);
     }
 
     // For testing
-    public static void checkIncludedDirs(ApplicationPackage app, Version vespaVersion) throws IOException {
+    public void checkIncludedDirs(ApplicationPackage app) throws IOException {
         for (String includedDir : app.getUserIncludeDirs()) {
             List<NamedReader> includedFiles = app.getFiles(Path.fromString(includedDir), ".xml", true);
             for (NamedReader file : includedFiles) {
-                createSchemaValidator("container-include.rnc", vespaVersion).validate(file);
+                validators.containerIncludeXmlValidator().validate(file);
             }
         }
     }
 
-    private void validateOptional(String schema, String file) throws IOException {
+    private void validateOptional(SchemaValidator validator, String file) throws IOException {
         if ( ! appDirs.file(file).exists()) return;
-        validate(schema, file);
+        validate(validator, file);
     }
 
-    private void validate(String schema, String file) throws IOException {
-        createSchemaValidator(schema, vespaVersion).validate(appDirs.file(file));
+    private void validate(SchemaValidator validator, String filename) throws IOException {
+        validator.validate(appDirs.file(filename));
     }
 
     @SuppressWarnings("deprecation")
@@ -87,26 +85,22 @@ public class ApplicationPackageXmlFilesValidator {
         return servicesFile;
     }
 
-    private void validate(Tuple2<File, String> directory, String schemaFile) throws IOException {
+    private void validateRouting(Tuple2<File, String> directory) throws IOException {
         if ( ! directory.first.isDirectory()) return;
-        validate(directory, createSchemaValidator(schemaFile, vespaVersion));
+        validateRouting(validators.routingStandaloneXmlValidator(), directory);
     }
 
-    private void validate(Tuple2<File, String> directory, SchemaValidator validator) throws IOException {
+    private void validateRouting(SchemaValidator validator, Tuple2<File, String> directory) throws IOException {
         File dir = directory.first;
         if ( ! dir.isDirectory()) return;
 
         String directoryName = directory.second;
         for (File f : dir.listFiles(xmlFilter)) {
             if (f.isDirectory())
-                validate(new Tuple2<>(f, directoryName + File.separator + f.getName()),validator);
+                validateRouting(validator, new Tuple2<>(f, directoryName + File.separator + f.getName()));
             else
                 validator.validate(f, directoryName + File.separator + f.getName());
         }
-    }
-
-    private static SchemaValidator createSchemaValidator(String schemaFile, Version vespaVersion) {
-        return new SchemaValidator(schemaFile, new BaseDeployLogger(), vespaVersion);
     }
 
 }

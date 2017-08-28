@@ -98,8 +98,7 @@ public class VespaModelFactory implements ModelFactory {
                                                                                   modelContext.modelVespaVersion());
             try {
                 validator.checkApplication();
-                ApplicationPackageXmlFilesValidator.checkIncludedDirs(modelContext.applicationPackage(), 
-                                                                      modelContext.modelVespaVersion());
+                validator.checkIncludedDirs(modelContext.applicationPackage());
             } catch (IllegalArgumentException e) {
                 rethrowUnlessIgnoreErrors(e, ignoreValidationErrors);
             } catch (Exception e) {
