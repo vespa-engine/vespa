@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 import com.yahoo.vespa.hosted.provision.persistence.DnsNameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
+import com.yahoo.vespa.hosted.provision.restapi.v2.NotFoundException;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -468,24 +469,26 @@ public class NodeRepository extends AbstractComponent {
 
     /**
      * Removes a node. A node must be in a legal state before it can be removed.
-     *
-     * @return true if the node was removed, false if it was not found in one of the legal states
      */
-    public boolean remove(String hostname) {
+    public void remove(String hostname) {
+        Node nodeToRemove = getNode(hostname).orElseThrow(() ->  new NotFoundException("No node with hostname \"" + hostname + '"'));
+        List<Node.State> legalStates = dynamicAllocationEnabled() ?
+                Arrays.asList(Node.State.provisioned, Node.State.failed, Node.State.parked, Node.State.dirty) :
+                Arrays.asList(Node.State.provisioned, Node.State.failed, Node.State.parked);
 
-        Node.State[] legalStates = {Node.State.provisioned, Node.State.failed, Node.State.parked};
-        Node.State[] legalDynamicStates = {Node.State.provisioned, Node.State.failed, Node.State.parked, Node.State.dirty};
-
-        Optional<Node> nodeToRemove = getNode(hostname, dynamicAllocationEnabled() ? legalDynamicStates : legalStates);
-        if ( ! nodeToRemove.isPresent()) return false;
-
-        // Only docker nodes are allowed to be deleted in state dirty.
-        if ( nodeToRemove.get().state().equals(Node.State.dirty)) {
-            if (!(nodeToRemove.get().flavor().getType().equals(Flavor.Type.DOCKER_CONTAINER))) return false;
+        if (! legalStates.contains(nodeToRemove.state())) {
+            throw new IllegalArgumentException("Can only remove node from following states: " +
+                    legalStates.stream().map(Node.State::name).collect(Collectors.joining(", ")));
         }
 
-        try (Mutex lock = lock(nodeToRemove.get())) {
-            return db.removeNode(nodeToRemove.get().state(), hostname);
+        if (nodeToRemove.state().equals(Node.State.dirty)) {
+            if (!(nodeToRemove.flavor().getType().equals(Flavor.Type.DOCKER_CONTAINER))) {
+                throw new IllegalArgumentException("Only docker nodes can be deleted from state dirty");
+            }
+        }
+
+        try (Mutex lock = lock(nodeToRemove)) {
+            db.removeNode(nodeToRemove.state(), hostname);
         }
     }
 
