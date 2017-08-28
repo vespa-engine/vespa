@@ -135,10 +135,8 @@ public class NodesApiHandler extends LoggingRequestHandler {
              */
             String hostname = lastElement(path);
             if (nodeRepository.dynamicAllocationEnabled()) {
-                if (nodeRepository.remove(hostname))
-                    return new MessageResponse("Removed " + hostname);
-                else
-                    throw new NotFoundException("No node in the provisioned, parked, dirty or failed state with hostname " + hostname);
+                nodeRepository.remove(hostname);
+                return new MessageResponse("Removed " + hostname);
             } else {
                 nodeRepository.setReady(hostname);
                 return new MessageResponse("Moved " + hostname + " to ready");
@@ -182,10 +180,8 @@ public class NodesApiHandler extends LoggingRequestHandler {
         String path = request.getUri().getPath();
         if (path.startsWith("/nodes/v2/node/")) {
             String hostname = lastElement(path);
-            if (nodeRepository.remove(hostname))
-                return new MessageResponse("Removed " + hostname);
-            else
-                throw new NotFoundException("No node in the provisioned, parked or failed state with hostname " + hostname);
+            nodeRepository.remove(hostname);
+            return new MessageResponse("Removed " + hostname);
         }
         else if (path.startsWith("/nodes/v2/maintenance/inactive/")) {
             return setActive(lastElement(path), true);
