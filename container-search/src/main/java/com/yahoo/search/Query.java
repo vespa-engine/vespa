@@ -936,6 +936,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         clone.setOffset(getOffset());
         clone.setNoCache(getNoCache());
         clone.setGroupingSessionCache(getGroupingSessionCache());
+        clone.requestId = null; // Each clone should have their own requestId.
     }
 
     /** Returns the presentation to be used for this query, never null */

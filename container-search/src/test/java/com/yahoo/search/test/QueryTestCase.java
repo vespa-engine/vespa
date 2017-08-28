@@ -653,11 +653,14 @@ public class QueryTestCase {
         Query q2 = new Query();
         assertNotEquals(q.getSessionId(false), q2.getSessionId(true));
         assertNotEquals(q.getSessionId(false).toString(), q2.getSessionId(true).toString());
-
-        // This is not required, but just to document current implementation.
+    }
+    @Test
+    public void testThatCloneGetANewSessionId() {
+        Query q = new Query();
+        q.getSessionId(true);
         Query clonedQ = q.clone();
-        assertNotNull(clonedQ.getSessionId(false));
-        assertEquals(q.getSessionId(false), q.getSessionId(false));
+        assertNull(clonedQ.getSessionId(false));
+        assertNotEquals(q.getSessionId(false), clonedQ.getSessionId(true));
     }
 
     @Test
