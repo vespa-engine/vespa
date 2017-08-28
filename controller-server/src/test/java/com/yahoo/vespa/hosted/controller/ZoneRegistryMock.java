@@ -27,9 +27,11 @@ public class ZoneRegistryMock implements ZoneRegistry {
         deploymentTimeToLive.put(zone, duration);
     }
 
+    private SystemName system = SystemName.main;
+
     @Override
     public SystemName system() {
-        return SystemName.main;
+        return system;
     }
 
     @Override
@@ -70,5 +72,9 @@ public class ZoneRegistryMock implements ZoneRegistry {
     @Override
     public URI getDashboardUri() {
         return URI.create("http://dashboard.test");
+    }
+
+    public void setSystem(SystemName system) {
+        this.system = system;
     }
 }

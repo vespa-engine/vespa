@@ -160,7 +160,7 @@ public class DeploymentTester {
     }
 
     public void deploy(JobType job, Application application, ApplicationPackage applicationPackage, boolean deployCurrentVersion) {
-        job.zone(SystemName.main).ifPresent(zone -> tester.deploy(application, zone, applicationPackage, deployCurrentVersion));
+        job.zone(controller().system()).ifPresent(zone -> tester.deploy(application, zone, applicationPackage, deployCurrentVersion));
     }
 
     public void deployAndNotify(JobType job, Application application, ApplicationPackage applicationPackage, boolean success) {

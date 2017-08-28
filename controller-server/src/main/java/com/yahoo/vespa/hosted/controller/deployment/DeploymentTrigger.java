@@ -89,13 +89,13 @@ public class DeploymentTrigger {
     /**
      * Called periodically to cause triggering of jobs in the background
      */
-    public void triggerFailing(ApplicationId applicationId) {
+    public void triggerFailing(ApplicationId applicationId, String cause) {
         try (Lock lock = applications().lock(applicationId)) {
             Application application = applications().require(applicationId);
             if (shouldRetryFromBeginning(application)) {
                 // failed for a long time: Discard existing change and restart from the component job
                 application = application.withDeploying(Optional.empty());
-                application = trigger(JobType.component, application, "Retrying failing deployment from beginning", lock);
+                application = trigger(JobType.component, application, "Retrying failing deployment from beginning: " + cause, lock);
                 applications().store(application, lock);
             } else {
                 // retry the failed job (with backoff)
@@ -103,7 +103,7 @@ public class DeploymentTrigger {
                     JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
                     if (isFailing(jobStatus)) {
                         if (shouldRetryNow(jobStatus)) {
-                            application = trigger(jobType, application, "Retrying failing job", lock);
+                            application = trigger(jobType, application, "Retrying failing job: " + cause, lock);
                             applications().store(application, lock);
                         }
                         break;
