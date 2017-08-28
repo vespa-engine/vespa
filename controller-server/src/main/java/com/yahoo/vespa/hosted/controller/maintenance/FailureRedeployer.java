@@ -54,7 +54,14 @@ public class FailureRedeployer extends Maintainer {
                 continue;
             }
             Optional<Map.Entry<JobType, JobStatus>> job = oldestRunningJob(application);
-            if (job.isPresent() && job.get().getValue().lastTriggered().get().at().isBefore(maxAge)) {
+            if (!job.isPresent()) {
+                continue;
+            }
+            // Ignore job if it doesn't belong to a zone in this system
+            if (!job.get().getKey().zone(controller().system()).isPresent()) {
+                continue;
+            }
+            if (job.get().getValue().lastTriggered().get().at().isBefore(maxAge)) {
                 triggerFailing(application, "Job " + job.get().getKey().id() +
                         " has been running for more than " + jobTimeout);
             }
