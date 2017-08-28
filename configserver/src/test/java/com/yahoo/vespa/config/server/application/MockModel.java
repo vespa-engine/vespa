@@ -7,7 +7,7 @@ import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.ProvisionInfo;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
@@ -93,7 +93,7 @@ class MockModel implements Model {
     }
 
     @Override
-    public Optional<ProvisionInfo> getProvisionInfo() {
+    public Optional<AllocatedHosts> getProvisionInfo() {
         throw new UnsupportedOperationException();
     }
 }

@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.server.deploy;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.application.provider.*;
-import com.yahoo.config.provision.ProvisionInfo;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Version;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
@@ -53,7 +53,7 @@ public class ZooKeeperDeployerTest {
         ZooKeeperClient client = new ZooKeeperClient(configCurator, logger, true, appPath);
         ZooKeeperDeployer deployer = new ZooKeeperDeployer(client);
 
-        deployer.deploy(applicationPackage, Collections.singletonMap(Version.fromIntValues(1, 0, 0), new MockFileRegistry()), ProvisionInfo.withHosts(Collections.emptySet()));
+        deployer.deploy(applicationPackage, Collections.singletonMap(Version.fromIntValues(1, 0, 0), new MockFileRegistry()), AllocatedHosts.withHosts(Collections.emptySet()));
         assertTrue(configCurator.exists(appPath.getAbsolute()));
     }
 

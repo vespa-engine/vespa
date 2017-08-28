@@ -6,8 +6,7 @@ import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.NodeFlavors;
-import com.yahoo.config.provision.ProvisionInfo;
-import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
@@ -189,9 +188,9 @@ public class SessionZooKeeperClient {
         return rootPath.append(CREATE_TIME_PATH).getAbsolute();
     }
 
-    ProvisionInfo getProvisionInfo() {
-        return loadApplicationPackage().getProvisionInfo()
-                                       .orElseThrow(() -> new IllegalStateException("Provision info does not exists"));
+    AllocatedHosts getProvisionInfo() {
+        return loadApplicationPackage().getAllocatedHosts()
+                                       .orElseThrow(() -> new IllegalStateException("Allocated hosts does not exists"));
     }
 
     public ZooKeeperDeployer createDeployer(DeployLogger logger) {

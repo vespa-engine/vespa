@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server.deploy;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.FileRegistry;
-import com.yahoo.config.provision.ProvisionInfo;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Version;
 
 import java.io.IOException;
@@ -28,15 +28,15 @@ public class ZooKeeperDeployer {
      *
      * @param applicationPackage The application package to persist.
      * @param fileRegistryMap the file registries to persist.
-     * @param provisionInfo the provisioning info to persist.
+     * @param allocatedHosts the provisioning info to persist.
      * @throws IOException if deploying fails
      */
     public void deploy(ApplicationPackage applicationPackage, Map<Version, FileRegistry> fileRegistryMap, 
-                       ProvisionInfo provisionInfo) throws IOException {
+                       AllocatedHosts allocatedHosts) throws IOException {
         zooKeeperClient.setupZooKeeper();
         zooKeeperClient.feedZooKeeper(applicationPackage);
         zooKeeperClient.feedZKFileRegistries(fileRegistryMap);
-        zooKeeperClient.feedProvisionInfo(provisionInfo);
+        zooKeeperClient.feedProvisionInfo(allocatedHosts);
     }
 
     public void cleanup() {

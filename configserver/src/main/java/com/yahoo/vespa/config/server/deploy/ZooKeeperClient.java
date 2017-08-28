@@ -6,7 +6,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
-import com.yahoo.config.provision.ProvisionInfo;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Version;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.log.LogLevel;
@@ -355,7 +355,7 @@ public class ZooKeeperClient {
         }
     }
 
-    public void feedProvisionInfo(ProvisionInfo info) throws IOException {
+    public void feedProvisionInfo(AllocatedHosts info) throws IOException {
         configCurator.putData(rootPath.append(ZKApplicationPackage.allocatedHostsNode).getAbsolute(), info.toJson());
     }
 

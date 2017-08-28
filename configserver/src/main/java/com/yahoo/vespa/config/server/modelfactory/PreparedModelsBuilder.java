@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.modelfactory;
 
-import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigChangeAction;
@@ -13,7 +12,7 @@ import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ProvisionInfo;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Version;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -82,7 +81,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                                     ApplicationPackage applicationPackage,
                                                     ApplicationId applicationId, 
                                                     com.yahoo.component.Version wantedNodeVespaVersion,
-                                                    SettableOptional<ProvisionInfo> activatedHosts,
+                                                    SettableOptional<AllocatedHosts> activatedHosts,
                                                     Instant now) {
         Version modelVersion = modelFactory.getVersion();
         log.log(LogLevel.DEBUG, "Start building model for Vespa version " + modelVersion);

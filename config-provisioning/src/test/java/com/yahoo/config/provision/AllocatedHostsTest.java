@@ -4,7 +4,6 @@ package com.yahoo.config.provision;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -15,7 +14,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author Ulf Lilleengen
  */
-public class ProvisionInfoTest {
+public class AllocatedHostsTest {
 
     private final HostSpec h1 = new HostSpec("host1", Optional.empty());
     private final HostSpec h2 = new HostSpec("host2", Optional.empty());
@@ -27,12 +26,12 @@ public class ProvisionInfoTest {
         hosts.add(h1);
         hosts.add(h2);
         hosts.add(h3);
-        ProvisionInfo info = ProvisionInfo.withHosts(hosts);
+        AllocatedHosts info = AllocatedHosts.withHosts(hosts);
         assertProvisionInfo(info);
     }
 
-    private void assertProvisionInfo(ProvisionInfo info) throws IOException {
-        ProvisionInfo serializedInfo = ProvisionInfo.fromJson(info.toJson(), Optional.empty());
+    private void assertProvisionInfo(AllocatedHosts info) throws IOException {
+        AllocatedHosts serializedInfo = AllocatedHosts.fromJson(info.toJson(), Optional.empty());
         assertEquals(info.getHosts().size(), serializedInfo.getHosts().size());
         assertTrue(serializedInfo.getHosts().contains(h1));
         assertTrue(serializedInfo.getHosts().contains(h2));

@@ -14,7 +14,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.application.provider.*;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeFlavors;
-import com.yahoo.config.provision.ProvisionInfo;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.io.reader.NamedReader;
@@ -44,7 +44,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
     private ZKLiveApp liveApp;
 
     private final Map<com.yahoo.config.provision.Version, PreGeneratedFileRegistry> fileRegistryMap = new HashMap<>();
-    private final Optional<ProvisionInfo> provisionInfo;
+    private final Optional<AllocatedHosts> allocatedHosts;
     private static final com.yahoo.config.provision.Version legacyVersion = com.yahoo.config.provision.Version.fromIntValues(0, 0, 0);
 
     public static final String fileRegistryNode = "fileregistry";
@@ -56,55 +56,55 @@ public class ZKApplicationPackage implements ApplicationPackage {
         liveApp = new ZKLiveApp(zk, appPath);
         metaData = readMetaDataFromLiveApp(liveApp);
         importFileRegistries(fileRegistryNode);
-        provisionInfo = importProvisionInfos(allocatedHostsNode, nodeFlavors);
+        allocatedHosts = importAllocatedHosts(allocatedHostsNode, nodeFlavors);
     }
 
-    private Optional<ProvisionInfo> importProvisionInfos(String allocatedHostsPath, Optional<NodeFlavors> nodeFlavors) {
+    private Optional<AllocatedHosts> importAllocatedHosts(String allocatedHostsPath, Optional<NodeFlavors> nodeFlavors) {
         if ( ! liveApp.exists(allocatedHostsPath)) return Optional.empty();
-        Optional<ProvisionInfo> provisionInfo = readProvisionInfo(allocatedHostsPath, nodeFlavors);
-        if ( ! provisionInfo.isPresent()) { // Read from legacy location. TODO: Remove when 6.142 is in production everywhere
+        Optional<AllocatedHosts> allocatedHosts = readAllocatedHosts(allocatedHostsPath, nodeFlavors);
+        if ( ! allocatedHosts.isPresent()) { // Read from legacy location. TODO: Remove when 6.143 is in production everywhere
             List<String> provisionInfoByVersionNodes = liveApp.getChildren(allocatedHostsPath);
-            provisionInfo = merge(readProvisionInfosByVersion(provisionInfoByVersionNodes, nodeFlavors));
+            allocatedHosts = merge(readAllocatedHostsByVersion(provisionInfoByVersionNodes, nodeFlavors));
         }
-        return provisionInfo;
+        return allocatedHosts;
     }
     
-    private Map<Version, ProvisionInfo> readProvisionInfosByVersion(List<String> provisionInfoByVersionNodes, Optional<NodeFlavors> nodeFlavors) {
-        Map<Version, ProvisionInfo> provisionInfoMap = new HashMap<>();
+    private Map<Version, AllocatedHosts> readAllocatedHostsByVersion(List<String> provisionInfoByVersionNodes, Optional<NodeFlavors> nodeFlavors) {
+        Map<Version, AllocatedHosts> allocatedHostsByVersion = new HashMap<>();
         provisionInfoByVersionNodes.stream()
                 .forEach(versionStr -> {
                     Version version = Version.fromString(versionStr);
-                    Optional<ProvisionInfo> provisionInfo = readProvisionInfo(Joiner.on("/").join(allocatedHostsNode, versionStr),
-                                                                              nodeFlavors);
-                    provisionInfo.ifPresent(info -> provisionInfoMap.put(version, info));
+                    Optional<AllocatedHosts> allocatedHosts = readAllocatedHosts(Joiner.on("/").join(allocatedHostsNode, versionStr),
+                                                                                nodeFlavors);
+                    allocatedHosts.ifPresent(info -> allocatedHostsByVersion.put(version, info));
                 });
-        return provisionInfoMap;
+        return allocatedHostsByVersion;
     }
 
-    private Optional<ProvisionInfo> merge(Map<Version, ProvisionInfo> provisionInfoMap) {
+    private Optional<AllocatedHosts> merge(Map<Version, AllocatedHosts> provisionInfoMap) {
         // Merge the provision infos in any order. This is wrong but preserves current behavior (modulo order differences)
         if (provisionInfoMap.isEmpty()) return Optional.empty();
         
         Map<String, HostSpec> merged = new HashMap<>();
-        for (Map.Entry<Version, ProvisionInfo> entry : provisionInfoMap.entrySet()) {
+        for (Map.Entry<Version, AllocatedHosts> entry : provisionInfoMap.entrySet()) {
             for (HostSpec host : entry.getValue().getHosts())
                 merged.put(host.hostname(), host);
         }
-        return Optional.of(ProvisionInfo.withHosts(ImmutableSet.copyOf(merged.values())));
+        return Optional.of(AllocatedHosts.withHosts(ImmutableSet.copyOf(merged.values())));
     }
 
     /** 
-     * Reads provision info at the given node.
+     * Reads allocated hosts at the given node.
      * 
-     * @return the provision info at this node or empty if there is no data at this path
+     * @return the allocated hosts at this node or empty if there is no data at this path
      */
-    private Optional<ProvisionInfo> readProvisionInfo(String provisionInfoPath, Optional<NodeFlavors> nodeFlavors) {
+    private Optional<AllocatedHosts> readAllocatedHosts(String allocatedHostsPath, Optional<NodeFlavors> nodeFlavors) {
         try {
-            byte[] data = liveApp.getBytes(provisionInfoPath);
-            if (data.length == 0) return Optional.empty(); // TODO: Remove this line (and make return non-optional) when 6.142 is in production everywhere
-            return Optional.of(ProvisionInfo.fromJson(data, nodeFlavors));
+            byte[] data = liveApp.getBytes(allocatedHostsPath);
+            if (data.length == 0) return Optional.empty(); // TODO: Remove this line (and make return non-optional) when 6.143 is in production everywhere
+            return Optional.of(AllocatedHosts.fromJson(data, nodeFlavors));
         } catch (Exception e) {
-            throw new RuntimeException("Unable to read provision info", e);
+            throw new RuntimeException("Unable to read allocated hosts", e);
         }
     }
 
@@ -176,8 +176,9 @@ public class ZKApplicationPackage implements ApplicationPackage {
         return ret;
     }
 
-    public Optional<ProvisionInfo> getProvisionInfo() {
-        return provisionInfo;
+    @Override
+    public Optional<AllocatedHosts> getAllocatedHosts() {
+        return allocatedHosts;
     }
 
     @Override

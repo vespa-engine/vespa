@@ -16,7 +16,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeFlavors;
-import com.yahoo.config.provision.ProvisionInfo;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Version;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.path.Path;
@@ -33,7 +33,7 @@ public class ZKApplicationPackageTest extends TestWithCurator {
     private static final String APP = "src/test/apps/zkapp";
     private static final String TEST_FLAVOR_NAME = "test-flavor";
     private static final Optional<Flavor> TEST_FLAVOR = new MockNodeFlavors().getFlavor(TEST_FLAVOR_NAME);
-    private static final ProvisionInfo provisionInfo = ProvisionInfo.withHosts(
+    private static final AllocatedHosts ALLOCATED_HOSTS = AllocatedHosts.withHosts(
             Collections.singleton(new HostSpec("foo.yahoo.com", Collections.emptyList(), TEST_FLAVOR, Optional.empty())));
 
     @Rule
@@ -64,8 +64,8 @@ public class ZKApplicationPackageTest extends TestWithCurator {
         assertTrue(zkApp.getFileRegistryMap().containsKey(goodVersion));
         assertFalse(zkApp.getFileRegistryMap().containsKey(Version.fromIntValues(0, 0, 0)));
         assertThat(zkApp.getFileRegistryMap().get(goodVersion).fileSourceHost(), is("dummyfiles"));
-        ProvisionInfo readInfo = zkApp.getProvisionInfo().get();
-        assertThat(Utf8.toString(readInfo.toJson()), is(Utf8.toString(provisionInfo.toJson())));
+        AllocatedHosts readInfo = zkApp.getAllocatedHosts().get();
+        assertThat(Utf8.toString(readInfo.toJson()), is(Utf8.toString(ALLOCATED_HOSTS.toJson())));
         assertThat(readInfo.getHosts().iterator().next().flavor(), is(TEST_FLAVOR));
         assertTrue(zkApp.getDeployment().isPresent());
         assertThat(DeploymentSpec.fromXml(zkApp.getDeployment().get()).globalServiceId().get(), is("mydisc"));
@@ -77,7 +77,7 @@ public class ZKApplicationPackageTest extends TestWithCurator {
         String metaData = "{\"deploy\":{\"user\":\"foo\",\"from\":\"bar\",\"timestamp\":1},\"application\":{\"name\":\"foo\",\"checksum\":\"abc\",\"generation\":4,\"previousActiveGeneration\":3}}";
         zk.putData("/0", ConfigCurator.META_ZK_PATH, metaData);
         zk.putData("/0/" + ZKApplicationPackage.fileRegistryNode + "/3.0.0", "dummyfiles");
-        zk.putData("/0/" + ZKApplicationPackage.allocatedHostsNode + "/3.0.0", provisionInfo.toJson());
+        zk.putData("/0/" + ZKApplicationPackage.allocatedHostsNode + "/3.0.0", ALLOCATED_HOSTS.toJson());
     }
 
     private static class MockNodeFlavors extends NodeFlavors{

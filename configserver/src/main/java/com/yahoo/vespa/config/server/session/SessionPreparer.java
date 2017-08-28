@@ -235,10 +235,10 @@ public class SessionPreparer {
                                        com.yahoo.component.Version vespaVersion,
                                        DeployLogger deployLogger,
                                        Map<Version, FileRegistry> fileRegistryMap,
-                                       ProvisionInfo provisionInfo) {
+                                       AllocatedHosts allocatedHosts) {
         ZooKeeperDeployer zkDeployer = zooKeeperClient.createDeployer(deployLogger);
         try {
-            zkDeployer.deploy(applicationPackage, fileRegistryMap, provisionInfo);
+            zkDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
             zooKeeperClient.writeApplicationId(applicationId);
             zooKeeperClient.writeVespaVersion(vespaVersion);
         } catch (RuntimeException | IOException e) {
@@ -260,8 +260,8 @@ public class SessionPreparer {
         public List<PreparedModelsBuilder.PreparedModelResult> asList() { return results; }
 
         /** Returns the host allocations resulting from this preparation. */
-        public ProvisionInfo getProvisionInfo() {
-            return results.asList().get(0).getModel().provisionInfo(); // All have the same provision info
+        public AllocatedHosts getProvisionInfo() {
+            return results.asList().get(0).getModel().allocatedHosts(); // All have the same hosts allocated
         }
 
         public Map<Version, FileRegistry> getFileRegistries() {

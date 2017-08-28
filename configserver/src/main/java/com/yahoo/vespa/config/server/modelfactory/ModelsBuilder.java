@@ -8,8 +8,7 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.OutOfCapacityException;
-import com.yahoo.config.provision.ProvisionInfo;
-import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
@@ -71,7 +70,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                               .collect(Collectors.toList());
 
         // The newest version (major and minor) (which is loaded first) decides the allocated hosts
-        SettableOptional<ProvisionInfo> allocatedHosts = new SettableOptional();
+        SettableOptional<AllocatedHosts> allocatedHosts = new SettableOptional();
         List<MODELRESULT> allApplicationModels = new ArrayList<>();
         for (int i = 0; i < majorVersions.size(); i++) {
             try {
@@ -103,7 +102,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
     private List<MODELRESULT> buildModelVersion(Set<Version> versions, ApplicationId applicationId,
                                                 com.yahoo.component.Version wantedNodeVespaVersion, 
                                                 ApplicationPackage applicationPackage,
-                                                SettableOptional<ProvisionInfo> allocatedHosts,
+                                                SettableOptional<AllocatedHosts> allocatedHosts,
                                                 Instant now) {
         Version latest = findLatest(versions);
         // load latest application version
@@ -114,7 +113,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                                  allocatedHosts,
                                                                  now);
         if ( ! allocatedHosts.isPresent())
-            allocatedHosts.set(latestApplicationVersion.getModel().provisionInfo());
+            allocatedHosts.set(latestApplicationVersion.getModel().allocatedHosts());
         
         if (latestApplicationVersion.getModel().skipOldConfigModels(now))
             return Collections.singletonList(latestApplicationVersion);
@@ -156,7 +155,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
     protected abstract MODELRESULT buildModelVersion(ModelFactory modelFactory, ApplicationPackage applicationPackage,
                                                      ApplicationId applicationId, 
                                                      com.yahoo.component.Version wantedNodeVespaVersion,
-                                                     SettableOptional<ProvisionInfo> allocatedHosts,
+                                                     SettableOptional<AllocatedHosts> allocatedHosts,
                                                      Instant now);
 
     protected ModelContext.Properties createModelContextProperties(ApplicationId applicationId,
@@ -175,9 +174,9 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
      * Returns a host provisioner returning the previously allocated hosts if available and when on hosted Vespa,
      * returns empty otherwise.
      */
-    protected Optional<HostProvisioner> createHostProvisioner(Optional<ProvisionInfo> provisionInfo) {
-        if (hosted && provisionInfo.isPresent())
-            return Optional.of(new StaticProvisioner(provisionInfo.get()));
+    protected Optional<HostProvisioner> createHostProvisioner(Optional<AllocatedHosts> allocatedHosts) {
+        if (hosted && allocatedHosts.isPresent())
+            return Optional.of(new StaticProvisioner(allocatedHosts.get()));
         return Optional.empty();
     }
 

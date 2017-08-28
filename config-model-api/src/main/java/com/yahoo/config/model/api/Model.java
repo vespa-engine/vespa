@@ -1,12 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.api;
 
-import com.yahoo.config.provision.ProvisionInfo;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 
-import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
@@ -60,17 +59,17 @@ public interface Model {
     /**
      * Get the provisioning info for this model.
      * 
-     * @return {@link ProvisionInfo} instance, if available.
-     * @deprecated use provisionInfo
+     * @return {@link AllocatedHosts} instance, if available.
+     * @deprecated use allocatedHosts
      */
     @Deprecated
-    // TODO: Remove this (and the implementation below) when no version older than 6.142 is deployed anywhere
-    default Optional<ProvisionInfo> getProvisionInfo() {
-        return Optional.of(provisionInfo());
+    // TODO: Remove this (and the implementation below) when no version older than 6.143 is deployed anywhere
+    default Optional<AllocatedHosts> getProvisionInfo() {
+        return Optional.of(allocatedHosts());
     }
 
     @SuppressWarnings("deprecation")
-    default ProvisionInfo provisionInfo() {
+    default AllocatedHosts allocatedHosts() {
         return getProvisionInfo().get();
     }
 

@@ -20,7 +20,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.ProvisionInfo;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Version;
@@ -134,7 +134,7 @@ public class DeployTester {
         return id;
     }
 
-    public ProvisionInfo getProvisionInfoFromDeployedApp(ApplicationId applicationId) {
+    public AllocatedHosts getProvisionInfoFromDeployedApp(ApplicationId applicationId) {
         Tenant tenant = tenant();
         LocalSession session = tenant.getLocalSessionRepo().getSession(tenant.getApplicationRepo()
                                                                              .getSessionIdForApplication(applicationId));

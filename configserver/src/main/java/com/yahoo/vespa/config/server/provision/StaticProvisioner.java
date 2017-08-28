@@ -8,16 +8,16 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Host provisioning from an existing {@link ProvisionInfo} instance.
+ * Host provisioning from an existing {@link AllocatedHosts} instance.
  *
  * @author bratseth
  */
 public class StaticProvisioner implements HostProvisioner {
 
-    private final ProvisionInfo provisionInfo;
+    private final AllocatedHosts allocatedHosts;
 
-    public StaticProvisioner(ProvisionInfo provisionInfo) {
-        this.provisionInfo = provisionInfo;
+    public StaticProvisioner(AllocatedHosts allocatedHosts) {
+        this.allocatedHosts = allocatedHosts;
     }
 
     @Override
@@ -27,7 +27,7 @@ public class StaticProvisioner implements HostProvisioner {
 
     @Override
     public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger) {
-        return provisionInfo.getHosts().stream()
+        return allocatedHosts.getHosts().stream()
                 .filter(host -> host.membership().isPresent() && matches(host.membership().get().cluster(), cluster))
                 .collect(Collectors.toList());
     }

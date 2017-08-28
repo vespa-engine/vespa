@@ -6,7 +6,7 @@ import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.provision.ProvisionInfo;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.transaction.AbstractTransaction;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
@@ -171,7 +171,7 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
 
     public Version getVespaVersion() { return zooKeeperClient.readVespaVersion(); }
 
-    public ProvisionInfo getProvisionInfo() {
+    public AllocatedHosts getProvisionInfo() {
         return zooKeeperClient.getProvisionInfo();
     }
 
