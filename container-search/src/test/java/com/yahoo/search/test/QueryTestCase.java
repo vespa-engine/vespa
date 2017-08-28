@@ -670,6 +670,20 @@ public class QueryTestCase {
     }
 
     @Test
+    public void testThatSessionIdIsNotSharedIfCreatedAfterClone() {
+        Query q = new Query();
+        Query q2 = q.clone();
+        assertNull(q.getSessionId(false));
+        assertNull(q2.getSessionId(false));
+
+        assertNotNull(q.getSessionId(true));
+        assertNull(q2.getSessionId(false));
+
+        assertNotNull(q2.getSessionId(true));
+        assertNotEquals(q.getSessionId(false), q2.getSessionId(false));
+    }
+
+    @Test
     public void testPositiveTerms() {
         Query q = new Query(httpEncode("/?query=-a \"b c\" d e"));
         Item i = q.getModel().getQueryTree().getRoot();
