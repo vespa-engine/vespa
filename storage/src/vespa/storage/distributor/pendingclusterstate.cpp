@@ -425,7 +425,7 @@ PendingClusterState::insertInfo(
 
     LOG_BUCKET_OPERATION_NO_LOCK(
             _entries[range.first].bucketId,
-            vespalib::make_vespa_string("insertInfo: %s",
+            vespalib::make_string("insertInfo: %s",
                                         info.toString().c_str()));
 }
 

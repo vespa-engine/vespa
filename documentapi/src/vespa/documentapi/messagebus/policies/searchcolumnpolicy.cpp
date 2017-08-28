@@ -53,20 +53,20 @@ SearchColumnPolicy::select(mbus::RoutingContext &context)
     const mbus::Message &msg = context.getMessage();
     switch(msg.getType()) {
     case DocumentProtocol::MESSAGE_PUTDOCUMENT:
-	id = &static_cast<const PutDocumentMessage&>(msg).getDocument()->getId();
+        id = &static_cast<const PutDocumentMessage&>(msg).getDocument().getId();
         break;
 
     case DocumentProtocol::MESSAGE_GETDOCUMENT:
-	id = &static_cast<const GetDocumentMessage&>(msg).getDocumentId();
+	    id = &static_cast<const GetDocumentMessage&>(msg).getDocumentId();
         break;
 
     case DocumentProtocol::MESSAGE_REMOVEDOCUMENT:
-	id = &static_cast<const RemoveDocumentMessage&>(msg).getDocumentId();
+	    id = &static_cast<const RemoveDocumentMessage&>(msg).getDocumentId();
         break;
 
     case DocumentProtocol::MESSAGE_UPDATEDOCUMENT:
-	id = &static_cast<const UpdateDocumentMessage&>(msg).getDocumentUpdate()->getId();
-	break;
+	    id = &static_cast<const UpdateDocumentMessage&>(msg).getDocumentUpdate().getId();
+	    break;
 
     case DocumentProtocol::MESSAGE_MULTIOPERATION:
         bucketId = (static_cast<const MultiOperationMessage&>(msg)).getBucketId();

@@ -80,5 +80,19 @@ uint32_t ImportedAttributeVectorReadGuard::get(DocId docId, WeightedEnum *buffer
     return _target_attribute->get(getReferencedLid(docId), buffer, sz);
 }
 
+long ImportedAttributeVectorReadGuard::onSerializeForAscendingSort(DocId doc,
+                                                                   void *serTo,
+                                                                   long available,
+                                                                   const common::BlobConverter *bc) const {
+    return _target_attribute->serializeForAscendingSort(getReferencedLid(doc), serTo, available, bc);
+}
+
+long ImportedAttributeVectorReadGuard::onSerializeForDescendingSort(DocId doc,
+                                                                    void *serTo,
+                                                                    long available,
+                                                                    const common::BlobConverter *bc) const {
+    return _target_attribute->serializeForDescendingSort(getReferencedLid(doc), serTo, available, bc);
+}
+
 }
 }

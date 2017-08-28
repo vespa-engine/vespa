@@ -89,7 +89,7 @@ BucketOwnershipNotifier::logNotification(const document::BucketId& bucket,
         newInfo.toString().c_str());
     LOG_BUCKET_OPERATION_NO_LOCK(
             bucket,
-            vespalib::make_vespa_string(
+            vespalib::make_string(
                     "Sending notify to distributor %u "
                     "(ownership changed away from %u)",
                     currentOwnerIndex, sourceIndex));

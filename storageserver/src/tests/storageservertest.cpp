@@ -6,7 +6,7 @@
 #include <vespa/document/base/testdocman.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/messagebus/rpcmessagebus.h>
-#include <fstream>
+#include <vespa/messagebus/network/rpcnetworkparams.h>
 #include <vespa/memfilepersistence/spi/memfilepersistenceprovider.h>
 #include <vespa/messagebus/staticthrottlepolicy.h>
 #include <vespa/messagebus/testlib/slobrok.h>
@@ -14,16 +14,14 @@
 #include <vespa/storageapi/mbusprot/storagereply.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/state.h>
-#include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/common/statusmetricconsumer.h>
-#include <vespa/memfilepersistence/memfile/memfilecache.h>
 #include <tests/testhelper.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <tests/dummystoragelink.h>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/storageserver/app/distributorprocess.h>
 #include <vespa/storageserver/app/memfileservicelayerprocess.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/fnet/frt/supervisor.h>
 #include <sys/time.h>
 
 #include <vespa/log/log.h>
@@ -388,9 +386,8 @@ namespace {
                     if (msg->getType() == DocumentProtocol::MESSAGE_PUTDOCUMENT)
                     {
                         documentapi::PutDocumentMessage& putMsg(
-                                static_cast<documentapi::PutDocumentMessage&>(
-                                    *msg));
-                        std::cerr << " - " << putMsg.getDocument()->getId();
+                                static_cast<documentapi::PutDocumentMessage&>(*msg));
+                        std::cerr << " - " << putMsg.getDocument().getId();
                     }
                     std::cerr << "\n";
                 }
@@ -419,8 +416,7 @@ namespace {
                 }
                 FastOS_Thread::Sleep(1);
             }
-            LOG(info, "Currently, we have received %u ok replies and have %u "
-                      "pending ones.",
+            LOG(info, "Currently, we have received %u ok replies and have %u pending ones.",
                 _processedOk, _currentPending);
         }
     };

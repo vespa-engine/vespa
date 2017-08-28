@@ -1,14 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "stringfmt.h"
-#include "vstringfmt.h"
 #include <cassert>
 
 namespace vespalib {
 
 //-----------------------------------------------------------------------------
 
-vespalib::string make_vespa_string_va(const char *fmt, va_list ap)
+vespalib::string make_string_va(const char *fmt, va_list ap)
 {
     va_list ap2;
     vespalib::string ret;
@@ -42,27 +41,13 @@ vespalib::string make_vespa_string_va(const char *fmt, va_list ap)
  * @param fmt format string
  * @return formatted vespalib::string
  **/
-vespalib::string make_vespa_string(const char *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-    vespalib::string ret = make_vespa_string_va(fmt, ap);
-    va_end(ap);
-    return ret;
-}
-
 vespalib::string make_string(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    vespalib::string ret = make_vespa_string_va(fmt, ap);
+    vespalib::string ret = make_string_va(fmt, ap);
     va_end(ap);
     return ret;
-}
-
-vespalib::string make_string_va(const char *fmt, va_list ap)
-{
-    return make_vespa_string_va(fmt, ap);
 }
 
 } // namespace vespalib

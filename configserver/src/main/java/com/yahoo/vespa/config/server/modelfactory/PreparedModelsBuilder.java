@@ -85,7 +85,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                                     Optional<AllocatedHosts> allocatedHosts,
                                                     Instant now) {
         Version modelVersion = modelFactory.getVersion();
-        log.log(LogLevel.DEBUG, "Start building model for Vespa version " + modelVersion);
+        log.log(LogLevel.DEBUG, "Building model " + modelVersion + " for " + applicationId);
         FileDistributionProvider fileDistributionProvider = fileDistributionFactory.createProvider(
                 context.getServerDBSessionDir(),
                 applicationId);
@@ -107,10 +107,10 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 new com.yahoo.component.Version(modelVersion.toString()),
                 wantedNodeVespaVersion);
 
-        log.log(LogLevel.DEBUG, "Running createAndValidateModel for Vespa version " + modelVersion);
+        log.log(LogLevel.DEBUG, "Create and validate model " + modelVersion + " for " + applicationId);
         ModelCreateResult result =  modelFactory.createAndValidateModel(modelContext, params.ignoreValidationErrors());
         validateModelHosts(context.getHostValidator(), applicationId, result.getModel());
-        log.log(LogLevel.DEBUG, "Done building model for Vespa version " + modelVersion);
+        log.log(LogLevel.DEBUG, "Done building model " + modelVersion + " for " + applicationId);
         return new PreparedModelsBuilder.PreparedModelResult(modelVersion, result.getModel(), fileDistributionProvider, result.getConfigChangeActions());
     }
 

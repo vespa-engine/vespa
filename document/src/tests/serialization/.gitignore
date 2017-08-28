@@ -2,5 +2,4 @@
 .depend
 Makefile
 document_annotationserializer_test_app
-document_compression_test_app
 document_vespadocumentserializer_test_app

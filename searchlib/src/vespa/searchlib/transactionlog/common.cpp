@@ -3,9 +3,7 @@
 #include "common.h"
 #include <vespa/fastos/file.h>
 
-namespace search {
-
-namespace transactionlog {
+namespace search::transactionlog {
 
 using vespalib::nbostream;
 using vespalib::nbostream_longlivedbuf;
@@ -103,5 +101,4 @@ bool Packet::add(const Packet::Entry & e)
     return retval;
 }
 
-}
 }

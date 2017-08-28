@@ -17,12 +17,3 @@ vespa_add_executable(document_annotationserializer_test_app TEST
     document_documentconfig
 )
 vespa_add_test(NAME document_annotationserializer_test_app COMMAND document_annotationserializer_test_app)
-vespa_add_executable(document_compression_test_app TEST
-    SOURCES
-    compression_test.cpp
-    DEPENDS
-    document
-    AFTER
-    document_documentconfig
-)
-vespa_add_test(NAME document_compression_test_app COMMAND document_compression_test_app)

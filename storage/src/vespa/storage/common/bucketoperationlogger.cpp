@@ -201,7 +201,7 @@ void logBucketDbInsert(uint64_t key, const bucketdb::StorageBucketInfo& entry)
 {
     LOG_BUCKET_OPERATION_NO_LOCK(
             document::BucketId(document::BucketId::keyToBucketId(key)),
-            vespalib::make_vespa_string(
+            vespalib::make_string(
                     "bucketdb insert Bucket(crc=%x, docs=%u, size=%u, "
                     "metacount=%u, usedfilesize=%u, ready=%s, "
                     "active=%s, lastModified=%zu) disk=%u",
@@ -308,7 +308,7 @@ logBucketDbInsert(uint64_t key, const BucketInfo& entry)
 {
     document::BucketId bucket(document::BucketId::keyToBucketId(key));
     LOG_BUCKET_OPERATION_NO_LOCK(
-            bucket, vespalib::make_vespa_string(
+            bucket, vespalib::make_string(
                     "bucketdb insert of %s", entry.toString().c_str()));
     // Do some sanity checking of the inserted entry
     checkAllConsistentNodesImpliesTrusted(bucket, entry);

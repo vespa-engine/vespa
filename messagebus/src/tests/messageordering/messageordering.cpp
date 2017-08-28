@@ -1,19 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/messagebus/messagebus.h>
-#include <vespa/messagebus/sourcesession.h>
-#include <vespa/messagebus/destinationsession.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/messagebus/routing/routingspec.h>
 #include <vespa/messagebus/testlib/receptor.h>
-#include <vespa/messagebus/sourcesessionparams.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/simplereply.h>
-#include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/errorcode.h>
-#include <vespa/vespalib/util/vstringfmt.h>
-#include <stdexcept>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("messageordering_test");
@@ -54,7 +48,7 @@ public:
 
         vespalib::MonitorGuard lock(_mon);
 
-        vespalib::string expected(vespalib::make_vespa_string("%d", _messageCounter));
+        vespalib::string expected(vespalib::make_string("%d", _messageCounter));
         LOG(debug, "Got message %p with %s, expecting %s",
             msg.get(),
             simpleMsg.getValue().c_str(),
@@ -117,7 +111,7 @@ VerifyReplyReceptor::handleReply(Reply::UP reply)
         }
         LOG(warning, "%s", ss.str().c_str());
     } else {
-        vespalib::string expected(vespalib::make_vespa_string("%d", _replyCount));
+        vespalib::string expected(vespalib::make_string("%d", _replyCount));
         SimpleReply& simpleReply(static_cast<SimpleReply&>(*reply));
         if (simpleReply.getValue() != expected) {
             std::stringstream ss;
@@ -171,7 +165,7 @@ Test::Main()
     // send messages on client
     const int messageCount = 10000;
     for (int i = 0; i < messageCount; ++i) {
-        vespalib::string str(vespalib::make_vespa_string("%d", i));
+        vespalib::string str(vespalib::make_string("%d", i));
         //FastOS_Thread::Sleep(1);
         SimpleMessage::UP msg(new SimpleMessage(str, true, commonMessageId));
         msg->getTrace().setLevel(9);

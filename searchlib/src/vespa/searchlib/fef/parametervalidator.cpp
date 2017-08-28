@@ -3,13 +3,12 @@
 #include "parametervalidator.h"
 #include "fieldtype.h"
 #include "fieldinfo.h"
-#include <vespa/vespalib/util/vstringfmt.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <boost/lexical_cast.hpp>
 
-using vespalib::make_vespa_string;
+using vespalib::make_string;
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 using CollectionType = FieldInfo::CollectionType;
 
@@ -56,27 +55,27 @@ ParameterValidator::validateField(ParameterType::Enum type, ParameterCollection:
 {
     const FieldInfo * field = _indexEnv.getFieldByName(_params[i]);
     if (field == NULL) {
-        throw ValidateException(make_vespa_string("Param[%zu]: Field '%s' was not found in the index environment",
+        throw ValidateException(make_string("Param[%zu]: Field '%s' was not found in the index environment",
                                             i, _params[i].c_str()));
     }
     if (type == ParameterType::INDEX_FIELD) {
         if (field->type() != FieldType::INDEX) {
-            throw ValidateException(make_vespa_string("Param[%zu]: Expected field '%s' to be an index field, but it was not",
+            throw ValidateException(make_string("Param[%zu]: Expected field '%s' to be an index field, but it was not",
                                                 i, _params[i].c_str()));
         }
     } else if (type == ParameterType::ATTRIBUTE_FIELD) {
         if (field->type() != FieldType::ATTRIBUTE) {
-            throw ValidateException(make_vespa_string("Param[%zu]: Expected field '%s' to be an attribute field, but it was not",
+            throw ValidateException(make_string("Param[%zu]: Expected field '%s' to be an attribute field, but it was not",
                                                 i, _params[i].c_str()));
         }
     } else if (type == ParameterType::ATTRIBUTE) {
         if (!field->hasAttribute()) {
-            throw ValidateException(make_vespa_string("Param[%zu]: Expected field '%s' to support attribute lookup, but it does not",
+            throw ValidateException(make_string("Param[%zu]: Expected field '%s' to support attribute lookup, but it does not",
                             i, _params[i].c_str()));
         }
     }
     if (!checkCollectionType(collection, field->collection())) {
-        throw ValidateException(make_vespa_string("Param[%zu]: field '%s' has inappropriate collection type",
+        throw ValidateException(make_string("Param[%zu]: field '%s' has inappropriate collection type",
                                             i, _params[i].c_str()));
     }
     result.addParameter(Parameter(type, _params[i]).setField(field));
@@ -90,7 +89,7 @@ ParameterValidator::validateNumber(ParameterType::Enum type, size_t i, Result & 
         int64_t intVal = static_cast<int64_t>(doubleVal);
         result.addParameter(Parameter(type, _params[i]).setInteger(intVal).setDouble(doubleVal));
     } catch (const boost::bad_lexical_cast &) {
-        throw ValidateException(make_vespa_string("Param[%zu]: Could not convert '%s' to a number", i, _params[i].c_str()));
+        throw ValidateException(make_string("Param[%zu]: Could not convert '%s' to a number", i, _params[i].c_str()));
     }
 }
 
@@ -103,11 +102,11 @@ ParameterValidator::validate(const ParameterDescriptions::Description & desc)
         if (minParams > _params.size() ||
             ((_params.size() - desc.getParams().size()) % desc.getRepeat() != 0))
         {
-            throw ValidateException(make_vespa_string("Expected %zd+%zdx parameter(s), but got %zd",
+            throw ValidateException(make_string("Expected %zd+%zdx parameter(s), but got %zd",
                                                 minParams, desc.getRepeat(), _params.size()));
         }
     } else if (desc.getParams().size() != _params.size()) {
-        throw ValidateException(make_vespa_string("Expected %zd parameter(s), but got %zd", desc.getParams().size(), _params.size()));
+        throw ValidateException(make_string("Expected %zd parameter(s), but got %zd", desc.getParams().size(), _params.size()));
     }
     for (size_t i = 0; i < _params.size(); ++i) {
         ParamDescItem param = desc.getParam(i);
@@ -160,5 +159,4 @@ ParameterValidator::validate()
     return invalid;
 }
 
-} // namespace fef
-} // namespace search
+}

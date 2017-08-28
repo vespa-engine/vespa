@@ -7,11 +7,13 @@ BUILD_DIR=~/build
 
 mkdir "${BUILD_DIR}"
 
-export CCACHE_SIZE="4G"
+export CCACHE_MAXSIZE="1250M"
 export CCACHE_COMPRESS=1
 NUM_THREADS=4
+ccache --print-config
 
 cd ${BUILD_DIR}
 bash ${SOURCE_DIR}/bootstrap-cpp.sh ${SOURCE_DIR} ${BUILD_DIR}
 make -j ${NUM_THREADS}
 ctest3 --output-on-failure -j ${NUM_THREADS}
+ccache --show-stats

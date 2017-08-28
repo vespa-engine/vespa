@@ -142,7 +142,7 @@ MapBucketDatabase::update(const Entry& newEntry)
     assert(newEntry.valid());
     LOG_BUCKET_OPERATION_NO_LOCK(
             newEntry.getBucketId(),
-            vespalib::make_vespa_string(
+            vespalib::make_string(
                     "bucketdb insert of %s", newEntry.toString().c_str()));
 
     Entry* found = find(0, 0, newEntry.getBucketId(), true);

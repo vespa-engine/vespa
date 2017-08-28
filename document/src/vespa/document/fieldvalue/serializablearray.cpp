@@ -2,7 +2,7 @@
 #include "serializablearray.h"
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/document/util/bytebuffer.h>
-#include <vespa/document/util/compressor.h>
+#include <vespa/vespalib/util/compressor.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/data/databuffer.h>
 #include <algorithm>
@@ -181,7 +181,7 @@ SerializableArray::clear(int id)
 void
 SerializableArray::deCompress() // throw (DeserializeException)
 {
-    using document::compression::decompress;
+    using vespalib::compression::decompress;
     // will only do this once
 
     LOG_ASSERT(_compSerData);
@@ -239,7 +239,7 @@ void SerializableArray::assign(EntryMap & entries,
     }
 }
 
-CompressionInfo
+vespalib::compression::CompressionInfo
 SerializableArray::getCompressionInfo() const {
     return CompressionInfo(_uncompressedLength, _compSerData->getRemaining());
 }

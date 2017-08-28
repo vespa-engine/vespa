@@ -3,6 +3,7 @@
 
 #include "simpleprotocol.h"
 #include <vespa/messagebus/routing/iroutingpolicy.h>
+#include <vespa/messagebus/routing/route.h>
 
 namespace mbus {
 

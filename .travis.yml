@@ -21,7 +21,7 @@ branches:
 before_cache:
   - sudo rm -rf $HOME/.m2/repository/com/yahoo
   - du --summarize --human-readable $HOME/.m2/repository
-  - ccache --show-stats
+  - du --summarize --human-readable $HOME/.ccache
 
 install: true
 

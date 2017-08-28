@@ -9,7 +9,7 @@
 #include <vespa/fnet/packet.h>
 #include <vespa/fnet/databuffer.h>
 #include <vespa/document/base/globalid.h>
-#include <vespa/document/util/compressionconfig.h>
+#include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/vespalib/util/memory.h>
 #include <vespa/fastos/timestamp.h>
 #include <vector>
@@ -110,10 +110,11 @@ public:
 class FS4PersistentPacketStreamer : public FNET_IPacketStreamer {
     FS4PersistentPacketStreamer(const FS4PersistentPacketStreamer &);
     FS4PersistentPacketStreamer& operator=(const FS4PersistentPacketStreamer &);
+    using CompressionConfig = vespalib::compression::CompressionConfig;
 
     unsigned int _compressionLimit;
     unsigned int _compressionLevel;
-    document::CompressionConfig::Type _compressionType;
+    CompressionConfig::Type _compressionType;
 protected:
     bool _conservative;  // Set to true if out of sync should mark the
                          // stream as broken.
@@ -139,8 +140,8 @@ public:
     void SetConservativeMode(bool cons) { _conservative = cons; }
     void SetCompressionLimit(unsigned int limit) { _compressionLimit = limit; }
     void SetCompressionLevel(unsigned int level) { _compressionLevel = level; }
-    void SetCompressionType(document::CompressionConfig::Type compressionType) { _compressionType = compressionType; }
-    document::CompressionConfig::Type getCompressionType() const { return _compressionType; }
+    void SetCompressionType(CompressionConfig::Type compressionType) { _compressionType = compressionType; }
+    CompressionConfig::Type getCompressionType() const { return _compressionType; }
     uint32_t getCompressionLimit() const { return _compressionLimit; }
     uint32_t getCompressionLevel() const { return _compressionLevel; }
 };
@@ -243,9 +244,10 @@ public:
     bool Decode(FNET_DataBuffer *src, uint32_t len) override;
     vespalib::string toString(uint32_t indent) const override;
 private:
-    uint32_t                          _pcode;
-    document::CompressionConfig::Type _compressionType;
-    FNET_DataBuffer                   _data;
+    using CompressionConfig = vespalib::compression::CompressionConfig;
+    uint32_t                _pcode;
+    CompressionConfig::Type _compressionType;
+    FNET_DataBuffer         _data;
 };
 
 class FS4Packet_Shared : public FS4Packet

@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <cstdarg>
 #include <vespa/vespalib/stllike/string.h>
+#include <cstdarg>
 
 #ifndef PRId64
   #define PRId64 "ld"

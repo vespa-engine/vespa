@@ -12,7 +12,6 @@
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/vstringfmt.h>
 
 using namespace mbus;
 

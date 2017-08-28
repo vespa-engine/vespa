@@ -55,6 +55,7 @@ using vespalib::tensor::Tensor;
 using vespalib::tensor::TensorBuilder;
 using vespalib::tensor::TensorCells;
 using vespalib::tensor::TensorDimensions;
+using vespalib::compression::CompressionConfig;
 using namespace document;
 using std::string;
 using std::vector;

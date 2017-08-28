@@ -781,7 +781,7 @@ FileStorHandlerImpl::remapMessage(
                     targetDisk = targets[idx]->diskIndex;
 #if defined(ENABLE_BUCKET_OPERATION_LOGGING)
                     {
-                        vespalib::string desc = vespalib::make_vespa_string(
+                        vespalib::string desc = vespalib::make_string(
                                 "Remapping %s from %s to %s, targetDisk = %u",
                                 cmd.toString().c_str(), source.toString().c_str(),
                                 targets[idx]->bid.toString().c_str(), targetDisk);
@@ -829,7 +829,7 @@ FileStorHandlerImpl::remapMessage(
                 targetDisk = targets[0]->diskIndex;
 #ifdef ENABLE_BUCKET_OPERATION_LOGGING
                 {
-                    vespalib::string desc = vespalib::make_vespa_string(
+                    vespalib::string desc = vespalib::make_string(
                             "Remapping %s from %s to %s, targetDisk = %u",
                             cmd.toString().c_str(), source.toString().c_str(),
                             targets[0]->bid.toString().c_str(), targetDisk);

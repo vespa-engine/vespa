@@ -60,8 +60,8 @@ public:
     };
 
 private:
-    typedef vespa::config::search::AttributesConfig AttributesConfig;
-    typedef FastAccessDocSubDBConfigurer Configurer;
+    using AttributesConfig = vespa::config::search::AttributesConfig;
+    using Configurer = FastAccessDocSubDBConfigurer;
 
     const bool                    _hasAttributes;
     const bool                    _fastAccessAttributesOnly;
@@ -81,7 +81,8 @@ private:
     void initFeedView(const IAttributeWriter::SP &writer, const DocumentDBConfig &configSnapshot);
 
 protected:
-    typedef StoreOnlyDocSubDB Parent;
+    using Parent = StoreOnlyDocSubDB;
+    using SessionManagerSP = std::shared_ptr<matching::SessionManager>;
 
     const bool           _addMetrics;
     MetricsWireService  &_metricsWireService;
@@ -110,7 +111,7 @@ public:
     void setup(const DocumentSubDbInitializerResult &initResult) override;
 
     void initViews(const DocumentDBConfig &configSnapshot,
-                   const matching::SessionManager::SP &sessionManager) override;
+                   const SessionManagerSP &sessionManager) override;
 
     IReprocessingTask::List applyConfig(const DocumentDBConfig &newConfigSnapshot,
                                         const DocumentDBConfig &oldConfigSnapshot,

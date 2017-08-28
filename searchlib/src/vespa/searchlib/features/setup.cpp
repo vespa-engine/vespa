@@ -53,7 +53,12 @@
 #include "valuefeature.h"
 #include "constant_feature.h"
 
+#include <vespa/searchlib/features/max_reduce_prod_join_replacer.h>
+#include <vespa/searchlib/features/rankingexpression/expression_replacer.h>
+
 using search::fef::Blueprint;
+using search::features::rankingexpression::ListExpressionReplacer;
+using search::features::MaxReduceProdJoinReplacer;
 
 namespace search {
 namespace features {
@@ -95,7 +100,6 @@ void setup_search_features(fef::IBlueprintRegistry & registry)
     registry.addPrototype(Blueprint::SP(new QueryTermCountBlueprint()));
     registry.addPrototype(Blueprint::SP(new RandomBlueprint()));
     registry.addPrototype(Blueprint::SP(new RandomNormalBlueprint()));
-    registry.addPrototype(Blueprint::SP(new RankingExpressionBlueprint()));
     registry.addPrototype(Blueprint::SP(new RawScoreBlueprint()));
     registry.addPrototype(Blueprint::SP(new SubqueriesBlueprint));
     registry.addPrototype(Blueprint::SP(new TensorFromLabelsBlueprint()));
@@ -114,6 +118,11 @@ void setup_search_features(fef::IBlueprintRegistry & registry)
     registry.addPrototype(Blueprint::SP(new TermEditDistanceBlueprint()));
     registry.addPrototype(Blueprint::SP(new TermFieldMdBlueprint()));
     registry.addPrototype(std::make_shared<ConstantBlueprint>());
+
+    // Ranking Expression
+    auto replacers = std::make_unique<ListExpressionReplacer>();
+    replacers->add(MaxReduceProdJoinReplacer::create());
+    registry.addPrototype(std::make_shared<RankingExpressionBlueprint>(std::move(replacers)));
 }
 
 } // namespace features

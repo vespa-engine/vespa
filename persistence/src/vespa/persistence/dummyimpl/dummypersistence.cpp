@@ -5,18 +5,18 @@
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/util/crc.h>
-#include <vespa/vespalib/util/vstringfmt.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <algorithm>
 
-using std::binary_search;
-using std::lower_bound;
-
 #include <vespa/log/log.h>
 LOG_SETUP(".dummypersistence");
+
+using vespalib::make_string;
+using std::binary_search;
+using std::lower_bound;
 
 namespace storage::spi::dummy {
 
@@ -678,10 +678,8 @@ DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize, Context& ctx) con
         it->_leftToIterate.pop_back();
     }
     if (ctx.shouldTrace(9)) {
-        ctx.trace(9, vespalib::make_vespa_string("finished iterate(), returning %zu "
-                                                 "documents with %u bytes of data",
-                                                 entries.size(),
-                                                 currentSize));
+        ctx.trace(9, make_string("finished iterate(), returning %zu documents with %u bytes of data",
+                                 entries.size(), currentSize));
     }
     LOG(debug, "finished iterate(%zu, %zu), returning %zu documents "
         "with %u bytes of data. %u docs cloned in fast path",

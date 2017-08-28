@@ -52,8 +52,8 @@ Messages52Test::testPutDocumentMessage()
         if (EXPECT_TRUE(routableUp.get() != nullptr)) {
             auto & deserializedMsg = static_cast<PutDocumentMessage &>(*routableUp);
 
-            EXPECT_EQUAL(msg.getDocument()->getType().getName(), deserializedMsg.getDocument()->getType().getName());
-            EXPECT_EQUAL(msg.getDocument()->getId().toString(), deserializedMsg.getDocument()->getId().toString());
+            EXPECT_EQUAL(msg.getDocument().getType().getName(), deserializedMsg.getDocument().getType().getName());
+            EXPECT_EQUAL(msg.getDocument().getId().toString(), deserializedMsg.getDocument().getId().toString());
             EXPECT_EQUAL(msg.getTimestamp(), deserializedMsg.getTimestamp());
             EXPECT_EQUAL(67u, deserializedMsg.getApproxSize());
             EXPECT_EQUAL(msg.getCondition().getSelection(), deserializedMsg.getCondition().getSelection());
@@ -90,8 +90,7 @@ Messages52Test::testUpdateDocumentMessage()
     const DocumentTypeRepo & repo = getTypeRepo();
     const document::DocumentType & docType = *repo.getDocumentType("testdoc");
 
-    document::DocumentUpdate::SP docUpdate(new document::DocumentUpdate(docType,
-        document::DocumentId("doc:scheme:")));
+    auto docUpdate = std::make_shared<document::DocumentUpdate>(docType, document::DocumentId("doc:scheme:"));
 
     docUpdate->addFieldPathUpdate(document::FieldPathUpdate::CP(
         new document::RemoveFieldPathUpdate("intfield", "testdoc.intfield > 0")));
@@ -108,7 +107,7 @@ Messages52Test::testUpdateDocumentMessage()
 
         if (EXPECT_TRUE(routableUp.get() != nullptr)) {
             auto & deserializedMsg = static_cast<UpdateDocumentMessage &>(*routableUp);
-            EXPECT_EQUAL(*msg.getDocumentUpdate(), *deserializedMsg.getDocumentUpdate());
+            EXPECT_EQUAL(msg.getDocumentUpdate(), deserializedMsg.getDocumentUpdate());
             EXPECT_EQUAL(msg.getOldTimestamp(), deserializedMsg.getOldTimestamp());
             EXPECT_EQUAL(msg.getNewTimestamp(), deserializedMsg.getNewTimestamp());
             EXPECT_EQUAL(115u, deserializedMsg.getApproxSize());

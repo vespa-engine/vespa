@@ -1,22 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tlcproxy.h"
-#include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/searchlib/common/bitvector.h>
-#include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/util/exceptions.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.tlcproxy");
 
 using vespalib::nbostream;
+using search::transactionlog::Packet;
 
 namespace proton {
 
 void TlcProxy::commit(search::SerialNum serialNum, search::transactionlog::Type type, const vespalib::nbostream &buf)
 {
-    search::transactionlog::Packet::Entry
-        entry(serialNum, type, vespalib::ConstBufferRef(buf.c_str(), buf.size()));
-    search::transactionlog::Packet packet;
+    Packet::Entry entry(serialNum, type, vespalib::ConstBufferRef(buf.c_str(), buf.size()));
+    Packet packet;
     packet.add(entry);
     packet.close();
     if (_tlsDirectWriter != NULL) {

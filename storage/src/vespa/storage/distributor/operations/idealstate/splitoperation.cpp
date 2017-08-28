@@ -108,7 +108,7 @@ SplitOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP
                      | DatabaseUpdate::RESET_TRUSTED));
 
             LOG_BUCKET_OPERATION_NO_LOCK(
-                    sinfo.first, vespalib::make_vespa_string(
+                    sinfo.first, vespalib::make_string(
                         "Split from bucket %s: %s",
                         getBucketId().toString().c_str(),
                         copy.toString().c_str()));
@@ -140,13 +140,13 @@ SplitOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP
 #ifdef ENABLE_BUCKET_OPERATION_LOGGING
     if (_ok) {
         LOG_BUCKET_OPERATION_NO_LOCK(
-                getBucketId(), vespalib::make_vespa_string(
+                getBucketId(), vespalib::make_string(
                         "Split OK on node %d: %s. Finished: %s",
                         node, ost.str().c_str(),
                         _tracker.finished() ? "yes" : "no"));
     } else {
         LOG_BUCKET_OPERATION_NO_LOCK(
-                getBucketId(), vespalib::make_vespa_string(
+                getBucketId(), vespalib::make_string(
                         "Split FAILED on node %d: %s. Finished: %s",
                         node, rep.getResult().toString().c_str(),
                         _tracker.finished() ? "yes" : "no"));

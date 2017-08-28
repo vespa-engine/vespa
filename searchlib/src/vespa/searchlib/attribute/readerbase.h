@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/util/fileutil.h>
+#include <cassert>
 
 namespace search {
 

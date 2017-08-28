@@ -135,10 +135,8 @@ public class NodesApiHandler extends LoggingRequestHandler {
              */
             String hostname = lastElement(path);
             if (nodeRepository.dynamicAllocationEnabled()) {
-                if (nodeRepository.remove(hostname))
-                    return new MessageResponse("Removed " + hostname);
-                else
-                    throw new NotFoundException("No node in the provisioned, parked, dirty or failed state with hostname " + hostname);
+                nodeRepository.remove(hostname);
+                return new MessageResponse("Removed " + hostname);
             } else {
                 nodeRepository.setReady(hostname);
                 return new MessageResponse("Moved " + hostname + " to ready");
@@ -182,10 +180,8 @@ public class NodesApiHandler extends LoggingRequestHandler {
         String path = request.getUri().getPath();
         if (path.startsWith("/nodes/v2/node/")) {
             String hostname = lastElement(path);
-            if (nodeRepository.remove(hostname))
-                return new MessageResponse("Removed " + hostname);
-            else
-                throw new NotFoundException("No node in the provisioned, parked or failed state with hostname " + hostname);
+            nodeRepository.remove(hostname);
+            return new MessageResponse("Removed " + hostname);
         }
         else if (path.startsWith("/nodes/v2/maintenance/inactive/")) {
             return setActive(lastElement(path), true);
@@ -196,13 +192,8 @@ public class NodesApiHandler extends LoggingRequestHandler {
     }
 
     private Node nodeFromRequest(HttpRequest request) {
-        // TODO: The next 4 lines can be a oneliner when updateNodeAttribute is removed (as we won't allow path suffixes)
         String path = request.getUri().getPath();
-        String prefixString = "/nodes/v2/node/";
-        int beginIndex = path.indexOf(prefixString) + prefixString.length();
-        int endIndex = path.indexOf("/", beginIndex);
-        if (endIndex < 0) endIndex = path.length(); // path ends by ip
-        String hostname = path.substring(beginIndex, endIndex);
+        String hostname = path.substring(path.lastIndexOf("/"));
 
         return nodeRepository.getNode(hostname).orElseThrow(() ->
                 new NotFoundException("No node found with hostname " + hostname));

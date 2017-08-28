@@ -31,6 +31,7 @@ vespa_add_library(searchlib_features OBJECT
     matchcountfeature.cpp
     matchesfeature.cpp
     matchfeature.cpp
+    max_reduce_prod_join_replacer.cpp
     native_dot_product_feature.cpp
     nativeattributematchfeature.cpp
     nativefieldmatchfeature.cpp
@@ -42,8 +43,8 @@ vespa_add_library(searchlib_features OBJECT
     queryfeature.cpp
     queryterm.cpp
     querytermcountfeature.cpp
-    randomfeature.cpp
     random_normal_feature.cpp
+    randomfeature.cpp
     rankingexpressionfeature.cpp
     raw_score_feature.cpp
     reverseproximityfeature.cpp

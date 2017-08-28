@@ -396,6 +396,16 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
             s.append(" location=")
                     .append(query.getRanking().getLocation().toString());
         }
+        
+        if (query.getGroupingSessionCache()) {
+            s.append(" groupingSessionCache=true");
+        }
+        if (query.getRanking().getQueryCache()) {
+            s.append(" ranking.queryCache=true");
+        }
+        if (query.getGroupingSessionCache() || query.getRanking().getQueryCache()) {
+            s.append(" sessionId=" + query.getSessionId(true));
+        }
 
         List<Grouping> grouping = GroupingExecutor.getGroupingList(query);
         s.append(" grouping=").append(grouping.size()).append(" : ");

@@ -48,7 +48,7 @@ public class StandaloneMain {
             System.out.println("debug\tStopped ok.");
             System.exit(0);
         } catch (Exception e) {
-            log.log(Level.WARNING, "Unexpected: ", e);
+            log.log(Level.SEVERE, "Unexpected: ", e);
             System.exit(6);
         }
     }

@@ -95,7 +95,12 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
     protected void handleRequest(Request request, BufferedContentChannel requestContent,
                                  ResponseHandler responseHandler)
     {
-        handleRequest(request, requestContent.toReadable(), responseHandler);
+        ReadableContentChannel readable = requestContent.toReadable();
+        try {
+            handleRequest(request, readable, responseHandler);
+        } finally {
+            while (readable.read() != null) {} // consume all ignored content
+        }
     }
 
     /**
@@ -110,7 +115,12 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
     protected void handleRequest(Request request, ReadableContentChannel requestContent,
                                  ResponseHandler responseHandler)
     {
-        handleRequest(request, requestContent.toStream(), responseHandler);
+        ContentInputStream inputStream = requestContent.toStream();
+        try {
+            handleRequest(request, inputStream, responseHandler);
+        } finally {
+            while (inputStream.read() >= 0) {} // consume all ignored content
+        }
     }
 
     /**
@@ -126,9 +136,6 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
     protected void handleRequest(Request request, ContentInputStream requestContent,
                                  ResponseHandler responseHandler)
     {
-        while (requestContent.read() >= 0) {
-            // drain content stream
-        }
         ResponseDispatch.newInstance(Response.Status.NOT_IMPLEMENTED).dispatch(responseHandler);
     }
 
@@ -150,7 +157,18 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
         public void run() {
             try (final ResourceReference ref = requestReference) {
                 ThreadedRequestHandler.this.handleRequest(request, content, responseHandler);
+                consumeRequestContent();
             }
+        }
+
+        private void consumeRequestContent() {
+            if (content.isConnected()) return;
+            try {
+                ReadableContentChannel requestContent = content.toReadable();
+                while (requestContent.read() != null) {
+                    // consume all ignored content
+                }
+            } catch (IllegalStateException ignored) {}
         }
     }
 }

@@ -16,6 +16,7 @@
 #include <fcntl.h>
 
 using vespalib::nbostream;
+using vespalib::compression::CompressionConfig;
 
 using namespace document::config_builder;
 

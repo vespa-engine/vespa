@@ -5,17 +5,17 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
+using vespalib::compression::CompressionConfig;
 using vespalib::nbostream;
 
 namespace vdslib {
-MutableDocumentList::MutableDocumentList(const document::DocumentTypeRepo::SP & repo, char* buffer, uint32_t bufferSize, bool keepexisting)
+MutableDocumentList::MutableDocumentList(const document::DocumentTypeRepo::SP & repo, char* buffer,
+                                         uint32_t bufferSize, bool keepexisting)
     : DocumentList(repo, buffer, bufferSize, keepexisting)
 {
 }
 
-MutableDocumentList::MutableDocumentList(const DocumentList& source,
-                                         char* buffer,
-                                         uint32_t bufferSize)
+MutableDocumentList::MutableDocumentList(const DocumentList& source, char* buffer, uint32_t bufferSize)
     : DocumentList(source, buffer, bufferSize)
 {
 }
@@ -41,8 +41,7 @@ MutableDocumentList::addOperationList(const OperationList& opl)
 }
 
 bool
-MutableDocumentList::addPut(const document::Document& doc, Timestamp ts,
-                            bool addBody)
+MutableDocumentList::addPut(const document::Document& doc, Timestamp ts, bool addBody)
 {
     uint32_t freePos = _freePtr - _buffer;
 
@@ -69,9 +68,7 @@ MutableDocumentList::addPut(const document::Document& doc, Timestamp ts,
     entry.bodyLen = bodySize;
     entry.flags = 0;
 
-    if (doc.getType().getFieldsType().getCompressionConfig().type
-        != document::CompressionConfig::NONE)
-    {
+    if (doc.getType().getFieldsType().getCompressionConfig().type != CompressionConfig::NONE) {
         entry.flags |= MetaEntry::COMPRESSED;
     }
 
@@ -91,8 +88,7 @@ MutableDocumentList::addPut(const document::Document& doc, Timestamp ts,
 }
 
 bool
-MutableDocumentList::addUpdate(const document::DocumentUpdate& update,
-                               Timestamp ts)
+MutableDocumentList::addUpdate(const document::DocumentUpdate& update, Timestamp ts)
 {
     vespalib::nbostream os;
     update.serialize42(os);

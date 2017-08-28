@@ -3,6 +3,7 @@
 #include "updatedocumentmessage.h"
 #include "updatedocumentreply.h"
 #include <vespa/documentapi/messagebus/documentprotocol.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 namespace documentapi {
@@ -20,7 +21,7 @@ UpdateDocumentMessage::UpdateDocumentMessage(document::DocumentUpdate::SP docume
     _oldTime(0),
     _newTime(0)
 {
-    setDocumentUpdate(documentUpdate);
+    setDocumentUpdate(std::move(documentUpdate));
 }
 
 UpdateDocumentMessage::~UpdateDocumentMessage() {}
@@ -49,25 +50,13 @@ UpdateDocumentMessage::getType() const
     return DocumentProtocol::MESSAGE_UPDATEDOCUMENT;
 }
 
-document::DocumentUpdate::SP
-UpdateDocumentMessage::getDocumentUpdate()
-{
-    return _documentUpdate;
-}
-
-std::shared_ptr<const document::DocumentUpdate>
-UpdateDocumentMessage::getDocumentUpdate() const
-{
-    return _documentUpdate;
-}
-
 void
 UpdateDocumentMessage::setDocumentUpdate(document::DocumentUpdate::SP documentUpdate)
 {
-    if (documentUpdate.get() == NULL) {
+    if ( ! documentUpdate) {
         throw vespalib::IllegalArgumentException("Document update can not be null.", VESPA_STRLOC);
     }
-    _documentUpdate = documentUpdate;
+    _documentUpdate = std::move(documentUpdate);
 }
 
 }

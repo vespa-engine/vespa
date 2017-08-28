@@ -11,8 +11,7 @@ LOG_SETUP(".translogclient");
 
 using namespace std::chrono_literals;
 
-namespace search {
-namespace transactionlog {
+namespace search::transactionlog {
 
 namespace {
     const double NEVER(-1.0);
@@ -407,5 +406,4 @@ TransLogClient::Visitor::~Visitor()
 {
 }
 
-}
 }

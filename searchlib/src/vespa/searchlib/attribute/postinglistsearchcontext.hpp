@@ -9,6 +9,7 @@
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/common/growablebitvector.h>
+#include "posting_list_traverser.h"
 
 
 using search::queryeval::EmptySearch;
@@ -23,10 +24,8 @@ PostingListSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uin
                           uint32_t minBvDocFreq, bool useBitVector)
     : PostingListSearchContext(dictionary, docIdLimit, numValues, hasWeight, esb, minBvDocFreq, useBitVector),
       _postingList(postingList),
-      _array(),
-      _bitVector(),
-      _fetchPostingsDone(false),
-      _arrayValid(false)
+      _merger(docIdLimit),
+      _fetchPostingsDone(false)
 {
 }
 
@@ -87,27 +86,14 @@ PostingListSearchContextT<DataT>::countHits() const
 
 template <typename DataT>
 void
-PostingListSearchContextT<DataT>::fillArray(size_t numDocs)
+PostingListSearchContextT<DataT>::fillArray()
 {
-    _array.clear();
-    _array.reserve(numDocs);
-    std::vector<size_t> startPos;
-    startPos.reserve(_uniqueValues + 1);
-    startPos.push_back(0);
     for (auto it(_lowerDictItr); it != _upperDictItr; ++it) {
         if (useThis(it)) {
-            _postingList.foreach_frozen(it.getData(),
-                                        [&](uint32_t key, const DataT &data) {
-                                            _array.push_back(Posting(key, data));
-                                        });
-            startPos.push_back(_array.size());
+            _merger.addToArray(PostingListTraverser<PostingList>(_postingList, it.getData()));
         }
     }
-    if (startPos.size() > 2) {
-        PostingVector temp(_array.size());
-        _array.swap(merge(_array, temp, startPos));
-    }
-    _arrayValid = true;
+    _merger.merge();
 }
 
 
@@ -115,50 +101,11 @@ template <typename DataT>
 void
 PostingListSearchContextT<DataT>::fillBitVector()
 {
-    _bitVector = BitVector::create(_docIdLimit);
-    BitVector &bv(*_bitVector);
-    uint32_t limit = bv.size();
     for (auto it(_lowerDictItr); it != _upperDictItr; ++it) {
         if (useThis(it)) {
-            _postingList.foreach_frozen_key(it.getData(),
-                                            [&](uint32_t key) {
-                                                if (key < limit) {
-                                                    bv.setBit(key);
-                                                }
-                                            });
+            _merger.addToBitVector(PostingListTraverser<PostingList>(_postingList, it.getData()));
         }
     }
-    bv.invalidateCachedCount();
-}
-
-
-template <typename DataT>
-typename PostingListSearchContextT<DataT>::PostingVector &
-PostingListSearchContextT<DataT>::
-merge(PostingVector &v, PostingVector &temp,
-      const std::vector<size_t> &startPos)
-{
-    std::vector<size_t> nextStartPos;
-    nextStartPos.reserve((startPos.size() + 1) / 2);
-    nextStartPos.push_back(0);
-    for (size_t i(0), m((startPos.size() - 1) / 2); i < m; i++) {
-        size_t aStart = startPos[i * 2 + 0];
-        size_t aEnd = startPos[i * 2 + 1];
-        size_t bStart = aEnd;
-        size_t bEnd = startPos[i * 2 + 2];
-        typename PostingVector::const_iterator it = v.begin();
-        std::merge(it + aStart, it + aEnd,
-                   it + bStart, it + bEnd,
-                   temp.begin() + aStart);
-        nextStartPos.push_back(bEnd);
-    }
-    if ((startPos.size() - 1) % 2) {
-        for (size_t i(startPos[startPos.size() - 2]), m(v.size()); i < m; i++) {
-            temp[i] = v[i];
-        }
-        nextStartPos.push_back(temp.size());
-    }
-    return (nextStartPos.size() > 2) ? merge(temp, v, nextStartPos) : temp;
 }
 
 
@@ -174,10 +121,13 @@ PostingListSearchContextT<DataT>::fetchPostings(bool strict)
     if (strict && !fallbackToFiltering()) {
         size_t sum(countHits());
         if (sum < _docIdLimit / 64) {
-            fillArray(sum);
+            _merger.reserveArray(_uniqueValues, sum);
+            fillArray();
         } else {
+            _merger.allocBitVector();
             fillBitVector();
         }
+        _merger.merge();
     }
 }
 
@@ -189,17 +139,10 @@ PostingListSearchContextT<DataT>::diversify(bool forward, size_t wanted_hits, co
 {
     assert(!_fetchPostingsDone);
     _fetchPostingsDone = true;
-    _array.clear();
-    _array.reserve(wanted_hits);
-    std::vector<size_t> fragments;
-    fragments.push_back(0);
+    _merger.reserveArray(128, wanted_hits);
     diversity::diversify(forward, _lowerDictItr, _upperDictItr, _postingList, wanted_hits, diversity_attr,
-                         max_per_group, cutoff_groups, cutoff_strict, _array, fragments);
-    if (fragments.size() > 2) {
-        PostingVector temp(_array.size());
-        _array.swap(merge(_array, temp, fragments));
-    }
-    _arrayValid = true;
+                         max_per_group, cutoff_groups, cutoff_strict, _merger.getWritableArray(), _merger.getWritableStartPos());
+    _merger.merge();
 }
 
 
@@ -212,22 +155,23 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
     if (_uniqueValues == 0u) {
         return SearchIterator::UP(new EmptySearch());
     }
-    if (_arrayValid || (_bitVector.get() != nullptr)) { // synthetic results are available
-        if (!_array.empty()) {
-            assert(_arrayValid);
+    if (_merger.hasArray() || _merger.hasBitVector()) { // synthetic results are available
+        if (!_merger.emptyArray()) {
+            assert(_merger.hasArray());
             using DocIt = DocIdIterator<Posting>;
             DocIt postings;
-            postings.set(&_array[0], &_array[_array.size()]);
+            vespalib::ConstArrayRef<Posting> array = _merger.getArray();
+            postings.set(&array[0], &array[array.size()]);
             if (_postingList._isFilter) {
                 return std::make_unique<FilterAttributePostingListIteratorT<DocIt>>(matchData, postings);
             } else {
                 return std::make_unique<AttributePostingListIteratorT<DocIt>>(_hasWeight, matchData, postings);
             }
         }
-        if (_arrayValid) {
+        if (_merger.hasArray()) {
             return SearchIterator::UP(new EmptySearch());
         }
-        BitVector *bv(_bitVector.get());
+        const BitVector *bv(_merger.getBitVector());
         assert(bv != nullptr);
         return search::BitVectorIterator::create(bv, bv->size(), *matchData, strict);
     }

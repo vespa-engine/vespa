@@ -322,10 +322,6 @@ public class FastHit extends Hit {
             needXmlEscape = ! (fieldType instanceof XMLField);
             this.contents = contents;
         }
-        public RawField(byte [] contents) {
-            needXmlEscape = true;
-            this.contents = contents;
-        }
 
         public byte [] getUtf8() { return contents; }
         public boolean needXmlEscape() { return needXmlEscape; }
@@ -357,10 +353,6 @@ public class FastHit extends Hit {
      */
     public QueryPacketData getQueryPacketData() {
         return queryPacketData;
-    }
-
-    public void clearQueryPacketData() {
-        queryPacketData = null;
     }
 
     CacheKey getCacheKey() {

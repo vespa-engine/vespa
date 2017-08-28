@@ -4,10 +4,7 @@
 
 #include <vespa/searchlib/common/serialnum.h>
 
-namespace search
-{
-namespace transactionlog
-{
+namespace search::transactionlog {
 
 class SyncProxy
 {
@@ -17,6 +14,3 @@ public:
 };
 
 }
-
-}
-

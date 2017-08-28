@@ -257,6 +257,7 @@ public class NodeSerializer {
     /** Returns the event type, or null if this event type should be ignored */
     private History.Event.Type eventTypeFromString(String eventTypeString) {
         switch (eventTypeString) {
+            case "provisioned" : return History.Event.Type.provisioned;
             case "readied" : return History.Event.Type.readied;
             case "reserved" : return History.Event.Type.reserved;
             case "activated" : return History.Event.Type.activated;
@@ -273,6 +274,7 @@ public class NodeSerializer {
     }
     private String toString(History.Event.Type nodeEventType) {
         switch (nodeEventType) {
+            case provisioned : return "provisioned";
             case readied : return "readied";
             case reserved : return "reserved";
             case activated : return "activated";

@@ -26,6 +26,7 @@
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/random.h>
+#include <dirent.h>
 
 #include <vespa/searchlib/aggregation/forcelink.hpp>
 #include <vespa/searchlib/expression/forcelink.hpp>
@@ -47,7 +48,7 @@ using search::index::SchemaBuilder;
 using search::transactionlog::DomainStats;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::search::core::internal::InternalProtonType;
-using document::CompressionConfig;
+using vespalib::compression::CompressionConfig;
 
 namespace proton {
 

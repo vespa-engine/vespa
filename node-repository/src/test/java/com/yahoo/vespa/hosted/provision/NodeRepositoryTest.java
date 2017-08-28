@@ -13,6 +13,7 @@ import org.junit.Test;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
+import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -36,7 +37,7 @@ public class NodeRepositoryTest {
         assertEquals(3, tester.getNodes(NodeType.tenant).size());
         
         tester.nodeRepository().park("host2", Agent.system, "Parking to unit test");
-        assertTrue(tester.nodeRepository().remove("host2"));
+        tester.nodeRepository().remove("host2");
 
         assertEquals(2, tester.getNodes(NodeType.tenant).size());
     }
@@ -71,17 +72,18 @@ public class NodeRepositoryTest {
     @Test
     public void only_allow_to_delete_dirty_nodes_when_dynamic_allocation_feature_enabled() {
         NodeRepositoryTester tester = new NodeRepositoryTester();
+        tester.addNode("id1", "host1", "default", NodeType.host);
+        tester.addNode("id2", "host2", "docker", NodeType.tenant);
+        tester.nodeRepository().setDirty("host2");
+
         try {
-            tester.addNode("id1", "host1", "default", NodeType.host);
-            tester.addNode("id2", "host2", "docker", NodeType.tenant);
-            tester.nodeRepository().setDirty("host2");
-
-            assertFalse(tester.nodeRepository().remove("host2"));
-
-            tester.curator().set(Path.fromString("/provision/v1/dynamicDockerAllocation"), new byte[0]);
-            assertTrue(tester.nodeRepository().remove("host2"));
-        } finally {
-            tester.curator().delete(Path.fromString("/provision/v1/dynamicDockerAllocation"));
+            tester.nodeRepository().remove("host2");
+            fail("Should not be able to delete tenant node in state dirty");
+        } catch (IllegalArgumentException ignored) {
+            // Expected
         }
+
+        tester.curator().set(Path.fromString("/provision/v1/dynamicDockerAllocation"), new byte[0]);
+        tester.nodeRepository().remove("host2");
     }
 }

@@ -4,8 +4,7 @@
 #include "stringfmt.h"
 #include "exceptions.h"
 
-namespace vespalib {
-namespace compress {
+namespace vespalib::compress {
 
 size_t Integer::compressedPositiveLength(uint64_t n)
 {
@@ -83,5 +82,4 @@ size_t Integer::compress(int64_t n, void *destination)
     }
 }
 
-}
 }
