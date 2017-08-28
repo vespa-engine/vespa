@@ -23,6 +23,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.query.QueryTree;
+import com.yahoo.search.query.SessionId;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.result.Hit;
@@ -44,6 +45,7 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -634,6 +636,37 @@ public class QueryTestCase {
             query.properties().set("a.b","baz");
             assertEquals("baz",query.properties().get("a.b"));
         }
+    }
+
+    @Test
+    public void testThatSessionIdIsUniquePerQuery() {
+        Query q = new Query();
+        assertNull(q.getSessionId(false));
+        assertNull(q.getSessionId(false));
+        SessionId s1 = q.getSessionId(true);
+        assertNotNull(s1);
+        SessionId s2 = q.getSessionId(true);
+        assertNotSame(s1, s2);
+        assertEquals(s1, s2);
+        assertEquals(s1.toString(), s2.toString());
+
+        Query q2 = new Query();
+        assertNotEquals(q.getSessionId(false), q2.getSessionId(true));
+        assertNotEquals(q.getSessionId(false).toString(), q2.getSessionId(true).toString());
+
+        // This is not required, but just to document current implementation.
+        Query clonedQ = q.clone();
+        assertNotNull(clonedQ.getSessionId(false));
+        assertEquals(q.getSessionId(false), q.getSessionId(false));
+    }
+
+    @Test
+    public void testThatSessionIdIsUniquePerRankProfilePerQuery() {
+        Query q = new Query();
+        SessionId s1 = q.getSessionId(true);
+        q.getRanking().setProfile("my-profile");
+        SessionId s2 = q.getSessionId(false);
+        assertNotEquals(s1, s2);
     }
 
     @Test
