@@ -12,6 +12,7 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.lang.SettableOptional;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
@@ -49,9 +50,16 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         this.hosted = hosted;
     }
 
+    /**
+     * Builds all applicable model versions
+     * 
+     * @param allocatedHosts the newest version (major and minor) (which is loaded first) decides the allocated hosts
+     *                       and assigns to this SettableOptional such that it can be used after this method returns
+     */
     public List<MODELRESULT> buildModels(ApplicationId applicationId, 
                                          com.yahoo.component.Version wantedNodeVespaVersion, 
                                          ApplicationPackage applicationPackage,
+                                         SettableOptional<AllocatedHosts> allocatedHosts,
                                          Instant now) {
         Set<Version> versions = modelFactoryRegistry.allVersions();
 
@@ -69,8 +77,6 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                               .sorted(Comparator.reverseOrder())
                                               .collect(Collectors.toList());
 
-        // The newest version (major and minor) (which is loaded first) decides the allocated hosts
-        SettableOptional<AllocatedHosts> allocatedHosts = new SettableOptional<>();
         List<MODELRESULT> allApplicationModels = new ArrayList<>();
         for (int i = 0; i < majorVersions.size(); i++) {
             try {
@@ -178,33 +184,6 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         if (hosted && allocatedHosts.isPresent())
             return Optional.of(new StaticProvisioner(allocatedHosts.get()));
         return Optional.empty();
-    }
-
-    /** An optional which contains a settable value */
-    protected static final class SettableOptional<T> {
-
-        private T value = null;
-
-        /** Creates a new empty settable optional */
-        private SettableOptional() {}
-
-        /** Creates a new settable optional with the given value */
-        private SettableOptional(T value) { this.value = value; }
-
-        public boolean isPresent() {
-            return value != null;
-        }
-        
-        public T get() {
-            if (value == null)
-                throw new NoSuchElementException("No value present");
-            return value;
-        }
-        
-        public void set(T value) {
-            this.value = value;
-        }
-        
     }
 
 }

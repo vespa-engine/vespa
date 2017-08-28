@@ -10,6 +10,7 @@ import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.provision.*;
+import com.yahoo.lang.SettableOptional;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -91,8 +92,8 @@ public class SessionPreparer {
         Preparation preparation = new Preparation(context, logger, params, currentActiveApplicationSet, tenantPath);
         preparation.preprocess();
         try {
-            preparation.buildModels(now);
-            preparation.makeResult();
+            AllocatedHosts allocatedHosts = preparation.buildModels(now);
+            preparation.makeResult(allocatedHosts);
             if ( ! params.isDryRun()) {
                 preparation.writeStateZK();
                 preparation.writeRotZK();
@@ -176,13 +177,16 @@ public class SessionPreparer {
             checkTimeout("preprocess");
         }
 
-        void buildModels(Instant now) {
-            this.modelResultList = preparedModelsBuilder.buildModels(applicationId, vespaVersion, applicationPackage, now);
+        AllocatedHosts buildModels(Instant now) {
+            SettableOptional<AllocatedHosts> allocatedHosts = new SettableOptional<>();
+            this.modelResultList = preparedModelsBuilder.buildModels(applicationId, vespaVersion, 
+                                                                     applicationPackage, allocatedHosts, now);
             checkTimeout("build models");
+            return allocatedHosts.get();
         }
 
-        void makeResult() {
-            this.prepareResult = new PrepareResult(modelResultList);
+        void makeResult(AllocatedHosts allocatedHosts) {
+            this.prepareResult = new PrepareResult(allocatedHosts, modelResultList);
             checkTimeout("making result from models");
         }
 
@@ -194,7 +198,7 @@ public class SessionPreparer {
                                   vespaVersion,
                                   logger,
                                   prepareResult.getFileRegistries(), 
-                                  prepareResult.getProvisionInfo());
+                                  prepareResult.allocatedHosts());
             checkTimeout("write state to zookeeper");
         }
 
@@ -250,9 +254,11 @@ public class SessionPreparer {
     /** The result of preparation over all model versions */
     private static class PrepareResult {
 
+        private final AllocatedHosts allocatedHosts;
         private final ImmutableList<PreparedModelsBuilder.PreparedModelResult> results;
         
-        public PrepareResult(List<PreparedModelsBuilder.PreparedModelResult> results) {
+        public PrepareResult(AllocatedHosts allocatedHosts, List<PreparedModelsBuilder.PreparedModelResult> results) {
+            this.allocatedHosts = allocatedHosts;
             this.results = ImmutableList.copyOf(results);
         }
 
@@ -260,9 +266,7 @@ public class SessionPreparer {
         public List<PreparedModelsBuilder.PreparedModelResult> asList() { return results; }
 
         /** Returns the host allocations resulting from this preparation. */
-        public AllocatedHosts getProvisionInfo() {
-            return results.asList().get(0).getModel().allocatedHosts(); // All have the same hosts allocated
-        }
+        public AllocatedHosts allocatedHosts() { return allocatedHosts; }
 
         public Map<Version, FileRegistry> getFileRegistries() {
             return results.stream()
