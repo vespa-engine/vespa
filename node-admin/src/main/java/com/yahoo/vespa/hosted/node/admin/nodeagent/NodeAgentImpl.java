@@ -180,7 +180,9 @@ public class NodeAgentImpl implements NodeAgent {
 
     @Override
     public void start(int intervalMillis) {
-        addDebugMessage("Starting with interval " + intervalMillis + "ms");
+        String message = "Starting with interval " + intervalMillis + " ms";
+        logger.info(message);
+        addDebugMessage(message);
         delaysBetweenEachConvergeMillis = intervalMillis;
         if (loopThread != null) {
             throw new RuntimeException("Can not restart a node agent.");
@@ -214,6 +216,8 @@ public class NodeAgentImpl implements NodeAgent {
         } catch (InterruptedException e) {
             logger.error("Interrupted; Could not stop filebeatrestarter thread");
         }
+
+        logger.info("Stopped");
     }
 
     private void runLocalResumeScriptIfNeeded() {
