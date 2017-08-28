@@ -7,7 +7,7 @@ BUILD_DIR=~/build
 
 mkdir "${BUILD_DIR}"
 
-export CCACHE_MAXSIZE="1G"
+export CCACHE_MAXSIZE="1250M"
 export CCACHE_COMPRESS=1
 NUM_THREADS=4
 ccache --print-config
