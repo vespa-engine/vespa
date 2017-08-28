@@ -235,11 +235,7 @@ public class NodeAdminImpl implements NodeAdmin {
                 existingContainers.stream(), containerName -> containerName);
 
         final Set<ContainerName> obsoleteAgentContainerNames = diff(nodeAgents.keySet(), new HashSet<>(hostnameByContainerName.keySet()));
-
-        for (ContainerName containerName : obsoleteAgentContainerNames) {
-            nodeAgents.remove(containerName).stop();
-            logger.warning("Stopped node agent for " + containerName.asString());
-        }
+        obsoleteAgentContainerNames.forEach(containerName -> nodeAgents.remove(containerName).stop());
 
         nodeSpecContainerPairs.forEach(nodeSpecContainerPair -> {
             final Optional<ContainerName> nodeSpec = nodeSpecContainerPair.getFirst();
