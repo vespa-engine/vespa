@@ -13,20 +13,18 @@ import java.util.logging.Logger;
 /**
  * This class is necessary to support both having and not having a host provisioner. We inject
  * a component registry here, which then enables us to check whether or not we have a provisioner available.
+ * We only have a provisioner if we are running in hosted mode.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class HostProvisionerProvider {
 
-    private static final Logger log = Logger.getLogger(HostProvisionerProvider.class.getName());
     private final Optional<Provisioner> hostProvisioner;
 
     public HostProvisionerProvider(ComponentRegistry<Provisioner> hostProvisionerRegistry, ConfigserverConfig configserverConfig) {
         if (hostProvisionerRegistry.allComponents().isEmpty() || ! configserverConfig.hostedVespa()) {
-            log.info("Host provisioner is missing, provisioner component count: " + hostProvisionerRegistry.allComponents().size() + ", is hosted Vespa: " + configserverConfig.hostedVespa());
             hostProvisioner = Optional.empty();
         } else {
-            log.log(LogLevel.DEBUG, "Host provisioner injected. Will be used for all deployments");
             hostProvisioner = Optional.of(hostProvisionerRegistry.allComponents().get(0));
         }
     }
@@ -35,6 +33,7 @@ public class HostProvisionerProvider {
         this(componentRegistry, new ConfigserverConfig(new ConfigserverConfig.Builder()));
     }
 
+    /** Returns the host provisioner, or empty if we are not in hosted mode */
     public Optional<Provisioner> getHostProvisioner() {
         return hostProvisioner;
     }

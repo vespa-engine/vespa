@@ -22,8 +22,7 @@ import java.util.Optional;
 /**
  * Registry containing all the "static"/"global" components in a config server in one place.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry {
 

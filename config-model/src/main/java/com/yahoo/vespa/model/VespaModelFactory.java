@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 /**
  * Factory for creating {@link VespaModel} instances.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class VespaModelFactory implements ModelFactory {
 

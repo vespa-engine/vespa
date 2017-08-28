@@ -19,8 +19,7 @@ import java.util.logging.Logger;
  * A RemoteSession represents a session created on another config server. This session can
  * be regarded as read only, and this interface only allows reading information about a session.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class RemoteSession extends Session {
 

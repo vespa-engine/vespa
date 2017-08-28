@@ -48,7 +48,6 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     private final long appGeneration;
     private final SessionZooKeeperClient zkClient;
     private final Optional<PermanentApplicationPackage> permanentApplicationPackage;
-    private final Optional<com.yahoo.config.provision.Provisioner> hostProvisioner;
     private final ConfigserverConfig configserverConfig;
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final Metrics metrics;
@@ -57,7 +56,8 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     private final DeployLogger logger;
 
     public ActivatedModelsBuilder(TenantName tenant, long appGeneration, SessionZooKeeperClient zkClient, GlobalComponentRegistry globalComponentRegistry) {
-        super(globalComponentRegistry.getModelFactoryRegistry());
+        super(globalComponentRegistry.getModelFactoryRegistry(), 
+              globalComponentRegistry.getHostProvisioner().isPresent());
         this.tenant = tenant;
         this.appGeneration = appGeneration;
         this.zkClient = zkClient;
@@ -65,7 +65,6 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         this.configserverConfig = globalComponentRegistry.getConfigserverConfig();
         this.configDefinitionRepo = globalComponentRegistry.getConfigDefinitionRepo();
         this.metrics = globalComponentRegistry.getMetrics();
-        this.hostProvisioner = globalComponentRegistry.getHostProvisioner();
         this.curator = globalComponentRegistry.getCurator();
         this.zone = globalComponentRegistry.getZone();
         this.logger = new SilentDeployLogger();
@@ -76,6 +75,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                             ApplicationPackage applicationPackage,
                                             ApplicationId applicationId, 
                                             com.yahoo.component.Version wantedNodeVespaVersion,
+                                            SettableOptional<ProvisionInfo> ignored, // Ignored since we have this in the app package for activated models
                                             Instant now) {
         log.log(LogLevel.DEBUG, String.format("Loading model version %s for session %s application %s",
                                               modelFactory.getVersion(), appGeneration, applicationId));
@@ -95,17 +95,6 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         MetricUpdater applicationMetricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(applicationId));
         return new Application(modelFactory.createModel(modelContext), cache, appGeneration, modelFactory.getVersion(),
                                applicationMetricUpdater, applicationId);
-    }
-
-    private Optional<HostProvisioner> createHostProvisioner(Optional<ProvisionInfo> provisionInfo) {
-        if (hostProvisioner.isPresent() && provisionInfo.isPresent()) {
-            return Optional.of(createStaticProvisioner(provisionInfo.get()));
-        }
-        return Optional.empty();
-    }
-
-    private HostProvisioner createStaticProvisioner(ProvisionInfo provisionInfo) {
-        return new StaticProvisioner(provisionInfo);
     }
 
     private static <T> Optional<T> getForVersionOrLatest(Map<Version, T> map, Version version) {

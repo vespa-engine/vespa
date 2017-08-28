@@ -252,11 +252,8 @@ public class SessionPreparer {
 
         private final ImmutableList<PreparedModelsBuilder.PreparedModelResult> results;
         
-        private final ReconciliatedHostAllocations reconciliatedHostAllocations;
-
         public PrepareResult(List<PreparedModelsBuilder.PreparedModelResult> results) {
             this.results = ImmutableList.copyOf(results);
-            reconciliatedHostAllocations = new ReconciliatedHostAllocations(results);
         }
 
         /** Returns the results for each model as an immutable list */
@@ -264,7 +261,7 @@ public class SessionPreparer {
 
         /** Returns the host allocations resulting from this preparation. */
         public ProvisionInfo getProvisionInfo() {
-            return reconciliatedHostAllocations.allocatedHosts();
+            return results.asList().get(0).getModel().provisionInfo(); // All have the same provision info
         }
 
         public Map<Version, FileRegistry> getFileRegistries() {

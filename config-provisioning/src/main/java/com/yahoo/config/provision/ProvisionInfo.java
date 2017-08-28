@@ -9,6 +9,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Optional;

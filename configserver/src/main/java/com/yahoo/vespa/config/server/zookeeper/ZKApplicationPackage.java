@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.zookeeper;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ComponentInfo;
@@ -11,6 +12,7 @@ import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.application.provider.*;
+import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.ProvisionInfo;
 import com.yahoo.io.IOUtils;
@@ -35,7 +37,7 @@ import java.util.Optional;
 /**
  * Represents an application residing in zookeeper.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ZKApplicationPackage implements ApplicationPackage {
 
@@ -62,7 +64,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
         Optional<ProvisionInfo> provisionInfo = readProvisionInfo(allocatedHostsPath, nodeFlavors);
         if ( ! provisionInfo.isPresent()) { // Read from legacy location. TODO: Remove when 6.142 is in production everywhere
             List<String> provisionInfoByVersionNodes = liveApp.getChildren(allocatedHostsPath);
-            provisionInfo = newestOf(readProvisionInfosByVersion(provisionInfoByVersionNodes, nodeFlavors));
+            provisionInfo = merge(readProvisionInfosByVersion(provisionInfoByVersionNodes, nodeFlavors));
         }
         return provisionInfo;
     }
@@ -79,17 +81,16 @@ public class ZKApplicationPackage implements ApplicationPackage {
         return provisionInfoMap;
     }
 
-    private Optional<ProvisionInfo> newestOf(Map<Version, ProvisionInfo> provisionInfoMap) {
+    private Optional<ProvisionInfo> merge(Map<Version, ProvisionInfo> provisionInfoMap) {
+        // Merge the provision infos in any order. This is wrong but preserves current behavior (modulo order differences)
         if (provisionInfoMap.isEmpty()) return Optional.empty();
-        Version newestVersion = null;
-        ProvisionInfo newestInfo = null;
+        
+        Map<String, HostSpec> merged = new HashMap<>();
         for (Map.Entry<Version, ProvisionInfo> entry : provisionInfoMap.entrySet()) {
-            if (newestVersion == null || newestVersion.isBefore(entry.getKey())) {
-                newestVersion = entry.getKey();
-                newestInfo = entry.getValue();
-            }
+            for (HostSpec host : entry.getValue().getHosts())
+                merged.put(host.hostname(), host);
         }
-        return Optional.of(newestInfo);
+        return Optional.of(ProvisionInfo.withHosts(ImmutableSet.copyOf(merged.values())));
     }
 
     /** 

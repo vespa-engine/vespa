@@ -9,8 +9,7 @@ import java.util.List;
 /**
  * Interface used by the config system to acquire hosts.
  *
- * @author lulf
- * @since 5.11
+ * @author Ulf Lilleengen
  */
 public interface Provisioner {
 

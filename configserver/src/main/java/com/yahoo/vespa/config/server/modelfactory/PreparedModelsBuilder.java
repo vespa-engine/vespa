@@ -13,6 +13,7 @@ import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ProvisionInfo;
 import com.yahoo.config.provision.Version;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -61,7 +62,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                  PrepareParams params,
                                  Optional<ApplicationSet> currentActiveApplicationSet,
                                  ModelContext.Properties properties) {
-        super(modelFactoryRegistry);
+        super(modelFactoryRegistry, properties.hostedVespa());
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.configDefinitionRepo = configDefinitionRepo;
 
@@ -80,14 +81,19 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     protected PreparedModelResult buildModelVersion(ModelFactory modelFactory, 
                                                     ApplicationPackage applicationPackage,
                                                     ApplicationId applicationId, 
-                                                    com.yahoo.component.Version wantedNodeVespaVersion, Instant now) {
+                                                    com.yahoo.component.Version wantedNodeVespaVersion,
+                                                    SettableOptional<ProvisionInfo> activatedHosts,
+                                                    Instant now) {
         Version modelVersion = modelFactory.getVersion();
         log.log(LogLevel.DEBUG, "Start building model for Vespa version " + modelVersion);
         FileDistributionProvider fileDistributionProvider = fileDistributionFactory.createProvider(
                 context.getServerDBSessionDir(),
                 applicationId);
 
-        Optional<HostProvisioner> hostProvisioner = createHostProvisionerAdapter(properties);
+        // Use already allocated hosts if available, create connection to a host provisioner otherwise
+        Optional<HostProvisioner> hostProvisioner = 
+                activatedHosts.isPresent() ? createHostProvisioner(Optional.of(activatedHosts.get())) :
+                                             createHostProvisionerAdapter(properties);
         Optional<Model> previousModel = currentActiveApplicationSet
                 .map(set -> set.getForVersionOrLatest(Optional.of(modelVersion), now).getModel());
         ModelContext modelContext = new ModelContextImpl(
