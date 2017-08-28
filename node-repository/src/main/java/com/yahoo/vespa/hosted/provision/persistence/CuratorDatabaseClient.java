@@ -108,16 +108,14 @@ public class CuratorDatabaseClient {
      *
      * @param state the current state of the node
      * @param hostName the host name of the node to remove
-     * @return true if the node was removed, false if it was not found
      */
-    public boolean removeNode(Node.State state, String hostName) {
+    public void removeNode(Node.State state, String hostName) {
         Path path = toPath(state, hostName);
         NestedTransaction transaction = new NestedTransaction();
         CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
         curatorTransaction.add(CuratorOperations.delete(path.getAbsolute()));
         transaction.commit();
         log.log(LogLevel.INFO, "Removed: " + state + " node " + hostName);
-        return true;
     }
 
     /**

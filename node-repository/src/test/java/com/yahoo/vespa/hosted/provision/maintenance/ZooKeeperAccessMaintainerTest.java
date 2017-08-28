@@ -49,7 +49,7 @@ public class ZooKeeperAccessMaintainerTest {
         assertEquals(asSet("host1,host2,host3,host4,host5,server1,server2"), ZooKeeperServer.getAllowedClientHostnames());
 
         tester.nodeRepository().park("host2", Agent.system, "Parking to unit test");
-        assertTrue(tester.nodeRepository().remove("host2"));
+        tester.nodeRepository().remove("host2");
         maintainer.maintain();
 
         assertEquals(2, tester.getNodes(NodeType.tenant).size());
