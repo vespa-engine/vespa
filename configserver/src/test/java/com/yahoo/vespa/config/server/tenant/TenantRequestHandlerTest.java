@@ -8,6 +8,7 @@ import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.ProvisionInfo;
 import com.yahoo.config.provision.Version;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
@@ -94,7 +95,7 @@ public class TenantRequestHandlerTest extends TestWithCurator {
         File app = tempFolder.newFolder();
         IOUtils.copyDirectory(appDir, app);
         ZooKeeperDeployer deployer = zkc.createDeployer(new BaseDeployLogger());
-        deployer.deploy(FilesApplicationPackage.fromFile(appDir), Collections.singletonMap(vespaVersion, new MockFileRegistry()), Collections.emptyMap());
+        deployer.deploy(FilesApplicationPackage.fromFile(appDir), Collections.singletonMap(vespaVersion, new MockFileRegistry()), ProvisionInfo.withHosts(Collections.emptySet()));
     }
 
     private ApplicationSet reloadConfig(long id, Clock clock) {

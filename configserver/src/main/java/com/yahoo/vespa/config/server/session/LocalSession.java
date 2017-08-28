@@ -30,8 +30,7 @@ import java.util.Optional;
  * prepared. Deleting a local session will ensure that the local filesystem state and global zookeeper state is
  * cleaned for this session.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 // This is really the store of an application, whether it is active or in an edit session
 // TODO: Separate the "application store" and "session" aspects - the latter belongs in the HTTP layer

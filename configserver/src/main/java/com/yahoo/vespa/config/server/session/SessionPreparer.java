@@ -42,8 +42,7 @@ import javax.xml.transform.TransformerException;
 /**
  * A SessionPreparer is responsible for preparing a session given an application package.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class SessionPreparer {
 
@@ -195,7 +194,7 @@ public class SessionPreparer {
                                   vespaVersion,
                                   logger,
                                   prepareResult.getFileRegistries(), 
-                                  prepareResult.getProvisionInfos());
+                                  prepareResult.getProvisionInfo());
             checkTimeout("write state to zookeeper");
         }
 
@@ -236,10 +235,10 @@ public class SessionPreparer {
                                        com.yahoo.component.Version vespaVersion,
                                        DeployLogger deployLogger,
                                        Map<Version, FileRegistry> fileRegistryMap,
-                                       Map<Version, ProvisionInfo> provisionInfoMap) {
+                                       ProvisionInfo provisionInfo) {
         ZooKeeperDeployer zkDeployer = zooKeeperClient.createDeployer(deployLogger);
         try {
-            zkDeployer.deploy(applicationPackage, fileRegistryMap, provisionInfoMap);
+            zkDeployer.deploy(applicationPackage, fileRegistryMap, provisionInfo);
             zooKeeperClient.writeApplicationId(applicationId);
             zooKeeperClient.writeVespaVersion(vespaVersion);
         } catch (RuntimeException | IOException e) {
@@ -252,19 +251,20 @@ public class SessionPreparer {
     private static class PrepareResult {
 
         private final ImmutableList<PreparedModelsBuilder.PreparedModelResult> results;
+        
+        private final ReconciliatedHostAllocations reconciliatedHostAllocations;
 
         public PrepareResult(List<PreparedModelsBuilder.PreparedModelResult> results) {
             this.results = ImmutableList.copyOf(results);
+            reconciliatedHostAllocations = new ReconciliatedHostAllocations(results);
         }
 
         /** Returns the results for each model as an immutable list */
         public List<PreparedModelsBuilder.PreparedModelResult> asList() { return results; }
 
-        public Map<Version, ProvisionInfo> getProvisionInfos() {
-            return results.stream()
-                    .filter(result -> result.model.getProvisionInfo().isPresent())
-                    .collect(Collectors.toMap((prepareResult -> prepareResult.version),
-                            (prepareResult -> prepareResult.model.getProvisionInfo().get())));
+        /** Returns the host allocations resulting from this preparation. */
+        public ProvisionInfo getProvisionInfo() {
+            return reconciliatedHostAllocations.allocatedHosts();
         }
 
         public Map<Version, FileRegistry> getFileRegistries() {
@@ -290,4 +290,31 @@ public class SessionPreparer {
 
     }
 
+    /**
+     * During model building each model version will request nodes allocated (from the node allocator)
+     * for each cluster specified by that model. As allocations are stable this should usually
+     * result in the same allocations for the same clusters across all model versions,
+     * otherwise we should fail this preparation as such inconsistencies lead to undefined behavior,
+     * and there is really just one true allocation (for a given cluster) to be activated in the node repository.
+     * 
+     * However, these disagreements between allocations in each model version are allowed:
+     * - A node may be retired in some model version but not another. This allows model versions to change cluster sizes,
+     *   and is ok because the system will converge on the latest version's opinion
+     * - Clusters may be present on some version but not on another. This does not lead to inconsistency
+     *   and allows new model versions to introduce new clusters.
+     *   
+     * For each cluster, the newest model version which has that cluster decides the correct retirement status of nodes
+     * (and all model versions having the cluster must have the same nodes).
+     * 
+     * This class ensures these constraints and returns a reconciliated set of nodes which should be activated,
+     * given a set of model activation results.
+     */
+    private static final class ReconciliatedHostAllocations {
+        
+        public ReconciliatedHostAllocations(List<PreparedModelsBuilder.PreparedModelResult> results) {
+            
+        }
+
+    }
+    
 }

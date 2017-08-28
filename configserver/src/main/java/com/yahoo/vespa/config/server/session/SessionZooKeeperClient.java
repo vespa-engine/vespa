@@ -190,9 +190,8 @@ public class SessionZooKeeperClient {
     }
 
     ProvisionInfo getProvisionInfo() {
-        return loadApplicationPackage().getProvisionInfoMap().values().stream()
-                .reduce((infoA, infoB) -> infoA.merge(infoB))
-                .orElseThrow(() -> new IllegalStateException("Trying to read provision info, but no provision info exists"));
+        return loadApplicationPackage().getProvisionInfo()
+                                       .orElseThrow(() -> new IllegalStateException("Provision info does not exists"));
     }
 
     public ZooKeeperDeployer createDeployer(DeployLogger logger) {

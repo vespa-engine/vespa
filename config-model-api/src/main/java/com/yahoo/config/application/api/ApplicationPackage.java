@@ -228,8 +228,20 @@ public interface ApplicationPackage {
         throw new UnsupportedOperationException("This application package cannot write its metadata");
     }
 
+    /** 
+     * Returns the single host allocation info of this, or an empty map if no allocation is available 
+     * 
+     * @deprecated please use #getProvisionInfo
+     */
+    // TODO: Remove on Vespa 7
+    @Deprecated
     default Map<Version, ProvisionInfo> getProvisionInfoMap() {
         return Collections.emptyMap();
+    }
+
+    /** Returns the host allocation info of this, or empty if no allocation is available */
+    default Optional<ProvisionInfo> getProvisionInfo() {
+        return Optional.empty();
     }
 
     default Map<Version, FileRegistry> getFileRegistryMap() {

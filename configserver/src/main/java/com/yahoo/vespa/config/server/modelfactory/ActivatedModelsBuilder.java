@@ -87,7 +87,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                 logger,
                 configDefinitionRepo,
                 getForVersionOrLatest(applicationPackage.getFileRegistryMap(), modelFactory.getVersion()).orElse(new MockFileRegistry()),
-                createHostProvisioner(getForVersionOrLatest(applicationPackage.getProvisionInfoMap(), modelFactory.getVersion())),
+                createHostProvisioner(applicationPackage.getProvisionInfo()),
                 createModelContextProperties(applicationId),
                 Optional.empty(),
                 new com.yahoo.component.Version(modelFactory.getVersion().toString()),

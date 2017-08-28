@@ -11,7 +11,7 @@ import java.util.List;
  * An application file represents a file within an application package. This class can be used to traverse the entire
  * application package file structure, as well as read and write files to it, and create directories.
  *
- * @author Ulf Lillengen
+ * @author Ulf Lilleengen
  */
 public abstract class ApplicationFile implements Comparable<ApplicationFile> {
 

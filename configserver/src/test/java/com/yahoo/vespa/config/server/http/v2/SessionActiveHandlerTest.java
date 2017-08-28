@@ -218,7 +218,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         ZooKeeperClient zkC = new ZooKeeperClient(configCurator, new BaseDeployLogger(), false, pathProvider.getSessionDirs().append(String.valueOf(sessionId)));
         VespaModelFactory modelFactory = new VespaModelFactory(new NullConfigModelRegistry());
         zkC.feedZKFileRegistries(Collections.singletonMap(modelFactory.getVersion(), new MockFileRegistry()));
-        zkC.feedProvisionInfos(Collections.singletonMap(modelFactory.getVersion(), ProvisionInfo.withHosts(Collections.emptySet())));
+        zkC.feedProvisionInfo(ProvisionInfo.withHosts(Collections.emptySet()));
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .curator(curator)
                 .configCurator(configCurator)

@@ -17,7 +17,7 @@ import java.util.Set;
 /**
  * Model context containing state provided to model factories.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public interface ModelContext {
 
@@ -30,11 +30,6 @@ public interface ModelContext {
     FileRegistry getFileRegistry();
     Properties properties();
     default Optional<File> appDir() { return Optional.empty();}
-    
-    /** @deprecated TODO: Remove this when no config models older than 6.98 are used */
-    @SuppressWarnings("unused")
-    @Deprecated
-    default Optional<com.yahoo.config.provision.Version> vespaVersion() { return Optional.empty(); }
     
     /** The Vespa version this model is built for */
     Version modelVespaVersion();
@@ -50,4 +45,5 @@ public interface ModelContext {
         Zone zone();
         Set<Rotation> rotations();
     }
+
 }

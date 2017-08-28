@@ -16,8 +16,7 @@ import java.util.Collection;
  * A {@link Model} represents the interface towards the model of an entire tenant, and defines methods
  * for querying this model.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public interface Model {
 
@@ -60,9 +59,20 @@ public interface Model {
 
     /**
      * Get the provisioning info for this model.
+     * 
      * @return {@link ProvisionInfo} instance, if available.
+     * @deprecated use provisionInfo
      */
-    Optional<ProvisionInfo> getProvisionInfo();
+    @Deprecated
+    // TODO: Remove this (and the implementation below) when no version older than 6.142 is deployed anywhere
+    default Optional<ProvisionInfo> getProvisionInfo() {
+        return Optional.of(provisionInfo());
+    }
+
+    @SuppressWarnings("deprecation")
+    default ProvisionInfo provisionInfo() {
+        return getProvisionInfo().get();
+    }
 
     /**
      * Returns whether this application allows serving config request for a different version.
@@ -70,11 +80,6 @@ public interface Model {
      * due to some problem, or when we need to try a newer version of the platform on some node.
      */
     default boolean allowModelVersionMismatch(Instant now) { return false; }
-
-    /** @deprecated pass now. */
-    // TODO: Remove this when no version older than 6.115 is deployed anywhere
-    @Deprecated
-    default boolean allowModelVersionMismatch() { return allowModelVersionMismatch(Clock.systemUTC().instant()); }
 
     /**
      * Returns whether old config models should be loaded (default) or not.
@@ -88,9 +93,4 @@ public interface Model {
      */
     default boolean skipOldConfigModels(Instant now) { return false; }
     
-    /** @deprecated pass now. */
-    // TODO: Remove this when no version older than 6.115 is deployed anywhere
-    @Deprecated 
-    default boolean skipOldConfigModels() { return skipOldConfigModels(Clock.systemUTC().instant()); }
-
 }

@@ -160,7 +160,7 @@ public class LocalSessionTest {
         zkc.createWriteStatusTransaction(Session.Status.NEW).commit();
         ZooKeeperClient zkClient = new ZooKeeperClient(configCurator, new BaseDeployLogger(), false, appPath);
         if (provisionInfo.isPresent()) {
-            zkClient.feedProvisionInfos(Collections.singletonMap(Version.fromIntValues(0, 0, 0), provisionInfo.get()));
+            zkClient.feedProvisionInfo(provisionInfo.get());
         }
         zkClient.feedZKFileRegistries(Collections.singletonMap(Version.fromIntValues(0, 0, 0), new MockFileRegistry()));
         File sessionDir = new File(tenantFileSystemDirs.path(), String.valueOf(sessionId));

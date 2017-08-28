@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -14,10 +15,12 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Information about hosts provisioned for an application, and (de)serialization of this information to/from JSON.
+ * The hosts allocated to an application (a better name would be "AllocatedHosts").
+ * This can be serialized to/from JSON.
+ * This is immutable.
  *
- * @author lulf
- * @since 5.12
+ * @author Ulf Lilleengen
+ * @author bratseth
  */
 public class ProvisionInfo {
 
@@ -28,10 +31,10 @@ public class ProvisionInfo {
     private static final String hostSpecFlavor = "flavor";
     private static final String hostSpecVespaVersion = "vespaVersion";
 
-    private final Set<HostSpec> hosts = new LinkedHashSet<>();
+    private final ImmutableSet<HostSpec> hosts;
 
     private ProvisionInfo(Set<HostSpec> hosts) {
-        this.hosts.addAll(hosts);
+        this.hosts = ImmutableSet.copyOf(hosts);
     }
 
     public static ProvisionInfo withHosts(Set<HostSpec> hosts) {
@@ -40,13 +43,11 @@ public class ProvisionInfo {
 
     private void toSlime(Cursor cursor) {
         Cursor array = cursor.setArray(mappingKey);
-        for (HostSpec host : hosts) {
-            Cursor object = array.addObject();
-            serializeHostSpec(object.setObject(hostSpecKey), host);
-        }
+        for (HostSpec host : hosts)
+            toSlime(host, array.addObject().setObject(hostSpecKey));
     }
 
-    private void serializeHostSpec(Cursor cursor, HostSpec host) {
+    private void toSlime(HostSpec host, Cursor cursor) {
         cursor.setString(hostSpecHostName, host.hostname());
         if (host.membership().isPresent()) {
             cursor.setString(hostSpecMembership, host.membership().get().stringValue());
@@ -56,9 +57,8 @@ public class ProvisionInfo {
             cursor.setString(hostSpecFlavor, host.flavor().get().name());
     }
 
-    public Set<HostSpec> getHosts() {
-        return Collections.unmodifiableSet(hosts);
-    }
+    /** Returns the hosts of this allocation */
+    public Set<HostSpec> getHosts() { return hosts; }
 
     private static ProvisionInfo fromSlime(Inspector inspector, Optional<NodeFlavors> nodeFlavors) {
         Inspector array = inspector.field(mappingKey);
@@ -66,27 +66,27 @@ public class ProvisionInfo {
         array.traverse(new ArrayTraverser() {
             @Override
             public void entry(int i, Inspector inspector) {
-                hosts.add(deserializeHostSpec(inspector.field(hostSpecKey), nodeFlavors));
+                hosts.add(hostsFromSlime(inspector.field(hostSpecKey), nodeFlavors));
             }
         });
         return new ProvisionInfo(hosts);
     }
 
-    private static HostSpec deserializeHostSpec(Inspector object, Optional<NodeFlavors> nodeFlavors) {
+    private static HostSpec hostsFromSlime(Inspector object, Optional<NodeFlavors> nodeFlavors) {
         Optional<ClusterMembership> membership =
-                object.field(hostSpecMembership).valid() ? Optional.of(readMembership(object)) : Optional.empty();
+                object.field(hostSpecMembership).valid() ? Optional.of(membershipFromSlime(object)) : Optional.empty();
         Optional<Flavor> flavor =
-                object.field(hostSpecFlavor).valid() ? readFlavor(object, nodeFlavors) : Optional.empty();
+                object.field(hostSpecFlavor).valid() ? flavorFromSlime(object, nodeFlavors) : Optional.empty();
 
         return new HostSpec(object.field(hostSpecHostName).asString(),Collections.emptyList(), flavor, membership);
     }
 
-    private static ClusterMembership readMembership(Inspector object) {
+    private static ClusterMembership membershipFromSlime(Inspector object) {
         return ClusterMembership.from(object.field(hostSpecMembership).asString(),
                                       com.yahoo.component.Version.fromString(object.field(hostSpecVespaVersion).asString()));
     }
 
-    private static Optional<Flavor> readFlavor(Inspector object, Optional<NodeFlavors> nodeFlavors) {
+    private static Optional<Flavor> flavorFromSlime(Inspector object, Optional<NodeFlavors> nodeFlavors) {
         return nodeFlavors.map(flavorMapper ->  flavorMapper.getFlavor(object.field(hostSpecFlavor).asString()))
                 .orElse(Optional.empty());
     }
@@ -100,12 +100,17 @@ public class ProvisionInfo {
     public static ProvisionInfo fromJson(byte[] json, Optional<NodeFlavors> nodeFlavors) {
         return fromSlime(SlimeUtils.jsonToSlime(json).get(), nodeFlavors);
     }
-
-    public ProvisionInfo merge(ProvisionInfo provisionInfo) {
-        Set<HostSpec> mergedSet = new LinkedHashSet<>();
-        mergedSet.addAll(this.hosts);
-        mergedSet.addAll(provisionInfo.getHosts());
-        return ProvisionInfo.withHosts(mergedSet);
+    
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if ( ! (other instanceof ProvisionInfo)) return false;
+        return ((ProvisionInfo) other).hosts.equals(this.hosts);
+    }
+    
+    @Override
+    public int hashCode() {
+        return hosts.hashCode();
     }
 
 }

@@ -286,7 +286,7 @@ public class VespaModelTestCase {
                         .build())
                 .build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
-        ProvisionInfo info = model.getProvisionInfo().get();
+        ProvisionInfo info = model.provisionInfo();
         assertEquals("Admin version 3 is ignored, and there are no other hosts to borrow for admin services", 0, info.getHosts().size());
     }
 

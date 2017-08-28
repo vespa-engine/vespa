@@ -25,7 +25,6 @@ import java.util.*;
  * A class used for reading and writing application data to zookeeper.
  *
  * @author hmusum
- * @since 5.1
  */
 public class ZooKeeperClient {
 
@@ -356,9 +355,8 @@ public class ZooKeeperClient {
         }
     }
 
-    private void feedProvisionInfo(Version version, ProvisionInfo info) throws IOException {
-        byte[] json = info.toJson();
-        configCurator.putData(rootPath.append(ZKApplicationPackage.allocatedHostsNode).append(version.toSerializedForm()).getAbsolute(), json);
+    public void feedProvisionInfo(ProvisionInfo info) throws IOException {
+        configCurator.putData(rootPath.append(ZKApplicationPackage.allocatedHostsNode).getAbsolute(), info.toJson());
     }
 
     public void feedZKFileRegistries(Map<Version, FileRegistry> fileRegistryMap) {
@@ -367,9 +365,4 @@ public class ZooKeeperClient {
         }
     }
 
-    public void feedProvisionInfos(Map<Version, ProvisionInfo> provisionInfoMap) throws IOException {
-        for (Map.Entry<Version, ProvisionInfo> versionProvisionInfoEntry : provisionInfoMap.entrySet()) {
-            feedProvisionInfo(versionProvisionInfoEntry.getKey(), versionProvisionInfoEntry.getValue());
-        }
-    }
 }

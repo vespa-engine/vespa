@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.zookeeper;
 
 import com.google.common.base.Joiner;
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.application.api.FileRegistry;
@@ -12,7 +13,6 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.application.provider.*;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.ProvisionInfo;
-import com.yahoo.config.provision.Version;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.io.reader.NamedReader;
@@ -24,7 +24,13 @@ import com.yahoo.vespa.config.util.ConfigUtils;
 import java.io.File;
 import java.io.Reader;
 import java.io.StringReader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Represents an application residing in zookeeper.
@@ -35,9 +41,9 @@ public class ZKApplicationPackage implements ApplicationPackage {
 
     private ZKLiveApp liveApp;
 
-    private final Map<Version, PreGeneratedFileRegistry> fileRegistryMap = new HashMap<>();
-    private final Map<Version, ProvisionInfo> provisionInfoMap = new HashMap<>();
-    private static final Version legacyVersion = Version.fromIntValues(0, 0, 0);
+    private final Map<com.yahoo.config.provision.Version, PreGeneratedFileRegistry> fileRegistryMap = new HashMap<>();
+    private final Optional<ProvisionInfo> provisionInfo;
+    private static final com.yahoo.config.provision.Version legacyVersion = com.yahoo.config.provision.Version.fromIntValues(0, 0, 0);
 
     public static final String fileRegistryNode = "fileregistry";
     public static final String allocatedHostsNode = "allocatedHosts";
@@ -48,32 +54,54 @@ public class ZKApplicationPackage implements ApplicationPackage {
         liveApp = new ZKLiveApp(zk, appPath);
         metaData = readMetaDataFromLiveApp(liveApp);
         importFileRegistries(fileRegistryNode);
-        importProvisionInfos(allocatedHostsNode, nodeFlavors);
+        provisionInfo = importProvisionInfos(allocatedHostsNode, nodeFlavors);
     }
 
-    private void importProvisionInfos(String allocatedHostsNode, Optional<NodeFlavors> nodeFlavors) {
-        List<String> provisionInfoNodes = liveApp.getChildren(allocatedHostsNode);
-        if (provisionInfoNodes.isEmpty()) {
-            Optional<ProvisionInfo> provisionInfo = importProvisionInfo(allocatedHostsNode, nodeFlavors);
-            provisionInfo.ifPresent(info -> provisionInfoMap.put(legacyVersion, info));
-        } else {
-            provisionInfoNodes.stream()
-                    .forEach(versionStr -> {
-                        Version version = Version.fromString(versionStr);
-                        Optional<ProvisionInfo> provisionInfo = importProvisionInfo(Joiner.on("/").join(allocatedHostsNode, versionStr),
-                                                                                    nodeFlavors);
-                        provisionInfo.ifPresent(info -> provisionInfoMap.put(version, info));
-                    });
+    private Optional<ProvisionInfo> importProvisionInfos(String allocatedHostsPath, Optional<NodeFlavors> nodeFlavors) {
+        if ( ! liveApp.exists(allocatedHostsPath)) return Optional.empty();
+        Optional<ProvisionInfo> provisionInfo = readProvisionInfo(allocatedHostsPath, nodeFlavors);
+        if ( ! provisionInfo.isPresent()) { // Read from legacy location. TODO: Remove when 6.142 is in production everywhere
+            List<String> provisionInfoByVersionNodes = liveApp.getChildren(allocatedHostsPath);
+            provisionInfo = newestOf(readProvisionInfosByVersion(provisionInfoByVersionNodes, nodeFlavors));
         }
+        return provisionInfo;
+    }
+    
+    private Map<Version, ProvisionInfo> readProvisionInfosByVersion(List<String> provisionInfoByVersionNodes, Optional<NodeFlavors> nodeFlavors) {
+        Map<Version, ProvisionInfo> provisionInfoMap = new HashMap<>();
+        provisionInfoByVersionNodes.stream()
+                .forEach(versionStr -> {
+                    Version version = Version.fromString(versionStr);
+                    Optional<ProvisionInfo> provisionInfo = readProvisionInfo(Joiner.on("/").join(allocatedHostsNode, versionStr),
+                                                                              nodeFlavors);
+                    provisionInfo.ifPresent(info -> provisionInfoMap.put(version, info));
+                });
+        return provisionInfoMap;
     }
 
-    private Optional<ProvisionInfo> importProvisionInfo(String provisionInfoNode, Optional<NodeFlavors> nodeFlavors) {
-        try {
-            if (liveApp.exists(provisionInfoNode)) {
-                return Optional.of(ProvisionInfo.fromJson(liveApp.getBytes(provisionInfoNode), nodeFlavors));
-            } else {
-                return Optional.empty();
+    private Optional<ProvisionInfo> newestOf(Map<Version, ProvisionInfo> provisionInfoMap) {
+        if (provisionInfoMap.isEmpty()) return Optional.empty();
+        Version newestVersion = null;
+        ProvisionInfo newestInfo = null;
+        for (Map.Entry<Version, ProvisionInfo> entry : provisionInfoMap.entrySet()) {
+            if (newestVersion == null || newestVersion.isBefore(entry.getKey())) {
+                newestVersion = entry.getKey();
+                newestInfo = entry.getValue();
             }
+        }
+        return Optional.of(newestInfo);
+    }
+
+    /** 
+     * Reads provision info at the given node.
+     * 
+     * @return the provision info at this node or empty if there is no data at this path
+     */
+    private Optional<ProvisionInfo> readProvisionInfo(String provisionInfoPath, Optional<NodeFlavors> nodeFlavors) {
+        try {
+            byte[] data = liveApp.getBytes(provisionInfoPath);
+            if (data.length == 0) return Optional.empty(); // TODO: Remove this line (and make return non-optional) when 6.142 is in production everywhere
+            return Optional.of(ProvisionInfo.fromJson(data, nodeFlavors));
         } catch (Exception e) {
             throw new RuntimeException("Unable to read provision info", e);
         }
@@ -85,9 +113,9 @@ public class ZKApplicationPackage implements ApplicationPackage {
             fileRegistryMap.put(legacyVersion, importFileRegistry(fileRegistryNode));
         } else {
             fileRegistryNodes.stream()
-                    .forEach(versionStr -> {
-                        Version version = Version.fromString(versionStr);
-                        fileRegistryMap.put(version, importFileRegistry(Joiner.on("/").join(fileRegistryNode, versionStr)));
+                    .forEach(version -> {
+                        fileRegistryMap.put(com.yahoo.config.provision.Version.fromString(version),
+                                            importFileRegistry(Joiner.on("/").join(fileRegistryNode, version)));
                     });
         }
     }
@@ -147,16 +175,16 @@ public class ZKApplicationPackage implements ApplicationPackage {
         return ret;
     }
 
-    public Map<Version, ProvisionInfo> getProvisionInfoMap() {
-        return Collections.unmodifiableMap(provisionInfoMap);
+    public Optional<ProvisionInfo> getProvisionInfo() {
+        return provisionInfo;
     }
 
     @Override
-    public Map<Version, FileRegistry> getFileRegistryMap() {
+    public Map<com.yahoo.config.provision.Version, FileRegistry> getFileRegistryMap() {
         return Collections.unmodifiableMap(fileRegistryMap);
     }
 
-    private Optional<PreGeneratedFileRegistry> getPreGeneratedFileRegistry(Version vespaVersion) {
+    private Optional<PreGeneratedFileRegistry> getPreGeneratedFileRegistry(com.yahoo.config.provision.Version vespaVersion) {
         // Assumes at least one file registry, which we always have.
         Optional<PreGeneratedFileRegistry> fileRegistry = Optional.ofNullable(fileRegistryMap.get(vespaVersion));
         if (!fileRegistry.isPresent()) {
@@ -243,7 +271,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
     }
 
     @Override
-    public List<ComponentInfo> getComponentsInfo(Version vespaVersion) {
+    public List<ComponentInfo> getComponentsInfo(com.yahoo.config.provision.Version vespaVersion) {
         List<ComponentInfo> components = new ArrayList<>();
         PreGeneratedFileRegistry fileRegistry = getPreGeneratedFileRegistry(vespaVersion).get();
         for (String path : fileRegistry.getPaths()) {

@@ -13,8 +13,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author lulf
- * @since 5.12
+ * @author Ulf Lilleengen
  */
 public class ProvisionInfoTest {
 
@@ -30,19 +29,6 @@ public class ProvisionInfoTest {
         hosts.add(h3);
         ProvisionInfo info = ProvisionInfo.withHosts(hosts);
         assertProvisionInfo(info);
-    }
-
-    @Test
-    public void testProvisionInfoMerging() throws IOException {
-        Set<HostSpec> hostsA = new LinkedHashSet<>(Collections.singleton(h1));
-        Set<HostSpec> hostsB = new LinkedHashSet<>();
-        hostsB.add(h2);
-        hostsB.add(h3);
-
-        ProvisionInfo infoA = ProvisionInfo.withHosts(hostsA);
-        ProvisionInfo infoB = ProvisionInfo.withHosts(hostsB);
-        assertProvisionInfo(infoA.merge(infoB));
-        assertProvisionInfo(infoB.merge(infoA));
     }
 
     private void assertProvisionInfo(ProvisionInfo info) throws IOException {

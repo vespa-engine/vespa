@@ -64,8 +64,7 @@ public class ZKApplicationPackageTest extends TestWithCurator {
         assertTrue(zkApp.getFileRegistryMap().containsKey(goodVersion));
         assertFalse(zkApp.getFileRegistryMap().containsKey(Version.fromIntValues(0, 0, 0)));
         assertThat(zkApp.getFileRegistryMap().get(goodVersion).fileSourceHost(), is("dummyfiles"));
-        assertTrue(zkApp.getProvisionInfoMap().containsKey(goodVersion));
-        ProvisionInfo readInfo = zkApp.getProvisionInfoMap().get(goodVersion);
+        ProvisionInfo readInfo = zkApp.getProvisionInfo().get();
         assertThat(Utf8.toString(readInfo.toJson()), is(Utf8.toString(provisionInfo.toJson())));
         assertThat(readInfo.getHosts().iterator().next().flavor(), is(TEST_FLAVOR));
         assertTrue(zkApp.getDeployment().isPresent());
