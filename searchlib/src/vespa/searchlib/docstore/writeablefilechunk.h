@@ -22,20 +22,21 @@ public:
     class Config
     {
     public:
+        using CompressionConfig = vespalib::compression::CompressionConfig;
         Config()
-            : _compression(document::CompressionConfig::LZ4, 9, 60),
+            : _compression(CompressionConfig::LZ4, 9, 60),
               _maxChunkBytes(0x10000)
         { }
 
-        Config(const document::CompressionConfig &compression, size_t maxChunkBytes)
+        Config(const CompressionConfig &compression, size_t maxChunkBytes)
             : _compression(compression),
               _maxChunkBytes(maxChunkBytes)
         { }
 
-        const document::CompressionConfig & getCompression() const { return _compression; }
+        const CompressionConfig & getCompression() const { return _compression; }
         size_t getMaxChunkBytes() const { return _maxChunkBytes; }
     private:
-        document::CompressionConfig _compression;
+        CompressionConfig _compression;
         size_t _maxChunkBytes;
     };
 

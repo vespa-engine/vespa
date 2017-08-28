@@ -10,7 +10,6 @@
 #include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
-#include <stdlib.h>
 #include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -25,6 +24,7 @@ using std::vector;
 using vespalib::Identifiable;
 using vespalib::IllegalArgumentException;
 using vespalib::string;
+using vespalib::compression::CompressionConfig;
 
 using namespace document::config_builder;
 using namespace document;

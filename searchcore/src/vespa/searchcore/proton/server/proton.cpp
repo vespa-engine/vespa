@@ -48,7 +48,7 @@ using search::index::SchemaBuilder;
 using search::transactionlog::DomainStats;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::search::core::internal::InternalProtonType;
-using document::CompressionConfig;
+using vespalib::compression::CompressionConfig;
 
 namespace proton {
 

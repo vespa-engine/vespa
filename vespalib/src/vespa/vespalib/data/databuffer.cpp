@@ -33,6 +33,7 @@ DataBuffer::DataBuffer(size_t len, size_t alignment, const Alloc & initial)
     }
 }
 
+DataBuffer::~DataBuffer() = default;
 
 void
 DataBuffer::moveFreeToData(size_t len)

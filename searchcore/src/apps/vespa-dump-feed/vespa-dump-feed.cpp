@@ -9,6 +9,7 @@
 #include <vespa/messagebus/destinationsession.h>
 #include <vespa/messagebus/protocolset.h>
 #include <vespa/messagebus/rpcmessagebus.h>
+#include <vespa/messagebus/network/rpcnetworkparams.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/slaveproc.h>

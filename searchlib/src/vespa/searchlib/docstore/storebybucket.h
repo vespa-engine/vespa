@@ -23,9 +23,9 @@ class StoreByBucket
     using MemoryDataStore = vespalib::MemoryDataStore;
     using ThreadExecutor = vespalib::ThreadExecutor;
     using ConstBufferRef = vespalib::ConstBufferRef;
-    using CompressionConfig = document::CompressionConfig;
+    using CompressionConfig = vespalib::compression::CompressionConfig;
 public:
-    StoreByBucket(vespalib::MemoryDataStore & backingMemory, const document::CompressionConfig & compression);
+    StoreByBucket(vespalib::MemoryDataStore & backingMemory, const CompressionConfig & compression);
     StoreByBucket(MemoryDataStore & backingMemory, ThreadExecutor & executor, const CompressionConfig & compression);
     StoreByBucket(StoreByBucket &&) = default;
     ~StoreByBucket();

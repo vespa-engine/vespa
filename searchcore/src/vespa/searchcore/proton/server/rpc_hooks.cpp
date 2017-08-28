@@ -9,7 +9,7 @@
 LOG_SETUP(".proton.server.rtchooks");
 
 using namespace vespalib;
-using document::CompressionConfig;
+using vespalib::compression::CompressionConfig;
 
 namespace {
 

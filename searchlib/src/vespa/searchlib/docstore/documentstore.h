@@ -26,25 +26,26 @@ class DocumentStore : public IDocumentStore
 public:
     class Config {
     public:
+        using CompressionConfig = vespalib::compression::CompressionConfig;
         Config() :
-            _compression(document::CompressionConfig::LZ4, 9, 70),
+            _compression(CompressionConfig::LZ4, 9, 70),
             _maxCacheBytes(1000000000),
             _initialCacheEntries(0),
             _allowVisitCaching(false)
         { }
-        Config(const document::CompressionConfig & compression, size_t maxCacheBytes, size_t initialCacheEntries) :
-            _compression((maxCacheBytes != 0) ? compression : document::CompressionConfig::NONE),
+        Config(const CompressionConfig & compression, size_t maxCacheBytes, size_t initialCacheEntries) :
+            _compression((maxCacheBytes != 0) ? compression : CompressionConfig::NONE),
             _maxCacheBytes(maxCacheBytes),
             _initialCacheEntries(initialCacheEntries),
             _allowVisitCaching(false)
         { }
-        const document::CompressionConfig & getCompression() const { return _compression; }
+        const CompressionConfig & getCompression() const { return _compression; }
         size_t getMaxCacheBytes()   const { return _maxCacheBytes; }
         size_t getInitialCacheEntries() const { return _initialCacheEntries; }
         bool allowVisitCaching() const { return _allowVisitCaching; }
         Config & allowVisitCaching(bool allow) { _allowVisitCaching = allow; return *this; }
     private:
-        document::CompressionConfig _compression;
+        CompressionConfig _compression;
         size_t _maxCacheBytes;
         size_t _initialCacheEntries;
         bool   _allowVisitCaching;

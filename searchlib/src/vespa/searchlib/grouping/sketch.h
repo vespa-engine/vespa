@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/document/util/compressionconfig.h>
-#include <vespa/document/util/compressor.h>
+#include <vespa/vespalib/util/compressionconfig.h>
+#include <vespa/vespalib/util/compressor.h>
 #include <lz4.h>
 #include <vespa/searchlib/common/identifiable.h>
 #include <vespa/vespalib/data/databuffer.h>
@@ -205,13 +205,13 @@ deserialize(vespalib::Deserializer &is) {
 template <int BucketBits, typename HashT>
 uint32_t NormalSketch<BucketBits, HashT>::
 compress_buckets_into(char *buffer, uint32_t size) const {
-    document::CompressionConfig config(document::CompressionConfig::LZ4, 9, 9);
+    vespalib::compression::CompressionConfig config(vespalib::compression::CompressionConfig::LZ4, 9, 9);
     vespalib::ConstBufferRef org(&bucket[0], BUCKET_COUNT);
     vespalib::DataBuffer compress_buffer(buffer, size);
-    document::CompressionConfig::Type r =
-        document::compression::compress(config, org, compress_buffer, false);
+    vespalib::compression::CompressionConfig::Type r =
+        vespalib::compression::compress(config, org, compress_buffer, false);
     assert(compress_buffer.getDead() == buffer);
-    if (r == document::CompressionConfig::LZ4) {
+    if (r == vespalib::compression::CompressionConfig::LZ4) {
         assert(compress_buffer.getDataLen() < BUCKET_COUNT);
         return compress_buffer.getDataLen();
     } else {
@@ -228,7 +228,8 @@ decompress_buckets_from(char *buffer, uint32_t size) {
     } else {
         vespalib::ConstBufferRef compressed(buffer, size);
         vespalib::DataBuffer uncompressed(reinterpret_cast<char *>(&bucket[0]), BUCKET_COUNT);
-        document::compression::decompress(document::CompressionConfig::LZ4, BUCKET_COUNT, compressed, uncompressed, false);
+        vespalib::compression::decompress(vespalib::compression::CompressionConfig::LZ4, BUCKET_COUNT,
+                                          compressed, uncompressed, false);
     }
 }
 template <int BucketBits, typename HashT>

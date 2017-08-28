@@ -33,7 +33,7 @@ private:
  **/
 class BucketCompacter : public IWriteData, public StoreByBucket::IWrite
 {
-    using CompressionConfig = document::CompressionConfig;
+    using CompressionConfig = vespalib::compression::CompressionConfig;
     using ThreadExecutor = vespalib::ThreadExecutor;
 public:
     using FileId = FileChunk::FileId;

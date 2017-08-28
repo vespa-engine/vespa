@@ -1,18 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-
 #include "checkpointfile.h"
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.checkpointfile");
 
 using vespalib::getLastErrorString;
 
-namespace search {
-
-namespace diskindex {
+namespace search::diskindex {
 
 using common::FileHeaderContext;
 
@@ -182,6 +180,4 @@ CheckPointFile::readHeader()
 }
 
 
-} // namespace diskindex
-
-} // namespace search
+}

@@ -14,6 +14,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     classname.cpp
     closuretask.cpp
     compress.cpp
+    compressor.cpp
     dual_merge_director.cpp
     error.cpp
     exception.cpp
@@ -25,6 +26,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     host_name.cpp
     joinable.cpp
     left_right_heap.cpp
+    lz4compressor.cpp
     md5.c
     printable.cpp
     priority_queue.cpp
@@ -47,5 +49,6 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     threadstackexecutorbase.cpp
     time_tracker.cpp
     valgrind.cpp
+    zstdcompressor.cpp
     DEPENDS
 )

@@ -3,8 +3,8 @@
 #pragma once
 
 #include "sketch.h"
-#include <vespa/document/util/compressionconfig.h>
-#include <vespa/document/util/compressor.h>
+#include <vespa/vespalib/util/compressionconfig.h>
+#include <vespa/vespalib/util/compressor.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/objects/deserializer.h>
 #include <vespa/vespalib/objects/serializer.h>

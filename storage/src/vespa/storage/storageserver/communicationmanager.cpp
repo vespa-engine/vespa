@@ -8,6 +8,7 @@
 #include <vespa/documentapi/messagebus/messages/wrongdistributionreply.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/messagebus/rpcmessagebus.h>
+#include <vespa/messagebus/network/rpcnetworkparams.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -362,8 +363,7 @@ void CommunicationManager::onClose()
 }
 
 void
-CommunicationManager::configureMessageBusLimits(
-        const CommunicationManagerConfig& cfg)
+CommunicationManager::configureMessageBusLimits(const CommunicationManagerConfig& cfg)
 {
     const bool isDist(_component.getNodeType() == lib::NodeType::DISTRIBUTOR);
     auto& mbus(_mbus->getMessageBus());
@@ -404,6 +404,11 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
             params.setListenPort(config->mbusport);
         }
 
+        using CompressionConfig = vespalib::compression::CompressionConfig;
+        CompressionConfig::Type compressionType = CompressionConfig::toType(
+                CommunicationManagerConfig::Mbus::Compress::getTypeName(config->mbus.compress.type).c_str());
+        params.setCompressionConfig(CompressionConfig(compressionType, config->mbus.compress.level,
+                                                      90, config->mbus.compress.limit));
         // Configure messagebus here as we for legacy reasons have
         // config here.
         _mbus = std::make_unique<mbus::RPCMessageBus>(

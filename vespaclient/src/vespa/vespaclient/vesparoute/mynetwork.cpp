@@ -3,6 +3,8 @@
 #include "mynetwork.h"
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/sendproxy.h>
+#include <vespa/messagebus/network/oosmanager.h>
+
 
 class MyServiceAddress : public mbus::IServiceAddress {
 private:

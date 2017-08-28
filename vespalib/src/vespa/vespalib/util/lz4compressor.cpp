@@ -8,7 +8,7 @@
 
 using vespalib::alloc::Alloc;
 
-namespace document {
+namespace vespalib::compression {
 
 size_t LZ4Compressor::adjustProcessLen(uint16_t, size_t len)   const { return LZ4_compressBound(len); }
 

@@ -6,6 +6,7 @@ vespa_define_module(
 
     EXTERNAL_DEPENDS
     lz4
+    zstd
 
     APPS
     src/apps/make_fixture_macros
@@ -22,6 +23,8 @@ vespa_define_module(
     src/tests/closure
     src/tests/component
     src/tests/compress
+    src/tests/compression
+    src/tests/data/databuffer
     src/tests/data/input_reader
     src/tests/data/lz4_encode_decode
     src/tests/data/memory_input

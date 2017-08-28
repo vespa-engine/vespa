@@ -5,10 +5,9 @@
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/data/fileheader.h>
+#include <vespa/vespalib/data/databuffer.h>
 
-namespace search {
-
-namespace bitcompression {
+namespace search::bitcompression {
 
 using vespalib::nbostream;
 
@@ -157,16 +156,11 @@ DecodeContext64Base::checkPointRead(nbostream &in)
     (void) in;
 }
 
-} // namespace bitcompression
-
-
 namespace {
 
 vespalib::string noFeatures = "NoFeatures";
 
 }
-
-namespace bitcompression {
 
 template <bool bigEndian>
 void
@@ -486,6 +480,4 @@ template class FeatureEncodeContext<true>;
 template class FeatureEncodeContext<false>;
 
 
-} // namespace bitcompression
-
-} // namespace search
+}
