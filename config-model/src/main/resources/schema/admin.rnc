@@ -123,7 +123,7 @@ LogForwarding = element logforwarding {
         } &
         element destination {
             element endpoint { xsd:string } &
-            element index { xsd:string } # TODO: Mandatory or with a default value?
+            element index { xsd:string }
         }
     }+
 
