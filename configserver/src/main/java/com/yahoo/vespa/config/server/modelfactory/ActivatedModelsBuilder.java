@@ -13,7 +13,6 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.lang.SettableOptional;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.tenant.Rotations;
@@ -73,7 +72,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                             ApplicationPackage applicationPackage,
                                             ApplicationId applicationId,
                                             com.yahoo.component.Version wantedNodeVespaVersion,
-                                            SettableOptional<AllocatedHosts> ignored, // Ignored since we have this in the app package for activated models
+                                            Optional<AllocatedHosts> ignored, // Ignored since we have this in the app package for activated models
                                             Instant now) {
         log.log(LogLevel.DEBUG, String.format("Loading model version %s for session %s application %s",
                                               modelFactory.getVersion(), appGeneration, applicationId));
@@ -85,7 +84,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                 logger,
                 configDefinitionRepo,
                 getForVersionOrLatest(applicationPackage.getFileRegistryMap(), modelFactory.getVersion()).orElse(new MockFileRegistry()),
-                createHostProvisioner(applicationPackage.getAllocatedHosts()),
+                createStaticProvisioner(applicationPackage.getAllocatedHosts()),
                 createModelContextProperties(applicationId),
                 Optional.empty(),
                 new com.yahoo.component.Version(modelFactory.getVersion().toString()),

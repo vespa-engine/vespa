@@ -16,7 +16,7 @@ import java.util.*;
  * behavior to the config model. Adapts interface from a {@link HostProvisioner} to a
  * {@link Provisioner}.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class ProvisionerAdapter implements HostProvisioner {
 
@@ -30,6 +30,7 @@ public class ProvisionerAdapter implements HostProvisioner {
 
     @Override
     public HostSpec allocateHost(String alias) {
+        // Wow. Such mess. TODO: Actually support polymorphy or stop pretending to, see also ModelContextImpl.getHostProvisioner
         throw new UnsupportedOperationException("Allocating a single host in a hosted environment is not possible");
     }
 

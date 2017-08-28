@@ -1,6 +1,7 @@
 package com.yahoo.lang;
 
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 /**
  * An optional which contains a settable value
@@ -29,6 +30,11 @@ public final class SettableOptional<T> {
 
     public void set(T value) {
         this.value = value;
+    }
+    
+    public Optional<T> asOptional() {
+        if (value == null) return Optional.empty();
+        return Optional.of(value);
     }
 
 }

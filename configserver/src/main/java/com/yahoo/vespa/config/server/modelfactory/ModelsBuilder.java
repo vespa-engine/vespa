@@ -112,21 +112,20 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                 Instant now) {
         Version latest = findLatest(versions);
         // load latest application version
-        MODELRESULT latestApplicationVersion = buildModelVersion(modelFactoryRegistry.getFactory(latest), 
+        MODELRESULT latestModelVersion = buildModelVersion(modelFactoryRegistry.getFactory(latest), 
                                                                  applicationPackage, 
                                                                  applicationId, 
                                                                  wantedNodeVespaVersion, 
-                                                                 allocatedHosts,
+                                                                 allocatedHosts.asOptional(),
                                                                  now);
-        if ( ! allocatedHosts.isPresent())
-            allocatedHosts.set(latestApplicationVersion.getModel().allocatedHosts());
+        allocatedHosts.set(latestModelVersion.getModel().allocatedHosts()); // Update with additional clusters allocated
         
-        if (latestApplicationVersion.getModel().skipOldConfigModels(now))
-            return Collections.singletonList(latestApplicationVersion);
+        if (latestModelVersion.getModel().skipOldConfigModels(now))
+            return Collections.singletonList(latestModelVersion);
 
         // load old model versions
         List<MODELRESULT> allApplicationVersions = new ArrayList<>();
-        allApplicationVersions.add(latestApplicationVersion);
+        allApplicationVersions.add(latestModelVersion);
 
         // TODO: We use the allocated hosts from the newest version when building older model versions.
         // This is correct except for the case where an old model specifies a cluster which the new version
@@ -135,12 +134,15 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         // clusters and the node repository provisioner as fallback.
         for (Version version : versions) {
             if (version.equals(latest)) continue; // already loaded
-            allApplicationVersions.add(buildModelVersion(modelFactoryRegistry.getFactory(version),
+
+            MODELRESULT modelVersion = buildModelVersion(modelFactoryRegistry.getFactory(version),
                                                          applicationPackage,
                                                          applicationId,
                                                          wantedNodeVespaVersion,
-                                                         allocatedHosts,
-                                                         now));
+                                                         allocatedHosts.asOptional(),
+                                                         now);
+            allocatedHosts.set(modelVersion.getModel().allocatedHosts()); // Update with additional clusters allocated
+            allApplicationVersions.add(modelVersion);
         }
         return allApplicationVersions;
     }
@@ -161,7 +163,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
     protected abstract MODELRESULT buildModelVersion(ModelFactory modelFactory, ApplicationPackage applicationPackage,
                                                      ApplicationId applicationId, 
                                                      com.yahoo.component.Version wantedNodeVespaVersion,
-                                                     SettableOptional<AllocatedHosts> allocatedHosts,
+                                                     Optional<AllocatedHosts> allocatedHosts,
                                                      Instant now);
 
     protected ModelContext.Properties createModelContextProperties(ApplicationId applicationId,
@@ -178,9 +180,10 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
 
     /** 
      * Returns a host provisioner returning the previously allocated hosts if available and when on hosted Vespa,
-     * returns empty otherwise.
+     * returns empty otherwise, which may either mean that no hosts are allocated or that we are running
+     * non-hosted and should default to use hosts defined in the application package, depending on context
      */
-    protected Optional<HostProvisioner> createHostProvisioner(Optional<AllocatedHosts> allocatedHosts) {
+    protected Optional<HostProvisioner> createStaticProvisioner(Optional<AllocatedHosts> allocatedHosts) {
         if (hosted && allocatedHosts.isPresent())
             return Optional.of(new StaticProvisioner(allocatedHosts.get()));
         return Optional.empty();
