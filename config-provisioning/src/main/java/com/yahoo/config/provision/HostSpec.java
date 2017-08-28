@@ -10,8 +10,7 @@ import java.util.Optional;
 
 /**
  * A specification of a host and its role.
- * This is a value object: Immutable and the identity is determined by all the content.
- * Host specs are ordered by host name.
+ * Equality and order is determined by the host name.
  *
  * @author hmusum
  */
@@ -71,21 +70,16 @@ public class HostSpec implements Comparable<HostSpec> {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (o == this) return true;
-        if ( ! (o instanceof HostSpec)) return false;
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if ( ! (other instanceof HostSpec)) return false;
 
-        HostSpec other = (HostSpec) o;
-        if ( ! this.hostname.equals(other.hostname)) return false;
-        if ( ! this.aliases.equals(other.aliases)) return false;
-        if ( ! this.membership.equals(other.membership)) return false;
-        if ( ! this.flavor.equals(other.flavor)) return false;
-        return true;
+        return ((HostSpec)other).hostname.equals(this.hostname);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(hostname, aliases, membership, flavor); 
+        return hostname.hashCode();
     }
 
     @Override

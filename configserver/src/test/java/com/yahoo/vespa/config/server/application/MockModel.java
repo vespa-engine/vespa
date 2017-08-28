@@ -93,7 +93,7 @@ class MockModel implements Model {
     }
 
     @Override
-    public Optional<AllocatedHosts> getProvisionInfo() {
+    public AllocatedHosts allocatedHosts() {
         throw new UnsupportedOperationException();
     }
 }

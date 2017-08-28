@@ -70,7 +70,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                               .collect(Collectors.toList());
 
         // The newest version (major and minor) (which is loaded first) decides the allocated hosts
-        SettableOptional<AllocatedHosts> allocatedHosts = new SettableOptional();
+        SettableOptional<AllocatedHosts> allocatedHosts = new SettableOptional<>();
         List<MODELRESULT> allApplicationModels = new ArrayList<>();
         for (int i = 0; i < majorVersions.size(); i++) {
             try {

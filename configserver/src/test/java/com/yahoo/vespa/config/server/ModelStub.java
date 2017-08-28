@@ -44,7 +44,7 @@ public class ModelStub implements Model {
     }
 
     @Override
-    public Optional<AllocatedHosts> getProvisionInfo() {
+    public AllocatedHosts allocatedHosts() {
         return null;
     }
 
