@@ -220,13 +220,9 @@ public class ControllerTest {
         assertEquals(systemVersion, tester.configServerClientMock().lastPrepareVersion.get());
 
         // Unexpected deployment
-        try {
-            tester.deploy(productionUsWest1, app1, applicationPackage);
-            fail("Expected exception as no change was to be deployed");
-        }
-        catch (IllegalArgumentException expected) {
-            // success
-        }
+        tester.deploy(productionUsWest1, app1, applicationPackage);
+        // applications are immutable, so any change to one, including deployment changes, would give rise to a new instance.
+        assertEquals("Unexpected deployment is ignored", app1, applications.require(app1.id()));
 
         // Application change after a new system version, and a region added
         Version newSystemVersion = incrementSystemVersion(tester.controller());
