@@ -133,41 +133,6 @@ public class ApplicationSerializerTest {
         assertEquals(JobError.unknown, applicationWithFailingJob.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.systemTest).jobError().get());
     }
 
-    // TODO: Remove after Aug 2017
-    @Test
-    public void serializeWithRemovedZone() throws Exception {
-        String json = "{\n" +
-                "  \"id\": \"t1:a1:i1\",\n" +
-                "  \"deploymentSpecField\": \"<deployment version='1.0'/>\",\n" +
-                "  \"deploymentJobs\": {\n" +
-                "    \"projectId\": 123,\n" +
-                "    \"jobStatus\": [\n" +
-                "      {\n" +
-                "        \"jobType\": \"system-test\",\n" +
-                "        \"version\": \"5.6.7\",\n" +
-                "        \"completionTime\": 7,\n" +
-                "        \"lastTriggered\": 8\n" +
-                "      },\n" +
-                "      {\n" +
-                "        \"jobType\": \"production-ap-aue-1\",\n" +
-                "        \"version\": \"5.6.7\",\n" +
-                "        \"completionTime\": 7,\n" +
-                "        \"lastTriggered\": 8\n" +
-                "      },\n" +
-                "      {\n" +
-                "        \"jobType\": \"staging-test\",\n" +
-                "        \"version\": \"5.6.7\",\n" +
-                "        \"completionTime\": 7,\n" +
-                "        \"lastTriggered\": 8\n" +
-                "      }\n" +
-                "    ],\n" +
-                "    \"selfTriggering\": false\n" +
-                "  }\n" +
-                "}\n";
-        Application app = applicationSerializer.fromSlime(SlimeUtils.jsonToSlime(json.getBytes(StandardCharsets.UTF_8)));
-        assertEquals(2, app.deploymentJobs().jobStatus().size());
-    }
-
     private Slime applicationSlime(boolean error) {
         return SlimeUtils.jsonToSlime(applicationJson(error).getBytes(StandardCharsets.UTF_8));
     }
