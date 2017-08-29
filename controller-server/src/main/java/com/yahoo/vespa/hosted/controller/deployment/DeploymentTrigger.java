@@ -119,6 +119,9 @@ public class DeploymentTrigger {
             if ( ! application.deploying().isPresent() ) continue;
             if (application.deploymentJobs().hasFailures()) continue;
             if (application.deploymentJobs().inProgress()) continue;
+            if (application.deploymentSpec().steps().stream().noneMatch(step -> step instanceof DeploymentSpec.Delay)) {
+                continue; // Application does not have any delayed deployments
+            }
 
             Optional<JobStatus> lastSuccessfulJob = application.deploymentJobs().jobStatus().values()
                     .stream()
@@ -131,7 +134,7 @@ public class DeploymentTrigger {
             try (Lock lock = applications().lock(application.id())) {
                 application = applications().require(application.id());
                 application = trigger(nextAfter(lastSuccessfulJob.get().type(), application), application,
-                                      "Delayed by deployment spec", lock);
+                                      "Resuming delayed deployment", lock);
                 applications().store(application, lock);
             }
         }

@@ -133,9 +133,9 @@ public class ApplicationSerializerTest {
         assertEquals(JobError.unknown, applicationWithFailingJob.deploymentJobs().jobStatus().get(DeploymentJobs.JobType.systemTest).jobError().get());
     }
 
-    // TODO: Remove after Aug 2017
+    // TODO: Tests NIX check: Remove after Sep 2017
     @Test
-    public void serializeWithRemovedZone() throws Exception {
+    public void serializeLegacyDeployingField() {
         String json = "{\n" +
                 "  \"id\": \"t1:a1:i1\",\n" +
                 "  \"deploymentSpecField\": \"<deployment version='1.0'/>\",\n" +
@@ -149,7 +149,7 @@ public class ApplicationSerializerTest {
                 "        \"lastTriggered\": 8\n" +
                 "      },\n" +
                 "      {\n" +
-                "        \"jobType\": \"production-ap-aue-1\",\n" +
+                "        \"jobType\": \"production-us-west-1\",\n" +
                 "        \"version\": \"5.6.7\",\n" +
                 "        \"completionTime\": 7,\n" +
                 "        \"lastTriggered\": 8\n" +
@@ -162,10 +162,11 @@ public class ApplicationSerializerTest {
                 "      }\n" +
                 "    ],\n" +
                 "    \"selfTriggering\": false\n" +
-                "  }\n" +
+                "  },\n" +
+                "  \"deployingField\": null\n" +
                 "}\n";
         Application app = applicationSerializer.fromSlime(SlimeUtils.jsonToSlime(json.getBytes(StandardCharsets.UTF_8)));
-        assertEquals(2, app.deploymentJobs().jobStatus().size());
+        assertFalse("No change present", app.deploying().isPresent());
     }
 
     private Slime applicationSlime(boolean error) {
