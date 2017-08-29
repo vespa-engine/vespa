@@ -356,7 +356,7 @@ public class HttpServerTest {
         driver.client().get("/status.html")
               .expectStatusCode(is(OK))
               .expectHeader("Set-Cookie",
-                      is("foo=bar;Path=/foopath;Domain=.localhost;Secure;HttpOnly"));
+                      is("foo=bar; Path=/foopath; Domain=.localhost; Secure; HTTPOnly"));
         assertThat(driver.close(), is(true));
     }
 
