@@ -84,6 +84,8 @@ public class CuratorDatabaseClient {
         for (Node node : nodes) {
             if (node.state() != expectedState)
                 throw new IllegalArgumentException(node + " is not in the " + node.state() + " state");
+
+            node = node.with(node.history().recordStateTransition(null, expectedState, Agent.system, clock.instant()));
             curatorTransaction.add(CuratorOperations.create(toPath(node).getAbsolute(), nodeSerializer.toJson(node)));
         }
         transaction.commit();

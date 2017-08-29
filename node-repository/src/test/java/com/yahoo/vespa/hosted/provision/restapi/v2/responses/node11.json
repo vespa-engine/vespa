@@ -1,26 +1,38 @@
 {
-  "url":"http://localhost:8080/nodes/v2/node/host11.yahoo.com",
-  "id":"host11.yahoo.com",
-  "state":"provisioned",
+  "url": "http://localhost:8080/nodes/v2/node/host11.yahoo.com",
+  "id": "host11.yahoo.com",
+  "state": "provisioned",
   "type": "tenant",
-  "hostname":"host11.yahoo.com",
-  "parentHostname":"parent.host.yahoo.com",
-  "openStackId":"host11.yahoo.com",
-  "flavor":"docker",
-  "canonicalFlavor":"docker",
-  "minDiskAvailableGb":100.0,
-  "minMainMemoryAvailableGb":0.5,
-  "description":"Flavor-name-is-docker",
-  "minCpuCores":0.2,
-  "fastDisk":true,
-  "environment":"DOCKER_CONTAINER",
-  "rebootGeneration":0,
-  "currentRebootGeneration":0,
-  "failCount":0,
-  "hardwareFailure":false,
-  "wantToRetire":false,
-  "wantToDeprovision" : false,
-  "history":[],
-  "ipAddresses":["::1", "127.0.0.1"],
-  "additionalIpAddresses":["::10","::11"]
+  "hostname": "host11.yahoo.com",
+  "parentHostname": "parent.host.yahoo.com",
+  "openStackId": "host11.yahoo.com",
+  "flavor": "docker",
+  "canonicalFlavor": "docker",
+  "minDiskAvailableGb": 100.0,
+  "minMainMemoryAvailableGb": 0.5,
+  "description": "Flavor-name-is-docker",
+  "minCpuCores": 0.2,
+  "fastDisk": true,
+  "environment": "DOCKER_CONTAINER",
+  "rebootGeneration": 0,
+  "currentRebootGeneration": 0,
+  "failCount": 0,
+  "hardwareFailure": false,
+  "wantToRetire": false,
+  "wantToDeprovision": false,
+  "history": [
+    {
+      "event": "provisioned",
+      "at": 123,
+      "agent": "system"
+    }
+  ],
+  "ipAddresses": [
+    "::1",
+    "127.0.0.1"
+  ],
+  "additionalIpAddresses": [
+    "::10",
+    "::11"
+  ]
 }

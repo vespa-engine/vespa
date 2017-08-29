@@ -65,14 +65,15 @@ public class History {
     public History recordStateTransition(Node.State from, Node.State to, Agent agent, Instant at) {
         if (from == to) return this;
         switch (to) {
-            case ready:    return this.withoutApplicationEvents().with(new Event(Event.Type.readied, agent, at));
-            case active:   return this.with(new Event(Event.Type.activated, agent, at));
-            case inactive: return this.with(new Event(Event.Type.deactivated, agent, at));
-            case reserved: return this.with(new Event(Event.Type.reserved, agent, at));
-            case failed:   return this.with(new Event(Event.Type.failed, agent, at));
-            case dirty:    return this.with(new Event(Event.Type.deallocated, agent, at));
-            case parked:   return this.with(new Event(Event.Type.parked, agent, at));
-            default:       return this;
+            case provisioned: return this.with(new Event(Event.Type.provisioned, agent, at));
+            case ready:       return this.withoutApplicationEvents().with(new Event(Event.Type.readied, agent, at));
+            case active:      return this.with(new Event(Event.Type.activated, agent, at));
+            case inactive:    return this.with(new Event(Event.Type.deactivated, agent, at));
+            case reserved:    return this.with(new Event(Event.Type.reserved, agent, at));
+            case failed:      return this.with(new Event(Event.Type.failed, agent, at));
+            case dirty:       return this.with(new Event(Event.Type.deallocated, agent, at));
+            case parked:      return this.with(new Event(Event.Type.parked, agent, at));
+            default:          return this;
         }
     }
     
