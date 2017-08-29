@@ -5,6 +5,7 @@
 #include "type.h"
 #include <vespa/vespalib/data/memory.h>
 #include "symbol.h"
+#include "external_memory.h"
 
 namespace vespalib {
 
@@ -27,6 +28,7 @@ struct Inserter {
     virtual Cursor &insertDouble(double value) const = 0;
     virtual Cursor &insertString(Memory value) const = 0;
     virtual Cursor &insertData(Memory value) const = 0;
+    virtual Cursor &insertData(ExternalMemory::UP value) const = 0;
     virtual Cursor &insertArray() const = 0;
     virtual Cursor &insertObject() const = 0;
     virtual ~Inserter() {}
@@ -44,6 +46,7 @@ struct SlimeInserter : Inserter {
     Cursor &insertDouble(double value) const override;
     Cursor &insertString(Memory value) const override;
     Cursor &insertData(Memory value) const override;
+    Cursor &insertData(ExternalMemory::UP value) const override;
     Cursor &insertArray() const override;
     Cursor &insertObject() const override;
 };
@@ -58,6 +61,7 @@ struct ArrayInserter : Inserter {
     Cursor &insertDouble(double value) const override;
     Cursor &insertString(Memory value) const override;
     Cursor &insertData(Memory value) const override;
+    Cursor &insertData(ExternalMemory::UP value) const override;
     Cursor &insertArray() const override;
     Cursor &insertObject() const override;
 };
@@ -73,6 +77,7 @@ struct ObjectSymbolInserter : Inserter {
     Cursor &insertDouble(double value) const override;
     Cursor &insertString(Memory value) const override;
     Cursor &insertData(Memory value) const override;
+    Cursor &insertData(ExternalMemory::UP value) const override;
     Cursor &insertArray() const override;
     Cursor &insertObject() const override;
 };
@@ -88,6 +93,7 @@ struct ObjectInserter : Inserter {
     Cursor &insertDouble(double value) const override;
     Cursor &insertString(Memory value) const override;
     Cursor &insertData(Memory value) const override;
+    Cursor &insertData(ExternalMemory::UP value) const override;
     Cursor &insertArray() const override;
     Cursor &insertObject() const override;
 };
