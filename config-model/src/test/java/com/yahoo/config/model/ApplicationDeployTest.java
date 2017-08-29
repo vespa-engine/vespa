@@ -243,7 +243,7 @@ public class ApplicationDeployTest {
         final FilesApplicationPackage filesApplicationPackage = FilesApplicationPackage.fromFile(new File(appPkg));
         if (validateXml) {
             ApplicationPackageXmlFilesValidator validator =
-                    ApplicationPackageXmlFilesValidator.createTestXmlValidator(new File(appPkg), new Version(6));
+                    ApplicationPackageXmlFilesValidator.create(new File(appPkg), new Version(6));
             validator.checkApplication();
             validator.checkIncludedDirs(filesApplicationPackage);
         }

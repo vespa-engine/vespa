@@ -31,11 +31,7 @@ public class ApplicationPackageXmlFilesValidator {
         this.validators = new SchemaValidators(vespaVersion, new BaseDeployLogger());
     }
 
-    public static ApplicationPackageXmlFilesValidator createDefaultXMLValidator(File appDir, Version vespaVersion) {
-        return new ApplicationPackageXmlFilesValidator(new AppSubDirs(appDir), vespaVersion);
-    }
-
-    public static ApplicationPackageXmlFilesValidator createTestXmlValidator(File appDir, Version vespaVersion) {
+    public static ApplicationPackageXmlFilesValidator create(File appDir, Version vespaVersion) {
         return new ApplicationPackageXmlFilesValidator(new AppSubDirs(appDir), vespaVersion);
     }
 

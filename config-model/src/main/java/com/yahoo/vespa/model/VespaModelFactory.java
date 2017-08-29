@@ -82,8 +82,7 @@ public class VespaModelFactory implements ModelFactory {
     }
 
     @Override
-    public ModelCreateResult createAndValidateModel(ModelContext modelContext, 
-                                                    boolean ignoreValidationErrors) {
+    public ModelCreateResult createAndValidateModel(ModelContext modelContext, boolean ignoreValidationErrors) {
         validateXml(modelContext, ignoreValidationErrors);
         DeployState deployState = createDeployState(modelContext);
         VespaModel model = buildModel(deployState);
@@ -94,8 +93,8 @@ public class VespaModelFactory implements ModelFactory {
     private void validateXml(ModelContext modelContext, boolean ignoreValidationErrors) {
         if (modelContext.appDir().isPresent()) {
             ApplicationPackageXmlFilesValidator validator =
-                    ApplicationPackageXmlFilesValidator.createDefaultXMLValidator(modelContext.appDir().get(),
-                                                                                  modelContext.modelVespaVersion());
+                    ApplicationPackageXmlFilesValidator.create(modelContext.appDir().get(),
+                                                               modelContext.modelVespaVersion());
             try {
                 validator.checkApplication();
                 validator.checkIncludedDirs(modelContext.applicationPackage());
@@ -104,7 +103,6 @@ public class VespaModelFactory implements ModelFactory {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-
         } else {
             validateXML(modelContext.applicationPackage(), ignoreValidationErrors);
         }
