@@ -12,23 +12,24 @@ using search::makeLambdaTask;
 
 namespace proton {
 
-GidToLidChangeHandler::GidToLidChangeHandler(searchcorespi::index::IThreadService *master)
+GidToLidChangeHandler::GidToLidChangeHandler()
     : _lock(),
       _listeners(),
-      _master(master)
+      _closed(false)
 {
 }
 
 
 GidToLidChangeHandler::~GidToLidChangeHandler()
 {
-    assert(_master == nullptr);
+    assert(_closed);
     assert(_listeners.empty());
 }
 
 void
 GidToLidChangeHandler::notifyGidToLidChange(document::GlobalId gid, uint32_t lid)
 {
+    lock_guard guard(_lock);
     for (const auto &listener : _listeners) {
         listener->notifyGidToLidChange(gid, lid);
     }
@@ -37,11 +38,11 @@ GidToLidChangeHandler::notifyGidToLidChange(document::GlobalId gid, uint32_t lid
 void
 GidToLidChangeHandler::close()
 {
-    lock_guard guard(_lock);
-    if (_master != nullptr) {
-        assert(_master->isCurrentThread());
-        _master = nullptr;
-        _listeners.clear();
+    Listeners deferredDelete;
+    {
+        lock_guard guard(_lock);
+        _closed = true;
+        _listeners.swap(deferredDelete);
     }
 }
 
@@ -49,20 +50,7 @@ void
 GidToLidChangeHandler::addListener(std::unique_ptr<IGidToLidChangeListener> listener)
 {
     lock_guard guard(_lock);
-    if (_master) {
-        auto self(shared_from_this());
-        _master->execute(makeLambdaTask([self,listener(std::move(listener))]() mutable { self->performAddListener(std::move(listener)); }));
-    } else {
-        assert(_listeners.empty());
-    }
-}
-
-
-void
-GidToLidChangeHandler::performAddListener(std::unique_ptr<IGidToLidChangeListener> listener)
-{
-    lock_guard guard(_lock);
-    if (_master) {
+    if (!_closed) {
         const vespalib::string &docTypeName = listener->getDocTypeName();
         const vespalib::string &name = listener->getName();
         for (const auto &oldlistener : _listeners) {
@@ -72,19 +60,6 @@ GidToLidChangeHandler::performAddListener(std::unique_ptr<IGidToLidChangeListene
         }
         _listeners.emplace_back(std::move(listener));
         _listeners.back()->notifyRegistered();
-    } else {
-        assert(_listeners.empty());
-    }
-}
-
-void
-GidToLidChangeHandler::removeListeners(const vespalib::string &docTypeName,
-                                       const std::set<vespalib::string> &keepNames)
-{
-    lock_guard guard(_lock);
-    if (_master) {
-        auto self(shared_from_this());
-        _master->execute(makeLambdaTask([self,docTypeName,keepNames]() mutable { self->performRemoveListener(docTypeName, keepNames); }));
     } else {
         assert(_listeners.empty());
     }
@@ -103,21 +78,25 @@ bool shouldRemoveListener(const IGidToLidChangeListener &listener,
 }
 
 void
-GidToLidChangeHandler::performRemoveListener(const vespalib::string &docTypeName,
-                                             const std::set<vespalib::string> &keepNames)
+GidToLidChangeHandler::removeListeners(const vespalib::string &docTypeName,
+                                       const std::set<vespalib::string> &keepNames)
 {
-    lock_guard guard(_lock);
-    if (_master) {
-        auto itr = _listeners.begin();
-        while (itr != _listeners.end()) {
-            if (shouldRemoveListener(**itr, docTypeName, keepNames)) {
-                itr = _listeners.erase(itr);
-            } else {
-                ++itr;
+    Listeners deferredDelete;
+    {
+        lock_guard guard(_lock);
+        if (!_closed) {
+            auto itr = _listeners.begin();
+            while (itr != _listeners.end()) {
+                if (shouldRemoveListener(**itr, docTypeName, keepNames)) {
+                    deferredDelete.emplace_back(std::move(*itr));
+                    itr = _listeners.erase(itr);
+                } else {
+                    ++itr;
+                }
             }
+        } else {
+            assert(_listeners.empty());
         }
-    } else {
-        assert(_listeners.empty());
     }
 }
 

@@ -19,25 +19,22 @@ class GidToLidChangeHandler : public std::enable_shared_from_this<GidToLidChange
                               public IGidToLidChangeHandler
 {
     using lock_guard = std::lock_guard<std::mutex>;
+    using Listeners = std::vector<std::unique_ptr<IGidToLidChangeListener>>;
     std::mutex _lock;
-    std::vector<std::unique_ptr<IGidToLidChangeListener>> _listeners;
-    searchcorespi::index::IThreadService *_master;
+    Listeners _listeners;
+    bool _closed;
 
-    void performAddListener(std::unique_ptr<IGidToLidChangeListener> listener);
-    void performRemoveListener(const vespalib::string &docTypeName,
-                               const std::set<vespalib::string> &keepNames);
 public:
-    GidToLidChangeHandler(searchcorespi::index::IThreadService *master);
+    GidToLidChangeHandler();
     virtual ~GidToLidChangeHandler();
 
     /**
-     * Notify gid to lid mapping change. Called by master executor.
+     * Notify gid to lid mapping change.
      */
     virtual void notifyGidToLidChange(document::GlobalId gid, uint32_t lid) override;
 
     /**
-     * Close handler, further notifications are blocked.  Called by master
-     * executor.
+     * Close handler, further notifications are blocked.
      */
     void close();
 

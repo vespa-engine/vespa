@@ -99,16 +99,12 @@ public:
 
 struct Fixture
 {
-    vespalib::ThreadStackExecutor _masterExecutor;
-    ExecutorThreadService _master;
     std::vector<std::shared_ptr<ListenerStats>> _statss;
     std::shared_ptr<GidToLidChangeHandler> _handler;
 
     Fixture()
-        : _masterExecutor(1, 128 * 1024),
-          _master(_masterExecutor),
-          _statss(),
-          _handler(std::make_shared<GidToLidChangeHandler>(&_master))
+        : _statss(),
+          _handler(std::make_shared<GidToLidChangeHandler>())
     {
     }
 
@@ -119,8 +115,7 @@ struct Fixture
 
     void close()
     {
-        _master.execute(makeLambdaTask([this]() { _handler->close(); }));
-        _master.sync();
+        _handler->close();
     }
 
     ListenerStats &addStats() {
@@ -130,18 +125,15 @@ struct Fixture
 
     void addListener(std::unique_ptr<IGidToLidChangeListener> listener) {
         _handler->addListener(std::move(listener));
-        _master.sync();
     }
 
     void notifyGidToLidChange(GlobalId gid, uint32_t lid) {
-        _master.execute(makeLambdaTask([this, gid, lid]() { _handler->notifyGidToLidChange(gid, lid); }));
-        _master.sync();
+        _handler->notifyGidToLidChange(gid, lid);
     }
 
     void removeListeners(const vespalib::string &docTypeName,
                          const std::set<vespalib::string> &keepNames) {
         _handler->removeListeners(docTypeName, keepNames);
-        _master.sync();
     }
 
 };
