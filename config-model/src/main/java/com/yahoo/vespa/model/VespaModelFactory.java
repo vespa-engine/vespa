@@ -161,7 +161,6 @@ public class VespaModelFactory implements ModelFactory {
 
     private List<ConfigChangeAction> validateModel(VespaModel model, DeployState deployState, boolean ignoreValidationErrors) {
         try {
-            deployState.getApplicationPackage().validateXML();
             return Validation.validate(model, ignoreValidationErrors, deployState);
         } catch (IllegalArgumentException e) {
             rethrowUnlessIgnoreErrors(e, ignoreValidationErrors);
