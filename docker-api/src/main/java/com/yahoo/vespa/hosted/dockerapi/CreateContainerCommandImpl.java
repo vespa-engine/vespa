@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.dockerapi;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
-import com.github.dockerjava.api.exception.DockerException;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Capability;
 import com.github.dockerjava.api.model.Ulimit;
@@ -133,8 +132,8 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     public void create() {
         try {
             createCreateContainerCmd().exec();
-        } catch (DockerException e) {
-            throw new RuntimeException("Failed to create container " + containerName.asString(), e);
+        } catch (RuntimeException e) {
+            throw new DockerException("Failed to create container " + containerName.asString(), e);
         }
     }
 
