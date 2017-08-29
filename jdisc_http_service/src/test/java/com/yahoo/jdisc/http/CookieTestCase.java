@@ -106,14 +106,14 @@ public class CookieTestCase {
                 "foo.name=foo.value",
                 Collections.singletonList(newCookie("foo")));
         assertEncodeCookie(
-                "foo.name=foo.value; bar.name=bar.value",
+                "foo.name=foo.value;bar.name=bar.value",
                 Arrays.asList(newCookie("foo"), newCookie("bar")));
     }
 
     @Test
     public void requireThatSetCookieCanBeEncoded() {
         assertEncodeSetCookie(
-                Collections.singletonList("foo.name=foo.value; Path=path; Domain=domain; Secure; HTTPOnly"),
+                Collections.singletonList("foo.name=foo.value;Path=path;Domain=domain;Secure;HttpOnly"),
                 Collections.singletonList(newSetCookie("foo")));
     }
 
@@ -131,6 +131,7 @@ public class CookieTestCase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void requireThatSetCookieCanBeDecoded() {
         final Cookie foo = new Cookie();
         foo.setName("foo.name");
@@ -140,6 +141,7 @@ public class CookieTestCase {
         foo.setMaxAge(0, TimeUnit.SECONDS);
         foo.setSecure(true);
         foo.setHttpOnly(true);
+        foo.setVersion(1);
         assertDecodeSetCookie(foo, "foo.name=foo.value;Max-Age=0;Path=path;Domain=domain;Secure;HTTPOnly;");
 
         final Cookie bar = new Cookie();
@@ -148,6 +150,7 @@ public class CookieTestCase {
         bar.setPath("path");
         bar.setDomain("domain");
         bar.setMaxAge(0, TimeUnit.SECONDS);
+        bar.setVersion(1);
         assertDecodeSetCookie(bar, "bar.name=bar.value;Max-Age=0;Path=path;Domain=domain;");
     }
 
