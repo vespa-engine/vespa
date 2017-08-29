@@ -45,8 +45,10 @@ public class VespaModelCreatorWithFilePkg {
     }
 
     public void validate() throws IOException {
-        ApplicationPackageXmlFilesValidator.createTestXmlValidator(applicationPkg.getAppDir(), new Version(6)).checkApplication();
-        ApplicationPackageXmlFilesValidator.checkIncludedDirs(applicationPkg, new Version(6));
+        ApplicationPackageXmlFilesValidator validator =
+                ApplicationPackageXmlFilesValidator.createTestXmlValidator(applicationPkg.getAppDir(), new Version(6));
+        validator.checkApplication();
+        validator.checkIncludedDirs(applicationPkg);
     }
 
     public VespaModel create(boolean validateApplicationWithSchema) {

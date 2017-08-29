@@ -634,7 +634,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
         com.yahoo.component.Version modelVersion = vespaVersion.map(v -> new com.yahoo.component.Version(vespaVersion.toString())).orElse(Vtag.currentVersion);
         ApplicationPackageXmlFilesValidator xmlFilesValidator = ApplicationPackageXmlFilesValidator.createDefaultXMLValidator(appDir, modelVersion);
         xmlFilesValidator.checkApplication();
-        ApplicationPackageXmlFilesValidator.checkIncludedDirs(this, modelVersion);
+        xmlFilesValidator.checkIncludedDirs(this);
     }
 
     @Override
