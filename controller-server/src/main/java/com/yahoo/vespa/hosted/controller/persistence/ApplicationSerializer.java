@@ -12,7 +12,6 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import com.yahoo.slime.Type;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.application.ApplicationRevision;
@@ -230,8 +229,7 @@ public class ApplicationSerializer {
     }
 
     private Optional<Change> changeFromSlime(Inspector object) {
-        // TODO: Remove NIX check after Sep 2017
-        if ( ! object.valid() || object.type() == Type.NIX) return Optional.empty();
+        if ( ! object.valid()) return Optional.empty();
         Inspector versionFieldValue = object.field(versionField);
         if (versionFieldValue.valid())
             return Optional.of(new Change.VersionChange(Version.fromString(versionFieldValue.asString())));
