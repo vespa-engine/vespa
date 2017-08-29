@@ -468,28 +468,37 @@ public class NodeRepository extends AbstractComponent {
     }
 
     /**
-     * Removes a node. A node must be in a legal state before it can be removed.
+     * Removes all the nodes that are children of hostname before finally removing the hostname itself.
+     *
+     * @return List of all the nodes that have been removed
      */
-    public void remove(String hostname) {
-        Node nodeToRemove = getNode(hostname).orElseThrow(() ->  new NotFoundException("No node with hostname \"" + hostname + '"'));
-        List<Node.State> legalStates = dynamicAllocationEnabled() ?
-                Arrays.asList(Node.State.provisioned, Node.State.failed, Node.State.parked, Node.State.dirty) :
+    public List<Node> removeRecursively(String hostname) {
+        Node node = getNode(hostname).orElseThrow(() -> new NotFoundException("No node with hostname \"" + hostname + '"'));
+
+        try (Mutex lock = lockUnallocated()) {
+            List<Node> removed = getChildNodes(hostname).stream()
+                    .filter(this::allowedToRemove)
+                    .collect(Collectors.toList());
+            if (allowedToRemove(node)) removed.add(node);
+            db.removeNodes(removed);
+
+            return removed;
+        } catch (RuntimeException e) {
+            throw new IllegalArgumentException("Failed to delete " + node.hostname(), e);
+        }
+    }
+
+    private boolean allowedToRemove(Node nodeToRemove) {
+        List<Node.State> legalStates = nodeToRemove.flavor().getType() == Flavor.Type.DOCKER_CONTAINER ?
+                Arrays.asList(Node.State.provisioned, Node.State.ready) :
                 Arrays.asList(Node.State.provisioned, Node.State.failed, Node.State.parked);
 
         if (! legalStates.contains(nodeToRemove.state())) {
-            throw new IllegalArgumentException("Can only remove node from following states: " +
-                    legalStates.stream().map(Node.State::name).collect(Collectors.joining(", ")));
+            throw new IllegalArgumentException(String.format("%s can only be removed from following states: %s",
+                    nodeToRemove.hostname(), legalStates.stream().map(Node.State::name).collect(Collectors.joining(", "))));
         }
 
-        if (nodeToRemove.state().equals(Node.State.dirty)) {
-            if (!(nodeToRemove.flavor().getType().equals(Flavor.Type.DOCKER_CONTAINER))) {
-                throw new IllegalArgumentException("Only docker nodes can be deleted from state dirty");
-            }
-        }
-
-        try (Mutex lock = lock(nodeToRemove)) {
-            db.removeNode(nodeToRemove.state(), hostname);
-        }
+        return true;
     }
 
     /**

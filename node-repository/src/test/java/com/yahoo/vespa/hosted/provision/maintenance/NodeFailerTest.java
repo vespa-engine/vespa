@@ -342,7 +342,7 @@ public class NodeFailerTest {
         assertEquals(15, tester.nodeRepository.getNodes(NodeType.proxy, Node.State.active).size());
 
         // The first down host is removed, which causes the second one to be moved to failed
-        tester.nodeRepository.remove(failedHost1);
+        tester.nodeRepository.removeRecursively(failedHost1);
         tester.failer.run();
         assertEquals( 2, tester.deployer.redeployments);
         assertEquals(14, tester.nodeRepository.getNodes(NodeType.proxy, Node.State.active).size());
