@@ -2,6 +2,7 @@
 #
 # Container settings for document type management
 #
+version=1
 namespace=container.core.document
 
 # A document type name to use a concrete document type for
