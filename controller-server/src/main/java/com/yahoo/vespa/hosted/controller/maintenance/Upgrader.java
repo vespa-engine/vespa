@@ -47,9 +47,11 @@ public class Upgrader extends Maintainer {
         
         switch (target.confidence()) {
             case broken:
-                log.info(String.format("Version %s is broken, cancelling all upgrades", target.versionNumber()));
-                cancelUpgradesOf(applications().upgradingTo(target.versionNumber())
-                                               .without(UpgradePolicy.canary)); // keep trying canaries
+                ApplicationList toCancel = applications().upgradingTo(target.versionNumber())
+                                                         .without(UpgradePolicy.canary);
+                if (toCancel.isEmpty()) break;
+                log.info("Version " + target.versionNumber() + " is broken, cancelling all upgrades");
+                cancelUpgradesOf(toCancel);
                 break;
             case low:
                 upgrade(applications().with(UpgradePolicy.canary), target.versionNumber());

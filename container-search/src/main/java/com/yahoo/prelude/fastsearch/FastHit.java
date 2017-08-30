@@ -15,7 +15,7 @@ import com.yahoo.data.access.simple.Value.StringValue;
  * A regular hit from a Vespa backend
  *
  * @author bratseth
- * @author steinar
+ * @author Steinar Knutsen
  */
 public class FastHit extends Hit {
 
