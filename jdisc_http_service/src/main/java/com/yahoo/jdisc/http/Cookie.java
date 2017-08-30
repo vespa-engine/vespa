@@ -1,18 +1,21 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http;
 
-import org.jboss.netty.handler.codec.http.cookie.ClientCookieDecoder;
-import org.jboss.netty.handler.codec.http.cookie.ClientCookieEncoder;
-import org.jboss.netty.handler.codec.http.cookie.DefaultCookie;
-import org.jboss.netty.handler.codec.http.cookie.ServerCookieDecoder;
-import org.jboss.netty.handler.codec.http.cookie.ServerCookieEncoder;
+import org.eclipse.jetty.server.CookieCutter;
+import org.eclipse.jetty.server.Response;
 
+import java.net.HttpCookie;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -26,6 +29,8 @@ import java.util.stream.StreamSupport;
  */
 public class Cookie {
 
+    private final static Logger log = Logger.getLogger(Cookie.class.getName());
+
     private final Set<Integer> ports = new HashSet<>();
     private String name;
     private String value;
@@ -33,7 +38,7 @@ public class Cookie {
     private String path;
     private String comment;
     private String commentUrl;
-    private long maxAgeMillis = TimeUnit.SECONDS.toMillis(Integer.MIN_VALUE);
+    private long maxAgeSeconds = Integer.MIN_VALUE;
     private int version;
     private boolean secure;
     private boolean httpOnly;
@@ -50,7 +55,7 @@ public class Cookie {
         path = cookie.path;
         comment = cookie.comment;
         commentUrl = cookie.commentUrl;
-        maxAgeMillis = cookie.maxAgeMillis;
+        maxAgeSeconds = cookie.maxAgeSeconds;
         version = cookie.version;
         secure = cookie.secure;
         httpOnly = cookie.httpOnly;
@@ -131,11 +136,11 @@ public class Cookie {
     }
 
     public int getMaxAge(TimeUnit unit) {
-        return (int)unit.convert(maxAgeMillis, TimeUnit.MILLISECONDS);
+        return (int)unit.convert(maxAgeSeconds, TimeUnit.SECONDS);
     }
 
     public Cookie setMaxAge(int maxAge, TimeUnit unit) {
-        this.maxAgeMillis = unit.toMillis(maxAge);
+        this.maxAgeSeconds = maxAge >= 0 ? unit.toSeconds(maxAge) : Integer.MIN_VALUE;
         return this;
     }
 
@@ -189,7 +194,7 @@ public class Cookie {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Cookie cookie = (Cookie) o;
-        return maxAgeMillis == cookie.maxAgeMillis &&
+        return maxAgeSeconds == cookie.maxAgeSeconds &&
                 version == cookie.version &&
                 secure == cookie.secure &&
                 httpOnly == cookie.httpOnly &&
@@ -205,7 +210,7 @@ public class Cookie {
 
     @Override
     public int hashCode() {
-        return Objects.hash(ports, name, value, domain, path, comment, commentUrl, maxAgeMillis, version, secure, httpOnly, discard);
+        return Objects.hash(ports, name, value, domain, path, comment, commentUrl, maxAgeSeconds, version, secure, httpOnly, discard);
     }
 
     @Override
@@ -214,25 +219,51 @@ public class Cookie {
         ret.append(name).append("=").append(value);
         return ret.toString();
     }
+    // NOTE cookie encoding and decoding:
+    //      The implementation uses Jetty for server-side (encoding of Set-Cookie and decoding of Cookie header),
+    //      and java.net.HttpCookie for client-side (encoding of Cookie and decoding of Set-Cookie header).
+    //
+    // Implementation is RFC-6265 compliant.
 
     public static String toCookieHeader(Iterable<? extends Cookie> cookies) {
-        ClientCookieEncoder encoder = ClientCookieEncoder.STRICT;
-        List<org.jboss.netty.handler.codec.http.cookie.Cookie> nettyCookies =
-                StreamSupport.stream(cookies.spliterator(), false)
-                        // NOTE: Only name and value is included in Cookie header as of RFC-6265
-                        .map(cookie -> new DefaultCookie(cookie.getName(), cookie.getValue()))
-                        .collect(Collectors.toList());
-        return encoder.encode(nettyCookies);
+        return StreamSupport.stream(cookies.spliterator(), false)
+                .map(cookie -> {
+                    HttpCookie httpCookie = new HttpCookie(cookie.getName(), cookie.getValue());
+                    httpCookie.setComment(cookie.getComment());
+                    httpCookie.setCommentURL(cookie.getCommentURL());
+                    httpCookie.setDiscard(cookie.isDiscard());
+                    httpCookie.setDomain(cookie.getDomain());
+                    httpCookie.setHttpOnly(cookie.isHttpOnly());
+                    httpCookie.setMaxAge(cookie.getMaxAge(TimeUnit.SECONDS));
+                    httpCookie.setPath(cookie.getPath());
+                    httpCookie.setSecure(cookie.isSecure());
+                    httpCookie.setVersion(cookie.getVersion());
+                    String portList = cookie.ports().stream()
+                            .map(Number::toString)
+                            .collect(Collectors.joining(","));
+                    httpCookie.setPortlist(portList);
+                    return httpCookie.toString();
+                })
+                .collect(Collectors.joining(";"));
     }
 
     public static List<Cookie> fromCookieHeader(String headerVal) {
-        if (headerVal == null) return Collections.emptyList();
-
-        ServerCookieDecoder decoder = ServerCookieDecoder.STRICT;
-        Set<org.jboss.netty.handler.codec.http.cookie.Cookie> nettyCookies = decoder.decode(headerVal);
-        return nettyCookies.stream()
-                // NOTE: Only name and value is included in Cookie header as of RFC-6265
-                .map(nettyCookie -> new Cookie(nettyCookie.name(), nettyCookie.value()))
+        CookieCutter cookieCutter = new CookieCutter();
+        cookieCutter.addCookieField(headerVal);
+        return Arrays.stream(cookieCutter.getCookies())
+                .map(servletCookie -> {
+                    Cookie cookie = new Cookie();
+                    cookie.setName(servletCookie.getName());
+                    cookie.setValue(servletCookie.getValue());
+                    cookie.setComment(servletCookie.getComment());
+                    cookie.setPath(servletCookie.getPath());
+                    cookie.setDomain(servletCookie.getDomain());
+                    cookie.setMaxAge(servletCookie.getMaxAge(), TimeUnit.SECONDS);
+                    cookie.setSecure(servletCookie.getSecure());
+                    cookie.setVersion(servletCookie.getVersion());
+                    cookie.setHttpOnly(servletCookie.isHttpOnly());
+                    return cookie;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -247,34 +278,60 @@ public class Cookie {
 
     // TODO Rename to toSetCookieHeader for Vespa 7
     public static List<String> toSetCookieHeaderAll(Iterable<? extends Cookie> cookies) {
-        ServerCookieEncoder encoder = ServerCookieEncoder.STRICT;
-        List<org.jboss.netty.handler.codec.http.cookie.Cookie> nettyCookies =
-                StreamSupport.stream(cookies.spliterator(), false)
-                        .map(cookie -> {
-                            org.jboss.netty.handler.codec.http.cookie.Cookie nettyCookie
-                                    = new DefaultCookie(cookie.getName(), cookie.getValue());
-                            nettyCookie.setPath(cookie.getPath());
-                            nettyCookie.setMaxAge(cookie.getMaxAge(TimeUnit.SECONDS));
-                            nettyCookie.setSecure(cookie.isSecure());
-                            nettyCookie.setHttpOnly(cookie.isHttpOnly());
-                            nettyCookie.setDomain(cookie.getDomain());
-                            return nettyCookie;
-                        })
-                        .collect(Collectors.toList());
-        return encoder.encode(nettyCookies);
+        // Ugly, bot Jetty does not provide a dedicated cookie parser (will be included in Jetty 10)
+        Response response = new Response(null, null);
+        for (Cookie cookie : cookies) {
+            response.addSetRFC6265Cookie(
+                    cookie.getName(),
+                    cookie.getValue(),
+                    cookie.getDomain(),
+                    cookie.getPath(),
+                    cookie.getMaxAge(TimeUnit.SECONDS),
+                    cookie.isSecure(),
+                    cookie.isHttpOnly());
+        }
+        return new ArrayList<>(response.getHeaders("Set-Cookie"));
     }
 
     // TODO Change return type to Cookie for Vespa 7
     public static List<Cookie> fromSetCookieHeader(String headerVal) {
-        if (headerVal == null) return Collections.emptyList();
-
-        ClientCookieDecoder encoder = ClientCookieDecoder.STRICT;
-        org.jboss.netty.handler.codec.http.cookie.Cookie nettyCookie = encoder.decode(headerVal);
-        return Collections.singletonList(new Cookie(nettyCookie.name(), nettyCookie.value())
-                .setHttpOnly(nettyCookie.isHttpOnly())
-                .setSecure(nettyCookie.isSecure())
-                .setMaxAge(nettyCookie.maxAge(), TimeUnit.SECONDS)
-                .setPath(nettyCookie.path())
-                .setDomain(nettyCookie.domain()));
+        return HttpCookie.parse(headerVal).stream()
+                .map(httpCookie -> {
+                    Cookie cookie = new Cookie();
+                    cookie.setName(httpCookie.getName());
+                    cookie.setValue(httpCookie.getValue());
+                    cookie.setComment(httpCookie.getComment());
+                    cookie.setCommentUrl(httpCookie.getCommentURL());
+                    cookie.setDiscard(httpCookie.getDiscard());
+                    cookie.setDomain(httpCookie.getDomain());
+                    cookie.setHttpOnly(httpCookie.isHttpOnly());
+                    cookie.setMaxAge((int)httpCookie.getMaxAge(), TimeUnit.SECONDS);
+                    cookie.setPath(httpCookie.getPath());
+                    cookie.setSecure(httpCookie.getSecure());
+                    cookie.setVersion(httpCookie.getVersion());
+                    cookie.ports().addAll(parsePortList(httpCookie.getPortlist()));
+                    return cookie;
+                })
+                .collect(Collectors.toList());
     }
+
+
+    private static List<Integer> parsePortList(String rawPortList) {
+        if (rawPortList == null) return Collections.emptyList();
+
+        List<Integer> ports = new ArrayList<>();
+        StringTokenizer tokenizer = new StringTokenizer(rawPortList, ",");
+        while (tokenizer.hasMoreTokens()) {
+            String rawPort = tokenizer.nextToken().trim();
+            if (!rawPort.isEmpty()) {
+                try {
+                    ports.add(Integer.parseInt(rawPort));
+                } catch (NumberFormatException e) {
+                    log.log(Level.FINE, "Unable to parse port: " + rawPort, e);
+                }
+            }
+        }
+        return ports;
+    }
+
 }
