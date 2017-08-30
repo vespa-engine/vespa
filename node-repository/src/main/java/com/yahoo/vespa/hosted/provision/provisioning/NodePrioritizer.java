@@ -329,7 +329,7 @@ class NodePrioritizer {
         if (a.allocation().isPresent() && !b.allocation().isPresent()) return 1;
 
         // Choose container over content nodes
-        if (a.allocation().isPresent() && a.allocation().isPresent()) {
+        if (a.allocation().isPresent() && b.allocation().isPresent()) {
             if (a.allocation().get().membership().cluster().type().equals(ClusterSpec.Type.container) &&
                     !b.allocation().get().membership().cluster().type().equals(ClusterSpec.Type.container))
                 return -1;
