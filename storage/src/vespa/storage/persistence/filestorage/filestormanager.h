@@ -55,7 +55,7 @@ class FileStorManager : public StorageLinkQueued,
     ServiceLayerComponent _component;
     const spi::PartitionStateList& _partitions;
     spi::PersistenceProvider& _providerCore;
-    ProviderShutdownWrapper _providerShutdown;
+    ProviderErrorWrapper _providerShutdown;
     bool _nodeUpInLastNodeStateSeenByProvider;
     spi::MetricPersistenceProvider::UP _providerMetric;
     spi::PersistenceProvider* _provider;

@@ -10,68 +10,92 @@ namespace storage {
 
 template <typename ResultType>
 ResultType
-ProviderShutdownWrapper::checkResult(ResultType&& result) const
+ProviderErrorWrapper::checkResult(ResultType&& result) const
 {
     if (result.getErrorCode() == spi::Result::FATAL_ERROR) {
-        vespalib::LockGuard guard(_shutdownLock);
-        if (_shutdownTriggered) {
-            LOG(debug,
-                "Received FATAL_ERROR from persistence provider: %s. "
-                "Node has already been instructed to shut down so "
-                "not doing anything now.",
-                result.getErrorMessage().c_str());
-        } else {
-            LOG(info,
-                "Received FATAL_ERROR from persistence provider, "
-                "shutting down node: %s",
-                result.getErrorMessage().c_str());
-            const_cast<ProviderShutdownWrapper*>(this)->
-                _component.requestShutdown(result.getErrorMessage());
-            _shutdownTriggered = true;
-        }
+        trigger_shutdown_listeners_once(result.getErrorMessage());
+    } else if (result.getErrorCode() == spi::Result::RESOURCE_EXHAUSTED) {
+        trigger_resource_exhaustion_listeners(result.getErrorMessage());
     }
-    return std::move(result);
+    return std::forward<ResultType>(result);
+}
+
+// TODO move this out as error listener instead
+void ProviderErrorWrapper::trigger_shutdown_listeners_once(vespalib::stringref reason) const {
+    std::lock_guard<std::mutex> guard(_mutex);
+    // TODO decide if this behavior even belongs here. Move to dedicated listener?
+    if (_shutdownTriggered) {
+        LOG(debug,
+            "Received FATAL_ERROR from persistence provider: %s. "
+            "Node has already been instructed to shut down so "
+            "not doing anything now.",
+            reason.c_str());
+    } else {
+        for (auto& listener : _listeners) {
+            listener->on_fatal_error(reason);
+        }
+        // TODO move out
+        LOG(info,
+            "Received FATAL_ERROR from persistence provider, "
+            "shutting down node: %s",
+            reason.c_str());
+        const_cast<ProviderErrorWrapper*>(this)->
+                _component.requestShutdown(reason);
+        _shutdownTriggered = true;
+    }
+}
+
+void ProviderErrorWrapper::trigger_resource_exhaustion_listeners(vespalib::stringref reason) const {
+    std::lock_guard<std::mutex> guard(_mutex);
+    for (auto& listener : _listeners) {
+        listener->on_resource_exhaustion_error(reason);
+    }
+}
+
+void ProviderErrorWrapper::register_error_listener(std::shared_ptr<ProviderErrorListener> listener) {
+    std::lock_guard<std::mutex> guard(_mutex);
+    _listeners.emplace_back(std::move(listener));
 }
 
 spi::Result
-ProviderShutdownWrapper::initialize()
+ProviderErrorWrapper::initialize()
 {
     return checkResult(_impl.initialize());
 }
 
 spi::PartitionStateListResult
-ProviderShutdownWrapper::getPartitionStates() const
+ProviderErrorWrapper::getPartitionStates() const
 {
     return checkResult(_impl.getPartitionStates());
 }
 
 spi::BucketIdListResult
-ProviderShutdownWrapper::listBuckets(spi::PartitionId partitionId) const
+ProviderErrorWrapper::listBuckets(spi::PartitionId partitionId) const
 {
     return checkResult(_impl.listBuckets(partitionId));
 }
 
 spi::Result
-ProviderShutdownWrapper::setClusterState(const spi::ClusterState& state)
+ProviderErrorWrapper::setClusterState(const spi::ClusterState& state)
 {
     return checkResult(_impl.setClusterState(state));
 }
 
 spi::Result
-ProviderShutdownWrapper::setActiveState(const spi::Bucket& bucket,
+ProviderErrorWrapper::setActiveState(const spi::Bucket& bucket,
                                         spi::BucketInfo::ActiveState newState)
 {
     return checkResult(_impl.setActiveState(bucket, newState));
 }
 
 spi::BucketInfoResult
-ProviderShutdownWrapper::getBucketInfo(const spi::Bucket& bucket) const
+ProviderErrorWrapper::getBucketInfo(const spi::Bucket& bucket) const
 {
     return checkResult(_impl.getBucketInfo(bucket));
 }
 
 spi::Result
-ProviderShutdownWrapper::put(const spi::Bucket& bucket,
+ProviderErrorWrapper::put(const spi::Bucket& bucket,
                              spi::Timestamp ts,
                              const spi::DocumentSP& doc,
                              spi::Context& context)
@@ -80,7 +104,7 @@ ProviderShutdownWrapper::put(const spi::Bucket& bucket,
 }
 
 spi::RemoveResult
-ProviderShutdownWrapper::remove(const spi::Bucket& bucket,
+ProviderErrorWrapper::remove(const spi::Bucket& bucket,
                                 spi::Timestamp ts,
                                 const document::DocumentId& docId,
                                 spi::Context& context)
@@ -89,7 +113,7 @@ ProviderShutdownWrapper::remove(const spi::Bucket& bucket,
 }
 
 spi::RemoveResult
-ProviderShutdownWrapper::removeIfFound(const spi::Bucket& bucket,
+ProviderErrorWrapper::removeIfFound(const spi::Bucket& bucket,
                                        spi::Timestamp ts,
                                        const document::DocumentId& docId,
                                        spi::Context& context)
@@ -98,7 +122,7 @@ ProviderShutdownWrapper::removeIfFound(const spi::Bucket& bucket,
 }
 
 spi::UpdateResult
-ProviderShutdownWrapper::update(const spi::Bucket& bucket,
+ProviderErrorWrapper::update(const spi::Bucket& bucket,
                                 spi::Timestamp ts,
                                 const spi::DocumentUpdateSP& docUpdate,
                                 spi::Context& context)
@@ -107,7 +131,7 @@ ProviderShutdownWrapper::update(const spi::Bucket& bucket,
 }
 
 spi::GetResult
-ProviderShutdownWrapper::get(const spi::Bucket& bucket,
+ProviderErrorWrapper::get(const spi::Bucket& bucket,
                              const document::FieldSet& fieldSet,
                              const document::DocumentId& docId,
                              spi::Context& context) const
@@ -116,13 +140,13 @@ ProviderShutdownWrapper::get(const spi::Bucket& bucket,
 }
 
 spi::Result
-ProviderShutdownWrapper::flush(const spi::Bucket& bucket, spi::Context& context)
+ProviderErrorWrapper::flush(const spi::Bucket& bucket, spi::Context& context)
 {
     return checkResult(_impl.flush(bucket, context));
 }
 
 spi::CreateIteratorResult
-ProviderShutdownWrapper::createIterator(const spi::Bucket& bucket,
+ProviderErrorWrapper::createIterator(const spi::Bucket& bucket,
                                         const document::FieldSet& fieldSet,
                                         const spi::Selection& selection,
                                         spi::IncludedVersions versions,
@@ -132,7 +156,7 @@ ProviderShutdownWrapper::createIterator(const spi::Bucket& bucket,
 }
 
 spi::IterateResult
-ProviderShutdownWrapper::iterate(spi::IteratorId iteratorId,
+ProviderErrorWrapper::iterate(spi::IteratorId iteratorId,
                                  uint64_t maxByteSize,
                                  spi::Context& context) const
 {
@@ -140,41 +164,41 @@ ProviderShutdownWrapper::iterate(spi::IteratorId iteratorId,
 }
 
 spi::Result
-ProviderShutdownWrapper::destroyIterator(spi::IteratorId iteratorId,
+ProviderErrorWrapper::destroyIterator(spi::IteratorId iteratorId,
                                          spi::Context& context)
 {
     return checkResult(_impl.destroyIterator(iteratorId, context));
 }
 
 spi::Result
-ProviderShutdownWrapper::createBucket(const spi::Bucket& bucket,
+ProviderErrorWrapper::createBucket(const spi::Bucket& bucket,
                                       spi::Context& context)
 {
     return checkResult(_impl.createBucket(bucket, context));
 }
 
 spi::Result
-ProviderShutdownWrapper::deleteBucket(const spi::Bucket& bucket,
+ProviderErrorWrapper::deleteBucket(const spi::Bucket& bucket,
                                       spi::Context& context)
 {
     return checkResult(_impl.deleteBucket(bucket, context));
 }
 
 spi::BucketIdListResult
-ProviderShutdownWrapper::getModifiedBuckets() const
+ProviderErrorWrapper::getModifiedBuckets() const
 {
     return checkResult(_impl.getModifiedBuckets());
 }
 
 spi::Result
-ProviderShutdownWrapper::maintain(const spi::Bucket& bucket,
+ProviderErrorWrapper::maintain(const spi::Bucket& bucket,
                                   spi::MaintenanceLevel level)
 {
     return checkResult(_impl.maintain(bucket, level));
 }
 
 spi::Result
-ProviderShutdownWrapper::split(const spi::Bucket& source,
+ProviderErrorWrapper::split(const spi::Bucket& source,
                                const spi::Bucket& target1,
                                const spi::Bucket& target2,
                                spi::Context& context)
@@ -183,7 +207,7 @@ ProviderShutdownWrapper::split(const spi::Bucket& source,
 }
 
 spi::Result
-ProviderShutdownWrapper::join(const spi::Bucket& source1,
+ProviderErrorWrapper::join(const spi::Bucket& source1,
                               const spi::Bucket& source2,
                               const spi::Bucket& target, spi::Context& context)
 {
@@ -191,14 +215,14 @@ ProviderShutdownWrapper::join(const spi::Bucket& source1,
 }
 
 spi::Result
-ProviderShutdownWrapper::move(const spi::Bucket& source,
+ProviderErrorWrapper::move(const spi::Bucket& source,
                               spi::PartitionId target, spi::Context& context)
 {
     return checkResult(_impl.move(source, target, context));
 }
 
 spi::Result
-ProviderShutdownWrapper::removeEntry(const spi::Bucket& bucket,
+ProviderErrorWrapper::removeEntry(const spi::Bucket& bucket,
                                 spi::Timestamp ts, spi::Context& context)
 {
     return checkResult(_impl.removeEntry(bucket, ts, context));

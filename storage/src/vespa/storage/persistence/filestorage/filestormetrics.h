@@ -95,10 +95,10 @@ struct FileStorThreadMetrics : public metrics::MetricSet
     metrics::LongCountMetric bytesMerged;
     metrics::LongCountMetric getBucketDiffReply;
     metrics::LongCountMetric applyBucketDiffReply;
-    metrics::LongAverageMetric mergeLatencyTotal;
-    metrics::LongAverageMetric mergeMetadataReadLatency;
-    metrics::LongAverageMetric mergeDataReadLatency;
-    metrics::LongAverageMetric mergeDataWriteLatency;
+    metrics::DoubleAverageMetric mergeLatencyTotal;
+    metrics::DoubleAverageMetric mergeMetadataReadLatency;
+    metrics::DoubleAverageMetric mergeDataReadLatency;
+    metrics::DoubleAverageMetric mergeDataWriteLatency;
     metrics::DoubleAverageMetric mergeAverageDataReceivedNeeded;
     metrics::LongAverageMetric batchingSize;
 
