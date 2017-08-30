@@ -53,7 +53,7 @@ private:
         Context(double rankDropLimit, MatchTools &matchTools, RankProgram & ranking, HitCollector & hits,
                 uint32_t num_threads) __attribute__((noinline));
         void rankHit(uint32_t docId);
-        void addHit(uint32_t docId) { _hits.addHit(docId, 0.0); }
+        void addHit(uint32_t docId) { _hits.addHit(docId, search::default_rank_value); }
         bool isBelowLimit() const { return matches < _matches_limit; }
         bool    isAtLimit() const { return matches == _matches_limit; }
         bool   atSoftDoom() const { return _softDoom.doom(); }
