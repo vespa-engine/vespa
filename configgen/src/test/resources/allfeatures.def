@@ -18,7 +18,6 @@
 # - Have an array within a struct, to verify that we correctly recurse.
 # - Reuse type name further within to ensure that this works.
 
-version=11
 namespace=configgen
 # Some random bool without a default value. These comments exist to check
  # that comment parsing works.e
