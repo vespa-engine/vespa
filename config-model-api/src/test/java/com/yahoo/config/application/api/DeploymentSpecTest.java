@@ -4,13 +4,14 @@ package com.yahoo.config.application.api;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
 
 import java.io.StringReader;
 import java.util.Optional;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author bratseth
@@ -231,6 +232,53 @@ public class DeploymentSpecTest {
         assertEquals(DeploymentSpec.UpgradePolicy.defaultPolicy, DeploymentSpec.empty.upgradePolicy());
         assertTrue(DeploymentSpec.empty.steps().isEmpty());
         assertEquals("<deployment version='1.0'/>", DeploymentSpec.empty.xmlForm());
+    }
+
+    @Test
+    public void productionSpecWithParallelDeployments() {
+        StringReader r = new StringReader(
+                "<deployment>\n" +
+                        "  <prod>    \n" +
+                        "    <region active='true'>us-west-1</region>\n" +
+                        "    <parallel>\n" +
+                        "      <region active='true'>us-central-1</region>\n" +
+                        "      <region active='true'>us-east-3</region>\n" +
+                        "    </parallel>\n" +
+                        "  </prod>\n" +
+                        "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        DeploymentSpec.ParallelZones parallelZones = ((DeploymentSpec.ParallelZones) spec.steps().get(3));
+        assertEquals(2, parallelZones.zones().size());
+        assertEquals(RegionName.from("us-central-1"), parallelZones.zones().get(0).region().get());
+        assertEquals(RegionName.from("us-east-3"), parallelZones.zones().get(1).region().get());
+    }
+
+    @Test
+    public void productionSpecWithDuplicateRegions() {
+        StringReader r = new StringReader(
+                "<deployment>\n" +
+                        "  <prod>\n" +
+                        "    <region active='true'>us-west-1</region>\n" +
+                        "    <parallel>\n" +
+                        "      <region active='true'>us-west-1</region>\n" +
+                        "      <region active='true'>us-central-1</region>\n" +
+                        "      <region active='true'>us-east-3</region>\n" +
+                        "    </parallel>\n" +
+                        "    <parallel>\n" +
+                        "      <region active='true'>eu-west-1</region>\n" +
+                        "      <region active='true'>us-central-1</region>\n" +
+                        "    </parallel>\n" +
+                        "  </prod>\n" +
+                        "</deployment>"
+        );
+        try {
+            DeploymentSpec.fromXml(r);
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("All declared regions must be unique, but found these duplicated regions: " +
+                                 "[us-west-1, us-central-1]", e.getMessage());
+        }
     }
 
 }
