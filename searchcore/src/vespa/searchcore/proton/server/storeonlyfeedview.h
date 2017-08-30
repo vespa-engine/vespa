@@ -179,7 +179,9 @@ private:
     // Ack token early if visibility delay is nonzero
     void considerEarlyAck(FeedTokenUP &token, FeedOperation::Type opType);
 
-    virtual void notifyGidToLidChange(const document::GlobalId &gid, uint32_t lid);
+    virtual void notifyPutGidToLidChange(const document::GlobalId &gid, uint32_t lid, SerialNum serialNum);
+    virtual void notifyRemoveGidToLidChange(const document::GlobalId &gid, SerialNum serialNum);
+    virtual void notifyRemoveDoneGidToLidChange(const document::GlobalId &gid, SerialNum serialNum);
 
     void makeUpdatedDocument(SerialNum serialNum, Lid lid, DocumentUpdate::SP upd,
             OnOperationDoneType onWriteDone,PromisedDoc promisedDoc, PromisedStream promisedStream);

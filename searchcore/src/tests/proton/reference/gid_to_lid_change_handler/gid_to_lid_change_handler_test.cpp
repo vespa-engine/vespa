@@ -14,6 +14,7 @@ LOG_SETUP("gid_to_lid_change_handler_test");
 using document::GlobalId;
 using document::DocumentId;
 using search::makeLambdaTask;
+using search::SerialNum;
 
 namespace proton {
 
@@ -127,8 +128,16 @@ struct Fixture
         _handler->addListener(std::move(listener));
     }
 
-    void notifyGidToLidChange(GlobalId gid, uint32_t lid) {
-        _handler->notifyGidToLidChange(gid, lid);
+    void notifyPut(GlobalId gid, uint32_t lid, SerialNum serialNum) {
+        _handler->notifyPut(gid, lid, serialNum);
+    }
+
+    void notifyRemove(GlobalId gid, SerialNum serialNum) {
+        _handler->notifyRemove(gid, serialNum);
+    }
+
+    void notifyRemoveDone(GlobalId gid, SerialNum serialNum) {
+        _handler->notifyRemoveDone(gid, serialNum);
     }
 
     void removeListeners(const vespalib::string &docTypeName,
@@ -145,7 +154,7 @@ TEST_F("Test that we can register a listener", Fixture)
     TEST_DO(stats.assertCounts(1, 0, 0, 0));
     f.addListener(std::move(listener));
     TEST_DO(stats.assertCounts(1, 1, 0, 0));
-    f.notifyGidToLidChange(toGid(doc1), 10);
+    f.notifyPut(toGid(doc1), 10, 10);
     TEST_DO(stats.assertCounts(1, 1, 0, 1));
     f.removeListeners("testdoc", {});
     TEST_DO(stats.assertCounts(1, 1, 1, 1));
@@ -168,7 +177,7 @@ TEST_F("Test that we can register multiple listeners", Fixture)
     TEST_DO(stats1.assertCounts(1, 1, 0, 0));
     TEST_DO(stats2.assertCounts(1, 1, 0, 0));
     TEST_DO(stats3.assertCounts(1, 1, 0, 0));
-    f.notifyGidToLidChange(toGid(doc1), 10);
+    f.notifyPut(toGid(doc1), 10, 10);
     TEST_DO(stats1.assertCounts(1, 1, 0, 1));
     TEST_DO(stats2.assertCounts(1, 1, 0, 1));
     TEST_DO(stats3.assertCounts(1, 1, 0, 1));
@@ -201,6 +210,50 @@ TEST_F("Test that we keep old listener when registering duplicate", Fixture)
     TEST_DO(stats.assertCounts(2, 1, 0, 0));
     f.addListener(std::move(listener));
     TEST_DO(stats.assertCounts(2, 1, 1, 0));
+}
+
+TEST_F("Test that put is ignored if we have a pending remove", Fixture)
+{
+    auto &stats = f.addStats();
+    auto listener = std::make_unique<MyListener>(stats, "test", "testdoc");
+    TEST_DO(stats.assertCounts(1, 0, 0, 0));
+    f.addListener(std::move(listener));
+    TEST_DO(stats.assertCounts(1, 1, 0, 0));
+    f.notifyRemove(toGid(doc1), 20);
+    TEST_DO(stats.assertCounts(1, 1, 0, 1));
+    f.notifyPut(toGid(doc1), 10, 10);
+    TEST_DO(stats.assertCounts(1, 1, 0, 1));
+    f.notifyRemoveDone(toGid(doc1), 20);
+    TEST_DO(stats.assertCounts(1, 1, 0, 1));
+    f.notifyPut(toGid(doc1), 11, 30);
+    TEST_DO(stats.assertCounts(1, 1, 0, 2));
+    f.removeListeners("testdoc", {});
+    TEST_DO(stats.assertCounts(1, 1, 1, 2));
+}
+
+TEST_F("Test that pending removes are merged", Fixture)
+{
+    auto &stats = f.addStats();
+    auto listener = std::make_unique<MyListener>(stats, "test", "testdoc");
+    TEST_DO(stats.assertCounts(1, 0, 0, 0));
+    f.addListener(std::move(listener));
+    TEST_DO(stats.assertCounts(1, 1, 0, 0));
+    f.notifyRemove(toGid(doc1), 20);
+    TEST_DO(stats.assertCounts(1, 1, 0, 1));
+    f.notifyRemove(toGid(doc1), 40);
+    TEST_DO(stats.assertCounts(1, 1, 0, 1));
+    f.notifyPut(toGid(doc1), 10, 10);
+    TEST_DO(stats.assertCounts(1, 1, 0, 1));
+    f.notifyRemoveDone(toGid(doc1), 20);
+    TEST_DO(stats.assertCounts(1, 1, 0, 1));
+    f.notifyPut(toGid(doc1), 11, 30);
+    TEST_DO(stats.assertCounts(1, 1, 0, 1));
+    f.notifyRemoveDone(toGid(doc1), 40);
+    TEST_DO(stats.assertCounts(1, 1, 0, 1));
+    f.notifyPut(toGid(doc1), 12, 50);
+    TEST_DO(stats.assertCounts(1, 1, 0, 2));
+    f.removeListeners("testdoc", {});
+    TEST_DO(stats.assertCounts(1, 1, 1, 2));
 }
 
 }

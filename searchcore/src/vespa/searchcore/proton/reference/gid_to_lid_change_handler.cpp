@@ -6,6 +6,7 @@
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/document/base/globalid.h>
 #include <cassert>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 using search::makeLambdaTask;
 
@@ -15,7 +16,9 @@ namespace proton {
 GidToLidChangeHandler::GidToLidChangeHandler()
     : _lock(),
       _listeners(),
-      _closed(false)
+      _closed(false),
+      _pendingRemove()
+
 {
 }
 
@@ -24,14 +27,50 @@ GidToLidChangeHandler::~GidToLidChangeHandler()
 {
     assert(_closed);
     assert(_listeners.empty());
+    assert(_pendingRemove.empty());
 }
 
 void
-GidToLidChangeHandler::notifyGidToLidChange(document::GlobalId gid, uint32_t lid)
+GidToLidChangeHandler::notifyGidToLidChange(GlobalId gid, uint32_t lid)
 {
-    lock_guard guard(_lock);
     for (const auto &listener : _listeners) {
         listener->notifyGidToLidChange(gid, lid);
+    }
+}
+
+void
+GidToLidChangeHandler::notifyPut(GlobalId gid, uint32_t lid, SerialNum serialNum)
+{
+    lock_guard guard(_lock);
+    auto itr = _pendingRemove.find(gid);
+    if (itr != _pendingRemove.end()) {
+        assert(itr->second > serialNum);
+        return; // Document has already been removed later on
+    }
+    notifyGidToLidChange(gid, lid);
+}
+
+void
+GidToLidChangeHandler::notifyRemove(GlobalId gid, SerialNum serialNum)
+{
+    lock_guard guard(_lock);
+    auto insRes = _pendingRemove.insert(std::make_pair(gid, serialNum));
+    if (!insRes.second) {
+        assert(insRes.first->second < serialNum);
+        insRes.first->second = serialNum;
+    } else {
+        notifyGidToLidChange(gid, 0);
+    }
+}
+
+void
+GidToLidChangeHandler::notifyRemoveDone(GlobalId gid, SerialNum serialNum)
+{
+    lock_guard guard(_lock);
+    auto itr = _pendingRemove.find(gid);
+    assert(itr != _pendingRemove.end() && itr->second >= serialNum);
+    if (itr->second == serialNum) {
+        _pendingRemove.erase(itr);
     }
 }
 
