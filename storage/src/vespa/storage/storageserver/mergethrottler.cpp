@@ -654,16 +654,25 @@ MergeThrottler::run(framework::ThreadHandle& thread)
 }
 
 bool MergeThrottler::merge_is_backpressure_throttled(const api::MergeBucketCommand& cmd) const {
-    (void) cmd;
     if (_throttle_until_time.time_since_epoch().count() == 0) {
-        return false; // Avoid sampling the clock if throttling time is zeroed already.
+        return false;
     }
-    // TODO source only bypass for own node
+    if (merge_has_this_node_as_source_only_node(cmd)) {
+        return false;
+    }
     if (_component.getClock().getMonotonicTime() < _throttle_until_time) {
         return true;
     }
+    // Avoid sampling the clock when it can't do anything useful.
     _throttle_until_time = std::chrono::steady_clock::time_point{};
     return false;
+}
+
+bool MergeThrottler::merge_has_this_node_as_source_only_node(const api::MergeBucketCommand& cmd) const {
+    auto self_is_source_only = [self = _component.getIndex()](auto& node) {
+        return (node.index == self) && node.sourceOnly;
+    };
+    return std::any_of(cmd.getNodes().begin(), cmd.getNodes().end(), self_is_source_only);
 }
 
 void MergeThrottler::bounce_backpressure_throttled_merge(const api::MergeBucketCommand& cmd, MessageGuard& guard) {

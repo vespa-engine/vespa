@@ -336,6 +336,7 @@ private:
 
     bool merge_is_backpressure_throttled(const api::MergeBucketCommand& cmd) const;
     void bounce_backpressure_throttled_merge(const api::MergeBucketCommand& cmd, MessageGuard& guard);
+    bool merge_has_this_node_as_source_only_node(const api::MergeBucketCommand& cmd) const;
 
     void sendReply(const api::MergeBucketCommand& cmd,
                    const api::ReturnCode& result,
