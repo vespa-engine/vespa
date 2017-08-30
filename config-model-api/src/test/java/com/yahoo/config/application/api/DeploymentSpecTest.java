@@ -265,10 +265,6 @@ public class DeploymentSpecTest {
                         "      <region active='true'>us-central-1</region>\n" +
                         "      <region active='true'>us-east-3</region>\n" +
                         "    </parallel>\n" +
-                        "    <parallel>\n" +
-                        "      <region active='true'>eu-west-1</region>\n" +
-                        "      <region active='true'>us-central-1</region>\n" +
-                        "    </parallel>\n" +
                         "  </prod>\n" +
                         "</deployment>"
         );
