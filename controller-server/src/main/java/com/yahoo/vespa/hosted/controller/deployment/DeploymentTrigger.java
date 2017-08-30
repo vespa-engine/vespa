@@ -39,6 +39,7 @@ public class DeploymentTrigger {
     private final Controller controller;
     private final Clock clock;
     private final BuildSystem buildSystem;
+    private final DeploymentOrder order;
 
     public DeploymentTrigger(Controller controller, CuratorDb curator, Clock clock) {
         Objects.requireNonNull(controller,"controller cannot be null");
@@ -46,6 +47,7 @@ public class DeploymentTrigger {
         this.controller = controller;
         this.clock = clock;
         this.buildSystem = new PolledBuildSystem(controller, curator);
+        this.order = new DeploymentOrder(controller);
     }
     
     //--- Start of methods which triggers deployment jobs -------------------------
@@ -76,11 +78,11 @@ public class DeploymentTrigger {
 
             // Trigger next
             if (report.success())
-                application = trigger(nextAfter(report.jobType(), application), application, report.jobType() + " completed successfully", lock);
+                application = trigger(order.nextAfter(report.jobType(), application), application, report.jobType() + " completed successfully", lock);
             else if (isCapacityConstrained(report.jobType()) && shouldRetryOnOutOfCapacity(application, report.jobType()))
                 application = trigger(report.jobType(), application, true, "Retrying due to out of capacity", lock);
             else if (shouldRetryNow(application))
-                application = trigger(report.jobType(), application, "Retrying as job just started failing", lock);
+                application = trigger(report.jobType(), application, false, "Retrying as job just started failing", lock);
 
             applications().store(application, lock);
         }
@@ -95,7 +97,7 @@ public class DeploymentTrigger {
             if (shouldRetryFromBeginning(application)) {
                 // failed for a long time: Discard existing change and restart from the component job
                 application = application.withDeploying(Optional.empty());
-                application = trigger(JobType.component, application, "Retrying failing deployment from beginning: " + cause, lock);
+                application = trigger(JobType.component, application, false, "Retrying failing deployment from beginning: " + cause, lock);
                 applications().store(application, lock);
             } else {
                 // retry the failed job (with backoff)
@@ -103,7 +105,7 @@ public class DeploymentTrigger {
                     JobStatus jobStatus = application.deploymentJobs().jobStatus().get(jobType);
                     if (isFailing(jobStatus)) {
                         if (shouldRetryNow(jobStatus)) {
-                            application = trigger(jobType, application, "Retrying failing job: " + cause, lock);
+                            application = trigger(jobType, application, false, "Retrying failing job: " + cause, lock);
                             applications().store(application, lock);
                         }
                         break;
@@ -133,7 +135,7 @@ public class DeploymentTrigger {
             // Trigger next
             try (Lock lock = applications().lock(application.id())) {
                 application = applications().require(application.id());
-                application = trigger(nextAfter(lastSuccessfulJob.get().type(), application), application,
+                application = trigger(order.nextAfter(lastSuccessfulJob.get().type(), application), application,
                                       "Resuming delayed deployment", lock);
                 applications().store(application, lock);
             }
@@ -154,7 +156,7 @@ public class DeploymentTrigger {
             application = application.withDeploying(Optional.of(change));
             if (change instanceof Change.ApplicationChange)
                 application = application.withOutstandingChange(false);
-            application = trigger(JobType.systemTest, application, "Deploying change", lock);
+            application = trigger(JobType.systemTest, application, false, "Deploying change", lock);
             applications().store(application, lock);
         }
     }
@@ -176,68 +178,6 @@ public class DeploymentTrigger {
     //--- End of methods which triggers deployment jobs ----------------------------
 
     private ApplicationController applications() { return controller.applications(); }
-    
-    /** Returns the next job to trigger after this job, or null if none should be triggered */
-    private JobType nextAfter(JobType jobType, Application application) {
-        // Always trigger system test after component as deployment spec might not be available yet (e.g. if this is a
-        // new application with no previous deployments)
-        if (jobType == JobType.component) {
-            return JobType.systemTest;
-        }
-
-        // At this point we've at least deployed to system test, so deployment spec should be available
-        List<DeploymentSpec.DeclaredZone> zones = application.deploymentSpec().zones();
-        Optional<DeploymentSpec.DeclaredZone> zoneForJob = zoneForJob(application, jobType);
-        if (!zoneForJob.isPresent()) {
-            return null;
-        }
-        int zoneIndex = application.deploymentSpec().zones().indexOf(zoneForJob.get());
-
-        // This is last zone
-        if (zoneIndex == zones.size() - 1) {
-            return null;
-        }
-
-        // Skip next job if delay has not passed yet
-        Duration delay = delayAfter(application, zoneForJob.get());
-        Optional<Instant> lastSuccess = Optional.ofNullable(application.deploymentJobs().jobStatus().get(jobType))
-                .flatMap(JobStatus::lastSuccess)
-                .map(JobStatus.JobRun::at);
-        if (lastSuccess.isPresent() && lastSuccess.get().plus(delay).isAfter(clock.instant())) {
-            log.info(String.format("Delaying next job after %s of %s by %s", jobType, application, delay));
-            return null;
-        }
-
-        DeploymentSpec.DeclaredZone nextZone = application.deploymentSpec().zones().get(zoneIndex + 1);
-        return JobType.from(controller.system(), nextZone.environment(), nextZone.region().orElse(null));
-    }
-
-    private Duration delayAfter(Application application, DeploymentSpec.DeclaredZone zone) {
-        int stepIndex = application.deploymentSpec().steps().indexOf(zone);
-        if (stepIndex == -1 || stepIndex == application.deploymentSpec().steps().size() - 1) {
-            return Duration.ZERO;
-        }
-        Duration totalDelay = Duration.ZERO;
-        List<DeploymentSpec.Step> remainingSteps = application.deploymentSpec().steps()
-                .subList(stepIndex + 1, application.deploymentSpec().steps().size());
-        for (DeploymentSpec.Step step : remainingSteps) {
-            if (!(step instanceof DeploymentSpec.Delay)) {
-                break;
-            }
-            totalDelay = totalDelay.plus(((DeploymentSpec.Delay) step).duration());
-        }
-        return totalDelay;
-    }
-
-    private Optional<DeploymentSpec.DeclaredZone> zoneForJob(Application application, JobType jobType) {
-        return application.deploymentSpec()
-                .zones()
-                .stream()
-                .filter(zone -> zone.deploysTo(
-                        jobType.environment(),
-                        jobType.isProduction() ? jobType.region(controller.system()) : Optional.empty()))
-                .findFirst();
-    }
 
     private boolean isFirstJob(JobType jobType) {
         return jobType == JobType.component;
@@ -356,8 +296,11 @@ public class DeploymentTrigger {
         return application.withJobTriggering(jobType, clock.instant(), controller);
     }
 
-    private Application trigger(JobType jobType, Application application, String cause, Lock lock) {
-        return trigger(jobType, application, false, cause, lock);
+    private Application trigger(List<JobType> jobs, Application application, String cause, Lock lock) {
+        for (JobType job : jobs) {
+            application = trigger(job, application, false, cause, lock);
+        }
+        return application;
     }
 
     public BuildSystem buildSystem() { return buildSystem; }
