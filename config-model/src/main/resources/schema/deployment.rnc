@@ -25,7 +25,8 @@ Staging = element staging {
 Prod = element prod {
    attribute global-service-id { text }? &
    Region* &
-   Delay*
+   Delay* &
+   Parallel*
 }
 
 Region = element region {
@@ -37,4 +38,8 @@ Delay = element delay {
    attribute hours { xsd:long }? &
    attribute minutes { xsd:long }? &
    attribute seconds { xsd:long }?
+}
+
+Parallel = element parallel {
+    Region*
 }
