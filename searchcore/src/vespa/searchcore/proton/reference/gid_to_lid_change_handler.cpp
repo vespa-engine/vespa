@@ -31,10 +31,18 @@ GidToLidChangeHandler::~GidToLidChangeHandler()
 }
 
 void
-GidToLidChangeHandler::notifyGidToLidChange(GlobalId gid, uint32_t lid)
+GidToLidChangeHandler::notifyPut(GlobalId gid, uint32_t lid)
 {
     for (const auto &listener : _listeners) {
-        listener->notifyGidToLidChange(gid, lid);
+        listener->notifyPut(gid, lid);
+    }
+}
+
+void
+GidToLidChangeHandler::notifyRemove(GlobalId gid)
+{
+    for (const auto &listener : _listeners) {
+        listener->notifyRemove(gid);
     }
 }
 
@@ -47,7 +55,7 @@ GidToLidChangeHandler::notifyPut(GlobalId gid, uint32_t lid, SerialNum serialNum
         assert(itr->second > serialNum);
         return; // Document has already been removed later on
     }
-    notifyGidToLidChange(gid, lid);
+    notifyPut(gid, lid);
 }
 
 void
@@ -59,7 +67,7 @@ GidToLidChangeHandler::notifyRemove(GlobalId gid, SerialNum serialNum)
         assert(insRes.first->second < serialNum);
         insRes.first->second = serialNum;
     } else {
-        notifyGidToLidChange(gid, 0);
+        notifyRemove(gid);
     }
 }
 

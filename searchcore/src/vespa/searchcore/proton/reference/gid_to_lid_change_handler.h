@@ -27,7 +27,8 @@ class GidToLidChangeHandler : public std::enable_shared_from_this<GidToLidChange
     bool _closed;
     vespalib::hash_map<GlobalId, SerialNum, GlobalId::hash> _pendingRemove;
 
-    void notifyGidToLidChange(GlobalId gid, uint32_t lid);
+    void notifyPut(GlobalId gid, uint32_t lid);
+    void notifyRemove(GlobalId gid);
 public:
     GidToLidChangeHandler();
     virtual ~GidToLidChangeHandler();

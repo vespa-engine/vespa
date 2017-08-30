@@ -26,12 +26,22 @@ GidToLidChangeListener::~GidToLidChangeListener()
 }
 
 void
-GidToLidChangeListener::notifyGidToLidChange(document::GlobalId gid, uint32_t lid)
+GidToLidChangeListener::notifyPut(document::GlobalId gid, uint32_t lid)
 {
     std::promise<bool> promise;
     std::future<bool> future = promise.get_future();
     _attributeFieldWriter.executeLambda(_executorId,
-                                        [this, &promise, gid, lid]() { _attr->notifyGidToLidChange(gid, lid); promise.set_value(true); });
+                                        [this, &promise, gid, lid]() { _attr->notifyReferencedPut(gid, lid); promise.set_value(true); });
+    (void) future.get();
+}
+
+void
+GidToLidChangeListener::notifyRemove(document::GlobalId gid)
+{
+    std::promise<bool> promise;
+    std::future<bool> future = promise.get_future();
+    _attributeFieldWriter.executeLambda(_executorId,
+                                        [this, &promise, gid]() { _attr->notifyReferencedRemove(gid); promise.set_value(true); });
     (void) future.get();
 }
 

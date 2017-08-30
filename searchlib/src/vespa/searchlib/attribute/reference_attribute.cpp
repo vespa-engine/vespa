@@ -320,12 +320,23 @@ ReferenceAttribute::setGidToLidMapperFactory(std::shared_ptr<IGidToLidMapperFact
 }
 
 void
-ReferenceAttribute::notifyGidToLidChange(const GlobalId &gid, DocId referencedLid)
+ReferenceAttribute::notifyReferencedPut(const GlobalId &gid, DocId referencedLid)
 {
     EntryRef ref = _store.find(gid);
     if (ref.valid()) {
         const auto &entry = _store.get(ref);
-        _referenceMappings.notifyGidToLidChange(entry, referencedLid);
+        _referenceMappings.notifyReferencedPut(entry, referencedLid);
+        commit();
+    }
+}
+
+void
+ReferenceAttribute::notifyReferencedRemove(const GlobalId &gid)
+{
+    EntryRef ref = _store.find(gid);
+    if (ref.valid()) {
+        const auto &entry = _store.get(ref);
+        _referenceMappings.notifyReferencedRemove(entry);
         commit();
     }
 }

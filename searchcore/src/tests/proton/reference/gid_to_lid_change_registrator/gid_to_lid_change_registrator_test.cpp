@@ -24,7 +24,8 @@ public:
     {
     }
     virtual ~MyListener() { }
-    virtual void notifyGidToLidChange(document::GlobalId, uint32_t) override { }
+    virtual void notifyPut(document::GlobalId, uint32_t) override { }
+    virtual void notifyRemove(document::GlobalId) override { }
     virtual void notifyRegistered() override { }
     virtual const vespalib::string &getName() const override { return _name; }
     virtual const vespalib::string &getDocTypeName() const override { return _docTypeName; }
