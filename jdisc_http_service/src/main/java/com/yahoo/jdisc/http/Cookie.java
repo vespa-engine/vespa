@@ -38,7 +38,7 @@ public class Cookie {
     private String path;
     private String comment;
     private String commentUrl;
-    private long maxAgeMillis = TimeUnit.SECONDS.toMillis(Integer.MIN_VALUE);
+    private long maxAgeSeconds = Integer.MIN_VALUE;
     private int version;
     private boolean secure;
     private boolean httpOnly;
@@ -55,7 +55,7 @@ public class Cookie {
         path = cookie.path;
         comment = cookie.comment;
         commentUrl = cookie.commentUrl;
-        maxAgeMillis = cookie.maxAgeMillis;
+        maxAgeSeconds = cookie.maxAgeSeconds;
         version = cookie.version;
         secure = cookie.secure;
         httpOnly = cookie.httpOnly;
@@ -136,11 +136,11 @@ public class Cookie {
     }
 
     public int getMaxAge(TimeUnit unit) {
-        return (int)unit.convert(maxAgeMillis, TimeUnit.MILLISECONDS);
+        return (int)unit.convert(maxAgeSeconds, TimeUnit.SECONDS);
     }
 
     public Cookie setMaxAge(int maxAge, TimeUnit unit) {
-        this.maxAgeMillis = unit.toMillis(maxAge);
+        this.maxAgeSeconds = maxAge >= 0 ? unit.toSeconds(maxAge) : Integer.MIN_VALUE;
         return this;
     }
 
@@ -194,7 +194,7 @@ public class Cookie {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Cookie cookie = (Cookie) o;
-        return maxAgeMillis == cookie.maxAgeMillis &&
+        return maxAgeSeconds == cookie.maxAgeSeconds &&
                 version == cookie.version &&
                 secure == cookie.secure &&
                 httpOnly == cookie.httpOnly &&
@@ -210,7 +210,7 @@ public class Cookie {
 
     @Override
     public int hashCode() {
-        return Objects.hash(ports, name, value, domain, path, comment, commentUrl, maxAgeMillis, version, secure, httpOnly, discard);
+        return Objects.hash(ports, name, value, domain, path, comment, commentUrl, maxAgeSeconds, version, secure, httpOnly, discard);
     }
 
     @Override
@@ -258,8 +258,7 @@ public class Cookie {
                     cookie.setComment(servletCookie.getComment());
                     cookie.setPath(servletCookie.getPath());
                     cookie.setDomain(servletCookie.getDomain());
-                    int maxAge = servletCookie.getMaxAge();
-                    cookie.setMaxAge(maxAge != -1 ? maxAge : Integer.MIN_VALUE, TimeUnit.SECONDS);
+                    cookie.setMaxAge(servletCookie.getMaxAge(), TimeUnit.SECONDS);
                     cookie.setSecure(servletCookie.getSecure());
                     cookie.setVersion(servletCookie.getVersion());
                     cookie.setHttpOnly(servletCookie.isHttpOnly());
@@ -306,8 +305,7 @@ public class Cookie {
                     cookie.setDiscard(httpCookie.getDiscard());
                     cookie.setDomain(httpCookie.getDomain());
                     cookie.setHttpOnly(httpCookie.isHttpOnly());
-                    int maxAge = (int) httpCookie.getMaxAge();
-                    cookie.setMaxAge(maxAge != -1 ? maxAge : Integer.MIN_VALUE, TimeUnit.SECONDS);
+                    cookie.setMaxAge((int)httpCookie.getMaxAge(), TimeUnit.SECONDS);
                     cookie.setPath(httpCookie.getPath());
                     cookie.setSecure(httpCookie.getSecure());
                     cookie.setVersion(httpCookie.getVersion());
