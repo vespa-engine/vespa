@@ -1,7 +1,6 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 # TODO: Not in use - remove on Vespa 7
 
-version=3
 namespace=search.cache
 
 # Size of a block in cache. A block is the smallest unit that would
