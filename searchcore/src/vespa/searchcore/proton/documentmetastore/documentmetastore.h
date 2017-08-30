@@ -136,6 +136,8 @@ private:
 
     VESPA_DLL_LOCAL DocId readNextDoc(documentmetastore::Reader & reader, TreeType::Builder & treeBuilder);
 
+    bool remove(DocId lid, BucketDBOwner::Guard &bucketGuard);
+
 public:
     typedef TreeType::Iterator Iterator;
     typedef TreeType::ConstIterator ConstIterator;
