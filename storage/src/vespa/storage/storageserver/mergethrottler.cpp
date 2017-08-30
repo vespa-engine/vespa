@@ -688,11 +688,8 @@ MergeThrottler::handleMessageDown(
             // distributor will wait a bit before retrying
             LOG(debug, "Queue is full; busy-returning %s",
                 mergeCmd.toString().c_str());
-            sendReply(mergeCmd,
-                      api::ReturnCode(api::ReturnCode::BUSY,
-                                      "Merge queue is full"),
-                      msgGuard,
-                      _metrics->local);
+            sendReply(mergeCmd, api::ReturnCode(api::ReturnCode::BUSY, "Merge queue is full"),
+                      msgGuard, _metrics->local);
         }
     } else {
         assert(msg->getType() == api::MessageType::MERGEBUCKET_REPLY);
@@ -707,8 +704,7 @@ MergeThrottler::handleMessageUp(
         MessageGuard& msgGuard)
 {
     assert(msg->getType() == api::MessageType::MERGEBUCKET_REPLY);
-    const api::MergeBucketReply& mergeReply
-        = static_cast<const api::MergeBucketReply&>(*msg);
+    auto& mergeReply = static_cast<const api::MergeBucketReply&>(*msg);
 
     LOG(debug, "Processing %s from persistence layer",
         mergeReply.toString().c_str());
@@ -741,9 +737,7 @@ MergeThrottler::validateNewMerge(
             << _component.getIndex()
             << ", which is not in its forwarding chain";
         LOG(error, "%s", oss.str().c_str());
-    } else if (mergeCmd.getChain().size()
-               >= nodeSeq.getSortedNodes().size())
-    {
+    } else if (mergeCmd.getChain().size() >= nodeSeq.getSortedNodes().size()) {
         // Chain is full but we haven't seen the merge! This means
         // the node has probably gone down with a merge it previously
         // forwarded only now coming back to haunt it.
@@ -774,8 +768,7 @@ MergeThrottler::processNewMergeCommand(
         const api::StorageMessage::SP& msg,
         MessageGuard& msgGuard)
 {
-    const api::MergeBucketCommand& mergeCmd
-        = static_cast<const api::MergeBucketCommand&>(*msg);
+    auto& mergeCmd = static_cast<const api::MergeBucketCommand&>(*msg);
 
     MergeNodeSequence nodeSeq(mergeCmd, _component.getIndex());
 
@@ -788,7 +781,7 @@ MergeThrottler::processNewMergeCommand(
     // Register the merge now so that it will contribute to filling up our
     // merge throttling window.
     assert(_merges.find(mergeCmd.getBucketId()) == _merges.end());
-    ActiveMergeMap::iterator state = _merges.insert(
+    auto state = _merges.insert(
             std::make_pair(mergeCmd.getBucketId(),
                            ChainedMergeState(msg))).first;
 
@@ -864,13 +857,11 @@ MergeThrottler::processCycledMergeCommand(
     // aborted, in which case we have to immediately send an abortion reply
     // so the cycle can be unwound.
 
-    const api::MergeBucketCommand& mergeCmd
-        = static_cast<const api::MergeBucketCommand&>(*msg);
+    auto& mergeCmd = static_cast<const api::MergeBucketCommand&>(*msg);
 
     MergeNodeSequence nodeSeq(mergeCmd, _component.getIndex());
 
-    ActiveMergeMap::iterator mergeIter(
-            _merges.find(mergeCmd.getBucketId()));
+    auto mergeIter = _merges.find(mergeCmd.getBucketId());
     assert(mergeIter != _merges.end());
 
     if (mergeIter->second.isAborted()) {
@@ -921,11 +912,9 @@ MergeThrottler::processMergeReply(
         bool fromPersistenceLayer,
         MessageGuard& msgGuard)
 {
-    const api::MergeBucketReply& mergeReply
-        = dynamic_cast<const api::MergeBucketReply&>(*msg);
+    auto& mergeReply = dynamic_cast<const api::MergeBucketReply&>(*msg);
 
-    ActiveMergeMap::iterator mergeIter(
-            _merges.find(mergeReply.getBucketId()));
+    auto mergeIter = _merges.find(mergeReply.getBucketId());
     if (mergeIter == _merges.end()) {
         LOG(warning, "Received %s, which has no command mapped "
             "for it. Cannot send chained reply!",
@@ -1035,7 +1024,7 @@ MergeThrottler::onDown(const std::shared_ptr<api::StorageMessage>& msg)
         return true;
     } else if (isDiffCommand(*msg)) {
         vespalib::LockGuard lock(_stateLock);
-        api::StorageCommand& cmd(static_cast<api::StorageCommand&>(*msg));
+        auto& cmd = static_cast<api::StorageCommand&>(*msg);
         if (bucketIsUnknownOrAborted(cmd.getBucketId())) {
             sendUp(makeAbortReply(cmd, "no state recorded for bucket in merge "
                                   "throttler, source merge probably aborted earlier"));
@@ -1067,7 +1056,7 @@ MergeThrottler::isMergeReply(const api::StorageMessage& msg) const
 bool
 MergeThrottler::bucketIsUnknownOrAborted(const document::BucketId& bucket) const
 {
-    ActiveMergeMap::const_iterator it(_merges.find(bucket));
+    auto it = _merges.find(bucket);
     if (it == _merges.end()) {
         return true;
     }
@@ -1089,8 +1078,7 @@ bool
 MergeThrottler::onUp(const std::shared_ptr<api::StorageMessage>& msg)
 {
     if (isMergeReply(*msg)) {
-        const api::MergeBucketReply& mergeReply
-            = dynamic_cast<const api::MergeBucketReply&>(*msg);
+        auto& mergeReply = dynamic_cast<const api::MergeBucketReply&>(*msg);
 
         LOG(spam, "Received %s from persistence layer",
             mergeReply.toString().c_str());
@@ -1126,8 +1114,7 @@ MergeThrottler::releaseWorkerThreadRendezvous(vespalib::MonitorGuard& guard)
     }
 }
 
-class ThreadRendezvousGuard
-{
+class ThreadRendezvousGuard {
     MergeThrottler& _throttler;
     vespalib::MonitorGuard& _guard;
 public:
@@ -1237,23 +1224,22 @@ MergeThrottler::reportHtmlStatus(std::ostream& out,
         out << "<h3>Active merges ("
             << _merges.size()
             << ")</h3>\n";
-        ActiveMergeMap::const_iterator end = _merges.end();
         if (!_merges.empty()) {
             out << "<ul>\n";
-            for (ActiveMergeMap::const_iterator i = _merges.begin(); i != end; ++i) {
-                out << "<li>" << i->second.getMergeCmdString();
-                if (i->second.isExecutingLocally()) {
+            for (auto& m : _merges) {
+                out << "<li>" << m.second.getMergeCmdString();
+                if (m.second.isExecutingLocally()) {
                     out << " <strong>(";
-                    if (i->second.isInCycle()) {
+                    if (m.second.isInCycle()) {
                         out << "cycled - ";
-                    } else if (i->second.isCycleBroken()) {
+                    } else if (m.second.isCycleBroken()) {
                         out << "broken cycle (another node in the chain likely went down) - ";
                     }
                     out << "executing on this node)</strong>";
-                } else if (i->second.isUnwinding()) {
+                } else if (m.second.isUnwinding()) {
                     out << " <strong>(was executed here, now unwinding)</strong>";
                 }
-                if (i->second.isAborted()) {
+                if (m.second.isAborted()) {
                     out << " <strong>aborted</strong>";
                 }
                 out << "</li>\n";
@@ -1268,14 +1254,13 @@ MergeThrottler::reportHtmlStatus(std::ostream& out,
         out << "<h3>Queued merges (in priority order) ("
             << _queue.size()
             << ")</h3>\n";
-        MergePriorityQueue::const_iterator end = _queue.end();
         if (!_queue.empty()) {
             out << "<ol>\n";
-            for (MergePriorityQueue::const_iterator i = _queue.begin(); i != end; ++i) {
+            for (auto& qm : _queue) {
                 // The queue always owns its messages, thus this is safe
                 out << "<li>Pri "
-                    << static_cast<unsigned int>(i->_msg->getPriority())
-                    << ": " << *i->_msg;
+                    << static_cast<unsigned int>(qm._msg->getPriority())
+                    << ": " << *qm._msg;
                 out << "</li>\n";
             }
             out << "</ol>\n";
