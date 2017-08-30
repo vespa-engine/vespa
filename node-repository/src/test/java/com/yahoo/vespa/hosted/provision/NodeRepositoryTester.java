@@ -51,6 +51,12 @@ public class NodeRepositoryTester {
         return nodeRepository.addNodes(Collections.singletonList(node)).get(0);
     }
 
+    public Node addNode(String id, String hostname, String parentHostname, String flavor, NodeType type) {
+        Node node = nodeRepository.createNode(id, hostname, Optional.of(parentHostname),
+                nodeFlavors.getFlavorOrThrow(flavor), type);
+        return nodeRepository.addNodes(Collections.singletonList(node)).get(0);
+    }
+
     private FlavorsConfig createConfig() {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
         b.addFlavor("default", 2., 4., 100, Flavor.Type.BARE_METAL).cost(3);

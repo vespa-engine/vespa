@@ -401,7 +401,7 @@ public class RestApiTest {
         // Attempt to DELETE a node which is not put in a deletable state first
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com",
                                    new byte[0], Request.Method.DELETE),
-                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Can only remove node from following states: provisioned, failed, parked, dirty\"}");
+                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Failed to delete host2.yahoo.com: Node host2.yahoo.com can only be removed from following states: provisioned, failed, parked\"}");
 
         // PUT current restart generation with string instead of long
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",

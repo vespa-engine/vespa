@@ -125,22 +125,10 @@ public class NodesApiHandler extends LoggingRequestHandler {
             return new MessageResponse("Moved " + lastElement(path) + " to active");
         }
         else if (path.startsWith("/nodes/v2/state/availablefornewallocations/")) {
-            /**
-             * This is a temporary "state" or rest call that we use to enable a smooth rollout of
-             * dynamic docker flavor allocations. Once we have switch everything we remove this
-             * and change the code in the nodeadmin to delete directly (remember to allow deletion of dirty nodes then).
-             *
-             * Should only be called by node-admin for docker containers (the docker constraint is
-             * enforced in the remove method)
-             */
             String hostname = lastElement(path);
-            if (nodeRepository.dynamicAllocationEnabled()) {
-                nodeRepository.remove(hostname);
-                return new MessageResponse("Removed " + hostname);
-            } else {
-                nodeRepository.setReady(hostname);
-                return new MessageResponse("Moved " + hostname + " to ready");
-            }
+            List<Node> available = nodeRepository.markNodeAvailableForNewAllocation(hostname);
+            return new MessageResponse("Marked following nodes as available for new allocation: " +
+                    available.stream().map(Node::hostname).collect(Collectors.joining(", ")));
         }
 
         throw new NotFoundException("Cannot put to path '" + path + "'");
@@ -180,8 +168,8 @@ public class NodesApiHandler extends LoggingRequestHandler {
         String path = request.getUri().getPath();
         if (path.startsWith("/nodes/v2/node/")) {
             String hostname = lastElement(path);
-            nodeRepository.remove(hostname);
-            return new MessageResponse("Removed " + hostname);
+            List<Node> removedNodes = nodeRepository.removeRecursively(hostname);
+            return new MessageResponse("Removed " + removedNodes.stream().map(Node::hostname).collect(Collectors.joining(", ")));
         }
         else if (path.startsWith("/nodes/v2/maintenance/inactive/")) {
             return setActive(lastElement(path), true);

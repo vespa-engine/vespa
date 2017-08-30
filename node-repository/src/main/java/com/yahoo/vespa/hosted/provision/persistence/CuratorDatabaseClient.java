@@ -106,18 +106,21 @@ public class CuratorDatabaseClient {
     }
 
     /**
-     * Removes a node.
+     * Removes multiple nodes in a single transaction.
      *
-     * @param state the current state of the node
-     * @param hostName the host name of the node to remove
+     * @param nodes list of the nodes to remove
      */
-    public void removeNode(Node.State state, String hostName) {
-        Path path = toPath(state, hostName);
+    public void removeNodes(List<Node> nodes) {
         NestedTransaction transaction = new NestedTransaction();
-        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
-        curatorTransaction.add(CuratorOperations.delete(path.getAbsolute()));
+
+        for (Node node : nodes) {
+            Path path = toPath(node.state(), node.hostname());
+            CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
+            curatorTransaction.add(CuratorOperations.delete(path.getAbsolute()));
+        }
+
         transaction.commit();
-        log.log(LogLevel.INFO, "Removed: " + state + " node " + hostName);
+        nodes.forEach(node -> log.log(LogLevel.INFO, "Removed node " + node.hostname() + " in state " + node.state()));
     }
 
     /**
