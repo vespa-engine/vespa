@@ -5,6 +5,7 @@
 #include "resolved_symbol.h"
 #include "empty_value_factory.h"
 #include "basic_value_factory.h"
+#include "external_data_value_factory.h"
 #include <vespa/vespalib/data/simple_buffer.h>
 #include "json_format.h"
 
@@ -80,7 +81,7 @@ Value::toString() const
     return buf.get().make_string();
 }
 
-// 6 x add
+// 7 x add
 Cursor &
 Value::addNix() { return addLeaf(NixValueFactory()); }
 Cursor &
@@ -93,8 +94,10 @@ Cursor &
 Value::addString(Memory str) { return addLeaf(StringValueFactory(str)); }
 Cursor &
 Value::addData(Memory data) { return addLeaf(DataValueFactory(data)); }
+Cursor &
+Value::addData(ExternalMemory::UP data) { return addLeaf(ExternalDataValueFactory(std::move(data))); }
 
-// 6 x set (with numeric symbol id)
+// 7 x set (with numeric symbol id)
 Cursor &
 Value::setNix(Symbol sym) { return setLeaf(sym, NixValueFactory()); }
 Cursor &
@@ -107,8 +110,10 @@ Cursor &
 Value::setString(Symbol sym, Memory str) { return setLeaf(sym, StringValueFactory(str)); }
 Cursor &
 Value::setData(Symbol sym, Memory data) { return setLeaf(sym, DataValueFactory(data)); }
+Cursor &
+Value::setData(Symbol sym, ExternalMemory::UP data) { return setLeaf(sym, ExternalDataValueFactory(std::move(data))); }
 
-// 6 x set (with symbol name)
+// 7 x set (with symbol name)
 Cursor &
 Value::setNix(Memory name) { return setLeaf(name, NixValueFactory()); }
 Cursor &
@@ -121,6 +126,8 @@ Cursor &
 Value::setString(Memory name, Memory str) { return setLeaf(name, StringValueFactory(str)); }
 Cursor &
 Value::setData(Memory name, Memory data) { return setLeaf(name, DataValueFactory(data)); }
+Cursor &
+Value::setData(Memory name, ExternalMemory::UP data) { return setLeaf(name, ExternalDataValueFactory(std::move(data))); }
 
 // nop defaults for array/objects
 Cursor &
