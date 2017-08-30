@@ -467,6 +467,29 @@ public class NodeRepository extends AbstractComponent {
         }
     }
 
+    /*
+     * This method is used to enable a smooth rollout of dynamic docker flavor allocations. Once we have switch
+     * everything this can be simplified to only deleting the node.
+     *
+     * Should only be called by node-admin for docker containers
+     */
+    public List<Node> markNodeAvailableForNewAllocation(String hostname) {
+        Node node = getNode(hostname).orElseThrow(() -> new NotFoundException("No node with hostname \"" + hostname + '"'));
+        if (node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER) {
+            throw new IllegalArgumentException(
+                    "Cannot make " + hostname + " available for new allocation, must be a docker container node");
+        } else if (node.state() != Node.State.dirty) {
+            throw new IllegalArgumentException(
+                    "Cannot make " + hostname + " available for new allocation, must be in state dirty, but was in " + node.state());
+        }
+
+        if (dynamicAllocationEnabled()) {
+            return removeRecursively(node, true);
+        } else {
+            return setReady(Collections.singletonList(node));
+        }
+    }
+
     /**
      * Removes all the nodes that are children of hostname before finally removing the hostname itself.
      *
@@ -474,15 +497,18 @@ public class NodeRepository extends AbstractComponent {
      */
     public List<Node> removeRecursively(String hostname) {
         Node node = getNode(hostname).orElseThrow(() -> new NotFoundException("No node with hostname \"" + hostname + '"'));
+        return removeRecursively(node, false);
+    }
 
+    private List<Node> removeRecursively(Node node, boolean force) {
         try (Mutex lock = lockUnallocated()) {
             List<Node> removed = node.type() != NodeType.host ?
                     new ArrayList<>() :
-                    getChildNodes(hostname).stream()
-                            .filter(child -> allowedToRemove(child, true))
+                    getChildNodes(node.hostname()).stream()
+                            .filter(child -> force || verifyRemovalIsAllowed(child, true))
                             .collect(Collectors.toList());
 
-            if (allowedToRemove(node, false)) removed.add(node);
+            if (force || verifyRemovalIsAllowed(node, false)) removed.add(node);
             db.removeNodes(removed);
 
             return removed;
@@ -498,14 +524,15 @@ public class NodeRepository extends AbstractComponent {
      *    If only removing the container node: node in state ready
      *    If also removing the parent node: child is in state provisioned|failed|parked|ready
      */
-    private boolean allowedToRemove(Node nodeToRemove, boolean deletingAsChild) {
-        if (nodeToRemove.flavor().getType() == Flavor.Type.DOCKER_CONTAINER && !deletingAsChild) {
+    private boolean verifyRemovalIsAllowed(Node nodeToRemove, boolean deletingAsChild) {
+        // TODO: Enable once controller no longer deletes child nodes manually
+        /*if (nodeToRemove.flavor().getType() == Flavor.Type.DOCKER_CONTAINER && !deletingAsChild) {
             if (nodeToRemove.state() != Node.State.ready) {
                 throw new IllegalArgumentException(
                         String.format("Docker container node %s can only be removed when in state ready", nodeToRemove.hostname()));
             }
 
-        } else if (nodeToRemove.flavor().getType() == Flavor.Type.DOCKER_CONTAINER) {
+        } else */ if (nodeToRemove.flavor().getType() == Flavor.Type.DOCKER_CONTAINER) {
             List<Node.State> legalStates = Arrays.asList(Node.State.provisioned, Node.State.failed, Node.State.parked, Node.State.ready);
 
             if (! legalStates.contains(nodeToRemove.state())) {

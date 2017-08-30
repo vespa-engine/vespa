@@ -175,6 +175,7 @@ public class NodeRepositoryImpl implements NodeRepository {
                 NodeMessageResponse.class);
         NODE_ADMIN_LOGGER.info(response.message);
 
+        System.out.println(response.message);
         if (response.errorCode == null || response.errorCode.isEmpty()) {
             return;
         }
