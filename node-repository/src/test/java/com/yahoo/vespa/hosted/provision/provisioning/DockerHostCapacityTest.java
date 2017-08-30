@@ -72,20 +72,20 @@ public class DockerHostCapacityTest {
 
     @Test
     public void hasCapacity() {
-        assertTrue(capacity.hasCapacity(host1, flavorDocker));
-        assertTrue(capacity.hasCapacity(host1, flavorDocker2));
-        assertTrue(capacity.hasCapacity(host2, flavorDocker));
-        assertTrue(capacity.hasCapacity(host2, flavorDocker2));
-        assertFalse(capacity.hasCapacity(host3, flavorDocker));  // No ip available
-        assertFalse(capacity.hasCapacity(host3, flavorDocker2)); // No ip available
+        assertTrue(capacity.hasCapacity(host1, ResourceCapacity.of(flavorDocker)));
+        assertTrue(capacity.hasCapacity(host1, ResourceCapacity.of(flavorDocker2)));
+        assertTrue(capacity.hasCapacity(host2, ResourceCapacity.of(flavorDocker)));
+        assertTrue(capacity.hasCapacity(host2, ResourceCapacity.of(flavorDocker2)));
+        assertFalse(capacity.hasCapacity(host3, ResourceCapacity.of(flavorDocker)));  // No ip available
+        assertFalse(capacity.hasCapacity(host3, ResourceCapacity.of(flavorDocker2))); // No ip available
 
         // Add a new node to host1 to deplete the memory resource
         Node nodeF = Node.create("nodeF", Collections.singleton("::6"), Collections.emptySet(),
                 "nodeF", Optional.of("host1"), flavorDocker, NodeType.tenant);
         nodes.add(nodeF);
         capacity = new DockerHostCapacity(nodes);
-        assertFalse(capacity.hasCapacity(host1, flavorDocker));
-        assertFalse(capacity.hasCapacity(host1, flavorDocker2));
+        assertFalse(capacity.hasCapacity(host1, ResourceCapacity.of(flavorDocker)));
+        assertFalse(capacity.hasCapacity(host1, ResourceCapacity.of(flavorDocker2)));
     }
 
     @Test
