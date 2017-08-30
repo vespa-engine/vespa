@@ -227,22 +227,21 @@ public class ApplicationController {
 
             // Ensure that the deploying change is tested
             // FIXME: For now only for non-self-triggering applications - VESPA-8418
-            if (!application.deploymentJobs().isSelfTriggering() && !zone.environment().isManuallyDeployed() && !application.deploymentJobs().isDeployableTo(zone.environment(), application.deploying())) {
+            if ( ! application.deploymentJobs().isSelfTriggering() && !zone.environment().isManuallyDeployed() && 
+                 ! application.deploymentJobs().isDeployableTo(zone.environment(), application.deploying())) {
                 throw new IllegalArgumentException("Rejecting deployment of " + application + " to " + zone +
-                                                           " as pending " + application.deploying().get() +
-                                                           " is untested");
+                                                   " as pending " + application.deploying().get() + " is untested");
             }
 
-            // Don't update/store applicationpackage information when deploying previous application package (initial staging step)
-            if(! options.deployCurrentVersion) {
-                // Add missing information to application
+            if( ! options.deployCurrentVersion) {
+                // Add missing information to application (unless we're deplying the previous version (initial staging step)
                 application = application.with(applicationPackage.deploymentSpec());
                 application = application.with(applicationPackage.validationOverrides());
                 if (options.screwdriverBuildJob.isPresent() && options.screwdriverBuildJob.get().screwdriverId != null)
                     application = application.withProjectId(options.screwdriverBuildJob.get().screwdriverId.value());
                 if (application.deploying().isPresent() && application.deploying().get() instanceof Change.ApplicationChange)
                     application = application.withDeploying(Optional.of(Change.ApplicationChange.of(revision)));
-                if (!triggeredWith(revision, application, jobType) && !zone.environment().isManuallyDeployed() && jobType != null) {
+                if ( ! triggeredWith(revision, application, jobType) && !zone.environment().isManuallyDeployed() && jobType != null) {
                     // Triggering information is used to store which changes were made or attempted
                     // - For self-triggered applications we don't have any trigger information, so we add it here.
                     // - For all applications, we don't have complete control over which revision is actually built,
@@ -480,8 +479,7 @@ public class ApplicationController {
 
     public Application deactivate(Application application, Deployment deployment, boolean requireThatDeploymentHasExpired) {
         try (Lock lock = lock(application.id())) {
-            // TODO: ignore no application errors for config server client,
-            // only return such errors from sherpa client.
+            // TODO: ignore no application errors for config server client, only return such errors from sherpa client.
             if (requireThatDeploymentHasExpired && ! DeploymentExpirer.hasExpired(controller.zoneRegistry(), deployment,
                                                                                   clock.instant()))
                 return application;
