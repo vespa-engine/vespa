@@ -150,6 +150,7 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode, const std::string & ro
     config->set("enable_dead_lock_detector_warnings", "false");
     config->set("max_merges_per_node", "25");
     config->set("max_merge_queue_size", "20");
+    config->set("resource_exhaustion_merge_back_pressure_duration_secs", "15.0");
     vespalib::string rootFolder = rootOfRoot + "_";
     rootFolder += (storagenode ? "vdsroot" : "vdsroot.distributor");
     config->set("root_folder", rootFolder);
