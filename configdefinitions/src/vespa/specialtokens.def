@@ -13,7 +13,6 @@
 ## prefix of another token, Vespa will prefer to return the first
 ## matching token in the list when encountering the longest
 ## special token.
-version=3
 namespace=vespa.configdefinition
 
 ## Path to makefsa binary, needed to create specialtokens-dictionary

@@ -1,9 +1,7 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-# version=4 , version in comment does not count.
 
 # Added empty line to see if we can confuse
 # the server's md5 calculation
-version=3
 namespace=config
 
 #even adding a variable name starting with 'version'
