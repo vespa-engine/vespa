@@ -112,11 +112,33 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>container-search-and-docproc</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.antlr</groupId>
+          <artifactId>antlr4-runtime</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>config-bundle</artifactId>
       <version>${project.version}</version>
     </dependency>
+
+    <!-- Dependencies below are added explicitly to exclude transitive deps that are not provided runtime by the container,
+         and hence make them invisible to user projects' build classpath.
+        Excluded artifacts should be added explicitly to the application module to make then visible in users' test classpath. -->
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>predicate-search-core</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.antlr</groupId>
+          <artifactId>antlr-runtime</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
   </dependencies>
 </project>
