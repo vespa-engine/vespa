@@ -146,7 +146,7 @@ public class ConfigCurator {
     /**
      * Returns the data at a path, or null if the path does not exist.
      *
-     * @param path    a String with a pathname.
+     * @param path a String with a pathname.
      * @return a byte array with data.
      */
     public byte[] getBytes(String path) {

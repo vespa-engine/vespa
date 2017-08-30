@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
-import com.yahoo.config.provision.ProvisionInfo;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.path.Path;
@@ -28,7 +28,7 @@ import java.util.jar.JarFile;
  *
  * Anyone wanting to access application data should use this interface.
  *
- * @author vegardh
+ * @author Vegard Havdal
  */
 public interface ApplicationPackage {
 
@@ -228,8 +228,20 @@ public interface ApplicationPackage {
         throw new UnsupportedOperationException("This application package cannot write its metadata");
     }
 
-    default Map<Version, ProvisionInfo> getProvisionInfoMap() {
+    /** 
+     * Returns the single host allocation info of this, or an empty map if no allocation is available 
+     * 
+     * @deprecated please use #getAllocatedHosts
+     */
+    // TODO: Remove on Vespa 7
+    @Deprecated
+    default Map<Version, AllocatedHosts> getProvisionInfoMap() {
         return Collections.emptyMap();
+    }
+
+    /** Returns the host allocation info of this, or empty if no allocation is available */
+    default Optional<AllocatedHosts> getAllocatedHosts() {
+        return Optional.empty();
     }
 
     default Map<Version, FileRegistry> getFileRegistryMap() {

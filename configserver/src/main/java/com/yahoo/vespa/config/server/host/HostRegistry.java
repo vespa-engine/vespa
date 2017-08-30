@@ -16,7 +16,6 @@ import com.yahoo.log.LogLevel;
  * TODO: Is there a generalized version of this pattern? Need some sort mix of Bimap and Multimap
  *
  * @author lulf
- * @since 5.3
  */
 public class HostRegistry<T> implements HostValidator<T> {
 

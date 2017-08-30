@@ -173,14 +173,11 @@ public class ZKLiveApp {
      * Returns the full list of children (file names) in the given path.
      *
      * @param path a path relative to the currently active application
-     * @return a list of file names
+     * @return a list of file names, which is empty (never null) if the path does not exist
      */
     public List<String> getChildren(String path) {
         String fullPath = getFullPath(path);
-        if (! zk.exists(fullPath)) {
-            log.fine("ZKApplicationPackage: " + fullPath + " is not a valid dir");
-            return Collections.emptyList();
-        }
+        if (! zk.exists(fullPath)) return Collections.emptyList();
         return zk.getChildren(fullPath);
     }
 

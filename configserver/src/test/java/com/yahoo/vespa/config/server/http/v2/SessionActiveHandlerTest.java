@@ -13,7 +13,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.ProvisionInfo;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -217,8 +217,8 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         zkClient.writeStatus(status);
         ZooKeeperClient zkC = new ZooKeeperClient(configCurator, new BaseDeployLogger(), false, pathProvider.getSessionDirs().append(String.valueOf(sessionId)));
         VespaModelFactory modelFactory = new VespaModelFactory(new NullConfigModelRegistry());
-        zkC.feedZKFileRegistries(Collections.singletonMap(modelFactory.getVersion(), new MockFileRegistry()));
-        zkC.feedProvisionInfos(Collections.singletonMap(modelFactory.getVersion(), ProvisionInfo.withHosts(Collections.emptySet())));
+        zkC.write(Collections.singletonMap(modelFactory.getVersion(), new MockFileRegistry()));
+        zkC.write(AllocatedHosts.withHosts(Collections.emptySet()));
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
                 .curator(curator)
                 .configCurator(configCurator)
@@ -318,7 +318,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
 
         ActivateRequest invoke(boolean createLocalSession) throws Exception {
             SessionZooKeeperClient zkClient = new MockSessionZKClient(curator, pathProvider.getSessionDirs().append(String.valueOf(sessionId)),
-                                                                      Optional.of(ProvisionInfo.withHosts(Collections.singleton(new HostSpec("bar", Collections.emptyList())))));
+                                                                      Optional.of(AllocatedHosts.withHosts(Collections.singleton(new HostSpec("bar", Collections.emptyList())))));
             session = createRemoteSession(sessionId, initialStatus, zkClient, clock);
             if (createLocalSession) {
                 LocalSessionRepo repo = addLocalSession(sessionId, deployData, zkClient);

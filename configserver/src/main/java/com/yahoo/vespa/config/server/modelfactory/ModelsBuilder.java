@@ -3,16 +3,20 @@ package com.yahoo.vespa.config.server.modelfactory;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.OutOfCapacityException;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.lang.SettableOptional;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
+import com.yahoo.vespa.config.server.provision.StaticProvisioner;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -37,13 +41,24 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
 
     private final ModelFactoryRegistry modelFactoryRegistry;
 
-    protected ModelsBuilder(ModelFactoryRegistry modelFactoryRegistry) {
+    /** True if we are running in hosted mode */
+    private final boolean hosted;
+
+    protected ModelsBuilder(ModelFactoryRegistry modelFactoryRegistry, boolean hosted) {
         this.modelFactoryRegistry = modelFactoryRegistry;
+        this.hosted = hosted;
     }
 
+    /**
+     * Builds all applicable model versions
+     * 
+     * @param allocatedHosts the newest version (major and minor) (which is loaded first) decides the allocated hosts
+     *                       and assigns to this SettableOptional such that it can be used after this method returns
+     */
     public List<MODELRESULT> buildModels(ApplicationId applicationId, 
                                          com.yahoo.component.Version wantedNodeVespaVersion, 
                                          ApplicationPackage applicationPackage,
+                                         SettableOptional<AllocatedHosts> allocatedHosts,
                                          Instant now) {
         Set<Version> versions = modelFactoryRegistry.allVersions();
 
@@ -52,7 +67,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         if (requestedMajorVersion.isPresent())
             versions = filterByMajorVersion(requestedMajorVersion.get(), versions);
 
-        // Load models by one major version at the time as new major versions are allowed to be unloadable
+        // Load models by one major version at the time as new major versions are allowed to be non-loadable
         // in the case where an existing application is incompatible with a new major version
         // (which is possible by the definition of major)
         List<Integer> majorVersions = versions.stream()
@@ -65,7 +80,8 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         for (int i = 0; i < majorVersions.size(); i++) {
             try {
                 allApplicationModels.addAll(buildModelVersion(filterByMajorVersion(majorVersions.get(i), versions),
-                                                              applicationId, wantedNodeVespaVersion, applicationPackage, now));
+                                                              applicationId, wantedNodeVespaVersion, applicationPackage, 
+                                                              allocatedHosts, now));
 
                 // skip old config models if requested after we have found a major version which works
                 if (allApplicationModels.size() > 0 && allApplicationModels.get(0).getModel().skipOldConfigModels(now))
@@ -91,30 +107,43 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
     private List<MODELRESULT> buildModelVersion(Set<Version> versions, ApplicationId applicationId,
                                                 com.yahoo.component.Version wantedNodeVespaVersion, 
                                                 ApplicationPackage applicationPackage,
+                                                SettableOptional<AllocatedHosts> allocatedHosts,
                                                 Instant now) {
         Version latest = findLatest(versions);
         // load latest application version
-        MODELRESULT latestApplicationVersion = buildModelVersion(modelFactoryRegistry.getFactory(latest), 
+        MODELRESULT latestModelVersion = buildModelVersion(modelFactoryRegistry.getFactory(latest), 
                                                                  applicationPackage, 
                                                                  applicationId, 
                                                                  wantedNodeVespaVersion, 
+                                                                 allocatedHosts.asOptional(),
                                                                  now);
-        if (latestApplicationVersion.getModel().skipOldConfigModels(now)) {
-            return Collections.singletonList(latestApplicationVersion);
+        allocatedHosts.set(latestModelVersion.getModel().allocatedHosts()); // Update with additional clusters allocated
+        
+        if (latestModelVersion.getModel().skipOldConfigModels(now))
+            return Collections.singletonList(latestModelVersion);
+
+        // load old model versions
+        List<MODELRESULT> allApplicationVersions = new ArrayList<>();
+        allApplicationVersions.add(latestModelVersion);
+
+        // TODO: We use the allocated hosts from the newest version when building older model versions.
+        // This is correct except for the case where an old model specifies a cluster which the new version
+        // does not. In that case we really want to extend the set of allocated hosts to include those of that
+        // cluster as well. To do that, create a new provisioner which uses static provisioning for known
+        // clusters and the node repository provisioner as fallback.
+        for (Version version : versions) {
+            if (version.equals(latest)) continue; // already loaded
+
+            MODELRESULT modelVersion = buildModelVersion(modelFactoryRegistry.getFactory(version),
+                                                         applicationPackage,
+                                                         applicationId,
+                                                         wantedNodeVespaVersion,
+                                                         allocatedHosts.asOptional(),
+                                                         now);
+            allocatedHosts.set(modelVersion.getModel().allocatedHosts()); // Update with additional clusters allocated
+            allApplicationVersions.add(modelVersion);
         }
-        else { // load old model versions
-            List<MODELRESULT> allApplicationVersions = new ArrayList<>();
-            allApplicationVersions.add(latestApplicationVersion);
-            for (Version version : versions) {
-                if (version.equals(latest)) continue; // already loaded
-                allApplicationVersions.add(buildModelVersion(modelFactoryRegistry.getFactory(version), 
-                                                             applicationPackage, 
-                                                             applicationId, 
-                                                             wantedNodeVespaVersion, 
-                                                             now));
-            }
-            return allApplicationVersions;
-        }
+        return allApplicationVersions;
     }
 
     private Set<Version> filterByMajorVersion(int majorVersion, Set<Version> versions) {
@@ -133,6 +162,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
     protected abstract MODELRESULT buildModelVersion(ModelFactory modelFactory, ApplicationPackage applicationPackage,
                                                      ApplicationId applicationId, 
                                                      com.yahoo.component.Version wantedNodeVespaVersion,
+                                                     Optional<AllocatedHosts> allocatedHosts,
                                                      Instant now);
 
     protected ModelContext.Properties createModelContextProperties(ApplicationId applicationId,
@@ -145,6 +175,17 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                configserverConfig.hostedVespa(),
                                                zone,
                                                rotations);
+    }
+
+    /** 
+     * Returns a host provisioner returning the previously allocated hosts if available and when on hosted Vespa,
+     * returns empty otherwise, which may either mean that no hosts are allocated or that we are running
+     * non-hosted and should default to use hosts defined in the application package, depending on context
+     */
+    protected Optional<HostProvisioner> createStaticProvisioner(Optional<AllocatedHosts> allocatedHosts) {
+        if (hosted && allocatedHosts.isPresent())
+            return Optional.of(new StaticProvisioner(allocatedHosts.get()));
+        return Optional.empty();
     }
 
 }

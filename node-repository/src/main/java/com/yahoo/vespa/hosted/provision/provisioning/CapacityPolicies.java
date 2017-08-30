@@ -24,7 +24,6 @@ public class CapacityPolicies {
         this.flavors = flavors;
     }
 
-    /** provides capacity defaults for various environments */
     public int decideSize(Capacity requestedCapacity) {
         int requestedNodes = requestedCapacity.nodeCount();
         if (requestedCapacity.isRequired()) return requestedNodes;
@@ -39,10 +38,10 @@ public class CapacityPolicies {
     }
 
     public Flavor decideFlavor(Capacity requestedCapacity, ClusterSpec cluster, Optional<String> defaultFlavorOverride) {
-        // for now, always use requested docker flavor when requested
+        // for now, always use the requested flavor if a docker flavor is requested
         Optional<String> requestedFlavor = requestedCapacity.flavor();
         if (requestedFlavor.isPresent() &&
-                flavors.getFlavorOrThrow(requestedFlavor.get()).getType() == Flavor.Type.DOCKER_CONTAINER)
+            flavors.getFlavorOrThrow(requestedFlavor.get()).getType() == Flavor.Type.DOCKER_CONTAINER)
             return flavors.getFlavorOrThrow(requestedFlavor.get());
 
         String defaultFlavorName = defaultFlavorOverride.isPresent() ?

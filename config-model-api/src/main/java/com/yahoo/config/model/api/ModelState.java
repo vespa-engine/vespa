@@ -5,5 +5,7 @@ package com.yahoo.config.model.api;
  * @author lulf
  */
 public interface ModelState {
+
     Model getModel();
+
 }

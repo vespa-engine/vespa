@@ -12,8 +12,7 @@ import com.yahoo.vespa.curator.Curator;
 import java.time.Clock;
 
 /**
- * @author lulf
- * @since 5.1.24
+ * @author Ulf Lilleengen
  */
 public class RemoteSessionFactory {
 

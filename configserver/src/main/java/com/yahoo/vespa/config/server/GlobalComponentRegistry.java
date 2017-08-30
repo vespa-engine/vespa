@@ -19,8 +19,7 @@ import java.util.Optional;
 /**
  * Interface representing all global config server components used within the config server.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public interface GlobalComponentRegistry {
 

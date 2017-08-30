@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server.deploy;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.FileRegistry;
-import com.yahoo.config.provision.ProvisionInfo;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Version;
 
 import java.io.IOException;
@@ -14,7 +14,6 @@ import java.util.Map;
  * Initialize must be called before each deploy.
  *
  * @author lulf
- * @since 5.1
  */
 public class ZooKeeperDeployer {
 
@@ -28,15 +27,16 @@ public class ZooKeeperDeployer {
      * Deploys an application package to zookeeper. initialize() must be called before calling this method.
      *
      * @param applicationPackage The application package to persist.
-     * @param fileRegistryMap The file registries to persist.
-     * @param provisionInfoMap The provisioning infos to persist.
+     * @param fileRegistryMap the file registries to persist.
+     * @param allocatedHosts the provisioning info to persist.
      * @throws IOException if deploying fails
      */
-    public void deploy(ApplicationPackage applicationPackage, Map<Version, FileRegistry> fileRegistryMap, Map<Version, ProvisionInfo> provisionInfoMap) throws IOException {
+    public void deploy(ApplicationPackage applicationPackage, Map<Version, FileRegistry> fileRegistryMap, 
+                       AllocatedHosts allocatedHosts) throws IOException {
         zooKeeperClient.setupZooKeeper();
-        zooKeeperClient.feedZooKeeper(applicationPackage);
-        zooKeeperClient.feedZKFileRegistries(fileRegistryMap);
-        zooKeeperClient.feedProvisionInfos(provisionInfoMap);
+        zooKeeperClient.write(applicationPackage);
+        zooKeeperClient.write(fileRegistryMap);
+        zooKeeperClient.write(allocatedHosts);
     }
 
     public void cleanup() {

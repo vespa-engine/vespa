@@ -15,8 +15,7 @@ import java.io.IOException;
 import java.io.StringReader;
 
 /**
- * @author lulf
- * @since 5.22
+ * @author Ulf Lilleengen
  */
 public class OverrideProcessorTest {
 

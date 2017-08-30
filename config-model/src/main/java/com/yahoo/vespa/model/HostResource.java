@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  * TODO: Merge with {@link Host}
  * Host resources are ordered by their host order.
  *
- * @author Ulf Lillengen
+ * @author Ulf Lilleengen
  */
 public class HostResource implements Comparable<HostResource> {
 

@@ -20,7 +20,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.producer.UserConfigRepo;
-import com.yahoo.config.provision.ProvisionInfo;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigKey;
@@ -83,7 +83,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
 
     public static final Logger log = Logger.getLogger(VespaModel.class.getPackage().toString());
     private ConfigModelRepo configModelRepo = new ConfigModelRepo();
-    private final Optional<ProvisionInfo> info;
+    private final AllocatedHosts allocatedHosts;
 
     /**
      * The config id for the root config producer
@@ -146,7 +146,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         if (complete) { // create a a completed, frozen model
             configModelRepo.readConfigModels(deployState, builder, root, configModelRegistry);
             addServiceClusters(deployState.getApplicationPackage(), builder);
-            this.info = Optional.of(createProvisionInfo()); // must happen after the two lines above
+            this.allocatedHosts = AllocatedHosts.withHosts(root.getHostSystem().getHostSpecs()); // must happen after the two lines above
             setupRouting();
             this.fileDistributor = root.getFileDistributionConfigProducer().getFileDistributor();
             getAdmin().addPerHostServices(getHostSystem().getHosts(), deployState.getProperties());
@@ -157,7 +157,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             this.deployState = null;
         }
         else { // create a model with no services instantiated and the given file distributor
-            this.info = Optional.of(createProvisionInfo());
+            this.allocatedHosts = AllocatedHosts.withHosts(root.getHostSystem().getHostSpecs());
             this.fileDistributor = fileDistributor;
         }
     }
@@ -165,10 +165,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     /** Creates a mutable model with no services instantiated */
     public static VespaModel createIncomplete(DeployState deployState) throws IOException, SAXException {
         return new VespaModel(new NullConfigModelRegistry(), deployState, false, new FileDistributor(deployState.getFileRegistry()));
-    }
-
-    private ProvisionInfo createProvisionInfo() {
-        return ProvisionInfo.withHosts(root.getHostSystem().getHostSpecs());
     }
 
     private void validateWrapExceptions() {
@@ -421,8 +417,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     }
 
     @Override
-    public Optional<ProvisionInfo> getProvisionInfo() {
-        return info;
+    public AllocatedHosts allocatedHosts() {
+        return allocatedHosts;
     }
 
     private static Set<ConfigKey<?>> configsProduced(ConfigProducer cp) {
