@@ -70,23 +70,20 @@ public class NodeRepositoryTest {
     }
 
     @Test
-    public void only_allow_docker_containers_remove_in_provisioned_or_ready() {
+    public void only_allow_docker_containers_remove_in_ready() {
         NodeRepositoryTester tester = new NodeRepositoryTester();
         tester.addNode("id1", "host1", "docker", NodeType.tenant);
-        tester.addNode("id2", "host2", "docker", NodeType.tenant);
-        tester.nodeRepository().fail("host2", Agent.system, "Failed for testing");
 
-        tester.nodeRepository().removeRecursively("host1"); // host1 is in state provisioned
         try {
-            tester.nodeRepository().removeRecursively("host2");
-            fail("Should not be able to delete docker tenant node in state dirty");
+            tester.nodeRepository().removeRecursively("host1"); // host1 is in state provisioned
+            fail("Should not be able to delete docker container node by itself in state provisioned");
         } catch (IllegalArgumentException ignored) {
             // Expected
         }
 
-        tester.nodeRepository().setDirty("host2");
-        tester.nodeRepository().setReady("host2");
-        tester.nodeRepository().removeRecursively("host2");
+        tester.nodeRepository().setDirty("host1");
+        tester.nodeRepository().setReady("host1");
+        tester.nodeRepository().removeRecursively("host1");
     }
 
     @Test
@@ -105,7 +102,7 @@ public class NodeRepositoryTest {
 
         try {
             tester.nodeRepository().removeRecursively("host1");
-            fail("Should not be able to delete host node, one of the children are in state dirty");
+            fail("Should not be able to delete host node, one of the children is in state dirty");
         } catch (IllegalArgumentException ignored) {
             // Expected
         }
@@ -117,7 +114,7 @@ public class NodeRepositoryTest {
 
         // Now node10 and node12 are in provisioned, set node11 to ready, and it should be OK to delete host1
         tester.nodeRepository().setReady("node11");
-        tester.nodeRepository().removeRecursively("node12"); // Remove one of the children first instead
+        tester.nodeRepository().removeRecursively("node11"); // Remove one of the children first instead
         assertEquals(3, tester.nodeRepository().getNodes().size());
 
         tester.nodeRepository().removeRecursively("host1");

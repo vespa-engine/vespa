@@ -476,10 +476,13 @@ public class NodeRepository extends AbstractComponent {
         Node node = getNode(hostname).orElseThrow(() -> new NotFoundException("No node with hostname \"" + hostname + '"'));
 
         try (Mutex lock = lockUnallocated()) {
-            List<Node> removed = getChildNodes(hostname).stream()
-                    .filter(this::allowedToRemove)
-                    .collect(Collectors.toList());
-            if (allowedToRemove(node)) removed.add(node);
+            List<Node> removed = node.type() != NodeType.host ?
+                    new ArrayList<>() :
+                    getChildNodes(hostname).stream()
+                            .filter(child -> allowedToRemove(child, true))
+                            .collect(Collectors.toList());
+
+            if (allowedToRemove(node, false)) removed.add(node);
             db.removeNodes(removed);
 
             return removed;
@@ -488,14 +491,34 @@ public class NodeRepository extends AbstractComponent {
         }
     }
 
-    private boolean allowedToRemove(Node nodeToRemove) {
-        List<Node.State> legalStates = nodeToRemove.flavor().getType() == Flavor.Type.DOCKER_CONTAINER ?
-                Arrays.asList(Node.State.provisioned, Node.State.ready) :
-                Arrays.asList(Node.State.provisioned, Node.State.failed, Node.State.parked);
+    /**
+     * Allowed to a node delete if:
+     *  Non-docker-container node: iff in state provisioned|failed|parked
+     *  Docker-container-node:
+     *    If only removing the container node: node in state ready
+     *    If also removing the parent node: child is in state provisioned|failed|parked|ready
+     */
+    private boolean allowedToRemove(Node nodeToRemove, boolean deletingAsChild) {
+        if (nodeToRemove.flavor().getType() == Flavor.Type.DOCKER_CONTAINER && !deletingAsChild) {
+            if (nodeToRemove.state() != Node.State.ready) {
+                throw new IllegalArgumentException(
+                        String.format("Docker container node %s can only be removed when in state ready", nodeToRemove.hostname()));
+            }
 
-        if (! legalStates.contains(nodeToRemove.state())) {
-            throw new IllegalArgumentException(String.format("%s can only be removed from following states: %s",
-                    nodeToRemove.hostname(), legalStates.stream().map(Node.State::name).collect(Collectors.joining(", "))));
+        } else if (nodeToRemove.flavor().getType() == Flavor.Type.DOCKER_CONTAINER) {
+            List<Node.State> legalStates = Arrays.asList(Node.State.provisioned, Node.State.failed, Node.State.parked, Node.State.ready);
+
+            if (! legalStates.contains(nodeToRemove.state())) {
+                throw new IllegalArgumentException(String.format("Child node %s can only be removed from following states: %s",
+                        nodeToRemove.hostname(), legalStates.stream().map(Node.State::name).collect(Collectors.joining(", "))));
+            }
+        } else {
+            List<Node.State> legalStates = Arrays.asList(Node.State.provisioned, Node.State.failed, Node.State.parked);
+
+            if (! legalStates.contains(nodeToRemove.state())) {
+                throw new IllegalArgumentException(String.format("Node %s can only be removed from following states: %s",
+                        nodeToRemove.hostname(), legalStates.stream().map(Node.State::name).collect(Collectors.joining(", "))));
+            }
         }
 
         return true;
