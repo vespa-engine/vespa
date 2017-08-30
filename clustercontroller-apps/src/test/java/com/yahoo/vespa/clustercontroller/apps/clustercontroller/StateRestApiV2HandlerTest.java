@@ -48,4 +48,5 @@ public class StateRestApiV2HandlerTest extends TestCase {
 
         assertEquals(expected, mapping);
     }
+
 }

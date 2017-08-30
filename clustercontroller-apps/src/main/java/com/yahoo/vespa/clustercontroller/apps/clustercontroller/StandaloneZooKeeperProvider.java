@@ -6,10 +6,11 @@ import com.yahoo.vespa.zookeeper.ZooKeeperServer;
 /**
  * ZooKeeper provider that ensures we are running our own instance of zookeeper.
  *
- * @author lulf
- * @since 5.26
+ * @author Ulf Lilleengen
  */
 public class StandaloneZooKeeperProvider implements ZooKeeperProvider {
+
     public StandaloneZooKeeperProvider(ZooKeeperServer server) {
     }
+
 }

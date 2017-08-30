@@ -9,7 +9,7 @@ import net.jcip.annotations.Immutable;
 /**
  * Constraints for ordering ChainedComponents in chains.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @Immutable
 public class Dependencies {

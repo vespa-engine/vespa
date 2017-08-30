@@ -16,10 +16,12 @@ import com.yahoo.component.ComponentId;
 
 /**
  * Test for OrderedReadyNodes.
- * @author tonytv
+ *
+ * @author Tony Vaagenes
  */
 @SuppressWarnings("rawtypes")
 public class OrderedReadyNodesTest {
+
     class ComponentA extends ChainedComponent {
         public ComponentA(ComponentId id) {
             super(id);
@@ -101,4 +103,5 @@ public class OrderedReadyNodesTest {
     private Node pop() {
         return readyNodes.pop();
     }
+
 }

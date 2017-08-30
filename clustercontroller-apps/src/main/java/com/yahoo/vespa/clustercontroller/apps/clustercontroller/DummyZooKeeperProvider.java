@@ -4,8 +4,7 @@ package com.yahoo.vespa.clustercontroller.apps.clustercontroller;
 /**
  * A dummy zookeeper provider when we do not run our own zookeeper instance.
  *
- * @author lulf
- * @since 5.26
+ * @author Ulf Lilleengen
  */
 public class DummyZooKeeperProvider implements ZooKeeperProvider {
 }

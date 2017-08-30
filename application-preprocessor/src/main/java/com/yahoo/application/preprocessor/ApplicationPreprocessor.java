@@ -18,10 +18,10 @@ import java.util.Optional;
 /**
  * Main entry for preprocessing an application package.
  *
- * @author lulf
- * @since 5.25
+ * @author Ulf Lilleengen
  */
 public class ApplicationPreprocessor {
+
     private final File applicationDir;
     private final Optional<File> outputDir;
     private final Optional<Environment> environment;
@@ -65,4 +65,5 @@ public class ApplicationPreprocessor {
             System.exit(1);
         }
     }
+
 }

@@ -7,9 +7,10 @@ import com.yahoo.component.chain.ChainedComponent;
  * A node representing a given component.
  *
  * @see Node
- * @author  tonytv
+ * @author Tony Vaagenes
  */
 class ComponentNode<T extends ChainedComponent> extends Node {
+
     private T component;
 
     public ComponentNode(T component, int priority) {
@@ -31,5 +32,6 @@ class ComponentNode<T extends ChainedComponent> extends Node {
     int classPriority() {
         return 2;
     }
+
 }
 

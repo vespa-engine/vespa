@@ -19,7 +19,7 @@ import java.util.List;
 /**
  * Component with dependencies.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public abstract class ChainedComponent extends AbstractComponent {
 

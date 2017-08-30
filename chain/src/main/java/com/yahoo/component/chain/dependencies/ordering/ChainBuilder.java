@@ -31,9 +31,10 @@ import com.yahoo.component.chain.Phase;
  * A warning will be logged if multiple components of different types provides the
  * same name. A component can not provide the same name as a phase.
  *
- * @author  tonytv
+ * @author Tony Vaagenes
  */
 public class ChainBuilder<T extends ChainedComponent> {
+
     private final ComponentId id;
     private int numComponents = 0;
     private int priority = 1;
@@ -166,4 +167,5 @@ public class ChainBuilder<T extends ChainedComponent> {
         }
         return readyNodes;
     }
+
 }

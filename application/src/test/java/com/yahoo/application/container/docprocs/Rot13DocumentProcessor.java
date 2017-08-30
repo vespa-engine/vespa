@@ -11,7 +11,7 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class Rot13DocumentProcessor extends DocumentProcessor {
     private static final String FIELD_NAME = "title";

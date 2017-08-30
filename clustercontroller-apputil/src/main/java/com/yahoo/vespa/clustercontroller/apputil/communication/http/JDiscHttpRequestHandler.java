@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 
 /**
  * Note. This class is tested through apache http instance test, using this as other endpoint.
- * @author humbe
+ * @author Haakon Humberset
  * @author Harald Musum
  * @author Vegard Sjonfjell
  */
@@ -124,4 +124,5 @@ public class JDiscHttpRequestHandler extends LoggingRequestHandler {
         }
         return headers;
     }
+
 }

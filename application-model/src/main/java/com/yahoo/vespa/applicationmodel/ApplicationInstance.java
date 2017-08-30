@@ -10,6 +10,7 @@ import java.util.Set;
  * @author bjorncs
  */
 public class ApplicationInstance<STATUS> {
+
     private final TenantId tenantId;
     private final ApplicationInstanceId applicationInstanceId;
     private final Set<ServiceCluster<STATUS>> serviceClusters;
@@ -63,4 +64,5 @@ public class ApplicationInstance<STATUS> {
                 ", serviceClusters=" + serviceClusters +
                 '}';
     }
+
 }

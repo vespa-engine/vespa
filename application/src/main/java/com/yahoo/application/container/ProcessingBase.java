@@ -19,7 +19,6 @@ import java.util.concurrent.Executors;
 
 /**
  * @author gjoranv
- * @since 5.1.15
  */
 @Beta
 public abstract class ProcessingBase<
@@ -27,6 +26,7 @@ public abstract class ProcessingBase<
         RESPONSE extends Response,
         PROCESSOR extends Processor>
 {
+
     /**
      * Returns a registry of configured chains.
      *
