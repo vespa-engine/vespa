@@ -218,20 +218,16 @@ public class Dispatcher extends AbstractComponent {
         }
 
         private void fill(List<FastHit> hits, byte[] slimeBytes) {
-            Slime slime = BinaryFormat.decode(slimeBytes);
-            int maxFieldsInhit = slime.symbols();
-            Inspector summaries = new SlimeAdapter(slime.get().field("docsums"));
-            summaries.fieldCount();
+            Inspector summaries = new SlimeAdapter(BinaryFormat.decode(slimeBytes).get().field("docsums"));
             if ( ! summaries.valid())
                 throw new IllegalArgumentException("Expected a Slime root object containing a 'docsums' field");
             for (int i = 0; i < hits.size(); i++) {
-                FastHit hit = hits.get(i);
-                hit.reserve(maxFieldsInhit);
-                fill(hit, summaries.entry(i).field("docsum"));
+                fill(hits.get(i), summaries.entry(i).field("docsum"));
             }
         }
 
         private void fill(FastHit hit, Inspector summary) {
+            hit.reserve(summary.fieldCount());
             summary.traverse((String name, Inspector value) -> {
                 hit.setField(name, nativeTypeOf(value));
             });

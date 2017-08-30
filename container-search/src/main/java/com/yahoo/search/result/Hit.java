@@ -105,7 +105,8 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     }
     private Map<String,Object> getFieldMap(int minSize) {
         if (fields == null) {
-            fields = new LinkedHashMap<>(minSize);
+            // Compensate for loadfactor and then some, rounded up....
+            fields = new LinkedHashMap<>(2*minSize);
         }
         return fields;
     }
