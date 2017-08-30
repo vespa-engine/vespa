@@ -5,7 +5,7 @@ set -e
 TIME=/usr/bin/time
 
 VESPA_MALLOC_SO=../../../src/vespamalloc/libvespamalloc.so
-VESPA_MALLOC_SO_D=../../../src/vespamalloc/libvespamalloc_vespamallocd.so
+VESPA_MALLOC_SO_D=../../../src/vespamalloc/libvespamallocd.so
 
 LD_PRELOAD=$VESPA_MALLOC_SO ./vespamalloc_realloc_test_app
 LD_PRELOAD=$VESPA_MALLOC_SO_D ./vespamalloc_realloc_test_app
