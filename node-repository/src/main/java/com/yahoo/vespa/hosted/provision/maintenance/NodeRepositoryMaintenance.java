@@ -44,6 +44,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final RetiredEarlyExpirer retiredEarlyExpirer;
     private final FailedExpirer failedExpirer;
     private final DirtyExpirer dirtyExpirer;
+    private final ProvisionedExpirer provisionedExpirer;
     private final NodeRebooter nodeRebooter;
     private final NodeRetirer nodeRetirer;
     private final MetricsReporter metricsReporter;
@@ -73,6 +74,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         inactiveExpirer = new InactiveExpirer(nodeRepository, clock, durationFromEnv("inactive_expiry").orElse(defaults.inactiveExpiry), jobControl);
         failedExpirer = new FailedExpirer(nodeRepository, zone, clock, durationFromEnv("failed_expiry").orElse(defaults.failedExpiry), jobControl);
         dirtyExpirer = new DirtyExpirer(nodeRepository, clock, durationFromEnv("dirty_expiry").orElse(defaults.dirtyExpiry), jobControl);
+        provisionedExpirer = new ProvisionedExpirer(nodeRepository, clock, durationFromEnv("provisioned_expiry").orElse(defaults.provisionedExpiry), jobControl);
         nodeRebooter = new NodeRebooter(nodeRepository, clock, durationFromEnv("reboot_interval").orElse(defaults.rebootInterval), jobControl);
         metricsReporter = new MetricsReporter(nodeRepository, metric, durationFromEnv("metrics_interval").orElse(defaults.metricsInterval), jobControl);
 
@@ -96,6 +98,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         dirtyExpirer.deconstruct();
         nodeRebooter.deconstruct();
         nodeRetirer.deconstruct();
+        provisionedExpirer.deconstruct();
         metricsReporter.deconstruct();
     }
 
@@ -133,6 +136,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration retiredExpiry;
         private final Duration failedExpiry;
         private final Duration dirtyExpiry;
+        private final Duration provisionedExpiry;
         private final Duration rebootInterval;
         private final Duration nodeRetirerInterval;
         private final Duration metricsInterval;
@@ -154,6 +158,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 retiredEarlyInterval = Duration.ofMinutes(29);
                 failedExpiry = Duration.ofDays(4); // enough time to recover data even if it happens friday night
                 dirtyExpiry = Duration.ofHours(2); // enough time to clean the node
+                provisionedExpiry = Duration.ofHours(4);
                 rebootInterval = Duration.ofDays(30);
                 nodeRetirerInterval = Duration.ofMinutes(30);
                 metricsInterval = Duration.ofMinutes(1);
@@ -171,6 +176,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 retiredEarlyInterval = Duration.ofMinutes(5);
                 failedExpiry = Duration.ofMinutes(10);
                 dirtyExpiry = Duration.ofMinutes(30);
+                provisionedExpiry = Duration.ofHours(4);
                 rebootInterval = Duration.ofDays(30);
                 nodeRetirerInterval = Duration.ofMinutes(30);
                 metricsInterval = Duration.ofMinutes(1);
