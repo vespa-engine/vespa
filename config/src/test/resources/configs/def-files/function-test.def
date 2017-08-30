@@ -18,6 +18,7 @@
 # - Have an array within a struct, to verify that we correctly recurse.
 # - Reuse type name further within to ensure that this works.
 
+version=8
 
 namespace=foo
 

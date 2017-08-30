@@ -2,6 +2,7 @@
 namespace=foo
 # Config containing only simple leaf types with default values, that can be used
 # for testing individual types in detail.
+version=1
 
 boolval bool default=false
 doubleval double default=0.0

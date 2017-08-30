@@ -1,5 +1,6 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 # Semantic production rules
+version=2
 namespace=prelude.semantics
 
 # Whether we should use these rule bases in pre-Vespa 2.2 compatibility mode
