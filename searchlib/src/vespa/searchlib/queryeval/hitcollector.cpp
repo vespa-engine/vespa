@@ -306,7 +306,7 @@ HitCollector::getResultSet()
                     rh[j]._rankValue = getReScore(_hits[i].second);
                     ++i;
                 } else {
-                    rh[j]._rankValue = 0;
+                    rh[j]._rankValue = default_rank_value;
                 }
             }
         } else {
@@ -317,7 +317,7 @@ HitCollector::getResultSet()
                     rh[j]._rankValue = _hits[i].second;
                     ++i;
                 } else {
-                    rh[j]._rankValue = 0;
+                    rh[j]._rankValue = default_rank_value;
                 }
             }
         }
