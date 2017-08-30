@@ -2,6 +2,8 @@
 package com.yahoo.vespa.config.server.zookeeper;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableSet;
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.application.api.FileRegistry;
@@ -10,9 +12,9 @@ import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.application.provider.*;
+import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeFlavors;
-import com.yahoo.config.provision.ProvisionInfo;
-import com.yahoo.config.provision.Version;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.io.reader.NamedReader;
@@ -24,20 +26,26 @@ import com.yahoo.vespa.config.util.ConfigUtils;
 import java.io.File;
 import java.io.Reader;
 import java.io.StringReader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Represents an application residing in zookeeper.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class ZKApplicationPackage implements ApplicationPackage {
 
     private ZKLiveApp liveApp;
 
-    private final Map<Version, PreGeneratedFileRegistry> fileRegistryMap = new HashMap<>();
-    private final Map<Version, ProvisionInfo> provisionInfoMap = new HashMap<>();
-    private static final Version legacyVersion = Version.fromIntValues(0, 0, 0);
+    private final Map<com.yahoo.config.provision.Version, PreGeneratedFileRegistry> fileRegistryMap = new HashMap<>();
+    private final Optional<AllocatedHosts> allocatedHosts;
+    private static final com.yahoo.config.provision.Version legacyVersion = com.yahoo.config.provision.Version.fromIntValues(0, 0, 0);
 
     public static final String fileRegistryNode = "fileregistry";
     public static final String allocatedHostsNode = "allocatedHosts";
@@ -48,34 +56,56 @@ public class ZKApplicationPackage implements ApplicationPackage {
         liveApp = new ZKLiveApp(zk, appPath);
         metaData = readMetaDataFromLiveApp(liveApp);
         importFileRegistries(fileRegistryNode);
-        importProvisionInfos(allocatedHostsNode, nodeFlavors);
+        allocatedHosts = importAllocatedHosts(allocatedHostsNode, nodeFlavors);
     }
 
-    private void importProvisionInfos(String allocatedHostsNode, Optional<NodeFlavors> nodeFlavors) {
-        List<String> provisionInfoNodes = liveApp.getChildren(allocatedHostsNode);
-        if (provisionInfoNodes.isEmpty()) {
-            Optional<ProvisionInfo> provisionInfo = importProvisionInfo(allocatedHostsNode, nodeFlavors);
-            provisionInfo.ifPresent(info -> provisionInfoMap.put(legacyVersion, info));
-        } else {
-            provisionInfoNodes.stream()
-                    .forEach(versionStr -> {
-                        Version version = Version.fromString(versionStr);
-                        Optional<ProvisionInfo> provisionInfo = importProvisionInfo(Joiner.on("/").join(allocatedHostsNode, versionStr),
-                                                                                    nodeFlavors);
-                        provisionInfo.ifPresent(info -> provisionInfoMap.put(version, info));
-                    });
+    private Optional<AllocatedHosts> importAllocatedHosts(String allocatedHostsPath, Optional<NodeFlavors> nodeFlavors) {
+        if ( ! liveApp.exists(allocatedHostsPath)) return Optional.empty();
+        Optional<AllocatedHosts> allocatedHosts = readAllocatedHosts(allocatedHostsPath, nodeFlavors);
+        if ( ! allocatedHosts.isPresent()) { // Read from legacy location. TODO: Remove when 6.143 is in production everywhere
+            List<String> allocatedHostsByVersionNodes = liveApp.getChildren(allocatedHostsPath);
+            allocatedHosts = merge(readAllocatedHostsByVersion(allocatedHostsByVersionNodes, nodeFlavors));
         }
+        return allocatedHosts;
+    }
+    
+    private Map<Version, AllocatedHosts> readAllocatedHostsByVersion(List<String> allocatedHostsByVersionNodes, 
+                                                                     Optional<NodeFlavors> nodeFlavors) {
+        Map<Version, AllocatedHosts> allocatedHostsByVersion = new HashMap<>();
+        allocatedHostsByVersionNodes.stream()
+                .forEach(versionStr -> {
+                    Version version = Version.fromString(versionStr);
+                    Optional<AllocatedHosts> allocatedHosts = readAllocatedHosts(Joiner.on("/").join(allocatedHostsNode, versionStr),
+                                                                                nodeFlavors);
+                    allocatedHosts.ifPresent(info -> allocatedHostsByVersion.put(version, info));
+                });
+        return allocatedHostsByVersion;
     }
 
-    private Optional<ProvisionInfo> importProvisionInfo(String provisionInfoNode, Optional<NodeFlavors> nodeFlavors) {
+    private Optional<AllocatedHosts> merge(Map<Version, AllocatedHosts> allocatedHostsByVersion) {
+        // Merge the allocated hosts in any order. This is wrong but preserves current behavior (modulo order differences)
+        if (allocatedHostsByVersion.isEmpty()) return Optional.empty();
+        
+        Map<String, HostSpec> merged = new HashMap<>();
+        for (Map.Entry<Version, AllocatedHosts> entry : allocatedHostsByVersion.entrySet()) {
+            for (HostSpec host : entry.getValue().getHosts())
+                merged.put(host.hostname(), host);
+        }
+        return Optional.of(AllocatedHosts.withHosts(ImmutableSet.copyOf(merged.values())));
+    }
+
+    /** 
+     * Reads allocated hosts at the given node.
+     * 
+     * @return the allocated hosts at this node or empty if there is no data at this path
+     */
+    private Optional<AllocatedHosts> readAllocatedHosts(String allocatedHostsPath, Optional<NodeFlavors> nodeFlavors) {
         try {
-            if (liveApp.exists(provisionInfoNode)) {
-                return Optional.of(ProvisionInfo.fromJson(liveApp.getBytes(provisionInfoNode), nodeFlavors));
-            } else {
-                return Optional.empty();
-            }
+            byte[] data = liveApp.getBytes(allocatedHostsPath);
+            if (data.length == 0) return Optional.empty(); // TODO: Remove this line (and make return non-optional) when 6.143 is in production everywhere
+            return Optional.of(AllocatedHosts.fromJson(data, nodeFlavors));
         } catch (Exception e) {
-            throw new RuntimeException("Unable to read provision info", e);
+            throw new RuntimeException("Unable to read allocated hosts", e);
         }
     }
 
@@ -85,9 +115,9 @@ public class ZKApplicationPackage implements ApplicationPackage {
             fileRegistryMap.put(legacyVersion, importFileRegistry(fileRegistryNode));
         } else {
             fileRegistryNodes.stream()
-                    .forEach(versionStr -> {
-                        Version version = Version.fromString(versionStr);
-                        fileRegistryMap.put(version, importFileRegistry(Joiner.on("/").join(fileRegistryNode, versionStr)));
+                    .forEach(version -> {
+                        fileRegistryMap.put(com.yahoo.config.provision.Version.fromString(version),
+                                            importFileRegistry(Joiner.on("/").join(fileRegistryNode, version)));
                     });
         }
     }
@@ -147,16 +177,17 @@ public class ZKApplicationPackage implements ApplicationPackage {
         return ret;
     }
 
-    public Map<Version, ProvisionInfo> getProvisionInfoMap() {
-        return Collections.unmodifiableMap(provisionInfoMap);
+    @Override
+    public Optional<AllocatedHosts> getAllocatedHosts() {
+        return allocatedHosts;
     }
 
     @Override
-    public Map<Version, FileRegistry> getFileRegistryMap() {
+    public Map<com.yahoo.config.provision.Version, FileRegistry> getFileRegistryMap() {
         return Collections.unmodifiableMap(fileRegistryMap);
     }
 
-    private Optional<PreGeneratedFileRegistry> getPreGeneratedFileRegistry(Version vespaVersion) {
+    private Optional<PreGeneratedFileRegistry> getPreGeneratedFileRegistry(com.yahoo.config.provision.Version vespaVersion) {
         // Assumes at least one file registry, which we always have.
         Optional<PreGeneratedFileRegistry> fileRegistry = Optional.ofNullable(fileRegistryMap.get(vespaVersion));
         if (!fileRegistry.isPresent()) {
@@ -243,7 +274,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
     }
 
     @Override
-    public List<ComponentInfo> getComponentsInfo(Version vespaVersion) {
+    public List<ComponentInfo> getComponentsInfo(com.yahoo.config.provision.Version vespaVersion) {
         List<ComponentInfo> components = new ArrayList<>();
         PreGeneratedFileRegistry fileRegistry = getPreGeneratedFileRegistry(vespaVersion).get();
         for (String path : fileRegistry.getPaths()) {

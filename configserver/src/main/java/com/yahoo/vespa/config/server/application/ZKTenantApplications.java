@@ -29,8 +29,7 @@ import java.util.logging.Logger;
  * Each application is stored as a single file, named the same as the application id and containing the id
  * of the session storing the content of the application.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 // TODO: Merge into interface and separate out curator layer instead
 public class ZKTenantApplications implements TenantApplications, PathChildrenCacheListener {

@@ -18,7 +18,7 @@ import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ProvisionInfo;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.net.HostName;
@@ -286,7 +286,7 @@ public class VespaModelTestCase {
                         .build())
                 .build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
-        ProvisionInfo info = model.getProvisionInfo().get();
+        AllocatedHosts info = model.allocatedHosts();
         assertEquals("Admin version 3 is ignored, and there are no other hosts to borrow for admin services", 0, info.getHosts().size());
     }
 

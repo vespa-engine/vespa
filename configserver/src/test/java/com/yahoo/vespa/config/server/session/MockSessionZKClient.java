@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.test.MockApplicationPackage;
-import com.yahoo.config.provision.ProvisionInfo;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.curator.Curator;
@@ -14,22 +14,21 @@ import java.util.Optional;
 /**
  * Overrides application package fetching, because this part is hard to do without feeding a full app.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class MockSessionZKClient extends SessionZooKeeperClient {
 
     private ApplicationPackage app = null;
-    private Optional<ProvisionInfo> info = null;
+    private Optional<AllocatedHosts> info = null;
     private Session.Status sessionStatus;
 
     public MockSessionZKClient(Curator curator, Path rootPath) {
         this(curator, rootPath, (ApplicationPackage)null);
     }
 
-    public MockSessionZKClient(Curator curator, Path rootPath, Optional<ProvisionInfo> provisionInfo) {
+    public MockSessionZKClient(Curator curator, Path rootPath, Optional<AllocatedHosts> allocatedHosts) {
         this(curator, rootPath);
-        this.info = provisionInfo;
+        this.info = allocatedHosts;
     }
 
     public MockSessionZKClient(Curator curator, Path rootPath, ApplicationPackage application) {
@@ -49,8 +48,8 @@ public class MockSessionZKClient extends SessionZooKeeperClient {
     }
 
     @Override
-    ProvisionInfo getProvisionInfo() {
-        return info.orElseThrow(() -> new IllegalStateException("Trying to read provision info, but no provision info exists"));
+    AllocatedHosts getAllocatedHosts() {
+        return info.orElseThrow(() -> new IllegalStateException("Could not find allocated hosts"));
     }
 
     @Override

@@ -83,6 +83,7 @@ struct StateCheckersTest : public CppUnit::TestFixture,
     void inhibitBucketDeactivationIfDisabledInConfig();
     void retiredNodesOutOfSyncAreMerged();
     void testGarbageCollection();
+    void gc_ops_are_prioritized_with_low_priority_category();
     void gcInhibitedWhenIdealNodeInMaintenance();
     void testNoRemoveWhenIdealNodeInMaintenance();
     void testStepwiseJoinForSmallBucketsWithoutSiblings();
@@ -186,7 +187,8 @@ struct StateCheckersTest : public CppUnit::TestFixture,
                                       uint32_t nowTimestamp,
                                       uint32_t checkInterval,
                                       uint32_t lastChangeTime = 0,
-                                      bool includePriority = false);
+                                      bool includePriority = false,
+                                      bool includeSchedulingPri = false);
 
     std::string testSplit(uint32_t splitCount,
                           uint32_t splitSize,
@@ -321,6 +323,7 @@ struct StateCheckersTest : public CppUnit::TestFixture,
     CPPUNIT_TEST(inhibitBucketActivationIfDisabledInConfig);
     CPPUNIT_TEST(inhibitBucketDeactivationIfDisabledInConfig);
     CPPUNIT_TEST(testGarbageCollection);
+    CPPUNIT_TEST(gc_ops_are_prioritized_with_low_priority_category);
     CPPUNIT_TEST(gcInhibitedWhenIdealNodeInMaintenance);
     CPPUNIT_TEST(testNoRemoveWhenIdealNodeInMaintenance);
     CPPUNIT_TEST(testStepwiseJoinForSmallBucketsWithoutSiblings);
@@ -1458,7 +1461,7 @@ StateCheckersTest::inhibitBucketDeactivationIfDisabledInConfig()
 std::string StateCheckersTest::testGarbageCollection(
         uint32_t prevTimestamp, uint32_t nowTimestamp,
         uint32_t checkInterval, uint32_t lastChangeTime,
-        bool includePriority)
+        bool includePriority, bool includeSchedulingPri)
 {
     BucketDatabase::Entry e(document::BucketId(17, 0));
     e.getBucketInfo().addNode(BucketCopy(prevTimestamp, 0,
@@ -1475,7 +1478,7 @@ std::string StateCheckersTest::testGarbageCollection(
             e.getBucketId());
     getClock().setAbsoluteTimeInSeconds(nowTimestamp);
     return testStateChecker(checker, c, false, PendingMessage(),
-                            includePriority);
+                            includePriority, includeSchedulingPri);
 }
 
 void
@@ -1525,6 +1528,13 @@ StateCheckersTest::testGarbageCollection()
     CPPUNIT_ASSERT_EQUAL(
             std::string("NO OPERATIONS GENERATED"),
             testGarbageCollection(3850, 4000, 300, 1));
+}
+
+void StateCheckersTest::gc_ops_are_prioritized_with_low_priority_category() {
+    CPPUNIT_ASSERT_EQUAL(
+            std::string("[Needs garbage collection: Last check at 3, current time 4000, "
+                        "configured interval 300] (scheduling pri LOW)"),
+            testGarbageCollection(3, 4000, 300, 1, false, true));
 }
 
 /**

@@ -20,10 +20,12 @@ import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -62,8 +64,9 @@ public class InactiveAndFailedExpirerTest {
 
         // One node is set back to ready
         Node ready = tester.nodeRepository().setReady(Collections.singletonList(dirty.get(0))).get(0);
-        assertEquals("Allocated history is removed on readying", 1, ready.history().events().size());
-        assertEquals(History.Event.Type.readied, ready.history().events().iterator().next().type());
+        assertEquals("Allocated history is removed on readying",
+                Arrays.asList(History.Event.Type.provisioned, History.Event.Type.readied),
+                ready.history().events().stream().map(History.Event::type).collect(Collectors.toList()));
 
         // Dirty times out for the other one
         tester.advanceTime(Duration.ofMinutes(14));

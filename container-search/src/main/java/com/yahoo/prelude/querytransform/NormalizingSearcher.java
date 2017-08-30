@@ -52,10 +52,12 @@ public class NormalizingSearcher extends Searcher {
     }
 
     protected void normalize(Query query, IndexFacts.Session indexFacts) {
-        String oldQuery = (query.getTraceLevel() >= 2) ? query.getModel().getQueryTree().getRoot().toString() : "";
+        String oldQuery = (query.getTraceLevel() >= 2) ? query.getModel().getQueryTree().getRoot().toString() : null;
+
         normalizeBody(query, indexFacts);
-        if (query.getTraceLevel() >= 2)
-            if (!(oldQuery.equals(query.getModel().getQueryTree().getRoot().toString()))) query.trace(getFunctionName(), true, 2);
+
+        if (query.getTraceLevel() >= 2 && ! query.getModel().getQueryTree().getRoot().toString().equals(oldQuery))
+            query.trace(getFunctionName(), true, 2);
     }
 
     private Query normalizeBody(Query query, IndexFacts.Session indexFacts) {
@@ -63,19 +65,18 @@ public class NormalizingSearcher extends Searcher {
         Language language = query.getModel().getParsingLanguage();
         if (root instanceof BlockItem) {
             List<Item> rootItems = new ArrayList<>(1);
-
             rootItems.add(root);
             ListIterator<Item> i = rootItems.listIterator();
-
             i.next();
             normalizeBlocks(language, indexFacts, (BlockItem) root, i);
-            query.getModel().getQueryTree().setRoot(rootItems.get(0));
+            if ( ! rootItems.isEmpty()) // give up normalizing if the root was removed
+                query.getModel().getQueryTree().setRoot(rootItems.get(0));
         } else if (root instanceof CompositeItem) {
             query.getModel().getQueryTree().setRoot(normalizeComposite(language, indexFacts, (CompositeItem) root));
         }
         return query;
     }
-
+    
     private Item normalizeComposite(Language language, IndexFacts.Session indexFacts, CompositeItem item) {
         if (item instanceof PhraseItem)  {
             return normalizePhrase(language, indexFacts, (PhraseItem) item);

@@ -25,6 +25,7 @@ import java.util.*;
  * @author tonytv
  */
 public class MockApplicationPackage implements ApplicationPackage {
+
     public static final String MUSIC_SEARCHDEFINITION = createSearchDefinition("music", "foo");
     public static final String BOOK_SEARCHDEFINITION = createSearchDefinition("book", "bar");
 

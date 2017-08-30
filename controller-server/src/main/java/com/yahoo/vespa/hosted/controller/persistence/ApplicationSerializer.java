@@ -241,14 +241,7 @@ public class ApplicationSerializer {
     
     private List<JobStatus> jobStatusListFromSlime(Inspector array) {
         List<JobStatus> jobStatusList = new ArrayList<>();
-        array.traverse((ArrayTraverser) (int i, Inspector item) -> {
-            // TODO: This zone has been removed. Remove after Aug 2017
-            String jobId = item.field(jobTypeField).asString();
-            if ("production-ap-aue-1".equals(jobId)) {
-                return;
-            }
-            jobStatusList.add(jobStatusFromSlime(item));
-        });
+        array.traverse((ArrayTraverser) (int i, Inspector item) -> jobStatusList.add(jobStatusFromSlime(item)));
         return jobStatusList;
     }
     

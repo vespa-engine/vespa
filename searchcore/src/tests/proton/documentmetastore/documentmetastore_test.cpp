@@ -2017,6 +2017,53 @@ TEST("require that document sizes are saved")
     TEST_DO(assertSize(dms4, 3, 1));
 }
 
+namespace {
+
+void
+assertLidGidFound(uint32_t lid, DocumentMetaStore &dms)
+{
+    GlobalId gid = createGid(lid);
+    EXPECT_TRUE(assertLid(lid, gid, dms));
+    EXPECT_TRUE(assertGid(gid, lid, dms));
+    EXPECT_TRUE(dms.validLid(lid));
+}
+
+void
+assertLidGidNotFound(uint32_t lid, DocumentMetaStore &dms)
+{
+    GlobalId gid = createGid(lid);
+    uint32_t resultLid;
+    GlobalId resultGid;
+    EXPECT_FALSE(dms.getLid(gid, resultLid));
+    EXPECT_FALSE(dms.getGid(lid, resultGid));
+    EXPECT_FALSE(dms.validLid(lid));
+}
+
+}
+
+TEST("require that multiple lids can be removed with removeBatch()")
+{
+    DocumentMetaStore dms(createBucketDB());
+    dms.constructFreeList();
+    TEST_DO(addLid(dms, 1));
+    TEST_DO(addLid(dms, 2));
+    TEST_DO(addLid(dms, 3));
+    TEST_DO(addLid(dms, 4));
+
+    TEST_DO(assertLidGidFound(1, dms));
+    TEST_DO(assertLidGidFound(2, dms));
+    TEST_DO(assertLidGidFound(3, dms));
+    TEST_DO(assertLidGidFound(4, dms));
+
+    dms.removeBatch({1, 3}, 5);
+    dms.removeBatchComplete({1, 3});
+
+    TEST_DO(assertLidGidNotFound(1, dms));
+    TEST_DO(assertLidGidFound(2, dms));
+    TEST_DO(assertLidGidNotFound(3, dms));
+    TEST_DO(assertLidGidFound(4, dms));
+}
+
 }
 
 TEST_MAIN()

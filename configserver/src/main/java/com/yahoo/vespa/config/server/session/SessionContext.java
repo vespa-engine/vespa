@@ -12,8 +12,7 @@ import java.io.File;
 /**
  * The dependencies needed for a local session to be edited and prepared.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class SessionContext {
 

@@ -44,6 +44,11 @@
   "wantToDeprovision" : true,
   "history": [
     {
+      "event": "provisioned",
+      "at": 123,
+      "agent": "system"
+    },
+    {
       "event": "readied",
       "at": 123,
       "agent": "system"    

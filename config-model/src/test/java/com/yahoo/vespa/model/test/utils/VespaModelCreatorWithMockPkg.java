@@ -6,8 +6,8 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.application.provider.SchemaValidators;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.application.provider.SchemaValidator;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.Validation;
@@ -56,14 +56,15 @@ public class VespaModelCreatorWithMockPkg {
             VespaModel model = new VespaModel(configModelRegistry, deployState);
             Version vespaVersion = new Version(6);
             if (validate) {
+                SchemaValidators validators = new SchemaValidators(vespaVersion);
                 try {
                     if (appPkg.getHosts() != null) {
-                        SchemaValidator.createTestValidatorHosts(vespaVersion).validate(appPkg.getHosts());
+                        validators.hostsXmlValidator().validate(appPkg.getHosts());
                     }
                     if (appPkg.getDeployment().isPresent()) {
-                        SchemaValidator.createTestValidatorDeployment(vespaVersion).validate(appPkg.getDeployment().get());
+                        validators.deploymentXmlValidator().validate(appPkg.getDeployment().get());
                     }
-                    SchemaValidator.createTestValidatorServices(vespaVersion).validate(appPkg.getServices());
+                    validators.servicesXmlValidator().validate(appPkg.getServices());
                 } catch (Exception e) {
                     System.err.println(e.getClass());
                     throw e instanceof RuntimeException ? (RuntimeException) e : new RuntimeException(e);

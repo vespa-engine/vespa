@@ -242,9 +242,10 @@ public class ApplicationDeployTest {
     public FilesApplicationPackage createAppPkg(String appPkg, boolean validateXml) throws IOException {
         final FilesApplicationPackage filesApplicationPackage = FilesApplicationPackage.fromFile(new File(appPkg));
         if (validateXml) {
-            ApplicationPackageXmlFilesValidator validator = ApplicationPackageXmlFilesValidator.createTestXmlValidator(new File(appPkg), new Version(6));
+            ApplicationPackageXmlFilesValidator validator =
+                    ApplicationPackageXmlFilesValidator.create(new File(appPkg), new Version(6));
             validator.checkApplication();
-            ApplicationPackageXmlFilesValidator.checkIncludedDirs(filesApplicationPackage, new Version(6));
+            validator.checkIncludedDirs(filesApplicationPackage);
         }
         return filesApplicationPackage;
     }

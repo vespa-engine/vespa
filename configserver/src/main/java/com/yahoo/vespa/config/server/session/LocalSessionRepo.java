@@ -18,7 +18,6 @@ import java.util.logging.Logger;
  * File-based session repository for LocalSessions. Contains state for the local instance of the configserver.
  *
  * @author lulf
- * @since 5.1
  */
 public class LocalSessionRepo extends SessionRepo<LocalSession> {
 

@@ -14,6 +14,6 @@ import java.io.Reader;
 public class SimpleApplicationValidator {
 
     public static void checkServices(Reader reader, Version version) throws IOException {
-        SchemaValidator.createTestValidatorServices(version).validate(reader);
+        new SchemaValidators(version, new BaseDeployLogger()).servicesXmlValidator().validate(reader);
     }
 }

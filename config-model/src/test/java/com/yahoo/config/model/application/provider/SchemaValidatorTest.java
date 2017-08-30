@@ -65,6 +65,6 @@ public class SchemaValidatorTest {
     }
 
     private SchemaValidator createValidator() throws IOException {
-        return SchemaValidator.createTestValidatorServices(new Version(6));
+        return new SchemaValidators(new Version(6)).servicesXmlValidator();
     }
 }

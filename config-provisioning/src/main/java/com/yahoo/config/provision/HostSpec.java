@@ -5,11 +5,12 @@ import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
  * A specification of a host and its role.
- * The identity of a host is determined by its name.
+ * Equality and order is determined by the host name.
  *
  * @author hmusum
  */
@@ -19,7 +20,7 @@ public class HostSpec implements Comparable<HostSpec> {
     private final String hostname;
 
     /** Aliases of this host */
-    private final List<String> aliases;
+    private final ImmutableList<String> aliases;
 
     /** The current membership role of this host in the cluster it belongs to */
     private final Optional<ClusterMembership> membership;
@@ -69,10 +70,11 @@ public class HostSpec implements Comparable<HostSpec> {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if ( ! (o instanceof HostSpec)) return false;
-        HostSpec other = (HostSpec) o;
-        return this.hostname().equals(other.hostname());
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if ( ! (other instanceof HostSpec)) return false;
+
+        return ((HostSpec)other).hostname.equals(this.hostname);
     }
 
     @Override

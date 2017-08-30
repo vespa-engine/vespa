@@ -591,7 +591,7 @@ DocumentMetaStore::updateMetaData(DocId lid,
 }
 
 bool
-DocumentMetaStore::remove(DocId lid)
+DocumentMetaStore::remove(DocId lid, BucketDBOwner::Guard &bucketGuard)
 {
     if (!validLid(lid)) {
         return false;
@@ -606,13 +606,21 @@ DocumentMetaStore::remove(DocId lid)
                         lid, gid.toString().c_str()));
     }
     _lidAlloc.unregisterLid(lid);
-    incGeneration();
     RawDocumentMetaData &oldMetaData = _metaDataStore[lid];
-    _bucketDB->takeGuard()->remove(oldMetaData.getGid(),
-                     oldMetaData.getBucketId().stripUnused(),
-                     oldMetaData.getTimestamp(), oldMetaData.getDocSize(),
-                     _subDbType);
+    bucketGuard->remove(oldMetaData.getGid(),
+                        oldMetaData.getBucketId().stripUnused(),
+                        oldMetaData.getTimestamp(), oldMetaData.getDocSize(),
+                        _subDbType);
     return true;
+}
+
+bool
+DocumentMetaStore::remove(DocId lid)
+{
+    BucketDBOwner::Guard bucketGuard = _bucketDB->takeGuard();
+    bool result = remove(lid, bucketGuard);
+    incGeneration();
+    return result;
 }
 
 void
@@ -649,14 +657,16 @@ DocumentMetaStore::move(DocId fromLid, DocId toLid)
 void
 DocumentMetaStore::removeBatch(const std::vector<DocId> &lidsToRemove, const uint32_t docIdLimit)
 {
+    BucketDBOwner::Guard bucketGuard = _bucketDB->takeGuard();
     for (const auto &lid : lidsToRemove) {
         assert(lid > 0 && lid < docIdLimit);
         (void) docIdLimit;
 
-        bool removed = remove(lid);
+        bool removed = remove(lid, bucketGuard);
         assert(removed);
         (void) removed;
     }
+    incGeneration();
 }
 
 void

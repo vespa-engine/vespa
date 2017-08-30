@@ -57,6 +57,7 @@ public:
     Cursor &addDouble(double d) override;
     Cursor &addString(Memory str) override;
     Cursor &addData(Memory data) override;
+    Cursor &addData(ExternalMemory::UP data) override;
     Cursor &addArray() override;
     Cursor &addObject() override;
 
@@ -66,6 +67,7 @@ public:
     Cursor &setDouble(Symbol sym, double d) override;
     Cursor &setString(Symbol sym, Memory str) override;
     Cursor &setData(Symbol sym, Memory data) override;
+    Cursor &setData(Symbol sym, ExternalMemory::UP data) override;
     Cursor &setArray(Symbol sym) override;
     Cursor &setObject(Symbol sym) override;
 
@@ -75,6 +77,7 @@ public:
     Cursor &setDouble(Memory name, double d) override;
     Cursor &setString(Memory name, Memory str) override;
     Cursor &setData(Memory name, Memory str) override;
+    Cursor &setData(Memory name, ExternalMemory::UP data) override;
     Cursor &setArray(Memory name) override;
     Cursor &setObject(Memory name) override;
 

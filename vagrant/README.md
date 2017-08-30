@@ -25,4 +25,4 @@ This is needed in order to compile and run tests fast on the local file system i
 
 
 ## Build C++ modules
-Please follow the instructions described [here](../README.md).
+Please follow the instructions described [here](../README.md#build-c-modules).

@@ -9,8 +9,7 @@ import java.util.List;
 /**
  * The applications of a tenant
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public interface TenantApplications {
 

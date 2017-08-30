@@ -631,10 +631,11 @@ public class FilesApplicationPackage implements ApplicationPackage {
 
     @Override
     public void validateXML(Optional<Version> vespaVersion) throws IOException {
-        com.yahoo.component.Version modelVersion = vespaVersion.map(v -> new com.yahoo.component.Version(vespaVersion.toString())).orElse(Vtag.currentVersion);
-        ApplicationPackageXmlFilesValidator xmlFilesValidator = ApplicationPackageXmlFilesValidator.createDefaultXMLValidator(appDir, modelVersion);
-        xmlFilesValidator.checkApplication();
-        ApplicationPackageXmlFilesValidator.checkIncludedDirs(this, modelVersion);
+        com.yahoo.component.Version modelVersion =
+                vespaVersion.map(v -> new com.yahoo.component.Version(vespaVersion.toString())).orElse(Vtag.currentVersion);
+        ApplicationPackageXmlFilesValidator validator = ApplicationPackageXmlFilesValidator.create(appDir, modelVersion);
+        validator.checkApplication();
+        validator.checkIncludedDirs(this);
     }
 
     @Override

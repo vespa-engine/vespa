@@ -13,7 +13,7 @@ import java.util.*;
  * A registry of model factories. Allows querying for a specific version of a {@link ModelFactory} or
  * simply returning all of them. Keeps track of the latest {@link com.yahoo.config.provision.Version} supported.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class ModelFactoryRegistry {
 

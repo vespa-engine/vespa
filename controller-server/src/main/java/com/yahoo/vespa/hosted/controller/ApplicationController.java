@@ -17,12 +17,15 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.GitRevision;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ScrewdriverBuildJob;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerClient;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordId;
@@ -216,25 +219,37 @@ public class ApplicationController {
 
     /** Deploys an application. If the application does not exist it is created. */
     // TODO: Get rid of the options arg
-    public ActivateResult deployApplication(ApplicationId applicationId, com.yahoo.config.provision.Zone zone,
+    public ActivateResult deployApplication(ApplicationId applicationId, Zone zone,
                                             ApplicationPackage applicationPackage, DeployOptions options) {
         try (Lock lock = lock(applicationId)) {
             // Determine what we are doing
             Application application = get(applicationId).orElse(new Application(applicationId));
-            DeploymentJobs.JobType jobType = DeploymentJobs.JobType.from(controller.zoneRegistry().system(), zone);
-            Version version = decideVersion(application, zone, options);
-            ApplicationRevision revision = toApplicationPackageRevision(applicationPackage, options.screwdriverBuildJob);
+
+            // Decide version to deploy, if applicable.
+            Version version;
+            if (options.deployCurrentVersion)
+                version = application.currentVersion(controller, zone);
+            else if (application.deploymentJobs().isSelfTriggering()) // legacy mode: let the client decide
+                version = options.vespaVersion.map(Version::new).orElse(controller.systemVersion());
+            else if ( ! application.deploying().isPresent() && ! zone.environment().isManuallyDeployed())
+                return unexpectedDeployment(applicationId, zone, applicationPackage);
+            else
+                version = application.currentDeployVersion(controller, zone);
 
             // Ensure that the deploying change is tested
             // FIXME: For now only for non-self-triggering applications - VESPA-8418
-            if ( ! application.deploymentJobs().isSelfTriggering() && !zone.environment().isManuallyDeployed() && 
-                 ! application.deploymentJobs().isDeployableTo(zone.environment(), application.deploying())) {
+            if ( ! application.deploymentJobs().isSelfTriggering() && 
+                 ! zone.environment().isManuallyDeployed() && 
+                 ! application.deploymentJobs().isDeployableTo(zone.environment(), application.deploying()))
                 throw new IllegalArgumentException("Rejecting deployment of " + application + " to " + zone +
-                                                   " as pending " + application.deploying().get() + " is untested");
-            }
+                                                   " as pending " + application.deploying().get() +
+                                                   " is untested");
+
+            DeploymentJobs.JobType jobType = DeploymentJobs.JobType.from(controller.zoneRegistry().system(), zone);
+            ApplicationRevision revision = toApplicationPackageRevision(applicationPackage, options.screwdriverBuildJob);
 
             if( ! options.deployCurrentVersion) {
-                // Add missing information to application (unless we're deplying the previous version (initial staging step)
+                // Add missing information to application (unless we're deploying the previous version (initial staging step)
                 application = application.with(applicationPackage.deploymentSpec());
                 application = application.with(applicationPackage.validationOverrides());
                 if (options.screwdriverBuildJob.isPresent() && options.screwdriverBuildJob.get().screwdriverId != null)
@@ -273,21 +288,17 @@ public class ApplicationController {
             return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.messages(), preparedApplication.prepareResponse());
         }
     }
-    
-    private Version decideVersion(Application application, Zone zone, DeployOptions options) {
-        if (options.deployCurrentVersion)
-            return application.currentVersion(controller, zone);
 
-        if (application.deploymentJobs().isSelfTriggering()) // legacy mode: let the client decide
-            return options.vespaVersion.map(Version::new).orElse(controller.systemVersion());
-
-        if ( ! application.deploying().isPresent() && ! zone.environment().isManuallyDeployed())
-            throw new IllegalArgumentException("Rejecting deployment of " + application + " to " + zone + 
-                                               " as a deployment is not currently expected");
-
-        return application.currentDeployVersion(controller, zone);
+    private ActivateResult unexpectedDeployment(ApplicationId applicationId, Zone zone, ApplicationPackage applicationPackage) {
+        Log logEntry = new Log();
+        logEntry.level = "WARNING";
+        logEntry.time = clock.instant().toEpochMilli();
+        logEntry.message = "Ignoring deployment of " + get(applicationId) + " to " + zone + " as a deployment is not currently expected";
+        PrepareResponse prepareResponse = new PrepareResponse();
+        prepareResponse.configChangeActions = new ConfigChangeActions(Collections.emptyList(), Collections.emptyList());
+        return new ActivateResult(new RevisionId(applicationPackage.hash()), Collections.singletonList(logEntry), prepareResponse);
     }
-    
+
     private Application deleteRemovedDeployments(Application application) {
         List<Deployment> deploymentsToRemove = application.deployments().values().stream()
                 .filter(deployment -> deployment.zone().environment() == Environment.prod)

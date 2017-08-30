@@ -68,6 +68,7 @@ vespa_define_module(
     src/tests/simple_thread_bundle
     src/tests/slaveproc
     src/tests/slime
+    src/tests/slime/external_data_value
     src/tests/slime/summary-feature-benchmark
     src/tests/stash
     src/tests/stllike

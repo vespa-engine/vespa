@@ -28,6 +28,7 @@
 #include "type.h"
 #include "value.h"
 #include "value_factory.h"
+#include "external_data_value_factory.h"
 #include <vespa/vespalib/data/input_reader.h>
 #include <vespa/vespalib/data/output_writer.h>
 #include <vespa/vespalib/data/simple_buffer.h>
@@ -146,6 +147,9 @@ public:
     }
     Cursor &setData(const Memory& data) {
         return _root.set(slime::DataValueFactory(data));
+    }
+    Cursor &setData(slime::ExternalMemory::UP data) {
+        return _root.set(slime::ExternalDataValueFactory(std::move(data)));
     }
     Cursor &setArray() {
         return _root.set(slime::ArrayValueFactory(*_names));

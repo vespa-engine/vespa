@@ -6,8 +6,7 @@ import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.NodeFlavors;
-import com.yahoo.config.provision.ProvisionInfo;
-import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
@@ -31,8 +30,7 @@ import java.util.concurrent.TimeUnit;
  * Zookeeper client for a specific session. Can be used to read and write session status
  * and create and get prepare and active barrier.
  * 
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class SessionZooKeeperClient {
 
@@ -189,10 +187,9 @@ public class SessionZooKeeperClient {
         return rootPath.append(CREATE_TIME_PATH).getAbsolute();
     }
 
-    ProvisionInfo getProvisionInfo() {
-        return loadApplicationPackage().getProvisionInfoMap().values().stream()
-                .reduce((infoA, infoB) -> infoA.merge(infoB))
-                .orElseThrow(() -> new IllegalStateException("Trying to read provision info, but no provision info exists"));
+    AllocatedHosts getAllocatedHosts() {
+        return loadApplicationPackage().getAllocatedHosts()
+                                       .orElseThrow(() -> new IllegalStateException("Allocated hosts does not exists"));
     }
 
     public ZooKeeperDeployer createDeployer(DeployLogger logger) {

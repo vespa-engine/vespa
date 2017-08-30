@@ -20,7 +20,7 @@ import java.io.IOException;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class StaticProvisionerTest {
 
@@ -30,7 +30,7 @@ public class StaticProvisionerTest {
         InMemoryProvisioner inMemoryHostProvisioner = new InMemoryProvisioner(false, "host1.yahoo.com", "host2.yahoo.com", "host3.yahoo.com", "host4.yahoo.com");
         VespaModel firstModel = createModel(app, inMemoryHostProvisioner);
 
-        StaticProvisioner staticProvisioner = new StaticProvisioner(firstModel.getProvisionInfo().get());
+        StaticProvisioner staticProvisioner = new StaticProvisioner(firstModel.allocatedHosts());
         VespaModel secondModel = createModel(app, staticProvisioner);
 
         assertModelConfig(firstModel, secondModel);

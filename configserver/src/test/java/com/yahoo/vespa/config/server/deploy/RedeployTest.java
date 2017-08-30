@@ -47,7 +47,7 @@ public class RedeployTest {
     @Test
     public void testNoRedeploy() {
         List<ModelFactory> modelFactories = new ArrayList<>();
-        modelFactories.add(DeployTester.createDefaultModelFactory(Clock.systemUTC()));
+        modelFactories.add(DeployTester.createModelFactory(Clock.systemUTC()));
         modelFactories.add(DeployTester.createFailingModelFactory(Version.fromIntValues(1, 0, 0)));
         DeployTester tester = new DeployTester("ignored/app/path", modelFactories);
         ApplicationId id = ApplicationId.from(TenantName.from("default"),

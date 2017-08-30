@@ -12,6 +12,7 @@ import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Version;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -21,6 +22,7 @@ import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.provision.ProvisionerAdapter;
+import com.yahoo.vespa.config.server.provision.StaticProvisioner;
 import com.yahoo.vespa.config.server.session.FileDistributionFactory;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.SessionContext;
@@ -60,7 +62,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                  PrepareParams params,
                                  Optional<ApplicationSet> currentActiveApplicationSet,
                                  ModelContext.Properties properties) {
-        super(modelFactoryRegistry);
+        super(modelFactoryRegistry, properties.hostedVespa());
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.configDefinitionRepo = configDefinitionRepo;
 
@@ -79,14 +81,17 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     protected PreparedModelResult buildModelVersion(ModelFactory modelFactory, 
                                                     ApplicationPackage applicationPackage,
                                                     ApplicationId applicationId, 
-                                                    com.yahoo.component.Version wantedNodeVespaVersion, Instant now) {
+                                                    com.yahoo.component.Version wantedNodeVespaVersion,
+                                                    Optional<AllocatedHosts> allocatedHosts,
+                                                    Instant now) {
         Version modelVersion = modelFactory.getVersion();
         log.log(LogLevel.DEBUG, "Building model " + modelVersion + " for " + applicationId);
         FileDistributionProvider fileDistributionProvider = fileDistributionFactory.createProvider(
                 context.getServerDBSessionDir(),
                 applicationId);
 
-        Optional<HostProvisioner> hostProvisioner = createHostProvisionerAdapter(properties);
+        // Use empty on non-hosted systems, use already allocated hosts if available, create connection to a host provisioner otherwise
+        Optional<HostProvisioner> hostProvisioner = createHostProvisioner(allocatedHosts);        
         Optional<Model> previousModel = currentActiveApplicationSet
                 .map(set -> set.getForVersionOrLatest(Optional.of(modelVersion), now).getModel());
         ModelContext modelContext = new ModelContextImpl(
@@ -109,6 +114,24 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         return new PreparedModelsBuilder.PreparedModelResult(modelVersion, result.getModel(), fileDistributionProvider, result.getConfigChangeActions());
     }
 
+    // This method is an excellent demonstration of what happens when one is too liberal with Optional   
+    // -bratseth, who had to write the below  :-\
+    private Optional<HostProvisioner> createHostProvisioner(Optional<AllocatedHosts> allocatedHosts) {
+        Optional<HostProvisioner> nodeRepositoryProvisioner = createNodeRepositoryProvisioner(properties);
+        if ( ! allocatedHosts.isPresent()) return nodeRepositoryProvisioner;
+        
+        Optional<HostProvisioner> staticProvisioner = createStaticProvisioner(allocatedHosts);
+        if ( ! staticProvisioner.isPresent()) return Optional.empty(); // Since we have hosts allocated this means we are on non-hosted
+
+        // The following option should not be possible, but since there is a right action for it we can take it
+        if ( ! nodeRepositoryProvisioner.isPresent())
+            return Optional.of(new StaticProvisioner(allocatedHosts.get()));
+            
+        // Nodes are already allocated by a model and we should use them unless this model requests hosts from a
+        // previously unallocated cluster. This allows future models to stop allocate certain clusters.
+        return Optional.of(new StaticProvisioner(allocatedHosts.get(), nodeRepositoryProvisioner.get()));
+    }
+
     private Optional<File> getAppDir(ApplicationPackage applicationPackage) {
         try {
             return applicationPackage instanceof FilesApplicationPackage ?
@@ -124,7 +147,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 .collect(Collectors.toList()));
     }
 
-    private Optional<HostProvisioner> createHostProvisionerAdapter(ModelContext.Properties properties) {
+    private Optional<HostProvisioner> createNodeRepositoryProvisioner(ModelContext.Properties properties) {
         return hostProvisionerProvider.getHostProvisioner().map(
                 provisioner -> new ProvisionerAdapter(provisioner, properties.applicationId()));
     }

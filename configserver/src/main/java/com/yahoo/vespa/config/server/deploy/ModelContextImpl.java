@@ -18,7 +18,7 @@ import java.util.Set;
 /**
  * Implementation of {@link ModelContext} for configserver.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class ModelContextImpl implements ModelContext {
 
@@ -83,6 +83,11 @@ public class ModelContextImpl implements ModelContext {
         return permanentApplicationPackage;
     }
 
+    /** 
+     * Returns the host provisioner to use, or empty to use the default provisioner, 
+     * creating hosts from the application package defined hosts 
+     */
+    // TODO: Don't allow empty here but create the right provisioner when this is set up instead
     @Override
     public Optional<HostProvisioner> hostProvisioner() {
         return hostProvisioner;
