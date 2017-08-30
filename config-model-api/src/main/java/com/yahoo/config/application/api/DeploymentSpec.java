@@ -73,33 +73,6 @@ public class DeploymentSpec {
     }
 
     /** Throw an IllegalArgumentException if any production zone is declared multiple times */
-    private static void validateZonesOld(List<Step> steps) {
-        // Collect both non-parallel and parallel zones
-        List<DeclaredZone> zones = new ArrayList<>();
-        steps.stream()
-                .filter(step -> step instanceof DeclaredZone)
-                .map(DeclaredZone.class::cast)
-                .forEach(zones::add);
-        steps.stream()
-                .filter(step -> step instanceof ParallelZones)
-                .map(ParallelZones.class::cast)
-                .flatMap(parallelZones -> parallelZones.zones().stream())
-                .forEach(zones::add);
-
-
-        // Detect duplicates
-        Set<DeclaredZone> unique = new HashSet<>();
-        List<RegionName> duplicates = zones.stream()
-                .filter(z -> z.environment() == Environment.prod && !unique.add(z))
-                .map(z -> z.region().get())
-                .collect(Collectors.toList());
-        if (!duplicates.isEmpty()) {
-            throw new IllegalArgumentException("All declared regions must be unique, but found these " +
-                                                       "duplicated regions: " + duplicates);
-        }
-    }
-
-    /** Throw an IllegalArgumentException if any production zone is declared multiple times */
     private void validateZones(List<Step> steps) {
         Set<DeclaredZone> zones = new HashSet<>();
 
