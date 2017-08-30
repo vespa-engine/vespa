@@ -17,7 +17,7 @@ import java.util.Set;
  *
  *  Where name designates a NameProvider( either a phase or a set of searchers).
  *
- * @author  tonytv
+ * @author Tony Vaagenes
 */
 abstract class Node {
     //How this node should be prioritized if its compared with a node of the same class, see class priority.

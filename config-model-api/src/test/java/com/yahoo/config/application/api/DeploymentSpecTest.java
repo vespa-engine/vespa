@@ -265,10 +265,6 @@ public class DeploymentSpecTest {
                         "      <region active='true'>us-central-1</region>\n" +
                         "      <region active='true'>us-east-3</region>\n" +
                         "    </parallel>\n" +
-                        "    <parallel>\n" +
-                        "      <region active='true'>eu-west-1</region>\n" +
-                        "      <region active='true'>us-central-1</region>\n" +
-                        "    </parallel>\n" +
                         "  </prod>\n" +
                         "</deployment>"
         );
@@ -276,8 +272,7 @@ public class DeploymentSpecTest {
             DeploymentSpec.fromXml(r);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("All declared regions must be unique, but found these duplicated regions: " +
-                                 "[us-west-1, us-central-1]", e.getMessage());
+            assertEquals("prod.us-west-1 is listed twice in deployment.xml", e.getMessage());
         }
     }
 

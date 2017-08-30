@@ -30,6 +30,7 @@ import org.apache.http.params.HttpParams;
  * Synchronous http client using Apache commons.
  */
 public class ApacheHttpInstance implements SyncHttpClient {
+
     private static final Logger log = Logger.getLogger(ApacheHttpInstance.class.getName());
     DefaultHttpClient client;
 
@@ -128,4 +129,5 @@ public class ApacheHttpInstance implements SyncHttpClient {
     public void close() {
         client.getConnectionManager().shutdown();
     }
+
 }

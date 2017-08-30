@@ -4,9 +4,10 @@ package com.yahoo.component.chain.dependencies.ordering;
 /**
  * A node containing nodes providing a given name.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 abstract class NameProvider extends Node {
+
     final String name;
 
     public NameProvider(String name, int priority) {
@@ -24,6 +25,7 @@ abstract class NameProvider extends Node {
     protected String dotName() {
         return name;
     }
+
 }
 
 

@@ -5,9 +5,10 @@ package com.yahoo.collections;
  * Utility class which is useful when implementing <code>Comparable</code> and one needs to
  * compare byte arrays as instance variables.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class ByteArrayComparator {
+
     /**
      * Compare the arguments. Shorter arrays are always considered
      * smaller than longer arrays. For arrays of equal lengths, the elements
@@ -29,17 +30,18 @@ public class ByteArrayComparator {
             return 1;
         }
 
-        //lengths are equal, compare contents
+        // lengths are equal, compare contents
         for (int i = 0; i < first.length; i++) {
             if (first[i] < second[i]) {
                 return -1;
             } else if (first[i] > second[i]) {
                 return 1;
             }
-            //values at index i are equal, continue...
+            // values at index i are equal, continue...
         }
 
-        //we haven't returned yet; contents must be equal:
+        // we haven't returned yet; contents must be equal:
         return 0;
     }
+
 }

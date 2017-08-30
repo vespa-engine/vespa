@@ -9,8 +9,8 @@ import net.jcip.annotations.Immutable;
 /**
  * Describes how a chained component should be created.
  *
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
- * @author tonytv
+ * @author Arne Bergene Fossaa
+ * @author Tony Vaagenes
  */
 @Immutable
 public class ChainedComponentModel extends ComponentModel {

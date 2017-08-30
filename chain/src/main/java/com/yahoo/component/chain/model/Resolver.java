@@ -6,8 +6,10 @@ import com.yahoo.component.ComponentSpecification;
 /**
  * Maps component specifications to matching instances.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public interface Resolver<T> {
+
     T resolve(ComponentSpecification componentSpecification);
+
 }

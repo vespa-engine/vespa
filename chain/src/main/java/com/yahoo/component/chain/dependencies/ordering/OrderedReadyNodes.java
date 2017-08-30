@@ -8,9 +8,10 @@ import java.util.PriorityQueue;
 /**
  * Ensures that Searchers are ordered deterministically.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 class OrderedReadyNodes {
+
     private class PriorityComparator implements Comparator<Node> {
         @Override
         public int compare(Node lhs, Node rhs) {
@@ -22,8 +23,7 @@ class OrderedReadyNodes {
         }
     }
 
-    final private PriorityQueue<Node> nodes =
-            new PriorityQueue<>(10, new PriorityComparator());
+    final private PriorityQueue<Node> nodes = new PriorityQueue<>(10, new PriorityComparator());
 
     public void add(Node node) {
         nodes.add(node);
@@ -36,4 +36,5 @@ class OrderedReadyNodes {
     public boolean isEmpty() {
         return nodes.isEmpty();
     }
+
 }

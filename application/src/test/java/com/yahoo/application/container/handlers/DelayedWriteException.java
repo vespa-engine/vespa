@@ -2,7 +2,7 @@
 package com.yahoo.application.container.handlers;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class DelayedWriteException extends RuntimeException {
 }

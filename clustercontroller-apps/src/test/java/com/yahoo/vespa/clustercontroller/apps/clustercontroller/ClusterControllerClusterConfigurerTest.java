@@ -79,4 +79,5 @@ public class ClusterControllerClusterConfigurerTest extends TestCase {
             assertEquals("Must set zookeeper server with multiple fleetcontrollers", e.getMessage());
         }
     }
+
 }

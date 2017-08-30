@@ -4,7 +4,7 @@ package com.yahoo.component.chain.dependencies.ordering;
 /**
  * Thrown if a searcher provides the same name as a phase.
  *
- * @author  tonytv
+ * @author Tony Vaagenes
  */
 @SuppressWarnings("serial")
 public class ConflictingNodeTypeException extends RuntimeException {

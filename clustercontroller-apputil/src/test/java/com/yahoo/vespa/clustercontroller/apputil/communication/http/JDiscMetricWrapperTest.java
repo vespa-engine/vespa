@@ -10,6 +10,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class JDiscMetricWrapperTest {
+
     class MetricImpl implements Metric {
         int calls = 0;
         @Override
@@ -41,4 +42,5 @@ public class JDiscMetricWrapperTest {
         assertEquals(5, impl2.calls);
 
     }
+
 }

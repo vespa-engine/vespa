@@ -8,10 +8,10 @@ import java.io.IOException;
 import java.io.Writer;
 
 /**
- *
  * @author Christian Andersen
  */
 public class MockRenderer extends Renderer {
+
     public MockRenderer() {
     }
 
@@ -29,4 +29,5 @@ public class MockRenderer extends Renderer {
     protected void render(Writer writer, Result result) throws IOException {
         writer.write("<mock hits=\"" + result.hits().size() + "\" />");
     }
+
 }

@@ -8,11 +8,13 @@ import java.lang.annotation.*;
  * Other components can then mark themselves as "before" and "after" the string provided here,
  * to impose constraints on ordering.
  *
- * @author  tonytv
+ * @author Tony Vaagenes
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @Inherited
 public @interface Provides {
-    public abstract String[] value() default {};
+
+    String[] value() default {};
+
 }

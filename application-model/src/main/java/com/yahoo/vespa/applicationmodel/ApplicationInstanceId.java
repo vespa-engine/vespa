@@ -10,6 +10,7 @@ import java.util.Objects;
  */
 // TODO: Remove this and use ApplicationName/InstanceName instead (if you need it for the JSON stuff move it to that layer and don't let it leak)
 public class ApplicationInstanceId {
+
     private final String id;
 
     public ApplicationInstanceId(String id) {
@@ -41,4 +42,5 @@ public class ApplicationInstanceId {
     public int hashCode() {
         return Objects.hash(id);
     }
+
 }

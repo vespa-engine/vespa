@@ -11,10 +11,10 @@ import com.yahoo.jdisc.service.AbstractClientProvider;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- *
  * @author Christian Andersen
  */
 public class MockClient extends AbstractClientProvider {
+
     private final AtomicInteger counter = new AtomicInteger();
 
     @Override
@@ -40,4 +40,5 @@ public class MockClient extends AbstractClientProvider {
             // Ignored
         }
     };
+
 }

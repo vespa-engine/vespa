@@ -19,8 +19,7 @@ import java.util.List;
 /**
  * Builds the config model for the standalone config server.
  *
- * @author lulf
- * @since 5.16
+ * @author Ulf Lilleengen
  */
 public class ConfigServerContainerModelBuilder extends ContainerModelBuilder {
 

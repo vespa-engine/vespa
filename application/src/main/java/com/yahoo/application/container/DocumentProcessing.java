@@ -20,10 +20,11 @@ import java.util.Map;
 /**
  * For doing document processing with {@link JDisc}.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 @Beta
 public final class DocumentProcessing {
+
     private final DocumentProcessingHandler handler;
     private final Map<String, DocumentType> documentTypes;
 

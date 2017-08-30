@@ -15,8 +15,8 @@ import java.util.Set;
  *
  * @see Request
  * @see Response
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Einar M R Rosenvinge
+ * @author Simon Thoresen
  */
 @NotThreadSafe
 @Beta
@@ -98,10 +98,6 @@ public class Headers implements Map<String, List<String>> {
         return h.hashCode();
     }
 
-
-    /*
-    CONVENIENCE METHODS:
-     */
 
     /**
      * <p>Convenience method for checking whether or not a named header contains a specific value. If the named header
@@ -223,4 +219,5 @@ public class Headers implements Map<String, List<String>> {
     public List<Entry<String, String>> entries() {
         return h.entries();
     }
+
 }

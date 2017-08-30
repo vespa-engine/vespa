@@ -13,8 +13,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
-* @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
-*/
+ * @author Einar M R Rosenvinge
+ */
 public class DelayedThrowingInWriteRequestHandler extends AbstractRequestHandler {
     private ExecutorService responseExecutor = Executors.newSingleThreadExecutor();
 

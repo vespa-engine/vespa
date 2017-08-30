@@ -46,4 +46,5 @@ public class HostName implements Comparable<HostName> {
     public int compareTo(HostName o) {
         return id.compareTo(o.id);
     }
+
 }
