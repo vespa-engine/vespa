@@ -276,8 +276,7 @@ public class DeploymentSpecTest {
             DeploymentSpec.fromXml(r);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("All declared regions must be unique, but found these duplicated regions: " +
-                                 "[us-west-1, us-central-1]", e.getMessage());
+            assertEquals("prod.us-west-1 is listed twice in deployment.xml", e.getMessage());
         }
     }
 

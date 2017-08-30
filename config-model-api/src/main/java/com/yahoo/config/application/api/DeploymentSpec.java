@@ -73,7 +73,7 @@ public class DeploymentSpec {
     }
 
     /** Throw an IllegalArgumentException if any production zone is declared multiple times */
-    private static void validateZones(List<Step> steps) {
+    private static void validateZonesOld(List<Step> steps) {
         // Collect both non-parallel and parallel zones
         List<DeclaredZone> zones = new ArrayList<>();
         steps.stream()
@@ -98,7 +98,25 @@ public class DeploymentSpec {
                                                        "duplicated regions: " + duplicates);
         }
     }
+
+    /** Throw an IllegalArgumentException if any production zone is declared multiple times */
+    private void validateZones(List<Step> steps) {
+        Set<DeclaredZone> zones = new HashSet<>();
+
+        steps.stream().filter(step -> step instanceof DeclaredZone)
+                      .map(DeclaredZone.class::cast)
+                      .forEach(zone -> ensureUnique(zone, zones));
+        steps.stream().filter(step -> step instanceof ParallelZones)
+                      .map(ParallelZones.class::cast)
+                      .flatMap(parallelZones -> parallelZones.zones().stream())
+                      .forEach(zone -> ensureUnique(zone, zones));
+    }
     
+    private void ensureUnique(DeclaredZone zone, Set<DeclaredZone> zones) {
+        if ( ! zones.add(zone))
+            throw new IllegalArgumentException(zone + " is listed twice in deployment.xml");
+    }
+
     /** Adds missing required steps and reorders steps to a permissible order */
     private static List<Step> completeSteps(List<Step> steps) {
         // Ensure no duplicate deployments to the same zone
@@ -398,6 +416,11 @@ public class DeploymentSpec {
             if (this.environment != other.environment) return false;
             if ( ! this.region.equals(other.region())) return false;
             return true;
+        }
+        
+        @Override
+        public String toString() {
+            return environment + ( region.isPresent() ? "." + region.get() : "");
         }
 
     }
