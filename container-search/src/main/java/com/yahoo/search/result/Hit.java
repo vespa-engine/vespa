@@ -101,8 +101,11 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     public static final String SDDOCNAME_FIELD = "sddocname";
 
     private Map<String,Object> getFieldMap() {
+        return getFieldMap(16);
+    }
+    private Map<String,Object> getFieldMap(int minSize) {
         if (fields == null) {
-            fields = new LinkedHashMap<>(16);
+            fields = new LinkedHashMap<>(minSize);
         }
         return fields;
     }
@@ -446,6 +449,14 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      **/
     //TODO Should it be deprecated ?
     public final Map<String,Object> fields() { return getUnmodifiableFieldMap(); }
+
+    /**
+     * Will preallocate in order to avoid resizing.
+     * @param minSize
+     */
+    public void reserve(int minSize) {
+        getFieldMap(minSize);
+    }
 
     /**
      * Fields
