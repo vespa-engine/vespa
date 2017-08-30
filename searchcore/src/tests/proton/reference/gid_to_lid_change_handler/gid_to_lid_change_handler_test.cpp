@@ -226,9 +226,7 @@ TEST_F("Test that put is ignored if we have a pending remove", Fixture)
 {
     auto &stats = f.addStats();
     auto listener = std::make_unique<MyListener>(stats, "test", "testdoc");
-    TEST_DO(stats.assertListeners(1, 0, 0));
     f.addListener(std::move(listener));
-    TEST_DO(stats.assertListeners(1, 1, 0));
     f.notifyRemove(toGid(doc1), 20);
     TEST_DO(stats.assertChanges(0, 1));
     f.notifyPut(toGid(doc1), 10, 10);
@@ -238,16 +236,13 @@ TEST_F("Test that put is ignored if we have a pending remove", Fixture)
     f.notifyPut(toGid(doc1), 11, 30);
     TEST_DO(stats.assertChanges(1, 1));
     f.removeListeners("testdoc", {});
-    TEST_DO(stats.assertListeners(1, 1, 1));
 }
 
 TEST_F("Test that pending removes are merged", Fixture)
 {
     auto &stats = f.addStats();
     auto listener = std::make_unique<MyListener>(stats, "test", "testdoc");
-    TEST_DO(stats.assertListeners(1, 0, 0));
     f.addListener(std::move(listener));
-    TEST_DO(stats.assertListeners(1, 1, 0));
     f.notifyRemove(toGid(doc1), 20);
     TEST_DO(stats.assertChanges(0, 1));
     f.notifyRemove(toGid(doc1), 40);
@@ -263,7 +258,6 @@ TEST_F("Test that pending removes are merged", Fixture)
     f.notifyPut(toGid(doc1), 12, 50);
     TEST_DO(stats.assertChanges(1, 1));
     f.removeListeners("testdoc", {});
-    TEST_DO(stats.assertListeners(1, 1, 1));
 }
 
 }
