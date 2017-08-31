@@ -5,7 +5,7 @@ import org.junit.Assert.assertThat
 import org.junit.Assert.assertTrue
 import org.hamcrest.CoreMatchers.is
 import java.io.StringReader
-import ConfigGenerator.createClassName
+import ConfiggenUtil.createClassName
 import JavaClassBuilder.createUniqueSymbol
 import org.junit.{Ignore, Test}
 

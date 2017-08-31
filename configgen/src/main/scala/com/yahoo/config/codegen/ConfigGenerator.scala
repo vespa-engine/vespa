@@ -2,11 +2,12 @@
 package com.yahoo.config.codegen
 
 
+import com.yahoo.config.codegen.BuilderGenerator.getBuilder
+import com.yahoo.config.codegen.JavaClassBuilder.Indentation
 import com.yahoo.config.codegen.LeafCNode._
 import com.yahoo.config.codegen.ReservedWords.{INTERNAL_PREFIX => InternalPrefix}
-import JavaClassBuilder.Indentation
-import BuilderGenerator.getBuilder
-import util.parsing.combinator.JavaTokenParsers
+
+import scala.util.parsing.combinator.JavaTokenParsers
 
 /**
  * @author gjoranv
@@ -409,7 +410,7 @@ object ConfigGenerator {
     node match {
       case emptyName: CNode if node.getName.length == 0 =>
         throw new CodegenRuntimeException("Node with empty name, under parent " + emptyName.getParent.getName)
-      case root: InnerCNode if root.getParent == null => createClassName(root.getName)
+      case root: InnerCNode if root.getParent == null => ConfiggenUtil.createClassName(root.getName)
       case b: BooleanLeaf   => "BooleanNode"
       case d: DoubleLeaf    => "DoubleNode"
       case f: FileLeaf      => "FileNode"
@@ -450,9 +451,10 @@ object ConfigGenerator {
   }
 
   /**
-   * Create class name from def name
-   * @param defName The file name without the '.def' suffix
-   */
+    * Deprecated!
+    * TODO: Remove when no longer used in config-model
+    */
+  @deprecated("Use ConfiggenUtil.createClassName() instead", "6.143")
   def createClassName(defName: String): String = {
     val className = defName.split("-").map (_.capitalize).mkString + "Config"
     val parser = new JavaTokenParsers {}
