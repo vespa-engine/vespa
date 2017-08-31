@@ -29,6 +29,14 @@ struct MockGidToLidMapper : public search::IGidToLidMapper {
             return 0u;
         }
     }
+
+    void foreach(const search::IGidToLidMapperVisitor &visitor) const override {
+        for (const auto &kv : _map) {
+            if (kv.second != 0) {
+                visitor.visit(kv.first, kv.second);
+            }
+        }
+    }
 };
 
 struct MockGidToLidMapperFactory : public search::IGidToLidMapperFactory {

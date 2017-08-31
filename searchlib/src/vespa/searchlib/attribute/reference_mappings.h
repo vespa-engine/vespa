@@ -61,7 +61,6 @@ public:
     void notifyReferencedRemove(const Reference &entry);
     void removeReverseMapping(const Reference &entry, uint32_t lid);
     void addReverseMapping(const Reference &entry, uint32_t lid);
-    void syncMappings(const Reference &entry);
 
     // Maintain size of mapping from lid to referenced lid
     void onAddDocs(uint32_t docIdLimit);

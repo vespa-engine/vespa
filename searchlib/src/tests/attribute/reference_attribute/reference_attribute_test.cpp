@@ -188,7 +188,8 @@ struct Fixture
     void notifyReferencedRemove(const GlobalId &gid) {
         _attr->notifyReferencedRemove(gid);
     }
-    void populateReferencedLids() {
+    void setGidToLidMapperFactory(std::shared_ptr<MyGidToLidMapperFactory> factory) {
+        _attr->setGidToLidMapperFactory(factory);
         _attr->populateReferencedLids();
     }
 };
@@ -289,8 +290,8 @@ TEST_F("require that we can save and load attribute", Fixture)
 TEST_F("require that update() uses gid-mapper to set referenced lid", Fixture)
 {
     f.ensureDocIdLimit(6);
-    std::shared_ptr<search::IGidToLidMapperFactory> factory = std::make_shared<MyGidToLidMapperFactory>();
-    f._attr->setGidToLidMapperFactory(factory);
+    auto factory = std::make_shared<MyGidToLidMapperFactory>();
+    f.setGidToLidMapperFactory(factory);
     f.set(1, toGid(doc1));
     f.set(2, toGid(doc2));
     f.set(4, toGid(doc1));
@@ -340,9 +341,8 @@ void preparePopulateReferencedLids(Fixture &f)
 
 void checkPopulateReferencedLids(Fixture &f)
 {
-    std::shared_ptr<search::IGidToLidMapperFactory> factory = std::make_shared<MyGidToLidMapperFactory>();
-    f._attr->setGidToLidMapperFactory(factory);
-    f.populateReferencedLids();
+    auto factory = std::make_shared<MyGidToLidMapperFactory>();
+    f.setGidToLidMapperFactory(factory);
     TEST_DO(f.assertRefLid(1, 10));
     TEST_DO(f.assertRefLid(2, 17));
     TEST_DO(f.assertRefLid(3, 10));
@@ -386,35 +386,6 @@ TEST_F("Require that notifyReferencedPut and notifyReferencedRemove changes reve
     f.notifyReferencedRemove(toGid(doc1));
     TEST_DO(f.assertLids(10, { }));
     TEST_DO(f.assertLids(11, { }));
-}
-
-TEST_F("Require that reverse mapping recovers from temporary out of order glitch", Fixture)
-{
-    auto factory = std::make_shared<MyGidToLidMapperFactory>();
-    f._attr->setGidToLidMapperFactory(factory);
-    f.ensureDocIdLimit(4);
-    f.set(1, toGid(doc1));
-    f.set(2, toGid(doc2));
-    /*
-     * Changes in gid to lid mapping can be visible via gid to lid
-     * mapper before notifications arrive.  If a lid is reused in the
-     * referenced document meta store then multiple entries in
-     * reference store might temporarily map to the same referenced
-     * lid.
-     */
-    factory->remove(doc1);   // remove referenced document
-    factory->add(doc3, 10);  // reuse lid for new referenced document
-    f.set(3, toGid(doc3));
-    TEST_DO(f.assertRefLid(1, 10));
-    TEST_DO(f.assertRefLid(2, 17));
-    TEST_DO(f.assertRefLid(3, 10));
-    // Notify reference attribute about gid to lid mapping changes
-    f.notifyReferencedRemove(toGid(doc1));
-    f.notifyReferencedPut(toGid(doc3), 10);
-    TEST_DO(f.assertRefLid(1, 0));
-    TEST_DO(f.assertRefLid(2, 17));
-    TEST_DO(f.assertRefLid(3, 10));
-    TEST_DO(f.assertLids(10, { 3 }));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

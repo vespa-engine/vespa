@@ -78,6 +78,7 @@ public:
     ReverseMappingRefs getReverseMappingRefs() const { return _referenceMappings.getReverseMappingRefs(); }
     const ReverseMapping &getReverseMapping() const { return _referenceMappings.getReverseMapping(); }
 
+    void notifyReferencedPutNoCommit(const GlobalId &gid, DocId referencedLid);
     void notifyReferencedPut(const GlobalId &gid, DocId referencedLid);
     void notifyReferencedRemove(const GlobalId &gid);
     void populateReferencedLids();
