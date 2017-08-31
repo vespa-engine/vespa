@@ -63,6 +63,13 @@ struct Fixture {
     void perform_spi_operation() {
         errorWrapper.getBucketInfo(spi::Bucket(document::BucketId(16, 1234), spi::PartitionId(0)));
     }
+
+    void check_no_listener_invoked_for_error(MockErrorListener& listener, spi::Result::ErrorType error) {
+        providerWrapper.setResult(spi::Result(error, "beep boop"));
+        perform_spi_operation();
+        CPPUNIT_ASSERT(!listener._seen_fatal_error);
+        CPPUNIT_ASSERT(!listener._seen_resource_exhaustion_error);
+    }
 };
 
 }
@@ -110,16 +117,8 @@ void ProviderErrorWrapperTest::listener_not_invoked_on_regular_errors() {
     auto listener = std::make_shared<MockErrorListener>();
     f.errorWrapper.register_error_listener(listener);
 
-    // TODO dedupe
-    f.providerWrapper.setResult(spi::Result(spi::Result::TRANSIENT_ERROR, "beep boop"));
-    f.perform_spi_operation();
-    CPPUNIT_ASSERT(!listener->_seen_fatal_error);
-    CPPUNIT_ASSERT(!listener->_seen_resource_exhaustion_error);
-
-    f.providerWrapper.setResult(spi::Result(spi::Result::PERMANENT_ERROR, "beep boop!!"));
-    f.perform_spi_operation();
-    CPPUNIT_ASSERT(!listener->_seen_fatal_error);
-    CPPUNIT_ASSERT(!listener->_seen_resource_exhaustion_error);
+    f.check_no_listener_invoked_for_error(*listener, spi::Result::TRANSIENT_ERROR);
+    f.check_no_listener_invoked_for_error(*listener, spi::Result::PERMANENT_ERROR);
 }
 
 void ProviderErrorWrapperTest::multiple_listeners_can_be_registered() {

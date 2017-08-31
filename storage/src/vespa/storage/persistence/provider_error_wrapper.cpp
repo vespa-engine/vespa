@@ -2,9 +2,6 @@
 
 #include "provider_error_wrapper.h"
 #include "persistenceutil.h"
-#include <vespa/log/log.h>
-
-LOG_SETUP(".persistence.shutdownwrapper");
 
 namespace storage {
 

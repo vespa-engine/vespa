@@ -25,8 +25,6 @@ class ServiceLayerComponent;
 class ProviderErrorListener {
 public:
     virtual ~ProviderErrorListener() = default;
-    // Note: fatal error listener will only be called _once_, as it is assumed
-    // that such errors are indeed fatal and will lead to the process' termination.
     virtual void on_fatal_error(vespalib::stringref message) {
         (void)message;
     }
@@ -77,11 +75,6 @@ public:
 
     void register_error_listener(std::shared_ptr<ProviderErrorListener> listener);
 private:
-    /**
-     * Check whether result has a FATAL_ERROR return code and invoke
-     * requestShutdown with its error string if so. Will const_cast
-     * internally since it calls non-const on _component.
-     */
     template <typename ResultType>
     ResultType checkResult(ResultType&& result) const;
 

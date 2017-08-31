@@ -14,11 +14,11 @@ class ServiceLayerErrorListenerTest : public CppUnit::TestFixture {
 public:
     CPPUNIT_TEST_SUITE(ServiceLayerErrorListenerTest);
     CPPUNIT_TEST(shutdown_invoked_on_fatal_error);
-    CPPUNIT_TEST(merge_throttle_backpressure_invoked_on_resource_exhaution_error);
+    CPPUNIT_TEST(merge_throttle_backpressure_invoked_on_resource_exhaustion_error);
     CPPUNIT_TEST_SUITE_END();
 
     void shutdown_invoked_on_fatal_error();
-    void merge_throttle_backpressure_invoked_on_resource_exhaution_error();
+    void merge_throttle_backpressure_invoked_on_resource_exhaustion_error();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(ServiceLayerErrorListenerTest);
@@ -71,7 +71,7 @@ void ServiceLayerErrorListenerTest::shutdown_invoked_on_fatal_error() {
     CPPUNIT_ASSERT_EQUAL(vespalib::string("eject! eject!"), f.shutdown_listener.reason());
 }
 
-void ServiceLayerErrorListenerTest::merge_throttle_backpressure_invoked_on_resource_exhaution_error() {
+void ServiceLayerErrorListenerTest::merge_throttle_backpressure_invoked_on_resource_exhaustion_error() {
     Fixture f;
 
     CPPUNIT_ASSERT(!f.merge_throttler.backpressure_mode_active());
