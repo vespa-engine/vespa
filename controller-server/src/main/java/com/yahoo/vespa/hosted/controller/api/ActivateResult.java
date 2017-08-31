@@ -13,21 +13,15 @@ import java.util.List;
 public class ActivateResult {
 
     private final RevisionId revisionId;
-    private final List<Log> messages;
     private final PrepareResponse prepareResponse;
 
-    public ActivateResult(RevisionId revisionId, List<Log> messages, PrepareResponse prepareResponse) {
+    public ActivateResult(RevisionId revisionId, PrepareResponse prepareResponse) {
         this.revisionId = revisionId;
-        this.messages = messages;
         this.prepareResponse = prepareResponse;
     }
 
     public RevisionId getRevisionId() {
         return revisionId;
-    }
-
-    public List<Log> getMessages() {
-        return messages;
     }
 
     public PrepareResponse getPrepareResponse() {

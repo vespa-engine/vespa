@@ -285,7 +285,7 @@ public class ApplicationController {
             application = application.with(new Deployment(zone, revision, version, clock.instant()));
             store(application, lock);
 
-            return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.messages(), preparedApplication.prepareResponse());
+            return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse());
         }
     }
 
@@ -295,8 +295,9 @@ public class ApplicationController {
         logEntry.time = clock.instant().toEpochMilli();
         logEntry.message = "Ignoring deployment of " + get(applicationId) + " to " + zone + " as a deployment is not currently expected";
         PrepareResponse prepareResponse = new PrepareResponse();
+        prepareResponse.log = Collections.singletonList(logEntry);
         prepareResponse.configChangeActions = new ConfigChangeActions(Collections.emptyList(), Collections.emptyList());
-        return new ActivateResult(new RevisionId(applicationPackage.hash()), Collections.singletonList(logEntry), prepareResponse);
+        return new ActivateResult(new RevisionId(applicationPackage.hash()), prepareResponse);
     }
 
     private Application deleteRemovedDeployments(Application application) {
