@@ -24,7 +24,6 @@ import com.yahoo.vespa.hosted.controller.AlreadyExistsException;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
-import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.InstanceEndpoints;
 import com.yahoo.vespa.hosted.controller.api.Tenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.ApplicationResource;
@@ -45,6 +44,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.GitRepository;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
+import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserGroup;
@@ -55,6 +55,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.athens.NToken;
 import com.yahoo.vespa.hosted.controller.api.integration.athens.ZmsException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.cost.ApplicationCost;
 import com.yahoo.vespa.hosted.controller.api.integration.cost.CostJsonModelAdapter;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
@@ -765,12 +766,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         DeployOptions deployOptionsJsonClass = new DeployOptions(screwdriverBuildJobFromSlime(deployOptions.field("screwdriverBuildJob")),
                                                                  optional("vespaVersion", deployOptions).map(Version::new),
                                                                  deployOptions.field("ignoreValidationErrors").asBool(),
-                                                                 deployOptions.field("deployCurrentVersion").asBool()); 
-        ActivateResult result = controller.applications().deployApplication(applicationId, 
-                                                                            zone, 
-                                                                            new ApplicationPackage(dataParts.get("applicationZip")),
+                                                                 deployOptions.field("deployCurrentVersion").asBool());
+        ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get("applicationZip"));
+        PrepareResponse response = controller.applications().deployApplication(applicationId,
+                                                                            zone,
+                                                                            applicationPackage,
                                                                             deployOptionsJsonClass);
-        return new SlimeJsonResponse(toSlime(result, dataParts.get("applicationZip").length));
+        return new SlimeJsonResponse(toSlime(response, new RevisionId(applicationPackage.hash()), dataParts.get("applicationZip").length));
     }
 
     private HttpResponse deleteTenant(String tenantName, HttpRequest request) {
@@ -974,14 +976,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                          "/application/" + application.id().application().value(), request.getUri()).toString());
     }
 
-    private Slime toSlime(ActivateResult result, long applicationZipSizeBytes) {
+    private Slime toSlime(PrepareResponse response, RevisionId revisionId, long applicationZipSizeBytes) {
         Slime slime = new Slime();
         Cursor object = slime.setObject();
-        object.setString("revisionId", result.getRevisionId().id());
+        object.setString("revisionId", revisionId.id());
         object.setLong("applicationZipSize", applicationZipSizeBytes);
         Cursor logArray = object.setArray("prepareMessages");
-        if (result.getPrepareResponse().log != null) {
-            for (Log logMessage : result.getPrepareResponse().log) {
+        if (response.log != null) {
+            for (Log logMessage : response.log) {
                 Cursor logObject = logArray.addObject();
                 logObject.setLong("time", logMessage.time);
                 logObject.setString("level", logMessage.level);
@@ -992,7 +994,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Cursor changeObject = object.setObject("configChangeActions");
 
         Cursor restartActionsArray = changeObject.setArray("restart");
-        for (RestartAction restartAction : result.getPrepareResponse().configChangeActions.restartActions) {
+        for (RestartAction restartAction : response.configChangeActions.restartActions) {
             Cursor restartActionObject = restartActionsArray.addObject();
             restartActionObject.setString("clusterName", restartAction.clusterName);
             restartActionObject.setString("clusterType", restartAction.clusterType);
@@ -1002,7 +1004,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
 
         Cursor refeedActionsArray = changeObject.setArray("refeed");
-        for (RefeedAction refeedAction : result.getPrepareResponse().configChangeActions.refeedActions) {
+        for (RefeedAction refeedAction : response.configChangeActions.refeedActions) {
             Cursor refeedActionObject = refeedActionsArray.addObject();
             refeedActionObject.setString("name", refeedAction.name);
             refeedActionObject.setBool("allowed", refeedAction.allowed);
