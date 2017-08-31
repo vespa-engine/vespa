@@ -15,6 +15,7 @@ import java.io.Reader;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -76,13 +77,9 @@ public class DeploymentSpec {
     private void validateZones(List<Step> steps) {
         Set<DeclaredZone> zones = new HashSet<>();
 
-        steps.stream().filter(step -> step instanceof DeclaredZone)
-                      .map(DeclaredZone.class::cast)
-                      .forEach(zone -> ensureUnique(zone, zones));
-        steps.stream().filter(step -> step instanceof ParallelZones)
-                      .map(ParallelZones.class::cast)
-                      .flatMap(parallelZones -> parallelZones.zones().stream())
-                      .forEach(zone -> ensureUnique(zone, zones));
+        for (Step step : steps)
+            for (DeclaredZone zone : step.zones())
+                ensureUnique(zone, zones);
     }
     
     private void ensureUnique(DeclaredZone zone, Set<DeclaredZone> zones) {
@@ -191,8 +188,8 @@ public class DeploymentSpec {
                 for (Element stepTag : XML.getChildren(environmentTag)) {
                     if (stepTag.getTagName().equals("delay")) {
                         steps.add(new Delay(Duration.ofSeconds(longAttribute("hours", stepTag) * 60 * 60 +
-                                                                       longAttribute("minutes", stepTag) * 60 +
-                                                                       longAttribute("seconds", stepTag))));
+                                                               longAttribute("minutes", stepTag) * 60 +
+                                                               longAttribute("seconds", stepTag))));
                     } else if (stepTag.getTagName().equals("parallel")) {
                         List<DeclaredZone> zones = new ArrayList<>();
                         for (Element regionTag : XML.getChildren(stepTag)) {
@@ -320,6 +317,9 @@ public class DeploymentSpec {
         /** Returns whether this step deploys to the given environment, and (if specified) region */
         public abstract boolean deploysTo(Environment environment, Optional<RegionName> region);
 
+        /** Returns the zones deployed to in this step */
+        public List<DeclaredZone> zones() { return Collections.emptyList(); }
+
     }
 
     /** A deployment step which is to wait for some time before progressing to the next step */
@@ -370,6 +370,9 @@ public class DeploymentSpec {
         public boolean active() { return active; }
 
         @Override
+        public List<DeclaredZone> zones() { return Collections.singletonList(this); }
+
+        @Override
         public boolean deploysTo(Environment environment, Optional<RegionName> region) {
             if (environment != this.environment) return false;
             if (region.isPresent() && ! region.equals(this.region)) return false;
@@ -407,7 +410,7 @@ public class DeploymentSpec {
             this.zones = ImmutableList.copyOf(zones);
         }
 
-        /** The list of zones to deploy in */
+        @Override
         public List<DeclaredZone> zones() { return this.zones; }
 
         @Override

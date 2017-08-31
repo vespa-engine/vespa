@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
@@ -23,7 +22,6 @@ import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -111,10 +109,10 @@ public class DeploymentTester {
     }
 
     private void completeDeployment(Application application, ApplicationPackage applicationPackage, Optional<JobType> failOnJob) {
-        List<JobType> triggerOrder = JobType.triggerOrder(SystemName.main, applicationPackage.deploymentSpec());
-        for (JobType job : triggerOrder) {
+        DeploymentOrder order = new DeploymentOrder(controller());
+        for (JobType job : order.jobsFrom(applicationPackage.deploymentSpec())) {
             boolean failJob = failOnJob.map(j -> j.equals(job)).orElse(false);
-            deployAndNotify(job, application, applicationPackage, !failJob);
+            deployAndNotify(application, applicationPackage, !failJob, job);
             if (failJob) {
                 break;
             }
@@ -163,20 +161,24 @@ public class DeploymentTester {
         job.zone(controller().system()).ifPresent(zone -> tester.deploy(application, zone, applicationPackage, deployCurrentVersion));
     }
 
-    public void deployAndNotify(JobType job, Application application, ApplicationPackage applicationPackage, boolean success) {
-        assertScheduledJob(application, job);
-        if (success) {
-            deploy(job, application, applicationPackage);
+    public void deployAndNotify(Application application, ApplicationPackage applicationPackage, boolean success, JobType... jobs) {
+        assertScheduledJob(application, jobs);
+        for (JobType job : jobs) {
+            if (success) {
+                deploy(job, application, applicationPackage);
+            }
+            notifyJobCompletion(job, application, success);
         }
-        notifyJobCompletion(job, application, success);
     }
 
-    private void assertScheduledJob(Application application, JobType jobType) {
-        Optional<BuildService.BuildJob> job = findJob(application, jobType);
-        assertTrue(String.format("Job %s is scheduled for %s", jobType, application), job.isPresent());
+    private void assertScheduledJob(Application application, JobType... jobs) {
+        for (JobType job : jobs) {
+            Optional<BuildService.BuildJob> buildJob = findJob(application, job);
+            assertTrue(String.format("Job %s is scheduled for %s", job, application), buildJob.isPresent());
+            assertEquals((long) application.deploymentJobs().projectId().get(), buildJob.get().projectId());
+            assertEquals(job.id(), buildJob.get().jobName());
+        }
         buildSystem().removeJobs(application.id());
-        assertEquals((long) application.deploymentJobs().projectId().get(), job.get().projectId());
-        assertEquals(jobType.id(), job.get().jobName());
     }
 
     private Optional<BuildService.BuildJob> findJob(Application application, JobType jobType) {

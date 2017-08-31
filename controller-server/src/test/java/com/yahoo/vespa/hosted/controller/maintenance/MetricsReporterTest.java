@@ -84,7 +84,7 @@ public class MetricsReporterTest {
 
         // 1 app fails system-test
         tester.notifyJobCompletion(component, app4, true);
-        tester.deployAndNotify(systemTest, app4, applicationPackage, false);
+        tester.deployAndNotify(app4, applicationPackage, false, systemTest);
 
         metricsReporter.maintain();
         assertEquals(25.0, metricsMock.getMetric(MetricsReporter.deploymentFailMetric));
