@@ -72,7 +72,7 @@ public class DeploymentTrigger {
                 else { // start a new change deployment
                     application = application.withDeploying(Optional.of(Change.ApplicationChange.unknown()));
                 }
-            } else if (order.isLast(report.jobType(), application) && report.success()) {
+            } else if (order.isLast(report.jobType(), application) && report.success() && application.deploymentJobs().isDeployed(application.deploying().get())) {
                 application = application.withDeploying(Optional.empty());
             }
 

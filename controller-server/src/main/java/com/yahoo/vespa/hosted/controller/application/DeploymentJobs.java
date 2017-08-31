@@ -126,6 +126,13 @@ public class DeploymentJobs {
         }
         return true; // other environments do not have any preconditions
     }
+
+    /** Returns whether change has been deployed completely */
+    public boolean isDeployed(Change change) {
+        return status.values().stream()
+                .filter(status -> status.type().isProduction())
+                .allMatch(status -> isSuccessful(status.type(), change));
+    }
     
     /** Returns the oldest failingSince time of the jobs of this, or null if none are failing */
     public Instant failingSince() {

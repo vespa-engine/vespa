@@ -13,6 +13,7 @@ import org.junit.Test;
 import java.time.Duration;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -50,7 +51,7 @@ public class DeploymentTriggerTest {
         assertEquals("Retried immediately", 1, tester.buildSystem().jobs().size());
 
         tester.buildSystem().takeJobsToRun();
-        assertEquals("Job removed", 0, tester.buildSystem().jobs().size());        
+        assertEquals("Job removed", 0, tester.buildSystem().jobs().size());
         tester.clock().advance(Duration.ofHours(2));
         tester.failureRedeployer().maintain();
         assertEquals("Retried job", 1, tester.buildSystem().jobs().size());
@@ -179,6 +180,36 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsWest1,
                                JobType.productionUsEast3);
         assertTrue("All jobs consumed", tester.buildSystem().jobs().isEmpty());
+    }
+
+    @Test
+    public void parallelDeploymentCompletesOutOfOrder() {
+        DeploymentTester tester = new DeploymentTester();
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .parallel("us-east-3", "us-west-1")
+                .build();
+
+        Application app = tester.createApplication("app1", "tenant1", 1, 11L);
+        tester.notifyJobCompletion(DeploymentJobs.JobType.component, app, true);
+
+        // Test environments pass
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
+
+        // Parallel deployment
+        tester.deploy(DeploymentJobs.JobType.productionUsWest1, app, applicationPackage);
+        tester.deploy(DeploymentJobs.JobType.productionUsEast3, app, applicationPackage);
+
+        // Last declared job completes first
+        tester.notifyJobCompletion(DeploymentJobs.JobType.productionUsWest1, app, true);
+        assertTrue("Change is present as not all jobs are complete",
+                   tester.applications().require(app.id()).deploying().isPresent());
+
+        // All jobs complete
+        tester.notifyJobCompletion(DeploymentJobs.JobType.productionUsEast3, app, true);
+        assertFalse("Change has been deployed",
+                    tester.applications().require(app.id()).deploying().isPresent());
     }
 
     @Test
