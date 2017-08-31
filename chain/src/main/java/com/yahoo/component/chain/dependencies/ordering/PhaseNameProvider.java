@@ -4,9 +4,10 @@ package com.yahoo.component.chain.dependencies.ordering;
 /**
  * A phase providing a given name.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 class PhaseNameProvider extends NameProvider {
+
     public PhaseNameProvider(String name, int priority) {
         super(name,priority);
     }
@@ -25,4 +26,5 @@ class PhaseNameProvider extends NameProvider {
     int classPriority() {
         return 0;
     }
+
 }

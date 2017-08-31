@@ -271,12 +271,14 @@ public class FastHit extends Hit {
 
     public void addSummary(Docsum docsum) {
         LazyDocsumValue lazyDocsumValue = new LazyDocsumValue(docsum);
+        reserve(docsum.getDefinition().getFieldCount());
         for (DocsumField field : docsum.getDefinition().getFields()) {
             setDocsumFieldIfNotPresent(field.getName(), lazyDocsumValue);
         }
     }
 
     void addSummary(DocsumDefinition docsumDef, Inspector value) {
+        reserve(docsumDef.getFieldCount());
         for (DocsumField field : docsumDef.getFields()) {
             String fieldName = field.getName();
             if (value.type() == Type.STRING &&

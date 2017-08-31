@@ -25,4 +25,4 @@ vespa_add_executable(vespamalloc_linklist_test_app
 )
 vespa_add_test(NAME vespamalloc_allocfree_shared_test_app NO_VALGRIND COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/allocfree_test.sh BENCHMARK
                DEPENDS vespamalloc_realloc_test_app vespamalloc_allocfree_shared_test_app vespamalloc_linklist_test_app
-                       vespamalloc vespamalloc_vespamallocd)
+                       vespamalloc vespamallocd)

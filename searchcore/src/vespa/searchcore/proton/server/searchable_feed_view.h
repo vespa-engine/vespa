@@ -86,7 +86,9 @@ private:
     void performIndexForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone);
     void forceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone) override;
 
-    virtual void notifyGidToLidChange(const document::GlobalId &gid, uint32_t lid) override;
+    virtual void notifyPutGidToLidChange(const document::GlobalId &gid, uint32_t lid, SerialNum serialNum) override;
+    virtual void notifyRemoveGidToLidChange(const document::GlobalId &gid, SerialNum serialNum) override;
+    virtual void notifyRemoveDoneGidToLidChange(const document::GlobalId &gid, SerialNum serialNum) override;
 
 public:
     SearchableFeedView(const StoreOnlyFeedView::Context &storeOnlyCtx, const PersistentParams &params,

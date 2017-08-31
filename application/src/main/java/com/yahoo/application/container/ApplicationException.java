@@ -5,10 +5,11 @@ package com.yahoo.application.container;
  * Wraps an Exception in a RuntimeException, for user convenience.
  *
  * @author gjoranv
- * @since 5.1.15
  */
 class ApplicationException extends RuntimeException {
+
     ApplicationException(Exception e) {
         super(e);
     }
+
 }

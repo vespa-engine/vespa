@@ -21,10 +21,13 @@ import java.util.logging.Logger;
  * This class gets around these issues by creating one instance per unique setting, and ensuring only one request use a given instance at a time.
  */
 public class ApacheAsyncHttpClient implements AsyncHttpClient<HttpResult> {
+
     private static final Logger log = Logger.getLogger(ApacheAsyncHttpClient.class.getName());
+
     public interface SyncHttpClientFactory {
         SyncHttpClient createInstance(String proxyHost, int proxyPort, long timeoutMs);
     }
+
     public static class Settings {
         String proxyHost;
         int proxyPort;
@@ -176,4 +179,5 @@ public class ApacheAsyncHttpClient implements AsyncHttpClient<HttpResult> {
             apacheInstances.clear();
         }
     }
+
 }

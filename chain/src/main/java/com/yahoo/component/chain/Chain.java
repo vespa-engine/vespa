@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * An immutable ordered list of components
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 public class Chain<COMPONENT extends ChainedComponent> {
 

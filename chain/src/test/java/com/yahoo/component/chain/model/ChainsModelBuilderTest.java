@@ -17,7 +17,6 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author gjoranv
- * @since 5.1.10
  */
 public class ChainsModelBuilderTest {
 
@@ -69,4 +68,5 @@ public class ChainsModelBuilderTest {
     getComponentsByName(Set<ComponentSpecification> componentSpecifications) {
         return ChainSpecification.componentsByName(componentSpecifications);
     }
+
 }

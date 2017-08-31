@@ -227,6 +227,7 @@ public class Dispatcher extends AbstractComponent {
         }
 
         private void fill(FastHit hit, Inspector summary) {
+            hit.reserve(summary.fieldCount());
             summary.traverse((String name, Inspector value) -> {
                 hit.setField(name, nativeTypeOf(value));
             });

@@ -11,9 +11,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
-* @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+* @author Einar M R Rosenvinge
 */
 public class ThrowingInWriteRequestHandler extends AbstractRequestHandler {
+
     private ExecutorService responseExecutor = Executors.newSingleThreadExecutor();
 
     @Override
@@ -50,4 +51,5 @@ public class ThrowingInWriteRequestHandler extends AbstractRequestHandler {
             handler.completed();
         }
     }
+
 }

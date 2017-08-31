@@ -11,7 +11,7 @@ import com.yahoo.component.chain.ChainedComponent;
 /**
  * A set of components providing a given name.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 class ComponentNameProvider extends NameProvider {
 

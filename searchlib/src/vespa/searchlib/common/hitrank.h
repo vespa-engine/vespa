@@ -2,10 +2,13 @@
 
 #pragma once
 
+#include <cmath>
+
 namespace search {
 
 typedef double HitRank;
 typedef double SignedHitRank;
+constexpr HitRank default_rank_value = -HUGE_VAL;
 
 } // namespace search
 

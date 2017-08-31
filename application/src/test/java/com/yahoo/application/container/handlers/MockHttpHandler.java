@@ -11,10 +11,10 @@ import java.io.PrintStream;
 import java.util.concurrent.Executor;
 
 /**
- *
  * @author Christian Andersen
  */
 public class MockHttpHandler extends ThreadedHttpRequestHandler {
+
     public MockHttpHandler(Executor executor) {
         super(executor);
     }
@@ -30,4 +30,5 @@ public class MockHttpHandler extends ThreadedHttpRequestHandler {
             }
         };
     }
+
 }

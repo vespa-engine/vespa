@@ -57,7 +57,8 @@ public:
     void transferHoldLists(generation_t generation) { _reverseMapping.transferHoldLists(generation); }
 
     // Handle mapping changes
-    void notifyGidToLidChange(const Reference &entry, uint32_t referencedLid);
+    void notifyReferencedPut(const Reference &entry, uint32_t referencedLid);
+    void notifyReferencedRemove(const Reference &entry);
     void removeReverseMapping(const Reference &entry, uint32_t lid);
     void addReverseMapping(const Reference &entry, uint32_t lid);
     void syncMappings(const Reference &entry);

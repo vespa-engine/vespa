@@ -28,10 +28,9 @@ import java.nio.file.Path;
 /**
  * A JDisc Container configured from XML.
  *
- * @author tonytv
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Tony Vaagenes
+ * @author Einar M R Rosenvinge
  * @author gjoranv
- * @since 5.1.15
  */
 @Beta
 public final class JDisc implements AutoCloseable {

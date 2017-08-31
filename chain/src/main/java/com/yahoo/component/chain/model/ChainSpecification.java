@@ -12,10 +12,11 @@ import java.util.*;
 /**
  * Specifies how the components should be selected to create a chain.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @Immutable
 public class ChainSpecification {
+
     public static class Inheritance {
         public final Set<ComponentSpecification> chainSpecifications;
         public final Set<ComponentSpecification> excludedComponents;

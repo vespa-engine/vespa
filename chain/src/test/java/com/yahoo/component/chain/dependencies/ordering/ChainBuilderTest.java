@@ -22,8 +22,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author tonytv
- * @since 5.1.10
+ * @author Tony Vaagenes
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class ChainBuilderTest {

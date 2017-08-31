@@ -143,6 +143,7 @@
     <dependency>
       <groupId>org.antlr</groupId>
       <artifactId>antlr4-runtime</artifactId>
+      <version>4.5</version>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
@@ -210,7 +211,7 @@
       <plugin> <!-- For the YQL query language -->
         <groupId>org.antlr</groupId>
         <artifactId>antlr4-maven-plugin</artifactId>
-        <version>${antlr4.version}</version>
+        <version>4.5</version>
         <executions>
           <execution>
             <configuration>

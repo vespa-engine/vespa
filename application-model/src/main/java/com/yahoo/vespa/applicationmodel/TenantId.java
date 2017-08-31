@@ -10,6 +10,7 @@ import java.util.Objects;
  */
 // TODO: Remove this and use TenantName instead (if you need it for the JSON stuff move it to that layer and don't let it leak)
 public class TenantId {
+
     private final String id;
 
     public TenantId(String id) {
@@ -41,4 +42,5 @@ public class TenantId {
     public int hashCode() {
         return Objects.hash(id);
     }
+
 }

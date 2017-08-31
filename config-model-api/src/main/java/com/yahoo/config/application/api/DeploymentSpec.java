@@ -73,32 +73,23 @@ public class DeploymentSpec {
     }
 
     /** Throw an IllegalArgumentException if any production zone is declared multiple times */
-    private static void validateZones(List<Step> steps) {
-        // Collect both non-parallel and parallel zones
-        List<DeclaredZone> zones = new ArrayList<>();
-        steps.stream()
-                .filter(step -> step instanceof DeclaredZone)
-                .map(DeclaredZone.class::cast)
-                .forEach(zones::add);
-        steps.stream()
-                .filter(step -> step instanceof ParallelZones)
-                .map(ParallelZones.class::cast)
-                .flatMap(parallelZones -> parallelZones.zones().stream())
-                .forEach(zones::add);
+    private void validateZones(List<Step> steps) {
+        Set<DeclaredZone> zones = new HashSet<>();
 
-
-        // Detect duplicates
-        Set<DeclaredZone> unique = new HashSet<>();
-        List<RegionName> duplicates = zones.stream()
-                .filter(z -> z.environment() == Environment.prod && !unique.add(z))
-                .map(z -> z.region().get())
-                .collect(Collectors.toList());
-        if (!duplicates.isEmpty()) {
-            throw new IllegalArgumentException("All declared regions must be unique, but found these " +
-                                                       "duplicated regions: " + duplicates);
-        }
+        steps.stream().filter(step -> step instanceof DeclaredZone)
+                      .map(DeclaredZone.class::cast)
+                      .forEach(zone -> ensureUnique(zone, zones));
+        steps.stream().filter(step -> step instanceof ParallelZones)
+                      .map(ParallelZones.class::cast)
+                      .flatMap(parallelZones -> parallelZones.zones().stream())
+                      .forEach(zone -> ensureUnique(zone, zones));
     }
     
+    private void ensureUnique(DeclaredZone zone, Set<DeclaredZone> zones) {
+        if ( ! zones.add(zone))
+            throw new IllegalArgumentException(zone + " is listed twice in deployment.xml");
+    }
+
     /** Adds missing required steps and reorders steps to a permissible order */
     private static List<Step> completeSteps(List<Step> steps) {
         // Ensure no duplicate deployments to the same zone
@@ -398,6 +389,11 @@ public class DeploymentSpec {
             if (this.environment != other.environment) return false;
             if ( ! this.region.equals(other.region())) return false;
             return true;
+        }
+        
+        @Override
+        public String toString() {
+            return environment + ( region.isPresent() ? "." + region.get() : "");
         }
 
     }

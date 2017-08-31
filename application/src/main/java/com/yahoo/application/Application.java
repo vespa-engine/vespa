@@ -35,10 +35,10 @@ import java.util.*;
 /**
  * Contains one or more containers built from services.xml.
  * Other services present in the services.xml file might be mocked in future versions.
- * <p>
+ *
  * Currently, only a single top level JDisc Container is allowed. Other clusters are ignored.
  *
- * @author tonytv
+ * @author Tony Vaagenes
  */
 @Beta
 public final class Application implements AutoCloseable {
@@ -666,4 +666,5 @@ public final class Application implements AutoCloseable {
             }
         }
     }
+
 }
