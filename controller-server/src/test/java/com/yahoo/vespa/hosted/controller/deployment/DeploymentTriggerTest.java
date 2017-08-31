@@ -6,7 +6,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.application.Change;
+import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobType;
 import org.junit.Test;
 
@@ -24,31 +24,42 @@ public class DeploymentTriggerTest {
     @Test
     public void testTriggerFailing() {
         DeploymentTester tester = new DeploymentTester();
-        Application app1 = tester.createApplication("app1", "tenant1", 1, 1L);
+        Application app = tester.createApplication("app1", "tenant1", 1, 1L);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .upgradePolicy("default")
                 .environment(Environment.prod)
                 .region("us-west-1")
                 .build();
-        app1 = app1.with(app1.deploymentJobs().asSelfTriggering(false));
-        tester.applications().store(app1, tester.applications().lock(app1.id()));
 
-        Version version = new Version(5, 2);
-        tester.deploymentTrigger().triggerChange(app1.id(), new Change.VersionChange(version));
-        tester.deployAndNotify(app1, applicationPackage, false, JobType.systemTest);
+        Version version = new Version(5, 1);
+        tester.updateVersionStatus(version);
+        tester.upgrader().maintain();
+
+        // Deploy completely once
+        tester.notifyJobCompletion(DeploymentJobs.JobType.component, app, true);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, DeploymentJobs.JobType.stagingTest);
+        tester.deployAndNotify(app, applicationPackage, true, JobType.productionUsWest1);
+
+        // New version is released
+        version = new Version(5, 2);
+        tester.updateVersionStatus(version);
+        tester.upgrader().maintain();
+
+        tester.deployAndNotify(app, applicationPackage, false, JobType.systemTest);
         assertEquals("Retried immediately", 1, tester.buildSystem().jobs().size());
 
         tester.buildSystem().takeJobsToRun();
         assertEquals("Job removed", 0, tester.buildSystem().jobs().size());        
         tester.clock().advance(Duration.ofHours(2));
-        tester.deploymentTrigger().triggerFailing(app1.id(), "unit test");
+        tester.failureRedeployer().maintain();
         assertEquals("Retried job", 1, tester.buildSystem().jobs().size());
         assertEquals(JobType.systemTest.id(), tester.buildSystem().jobs().get(0).jobName());
 
         tester.buildSystem().takeJobsToRun();
         assertEquals("Job removed", 0, tester.buildSystem().jobs().size());
-        tester.clock().advance(Duration.ofHours(7));
-        tester.deploymentTrigger().triggerFailing(app1.id(), "unit test");
+        tester.clock().advance(Duration.ofHours(12).plus(Duration.ofSeconds(1)));
+        tester.failureRedeployer().maintain();
         assertEquals("Retried from the beginning", 1, tester.buildSystem().jobs().size());
         assertEquals(JobType.component.id(), tester.buildSystem().jobs().get(0).jobName());
     }

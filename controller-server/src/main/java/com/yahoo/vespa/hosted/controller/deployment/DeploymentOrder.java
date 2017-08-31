@@ -9,10 +9,9 @@ import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -32,6 +31,7 @@ public class DeploymentOrder {
     private final Clock clock;
 
     public DeploymentOrder(Controller controller) {
+        Objects.requireNonNull(controller, "controller cannot be null");
         this.controller = controller;
         this.clock = controller.clock();
     }
@@ -87,10 +87,6 @@ public class DeploymentOrder {
 
     /** Returns jobs for given deployment spec, in the order they are declared */
     public List<JobType> jobsFrom(DeploymentSpec deploymentSpec) {
-        if (deploymentSpec.steps().isEmpty()) {
-            return Arrays.asList(JobType.systemTest, JobType.stagingTest);
-        }
-
         return deploymentSpec.steps().stream()
                 .flatMap(step -> step.zones().stream())
                 .map(this::toJob)
